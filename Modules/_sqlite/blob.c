@@ -122,6 +122,9 @@ blob_seterror(pysqlite_Blob *self, int rc)
 static PyObject *
 inner_read(pysqlite_Blob *self, Py_ssize_t length, Py_ssize_t offset)
 {
+    assert(length <= sqlite3_blob_bytes(self->blob));
+    assert(offset <= sqlite3_blob_bytes(self->blob) - self->offset);
+
     PyObject *buffer = PyBytes_FromStringAndSize(NULL, length);
     if (buffer == NULL) {
         return NULL;
@@ -191,6 +194,7 @@ inner_write(pysqlite_Blob *self, const void *buf, Py_ssize_t len,
         return -1;
     }
 
+    assert(offset <= remaining_len);
     int rc;
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_blob_write(self->blob, buf, (int)len, (int)offset);
