@@ -125,9 +125,11 @@ if PyStringMap is not None:
 
 del d, t
 
-def deepcopy(x, memo=None, _nil=[]):
+def _deepcopy_fallback(x, memo=None, _nil=[]):
     """Deep copy operation on arbitrary Python objects.
-
+    
+    This is the fallback from the C implementation
+    
     See the module's __doc__ string for more info.
     """
 
@@ -176,6 +178,11 @@ def deepcopy(x, memo=None, _nil=[]):
         memo[d] = y
         _keep_alive(x, memo) # Make sure x lives at least as long as d
     return y
+
+try:
+    from _copy import deepcopy
+except ImportError:
+    deepcopy = _deepcopy_fallback
 
 _deepcopy_dispatch = d = {}
 
