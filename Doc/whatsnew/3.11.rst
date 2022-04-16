@@ -249,7 +249,7 @@ functools
 ---------
 
 * :func:`functools.singledispatch` now supports :data:`types.UnionType`
-  and :data:`typing.Union` as dispatch argument.::
+  and :data:`typing.Union` as annotations to the dispatch argument.::
 
     >>> from functools import singledispatch
     >>> @singledispatch
