@@ -307,8 +307,51 @@ blob_tell_impl(pysqlite_Blob *self)
 }
 
 
+/*[clinic input]
+_sqlite3.Blob.__enter__ as blob_enter
+
+Blob context manager enter.
+[clinic start generated code]*/
+
+static PyObject *
+blob_enter_impl(pysqlite_Blob *self)
+/*[clinic end generated code: output=4fd32484b071a6cd input=fe4842c3c582d5a7]*/
+{
+    if (!check_blob(self)) {
+        return NULL;
+    }
+    return Py_NewRef(self);
+}
+
+
+/*[clinic input]
+_sqlite3.Blob.__exit__ as blob_exit
+
+    type: object
+    val: object
+    tb: object
+    /
+
+Blob context manager exit.
+[clinic start generated code]*/
+
+static PyObject *
+blob_exit_impl(pysqlite_Blob *self, PyObject *type, PyObject *val,
+               PyObject *tb)
+/*[clinic end generated code: output=fc86ceeb2b68c7b2 input=575d9ecea205f35f]*/
+{
+    if (!check_blob(self)) {
+        return NULL;
+    }
+    close_blob(self);
+    Py_RETURN_FALSE;
+}
+
+
 static PyMethodDef blob_methods[] = {
     BLOB_CLOSE_METHODDEF
+    BLOB_ENTER_METHODDEF
+    BLOB_EXIT_METHODDEF
     BLOB_READ_METHODDEF
     BLOB_SEEK_METHODDEF
     BLOB_TELL_METHODDEF
@@ -334,7 +377,7 @@ static PyType_Spec blob_spec = {
     .name = MODULE_NAME ".Blob",
     .basicsize = sizeof(pysqlite_Blob),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = blob_slots,
 };
 

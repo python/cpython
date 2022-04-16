@@ -199,7 +199,7 @@ static const uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
     0U,
     536870912U,
-    135020544U,
+    135118848U,
     4163U,
     122880U,
     0U,

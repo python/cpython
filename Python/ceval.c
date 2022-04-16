@@ -3217,12 +3217,8 @@ handle_eval_breaker:
 
         TARGET(BUILD_STRING) {
             PyObject *str;
-            PyObject *empty = PyUnicode_New(0, 0);
-            if (empty == NULL) {
-                goto error;
-            }
-            str = _PyUnicode_JoinArray(empty, stack_pointer - oparg, oparg);
-            Py_DECREF(empty);
+            str = _PyUnicode_JoinArray(&_Py_STR(empty),
+                                       stack_pointer - oparg, oparg);
             if (str == NULL)
                 goto error;
             while (--oparg >= 0) {
@@ -4150,7 +4146,7 @@ handle_eval_breaker:
                 DISPATCH();
             }
             if (Py_IsFalse(cond)) {
-                JUMPTO(oparg);
+                JUMPBY(oparg);
                 DISPATCH();
             }
             err = PyObject_IsTrue(cond);
@@ -4159,7 +4155,7 @@ handle_eval_breaker:
                 Py_DECREF(cond);
             }
             else if (err == 0)
-                JUMPTO(oparg);
+                JUMPBY(oparg);
             else
                 goto error;
             DISPATCH();
@@ -4174,12 +4170,12 @@ handle_eval_breaker:
                 DISPATCH();
             }
             if (Py_IsTrue(cond)) {
-                JUMPTO(oparg);
+                JUMPBY(oparg);
                 DISPATCH();
             }
             err = PyObject_IsTrue(cond);
             if (err > 0) {
-                JUMPTO(oparg);
+                JUMPBY(oparg);
             }
             else if (err == 0) {
                 STACK_SHRINK(1);

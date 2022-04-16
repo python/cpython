@@ -47,7 +47,7 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     /* the dict is created on the fly in PyObject_GenericSetAttr */
     self->dict = NULL;
-    self->note = NULL;
+    self->notes = NULL;
     self->traceback = self->cause = self->context = NULL;
     self->suppress_context = 0;
 
@@ -83,7 +83,7 @@ BaseException_clear(PyBaseExceptionObject *self)
 {
     Py_CLEAR(self->dict);
     Py_CLEAR(self->args);
-    Py_CLEAR(self->note);
+    Py_CLEAR(self->notes);
     Py_CLEAR(self->traceback);
     Py_CLEAR(self->cause);
     Py_CLEAR(self->context);
@@ -108,7 +108,7 @@ BaseException_traverse(PyBaseExceptionObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->dict);
     Py_VISIT(self->args);
-    Py_VISIT(self->note);
+    Py_VISIT(self->notes);
     Py_VISIT(self->traceback);
     Py_VISIT(self->cause);
     Py_VISIT(self->context);
@@ -186,12 +186,62 @@ PyDoc_STRVAR(with_traceback_doc,
 "Exception.with_traceback(tb) --\n\
     set self.__traceback__ to tb and return self.");
 
+static inline PyBaseExceptionObject*
+_PyBaseExceptionObject_cast(PyObject *exc)
+{
+    assert(PyExceptionInstance_Check(exc));
+    return (PyBaseExceptionObject *)exc;
+}
+
+static PyObject *
+BaseException_add_note(PyObject *self, PyObject *note)
+{
+    if (!PyUnicode_Check(note)) {
+        PyErr_Format(PyExc_TypeError,
+                     "note must be a str, not '%s'",
+                     Py_TYPE(note)->tp_name);
+        return NULL;
+    }
+
+    if (!PyObject_HasAttr(self, &_Py_ID(__notes__))) {
+        PyObject *new_notes = PyList_New(0);
+        if (new_notes == NULL) {
+            return NULL;
+        }
+        if (PyObject_SetAttr(self, &_Py_ID(__notes__), new_notes) < 0) {
+            Py_DECREF(new_notes);
+            return NULL;
+        }
+        Py_DECREF(new_notes);
+    }
+    PyObject *notes = PyObject_GetAttr(self, &_Py_ID(__notes__));
+    if (notes == NULL) {
+        return NULL;
+    }
+    if (!PyList_Check(notes)) {
+        Py_DECREF(notes);
+        PyErr_SetString(PyExc_TypeError, "Cannot add note: __notes__ is not a list");
+        return NULL;
+    }
+    if (PyList_Append(notes, note) < 0) {
+        Py_DECREF(notes);
+        return NULL;
+    }
+    Py_DECREF(notes);
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(add_note_doc,
+"Exception.add_note(note) --\n\
+    add a note to the exception");
 
 static PyMethodDef BaseException_methods[] = {
    {"__reduce__", (PyCFunction)BaseException_reduce, METH_NOARGS },
    {"__setstate__", (PyCFunction)BaseException_setstate, METH_O },
    {"with_traceback", (PyCFunction)BaseException_with_traceback, METH_O,
     with_traceback_doc},
+   {"add_note", (PyCFunction)BaseException_add_note, METH_O,
+    add_note_doc},
    {NULL, NULL, 0, NULL},
 };
 
@@ -217,33 +267,6 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val, void *Py_UNUS
     if (!seq)
         return -1;
     Py_XSETREF(self->args, seq);
-    return 0;
-}
-
-static PyObject *
-BaseException_get_note(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
-{
-    if (self->note == NULL) {
-        Py_RETURN_NONE;
-    }
-    return Py_NewRef(self->note);
-}
-
-static int
-BaseException_set_note(PyBaseExceptionObject *self, PyObject *note,
-                       void *Py_UNUSED(ignored))
-{
-    if (note == NULL) {
-        PyErr_SetString(PyExc_TypeError, "__note__ may not be deleted");
-        return -1;
-    }
-    else if (note != Py_None && !PyUnicode_CheckExact(note)) {
-        PyErr_SetString(PyExc_TypeError, "__note__ must be a string or None");
-        return -1;
-    }
-
-    Py_INCREF(note);
-    Py_XSETREF(self->note, note);
     return 0;
 }
 
@@ -337,7 +360,6 @@ BaseException_set_cause(PyObject *self, PyObject *arg, void *Py_UNUSED(ignored))
 static PyGetSetDef BaseException_getset[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"args", (getter)BaseException_get_args, (setter)BaseException_set_args},
-    {"__note__", (getter)BaseException_get_note, (setter)BaseException_set_note},
     {"__traceback__", (getter)BaseException_get_tb, (setter)BaseException_set_tb},
     {"__context__", BaseException_get_context,
      BaseException_set_context, PyDoc_STR("exception context")},
@@ -345,14 +367,6 @@ static PyGetSetDef BaseException_getset[] = {
      BaseException_set_cause, PyDoc_STR("exception cause")},
     {NULL},
 };
-
-
-static inline PyBaseExceptionObject*
-_PyBaseExceptionObject_cast(PyObject *exc)
-{
-    assert(PyExceptionInstance_Check(exc));
-    return (PyBaseExceptionObject *)exc;
-}
 
 
 PyObject *
@@ -910,9 +924,32 @@ exceptiongroup_subset(
     PyException_SetContext(eg, PyException_GetContext(orig));
     PyException_SetCause(eg, PyException_GetCause(orig));
 
-    PyObject *note = _PyBaseExceptionObject_cast(orig)->note;
-    Py_XINCREF(note);
-    _PyBaseExceptionObject_cast(eg)->note = note;
+    if (PyObject_HasAttr(orig, &_Py_ID(__notes__))) {
+        PyObject *notes = PyObject_GetAttr(orig, &_Py_ID(__notes__));
+        if (notes == NULL) {
+            goto error;
+        }
+        if (PySequence_Check(notes)) {
+            /* Make a copy so the parts have independent notes lists. */
+            PyObject *notes_copy = PySequence_List(notes);
+            Py_DECREF(notes);
+            if (notes_copy == NULL) {
+                goto error;
+            }
+            int res = PyObject_SetAttr(eg, &_Py_ID(__notes__), notes_copy);
+            Py_DECREF(notes_copy);
+            if (res < 0) {
+                goto error;
+            }
+        }
+        else {
+            /* __notes__ is supposed to be a list, and split() is not a
+             * good place to report earlier user errors, so we just ignore
+             * notes of non-sequence type.
+             */
+            Py_DECREF(notes);
+        }
+    }
 
     *result = eg;
     return 0;
@@ -1262,7 +1299,7 @@ is_same_exception_metadata(PyObject *exc1, PyObject *exc2)
     PyBaseExceptionObject *e1 = (PyBaseExceptionObject *)exc1;
     PyBaseExceptionObject *e2 = (PyBaseExceptionObject *)exc2;
 
-    return (e1->note == e2->note &&
+    return (e1->notes == e2->notes &&
             e1->traceback == e2->traceback &&
             e1->cause == e2->cause &&
             e1->context == e2->context);
