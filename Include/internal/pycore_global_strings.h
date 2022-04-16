@@ -155,7 +155,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__newobj__)
         STRUCT_FOR_ID(__newobj_ex__)
         STRUCT_FOR_ID(__next__)
-        STRUCT_FOR_ID(__note__)
+        STRUCT_FOR_ID(__notes__)
         STRUCT_FOR_ID(__or__)
         STRUCT_FOR_ID(__orig_class__)
         STRUCT_FOR_ID(__origin__)
