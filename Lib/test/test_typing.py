@@ -730,10 +730,12 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('tuple[*Ts]',                             '[*tuple_type[int, ...]]',                        'tuple[(*tuple_type[int, ...],),]'),  # Should be tuple[*tuple_tuple[int, ...]]
             ('Tuple[*Ts]',                             '[*tuple_type[int, ...]]',                        'Tuple[*tuple_type[int, ...]]'),
 
-            # Should raise TypeError: more than one unpacked arbitrary-length tuple may not appear in the same arg list.
+            # Technically, multiple unpackings are forbidden by PEP 646, but we
+            # choose to be less restrictive at runtime, to allow folks room
+            # to experiment. So all three of these should be valid.
             ('C[*Ts]',                                 '[*tuple_type[int, ...], *tuple_type[str, ...]]', 'C[*tuple_type[int, ...], *tuple_type[str, ...]]'),
+            # Should be tuple[*tuple_type[int, ...], *tuple_type[str, ...]], to match the other two.
             ('tuple[*Ts]',                             '[*tuple_type[int, ...], *tuple_type[str, ...]]', 'TypeError'),
-            # Should raise TypeError: more than one unpacked arbitrary-length tuple may not appear in the same arg list.
             ('Tuple[*Ts]',                             '[*tuple_type[int, ...], *tuple_type[str, ...]]', 'Tuple[*tuple_type[int, ...], *tuple_type[str, ...]]'),
 
             ('C[*Ts]',                                 '[*Ts]',                                          'C[*Ts]'),
