@@ -23,6 +23,7 @@ an existing framework.
 be used to add WSGI support to a web server or framework.  It provides utilities
 for manipulating WSGI environment variables and response headers, base classes
 for implementing WSGI servers, a demo HTTP server that serves WSGI applications,
+types for static type checking,
 and a validation tool that checks WSGI servers and applications for conformance
 to the WSGI specification (:pep:`3333`).
 
@@ -43,7 +44,9 @@ This module provides a variety of utility functions for working with WSGI
 environments.  A WSGI environment is a dictionary containing HTTP request
 variables as described in :pep:`3333`.  All of the functions taking an *environ*
 parameter expect a WSGI-compliant dictionary to be supplied; please see
-:pep:`3333` for a detailed specification.
+:pep:`3333` for a detailed specification and
+:data:`~wsgiref.types.WSGIEnvironment` for a type alias that can be used
+in type annotations.
 
 
 .. function:: guess_scheme(environ)
@@ -150,7 +153,9 @@ also provides these miscellaneous utilities:
 
 .. class:: FileWrapper(filelike, blksize=8192)
 
-   A wrapper to convert a file-like object to an :term:`iterator`.  The resulting objects
+   A concrete implementation of the :class:`wsgiref.types.FileWrapper`
+   protocol used to convert a file-like object to an :term:`iterator`.
+   The resulting objects
    are :term:`iterable`\ s. As the object is iterated over, the
    optional *blksize* parameter will be repeatedly passed to the *filelike*
    object's :meth:`read` method to obtain bytestrings to yield.  When :meth:`read`
@@ -349,7 +354,8 @@ request.  (E.g., using the :func:`shift_path_info` function from
 
    .. method:: WSGIRequestHandler.get_environ()
 
-      Returns a dictionary containing the WSGI environment for a request.  The default
+      Return a :data:`~wsgiref.types.WSGIEnvironment` dictionary for a
+      request.  The default
       implementation copies the contents of the :class:`WSGIServer` object's
       :attr:`base_environ` dictionary attribute and then adds various headers derived
       from the HTTP request.  Each call to this method should return a new dictionary
@@ -558,13 +564,15 @@ input, output, and error streams.
 
    .. method:: BaseHandler.get_stdin()
 
-      Return an input stream object suitable for use as the ``wsgi.input`` of the
+      Return an object compatible with :class:`~wsgiref.types.InputStream`
+      suitable for use as the ``wsgi.input`` of the
       request currently being processed.
 
 
    .. method:: BaseHandler.get_stderr()
 
-      Return an output stream object suitable for use as the ``wsgi.errors`` of the
+      Return an object compatible with :class:`~wsgiref.types.ErrorStream`
+      suitable for use as the ``wsgi.errors`` of the
       request currently being processed.
 
 
@@ -703,8 +711,9 @@ input, output, and error streams.
 
    .. attribute:: BaseHandler.wsgi_file_wrapper
 
-      A ``wsgi.file_wrapper`` factory, or ``None``.  The default value of this
-      attribute is the :class:`wsgiref.util.FileWrapper` class.
+      A ``wsgi.file_wrapper`` factory, compatible with
+      :class:`wsgiref.types.FileWrapper`, or ``None``.  The default value
+      of this attribute is the :class:`wsgiref.util.FileWrapper` class.
 
 
    .. method:: BaseHandler.sendfile()
@@ -752,6 +761,51 @@ input, output, and error streams.
    directly.
 
    .. versionadded:: 3.2
+
+
+:mod:`wsgiref.types` -- WSGI types for static type checking
+-----------------------------------------------------------
+
+.. module:: wsgiref.types
+   :synopsis: WSGI types for static type checking
+
+
+This module provides various types for static type checking as described
+in :pep:`3333`.
+
+.. versionadded:: 3.11
+
+
+.. class:: StartResponse()
+
+   A :class:`typing.Protocol` describing `start_response()
+   <https://peps.python.org/pep-3333/#the-start-response-callable>`_
+   callables (:pep:`3333`).
+
+.. data:: WSGIEnvironment
+
+   A type alias describing a WSGI environment dictionary.
+
+.. data:: WSGIApplication
+
+   A type alias describing a WSGI application callable.
+
+.. class:: InputStream()
+
+   A :class:`typing.Protocol` describing a `WSGI Input Stream
+   <https://peps.python.org/pep-3333/#input-and-error-streams>`_.
+
+.. class:: ErrorStream()
+
+   A :class:`typing.Protocol` describing a `WSGI Error Stream
+   <https://peps.python.org/pep-3333/#input-and-error-streams>`_.
+
+.. class:: FileWrapper()
+
+   A :class:`typing.Protocol` describing a `file wrapper
+   <https://peps.python.org/pep-3333/#optional-platform-specific-file-handling>`_.
+   See :class:`wsgiref.util.FileWrapper` for a concrete implementation of this
+   protocol.
 
 
 Examples
