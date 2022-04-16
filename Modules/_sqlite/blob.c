@@ -120,7 +120,7 @@ blob_seterror(pysqlite_Blob *self, int rc)
 }
 
 static PyObject *
-inner_read(pysqlite_Blob *self, int length, int offset)
+inner_read(pysqlite_Blob *self, Py_ssize_t length, Py_ssize_t offset)
 {
     PyObject *buffer = PyBytes_FromStringAndSize(NULL, length);
     if (buffer == NULL) {
@@ -130,7 +130,7 @@ inner_read(pysqlite_Blob *self, int length, int offset)
     char *raw_buffer = PyBytes_AS_STRING(buffer);
     int rc;
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_blob_read(self->blob, raw_buffer, length, offset);
+    rc = sqlite3_blob_read(self->blob, raw_buffer, (int)length, (int)offset);
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
@@ -181,9 +181,11 @@ blob_read_impl(pysqlite_Blob *self, int length)
 };
 
 static int
-inner_write(pysqlite_Blob *self, const void *buf, Py_ssize_t len, int offset)
+inner_write(pysqlite_Blob *self, const void *buf, Py_ssize_t len,
+            Py_ssize_t offset)
 {
-    int remaining_len = sqlite3_blob_bytes(self->blob) - self->offset;
+    int blob_len = sqlite3_blob_bytes(self->blob);
+    int remaining_len = blob_len - self->offset;
     if (len > remaining_len) {
         PyErr_SetString(PyExc_ValueError, "data longer than blob length");
         return -1;
@@ -191,7 +193,7 @@ inner_write(pysqlite_Blob *self, const void *buf, Py_ssize_t len, int offset)
 
     int rc;
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_blob_write(self->blob, buf, (int)len, offset);
+    rc = sqlite3_blob_write(self->blob, buf, (int)len, (int)offset);
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
@@ -356,7 +358,7 @@ blob_length(pysqlite_Blob *self)
     return sqlite3_blob_bytes(self->blob);
 };
 
-static int
+static Py_ssize_t
 get_subscript_index(pysqlite_Blob *self, PyObject *item)
 {
     Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
@@ -377,7 +379,7 @@ get_subscript_index(pysqlite_Blob *self, PyObject *item)
 static PyObject *
 subscript_index(pysqlite_Blob *self, PyObject *item)
 {
-    int i = get_subscript_index(self, item);
+    Py_ssize_t i = get_subscript_index(self, item);
     if (i < 0) {
         return NULL;
     }
@@ -455,7 +457,7 @@ ass_subscript_index(pysqlite_Blob *self, PyObject *item, PyObject *value)
         return -1;
     }
 
-    int i = get_subscript_index(self, item);
+    Py_ssize_t i = get_subscript_index(self, item);
     if (i < 0) {
         return -1;
     }
