@@ -561,7 +561,7 @@ SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel)
 {
     const SRE_CHAR* end = (const SRE_CHAR *)state->end;
     Py_ssize_t alloc_pos, ctx_pos = -1;
-    Py_ssize_t i, ret = 0;
+    Py_ssize_t ret = 0;
     int jump;
     unsigned int sigcount=0;
 
@@ -610,20 +610,22 @@ dispatch:
             /* <MARK> <gid> */
             TRACE(("|%p|%p|MARK %d\n", pattern,
                    ptr, pattern[0]));
-            i = pattern[0];
-            if (i & 1)
-                state->lastindex = i/2 + 1;
-            if (i > state->lastmark) {
-                /* state->lastmark is the highest valid index in the
-                   state->mark array.  If it is increased by more than 1,
-                   the intervening marks must be set to NULL to signal
-                   that these marks have not been encountered. */
-                Py_ssize_t j = state->lastmark + 1;
-                while (j < i)
-                    state->mark[j++] = NULL;
-                state->lastmark = i;
+            {
+                int i = pattern[0];
+                if (i & 1)
+                    state->lastindex = i/2 + 1;
+                if (i > state->lastmark) {
+                    /* state->lastmark is the highest valid index in the
+                    state->mark array.  If it is increased by more than 1,
+                    the intervening marks must be set to NULL to signal
+                    that these marks have not been encountered. */
+                    int j = state->lastmark + 1;
+                    while (j < i)
+                        state->mark[j++] = NULL;
+                    state->lastmark = i;
+                }
+                state->mark[i] = ptr;
             }
-            state->mark[i] = ptr;
             pattern++;
             DISPATCH;
 
@@ -1376,9 +1378,8 @@ dispatch:
             /* match backreference */
             TRACE(("|%p|%p|GROUPREF %d\n", pattern,
                    ptr, pattern[0]));
-            i = pattern[0];
             {
-                Py_ssize_t groupref = i+i;
+                int groupref = pattern[0] * 2;
                 if (groupref >= state->lastmark) {
                     RETURN_FAILURE;
                 } else {
@@ -1401,9 +1402,8 @@ dispatch:
             /* match backreference */
             TRACE(("|%p|%p|GROUPREF_IGNORE %d\n", pattern,
                    ptr, pattern[0]));
-            i = pattern[0];
             {
-                Py_ssize_t groupref = i+i;
+                int groupref = pattern[0] * 2;
                 if (groupref >= state->lastmark) {
                     RETURN_FAILURE;
                 } else {
@@ -1427,9 +1427,8 @@ dispatch:
             /* match backreference */
             TRACE(("|%p|%p|GROUPREF_UNI_IGNORE %d\n", pattern,
                    ptr, pattern[0]));
-            i = pattern[0];
             {
-                Py_ssize_t groupref = i+i;
+                int groupref = pattern[0] * 2;
                 if (groupref >= state->lastmark) {
                     RETURN_FAILURE;
                 } else {
@@ -1453,9 +1452,8 @@ dispatch:
             /* match backreference */
             TRACE(("|%p|%p|GROUPREF_LOC_IGNORE %d\n", pattern,
                    ptr, pattern[0]));
-            i = pattern[0];
             {
-                Py_ssize_t groupref = i+i;
+                int groupref = pattern[0] * 2;
                 if (groupref >= state->lastmark) {
                     RETURN_FAILURE;
                 } else {
@@ -1479,9 +1477,8 @@ dispatch:
             TRACE(("|%p|%p|GROUPREF_EXISTS %d\n", pattern,
                    ptr, pattern[0]));
             /* <GROUPREF_EXISTS> <group> <skip> codeyes <JUMP> codeno ... */
-            i = pattern[0];
             {
-                Py_ssize_t groupref = i+i;
+                int groupref = pattern[0] * 2;
                 if (groupref >= state->lastmark) {
                     pattern += pattern[1];
                     DISPATCH;
