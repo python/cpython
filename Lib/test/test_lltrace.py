@@ -3,7 +3,7 @@ import sys
 import textwrap
 import unittest
 
-from test.support import os_helper
+from test.support import os_helper, verbose
 from test.support.script_helper import assert_python_ok
 
 def example():
@@ -27,7 +27,14 @@ class TestLLTrace(unittest.TestCase):
         status, stdout, stderr = assert_python_ok(os_helper.TESTFN)
         self.assertEqual(stderr, b"")
         self.assertEqual(status, 0)
-        return stdout.decode('utf-8')
+        result = stdout.decode('utf-8')
+        if verbose:
+            print("\n\n--- code ---")
+            print(code)
+            print("\n--- stdout ---")
+            print(result)
+            print()
+        return result
 
     def test_lltrace(self):
         stdout = self.run_code("""
