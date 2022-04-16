@@ -787,6 +787,9 @@ CPython bytecode changes
   :opcode:`POP_JUMP_FORWARD_IF_NONE` and :opcode:`POP_JUMP_BACKWARD_IF_NONE`
   opcodes to speed up conditional jumps.
 
+* :opcode:`JUMP_IF_TRUE_OR_POP` and :opcode:`JUMP_IF_FALSE_OR_POP` are now
+  relative rather than absolute.
+
 
 Deprecated
 ==========
@@ -872,6 +875,7 @@ Deprecated
   * :mod:`crypt`
   * :mod:`imghdr`
   * :mod:`msilib`
+  * :mod:`nntplib`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
@@ -1160,6 +1164,14 @@ New Features
 * Add new functions to get frame object attributes:
   :c:func:`PyFrame_GetBuiltins`, :c:func:`PyFrame_GetGenerator`,
   :c:func:`PyFrame_GetGlobals`, :c:func:`PyFrame_GetLasti`.
+
+* Added two new functions to get and set the active exception instance:
+  :c:func:`PyErr_GetHandledException` and :c:func:`PyErr_SetHandledException`.
+  These are alternatives to :c:func:`PyErr_SetExcInfo()` and
+  :c:func:`PyErr_GetExcInfo()` which work with the legacy 3-tuple
+  representation of exceptions.
+  (Contributed by Irit Katriel in :issue:`46343`.)
+
 
 Porting to Python 3.11
 ----------------------

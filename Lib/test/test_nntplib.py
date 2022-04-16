@@ -5,13 +5,13 @@ import textwrap
 import unittest
 import functools
 import contextlib
-import nntplib
 import os.path
 import re
 import threading
 
 from test import support
-from test.support import socket_helper
+from test.support import socket_helper, warnings_helper
+nntplib = warnings_helper.import_deprecated("nntplib")
 from nntplib import NNTP, GroupInfo
 from unittest.mock import patch
 try:

@@ -5873,6 +5873,77 @@ class AnnotatedTests(BaseTestCase):
         with self.assertRaises(TypeError):
             LI[None]
 
+    def test_typevar_subst(self):
+        dec = "a decoration"
+        Ts = TypeVarTuple('Ts')
+        T = TypeVar('T')
+        T1 = TypeVar('T1')
+        T2 = TypeVar('T2')
+
+        A = Annotated[Tuple[Unpack[Ts]], dec]
+        self.assertEqual(A[int], Annotated[Tuple[int], dec])
+        self.assertEqual(A[str, int], Annotated[Tuple[str, int], dec])
+        with self.assertRaises(TypeError):
+            Annotated[Unpack[Ts], dec]
+
+        B = Annotated[Tuple[T, Unpack[Ts]], dec]
+        self.assertEqual(B[int], Annotated[Tuple[int], dec])
+        self.assertEqual(B[int, str], Annotated[Tuple[int, str], dec])
+        self.assertEqual(
+            B[int, str, float],
+            Annotated[Tuple[int, str, float], dec]
+        )
+        with self.assertRaises(TypeError):
+            B[()]
+
+        C = Annotated[Tuple[Unpack[Ts], T], dec]
+        self.assertEqual(C[int], Annotated[Tuple[int], dec])
+        self.assertEqual(C[int, str], Annotated[Tuple[int, str], dec])
+        self.assertEqual(
+            C[int, str, float],
+            Annotated[Tuple[int, str, float], dec]
+        )
+        with self.assertRaises(TypeError):
+            C[()]
+
+        D = Annotated[Tuple[T1, Unpack[Ts], T2], dec]
+        self.assertEqual(D[int, str], Annotated[Tuple[int, str], dec])
+        self.assertEqual(
+            D[int, str, float],
+            Annotated[Tuple[int, str, float], dec]
+        )
+        self.assertEqual(
+            D[int, str, bool, float],
+            Annotated[Tuple[int, str, bool, float], dec]
+        )
+        with self.assertRaises(TypeError):
+            D[int]
+
+        # Now let's try creating an alias from an alias.
+
+        Ts2 = TypeVarTuple('Ts2')
+        T3 = TypeVar('T3')
+        T4 = TypeVar('T4')
+
+        E = D[T3, Unpack[Ts2], T4]
+        self.assertEqual(
+            E,
+            Annotated[Tuple[T3, Unpack[Ts2], T4], dec]
+        )
+        self.assertEqual(
+            E[int, str], Annotated[Tuple[int, str], dec]
+        )
+        self.assertEqual(
+            E[int, str, float],
+            Annotated[Tuple[int, str, float], dec]
+        )
+        self.assertEqual(
+            E[int, str, bool, float],
+            Annotated[Tuple[int, str, bool, float], dec]
+        )
+        with self.assertRaises(TypeError):
+            E[int]
+
     def test_annotated_in_other_types(self):
         X = List[Annotated[T, 5]]
         self.assertEqual(X[int], List[Annotated[int, 5]])
