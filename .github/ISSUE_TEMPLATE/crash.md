@@ -5,6 +5,7 @@ labels: "type-crash"
 ---
 
 <!--
+  Use this template for hard crashes of the interpreter, segmentation faults, failed C-level assertions, and similar.
   Do not submit this form if you encounter an exception being unexpectedly raised from a Python function.
   Most of the time, these should be filed as bugs, rather than crashes.
 
@@ -16,9 +17,9 @@ labels: "type-crash"
 
 Tell us what happened, ideally including a minimal, reproducible example (https://stackoverflow.com/help/minimal-reproducible-example).
 
-**Traceback**
+**Error messages**
 
-Enter the full traceback caused by the crash, if there is one.
+Enter any relevant error message caused by the crash, including a core dump if there is one.
 
 **Your environment**
 

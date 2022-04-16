@@ -1,16 +1,17 @@
 ---
-name: Feature
-about: Submit a proposal for a new CPython feature
+name: Feature or enhancement
+about: Submit a proposal for a new CPython feature or enhancement
 labels: "type-feature"
 ---
 
-**Feature**
+**Feature or enhancement**
 
-(A clear and concise description of your feature proposal.)
+(A clear and concise description of your proposal.)
 
 **Pitch**
 
-(Explain why this feature should be implemented and how it would be used. Add examples, if applicable.)
+(Explain why this feature or enhacement should be implemented and how it would be used.
+ Add examples, if applicable.)
 
 **Previous discussion**
 
