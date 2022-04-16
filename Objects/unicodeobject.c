@@ -15697,7 +15697,7 @@ unicodeiter_traverse(unicodeiterobject *it, visitproc visit, void *arg)
 static PyObject *
 unicodeiter_next(unicodeiterobject *it)
 {
-    PyObject *seq, *item;
+    PyObject *seq;
 
     assert(it != NULL);
     seq = it->it_seq;
@@ -15709,8 +15709,7 @@ unicodeiter_next(unicodeiterobject *it)
         int kind = PyUnicode_KIND(seq);
         const void *data = PyUnicode_DATA(seq);
         Py_UCS4 chr = PyUnicode_READ(kind, data, it->it_index++);
-        item = unicode_char(chr);
-        return item;
+        return unicode_char(chr);
     }
 
     it->it_seq = NULL;
@@ -15723,8 +15722,9 @@ unicode_ascii_iter_next(unicodeiterobject *it)
 {
     assert(it != NULL);
     PyObject *seq = it->it_seq;
-    if (seq == NULL)
+    if (seq == NULL) {
         return NULL;
+    }
     assert(_PyUnicode_CHECK(seq));
     assert(PyUnicode_IS_COMPACT_ASCII(seq));
     if (it->it_index < PyUnicode_GET_LENGTH(seq)) {
@@ -15852,7 +15852,8 @@ unicode_iter(PyObject *seq)
         return NULL;
     if (PyUnicode_IS_COMPACT_ASCII(seq)) {
         it = PyObject_GC_New(unicodeiterobject, &_PyUnicodeASCIIIter_Type);
-    } else {
+    }
+    else {
         it = PyObject_GC_New(unicodeiterobject, &PyUnicodeIter_Type);
     }
     if (it == NULL)
