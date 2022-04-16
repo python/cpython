@@ -25,7 +25,7 @@ from concurrent import futures
 from concurrent.futures._base import (
     PENDING, RUNNING, CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, Future,
     BrokenExecutor)
-from concurrent.futures.process import BrokenProcessPool, _check_system_limits
+from concurrent.futures.process import BrokenProcessPool
 
 import multiprocessing.process
 import multiprocessing.util
