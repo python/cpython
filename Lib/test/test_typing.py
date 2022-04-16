@@ -566,6 +566,7 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[T]',                        '[int]',                   'generic[int]'),
             ('generic[T]',                        '[int, str]',              'TypeError'),
             ('generic[T]',                        '[tuple_type[int, ...]]',  'generic[tuple_type[int, ...]]'),
+            # Should raise TypeError: it's equivalent to generic[()]
             ('generic[T]',                        '[*tuple_type[()]]',       'generic[*tuple_type[()]]'),
             ('generic[T]',                        '[*tuple_type[int]]',      'generic[*tuple_type[int]]'),
             # Should raise TypeError (because too many args)
