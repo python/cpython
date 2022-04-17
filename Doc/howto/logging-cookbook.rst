@@ -1788,22 +1788,15 @@ Python used.
 If you need more specialised processing, you can use a custom JSON encoder,
 as in the following complete example::
 
-    from __future__ import unicode_literals
-
     import json
     import logging
 
-    # This next bit is to ensure the script runs unchanged on 2.x and 3.x
-    try:
-        unicode
-    except NameError:
-        unicode = str
 
     class Encoder(json.JSONEncoder):
         def default(self, o):
             if isinstance(o, set):
                 return tuple(o)
-            elif isinstance(o, unicode):
+            elif isinstance(o, str):
                 return o.encode('unicode_escape').decode('ascii')
             return super().default(o)
 

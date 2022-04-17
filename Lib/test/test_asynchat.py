@@ -18,6 +18,8 @@ with warnings.catch_warnings():
     import asynchat
     import asyncore
 
+support.requires_working_socket(module=True)
+
 HOST = socket_helper.HOST
 SERVER_QUIT = b'QUIT\n'
 

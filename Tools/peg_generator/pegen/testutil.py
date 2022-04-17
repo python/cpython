@@ -6,7 +6,7 @@ import sys
 import textwrap
 import token
 import tokenize
-from typing import IO, Any, Dict, Final, Type, cast
+from typing import IO, Any, Dict, Final, Optional, Type, cast
 
 from pegen.build import compile_c_extension
 from pegen.c_generator import CParserGenerator
@@ -83,7 +83,8 @@ def generate_c_parser_source(grammar: Grammar) -> str:
 
 
 def generate_parser_c_extension(
-    grammar: Grammar, path: pathlib.PurePath, debug: bool = False
+    grammar: Grammar, path: pathlib.PurePath, debug: bool = False,
+    library_dir: Optional[str] = None,
 ) -> Any:
     """Generate a parser c extension for the given grammar in the given path
 
@@ -101,7 +102,13 @@ def generate_parser_c_extension(
             grammar, ALL_TOKENS, EXACT_TOKENS, NON_EXACT_TOKENS, file, debug=debug
         )
         genr.generate("parse.c")
-    compile_c_extension(str(source), build_dir=str(path))
+    compile_c_extension(
+        str(source),
+        build_dir=str(path),
+        # Significant test_peg_generator speedups
+        disable_optimization=True,
+        library_dir=library_dir,
+    )
 
 
 def print_memstats() -> bool:

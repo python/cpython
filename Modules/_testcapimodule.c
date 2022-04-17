@@ -2563,6 +2563,16 @@ set_errno(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+test_set_exception(PyObject *self, PyObject *new_exc)
+{
+    PyObject *exc = PyErr_GetHandledException();
+    assert(PyExceptionInstance_Check(exc) || exc == NULL);
+
+    PyErr_SetHandledException(new_exc);
+    return exc;
+}
+
+static PyObject *
 test_set_exc_info(PyObject *self, PyObject *args)
 {
     PyObject *orig_exc;
@@ -5853,6 +5863,61 @@ test_float_unpack(PyObject *self, PyObject *args)
     return PyFloat_FromDouble(d);
 }
 
+static PyObject *
+frame_getlocals(PyObject *self, PyObject *frame)
+{
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+    return PyFrame_GetLocals((PyFrameObject *)frame);
+}
+
+static PyObject *
+frame_getglobals(PyObject *self, PyObject *frame)
+{
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+    return PyFrame_GetGlobals((PyFrameObject *)frame);
+}
+
+static PyObject *
+frame_getgenerator(PyObject *self, PyObject *frame)
+{
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+    return PyFrame_GetGenerator((PyFrameObject *)frame);
+}
+
+static PyObject *
+frame_getbuiltins(PyObject *self, PyObject *frame)
+{
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+    return PyFrame_GetBuiltins((PyFrameObject *)frame);
+}
+
+static PyObject *
+frame_getlasti(PyObject *self, PyObject *frame)
+{
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+    int lasti = PyFrame_GetLasti((PyFrameObject *)frame);
+    if (lasti < 0) {
+        assert(lasti == -1);
+        Py_RETURN_NONE;
+    }
+    return PyLong_FromLong(lasti);
+}
+
 
 static PyObject *negative_dictoffset(PyObject *, PyObject *);
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
@@ -6013,6 +6078,7 @@ static PyMethodDef TestMethods[] = {
 #endif
     {"traceback_print",         traceback_print,                 METH_VARARGS},
     {"exception_print",         exception_print,                 METH_VARARGS},
+    {"set_exception",           test_set_exception,              METH_O},
     {"set_exc_info",            test_set_exc_info,               METH_VARARGS},
     {"argparsing",              argparsing,                      METH_VARARGS},
     {"code_newempty",           code_newempty,                   METH_VARARGS},
@@ -6142,6 +6208,11 @@ static PyMethodDef TestMethods[] = {
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"float_pack", test_float_pack, METH_VARARGS, NULL},
     {"float_unpack", test_float_unpack, METH_VARARGS, NULL},
+    {"frame_getlocals", frame_getlocals, METH_O, NULL},
+    {"frame_getglobals", frame_getglobals, METH_O, NULL},
+    {"frame_getgenerator", frame_getgenerator, METH_O, NULL},
+    {"frame_getbuiltins", frame_getbuiltins, METH_O, NULL},
+    {"frame_getlasti", frame_getlasti, METH_O, NULL},
     {NULL, NULL} /* sentinel */
 };
 

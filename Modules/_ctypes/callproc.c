@@ -1209,7 +1209,12 @@ PyObject *_ctypes_callproc(PPROC pProc,
         }
     }
 
-    rtype = _ctypes_get_ffi_type(restype);
+    if (restype == Py_None) {
+        rtype = &ffi_type_void;
+    } else {
+        rtype = _ctypes_get_ffi_type(restype);
+    }
+
     resbuf = alloca(max(rtype->size, sizeof(ffi_arg)));
 
 #ifdef _Py_MEMORY_SANITIZER

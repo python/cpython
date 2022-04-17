@@ -3,7 +3,10 @@ import os
 import unittest
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
-msilib = import_module('msilib')
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", DeprecationWarning)
+    msilib = import_module('msilib')
 import msilib.schema
 
 
