@@ -518,13 +518,14 @@ static inline void Py_INCREF(PyObject *op)
 #else
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
-    if (_Py_IsImmortal(op)) {
+    PY_LONG_LONG new_refcount;
+    if (__builtin_saddll_overflow(op->ob_refcnt, 1, &new_refcount)) {
         return;
     }
 #ifdef Py_REF_DEBUG
     _Py_RefTotal++;
 #endif
-    op->ob_refcnt++;
+    op->ob_refcnt = new_refcount;
 #endif
 }
 #define Py_INCREF(op) Py_INCREF(_PyObject_CAST(op))
