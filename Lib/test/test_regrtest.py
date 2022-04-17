@@ -888,12 +888,12 @@ class ArgsTestCase(BaseTestCase):
 
         filename = 'reflog.txt'
         self.addCleanup(os_helper.unlink, filename)
-        output = self.run_tests('--huntrleaks', '3:3:', test,
+        output = self.run_tests('--huntrleaks', '9:3', test,
                                 exitcode=2,
                                 stderr=subprocess.STDOUT)
         self.check_executed_tests(output, [test], failed=test)
 
-        line = 'beginning 6 repetitions\n123456\n......\n'
+        line = 'beginning 12 repetitions'
         self.check_line(output, re.escape(line))
 
         line2 = '%s leaked [1, 1, 1] %s, sum=3\n' % (test, what)
