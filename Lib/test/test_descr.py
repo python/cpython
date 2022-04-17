@@ -4481,8 +4481,8 @@ order (MRO) for bases """
                 raise RuntimeError(f"Premature access to sys.stdout.{attr}")
 
         with redirect_stdout(StdoutGuard()):
-             with self.assertRaises(RuntimeError):
-                 print("Oops!")
+            with self.assertRaises(RuntimeError):
+                print("Oops!")
 
     def test_vicious_descriptor_nonsense(self):
         # Testing vicious_descriptor_nonsense...
