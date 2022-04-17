@@ -43,13 +43,17 @@ parameters:
 # Eventually when we stop releasing anything that old, we can drop this
 # argument (and make it implicitly always 'true')
 - name: ARM64TclTk
-  displayName: "Use Tcl/Tk for ARM64"
+  displayName: "Use Tcl/Tk for ARM64 (3.11 and later)"
   type: boolean
   default: true
 - name: DoPGO
   displayName: "Run PGO"
   type: boolean
   default: true
+- name: DoCHM
+  displayName: "Produce compiled help document (pre-3.11)"
+  type: boolean
+  default: false
 - name: DoLayout
   displayName: "Produce full layout artifact"
   type: boolean
@@ -86,6 +90,7 @@ variables:
   ${{ if ne(parameters.SigningCertificate, 'Unsigned') }}:
     SigningCertificate: ${{ parameters.SigningCertificate }}
   SigningDescription: ${{ parameters.SigningDescription }}
+  DoCHM: ${{ parameters.DoCHM }}
   DoLayout: ${{ parameters.DoLayout }}
   DoMSIX: ${{ parameters.DoMSIX }}
   DoNuget: ${{ parameters.DoNuget }}

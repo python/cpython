@@ -1,6 +1,6 @@
 name: Tests
 
-# bpo-40548: "paths-ignore" is not used to skip documentation-only PRs, because
+# gh-84728: "paths-ignore" is not used to skip documentation-only PRs, because
 # it prevents to mark a job as mandatory. A PR cannot be merged if a job is
 # mandatory but not scheduled because of "paths-ignore".
 on:
@@ -82,6 +82,9 @@ jobs:
         run: make regen-configure
       - name: Build CPython
         run: |
+          # Deepfreeze will usually cause global objects to be added or removed,
+          # so we run it before regen-global-objects gets rum (in regen-all).
+          make regen-deepfreeze
           make -j4 regen-all
           make regen-stdlib-module-names
       - name: Check for changes
