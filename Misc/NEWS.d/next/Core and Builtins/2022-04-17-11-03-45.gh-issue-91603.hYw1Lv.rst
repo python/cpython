@@ -1,0 +1,2 @@
+Speed-up ``isinstance`` and ``issubclass`` checks for ``types.UnionType``.
+Patch provided by Yurii Karabas.
