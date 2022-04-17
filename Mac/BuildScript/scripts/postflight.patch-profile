@@ -87,7 +87,7 @@ fish)
 	if [ -f "${RC}.pysave" ]; then
 		echo "# The original version is saved in ${RC}.pysave" >> "${RC}"
 	fi
-	echo "fish-add-path -g \"${PYTHON_ROOT}/bin\"" >> "${RC}"
+	echo "fish_add_path -g \"${PYTHON_ROOT}/bin\"" >> "${RC}"
 	if [ `id -ur` = 0 ]; then
 		chown "${USER}" "${RC}"
 	fi
