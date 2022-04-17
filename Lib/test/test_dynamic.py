@@ -134,6 +134,7 @@ class RebindBuiltinsTests(unittest.TestCase):
         self.assertEqual(foo(), 7)
 
     def test_load_global_specialization_failure_keeps_oparg(self):
+        # https://github.com/python/cpython/issues/91625
         class MyGlobals(dict):
             def __missing__(self, key):
                 return int(key.removeprefix("_number_"))

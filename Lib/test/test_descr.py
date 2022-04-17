@@ -1962,6 +1962,7 @@ order (MRO) for bases """
         self.assertEqual(a.delitem, (slice(0, 10)))
 
     def test_load_attr_extended_arg(self):
+        # https://github.com/python/cpython/issues/91625
         class Numbers:
             def __getattr__(self, attr):
                 return int(attr.lstrip("_"))
