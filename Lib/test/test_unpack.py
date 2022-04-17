@@ -185,6 +185,14 @@ def unpack_400(x):
 class TestCornerCases(unittest.TestCase):
     def test_extended_oparg_not_ignored(self):
         # https://github.com/python/cpython/issues/91625
+        target = "(" + "y,"*400 + ")"
+        code = f"""def unpack_400(x):
+            {target} = x
+            return y
+        """
+        ns = {}
+        exec(code, ns)
+        unpack_400 = ns["unpack_400"]
         # Warm up the the function for quickening (PEP 659)
         for _ in range(30):
             y = unpack_400(range(400))
