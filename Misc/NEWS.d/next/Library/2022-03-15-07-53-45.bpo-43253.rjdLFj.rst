@@ -1,1 +1,0 @@
-Fix a crash when closing transports where the underlying socket handle is already invalid on the Proactor event loop.

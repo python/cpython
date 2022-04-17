@@ -49,7 +49,16 @@ IFDEF_DOC_NOTES = {
     'MS_WINDOWS': 'on Windows',
     'HAVE_FORK': 'on platforms with fork()',
     'USE_STACKCHECK': 'on platforms with USE_STACKCHECK',
+    'PY_HAVE_THREAD_NATIVE_ID': 'on platforms with native thread IDs',
 }
+
+# To generate the DLL definition, we need to know which feature macros are
+# defined on Windows. On all platforms.
+# Best way to do that is to hardcode the list (and later test in on Windows).
+WINDOWS_IFDEFS = frozenset({
+    'MS_WINDOWS',
+    'PY_HAVE_THREAD_NATIVE_ID',
+})
 
 # The stable ABI manifest (Misc/stable_abi.txt) exists only to fill the
 # following dataclasses.
@@ -118,6 +127,8 @@ class ABIItem:
     contents: list = dataclasses.field(default_factory=list)
     abi_only: bool = False
     ifdef: str = None
+    struct_abi_kind: str = None
+    members: list = None
 
     KINDS = frozenset({
         'struct', 'function', 'macro', 'data', 'const', 'typedef',
@@ -172,6 +183,15 @@ def parse_manifest(file):
             if parent.kind not in {'function', 'data'}:
                 raise_error(f'{kind} cannot go in {parent.kind}')
             parent.abi_only = True
+        elif kind in {'members', 'full-abi', 'opaque'}:
+            if parent.kind not in {'struct'}:
+                raise_error(f'{kind} cannot go in {parent.kind}')
+            if prev := getattr(parent, 'struct_abi_kind', None):
+                raise_error(
+                    f'{parent.name} already has {prev}, cannot add {kind}')
+            parent.struct_abi_kind = kind
+            if kind == 'members':
+                parent.members = content.split()
         else:
             raise_error(f"unknown kind {kind!r}")
             # When adding more, update the comment in stable_abi.txt.
@@ -221,7 +241,7 @@ def gen_python3dll(manifest, args, outfile):
 
     for item in sorted(
             manifest.select(
-                {'function'}, include_abi_only=True, ifdef={'MS_WINDOWS'}),
+                {'function'}, include_abi_only=True, ifdef=WINDOWS_IFDEFS),
             key=sort_key):
         write(f'EXPORT_FUNC({item.name})')
 
@@ -229,7 +249,7 @@ def gen_python3dll(manifest, args, outfile):
 
     for item in sorted(
             manifest.select(
-                {'data'}, include_abi_only=True, ifdef={'MS_WINDOWS'}),
+                {'data'}, include_abi_only=True, ifdef=WINDOWS_IFDEFS),
             key=sort_key):
         write(f'EXPORT_DATA({item.name})')
 
@@ -246,7 +266,9 @@ REST_ROLES = {
 def gen_doc_annotations(manifest, args, outfile):
     """Generate/check the stable ABI list for documentation annotations"""
     writer = csv.DictWriter(
-        outfile, ['role', 'name', 'added', 'ifdef_note'], lineterminator='\n')
+        outfile,
+        ['role', 'name', 'added', 'ifdef_note', 'struct_abi_kind'],
+        lineterminator='\n')
     writer.writeheader()
     for item in manifest.select(REST_ROLES.keys(), include_abi_only=False):
         if item.ifdef:
@@ -257,7 +279,13 @@ def gen_doc_annotations(manifest, args, outfile):
             'role': REST_ROLES[item.kind],
             'name': item.name,
             'added': item.added,
-            'ifdef_note': ifdef_note})
+            'ifdef_note': ifdef_note,
+            'struct_abi_kind': item.struct_abi_kind})
+        for member_name in item.members or ():
+            writer.writerow({
+                'role': 'member',
+                'name': f'{item.name}.{member_name}',
+                'added': item.added})
 
 @generator("ctypes_test", 'Lib/test/test_stable_abi_ctypes.py')
 def gen_ctypes_test(manifest, args, outfile):
@@ -656,7 +684,7 @@ def main():
 
         And in PEP 384:
 
-        https://www.python.org/dev/peps/pep-0384/
+        https://peps.python.org/pep-0384/
         """)
 
 

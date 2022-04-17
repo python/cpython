@@ -5781,6 +5781,7 @@ _ctypes_add_objects(PyObject *mod)
 #endif
     MOD_ADD("RTLD_LOCAL", PyLong_FromLong(RTLD_LOCAL));
     MOD_ADD("RTLD_GLOBAL", PyLong_FromLong(RTLD_GLOBAL));
+    MOD_ADD("CTYPES_MAX_ARGCOUNT", PyLong_FromLong(CTYPES_MAX_ARGCOUNT));
     MOD_ADD("ArgumentError", Py_NewRef(PyExc_ArgError));
     return 0;
 #undef MOD_ADD
