@@ -225,7 +225,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         with self.assertRaises(TypeError):
             isinstance(2, list[int] | int)
         with self.assertRaises(TypeError):
-            isinstance(2, int | str | list[int] | float)
+            isinstance(2, float | str | list[int] | int)
 
 
 
