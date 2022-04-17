@@ -229,6 +229,42 @@ However, for reading convenience, most of the examples show sorted sequences.
    .. versionchanged:: 3.10
       Added support for *weights*.
 
+
+
+.. function:: center_mean(data, dataset_size: int, calculate_mean=False, pretty_print=False)
+
+   Gives a liberal average, useful for datasets with varied weighting.
+   Common when aggregating aggregators. It always generates a lower
+   ``data`` value than provided.
+   
+   Pseudocode (where n is a previously calculated mean average):
+   ``n = ((n * dataset_size) - n) / dataset_size``
+
+   ``center_mean`` requires the original dataset_size.
+
+   If ``dataset_size`` is less than 2 it is not possible to 
+   calculate the ``center_mean``, it's not very logical to calculate
+   this for smaller dataset_size samples.
+
+   ``calculate_mean`` is a keyword argument that peforms: ``mean([data])``.
+
+   ``pretty_print`` is a boolean that rounds the result to 2 decimal places.
+
+   Example usage:
+   .. doctest::
+      >>> dataset = [39000, 49000, 59000, 69000, 79000, 89000, 99000]
+
+      >>> center_mean(dataset, len(dataset), calculate_mean= True, pretty_print=True) 
+      59142.86
+
+      >>> mean(my_list)
+      69000
+
+   :exc:`StatisticsError` is raised if *dataset_size* is not an integer or less than 2.
+
+   .. versionadded:: 3.11
+
+
 .. function:: median(data)
 
    Return the median (middle value) of numeric data, using the common "mean of

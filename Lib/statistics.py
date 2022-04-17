@@ -14,6 +14,7 @@ mean                Arithmetic mean (average) of data.
 fmean               Fast, floating point arithmetic mean.
 geometric_mean      Geometric mean of data.
 harmonic_mean       Harmonic mean of data.
+center_mean         Center mean (low value inaccuracy) of data.
 median              Median (middle value) of data.
 median_low          Low median of data.
 median_high         High median of data.
@@ -112,6 +113,7 @@ __all__ = [
     'fmean',
     'geometric_mean',
     'harmonic_mean',
+    'center_mean',
     'linear_regression',
     'mean',
     'median',
@@ -558,6 +560,55 @@ def harmonic_mean(data, weights=None):
     if total <= 0:
         raise StatisticsError('Weighted sum must be positive')
     return _convert(sum_weights / total, T)
+
+
+def center_mean(data, dataset_size: int, calculate_mean=False, pretty_print=False):
+    """Returns the center mean of data.
+
+    Pseudocode:
+    self = ((self * dataset_size) - self) / dataset_size
+
+    Gives a liberal average, useful for datasets with
+    varied weighting. Common when aggregating aggregators;
+    creates a lower end-value.
+
+    center_mean requires the original dataset_size.
+
+    If `dataset_size` is less than 2 it is not possible to 
+    calculate the `center_mean`, it's not very logical to calculate
+    this for smaller dataset_size samples.
+
+    `calculate_mean` is a keyword argument that peforms: `mean([data])`
+
+    `pretty_print` rounds the result to 2 decimal places, commonly this
+    will return a value of x.xxxx00000000000+/-2 due to float magic
+
+    Example usage:
+    >>> dataset = [39000, 49000, 59000, 69000, 79000, 89000, 99000]
+
+    >>> center_mean(dataset, len(dataset), calculate_mean= True, pretty_print=True) 
+    59142.86
+
+    >>> mean(my_list)
+    69000
+    """
+    if dataset_size < 2:
+        raise StatisticsError(
+            "center_mean requires a dataset size of at least 2")
+
+    if not isinstance(dataset_size, int):
+        raise StatisticsError("dataset_size must be an integer")
+
+    if calculate_mean:
+        data = mean(data)
+
+    data = ((data * dataset_size) - data) / dataset_size
+
+    if pretty_print:
+        return round(data, 2)
+
+    return data
+
 
 # FIXME: investigate ways to calculate medians without sorting? Quickselect?
 def median(data):
