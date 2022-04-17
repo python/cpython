@@ -259,8 +259,9 @@ a stack traceback, except when the exception is :exc:`SystemExit`.
 
 Exceptions are identified by class instances.  The :keyword:`except` clause is
 selected depending on the class of the instance: it must reference the class of
-the instance or a base class thereof.  The instance can be received by the
-handler and can carry additional information about the exceptional condition.
+the instance or a :term:`non-virtual base class <abstract base class>` thereof.
+The instance can be received by the handler and can carry additional information
+about the exceptional condition.
 
 .. note::
 
