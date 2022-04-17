@@ -195,7 +195,7 @@ class UnicodeTest(string_tests.CommonTest,
         cases = ['abc', '🚀🚀🚀', "\u1111\u2222\u3333"]
         for case in cases:
             with self.subTest(string=case):
-                self.assertEqual((*case,), (*iter(case),))
+                self.assertEqual(case, "".join(iter(case)))
 
     def test_count(self):
         string_tests.CommonTest.test_count(self)
