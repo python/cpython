@@ -71,7 +71,8 @@
 
 
 /* Pseudo-instructions used in the compiler,
- * but turned into NOPs by the assembler. */
+ * but turned into NOPs or other instructions
+ * by the assembler. */
 #define SETUP_FINALLY -1
 #define SETUP_CLEANUP -2
 #define SETUP_WITH -3
