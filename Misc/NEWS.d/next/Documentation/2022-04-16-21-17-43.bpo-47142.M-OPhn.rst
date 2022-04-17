@@ -1,2 +1,0 @@
-Refined the definition of the Traversable protocol, appling changes from
-importlib_resources 5.7.1.
