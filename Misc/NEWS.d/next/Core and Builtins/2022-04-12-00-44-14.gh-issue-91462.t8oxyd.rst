@@ -1,0 +1,1 @@
+Make the interpreter's low-level tracing (lltrace) feature output more readable by displaying opcode names (rather than just numbers), and by displaying stack contents before each opcode.
