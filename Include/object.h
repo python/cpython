@@ -91,9 +91,8 @@ statically allocated immortal instances vs those promoted by the runtime to be
 immortal. The latter which should be the only instances that require proper
 cleanup during runtime finalization.
 */
-#define _Py_IMMORTAL_BIT_OFFSET (8 * sizeof(Py_ssize_t) - 3)
-#define _Py_IMMORTAL_BIT (1LL << _Py_IMMORTAL_BIT_OFFSET)
-#define _Py_IMMORTAL_REFCNT (_Py_IMMORTAL_BIT + (_Py_IMMORTAL_BIT / 2))
+#define _Py_IMMORTAL_REFCNT PY_SSIZE_T_MAX
+#define _Py_IMMORTAL_BIT (1LL << (8 * sizeof(Py_ssize_t) - 2))
 
 #define PyObject_HEAD_INIT(type)        \
     { _PyObject_EXTRA_INIT              \
