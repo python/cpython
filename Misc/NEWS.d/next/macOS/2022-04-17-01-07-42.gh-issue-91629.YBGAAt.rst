@@ -1,0 +1,1 @@
+Use conf.d configs and fish_add_path to set the PATH when installing for the Fish shell.
