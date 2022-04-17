@@ -2173,6 +2173,10 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.fullmatch(r'a*+', 'ab'))
         self.assertIsNone(re.fullmatch(r'a?+', 'ab'))
         self.assertIsNone(re.fullmatch(r'a{1,3}+', 'ab'))
+        self.assertTrue(re.fullmatch(r'a++b', 'ab'))
+        self.assertTrue(re.fullmatch(r'a*+b', 'ab'))
+        self.assertTrue(re.fullmatch(r'a?+b', 'ab'))
+        self.assertTrue(re.fullmatch(r'a{1,3}+b', 'ab'))
 
         self.assertTrue(re.fullmatch(r'(?:ab)++', 'ab'))
         self.assertTrue(re.fullmatch(r'(?:ab)*+', 'ab'))
@@ -2182,6 +2186,10 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.fullmatch(r'(?:ab)*+', 'abc'))
         self.assertIsNone(re.fullmatch(r'(?:ab)?+', 'abc'))
         self.assertIsNone(re.fullmatch(r'(?:ab){1,3}+', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?:ab)++c', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?:ab)*+c', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?:ab)?+c', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?:ab){1,3}+c', 'abc'))
 
     def test_findall_possessive_quantifiers(self):
         self.assertEqual(re.findall(r'a++', 'aab'), ['aa'])
@@ -2217,6 +2225,10 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.fullmatch(r'(?>a*)', 'ab'))
         self.assertIsNone(re.fullmatch(r'(?>a?)', 'ab'))
         self.assertIsNone(re.fullmatch(r'(?>a{1,3})', 'ab'))
+        self.assertTrue(re.fullmatch(r'(?>a+)b', 'ab'))
+        self.assertTrue(re.fullmatch(r'(?>a*)b', 'ab'))
+        self.assertTrue(re.fullmatch(r'(?>a?)b', 'ab'))
+        self.assertTrue(re.fullmatch(r'(?>a{1,3})b', 'ab'))
 
         self.assertTrue(re.fullmatch(r'(?>(?:ab)+)', 'ab'))
         self.assertTrue(re.fullmatch(r'(?>(?:ab)*)', 'ab'))
@@ -2226,6 +2238,10 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.fullmatch(r'(?>(?:ab)*)', 'abc'))
         self.assertIsNone(re.fullmatch(r'(?>(?:ab)?)', 'abc'))
         self.assertIsNone(re.fullmatch(r'(?>(?:ab){1,3})', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?>(?:ab)+)c', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?>(?:ab)*)c', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?>(?:ab)?)c', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?>(?:ab){1,3})c', 'abc'))
 
     def test_findall_atomic_grouping(self):
         self.assertEqual(re.findall(r'(?>a+)', 'aab'), ['aa'])
@@ -2237,6 +2253,34 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.findall(r'(?>(?:ab)*)', 'ababc'), ['abab', '', ''])
         self.assertEqual(re.findall(r'(?>(?:ab)?)', 'ababc'), ['ab', 'ab', '', ''])
         self.assertEqual(re.findall(r'(?>(?:ab){1,3})', 'ababc'), ['abab'])
+
+    def test_bug_gh91616(self):
+        # These 3 jumps should use DO_JUMP0() instead of DO_JUMP()
+
+        # JUMP_POSS_REPEAT_1
+        self.assertTrue(re.fullmatch(r'(a*?b){1}+c', "abc"))
+        self.assertTrue(  re.fullmatch(r'(.b|a){1}+c', 'abc'))
+        self.assertIsNone(re.fullmatch(r'(a|.b){1}+c', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?:(ab)*+){1}+c', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?:(ab)?+){1}+c', 'abc'))
+
+        # JUMP_POSS_REPEAT_2
+        self.assertTrue(re.fullmatch(r'(a*?b)*+c', "abc"))
+        self.assertTrue(  re.fullmatch(r'(.b|a)*+c', 'abc'))
+        self.assertIsNone(re.fullmatch(r'(a|.b)*+c', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?:(ab)*+)*+c', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?:(ab)?+)*+c', 'abc'))
+
+        # JUMP_ATOMIC_GROUP
+        self.assertTrue(re.fullmatch(r'(?>a*?b)c', "abc"))
+        self.assertTrue(  re.fullmatch(r'(?>.b|a)c', 'abc'))
+        self.assertIsNone(re.fullmatch(r'(?>a|.b)c', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?>(ab)*+)c', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?>(ab)?+)c', 'abc'))
+
+        # test-cases provided by gh-91616
+        self.assertTrue(re.fullmatch(r'(?s:(?>.*?\.).*)\Z', "a.txt"))
+        self.assertTrue(re.fullmatch(r'(?s:(?=(?P<g0>.*?\.))(?P=g0).*)\Z', "a.txt"))
 
 
 def get_debug_out(pat):
