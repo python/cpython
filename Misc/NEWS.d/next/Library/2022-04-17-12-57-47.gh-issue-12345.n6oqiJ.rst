@@ -1,0 +1,4 @@
+Returns the mean center of data.
+Pseudocode: self = ((self * dataset_size) - self) / dataset_size
+
+Gives a liberal average, useful for datasets with varied weighting. Common when aggregating aggregators; it creates a lower end-value.
