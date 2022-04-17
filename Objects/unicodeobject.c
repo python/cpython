@@ -250,16 +250,9 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
                     Py_ssize_t *consumed);
 #ifdef Py_DEBUG
 static inline int unicode_is_finalizing(void);
+static int unicode_is_singleton(PyObject *unicode);
 #endif
 
-static int unicode_is_singleton(PyObject *unicode);
-
-static struct _Py_unicode_state*
-get_unicode_state(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->unicode;
-}
 
 #define _Py_RETURN_UNICODE_EMPTY()   \
     do {                             \
@@ -1919,6 +1912,9 @@ unicode_dealloc(PyObject *unicode)
         break;
 
     case SSTATE_INTERNED_IMMORTAL:
+        break;
+
+    case SSTATE_INTERNED_IMMORTAL_STATIC:
         break;
 
     default:
@@ -15535,10 +15531,12 @@ PyUnicode_InternInPlace(PyObject **p)
         return;
     }
 
-    if (!_Py_IsStaticImmortal(s)) {
-        _Py_SetImmortal(s);
+    if (_Py_IsImmortal(s)) {
+        _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
+       return;
     }
-    _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
+     _Py_SetImmortal(s);
+     _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
 #else
     // PyDict expects that interned strings have their hash
     // (PyASCIIObject.hash) already computed.
@@ -15585,6 +15583,14 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     }
     assert(PyDict_CheckExact(interned));
 
+    // TODO: Currently, the runtime is not able to guarantee that it can exit
+    //       without allocations that carry over to a future initialization of
+    //       Python within the same process.
+    //           i.e: ./python -X showrefcount -c 'import itertools'
+    //                [298 refs, 298 blocks]
+    //       Therefore, this should remain disabled until there is a strict
+    //       guarantee that no memory will be leftover after `Py_Finalize`
+#ifdef Py_DEBUG
     /* For all non-singleton interned strings, restore the two valid references
        to that instance from within the intern string dictionary and let the
        normal reference counting process clean up these instances. */
@@ -15594,15 +15600,16 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
         assert(PyUnicode_IS_READY(s));
         switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_INTERNED_IMMORTAL:
-            if (!_Py_IsStaticImmortal(s) && !unicode_is_singleton(s)) {
-                // Skip the Immortal Instance check and directly set the refcnt.
-                s->ob_refcnt = 2;
+            // printf("String: %s, ptr: %p\n", PyUnicode_AsUTF8(PyObject_Repr(s)), (void *) s);
+            // Skip the Immortal Instance check and directly set the refcnt.
+            s->ob_refcnt = 2;
 #ifdef Py_REF_DEBUG
-                // Update the total ref counts to account for the original
-                // reference to this string that no longer exists.
-                _Py_RefTotal--;
+            // Update the total ref counts to account for the original
+            // reference to this string that no longer exists.
+            _Py_RefTotal--;
 #endif
-            }
+            break;
+        case SSTATE_INTERNED_IMMORTAL_STATIC:
             break;
         case SSTATE_INTERNED_MORTAL:
             /* fall through */
@@ -15620,6 +15627,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     for (Py_ssize_t i=0; i < ids->size; i++) {
         Py_XINCREF(ids->array[i]);
     }
+#endif
 
     PyDict_Clear(interned);
     Py_CLEAR(interned);

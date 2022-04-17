@@ -151,6 +151,7 @@ typedef struct {
            SSTATE_NOT_INTERNED (0)
            SSTATE_INTERNED_MORTAL (1)
            SSTATE_INTERNED_IMMORTAL (2)
+           SSTATE_INTERNED_IMMORTAL_STATIC (3)
 
            If interned != SSTATE_NOT_INTERNED, the two references from the
            dictionary to this object are *not* counted in ob_refcnt.
@@ -278,6 +279,7 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
 #define SSTATE_NOT_INTERNED 0
 #define SSTATE_INTERNED_MORTAL 1
 #define SSTATE_INTERNED_IMMORTAL 2
+#define SSTATE_INTERNED_IMMORTAL_STATIC 3
 
 /* Use only if you know it's a string */
 #define PyUnicode_CHECK_INTERNED(op) \
