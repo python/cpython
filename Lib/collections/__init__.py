@@ -37,6 +37,7 @@ from operator import eq as _eq
 from operator import itemgetter as _itemgetter
 from reprlib import recursive_repr as _recursive_repr
 from _weakref import proxy as _proxy
+from collections.abc import Mapping
 
 try:
     from _collections import deque
