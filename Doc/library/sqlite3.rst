@@ -431,24 +431,21 @@ Connection Objects
 
    .. method:: execute(sql[, parameters])
 
-      This is a nonstandard shortcut that creates a cursor object by calling
-      the :meth:`~Connection.cursor` method, calls the cursor's
-      :meth:`~Cursor.execute` method with the *parameters* given, and returns
-      the cursor.
+      Creates a new :class:`Cursor` object and calls
+      :meth:`~Cursor.execute` on it with the given *sql* and *parameters*.
+      Returns the new cursor object.
 
    .. method:: executemany(sql[, parameters])
 
-      This is a nonstandard shortcut that creates a cursor object by
-      calling the :meth:`~Connection.cursor` method, calls the cursor's
-      :meth:`~Cursor.executemany` method with the *parameters* given, and
-      returns the cursor.
+      Creates a new :class:`Cursor` object and calls
+      :meth:`~Cursor.executemany` on it with the given *sql* and *parameters*.
+      Returns the new cursor object.
 
    .. method:: executescript(sql_script)
 
-      This is a nonstandard shortcut that creates a cursor object by
-      calling the :meth:`~Connection.cursor` method, calls the cursor's
-      :meth:`~Cursor.executescript` method with the given *sql_script*, and
-      returns the cursor.
+      Creates a new :class:`Cursor` object and calls
+      :meth:`~Cursor.executescript` on it with the given *sql_script*.
+      Returns the new cursor object.
 
    .. method:: create_function(name, num_params, func, *, deterministic=False)
 
