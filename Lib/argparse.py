@@ -119,7 +119,15 @@ class _AttributeHolder(object):
         type_name = type(self).__name__
         arg_strings = []
         star_args = {}
-        for arg in self._get_args():
+
+        get_args = self._get_args()
+        if get_args:
+            warnings.warn("_AttributeHolder()._get_args() is deprecated as of "
+                          "Python 3.11.",
+                          DeprecationWarning,
+                          stacklevel=2)
+
+        for arg in get_args:
             arg_strings.append(repr(arg))
         for name, value in self._get_kwargs():
             if name.isidentifier():
@@ -134,6 +142,7 @@ class _AttributeHolder(object):
         return list(self.__dict__.items())
 
     def _get_args(self):
+        """This method is deprecated."""
         return []
 
 
