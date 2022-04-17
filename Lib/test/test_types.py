@@ -951,8 +951,8 @@ class UnionTests(unittest.TestCase):
         with self.assertRaises(ZeroDivisionError):
             list[int] | list[bt]
 
-        union_ga = (int | list[str], int | collections.abc.Callable[..., str],
-                    int | d)
+        union_ga = (list[str] | int, collections.abc.Callable[..., str] | int,
+                    d | int)
         # Raise error when isinstance(type, type | genericalias)
         for type_ in union_ga:
             with self.subTest(f"check isinstance/issubclass is invalid for {type_}"):

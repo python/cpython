@@ -48,19 +48,6 @@ union_hash(PyObject *self)
     return hash;
 }
 
-static int
-is_generic_alias_in_args(PyObject *args)
-{
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
-        PyObject *arg = PyTuple_GET_ITEM(args, iarg);
-        if (_PyGenericAlias_Check(arg)) {
-            return 0;
-        }
-    }
-    return 1;
-}
-
 static PyObject *
 union_richcompare(PyObject *a, PyObject *b, int op)
 {
@@ -381,16 +368,9 @@ union_getattro(PyObject *self, PyObject *name)
 }
 
 PyObject *
-_Py_union_args_for_check(PyObject *self, bool is_instance_check)
+_Py_union_args(PyObject *self)
 {
-    PyObject *args = ((unionobject *) self)->args;
-    if (!is_generic_alias_in_args(args)) {
-        PyErr_Format(PyExc_TypeError,
-                     "%s() argument 2 cannot contain a parameterized generic",
-                     is_instance_check ? "isinstance" : "issubclass");
-        return NULL;
-    }
-    return args;
+    return ((unionobject *) self)->args;
 }
 
 PyTypeObject _PyUnion_Type = {

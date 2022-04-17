@@ -905,7 +905,8 @@ are always available.  They are listed here in alphabetical order.
    tuples) or a :ref:`types-union` of multiple types, return ``True`` if
    *object* is an instance of any of the types.
    If *classinfo* is not a type or tuple of types and such tuples,
-   a :exc:`TypeError` exception is raised.
+   a :exc:`TypeError` exception is raised. :exc:`TypeError` may not be
+   raised for an invalid type if an earlier check succeeds.
 
    .. versionchanged:: 3.10
       *classinfo* can be a :ref:`types-union`.
