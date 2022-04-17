@@ -1,0 +1,3 @@
+Convert :mod:`csv` to use Argument Clinic for :func:`csv.field_size_limit`,
+:func:`csv.get_dialect`, :func:`csv.unregister_dialect` and :func:`csv.list_dialects`.
+
