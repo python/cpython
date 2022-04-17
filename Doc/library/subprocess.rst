@@ -214,7 +214,9 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 .. exception:: CalledProcessError
 
     Subclass of :exc:`SubprocessError`, raised when a process run by
-    :func:`check_call` or :func:`check_output` returns a non-zero exit status.
+    :func:`check_call`, :func:`check_output`, or :func:`run` (with ``check=True``)
+    returns a non-zero exit status.
+
 
     .. attribute:: returncode
 
