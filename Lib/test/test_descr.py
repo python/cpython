@@ -2004,6 +2004,7 @@ order (MRO) for bases """
                 Z._264, Z._265, Z._266, Z._267, Z._268, Z._269, Z._270, Z._271,
                 Z._272, Z._273, Z._274, Z._275, Z._276, Z._277, Z._278, Z._279,
             ]
+        # Warm up the the function for quickening (PEP 659)
         for _ in range(30):
             self.assertEqual(number_attrs(Numbers()), list(range(280)))
 
