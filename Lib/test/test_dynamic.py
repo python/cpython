@@ -133,6 +133,17 @@ class RebindBuiltinsTests(unittest.TestCase):
 
         self.assertEqual(foo(), 7)
 
+    def test_load_global_specialization_failure_keeps_oparg(self):
+        class MyGlobals(dict):
+            def __missing__(self, key):
+                return int(key.removeprefix("_number_"))
+
+        code = ("lambda: [" +
+                ", ".join(f"_number_{i}" for i in range(1000)) +
+                "]")
+        func = eval(code, MyGlobals())
+        numbers = func()
+        self.assertEqual(numbers, list(range(1000)))
 
 if __name__ == "__main__":
     unittest.main()
