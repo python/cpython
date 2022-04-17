@@ -431,21 +431,21 @@ Connection Objects
 
    .. method:: execute(sql[, parameters])
 
-      Creates a new :class:`Cursor` object and calls
+      Create a new :class:`Cursor` object and call
       :meth:`~Cursor.execute` on it with the given *sql* and *parameters*.
-      Returns the new cursor object.
+      Return the new cursor object.
 
    .. method:: executemany(sql[, parameters])
 
-      Creates a new :class:`Cursor` object and calls
+      Create a new :class:`Cursor` object and call
       :meth:`~Cursor.executemany` on it with the given *sql* and *parameters*.
-      Returns the new cursor object.
+      Return the new cursor object.
 
    .. method:: executescript(sql_script)
 
-      Creates a new :class:`Cursor` object and calls
+      Create a new :class:`Cursor` object and call
       :meth:`~Cursor.executescript` on it with the given *sql_script*.
-      Returns the new cursor object.
+      Return the new cursor object.
 
    .. method:: create_function(name, num_params, func, *, deterministic=False)
 
