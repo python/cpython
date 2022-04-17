@@ -35,6 +35,10 @@ though it may take a while to be processed.
    `Helping with Documentation <https://devguide.python.org/docquality/#helping-with-documentation>`_
       Comprehensive guide for individuals that are interested in contributing to Python documentation.
 
+   `Documentation Translations <https://devguide.python.org/documenting/#translating>`_
+      A list of GitHub pages for documentation translation and their primary contacts.
+
+
 .. _using-the-tracker:
 
 Using the Python issue tracker
