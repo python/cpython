@@ -4345,6 +4345,7 @@ handle_eval_breaker:
             }
         iterator_exhausted_no_error:
             /* iterator ended normally */
+            assert(!_PyErr_Occurred(tstate));
             Py_DECREF(POP());
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
             DISPATCH();
