@@ -359,10 +359,11 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
                 # proceeded.
                 if fixup:
                     hascased = True
-                    # For now, IN_IGNORE+LITERAL and IN_IGNORE+RANGE_UNI_IGNORE
-                    # work for all non-BMP characters, because two characters
-                    # (at least one of which is not in the BMP) match
-                    # case-insensitively if and only if:
+                    # For now, IN_UNI_IGNORE+LITERAL and
+                    # IN_UNI_IGNORE+RANGE_UNI_IGNORE work for all non-BMP
+                    # characters, because two characters (at least one of
+                    # which is not in the BMP) match case-insensitively
+                    # if and only if:
                     # 1) c1.lower() == c2.lower()
                     # 2) c1.lower() == c2 or c1.lower().upper() == c2
                     # Also, both c.lower() and c.lower().upper() are single
