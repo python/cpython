@@ -11,7 +11,7 @@
 #    This module is maintained by Marc-Andre Lemburg <mal@egenix.com>.
 #    If you find problems, please submit bug reports/patches as detailed
 #    in the Python devguide (https://devguide.python.org/tracker/) and
-#    assign them to "lemburg".
+#    assign them to "malemburg".
 #
 #    Still needed:
 #    * support for MS-DOS (PythonDX ?)
