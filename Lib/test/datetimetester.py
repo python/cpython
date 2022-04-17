@@ -139,8 +139,8 @@ class PicklableFixedOffset(FixedOffset):
     def __init__(self, offset=None, name=None, dstoffset=None):
         FixedOffset.__init__(self, offset, name, dstoffset)
 
-    def __getstate__(self):
-        return self.__dict__
+class PicklableFixedOffsetWithSlots(PicklableFixedOffset):
+    __slots__ = '_FixedOffset__offset', '_FixedOffset__name', 'spam'
 
 class _TZInfo(tzinfo):
     def utcoffset(self, datetime_module):
@@ -202,6 +202,7 @@ class TestTZInfo(unittest.TestCase):
         offset = timedelta(minutes=-300)
         for otype, args in [
             (PicklableFixedOffset, (offset, 'cookie')),
+            (PicklableFixedOffsetWithSlots, (offset, 'cookie')),
             (timezone, (offset,)),
             (timezone, (offset, "EST"))]:
             orig = otype(*args)
@@ -217,6 +218,7 @@ class TestTZInfo(unittest.TestCase):
                 self.assertIs(type(derived), otype)
                 self.assertEqual(derived.utcoffset(None), offset)
                 self.assertEqual(derived.tzname(None), oname)
+                self.assertFalse(hasattr(derived, 'spam'))
 
     def test_issue23600(self):
         DSTDIFF = DSTOFFSET = timedelta(hours=1)
