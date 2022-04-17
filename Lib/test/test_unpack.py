@@ -150,6 +150,43 @@ def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())
     return tests
 
+def unpack_400(x):
+    # UNPACK_SEQUENCE 400
+    # is actually
+    #     EXTENDED_ARG 1
+    #     UNPACK_SEQUENCE 144
+    (
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+        y,y,y,y,y, y,y,y,y,y, y,y,y,y,y, y,y,y,y,y,
+    ) = x
+    return y
+
+class TestCornerCases(unittest.TestCase):
+    def test_extended_oparg_not_ignored(self):
+        for _ in range(30):
+            y = unpack_400(range(400))
+            self.assertEqual(y, 399)
 
 if __name__ == "__main__":
     unittest.main()
