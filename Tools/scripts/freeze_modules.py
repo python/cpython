@@ -9,7 +9,7 @@ import os
 import ntpath
 import posixpath
 import sys
-
+import argparse
 from update_file import updating_file_with_tmpfile
 
 
@@ -18,7 +18,7 @@ ROOT_DIR = os.path.abspath(ROOT_DIR)
 FROZEN_ONLY = os.path.join(ROOT_DIR, 'Tools', 'freeze', 'flag.py')
 
 STDLIB_DIR = os.path.join(ROOT_DIR, 'Lib')
-# If FROZEN_MODULES_DIR or DEEPFROZEN_MODULES_DIR is changed then the 
+# If FROZEN_MODULES_DIR or DEEPFROZEN_MODULES_DIR is changed then the
 # .gitattributes and .gitignore files needs to be updated.
 FROZEN_MODULES_DIR = os.path.join(ROOT_DIR, 'Python', 'frozen_modules')
 DEEPFROZEN_MODULES_DIR = os.path.join(ROOT_DIR, 'Python', 'deepfreeze')
@@ -68,6 +68,11 @@ FROZEN = [
         'site',
         'stat',
         ]),
+    ('runpy - run module with -m', [
+        "importlib.util",
+        "importlib.machinery",
+        "runpy",
+    ]),
     (TESTS_SECTION, [
         '__hello__',
         '__hello__ : __hello_alias__',
@@ -258,6 +263,10 @@ class FrozenSource(namedtuple('FrozenSource', 'id pyfile frozenfile deepfreezefi
             return False
         else:
             return os.path.basename(self.pyfile) == '__init__.py'
+
+    @property
+    def isbootstrap(self):
+        return self.id in BOOTSTRAP
 
 
 def resolve_frozen_file(frozenid, destdir):
@@ -454,14 +463,15 @@ def replace_block(lines, start_marker, end_marker, replacements, file):
     return lines[:start_pos + 1] + replacements + lines[end_pos:]
 
 
-def regen_frozen(modules):
+def regen_frozen(modules, frozen_modules: bool):
     headerlines = []
     parentdir = os.path.dirname(FROZEN_FILE)
-    for src in _iter_sources(modules):
-        # Adding a comment to separate sections here doesn't add much,
-        # so we don't.
-        header = relpath_for_posix_display(src.frozenfile, parentdir)
-        headerlines.append(f'#include "{header}"')
+    if frozen_modules:
+        for src in _iter_sources(modules):
+            # Adding a comment to separate sections here doesn't add much,
+            # so we don't.
+            header = relpath_for_posix_display(src.frozenfile, parentdir)
+            headerlines.append(f'#include "{header}"')
 
     externlines = []
     bootstraplines = []
@@ -471,7 +481,7 @@ def regen_frozen(modules):
     indent = '    '
     lastsection = None
     for mod in modules:
-        if mod.frozenid in BOOTSTRAP:
+        if mod.isbootstrap:
             lines = bootstraplines
         elif mod.section == TESTS_SECTION:
             lines = testlines
@@ -491,9 +501,13 @@ def regen_frozen(modules):
         externlines.append("extern PyObject *%s(void);" % get_code_name)
 
         symbol = mod.symbol
-        pkg = '-' if mod.ispkg else ''
-        line = ('{"%s", %s, %s(int)sizeof(%s), GET_CODE(%s)},'
-                ) % (mod.name, symbol, pkg, symbol, code_name)
+        pkg = 'true' if mod.ispkg else 'false'
+        if not frozen_modules:
+            line = ('{"%s", NULL, 0, %s, GET_CODE(%s)},'
+                ) % (mod.name, pkg, code_name)
+        else:
+            line = ('{"%s", %s, (int)sizeof(%s), %s, GET_CODE(%s)},'
+                ) % (mod.name, symbol, symbol, pkg, code_name)
         lines.append(line)
 
         if mod.isalias:
@@ -566,36 +580,34 @@ def regen_frozen(modules):
 def regen_makefile(modules):
     pyfiles = []
     frozenfiles = []
-    deepfreezefiles = []
     rules = ['']
-    deepfreezerules = ['']
+    deepfreezerules = ["Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)",
+                       "\t$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py \\"]
     for src in _iter_sources(modules):
         frozen_header = relpath_for_posix_display(src.frozenfile, ROOT_DIR)
-        deepfreeze_header = relpath_for_posix_display(src.deepfreezefile, ROOT_DIR)
         frozenfiles.append(f'\t\t{frozen_header} \\')
-        cfile = deepfreeze_header[:-2] + ".c"
-        ofile = deepfreeze_header[:-2] + ".o"
-        deepfreezefiles.append(f"\t\t{ofile} \\")
 
         pyfile = relpath_for_posix_display(src.pyfile, ROOT_DIR)
         pyfiles.append(f'\t\t{pyfile} \\')
 
-        freeze = (f'$(FREEZE_MODULE) {src.frozenid} '
-                  f'$(srcdir)/{pyfile} {frozen_header}')
+        if src.isbootstrap:
+            freezecmd = '$(FREEZE_MODULE_BOOTSTRAP)'
+            freezedep = '$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
+        else:
+            freezecmd = '$(FREEZE_MODULE)'
+            freezedep = '$(FREEZE_MODULE_DEPS)'
+
+        freeze = (f'{freezecmd} {src.frozenid} '
+                    f'$(srcdir)/{pyfile} {frozen_header}')
         rules.extend([
-            f'{frozen_header}: $(FREEZE_MODULE) {pyfile}',
+            f'{frozen_header}: {pyfile} {freezedep}',
             f'\t{freeze}',
             '',
         ])
-        deepfreezerules.append(f'{cfile}: {frozen_header} $(DEEPFREEZE_DEPS)')
-        deepfreezerules.append(
-            f"\t$(PYTHON_FOR_FREEZE) "
-            f"$(srcdir)/Tools/scripts/deepfreeze.py "
-            f"{frozen_header} -m {src.frozenid} -o {cfile}")
-        deepfreezerules.append('')
+        deepfreezerules.append(f"\t{frozen_header}:{src.frozenid} \\")
+    deepfreezerules.append('\t-o Python/deepfreeze/deepfreeze.c')
     pyfiles[-1] = pyfiles[-1].rstrip(" \\")
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
-    deepfreezefiles[-1] = deepfreezefiles[-1].rstrip(" \\")
 
     print(f'# Updating {os.path.relpath(MAKEFILE)}')
     with updating_file_with_tmpfile(MAKEFILE) as (infile, outfile):
@@ -612,13 +624,6 @@ def regen_makefile(modules):
             "FROZEN_FILES_OUT =",
             "# End FROZEN_FILES_OUT",
             frozenfiles,
-            MAKEFILE,
-        )
-        lines = replace_block(
-            lines,
-            "DEEPFREEZE_OBJS =",
-            "# End DEEPFREEZE_OBJS",
-            deepfreezefiles,
             MAKEFILE,
         )
         lines = replace_block(
@@ -642,26 +647,24 @@ def regen_pcbuild(modules):
     projlines = []
     filterlines = []
     corelines = []
+    deepfreezerules = ['\t<Exec Command=\'$(PythonForBuild) "$(PySourcePath)Tools\\scripts\\deepfreeze.py" ^']
     for src in _iter_sources(modules):
         pyfile = relpath_for_windows_display(src.pyfile, ROOT_DIR)
         header = relpath_for_windows_display(src.frozenfile, ROOT_DIR)
-        deepbase = "df." + src.id
-        deepoutfile = f"Python\\deepfreeze\\{deepbase}.c"
         intfile = ntpath.splitext(ntpath.basename(header))[0] + '.g.h'
-        deepintfile = ntpath.splitext(ntpath.basename(header))[0] + '.g.c'
         projlines.append(f'    <None Include="..\\{pyfile}">')
         projlines.append(f'      <ModName>{src.frozenid}</ModName>')
         projlines.append(f'      <IntFile>$(IntDir){intfile}</IntFile>')
         projlines.append(f'      <OutFile>$(PySourcePath){header}</OutFile>')
-        projlines.append(f'      <DeepIntFile>$(IntDir){deepintfile}</DeepIntFile>')
-        projlines.append(f'      <DeepOutFile>$(PySourcePath){deepoutfile}</DeepOutFile>')
         projlines.append(f'    </None>')
 
         filterlines.append(f'    <None Include="..\\{pyfile}">')
         filterlines.append('      <Filter>Python Files</Filter>')
         filterlines.append('    </None>')
+        deepfreezerules.append(f'\t\t "$(PySourcePath){header}:{src.frozenid}" ^')
+    deepfreezerules.append('\t\t "-o" "$(PySourcePath)Python\\deepfreeze\\deepfreeze.c"\'/>' )
 
-        corelines.append(f'    <ClCompile Include="..\\{deepoutfile}" />')
+    corelines.append(f'    <ClCompile Include="..\\Python\\deepfreeze\\deepfreeze.c" />')
 
     print(f'# Updating {os.path.relpath(PCBUILD_PROJECT)}')
     with updating_file_with_tmpfile(PCBUILD_PROJECT) as (infile, outfile):
@@ -671,6 +674,16 @@ def regen_pcbuild(modules):
             '<!-- BEGIN frozen modules -->',
             '<!-- END frozen modules -->',
             projlines,
+            PCBUILD_PROJECT,
+        )
+        outfile.writelines(lines)
+    with updating_file_with_tmpfile(PCBUILD_PROJECT) as (infile, outfile):
+        lines = infile.readlines()
+        lines = replace_block(
+            lines,
+            '<!-- BEGIN deepfreeze rule -->',
+            '<!-- END deepfreeze rule -->',
+            deepfreezerules,
             PCBUILD_PROJECT,
         )
         outfile.writelines(lines)
@@ -701,18 +714,21 @@ def regen_pcbuild(modules):
 #######################################
 # the script
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--frozen-modules", action="store_true",
+        help="Use both frozen and deepfrozen modules. (default: uses only deepfrozen modules)")
+
 def main():
+    args = parser.parse_args()
+    frozen_modules: bool = args.frozen_modules
     # Expand the raw specs, preserving order.
     modules = list(parse_frozen_specs())
 
     # Regen build-related files.
     regen_makefile(modules)
     regen_pcbuild(modules)
-    regen_frozen(modules)
+    regen_frozen(modules, frozen_modules)
 
 
 if __name__ == '__main__':
-    argv = sys.argv[1:]
-    if argv:
-        sys.exit(f'ERROR: got unexpected args {argv}')
     main()

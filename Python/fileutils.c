@@ -93,6 +93,10 @@ _Py_device_encoding(int fd)
 
     return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
 #else
+    if (_PyRuntime.preconfig.utf8_mode) {
+        _Py_DECLARE_STR(utf_8, "utf-8");
+        return Py_NewRef(&_Py_STR(utf_8));
+    }
     return _Py_GetLocaleEncodingObject();
 #endif
 }
@@ -873,10 +877,10 @@ _Py_EncodeLocaleEx(const wchar_t *text, char **str,
 
 // Get the current locale encoding name:
 //
-// - Return "UTF-8" if _Py_FORCE_UTF8_LOCALE macro is defined (ex: on Android)
-// - Return "UTF-8" if the UTF-8 Mode is enabled
+// - Return "utf-8" if _Py_FORCE_UTF8_LOCALE macro is defined (ex: on Android)
+// - Return "utf-8" if the UTF-8 Mode is enabled
 // - On Windows, return the ANSI code page (ex: "cp1250")
-// - Return "UTF-8" if nl_langinfo(CODESET) returns an empty string.
+// - Return "utf-8" if nl_langinfo(CODESET) returns an empty string.
 // - Otherwise, return nl_langinfo(CODESET).
 //
 // Return NULL on memory allocation failure.
@@ -888,12 +892,8 @@ _Py_GetLocaleEncoding(void)
 #ifdef _Py_FORCE_UTF8_LOCALE
     // On Android langinfo.h and CODESET are missing,
     // and UTF-8 is always used in mbstowcs() and wcstombs().
-    return _PyMem_RawWcsdup(L"UTF-8");
+    return _PyMem_RawWcsdup(L"utf-8");
 #else
-    const PyPreConfig *preconfig = &_PyRuntime.preconfig;
-    if (preconfig->utf8_mode) {
-        return _PyMem_RawWcsdup(L"UTF-8");
-    }
 
 #ifdef MS_WINDOWS
     wchar_t encoding[23];
@@ -906,7 +906,7 @@ _Py_GetLocaleEncoding(void)
     if (!encoding || encoding[0] == '\0') {
         // Use UTF-8 if nl_langinfo() returns an empty string. It can happen on
         // macOS if the LC_CTYPE locale is not supported.
-        return _PyMem_RawWcsdup(L"UTF-8");
+        return _PyMem_RawWcsdup(L"utf-8");
     }
 
     wchar_t *wstr;
@@ -2049,42 +2049,7 @@ _Py_abspath(const wchar_t *path, wchar_t **abspath_p)
     }
 
 #ifdef MS_WINDOWS
-    wchar_t woutbuf[MAX_PATH], *woutbufp = woutbuf;
-    DWORD result;
-
-    result = GetFullPathNameW(path,
-                              Py_ARRAY_LENGTH(woutbuf), woutbuf,
-                              NULL);
-    if (!result) {
-        return -1;
-    }
-
-    if (result >= Py_ARRAY_LENGTH(woutbuf)) {
-        if ((size_t)result <= (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
-            woutbufp = PyMem_RawMalloc((size_t)result * sizeof(wchar_t));
-        }
-        else {
-            woutbufp = NULL;
-        }
-        if (!woutbufp) {
-            *abspath_p = NULL;
-            return 0;
-        }
-
-        result = GetFullPathNameW(path, result, woutbufp, NULL);
-        if (!result) {
-            PyMem_RawFree(woutbufp);
-            return -1;
-        }
-    }
-
-    if (woutbufp != woutbuf) {
-        *abspath_p = woutbufp;
-        return 0;
-    }
-
-    *abspath_p = _PyMem_RawWcsdup(woutbufp);
-    return 0;
+    return _PyOS_getfullpathname(path, abspath_p);
 #else
     wchar_t cwd[MAXPATHLEN + 1];
     cwd[Py_ARRAY_LENGTH(cwd) - 1] = 0;
@@ -2128,8 +2093,8 @@ join_relfile(wchar_t *buffer, size_t bufsize,
              const wchar_t *dirname, const wchar_t *relfile)
 {
 #ifdef MS_WINDOWS
-    if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile, 
-        PATHCCH_ALLOW_LONG_PATHS | PATHCCH_FORCE_ENABLE_LONG_NAME_PROCESS))) {
+    if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile,
+        PATHCCH_ALLOW_LONG_PATHS))) {
         return -1;
     }
 #else
@@ -2218,11 +2183,11 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
     if (!path[0] || size == 0) {
         return path;
     }
-    wchar_t lastC = L'\0';
-    wchar_t *p1 = path;
     wchar_t *pEnd = size >= 0 ? &path[size] : NULL;
-    wchar_t *p2 = path;
-    wchar_t *minP2 = path;
+    wchar_t *p1 = path;     // sequentially scanned address in the path
+    wchar_t *p2 = path;     // destination of a scanned character to be ljusted
+    wchar_t *minP2 = path;  // the beginning of the destination range
+    wchar_t lastC = L'\0';  // the last ljusted character, p2[-1] in most cases
 
 #define IS_END(x) (pEnd ? (x) == pEnd : !*(x))
 #ifdef ALTSEP
@@ -2264,14 +2229,18 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
                 *p2++ = lastC = *p1;
             }
         }
-        minP2 = p2;
+        if (sepCount) {
+            minP2 = p2;      // Invalid path
+        } else {
+            minP2 = p2 - 1;  // Absolute path has SEP at minP2
+        }
     }
 #else
     // Skip past two leading SEPs
     else if (IS_SEP(&p1[0]) && IS_SEP(&p1[1]) && !IS_SEP(&p1[2])) {
         *p2++ = *p1++;
         *p2++ = *p1++;
-        minP2 = p2;
+        minP2 = p2 - 1;  // Absolute path has SEP at minP2
         lastC = SEP;
     }
 #endif /* MS_WINDOWS */
@@ -2292,8 +2261,11 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
                     wchar_t *p3 = p2;
                     while (p3 != minP2 && *--p3 == SEP) { }
                     while (p3 != minP2 && *(p3 - 1) != SEP) { --p3; }
-                    if (p3[0] == L'.' && p3[1] == L'.' && IS_SEP(&p3[2])) {
-                        // Previous segment is also ../, so append instead
+                    if (p2 == minP2
+                        || (p3[0] == L'.' && p3[1] == L'.' && IS_SEP(&p3[2])))
+                    {
+                        // Previous segment is also ../, so append instead.
+                        // Relative path does not absorb ../ at minP2 as well.
                         *p2++ = L'.';
                         *p2++ = L'.';
                         lastC = L'.';
@@ -2314,7 +2286,7 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
             }
         } else {
             *p2++ = lastC = c;
-        } 
+        }
     }
     *p2 = L'\0';
     if (p2 != minP2) {
@@ -2652,10 +2624,11 @@ _Py_closerange(int first, int last)
     first = Py_MAX(first, 0);
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_CLOSE_RANGE
-    if (close_range(first, last, 0) == 0 || errno != ENOSYS) {
-        /* Any errors encountered while closing file descriptors are ignored;
-         * ENOSYS means no kernel support, though,
-         * so we'll fallback to the other methods. */
+    if (close_range(first, last, 0) == 0) {
+        /* close_range() ignores errors when it closes file descriptors.
+         * Possible reasons of an error return are lack of kernel support
+         * or denial of the underlying syscall by a seccomp sandbox on Linux.
+         * Fallback to other methods in case of any error. */
     }
     else
 #endif /* HAVE_CLOSE_RANGE */

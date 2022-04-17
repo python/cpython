@@ -36,6 +36,7 @@ REST_ROLE_MAP = {
     'type': 'type',
     'macro': 'macro',
     'type': 'type',
+    'member': 'member',
 }
 
 
@@ -100,6 +101,12 @@ class Annotations:
             # Stable ABI annotation. These have two forms:
             #   Part of the [Stable ABI](link).
             #   Part of the [Stable ABI](link) since version X.Y.
+            # For structs, there's some more info in the message:
+            #   Part of the [Limited API](link) (as an opaque struct).
+            #   Part of the [Stable ABI](link) (including all members).
+            #   Part of the [Limited API](link) (Only some members are part
+            #       of the stable ABI.).
+            # ... all of which can have "since version X.Y" appended.
             record = self.stable_abi_data.get(name)
             if record:
                 if record['role'] != objtype:
@@ -113,15 +120,27 @@ class Annotations:
                 ref_node = addnodes.pending_xref(
                     'Stable ABI', refdomain="std", reftarget='stable',
                     reftype='ref', refexplicit="False")
-                ref_node += nodes.Text('Stable ABI')
+                struct_abi_kind = record['struct_abi_kind']
+                if struct_abi_kind in {'opaque', 'members'}:
+                    ref_node += nodes.Text('Limited API')
+                else:
+                    ref_node += nodes.Text('Stable ABI')
                 emph_node += ref_node
+                if struct_abi_kind == 'opaque':
+                    emph_node += nodes.Text(' (as an opaque struct)')
+                elif struct_abi_kind == 'full-abi':
+                    emph_node += nodes.Text(' (including all members)')
                 if record['ifdef_note']:
                     emph_node += nodes.Text(' ' + record['ifdef_note'])
                 if stable_added == '3.2':
                     # Stable ABI was introduced in 3.2.
-                    emph_node += nodes.Text('.')
+                    pass
                 else:
-                    emph_node += nodes.Text(f' since version {stable_added}.')
+                    emph_node += nodes.Text(f' since version {stable_added}')
+                emph_node += nodes.Text('.')
+                if struct_abi_kind == 'members':
+                    emph_node += nodes.Text(
+                        ' (Only some members are part of the stable ABI.)')
                 node.insert(0, emph_node)
 
             # Return value annotation

@@ -1588,7 +1588,7 @@ class WinPage(Frame):
                     win_height_int: Entry > win_height
                 frame_cursor: Frame
                     indent_title: Label
-                    indent_chooser: Spinbox (Combobox < 8.5.9) > indent_spaces
+                    indent_chooser: Spinbox > indent_spaces
                     blink_on: Checkbutton > cursor_blink
                 frame_autocomplete: Frame
                     auto_wait_title: Label

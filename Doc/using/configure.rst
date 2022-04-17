@@ -35,8 +35,7 @@ General Options
 
    Define the size in bits of Python :class:`int` digits: 15 or 30 bits.
 
-   By default, the number of bits is selected depending on ``sizeof(void*)``:
-   30 bits if ``void*`` size is 64-bit or larger, 15 bits otherwise.
+   By default, the digit size is 30.
 
    Define the ``PYLONG_BITS_IN_DIGIT`` to ``15`` or ``30``.
 
@@ -53,11 +52,13 @@ General Options
    Set the Python executable suffix to *SUFFIX*.
 
    The default suffix is ``.exe`` on Windows and macOS (``python.exe``
-   executable), ``.wasm`` on Emscripten (``python.wasm`` executable), and
-   an empty string on other platforms (``python`` executable).
+   executable), ``.js`` on Emscripten node, ``.html`` on Emscripten browser,
+   ``.wasm`` on WASI, and an empty string on other platforms (``python``
+   executable).
 
    .. versionchanged:: 3.11
-      The default suffix on Emscripten platform is ``.wasm``.
+      The default suffix on WASM platform is one of ``.js``, ``.html``
+      or ``.wasm``.
 
 .. cmdoption:: --with-tzpath=<list of absolute paths separated by pathsep>
 
@@ -80,7 +81,7 @@ General Options
 
    .. versionadded:: 3.9
 
-.. cmdoption:: --with-dbmliborder=db1:db2:...
+.. cmdoption:: --with-dbmliborder=<list of backend names>
 
    Override order to check db backends for the :mod:`dbm` module
 
@@ -128,6 +129,38 @@ General Options
    * ``check`` (default): :program:`pkg-config` is optional
    * ``yes``: :program:`pkg-config` is mandatory
    * ``no``: configure does not use :program:`pkg-config` even when present
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: --enable-pystats
+
+   Turn on internal statistics gathering.
+
+   The statistics will be dumped to a arbitrary (probably unique) file in
+   ``/tmp/py_stats/``, or ``C:\temp\py_stats\`` on Windows.
+
+   Use ``Tools//summarize_stats.py`` to read the stats.
+
+   .. versionadded:: 3.11
+
+WebAssemby Options
+------------------
+
+.. cmdoption:: --with-emscripten-target=[browser|node]
+
+   Set build flavor for ``wasm32-emscripten``.
+
+   * ``browser`` (default): preload minimal stdlib, default MEMFS.
+   * ``node``: NODERAWFS and pthread support.
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: --enable-wasm-dynamic-linking
+
+   Turn on dynamic linking support for WASM.
+
+   Dynamic linking enables ``dlopen``. File size of the executable
+   increases due to limited dead code elimination and additional features.
 
    .. versionadded:: 3.11
 
@@ -240,7 +273,7 @@ Effects of a debug build:
 * Add :func:`sys.gettotalrefcount` function.
 * Add :option:`-X showrefcount <-X>` command line option.
 * Add :envvar:`PYTHONTHREADDEBUG` environment variable.
-* Add support for the ``__ltrace__`` variable: enable low-level tracing in the
+* Add support for the ``__lltrace__`` variable: enable low-level tracing in the
   bytecode evaluation loop if the variable is defined.
 * Install :ref:`debug hooks on memory allocators <default-memory-allocators>`
   to detect buffer overflow and other memory errors.
@@ -394,14 +427,6 @@ Libraries options
 
    .. versionadded:: 3.10
 
-.. cmdoption:: --with-tcltk-includes='-I...'
-
-   Override search for Tcl and Tk include files.
-
-.. cmdoption:: --with-tcltk-libs='-L...'
-
-   Override search for Tcl and Tk libraries.
-
 .. cmdoption:: --with-libm=STRING
 
    Override ``libm`` math library to *STRING* (default is system-dependent).
@@ -518,9 +543,8 @@ Cross Compiling Options
 
 Cross compiling, also known as cross building, can be used to build Python
 for another CPU architecture or platform. Cross compiling requires a Python
-interpreter and the :program:`_freeze_module` binary from another build. The
-version of the build Python and :program:`_freeze_module` command must be
-the same as the cross compiled host Python.
+interpreter for the build platform. The version of the build Python must match
+the version of the cross compiled host Python.
 
 .. cmdoption:: --build=BUILD
 
@@ -530,13 +554,7 @@ the same as the cross compiled host Python.
 
    cross-compile to build programs to run on HOST (target platform)
 
-.. cmdoption:: --with-freeze-module=Programs/_freeze_module
-
-   path to ``_freeze_module`` binary for cross compiling.
-
-   .. versionadded:: 3.11
-
-.. cmdoption:: --with-build-python=python3.xx
+.. cmdoption:: --with-build-python=path/to/python
 
    path to build ``python`` binary for cross compiling
 
@@ -559,7 +577,6 @@ Cross compiling example::
    CONFIG_SITE=config.site-aarch64 ../configure \
        --build=x86_64-pc-linux-gnu \
        --host=aarch64-unknown-linux-gnu \
-       --with-freeze-module=../x86_64/Programs/_freeze_module \
        --with-build-python=../x86_64/python
 
 

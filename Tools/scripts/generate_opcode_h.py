@@ -28,7 +28,7 @@ footer = """
 #endif /* !Py_OPCODE_H */
 """
 
-DEFINE = "#define {:<31} {:>3}\n"
+DEFINE = "#define {:<38} {:>3}\n"
 
 UINT32_MASK = (1<<32)-1
 
@@ -36,7 +36,7 @@ def write_int_array_from_ops(name, ops, out):
     bits = 0
     for op in ops:
         bits |= 1<<op
-    out.write(f"static uint32_t {name}[8] = {{\n")
+    out.write(f"static const uint32_t {name}[8] = {{\n")
     for i in range(8):
         out.write(f"    {bits & UINT32_MASK}U,\n")
         bits >>= 32
@@ -53,30 +53,60 @@ def main(opcode_py, outfile='Include/opcode.h'):
         code = fp.read()
     exec(code, opcode)
     opmap = opcode['opmap']
+    opname = opcode['opname']
     hasconst = opcode['hasconst']
     hasjrel = opcode['hasjrel']
     hasjabs = opcode['hasjabs']
     used = [ False ] * 256
     next_op = 1
+
     for name, op in opmap.items():
         used[op] = True
+
+    specialized_opmap = {}
+    opname_including_specialized = opname.copy()
+    for name in opcode['_specialized_instructions']:
+        while used[next_op]:
+            next_op += 1
+        specialized_opmap[name] = next_op
+        opname_including_specialized[next_op] = name
+        used[next_op] = True
+    specialized_opmap['DO_TRACING'] = 255
+    opname_including_specialized[255] = 'DO_TRACING'
+    used[255] = True
+
     with open(outfile, 'w') as fobj:
         fobj.write(header)
-        for name in opcode['opname']:
+        for name in opname:
             if name in opmap:
                 fobj.write(DEFINE.format(name, opmap[name]))
             if name == 'POP_EXCEPT': # Special entry for HAVE_ARGUMENT
                 fobj.write(DEFINE.format("HAVE_ARGUMENT", opcode["HAVE_ARGUMENT"]))
 
-        for name in opcode['_specialized_instructions']:
-            while used[next_op]:
-                next_op += 1
-            fobj.write(DEFINE.format(name, next_op))
-            used[next_op] = True
-        fobj.write(DEFINE.format('DO_TRACING', 255))
-        fobj.write("#ifdef NEED_OPCODE_JUMP_TABLES\n")
+        for name, op in specialized_opmap.items():
+            fobj.write(DEFINE.format(name, op))
+
+        fobj.write("\nextern const uint8_t _PyOpcode_Caches[256];\n")
+        fobj.write("\nextern const uint8_t _PyOpcode_Deopt[256];\n")
+        fobj.write("\n#ifdef NEED_OPCODE_TABLES\n")
         write_int_array_from_ops("_PyOpcode_RelativeJump", opcode['hasjrel'], fobj)
         write_int_array_from_ops("_PyOpcode_Jump", opcode['hasjrel'] + opcode['hasjabs'], fobj)
+
+        fobj.write("\nconst uint8_t _PyOpcode_Caches[256] = {\n")
+        for i, entries in enumerate(opcode["_inline_cache_entries"]):
+            if entries:
+                fobj.write(f"    [{opname[i]}] = {entries},\n")
+        fobj.write("};\n")
+        deoptcodes = {}
+        for basic in opmap:
+            deoptcodes[basic] = basic
+        for basic, family in opcode["_specializations"].items():
+            for specialized in family:
+                deoptcodes[specialized] = basic
+        fobj.write("\nconst uint8_t _PyOpcode_Deopt[256] = {\n")
+        for opt, deopt in sorted(deoptcodes.items()):
+            fobj.write(f"    [{opt}] = {deopt},\n")
+        fobj.write("};\n")
         fobj.write("#endif /* OPCODE_TABLES */\n")
 
         fobj.write("\n")
@@ -88,6 +118,16 @@ def main(opcode_py, outfile='Include/opcode.h'):
         fobj.write("\n")
         for i, (op, _) in enumerate(opcode["_nb_ops"]):
             fobj.write(DEFINE.format(op, i))
+
+        fobj.write("\n")
+        fobj.write("#ifdef Py_DEBUG\n")
+        fobj.write("static const char *const _PyOpcode_OpName[256] = {\n")
+        for op, name in enumerate(opname_including_specialized):
+            if name[0] != "<":
+                op = name
+            fobj.write(f'''    [{op}] = "{name}",\n''')
+        fobj.write("};\n")
+        fobj.write("#endif\n")
 
         fobj.write(footer)
 

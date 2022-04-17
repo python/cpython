@@ -45,6 +45,7 @@
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <ControlFlowGuard Condition="$(EnableControlFlowGuard) != ''">$(EnableControlFlowGuard)</ControlFlowGuard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <ClCompile Condition="$(Configuration) == 'Debug'">
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
@@ -73,7 +74,7 @@
       <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGInstrument'">PGInstrument</LinkTimeCodeGeneration>
       <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate'">PGUpdate</LinkTimeCodeGeneration>
       <AdditionalDependencies>advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalOptions Condition="$(Configuration) != 'Debug'">/OPT:REF,NOICF /CGTHREADS:1 /PDBTHREADS:1 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="$(Configuration) != 'Debug'">/OPT:REF,NOICF %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Lib>
       <LinkTimeCodeGeneration Condition="$(Configuration) == 'Release'">true</LinkTimeCodeGeneration>
@@ -224,5 +225,18 @@ public override bool Execute() {
 
     <Warning Text="vcruntime*.dll not found under $(VCRedistDir)." Condition="@(VCRuntimeDLL) == ''" />
     <Message Text="VC Runtime DLL(s):%0A- @(VCRuntimeDLL,'%0A- ')" />
+  </Target>
+
+  <Target Name="FindPythonForBuild" Condition="$(PythonForBuild) == ''">
+    <Exec Command="$(MSBuildThisFileDirectory)\find_python.bat -q"
+          EchoOff="true"
+          ConsoleToMsBuild="true">
+        <Output TaskParameter="ConsoleOutput" ItemName="_CmdExeLines" />
+    </Exec>
+    <PropertyGroup>
+      <PythonForBuild>@(_CmdExeLines)</PythonForBuild>
+    </PropertyGroup>
+    <Error Text="Failed to locate suitable Python runtime for building from source." Condition="$(PythonForBuild)==''" />
+    <Message Text="Using PythonForBuild=$(PythonForBuild)" Importance="high" />
   </Target>
 </Project>

@@ -158,11 +158,10 @@ error:
 static int
 pymain_sys_path_add_path0(PyInterpreterState *interp, PyObject *path0)
 {
-    _Py_IDENTIFIER(path);
     PyObject *sys_path;
     PyObject *sysdict = interp->sysdict;
     if (sysdict != NULL) {
-        sys_path = _PyDict_GetItemIdWithError(sysdict, &PyId_path);
+        sys_path = PyDict_GetItemWithError(sysdict, &_Py_ID(path));
         if (sys_path == NULL && PyErr_Occurred()) {
             return -1;
         }

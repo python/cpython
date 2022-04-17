@@ -2,7 +2,7 @@
 
 This module is an implementation of PEP 205:
 
-https://www.python.org/dev/peps/pep-0205/
+https://peps.python.org/pep-0205/
 """
 
 # Naming convention: Variables named "wr" are weak reference objects;
@@ -33,7 +33,6 @@ __all__ = ["ref", "proxy", "getweakrefcount", "getweakrefs",
            "WeakSet", "WeakMethod", "finalize"]
 
 
-_collections_abc.Set.register(WeakSet)
 _collections_abc.MutableSet.register(WeakSet)
 
 class WeakMethod(ref):

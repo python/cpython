@@ -553,6 +553,8 @@ Process-wide parameters
    period.  The returned string points into static storage; the caller should not
    modify its value.  The value is available to Python code as :data:`sys.version`.
 
+   See also the :data:`Py_Version` constant.
+
 
 .. c:function:: const char* Py_GetPlatform()
 
@@ -1781,7 +1783,7 @@ is not possible due to its implementation being opaque at build time.
    argument is `NULL`.
 
    .. note::
-      A freed key becomes a dangling pointer, you should reset the key to
+      A freed key becomes a dangling pointer. You should reset the key to
       `NULL`.
 
 

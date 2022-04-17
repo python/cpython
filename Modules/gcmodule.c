@@ -139,24 +139,20 @@ get_gc_state(void)
 void
 _PyGC_InitState(GCState *gcstate)
 {
-    gcstate->enabled = 1; /* automatic collection enabled? */
+#define INIT_HEAD(GEN) \
+    do { \
+        GEN.head._gc_next = (uintptr_t)&GEN.head; \
+        GEN.head._gc_prev = (uintptr_t)&GEN.head; \
+    } while (0)
 
-#define _GEN_HEAD(n) GEN_HEAD(gcstate, n)
-    struct gc_generation generations[NUM_GENERATIONS] = {
-        /* PyGC_Head,                                    threshold,    count */
-        {{(uintptr_t)_GEN_HEAD(0), (uintptr_t)_GEN_HEAD(0)},   700,        0},
-        {{(uintptr_t)_GEN_HEAD(1), (uintptr_t)_GEN_HEAD(1)},   10,         0},
-        {{(uintptr_t)_GEN_HEAD(2), (uintptr_t)_GEN_HEAD(2)},   10,         0},
-    };
     for (int i = 0; i < NUM_GENERATIONS; i++) {
-        gcstate->generations[i] = generations[i];
+        assert(gcstate->generations[i].count == 0);
+        INIT_HEAD(gcstate->generations[i]);
     };
     gcstate->generation0 = GEN_HEAD(gcstate, 0);
-    struct gc_generation permanent_generation = {
-          {(uintptr_t)&gcstate->permanent_generation.head,
-           (uintptr_t)&gcstate->permanent_generation.head}, 0, 0
-    };
-    gcstate->permanent_generation = permanent_generation;
+    INIT_HEAD(gcstate->permanent_generation);
+
+#undef INIT_HEAD
 }
 
 
@@ -795,7 +791,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
             _PyWeakref_ClearRef((PyWeakReference *)op);
         }
 
-        if (! PyType_SUPPORTS_WEAKREFS(Py_TYPE(op)))
+        if (! _PyType_SUPPORTS_WEAKREFS(Py_TYPE(op)))
             continue;
 
         /* It supports weakrefs.  Does it have any? */
@@ -2161,12 +2157,36 @@ _PyGC_DumpShutdownStats(PyInterpreterState *interp)
     }
 }
 
+
+static void
+gc_fini_untrack(PyGC_Head *list)
+{
+    PyGC_Head *gc;
+    for (gc = GC_NEXT(list); gc != list; gc = GC_NEXT(list)) {
+        PyObject *op = FROM_GC(gc);
+        _PyObject_GC_UNTRACK(op);
+    }
+}
+
+
 void
 _PyGC_Fini(PyInterpreterState *interp)
 {
     GCState *gcstate = &interp->gc;
     Py_CLEAR(gcstate->garbage);
     Py_CLEAR(gcstate->callbacks);
+
+    if (!_Py_IsMainInterpreter(interp)) {
+        // bpo-46070: Explicitly untrack all objects currently tracked by the
+        // GC. Otherwise, if an object is used later by another interpreter,
+        // calling PyObject_GC_UnTrack() on the object crashs if the previous
+        // or the next object of the PyGC_Head structure became a dangling
+        // pointer.
+        for (int i = 0; i < NUM_GENERATIONS; i++) {
+            PyGC_Head *gen = GEN_HEAD(gcstate, i);
+            gc_fini_untrack(gen);
+        }
+    }
 }
 
 /* for debugging */

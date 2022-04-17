@@ -43,7 +43,7 @@ something into it:
 
     $ python3 -m venv example
     $ source example/bin/activate
-    (example) $ pip install wheel
+    (example) $ python -m pip install wheel
 
 You can get the version string for ``wheel`` by running the following:
 
@@ -264,6 +264,7 @@ Python packages or modules::
 
 .. versionadded:: 3.10
 
+.. _distributions:
 
 Distributions
 =============
@@ -335,6 +336,3 @@ a custom finder, return instances of this derived ``Distribution`` in the
 .. _`entry point API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#entry-points
 .. _`metadata API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#metadata-api
 .. _`importlib_resources`: https://importlib-resources.readthedocs.io/en/latest/index.html
-
-
-.. rubric:: Footnotes

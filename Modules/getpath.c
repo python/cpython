@@ -59,7 +59,7 @@ getpath_abspath(PyObject *Py_UNUSED(self), PyObject *args)
 {
     PyObject *r = NULL;
     PyObject *pathobj;
-    const wchar_t *path;
+    wchar_t *path;
     if (!PyArg_ParseTuple(args, "U", &pathobj)) {
         return NULL;
     }
@@ -67,8 +67,8 @@ getpath_abspath(PyObject *Py_UNUSED(self), PyObject *args)
     path = PyUnicode_AsWideCharString(pathobj, &len);
     if (path) {
         wchar_t *abs;
-        if (_Py_abspath(path, &abs) == 0 && abs) {
-            r = PyUnicode_FromWideChar(_Py_normpath(abs, -1), -1);
+        if (_Py_abspath((const wchar_t *)_Py_normpath(path, -1), &abs) == 0 && abs) {
+            r = PyUnicode_FromWideChar(abs, -1);
             PyMem_RawFree((void *)abs);
         } else {
             PyErr_SetString(PyExc_OSError, "failed to make path absolute");
@@ -141,7 +141,7 @@ getpath_hassuffix(PyObject *Py_UNUSED(self), PyObject *args)
     if (path) {
         suffix = PyUnicode_AsWideCharString(suffixobj, &suffixLen);
         if (suffix) {
-            if (suffixLen < len ||
+            if (suffixLen > len ||
 #ifdef MS_WINDOWS
                 wcsicmp(&path[len - suffixLen], suffix) != 0
 #else
@@ -386,11 +386,11 @@ getpath_readlines(PyObject *Py_UNUSED(self), PyObject *args)
     wchar_t *p1 = wbuffer;
     wchar_t *p2 = p1;
     while ((p2 = wcschr(p1, L'\n')) != NULL) {
-        size_t cb = p2 - p1;
-        while (cb && (p1[cb] == L'\n' || p1[cb] == L'\r')) {
+        Py_ssize_t cb = p2 - p1;
+        while (cb >= 0 && (p1[cb] == L'\n' || p1[cb] == L'\r')) {
             --cb;
         }
-        PyObject *u = PyUnicode_FromWideChar(p1, cb + 1);
+        PyObject *u = PyUnicode_FromWideChar(p1, cb >= 0 ? cb + 1 : 0);
         if (!u || PyList_Append(r, u) < 0) {
             Py_XDECREF(u);
             Py_CLEAR(r);
@@ -876,6 +876,11 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 #else
         !decode_to_dict(dict, "os_name", "posix") ||
 #endif
+#ifdef WITH_NEXT_FRAMEWORK
+        !int_to_dict(dict, "WITH_NEXT_FRAMEWORK", 1) ||
+#else
+        !int_to_dict(dict, "WITH_NEXT_FRAMEWORK", 0) ||
+#endif
         !decode_to_dict(dict, "PREFIX", PREFIX) ||
         !decode_to_dict(dict, "EXEC_PREFIX", EXEC_PREFIX) ||
         !decode_to_dict(dict, "PYTHONPATH", PYTHONPATH) ||
@@ -943,3 +948,4 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 
     return _PyStatus_OK();
 }
+
