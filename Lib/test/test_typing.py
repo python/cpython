@@ -5124,6 +5124,17 @@ class NewTypeTests:
             class ProUserId(UserId):
                 ...
 
+    def test_get_type_hints(self):
+        for tp in (int, "int", self.module.ForwardRef("int")):
+            with self.subTest(tp=tp):
+                UserAge = self.module.NewType("UserAge", tp)
+
+                def foo(a: UserAge):
+                    pass
+
+                hints = self.module.get_type_hints(foo)
+                self.assertEqual(hints["a"].__supertype__, int)
+
 
 class NewTypePythonTests(NewTypeTests, BaseTestCase):
     module = py_typing

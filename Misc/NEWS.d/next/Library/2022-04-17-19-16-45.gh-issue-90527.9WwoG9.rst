@@ -1,0 +1,2 @@
+Evaluate ``typing.ForwardRef`` inside ``typing.NewType``. Patch provided by
+Yurii Karabas.
