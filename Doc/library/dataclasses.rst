@@ -700,6 +700,8 @@ variable ``x``, as expected.
 
 Using dataclasses, *if* this code was valid::
 
+  from typing import List
+  
   @dataclass
   class D:
       x: List = []
