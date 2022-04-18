@@ -205,7 +205,7 @@ method_getattro(PyObject *obj, PyObject *name)
 
 /*[clinic input]
 @classmethod
-method.__new__
+method.__new__ as method_new
     function: object
     instance: object
     /
@@ -214,8 +214,8 @@ Create a bound instance method object.
 [clinic start generated code]*/
 
 static PyObject *
-method_impl(PyTypeObject *type, PyObject *function, PyObject *instance)
-/*[clinic end generated code: output=44aa2fdb91a02860 input=c53ecd305077d0c2]*/
+method_new_impl(PyTypeObject *type, PyObject *function, PyObject *instance)
+/*[clinic end generated code: output=d33ef4ebf702e1f7 input=4e32facc3c3108ae]*/
 {
     if (!PyCallable_Check(function)) {
         PyErr_SetString(PyExc_TypeError,
@@ -513,15 +513,16 @@ instancemethod_repr(PyObject *self)
 
 /*[clinic input]
 @classmethod
-instancemethod.__new__
+instancemethod.__new__ as instancemethod_new
     function: object
+    /
 
 Bind a function to a class.
 [clinic start generated code]*/
 
 static PyObject *
-instancemethod_impl(PyTypeObject *type, PyObject *function)
-/*[clinic end generated code: output=7be73374f08a55df input=17197d46a4f0dcd7]*/
+instancemethod_new_impl(PyTypeObject *type, PyObject *function)
+/*[clinic end generated code: output=5e0397b2bdb750be input=cfc54e8b973664a8]*/
 {
     if (!PyCallable_Check(function)) {
         PyErr_SetString(PyExc_TypeError,

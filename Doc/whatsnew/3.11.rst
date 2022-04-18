@@ -287,11 +287,6 @@ IDLE and idlelib
 * Apply syntax highlighting to `.pyi` files. (Contributed by Alex
   Waygood and Terry Jan Reedy in :issue:`45447`.)
 
-* :func:`idlelib.calltip.get_argspec` now correctly reports that
-  :class:`~types.MethodType` constructor has positional-only arguments.
-  Previously it was implemented in the interpreter but not reflected in
-  a docstring. (Contributed by Oleg Iarygin in :issue:`46942`.)
-
 inspect
 -------
 * Add :func:`inspect.getmembers_static`: return all members without
