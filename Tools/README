@@ -42,3 +42,5 @@ unittestgui     A Tkinter based GUI test runner for unittest, with test
 
 
 (*) A generic benchmark suite is maintained separately at https://github.com/python/performance
+
+Note: The pynche color editor has moved to https://gitlab.com/warsaw/pynche
