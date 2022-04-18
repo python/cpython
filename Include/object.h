@@ -517,15 +517,9 @@ _Py_sadd(Py_ssize_t a, Py_ssize_t b, Py_ssize_t *result)
     return __builtin_saddll_overflow(a, b, (long long *)result);
 #elif (defined(__clang__) || defined(__GNUC__))
     return __builtin_saddl_overflow(a, b, (long *)result);
-#elif defined(MS_WIN64)
-    unsigned char overflow = 0;
-    return _addcarry_u64(overflow, a, b, (unsigned __int64)result);
-#elif defined(MS_WIN32)
-    unsigned char overflow = 0;
-    return _addcarry_u32(overflow, a, b, (unsigned int)result);
 #else
     *result = a + b;
-    return *result < 0 ? true : false;
+    return *result < a;
 #endif
 }
 
