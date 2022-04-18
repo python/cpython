@@ -1,0 +1,2 @@
+Update case-insensitive matching in the :mod:`re` module to the latest
+Unicode version.
