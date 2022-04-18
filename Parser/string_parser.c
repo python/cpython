@@ -9,15 +9,15 @@
 //// STRING HANDLING FUNCTIONS ////
 
 static int
-warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char, Token *t)
+warn_invalid_escape_sequence(Parser *p, const char *first_invalid_escape, Token *t)
 {
-    int octal = ('4' <= first_invalid_escape_char &&
-                 first_invalid_escape_char <= '7');
+    unsigned char c = *first_invalid_escape;
+    int octal = ('4' <= c && c <= '7');
     PyObject *msg =
         octal
-        ? PyUnicode_FromString("invalid octal escape sequence")
-        : PyUnicode_FromFormat("invalid escape sequence '\\%c'",
-                               first_invalid_escape_char);
+        ? PyUnicode_FromFormat("invalid octal escape sequence '\\%.3s'",
+                               first_invalid_escape)
+        : PyUnicode_FromFormat("invalid escape sequence '\\%c'", c);
     if (msg == NULL) {
         return -1;
     }
@@ -33,11 +33,11 @@ warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char,
                error location, if p->known_err_token is not set. */
             p->known_err_token = t;
             if (octal) {
-                RAISE_SYNTAX_ERROR("invalid octal escape sequence");
+                RAISE_SYNTAX_ERROR("invalid octal escape sequence '\\%.3s'",
+                                   first_invalid_escape);
             }
             else {
-                RAISE_SYNTAX_ERROR("invalid escape sequence '\\%c'",
-                                   first_invalid_escape_char);
+                RAISE_SYNTAX_ERROR("invalid escape sequence '\\%c'", c);
             }
         }
         Py_DECREF(msg);
@@ -129,7 +129,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
     v = _PyUnicode_DecodeUnicodeEscapeInternal(s, len, NULL, NULL, &first_invalid_escape);
 
     if (v != NULL && first_invalid_escape != NULL) {
-        if (warn_invalid_escape_sequence(parser, *first_invalid_escape, t) < 0) {
+        if (warn_invalid_escape_sequence(parser, first_invalid_escape, t) < 0) {
             /* We have not decref u before because first_invalid_escape points
                inside u. */
             Py_XDECREF(u);
@@ -151,7 +151,7 @@ decode_bytes_with_escapes(Parser *p, const char *s, Py_ssize_t len, Token *t)
     }
 
     if (first_invalid_escape != NULL) {
-        if (warn_invalid_escape_sequence(p, *first_invalid_escape, t) < 0) {
+        if (warn_invalid_escape_sequence(p, first_invalid_escape, t) < 0) {
             Py_DECREF(result);
             return NULL;
         }
@@ -476,7 +476,7 @@ fstring_find_literal(Parser *p, const char **str, const char *end, int raw,
                    decode_unicode_with_escapes(). */
                 continue;
             }
-            if (ch == '{' && warn_invalid_escape_sequence(p, ch, t) < 0) {
+            if (ch == '{' && warn_invalid_escape_sequence(p, s-1, t) < 0) {
                 return -1;
             }
         }

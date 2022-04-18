@@ -6562,7 +6562,8 @@ _PyUnicode_DecodeUnicodeEscapeStateful(const char *s,
         unsigned char c = *first_invalid_escape;
         if ('4' <= c && c <= '7') {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "invalid octal escape sequence") < 0)
+                                 "invalid octal escape sequence '\\%.3s'",
+                                 first_invalid_escape) < 0)
             {
                 Py_DECREF(result);
                 return NULL;
