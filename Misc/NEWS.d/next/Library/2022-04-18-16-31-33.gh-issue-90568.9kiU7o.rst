@@ -1,0 +1,3 @@
+Parsing ``\N`` escapes of Unicode Named Character Sequences in a
+:mod:`regular expression <re>` raises now :exc:`re.error` instead of
+``TypeError``.

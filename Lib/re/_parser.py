@@ -333,7 +333,7 @@ def _class_escape(source, escape):
             charname = source.getuntil('}', 'character name')
             try:
                 c = ord(unicodedata.lookup(charname))
-            except KeyError:
+            except (KeyError, TypeError):
                 raise source.error("undefined character name %r" % charname,
                                    len(charname) + len(r'\N{}')) from None
             return LITERAL, c
@@ -393,7 +393,7 @@ def _escape(source, escape, state):
             charname = source.getuntil('}', 'character name')
             try:
                 c = ord(unicodedata.lookup(charname))
-            except KeyError:
+            except (KeyError, TypeError):
                 raise source.error("undefined character name %r" % charname,
                                    len(charname) + len(r'\N{}')) from None
             return LITERAL, c
