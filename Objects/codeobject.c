@@ -492,6 +492,7 @@ _PyCode_New(struct _PyCodeConstructor *con)
     Py_ssize_t size = PyBytes_GET_SIZE(con->code) / sizeof(_Py_CODEUNIT);
     PyCodeObject *co = PyObject_NewVar(PyCodeObject, &PyCode_Type, size);
     if (co == NULL) {
+        Py_XDECREF(replacement_locations);
         PyErr_NoMemory();
         return NULL;
     }
