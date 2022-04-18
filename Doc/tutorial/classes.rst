@@ -205,6 +205,29 @@ binding.
 You can also see that there was no previous binding for *spam* before the
 :keyword:`global` assignment.
 
+Also note that scope is modified only by functions or classes - ``if`` statements
+or things like ``try`` blocks aren't afefcted by scope::
+
+   >>> if True:
+   ...     inside_if = "Inside if statement"
+   ... 
+   >>> print(inside_if)
+   Inside if statement
+   >>> 
+   >>> try:
+   ...     inside_try = "Inside try block"
+   ... except Exception:
+   ...     pass
+   ... finally:
+   ...     print(inside_try)
+   ... 
+   Inside try block
+   >>> for _ in range(1):
+   ...     inside_for = "Inside for loop"
+   ... 
+   >>> print(inside_for)
+   Inside for loop
+
 
 .. _tut-firstclasses:
 
