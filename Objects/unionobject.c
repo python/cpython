@@ -443,9 +443,9 @@ union_getattro(PyObject *self, PyObject *name)
 PyTypeObject _PyUnion_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "types.UnionType",
-    .tp_doc = "Represent a PEP 604 union type\n"
+    .tp_doc = PyDoc_STR("Represent a PEP 604 union type\n"
               "\n"
-              "E.g. for int | str",
+              "E.g. for int | str"),
     .tp_basicsize = sizeof(unionobject),
     .tp_dealloc = unionobject_dealloc,
     .tp_alloc = PyType_GenericAlloc,
