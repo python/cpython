@@ -206,7 +206,7 @@ You can also see that there was no previous binding for *spam* before the
 :keyword:`global` assignment.
 
 Also note that scope is modified only by functions or classes - ``if`` statements
-or things like ``try`` blocks aren't afefcted by scope::
+or things like ``try`` blocks aren't affected by scope::
 
    >>> if True:
    ...     inside_if = "Inside if statement"
