@@ -357,6 +357,10 @@ socket
 * Add CAN Socket support for NetBSD.
   (Contributed by Thomas Klausner in :issue:`30512`.)
 
+* :meth:`~socket.create_connection` has an option to raise, in case of
+  failure to connect, an :exc:`ExceptionGroup` containing all errors
+  instead of only raising the last error.
+  (Contributed by Irit Katriel in :issue:`29980`).
 
 sqlite3
 -------
