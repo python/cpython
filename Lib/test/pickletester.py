@@ -1380,6 +1380,7 @@ class AbstractUnpickleTests:
             self.check_unpickling_error(self.truncated_errors, p)
 
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_unpickle_module_race(self):
         # https://bugs.python.org/issue34572
         locker_module = dedent("""

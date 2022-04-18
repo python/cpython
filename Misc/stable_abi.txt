@@ -1787,6 +1787,7 @@ function PyThread_get_stacksize
 function PyThread_get_thread_ident
     added 3.2
 function PyThread_get_thread_native_id
+    ifdef PY_HAVE_THREAD_NATIVE_ID
     added 3.2
 function PyThread_init_thread
     added 3.2
@@ -2252,3 +2253,8 @@ function PyMemoryView_FromBuffer
 
 data Py_Version
     added 3.11
+function PyErr_GetHandledException
+    added 3.11
+function PyErr_SetHandledException
+    added 3.11
+

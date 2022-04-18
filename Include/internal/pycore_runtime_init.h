@@ -760,10 +760,10 @@ extern "C" {
                 INIT_ID(__le__), \
                 INIT_ID(__len__), \
                 INIT_ID(__length_hint__), \
+                INIT_ID(__lltrace__), \
                 INIT_ID(__loader__), \
                 INIT_ID(__lshift__), \
                 INIT_ID(__lt__), \
-                INIT_ID(__ltrace__), \
                 INIT_ID(__main__), \
                 INIT_ID(__matmul__), \
                 INIT_ID(__missing__), \
@@ -778,7 +778,7 @@ extern "C" {
                 INIT_ID(__newobj__), \
                 INIT_ID(__newobj_ex__), \
                 INIT_ID(__next__), \
-                INIT_ID(__note__), \
+                INIT_ID(__notes__), \
                 INIT_ID(__or__), \
                 INIT_ID(__orig_class__), \
                 INIT_ID(__origin__), \
