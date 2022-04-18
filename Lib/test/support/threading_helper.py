@@ -21,14 +21,14 @@ from test import support
 
 
 def threading_setup():
-    return _thread._count(), threading._dangling.copy()
+    return _thread._count(), threading._dangling.copy(), threading.get_ident()
 
 
 def threading_cleanup(*original_values):
     _MAX_COUNT = 100
 
     for count in range(_MAX_COUNT):
-        values = _thread._count(), threading._dangling
+        values = _thread._count(), threading._dangling, threading.get_ident()
         if values == original_values:
             break
 
@@ -39,7 +39,8 @@ def threading_cleanup(*original_values):
             support.print_warning(f"threading_cleanup() failed to cleanup "
                                   f"{values[0] - original_values[0]} threads "
                                   f"(count: {values[0]}, "
-                                  f"dangling: {len(dangling_threads)})")
+                                  f"dangling: {len(dangling_threads)}), ")
+                                  f"ident before {values[2]} ident after {values[2]})")
             for thread in dangling_threads:
                 support.print_warning(f"Dangling thread: {thread!r}")
 
