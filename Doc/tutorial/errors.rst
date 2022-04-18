@@ -558,9 +558,9 @@ Enriching Exceptions with Notes
 When an exception is created in order to be raised, it is usually initialized
 with information that describes the error that has occurred. There are cases
 where it is useful to add information after the exception was caught. For this
-purpose, exceptions have a method ``add_node(note)`` that accepts a string and
-adds it to the exception's notes list. The standard traceback includes all
-notes, in the order they were added, after the exception. ::
+purpose, exceptions have a method ``add_note(note)`` that accepts a string and
+adds it to the exception's notes list. The standard traceback rendering
+includes all notes, in the order they were added, after the exception. ::
 
    >>> try:
    ...     raise TypeError('bad type')
