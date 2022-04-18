@@ -1784,8 +1784,9 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                   PyObject *co_varnames, PyObject *co_freevars,
                   PyObject *co_cellvars, PyObject *co_filename,
                   PyObject *co_name, PyObject *co_qualname,
-                  PyObject *co_linetable, PyBytesObject *co_exceptiontable)
-/*[clinic end generated code: output=d545430b5261cbf4 input=d4c5675d7a781ba9]*/
+                  PyBytesObject *co_linetable,
+                  PyBytesObject *co_exceptiontable)
+/*[clinic end generated code: output=b6cd9988391d5711 input=f6f68e03571f8d7c]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \
