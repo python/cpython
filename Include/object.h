@@ -510,6 +510,25 @@ PyAPI_FUNC(void) Py_DecRef(PyObject *);
 PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
+static inline int
+_Py_sadd(Py_ssize_t a, Py_ssize_t b, Py_ssize_t *result)
+{
+#if (defined(__clang__) || defined(__GNUC__)) && __x86_64__
+    return __builtin_saddll_overflow(a, b, (long long *)result);
+#elif (defined(__clang__) || defined(__GNUC__))
+    return __builtin_saddl_overflow(a, b, (long *)result);
+#elif defined(MS_WIN64)
+    unsigned char overflow = 0;
+    return _addcarry_u64(overflow, a, b, (unsigned __int64)result);
+#elif defined(MS_WIN32)
+    unsigned char overflow = 0;
+    return _addcarry_u32(overflow, a, b, (unsigned int)result);
+#else
+    *result = a + b;
+    return *result < 0 ? true : false;
+#endif
+}
+
 static inline void Py_INCREF(PyObject *op)
 {
 #if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
@@ -518,8 +537,8 @@ static inline void Py_INCREF(PyObject *op)
 #else
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
-    PY_LONG_LONG new_refcount;
-    if (__builtin_saddll_overflow(op->ob_refcnt, 1, &new_refcount)) {
+    Py_ssize_t new_refcount;
+    if (_Py_sadd(op->ob_refcnt, 1, &new_refcount)) {
         return;
     }
 #ifdef Py_REF_DEBUG
