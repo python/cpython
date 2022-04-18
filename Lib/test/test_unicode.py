@@ -213,7 +213,8 @@ class UnicodeTest(string_tests.CommonTest,
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     it = iter(case)
                     with self.subTest(proto=proto):
-                        self.assertEqual(case, "".join(pickle.loads(pickle.dumps(it, pickle.HIGHEST_PROTOCOL))))
+                        pickled = "".join(pickle.loads(pickle.dumps(it, proto)))
+                        self.assertEqual(case, pickled)
 
     def test_count(self):
         string_tests.CommonTest.test_count(self)
