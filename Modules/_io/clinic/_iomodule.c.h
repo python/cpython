@@ -22,9 +22,9 @@ PyDoc_STRVAR(_io_open__doc__,
 "\'a\' for appending (which on some Unix systems, means that all writes\n"
 "append to the end of the file regardless of the current seek position).\n"
 "In text mode, if encoding is not specified the encoding used is platform\n"
-"dependent: locale.getpreferredencoding(False) is called to get the\n"
-"current locale encoding. (For reading and writing raw bytes use binary\n"
-"mode and leave encoding unspecified.) The available modes are:\n"
+"dependent: locale.getencoding() is called to get the current locale encoding.\n"
+"(For reading and writing raw bytes use binary mode and leave encoding\n"
+"unspecified.) The available modes are:\n"
 "\n"
 "========= ===============================================================\n"
 "Character Meaning\n"
@@ -355,4 +355,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1a7fd7755c9a9609 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e562f29e3c2533a6 input=a9049054013a1b77]*/

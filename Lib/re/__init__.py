@@ -129,7 +129,7 @@ import functools
 # public symbols
 __all__ = [
     "match", "fullmatch", "search", "sub", "subn", "split",
-    "findall", "finditer", "compile", "purge", "template", "escape",
+    "findall", "finditer", "compile", "purge", "escape",
     "error", "Pattern", "Match", "A", "I", "L", "M", "S", "X", "U",
     "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
     "UNICODE", "NOFLAG", "RegexFlag",
@@ -148,8 +148,6 @@ class RegexFlag:
     MULTILINE = M = _compiler.SRE_FLAG_MULTILINE # make anchors look for newline
     DOTALL = S = _compiler.SRE_FLAG_DOTALL # make dot match newline
     VERBOSE = X = _compiler.SRE_FLAG_VERBOSE # ignore whitespace and comments
-    # sre extensions (experimental, don't rely on these)
-    TEMPLATE = T = _compiler.SRE_FLAG_TEMPLATE # disable backtracking
     DEBUG = _compiler.SRE_FLAG_DEBUG # dump pattern after compilation
     __str__ = object.__str__
     _numeric_repr_ = hex
@@ -230,10 +228,6 @@ def purge():
     "Clear the regular expression caches"
     _cache.clear()
     _compile_repl.cache_clear()
-
-def template(pattern, flags=0):
-    "Compile a template pattern, returning a Pattern object"
-    return _compile(pattern, flags|T)
 
 # SPECIAL_CHARS
 # closing ')', '}' and ']'

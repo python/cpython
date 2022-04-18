@@ -947,23 +947,13 @@ PyDoc_STRVAR(odict_reduce__doc__, "Return state information for pickling");
 static PyObject *
 odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *dict = NULL, *result = NULL;
+    PyObject *state, *result = NULL;
     PyObject *items_iter, *items, *args = NULL;
 
     /* capture any instance state */
-    dict = PyObject_GetAttr((PyObject *)od, &_Py_ID(__dict__));
-    if (dict == NULL)
+    state = _PyObject_GetState((PyObject *)od);
+    if (state == NULL)
         goto Done;
-    else {
-        /* od.__dict__ isn't necessarily a dict... */
-        Py_ssize_t dict_len = PyObject_Length(dict);
-        if (dict_len == -1)
-            goto Done;
-        if (!dict_len) {
-            /* nothing to pickle in od.__dict__ */
-            Py_CLEAR(dict);
-        }
-    }
 
     /* build the result */
     args = PyTuple_New(0);
@@ -979,11 +969,11 @@ odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
     if (items_iter == NULL)
         goto Done;
 
-    result = PyTuple_Pack(5, Py_TYPE(od), args, dict ? dict : Py_None, Py_None, items_iter);
+    result = PyTuple_Pack(5, Py_TYPE(od), args, state, Py_None, items_iter);
     Py_DECREF(items_iter);
 
 Done:
-    Py_XDECREF(dict);
+    Py_XDECREF(state);
     Py_XDECREF(args);
 
     return result;
