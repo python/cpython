@@ -1936,6 +1936,7 @@ static PyTypeObject* static_types[] = {
     &_PyNamespace_Type,
     &_PyNone_Type,
     &_PyNotImplemented_Type,
+    &_PyUnicodeASCIIIter_Type,
     &_PyUnion_Type,
     &_PyWeakref_CallableProxyType,
     &_PyWeakref_ProxyType,

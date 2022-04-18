@@ -54,15 +54,77 @@ static PyObject * do_call_core(
 
 #ifdef LLTRACE
 static int lltrace;
-static int prtrace(PyThreadState *, PyObject *, const char *);
-static void lltrace_instruction(_PyInterpreterFrame *frame, int opcode, int oparg)
+static void
+dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
+    PyObject **stack_base = _PyFrame_Stackbase(frame);
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
+    printf("    stack=[");
+    for (PyObject **ptr = stack_base; ptr < stack_pointer; ptr++) {
+        if (ptr != stack_base) {
+            printf(", ");
+        }
+        if (PyObject_Print(*ptr, stdout, 0) != 0) {
+            PyErr_Clear();
+            printf("<%s object at %p>",
+                   Py_TYPE(*ptr)->tp_name, (void *)(*ptr));
+        }
+    }
+    printf("]\n");
+    fflush(stdout);
+    PyErr_Restore(type, value, traceback);
+}
+
+static void
+lltrace_instruction(_PyInterpreterFrame *frame,
+                    PyObject **stack_pointer,
+                    _Py_CODEUNIT *next_instr)
+{
+    dump_stack(frame, stack_pointer);
+    int oparg = _Py_OPARG(*next_instr);
+    int opcode = _Py_OPCODE(*next_instr);
+    const char *opname = _PyOpcode_OpName[opcode];
+    assert(opname != NULL);
+    int offset = (int)(next_instr - _PyCode_CODE(frame->f_code));
     if (HAS_ARG(opcode)) {
-        printf("%d: %d, %d\n", _PyInterpreterFrame_LASTI(frame), opcode, oparg);
+        printf("%d: %s %d\n", offset * 2, opname, oparg);
     }
     else {
-        printf("%d: %d\n", _PyInterpreterFrame_LASTI(frame), opcode);
+        printf("%d: %s\n", offset * 2, opname);
     }
+    fflush(stdout);
+}
+static void
+lltrace_resume_frame(_PyInterpreterFrame *frame)
+{
+    PyFunctionObject *f = frame->f_func;
+    if (f == NULL) {
+        printf("\nResuming frame.");
+        return;
+    }
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
+    PyObject *name = f->func_qualname;
+    if (name == NULL) {
+        name = f->func_name;
+    }
+    printf("\nResuming frame");
+    if (name) {
+        printf(" for ");
+        if (PyObject_Print(name, stdout, 0) < 0) {
+            PyErr_Clear();
+        }
+    }
+    if (f->func_module) {
+        printf(" in module ");
+        if (PyObject_Print(f->func_module, stdout, 0) < 0) {
+            PyErr_Clear();
+        }
+    }
+    printf("\n");
+    fflush(stdout);
+    PyErr_Restore(type, value, traceback);
 }
 #endif
 static int call_trace(Py_tracefunc, PyObject *,
@@ -1266,7 +1328,8 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
-#define PRE_DISPATCH_GOTO() if (lltrace) { lltrace_instruction(frame, opcode, oparg); }
+#define PRE_DISPATCH_GOTO() if (lltrace) { \
+    lltrace_instruction(frame, stack_pointer, next_instr); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
@@ -1285,6 +1348,13 @@ eval_frame_handle_pending(PyThreadState *tstate)
         PRE_DISPATCH_GOTO(); \
         assert(cframe.use_tracing == 0 || cframe.use_tracing == 255); \
         opcode |= cframe.use_tracing OR_DTRACE_LINE; \
+        DISPATCH_GOTO(); \
+    }
+
+#define NOTRACE_DISPATCH_SAME_OPARG() \
+    { \
+        opcode = _Py_OPCODE(*next_instr); \
+        PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO(); \
     }
 
@@ -1375,6 +1445,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 /* The stack can grow at most MAXINT deep, as co_nlocals and
    co_stacksize are ints. */
 #define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(frame)))
+#define STACK_SIZE()      (frame->f_code->co_stacksize)
 #define EMPTY()           (STACK_LEVEL() == 0)
 #define TOP()             (stack_pointer[-1])
 #define SECOND()          (stack_pointer[-2])
@@ -1387,23 +1458,21 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define BASIC_PUSH(v)     (*stack_pointer++ = (v))
 #define BASIC_POP()       (*--stack_pointer)
 
-#ifdef LLTRACE
-#define PUSH(v)         { (void)(BASIC_PUSH(v), \
-                          lltrace && prtrace(tstate, TOP(), "push")); \
-                          assert(STACK_LEVEL() <= frame->f_code->co_stacksize); }
-#define POP()           ((void)(lltrace && prtrace(tstate, TOP(), "pop")), \
-                         BASIC_POP())
+#ifdef Py_DEBUG
+#define PUSH(v)         do { \
+                            BASIC_PUSH(v); \
+                            assert(STACK_LEVEL() <= STACK_SIZE()); \
+                        } while (0)
+#define POP()           (assert(STACK_LEVEL() > 0), BASIC_POP())
 #define STACK_GROW(n)   do { \
-                          assert(n >= 0); \
-                          (void)(BASIC_STACKADJ(n), \
-                          lltrace && prtrace(tstate, TOP(), "stackadj")); \
-                          assert(STACK_LEVEL() <= frame->f_code->co_stacksize); \
+                            assert(n >= 0); \
+                            BASIC_STACKADJ(n); \
+                            assert(STACK_LEVEL() <= STACK_SIZE()); \
                         } while (0)
 #define STACK_SHRINK(n) do { \
                             assert(n >= 0); \
-                            (void)(lltrace && prtrace(tstate, TOP(), "stackadj")); \
-                            (void)(BASIC_STACKADJ(-(n))); \
-                            assert(STACK_LEVEL() <= frame->f_code->co_stacksize); \
+                            assert(STACK_LEVEL() >= n); \
+                            BASIC_STACKADJ(-(n)); \
                         } while (0)
 #else
 #define PUSH(v)                BASIC_PUSH(v)
@@ -1667,11 +1736,14 @@ resume_frame:
 
 #ifdef LLTRACE
     {
-        int r = PyDict_Contains(GLOBALS(), &_Py_ID(__ltrace__));
+        int r = PyDict_Contains(GLOBALS(), &_Py_ID(__lltrace__));
         if (r < 0) {
             goto exit_unwind;
         }
         lltrace = r;
+    }
+    if (lltrace) {
+        lltrace_resume_frame(frame);
     }
 #endif
 
@@ -2093,7 +2165,7 @@ handle_eval_breaker:
                 if (_Py_Specialize_BinarySubscr(container, sub, next_instr) < 0) {
                     goto error;
                 }
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(BINARY_SUBSCR, deferred);
@@ -2258,7 +2330,7 @@ handle_eval_breaker:
                 if (_Py_Specialize_StoreSubscr(container, sub, next_instr) < 0) {
                     goto error;
                 }
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(STORE_SUBSCR, deferred);
@@ -2748,7 +2820,7 @@ handle_eval_breaker:
                 PyObject *seq = TOP();
                 next_instr--;
                 _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(UNPACK_SEQUENCE, deferred);
@@ -2991,7 +3063,7 @@ handle_eval_breaker:
                 if (_Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name) < 0) {
                     goto error;
                 }
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(LOAD_GLOBAL, deferred);
@@ -3416,7 +3488,7 @@ handle_eval_breaker:
                 if (_Py_Specialize_LoadAttr(owner, next_instr, name) < 0) {
                     goto error;
                 }
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(LOAD_ATTR, deferred);
@@ -3525,7 +3597,7 @@ handle_eval_breaker:
                 if (_Py_Specialize_StoreAttr(owner, next_instr, name) < 0) {
                     goto error;
                 }
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(STORE_ATTR, deferred);
@@ -3653,7 +3725,7 @@ handle_eval_breaker:
                 PyObject *left = SECOND();
                 next_instr--;
                 _Py_Specialize_CompareOp(left, right, next_instr, oparg);
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(COMPARE_OP, deferred);
@@ -4458,7 +4530,7 @@ handle_eval_breaker:
                 if (_Py_Specialize_LoadMethod(owner, next_instr, name) < 0) {
                     goto error;
                 }
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(LOAD_METHOD, deferred);
@@ -4732,7 +4804,7 @@ handle_eval_breaker:
                 if (err < 0) {
                     goto error;
                 }
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(PRECALL, deferred);
@@ -4753,7 +4825,7 @@ handle_eval_breaker:
                 if (err < 0) {
                     goto error;
                 }
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(CALL, deferred);
@@ -5480,7 +5552,7 @@ handle_eval_breaker:
                 PyObject *rhs = TOP();
                 next_instr--;
                 _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(BINARY_OP, deferred);
@@ -5499,11 +5571,9 @@ handle_eval_breaker:
 
         TARGET(EXTENDED_ARG) {
             assert(oparg);
-            int oldoparg = oparg;
-            NEXTOPARG();
-            oparg |= oldoparg << 8;
-            PRE_DISPATCH_GOTO();
-            DISPATCH_GOTO();
+            oparg <<= 8;
+            oparg |= _Py_OPARG(*next_instr);
+            NOTRACE_DISPATCH_SAME_OPARG();
         }
 
         TARGET(CACHE) {
@@ -6662,23 +6732,6 @@ Error:
     Py_XDECREF(it);
     return 0;
 }
-
-#ifdef LLTRACE
-static int
-prtrace(PyThreadState *tstate, PyObject *v, const char *str)
-{
-    printf("%s ", str);
-    PyObject *type, *value, *traceback;
-    PyErr_Fetch(&type, &value, &traceback);
-    if (PyObject_Print(v, stdout, 0) != 0) {
-        /* Don't know what else to do */
-        _PyErr_Clear(tstate);
-    }
-    printf("\n");
-    PyErr_Restore(type, value, traceback);
-    return 1;
-}
-#endif
 
 static void
 call_exc_trace(Py_tracefunc func, PyObject *self,
