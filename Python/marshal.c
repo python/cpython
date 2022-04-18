@@ -563,7 +563,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_name, p);
         w_object(co->co_qualname, p);
         w_long(co->co_firstlineno, p);
-        w_object(co->co_locationtable, p);
+        w_object(co->co_linetable, p);
         w_object(co->co_exceptiontable, p);
         Py_DECREF(co_code);
     }
@@ -1355,7 +1355,7 @@ r_object(RFILE *p)
             PyObject *name = NULL;
             PyObject *qualname = NULL;
             int firstlineno;
-            PyObject* locationtable = NULL;
+            PyObject* linetable = NULL;
             PyObject *exceptiontable = NULL;
 
             idx = r_ref_reserve(flag, p);
@@ -1408,8 +1408,8 @@ r_object(RFILE *p)
             firstlineno = (int)r_long(p);
             if (firstlineno == -1 && PyErr_Occurred())
                 break;
-            locationtable = r_object(p);
-            if (locationtable == NULL)
+            linetable = r_object(p);
+            if (linetable == NULL)
                 goto code_error;
             exceptiontable = r_object(p);
             if (exceptiontable == NULL)
@@ -1423,7 +1423,7 @@ r_object(RFILE *p)
 
                 .code = code,
                 .firstlineno = firstlineno,
-                .locationtable = locationtable,
+                .linetable = linetable,
 
                 .consts = consts,
                 .names = names,
@@ -1460,7 +1460,7 @@ r_object(RFILE *p)
             Py_XDECREF(filename);
             Py_XDECREF(name);
             Py_XDECREF(qualname);
-            Py_XDECREF(locationtable);
+            Py_XDECREF(linetable);
             Py_XDECREF(exceptiontable);
         }
         retval = v;

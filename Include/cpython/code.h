@@ -86,7 +86,7 @@ typedef uint16_t _Py_CODEUNIT;
     PyObject *co_filename;        /* unicode (where it was loaded from) */     \
     PyObject *co_name;            /* unicode (name, for reference) */          \
     PyObject *co_qualname;        /* unicode (qualname, for reference) */      \
-    PyObject *co_locationtable;   /* bytes object that holds location info */  \
+    PyObject *co_linetable;   /* bytes object that holds location info */  \
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \

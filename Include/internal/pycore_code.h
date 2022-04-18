@@ -175,7 +175,7 @@ struct _PyCodeConstructor {
     /* the code */
     PyObject *code;
     int firstlineno;
-    PyObject *locationtable;
+    PyObject *linetable;
 
     /* used by the code */
     PyObject *consts;
@@ -224,7 +224,7 @@ extern int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds
 
 /** Out of process API for initializing the location table. */
 extern void _PyLocationTable_InitAddressRange(
-    const char *locationtable,
+    const char *linetable,
     Py_ssize_t length,
     int firstlineno,
     PyCodeAddressRange *range);

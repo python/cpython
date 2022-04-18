@@ -288,7 +288,7 @@ class Reader:
             retval.co_name = self.r_object()
             retval.co_qualname = self.r_object()
             retval.co_firstlineno = self.r_long()
-            retval.co_locationtable = self.r_object()
+            retval.co_linetable = self.r_object()
             retval.co_exceptiontable = self.r_object()
             return retval
         elif type == Type.REF:

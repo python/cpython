@@ -196,7 +196,7 @@ def bug42562():
 
 
 # Set line number for 'pass' to None
-bug42562.__code__ = bug42562.__code__.replace(co_locationtable=b'\xf8')
+bug42562.__code__ = bug42562.__code__.replace(co_linetable=b'\xf8')
 
 
 dis_bug42562 = """\
@@ -1425,7 +1425,7 @@ class InstructionTests(InstructionTestCase):
     @requires_debug_ranges()
     def test_co_positions_missing_info(self):
         code = compile('x, y, z', '<test>', 'exec')
-        code_without_location_table = code.replace(co_locationtable=b'')
+        code_without_location_table = code.replace(co_linetable=b'')
         actual = dis.get_instructions(code_without_location_table)
         for instruction in actual:
             with self.subTest(instruction=instruction):

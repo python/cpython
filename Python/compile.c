@@ -7028,7 +7028,7 @@ struct assembler {
     int a_end_lineno_start; /* bytecode start offset of current end_lineno */
 
     /* Location Info */
-    PyObject* a_locationtable; /* bytes containing location info */
+    PyObject* a_linetable; /* bytes containing location info */
     int a_location_off;    /* offset of last written location info frame */
 
     basicblock *a_entry;
@@ -7129,15 +7129,15 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
     memset(a, 0, sizeof(struct assembler));
     a->a_prevlineno = a->a_lineno = firstlineno;
     a->a_prev_end_lineno = a->a_end_lineno = firstlineno;
-    a->a_locationtable = NULL;
+    a->a_linetable = NULL;
     a->a_location_off = 0;
     a->a_except_table = NULL;
     a->a_bytecode = PyBytes_FromStringAndSize(NULL, DEFAULT_CODE_SIZE);
     if (a->a_bytecode == NULL) {
         goto error;
     }
-    a->a_locationtable = PyBytes_FromStringAndSize(NULL, DEFAULT_CNOTAB_SIZE);
-    if (a->a_locationtable == NULL) {
+    a->a_linetable = PyBytes_FromStringAndSize(NULL, DEFAULT_CNOTAB_SIZE);
+    if (a->a_linetable == NULL) {
         goto error;
     }
     a->a_except_table = PyBytes_FromStringAndSize(NULL, DEFAULT_LNOTAB_SIZE);
@@ -7151,7 +7151,7 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
     return 1;
 error:
     Py_XDECREF(a->a_bytecode);
-    Py_XDECREF(a->a_locationtable);
+    Py_XDECREF(a->a_linetable);
     Py_XDECREF(a->a_except_table);
     return 0;
 }
@@ -7160,7 +7160,7 @@ static void
 assemble_free(struct assembler *a)
 {
     Py_XDECREF(a->a_bytecode);
-    Py_XDECREF(a->a_locationtable);
+    Py_XDECREF(a->a_linetable);
     Py_XDECREF(a->a_except_table);
 }
 
@@ -7436,7 +7436,7 @@ No column | 11101bbb |
 static void
 write_location_byte(struct assembler* a, int val)
 {
-    PyBytes_AS_STRING(a->a_locationtable)[a->a_location_off] = val&255;
+    PyBytes_AS_STRING(a->a_linetable)[a->a_location_off] = val&255;
     a->a_location_off++;
 }
 
@@ -7549,10 +7549,10 @@ write_location_info_entry(struct assembler* a, struct instr* i, int isize)
 static int
 assemble_emit_location(struct assembler* a, struct instr* i)
 {
-    Py_ssize_t len = PyBytes_GET_SIZE(a->a_locationtable);
+    Py_ssize_t len = PyBytes_GET_SIZE(a->a_linetable);
     if (a->a_location_off + THEORETICAL_MAX_ENTRY_SIZE >= len) {
         assert(len > THEORETICAL_MAX_ENTRY_SIZE);
-        if (_PyBytes_Resize(&a->a_locationtable, len*2) < 0) {
+        if (_PyBytes_Resize(&a->a_linetable, len*2) < 0) {
             return 0;
         }
     }
@@ -7900,7 +7900,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
 
         .code = a->a_bytecode,
         .firstlineno = c->u->u_firstlineno,
-        .locationtable = a->a_locationtable,
+        .linetable = a->a_linetable,
 
         .consts = consts,
         .names = names,
@@ -8353,10 +8353,10 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    if (_PyBytes_Resize(&a.a_locationtable, a.a_location_off) < 0) {
+    if (_PyBytes_Resize(&a.a_linetable, a.a_location_off) < 0) {
         goto error;
     }
-    if (!merge_const_one(c, &a.a_locationtable)) {
+    if (!merge_const_one(c, &a.a_linetable)) {
         goto error;
     }
 

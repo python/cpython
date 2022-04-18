@@ -237,7 +237,7 @@ class Printer:
         co_filename = self.generate(name + "_filename", code.co_filename)
         co_name = self.generate(name + "_name", code.co_name)
         co_qualname = self.generate(name + "_qualname", code.co_qualname)
-        co_locationtable = self.generate(name + "_locationtable", code.co_locationtable)
+        co_linetable = self.generate(name + "_linetable", code.co_linetable)
         co_exceptiontable = self.generate(name + "_exceptiontable", code.co_exceptiontable)
         # These fields are not directly accessible
         localsplusnames, localspluskinds = get_localsplus(code)
@@ -275,7 +275,7 @@ class Printer:
             self.write(f".co_filename = {co_filename},")
             self.write(f".co_name = {co_name},")
             self.write(f".co_qualname = {co_qualname},")
-            self.write(f".co_locationtable = {co_locationtable},")
+            self.write(f".co_linetable = {co_linetable},")
             self.write(f".co_code_adaptive = {co_code_adaptive},")
         name_as_code = f"(PyCodeObject *)&{name}"
         self.deallocs.append(f"_PyStaticCode_Dealloc({name_as_code});")

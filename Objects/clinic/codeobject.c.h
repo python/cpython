@@ -5,7 +5,7 @@ preserve
 PyDoc_STRVAR(code_new__doc__,
 "code(argcount, posonlyargcount, kwonlyargcount, nlocals, stacksize,\n"
 "     flags, codestring, constants, names, varnames, filename, name,\n"
-"     qualname, firstlineno, locationtable, exceptiontable, freevars=(),\n"
+"     qualname, firstlineno, linetable, exceptiontable, freevars=(),\n"
 "     cellvars=(), /)\n"
 "--\n"
 "\n"
@@ -16,7 +16,7 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
               int kwonlyargcount, int nlocals, int stacksize, int flags,
               PyObject *code, PyObject *consts, PyObject *names,
               PyObject *varnames, PyObject *filename, PyObject *name,
-              PyObject *qualname, int firstlineno, PyObject *locationtable,
+              PyObject *qualname, int firstlineno, PyObject *linetable,
               PyObject *exceptiontable, PyObject *freevars,
               PyObject *cellvars);
 
@@ -38,7 +38,7 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *name;
     PyObject *qualname;
     int firstlineno;
-    PyObject *locationtable;
+    PyObject *linetable;
     PyObject *exceptiontable;
     PyObject *freevars = NULL;
     PyObject *cellvars = NULL;
@@ -127,7 +127,7 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("code", "argument 15", "bytes", PyTuple_GET_ITEM(args, 14));
         goto exit;
     }
-    locationtable = PyTuple_GET_ITEM(args, 14);
+    linetable = PyTuple_GET_ITEM(args, 14);
     if (!PyBytes_Check(PyTuple_GET_ITEM(args, 15))) {
         _PyArg_BadArgument("code", "argument 16", "bytes", PyTuple_GET_ITEM(args, 15));
         goto exit;
@@ -150,7 +150,7 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
     cellvars = PyTuple_GET_ITEM(args, 17);
 skip_optional:
-    return_value = code_new_impl(type, argcount, posonlyargcount, kwonlyargcount, nlocals, stacksize, flags, code, consts, names, varnames, filename, name, qualname, firstlineno, locationtable, exceptiontable, freevars, cellvars);
+    return_value = code_new_impl(type, argcount, posonlyargcount, kwonlyargcount, nlocals, stacksize, flags, code, consts, names, varnames, filename, name, qualname, firstlineno, linetable, exceptiontable, freevars, cellvars);
 
 exit:
     return return_value;
@@ -162,7 +162,7 @@ PyDoc_STRVAR(code_replace__doc__,
 "        co_flags=-1, co_firstlineno=-1, co_code=None, co_consts=None,\n"
 "        co_names=None, co_varnames=None, co_freevars=None,\n"
 "        co_cellvars=None, co_filename=None, co_name=None,\n"
-"        co_qualname=None, co_locationtable=None, co_exceptiontable=None)\n"
+"        co_qualname=None, co_linetable=None, co_exceptiontable=None)\n"
 "--\n"
 "\n"
 "Return a copy of the code object with new values for the specified fields.");
@@ -179,14 +179,13 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                   PyObject *co_varnames, PyObject *co_freevars,
                   PyObject *co_cellvars, PyObject *co_filename,
                   PyObject *co_name, PyObject *co_qualname,
-                  PyObject *co_locationtable,
-                  PyBytesObject *co_exceptiontable);
+                  PyObject *co_linetable, PyBytesObject *co_exceptiontable);
 
 static PyObject *
 code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"co_argcount", "co_posonlyargcount", "co_kwonlyargcount", "co_nlocals", "co_stacksize", "co_flags", "co_firstlineno", "co_code", "co_consts", "co_names", "co_varnames", "co_freevars", "co_cellvars", "co_filename", "co_name", "co_qualname", "co_locationtable", "co_exceptiontable", NULL};
+    static const char * const _keywords[] = {"co_argcount", "co_posonlyargcount", "co_kwonlyargcount", "co_nlocals", "co_stacksize", "co_flags", "co_firstlineno", "co_code", "co_consts", "co_names", "co_varnames", "co_freevars", "co_cellvars", "co_filename", "co_name", "co_qualname", "co_linetable", "co_exceptiontable", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "replace", 0};
     PyObject *argsbuf[18];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
@@ -206,7 +205,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     PyObject *co_filename = self->co_filename;
     PyObject *co_name = self->co_name;
     PyObject *co_qualname = self->co_qualname;
-    PyObject *co_locationtable = self->co_locationtable;
+    PyObject *co_linetable = self->co_linetable;
     PyBytesObject *co_exceptiontable = (PyBytesObject *)self->co_exceptiontable;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
@@ -379,7 +378,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         }
     }
     if (args[16]) {
-        co_locationtable = args[16];
+        co_linetable = args[16];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
@@ -390,7 +389,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     co_exceptiontable = (PyBytesObject *)args[17];
 skip_optional_kwonly:
-    return_value = code_replace_impl(self, co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals, co_stacksize, co_flags, co_firstlineno, co_code, co_consts, co_names, co_varnames, co_freevars, co_cellvars, co_filename, co_name, co_qualname, co_locationtable, co_exceptiontable);
+    return_value = code_replace_impl(self, co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals, co_stacksize, co_flags, co_firstlineno, co_code, co_consts, co_names, co_varnames, co_freevars, co_cellvars, co_filename, co_name, co_qualname, co_linetable, co_exceptiontable);
 
 exit:
     return return_value;
@@ -432,4 +431,4 @@ code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=82434fea629ecd68 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9bad1ea605d07309 input=a9049054013a1b77]*/

@@ -230,7 +230,7 @@ class CodeTest(unittest.TestCase):
                         co.co_name,
                         co.co_qualname,
                         co.co_firstlineno,
-                        co.co_locationtable,
+                        co.co_linetable,
                         co.co_exceptiontable,
                         co.co_freevars,
                         co.co_cellvars)
@@ -306,7 +306,7 @@ class CodeTest(unittest.TestCase):
                          co.co_name,
                          co.co_qualname,
                          co.co_firstlineno,
-                         co.co_locationtable,
+                         co.co_linetable,
                          co.co_exceptiontable,
                          co.co_freevars,
                          co.co_cellvars,
@@ -326,10 +326,10 @@ class CodeTest(unittest.TestCase):
         newcode = code.replace(co_name="func")  # Should not raise SystemError
         self.assertEqual(code, newcode)
 
-    def test_empty_locationtable(self):
+    def test_empty_linetable(self):
         def func():
             pass
-        new_code = code = func.__code__.replace(co_locationtable=b'')
+        new_code = code = func.__code__.replace(co_linetable=b'')
         self.assertEqual(list(new_code.co_lines()), [])
 
     @requires_debug_ranges()
@@ -415,10 +415,10 @@ class CodeTest(unittest.TestCase):
     # co_positions behavior when info is missing.
 
     @requires_debug_ranges()
-    def test_co_positions_empty_locationtable(self):
+    def test_co_positions_empty_linetable(self):
         def func():
             x = 1
-        new_code = func.__code__.replace(co_locationtable=b'')
+        new_code = func.__code__.replace(co_linetable=b'')
         positions = new_code.co_positions()
         for line, end_line, column, end_column in positions:
             self.assertIsNone(line)
@@ -524,7 +524,7 @@ def read_signed_varint(it):
 
 def parse_location_table(code):
     line = code.co_firstlineno
-    it = iter(code.co_locationtable)
+    it = iter(code.co_linetable)
     while True:
         try:
             first_byte = read(it)

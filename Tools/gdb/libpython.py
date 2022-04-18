@@ -655,10 +655,10 @@ def read_signed_varint(it):
     else:
         return uval >> 1
 
-def parse_location_table(firstlineno, locationtable):
+def parse_location_table(firstlineno, linetable):
     line = firstlineno
     addr = 0
-    it = iter(locationtable)
+    it = iter(linetable)
     while True:
         try:
             first_byte = read(it)
@@ -706,7 +706,7 @@ class PyCodeObjectPtr(PyObjectPtr):
         Analogous to PyCode_Addr2Line; translated from pseudocode in
         Objects/lnotab_notes.txt
         '''
-        co_locationtable = self.pyop_field('co_locationtable').proxyval(set())
+        co_linetable = self.pyop_field('co_linetable').proxyval(set())
 
         # Initialize lineno to co_firstlineno as per PyCode_Addr2Line
         # not 0, as lnotab_notes.txt has it:
@@ -715,7 +715,7 @@ class PyCodeObjectPtr(PyObjectPtr):
         if addrq < 0:
             return lineno
         addr = 0
-        for addr, end_addr, line in parse_location_table(lineno, co_locationtable):
+        for addr, end_addr, line in parse_location_table(lineno, co_linetable):
             if addr <= addrq and end_addr > addrq:
                 return line
         assert False, "Unreachable"
