@@ -1,1 +1,0 @@
-Place summary/quick links table at the top of the documentation for the argparse module to benefit ease of use.
