@@ -52,6 +52,24 @@ def main(outfile='Lib/re/_casefix.py'):
                               for t in [set(ord(c.lower()) for c in s)]
                               if len(t) > 1]
 
+    bad_codes = []
+    for t in equivalent_lower_codes:
+        for i in t:
+            if i > 0xffff:
+                bad_codes.extend(t)
+                try:
+                    bad_codes.append(ord(chr(i).upper()))
+                except (ValueError, TypeError):
+                    pass
+                break
+    if bad_codes:
+        print('Case-insensitive matching may not work correctly for character:',
+              file=sys.stderr)
+        for i in sorted(bad_codes):
+            print("  '%s' (U+%04x, %s)" % (alpha(i), i, uname(i)),
+                  file=sys.stderr)
+        sys.exit(1)
+
     mapping = {i: tuple(j for j in t if i != j)
                for t in equivalent_lower_codes
                for i in t}
