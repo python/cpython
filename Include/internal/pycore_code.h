@@ -223,7 +223,7 @@ extern PyObject* _PyCode_GetCode(PyCodeObject *);
 extern int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
 
 /** Out of process API for initializing the location table. */
-extern void _PyLocationTable_InitAddressRange(
+extern void _PyLineTable_InitAddressRange(
     const char *linetable,
     Py_ssize_t length,
     int firstlineno,

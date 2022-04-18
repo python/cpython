@@ -7017,7 +7017,6 @@ struct assembler {
     PyObject *a_bytecode;  /* bytes containing bytecode */
     int a_offset;              /* offset into bytecode */
     int a_nblocks;             /* number of reachable blocks */
-
     PyObject *a_except_table;  /* bytes containing exception table */
     int a_except_table_off;    /* offset into exception table */
     int a_prevlineno;     /* lineno of last emitted line in line table */
@@ -7026,12 +7025,10 @@ struct assembler {
     int a_end_lineno;      /* end_lineno of last emitted instruction */
     int a_lineno_start;    /* bytecode start offset of current lineno */
     int a_end_lineno_start; /* bytecode start offset of current end_lineno */
-
+    basicblock *a_entry;
     /* Location Info */
     PyObject* a_linetable; /* bytes containing location info */
     int a_location_off;    /* offset of last written location info frame */
-
-    basicblock *a_entry;
 };
 
 Py_LOCAL_INLINE(void)
@@ -7419,25 +7416,23 @@ assemble_exception_table(struct assembler *a)
     return 1;
 }
 
-/* Code location formats (this looks better if rendered as markdown)
+/* Code location emitting code. See locations.md for a description of the format. */
 
-Format | First byte | Subsequent bytes | Meaning
------- | ------- | ------- | -------
-Short | 1nnnnbbb | 0ccceeee | Same line as previous entry. Column = `nnnn`*8 + `ccc`, end column = column + `eeee`. `n` < 10
-Indent | 11xxxbbb | 0ccceeee | One line. Line = previous + xxx-1. Column = `ccc`*4, end column = column + `eeee`. 2 <= x < 5
-Long form | 11110bbb | signed varint `l`, varint `e`, unsigned varint `c` ,unsigned varint `x`  | Line = previous + `l`, end_line = line + `e`, column = c, end_column = x
-None | 11111bbb | --- | No location info
-
-No column | 11101bbb |
-
-*/
-
+#define MSB 0x80
 
 static void
 write_location_byte(struct assembler* a, int val)
 {
     PyBytes_AS_STRING(a->a_linetable)[a->a_location_off] = val&255;
     a->a_location_off++;
+}
+
+
+static void
+write_location_first_byte(struct assembler* a, int code, int length)
+{
+    assert((code & 15) == code);
+    write_location_byte(a, MSB | (code << 3) | (length - 1));
 }
 
 static void
@@ -7467,10 +7462,10 @@ write_location_info_short_form(struct assembler* a, int length, int column, int 
 {
     assert(length > 0 &&  length <= 8);
     int column_low_bits = column & 7;
-    int column_high_bits = column & 0x78;
+    int column_group = column >> 3;
     assert(column < 80);
     assert(end_column - column < 16);
-    write_location_byte(a, 0x80 | column_high_bits | (length - 1));
+    write_location_first_byte(a, PY_CODE_LOCATION_INFO_SHORT0 + column_group, length);
     write_location_byte(a, (column_low_bits << 4) | (end_column - column));
 }
 
@@ -7481,7 +7476,7 @@ write_location_info_oneline_form(struct assembler* a, int length, int line_delta
     assert(line_delta >= 0 && line_delta < 3);
     assert(column < 128);
     assert(end_column < 128);
-    write_location_byte(a, 0x80 | (line_delta + 10) << 3 | (length - 1));
+    write_location_first_byte(a, PY_CODE_LOCATION_INFO_ONE_LINE0 + line_delta, length);
     write_location_byte(a, column);
     write_location_byte(a, end_column);
 }
@@ -7490,7 +7485,7 @@ static void
 write_location_info_long_form(struct assembler* a, struct instr* i, int length)
 {
     assert(length > 0 &&  length <= 8);
-    write_location_byte(a, 0xf0 | (length - 1));
+    write_location_first_byte(a, PY_CODE_LOCATION_INFO_LONG, length);
     write_location_signed_varint(a, i->i_lineno - a->a_lineno);
     write_location_varint(a, i->i_end_lineno - i->i_lineno);
     write_location_varint(a, i->i_col_offset+1);
@@ -7500,24 +7495,31 @@ write_location_info_long_form(struct assembler* a, struct instr* i, int length)
 static void
 write_location_info_none(struct assembler* a, int length)
 {
-    write_location_byte(a, 0xf8 | (length-1));
+    write_location_first_byte(a, PY_CODE_LOCATION_INFO_NONE, length);
 }
 
 static void
 write_location_info_no_column(struct assembler* a, int length, int line_delta)
 {
-    write_location_byte(a, 0xe8 | (length-1));
+    write_location_first_byte(a, PY_CODE_LOCATION_INFO_NO_COLUMNS, length);
     write_location_signed_varint(a, line_delta);
 }
 
 #define THEORETICAL_MAX_ENTRY_SIZE 25 /* 1 + 6 + 6 + 6 + 6 */
 
-static void
+static int
 write_location_info_entry(struct assembler* a, struct instr* i, int isize)
 {
+    Py_ssize_t len = PyBytes_GET_SIZE(a->a_linetable);
+    if (a->a_location_off + THEORETICAL_MAX_ENTRY_SIZE >= len) {
+        assert(len > THEORETICAL_MAX_ENTRY_SIZE);
+        if (_PyBytes_Resize(&a->a_linetable, len*2) < 0) {
+            return 0;
+        }
+    }
     if (i->i_lineno < 0) {
         write_location_info_none(a, isize);
-        return;
+        return 1;
     }
     int line_delta = i->i_lineno - a->a_lineno;
     int column = i->i_col_offset;
@@ -7528,48 +7530,36 @@ write_location_info_entry(struct assembler* a, struct instr* i, int isize)
         if (i->i_end_lineno == i->i_lineno) {
             write_location_info_no_column(a, isize, line_delta);
             a->a_lineno = i->i_lineno;
-            return;
+            return 1;
         }
     }
     else if (i->i_end_lineno == i->i_lineno) {
         if (line_delta == 0 && column < 80 && end_column - column < 16) {
             write_location_info_short_form(a, isize, column, end_column);
-            return;
+            return 1;
         }
         if (line_delta >= 0 && line_delta < 3 && column < 128 && end_column < 128) {
             write_location_info_oneline_form(a, isize, line_delta, column, end_column);
             a->a_lineno = i->i_lineno;
-            return;
+            return 1;
         }
     }
     write_location_info_long_form(a, i, isize);
     a->a_lineno = i->i_lineno;
+    return 1;
 }
 
 static int
 assemble_emit_location(struct assembler* a, struct instr* i)
 {
-    Py_ssize_t len = PyBytes_GET_SIZE(a->a_linetable);
-    if (a->a_location_off + THEORETICAL_MAX_ENTRY_SIZE >= len) {
-        assert(len > THEORETICAL_MAX_ENTRY_SIZE);
-        if (_PyBytes_Resize(&a->a_linetable, len*2) < 0) {
+    int isize = instr_size(i);
+    while (isize > 8) {
+        if (!write_location_info_entry(a, i, 8)) {
             return 0;
         }
-    }
-    int isize = instr_size(i);
-    if (isize > 8) {
-        write_location_info_entry(a, i, 8);
         isize -= 8;
-        while (isize > 8) {
-            write_location_info_none(a, 8);
-            isize -= 8;
-        }
-        write_location_info_none(a, isize);
     }
-    else {
-        write_location_info_entry(a, i, isize);
-    }
-    return 1;
+    return write_location_info_entry(a, i, isize);
 }
 
 /* assemble_emit()

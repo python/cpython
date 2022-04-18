@@ -370,16 +370,17 @@ get_line_delta(const uint8_t *ptr)
 {
     int code = ((*ptr) >> 3) & 15;
     switch (code) {
-        case 15:
+        case PY_CODE_LOCATION_INFO_NONE:
             return 0;
-        case 13: /* No column */
-        case 14: /* Long form */
+        case PY_CODE_LOCATION_INFO_NO_COLUMNS:
+        case PY_CODE_LOCATION_INFO_LONG:
             return scan_signed_varint(ptr+1);
-        case 10:
-        case 11:
-        case 12:
-            /* One line forms */
-            return code - 10;
+        case PY_CODE_LOCATION_INFO_ONE_LINE0:
+            return 0;
+        case PY_CODE_LOCATION_INFO_ONE_LINE1:
+            return 1;
+        case PY_CODE_LOCATION_INFO_ONE_LINE2:
+            return 2;
         default:
             /* Same line */
             return 0;
@@ -861,14 +862,12 @@ advance_with_locations(PyCodeAddressRange *bounds, int *endline, int *column, in
     bounds->ar_start = bounds->ar_end;
     bounds->ar_end = bounds->ar_start + ((first_byte & 7) + 1) * sizeof(_Py_CODEUNIT);
     switch(code) {
-        case 15:
-            /* None */
+        case PY_CODE_LOCATION_INFO_NONE:
             bounds->ar_line = *endline = -1;
             *column =  *endcolumn = -1;
             break;
-        case 14:
+        case PY_CODE_LOCATION_INFO_LONG:
         {
-            /* Long form */
             bounds->opaque.computed_line += read_signed_varint(bounds);
             bounds->ar_line = bounds->opaque.computed_line;
             *endline = bounds->ar_line + read_varint(bounds);
@@ -876,7 +875,7 @@ advance_with_locations(PyCodeAddressRange *bounds, int *endline, int *column, in
             *endcolumn = read_varint(bounds)-1;
             break;
         }
-        case 13:
+        case PY_CODE_LOCATION_INFO_NO_COLUMNS:
         {
             /* No column */
             bounds->opaque.computed_line += read_signed_varint(bounds);
@@ -884,9 +883,9 @@ advance_with_locations(PyCodeAddressRange *bounds, int *endline, int *column, in
             *column = *endcolumn = -1;
             break;
         }
-        case 10:
-        case 11:
-        case 12:
+        case PY_CODE_LOCATION_INFO_ONE_LINE0:
+        case PY_CODE_LOCATION_INFO_ONE_LINE1:
+        case PY_CODE_LOCATION_INFO_ONE_LINE2:
         {
             /* one line form */
             int line_delta = code - 10;
@@ -896,9 +895,9 @@ advance_with_locations(PyCodeAddressRange *bounds, int *endline, int *column, in
             *endcolumn = read_byte(bounds);
             break;
         }
-        default: /* 0 to 9 */
+        default:
         {
-            /* Short form */
+            /* Short forms */
             int second_byte = read_byte(bounds);
             assert((second_byte & 128) == 0);
             *endline = bounds->ar_line = bounds->opaque.computed_line;
@@ -967,15 +966,15 @@ _PyLineTable_StartsLine(PyCodeAddressRange *range)
     } while (((*ptr) & 128) == 0);
     int code = ((*ptr)>> 3) & 15;
     switch(code) {
-        case 15:
+        case PY_CODE_LOCATION_INFO_LONG:
             return 0;
-        case 13:
-        case 14:
+        case PY_CODE_LOCATION_INFO_NO_COLUMNS:
+        case PY_CODE_LOCATION_INFO_NONE:
             return ptr[1] != 0;
-        case 10:
+        case PY_CODE_LOCATION_INFO_ONE_LINE0:
             return 0;
-        case 11:
-        case 12:
+        case PY_CODE_LOCATION_INFO_ONE_LINE1:
+        case PY_CODE_LOCATION_INFO_ONE_LINE2:
             return 1;
         default:
             return 0;
@@ -1674,7 +1673,7 @@ static PyMemberDef code_memberlist[] = {
     {"co_name",            T_OBJECT, OFF(co_name),            READONLY},
     {"co_qualname",        T_OBJECT, OFF(co_qualname),        READONLY},
     {"co_firstlineno",     T_INT,    OFF(co_firstlineno),     READONLY},
-    {"co_linetable",   T_OBJECT, OFF(co_linetable),   READONLY},
+    {"co_linetable",       T_OBJECT, OFF(co_linetable),       READONLY},
     {"co_exceptiontable",  T_OBJECT, OFF(co_exceptiontable),  READONLY},
     {NULL}      /* Sentinel */
 };
@@ -1769,7 +1768,7 @@ code.replace
     co_filename: unicode(c_default="self->co_filename") = None
     co_name: unicode(c_default="self->co_name") = None
     co_qualname: unicode(c_default="self->co_qualname") = None
-    co_linetable: object(c_default="self->co_linetable") = None
+    co_linetable: PyBytesObject(c_default="(PyBytesObject *)self->co_linetable") = None
     co_exceptiontable: PyBytesObject(c_default="(PyBytesObject *)self->co_exceptiontable") = None
 
 Return a copy of the code object with new values for the specified fields.

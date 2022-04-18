@@ -86,7 +86,7 @@ typedef uint16_t _Py_CODEUNIT;
     PyObject *co_filename;        /* unicode (where it was loaded from) */     \
     PyObject *co_name;            /* unicode (name, for reference) */          \
     PyObject *co_qualname;        /* unicode (qualname, for reference) */      \
-    PyObject *co_linetable;   /* bytes object that holds location info */  \
+    PyObject *co_linetable;       /* bytes object that holds location info */  \
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \
@@ -204,15 +204,16 @@ PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
 
 
 typedef enum _PyCodeLocationInfoKind {
+    /* short forms are 0 to 9 */
     PY_CODE_LOCATION_INFO_SHORT0 = 0,
-    PY_CODE_LOCATION_INFO_SHORT1 = 1,
-    PY_CODE_LOCATION_INFO_SHORT2 = 2,
-    PY_CODE_LOCATION_INFO_SHORT3 = 3,
-    PY_CODE_LOCATION_INFO_SHORT4 = 4,
-    PY_CODE_LOCATION_INFO_SHORT5 = 5,
+    /* one lineforms are 10 to 12 */
+    PY_CODE_LOCATION_INFO_ONE_LINE0 = 10,
+    PY_CODE_LOCATION_INFO_ONE_LINE1 = 11,
+    PY_CODE_LOCATION_INFO_ONE_LINE2 = 12,
 
-    PYCODE_LOCATION_INFO_TWO_LINES = 14,
-    PYCODE_LOCATION_INFO_NONE = 15
+    PY_CODE_LOCATION_INFO_NO_COLUMNS = 13,
+    PY_CODE_LOCATION_INFO_LONG = 14,
+    PY_CODE_LOCATION_INFO_NONE = 15
 } _PyCodeLocationInfoKind;
 
 #ifdef __cplusplus

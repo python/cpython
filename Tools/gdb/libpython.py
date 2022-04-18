@@ -636,7 +636,7 @@ class PyCFunctionObjectPtr(PyObjectPtr):
 
 # Python implementation of location table parsing algorithm
 def read(it):
-    return next(it)
+    return ord(next(it))
 
 def read_varint(it):
     b = read(it)
@@ -671,7 +671,7 @@ def parse_location_table(firstlineno, linetable):
             yield addr, end_addr, None
             addr = end_addr
             continue
-        elif code == 14:
+        elif code == 14: # Long form
             line_delta = read_signed_varint(it)
             line += line_delta
             end_line = line + read_varint(it)
@@ -1127,8 +1127,8 @@ class PyFramePtr:
         if self.is_optimized_out():
             return None
         try:
-            return self.co.addr2line(self.f_lasti*2)
-        except Exception:
+            return self.co.addr2line(self.f_lasti)
+        except Exception as ex:
             # bpo-34989: addr2line() is a complex function, it can fail in many
             # ways. For example, it fails with a TypeError on "FakeRepr" if
             # gdb fails to load debug symbols. Use a catch-all "except

@@ -270,6 +270,7 @@ class CodeTest(unittest.TestCase):
             ("co_cellvars", ("cellvar",)),
             ("co_filename", "newfilename"),
             ("co_name", "newname"),
+            ("co_linetable", code2.co_linetable),
         ):
             with self.subTest(attr=attr, value=value):
                 new_code = code.replace(**{attr: value})
@@ -376,9 +377,9 @@ class CodeTest(unittest.TestCase):
                 ("LOAD_CONST", None), # artificial 'None'
                 ("STORE_NAME", "e"),  # XX: we know the location for this
                 ("DELETE_NAME", "e"),
-                ('RERAISE', 1),
-                ('COPY', 3),
-                ('POP_EXCEPT', None),
+                ("RERAISE", 1),
+                ("COPY", 3),
+                ("POP_EXCEPT", None),
                 ("RERAISE", 1)
             ]
         )
