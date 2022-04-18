@@ -678,11 +678,8 @@ static int
 func_clear(PyFunctionObject *op)
 {
     op->func_version = 0;
-    Py_CLEAR(op->func_code);
     Py_CLEAR(op->func_globals);
     Py_CLEAR(op->func_builtins);
-    Py_CLEAR(op->func_name);
-    Py_CLEAR(op->func_qualname);
     Py_CLEAR(op->func_module);
     Py_CLEAR(op->func_defaults);
     Py_CLEAR(op->func_kwdefaults);
@@ -690,6 +687,14 @@ func_clear(PyFunctionObject *op)
     Py_CLEAR(op->func_dict);
     Py_CLEAR(op->func_closure);
     Py_CLEAR(op->func_annotations);
+    /* Below are required attributes, so to keep everything in
+     * a consistent state, don't clear them.  They're immutable,
+     * so they can't participate in cycles anyway.
+     * 
+     *    don't Py_CLEAR(op->func_code);
+     *    don't Py_CLEAR(op->func_name);
+     *    don't Py_CLEAR(op->func_qualname);
+     */
     return 0;
 }
 
@@ -701,6 +706,10 @@ func_dealloc(PyFunctionObject *op)
         PyObject_ClearWeakRefs((PyObject *) op);
     }
     (void)func_clear(op);
+    // These aren't cleared by func_clear().
+    Py_XDECREF(op->func_code);
+    Py_XDECREF(op->func_name);
+    Py_XDECREF(op->func_qualname);
     PyObject_GC_Del(op);
 }
 
