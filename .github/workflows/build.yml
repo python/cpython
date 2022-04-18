@@ -1,6 +1,6 @@
 name: Tests
 
-# bpo-40548: "paths-ignore" is not used to skip documentation-only PRs, because
+# gh-84728: "paths-ignore" is not used to skip documentation-only PRs, because
 # it prevents to mark a job as mandatory. A PR cannot be merged if a job is
 # mandatory but not scheduled because of "paths-ignore".
 on:

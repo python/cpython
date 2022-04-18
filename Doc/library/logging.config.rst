@@ -833,7 +833,7 @@ Sections which specify formatter configuration are typified by the following.
    [formatter_form01]
    format=F1 %(asctime)s %(levelname)s %(message)s
    datefmt=
-   style='%'
+   style=%
    validate=True
    class=logging.Formatter
 

@@ -163,11 +163,3 @@ def framework_find(fn, executable_path=None, env=None):
         raise error
     finally:
         error = None
-
-def test_dyld_find():
-    env = {}
-    assert dyld_find('libSystem.dylib') == '/usr/lib/libSystem.dylib'
-    assert dyld_find('System.framework/System') == '/System/Library/Frameworks/System.framework/System'
-
-if __name__ == '__main__':
-    test_dyld_find()

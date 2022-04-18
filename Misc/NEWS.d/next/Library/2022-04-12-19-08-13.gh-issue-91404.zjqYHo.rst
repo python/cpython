@@ -1,0 +1,3 @@
+Improve the performance of :mod:`re` matching by using computed gotos (or
+"threaded code") on supported platforms and removing expensive pointer
+indirections.
