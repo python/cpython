@@ -26,6 +26,75 @@ module also automatically generates help and usage messages and issues errors
 when users give the program invalid arguments.
 
 
+Summary
+-------
+
+Core Functionality
+^^^^^^^^^^^^^^^^^^
+
+The :mod:`argparse` module's support for command-line interfaces is built
+from the following:
+
+The :class:`argparse.ArgumentParser` creates a new :class:`ArgumentParser`
+object. Commonly used arguments include prog_, description_, and
+formatter_class_. For example, the user can create an instance of
+:class:`ArgumentParser` through the following::
+
+   >>> parser = argparse.ArgumentParser(prog='PROG', description='DESC',
+   ...                                  formatter_class=argparse.RawDescriptionHelpFormatter)
+
+The :func:`ArgumentParser.add_argument` is a function that is used
+to define how a single command-line argument should be parsed. Commonly used
+arguments include `name or flags`_, action_, default_, type_, required_,
+and help_. An example of the function :func:`ArgumentParser.add_argument`
+is as follows::
+
+   >>> parser.add_argument('-v', '--verbose', action='store_true',
+   ...                     help='Show various debugging information')
+
+
+Basic Usage of :func:`add_argument`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+**Name or Flags Type**
+
+====================== ===========================
+Type                   Example
+====================== ===========================
+Positional             ``'foo'``
+Optional               ``'-v'``, ``'--verbose'``
+====================== ===========================
+
+
+**Basic Arguments:**
+
+====================== =========================================================== =========================================================================================================================
+Name                   Description                                                 Keywords
+====================== =========================================================== =========================================================================================================================
+action_                Specifies how an argument should be handled                 ``'store'``, ``'store_const'``, ``'store_true'``, ``'append'``, ``'append_const'``, ``'count'``, ``'help'``, ``'version'``
+default_               Default value used when an argument is not provided
+type_                  Automatically converts an argument to the given type        :class:`int`, :class:`float`, :class:`bool`, ``argparse.FileType('w')``, ``callable function``
+help_                  Help message of an argument
+====================== =========================================================== =========================================================================================================================
+
+
+
+**Advanced Arguments:**
+
+====================== =========================================================== =======================================================================================================================
+Name                   Description                                                 Keywords
+====================== =========================================================== =======================================================================================================================
+nargs_                 Associates a single action with the number of arguments     ``N`` (:class:`int`), ``'?'``, ``'*'``, ``'+'``, ``argparse.REMAINDER``
+const_                 Stores constant values of names or flags
+choices_               A container that lists the possible values                  ``['foo', 'bar']``, ``range(1, 10)``, Any object that supports ``in`` operator
+required_              Indicates if an optional argument is required or not        ``True``, ``False``
+metavar_               An alternative display name for the argument
+dest_                  Specifies name of attribute to be used in ``parse_args()``
+====================== =========================================================== =======================================================================================================================
+
+
+
 Example
 -------
 
@@ -196,6 +265,8 @@ ArgumentParser objects
 The following sections describe how each of these are used.
 
 
+.. _prog:
+
 prog
 ^^^^
 
@@ -293,6 +364,8 @@ The ``%(prog)s`` format specifier is available to fill in the program name in
 your usage messages.
 
 
+.. _description:
+
 description
 ^^^^^^^^^^^
 
@@ -372,6 +445,8 @@ and one in the child) and raise an error.
    If you change the parent parsers after the child parser, those changes will
    not be reflected in the child.
 
+
+.. _formatter_class:
 
 formatter_class
 ^^^^^^^^^^^^^^^
@@ -716,6 +791,8 @@ The add_argument() method
 The following sections describe how each of these are used.
 
 
+.. _name_or_flags:
+
 name or flags
 ^^^^^^^^^^^^^
 
@@ -748,6 +825,8 @@ be positional::
    usage: PROG [-h] [-f FOO] bar
    PROG: error: the following arguments are required: bar
 
+
+.. _action:
 
 action
 ^^^^^^
@@ -884,6 +963,9 @@ An example of a custom action::
 
 For more details, see :class:`Action`.
 
+
+.. _nargs:
+
 nargs
 ^^^^^
 
@@ -971,6 +1053,8 @@ is determined by the action_.  Generally this means a single command-line argume
 will be consumed and a single item (not a list) will be produced.
 
 
+.. _const:
+
 const
 ^^^^^
 
@@ -996,6 +1080,8 @@ the various :class:`ArgumentParser` actions.  The two most common uses of it are
 .. versionchanged:: 3.11
    ``const=None`` by default, including when ``action='append_const'`` or
    ``action='store_const'``.
+
+.. _default:
 
 default
 ^^^^^^^
@@ -1054,6 +1140,8 @@ command-line argument was not present::
    >>> parser.parse_args(['--foo', '1'])
    Namespace(foo='1')
 
+
+.. _type:
 
 type
 ^^^^
@@ -1124,6 +1212,8 @@ For type checkers that simply check against a fixed set of values, consider
 using the choices_ keyword instead.
 
 
+.. _choices:
+
 choices
 ^^^^^^^
 
@@ -1166,6 +1256,8 @@ from *dest*.  This is usually what you want because the user never sees the
 many choices), just specify an explicit metavar_.
 
 
+.. _required:
+
 required
 ^^^^^^^^
 
@@ -1191,6 +1283,8 @@ present at the command line.
     Required options are generally considered bad form because users expect
     *options* to be *optional*, and thus they should be avoided when possible.
 
+
+.. _help:
 
 help
 ^^^^
@@ -1246,6 +1340,8 @@ setting the ``help`` value to ``argparse.SUPPRESS``::
    options:
      -h, --help  show this help message and exit
 
+
+.. _metavar:
 
 metavar
 ^^^^^^^
@@ -1310,6 +1406,8 @@ arguments::
     -x X X
     --foo bar baz
 
+
+.. _dest:
 
 dest
 ^^^^
