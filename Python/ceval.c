@@ -4364,7 +4364,7 @@ handle_eval_breaker:
             if (cache->counter == 0) {
                 next_instr--;
                 _Py_Specialize_ForIter(TOP(), next_instr);
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(FOR_ITER, deferred);
