@@ -616,9 +616,9 @@ dispatch:
                     state->lastindex = i/2 + 1;
                 if (i > state->lastmark) {
                     /* state->lastmark is the highest valid index in the
-                    state->mark array.  If it is increased by more than 1,
-                    the intervening marks must be set to NULL to signal
-                    that these marks have not been encountered. */
+                       state->mark array.  If it is increased by more than 1,
+                       the intervening marks must be set to NULL to signal
+                       that these marks have not been encountered. */
                     int j = state->lastmark + 1;
                     while (j < i)
                         state->mark[j++] = NULL;
