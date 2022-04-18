@@ -15730,7 +15730,8 @@ unicode_ascii_iter_next(unicodeiterobject *it)
     assert(PyUnicode_IS_COMPACT_ASCII(seq));
     if (it->it_index < PyUnicode_GET_LENGTH(seq)) {
         const void *data = ((void*)(_PyASCIIObject_CAST(seq) + 1));
-        Py_UCS1 chr = PyUnicode_READ(PyUnicode_1BYTE_KIND, data, it->it_index);
+        Py_UCS1 chr = (Py_UCS1)PyUnicode_READ(PyUnicode_1BYTE_KIND,
+                                              data, it->it_index);
         it->it_index++;
         PyObject *item = (PyObject*)&_Py_SINGLETON(strings).ascii[chr];
         return Py_NewRef(item);

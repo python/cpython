@@ -9,6 +9,7 @@ import _string
 import codecs
 import itertools
 import operator
+import pickle
 import struct
 import sys
 import textwrap
@@ -196,6 +197,23 @@ class UnicodeTest(string_tests.CommonTest,
         for case in cases:
             with self.subTest(string=case):
                 self.assertEqual(case, "".join(iter(case)))
+
+    def test_exhausted_iterator(self):
+        cases = ['abc', '🚀🚀🚀', "\u1111\u2222\u3333"]
+        for case in cases:
+            with self.subTest(case=case):
+                iterator = iter(case)
+                tuple(iterator)
+                self.assertRaises(StopIteration, next, iterator)
+
+    def test_pickle_iterator(self):
+        cases = ['abc', '🚀🚀🚀', "\u1111\u2222\u3333"]
+        for case in cases:
+            with self.subTest(case=case):
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                    it = iter(case)
+                    with self.subTest(proto=proto):
+                        self.assertEqual(case, "".join(pickle.loads(pickle.dumps(it, pickle.HIGHEST_PROTOCOL))))
 
     def test_count(self):
         string_tests.CommonTest.test_count(self)
