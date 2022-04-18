@@ -3,6 +3,7 @@
 import os
 import re
 import sys
+import shlex
 
 __all__ = [
     'compiler_fixup',
@@ -529,7 +530,9 @@ def get_platform_osx(_config_vars, osname, release, machine):
             # assume no universal support
             macrelease = (10, 3)
 
-        archs = re.findall(r'(?:^|\s)-arch\s+(\S+)', cflags)
+        cflags_split = shlex.split(cflags)
+        archs = [cflags_split[i + 1] for i, flag in
+                 enumerate(cflags_split[:-1]) if flag == "-arch"]
         archs = tuple(sorted(set(archs)))
 
         if (macrelease >= (10, 4)) and archs:
