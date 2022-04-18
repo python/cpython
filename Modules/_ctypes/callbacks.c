@@ -399,7 +399,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 #endif
     result = ffi_prep_cif(&p->cif, cc,
                           Py_SAFE_DOWNCAST(nargs, Py_ssize_t, int),
-                          _ctypes_get_ffi_type(restype),
+                          p->ffi_restype,
                           &p->atypes[0]);
     if (result != FFI_OK) {
         PyErr_Format(PyExc_RuntimeError,

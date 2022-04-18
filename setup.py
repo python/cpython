@@ -1256,6 +1256,7 @@ class PyBuildExt(build_ext):
 
     def detect_sqlite(self):
         sources = [
+            "_sqlite/blob.c",
             "_sqlite/connection.c",
             "_sqlite/cursor.c",
             "_sqlite/microprotocols.c",

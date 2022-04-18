@@ -2737,6 +2737,7 @@ class TextIOWrapperTest(unittest.TestCase):
             os.environ.update(old_environ)
 
     @support.cpython_only
+    @unittest.skipIf(sys.platform != "win32", "Windows-only test")
     @unittest.skipIf(sys.flags.utf8_mode, "utf-8 mode is enabled")
     def test_device_encoding(self):
         # Issue 15989
