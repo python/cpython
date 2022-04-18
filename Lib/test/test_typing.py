@@ -4408,6 +4408,12 @@ class GetTypeHintTests(BaseTestCase):
             'a': Annotated[Required[int], "a", "b", "c"]
         })
 
+    def test_get_type_hints_collections_abc_callable(self):
+        # https://github.com/python/cpython/issues/91621
+        def f(x: collections.abc.Callable[[int], int]): ...
+
+        self.assertEqual(get_type_hints(f), {'x': collections.abc.Callable[[int], int]})
+
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
