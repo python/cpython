@@ -558,20 +558,22 @@ Enriching Exceptions with Notes
 When an exception is created in order to be raised, it is usually initialized
 with information that describes the error that has occurred. There are cases
 where it is useful to add information after the exception was caught. For this
-purpose, exceptions have a ``__note__`` attribute that can be assigned a string or
-``None`` value (``None`` by default). If it is a string, it is included in the
-formatted tracebacks after the exception. ::
+purpose, exceptions have a method ``add_node(note)`` that accepts a string and
+adds it to the exception's notes list. The standard traceback includes all
+notes, in the order they were added, after the exception. ::
 
    >>> try:
    ...     raise TypeError('bad type')
    ... except Exception as e:
-   ...     e.__note__ = 'Add some information'
+   ...     e.add_note('Add some information')
+   ...     e.add_note('Add some more information')
    ...     raise
    ...
    Traceback (most recent call last):
      File "<stdin>", line 2, in <module>
    TypeError: bad type
    Add some information
+   Add some more information
    >>>
 
 For example, when collecting exceptions into an exception group, we may want
@@ -586,7 +588,7 @@ exception in the group has a note indicating when this error has occurred. ::
    ...     try:
    ...         f()
    ...     except Exception as e:
-   ...         e.__note__ = f'Happened in Iteration {i+1}'
+   ...         e.add_note(f'Happened in Iteration {i+1}')
    ...         excs.append(e)
    ...
    >>> raise ExceptionGroup('We have some problems', excs)
