@@ -1220,7 +1220,7 @@ class Enum(metaclass=EnumType):
             try:
                 n + 1
                 return True
-            except:
+            except TypeError:
                 return False
 
         checked_last_values = sorted(filter(test_incrementable, last_values))
