@@ -884,6 +884,7 @@ Deprecated
   * :mod:`msilib`
   * :mod:`nis`
   * :mod:`nntplib`
+  * :mod:`ossaudiodev`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
