@@ -580,16 +580,19 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             # Should raise TypeError: a) according to the tentative spec,
             # unpacked types are only valid as arguments to a TypeVarTuple, and
             # b) it's equivalent to generic[()].
-            ('generic[T]',                        '[*tuple_type[()]]',       'generic[*tuple_type[()]]'),
+            ('generic[T]',                        '[*tuple[()]]',            'generic[*tuple[()]]'),
+            ('generic[T]',                        '[*Tuple[()]]',            'TypeError'),
             # Should raise TypeError according to the tentative spec: unpacked
             # types are only valid as arguments to a TypeVarTuple.
-            ('generic[T]',                        '[*tuple_type[int]]',      'generic[*tuple_type[int]]'),
+            ('generic[T]',                        '[*tuple[int]]',           'generic[*tuple[int]]'),
+            ('generic[T]',                        '[*Tuple[int]]',           'TypeError'),
             # Ditto.
-            ('generic[T]',                        '[*tuple_type[int, str]]', 'generic[*tuple_type[int, str]]'),
+            ('generic[T]',                        '[*tuple[int, str]]',      'generic[*tuple[int, str]]'),
+            ('generic[T]',                        '[*Tuple[int, str]]',      'TypeError'),
             # Ditto.
-            ('generic[T]',                        '[*tuple_type[int, ...]]', 'generic[*tuple_type[int, ...]]'),
-            # Ditto.
-            ('generic[T]',                        '[*Ts]',                   'generic[*Ts]'),
+            ('generic[T]',                        '[*tuple[int, ...]]',      'generic[*tuple[int, ...]]'),
+            ('generic[T]',                        '[*Tuple[int, ...]]',      'TypeError'),
+            ('generic[T]',                        '[*Ts]',                   'TypeError'),
             ('generic[T]',                        '[T, *Ts]',                'TypeError'),
             ('generic[T]',                        '[*Ts, T]',                'TypeError'),
             # Raises TypeError because C is not variadic.
