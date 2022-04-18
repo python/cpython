@@ -349,7 +349,7 @@ PyTypeObject PyMethod_Type = {
     .tp_members = method_memberlist,
     .tp_getset = method_getset,
     .tp_descr_get = method_descr_get,
-    .tp_new = method,
+    .tp_new = method_new,
 };
 
 /* ------------------------------------------------------------------------
@@ -549,5 +549,5 @@ PyTypeObject PyInstanceMethod_Type = {
     .tp_members = instancemethod_memberlist,
     .tp_getset = instancemethod_getset,
     .tp_descr_get = instancemethod_descr_get,
-    .tp_new = instancemethod,
+    .tp_new = instancemethod_new,
 };
