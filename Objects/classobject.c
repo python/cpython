@@ -341,7 +341,7 @@ PyTypeObject PyMethod_Type = {
     .tp_setattro = PyObject_GenericSetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
                 Py_TPFLAGS_HAVE_VECTORCALL,
-    .tp_doc = method__doc__,
+    .tp_doc = method_new__doc__,
     .tp_traverse = (traverseproc)method_traverse,
     .tp_richcompare = method_richcompare,
     .tp_weaklistoffset = offsetof(PyMethodObject, im_weakreflist),
@@ -543,7 +543,7 @@ PyTypeObject PyInstanceMethod_Type = {
     .tp_getattro = instancemethod_getattro,
     .tp_setattro = PyObject_GenericSetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_doc = instancemethod__doc__,
+    .tp_doc = instancemethod_new__doc__,
     .tp_traverse = instancemethod_traverse,
     .tp_richcompare = instancemethod_richcompare,
     .tp_members = instancemethod_memberlist,
