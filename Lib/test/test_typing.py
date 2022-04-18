@@ -636,27 +636,30 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[T1, T2]',                        '[int]',                                             'TypeError'),
             ('generic[T1, T2]',                        '[int, str]',                                        'generic[int, str]'),
             ('generic[T1, T2]',                        '[int, str, bool]',                                  'TypeError'),
+            ('generic[T1, T2]',                        '[*tuple_type[int]]',                                'TypeError'),
+            ('generic[T1, T2]',                        '[*tuple_type[int, str]]',                           'TypeError'),
+            ('generic[T1, T2]',                        '[*tuple_type[int, str, bool]]',                     'TypeError'),
+
             # Should raise TypeError according to the tentative spec: unpacked
             # types are only valid as arguments to a TypeVarTuple.
-            ('generic[T1, T2]',                        '[*tuple_type[int]]',                                'TypeError'),
-            # Ditto.
-            ('generic[T1, T2]',                        '[*tuple_type[int, str]]',                           'TypeError'),
-            # Ditto.
-            ('generic[T1, T2]',                        '[*tuple_type[int, str, bool]]',                     'TypeError'),
-            # Ditto.
             ('generic[T1, T2]',                        '[*tuple[int, str], *tuple[float, bool]]',           'generic[*tuple[int, str], *tuple[float, bool]]'),
             ('generic[T1, T2]',                        '[*Tuple[int, str], *Tuple[float, bool]]',           'TypeError'),
+
             ('generic[T1, T2]',                        '[tuple_type[int, ...]]',                            'TypeError'),
             ('generic[T1, T2]',                        '[tuple_type[int, ...], tuple_type[str, ...]]',      'generic[tuple_type[int, ...], tuple_type[str, ...]]'),
-            # Ditto.
             ('generic[T1, T2]',                        '[*tuple_type[int, ...]]',                           'TypeError'),
-            # Ditto.
+
+            # Should raise TypeError according to the tentative spec: unpacked
+            # types are only valid as arguments to a TypeVarTuple.
             ('generic[T1, T2]',                        '[*tuple[int, ...], *tuple[str, ...]]',              'generic[*tuple[int, ...], *tuple[str, ...]]'),
             ('generic[T1, T2]',                        '[*Tuple[int, ...], *Tuple[str, ...]]',              'TypeError'),
+
             ('generic[T1, T2]',                        '[*Ts]',                                             'TypeError'),
             ('generic[T1, T2]',                        '[T, *Ts]',                                          'TypeError'),
             ('generic[T1, T2]',                        '[*Ts, T]',                                          'TypeError'),
-            # Ditto. (None of the things in `generics` were defined using *Ts.)
+            # Should raise TypeError according to the tentative spec: unpacked
+            # types are only valid as arguments to a TypeVarTuple.
+            # (None of the things in `generics` were defined using *Ts.)
             ('generic[T1, *tuple_type[int, ...]]',     '[str]',                                             'generic[str, *tuple_type[int, ...]]'),
         ]
 
@@ -689,8 +692,6 @@ class GenericAliasSubstitutionTests(BaseTestCase):
         tests = [
             # Alias                                    # Args                                               # Expected result
             ('generic[T1, bool, T2]',                  '[int, str]',                                        'generic[int, bool, str]'),
-            # Should raise TypeError according to the tentative spec: unpacked
-            # types are only valid as arguments to a TypeVarTuple.
             ('generic[T1, bool, T2]',                  '[*tuple_type[int, str]]',                           'TypeError'),
         ]
 
