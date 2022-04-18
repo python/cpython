@@ -226,7 +226,7 @@ class GCTests(unittest.TestCase):
         gc.collect()
         del d
         self.assertEqual(gc.collect(), 2)
-    
+
     def test_function_tp_clear_leaves_consistent_state(self):
         # https://github.com/python/cpython/issues/91636
         code = """if 1:
