@@ -12181,6 +12181,14 @@ LIBS=$save_LIBS
 
 fi
 
+case $ac_sys_system in #(
+  NetBSD*) :
+    OSSAUDIODEV_LIBS="-lossaudio" ;; #(
+  *) :
+    OSSAUDIODEV_LIBS=""
+ ;;
+esac
+
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBSQLITE3" >&5
@@ -23250,7 +23258,7 @@ fi
   if test "x$py_cv_module_ossaudiodev" = xyes; then :
 
 
-
+    as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV_LDFLAGS=$OSSAUDIODEV_LIBS$as_nl"
 
 fi
    if test "$py_cv_module_ossaudiodev" = yes; then
