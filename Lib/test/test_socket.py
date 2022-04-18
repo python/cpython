@@ -5177,6 +5177,24 @@ class NetworkConnectionNoServer(unittest.TestCase):
         expected_errnos = socket_helper.get_socket_conn_refused_errs()
         self.assertIn(cm.exception.errno, expected_errnos)
 
+    def test_create_connection_all_errors(self):
+        port = socket_helper.find_unused_port()
+        try:
+            socket.create_connection((HOST, port), all_errors=True)
+        except ExceptionGroup as e:
+            eg = e
+        else:
+            self.fail('expected connection to fail')
+
+        self.assertIsInstance(eg, ExceptionGroup)
+        for e in eg.exceptions:
+            self.assertIsInstance(e, OSError)
+
+        addresses = socket.getaddrinfo(
+            'localhost', port, 0, socket.SOCK_STREAM)
+        # assert that we got an exception for each address
+        self.assertEqual(len(addresses), len(eg.exceptions))
+
     def test_create_connection_timeout(self):
         # Issue #9792: create_connection() should not recast timeout errors
         # as generic socket errors.
