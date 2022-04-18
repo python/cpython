@@ -1692,6 +1692,7 @@ finalize_interp_types(PyInterpreterState *interp)
 
     _PyUnicode_Fini(interp);
     _PyFloat_Fini(interp);
+    _PyLong_Fini(interp);
 }
 
 

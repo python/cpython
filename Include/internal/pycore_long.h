@@ -16,6 +16,7 @@ extern "C" {
 
 extern PyStatus _PyLong_InitTypes(PyInterpreterState *);
 extern void _PyLong_FiniTypes(PyInterpreterState *interp);
+extern void _PyLong_Fini(PyInterpreterState *);
 
 
 /* other API */

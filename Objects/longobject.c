@@ -6070,3 +6070,29 @@ _PyLong_FiniTypes(PyInterpreterState *interp)
 
     _PyStructSequence_FiniType(&Int_InfoType);
 }
+
+void
+_PyLong_ClearFreeList(PyInterpreterState *interp)
+{
+#if PyLong_MAXFREELIST > 0
+    struct _Py_long_state *state = &interp->long_state;
+    PyLongObject *num = state->free_list;
+    while (num != NULL) {
+        PyLongObject *next = (PyLongObject *) Py_TYPE(num);
+        PyObject_Free(num);
+        num = next;
+    }
+    state->free_list = NULL;
+    state->numfree = 0;
+#endif
+}
+
+void
+_PyLong_Fini(PyInterpreterState *interp)
+{
+    _PyLong_ClearFreeList(interp);
+#if defined(Py_DEBUG) && PyLong_MAXFREELIST > 0
+    struct _Py_long_state *state = &interp->long_state;
+    state->numfree = -1;
+#endif
+}

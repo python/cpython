@@ -1036,6 +1036,7 @@ clear_freelists(PyInterpreterState *interp)
 {
     _PyTuple_ClearFreeList(interp);
     _PyFloat_ClearFreeList(interp);
+    _PyLong_ClearFreeList(interp);
     _PyList_ClearFreeList(interp);
     _PyDict_ClearFreeList(interp);
     _PyAsyncGen_ClearFreeLists(interp);
