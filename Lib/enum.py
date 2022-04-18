@@ -1214,15 +1214,18 @@ class Enum(metaclass=EnumType):
         count: the number of existing members
         last_values: the list of values assigned
         """
-        incrementable_last_values = []
-        for val in last_values:
-            try:
-                incrementable_last_values.append(val + 1)
-            except TypeError:
-                pass
 
-        if incrementable_last_values:
-            return sorted(incrementable_last_values)[-1]
+        # Filter funciton to deal with last_values lists of mixed types
+        def test_incrementable(n):
+            try:
+                n + 1
+                return True
+            except:
+                return False
+
+        checked_last_values = sorted(filter(test_incrementable, last_values))
+        if checked_last_values:
+            return checked_last_values[-1] + 1
         else:
             return start
 
