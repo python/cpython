@@ -1,1 +1,1 @@
-Removes deprecated ``SO`` config variable in ``sysconfig.py``
+Remove deprecated ``SO`` config variable in :mod:`sysconfig`.
