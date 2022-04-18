@@ -1138,6 +1138,13 @@ class BlobTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "data longer than blob"):
             self.blob.write(b"a" * 1000)
 
+        self.blob.seek(0, SEEK_SET)
+        n = len(self.blob)
+        self.blob.write(b"a" * (n-1))
+        self.blob.write(b"a" * 1)
+        with self.assertRaisesRegex(ValueError, "data longer than blob"):
+            self.blob.write(b"a" * 1)
+
     def test_blob_write_error_row_changed(self):
         self.cx.execute("update test set b='aaaa' where rowid=1")
         with self.assertRaises(sqlite.OperationalError):
@@ -1177,6 +1184,15 @@ class BlobTests(unittest.TestCase):
         expected = b"b" + self.data[1:]
         actual = self.cx.execute("select b from test").fetchone()[0]
         self.assertEqual(actual, expected)
+
+    def test_blob_set_item_with_offset(self):
+        self.blob.seek(0, SEEK_END)
+        self.assertEqual(self.blob.read(), b"")  # verify that we're at EOB
+        self.blob[0] = b"T"
+        self.blob[-1] = b"."
+        self.blob.seek(0, SEEK_SET)
+        expected = b"This blob data string is exactly fifty bytes long."
+        self.assertEqual(self.blob.read(), expected)
 
     def test_blob_set_buffer_object(self):
         from array import array

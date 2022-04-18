@@ -123,7 +123,7 @@ static PyObject *
 inner_read(pysqlite_Blob *self, Py_ssize_t length, Py_ssize_t offset)
 {
     assert(length <= sqlite3_blob_bytes(self->blob));
-    assert(offset <= sqlite3_blob_bytes(self->blob) - self->offset);
+    assert(offset <= sqlite3_blob_bytes(self->blob));
 
     PyObject *buffer = PyBytes_FromStringAndSize(NULL, length);
     if (buffer == NULL) {
@@ -188,13 +188,13 @@ inner_write(pysqlite_Blob *self, const void *buf, Py_ssize_t len,
             Py_ssize_t offset)
 {
     int blob_len = sqlite3_blob_bytes(self->blob);
-    int remaining_len = blob_len - self->offset;
+    int remaining_len = blob_len - offset;
     if (len > remaining_len) {
         PyErr_SetString(PyExc_ValueError, "data longer than blob length");
         return -1;
     }
 
-    assert(offset <= remaining_len);
+    assert(offset <= blob_len);
     int rc;
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_blob_write(self->blob, buf, (int)len, (int)offset);
