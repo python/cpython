@@ -11,11 +11,13 @@
 static int
 warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char, Token *t)
 {
+    int octal = ('4' <= first_invalid_escape_char &&
+                 first_invalid_escape_char <= '7');
     PyObject *msg =
-        ('4' <= first_invalid_escape_char && first_invalid_escape_char <= '7')
-        ? PyUnicode_FromFormat("invalid escape sequence '\\%c'",
-                               first_invalid_escape_char)
-        : PyUnicode_FromString("invalid octal escape sequence");
+        octal
+        ? PyUnicode_FromString("invalid octal escape sequence")
+        : PyUnicode_FromFormat("invalid escape sequence '\\%c'",
+                               first_invalid_escape_char);
     if (msg == NULL) {
         return -1;
     }
@@ -30,7 +32,13 @@ warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char,
                since _PyPegen_raise_error uses p->tokens[p->fill - 1] for the
                error location, if p->known_err_token is not set. */
             p->known_err_token = t;
-            RAISE_SYNTAX_ERROR("invalid escape sequence '\\%c'", first_invalid_escape_char);
+            if (octal) {
+                RAISE_SYNTAX_ERROR("invalid octal escape sequence");
+            }
+            else {
+                RAISE_SYNTAX_ERROR("invalid escape sequence '\\%c'",
+                                   first_invalid_escape_char);
+            }
         }
         Py_DECREF(msg);
         return -1;

@@ -116,6 +116,7 @@ class TestLiterals(unittest.TestCase):
             warnings.simplefilter('always', category=DeprecationWarning)
             eval("'''\n\\z'''")
         self.assertEqual(len(w), 1)
+        self.assertEqual(str(w[0].message), r"invalid escape sequence '\z'")
         self.assertEqual(w[0].filename, '<string>')
         self.assertEqual(w[0].lineno, 1)
 
@@ -125,6 +126,7 @@ class TestLiterals(unittest.TestCase):
                 eval("'''\n\\z'''")
             exc = cm.exception
         self.assertEqual(w, [])
+        self.assertEqual(exc.msg, r"invalid escape sequence '\z'")
         self.assertEqual(exc.filename, '<string>')
         self.assertEqual(exc.lineno, 1)
         self.assertEqual(exc.offset, 1)
@@ -138,6 +140,7 @@ class TestLiterals(unittest.TestCase):
             warnings.simplefilter('always', category=DeprecationWarning)
             eval("'''\n\\407'''")
         self.assertEqual(len(w), 1)
+        self.assertEqual(str(w[0].message), 'invalid octal escape sequence')
         self.assertEqual(w[0].filename, '<string>')
         self.assertEqual(w[0].lineno, 1)
 
@@ -147,6 +150,7 @@ class TestLiterals(unittest.TestCase):
                 eval("'''\n\\407'''")
             exc = cm.exception
         self.assertEqual(w, [])
+        self.assertEqual(exc.msg, 'invalid octal escape sequence')
         self.assertEqual(exc.filename, '<string>')
         self.assertEqual(exc.lineno, 1)
         self.assertEqual(exc.offset, 1)
@@ -188,6 +192,7 @@ class TestLiterals(unittest.TestCase):
             warnings.simplefilter('always', category=DeprecationWarning)
             eval("b'''\n\\z'''")
         self.assertEqual(len(w), 1)
+        self.assertEqual(str(w[0].message), r"invalid escape sequence '\z'")
         self.assertEqual(w[0].filename, '<string>')
         self.assertEqual(w[0].lineno, 1)
 
@@ -197,6 +202,7 @@ class TestLiterals(unittest.TestCase):
                 eval("b'''\n\\z'''")
             exc = cm.exception
         self.assertEqual(w, [])
+        self.assertEqual(exc.msg, r"invalid escape sequence '\z'")
         self.assertEqual(exc.filename, '<string>')
         self.assertEqual(exc.lineno, 1)
 
@@ -209,6 +215,7 @@ class TestLiterals(unittest.TestCase):
             warnings.simplefilter('always', category=DeprecationWarning)
             eval("b'''\n\\407'''")
         self.assertEqual(len(w), 1)
+        self.assertEqual(str(w[0].message), 'invalid octal escape sequence')
         self.assertEqual(w[0].filename, '<string>')
         self.assertEqual(w[0].lineno, 1)
 
@@ -218,6 +225,7 @@ class TestLiterals(unittest.TestCase):
                 eval("b'''\n\\407'''")
             exc = cm.exception
         self.assertEqual(w, [])
+        self.assertEqual(exc.msg, 'invalid octal escape sequence')
         self.assertEqual(exc.filename, '<string>')
         self.assertEqual(exc.lineno, 1)
 
