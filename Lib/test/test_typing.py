@@ -4410,9 +4410,14 @@ class GetTypeHintTests(BaseTestCase):
 
     def test_get_type_hints_collections_abc_callable(self):
         # https://github.com/python/cpython/issues/91621
+        P = ParamSpec('P')
         def f(x: collections.abc.Callable[[int], int]): ...
+        def g(x: collections.abc.Callable[..., int]): ...
+        def h(x: collections.abc.Callable[P, int]): ...
 
         self.assertEqual(get_type_hints(f), {'x': collections.abc.Callable[[int], int]})
+        self.assertEqual(get_type_hints(g), {'x': collections.abc.Callable[..., int]})
+        self.assertEqual(get_type_hints(h), {'x': collections.abc.Callable[P, int]})
 
 
 class GetUtilitiesTestCase(TestCase):
