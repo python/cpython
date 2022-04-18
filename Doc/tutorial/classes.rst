@@ -210,21 +210,21 @@ or things like ``try`` blocks aren't afefcted by scope::
 
    >>> if True:
    ...     inside_if = "Inside if statement"
-   ... 
+   ...
    >>> print(inside_if)
    Inside if statement
-   >>> 
+   >>>
    >>> try:
    ...     inside_try = "Inside try block"
    ... except Exception:
    ...     pass
    ... finally:
    ...     print(inside_try)
-   ... 
+   ...
    Inside try block
    >>> for _ in range(1):
    ...     inside_for = "Inside for loop"
-   ... 
+   ...
    >>> print(inside_for)
    Inside for loop
 
