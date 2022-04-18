@@ -1932,6 +1932,7 @@ unicode_dealloc(PyObject *unicode)
     Py_TYPE(unicode)->tp_free(unicode);
 }
 
+#ifdef Py_DEBUG
 static int
 unicode_is_singleton(PyObject *unicode)
 {
@@ -1948,6 +1949,7 @@ unicode_is_singleton(PyObject *unicode)
     }
     return 0;
 }
+#endif
 
 static int
 unicode_modifiable(PyObject *unicode)
