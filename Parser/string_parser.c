@@ -12,7 +12,10 @@ static int
 warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char, Token *t)
 {
     PyObject *msg =
-        PyUnicode_FromFormat("invalid escape sequence '\\%c'", first_invalid_escape_char);
+        ('4' <= first_invalid_escape_char && first_invalid_escape_char <= '7')
+        ? PyUnicode_FromFormat("invalid escape sequence '\\%c'",
+                               first_invalid_escape_char)
+        : PyUnicode_FromString("invalid octal escape sequence");
     if (msg == NULL) {
         return -1;
     }
@@ -357,7 +360,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
             break;
         }
     }
-    
+
     if (s == expr_end) {
         if (*expr_end == '!' || *expr_end == ':' || *expr_end == '=') {
             RAISE_SYNTAX_ERROR("f-string: expression required before '%c'", *expr_end);

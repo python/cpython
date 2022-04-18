@@ -596,6 +596,11 @@ Notes:
 (1)
    As in Standard C, up to three octal digits are accepted.
 
+   .. versionchanged:: 3.11
+      Octal escapes with value larger than ``0o377`` produce a :exc:`DeprecationWarning`.
+      In a future Python version they will be a :exc:`SyntaxWarning` and
+      eventually a :exc:`SyntaxError`.
+
 (2)
    Unlike in Standard C, exactly two hex digits are required.
 
