@@ -85,7 +85,9 @@
 
     <Fragment>
         <DirectoryRef Id="InstallDirectory">
-            <Directory Id="Doc" Name="Doc" />
+            <Directory Id="Doc" Name="Doc">
+                <Directory Id="Doc_html" Name="html" />
+            </Directory>
         </DirectoryRef>
     </Fragment>
 

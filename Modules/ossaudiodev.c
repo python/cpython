@@ -1117,6 +1117,13 @@ PyInit_ossaudiodev(void)
 {
     PyObject *m;
 
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "'ossaudiodev' is deprecated and slated for removal in "
+                     "Python 3.13",
+                     7)) {
+        return NULL;
+    }
+
     if (PyType_Ready(&OSSAudioType) < 0)
         return NULL;
 

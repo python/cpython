@@ -12,7 +12,6 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_code.h"          // _PyCode_New()
 #include "pycore_hashtable.h"     // _Py_hashtable_t
-#include "code.h"
 #include "marshal.h"              // Py_MARSHAL_VERSION
 
 /*[clinic input]

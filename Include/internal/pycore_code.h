@@ -110,6 +110,8 @@ _PyCode_Warmup(PyCodeObject *code)
     }
 }
 
+extern uint8_t _PyOpcode_Adaptive[256];
+
 extern Py_ssize_t _Py_QuickenedCount;
 
 // Borrowed references to common callables:
@@ -263,7 +265,7 @@ extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
 extern int _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr,
                                   int nargs, PyObject *kwnames, int oparg);
 extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
-                                    int oparg);
+                                    int oparg, PyObject **locals);
 extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
                                      _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,

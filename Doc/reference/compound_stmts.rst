@@ -157,17 +157,14 @@ The :keyword:`for` statement is used to iterate over the elements of a sequence
    for_stmt: "for" `target_list` "in" `starred_list` ":" `suite`
            : ["else" ":" `suite`]
 
-The expression list is evaluated once; it should yield an iterable object.  An
-iterator is created for the result of the ``starred_list``.  The expression
-list can contain starred elements (``*x, *y``) that will be unpacked in the
-final iterator (as when constructing a ``tuple`` or ``list`` literal). The
-suite is then executed once for each item provided by the iterator, in the
-order returned by the iterator.  Each item in turn is assigned to the target
-list using the standard rules for assignments (see :ref:`assignment`), and then
-the suite is executed.  When the items are exhausted (which is immediately when
-the sequence is empty or an iterator raises a :exc:`StopIteration` exception),
-the suite in the :keyword:`!else` clause, if present, is executed, and the loop
-terminates.
+The ``starred_list`` expression is evaluated once; it should yield an
+:term:`iterable` object.  An :term:`iterator` is created for that iterable.
+The first item provided
+by the iterator is then assigned to the target list using the standard
+rules for assignments (see :ref:`assignment`), and the suite is executed.  This
+repeats for each item provided by the iterator.  When the iterator is exhausted,
+the suite in the :keyword:`!else` clause,
+if present, is executed, and the loop terminates.
 
 .. index::
    statement: break
@@ -243,9 +240,10 @@ is found that matches the exception.  An expression-less except clause, if
 present, must be last; it matches any exception.  For an except clause with an
 expression, that expression is evaluated, and the clause matches the exception
 if the resulting object is "compatible" with the exception.  An object is
-compatible with an exception if the object is the class or a base class of the exception
-object, or a tuple containing an item that is the class or a base class of
-the exception object.
+compatible with an exception if the object is the class or a
+:term:`non-virtual base class <abstract base class>` of the exception object,
+or a tuple containing an item that is the class or a non-virtual base class
+of the exception object.
 
 If no except clause matches the exception, the search for an exception handler
 continues in the surrounding code and on the invocation stack.  [#]_
