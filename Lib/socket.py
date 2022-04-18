@@ -834,7 +834,7 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
                 sock.bind(source_address)
             sock.connect(sa)
             # Break explicitly a reference cycle
-            err = None
+            exceptions.clear()
             return sock
 
         except error as exc:
