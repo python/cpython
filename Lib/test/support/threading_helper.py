@@ -39,7 +39,7 @@ def threading_cleanup(*original_values):
             support.print_warning(f"threading_cleanup() failed to cleanup "
                                   f"{values[0] - original_values[0]} threads "
                                   f"(count: {values[0]}, "
-                                  f"dangling: {len(dangling_threads)}), ")
+                                  f"dangling: {len(dangling_threads)}), "
                                   f"ident before {values[2]} ident after {values[2]})")
             for thread in dangling_threads:
                 support.print_warning(f"Dangling thread: {thread!r}")
