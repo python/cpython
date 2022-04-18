@@ -15697,7 +15697,7 @@ unicodeiter_traverse(unicodeiterobject *it, visitproc visit, void *arg)
 static PyObject *
 unicodeiter_next(unicodeiterobject *it)
 {
-    PyObject *seq, *item;
+    PyObject *seq;
 
     assert(it != NULL);
     seq = it->it_seq;
@@ -15709,12 +15709,33 @@ unicodeiter_next(unicodeiterobject *it)
         int kind = PyUnicode_KIND(seq);
         const void *data = PyUnicode_DATA(seq);
         Py_UCS4 chr = PyUnicode_READ(kind, data, it->it_index);
-        item = PyUnicode_FromOrdinal(chr);
-        if (item != NULL)
-            ++it->it_index;
-        return item;
+        it->it_index++;
+        return unicode_char(chr);
     }
 
+    it->it_seq = NULL;
+    Py_DECREF(seq);
+    return NULL;
+}
+
+static PyObject *
+unicode_ascii_iter_next(unicodeiterobject *it)
+{
+    assert(it != NULL);
+    PyObject *seq = it->it_seq;
+    if (seq == NULL) {
+        return NULL;
+    }
+    assert(_PyUnicode_CHECK(seq));
+    assert(PyUnicode_IS_COMPACT_ASCII(seq));
+    if (it->it_index < PyUnicode_GET_LENGTH(seq)) {
+        const void *data = ((void*)(_PyASCIIObject_CAST(seq) + 1));
+        Py_UCS1 chr = (Py_UCS1)PyUnicode_READ(PyUnicode_1BYTE_KIND,
+                                              data, it->it_index);
+        it->it_index++;
+        PyObject *item = (PyObject*)&_Py_SINGLETON(strings).ascii[chr];
+        return Py_NewRef(item);
+    }
     it->it_seq = NULL;
     Py_DECREF(seq);
     return NULL;
@@ -15808,6 +15829,19 @@ PyTypeObject PyUnicodeIter_Type = {
     0,
 };
 
+PyTypeObject _PyUnicodeASCIIIter_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "str_ascii_iterator",
+    .tp_basicsize = sizeof(unicodeiterobject),
+    .tp_dealloc = (destructor)unicodeiter_dealloc,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = (traverseproc)unicodeiter_traverse,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)unicode_ascii_iter_next,
+    .tp_methods = unicodeiter_methods,
+};
+
 static PyObject *
 unicode_iter(PyObject *seq)
 {
@@ -15819,7 +15853,12 @@ unicode_iter(PyObject *seq)
     }
     if (PyUnicode_READY(seq) == -1)
         return NULL;
-    it = PyObject_GC_New(unicodeiterobject, &PyUnicodeIter_Type);
+    if (PyUnicode_IS_COMPACT_ASCII(seq)) {
+        it = PyObject_GC_New(unicodeiterobject, &_PyUnicodeASCIIIter_Type);
+    }
+    else {
+        it = PyObject_GC_New(unicodeiterobject, &PyUnicodeIter_Type);
+    }
     if (it == NULL)
         return NULL;
     it->it_index = 0;
