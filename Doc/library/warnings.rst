@@ -507,9 +507,9 @@ Available Context Managers
     protected. This argument exists primarily for testing the :mod:`warnings`
     module itself.
 
-    If the *action* argument is not None, the remaining arguments are passed
-    to :func:`simplefilter` as if it were called immediately on entering the
-    context.
+    If the *action* argument is not ``None``, the remaining arguments are
+    passed to :func:`simplefilter` as if it were called immediately on
+    entering the context.
 
     .. note::
 
