@@ -1166,8 +1166,8 @@ are always available.  They are listed here in alphabetical order.
    to switch buffering off (only allowed in binary mode), 1 to select line
    buffering (only usable in text mode), and an integer > 1 to indicate the size
    in bytes of a fixed-size chunk buffer. Note that specifying a buffer size this
-   way does not apply for files opened in text mode, where
-   :attr:`io.DEFAULT_BUFFER_SIZE` applies instead. For configuring text buffer
+   way applies for binary buffered I/O, but ``TextIOWrapper`` (i.e., files opened
+   with ``mode='r+'``) would have another buffering. For configuring text buffer
    sizes, consider using the ``write_through`` flag for
    :func:`io.TextIOWrapper.reconfigure`. When no *buffering* argument is
    given, the default buffering policy works as follows:
