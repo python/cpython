@@ -667,10 +667,6 @@ def get_config_vars(*args):
             _CONFIG_VARS['VPATH'] = sys._vpath
         if os.name == 'posix':
             _init_posix(_CONFIG_VARS)
-        # For backward compatibility, see issue19555
-        SO = _CONFIG_VARS.get('EXT_SUFFIX')
-        if SO is not None:
-            _CONFIG_VARS['SO'] = SO
         if _HAS_USER_BASE:
             # Setting 'userbase' is done below the call to the
             # init function to enable using 'get_config_var' in
@@ -715,9 +711,6 @@ def get_config_var(name):
 
     Equivalent to get_config_vars().get(name)
     """
-    if name == 'SO':
-        import warnings
-        warnings.warn('SO is deprecated, use EXT_SUFFIX', DeprecationWarning, 2)
     return get_config_vars().get(name)
 
 
