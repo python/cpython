@@ -1097,10 +1097,10 @@ range_iter(PyObject *seq)
         goto long_range;
     }
     ulen = get_len_of_range(lstart, lstop, lstep);
-    if (ulen > PyLong_MASK ||
-        lstart > PyLong_MASK || lstart < -(long)PyLong_MASK ||
-        lstop > PyLong_MASK || lstop < -(long)PyLong_MASK ||
-        lstep > PyLong_MASK || lstep < -(long)PyLong_MASK)
+    if (ulen > (long)PyLong_MASK ||
+        lstart > (long)PyLong_MASK || lstart < -(long)PyLong_MASK ||
+        lstop > (long)PyLong_MASK || lstop < -(long)PyLong_MASK ||
+        lstep > (long)PyLong_MASK || lstep < -(long)PyLong_MASK)
     {
         goto long_range;
     }
@@ -1190,10 +1190,10 @@ range_reverse(PyObject *seq, PyObject *Py_UNUSED(ignored))
 
     new_stop = lstart - lstep;
     new_start = (long)(new_stop + ulen * lstep);
-    if (ulen > PyLong_MASK ||
-        new_start > PyLong_MASK || new_start < -(long)PyLong_MASK ||
-        new_stop > PyLong_MASK || new_stop < -(long)PyLong_MASK ||
-        lstep > PyLong_MASK || lstep < -(long)PyLong_MASK)
+    if (ulen > (long)PyLong_MASK ||
+        new_start > (long)PyLong_MASK || new_start < -(long)PyLong_MASK ||
+        new_stop > (long)PyLong_MASK || new_stop < -(long)PyLong_MASK ||
+        lstep > (long)PyLong_MASK || lstep < -(long)PyLong_MASK)
     {
         goto long_range;
     }
