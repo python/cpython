@@ -2255,31 +2255,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.findall(r'(?>(?:ab){1,3})', 'ababc'), ['abab'])
 
     def test_bug_gh91616(self):
-        # These 3 jumps should use DO_JUMP0() instead of DO_JUMP()
-
-        # JUMP_POSS_REPEAT_1
-        self.assertTrue(re.fullmatch(r'(a*?b){1}+c', "abc"))
-        self.assertTrue(  re.fullmatch(r'(.b|a){1}+c', 'abc'))
-        self.assertIsNone(re.fullmatch(r'(a|.b){1}+c', 'abc'))
-        self.assertTrue(re.fullmatch(r'(?:(ab)*+){1}+c', 'abc'))
-        self.assertTrue(re.fullmatch(r'(?:(ab)?+){1}+c', 'abc'))
-
-        # JUMP_POSS_REPEAT_2
-        self.assertTrue(re.fullmatch(r'(a*?b)*+c', "abc"))
-        self.assertTrue(  re.fullmatch(r'(.b|a)*+c', 'abc'))
-        self.assertIsNone(re.fullmatch(r'(a|.b)*+c', 'abc'))
-        self.assertTrue(re.fullmatch(r'(?:(ab)*+)*+c', 'abc'))
-        self.assertTrue(re.fullmatch(r'(?:(ab)?+)*+c', 'abc'))
-
-        # JUMP_ATOMIC_GROUP
-        self.assertTrue(re.fullmatch(r'(?>a*?b)c', "abc"))
-        self.assertTrue(  re.fullmatch(r'(?>.b|a)c', 'abc'))
-        self.assertIsNone(re.fullmatch(r'(?>a|.b)c', 'abc'))
-        self.assertTrue(re.fullmatch(r'(?>(ab)*+)c', 'abc'))
-        self.assertTrue(re.fullmatch(r'(?>(ab)?+)c', 'abc'))
-
-        # test-cases provided by gh-91616
-        self.assertTrue(re.fullmatch(r'(?s:(?>.*?\.).*)\Z', "a.txt"))
+        self.assertTrue(re.fullmatch(r'(?s:(?>.*?\.).*)\Z', "a.txt")) # reproducer
         self.assertTrue(re.fullmatch(r'(?s:(?=(?P<g0>.*?\.))(?P=g0).*)\Z', "a.txt"))
 
 
