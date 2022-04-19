@@ -1000,11 +1000,11 @@ The :keyword:`!nonlocal` statement
                 : ["=" (`target_list` "=")+ starred_expression]
                 : | "nonlocal" identifier augop expression_list
 
-When the definition of a function or class is nested within the definitions of
-other functions, its nonlocal scopes are the local scopes of the enclosing
-function. The :keyword:`nonlocal` statement causes the listed identifiers to
-refer to previously bound variables in the nearest nonlocal enclosing scope,
-which excludes globals.
+When a function or class definition is nested within other function definitions,
+its nonlocal scopes are the local scopes of the enclosing function.
+The :keyword:`nonlocal` statement causes the listed identifiers to
+refer to names previously bound in nonlocal enclosing scope.
+If the name is bound in more than one nonlocal scope, the nearest binding is used.
 This is important because the default behavior for binding is to search the
 local namespace first.  The statement allows encapsulated code to rebind
 variables outside of the local scope besides the global (module) scope.
@@ -1015,11 +1015,11 @@ variables outside of the local scope besides the global (module) scope.
 
 Names listed in a :keyword:`nonlocal` statement, unlike those listed in a
 :keyword:`global` statement, must refer to pre-existing bindings in an
-enclosing scope (the scope in which a new binding should be created cannot
-be determined unambiguously).
+enclosing scope, otherwise a ``SyntaxError`` is raised (the scope in which a new
+binding should be created cannot be determined unambiguously).
 
 Names listed in a :keyword:`nonlocal` statement must not collide with
-pre-existing bindings in the local scope.
+pre-existing bindings in the local scope, otherwise a ``SyntaxError` is raised.
 
 .. seealso::
 
