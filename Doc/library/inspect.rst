@@ -1172,7 +1172,7 @@ is considered deprecated and may be removed in the future.
 
    .. attribute:: frame
 
-      The frame object that the record corresponds to.
+      The :ref:`frame object <frame-objects>` that the record corresponds to.
 
    .. attribute:: filename
 
@@ -1195,7 +1195,7 @@ is considered deprecated and may be removed in the future.
 
    .. attribute:: index
 
-      The index of the current line being executed in the ``code_context`` list.
+      The index of the current line being executed in the :attr:`code_context` list.
 
    .. attribute:: positions
 
@@ -1232,7 +1232,7 @@ is considered deprecated and may be removed in the future.
 
    .. attribute:: index
 
-      The index of the current line being executed in the ``code_context`` list.
+      The index of the current line being executed in the :attr:`code_context` list.
 
    .. attribute:: positions
 
@@ -1276,7 +1276,7 @@ line.
    is returned.
 
    .. versionchanged:: 3.11
-      A :class:`Traceback` object is returned inspead of a named tuple.
+      A :class:`Traceback` object is returned instead of a named tuple.
 
 .. function:: getouterframes(frame, context=1)
 
