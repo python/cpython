@@ -398,15 +398,12 @@ remove_column_info(PyObject *locations)
         return NULL;
     }
     uint8_t *output = (uint8_t *)PyBytes_AS_STRING(res);
-    Py_ssize_t len = PyBytes_GET_SIZE(res);
-    while (offset < len) {
-        Py_ssize_t len = PyBytes_GET_SIZE(res);
+    while (offset < PyBytes_GET_SIZE(locations)) {
         Py_ssize_t write_offset = output - (uint8_t *)PyBytes_AS_STRING(res);
         if (write_offset + 16 >= PyBytes_GET_SIZE(res)) {
-            if (_PyBytes_Resize(&res, len * 2) < 0) {
+            if (_PyBytes_Resize(&res, PyBytes_GET_SIZE(res) * 2) < 0) {
                 return NULL;
             }
-            len = PyBytes_GET_SIZE(res);
             output = (uint8_t *)PyBytes_AS_STRING(res) + write_offset;
         }
         int blength = data[offset] & 7;
@@ -420,7 +417,8 @@ remove_column_info(PyObject *locations)
             output += write_signed_varint(output, ldelta);
         }
         offset++;
-        while (offset < len && (data[offset] & 128) == 0) {
+        while (offset < PyBytes_GET_SIZE(locations) &&
+            (data[offset] & 128) == 0) {
             offset++;
         }
     }
