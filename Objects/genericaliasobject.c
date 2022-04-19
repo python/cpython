@@ -349,6 +349,11 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     return newargs;
 }
 
+PyDoc_STRVAR(genericalias__doc__,
+"Represent a PEP 585 generic type\n"
+"\n"
+"E.g. for t = list[int], t.__origin__ is list and t.__args__ is (int,).");
+
 static PyObject *
 ga_getitem(PyObject *self, PyObject *item)
 {
@@ -628,14 +633,11 @@ static PyNumberMethods ga_as_number = {
 
 // TODO:
 // - argument clinic?
-// - __doc__?
 // - cache?
 PyTypeObject Py_GenericAliasType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "types.GenericAlias",
-    .tp_doc = "Represent a PEP 585 generic type\n"
-              "\n"
-              "E.g. for t = list[int], t.__origin__ is list and t.__args__ is (int,).",
+    .tp_doc = genericalias__doc__,
     .tp_basicsize = sizeof(gaobject),
     .tp_dealloc = ga_dealloc,
     .tp_repr = ga_repr,
