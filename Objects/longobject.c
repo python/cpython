@@ -124,6 +124,15 @@ long_normalize(PyLongObject *v)
     return v;
 }
 
+#if PyLong_MAXFREELIST > 0
+static struct _Py_long_state *
+get_long_state(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->long_state;
+}
+#endif
+
 /* Allocate a new int object with size digits.
    Return NULL and set exception if we run out of memory. */
 
@@ -188,11 +197,26 @@ _PyLong_FromMedium(sdigit x)
 {
     assert(!IS_SMALL_INT(x));
     assert(is_medium_int(x));
-    /* We could use a freelist here */
-    PyLongObject *v = PyObject_Malloc(sizeof(PyLongObject));
-    if (v == NULL) {
-        PyErr_NoMemory();
-        return NULL;
+    PyLongObject *v;
+#if PyLong_MAXFREELIST > 0
+    struct _Py_long_state *state = get_long_state();
+    v = state->free_list;
+    if (v != NULL) {
+#ifdef Py_DEBUG
+        assert(state->numfree != -1);
+#endif
+        state->free_list = (PyLongObject *) Py_TYPE(v);
+        state->numfree--;
+    }
+    else
+#endif
+    {
+        /* We could use a freelist here */
+        v = PyObject_Malloc(sizeof(PyLongObject));
+        if (v == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
     }
     Py_ssize_t sign = x < 0 ? -1: 1;
     digit abs_x = x < 0 ? -x : x;
@@ -3039,6 +3063,30 @@ PyLong_AsDouble(PyObject *v)
 }
 
 /* Methods */
+
+static void
+float_dealloc(PyLongObject *op)
+{
+#if PyLong_MAXFREELIST > 0
+    if (PyLong_CheckExact(op) && IS_MEDIUM_VALUE(op)) {
+        struct _Py_long_state *state = get_long_state();
+#ifdef Py_DEBUG
+        assert(state->numfree != -1);
+#endif
+        if (state->numfree >= PyLong_MAXFREELIST) {
+            PyObject_Del(op);
+            return;
+        }
+        state->numfree++;
+        Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
+        state->free_list = op;
+    }
+    else
+#endif
+    {
+        Py_TYPE(op)->tp_free((PyObject *)op);
+    }
+}
 
 /* if a < b, return a negative number
    if a == b, return 0
@@ -5957,7 +6005,7 @@ PyTypeObject PyLong_Type = {
     "int",                                      /* tp_name */
     offsetof(PyLongObject, ob_digit),           /* tp_basicsize */
     sizeof(digit),                              /* tp_itemsize */
-    0,                                          /* tp_dealloc */
+    (destructor)float_dealloc,                  /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
