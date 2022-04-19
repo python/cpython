@@ -1702,7 +1702,8 @@ def getframeinfo(frame, context=1):
     else:
         lines = index = None
 
-    return Traceback(filename, lineno, frame.f_code.co_name, lines, index, tuple(positions))
+    return Traceback(filename, lineno, frame.f_code.co_name, lines,
+                     index, dis.Positions(*positions))
 
 def getlineno(frame):
     """Get the line number from a frame object, allowing for optimization."""

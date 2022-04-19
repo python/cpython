@@ -1163,7 +1163,7 @@ Classes and functions
 The interpreter stack
 ---------------------
 
-When the following functions return "frame records," each record is a
+When the following functions return ":class:`FrameInfo` objects," each record is a
 :class:`FrameInfo` object. For backwards compatibility these objects allow
 tuple-like operations on all attributes except ``positions``. This behavior
 is considered deprecated and may be removed in the future.
@@ -1199,8 +1199,9 @@ is considered deprecated and may be removed in the future.
 
    .. attribute:: positions
 
-      A tuple containing the start line number, end line number, start column offset and end column
-      offset associated with the instruction being executed by the frame this record corresponds to.
+      A :class:`dis.Positions` object containing the start line number, end line
+      number, start column offset and end column offset associated with the
+      instruction being executed by the frame this record corresponds to.
 
 .. versionchanged:: 3.5
    Return a named tuple instead of a tuple.
@@ -1280,10 +1281,10 @@ line.
 
 .. function:: getouterframes(frame, context=1)
 
-   Get a list of frame records for a frame and all outer frames.  These frames
-   represent the calls that lead to the creation of *frame*. The first entry in the
-   returned list represents *frame*; the last entry represents the outermost call
-   on *frame*'s stack.
+   Get a list of :class:`FrameInfo` objects for a frame and all outer frames.
+   These frames represent the calls that lead to the creation of *frame*. The
+   first entry in the returned list represents *frame*; the last entry
+   represents the outermost call on *frame*'s stack.
 
    .. versionchanged:: 3.5
       A list of :term:`named tuples <named tuple>`
@@ -1295,10 +1296,10 @@ line.
 
 .. function:: getinnerframes(traceback, context=1)
 
-   Get a list of frame records for a traceback's frame and all inner frames.  These
-   frames represent calls made as a consequence of *frame*.  The first entry in the
-   list represents *traceback*; the last entry represents where the exception was
-   raised.
+   Get a list of :class:`FrameInfo` objects for a traceback's frame and all
+   inner frames.  These frames represent calls made as a consequence of *frame*.
+   The first entry in the list represents *traceback*; the last entry represents
+   where the exception was raised.
 
    .. versionchanged:: 3.5
       A list of :term:`named tuples <named tuple>`
@@ -1322,9 +1323,9 @@ line.
 
 .. function:: stack(context=1)
 
-   Return a list of frame records for the caller's stack.  The first entry in the
-   returned list represents the caller; the last entry represents the outermost
-   call on the stack.
+   Return a list of :class:`FrameInfo` objects for the caller's stack.  The
+   first entry in the returned list represents the caller; the last entry
+   represents the outermost call on the stack.
 
    .. versionchanged:: 3.5
       A list of :term:`named tuples <named tuple>`
@@ -1336,10 +1337,10 @@ line.
 
 .. function:: trace(context=1)
 
-   Return a list of frame records for the stack between the current frame and the
-   frame in which an exception currently being handled was raised in.  The first
-   entry in the list represents the caller; the last entry represents where the
-   exception was raised.
+   Return a list of :class:`FrameInfo` objects for the stack between the current
+   frame and the frame in which an exception currently being handled was raised
+   in.  The first entry in the list represents the caller; the last entry
+   represents where the exception was raised.
 
    .. versionchanged:: 3.5
       A list of :term:`named tuples <named tuple>`

@@ -7,6 +7,7 @@ import inspect
 import io
 import linecache
 import os
+import dis
 from os.path import normcase
 import _pickle
 import pickle
@@ -365,19 +366,19 @@ class TestInterpreterStack(IsTestBase):
         frameinfo = revise(*frame1[1:])
         self.assertEqual(frameinfo,
              (modfile, 16, 'eggs', ['    st = inspect.stack()\n'], 0))
-        self.assertEqual(frame1.positions, (16, 16, 9, 24))
+        self.assertEqual(frame1.positions, dis.Positions(16, 16, 9, 24))
         frameinfo = revise(*frame2[1:])
         self.assertEqual(frameinfo,
              (modfile, 9, 'spam', ['    eggs(b + d, c + f)\n'], 0))
-        self.assertEqual(frame2.positions, (9, 9, 4, 22))
+        self.assertEqual(frame2.positions, dis.Positions(9, 9, 4, 22))
         frameinfo = revise(*frame3[1:])
         self.assertEqual(frameinfo,
              (modfile, 43, 'argue', ['            spam(a, b, c)\n'], 0))
-        self.assertEqual(frame3.positions, (43, 43, 12, 25))
+        self.assertEqual(frame3.positions, dis.Positions(43, 43, 12, 25))
         frameinfo = revise(*frame4[1:])
         self.assertEqual(frameinfo,
              (modfile, 39, 'abuse', ['        self.argue(a, b, c)\n'], 0))
-        self.assertEqual(frame4.positions, (39, 39, 8, 27))
+        self.assertEqual(frame4.positions, dis.Positions(39, 39, 8, 27))
         # Test named tuple fields
         record = mod.st[0]
         self.assertIs(record.frame, mod.fr)
@@ -392,13 +393,13 @@ class TestInterpreterStack(IsTestBase):
         frame1, frame2, frame3, = git.tr
         self.assertEqual(revise(*frame1[1:]),
              (modfile, 43, 'argue', ['            spam(a, b, c)\n'], 0))
-        self.assertEqual(frame1.positions, (43, 43, 12, 25))
+        self.assertEqual(frame1.positions, dis.Positions(43, 43, 12, 25))
         self.assertEqual(revise(*frame2[1:]),
              (modfile, 9, 'spam', ['    eggs(b + d, c + f)\n'], 0))
-        self.assertEqual(frame2.positions, (9, 9, 4, 22))
+        self.assertEqual(frame2.positions, dis.Positions(9, 9, 4, 22))
         self.assertEqual(revise(*frame3[1:]),
              (modfile, 18, 'eggs', ['    q = y / 0\n'], 0))
-        self.assertEqual(frame3.positions, (18, 18, 8, 13))
+        self.assertEqual(frame3.positions, dis.Positions(18, 18, 8, 13))
 
     def test_frame(self):
         args, varargs, varkw, locals = inspect.getargvalues(mod.fr)
