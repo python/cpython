@@ -187,8 +187,8 @@ static int
 inner_write(pysqlite_Blob *self, const void *buf, Py_ssize_t len,
             Py_ssize_t offset)
 {
-    int blob_len = sqlite3_blob_bytes(self->blob);
-    int remaining_len = blob_len - offset;
+    Py_ssize_t blob_len = sqlite3_blob_bytes(self->blob);
+    Py_ssize_t remaining_len = blob_len - offset;
     if (len > remaining_len) {
         PyErr_SetString(PyExc_ValueError, "data longer than blob length");
         return -1;
