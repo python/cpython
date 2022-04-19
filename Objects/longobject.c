@@ -40,7 +40,7 @@ static inline void
 _Py_DECREF_INT(PyLongObject *op)
 {
     assert(PyLong_CheckExact(op));
-    _Py_DECREF_SPECIALIZED((PyObject *)op, _PyLong_ExactDealloc);
+    _Py_DECREF_SPECIALIZED((PyObject *)op, PyObject_Free);
 }
 
 static inline int
@@ -5860,13 +5860,6 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
     return long_obj;
 }
 
-void
-_PyLong_ExactDealloc(PyObject *op)
-{
-    assert(PyLong_CheckExact(op));
-    PyObject_Del(op);
-}
-
 static PyObject *
 long_long_meth(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
@@ -6008,7 +6001,7 @@ PyTypeObject PyLong_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     long_new,                                   /* tp_new */
-    PyObject_Del,                               /* tp_free */
+    PyObject_Free,                              /* tp_free */
 };
 
 static PyTypeObject Int_InfoType;
