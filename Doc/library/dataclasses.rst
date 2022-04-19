@@ -699,12 +699,10 @@ Note that the two instances of class ``C`` share the same class
 variable ``x``, as expected.
 
 Using dataclasses, *if* this code was valid::
-
-  from typing import List
   
   @dataclass
   class D:
-      x: List = []
+      x: list = field(default_factory=list)
       def add(self, element):
           self.x += element
 
