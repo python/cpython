@@ -48,9 +48,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // PyInterpreterState.fs_codec
 #include "pycore_long.h"          // _PyLong_FormatWriter()
-#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_object.h"        // _PyObject_GC_TRACK(), _Py_FatalRefcountError()
 #include "pycore_pathconfig.h"    // _Py_DumpPathConfig()
-#include "pycore_pyerrors.h"      // _Py_FatalRefcountError()
 #include "pycore_pylifecycle.h"   // _Py_SetFileSystemEncoding()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
@@ -15367,6 +15366,13 @@ unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
 onError:
     Py_DECREF(self);
     return NULL;
+}
+
+void
+_PyUnicode_ExactDealloc(PyObject *op)
+{
+    assert(PyUnicode_CheckExact(op));
+    unicode_dealloc(op);
 }
 
 PyDoc_STRVAR(unicode_doc,
