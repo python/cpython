@@ -1,0 +1,3 @@
+Stop calling ``os.device_encoding(file.fileno())`` in
+:class:`TextIOWrapper`. It was complex, never documented, and didn't work
+for most cases. (Patch by Inada Naoki.)

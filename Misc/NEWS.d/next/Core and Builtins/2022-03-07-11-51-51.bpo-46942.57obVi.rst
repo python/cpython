@@ -1,0 +1,2 @@
+Use Argument Clinic for the :class:`types.MethodType` constructor.  Patch by
+Oleg Iarygin.
