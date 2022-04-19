@@ -1,0 +1,4 @@
+Compilation of regular expression containing a conditional expression
+``(?(group)...)`` now raises an appropriate :exc:`re.error` if the group
+number refers to not defined group. Previously an internal RuntimeError was
+raised.
