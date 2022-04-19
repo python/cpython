@@ -1259,8 +1259,8 @@ dispatch:
             /* Check for minimum required matches. */
             while (ctx->count < (Py_ssize_t)pattern[1]) {
                 /* not enough matches */
-                DO_JUMP(JUMP_POSS_REPEAT_1, jump_poss_repeat_1,
-                        &pattern[3]);
+                DO_JUMP0(JUMP_POSS_REPEAT_1, jump_poss_repeat_1,
+                         &pattern[3]);
                 if (ret) {
                     RETURN_ON_ERROR(ret);
                     ctx->count++;
@@ -1306,8 +1306,8 @@ dispatch:
 
                 /* We have not reached the maximin matches, so try to
                    match once more. */
-                DO_JUMP(JUMP_POSS_REPEAT_2, jump_poss_repeat_2,
-                        &pattern[3]);
+                DO_JUMP0(JUMP_POSS_REPEAT_2, jump_poss_repeat_2,
+                         &pattern[3]);
 
                 /* Check to see if the last attempted match
                    succeeded. */
@@ -1348,15 +1348,15 @@ dispatch:
             TRACE(("|%p|%p|ATOMIC_GROUP\n", pattern, ptr));
 
             /* Set the global Input pointer to this context's Input
-            pointer */
+               pointer */
             state->ptr = ptr;
 
             /* Evaluate the Atomic Group in a new context, terminating
                when the end of the group, represented by a SUCCESS op
                code, is reached. */
             /* Group Pattern begins at an offset of 1 code. */
-            DO_JUMP(JUMP_ATOMIC_GROUP, jump_atomic_group,
-                    &pattern[1]);
+            DO_JUMP0(JUMP_ATOMIC_GROUP, jump_atomic_group,
+                     &pattern[1]);
 
             /* Test Exit Condition */
             RETURN_ON_ERROR(ret);
