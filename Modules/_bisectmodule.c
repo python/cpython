@@ -294,13 +294,6 @@ having to sort the list after each insertion. For long lists of items with\n\
 expensive comparison operations, this can be an improvement over the more\n\
 common approach.\n");
 
-
-static int
-bisect_traverse(PyObject *module, visitproc visit, void *arg)
-{
-    return 0;
-}
-
 static int
 bisect_clear(PyObject *module)
 {
@@ -338,7 +331,6 @@ static struct PyModuleDef _bisectmodule = {
     .m_doc = module_doc,
     .m_methods = bisect_methods,
     .m_slots = bisect_slots,
-    .m_traverse = bisect_traverse,
     .m_clear = bisect_clear,
     .m_free = bisect_free,
 };
