@@ -920,6 +920,48 @@ class CookieTests(unittest.TestCase):
 ##         self.assertEqual(len(c), 2)
         self.assertEqual(len(c), 4)
 
+    def test_localhost_domain(self):
+        c = CookieJar()
+
+        interact_netscape(c, "http://localhost", "foo=bar; domain=localhost;")
+
+        self.assertEqual(len(c), 1)
+
+    def test_localhost_domain_contents(self):
+        c = CookieJar()
+
+        interact_netscape(c, "http://localhost", "foo=bar; domain=localhost;")
+
+        self.assertEqual(c._cookies[".localhost"]["/"]["foo"].value, "bar")
+
+    def test_localhost_domain_contents_2(self):
+        c = CookieJar()
+
+        interact_netscape(c, "http://localhost", "foo=bar;")
+
+        self.assertEqual(c._cookies["localhost.local"]["/"]["foo"].value, "bar")
+
+    def test_evil_nonlocal_domain(self):
+        c = CookieJar()
+
+        interact_netscape(c, "http://evil.com", "foo=bar; domain=.localhost")
+
+        self.assertEqual(len(c), 0)
+
+    def test_evil_local_domain(self):
+        c = CookieJar()
+
+        interact_netscape(c, "http://localhost", "foo=bar; domain=.evil.com")
+
+        self.assertEqual(len(c), 0)
+
+    def test_evil_local_domain_2(self):
+        c = CookieJar()
+
+        interact_netscape(c, "http://localhost", "foo=bar; domain=.someother.local")
+
+        self.assertEqual(len(c), 0)
+
     def test_two_component_domain_rfc2965(self):
         pol = DefaultCookiePolicy(rfc2965=True)
         c = CookieJar(pol)
