@@ -481,6 +481,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                        time.daylight and found_zone not in ("utc", "gmt")):
                         break
                     else:
+                        gmtoff = 0
                         tz = value
                         break
     # Deal with the cases where ambiguities arize
