@@ -687,14 +687,13 @@ func_clear(PyFunctionObject *op)
     Py_CLEAR(op->func_dict);
     Py_CLEAR(op->func_closure);
     Py_CLEAR(op->func_annotations);
-    /* Below are required attributes, so to keep everything in
-     * a consistent state, don't clear them.  They're immutable,
-     * so they can't participate in cycles anyway.
-     * 
-     *    don't Py_CLEAR(op->func_code);
-     *    don't Py_CLEAR(op->func_name);
-     *    don't Py_CLEAR(op->func_qualname);
-     */
+    // Don't Py_CLEAR(op->func_code), since code is always required
+    // to be non-NULL. Similarly, name and qualname shouldn't be NULL.
+    // However, name and qualname could be str subclasses, so they
+    // could have reference cycles. The solution is to replace them
+    // with a genuinely immutable string.
+    Py_SETREF(op->func_name, Py_NewRef(&_Py_STR(empty)));
+    Py_SETREF(op->func_qualname, Py_NewRef(&_Py_STR(empty)));
     return 0;
 }
 

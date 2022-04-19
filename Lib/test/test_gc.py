@@ -288,9 +288,10 @@ class GCTests(unittest.TestCase):
         #    had been NULL-ed out by func_clear().
         print(f"{func=}")
         """
+        # We're mostly just checking that this doesn't crash.
         rc, stdout, stderr = assert_python_ok("-c", code)
         self.assertEqual(rc, 0)
-        self.assertRegex(stdout, rb"""\A\s*func=<function func at .+>\s*\Z""")
+        self.assertRegex(stdout, rb"""\A\s*func=<function  at \S+>\s*\Z""")
         self.assertFalse(stderr)
 
     @refcount_test
