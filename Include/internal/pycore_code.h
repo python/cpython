@@ -432,6 +432,31 @@ read_obj(uint16_t *p)
     return (PyObject *)val;
 }
 
+static inline int
+write_varint(uint8_t *ptr, int val)
+{
+    int written = 1;
+    while (val >= 64) {
+        *ptr++ = 64 | (val & 63);
+        val >>= 6;
+        written++;
+    }
+    *ptr = val;
+    return written;
+}
+
+static inline int
+write_signed_varint(uint8_t *ptr, int val)
+{
+    if (val < 0) {
+        val = ((-val)<<1) | 1;
+    }
+    else {
+        val = val << 1;
+    }
+    return write_varint(ptr, val);
+}
+
 #ifdef __cplusplus
 }
 #endif

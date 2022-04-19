@@ -387,29 +387,6 @@ get_line_delta(const uint8_t *ptr)
     }
 }
 
-static uint8_t *
-write_varint(uint8_t *ptr, unsigned int val)
-{
-    while (val >= 64) {
-        *ptr++ = 64 | (val & 63);
-        val >>= 6;
-    }
-    *ptr++ = val;
-    return ptr;
-}
-
-static uint8_t *
-write_signed_varint(uint8_t *ptr, int val)
-{
-    if (val < 0) {
-        val = ((-val)<<1) | 1;
-    }
-    else {
-        val = val << 1;
-    }
-    return write_varint(ptr, val);
-}
-
 static PyObject *
 remove_column_info(PyObject *locations)
 {
@@ -421,13 +398,15 @@ remove_column_info(PyObject *locations)
         return NULL;
     }
     uint8_t *output = (uint8_t *)PyBytes_AS_STRING(res);
-    while (offset < PyBytes_GET_SIZE(locations)) {
+    Py_ssize_t len = PyBytes_GET_SIZE(res);
+    while (offset < len) {
         Py_ssize_t len = PyBytes_GET_SIZE(res);
         Py_ssize_t write_offset = output - (uint8_t *)PyBytes_AS_STRING(res);
         if (write_offset + 16 >= PyBytes_GET_SIZE(res)) {
             if (_PyBytes_Resize(&res, len * 2) < 0) {
                 return NULL;
             }
+            len = PyBytes_GET_SIZE(res);
             output = (uint8_t *)PyBytes_AS_STRING(res) + write_offset;
         }
         int blength = data[offset] & 7;
@@ -438,10 +417,10 @@ remove_column_info(PyObject *locations)
         else {
             int ldelta = get_line_delta(&data[offset]);
             *output++ = 0xe8 | blength;
-            output = write_signed_varint(output, ldelta);
+            output += write_signed_varint(output, ldelta);
         }
         offset++;
-        while ((data[offset] & 128) == 0) {
+        while (offset < len && (data[offset] & 128) == 0) {
             offset++;
         }
     }

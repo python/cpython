@@ -7473,26 +7473,26 @@ write_location_first_byte(struct assembler* a, int code, int length)
     write_location_byte(a, MSB | (code << 3) | (length - 1));
 }
 
+static uint8_t *
+location_pointer(struct assembler* a)
+{
+    return (uint8_t *)PyBytes_AS_STRING(a->a_linetable) +
+        a->a_location_off;
+}
+
 static void
 write_location_varint(struct assembler* a, unsigned int val)
 {
-    while (val >= 64) {
-        write_location_byte(a, 64 | (val & 63));
-        val >>= 6;
-    }
-    write_location_byte(a, val);
+    uint8_t *ptr = location_pointer(a);
+    a->a_location_off += write_varint(ptr, val);
 }
+
 
 static void
 write_location_signed_varint(struct assembler* a, int val)
 {
-    if (val < 0) {
-        val = ((-val)<<1) | 1;
-    }
-    else {
-        val = val << 1;
-    }
-    write_location_varint(a, val);
+    uint8_t *ptr = location_pointer(a);
+    a->a_location_off += write_signed_varint(ptr, val);
 }
 
 static void
