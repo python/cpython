@@ -1060,6 +1060,14 @@ Changes in the Python API
   before.
   (Contributed by Ma Lin in :issue:`35859`.)
 
+* More strict rules are now applied for numerical group references and
+  group names in regular expressions.
+  Only sequence of ASCII digits not starting with ``0`` (except group 0) is
+  now accepted as a numerical reference.
+  The group name in bytes patterns and replacement strings can now only
+  contain ASCII letters and digits and underscore.
+  (Contributed by Serhiy Storchaka in :issue:`91760`.)
+
 * The *population* parameter of :func:`random.sample` must be a sequence.
   Automatic conversion of sets to lists is no longer supported. If the sample size
   is larger than the population size, a :exc:`ValueError` is raised.

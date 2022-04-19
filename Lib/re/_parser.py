@@ -295,6 +295,14 @@ class Tokenizer:
     def error(self, msg, offset=0):
         return error(msg, self.string, self.tell() - offset)
 
+    def checkgroupname(self, name, offset):
+        if not (self.istext or name.isascii()):
+            msg = "bad character in group name %a" % name
+            raise self.error(msg, len(name) + offset)
+        if not name.isidentifier():
+            msg = "bad character in group name %r" % name
+            raise self.error(msg, len(name) + offset)
+
 def _class_escape(source, escape):
     # handle escape code inside character class
     code = ESCAPES.get(escape)
@@ -707,15 +715,11 @@ def _parse(source, state, verbose, nested, first=False):
                     if sourcematch("<"):
                         # named group: skip forward to end of name
                         name = source.getuntil(">", "group name")
-                        if not name.isidentifier():
-                            msg = "bad character in group name %r" % name
-                            raise source.error(msg, len(name) + 1)
+                        source.checkgroupname(name, 1)
                     elif sourcematch("="):
                         # named backreference
                         name = source.getuntil(")", "group name")
-                        if not name.isidentifier():
-                            msg = "bad character in group name %r" % name
-                            raise source.error(msg, len(name) + 1)
+                        source.checkgroupname(name, 1)
                         gid = state.groupdict.get(name)
                         if gid is None:
                             msg = "unknown group name %r" % name
@@ -776,24 +780,20 @@ def _parse(source, state, verbose, nested, first=False):
                 elif char == "(":
                     # conditional backreference group
                     condname = source.getuntil(")", "group name")
-                    if condname.isidentifier():
-                        condgroup = state.groupdict.get(condname)
-                        if condgroup is None:
-                            msg = "unknown group name %r" % condname
-                            raise source.error(msg, len(condname) + 1)
-                    else:
-                        try:
-                            condgroup = int(condname)
-                            if condgroup < 0:
-                                raise ValueError
-                        except ValueError:
-                            msg = "bad character in group name %r" % condname
-                            raise source.error(msg, len(condname) + 1) from None
+                    if (condname.isdecimal() and condname.isascii() and
+                            (condname[0] != "0" or condname == "0")):
+                        condgroup = int(condname)
                         if not condgroup:
                             raise source.error("bad group number",
                                                len(condname) + 1)
                         if condgroup >= MAXGROUPS:
                             msg = "invalid group reference %d" % condgroup
+                            raise source.error(msg, len(condname) + 1)
+                    else:
+                        source.checkgroupname(condname, 1)
+                        condgroup = state.groupdict.get(condname)
+                        if condgroup is None:
+                            msg = "unknown group name %r" % condname
                             raise source.error(msg, len(condname) + 1)
                     state.checklookbehindgroup(condgroup, source)
                     item_yes = _parse(source, state, verbose, nested + 1)
@@ -1006,26 +1006,21 @@ def parse_template(source, state):
             # group
             c = this[1]
             if c == "g":
-                name = ""
                 if not s.match("<"):
                     raise s.error("missing <")
                 name = s.getuntil(">", "group name")
-                if name.isidentifier():
+                if (name.isdecimal() and name.isascii() and
+                        (name[0] != "0" or name == "0")):
+                    index = int(name)
+                    if index >= MAXGROUPS:
+                        raise s.error("invalid group reference %d" % index,
+                                      len(name) + 1)
+                else:
+                    s.checkgroupname(name, 1)
                     try:
                         index = groupindex[name]
                     except KeyError:
                         raise IndexError("unknown group name %r" % name) from None
-                else:
-                    try:
-                        index = int(name)
-                        if index < 0:
-                            raise ValueError
-                    except ValueError:
-                        raise s.error("bad character in group name %r" % name,
-                                      len(name) + 1) from None
-                    if index >= MAXGROUPS:
-                        raise s.error("invalid group reference %d" % index,
-                                      len(name) + 1)
                 addgroup(index, len(name) + 1)
             elif c == "0":
                 if s.next in OCTDIGITS:
