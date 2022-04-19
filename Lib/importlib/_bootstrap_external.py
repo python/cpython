@@ -389,6 +389,19 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a5 3480 (New CALL opcodes, second iteration)
 #     Python 3.11a5 3481 (Use inline cache for BINARY_OP)
 #     Python 3.11a5 3482 (Use inline caching for UNPACK_SEQUENCE and LOAD_GLOBAL)
+#     Python 3.11a5 3483 (Use inline caching for COMPARE_OP and BINARY_SUBSCR)
+#     Python 3.11a5 3484 (Use inline caching for LOAD_ATTR, LOAD_METHOD, and
+#                         STORE_ATTR)
+#     Python 3.11a5 3485 (Add an oparg to GET_AWAITABLE)
+#     Python 3.11a6 3486 (Use inline caching for PRECALL and CALL)
+#     Python 3.11a6 3487 (Remove the adaptive "oparg counter" mechanism)
+#     Python 3.11a6 3488 (LOAD_GLOBAL can push additional NULL)
+#     Python 3.11a6 3489 (Add JUMP_BACKWARD, remove JUMP_ABSOLUTE)
+#     Python 3.11a6 3490 (remove JUMP_IF_NOT_EXC_MATCH, add CHECK_EXC_MATCH)
+#     Python 3.11a6 3491 (remove JUMP_IF_NOT_EG_MATCH, add CHECK_EG_MATCH,
+#                         add JUMP_BACKWARD_NO_INTERRUPT, make JUMP_NO_INTERRUPT virtual)
+#     Python 3.11a7 3492 (make POP_JUMP_IF_NONE/NOT_NONE/TRUE/FALSE relative)
+#     Python 3.11a7 3493 (Make JUMP_IF_TRUE_OR_POP/JUMP_IF_FALSE_OR_POP relative)
 
 #     Python 3.12 will start with magic number 3500
 
@@ -403,7 +416,8 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3482).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3493).to_bytes(2, 'little') + b'\r\n'
+
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'

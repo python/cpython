@@ -1,4 +1,4 @@
-This is Python version 3.11.0 alpha 5
+This is Python version 3.11.0 alpha 7
 =====================================
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
@@ -25,7 +25,7 @@ General Information
 
 - Website: https://www.python.org
 - Source code: https://github.com/python/cpython
-- Issue tracker: https://bugs.python.org
+- Issue tracker: https://github.com/python/cpython/issues
 - Documentation: https://docs.python.org
 - Developer's Guide: https://devguide.python.org/
 
@@ -185,8 +185,9 @@ example, if ``test_os`` and ``test_gdb`` failed, you can run::
     make test TESTOPTS="-v test_os test_gdb"
 
 If the failure persists and appears to be a problem with Python rather than
-your environment, you can `file a bug report <https://bugs.python.org>`_ and
-include relevant output from that command to show the issue.
+your environment, you can `file a bug report
+<https://github.com/python/cpython/issues>`_ and include relevant output from
+that command to show the issue.
 
 See `Running & Writing Tests <https://devguide.python.org/runtests/>`_
 for more on running tests.
@@ -213,9 +214,9 @@ and ``make altinstall`` in the others.
 Issue Tracker and Mailing List
 ------------------------------
 
-Bug reports are welcome!  You can use the `issue tracker
-<https://bugs.python.org>`_ to report bugs, and/or submit pull requests `on
-GitHub <https://github.com/python/cpython>`_.
+Bug reports are welcome!  You can use Github to `report bugs
+<https://github.com/python/cpython/issues>`_, and/or `submit pull requests
+<https://github.com/python/cpython/pulls>`_.
 
 You can also follow development discussion on the `python-dev mailing list
 <https://mail.python.org/mailman/listinfo/python-dev/>`_.
@@ -228,7 +229,7 @@ If you have a proposal to change Python, you may want to send an email to the
 `comp.lang.python`_ or `python-ideas`_ mailing lists for initial feedback.  A
 Python Enhancement Proposal (PEP) may be submitted if your idea gains ground.
 All current PEPs, as well as guidelines for submitting a new PEP, are listed at
-`python.org/dev/peps/ <https://www.python.org/dev/peps/>`_.
+`peps.python.org <https://peps.python.org/>`_.
 
 .. _python-ideas: https://mail.python.org/mailman/listinfo/python-ideas/
 .. _comp.lang.python: https://mail.python.org/mailman/listinfo/python-list

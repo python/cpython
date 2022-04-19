@@ -192,6 +192,21 @@ typedef int socklen_t;
 
 #endif /* HAVE_SOCKADDR_ALG */
 
+#ifdef __EMSCRIPTEN__
+// wasm32-emscripten sockets only support subset of IPv4 and IPv6.
+// SCTP protocol crashes runtime.
+#ifdef IPPROTO_SCTP
+#  undef IPPROTO_SCTP
+#endif
+// setsockopt() fails with ENOPROTOOPT, getsockopt only supports SO_ERROR.
+// undef SO_REUSEADDR and SO_REUSEPORT so they cannot be used.
+#ifdef SO_REUSEADDR
+#  undef SO_REUSEADDR
+#endif
+#ifdef SO_REUSEPORT
+#  undef SO_REUSEPORT
+#endif
+#endif // __EMSCRIPTEN__
 
 #ifndef Py__SOCKET_H
 #define Py__SOCKET_H

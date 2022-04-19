@@ -12346,6 +12346,9 @@ static struct constdef posix_constants_sysconf[] = {
 #ifdef _SC_XOPEN_XPG4
     {"SC_XOPEN_XPG4",   _SC_XOPEN_XPG4},
 #endif
+#ifdef _SC_MINSIGSTKSZ
+    {"SC_MINSIGSTKSZ",   _SC_MINSIGSTKSZ},
+#endif
 };
 
 static int

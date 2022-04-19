@@ -228,6 +228,49 @@ by the SHAKE algorithm.
    exchange the value safely in email or other non-binary environments.
 
 
+File hashing
+------------
+
+The hashlib module provides a helper function for efficient hashing of
+a file or file-like object.
+
+.. function:: file_digest(fileobj, digest, /)
+
+   Return a digest object that has been updated with contents of file object.
+
+   *fileobj* must be a file-like object opened for reading in binary mode.
+   It accepts file objects from  builtin :func:`open`, :class:`~io.BytesIO`
+   instances, SocketIO objects from :meth:`socket.socket.makefile`, and
+   similar. The function may bypass Python's I/O and use the file descriptor
+   from :meth:`~io.IOBase.fileno` directly. *fileobj* must be assumed to be
+   in an unknown state after this function returns or raises. It is up to
+   the caller to close *fileobj*.
+
+   *digest* must either be a hash algorithm name as a *str*, a hash
+   constructor, or a callable that returns a hash object.
+
+   Example:
+
+      >>> import io, hashlib, hmac
+      >>> with open(hashlib.__file__, "rb") as f:
+      ...     digest = hashlib.file_digest(f, "sha256")
+      ...
+      >>> digest.hexdigest()  # doctest: +ELLIPSIS
+      '...'
+
+      >>> buf = io.BytesIO(b"somedata")
+      >>> mac1 = hmac.HMAC(b"key", digestmod=hashlib.sha512)
+      >>> digest = hashlib.file_digest(buf, lambda: mac1)
+
+      >>> digest is mac1
+      True
+      >>> mac2 = hmac.HMAC(b"key", b"somedata", digestmod=hashlib.sha512)
+      >>> mac1.digest() == mac2.digest()
+      True
+
+   .. versionadded:: 3.11
+
+
 Key derivation
 --------------
 

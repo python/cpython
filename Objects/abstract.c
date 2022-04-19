@@ -190,6 +190,9 @@ PyObject_GetItem(PyObject *o, PyObject *key)
             Py_DECREF(meth);
             return result;
         }
+        PyErr_Format(PyExc_TypeError, "type '%.200s' is not subscriptable",
+                     ((PyTypeObject *)o)->tp_name);
+        return NULL;
     }
 
     return type_error("'%.200s' object is not subscriptable", o);

@@ -658,6 +658,14 @@ class ElementTreeTest(unittest.TestCase):
                     'junk after document element: line 1, column 12')
             del cm, it
 
+        # Not exhausting the iterator still closes the resource (bpo-43292)
+        with warnings_helper.check_no_resource_warning(self):
+            it = iterparse(TESTFN)
+            del it
+
+        with self.assertRaises(FileNotFoundError):
+            iterparse("nonexistent")
+
     def test_writefile(self):
         elem = ET.Element("tag")
         elem.text = "text"
@@ -2516,8 +2524,7 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
                     <group><dogs>4</dogs>
                     </group>"""
                 e1 = dumper.fromstring(XMLTEXT)
-                if hasattr(e1, '__getstate__'):
-                    self.assertEqual(e1.__getstate__()['tag'], 'group')
+                self.assertEqual(e1.__getstate__()['tag'], 'group')
                 e2 = self.pickleRoundTrip(e1, 'xml.etree.ElementTree',
                                           dumper, loader, proto)
                 self.assertEqual(e2.tag, 'group')
