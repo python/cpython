@@ -486,6 +486,7 @@ static inline void Py_INCREF(PyObject *op)
 #ifdef Py_REF_DEBUG
     _Py_RefTotal++;
 #endif
+    OBJECT_STAT_INC(increfs);
     op->ob_refcnt++;
 #endif
 }
@@ -506,6 +507,7 @@ static inline void Py_DECREF(
 #ifdef Py_REF_DEBUG
     _Py_RefTotal--;
 #endif
+    OBJECT_STAT_INC(decrefs);
     if (--op->ob_refcnt != 0) {
 #ifdef Py_REF_DEBUG
         if (op->ob_refcnt < 0) {
