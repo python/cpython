@@ -594,7 +594,7 @@ exception in the group has a note indicating when this error has occurred. ::
    >>> raise ExceptionGroup('We have some problems', excs)
      + Exception Group Traceback (most recent call last):
      |   File "<stdin>", line 1, in <module>
-     | ExceptionGroup: We have some problems
+     | ExceptionGroup: We have some problems (3 sub-exceptions)
      +-+---------------- 1 ----------------
        | Traceback (most recent call last):
        |   File "<stdin>", line 3, in <module>
