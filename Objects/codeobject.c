@@ -1847,12 +1847,6 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
         co_freevars = freevars;
     }
 
-    if (!Py_IsNone(co_linetable) && !PyBytes_Check(co_linetable)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "co_linetable must be None or bytes");
-        goto error;
-    }
-
     co = PyCode_NewWithPosOnlyArgs(
         co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals,
         co_stacksize, co_flags, (PyObject*)co_code, co_consts, co_names,
