@@ -1599,6 +1599,7 @@ typedef struct {
     PyObject *kwnames;
 } CallShape;
 
+// GH-89279: Must be a macro to be sure it's inlined by MSVC.
 #define is_method(stack_pointer, args) (PEEK((args)+2) != NULL)
 
 #define KWNAMES_LEN() \
