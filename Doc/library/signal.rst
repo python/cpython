@@ -712,7 +712,7 @@ case, wrap your entry point to catch this exception as follows::
         main()
 
 Do not set :const:`SIGPIPE`'s disposition to :const:`SIG_DFL` in
-order to avoid :exc:`BrokenPipeError`.  Doing that causes
+order to avoid :exc:`BrokenPipeError`.  Doing that would cause
 your program to exit unexpectedly whenever any socket
 connection is interrupted while your program is still writing to
 it.
