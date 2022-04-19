@@ -10,10 +10,10 @@ extern "C" {
 
 typedef struct {
     PyObject_HEAD
-    long index;
-    long start;
-    long step;
-    long len;
+    sdigit index;
+    sdigit start;
+    sdigit step;
+    sdigit len;
 } _PyRangeIterObject;
 
 #ifdef __cplusplus
