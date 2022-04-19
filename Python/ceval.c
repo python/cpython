@@ -4426,7 +4426,7 @@ handle_eval_breaker:
                 else {
                     assert(value >= -(sdigit)PyLong_MASK);
                     ((PyLongObject *)local)->ob_digit[0] = -(sdigit)value;
-                    Py_SET_SIZE(local, -1);
+                    Py_SET_SIZE(local, (Py_ssize_t)-1);
                 }
                 NOTRACE_DISPATCH();
             }

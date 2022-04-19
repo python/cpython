@@ -770,7 +770,7 @@ rangeiter_next(_PyRangeIterObject *r)
         /* cast to unsigned to avoid possible signed overflow
            in intermediate calculations. */
         return PyLong_FromLong((long)(r->start +
-                                      (digit)(r->index++) * r->step));
+                                      (unsigned long)(r->index++) * r->step));
     return NULL;
 }
 
@@ -1190,6 +1190,13 @@ range_reverse(PyObject *seq, PyObject *Py_UNUSED(ignored))
 
     new_stop = lstart - lstep;
     new_start = (long)(new_stop + ulen * lstep);
+    if (ulen > PyLong_MASK ||
+        new_start > PyLong_MASK || new_start < -(long)PyLong_MASK ||
+        new_stop > PyLong_MASK || new_stop < -(long)PyLong_MASK ||
+        lstep > PyLong_MASK || lstep < -(long)PyLong_MASK)
+    {
+        goto long_range;
+    }
     return fast_range_iter(new_start, new_stop, -lstep, (long)ulen);
 
 long_range:
