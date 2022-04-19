@@ -706,9 +706,9 @@ func_dealloc(PyFunctionObject *op)
     }
     (void)func_clear(op);
     // These aren't cleared by func_clear().
-    Py_XDECREF(op->func_code);
-    Py_XDECREF(op->func_name);
-    Py_XDECREF(op->func_qualname);
+    Py_DECREF(op->func_code);
+    Py_DECREF(op->func_name);
+    Py_DECREF(op->func_qualname);
     PyObject_GC_Del(op);
 }
 
