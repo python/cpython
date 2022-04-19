@@ -1019,7 +1019,7 @@ enclosing scope, otherwise a ``SyntaxError`` is raised (the scope in which a new
 binding should be created cannot be determined unambiguously).
 
 Names listed in a :keyword:`nonlocal` statement must not collide with
-pre-existing bindings in the local scope, otherwise a ``SyntaxError` is raised.
+pre-existing bindings in the local scope, otherwise a ``SyntaxError`` is raised.
 
 .. seealso::
 
