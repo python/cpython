@@ -2736,18 +2736,6 @@ class TextIOWrapperTest(unittest.TestCase):
             os.environ.clear()
             os.environ.update(old_environ)
 
-    @support.cpython_only
-    @unittest.skipIf(sys.platform != "win32", "Windows-only test")
-    @unittest.skipIf(sys.flags.utf8_mode, "utf-8 mode is enabled")
-    def test_device_encoding(self):
-        # Issue 15989
-        import _testcapi
-        b = self.BytesIO()
-        b.fileno = lambda: _testcapi.INT_MAX + 1
-        self.assertRaises(OverflowError, self.TextIOWrapper, b, encoding="locale")
-        b.fileno = lambda: _testcapi.UINT_MAX + 1
-        self.assertRaises(OverflowError, self.TextIOWrapper, b, encoding="locale")
-
     def test_encoding(self):
         # Check the encoding attribute is always set, and valid
         b = self.BytesIO()
