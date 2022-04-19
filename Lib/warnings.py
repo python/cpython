@@ -433,11 +433,8 @@ class catch_warnings(object):
     when testing the warnings module itself.
 
     If the 'action' argument is not None, the remaining arguments are passed
-    to warnings.simplefilter() as if it that call was the first line of the
-    with-statement.
-
-    .. versionchanged:: 3.11
-       Added the action, category, lineno, and append arguments.
+    to warnings.simplefilter() as if it were called immediately on entering the
+    context.
     """
 
     def __init__(self, *, record=False, module=None,
