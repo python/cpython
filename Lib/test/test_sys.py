@@ -1461,7 +1461,7 @@ class SizeofTest(unittest.TestCase):
         # PyCapsule
         # XXX
         # rangeiterator
-        check(iter(range(1)), size('4l'))
+        check(iter(range(1)), size('') + 4 * self.longdigit)
         # reverse
         check(reversed(''), size('nP'))
         # range

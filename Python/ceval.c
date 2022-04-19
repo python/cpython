@@ -4419,7 +4419,7 @@ handle_eval_breaker:
             }
             if (local && PyLong_CheckExact(local) && Py_REFCNT(local) == 1) {
                 if (value > 0) {
-                    assert(value <= PyLong_MASK);
+                    assert((digit)value <= PyLong_MASK);
                     ((PyLongObject *)local)->ob_digit[0] = value;
                     Py_SET_SIZE(local, 1);
                 }
