@@ -18,7 +18,7 @@ import umarshal
 from generate_global_objects import get_identifiers_and_strings
 
 verbose = False
-identifiers = get_identifiers_and_strings()[0]
+identifiers, strings = get_identifiers_and_strings()
 
 def isprintable(b: bytes) -> bool:
     return all(0x20 <= c < 0x7f for c in b)
@@ -168,6 +168,8 @@ class Printer:
         return f"& {name}.ob_base.ob_base"
 
     def generate_unicode(self, name: str, s: str) -> str:
+        if s in strings:
+            return f"&_Py_STR({strings[s]})"
         if s in identifiers:
             return f"&_Py_ID({s})"
         if re.match(r'\A[A-Za-z0-9_]+\Z', s):

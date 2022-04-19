@@ -1160,7 +1160,7 @@ PyFrame_GetLasti(PyFrameObject *frame)
     if (lasti < 0) {
         return -1;
     }
-    return lasti*2;
+    return lasti * sizeof(_Py_CODEUNIT);
 }
 
 PyObject *
