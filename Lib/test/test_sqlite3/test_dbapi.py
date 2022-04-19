@@ -1141,9 +1141,9 @@ class BlobTests(unittest.TestCase):
         self.blob.seek(0, SEEK_SET)
         n = len(self.blob)
         self.blob.write(b"a" * (n-1))
-        self.blob.write(b"a" * 1)
+        self.blob.write(b"a")
         with self.assertRaisesRegex(ValueError, "data longer than blob"):
-            self.blob.write(b"a" * 1)
+            self.blob.write(b"a")
 
     def test_blob_write_error_row_changed(self):
         self.cx.execute("update test set b='aaaa' where rowid=1")
@@ -1197,11 +1197,22 @@ class BlobTests(unittest.TestCase):
     def test_blob_set_buffer_object(self):
         from array import array
         self.blob[0] = memoryview(b"1")
-        self.blob[0] = bytearray(b"1")
-        self.blob[0] = array("b", [1])
+        self.assertEqual(self.blob[0], b"1")
+
+        self.blob[1] = bytearray(b"2")
+        self.assertEqual(self.blob[1], b"2")
+
+        self.blob[2] = array("b", [4])
+        self.assertEqual(self.blob[2], b"\x04")
+
         self.blob[0:5] = memoryview(b"12345")
-        self.blob[0:5] = bytearray(b"12345")
+        self.assertEqual(self.blob[0:5], b"12345")
+
+        self.blob[0:5] = bytearray(b"23456")
+        self.assertEqual(self.blob[0:5], b"23456")
+
         self.blob[0:5] = array("b", [1, 2, 3, 4, 5])
+        self.assertEqual(self.blob[0:5], b"\x01\x02\x03\x04\x05")
 
     def test_blob_set_item_negative_index(self):
         self.blob[-1] = b"z"
