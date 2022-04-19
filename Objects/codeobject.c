@@ -14,6 +14,8 @@
  * generic helpers
  ******************/
 
+static PyObject *codeobjects = NULL;
+
 /* all_name_chars(s): true iff s matches [a-zA-Z0-9_]* */
 static int
 all_name_chars(PyObject *o)
@@ -387,8 +389,51 @@ _PyCode_New(struct _PyCodeConstructor *con)
         return NULL;
     }
     init_code(co, con);
+     _Py_SetImmortal((PyObject *)co);
+    if (codeobjects == NULL) {
+        codeobjects = PyList_New(0);
+        if (codeobjects == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+    }
+    if (PyList_Append(codeobjects, (PyObject *)co) < 0) {
+        PyErr_NoMemory();
+        return NULL;
+    }
 
     return co;
+}
+
+void
+_PyCode_ClearList()
+{
+    PyCodeObject *code;
+    Py_ssize_t listsz, tuplesz, i, j;
+
+    if (codeobjects == NULL) {
+        return;
+    }
+    assert(PyList_CheckExact(codeobjects));
+
+    // Clear all existing references to code objects in the consts tuple
+    listsz = PyList_Size(codeobjects);
+    for (i = 0; i < listsz; i++) {
+        code = (PyCodeObject *)PyList_GET_ITEM(codeobjects, i);
+        tuplesz = PyTuple_Size(code->co_consts);
+        for (j = 0; j < tuplesz; j++) {
+            if (PyCode_Check(PyTuple_GET_ITEM(code->co_consts, j))) {
+                PyTuple_SET_ITEM(code->co_consts, j, Py_None);
+            }
+        }
+    }
+
+    // Then, reset all the immortal refcounts and clear the list
+    for (i = 0; i < listsz; i++) {
+        code = (PyCodeObject *)PyList_GET_ITEM(codeobjects, i);
+        ((PyObject *)code)->ob_refcnt = 1;
+    }
+    Py_CLEAR(codeobjects);
 }
 
 

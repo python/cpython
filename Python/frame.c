@@ -104,11 +104,10 @@ _PyFrame_Clear(_PyInterpreterFrame *frame)
     }
     assert(frame->stacktop >= 0);
     for (int i = 0; i < frame->stacktop; i++) {
-        _Py_XDECREF_SKIP_IMMORTAL_CHECK(frame->localsplus[i]);
+        Py_XDECREF(frame->localsplus[i]);
     }
     _Py_XDECREF_SKIP_IMMORTAL_CHECK(frame->f_locals);
     _Py_DECREF_SKIP_IMMORTAL_CHECK(frame->f_func);
-    _Py_DECREF_SKIP_IMMORTAL_CHECK(frame->f_code);
 }
 
 /* Consumes reference to func */

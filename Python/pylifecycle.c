@@ -1721,6 +1721,7 @@ finalize_interp_clear(PyThreadState *tstate)
         _PyArg_Fini();
         _Py_ClearFileSystemEncoding();
         _Py_Deepfreeze_Fini();
+        _PyCode_ClearList();
     }
 
     finalize_interp_types(tstate->interp);

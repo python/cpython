@@ -211,6 +211,7 @@ struct _PyCodeConstructor {
 // (See the comments in https://github.com/python/cpython/pull/26258.)
 PyAPI_FUNC(int) _PyCode_Validate(struct _PyCodeConstructor *);
 PyAPI_FUNC(PyCodeObject *) _PyCode_New(struct _PyCodeConstructor *);
+extern void _PyCode_ClearList();
 
 
 /* Private API */

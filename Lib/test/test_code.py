@@ -524,8 +524,9 @@ class CodeWeakRefTest(unittest.TestCase):
         self.assertTrue(bool(coderef()))
         del f
         gc_collect()  # For PyPy or other GCs.
-        self.assertFalse(bool(coderef()))
-        self.assertTrue(self.called)
+        # The code objects will stay alive until the entire execution of the runtime
+        self.assertTrue(bool(coderef()))
+        self.assertFalse(self.called)
 
 
 if check_impl_detail(cpython=True) and ctypes is not None:
