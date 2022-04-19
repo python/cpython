@@ -148,6 +148,8 @@ class IsolatedAsyncioTestCase(TestCase):
             # shutdown asyncgens
             loop.run_until_complete(loop.shutdown_asyncgens())
         finally:
+            # Prevent our executor environment from leaking to future tests.
+            loop.run_until_complete(loop.shutdown_default_executor())
             asyncio.set_event_loop(None)
             loop.close()
 
