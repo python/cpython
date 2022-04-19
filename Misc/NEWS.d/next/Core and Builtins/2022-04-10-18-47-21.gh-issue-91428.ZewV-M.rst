@@ -1,0 +1,5 @@
+Add ``static const char *const _PyOpcode_OpName[256] = {...};`` to
+``opcode.h`` for debug builds to assist in debugging the Python interpreter.
+It is now more convenient to make various forms of debugging output more
+human-readable by including opcode names rather than just the corresponding
+decimal digits.

@@ -76,6 +76,8 @@ annotations. These include:
      *Introducing* :data:`TypeGuard`
 * :pep:`673`: Self type
     *Introducing* :data:`Self`
+* :pep:`675`: Arbitrary Literal String Type
+    *Introducing* :data:`LiteralString`
 
 .. _type-aliases:
 
@@ -579,6 +581,38 @@ These can be used as types in annotations and do not support ``[]``.
 
    * Every type is compatible with :data:`Any`.
    * :data:`Any` is compatible with every type.
+
+    .. versionchanged:: 3.11
+       :data:`Any` can now be used as a base class. This can be useful for
+       avoiding type checker errors with classes that can duck type anywhere or
+       are highly dynamic.
+
+.. data:: LiteralString
+
+   Special type that includes only literal strings. A string
+   literal is compatible with ``LiteralString``, as is another
+   ``LiteralString``, but an object typed as just ``str`` is not.
+   A string created by composing ``LiteralString``-typed objects
+   is also acceptable as a ``LiteralString``.
+
+   Example::
+
+      def run_query(sql: LiteralString) -> ...
+          ...
+
+      def caller(arbitrary_string: str, literal_string: LiteralString) -> None:
+          run_query("SELECT * FROM students")  # ok
+          run_query(literal_string)  # ok
+          run_query("SELECT * FROM " + literal_string)  # ok
+          run_query(arbitrary_string)  # type checker error
+          run_query(  # type checker error
+              f"SELECT * FROM students WHERE name = {arbitrary_string}"
+          )
+
+   This is useful for sensitive APIs where arbitrary user-generated
+   strings could generate problems. For example, the two cases above
+   that generate type checker errors could be vulnerable to an SQL
+   injection attack.
 
 .. data:: Never
 
@@ -2372,6 +2406,35 @@ Functions and decorators
           <actual implementation>
 
    See :pep:`484` for details and comparison with other typing semantics.
+
+   .. versionchanged:: 3.11
+      Overloaded functions can now be introspected at runtime using
+      :func:`get_overloads`.
+
+
+.. function:: get_overloads(func)
+
+   Return a sequence of :func:`@overload <overload>`-decorated definitions for
+   *func*. *func* is the function object for the implementation of the
+   overloaded function. For example, given the definition of ``process`` in
+   the documentation for :func:`@overload <overload>`,
+   ``get_overloads(process)`` will return a sequence of three function objects
+   for the three defined overloads. If called on a function with no overloads,
+   ``get_overloads`` returns an empty sequence.
+
+   ``get_overloads`` can be used for introspecting an overloaded function at
+   runtime.
+
+   .. versionadded:: 3.11
+
+
+.. function:: clear_overloads()
+
+   Clear all registered overloads in the internal registry. This can be used
+   to reclaim the memory used by the registry.
+
+   .. versionadded:: 3.11
+
 
 .. decorator:: final
 

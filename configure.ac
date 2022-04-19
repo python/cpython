@@ -1137,7 +1137,7 @@ AC_ARG_WITH([suffix],
   )
 ], [
   AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-    [Emscripten/browser*], [EXEEXT=.html],
+    [Emscripten/browser*], [EXEEXT=.js],
     [Emscripten/node*], [EXEEXT=.js],
     [WASI/*], [EXEEXT=.wasm],
     [EXEEXT=]
@@ -1247,7 +1247,7 @@ AC_MSG_RESULT($EXPORTSYMS)
 # make sure we default having it set to "no": this is used by
 # distutils.unixccompiler to know if it should add --enable-new-dtags
 # to linker command lines, and failing to detect GNU ld simply results
-# in the same bahaviour as before.
+# in the same behaviour as before.
 AC_SUBST(GNULD)
 AC_MSG_CHECKING(for GNU ld)
 ac_prog=ld
@@ -1574,10 +1574,10 @@ if test "$Py_OPT" = 'true' ; then
       ])
       ;;
   esac
-elif test "$ac_sys_system" = "Emscripten"; then
+elif test "$ac_sys_system" = "Emscripten" -o "$ac_sys_system" = "WASI"; then
   dnl Emscripten does not support shared extensions yet. Build
-  dnl "python.[js,html,wasm]", "pybuilddir.txt", and "platform" files.
-  DEF_MAKE_ALL_RULE="build_platform"
+  dnl "python.[js,wasm]", "pybuilddir.txt", and "platform" files.
+  DEF_MAKE_ALL_RULE="build_wasm"
   REQUIRE_PGO="no"
   DEF_MAKE_RULE="all"
 else
@@ -1911,30 +1911,30 @@ fi
 # WASM flags
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
   [Emscripten/browser*], [
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH=1"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH"
     LINKFORSHARED="--preload-file=\$(WASM_ASSETS_DIR)"
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
-      AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE=1"])
+      AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
     ])
     WASM_ASSETS_DIR=".\$(prefix)"
     WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
     dnl separate-dwarf does not seem to work in Chrome DevTools Support.
     if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "browser-debug"; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS=1"
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS"
       LINKFORSHARED="$LINKFORSHARED -gsource-map --emit-symbol-map"
     else
       LINKFORSHARED="$LINKFORSHARED -O2 -g0"
     fi
   ],
   [Emscripten/node*], [
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH=1 -sNODERAWFS=1 -sUSE_PTHREADS=1"
-    LINKFORSHARED="-sPROXY_TO_PTHREAD=1 -sEXIT_RUNTIME=1"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH -sNODERAWFS -sUSE_PTHREADS"
+    LINKFORSHARED="-sPROXY_TO_PTHREAD -sEXIT_RUNTIME"
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
-      AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE=1"])
+      AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
     ])
     CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
     if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "node-debug"; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS=1"
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS"
       LINKFORSHARED="$LINKFORSHARED -gseparate-dwarf --emit-symbol-map"
     else
       LINKFORSHARED="$LINKFORSHARED -O2 -g0"
@@ -3009,7 +3009,7 @@ fi
 dnl Emscripten's emconfigure sets LDSHARED. Set BLDSHARED outside the
 dnl test -z $LDSHARED block to configure BLDSHARED for side module support.
 if test "$enable_wasm_dynamic_linking" = "yes" -a "$ac_sys_system" = "Emscripten"; then
-  BLDSHARED='$(CC) -shared -sSIDE_MODULE=1 -sWASM=1'
+  BLDSHARED='$(CC) -shared -sSIDE_MODULE=1'
 fi
 
 AC_MSG_RESULT($LDSHARED)
@@ -3553,6 +3553,12 @@ AS_VAR_IF([have_nis], [yes], [
   ])
 ])
 
+dnl On NetBSD, when using OSS audio, you need to link against libossaudio
+AS_CASE([$ac_sys_system],
+  [NetBSD*], [OSSAUDIODEV_LIBS="-lossaudio"],
+  [OSSAUDIODEV_LIBS=""]
+)
+
 dnl Check for SQLite library. Use pkg-config if available.
 PKG_CHECK_MODULES(
   [LIBSQLITE3], [sqlite3 >= 3.7.15], [], [
@@ -3562,44 +3568,84 @@ PKG_CHECK_MODULES(
 )
 AS_VAR_APPEND([LIBSQLITE3_CFLAGS], [' -I$(srcdir)/Modules/_sqlite'])
 
-WITH_SAVE_ENV(
+dnl PY_CHECK_SQLITE_FUNC(FUNCTION, IF-FOUND, IF-NOT-FOUND)
+AC_DEFUN([PY_CHECK_SQLITE_FUNC], [
+  AC_CHECK_LIB([sqlite3], [$1], [$2], [
+    m4_ifblank([$3], [have_supported_sqlite3=no], [$3])
+  ])
+])
+
+WITH_SAVE_ENV([
 dnl bpo-45774/GH-29507: The CPP check in AC_CHECK_HEADER can fail on FreeBSD,
 dnl hence CPPFLAGS instead of CFLAGS.
   CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
   LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
 
   AC_CHECK_HEADER([sqlite3.h], [
-    AC_CHECK_LIB([sqlite3], [sqlite3_open_v2], [
-      have_sqlite3=yes
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([
-          #include <sqlite3.h>
-          #if SQLITE_VERSION_NUMBER < 3007015
-          #  error "SQLite 3.7.15 or higher required"
-          #endif
-        ], [])
-      ], [have_supported_sqlite3=yes], [have_supported_sqlite3=no])
-    ], [have_sqlite3=no])
-    AC_CHECK_LIB([sqlite3], [sqlite3_load_extension],
-                 [have_sqlite3_load_extension=yes],
-                 [have_sqlite3_load_extension=no])
+    have_sqlite3=yes
+
+    AC_COMPILE_IFELSE([
+      AC_LANG_PROGRAM([
+        #include <sqlite3.h>
+        #if SQLITE_VERSION_NUMBER < 3007015
+        #  error "SQLite 3.7.15 or higher required"
+        #endif
+      ], [])
+    ], [
+      have_supported_sqlite3=yes
+      dnl Check that required functions are in place. A lot of stuff may be
+      dnl omitted with SQLITE_OMIT_* compile time defines.
+      PY_CHECK_SQLITE_FUNC([sqlite3_bind_double])
+      PY_CHECK_SQLITE_FUNC([sqlite3_column_decltype])
+      PY_CHECK_SQLITE_FUNC([sqlite3_column_double])
+      PY_CHECK_SQLITE_FUNC([sqlite3_complete])
+      PY_CHECK_SQLITE_FUNC([sqlite3_enable_shared_cache])
+      PY_CHECK_SQLITE_FUNC([sqlite3_progress_handler])
+      PY_CHECK_SQLITE_FUNC([sqlite3_result_double])
+      PY_CHECK_SQLITE_FUNC([sqlite3_set_authorizer])
+      PY_CHECK_SQLITE_FUNC([sqlite3_trace_v2], [], [
+        PY_CHECK_SQLITE_FUNC([sqlite3_trace])
+      ])
+      PY_CHECK_SQLITE_FUNC([sqlite3_value_double])
+      AC_CHECK_LIB([sqlite3], [sqlite3_load_extension],
+        [have_sqlite3_load_extension=yes],
+        [have_sqlite3_load_extension=no]
+      )
+      AC_CHECK_LIB([sqlite3], [sqlite3_serialize], [
+        AC_DEFINE(
+          [PY_SQLITE_HAVE_SERIALIZE], [1],
+          [Define if SQLite was compiled with the serialize API]
+        )
+      ])
+    ], [
+      have_supported_sqlite3=no
+    ])
   ])
-)
-
-# Check for support for loadable sqlite extensions
-AC_MSG_CHECKING(for --enable-loadable-sqlite-extensions)
-AC_ARG_ENABLE(loadable-sqlite-extensions,
-              AS_HELP_STRING([--enable-loadable-sqlite-extensions],
-                             [support loadable extensions in _sqlite module, see Doc/library/sqlite3.rst (default is no)]),
-              [AS_VAR_IF([have_sqlite3_load_extension], [no],
-                         [AC_MSG_WARN([Your version of SQLite does not support loadable extensions])])],
-              [enable_loadable_sqlite_extensions=no])
-AC_MSG_RESULT($enable_loadable_sqlite_extensions)
-
-AS_VAR_IF([enable_loadable_sqlite_extensions], [yes], [
-  AC_DEFINE(PY_SQLITE_ENABLE_LOAD_EXTENSION, 1,
-  [Define to 1 to build the sqlite module with loadable extensions support.])
 ])
+
+dnl Check for support for loadable sqlite extensions
+AC_MSG_CHECKING([for --enable-loadable-sqlite-extensions])
+AC_ARG_ENABLE([loadable-sqlite-extensions],
+  AS_HELP_STRING(
+    [--enable-loadable-sqlite-extensions], [
+      support loadable extensions in the sqlite3 module, see
+      Doc/library/sqlite3.rst (default is no)
+    ]
+  ), [
+    AS_VAR_IF([have_sqlite3_load_extension], [no], [
+      AC_MSG_RESULT([n/a])
+      AC_MSG_WARN([Your version of SQLite does not support loadable extensions])
+    ], [
+      AC_MSG_RESULT([yes])
+      AC_DEFINE(
+        [PY_SQLITE_ENABLE_LOAD_EXTENSION], [1],
+        [Define to 1 to build the sqlite module with loadable extensions support.]
+      )
+    ])
+  ], [
+    AC_MSG_RESULT([no])
+  ]
+)
 
 dnl
 dnl Detect Tcl/Tk. Use pkg-config if available.
@@ -4509,8 +4555,8 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
 ])
 
 if test "$have_zlib" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$ZLIB_LIBS" = "-lz"; then
-  ZLIB_CFLAGS="-sUSE_ZLIB=1"
-  ZLIB_LIBS="-sUSE_ZLIB=1"
+  ZLIB_CFLAGS="-sUSE_ZLIB"
+  ZLIB_LIBS="-sUSE_ZLIB"
 fi
 
 dnl binascii can use zlib for optimized crc32.
@@ -4532,8 +4578,8 @@ PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
 ])
 
 if test "$have_bzip2" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$BZIP2_LIBS" = "-lbz2"; then
-  BZIP2_CFLAGS="-sUSE_BZIP2=1"
-  BZIP2_LIBS="-sUSE_BZIP2=1"
+  BZIP2_CFLAGS="-sUSE_BZIP2"
+  BZIP2_LIBS="-sUSE_BZIP2"
 fi
 
 
@@ -6517,21 +6563,18 @@ fi],
 
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.
-AC_MSG_CHECKING(for --disable-test-modules)
-AC_ARG_ENABLE(test-modules,
-              AS_HELP_STRING([--disable-test-modules], [don't build nor install test modules]))
-if test "$enable_test_modules" = no; then
-    TEST_MODULES=no
-else
-    AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-      [Emscripten/browser*], [TEST_MODULES=no],
-      [TEST_MODULES=yes]
-    )
-fi
-AS_VAR_IF([TEST_MODULES], [yes],
-  [AC_MSG_RESULT(no)], [AC_MSG_RESULT(yes)]
-)
-AC_SUBST(TEST_MODULES)
+AC_MSG_CHECKING([for --disable-test-modules])
+AC_ARG_ENABLE([test-modules],
+  [AS_HELP_STRING([--disable-test-modules], [don't build nor install test modules])], [
+  AS_VAR_IF([enable_test_modules], [yes], [TEST_MODULES=yes], [TEST_MODULES=no])
+], [
+  AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+    [Emscripten/browser*], [TEST_MODULES=no],
+    [TEST_MODULES=yes]
+  )
+])
+AC_MSG_RESULT([$TEST_MODULES])
+AC_SUBST([TEST_MODULES])
 
 AC_DEFUN([PY_STDLIB_MOD_SET_NA], [
   m4_foreach([mod], [$@], [
@@ -6749,7 +6792,8 @@ PY_STDLIB_MOD([_socket],
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
 PY_STDLIB_MOD([ossaudiodev],
-  [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes])
+  [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes],
+  [], [$OSSAUDIODEV_LIBS])
 PY_STDLIB_MOD([pwd], [], [test "$ac_cv_func_getpwuid" = yes -o "$ac_cv_func_getpwuid_r" = yes])
 PY_STDLIB_MOD([resource], [], [test "$ac_cv_header_sys_resource_h" = yes])
 PY_STDLIB_MOD([_scproxy],
