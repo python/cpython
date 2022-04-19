@@ -870,6 +870,9 @@ Glossary
 
       See also :term:`regular package` and :term:`namespace package`.
 
+      .. index:: single: * (asterisk); function parameter
+      .. index:: single: / (slash); function parameter
+
    parameter
       A named entity in a :term:`function` (or method) definition that
       specifies an :term:`argument` (or in some cases, arguments) that the
