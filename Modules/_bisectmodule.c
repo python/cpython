@@ -317,7 +317,6 @@ bisect_free(void *module)
     bisect_clear((PyObject *)module);
 }
 
-
 static int
 bisect_modexec(PyObject *m)
 {
@@ -343,7 +342,7 @@ static struct PyModuleDef _bisectmodule = {
     .m_slots = bisect_slots,
     .m_traverse = bisect_traverse,
     .m_clear = bisect_clear,
-    .m_free  = bisect_free,
+    .m_free = bisect_free,
 };
 
 PyMODINIT_FUNC
