@@ -475,8 +475,16 @@ PyAPI_FUNC(void) Py_DecRef(PyObject *);
 PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
+#ifdef Py_STATS
+PyAPI_DATA(uint64_t) _Py_IncrefTotal;
+PyAPI_DATA(uint64_t) _Py_DecrefTotal;
+#endif
+
 static inline void Py_INCREF(PyObject *op)
 {
+#ifdef Py_STATS
+    _Py_IncrefTotal++;
+#endif
 #if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
     // Stable ABI for Python 3.10 built in debug mode.
     _Py_IncRef(op);
@@ -486,7 +494,6 @@ static inline void Py_INCREF(PyObject *op)
 #ifdef Py_REF_DEBUG
     _Py_RefTotal++;
 #endif
-    OBJECT_STAT_INC(increfs);
     op->ob_refcnt++;
 #endif
 }
@@ -498,6 +505,9 @@ static inline void Py_DECREF(
 #endif
     PyObject *op)
 {
+#ifdef Py_STATS
+    _Py_DecrefTotal++;
+#endif
 #if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
     // Stable ABI for Python 3.10 built in debug mode.
     _Py_DecRef(op);
@@ -507,7 +517,6 @@ static inline void Py_DECREF(
 #ifdef Py_REF_DEBUG
     _Py_RefTotal--;
 #endif
-    OBJECT_STAT_INC(decrefs);
     if (--op->ob_refcnt != 0) {
 #ifdef Py_REF_DEBUG
         if (op->ob_refcnt < 0) {

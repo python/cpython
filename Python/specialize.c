@@ -186,8 +186,8 @@ print_object_stats(FILE *out, ObjectStats *stats)
     fprintf(out, "Object allocations: %" PRIu64 "\n", stats->allocations);
     fprintf(out, "Object frees: %" PRIu64 "\n", stats->frees);
     fprintf(out, "Object new values: %" PRIu64 "\n", stats->new_values);
-    fprintf(out, "Objec increfs: %" PRIu64 "\n", stats->increfs);
-    fprintf(out, "Objec decrefs: %" PRIu64 "\n", stats->decrefs);
+    fprintf(out, "Object increfs: %" PRIu64 "\n", _Py_IncrefTotal);
+    fprintf(out, "Object decrefs: %" PRIu64 "\n", _Py_DecrefTotal);
     fprintf(out, "Object materialize dict (on request): %" PRIu64 "\n", stats->dict_materialized_on_request);
     fprintf(out, "Object materialize dict (new key): %" PRIu64 "\n", stats->dict_materialized_new_key);
     fprintf(out, "Object materialize dict (too big): %" PRIu64 "\n", stats->dict_materialized_too_big);

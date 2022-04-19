@@ -72,6 +72,11 @@ _PyDebug_PrintTotalRefs(void) {
 }
 #endif /* Py_REF_DEBUG */
 
+#ifdef Py_STATS
+uint64_t _Py_IncrefTotal = 0;
+uint64_t _Py_DecrefTotal = 0;
+#endif
+
 /* Object allocation routines used by NEWOBJ and NEWVAROBJ macros.
    These are used by the individual routines for object creation.
    Do not call them otherwise, they do not initialize the object! */
