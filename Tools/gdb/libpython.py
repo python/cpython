@@ -1418,7 +1418,7 @@ class PyUnicodeObjectPtr(PyObjectPtr):
                 out.write('\\r')
 
             # Map non-printable US ASCII to '\xhh' */
-            elif ch < ' ' or ch == 0x7F:
+            elif ch < ' ' or ord(ch) == 0x7F:
                 out.write('\\x')
                 out.write(hexdigits[(ord(ch) >> 4) & 0x000F])
                 out.write(hexdigits[ord(ch) & 0x000F])

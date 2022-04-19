@@ -475,7 +475,11 @@ blobopen_impl(pysqlite_Connection *self, const char *table, const char *col,
     rc = sqlite3_blob_open(self->db, name, table, col, row, !readonly, &blob);
     Py_END_ALLOW_THREADS
 
-    if (rc != SQLITE_OK) {
+    if (rc == SQLITE_MISUSE) {
+        PyErr_Format(self->state->InterfaceError, sqlite3_errstr(rc));
+        return NULL;
+    }
+    else if (rc != SQLITE_OK) {
         _pysqlite_seterror(self->state, self->db);
         return NULL;
     }
