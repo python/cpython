@@ -1,0 +1,1 @@
+now() and utcnow() returns timezone-aware objects
