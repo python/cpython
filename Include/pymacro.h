@@ -122,6 +122,8 @@
 #  define Py_UNREACHABLE() __builtin_unreachable()
 #elif defined(__clang__) || defined(__INTEL_COMPILER)
 #  define Py_UNREACHABLE() __builtin_unreachable()
+#elif defined(_MSC_VER)
+#  define Py_UNREACHABLE() __assume(0)
 #else
 #  define Py_UNREACHABLE() \
     Py_FatalError("Unreachable C code path reached")
