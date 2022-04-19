@@ -298,8 +298,6 @@ common approach.\n");
 static int
 bisect_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    bisect_state *state = get_bisect_state(module);
-    Py_VISIT(state->str_insert);
     return 0;
 }
 
