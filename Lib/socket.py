@@ -806,7 +806,7 @@ def getfqdn(name=''):
 _GLOBAL_DEFAULT_TIMEOUT = object()
 
 def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
-                      source_address=None):
+                      source_address=None, all_errors=False):
     """Connect to *address* and return the socket object.
 
     Convenience function.  Connect to *address* (a 2-tuple ``(host,
@@ -816,11 +816,13 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
     global default timeout setting returned by :func:`getdefaulttimeout`
     is used.  If *source_address* is set it must be a tuple of (host, port)
     for the socket to bind as a source address before making the connection.
-    A host of '' or port 0 tells the OS to use the default.
+    A host of '' or port 0 tells the OS to use the default. When a connection
+    cannot be created, raises the last error if *all_errors* is False,
+    and an ExceptionGroup of all errors if *all_errors* is True.
     """
 
     host, port = address
-    err = None
+    exceptions = []
     for res in getaddrinfo(host, port, 0, SOCK_STREAM):
         af, socktype, proto, canonname, sa = res
         sock = None
@@ -832,20 +834,24 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
                 sock.bind(source_address)
             sock.connect(sa)
             # Break explicitly a reference cycle
-            err = None
+            exceptions.clear()
             return sock
 
-        except error as _:
-            err = _
+        except error as exc:
+            if not all_errors:
+                exceptions.clear()  # raise only the last error
+            exceptions.append(exc)
             if sock is not None:
                 sock.close()
 
-    if err is not None:
+    if len(exceptions):
         try:
-            raise err
+            if not all_errors:
+                raise exceptions[0]
+            raise ExceptionGroup("create_connection failed", exceptions)
         finally:
             # Break explicitly a reference cycle
-            err = None
+            exceptions = None
     else:
         raise error("getaddrinfo returns an empty list")
 
