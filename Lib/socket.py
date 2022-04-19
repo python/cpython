@@ -851,7 +851,7 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
             raise ExceptionGroup("create_connection failed", exceptions)
         finally:
             # Break explicitly a reference cycle
-            exceptions = None
+            exceptions.clear()
     else:
         raise error("getaddrinfo returns an empty list")
 
