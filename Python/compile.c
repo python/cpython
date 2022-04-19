@@ -7525,6 +7525,7 @@ write_location_info_long_form(struct assembler* a, struct instr* i, int length)
     assert(length > 0 &&  length <= 8);
     write_location_first_byte(a, PY_CODE_LOCATION_INFO_LONG, length);
     write_location_signed_varint(a, i->i_lineno - a->a_lineno);
+    assert(i->i_end_lineno >= i->i_lineno);
     write_location_varint(a, i->i_end_lineno - i->i_lineno);
     write_location_varint(a, i->i_col_offset+1);
     write_location_varint(a, i->i_end_col_offset+1);
@@ -7565,7 +7566,7 @@ write_location_info_entry(struct assembler* a, struct instr* i, int isize)
     assert(column >= -1);
     assert(end_column >= -1);
     if (column < 0 || end_column < 0) {
-        if (i->i_end_lineno == i->i_lineno) {
+        if (i->i_end_lineno == i->i_lineno || i->i_end_lineno == -1) {
             write_location_info_no_column(a, isize, line_delta);
             a->a_lineno = i->i_lineno;
             return 1;

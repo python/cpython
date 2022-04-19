@@ -433,7 +433,7 @@ read_obj(uint16_t *p)
 }
 
 static inline int
-write_varint(uint8_t *ptr, int val)
+write_varint(uint8_t *ptr, unsigned int val)
 {
     int written = 1;
     while (val >= 64) {
