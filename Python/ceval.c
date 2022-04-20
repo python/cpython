@@ -4063,14 +4063,12 @@ handle_eval_breaker:
             _PyListIterObject *it = (_PyListIterObject *)TOP();
             DEOPT_IF(Py_TYPE(it) != &PyListIter_Type, JUMP_BACKWARD);
             STAT_INC(JUMP_BACKWARD, hit);
-            assert(_Py_OPCODE(
-                next_instr[INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg])
-                == FOR_ITER);
 
             JUMPBY(INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg);
             CHECK_EVAL_BREAKER();
             NEXTOPARG();
-            frame->prev_instr = next_instr++;
+            assert(opcode == FOR_ITER);
+            next_instr++;
 
             PyListObject *seq = it->it_seq;
             if (seq == NULL) {
@@ -4092,16 +4090,12 @@ handle_eval_breaker:
             _PyRangeIterObject *r = (_PyRangeIterObject *)TOP();
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, JUMP_BACKWARD);
             STAT_INC(JUMP_BACKWARD, hit);
-            assert(_Py_OPCODE(
-                next_instr[INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg])
-                == FOR_ITER);
-            assert(_PyOpcode_Deopt[_Py_OPCODE(
-                next_instr[INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg+1])]
-                == STORE_FAST);
             JUMPBY(INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg);
             CHECK_EVAL_BREAKER();
             NEXTOPARG();
-            frame->prev_instr = next_instr++;
+            assert(opcode == FOR_ITER);
+            next_instr++;
+            assert(_PyOpcode_Deopt[_Py_OPCODE(*next_instr)] == STORE_FAST);
             PyObject **local_ptr = &GETLOCAL(_Py_OPARG(*next_instr));
             PyObject *local = *local_ptr;
             if (r->index >= r->len) {
