@@ -1,0 +1,2 @@
+Add ``PyBytes_Type.tp_alloc`` to initialize ``PyBytesObject.ob_shash`` for
+bytes subclasses.
