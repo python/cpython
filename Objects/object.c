@@ -18,7 +18,6 @@
 #include "pycore_unionobject.h"   // _PyUnion_Type
 #include "frameobject.h"          // PyFrame_Type
 #include "pycore_interpreteridobject.h"  // _PyInterpreterID_Type
-#include "pycore_genericaliasobject.h"  // _Py_GenericAliasIterType
 
 #ifdef Py_LIMITED_API
    // Prevent recursive call _Py_IncRef() <=> Py_INCREF()
@@ -1835,6 +1834,7 @@ _PyTypes_InitState(PyInterpreterState *interp)
 #ifdef MS_WINDOWS
 extern PyTypeObject PyHKEY_Type;
 #endif
+extern PyTypeObject _Py_GenericAliasIterType;
 
 static PyTypeObject* static_types[] = {
     // The two most important base types: must be initialized first and
