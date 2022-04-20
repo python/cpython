@@ -344,9 +344,7 @@ static inline void* _PyUnicode_COMPACT_DATA(PyObject *op) {
     if (PyUnicode_IS_ASCII(op)) {
         return (void*)(_PyASCIIObject_CAST(op) + 1);
     }
-    else {
-        return (void*)(_PyCompactUnicodeObject_CAST(op) + 1);
-    }
+    return (void*)(_PyCompactUnicodeObject_CAST(op) + 1);
 }
 
 static inline void* _PyUnicode_NONCOMPACT_DATA(PyObject *op) {
@@ -359,9 +357,7 @@ static inline void* PyUnicode_DATA(PyObject *op) {
     if (PyUnicode_IS_COMPACT(op)) {
         return _PyUnicode_COMPACT_DATA(op);
     }
-    else {
-        return _PyUnicode_NONCOMPACT_DATA(op);
-    }
+    return _PyUnicode_NONCOMPACT_DATA(op);
 }
 #define PyUnicode_DATA(op) PyUnicode_DATA(_PyObject_CAST(op))
 
