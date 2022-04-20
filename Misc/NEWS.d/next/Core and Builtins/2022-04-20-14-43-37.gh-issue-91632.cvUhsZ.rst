@@ -1,0 +1,1 @@
+Fix :class:`generic_alias_iterator` to be finalized at exit.
