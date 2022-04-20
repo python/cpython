@@ -40,7 +40,7 @@ static inline void
 _Py_DECREF_INT(PyLongObject *op)
 {
     assert(PyLong_CheckExact(op));
-    _Py_DECREF_SPECIALIZED((PyObject *)op, PyObject_Free);
+    _Py_DECREF_SPECIALIZED((PyObject *)op, (destructor)PyObject_Free);
 }
 
 static inline int
@@ -771,7 +771,10 @@ _PyLong_Sign(PyObject *vv)
 static int
 bit_length_digit(digit x)
 {
-    Py_BUILD_ASSERT(PyLong_SHIFT <= sizeof(unsigned long) * 8);
+    // digit can be larger than unsigned long, but only PyLong_SHIFT bits
+    // of it will be ever used.
+    static_assert(PyLong_SHIFT <= sizeof(unsigned long) * 8,
+                  "digit is larger than unsigned long");
     return _Py_bit_length((unsigned long)x);
 }
 
@@ -5647,7 +5650,7 @@ popcount_digit(digit d)
 {
     // digit can be larger than uint32_t, but only PyLong_SHIFT bits
     // of it will be ever used.
-    Py_BUILD_ASSERT(PyLong_SHIFT <= 32);
+    static_assert(PyLong_SHIFT <= 32, "digit is larger than uint32_t");
     return _Py_popcount32((uint32_t)d);
 }
 
