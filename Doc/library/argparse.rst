@@ -22,8 +22,8 @@
 The :mod:`argparse` module makes it easy to write user-friendly command-line
 interfaces. The program defines what arguments it requires, and :mod:`argparse`
 will figure out how to parse those out of :data:`sys.argv`.  The :mod:`argparse`
-module. Moreover, it automatically generates the `help` and `usage messages` and 
-`issues errors` when users provide invalid arguments to the program.
+module. Moreover, it automatically generates the help, usage messages and 
+issues errors when users provide invalid arguments to the program.
 
 
 Core Functionality
