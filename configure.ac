@@ -6595,6 +6595,7 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
   [Emscripten/browser*], [
     PY_STDLIB_MOD_SET_NA(
       [_ctypes],
+      [_ctypes_test],
       [_curses],
       [_curses_panel],
       [_dbm],
@@ -6622,6 +6623,7 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
   [Emscripten/node*], [
     PY_STDLIB_MOD_SET_NA(
       [_ctypes],
+      [_ctypes_test],
       [_curses],
       [_curses_panel],
       [_dbm],
