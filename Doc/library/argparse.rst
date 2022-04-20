@@ -30,32 +30,36 @@ Core Functionality
 ------------------
 
 The :mod:`argparse` module's support for command-line interfaces is built
-from the following:
+around an instance of :class:`argparse.ArgumentParser`.  It is a container for
+argument specifications and has options that apply the parser as whole::
 
-The :class:`argparse.ArgumentParser` creates a new :class:`ArgumentParser`
-object. Commonly used arguments include prog_, description_, and
-formatter_class_. For example, the user can create an instance of
-:class:`ArgumentParser` through the following::
+   parser = argparse.ArgumentParser(
+                 prog = 'ProgramName',
+                 description = 'What the program does',
+                 epilog = 'Text at the bottom of help')
 
-   >>> parser = argparse.ArgumentParser(prog='PROG', description='DESC',
-   ...                                  formatter_class=argparse.RawDescriptionHelpFormatter)
+The :func:`ArgumentParser.add_argument` function attaches individual argument
+specifications to the parser.  It supports positional arguments, options that
+accept values, and on/off flags::
 
-The :func:`ArgumentParser.add_argument` is a function that is used
-to define each command-line argument should be parsed. Commonly used
-arguments include `name or flags`_, action_, default_, type_, required_,
-and help_. An example of the function :func:`ArgumentParser.add_argument`
-is as follows::
+   parser.add_argument('filename')           # positional argument
+   parser.add_argument('-c', '--count')      # option that takes value
+   parser.add_argument('-v', '--verbose',
+                       action='store_true')  # on/off flag
 
-   >>> parser.add_argument('-v', '--verbose', action='store_true',
-   ...                     help='Show various debugging information')
+The :func:`ArgumentParser.parse_args` function runs the parser and puts
+the extracted data in a :class:`argparse.Namespace` object::
+
+   args = parser.parse_args()
+   print(args.filename, args.count, args.verbose)
 
 
 Quick Links for add_argument()
 ------------------------------
 
-====================== =========================================================== =========================================================================================================================
+====================== =========================================================== ==========================================================================================================================
 Name                   Description                                                 Values
-====================== =========================================================== =========================================================================================================================
+====================== =========================================================== ==========================================================================================================================
 action_                Specify how an argument should be handled                   ``'store'``, ``'store_const'``, ``'store_true'``, ``'append'``, ``'append_const'``, ``'count'``, ``'help'``, ``'version'``
 choices_               Limit values to specific set of choices                     ``['foo', 'bar']``, ``range(1, 10)``, or an object that supports ``in`` operator
 const_                 Store a constant value
@@ -66,8 +70,7 @@ metavar_               Alternate display name for the argument as shown in help
 nargs_                 Number of times the argument can be used                    ``N`` (:class:`int`), ``'?'``, ``'*'``, ``'+'``, ``argparse.REMAINDER``
 required_              Indicate whether an optional argument is required or not    ``True``, ``False``
 type_                  Automatically convert an argument to the given type         :class:`int`, :class:`float`, ``argparse.FileType('w')``, or any callable function
-====================== =========================================================== =======================================================================================================================
-
+====================== =========================================================== ==========================================================================================================================
 
 
 Example
