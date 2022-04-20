@@ -61,7 +61,7 @@ CDF_FILES = FileSuffixSet(".cdf")
 
 DATA_DIRS = FileNameSet("data")
 
-TOOLS_DIRS = FileNameSet("scripts", "i18n", "pynche", "demo", "parser")
+TOOLS_DIRS = FileNameSet("scripts", "i18n", "demo", "parser")
 TOOLS_FILES = FileSuffixSet(".py", ".pyw", ".txt")
 
 

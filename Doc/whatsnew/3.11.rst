@@ -157,12 +157,15 @@ The :option:`-X` ``no_debug_ranges`` option and the environment variable
 See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
 and Ammar Askar in :issue:`43950`.)
 
-Exceptions can be enriched with a string ``__note__``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Exceptions can be enriched with notes (PEP 678)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``__note__`` field was added to :exc:`BaseException`. It is ``None``
-by default but can be set to a string which is added to the exception's
-traceback. (Contributed by Irit Katriel in :issue:`45607`.)
+The :meth:`add_note` method was added to :exc:`BaseException`. It can be
+used to enrich exceptions with context information which is not available
+at the time when the exception is raised. The notes added appear in the
+default traceback. See :pep:`678` for more details. (Contributed by
+Irit Katriel in :issue:`45607`.)
+
 
 Other Language Changes
 ======================
@@ -233,6 +236,10 @@ New Modules
 * A new module, :mod:`tomllib`, was added for parsing TOML.
   (Contributed by Taneli Hukkinen in :issue:`40059`.)
 
+* :mod:`wsgiref.types`, containing WSGI-specific types for static type
+  checking, was added.
+  (Contributed by Sebastian Rittau in :issue:`42012`.)
+
 
 Improved Modules
 ================
@@ -246,6 +253,10 @@ asyncio
   :meth:`~asyncio.AbstractEventLoop.sock_recvfrom_into`.
   (Contributed by Alex Grönholm in :issue:`46805`.)
 
+* Add :meth:`~asyncio.streams.StreamWriter.start_tls` method for upgrading
+  existing stream-based connections to TLS. (Contributed by Ian Good in
+  :issue:`34975`.)
+
 fractions
 ---------
 
@@ -255,6 +266,36 @@ fractions
 * :class:`~fractions.Fraction` now implements an ``__int__`` method, so
   that an ``isinstance(some_fraction, typing.SupportsInt)`` check passes.
   (Contributed by Mark Dickinson in :issue:`44547`.)
+
+functools
+---------
+
+* :func:`functools.singledispatch` now supports :data:`types.UnionType`
+  and :data:`typing.Union` as annotations to the dispatch argument.::
+
+    >>> from functools import singledispatch
+    >>> @singledispatch
+    ... def fun(arg, verbose=False):
+    ...     if verbose:
+    ...         print("Let me just say,", end=" ")
+    ...     print(arg)
+    ...
+    >>> @fun.register
+    ... def _(arg: int | float, verbose=False):
+    ...     if verbose:
+    ...         print("Strength in numbers, eh?", end=" ")
+    ...     print(arg)
+    ...
+    >>> from typing import Union
+    >>> @fun.register
+    ... def _(arg: Union[list, set], verbose=False):
+    ...     if verbose:
+    ...         print("Enumerate this:")
+    ...     for i, elem in enumerate(arg):
+    ...         print(i, elem)
+    ...
+
+  (Contributed by Yurii Karabas in :issue:`46014`.)
 
 hashlib
 -------
@@ -346,6 +387,10 @@ socket
 * Add CAN Socket support for NetBSD.
   (Contributed by Thomas Klausner in :issue:`30512`.)
 
+* :meth:`~socket.create_connection` has an option to raise, in case of
+  failure to connect, an :exc:`ExceptionGroup` containing all errors
+  instead of only raising the last error.
+  (Contributed by Irit Katriel in :issue:`29980`).
 
 sqlite3
 -------
@@ -392,6 +437,10 @@ sqlite3
 * Add :meth:`~sqlite3.Connection.create_window_function` to
   :class:`sqlite3.Connection` for creating aggregate window functions.
   (Contributed by Erlend E. Aasland in :issue:`34916`.)
+
+* Add :meth:`~sqlite3.Connection.blobopen` to :class:`sqlite3.Connection`.
+  :class:`sqlite3.Blob` allows incremental I/O operations on blobs.
+  (Contributed by Aviv Palivoda and Erlend E. Aasland in :issue:`24905`)
 
 
 sys
@@ -511,6 +560,12 @@ Optimizations
   This reduces dict size. For example, ``sys.getsizeof(dict.fromkeys("abcdefg"))``
   becomes 272 bytes from 352 bytes on 64bit platform.
   (Contributed by Inada Naoki in :issue:`46845`.)
+
+* :mod:`re`'s regular expression matching engine has been partially refactored,
+  and now uses computed gotos (or "threaded code") on supported platforms. As a
+  result, Python 3.11 executes the `pyperformance regular expression benchmarks
+  <https://pyperformance.readthedocs.io/benchmarks.html#regex-dna>`_ up to 10%
+  faster than Python 3.10.
 
 
 Faster CPython
@@ -773,6 +828,9 @@ CPython bytecode changes
   :opcode:`POP_JUMP_FORWARD_IF_NONE` and :opcode:`POP_JUMP_BACKWARD_IF_NONE`
   opcodes to speed up conditional jumps.
 
+* :opcode:`JUMP_IF_TRUE_OR_POP` and :opcode:`JUMP_IF_FALSE_OR_POP` are now
+  relative rather than absolute.
+
 
 Deprecated
 ==========
@@ -856,6 +914,11 @@ Deprecated
   * :mod:`cgitb`
   * :mod:`chunk`
   * :mod:`crypt`
+  * :mod:`imghdr`
+  * :mod:`msilib`
+  * :mod:`nis`
+  * :mod:`nntplib`
+  * :mod:`ossaudiodev`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
@@ -1144,6 +1207,14 @@ New Features
 * Add new functions to get frame object attributes:
   :c:func:`PyFrame_GetBuiltins`, :c:func:`PyFrame_GetGenerator`,
   :c:func:`PyFrame_GetGlobals`, :c:func:`PyFrame_GetLasti`.
+
+* Added two new functions to get and set the active exception instance:
+  :c:func:`PyErr_GetHandledException` and :c:func:`PyErr_SetHandledException`.
+  These are alternatives to :c:func:`PyErr_SetExcInfo()` and
+  :c:func:`PyErr_GetExcInfo()` which work with the legacy 3-tuple
+  representation of exceptions.
+  (Contributed by Irit Katriel in :issue:`46343`.)
+
 
 Porting to Python 3.11
 ----------------------

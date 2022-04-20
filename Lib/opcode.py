@@ -131,8 +131,8 @@ hascompare.append(107)
 name_op('IMPORT_NAME', 108)     # Index in name list
 name_op('IMPORT_FROM', 109)     # Index in name list
 jrel_op('JUMP_FORWARD', 110)    # Number of words to skip
-jabs_op('JUMP_IF_FALSE_OR_POP', 111) # Target byte offset from beginning of code
-jabs_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
+jrel_op('JUMP_IF_FALSE_OR_POP', 111) # Number of words to skip
+jrel_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
 jrel_op('POP_JUMP_FORWARD_IF_FALSE', 114)
 jrel_op('POP_JUMP_FORWARD_IF_TRUE', 115)
 name_op('LOAD_GLOBAL', 116, 5)     # Index in name list
