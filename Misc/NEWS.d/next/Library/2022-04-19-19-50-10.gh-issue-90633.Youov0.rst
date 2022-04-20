@@ -1,0 +1,2 @@
+Include the passed value in the exception thrown by
+:func:`typing.assert_never`. Patch by Jelle Zijlstra.

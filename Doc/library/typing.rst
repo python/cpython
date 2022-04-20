@@ -2346,6 +2346,11 @@ Functions and decorators
 
    At runtime, this throws an exception when called.
 
+   .. seealso::
+      `Unreachable Code and Exhaustiveness Checking
+      <https://typing.readthedocs.io/en/latest/source/unreachable.html>_` has more
+      information about exhaustiveness checking with static typing.
+
    .. versionadded:: 3.11
 
 .. function:: reveal_type(obj)
