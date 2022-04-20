@@ -2395,10 +2395,11 @@ _Py_closerange(int first, int last)
     first = Py_MAX(first, 0);
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_CLOSE_RANGE
-    if (close_range(first, last, 0) == 0 || errno != ENOSYS) {
-        /* Any errors encountered while closing file descriptors are ignored;
-         * ENOSYS means no kernel support, though,
-         * so we'll fallback to the other methods. */
+    if (close_range(first, last, 0) == 0) {
+        /* close_range() ignores errors when it closes file descriptors.
+         * Possible reasons of an error return are lack of kernel support
+         * or denial of the underlying syscall by a seccomp sandbox on Linux.
+         * Fallback to other methods in case of any error. */
     }
     else
 #endif /* HAVE_CLOSE_RANGE */

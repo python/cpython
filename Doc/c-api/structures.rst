@@ -494,7 +494,7 @@ Accessing attributes of extension types
    +=============+==================+===================================+
    | name        | const char \*    | attribute name                    |
    +-------------+------------------+-----------------------------------+
-   | get         | getter           | C Function to get the attribute   |
+   | get         | getter           | C function to get the attribute   |
    +-------------+------------------+-----------------------------------+
    | set         | setter           | optional C function to set or     |
    |             |                  | delete the attribute, if omitted  |

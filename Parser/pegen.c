@@ -435,7 +435,12 @@ get_error_line(Parser *p, Py_ssize_t lineno)
     assert((p->tok->fp == NULL && p->tok->str != NULL) || p->tok->fp == stdin);
 
     char *cur_line = p->tok->fp_interactive ? p->tok->interactive_src_start : p->tok->str;
-    assert(cur_line != NULL);
+    if (cur_line == NULL) {
+        assert(p->tok->fp_interactive);
+        // We can reach this point if the tokenizer buffers for interactive source have not been
+        // initialized because we failed to decode the original source with the given locale.
+        return PyUnicode_FromStringAndSize("", 0);
+    }
     const char* buf_end = p->tok->fp_interactive ? p->tok->interactive_src_end : p->tok->inp;
 
     Py_ssize_t relative_lineno = p->starting_lineno ? lineno - p->starting_lineno + 1 : lineno;
@@ -495,7 +500,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         goto error;
     }
 
-    if (p->tok->fp_interactive) {
+    if (p->tok->fp_interactive && p->tok->interactive_src_start != NULL) {
         error_line = get_error_line(p, lineno);
     }
     else if (p->start_rule == Py_file_input) {
@@ -2563,7 +2568,7 @@ void *_PyPegen_arguments_parsing_error(Parser *p, expr_ty e) {
 }
 
 
-static inline expr_ty
+expr_ty
 _PyPegen_get_last_comprehension_item(comprehension_ty comprehension) {
     if (comprehension->ifs == NULL || asdl_seq_LEN(comprehension->ifs) == 0) {
         return comprehension->iter;

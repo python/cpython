@@ -272,7 +272,7 @@ The following functions and structs are used to create
 
      .. versionchanged:: 3.9
 
-        Slots in :c:type:`PyBufferProcs` in may be set in the unlimited API.
+        Slots in :c:type:`PyBufferProcs` may be set in the unlimited API.
 
    .. c:member:: void *PyType_Slot.pfunc
 

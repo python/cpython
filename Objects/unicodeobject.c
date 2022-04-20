@@ -5373,7 +5373,7 @@ _Py_DecodeUTF8Ex(const char *s, Py_ssize_t size, wchar_t **wstr, size_t *wlen,
 
     /* Note: size will always be longer than the resulting Unicode
        character count */
-    if (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t) < (size + 1)) {
+    if (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t) - 1 < size) {
         return -1;
     }
 
@@ -13478,19 +13478,26 @@ PyUnicode_Split(PyObject *s, PyObject *sep, Py_ssize_t maxsplit)
 str.split as unicode_split
 
     sep: object = None
-        The delimiter according which to split the string.
-        None (the default value) means split according to any whitespace,
-        and discard empty strings from the result.
+        The separator used to split the string.
+
+        When set to None (the default value), will split on any whitespace
+        character (including \\n \\r \\t \\f and spaces) and will discard
+        empty strings from the result.
     maxsplit: Py_ssize_t = -1
-        Maximum number of splits to do.
+        Maximum number of splits (starting from the left).
         -1 (the default value) means no limit.
 
-Return a list of the words in the string, using sep as the delimiter string.
+Return a list of the substrings in the string, using sep as the separator string.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
 [clinic start generated code]*/
 
 static PyObject *
 unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=3a65b1db356948dc input=606e750488a82359]*/
+/*[clinic end generated code: output=3a65b1db356948dc input=906d953b44efc43b]*/
 {
     if (sep == Py_None)
         return split(self, NULL, maxsplit);
@@ -13661,14 +13668,14 @@ PyUnicode_RSplit(PyObject *s, PyObject *sep, Py_ssize_t maxsplit)
 /*[clinic input]
 str.rsplit as unicode_rsplit = str.split
 
-Return a list of the words in the string, using sep as the delimiter string.
+Return a list of the substrings in the string, using sep as the separator string.
 
-Splits are done starting at the end of the string and working to the front.
+Splitting starts at the end of the string and works to the front.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=c2b815c63bcabffc input=12ad4bf57dd35f15]*/
+/*[clinic end generated code: output=c2b815c63bcabffc input=ea78406060fce33c]*/
 {
     if (sep == Py_None)
         return rsplit(self, NULL, maxsplit);
@@ -16352,6 +16359,9 @@ _PyUnicode_Fini(PyInterpreterState *interp)
     if (_Py_IsMainInterpreter(interp)) {
         // _PyUnicode_ClearInterned() must be called before _PyUnicode_Fini()
         assert(interned == NULL);
+        // bpo-47182: force a unicodedata CAPI capsule re-import on
+        // subsequent initialization of main interpreter.
+        ucnhash_capi = NULL;
     }
 
     _PyUnicode_FiniEncodings(&state->fs_codec);

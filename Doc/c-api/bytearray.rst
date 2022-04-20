@@ -42,8 +42,6 @@ Direct API functions
    Return a new bytearray object from any object, *o*, that implements the
    :ref:`buffer protocol <bufferobjects>`.
 
-   .. XXX expand about the buffer protocol, at least somewhere
-
 
 .. c:function:: PyObject* PyByteArray_FromStringAndSize(const char *string, Py_ssize_t len)
 
