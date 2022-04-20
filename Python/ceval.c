@@ -4020,8 +4020,8 @@ handle_eval_breaker:
             /* Adaptiveness is for the for FOR_ITER operation */
             if (cache->counter == 0) {
                 next_instr--;
-                _Py_Specialize_JumpBackward(TOP(), next_instr);
-                DISPATCH();
+                _Py_Specialize_JumpBackward(TOP(), next_instr, oparg);
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             STAT_INC(JUMP_BACKWARD, deferred);
             cache->counter--;
@@ -4095,7 +4095,9 @@ handle_eval_breaker:
             assert(_Py_OPCODE(
                 next_instr[INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg])
                 == FOR_ITER);
-
+            assert(_PyOpcode_Deopt[_Py_OPCODE(
+                next_instr[INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg+1])]
+                == STORE_FAST);
             JUMPBY(INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg);
             CHECK_EVAL_BREAKER();
             NEXTOPARG();
@@ -4111,7 +4113,38 @@ handle_eval_breaker:
                 NOTRACE_DISPATCH();
             }
             goto iterator_exhausted_no_error;
+#if 0
+            PyObject **local_ptr = &GETLOCAL(_Py_OPARG(*next_instr));
+            PyObject *local = *local_ptr;
+            sdigit value = r->start + (digit)(r->index++) * r->step;
+            if (value < _PY_NSMALLPOSINTS && value >= -_PY_NSMALLNEGINTS) {
+                *local_ptr = Py_NewRef(&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+value]);
+                Py_XDECREF(local);
+                NOTRACE_DISPATCH();
+            }
+            if (local && PyLong_CheckExact(local) && Py_REFCNT(local) == 1) {
+                if (value > 0) {
+                    assert((digit)value <= PyLong_MASK);
+                    ((PyLongObject *)local)->ob_digit[0] = value;
+                    Py_SET_SIZE(local, 1);
+                }
+                else {
+                    assert(value >= -(sdigit)PyLong_MASK);
+                    ((PyLongObject *)local)->ob_digit[0] = -(sdigit)value;
+                    Py_SET_SIZE(local, (Py_ssize_t)-1);
+                }
+                NOTRACE_DISPATCH();
+            }
+            PyObject *res = PyLong_FromLong(value);
+            if (res == NULL) {
+                goto error;
+            }
+            *local_ptr = res;
+            Py_XDECREF(local);
+            NOTRACE_DISPATCH();
+#endif
         }
+
 
         TARGET(POP_JUMP_BACKWARD_IF_FALSE) {
             PREDICTED(POP_JUMP_BACKWARD_IF_FALSE);

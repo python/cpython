@@ -2064,20 +2064,23 @@ int
 
 #endif
 
-
-
 void
-_Py_Specialize_JumpBackward(PyObject *iter, _Py_CODEUNIT *instr)
+_Py_Specialize_JumpBackward(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
 {
     assert(_PyOpcode_Caches[JUMP_BACKWARD] ==
            INLINE_CACHE_ENTRIES_JUMP_BACKWARD);
+    _Py_CODEUNIT *target = &instr[1+INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg];
+    assert(_Py_OPCODE(*target) == FOR_ITER);
+    int next_opcode = _PyOpcode_Deopt[_Py_OPCODE(target[1])];
+    int next_oparg = _Py_OPCODE(target[1]);
+
     _PyJumpBackwardCache *cache = (_PyJumpBackwardCache *)(instr + 1);
     PyTypeObject *tp = Py_TYPE(iter);
     if (tp == &PyListIter_Type) {
         _Py_SET_OPCODE(*instr, JUMP_BACKWARD_FOR_ITER_LIST);
         goto success;
     }
-    else if (tp == &PyRangeIter_Type) {
+    else if (tp == &PyRangeIter_Type && next_opcode == STORE_FAST) {
         _Py_SET_OPCODE(*instr, JUMP_BACKWARD_FOR_ITER_RANGE);
         goto success;
     }
