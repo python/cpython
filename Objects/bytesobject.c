@@ -415,6 +415,7 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     PyObject *result;
     double x;
     size_t len;
+    int dtoa_flags = 0;
 
     x = PyFloat_AsDouble(v);
     if (x == -1.0 && PyErr_Occurred()) {
@@ -426,8 +427,13 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     if (prec < 0)
         prec = 6;
 
-    p = PyOS_double_to_string(x, type, prec,
-                              (flags & F_ALT) ? Py_DTSF_ALT : 0, NULL);
+    if (flags & F_ALT) {
+        dtoa_flags |= Py_DTSF_ALT;
+    }
+    if (flags & F_NO_NEG_0) {
+        dtoa_flags |= Py_DTSF_NO_NEG_0;
+    }
+    p = PyOS_double_to_string(x, type, prec, dtoa_flags, NULL);
 
     if (p == NULL)
         return NULL;
@@ -706,6 +712,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 case ' ': flags |= F_BLANK; continue;
                 case '#': flags |= F_ALT; continue;
                 case '0': flags |= F_ZERO; continue;
+                case 'z': flags |= F_NO_NEG_0; continue;
                 }
                 break;
             }
@@ -2854,6 +2861,25 @@ PyBytes_FromObject(PyObject *x)
     return NULL;
 }
 
+/* This allocator is needed for subclasses don't want to use __new__.
+ * See https://github.com/python/cpython/issues/91020#issuecomment-1096793239
+ *
+ * This allocator will be removed when ob_shash is removed.
+ */
+static PyObject *
+bytes_alloc(PyTypeObject *self, Py_ssize_t nitems)
+{
+    PyBytesObject *obj = (PyBytesObject*)PyType_GenericAlloc(self, nitems);
+    if (obj == NULL) {
+        return NULL;
+    }
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    obj->ob_shash = -1;
+_Py_COMP_DIAG_POP
+    return (PyObject*)obj;
+}
+
 static PyObject *
 bytes_subtype_new(PyTypeObject *type, PyObject *tmp)
 {
@@ -2930,7 +2956,7 @@ PyTypeObject PyBytes_Type = {
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
     0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
+    bytes_alloc,                                /* tp_alloc */
     bytes_new,                                  /* tp_new */
     PyObject_Del,                               /* tp_free */
 };
