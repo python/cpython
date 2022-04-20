@@ -61,7 +61,7 @@ Quick Links for add_argument()
 Name                   Description                                                 Values
 ====================== =========================================================== ==========================================================================================================================
 action_                Specify how an argument should be handled                   ``'store'``, ``'store_const'``, ``'store_true'``, ``'append'``, ``'append_const'``, ``'count'``, ``'help'``, ``'version'``
-choices_               Limit values to a specific set of choices                   ``['foo', 'bar']``, ``range(1, 10)``, or :class:`collections.abc.Container` instance
+choices_               Limit values to a specific set of choices                   ``['foo', 'bar']``, ``range(1, 10)``, or :class:`~collections.abc.Container` instance
 const_                 Store a constant value
 default_               Default value used when an argument is not provided         Defaults to *None*
 dest_                  Specify the attribute name used in the result namespace
