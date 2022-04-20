@@ -1774,7 +1774,9 @@ handle_eval_breaker:
     {
 #else
     dispatch_opcode:
-        switch (opcode) {
+        // The cast, combined with the EXTRA_CASES macro,
+        // causes MSVC to generate a faster switch.
+        switch ((unsigned char)opcode) {
 #endif
 
         /* BEWARE!
@@ -5645,7 +5647,7 @@ handle_eval_breaker:
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
 #else
-        default:
+        EXTRA_CASES  // From opcode.h, a 'case' for each unused opcode
 #endif
             fprintf(stderr, "XXX lineno: %d, opcode: %d\n",
                     _PyInterpreterFrame_GetLine(frame),  opcode);
