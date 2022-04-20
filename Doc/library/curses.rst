@@ -37,7 +37,7 @@ Linux and the BSD variants of Unix.
 
       import locale
       locale.setlocale(locale.LC_ALL, '')
-      code = locale.getpreferredencoding()
+      code = locale.getencoding()
 
    Then use *code* as the encoding for :meth:`str.encode` calls.
 
@@ -924,7 +924,7 @@ the following methods and attributes:
    Encoding used to encode method arguments (Unicode strings and characters).
    The encoding attribute is inherited from the parent window when a subwindow
    is created, for example with :meth:`window.subwin`. By default, the locale
-   encoding is used (see :func:`locale.getpreferredencoding`).
+   encoding is used (see :func:`locale.getencoding`).
 
    .. versionadded:: 3.3
 

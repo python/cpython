@@ -1204,7 +1204,7 @@ class BuiltinTest(unittest.TestCase):
                     del os.environ[key]
 
             self.write_testfile()
-            current_locale_encoding = locale.getpreferredencoding(False)
+            current_locale_encoding = locale.getencoding()
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", EncodingWarning)
                 fp = open(TESTFN, 'w')

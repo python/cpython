@@ -43,7 +43,7 @@ def setUpModule():
                     locale.setlocale(locale.LC_ALL, loc)
                 except Error:
                     continue
-                encoding = locale.getpreferredencoding(False)
+                encoding = locale.getencoding()
                 try:
                     localeconv()
                 except Exception as err:

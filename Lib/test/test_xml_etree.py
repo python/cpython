@@ -975,7 +975,7 @@ class ElementTreeTest(unittest.TestCase):
 
     def test_tostring_xml_declaration_unicode_encoding(self):
         elem = ET.XML('<body><tag/></body>')
-        preferredencoding = locale.getpreferredencoding()
+        preferredencoding = locale.getpreferredencoding(False)
         self.assertEqual(
             f"<?xml version='1.0' encoding='{preferredencoding}'?>\n<body><tag /></body>",
             ET.tostring(elem, encoding='unicode', xml_declaration=True)
@@ -983,7 +983,7 @@ class ElementTreeTest(unittest.TestCase):
 
     def test_tostring_xml_declaration_cases(self):
         elem = ET.XML('<body><tag>ø</tag></body>')
-        preferredencoding = locale.getpreferredencoding()
+        preferredencoding = locale.getpreferredencoding(False)
         TESTCASES = [
         #   (expected_retval,                  encoding, xml_declaration)
             # ... xml_declaration = None
@@ -1048,7 +1048,7 @@ class ElementTreeTest(unittest.TestCase):
             b"<?xml version='1.0' encoding='us-ascii'?>\n<body><tag /></body>"
         )
 
-        preferredencoding = locale.getpreferredencoding()
+        preferredencoding = locale.getpreferredencoding(False)
         stringlist = ET.tostringlist(elem, encoding='unicode', xml_declaration=True)
         self.assertEqual(
             ''.join(stringlist),
