@@ -1662,7 +1662,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #ifdef Py_STATS
     int lastopcode = 0;
 #endif
-    int opcode;        /* Current opcode */
+    uint8_t opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
 
@@ -1776,7 +1776,7 @@ handle_eval_breaker:
     dispatch_opcode:
         // The cast, combined with the EXTRA_CASES macro,
         // causes MSVC to generate a faster switch.
-        switch ((unsigned char)opcode) {
+        switch (opcode) {
 #endif
 
         /* BEWARE!
