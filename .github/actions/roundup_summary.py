@@ -37,10 +37,9 @@ def get_issues(filters: Iterable[str], token: str, all_: bool = True):
     """return a list of results from the Github search API"""
     # TODO: if there are more than 100 issues, we need to include pagination
     # this doesn't occur very often, but it should still be included just incase.
-    search = " ".join(filters)
-    data = {"query": """
+    data = {"query": f"""
         {{
-            search(query:"{}" type: ISSUE first: 100)
+            search(query:"{' '.join(filters)}" type: ISSUE first: 100)
             {{
                 pageInfo {{ hasNextPage endCursor startCursor }}
                 nodes {{
@@ -50,7 +49,7 @@ def get_issues(filters: Iterable[str], token: str, all_: bool = True):
                 }}
             }}
         }}
-    """.format(search)}
+    """}
     response = requests.post(GRAPHQL_ENDPOINT, json=data, headers={
         "Authorization": f"Bearer {token}",
         "accept": "application/vnd.github.v3+json"
