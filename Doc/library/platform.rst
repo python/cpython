@@ -203,7 +203,7 @@ Windows Platform
    ``(release, version, csd, ptype)`` referring to OS release, version number,
    CSD level (service pack) and OS type (multi/single processor). Values which
    cannot be determined are set to the defaults given as parameters (which all
-   default to ``''``).
+   default to an empty string).
 
    As a hint: *ptype* is ``'Uniprocessor Free'`` on single processor NT machines
    and ``'Multiprocessor Free'`` on multi processor machines. The *'Free'* refers
