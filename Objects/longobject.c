@@ -36,11 +36,17 @@ medium_value(PyLongObject *x)
 #define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
 
+void
+_PyLong_ExactDealloc(PyObject *op)
+{
+    PyObject_Free(op);
+}
+
 static inline void
 _Py_DECREF_INT(PyLongObject *op)
 {
     assert(PyLong_CheckExact(op));
-    _Py_DECREF_SPECIALIZED((PyObject *)op, PyObject_Free);
+    _Py_DECREF_SPECIALIZED((PyObject *)op, _PyLong_ExactDealloc);
 }
 
 static inline int
