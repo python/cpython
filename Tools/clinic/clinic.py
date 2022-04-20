@@ -789,12 +789,14 @@ class CLanguage(Language):
                 flags = "METH_METHOD|METH_FASTCALL|METH_KEYWORDS"
 
                 parser_prototype = parser_prototype_def_class
+                return_error = ('return NULL;' if default_return_converter
+                                else 'goto exit;')
                 parser_code = [normalize_snippet("""
                     if (nargs) {{
                         PyErr_SetString(PyExc_TypeError, "{name}() takes no arguments");
-                        return NULL;
+                        %s
                     }}
-                    """, indent=4)]
+                    """ % return_error, indent=4)]
 
             if default_return_converter:
                 parser_definition = '\n'.join([

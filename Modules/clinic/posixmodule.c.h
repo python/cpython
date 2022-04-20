@@ -8294,7 +8294,7 @@ os_DirEntry_is_symlink(DirEntry *self, PyTypeObject *defining_class, PyObject *c
 
     if (nargs) {
         PyErr_SetString(PyExc_TypeError, "is_symlink() takes no arguments");
-        return NULL;
+        goto exit;
     }
     _return_value = os_DirEntry_is_symlink_impl(self, defining_class);
     if ((_return_value == -1) && PyErr_Occurred()) {
@@ -9331,4 +9331,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=94df188372283341 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c8c5b148b96068b4 input=a9049054013a1b77]*/
