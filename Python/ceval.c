@@ -60,6 +60,8 @@
 #undef Py_XDECREF
 #define Py_XDECREF(arg) do { PyObject *op1 = _PyObject_CAST(arg); if (op1 != NULL) { Py_DECREF(op1); } } while (0)
 
+#undef _Py_DECREF_SPECIALIZED
+#define _Py_DECREF_SPECIALIZED(arg, dealloc) do { PyObject *op = _PyObject_CAST(arg); if (--op->ob_refcnt == 0) { (dealloc)(op); } } while (0)
 #endif
 
 // GH-89279: Similar to above, force inlining by using a macro.
