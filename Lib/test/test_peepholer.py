@@ -76,8 +76,9 @@ class TestTranforms(BytecodeTestCase):
             if not x == 2:
                 del x
         self.assertNotInBytecode(unot, 'UNARY_NOT')
-        self.assertNotInBytecode(unot, 'POP_JUMP_IF_FALSE')
-        self.assertInBytecode(unot, 'POP_JUMP_IF_TRUE')
+        self.assertNotInBytecode(unot, 'POP_JUMP_FORWARD_IF_FALSE')
+        self.assertNotInBytecode(unot, 'POP_JUMP_BACKWARD_IF_FALSE')
+        self.assertInBytecode(unot, 'POP_JUMP_FORWARD_IF_TRUE')
         self.check_lnotab(unot)
 
     def test_elim_inversion_of_is_or_in(self):
@@ -405,7 +406,7 @@ class TestTranforms(BytecodeTestCase):
         self.check_lnotab(f)
         self.assertNotInBytecode(f, 'JUMP_IF_FALSE_OR_POP')
         self.assertInBytecode(f, 'JUMP_IF_TRUE_OR_POP')
-        self.assertInBytecode(f, 'POP_JUMP_IF_FALSE')
+        self.assertInBytecode(f, 'POP_JUMP_FORWARD_IF_FALSE')
         # JUMP_IF_TRUE_OR_POP to JUMP_IF_FALSE_OR_POP --> POP_JUMP_IF_TRUE to non-jump
         def f(a, b, c):
             return ((a or b)
@@ -414,7 +415,7 @@ class TestTranforms(BytecodeTestCase):
         self.check_lnotab(f)
         self.assertNotInBytecode(f, 'JUMP_IF_TRUE_OR_POP')
         self.assertInBytecode(f, 'JUMP_IF_FALSE_OR_POP')
-        self.assertInBytecode(f, 'POP_JUMP_IF_TRUE')
+        self.assertInBytecode(f, 'POP_JUMP_FORWARD_IF_TRUE')
 
     def test_elim_jump_after_return1(self):
         # Eliminate dead code: jumps immediately after returns can't be reached

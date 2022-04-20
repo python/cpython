@@ -1,4 +1,0 @@
-:const:`hashlib.algorithms_available` now lists only algorithms that are
-provided by activated crypto providers on OpenSSL 3.0. Legacy algorithms are
-not listed unless the legacy provider has been loaded into the default
-OSSL context.

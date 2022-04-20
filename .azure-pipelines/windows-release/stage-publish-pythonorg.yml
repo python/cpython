@@ -135,7 +135,7 @@ jobs:
 
   - powershell: |
       $failures = 0
-      gci "msi\*\*-webinstall.exe" -File | %{
+      gci "msi\*\*.exe" -File | %{
           $d = mkdir "tests\$($_.BaseName)" -Force
           gci $d -r -File | del
           $ic = copy $_ $d -PassThru
@@ -155,7 +155,11 @@ jobs:
     displayName: 'Test layouts'
 
   - powershell: |
-      $hashes = gci doc\htmlhelp\python*.chm, msi\*\*.exe, embed\*.zip | `
+      $files = gci -File "msi\*\*.exe", "embed\*.zip"
+      if ("$(DoCHM)" -ieq "true") {
+          $files = $files + (gci -File "doc\htmlhelp\python*.chm")
+      }
+      $hashes = $files  | `
           Sort-Object Name | `
           Format-Table Name, @{
             Label="MD5";
@@ -170,9 +174,13 @@ jobs:
 
   - powershell: |
       "Copying:"
-      (gci msi\*\python*.asc, doc\htmlhelp\*.asc, embed\*.asc).FullName
+      $files = gci -File "msi\*\python*.asc", "embed\*.asc"
+      if ("$(DoCHM)" -ieq "true") {
+          $files = $files + (gci -File "doc\htmlhelp\*.asc")
+      }
+      $files.FullName
       $d = mkdir "$(Build.ArtifactStagingDirectory)\hashes" -Force
-      move msi\*\python*.asc, doc\htmlhelp\*.asc, embed\*.asc $d -Force
+      move $files $d -Force
       gci msi -Directory | %{ move "msi\$_\*.asc" (mkdir "$d\$_" -Force) }
     workingDirectory: $(Build.BinariesDirectory)
     displayName: 'Copy GPG signatures for build'

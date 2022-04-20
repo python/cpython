@@ -48,6 +48,7 @@ struct _Py_global_strings {
         STRUCT_FOR_STR(newline, "\n")
         STRUCT_FOR_STR(open_br, "{")
         STRUCT_FOR_STR(percent, "%")
+        STRUCT_FOR_STR(utf_8, "utf-8")
     } literals;
 
     struct {
@@ -136,10 +137,10 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__le__)
         STRUCT_FOR_ID(__len__)
         STRUCT_FOR_ID(__length_hint__)
+        STRUCT_FOR_ID(__lltrace__)
         STRUCT_FOR_ID(__loader__)
         STRUCT_FOR_ID(__lshift__)
         STRUCT_FOR_ID(__lt__)
-        STRUCT_FOR_ID(__ltrace__)
         STRUCT_FOR_ID(__main__)
         STRUCT_FOR_ID(__matmul__)
         STRUCT_FOR_ID(__missing__)
@@ -154,7 +155,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__newobj__)
         STRUCT_FOR_ID(__newobj_ex__)
         STRUCT_FOR_ID(__next__)
-        STRUCT_FOR_ID(__note__)
+        STRUCT_FOR_ID(__notes__)
         STRUCT_FOR_ID(__or__)
         STRUCT_FOR_ID(__orig_class__)
         STRUCT_FOR_ID(__origin__)

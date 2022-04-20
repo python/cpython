@@ -1,0 +1,2 @@
+Fix ``os.closerange()`` potentially being a no-op in a Linux seccomp
+sandbox.
