@@ -468,6 +468,61 @@ class UnpackTests(BaseTestCase):
             Unpack()
 
 
+class UnpackedArbitraryLengthTupleSubstitutionTests(BaseTestCase):
+
+    def test_correct_substitution(self):
+        T1 = TypeVar('T1')
+        T2 = TypeVar('T2')
+        Ts = TypeVarTuple('Ts')
+        class C(Generic[*Ts]): pass
+        cases = [
+             # Parameters    # Args                           # Expected result
+            ([*Ts],          [*tuple[int, ...]],              C[*tuple[int, ...]]),
+            ([*Ts],          [str, *tuple[int, ...]],         C[str, *tuple[int, ...]]),
+            ([*Ts],          [*tuple[int, ...], str],         C[*tuple[int, ...], str]),
+            ([*Ts],          [str, float, *tuple[int, ...]],  C[str, float, *tuple[int, ...]]),
+            ([*Ts],          [str, *tuple[int, ...], float],  C[str, *tuple[int, ...], float]),
+            ([*Ts],          [*tuple[int, ...], str, float],  C[*tuple[int, ...], str, float]),
+            ([T1, *Ts],      [*tuple[int, ...]],              C[int, *tuple[int, ...]]),
+            ([T1, *Ts],      [str, *tuple[int, ...]],         C[str, *tuple[int, ...]]),
+            ([T1, *Ts],      [*tuple[int, ...], str],         C[int, str]),
+            ([T1, *Ts],      [str, float, *tuple[int, ...]],  C[str, float, *tuple[int, ...]]),
+            ([T1, *Ts],      [str, *tuple[int, ...], float],  C[str, *tuple[int, ...], float]),
+            ([T1, *Ts],      [*tuple[int, ...], str, float],  C[int, str, float]),
+            ([*Ts, T1],      [*tuple[int, ...]],              C[*tuple[int, ...], int]),
+            ([*Ts, T1],      [str, *tuple[int, ...]],         C[str, int]),
+            ([*Ts, T1],      [*tuple[int, ...], str],         C[*tuple[int, ...], str]),
+            ([*Ts, T1],      [str, float, *tuple[int, ...]],  C[str, float, int]),
+            ([*Ts, T1],      [str, *tuple[int, ...], float],  C[str, *tuple[int, ...], float]),
+            ([*Ts, T1],      [*tuple[int, ...], str, float],  C[*tuple[int, ...], str, float]),
+            ([T1, T2, *Ts],  [*tuple[int, ...]],              C[int, int, *tuple[int, ...]]),
+            ([T1, T2, *Ts],  [str, *tuple[int, ...]],         C[str, int, *tuple[int, ...]]),
+            ([T1, T2, *Ts],  [*tuple[int, ...], str],         C[int, int, str]),
+            ([T1, T2, *Ts],  [str, float, *tuple[int, ...]],  C[str, float, *tuple[int, ...]]),
+            ([T1, T2, *Ts],  [str, *tuple[int, ...], float],  C[str, int, float]),
+            ([T1, T2, *Ts],  [*tuple[int, ...], str, float],  C[int, str, float]),
+            ([T1, *Ts, T2],  [*tuple[int, ...]],              C[int, *tuple[int, ...], int]),
+            ([T1, *Ts, T2],  [str, *tuple[int, ...]],         C[str, *tuple[int, ...], int]),
+            ([T1, *Ts, T2],  [*tuple[int, ...], str],         C[int, *tuple[int, ...], str]),
+            ([T1, *Ts, T2],  [str, float, *tuple[int, ...]],  C[str, float, int]),
+            ([T1, *Ts, T2],  [str, *tuple[int, ...], float],  C[str, *tuple[int, ...], float]),
+            ([T1, *Ts, T2],  [*tuple[int, ...], str, float],  C[int, str, float]),
+            ([*Ts, T2, T2],  [*tuple[int, ...]],              C[*tuple[int, ...], int, int]),
+            ([*Ts, T2, T2],  [str, *tuple[int, ...]],         C[str, int, int]),
+            ([*Ts, T2, T2],  [*tuple[int, ...], str],         C[*tuple[int, ...], str, str]),
+            ([*Ts, T2, T2],  [str, float, *tuple[int, ...]],  C[str, float, int, int]),
+            ([*Ts, T2, T2],  [str, *tuple[int, ...], float],  C[str, *tuple[int, ...], float, float]),
+            ([*Ts, T2, T2],  [*tuple[int, ...], str, float],  C[*tuple[int, ...], str, float, float]),
+        ]
+        for params, args, expected_result in cases:
+            with self.subTest(
+                    params=params, args=args, expected_result=expected_result
+            ):
+                Alias = C[*params]
+                actual_result = Alias[*args]
+                self.assertEqual(expected_result, actual_result)
+
+
 class TypeVarTupleTests(BaseTestCase):
 
     def assertEndsWith(self, string, tail):

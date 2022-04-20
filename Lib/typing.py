@@ -1197,7 +1197,17 @@ class _BaseGenericAlias(_Final, _root=True):
                 + [attr for attr in dir(self.__origin__) if not _is_dunder(attr)]))
 
 
-def _is_unpacked_tuple(x: Any) -> bool:
+def _is_unpacked_native_tuple(x: Any) -> bool:
+    return (
+        isinstance(x, types.GenericAlias)
+        and x.__origin__ is tuple
+        and (
+            repr(x).startswith('*tuple[')
+        )
+    )
+
+
+def _is_unpacked_typing_tuple(x: Any) -> bool:
     # Is `x` something like `*tuple[int]` or `*tuple[int, ...]`?
     if not isinstance(x, _UnpackGenericAlias):
         return False
@@ -1210,24 +1220,23 @@ def _is_unpacked_tuple(x: Any) -> bool:
     return getattr(unpacked_type, '__origin__', None) is tuple
 
 
+def _is_unpacked_tuple(x: Any) -> bool:
+    return _is_unpacked_typing_tuple(x) or _is_unpacked_native_tuple(x)
+
+
 def _is_unpacked_arbitrary_length_tuple(x: Any) -> bool:
-    if not _is_unpacked_tuple(x):
+    if not (_is_unpacked_typing_tuple(x) or _is_unpacked_native_tuple(x)):
         return False
-    unpacked_tuple = x.__args__[0]
 
-    if not hasattr(unpacked_tuple, '__args__'):
-        # It's `Unpack[tuple]`. We can't make any assumptions about the length
-        # of the tuple, so it's effectively an arbitrary-length tuple.
-        return True
-
-    tuple_args = unpacked_tuple.__args__
+    tuple_args = get_args(x)
     if not tuple_args:
-        # It's `Unpack[tuple[()]]`.
+        # It's `Unpack[Tuple[()]]` or `*tuple[()]`.
         return False
 
     last_arg = tuple_args[-1]
     if last_arg is Ellipsis:
-        # It's `Unpack[tuple[something, ...]]`, which is arbitrary-length.
+        # It's `Unpack[Tuple[something, ...]]` or `*tuple[something, ...]`,
+        # which are arbitrary-length.
         return True
 
     # If the arguments didn't end with an ellipsis, then it's not an
@@ -1337,6 +1346,93 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         r = self.copy_with(new_args)
         return r
 
+    def _compute_new_args_by_param_variadic(
+        self, args: list[Any], typevartuple_idx: int
+    ) -> dict[Any, Any]:
+        """Computes map from parameters to `args` when `self` is variadic.
+
+        `self` is variadic if it was created using a `TypeVarTuple`. For
+        example:
+
+            Ts = TypeVarTuple('Ts')
+            class C(Generic[*Ts]): ...
+            Alias = C[int, *Ts]
+            # Alias is a variadic _GenericAlias
+
+        What this function figures out is which type arguments map to which
+        type parameters in such cases. For example, consider the following.
+
+            T = TypeVar('T')
+            Alias = C[T, *Ts]
+            Alias[int, str, float]
+
+        Here, we need to figure out that:
+        * `T` binds to `int`
+        * `*Ts` binds to `str` and `float`
+        This would be encoded by a return value of `{T: int, Ts: [str, float]}`.
+        """
+
+        # A difficult edge case this function must deal with is unpacked
+        # arbitrary-length tuples such as `*tuple[int, ...]`. Consider the
+        # following case.
+        #
+        #    Alias = C[T, *Ts]
+        #    Alias[*tuple[int, ...]]
+        #
+        # Static type checkers have set the precedent that when it comes to
+        # arbitrary-length tuples, we adopt the positive attitude of "Try to
+        # find a way to make it work". We therefore assume the `tuple[int, ...]`
+        # contains at least one `int` so that the substitution can work. The
+        # resulting map should therefore be `{T: int, Ts: *tuple[int, ...]}`.
+        #
+        # Here's the algorithm we use to deal with this:
+        # 1. Detect the edge case by checking whether a) the number of type
+        #    arguments is less than the number of type parameters, and b)
+        #    an unpacked arbitrary-length tuple is present in the type
+        #    arguments.
+        # 2. If so, repeat the unpacked arbitrary-length tuple until we have
+        #    the same number of type arguments as type parameters. For example,
+        #    in the case above, we would grow from `args = [*tuple[int, ...]`
+        #    to `args = [*tuple[int, ...], *tuple[int, ...]]`.
+        # 3. Bind type arguments to type variables as normal.
+        # 4. Go through the bindings and change it so that the normal `TypeVars`
+        #    are bound to the inner type, `int`, rather than `*tuple[int, ...]`.
+
+        params = self.__parameters__
+
+        if len(args) < len(params):
+            for i, arg in enumerate(args):
+                if _is_unpacked_arbitrary_length_tuple(arg):
+                    # Implements Step 2 from the comment above.
+                    args = [
+                        *args[:i],
+                        *((len(params) - len(args)) * [arg]),
+                        *args[i:]
+                    ]
+                    break
+            else:
+                raise TypeError(f"Too few arguments for {self}")
+
+        # Bind type arguments to type variables.
+        start_idx = typevartuple_idx
+        end_idx = len(args) - (len(params) - typevartuple_idx - 1)
+        new_arg_by_param = {}
+        new_arg_by_param.update(zip(
+            params[:typevartuple_idx], args[:start_idx]
+        ))
+        new_arg_by_param[params[typevartuple_idx]] = args[start_idx:end_idx]
+        new_arg_by_param.update(zip(
+            params[typevartuple_idx + 1:], args[end_idx:]
+        ))
+
+        # Implements Step 4 from the comment above.
+        for param, new_arg in new_arg_by_param.items():
+            if (isinstance(param, TypeVar)
+                    and _is_unpacked_arbitrary_length_tuple(new_arg)):
+                new_arg_by_param[param] = get_args(new_arg)[0]
+
+        return new_arg_by_param
+
     def _determine_new_args(self, args):
         # Determines new __args__ for __getitem__.
         #
@@ -1353,19 +1449,19 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         # edge cases.
 
         params = self.__parameters__
-        # In the example above, this would be {T3: str}
-        new_arg_by_param = {}
+
         for i, param in enumerate(params):
             if isinstance(param, TypeVarTuple):
-                j = len(args) - (len(params) - i - 1)
-                if j < i:
-                    raise TypeError(f"Too few arguments for {self}")
-                new_arg_by_param.update(zip(params[:i], args[:i]))
-                new_arg_by_param[param] = args[i: j]
-                new_arg_by_param.update(zip(params[i + 1:], args[j:]))
+                typevartuple_idx = i
                 break
         else:
-            new_arg_by_param.update(zip(params, args))
+            typevartuple_idx = None
+
+        if typevartuple_idx is None:
+            new_arg_by_param = dict(zip(self.__parameters__, args))
+        else:
+            new_arg_by_param = self._compute_new_args_by_param_variadic(
+                args, typevartuple_idx)
 
         new_args = []
         for old_arg in self.__args__:
@@ -2350,6 +2446,10 @@ def get_args(tp):
                 and not (len(res) == 2 and _is_param_expr(res[0]))):
             res = (list(res[:-1]), res[-1])
         return res
+    if _is_unpacked_native_tuple(tp):
+        return tp.__args__
+    if _is_unpacked_typing_tuple(tp):
+        return tp.__args__[0].__args__
     if isinstance(tp, types.UnionType):
         return tp.__args__
     return ()
