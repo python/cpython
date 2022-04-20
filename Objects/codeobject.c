@@ -1070,7 +1070,7 @@ typedef struct {
 
 
 int
-_PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
+PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
 {
     if (!PyCode_Check(code)) {
         PyErr_BadInternalCall();
@@ -1091,7 +1091,7 @@ _PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
 
 
 int
-_PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
+PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
 

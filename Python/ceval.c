@@ -7802,7 +7802,7 @@ _Py_GetDXProfile(PyObject *self, PyObject *args)
 #endif
 
 Py_ssize_t
-_PyEval_RequestCodeExtraIndex(freefunc free)
+PyEval_RequestCodeExtraIndex(freefunc free)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     Py_ssize_t new_index;

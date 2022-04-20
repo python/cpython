@@ -148,19 +148,7 @@ PyAPI_DATA(PyTypeObject) PyCode_Type;
 #define _PyCode_CODE(CO) ((_Py_CODEUNIT *)(CO)->co_code_adaptive)
 #define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
 
-/* Public interface */
-PyAPI_FUNC(PyCodeObject *) PyCode_New(
-        int, int, int, int, int, PyObject *, PyObject *,
-        PyObject *, PyObject *, PyObject *, PyObject *,
-        PyObject *, PyObject *, PyObject *, int, PyObject *,
-        PyObject *, PyObject *, PyObject *);
-
-PyAPI_FUNC(PyCodeObject *) PyCode_NewWithPosOnlyArgs(
-        int, int, int, int, int, int, PyObject *, PyObject *,
-        PyObject *, PyObject *, PyObject *, PyObject *,
-        PyObject *, PyObject *, PyObject *, int, PyObject *,
-        PyObject *, PyObject *, PyObject *);
-        /* same as struct above */
+/* See Include/semi-stable/code.h for PyCode_New* */
 
 /* Creates a new empty code object with the specified source location. */
 PyAPI_FUNC(PyCodeObject *)
@@ -205,10 +193,9 @@ PyAPI_FUNC(PyObject*) PyCode_Optimize(PyObject *code, PyObject* consts,
                                       PyObject *names, PyObject *lnotab);
 
 
-PyAPI_FUNC(int) _PyCode_GetExtra(PyObject *code, Py_ssize_t index,
-                                 void **extra);
-PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
-                                 void *extra);
+#define Py_SEMISTABLE_CODE_H
+#include "semistable/code.h"
+#undef Py_SEMISTABLE_CODE_H
 
 #ifdef __cplusplus
 }
