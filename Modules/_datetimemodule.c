@@ -6637,19 +6637,19 @@ _datetime_exec(PyObject *module)
     /* A 4-year cycle has an extra leap day over what we'd get from
      * pasting together 4 single years.
      */
-    Py_BUILD_ASSERT(DI4Y == 4 * 365 + 1);
+    static_assert(DI4Y == 4 * 365 + 1, "DI4Y");
     assert(DI4Y == days_before_year(4+1));
 
     /* Similarly, a 400-year cycle has an extra leap day over what we'd
      * get from pasting together 4 100-year cycles.
      */
-    Py_BUILD_ASSERT(DI400Y == 4 * DI100Y + 1);
+    static_assert(DI400Y == 4 * DI100Y + 1, "DI400Y");
     assert(DI400Y == days_before_year(400+1));
 
     /* OTOH, a 100-year cycle has one fewer leap day than we'd get from
      * pasting together 25 4-year cycles.
      */
-    Py_BUILD_ASSERT(DI100Y == 25 * DI4Y - 1);
+    static_assert(DI100Y == 25 * DI4Y - 1, "DI100Y");
     assert(DI100Y == days_before_year(100+1));
 
     us_per_ms = PyLong_FromLong(1000);
