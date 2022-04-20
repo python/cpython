@@ -7,7 +7,14 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "structmember.h"         // PyMemberDef
 
+#include "clinic/classobject.c.h"
+
 #define TP_DESCR_GET(t) ((t)->tp_descr_get)
+
+/*[clinic input]
+class method "PyMethodObject *" "&PyMethod_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b16e47edf6107c23]*/
 
 
 PyObject *
@@ -115,23 +122,26 @@ PyMethod_New(PyObject *func, PyObject *self)
     return (PyObject *)im;
 }
 
-static PyObject *
-method_reduce(PyMethodObject *im, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *self = PyMethod_GET_SELF(im);
-    PyObject *func = PyMethod_GET_FUNCTION(im);
-    PyObject *funcname;
+/*[clinic input]
+method.__reduce__
+[clinic start generated code]*/
 
-    funcname = PyObject_GetAttr(func, &_Py_ID(__name__));
+static PyObject *
+method___reduce___impl(PyMethodObject *self)
+/*[clinic end generated code: output=6c04506d0fa6fdcb input=143a0bf5e96de6e8]*/
+{
+    PyObject *funcself = PyMethod_GET_SELF(self);
+    PyObject *func = PyMethod_GET_FUNCTION(self);
+    PyObject *funcname = PyObject_GetAttr(func, &_Py_ID(__name__));
     if (funcname == NULL) {
         return NULL;
     }
     return Py_BuildValue(
-            "N(ON)", _PyEval_GetBuiltin(&_Py_ID(getattr)), self, funcname);
+            "N(ON)", _PyEval_GetBuiltin(&_Py_ID(getattr)), funcself, funcname);
 }
 
 static PyMethodDef method_methods[] = {
-    {"__reduce__", (PyCFunction)method_reduce, METH_NOARGS, NULL},
+    METHOD___REDUCE___METHODDEF
     {NULL, NULL}
 };
 
@@ -193,34 +203,32 @@ method_getattro(PyObject *obj, PyObject *name)
     return PyObject_GetAttr(im->im_func, name);
 }
 
-PyDoc_STRVAR(method_doc,
-"method(function, instance)\n\
-\n\
-Create a bound instance method object.");
+/*[clinic input]
+@classmethod
+method.__new__ as method_new
+    function: object
+    instance: object
+    /
+
+Create a bound instance method object.
+[clinic start generated code]*/
 
 static PyObject *
-method_new(PyTypeObject* type, PyObject* args, PyObject *kw)
+method_new_impl(PyTypeObject *type, PyObject *function, PyObject *instance)
+/*[clinic end generated code: output=d33ef4ebf702e1f7 input=4e32facc3c3108ae]*/
 {
-    PyObject *func;
-    PyObject *self;
-
-    if (!_PyArg_NoKeywords("method", kw))
-        return NULL;
-    if (!PyArg_UnpackTuple(args, "method", 2, 2,
-                          &func, &self))
-        return NULL;
-    if (!PyCallable_Check(func)) {
+    if (!PyCallable_Check(function)) {
         PyErr_SetString(PyExc_TypeError,
                         "first argument must be callable");
         return NULL;
     }
-    if (self == NULL || self == Py_None) {
+    if (instance == NULL || instance == Py_None) {
         PyErr_SetString(PyExc_TypeError,
-            "self must not be None");
+            "instance must not be None");
         return NULL;
     }
 
-    return PyMethod_New(func, self);
+    return PyMethod_New(function, instance);
 }
 
 static void
@@ -322,49 +330,36 @@ method_descr_get(PyObject *meth, PyObject *obj, PyObject *cls)
 
 PyTypeObject PyMethod_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "method",
-    sizeof(PyMethodObject),
-    0,
-    (destructor)method_dealloc,                 /* tp_dealloc */
-    offsetof(PyMethodObject, vectorcall),       /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    (reprfunc)method_repr,                      /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    (hashfunc)method_hash,                      /* tp_hash */
-    PyVectorcall_Call,                          /* tp_call */
-    0,                                          /* tp_str */
-    method_getattro,                            /* tp_getattro */
-    PyObject_GenericSetAttr,                    /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-    Py_TPFLAGS_HAVE_VECTORCALL,                 /* tp_flags */
-    method_doc,                                 /* tp_doc */
-    (traverseproc)method_traverse,              /* tp_traverse */
-    0,                                          /* tp_clear */
-    method_richcompare,                         /* tp_richcompare */
-    offsetof(PyMethodObject, im_weakreflist), /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    method_methods,                             /* tp_methods */
-    method_memberlist,                          /* tp_members */
-    method_getset,                              /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    method_descr_get,                           /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    method_new,                                 /* tp_new */
+    .tp_name = "method",
+    .tp_basicsize = sizeof(PyMethodObject),
+    .tp_dealloc = (destructor)method_dealloc,
+    .tp_vectorcall_offset = offsetof(PyMethodObject, vectorcall),
+    .tp_repr = (reprfunc)method_repr,
+    .tp_hash = (hashfunc)method_hash,
+    .tp_call = PyVectorcall_Call,
+    .tp_getattro = method_getattro,
+    .tp_setattro = PyObject_GenericSetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+                Py_TPFLAGS_HAVE_VECTORCALL,
+    .tp_doc = method_new__doc__,
+    .tp_traverse = (traverseproc)method_traverse,
+    .tp_richcompare = method_richcompare,
+    .tp_weaklistoffset = offsetof(PyMethodObject, im_weakreflist),
+    .tp_methods = method_methods,
+    .tp_members = method_memberlist,
+    .tp_getset = method_getset,
+    .tp_descr_get = method_descr_get,
+    .tp_new = method_new,
 };
 
 /* ------------------------------------------------------------------------
  * instance method
  */
+
+/*[clinic input]
+class instancemethod "PyInstanceMethodObject *" "&PyInstanceMethod_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=28c9762a9016f4d2]*/
 
 PyObject *
 PyInstanceMethod_New(PyObject *func) {
@@ -516,67 +511,43 @@ instancemethod_repr(PyObject *self)
     return result;
 }
 
-PyDoc_STRVAR(instancemethod_doc,
-"instancemethod(function)\n\
-\n\
-Bind a function to a class.");
+/*[clinic input]
+@classmethod
+instancemethod.__new__ as instancemethod_new
+    function: object
+    /
+
+Bind a function to a class.
+[clinic start generated code]*/
 
 static PyObject *
-instancemethod_new(PyTypeObject* type, PyObject* args, PyObject *kw)
+instancemethod_new_impl(PyTypeObject *type, PyObject *function)
+/*[clinic end generated code: output=5e0397b2bdb750be input=cfc54e8b973664a8]*/
 {
-    PyObject *func;
-
-    if (!_PyArg_NoKeywords("instancemethod", kw))
-        return NULL;
-    if (!PyArg_UnpackTuple(args, "instancemethod", 1, 1, &func))
-        return NULL;
-    if (!PyCallable_Check(func)) {
+    if (!PyCallable_Check(function)) {
         PyErr_SetString(PyExc_TypeError,
                         "first argument must be callable");
         return NULL;
     }
 
-    return PyInstanceMethod_New(func);
+    return PyInstanceMethod_New(function);
 }
 
 PyTypeObject PyInstanceMethod_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "instancemethod",                           /* tp_name */
-    sizeof(PyInstanceMethodObject),             /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    instancemethod_dealloc,                     /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    (reprfunc)instancemethod_repr,              /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash  */
-    instancemethod_call,                        /* tp_call */
-    0,                                          /* tp_str */
-    instancemethod_getattro,                    /* tp_getattro */
-    PyObject_GenericSetAttr,                    /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT
-        | Py_TPFLAGS_HAVE_GC,                   /* tp_flags */
-    instancemethod_doc,                         /* tp_doc */
-    instancemethod_traverse,                    /* tp_traverse */
-    0,                                          /* tp_clear */
-    instancemethod_richcompare,                 /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    instancemethod_memberlist,                  /* tp_members */
-    instancemethod_getset,                      /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    instancemethod_descr_get,                   /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    instancemethod_new,                         /* tp_new */
+    .tp_name = "instancemethod",
+    .tp_basicsize = sizeof(PyInstanceMethodObject),
+    .tp_dealloc = instancemethod_dealloc,
+    .tp_repr = (reprfunc)instancemethod_repr,
+    .tp_call = instancemethod_call,
+    .tp_getattro = instancemethod_getattro,
+    .tp_setattro = PyObject_GenericSetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_doc = instancemethod_new__doc__,
+    .tp_traverse = instancemethod_traverse,
+    .tp_richcompare = instancemethod_richcompare,
+    .tp_members = instancemethod_memberlist,
+    .tp_getset = instancemethod_getset,
+    .tp_descr_get = instancemethod_descr_get,
+    .tp_new = instancemethod_new,
 };
