@@ -1812,7 +1812,7 @@ get_dotted_path(PyObject *obj, PyObject *name)
 {
     PyObject *dotted_path;
     Py_ssize_t i, n;
-
+    _Py_DECLARE_STR(dot, ".");
     dotted_path = PyUnicode_Split(name, &_Py_STR(dot), -1);
     if (dotted_path == NULL)
         return NULL;
