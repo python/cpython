@@ -1167,8 +1167,8 @@ are always available.  They are listed here in alphabetical order.
    buffering (only usable in text mode), and an integer > 1 to indicate the size
    in bytes of a fixed-size chunk buffer. Note that specifying a buffer size this
    way applies for binary buffered I/O, but ``TextIOWrapper`` (i.e., files opened
-   with ``mode='r+'``) would have another buffering. For configuring text buffer
-   sizes, consider using the ``write_through`` flag for
+   with ``mode='r+'``) would have another buffering. To disable buffering in
+   ``TextIOWrapper``, consider using the ``write_through`` flag for
    :func:`io.TextIOWrapper.reconfigure`. When no *buffering* argument is
    given, the default buffering policy works as follows:
 
