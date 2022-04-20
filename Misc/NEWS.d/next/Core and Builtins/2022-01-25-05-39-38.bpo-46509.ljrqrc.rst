@@ -1,0 +1,1 @@
+Add type-specialized versions of the ``Py_DECREF()``, and use them for ``float``, ``int``, ``str``, ``bool``, and ``None`` to avoid pointer-chasing at runtime where types are known at C compile time.

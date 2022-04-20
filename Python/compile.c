@@ -71,7 +71,8 @@
 
 
 /* Pseudo-instructions used in the compiler,
- * but turned into NOPs by the assembler. */
+ * but turned into NOPs or other instructions
+ * by the assembler. */
 #define SETUP_FINALLY -1
 #define SETUP_CLEANUP -2
 #define SETUP_WITH -3
@@ -233,19 +234,23 @@ typedef struct basicblock_ {
        reverse order that the block are allocated.  b_list points to the next
        block, not to be confused with b_next, which is next by control flow. */
     struct basicblock_ *b_list;
-    /* number of instructions used */
-    int b_iused;
-    /* length of instruction array (b_instr) */
-    int b_ialloc;
+    /* Exception stack at start of block, used by assembler to create the exception handling table */
+    ExceptStack *b_exceptstack;
     /* pointer to an array of instructions, initially NULL */
     struct instr *b_instr;
     /* If b_next is non-NULL, it is a pointer to the next
        block reached by normal control flow. */
     struct basicblock_ *b_next;
-    /* b_return is true if a RETURN_VALUE opcode is inserted. */
-    unsigned b_return : 1;
+    /* number of instructions used */
+    int b_iused;
+    /* length of instruction array (b_instr) */
+    int b_ialloc;
     /* Number of predecssors that a block has. */
     int b_predecessors;
+    /* depth of stack upon entry of block, computed by stackdepth() */
+    int b_startdepth;
+    /* instruction offset for block, computed by assemble_jump_offsets() */
+    int b_offset;
     /* Basic block has no fall through (it ends with a return, raise or jump) */
     unsigned b_nofallthrough : 1;
     /* Basic block is an exception handler that preserves lasti */
@@ -254,12 +259,8 @@ typedef struct basicblock_ {
     unsigned b_visited : 1;
     /* Basic block exits scope (it ends with a return or raise) */
     unsigned b_exit : 1;
-    /* depth of stack upon entry of block, computed by stackdepth() */
-    int b_startdepth;
-    /* instruction offset for block, computed by assemble_jump_offsets() */
-    int b_offset;
-    /* Exception stack at start of block, used by assembler to create the exception handling table */
-    ExceptStack *b_exceptstack;
+    /* b_return is true if a RETURN_VALUE opcode is inserted. */
+    unsigned b_return : 1;
 } basicblock;
 
 /* fblockinfo tracks the current frame block.
@@ -781,6 +782,7 @@ compiler_set_qualname(struct compiler *c)
     }
 
     if (base != NULL) {
+        _Py_DECLARE_STR(dot, ".");
         name = PyUnicode_Concat(base, &_Py_STR(dot));
         Py_DECREF(base);
         if (name == NULL)
@@ -3944,6 +3946,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
         ADDOP_NAME(c, IMPORT_NAME, s->v.ImportFrom.module, names);
     }
     else {
+        _Py_DECLARE_STR(empty, "");
         ADDOP_NAME(c, IMPORT_NAME, &_Py_STR(empty), names);
     }
     for (i = 0; i < n; i++) {
@@ -4884,6 +4887,7 @@ compiler_joined_str(struct compiler *c, expr_ty e)
 
     Py_ssize_t value_count = asdl_seq_LEN(e->v.JoinedStr.values);
     if (value_count > STACK_USE_GUIDELINE) {
+        _Py_DECLARE_STR(empty, "");
         ADDOP_LOAD_CONST_NEW(c, &_Py_STR(empty));
         ADDOP_NAME(c, LOAD_METHOD, &_Py_ID(join), names);
         ADDOP_I(c, BUILD_LIST, 0);
@@ -7051,23 +7055,23 @@ compiler_match(struct compiler *c, stmt_ty s)
 
 struct assembler {
     PyObject *a_bytecode;  /* bytes containing bytecode */
+    PyObject *a_lnotab;    /* bytes containing lnotab */
+    PyObject *a_enotab;    /* bytes containing enotab */
+    PyObject *a_cnotab;    /* bytes containing cnotab */
+    PyObject *a_except_table;  /* bytes containing exception table */
+    basicblock *a_entry;
     int a_offset;              /* offset into bytecode */
     int a_nblocks;             /* number of reachable blocks */
-    PyObject *a_lnotab;    /* bytes containing lnotab */
-    PyObject* a_enotab;    /* bytes containing enotab */
-    PyObject* a_cnotab;    /* bytes containing cnotab */
+    int a_except_table_off;    /* offset into exception table */
     int a_lnotab_off;      /* offset into lnotab */
     int a_enotab_off;      /* offset into enotab */
     int a_cnotab_off;      /* offset into cnotab */
-    PyObject *a_except_table;  /* bytes containing exception table */
-    int a_except_table_off;    /* offset into exception table */
     int a_prevlineno;     /* lineno of last emitted line in line table */
     int a_prev_end_lineno; /* end_lineno of last emitted line in line table */
     int a_lineno;          /* lineno of last emitted instruction */
     int a_end_lineno;      /* end_lineno of last emitted instruction */
     int a_lineno_start;    /* bytecode start offset of current lineno */
     int a_end_lineno_start; /* bytecode start offset of current end_lineno */
-    basicblock *a_entry;
 };
 
 Py_LOCAL_INLINE(void)
@@ -7671,6 +7675,21 @@ normalize_jumps(struct assembler *a)
                 case POP_JUMP_IF_TRUE:
                     last->i_opcode = is_forward ?
                         POP_JUMP_FORWARD_IF_TRUE : POP_JUMP_BACKWARD_IF_TRUE;
+                    break;
+                case JUMP_IF_TRUE_OR_POP:
+                case JUMP_IF_FALSE_OR_POP:
+                    if (!is_forward) {
+                        /* As far as we can tell, the compiler never emits
+                         * these jumps with a backwards target. If/when this
+                         * exception is raised, we have found a use case for
+                         * a backwards version of this jump (or to replace
+                         * it with the sequence (COPY 1, POP_JUMP_IF_T/F, POP)
+                         */
+                        PyErr_Format(PyExc_SystemError,
+                            "unexpected %s jumping backwards",
+                            last->i_opcode == JUMP_IF_TRUE_OR_POP ?
+                                "JUMP_IF_TRUE_OR_POP" : "JUMP_IF_FALSE_OR_POP");
+                    }
                     break;
             }
         }
