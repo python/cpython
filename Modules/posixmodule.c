@@ -2381,7 +2381,8 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
         return NULL;
 
     PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long)st->st_mode));
-    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(st->st_ino));
+    static_assert(sizeof(unsigned long long) >= sizeof(st->st_ino),
+                  "stat.st_ino is larger than unsigned long long");
     PyStructSequence_SET_ITEM(v, 1, PyLong_FromUnsignedLongLong(st->st_ino));
 #ifdef MS_WINDOWS
     PyStructSequence_SET_ITEM(v, 2, PyLong_FromUnsignedLong(st->st_dev));
@@ -2396,7 +2397,8 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
     PyStructSequence_SET_ITEM(v, 4, _PyLong_FromUid(st->st_uid));
     PyStructSequence_SET_ITEM(v, 5, _PyLong_FromGid(st->st_gid));
 #endif
-    Py_BUILD_ASSERT(sizeof(long long) >= sizeof(st->st_size));
+    static_assert(sizeof(long long) >= sizeof(st->st_size),
+                  "stat.st_size is larger than long long");
     PyStructSequence_SET_ITEM(v, 6, PyLong_FromLongLong(st->st_size));
 
 #if defined(HAVE_STAT_TV_NSEC)
@@ -13761,10 +13763,12 @@ _Py_COMP_DIAG_POP
         self->win32_file_index = stat.st_ino;
         self->got_file_index = 1;
     }
-    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(self->win32_file_index));
+    static_assert(sizeof(unsigned long long) >= sizeof(self->win32_file_index),
+                  "DirEntry.win32_file_index is larger than unsigned long long");
     return PyLong_FromUnsignedLongLong(self->win32_file_index);
 #else /* POSIX */
-    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(self->d_ino));
+    static_assert(sizeof(unsigned long long) >= sizeof(self->d_ino),
+                  "DirEntry.d_ino is larger than unsigned long long");
     return PyLong_FromUnsignedLongLong(self->d_ino);
 #endif
 }
