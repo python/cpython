@@ -577,14 +577,17 @@ class SSLContext(_SSLContext):
         certs = bytearray()
         try:
             for cert, encoding, trust in enum_certificates(storename):
-                # CA certs are never PKCS#7 encoded
-                if encoding == "x509_asn":
-                    if trust is True or purpose.oid in trust:
-                        certs.extend(cert)
+                try:
+                    self.load_verify_locations(cadata=cert)
+                except SSLError:
+                    warnings.warn("Bad certificiate in Windows certificate store")
+                else:
+                    # CA certs are never PKCS#7 encoded
+                    if encoding == "x509_asn":
+                        if trust is True or purpose.oid in trust:
+                            certs.extend(cert)
         except PermissionError:
             warnings.warn("unable to enumerate Windows certificate store")
-        if certs:
-            self.load_verify_locations(cadata=certs)
         return certs
 
     def load_default_certs(self, purpose=Purpose.SERVER_AUTH):
