@@ -146,14 +146,30 @@ _queue_SimpleQueue_get(simplequeueobject *self, PyTypeObject *cls, PyObject *con
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"block", "timeout", NULL};
-    static _PyArg_Parser _parser = {"|pO:get", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "get", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int block = 1;
     PyObject *timeout_obj = Py_None;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &block, &timeout_obj)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        block = PyObject_IsTrue(args[0]);
+        if (block < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    timeout_obj = args[1];
+skip_optional_pos:
     return_value = _queue_SimpleQueue_get_impl(self, cls, block, timeout_obj);
 
 exit:
@@ -181,10 +197,11 @@ _queue_SimpleQueue_get_nowait(simplequeueobject *self, PyTypeObject *cls, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":get_nowait", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "get_nowait", 0};
+    PyObject *argsbuf[0];
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     return_value = _queue_SimpleQueue_get_nowait_impl(self, cls);
@@ -248,4 +265,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=acfaf0191d8935db input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0c95174a416aa3a0 input=a9049054013a1b77]*/

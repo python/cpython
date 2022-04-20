@@ -19,10 +19,11 @@ SHA256Type_copy(SHAobject *self, PyTypeObject *cls, PyObject *const *args, Py_ss
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":copy", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "copy", 0};
+    PyObject *argsbuf[0];
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     return_value = SHA256Type_copy_impl(self, cls);
@@ -177,4 +178,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b7283f75c9d08f30 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5b96ad8f557a2b1f input=a9049054013a1b77]*/

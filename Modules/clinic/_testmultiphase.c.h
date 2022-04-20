@@ -23,10 +23,11 @@ _testmultiphase_StateAccessType_get_defining_module(StateAccessTypeObject *self,
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":get_defining_module", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "get_defining_module", 0};
+    PyObject *argsbuf[0];
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     return_value = _testmultiphase_StateAccessType_get_defining_module_impl(self, cls);
@@ -53,10 +54,11 @@ _testmultiphase_StateAccessType_getmodulebydef_bad_def(StateAccessTypeObject *se
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":getmodulebydef_bad_def", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "getmodulebydef_bad_def", 0};
+    PyObject *argsbuf[0];
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     return_value = _testmultiphase_StateAccessType_getmodulebydef_bad_def_impl(self, cls);
@@ -88,14 +90,37 @@ _testmultiphase_StateAccessType_increment_count_clinic(StateAccessTypeObject *se
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"n", "twice", NULL};
-    static _PyArg_Parser _parser = {"|i$p:increment_count_clinic", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "increment_count_clinic", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int n = 1;
     int twice = 0;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &n, &twice)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        n = _PyLong_AsInt(args[0]);
+        if (n == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    twice = PyObject_IsTrue(args[1]);
+    if (twice < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = _testmultiphase_StateAccessType_increment_count_clinic_impl(self, cls, n, twice);
 
 exit:
@@ -120,10 +145,11 @@ _testmultiphase_StateAccessType_get_count(StateAccessTypeObject *self, PyTypeObj
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":get_count", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "get_count", 0};
+    PyObject *argsbuf[0];
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     return_value = _testmultiphase_StateAccessType_get_count_impl(self, cls);
@@ -131,4 +157,4 @@ _testmultiphase_StateAccessType_get_count(StateAccessTypeObject *self, PyTypeObj
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e8d074b4e6437438 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=59cb7bab76e7a411 input=a9049054013a1b77]*/

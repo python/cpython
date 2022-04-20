@@ -639,6 +639,10 @@ class CLanguage(Language):
         assert parameters
         assert isinstance(parameters[0].converter, self_converter)
         del parameters[0]
+        requires_defining_class = False
+        if parameters and isinstance(parameters[0].converter, defining_class_converter):
+            requires_defining_class = True
+            del parameters[0]
         converters = [p.converter for p in parameters]
 
         has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
@@ -666,10 +670,6 @@ class CLanguage(Language):
                     pos_only = i
                 if not p.is_optional():
                     min_pos = i
-
-        requires_defining_class = any(
-            isinstance(p.converter, defining_class_converter)
-            for p in parameters)
 
         meth_o = (len(parameters) == 1 and
               parameters[0].is_positional_only() and
@@ -772,7 +772,7 @@ class CLanguage(Language):
                 add(field)
             return linear_format(output(), parser_declarations=declarations)
 
-        if not parameters:
+        if not parameters and not requires_defining_class:
             # no parameters, METH_NOARGS
 
             flags = "METH_NOARGS"
@@ -993,6 +993,8 @@ class CLanguage(Language):
 
             add_label = None
             for i, p in enumerate(parameters):
+                if isinstance(p.converter, defining_class_converter):
+                    raise ValueError("defining_class should be the first parameter (after self)")
                 displayname = p.get_displayname(i+1)
                 parsearg = p.converter.parse_arg(argname_fmt % i, displayname)
                 if parsearg is None:

@@ -106,10 +106,11 @@ _gdbm_gdbm_keys(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_s
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":keys", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "keys", 0};
+    PyObject *argsbuf[0];
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     return_value = _gdbm_gdbm_keys_impl(self, cls);
@@ -139,10 +140,11 @@ _gdbm_gdbm_firstkey(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":firstkey", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "firstkey", 0};
+    PyObject *argsbuf[0];
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     return_value = _gdbm_gdbm_firstkey_impl(self, cls);
@@ -214,10 +216,11 @@ _gdbm_gdbm_reorganize(gdbmobject *self, PyTypeObject *cls, PyObject *const *args
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":reorganize", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "reorganize", 0};
+    PyObject *argsbuf[0];
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     return_value = _gdbm_gdbm_reorganize_impl(self, cls);
@@ -246,10 +249,11 @@ _gdbm_gdbm_sync(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_s
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":sync", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "sync", 0};
+    PyObject *argsbuf[0];
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     return_value = _gdbm_gdbm_sync_impl(self, cls);
@@ -333,4 +337,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=63c507f93d84a3a4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=55d0054e5ca52c1e input=a9049054013a1b77]*/

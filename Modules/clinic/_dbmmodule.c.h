@@ -37,10 +37,11 @@ _dbm_dbm_keys(dbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssiz
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":keys", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "keys", 0};
+    PyObject *argsbuf[0];
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     return_value = _dbm_dbm_keys_impl(self, cls);
@@ -179,4 +180,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=32ef6c0f8f2d3db9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3016d0c11f940ef6 input=a9049054013a1b77]*/

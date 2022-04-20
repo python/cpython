@@ -41,10 +41,11 @@ _lsprof_Profiler_getstats(ProfilerObject *self, PyTypeObject *cls, PyObject *con
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":getstats", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "getstats", 0};
+    PyObject *argsbuf[0];
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     return_value = _lsprof_Profiler_getstats_impl(self, cls);
@@ -52,4 +53,4 @@ _lsprof_Profiler_getstats(ProfilerObject *self, PyTypeObject *cls, PyObject *con
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b4727cfebecdd22d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=25026d0a70f67826 input=a9049054013a1b77]*/

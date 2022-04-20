@@ -19,10 +19,11 @@ _curses_panel_panel_bottom(PyCursesPanelObject *self, PyTypeObject *cls, PyObjec
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":bottom", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "bottom", 0};
+    PyObject *argsbuf[0];
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     return_value = _curses_panel_panel_bottom_impl(self, cls);
@@ -50,10 +51,11 @@ _curses_panel_panel_hide(PyCursesPanelObject *self, PyTypeObject *cls, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":hide", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "hide", 0};
+    PyObject *argsbuf[0];
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     return_value = _curses_panel_panel_hide_impl(self, cls);
@@ -79,10 +81,11 @@ _curses_panel_panel_show(PyCursesPanelObject *self, PyTypeObject *cls, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":show", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "show", 0};
+    PyObject *argsbuf[0];
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     return_value = _curses_panel_panel_show_impl(self, cls);
@@ -108,10 +111,11 @@ _curses_panel_panel_top(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":top", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "top", 0};
+    PyObject *argsbuf[0];
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     return_value = _curses_panel_panel_top_impl(self, cls);
@@ -192,12 +196,21 @@ _curses_panel_panel_move(PyCursesPanelObject *self, PyTypeObject *cls, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {"ii:move", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "move", 0};
+    PyObject *argsbuf[2];
     int y;
     int x;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &y, &x)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    y = _PyLong_AsInt(args[0]);
+    if (y == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    x = _PyLong_AsInt(args[1]);
+    if (x == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_panel_panel_move_impl(self, cls, y, x);
@@ -243,13 +256,19 @@ _curses_panel_panel_replace(PyCursesPanelObject *self, PyTypeObject *cls, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"O!:replace", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "replace", 0};
+    PyObject *argsbuf[1];
     PyCursesWindowObject *win;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &PyCursesWindow_Type, &win)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!PyObject_TypeCheck(args[0], &PyCursesWindow_Type)) {
+        _PyArg_BadArgument("replace", "argument 1", (&PyCursesWindow_Type)->tp_name, args[0]);
+        goto exit;
+    }
+    win = (PyCursesWindowObject *)args[0];
     return_value = _curses_panel_panel_replace_impl(self, cls, win);
 
 exit:
@@ -274,13 +293,15 @@ _curses_panel_panel_set_userptr(PyCursesPanelObject *self, PyTypeObject *cls, Py
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"O:set_userptr", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "set_userptr", 0};
+    PyObject *argsbuf[1];
     PyObject *obj;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &obj)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    obj = args[0];
     return_value = _curses_panel_panel_set_userptr_impl(self, cls, obj);
 
 exit:
@@ -305,10 +326,11 @@ _curses_panel_panel_userptr(PyCursesPanelObject *self, PyTypeObject *cls, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":userptr", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "userptr", 0};
+    PyObject *argsbuf[0];
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     return_value = _curses_panel_panel_userptr_impl(self, cls);
@@ -401,4 +423,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=3081ef24e5560cb0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b56a4f39ac8e2bd6 input=a9049054013a1b77]*/
