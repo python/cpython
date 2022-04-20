@@ -101,6 +101,7 @@ bytes(cdata)
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
+#define NEEDS_PY_IDENTIFIER
 
 #define PY_SSIZE_T_CLEAN
 
@@ -195,7 +196,7 @@ static PyTypeObject DictRemover_Type = {
     0,                                          /* tp_as_buffer */
 /* XXX should participate in GC? */
     Py_TPFLAGS_DEFAULT,                         /* tp_flags */
-    "deletes a key from a dictionary",          /* tp_doc */
+    PyDoc_STR("deletes a key from a dictionary"), /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -578,8 +579,8 @@ UnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return StructUnionType_new(type, args, kwds, 0);
 }
 
-static const char from_address_doc[] =
-"C.from_address(integer) -> C instance\naccess a C instance at the specified address";
+PyDoc_STRVAR(from_address_doc,
+"C.from_address(integer) -> C instance\naccess a C instance at the specified address");
 
 static PyObject *
 CDataType_from_address(PyObject *type, PyObject *value)
@@ -596,8 +597,8 @@ CDataType_from_address(PyObject *type, PyObject *value)
     return PyCData_AtAddress(type, buf);
 }
 
-static const char from_buffer_doc[] =
-"C.from_buffer(object, offset=0) -> C instance\ncreate a C instance from a writeable buffer";
+PyDoc_STRVAR(from_buffer_doc,
+"C.from_buffer(object, offset=0) -> C instance\ncreate a C instance from a writeable buffer");
 
 static int
 KeepRef(CDataObject *target, Py_ssize_t index, PyObject *keep);
@@ -676,8 +677,8 @@ CDataType_from_buffer(PyObject *type, PyObject *args)
     return result;
 }
 
-static const char from_buffer_copy_doc[] =
-"C.from_buffer_copy(object, offset=0) -> C instance\ncreate a C instance from a readable buffer";
+PyDoc_STRVAR(from_buffer_copy_doc,
+"C.from_buffer_copy(object, offset=0) -> C instance\ncreate a C instance from a readable buffer");
 
 static PyObject *
 GenericPyCData_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
@@ -727,8 +728,8 @@ CDataType_from_buffer_copy(PyObject *type, PyObject *args)
     return result;
 }
 
-static const char in_dll_doc[] =
-"C.in_dll(dll, name) -> C instance\naccess a C instance in a dll";
+PyDoc_STRVAR(in_dll_doc,
+"C.in_dll(dll, name) -> C instance\naccess a C instance in a dll");
 
 static PyObject *
 CDataType_in_dll(PyObject *type, PyObject *args)
@@ -789,8 +790,8 @@ CDataType_in_dll(PyObject *type, PyObject *args)
     return PyCData_AtAddress(type, address);
 }
 
-static const char from_param_doc[] =
-"Convert a Python object into a function call parameter.";
+PyDoc_STRVAR(from_param_doc,
+"Convert a Python object into a function call parameter.");
 
 static PyObject *
 CDataType_from_param(PyObject *type, PyObject *value)
@@ -944,7 +945,7 @@ PyTypeObject PyCStructType_Type = {
     PyCStructType_setattro,                     /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    "metatype for the CData Objects",           /* tp_doc */
+    PyDoc_STR("metatype for the CData Objects"), /* tp_doc */
     (traverseproc)CDataType_traverse,           /* tp_traverse */
     (inquiry)CDataType_clear,                   /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -986,7 +987,7 @@ static PyTypeObject UnionType_Type = {
     UnionType_setattro,                         /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    "metatype for the CData Objects",           /* tp_doc */
+    PyDoc_STR("metatype for the CData Objects"), /* tp_doc */
     (traverseproc)CDataType_traverse,           /* tp_traverse */
     (inquiry)CDataType_clear,                   /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -1244,7 +1245,7 @@ PyTypeObject PyCPointerType_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    "metatype for the Pointer Objects",         /* tp_doc */
+    PyDoc_STR("metatype for the Pointer Objects"), /* tp_doc */
     (traverseproc)CDataType_traverse,           /* tp_traverse */
     (inquiry)CDataType_clear,                   /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -1417,49 +1418,12 @@ static PyGetSetDef WCharArray_getsets[] = {
 };
 
 /*
-  The next three functions copied from Python's typeobject.c.
+  The next function is copied from Python's typeobject.c.
 
-  They are used to attach methods, members, or getsets to a type *after* it
+  It is used to attach getsets to a type *after* it
   has been created: Arrays of characters have additional getsets to treat them
   as strings.
  */
-/*
-static int
-add_methods(PyTypeObject *type, PyMethodDef *meth)
-{
-    PyObject *dict = type->tp_dict;
-    for (; meth->ml_name != NULL; meth++) {
-        PyObject *descr;
-        descr = PyDescr_NewMethod(type, meth);
-        if (descr == NULL)
-            return -1;
-        if (PyDict_SetItemString(dict, meth->ml_name, descr) < 0) {
-            Py_DECREF(descr);
-            return -1;
-        }
-        Py_DECREF(descr);
-    }
-    return 0;
-}
-
-static int
-add_members(PyTypeObject *type, PyMemberDef *memb)
-{
-    PyObject *dict = type->tp_dict;
-    for (; memb->name != NULL; memb++) {
-        PyObject *descr;
-        descr = PyDescr_NewMember(type, memb);
-        if (descr == NULL)
-            return -1;
-        if (PyDict_SetItemString(dict, memb->name, descr) < 0) {
-            Py_DECREF(descr);
-            return -1;
-        }
-        Py_DECREF(descr);
-    }
-    return 0;
-}
-*/
 
 static int
 add_getset(PyTypeObject *type, PyGetSetDef *gsp)
@@ -1656,7 +1620,7 @@ PyTypeObject PyCArrayType_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "metatype for the Array Objects",           /* tp_doc */
+    PyDoc_STR("metatype for the Array Objects"), /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -2350,7 +2314,7 @@ PyTypeObject PyCSimpleType_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "metatype for the PyCSimpleType Objects",           /* tp_doc */
+    PyDoc_STR("metatype for the PyCSimpleType Objects"), /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -2382,7 +2346,6 @@ converters_from_argtypes(PyObject *ob)
     _Py_IDENTIFIER(from_param);
     PyObject *converters;
     Py_ssize_t i;
-    Py_ssize_t nArgs;
 
     ob = PySequence_Tuple(ob); /* new reference */
     if (!ob) {
@@ -2391,7 +2354,15 @@ converters_from_argtypes(PyObject *ob)
         return NULL;
     }
 
-    nArgs = PyTuple_GET_SIZE(ob);
+    Py_ssize_t nArgs = PyTuple_GET_SIZE(ob);
+    if (nArgs > CTYPES_MAX_ARGCOUNT) {
+        Py_DECREF(ob);
+        PyErr_Format(PyExc_ArgError,
+                     "_argtypes_ has too many arguments (%zi), maximum is %i",
+                     nArgs, CTYPES_MAX_ARGCOUNT);
+        return NULL;
+    }
+
     converters = PyTuple_New(nArgs);
     if (!converters) {
         Py_DECREF(ob);
@@ -2632,7 +2603,7 @@ PyTypeObject PyCFuncPtrType_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    "metatype for C function pointers",         /* tp_doc */
+    PyDoc_STR("metatype for C function pointers"), /* tp_doc */
     (traverseproc)CDataType_traverse,           /* tp_traverse */
     (inquiry)CDataType_clear,                   /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -2937,7 +2908,7 @@ PyTypeObject PyCData_Type = {
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "XXX to be provided",                       /* tp_doc */
+    PyDoc_STR("XXX to be provided"),            /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -4335,7 +4306,7 @@ PyTypeObject PyCFuncPtr_Type = {
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "Function Pointer",                         /* tp_doc */
+    PyDoc_STR("Function Pointer"),              /* tp_doc */
     (traverseproc)PyCFuncPtr_traverse,          /* tp_traverse */
     (inquiry)PyCFuncPtr_clear,                  /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -4487,7 +4458,7 @@ static PyTypeObject Struct_Type = {
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "Structure base class",                     /* tp_doc */
+    PyDoc_STR("Structure base class"),          /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -4529,7 +4500,7 @@ static PyTypeObject Union_Type = {
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "Union base class",                         /* tp_doc */
+    PyDoc_STR("Union base class"),              /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -4849,7 +4820,7 @@ PyTypeObject PyCArray_Type = {
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "XXX to be provided",                       /* tp_doc */
+    PyDoc_STR("XXX to be provided"),            /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -5068,7 +5039,7 @@ static PyTypeObject Simple_Type = {
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "XXX to be provided",                       /* tp_doc */
+    PyDoc_STR("XXX to be provided"),            /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -5450,7 +5421,7 @@ PyTypeObject PyCPointer_Type = {
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "XXX to be provided",                       /* tp_doc */
+    PyDoc_STR("XXX to be provided"),            /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -5477,12 +5448,12 @@ PyTypeObject PyCPointer_Type = {
  *  Module initialization.
  */
 
-static const char module_docs[] =
-"Create and manipulate C compatible data types in Python.";
+PyDoc_STRVAR(_ctypes__doc__,
+"Create and manipulate C compatible data types in Python.");
 
 #ifdef MS_WIN32
 
-static const char comerror_doc[] = "Raised when a COM method call failed.";
+PyDoc_STRVAR(comerror_doc, "Raised when a COM method call failed.");
 
 int
 comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
@@ -5671,7 +5642,7 @@ wstring_at(const wchar_t *ptr, int size)
 static struct PyModuleDef _ctypesmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_ctypes",
-    .m_doc = module_docs,
+    .m_doc = _ctypes__doc__,
     .m_size = -1,
     .m_methods = _ctypes_module_methods,
 };
@@ -5810,6 +5781,7 @@ _ctypes_add_objects(PyObject *mod)
 #endif
     MOD_ADD("RTLD_LOCAL", PyLong_FromLong(RTLD_LOCAL));
     MOD_ADD("RTLD_GLOBAL", PyLong_FromLong(RTLD_GLOBAL));
+    MOD_ADD("CTYPES_MAX_ARGCOUNT", PyLong_FromLong(CTYPES_MAX_ARGCOUNT));
     MOD_ADD("ArgumentError", Py_NewRef(PyExc_ArgError));
     return 0;
 #undef MOD_ADD

@@ -77,8 +77,8 @@ AboutDialog_spec = {
     'kwds': {'title': 'help_about test',
              '_htest': True,
              },
-    'msg': "Test every button. Ensure Python, TK and IDLE versions "
-           "are correctly displayed.\n [Close] to exit.",
+    'msg': "Click on URL to open in default browser.\n"
+           "Verify x.y.z versions and test each button, including Close.\n "
     }
 
 # TODO implement ^\; adding '<Control-Key-\\>' to function does not work.

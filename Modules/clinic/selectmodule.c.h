@@ -193,6 +193,10 @@ PyDoc_STRVAR(select_poll_poll__doc__,
 "\n"
 "Polls the set of registered file descriptors.\n"
 "\n"
+"  timeout\n"
+"    The maximum time to wait in milliseconds, or else None (or a negative\n"
+"    value) to wait indefinitely.\n"
+"\n"
 "Returns a list containing any descriptors that have events or errors to\n"
 "report, as a list of (fd, event) 2-tuples.");
 
@@ -362,6 +366,10 @@ PyDoc_STRVAR(select_devpoll_poll__doc__,
 "--\n"
 "\n"
 "Polls the set of registered file descriptors.\n"
+"\n"
+"  timeout\n"
+"    The maximum time to wait in milliseconds, or else None (or a negative\n"
+"    value) to wait indefinitely.\n"
 "\n"
 "Returns a list containing any descriptors that have events or errors to\n"
 "report, as a list of (fd, event) 2-tuples.");
@@ -1181,4 +1189,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=ed1e5a658863244c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=09ff9484c1b092fb input=a9049054013a1b77]*/

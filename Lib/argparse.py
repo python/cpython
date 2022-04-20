@@ -84,10 +84,12 @@ __all__ = [
     'ZERO_OR_MORE',
 ]
 
-
+import atexit as _atexit
 import os as _os
 import re as _re
 import sys as _sys
+
+import warnings
 
 from gettext import gettext as _, ngettext
 
@@ -392,6 +394,9 @@ class HelpFormatter(object):
         group_actions = set()
         inserts = {}
         for group in groups:
+            if not group._group_actions:
+                raise ValueError(f'empty group {group}')
+
             try:
                 start = actions.index(group._group_actions[0])
             except ValueError:
@@ -723,7 +728,7 @@ def _get_action_name(argument):
     if argument is None:
         return None
     elif argument.option_strings:
-        return  '/'.join(argument.option_strings)
+        return '/'.join(argument.option_strings)
     elif argument.metavar not in (None, SUPPRESS):
         return argument.metavar
     elif argument.dest not in (None, SUPPRESS):
@@ -876,7 +881,7 @@ class BooleanOptionalAction(Action):
                 option_string = '--no-' + option_string[2:]
                 _option_strings.append(option_string)
 
-        if help is not None and default is not None:
+        if help is not None and default is not None and default is not SUPPRESS:
             help += " (default: %(default)s)"
 
         super().__init__(
@@ -1254,17 +1259,21 @@ class FileType(object):
         # the special argument "-" means sys.std{in,out}
         if string == '-':
             if 'r' in self._mode:
-                return _sys.stdin
-            elif 'w' in self._mode:
-                return _sys.stdout
+                return _sys.stdin.buffer if 'b' in self._mode else _sys.stdin
+            elif any(c in self._mode for c in 'wax'):
+                return _sys.stdout.buffer if 'b' in self._mode else _sys.stdout
             else:
                 msg = _('argument "-" with mode %r') % self._mode
                 raise ValueError(msg)
 
         # all other arguments are used as file names
         try:
-            return open(string, self._mode, self._bufsize, self._encoding,
-                        self._errors)
+            fh = open(string, self._mode, self._bufsize, self._encoding, self._errors)
+
+            # Register cleanup function to close file
+            _atexit.register(fh.close)
+
+            return fh
         except OSError as e:
             args = {'filename': string, 'error': e}
             message = _("can't open '%(filename)s': %(error)s")
@@ -1645,6 +1654,14 @@ class _ArgumentGroup(_ActionsContainer):
         super(_ArgumentGroup, self)._remove_action(action)
         self._group_actions.remove(action)
 
+    def add_argument_group(self, *args, **kwargs):
+        warnings.warn(
+            "Nesting argument groups is deprecated.",
+            category=DeprecationWarning,
+            stacklevel=2
+        )
+        return super().add_argument_group(*args, **kwargs)
+
 
 class _MutuallyExclusiveGroup(_ArgumentGroup):
 
@@ -1665,12 +1682,21 @@ class _MutuallyExclusiveGroup(_ArgumentGroup):
         self._container._remove_action(action)
         self._group_actions.remove(action)
 
+    def add_mutually_exclusive_group(self, *args, **kwargs):
+        warnings.warn(
+            "Nesting mutually exclusive groups is deprecated.",
+            category=DeprecationWarning,
+            stacklevel=2
+        )
+        return super().add_mutually_exclusive_group(*args, **kwargs)
+
 
 class ArgumentParser(_AttributeHolder, _ActionsContainer):
     """Object for parsing command line strings into Python objects.
 
     Keyword Arguments:
-        - prog -- The name of the program (default: sys.argv[0])
+        - prog -- The name of the program (default:
+            ``os.path.basename(sys.argv[0])``)
         - usage -- A usage message (default: auto-generated from arguments)
         - description -- A description of what the program does
         - epilog -- Text following the argument descriptions
@@ -1853,8 +1879,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         if self.exit_on_error:
             try:
                 namespace, args = self._parse_known_args(args, namespace)
-            except ArgumentError:
-                err = _sys.exc_info()[1]
+            except ArgumentError as err:
                 self.error(str(err))
         else:
             namespace, args = self._parse_known_args(args, namespace)
@@ -2129,8 +2154,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                                 arg_strings.append(arg)
                         arg_strings = self._read_args_from_files(arg_strings)
                         new_arg_strings.extend(arg_strings)
-                except OSError:
-                    err = _sys.exc_info()[1]
+                except OSError as err:
                     self.error(str(err))
 
         # return the modified argument list
@@ -2480,9 +2504,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             result = type_func(arg_string)
 
         # ArgumentTypeErrors indicate errors
-        except ArgumentTypeError:
+        except ArgumentTypeError as err:
             name = getattr(action.type, '__name__', repr(action.type))
-            msg = str(_sys.exc_info()[1])
+            msg = str(err)
             raise ArgumentError(action, msg)
 
         # TypeErrors or ValueErrors also indicate errors

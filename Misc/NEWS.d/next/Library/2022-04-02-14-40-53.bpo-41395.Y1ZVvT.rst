@@ -1,0 +1,3 @@
+FileType objects from argparse may not be closed and lead to
+ResourceWarning. Register a file.close function with atexit for FileType
+objects to ensure they are closed. Patch Contributed by Adam Chhina.

@@ -8,9 +8,16 @@
 #define _Py_HAMT_MAX_TREE_DEPTH 7
 
 
+extern PyTypeObject _PyHamt_Type;
+extern PyTypeObject _PyHamt_ArrayNode_Type;
+extern PyTypeObject _PyHamt_BitmapNode_Type;
+extern PyTypeObject _PyHamt_CollisionNode_Type;
+extern PyTypeObject _PyHamtKeys_Type;
+extern PyTypeObject _PyHamtValues_Type;
+extern PyTypeObject _PyHamtItems_Type;
+
 /* runtime lifecycle */
 
-PyStatus _PyHamt_InitTypes(PyInterpreterState *);
 void _PyHamt_Fini(PyInterpreterState *);
 
 
@@ -67,15 +74,6 @@ typedef struct {
     PyHamtIteratorState hi_iter;
     binaryfunc hi_yield;
 } PyHamtIterator;
-
-
-PyAPI_DATA(PyTypeObject) _PyHamt_Type;
-PyAPI_DATA(PyTypeObject) _PyHamt_ArrayNode_Type;
-PyAPI_DATA(PyTypeObject) _PyHamt_BitmapNode_Type;
-PyAPI_DATA(PyTypeObject) _PyHamt_CollisionNode_Type;
-PyAPI_DATA(PyTypeObject) _PyHamtKeys_Type;
-PyAPI_DATA(PyTypeObject) _PyHamtValues_Type;
-PyAPI_DATA(PyTypeObject) _PyHamtItems_Type;
 
 
 /* Create a new HAMT immutable mapping. */

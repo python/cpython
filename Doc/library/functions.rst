@@ -248,7 +248,7 @@ are always available.  They are listed here in alphabetical order.
 
       class C:
           @classmethod
-          def f(cls, arg1, arg2, ...): ...
+          def f(cls, arg1, arg2): ...
 
    The ``@classmethod`` form is a function :term:`decorator` -- see
    :ref:`function` for details.
@@ -890,6 +890,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.8
       Falls back to :meth:`__index__` if :meth:`__int__` is not defined.
+
+   .. versionchanged:: 3.11
+      The delegation to :meth:`__trunc__` is deprecated.
 
 
 .. function:: isinstance(object, classinfo)
@@ -1571,7 +1574,7 @@ are always available.  They are listed here in alphabetical order.
    :func:`itertools.islice` for an alternate version that returns an iterator.
 
 
-.. function:: sorted(iterable, *, key=None, reverse=False)
+.. function:: sorted(iterable, /, *, key=None, reverse=False)
 
    Return a new sorted list from the items in *iterable*.
 
