@@ -616,7 +616,7 @@ dis_loop_test_quickened_code = """\
               8 LOAD_CONST                        2 (3)
              10 BINARY_OP_ADAPTIVE                5 (*)
              14 GET_ITER
-             16 FOR_ITER                         18 (to 54)
+        >>   16 FOR_ITER                         18 (to 54)
              18 STORE_FAST                        0 (i)
 
 %3d          20 LOAD_GLOBAL_MODULE                1 (NULL + load_test)
