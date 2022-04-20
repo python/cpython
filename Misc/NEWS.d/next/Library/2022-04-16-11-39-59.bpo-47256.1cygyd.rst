@@ -1,0 +1,2 @@
+:mod:`re` module, limit the maximum capturing group to 1,073,741,823 in
+64-bit build, this increases the depth of backtracking.

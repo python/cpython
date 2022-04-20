@@ -211,6 +211,8 @@ directory. This is an error unless the replacement is intended.  See section
 .. %
     Do we need stuff on zip files etc. ? DUBOIS
 
+.. _tut-pycache:
+
 "Compiled" Python files
 -----------------------
 
@@ -506,7 +508,7 @@ code::
    __all__ = ["echo", "surround", "reverse"]
 
 This would mean that ``from sound.effects import *`` would import the three
-named submodules of the :mod:`sound` package.
+named submodules of the :mod:`sound.effects` package.
 
 If ``__all__`` is not defined, the statement ``from sound.effects import *``
 does *not* import all submodules from the package :mod:`sound.effects` into the
