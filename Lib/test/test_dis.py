@@ -616,7 +616,7 @@ dis_loop_test_quickened_code = """\
               8 LOAD_CONST                        2 (3)
              10 BINARY_OP_ADAPTIVE                5 (*)
              14 GET_ITER
-             16 FOR_ITER                         17 (to 52)
+             16 FOR_ITER                         18 (to 54)
              18 STORE_FAST                        0 (i)
 
 %3d          20 LOAD_GLOBAL_MODULE                1 (NULL + load_test)
@@ -624,10 +624,10 @@ dis_loop_test_quickened_code = """\
              34 PRECALL_PYFUNC                    1
              38 CALL_PY_WITH_DEFAULTS             1
              48 POP_TOP
-             50 JUMP_BACKWARD_QUICK              18 (to 16)
+             50 JUMP_BACKWARD_FOR_ITER_LIST      19 (to 16)
 
-%3d     >>   52 LOAD_CONST                        0 (None)
-             54 RETURN_VALUE
+%3d     >>   54 LOAD_CONST                        0 (None)
+             56 RETURN_VALUE
 """ % (loop_test.__code__.co_firstlineno,
        loop_test.__code__.co_firstlineno + 1,
        loop_test.__code__.co_firstlineno + 2,

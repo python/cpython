@@ -4102,20 +4102,12 @@ handle_eval_breaker:
             CHECK_EVAL_BREAKER();
             NEXTOPARG();
             frame->prev_instr = next_instr++;
-
-            if (r->index < r->len) {
-                PyObject *res = PyLong_FromLong(
-                    (long)(r->start + (unsigned long)(r->index++) * r->step));
-                if (res == NULL) {
-                    goto error;
-                }
-                PUSH(res);
-                NOTRACE_DISPATCH();
-            }
-            goto iterator_exhausted_no_error;
-#if 0
             PyObject **local_ptr = &GETLOCAL(_Py_OPARG(*next_instr));
             PyObject *local = *local_ptr;
+            if (r->index >= r->len) {
+                goto iterator_exhausted_no_error;
+            }
+            next_instr++;
             sdigit value = r->start + (digit)(r->index++) * r->step;
             if (value < _PY_NSMALLPOSINTS && value >= -_PY_NSMALLNEGINTS) {
                 *local_ptr = Py_NewRef(&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+value]);
@@ -4137,12 +4129,12 @@ handle_eval_breaker:
             }
             PyObject *res = PyLong_FromLong(value);
             if (res == NULL) {
+                next_instr--;
                 goto error;
             }
             *local_ptr = res;
             Py_XDECREF(local);
             NOTRACE_DISPATCH();
-#endif
         }
 
 
