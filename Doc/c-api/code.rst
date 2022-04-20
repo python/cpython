@@ -36,15 +36,26 @@ bound into a function.
 .. c:function:: PyCodeObject* PyCode_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *lnotab)
 
    Return a new code object.  If you need a dummy code object to create a frame,
-   use :c:func:`PyCode_NewEmpty` instead.  Calling :c:func:`PyCode_New` directly
-   can bind you to a precise Python version since the definition of the bytecode
-   changes often.
+   use :c:func:`PyCode_NewEmpty` instead.
+
+   Since the definition of the bytecode changes often, calling
+   :c:func:`PyCode_New` directly can bind you to a precise Python version.
+   This function is  part of the semi-stable C API.
+   See :c:macro:`Py_USING_SEMI_STABLE_API` for usage.
+
+   .. versionchanged:: 3.11
+
+     Use without ``Py_USING_SEMI_STABLE_API`` is deprecated.
 
 .. c:function:: PyCodeObject* PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *lnotab)
 
    Similar to :c:func:`PyCode_New`, but with an extra "posonlyargcount" for positional-only arguments.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.11
+
+     Use without ``Py_USING_SEMI_STABLE_API`` is deprecated.
 
 .. c:function:: PyCodeObject* PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 
@@ -67,3 +78,80 @@ bound into a function.
    information is not available for any particular element.
 
    Returns ``1`` if the function succeeds and 0 otherwise.
+
+
+Extra information
+-----------------
+
+To support low-level extensions to frame evaluation, such as external
+just-in-time compilers, it is possible to attach arbitrary extra data to
+code objects.
+
+This functionality is a CPython implementation detail, and the API
+may change without deprecation warnings.
+These functions are part of the semi-stable C API.
+See :c:macro:`Py_USING_SEMI_STABLE_API` for details.
+
+See :pep:`523` for motivation and initial specification behind this API.
+
+
+.. c:function:: Py_ssize_t PyEval_RequestCodeExtraIndex(freefunc free)
+
+   Return a new an opaque index value used to adding data to code objects.
+
+   You generally call this function once (per interpreter) and use the result
+   with ``PyCode_GetExtra`` and ``PyCode_SetExtra`` to manipulate
+   data on individual code objects.
+
+   If *free* is not ``NULL``: when a code object is deallocated,
+   *free* will be called on non-``NULL`` data stored under the new index.
+   Use :c:func:`Py_DecRef` when storing :c:type:`PyObject`.
+
+   Part of the semi-stable API, see :c:macro:`Py_USING_SEMI_STABLE_API`
+   for usage.
+
+   .. versionadded:: 3.6 as ``_PyEval_RequestCodeExtraIndex``
+
+   .. versionchanged:: 3.11
+
+     Renamed to ``PyEval_RequestCodeExtraIndex`` (without the leading
+     undersecore). The old name is available as an alias.
+
+     Use without ``Py_USING_SEMI_STABLE_API`` is deprecated.
+
+.. c:function:: int PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
+
+   Set *extra* to the extra data stored under the given index.
+   Return 0 on success. Set an exception and return -1 on failure.
+
+   If no data was set under the index, set *extra* to ``NULL`` and return
+   0 without setting an exception.
+
+   Part of the semi-stable API, see :c:macro:`Py_USING_SEMI_STABLE_API`
+   for usage.
+
+   .. versionadded:: 3.6 as ``_PyCode_GetExtra``
+
+   .. versionchanged:: 3.11
+
+     Renamed to ``PyCode_GetExtra`` (without the leading undersecore).
+     The old name is available as an alias.
+
+     Use without ``Py_USING_SEMI_STABLE_API`` is deprecated.
+
+.. c:function:: int PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
+
+   Set the extra data stored under the given index to *extra*.
+   Return 0 on success. Set an exception and return -1 on failure.
+
+   Part of the semi-stable API, see :c:macro:`Py_USING_SEMI_STABLE_API`
+   for usage.
+
+   .. versionadded:: 3.6 3.6 as ``_PyCode_SetExtra``
+
+   .. versionchanged:: 3.11
+
+     Renamed to ``PyCode_SetExtra`` (without the leading undersecore).
+     The old name is available as an alias.
+
+     Use without ``Py_USING_SEMI_STABLE_API`` is deprecated.

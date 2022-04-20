@@ -7,8 +7,7 @@ C API Stability
 ***************
 
 Python's C API is covered by the Backwards Compatibility Policy, :pep:`387`.
-While the C API will change with every minor release (e.g. from 3.9 to 3.10),
-most changes will be source-compatible, typically by only adding new API.
+Most changes to it are source-compatible (typically by only adding new API).
 Changing existing API or removing API is only done after a deprecation period
 or to fix serious issues.
 
@@ -20,6 +19,20 @@ but will need to be compiled separately for 3.9.x and 3.10.x.
 
 Names prefixed by an underscore, such as ``_Py_InternalState``,
 are private API that can change without notice even in patch releases.
+
+
+Semi-stable C API
+=================
+
+.. c:macro:: Py_USING_SEMI_STABLE_API
+
+   Define this macro to access semi-stable API, intended for low-level
+   tools like debuggers.
+   This API exposes CPython implementation details, and may change
+   in every minor release (e.g. from 3.9 to 3.10) without
+   any deprecation warnings.
+   Projects that define ``Py_USING_SEMI_STABLE_API`` are expected to follow
+   CPython development and spend extra effort adjusting to changes.
 
 
 Stable Application Binary Interface
