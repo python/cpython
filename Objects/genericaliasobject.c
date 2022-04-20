@@ -683,6 +683,9 @@ ga_iter_clear(PyObject *self) {
     return 0;
 }
 
+/* gh-91632: _Py_GenericAliasIterType is exported  to be cleared
+   in _PyTypes_FiniTypes.
+*/
 PyTypeObject _Py_GenericAliasIterType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "generic_alias_iterator",
