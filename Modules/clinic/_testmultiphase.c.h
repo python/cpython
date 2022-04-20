@@ -21,19 +21,11 @@ _testmultiphase_StateAccessType_get_defining_module_impl(StateAccessTypeObject *
 static PyObject *
 _testmultiphase_StateAccessType_get_defining_module(StateAccessTypeObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "get_defining_module", 0};
-    PyObject *argsbuf[0];
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "get_defining_module() takes no arguments");
+        return NULL;
     }
-    return_value = _testmultiphase_StateAccessType_get_defining_module_impl(self, cls);
-
-exit:
-    return return_value;
+    return _testmultiphase_StateAccessType_get_defining_module_impl(self, cls);
 }
 
 PyDoc_STRVAR(_testmultiphase_StateAccessType_getmodulebydef_bad_def__doc__,
@@ -52,19 +44,11 @@ _testmultiphase_StateAccessType_getmodulebydef_bad_def_impl(StateAccessTypeObjec
 static PyObject *
 _testmultiphase_StateAccessType_getmodulebydef_bad_def(StateAccessTypeObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "getmodulebydef_bad_def", 0};
-    PyObject *argsbuf[0];
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "getmodulebydef_bad_def() takes no arguments");
+        return NULL;
     }
-    return_value = _testmultiphase_StateAccessType_getmodulebydef_bad_def_impl(self, cls);
-
-exit:
-    return return_value;
+    return _testmultiphase_StateAccessType_getmodulebydef_bad_def_impl(self, cls);
 }
 
 PyDoc_STRVAR(_testmultiphase_StateAccessType_increment_count_clinic__doc__,
@@ -143,18 +127,10 @@ _testmultiphase_StateAccessType_get_count_impl(StateAccessTypeObject *self,
 static PyObject *
 _testmultiphase_StateAccessType_get_count(StateAccessTypeObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "get_count", 0};
-    PyObject *argsbuf[0];
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "get_count() takes no arguments");
+        return NULL;
     }
-    return_value = _testmultiphase_StateAccessType_get_count_impl(self, cls);
-
-exit:
-    return return_value;
+    return _testmultiphase_StateAccessType_get_count_impl(self, cls);
 }
-/*[clinic end generated code: output=59cb7bab76e7a411 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b41a400ef84f50af input=a9049054013a1b77]*/

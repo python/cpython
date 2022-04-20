@@ -8290,14 +8290,11 @@ static PyObject *
 os_DirEntry_is_symlink(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "is_symlink", 0};
-    PyObject *argsbuf[0];
     int _return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "is_symlink() takes no arguments");
+        return NULL;
     }
     _return_value = os_DirEntry_is_symlink_impl(self, defining_class);
     if ((_return_value == -1) && PyErr_Occurred()) {
@@ -9334,4 +9331,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=b475160fab3f93c0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=94df188372283341 input=a9049054013a1b77]*/

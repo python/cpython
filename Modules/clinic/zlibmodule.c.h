@@ -513,19 +513,11 @@ zlib_Compress_copy_impl(compobject *self, PyTypeObject *cls);
 static PyObject *
 zlib_Compress_copy(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "copy", 0};
-    PyObject *argsbuf[0];
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
+        return NULL;
     }
-    return_value = zlib_Compress_copy_impl(self, cls);
-
-exit:
-    return return_value;
+    return zlib_Compress_copy_impl(self, cls);
 }
 
 #endif /* defined(HAVE_ZLIB_COPY) */
@@ -546,19 +538,11 @@ zlib_Compress___copy___impl(compobject *self, PyTypeObject *cls);
 static PyObject *
 zlib_Compress___copy__(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "__copy__", 0};
-    PyObject *argsbuf[0];
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "__copy__() takes no arguments");
+        return NULL;
     }
-    return_value = zlib_Compress___copy___impl(self, cls);
-
-exit:
-    return return_value;
+    return zlib_Compress___copy___impl(self, cls);
 }
 
 #endif /* defined(HAVE_ZLIB_COPY) */
@@ -616,19 +600,11 @@ zlib_Decompress_copy_impl(compobject *self, PyTypeObject *cls);
 static PyObject *
 zlib_Decompress_copy(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "copy", 0};
-    PyObject *argsbuf[0];
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
+        return NULL;
     }
-    return_value = zlib_Decompress_copy_impl(self, cls);
-
-exit:
-    return return_value;
+    return zlib_Decompress_copy_impl(self, cls);
 }
 
 #endif /* defined(HAVE_ZLIB_COPY) */
@@ -649,19 +625,11 @@ zlib_Decompress___copy___impl(compobject *self, PyTypeObject *cls);
 static PyObject *
 zlib_Decompress___copy__(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "__copy__", 0};
-    PyObject *argsbuf[0];
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "__copy__() takes no arguments");
+        return NULL;
     }
-    return_value = zlib_Decompress___copy___impl(self, cls);
-
-exit:
-    return return_value;
+    return zlib_Decompress___copy___impl(self, cls);
 }
 
 #endif /* defined(HAVE_ZLIB_COPY) */
@@ -887,4 +855,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=d47e757e8b4f487f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bb1e27d8b2198a86 input=a9049054013a1b77]*/

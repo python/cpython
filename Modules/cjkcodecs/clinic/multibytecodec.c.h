@@ -556,19 +556,11 @@ _multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *se
 static PyObject *
 _multibytecodec_MultibyteStreamWriter_reset(MultibyteStreamWriterObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "reset", 0};
-    PyObject *argsbuf[0];
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "reset() takes no arguments");
+        return NULL;
     }
-    return_value = _multibytecodec_MultibyteStreamWriter_reset_impl(self, cls);
-
-exit:
-    return return_value;
+    return _multibytecodec_MultibyteStreamWriter_reset_impl(self, cls);
 }
 
 PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
@@ -578,4 +570,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=55f6a328e1a03914 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0ee00c9f6883afe9 input=a9049054013a1b77]*/

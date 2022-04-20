@@ -1102,19 +1102,11 @@ _sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls);
 static PyObject *
 _sre_SRE_Scanner_match(ScannerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "match", 0};
-    PyObject *argsbuf[0];
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "match() takes no arguments");
+        return NULL;
     }
-    return_value = _sre_SRE_Scanner_match_impl(self, cls);
-
-exit:
-    return return_value;
+    return _sre_SRE_Scanner_match_impl(self, cls);
 }
 
 PyDoc_STRVAR(_sre_SRE_Scanner_search__doc__,
@@ -1131,18 +1123,10 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self, PyTypeObject *cls);
 static PyObject *
 _sre_SRE_Scanner_search(ScannerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "search", 0};
-    PyObject *argsbuf[0];
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "search() takes no arguments");
+        return NULL;
     }
-    return_value = _sre_SRE_Scanner_search_impl(self, cls);
-
-exit:
-    return return_value;
+    return _sre_SRE_Scanner_search_impl(self, cls);
 }
-/*[clinic end generated code: output=ec64ab853f79cd46 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8d8200b2177cd667 input=a9049054013a1b77]*/

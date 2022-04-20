@@ -615,19 +615,11 @@ array_arrayiterator___reduce___impl(arrayiterobject *self, PyTypeObject *cls);
 static PyObject *
 array_arrayiterator___reduce__(arrayiterobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "__reduce__", 0};
-    PyObject *argsbuf[0];
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "__reduce__() takes no arguments");
+        return NULL;
     }
-    return_value = array_arrayiterator___reduce___impl(self, cls);
-
-exit:
-    return return_value;
+    return array_arrayiterator___reduce___impl(self, cls);
 }
 
 PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
@@ -638,4 +630,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=d878182d18e48dad input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7f48d1691fa27442 input=a9049054013a1b77]*/

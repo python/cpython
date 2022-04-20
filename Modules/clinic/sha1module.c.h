@@ -17,19 +17,11 @@ SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls);
 static PyObject *
 SHA1Type_copy(SHA1object *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "copy", 0};
-    PyObject *argsbuf[0];
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
+        return NULL;
     }
-    return_value = SHA1Type_copy_impl(self, cls);
-
-exit:
-    return return_value;
+    return SHA1Type_copy_impl(self, cls);
 }
 
 PyDoc_STRVAR(SHA1Type_digest__doc__,
@@ -127,4 +119,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=018b0f112b4ec5b7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=93ced3c8f8fa4f21 input=a9049054013a1b77]*/

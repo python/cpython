@@ -772,25 +772,39 @@ class CLanguage(Language):
                 add(field)
             return linear_format(output(), parser_declarations=declarations)
 
-        if not parameters and not requires_defining_class:
-            # no parameters, METH_NOARGS
+        if not parameters:
+            if not requires_defining_class:
+                # no parameters, METH_NOARGS
+                flags = "METH_NOARGS"
 
-            flags = "METH_NOARGS"
+                parser_prototype = normalize_snippet("""
+                    static PyObject *
+                    {c_basename}({self_type}{self_name}, PyObject *Py_UNUSED(ignored))
+                    """)
+                parser_code = []
 
-            parser_prototype = normalize_snippet("""
-                static PyObject *
-                {c_basename}({self_type}{self_name}, PyObject *Py_UNUSED(ignored))
-                """)
-            parser_definition = parser_prototype
+            elif not parameters:
+                assert not new_or_init
+
+                flags = "METH_METHOD|METH_FASTCALL|METH_KEYWORDS"
+
+                parser_prototype = parser_prototype_def_class
+                parser_code = [normalize_snippet("""
+                    if (nargs) {{
+                        PyErr_SetString(PyExc_TypeError, "{name}() takes no arguments");
+                        return NULL;
+                    }}
+                    """, indent=4)]
 
             if default_return_converter:
-                parser_definition = parser_prototype + '\n' + normalize_snippet("""
-                    {{
-                        return {c_basename}_impl({impl_arguments});
-                    }}
-                    """)
+                parser_definition = '\n'.join([
+                    parser_prototype,
+                    '{{',
+                    *parser_code,
+                    '    return {c_basename}_impl({impl_arguments});',
+                    '}}'])
             else:
-                parser_definition = parser_body(parser_prototype)
+                parser_definition = parser_body(parser_prototype, *parser_code)
 
         elif meth_o:
             flags = "METH_O"
@@ -994,7 +1008,8 @@ class CLanguage(Language):
             add_label = None
             for i, p in enumerate(parameters):
                 if isinstance(p.converter, defining_class_converter):
-                    raise ValueError("defining_class should be the first parameter (after self)")
+                    raise ValueError("defining_class should be the first "
+                                     "parameter (after self)")
                 displayname = p.get_displayname(i+1)
                 parsearg = p.converter.parse_arg(argname_fmt % i, displayname)
                 if parsearg is None:

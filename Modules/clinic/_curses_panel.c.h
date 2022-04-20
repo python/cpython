@@ -17,19 +17,11 @@ _curses_panel_panel_bottom_impl(PyCursesPanelObject *self, PyTypeObject *cls);
 static PyObject *
 _curses_panel_panel_bottom(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "bottom", 0};
-    PyObject *argsbuf[0];
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "bottom() takes no arguments");
+        return NULL;
     }
-    return_value = _curses_panel_panel_bottom_impl(self, cls);
-
-exit:
-    return return_value;
+    return _curses_panel_panel_bottom_impl(self, cls);
 }
 
 PyDoc_STRVAR(_curses_panel_panel_hide__doc__,
@@ -49,19 +41,11 @@ _curses_panel_panel_hide_impl(PyCursesPanelObject *self, PyTypeObject *cls);
 static PyObject *
 _curses_panel_panel_hide(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "hide", 0};
-    PyObject *argsbuf[0];
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "hide() takes no arguments");
+        return NULL;
     }
-    return_value = _curses_panel_panel_hide_impl(self, cls);
-
-exit:
-    return return_value;
+    return _curses_panel_panel_hide_impl(self, cls);
 }
 
 PyDoc_STRVAR(_curses_panel_panel_show__doc__,
@@ -79,19 +63,11 @@ _curses_panel_panel_show_impl(PyCursesPanelObject *self, PyTypeObject *cls);
 static PyObject *
 _curses_panel_panel_show(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "show", 0};
-    PyObject *argsbuf[0];
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "show() takes no arguments");
+        return NULL;
     }
-    return_value = _curses_panel_panel_show_impl(self, cls);
-
-exit:
-    return return_value;
+    return _curses_panel_panel_show_impl(self, cls);
 }
 
 PyDoc_STRVAR(_curses_panel_panel_top__doc__,
@@ -109,19 +85,11 @@ _curses_panel_panel_top_impl(PyCursesPanelObject *self, PyTypeObject *cls);
 static PyObject *
 _curses_panel_panel_top(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "top", 0};
-    PyObject *argsbuf[0];
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "top() takes no arguments");
+        return NULL;
     }
-    return_value = _curses_panel_panel_top_impl(self, cls);
-
-exit:
-    return return_value;
+    return _curses_panel_panel_top_impl(self, cls);
 }
 
 PyDoc_STRVAR(_curses_panel_panel_above__doc__,
@@ -324,19 +292,11 @@ _curses_panel_panel_userptr_impl(PyCursesPanelObject *self,
 static PyObject *
 _curses_panel_panel_userptr(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "userptr", 0};
-    PyObject *argsbuf[0];
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "userptr() takes no arguments");
+        return NULL;
     }
-    return_value = _curses_panel_panel_userptr_impl(self, cls);
-
-exit:
-    return return_value;
+    return _curses_panel_panel_userptr_impl(self, cls);
 }
 
 PyDoc_STRVAR(_curses_panel_bottom_panel__doc__,
@@ -423,4 +383,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=b56a4f39ac8e2bd6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c552457e8067bb0a input=a9049054013a1b77]*/

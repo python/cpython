@@ -195,19 +195,11 @@ _queue_SimpleQueue_get_nowait_impl(simplequeueobject *self,
 static PyObject *
 _queue_SimpleQueue_get_nowait(simplequeueobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "get_nowait", 0};
-    PyObject *argsbuf[0];
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "get_nowait() takes no arguments");
+        return NULL;
     }
-    return_value = _queue_SimpleQueue_get_nowait_impl(self, cls);
-
-exit:
-    return return_value;
+    return _queue_SimpleQueue_get_nowait_impl(self, cls);
 }
 
 PyDoc_STRVAR(_queue_SimpleQueue_empty__doc__,
@@ -265,4 +257,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0c95174a416aa3a0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=36301c405a858f39 input=a9049054013a1b77]*/
