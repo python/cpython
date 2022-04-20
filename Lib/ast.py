@@ -1699,7 +1699,8 @@ def unparse(ast_obj):
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(prog='python -m ast')
+    program_name = argparse.PrettyExecutableName("ast")
+    parser = argparse.ArgumentParser(prog=f"{program_name}")
     parser.add_argument('infile', type=argparse.FileType(mode='rb'), nargs='?',
                         default='-',
                         help='the file to parse; defaults to stdin')

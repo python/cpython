@@ -463,7 +463,8 @@ def main(args=None):
     else:
         import argparse
 
-        parser = argparse.ArgumentParser(prog=__name__,
+        program_name = argparse.PrettyExecutableName('venv')
+        parser = argparse.ArgumentParser(prog=f'{program_name}',
                                          description='Creates virtual Python '
                                                      'environments in one or '
                                                      'more target '

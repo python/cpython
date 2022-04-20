@@ -56,6 +56,9 @@ The module contains the following public classes:
         ArgumentDefaultsHelpFormatter adds information about argument defaults
         to the help.
 
+    - PrettyExecutableName -- A class to create strings for use as the
+        prog argument for the ArgumentParser constructor.
+
 All other classes in this module are considered implementation details.
 (Also note that HelpFormatter and RawDescriptionHelpFormatter are only
 considered public as object names -- the API of the formatter objects is
@@ -70,6 +73,7 @@ __all__ = [
     'BooleanOptionalAction',
     'FileType',
     'HelpFormatter',
+    'PrettyExecutableName',
     'ArgumentDefaultsHelpFormatter',
     'RawDescriptionHelpFormatter',
     'RawTextHelpFormatter',
@@ -2601,3 +2605,24 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.print_usage(_sys.stderr)
         args = {'prog': self.prog, 'message': message}
         self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+
+
+class PrettyExecutableName(object):
+    """
+    A class to help construct the prog argument for ArgumentParser, useful when
+    the module has been invoked via `python3 -m <module_name>`.
+    """
+    def __init__(self, name):
+        self.name = name
+
+    def __str__(self):
+        """
+        Returns a string intended for use as an argument for the prog parameter
+        of ArgumentParser.
+        """
+        prefix = "python"
+        executable = _sys.executable
+        if executable:
+            executable = _os.path.basename(executable)
+            prefix = f"{executable}"
+        return f"{prefix} -m {self.name}"

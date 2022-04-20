@@ -5552,6 +5552,21 @@ class TestExitOnError(TestCase):
             self.parser.parse_args('--integers a'.split())
 
 
+class TestProgramName(TestCase):
+    def test_python3_as_module(self):
+        with mock.patch('argparse._sys') as mock_sys:
+            mock_sys.executable = '/usr/bin/python3'
+            mock_sys.argv = ['__main__.py']
+            program_name = argparse.PrettyExecutableName('prog')
+            self.assertEqual(f'{program_name}', 'python3 -m prog')
+
+    def test_fallback_to_python(self):
+        with mock.patch('argparse._sys') as mock_sys:
+            mock_sys.executable = None
+            program_name = argparse.PrettyExecutableName('prog')
+            self.assertEqual(f'{program_name}', 'python -m prog')
+
+
 def tearDownModule():
     # Remove global references to avoid looking like we have refleaks.
     RFile.seen = {}

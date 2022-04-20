@@ -640,7 +640,8 @@ def main():
         sys.exit(1)
 
     # Parse the arguments and options
-    parser = argparse.ArgumentParser(prog='python -m tokenize')
+    program_name = argparse.PrettyExecutableName('tokenize')
+    parser = argparse.ArgumentParser(prog=f'{program_name}')
     parser.add_argument(dest='filename', nargs='?',
                         metavar='filename.py',
                         help='the file to tokenize; defaults to stdin')

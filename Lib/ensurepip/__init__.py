@@ -224,7 +224,8 @@ def _uninstall_helper(*, verbosity=0):
 
 def _main(argv=None):
     import argparse
-    parser = argparse.ArgumentParser(prog="python -m ensurepip")
+    program_name = argparse.PrettyExecutableName("ensurepip")
+    parser = argparse.ArgumentParser(prog=f"{program_name}")
     parser.add_argument(
         "--version",
         action="version",
