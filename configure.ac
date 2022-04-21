@@ -2954,6 +2954,9 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
+	Emscripten|WASI)
+		LDSHARED='$(CC) -shared'
+		LDCXXSHARED='$(CXX) -shared';;
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
@@ -6585,43 +6588,19 @@ AC_DEFUN([PY_STDLIB_MOD_SET_NA], [
 dnl Modules that are not available on some platforms
 dnl AIX has shadow passwords, but access is not via getspent()
 dnl VxWorks does not provide crypt() function
-AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [AIX/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
-  [VxWorks*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [_crypt], [termios], [grp])],
-  [Darwin/*], [PY_STDLIB_MOD_SET_NA([ossaudiodev], [spwd])],
-  [CYGWIN*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
-  [QNX*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
-  [FreeBSD*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
-  [Emscripten/browser*], [
+AS_CASE([$ac_sys_system],
+  [AIX], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
+  [VxWorks*], [PY_STDLIB_MOD_SET_NA([_scproxy], [_crypt], [termios], [grp])],
+  [Darwin], [PY_STDLIB_MOD_SET_NA([ossaudiodev], [spwd])],
+  [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
+  [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
+  [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
+  [Emscripten|WASI], [
+    dnl subprocess and multiprocessing are not supported (no fork syscall).
+    dnl curses and tkinter user interface are not available.
+    dnl dbm and gdbm aren't available, too.
+    dnl Emscripten and WASI provide only stubs for pwd, grp APIs.
     PY_STDLIB_MOD_SET_NA(
-      [_ctypes],
-      [_curses],
-      [_curses_panel],
-      [_dbm],
-      [_gdbm],
-      [_multiprocessing],
-      [_posixshmem],
-      [_posixsubprocess],
-      [_scproxy],
-      [_tkinter],
-      [_xxsubinterpreters],
-      [fcntl],
-      [grp],
-      [nis],
-      [ossaudiodev],
-      [pwd],
-      [resource],
-      [readline],
-      [spwd],
-      [syslog],
-      [termios],
-    )
-  ],
-  dnl Some modules like _posixsubprocess do not work. We build them anyway
-  dnl so imports in tests do not fail.
-  [Emscripten/node*], [
-    PY_STDLIB_MOD_SET_NA(
-      [_ctypes],
       [_curses],
       [_curses_panel],
       [_dbm],
@@ -6639,24 +6618,18 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
       [spwd],
       [syslog],
     )
-  ],
-  [WASI/*], [
-    PY_STDLIB_MOD_SET_NA(
-      [_ctypes],
-      [_ctypes_test],
-      [_curses],
-      [_curses_panel],
-      [_dbm],
-      [_gdbm],
-      [_scproxy],
-      [_tkinter],
-      [_xxsubinterpreters],
-      [grp],
-      [nis],
-      [ossaudiodev],
-      [pwd],
-      [spwd],
-      [syslog],
+    AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+      [Emscripten/browser*], [
+        dnl These modules are not particularly useful in browsers.
+        PY_STDLIB_MOD_SET_NA(
+          [fcntl],
+          [resource],
+          [readline],
+          [termios],
+        )
+      ],
+      [Emscripten/node*], [],
+      [WASI/*], []
     )
   ],
   [PY_STDLIB_MOD_SET_NA([_scproxy])]
