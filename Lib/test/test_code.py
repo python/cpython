@@ -230,9 +230,7 @@ class CodeTest(unittest.TestCase):
                         co.co_name,
                         co.co_qualname,
                         co.co_firstlineno,
-                        co.co_lnotab,
-                        co.co_endlinetable,
-                        co.co_columntable,
+                        co.co_linetable,
                         co.co_exceptiontable,
                         co.co_freevars,
                         co.co_cellvars)
@@ -273,8 +271,6 @@ class CodeTest(unittest.TestCase):
             ("co_filename", "newfilename"),
             ("co_name", "newname"),
             ("co_linetable", code2.co_linetable),
-            ("co_endlinetable", code2.co_endlinetable),
-            ("co_columntable", code2.co_columntable),
         ):
             with self.subTest(attr=attr, value=value):
                 new_code = code.replace(**{attr: value})
@@ -311,9 +307,7 @@ class CodeTest(unittest.TestCase):
                          co.co_name,
                          co.co_qualname,
                          co.co_firstlineno,
-                         co.co_lnotab,
-                         co.co_endlinetable,
-                         co.co_columntable,
+                         co.co_linetable,
                          co.co_exceptiontable,
                          co.co_freevars,
                          co.co_cellvars,
@@ -391,14 +385,17 @@ class CodeTest(unittest.TestCase):
         )
 
     def test_endline_and_columntable_none_when_no_debug_ranges(self):
-        # Make sure that if `-X no_debug_ranges` is used, the endlinetable and
-        # columntable are None.
+        # Make sure that if `-X no_debug_ranges` is used, there is
+        # minimal debug info
         code = textwrap.dedent("""
             def f():
                 pass
 
-            assert f.__code__.co_endlinetable is None
-            assert f.__code__.co_columntable is None
+            positions = f.__code__.co_positions()
+            for line, end_line, column, end_column in positions:
+                assert line == end_line
+                assert column is None
+                assert end_column is None
             """)
         assert_python_ok('-X', 'no_debug_ranges', '-c', code)
 
@@ -408,8 +405,11 @@ class CodeTest(unittest.TestCase):
             def f():
                 pass
 
-            assert f.__code__.co_endlinetable is None
-            assert f.__code__.co_columntable is None
+            positions = f.__code__.co_positions()
+            for line, end_line, column, end_column in positions:
+                assert line == end_line
+                assert column is None
+                assert end_column is None
             """)
         assert_python_ok('-c', code, PYTHONNODEBUGRANGES='1')
 
@@ -421,34 +421,9 @@ class CodeTest(unittest.TestCase):
             x = 1
         new_code = func.__code__.replace(co_linetable=b'')
         positions = new_code.co_positions()
-        next(positions) # Skip RESUME at start
         for line, end_line, column, end_column in positions:
             self.assertIsNone(line)
             self.assertEqual(end_line, new_code.co_firstlineno + 1)
-
-    @requires_debug_ranges()
-    def test_co_positions_empty_endlinetable(self):
-        def func():
-            x = 1
-        new_code = func.__code__.replace(co_endlinetable=b'')
-        positions = new_code.co_positions()
-        next(positions) # Skip RESUME at start
-        for line, end_line, column, end_column in positions:
-            self.assertEqual(line, new_code.co_firstlineno + 1)
-            self.assertIsNone(end_line)
-
-    @requires_debug_ranges()
-    def test_co_positions_empty_columntable(self):
-        def func():
-            x = 1
-        new_code = func.__code__.replace(co_columntable=b'')
-        positions = new_code.co_positions()
-        next(positions) # Skip RESUME at start
-        for line, end_line, column, end_column in positions:
-            self.assertEqual(line, new_code.co_firstlineno + 1)
-            self.assertEqual(end_line, new_code.co_firstlineno + 1)
-            self.assertIsNone(column)
-            self.assertIsNone(end_column)
 
 
 def isinterned(s):
@@ -526,6 +501,122 @@ class CodeWeakRefTest(unittest.TestCase):
         gc_collect()  # For PyPy or other GCs.
         self.assertFalse(bool(coderef()))
         self.assertTrue(self.called)
+
+# Python implementation of location table parsing algorithm
+def read(it):
+    return next(it)
+
+def read_varint(it):
+    b = read(it)
+    val = b & 63;
+    shift = 0;
+    while b & 64:
+        b = read(it)
+        shift += 6
+        val |= (b&63) << shift
+    return val
+
+def read_signed_varint(it):
+    uval = read_varint(it)
+    if uval & 1:
+        return -(uval >> 1)
+    else:
+        return uval >> 1
+
+def parse_location_table(code):
+    line = code.co_firstlineno
+    it = iter(code.co_linetable)
+    while True:
+        try:
+            first_byte = read(it)
+        except StopIteration:
+            return
+        code = (first_byte >> 3) & 15
+        length = (first_byte & 7) + 1
+        if code == 15:
+            yield (code, length, None, None, None, None)
+        elif code == 14:
+            line_delta = read_signed_varint(it)
+            line += line_delta
+            end_line = line + read_varint(it)
+            col = read_varint(it)
+            if col == 0:
+                col = None
+            else:
+                col -= 1
+            end_col = read_varint(it)
+            if end_col == 0:
+                end_col = None
+            else:
+                end_col -= 1
+            yield (code, length, line, end_line, col, end_col)
+        elif code == 13: # No column
+            line_delta = read_signed_varint(it)
+            line += line_delta
+            yield (code, length, line, line, None, None)
+        elif code in (10, 11, 12): # new line
+            line_delta = code - 10
+            line += line_delta
+            column = read(it)
+            end_column = read(it)
+            yield (code, length, line, line, column, end_column)
+        else:
+            assert (0 <= code < 10)
+            second_byte = read(it)
+            column = code << 3 | (second_byte >> 4)
+            yield (code, length, line, line, column, column + (second_byte & 15))
+
+def positions_from_location_table(code):
+    for _, length, line, end_line, col, end_col in parse_location_table(code):
+        for _ in range(length):
+            yield (line, end_line, col, end_col)
+
+def misshappen():
+    """
+
+
+
+
+
+    """
+    x = (
+
+
+        4
+
+        +
+
+        y
+
+    )
+    y = (
+        a
+        +
+            b
+                +
+
+                d
+        )
+    return q if (
+
+        x
+
+        ) else p
+
+
+class CodeLocationTest(unittest.TestCase):
+
+    def check_positions(self, func):
+        pos1 = list(func.__code__.co_positions())
+        pos2 = list(positions_from_location_table(func.__code__))
+        for l1, l2 in zip(pos1, pos2):
+            self.assertEqual(l1, l2)
+        self.assertEqual(len(pos1), len(pos2))
+
+
+    def test_positions(self):
+        self.check_positions(parse_location_table)
+        self.check_positions(misshappen)
 
 
 if check_impl_detail(cpython=True) and ctypes is not None:

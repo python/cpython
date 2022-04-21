@@ -176,8 +176,6 @@ struct _PyCodeConstructor {
     PyObject *code;
     int firstlineno;
     PyObject *linetable;
-    PyObject *endlinetable;
-    PyObject *columntable;
 
     /* used by the code */
     PyObject *consts;
@@ -221,21 +219,10 @@ extern PyObject* _PyCode_GetCellvars(PyCodeObject *);
 extern PyObject* _PyCode_GetFreevars(PyCodeObject *);
 extern PyObject* _PyCode_GetCode(PyCodeObject *);
 
-/* Return the ending source code line number from a bytecode index. */
-extern int _PyCode_Addr2EndLine(PyCodeObject *, int);
-
-/* Return the ending source code line number from a bytecode index. */
-extern int _PyCode_Addr2EndLine(PyCodeObject *, int);
-/* Return the starting source code column offset from a bytecode index. */
-extern int _PyCode_Addr2Offset(PyCodeObject *, int);
-/* Return the ending source code column offset from a bytecode index. */
-extern int _PyCode_Addr2EndOffset(PyCodeObject *, int);
-
 /** API for initializing the line number tables. */
 extern int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
-extern int _PyCode_InitEndAddressRange(PyCodeObject* co, PyCodeAddressRange* bounds);
 
-/** Out of process API for initializing the line number table. */
+/** Out of process API for initializing the location table. */
 extern void _PyLineTable_InitAddressRange(
     const char *linetable,
     Py_ssize_t length,
@@ -444,6 +431,40 @@ read_obj(uint16_t *p)
 #endif
     return (PyObject *)val;
 }
+
+static inline int
+write_varint(uint8_t *ptr, unsigned int val)
+{
+    int written = 1;
+    while (val >= 64) {
+        *ptr++ = 64 | (val & 63);
+        val >>= 6;
+        written++;
+    }
+    *ptr = val;
+    return written;
+}
+
+static inline int
+write_signed_varint(uint8_t *ptr, int val)
+{
+    if (val < 0) {
+        val = ((-val)<<1) | 1;
+    }
+    else {
+        val = val << 1;
+    }
+    return write_varint(ptr, val);
+}
+
+static inline int
+write_location_entry_start(uint8_t *ptr, int code, int length)
+{
+    assert((code & 15) == code);
+    *ptr = 128 | (code << 3) | (length - 1);
+    return 1;
+}
+
 
 #ifdef __cplusplus
 }
