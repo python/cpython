@@ -884,6 +884,7 @@ Deprecated
   * :mod:`msilib`
   * :mod:`nis`
   * :mod:`nntplib`
+  * :mod:`pipes`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
