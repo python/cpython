@@ -8322,6 +8322,38 @@ fix_cell_offsets(struct compiler *c, basicblock *entryblock, int *fixedmap)
 static void
 propagate_line_numbers(struct assembler *a);
 
+static void
+eliminate_empty_basic_blocks(basicblock *entry);
+
+
+static void
+remove_redundant_jumps(basicblock *entry) {
+    /* If a non-empty block ends with a jump instruction, check if the next
+     * non-empty block reached through normal flow control is the target
+     * of that jump. If it is, then the jump instruction is redundant and
+     * can be deleted.
+     */
+    int removed = 0;
+    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+        if (b->b_iused > 0) {
+            struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
+            assert(!IS_ASSEMBLER_OPCODE(b_last_instr->i_opcode));
+            if (b_last_instr->i_opcode == JUMP ||
+                b_last_instr->i_opcode == JUMP_NO_INTERRUPT) {
+                if (b_last_instr->i_target == b->b_next) {
+                    assert(b->b_next->b_iused);
+                    b->b_nofallthrough = 0;
+                    b_last_instr->i_opcode = NOP;
+                    removed++;
+                }
+            }
+        }
+    }
+    if (removed) {
+        eliminate_empty_basic_blocks(entry);
+    }
+}
+
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
 {
@@ -8434,6 +8466,8 @@ assemble(struct compiler *c, int addNone)
     convert_exception_handlers_to_nops(entryblock);
 
     push_cold_blocks_to_end(a.a_entry);
+
+    remove_redundant_jumps(a.a_entry);
 
     for (basicblock *b = a.a_entry; b != NULL; b = b->b_next) {
         clean_basic_block(b);
@@ -9279,30 +9313,8 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         clean_basic_block(b);
     }
-    /* Delete jump instructions made redundant by previous step. If a non-empty
-       block ends with a jump instruction, check if the next non-empty block
-       reached through normal flow control is the target of that jump. If it
-       is, then the jump instruction is redundant and can be deleted.
-    */
-    int maybe_empty_blocks = 0;
-    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
-        if (b->b_iused > 0) {
-            struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
-            assert(!IS_ASSEMBLER_OPCODE(b_last_instr->i_opcode));
-            if (b_last_instr->i_opcode == JUMP ||
-                b_last_instr->i_opcode == JUMP_NO_INTERRUPT) {
-                if (b_last_instr->i_target == b->b_next) {
-                    assert(b->b_next->b_iused);
-                    b->b_nofallthrough = 0;
-                    b_last_instr->i_opcode = NOP;
-                    maybe_empty_blocks = 1;
-                }
-            }
-        }
-    }
-    if (maybe_empty_blocks) {
-        eliminate_empty_basic_blocks(a->a_entry);
-    }
+    /* Delete jump instructions made redundant by previous step. */
+    remove_redundant_jumps(a->a_entry);
     return 0;
 }
 
