@@ -13,16 +13,24 @@ typedef struct {
 PyAPI_FUNC(int) _PyTuple_Resize(PyObject **, Py_ssize_t);
 PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
 
-/* Macros trading safety for speed */
-
 /* Cast argument to PyTupleObject* type. */
 #define _PyTuple_CAST(op) (assert(PyTuple_Check(op)), (PyTupleObject *)(op))
 
-#define PyTuple_GET_SIZE(op)    Py_SIZE(_PyTuple_CAST(op))
+// Macros and static inline functions, trading safety for speed
 
-#define PyTuple_GET_ITEM(op, i) (_PyTuple_CAST(op)->ob_item[i])
+static inline Py_ssize_t PyTuple_GET_SIZE(PyTupleObject *op) {
+    return Py_SIZE(op);
+}
+#define PyTuple_GET_SIZE(op) PyTuple_GET_SIZE(_PyTuple_CAST(op))
 
-/* Macro, *only* to be used to fill in brand new tuples */
-#define PyTuple_SET_ITEM(op, i, v) _Py_RVALUE(_PyTuple_CAST(op)->ob_item[i] = (v))
+#define PyTuple_GET_ITEM(op, index) (_PyTuple_CAST(op)->ob_item[index])
+
+/* Function *only* to be used to fill in brand new tuples */
+static inline void
+PyTuple_SET_ITEM(PyTupleObject *op, Py_ssize_t index, PyObject *value) {
+    op->ob_item[index] = value;
+}
+#define PyTuple_SET_ITEM(op, index, value) \
+    PyTuple_SET_ITEM(_PyTuple_CAST(op), index, _PyObject_CAST(value))
 
 PyAPI_FUNC(void) _PyTuple_DebugMallocStats(FILE *out);
