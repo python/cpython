@@ -536,6 +536,8 @@ class TestMiscellaneous(unittest.TestCase):
     def test_getencoding(self):
         # Invoke getencoding to make sure it does not cause exceptions.
         enc = locale.getencoding()
+        self.assertIsInstance(enc, str)
+        self.assertNotEqual(enc, "")
         # make sure it is valid
         codecs.lookup(enc)
 
