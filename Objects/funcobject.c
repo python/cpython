@@ -678,11 +678,8 @@ static int
 func_clear(PyFunctionObject *op)
 {
     op->func_version = 0;
-    Py_CLEAR(op->func_code);
     Py_CLEAR(op->func_globals);
     Py_CLEAR(op->func_builtins);
-    Py_CLEAR(op->func_name);
-    Py_CLEAR(op->func_qualname);
     Py_CLEAR(op->func_module);
     Py_CLEAR(op->func_defaults);
     Py_CLEAR(op->func_kwdefaults);
@@ -690,6 +687,13 @@ func_clear(PyFunctionObject *op)
     Py_CLEAR(op->func_dict);
     Py_CLEAR(op->func_closure);
     Py_CLEAR(op->func_annotations);
+    // Don't Py_CLEAR(op->func_code), since code is always required
+    // to be non-NULL. Similarly, name and qualname shouldn't be NULL.
+    // However, name and qualname could be str subclasses, so they
+    // could have reference cycles. The solution is to replace them
+    // with a genuinely immutable string.
+    Py_SETREF(op->func_name, Py_NewRef(&_Py_STR(empty)));
+    Py_SETREF(op->func_qualname, Py_NewRef(&_Py_STR(empty)));
     return 0;
 }
 
@@ -701,6 +705,10 @@ func_dealloc(PyFunctionObject *op)
         PyObject_ClearWeakRefs((PyObject *) op);
     }
     (void)func_clear(op);
+    // These aren't cleared by func_clear().
+    Py_DECREF(op->func_code);
+    Py_DECREF(op->func_name);
+    Py_DECREF(op->func_qualname);
     PyObject_GC_Del(op);
 }
 
