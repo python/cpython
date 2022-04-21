@@ -1,0 +1,2 @@
+Use a single compact table for line starts, ends and column offsets. Reduces
+memory consumption for location info by half
