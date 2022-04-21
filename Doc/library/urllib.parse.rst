@@ -38,7 +38,7 @@ URL Parsing
 The URL parsing functions focus on splitting a URL string into its components,
 or on combining URL components into a URL string.
 
-.. function:: urlparse(urlstring, scheme='', allow_fragments=True, flags=None)
+.. function:: urlparse(urlstring, scheme='', allow_fragments=True, *, flags=None)
 
    Parse a URL into six components with respect to given scheme classes,
    returning a 6-item :term:`named tuple`. This corresponds to the general
@@ -349,7 +349,7 @@ or on combining URL components into a URL string.
    with an empty query; the RFC states that these are equivalent).
 
 
-.. function:: urljoin(base, url, allow_fragments=True, flags=None)
+.. function:: urljoin(base, url, allow_fragments=True, *, flags=None)
 
    Construct a full ("absolute") URL by combining a "base URL"
    (*base*) with another URL (*url*), and with behavior given by a

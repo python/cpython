@@ -411,7 +411,7 @@ def _fix_result_transcoding():
 _fix_result_transcoding()
 del _fix_result_transcoding
 
-def urlparse(url, scheme='', allow_fragments=True, flags=None):
+def urlparse(url, scheme='', allow_fragments=True, *, flags=None):
     """Parse a URL into 6 components:
     <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
 
@@ -562,7 +562,7 @@ def urlunsplit(components):
         url = url + '#' + fragment
     return _coerce_result(url)
 
-def urljoin(base, url, allow_fragments=True, flags=None):
+def urljoin(base, url, allow_fragments=True, *, flags=None):
     """Join a base URL and a possibly relative URL to form an absolute
     interpretation of the latter. Some logic may be enabled by setting
     the classes variable."""
