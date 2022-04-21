@@ -2697,7 +2697,7 @@ PyDoc_STRVAR(emscripten_info__doc__,
 \n\
 WebAssembly Emscripten platform information.");
 
-static PyTypeObject EmscriptenInfoType;
+static PyTypeObject *EmscriptenInfoType;
 
 static PyStructSequence_Field emscripten_info_fields[] = {
     {"emscripten_version", "Emscripten version (major, minor, micro)"},
@@ -2737,7 +2737,7 @@ make_emscripten_info(void)
     char *ua;
     int pos = 0;
 
-    emscripten_info = PyStructSequence_New(&EmscriptenInfoType);
+    emscripten_info = PyStructSequence_New(EmscriptenInfoType);
     if (emscripten_info == NULL) {
         return NULL;
     }
@@ -2927,10 +2927,9 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     }
 
 #ifdef __EMSCRIPTEN__
-    if (EmscriptenInfoType.tp_name == NULL) {
-        if (_PyStructSequence_InitType(&EmscriptenInfoType,
-                                       &emscripten_info_desc,
-                                       Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) {
+    if (EmscriptenInfoType == NULL) {
+        EmscriptenInfoType = PyStructSequence_NewType(&emscripten_info_desc);
+        if (EmscriptenInfoType == NULL) {
             goto type_init_failed;
         }
     }
@@ -3183,7 +3182,7 @@ _PySys_Fini(PyInterpreterState *interp)
         _PyStructSequence_FiniType(&Hash_InfoType);
         _PyStructSequence_FiniType(&AsyncGenHooksType);
 #ifdef __EMSCRIPTEN__
-        _PyStructSequence_FiniType(&EmscriptenInfoType);
+        Py_CLEAR(EmscriptenInfoType);
 #endif
     }
 }
