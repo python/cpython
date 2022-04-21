@@ -547,26 +547,32 @@ class ExceptionTests(unittest.TestCase):
                                              'pickled "%r", attribute "%s' %
                                              (e, checkArgName))
 
-    def test_note(self):
+    def test_notes(self):
         for e in [BaseException(1), Exception(2), ValueError(3)]:
             with self.subTest(e=e):
-                self.assertIsNone(e.__note__)
-                e.__note__ = "My Note"
-                self.assertEqual(e.__note__, "My Note")
+                self.assertFalse(hasattr(e, '__notes__'))
+                e.add_note("My Note")
+                self.assertEqual(e.__notes__, ["My Note"])
 
                 with self.assertRaises(TypeError):
-                    e.__note__ = 42
-                self.assertEqual(e.__note__, "My Note")
+                    e.add_note(42)
+                self.assertEqual(e.__notes__, ["My Note"])
 
-                e.__note__ = "Your Note"
-                self.assertEqual(e.__note__, "Your Note")
+                e.add_note("Your Note")
+                self.assertEqual(e.__notes__, ["My Note", "Your Note"])
+
+                del e.__notes__
+                self.assertFalse(hasattr(e, '__notes__'))
+
+                e.add_note("Our Note")
+                self.assertEqual(e.__notes__, ["Our Note"])
+
+                e.__notes__ = 42
+                self.assertEqual(e.__notes__, 42)
 
                 with self.assertRaises(TypeError):
-                    del e.__note__
-                self.assertEqual(e.__note__, "Your Note")
-
-                e.__note__ = None
-                self.assertIsNone(e.__note__)
+                    e.add_note("will not work")
+                self.assertEqual(e.__notes__, 42)
 
     def testWithTraceback(self):
         try:
@@ -2652,7 +2658,7 @@ class PEP626Tests(unittest.TestCase):
         def f():
             1/0
         self.lineno_after_raise(f, 1)
-        f.__code__ = f.__code__.replace(co_linetable=b'\x04\x80\xff\x80')
+        f.__code__ = f.__code__.replace(co_linetable=b'\xf8\xf8\xf8\xf9\xf8\xf8\xf8')
         self.lineno_after_raise(f, None)
 
     def test_lineno_after_raise_in_with_exit(self):

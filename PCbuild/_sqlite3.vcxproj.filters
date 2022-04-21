@@ -36,6 +36,9 @@
     <ClInclude Include="..\Modules\_sqlite\util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Modules\_sqlite\blob.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_sqlite\connection.c">
@@ -60,6 +63,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_sqlite\util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_sqlite\blob.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

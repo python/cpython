@@ -1,0 +1,1 @@
+Fixed a crash in a garbage-collection edge-case, in which a ``PyFunction_Type.tp_clear`` function could leave a python function object in an inconsistent state.
