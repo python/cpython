@@ -105,7 +105,7 @@ def iter_files():
 
 
 def iter_global_strings():
-    id_regex = re.compile(r'\b_Py_ID\((\w+)\)')
+    id_regex = re.compile(r'\b_Py_(?:Ref)?ID\((\w+)\)')
     str_regex = re.compile(r'\b_Py_DECLARE_STR\((\w+), "(.*?)"\)')
     for filename in iter_files():
         try:

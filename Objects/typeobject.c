@@ -566,8 +566,7 @@ type_module(PyTypeObject *type, void *context)
                 PyUnicode_InternInPlace(&mod);
         }
         else {
-            mod = &_Py_ID(builtins);
-            Py_INCREF(mod);
+            mod = _Py_RefID(builtins);
         }
     }
     return mod;

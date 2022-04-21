@@ -845,9 +845,7 @@ sys_getdefaultencoding_impl(PyObject *module)
 /*[clinic end generated code: output=256d19dfcc0711e6 input=d416856ddbef6909]*/
 {
     _Py_DECLARE_STR(utf_8, "utf-8");
-    PyObject *ret = &_Py_STR(utf_8);
-    Py_INCREF(ret);
-    return ret;
+    return _Py_RefSTR(utf_8);
 }
 
 /*[clinic input]

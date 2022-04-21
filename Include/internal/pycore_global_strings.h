@@ -370,8 +370,10 @@ struct _Py_global_strings {
 
 #define _Py_ID(NAME) \
      (_Py_SINGLETON(strings.identifiers._ ## NAME._ascii.ob_base))
+#define _Py_RefID(NAME) Py_NewRef(&_Py_ID(NAME))
 #define _Py_STR(NAME) \
      (_Py_SINGLETON(strings.literals._ ## NAME._ascii.ob_base))
+#define _Py_RefSTR(NAME) Py_NewRef(&_Py_STR(NAME))
 
 /* _Py_DECLARE_STR() should precede all uses of _Py_STR() in a function.
 
