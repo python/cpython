@@ -1,0 +1,2 @@
+Fix cookies getting sorted in :func:`CookieJar.__iter__` which is an extra behavior and not mentioned in RFC 2965 or Netscape cookie protocol.
+Now the cookies in ``CookieJar`` follows the order of the ``Set-Cookie`` header. Patch by Iman Kermani.
