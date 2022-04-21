@@ -1159,6 +1159,12 @@ C API Changes
   as its second parameter, instead of ``PyFrameObject*``.
   See :pep:`523` for more details of how to use this function pointer type.
 
+* :c:func:`PyCode_New` and :c:func:`PyCode_NewWithPosOnlyArgs` now take
+  an additional ``exception_table`` argument.
+  Using these functions should be avoided, if at all possible.
+  To get a custom code object: create a code object using the compiler,
+  then get a modified version with the ``replace`` method.
+
 New Features
 ------------
 
