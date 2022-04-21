@@ -32,7 +32,7 @@ def tearDownModule():
 class MimeTypesTestCase(unittest.TestCase):
     def setUp(self):
         self.db = mimetypes.MimeTypes()
-        
+
     def test_case_sensitivity(self):
         eq = self.assertEqual
         eq(self.db.guess_type("foobar.HTML"), self.db.guess_type("foobar.html"))
