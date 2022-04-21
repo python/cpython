@@ -2343,12 +2343,12 @@ Functions and decorators
 
    Here, the type annotations allow the type checker to infer that the
    last case can never execute, because ``arg`` is either
-   an :type:`int` or a :type:`str`, and both options are covered by
+   an :class:`int` or a :class:`str`, and both options are covered by
    earlier cases.
    If a type checker finds that a call to ``assert_never()`` is
    reachable, it will emit an error. For example, if the type annotation
    for ``arg`` was instead ``int | str | float``, the type checker would
-   emit an error pointing out that ``unreachable`` is of type :type:`float`.
+   emit an error pointing out that ``unreachable`` is of type :class:`float`.
 
    At runtime, this throws an exception when called.
 
