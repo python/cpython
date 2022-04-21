@@ -31,8 +31,15 @@ softkwlist = [
 {soft_keywords}
 ]
 
-iskeyword = frozenset(kwlist).__contains__
-issoftkeyword = frozenset(softkwlist).__contains__
+_kwset = frozenset(kwlist)
+def iskeyword(word, /):
+    """Return True if the string is a Python keyword, False otherwise."""
+    return word in _kwset
+
+_softkwset = frozenset(softkwlist)
+def issoftkeyword(word, /):
+    """Return True if the string is a Python soft keyword, False otherwise."""
+    return word in _softkwset
 '''.lstrip()
 
 EXTRA_KEYWORDS = ["async", "await"]
