@@ -318,11 +318,17 @@ def gen_ctypes_test(manifest, args, outfile):
                         ctypes_test.pythonapi[symbol_name]
 
             def test_feature_macros(self):
-                self.assertEqual(set(feature_macros), EXPECTED_IFDEFS)
+                self.assertEqual(set(get_feature_macros()), EXPECTED_IFDEFS)
 
+            # The feature macros for Windows are used in creating the DLL
+            # definition, so they must be known on all platforms.
+            # If we are on Windows, we check that the hardcoded data matches
+            # the reality.
             @unittest.skipIf(sys.platform != "win32", "Windows specific test")
             def test_windows_feature_macros(self):
-                self.assertEqual(set(feature_macros), WINDOWS_IFDEFS)
+                feature_macros = get_feature_macros()
+                feature_macros['Py_REF_DEBUG'] = False
+                self.assertEqual(feature_macros, WINDOWS_IFDEFS)
 
         SYMBOL_NAMES = (
     '''))
