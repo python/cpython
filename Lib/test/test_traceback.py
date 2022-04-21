@@ -615,6 +615,7 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
             '    ^^^^^^^^^^\n'
             f'  File "{TESTFN}", line {lineno_f}, in <module>\n'
             f'    {source}\n'
+            f'    {"^"*len(source)}\n'
         )
         self.assertEqual(result_lines, expected_error.splitlines())
 
