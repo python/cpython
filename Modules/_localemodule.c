@@ -480,8 +480,7 @@ _locale__getdefaultlocale_impl(PyObject *module)
     }
 
     /* cannot determine the language code (very unlikely) */
-    Py_INCREF(Py_None);
-    return Py_BuildValue("Os", Py_None, encoding);
+    return Py_BuildValue("Os", Py_RefNone(), encoding);
 }
 #endif
 

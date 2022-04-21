@@ -2055,8 +2055,7 @@ test_Z_code(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     obj = PyUnicode_FromString("test");
     PyTuple_SET_ITEM(tuple, 0, obj);
-    Py_INCREF(Py_None);
-    PyTuple_SET_ITEM(tuple, 1, Py_None);
+    PyTuple_SET_ITEM(tuple, 1, Py_RefNone());
 
     /* swap values on purpose */
     value1 = NULL;

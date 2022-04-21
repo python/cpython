@@ -5399,9 +5399,8 @@ datetime_subtract(PyObject *left, PyObject *right)
             int delta_d, delta_s, delta_us;
 
             if (GET_DT_TZINFO(left) == GET_DT_TZINFO(right)) {
-                offset2 = offset1 = Py_None;
-                Py_INCREF(offset1);
-                Py_INCREF(offset2);
+                offset1 = Py_RefNone();
+                offset2 = Py_RefNone();
             }
             else {
                 offset1 = datetime_utcoffset(left, NULL);

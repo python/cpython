@@ -961,8 +961,7 @@ PyState_RemoveModule(PyModuleDef* def)
         Py_FatalError("Module index out of bounds.");
     }
 
-    Py_INCREF(Py_None);
-    return PyList_SetItem(interp->modules_by_index, index, Py_None);
+    return PyList_SetItem(interp->modules_by_index, index, Py_RefNone());
 }
 
 // Used by finalize_modules()

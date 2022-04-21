@@ -53,18 +53,15 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
     Py_CLEAR(self->statement);
     Py_CLEAR(self->row_cast_map);
 
-    Py_INCREF(Py_None);
-    Py_XSETREF(self->description, Py_None);
+    Py_XSETREF(self->description, Py_RefNone());
 
-    Py_INCREF(Py_None);
-    Py_XSETREF(self->lastrowid, Py_None);
+    Py_XSETREF(self->lastrowid, Py_RefNone());
 
     self->arraysize = 1;
     self->closed = 0;
     self->rowcount = -1L;
 
-    Py_INCREF(Py_None);
-    Py_XSETREF(self->row_factory, Py_None);
+    Py_XSETREF(self->row_factory, Py_RefNone());
 
     if (!pysqlite_check_thread(self->connection)) {
         return -1;
@@ -514,8 +511,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     }
 
     /* reset description and rowcount */
-    Py_INCREF(Py_None);
-    Py_SETREF(self->description, Py_None);
+    Py_SETREF(self->description, Py_RefNone());
     self->rowcount = 0L;
 
     if (self->statement) {

@@ -415,11 +415,9 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
     Py_INCREF(tag);
     Py_XSETREF(self_elem->tag, tag);
 
-    Py_INCREF(Py_None);
-    _set_joined_ptr(&self_elem->text, Py_None);
+    _set_joined_ptr(&self_elem->text, Py_RefNone());
 
-    Py_INCREF(Py_None);
-    _set_joined_ptr(&self_elem->tail, Py_None);
+    _set_joined_ptr(&self_elem->tail, Py_RefNone());
 
     return 0;
 }
@@ -694,11 +692,9 @@ _elementtree_Element_clear_impl(ElementObject *self)
 {
     clear_extra(self);
 
-    Py_INCREF(Py_None);
-    _set_joined_ptr(&self->text, Py_None);
+    _set_joined_ptr(&self->text, Py_RefNone());
 
-    Py_INCREF(Py_None);
-    _set_joined_ptr(&self->tail, Py_None);
+    _set_joined_ptr(&self->tail, Py_RefNone());
 
     Py_RETURN_NONE;
 }

@@ -1998,8 +1998,7 @@ OSError_reduce(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
              * So, to recreate filename2, we need to pass in
              * winerror as well.
              */
-            Py_INCREF(Py_None);
-            PyTuple_SET_ITEM(args, 3, Py_None);
+            PyTuple_SET_ITEM(args, 3, Py_RefNone());
 
             /* filename2 */
             Py_INCREF(self->filename2);

@@ -2685,13 +2685,9 @@ zoneinfomodule_exec(PyObject *m)
     }
 
     if (NO_TTINFO.utcoff == NULL) {
-        NO_TTINFO.utcoff = Py_None;
-        NO_TTINFO.dstoff = Py_None;
-        NO_TTINFO.tzname = Py_None;
-
-        for (size_t i = 0; i < 3; ++i) {
-            Py_INCREF(Py_None);
-        }
+        NO_TTINFO.utcoff = Py_RefNone();
+        NO_TTINFO.dstoff = Py_RefNone();
+        NO_TTINFO.tzname = Py_RefNone();
     }
 
     if (initialize_caches()) {

@@ -104,13 +104,11 @@ get_proxy_settings(PyObject* Py_UNUSED(mod), PyObject *Py_UNUSED(ignored))
 
             aString = CFArrayGetValueAtIndex(anArray, i);
             if (aString == NULL) {
-                PyTuple_SetItem(v, i, Py_None);
-                Py_INCREF(Py_None);
+                PyTuple_SetItem(v, i, Py_RefNone());
             } else {
                 PyObject* t = cfstring_to_pystring(aString);
                 if (!t) {
-                    PyTuple_SetItem(v, i, Py_None);
-                    Py_INCREF(Py_None);
+                    PyTuple_SetItem(v, i, Py_RefNone());
                 } else {
                     PyTuple_SetItem(v, i, t);
                 }

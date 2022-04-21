@@ -2689,8 +2689,7 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     for (i=0 ; i < tuplesize ; i++) {
-        Py_INCREF(Py_None);
-        PyTuple_SET_ITEM(result, i, Py_None);
+        PyTuple_SET_ITEM(result, i, Py_RefNone());
     }
 
     /* create zipobject structure */

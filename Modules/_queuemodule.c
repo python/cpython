@@ -163,8 +163,7 @@ simplequeue_pop_item(simplequeueobject *self)
     assert(self->lst_pos < n);
 
     item = PyList_GET_ITEM(self->lst, self->lst_pos);
-    Py_INCREF(Py_None);
-    PyList_SET_ITEM(self->lst, self->lst_pos, Py_None);
+    PyList_SET_ITEM(self->lst, self->lst_pos, Py_RefNone());
     self->lst_pos += 1;
     count = n - self->lst_pos;
     if (self->lst_pos > count) {

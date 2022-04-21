@@ -1907,8 +1907,7 @@ cipher_to_tuple(const SSL_CIPHER *cipher)
 
     cipher_name = SSL_CIPHER_get_name(cipher);
     if (cipher_name == NULL) {
-        Py_INCREF(Py_None);
-        PyTuple_SET_ITEM(retval, 0, Py_None);
+        PyTuple_SET_ITEM(retval, 0, Py_RefNone());
     } else {
         v = PyUnicode_FromString(cipher_name);
         if (v == NULL)
@@ -1918,8 +1917,7 @@ cipher_to_tuple(const SSL_CIPHER *cipher)
 
     cipher_protocol = SSL_CIPHER_get_version(cipher);
     if (cipher_protocol == NULL) {
-        Py_INCREF(Py_None);
-        PyTuple_SET_ITEM(retval, 1, Py_None);
+        PyTuple_SET_ITEM(retval, 1, Py_RefNone());
     } else {
         v = PyUnicode_FromString(cipher_protocol);
         if (v == NULL)
@@ -5209,7 +5207,7 @@ _ssl_get_default_verify_paths_impl(PyObject *module)
 #define CONVERT(info, target) { \
         const char *tmp = (info); \
         target = NULL; \
-        if (!tmp) { Py_INCREF(Py_None); target = Py_None; } \
+        if (!tmp) { target = Py_RefNone(); } \
         else if ((target = PyUnicode_DecodeFSDefault(tmp)) == NULL) { \
             target = PyBytes_FromString(tmp); } \
         if (!target) goto error; \
