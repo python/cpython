@@ -565,7 +565,7 @@ def urlunsplit(components):
 def urljoin(base, url, allow_fragments=True, *, flags=None):
     """Join a base URL and a possibly relative URL to form an absolute
     interpretation of the latter. Some logic may be enabled by setting
-    the classes variable."""
+    the flags variable."""
     if not base:
         return url
     if not url:
