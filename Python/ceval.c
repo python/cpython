@@ -52,16 +52,36 @@
 // preprocessor.
 
 #undef Py_DECREF
-#define Py_DECREF(arg) do { PyObject *op = _PyObject_CAST(arg); if (--op->ob_refcnt == 0) { destructor d = Py_TYPE(op)->tp_dealloc; (*d)(op); } } while (0)
-
-#undef Py_IS_TYPE
-#define Py_IS_TYPE(ob, type) (_PyObject_CAST(ob)->ob_type == (type))
+#define Py_DECREF(arg) \
+    do { \
+        PyObject *op = _PyObject_CAST(arg); \
+        if (--op->ob_refcnt == 0) { \
+            destructor dealloc = Py_TYPE(op)->tp_dealloc; \
+            (*dealloc)(op); \
+        } \
+    } while (0)
 
 #undef Py_XDECREF
-#define Py_XDECREF(arg) do { PyObject *op1 = _PyObject_CAST(arg); if (op1 != NULL) { Py_DECREF(op1); } } while (0)
+#define Py_XDECREF(arg) \
+    do { \
+        PyObject *xop = _PyObject_CAST(arg); \
+        if (xop != NULL) { \
+            Py_DECREF(xop); \
+        } \
+    } while (0)
+
+#undef Py_IS_TYPE
+#define Py_IS_TYPE(ob, type) \
+    (_PyObject_CAST_CONST(ob)->ob_type == (type))
 
 #undef _Py_DECREF_SPECIALIZED
-#define _Py_DECREF_SPECIALIZED(arg, dealloc) do { PyObject *op = _PyObject_CAST(arg); if (--op->ob_refcnt == 0) { (dealloc)(op); } } while (0)
+#define _Py_DECREF_SPECIALIZED(arg, dealloc) \
+    do { \
+        PyObject *op = _PyObject_CAST(arg); \
+        if (--op->ob_refcnt == 0) { \
+            (dealloc)(op); \
+        } \
+    } while (0)
 #endif
 
 // GH-89279: Similar to above, force inlining by using a macro.
