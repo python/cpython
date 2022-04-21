@@ -15582,7 +15582,6 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
         assert(PyUnicode_IS_READY(s));
         switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_INTERNED_IMMORTAL:
-            // printf("String: %s, ptr: %p\n", PyUnicode_AsUTF8(PyObject_Repr(s)), (void *) s);
             // Skip the Immortal Instance check and directly set the refcnt.
             s->ob_refcnt = 2;
 #ifdef Py_REF_DEBUG

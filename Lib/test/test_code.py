@@ -576,53 +576,6 @@ if check_impl_detail(cpython=True) and ctypes is not None:
             self.assertEqual(GetExtra(f.__code__, FREE_INDEX+100,
                               ctypes.c_voidp(100)), 0)
 
-        # TODO(eelizondo): Temporarily disable. Come back and fix
-        # def test_free_called(self):
-        #     # Verify that the provided free function gets invoked
-        #     # when the code object is cleaned up.
-        #     f = self.get_func()
-
-        #     SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(100))
-        #     del f
-        #     self.assertEqual(LAST_FREED, 100)
-
-        # def test_get_set(self):
-        #     # Test basic get/set round tripping.
-        #     f = self.get_func()
-
-        #     extra = ctypes.c_voidp()
-
-        #     SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(200))
-        #     # reset should free...
-        #     SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(300))
-        #     self.assertEqual(LAST_FREED, 200)
-
-        #     extra = ctypes.c_voidp()
-        #     GetExtra(f.__code__, FREE_INDEX, extra)
-        #     self.assertEqual(extra.value, 300)
-        #     del f
-
-        # TODO(eelizondo): Temporarily disable. Come back and fix
-        # def test_free_different_thread(self):
-        #     # Freeing a code object on a different thread then
-        #     # where the co_extra was set should be safe.
-        #     f = self.get_func()
-        #     class ThreadTest(threading.Thread):
-        #         def __init__(self, f, test):
-        #             super().__init__()
-        #             self.f = f
-        #             self.test = test
-        #         def run(self):
-        #             del self.f
-        #             self.test.assertEqual(LAST_FREED, 500)
-
-        #     SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(500))
-        #     tt = ThreadTest(f, self)
-        #     del f
-        #     tt.start()
-        #     tt.join()
-        #     self.assertEqual(LAST_FREED, 500)
-
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())
