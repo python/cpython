@@ -1507,9 +1507,11 @@ config_get_xoption_value(const PyConfig *config, wchar_t *name)
 static PyStatus
 config_init_hash_seed(PyConfig *config)
 {
+    static_assert(sizeof(_Py_HashSecret_t) == sizeof(_Py_HashSecret.uc),
+                  "_Py_HashSecret_t has wrong size");
+
     const char *seed_text = config_get_env(config, "PYTHONHASHSEED");
 
-    Py_BUILD_ASSERT(sizeof(_Py_HashSecret_t) == sizeof(_Py_HashSecret.uc));
     /* Convert a text seed to a numeric one */
     if (seed_text && strcmp(seed_text, "random") != 0) {
         const char *endptr = seed_text;
