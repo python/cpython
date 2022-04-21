@@ -42,12 +42,18 @@ bound into a function.
    ways, meaning that subtle changes to values are likely to result in incorrect
    execution or VM crashes. Use this function only with extreme care.
 
+   .. versionchanged:: 3.11
+      Added ``exceptiontable`` parameter.
+
 .. c:function:: PyCodeObject* PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
    Similar to :c:func:`PyCode_New`, but with an extra "posonlyargcount" for positional-only arguments.
    The same caveats that apply to ``PyCode_New`` also apply to this function.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.11
+      Added ``exceptiontable`` parameter.
 
 .. c:function:: PyCodeObject* PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 
