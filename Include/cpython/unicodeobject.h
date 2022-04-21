@@ -590,10 +590,14 @@ Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicodeAndSize(
 /* Fast access macros */
 
 Py_DEPRECATED(3.3)
-static inline Py_ssize_t PyUnicode_WSTR_LENGTH(PyObject *op) {
-    return PyUnicode_IS_COMPACT_ASCII(op) ?
-            _PyASCIIObject_CAST(op)->length :
-            _PyCompactUnicodeObject_CAST(op)->wstr_length;
+static inline Py_ssize_t PyUnicode_WSTR_LENGTH(PyObject *op)
+{
+    if (PyUnicode_IS_COMPACT_ASCII(op)) {
+        return _PyASCIIObject_CAST(op)->length;
+    }
+    else {
+        return _PyCompactUnicodeObject_CAST(op)->wstr_length;
+    }
 }
 #define PyUnicode_WSTR_LENGTH(op) PyUnicode_WSTR_LENGTH(_PyObject_CAST(op))
 
@@ -603,16 +607,25 @@ static inline Py_ssize_t PyUnicode_WSTR_LENGTH(PyObject *op) {
    on request.  Use PyUnicode_GET_LENGTH() for the length in code points. */
 
 /* Py_DEPRECATED(3.3) */
-#define PyUnicode_GET_SIZE(op)                       \
-    (_PyASCIIObject_CAST(op)->wstr ?                 \
-      PyUnicode_WSTR_LENGTH(op) :                    \
-      ((void)PyUnicode_AsUnicode(_PyObject_CAST(op)),\
-       assert(_PyASCIIObject_CAST(op)->wstr),        \
-       PyUnicode_WSTR_LENGTH(op)))
+static inline Py_ssize_t PyUnicode_GET_SIZE(PyObject *op)
+{
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    if (_PyASCIIObject_CAST(op)->wstr == NULL) {
+        (void)PyUnicode_AsUnicode(op);
+        assert(_PyASCIIObject_CAST(op)->wstr != NULL);
+    }
+    return PyUnicode_WSTR_LENGTH(op);
+    _Py_COMP_DIAG_POP
+}
+#define PyUnicode_GET_SIZE(op) PyUnicode_GET_SIZE(_PyObject_CAST(op))
 
-/* Py_DEPRECATED(3.3) */
-#define PyUnicode_GET_DATA_SIZE(op) \
-    (PyUnicode_GET_SIZE(op) * Py_UNICODE_SIZE)
+ /* Py_DEPRECATED(3.3) */
+ static inline Py_ssize_t PyUnicode_GET_DATA_SIZE(PyObject *op)
+{
+    return PyUnicode_GET_SIZE(op) * Py_UNICODE_SIZE;
+}
+#define PyUnicode_GET_DATA_SIZE(op) PyUnicode_GET_DATA_SIZE(_PyObject_CAST(op))
 
 /* Alias for PyUnicode_AsUnicode().  This will create a wchar_t/Py_UNICODE
    representation on demand.  Using this macro is very inefficient now,
@@ -620,13 +633,26 @@ static inline Py_ssize_t PyUnicode_WSTR_LENGTH(PyObject *op) {
    use PyUnicode_WRITE() and PyUnicode_READ(). */
 
 /* Py_DEPRECATED(3.3) */
-#define PyUnicode_AS_UNICODE(op) \
-    (_PyASCIIObject_CAST(op)->wstr ? _PyASCIIObject_CAST(op)->wstr : \
-     PyUnicode_AsUnicode(_PyObject_CAST(op)))
+static inline Py_UNICODE* PyUnicode_AS_UNICODE(PyObject *op)
+{
+    wchar_t *wstr = _PyASCIIObject_CAST(op)->wstr;
+    if (wstr != NULL) {
+        return wstr;
+    }
+
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    return PyUnicode_AsUnicode(op);
+    _Py_COMP_DIAG_POP
+}
+#define PyUnicode_AS_UNICODE(op) PyUnicode_AS_UNICODE(_PyObject_CAST(op))
 
 /* Py_DEPRECATED(3.3) */
-#define PyUnicode_AS_DATA(op) \
-    ((const char *)(PyUnicode_AS_UNICODE(op)))
+static inline const char* PyUnicode_AS_DATA(PyObject *op)
+{
+    return (const char *)PyUnicode_AS_UNICODE(op);
+}
+#define PyUnicode_AS_DATA(op) PyUnicode_AS_DATA(_PyObject_CAST(op))
 
 
 /* --- _PyUnicodeWriter API ----------------------------------------------- */
