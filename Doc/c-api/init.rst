@@ -1239,7 +1239,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
       The function now takes a *tstate* parameter.
 
    .. versionchanged:: 3.11
-      The *frame* parameter changed from ``PyFrameObject *`` to ``_PyInterpreterFrame *``.
+      The *frame* parameter changed from ``PyFrameObject*`` to ``_PyInterpreterFrame*``.
 
 .. c:function:: _PyFrameEvalFunction _PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
 
