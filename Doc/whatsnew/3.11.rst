@@ -181,14 +181,16 @@ the :mod:`typing` module.
 PEP 646: Variadic generics
 --------------------------
 
-:pep:`484` introduced ``TypeVar``, enabling creation of generics parameterised
-with a single type. The new :data:`TypeVarTuple` enables parameterisation
-with an *arbitrary* number of types - that is, a *variadic* type variable,
+:pep:`484` introduced :data:`~typing.TypeVar`, enabling creation
+of generics parameterised with a single type. :pep:`646` introduces
+:data:`~typing.TypeVarTuple`, enabling parameterisation
+with an *arbitrary* number of types. In other words,
+a :data:`~typing.TypeVarTuple` is a *variadic* type variable,
 enabling *variadic* generics. This enables a wide variety of use cases.
 In particular, it allows the type of array-like structures
 in numerical computing libraries such as NumPy and TensorFlow to be
-parameterised with the array *shape*, enabling static type checkers
-to catch shape-related bugs in code that uses these libraries.
+parameterised with the array *shape*. Static type checkers will now
+be able to catch shape-related bugs in code that uses these libraries.
 
 See :pep:`646` for more details.
 
@@ -196,18 +198,18 @@ See :pep:`646` for more details.
 Serhiy Storchaka and Jelle Zijlstra. PEP written by Mark Mendoza, Matthew
 Rahtz, Pradeep Kumar, and Vincent Siles.)
 
-PEP 655: Marking individual ``TypedDict`` items as required or non-required
+PEP 655: Marking individual ``TypedDict`` items as required or not-required
 ---------------------------------------------------------------------------
 
-:data:`typing.Required` and :data:`typing.NotRequired` provide a
+:data:`~typing.Required` and :data:`~typing.NotRequired` provide a
 straightforward way to mark whether individual items in a
-:data:`TypedDict` must be present. Previously, this was only possible
+:data:`~typing.TypedDict` must be present. Previously this was only possible
 using inheritance.
 
-As before, fields are required by default, unless the ``total=False``
+Fields are still required by default, unless the ``total=False``
 parameter is set.
 For example, the following specifies a dictionary with one required and
-one non-required key::
+one not-required key::
 
    class Movie(TypedDict):
       title: str
@@ -231,9 +233,9 @@ written by David Foster.)
 PEP 673: ``Self`` type
 ----------------------
 
-The new :data:`typing.Self` annotation provides a simple and intuitive
-way to annotate methods that returnan instance of their class. This
-behaves the same as the :data:`typing.TypeVar`-based approach specified
+The new :data:`~typing.Self` annotation provides a simple and intuitive
+way to annotate methods that return an instance of their class. This
+behaves the same as the :data:`~typing.TypeVar`-based approach specified
 in :pep:`484` but is more concise and easier to follow.
 
 Common use cases include alternative constructors provided as classmethods
@@ -253,6 +255,9 @@ and :meth:`~object.__enter__` methods that return ``self``::
 
        ...
 
+:data:`~typing.Self` can also be used to annotate method parameters
+or attributes of the same type as their enclosing class.
+
 See :pep:`673` for more details.
 
 (Contributed by James Hilton-Balfe in :issue:`46534`. PEP written by
@@ -261,13 +266,13 @@ Pradeep Kumar and James Hilton-Balfe.)
 PEP 675: Arbitrary literal string type
 --------------------------------------
 
-The new :data:`typing.LiteralString` annotation may be used to indicate
+The new :data:`~typing.LiteralString` annotation may be used to indicate
 that a function parameter can be of any literal string type. This allows
 a function to accept arbitrary literal string types, as well as strings
-created from other literal strings. This allows static type checkers to
+created from other literal strings. Type checkers can then
 enforce that sensitive functions, such as those that execute SQL
 statements or shell commands, are called only with static arguments,
-which provides some protection against injection attacks.
+providing protection against injection attacks.
 
 For example, a SQL query function could be annotated as follows::
 
@@ -279,11 +284,11 @@ For example, a SQL query function could be annotated as follows::
        query_string: LiteralString,
        table_name: LiteralString,
    ) -> None:
-       run_query("SELECT * FROM students")  # ok
-       run_query(query_string)  # ok
+       run_query("SELECT * FROM students")       # ok
+       run_query(query_string)                   # ok
        run_query("SELECT * FROM " + table_name)  # ok
-       run_query(arbitrary_string)  # type checker error
-       run_query(  # type checker error
+       run_query(arbitrary_string)               # type checker error
+       run_query(                                # type checker error
            f"SELECT * FROM students WHERE name = {arbitrary_string}"
        )
 
