@@ -1,0 +1,2 @@
+Python is now built with ``-std=c11`` compiler option, rather than
+``-std=c99``. Patch by Victor Stinner.

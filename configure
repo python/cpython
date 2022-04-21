@@ -7871,7 +7871,7 @@ UNIVERSAL_ARCH_FLAGS=
 # tweak BASECFLAGS based on compiler and platform
 case $GCC in
 yes)
-    CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
+    CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
 
 
 
@@ -12180,6 +12180,14 @@ LIBS=$save_LIBS
 
 
 fi
+
+case $ac_sys_system in #(
+  NetBSD*) :
+    OSSAUDIODEV_LIBS="-lossaudio" ;; #(
+  *) :
+    OSSAUDIODEV_LIBS=""
+ ;;
+esac
 
 
 pkg_failed=no
@@ -23250,7 +23258,7 @@ fi
   if test "x$py_cv_module_ossaudiodev" = xyes; then :
 
 
-
+    as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV_LDFLAGS=$OSSAUDIODEV_LIBS$as_nl"
 
 fi
    if test "$py_cv_module_ossaudiodev" = yes; then

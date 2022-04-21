@@ -1546,6 +1546,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/longintrepr.h \
 		$(srcdir)/Include/cpython/longobject.h \
 		$(srcdir)/Include/cpython/methodobject.h \
+		$(srcdir)/Include/cpython/modsupport.h \
 		$(srcdir)/Include/cpython/object.h \
 		$(srcdir)/Include/cpython/objimpl.h \
 		$(srcdir)/Include/cpython/odictobject.h \
@@ -1558,6 +1559,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
 		$(srcdir)/Include/cpython/pythonrun.h \
+		$(srcdir)/Include/cpython/pythread.h \
 		$(srcdir)/Include/cpython/pytime.h \
 		$(srcdir)/Include/cpython/setobject.h \
 		$(srcdir)/Include/cpython/sysmodule.h \

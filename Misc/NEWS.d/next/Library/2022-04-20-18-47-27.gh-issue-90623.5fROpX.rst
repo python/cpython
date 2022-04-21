@@ -1,0 +1,2 @@
+:func:`signal.raise_signal` and :func:`os.kill` now check immediately for
+pending signals. Patch by Victor Stinner.

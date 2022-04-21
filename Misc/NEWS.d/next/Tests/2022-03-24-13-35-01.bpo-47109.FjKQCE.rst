@@ -1,0 +1,3 @@
+Test for :mod:`ctypes.macholib.dyld`, :mod:`ctypes.macholib.dylib`, and
+:mod:`ctypes.macholib.framework` are brought from manual pre-:mod:`unittest`
+times to :mod:`ctypes.test` location and structure. Patch by Oleg Iarygin.

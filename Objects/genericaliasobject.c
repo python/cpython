@@ -341,6 +341,11 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     return newargs;
 }
 
+PyDoc_STRVAR(genericalias__doc__,
+"Represent a PEP 585 generic type\n"
+"\n"
+"E.g. for t = list[int], t.__origin__ is list and t.__args__ is (int,).");
+
 static PyObject *
 ga_getitem(PyObject *self, PyObject *item)
 {
@@ -678,7 +683,9 @@ ga_iter_clear(PyObject *self) {
     return 0;
 }
 
-static PyTypeObject Py_GenericAliasIterType = {
+// gh-91632: _Py_GenericAliasIterType is exported  to be cleared
+// in _PyTypes_FiniTypes.
+PyTypeObject _Py_GenericAliasIterType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "generic_alias_iterator",
     .tp_basicsize = sizeof(gaiterobject),
@@ -692,7 +699,7 @@ static PyTypeObject Py_GenericAliasIterType = {
 
 static PyObject *
 ga_iter(PyObject *self) {
-    gaiterobject *gi = PyObject_GC_New(gaiterobject, &Py_GenericAliasIterType);
+    gaiterobject *gi = PyObject_GC_New(gaiterobject, &_Py_GenericAliasIterType);
     if (gi == NULL) {
         return NULL;
     }
@@ -703,14 +710,11 @@ ga_iter(PyObject *self) {
 
 // TODO:
 // - argument clinic?
-// - __doc__?
 // - cache?
 PyTypeObject Py_GenericAliasType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "types.GenericAlias",
-    .tp_doc = "Represent a PEP 585 generic type\n"
-              "\n"
-              "E.g. for t = list[int], t.__origin__ is list and t.__args__ is (int,).",
+    .tp_doc = genericalias__doc__,
     .tp_basicsize = sizeof(gaobject),
     .tp_dealloc = ga_dealloc,
     .tp_repr = ga_repr,

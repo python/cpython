@@ -33,24 +33,33 @@ bound into a function.
 
    Return the number of free variables in *co*.
 
-.. c:function:: PyCodeObject* PyCode_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *lnotab)
+.. c:function:: PyCodeObject* PyCode_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
    Return a new code object.  If you need a dummy code object to create a frame,
    use :c:func:`PyCode_NewEmpty` instead.  Calling :c:func:`PyCode_New` directly
-   can bind you to a precise Python version since the definition of the bytecode
-   changes often.
+   will bind you to a precise Python version since the definition of the bytecode
+   changes often. The many arguments of this function are inter-dependent in complex
+   ways, meaning that subtle changes to values are likely to result in incorrect
+   execution or VM crashes. Use this function only with extreme care.
 
-.. c:function:: PyCodeObject* PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *lnotab)
+   .. versionchanged:: 3.11
+      Added ``exceptiontable`` parameter.
+
+.. c:function:: PyCodeObject* PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
    Similar to :c:func:`PyCode_New`, but with an extra "posonlyargcount" for positional-only arguments.
+   The same caveats that apply to ``PyCode_New`` also apply to this function.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.11
+      Added ``exceptiontable`` parameter.
 
 .. c:function:: PyCodeObject* PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 
    Return a new empty code object with the specified filename,
-   function name, and first line number.  It is illegal to
-   :func:`exec` or :func:`eval` the resulting code object.
+   function name, and first line number. The resulting code
+   object will raise an ``Exception`` if executed.
 
 .. c:function:: int PyCode_Addr2Line(PyCodeObject *co, int byte_offset)
 
