@@ -1156,7 +1156,7 @@ C API Changes
   (Contributed by Kumar Aditya in :issue:`46608`.)
 
 * :c:func:`_PyFrameEvalFunction` now takes :c:struct:`_PyInterpreterFrame`
-  as its second parameter, instead of `:c:struct:`PyFrameObject`.
+  as its second parameter, instead of :c:struct:`PyFrameObject`.
   See PEP 523 for more details of how to use this function pointer type.
 
 New Features
