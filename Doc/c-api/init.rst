@@ -1228,31 +1228,63 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    .. versionadded:: 3.8
 
-.. c:type:: PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, PyFrameObject *frame, int throwflag)
+.. c:type:: PyObject* (*PyFrameEvalFunction)(PyThreadState *tstate, PyFrameObject *frame, int throwflag)
 
    Type of a frame evaluation function.
 
    The *throwflag* parameter is used by the ``throw()`` method of generators:
    if non-zero, handle the current exception.
 
+   Part of the semi-stable API, see :c:macro:`Py_USING_SEMI_STABLE_API`
+   for usage.
+
+   .. versionadded:: 3.6 as ``_PyFrameEvalFunction``
+
    .. versionchanged:: 3.9
       The function now takes a *tstate* parameter.
 
-.. c:function:: _PyFrameEvalFunction _PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
+   .. versionchanged:: 3.11
+
+     Renamed to ``PyFrameEvalFunction`` (without the leading undersecore).
+     The old name is available as an alias.
+
+     Use without ``Py_USING_SEMI_STABLE_API`` is deprecated.
+
+.. c:function:: PyFrameEvalFunction PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
 
    Get the frame evaluation function.
 
    See the :pep:`523` "Adding a frame evaluation API to CPython".
 
-   .. versionadded:: 3.9
+   Part of the semi-stable API, see :c:macro:`Py_USING_SEMI_STABLE_API`
+   for usage.
 
-.. c:function:: void _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp, _PyFrameEvalFunction eval_frame)
+   .. versionadded:: 3.9 as ``_PyInterpreterState_GetEvalFrameFunc``
+
+   .. versionchanged:: 3.11
+
+     Renamed to ``PyInterpreterState_GetEvalFrameFunc`` (without the leading undersecore).
+     The old name is available as an alias.
+
+     Use without ``Py_USING_SEMI_STABLE_API`` is deprecated.
+
+.. c:function:: void PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp, PyFrameEvalFunction eval_frame)
 
    Set the frame evaluation function.
 
    See the :pep:`523` "Adding a frame evaluation API to CPython".
 
-   .. versionadded:: 3.9
+   Part of the semi-stable API, see :c:macro:`Py_USING_SEMI_STABLE_API`
+   for usage.
+
+   .. versionadded:: 3.9 as ``_PyInterpreterState_SetEvalFrameFunc``
+
+   .. versionchanged:: 3.11
+
+     Renamed to ``PyInterpreterState_SetEvalFrameFunc`` (without the leading undersecore).
+     The old name is available as an alias.
+
+     Use without ``Py_USING_SEMI_STABLE_API`` is deprecated.
 
 
 .. c:function:: PyObject* PyThreadState_GetDict()
