@@ -79,7 +79,7 @@
     do { \
         PyObject *op = _PyObject_CAST(arg); \
         if (--op->ob_refcnt == 0) { \
-            destructor d = (destructor)(dealloc);
+            destructor d = (destructor)(dealloc); \
             d(op); \
         } \
     } while (0)
