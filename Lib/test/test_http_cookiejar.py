@@ -1293,11 +1293,11 @@ class CookieTests(unittest.TestCase):
                       r'port="90,100, 80,8080"; '
                       r'max-age=100; Comment = "Just kidding! (\"|\\\\) "')
 
-        versions = [1, 1, 1, 0, 1]
-        names = ["bang", "foo", "foo", "spam", "foo"]
-        domains = [".sol.no", "blah.spam.org", "www.acme.com",
-                   "www.acme.com", "www.acme.com"]
-        paths = ["/", "/", "/", "/blah", "/blah/"]
+        versions = [1, 0, 1, 1, 1]
+        names = ["foo", "spam", "foo", "foo", "bang"]
+        domains = ["blah.spam.org", "www.acme.com", "www.acme.com",
+                   "www.acme.com", ".sol.no"]
+        paths = ["/", "/blah", "/blah/", "/", "/"]
 
         for i in range(4):
             i = 0
