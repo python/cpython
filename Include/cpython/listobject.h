@@ -24,11 +24,21 @@ typedef struct {
 PyAPI_FUNC(PyObject *) _PyList_Extend(PyListObject *, PyObject *);
 PyAPI_FUNC(void) _PyList_DebugMallocStats(FILE *out);
 
-/* Macro, trading safety for speed */
-
 /* Cast argument to PyListObject* type. */
 #define _PyList_CAST(op) (assert(PyList_Check(op)), (PyListObject *)(op))
 
-#define PyList_GET_ITEM(op, i) (_PyList_CAST(op)->ob_item[i])
-#define PyList_SET_ITEM(op, i, v) _Py_RVALUE(_PyList_CAST(op)->ob_item[i] = (v))
-#define PyList_GET_SIZE(op)    Py_SIZE(_PyList_CAST(op))
+// Macros and static inline functions, trading safety for speed
+
+static inline Py_ssize_t PyList_GET_SIZE(PyListObject *op) {
+    return Py_SIZE(op);
+}
+#define PyList_GET_SIZE(op) PyList_GET_SIZE(_PyList_CAST(op))
+
+#define PyList_GET_ITEM(op, index) (_PyList_CAST(op)->ob_item[index])
+
+static inline void
+PyList_SET_ITEM(PyListObject *op, Py_ssize_t index, PyObject *value) {
+    op->ob_item[index] = value;
+}
+#define PyList_SET_ITEM(op, index, value) \
+    PyList_SET_ITEM(_PyList_CAST(op), index, _PyObject_CAST(value))
