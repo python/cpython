@@ -783,7 +783,7 @@ class CLanguage(Language):
                     """)
                 parser_code = []
 
-            elif not parameters:
+            else:
                 assert not new_or_init
 
                 flags = "METH_METHOD|METH_FASTCALL|METH_KEYWORDS"
