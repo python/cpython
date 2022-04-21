@@ -261,6 +261,8 @@ typedef struct basicblock_ {
     unsigned b_exit : 1;
     /* b_return is true if a RETURN_VALUE opcode is inserted. */
     unsigned b_return : 1;
+    /* b_cold is true if this block is not perf critical (like an exception handler) */
+    unsigned b_cold : 1;
 } basicblock;
 
 /* fblockinfo tracks the current frame block.
@@ -333,6 +335,8 @@ struct compiler_unit {
 
     /* true if we need to create an implicit basicblock before the next instr */
     int u_need_new_implicit_block;
+    /* >0 if we are generating cold code */
+    int u_cold;
 };
 
 /* This struct captures the global state of a compilation.
@@ -826,6 +830,7 @@ static basicblock *
 compiler_use_next_block(struct compiler *c, basicblock *block)
 {
     assert(block != NULL);
+    block->b_cold = c->u->u_cold > 0;
     c->u->u_curblock->b_next = block;
     c->u->u_curblock = block;
     c->u->u_need_new_implicit_block = 0;
@@ -900,6 +905,9 @@ compiler_next_instr(basicblock *b)
     }
     return b->b_iused++;
 }
+
+#define ENTER_COLD(c) (c)->u->u_cold++;
+#define EXIT_COLD(c)  (c)->u->u_cold--; assert((c)->u->u_cold >= 0);
 
 /* Set the line number and column offset for the following instructions.
 
@@ -3465,6 +3473,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     }
     ADDOP_JUMP_NOLINE(c, JUMP, end);
     n = asdl_seq_LEN(s->v.Try.handlers);
+    ENTER_COLD(c);
     compiler_use_next_block(c, except);
 
     UNSET_LOC(c);
@@ -3567,6 +3576,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, cleanup);
     POP_EXCEPT_AND_RERAISE(c);
+    EXIT_COLD(c);
     compiler_use_next_block(c, end);
     return 1;
 }
@@ -7390,6 +7400,35 @@ error:
     return -1;
 }
 
+static void
+push_cold_blocks_to_end(basicblock *entry) {
+    if (entry->b_next == NULL) {
+        /* single basicblock, no need to reorder */
+        return;
+    }
+    assert(!entry->b_cold);  /* First block can't be cold */
+    basicblock *tail = entry;
+    while (tail->b_next) {
+        tail = tail->b_next;
+    }
+    basicblock *origtail = tail;
+    basicblock *b = entry;
+    while(b) {
+        basicblock *next = b->b_next;
+        if (next == NULL || next == origtail) {
+            break;
+        }
+        if (next->b_cold) {
+            b->b_next = next->b_next;
+            next->b_next = NULL;
+            tail->b_next = next;
+            tail = next;
+        } else {
+            b = next;
+        }
+    }
+    return;
+}
 
 static void
 convert_exception_handlers_to_nops(basicblock *entry) {
@@ -8037,8 +8076,8 @@ static void
 dump_basicblock(const basicblock *b)
 {
     const char *b_return = b->b_return ? "return " : "";
-    fprintf(stderr, "used: %d, depth: %d, offset: %d %s\n",
-        b->b_iused, b->b_startdepth, b->b_offset, b_return);
+    fprintf(stderr, "[%d %p] used: %d, depth: %d, offset: %d %s\n",
+        b->b_cold, b, b->b_iused, b->b_startdepth, b->b_offset, b_return);
     if (b->b_instr) {
         int i;
         for (i = 0; i < b->b_iused; i++) {
@@ -8393,6 +8432,9 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
     convert_exception_handlers_to_nops(entryblock);
+
+    push_cold_blocks_to_end(a.a_entry);
+
     for (basicblock *b = a.a_entry; b != NULL; b = b->b_next) {
         clean_basic_block(b);
     }
