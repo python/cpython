@@ -387,14 +387,13 @@ static inline Py_ssize_t PyUnicode_GET_LENGTH(PyObject *op) {
 static inline void PyUnicode_WRITE(unsigned int kind, void *data,
                                    Py_ssize_t index, Py_UCS4 value)
 {
-    switch (kind) {
-    case PyUnicode_1BYTE_KIND:
+    if (kind == PyUnicode_1BYTE_KIND) {
         ((Py_UCS1 *)data)[index] = (Py_UCS1)value;
-        break;
-    case PyUnicode_2BYTE_KIND:
+    }
+    else if (kind == PyUnicode_2BYTE_KIND) {
         ((Py_UCS2 *)data)[index] = (Py_UCS2)value;
-        break;
-    default:
+    }
+    else {
         assert(kind == PyUnicode_4BYTE_KIND);
         ((Py_UCS4 *)data)[index] = value;
     }
@@ -410,12 +409,10 @@ static inline Py_UCS4 PyUnicode_READ(unsigned int kind,
     if (kind == PyUnicode_1BYTE_KIND) {
         return ((const Py_UCS1 *)data)[index];
     }
-    else if (kind == PyUnicode_2BYTE_KIND) {
+    if (kind == PyUnicode_2BYTE_KIND) {
         return ((const Py_UCS2 *)data)[index];
     }
-    else {
-        return ((const Py_UCS4 *)data)[index];
-    }
+    return ((const Py_UCS4 *)data)[index];
 }
 #define PyUnicode_READ(kind, data, index) \
     PyUnicode_READ((unsigned int)(kind), (const void*)(data), (index))
@@ -431,12 +428,10 @@ static inline Py_UCS4 PyUnicode_READ_CHAR(PyObject *unicode, Py_ssize_t index)
     if (kind == PyUnicode_1BYTE_KIND) {
         return PyUnicode_1BYTE_DATA(unicode)[index];
     }
-    else if (kind == PyUnicode_2BYTE_KIND) {
+    if (kind == PyUnicode_2BYTE_KIND) {
         return PyUnicode_2BYTE_DATA(unicode)[index];
     }
-    else {
-        return PyUnicode_4BYTE_DATA(unicode)[index];
-    }
+    return PyUnicode_4BYTE_DATA(unicode)[index];
 }
 #define PyUnicode_READ_CHAR(unicode, index) \
     PyUnicode_READ_CHAR(_PyObject_CAST(unicode), (index))
@@ -455,12 +450,10 @@ static inline Py_UCS4 PyUnicode_MAX_CHAR_VALUE(PyObject *op)
     if (kind == PyUnicode_1BYTE_KIND) {
        return 0xffU;
     }
-    else if (kind == PyUnicode_2BYTE_KIND) {
+    if (kind == PyUnicode_2BYTE_KIND) {
         return 0xffffU;
     }
-    else {
-        return 0x10ffffU;
-    }
+    return 0x10ffffU;
 }
 #define PyUnicode_MAX_CHAR_VALUE(op) \
     PyUnicode_MAX_CHAR_VALUE(_PyObject_CAST(op))
