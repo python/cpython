@@ -129,6 +129,13 @@ def main(opcode_py, outfile='Include/opcode.h'):
         fobj.write("};\n")
         fobj.write("#endif\n")
 
+        fobj.write("\n")
+        fobj.write("#define EXTRA_CASES \\\n")
+        for i, flag in enumerate(used):
+            if not flag:
+                fobj.write(f"    case {i}: \\\n")
+        fobj.write("        ;\n")
+
         fobj.write(footer)
 
 
