@@ -243,40 +243,6 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
     (assert(PyUnicode_Check(op)), (PyUnicodeObject*)(op))
 
 
-/* Fast access macros */
-
-/* Returns the deprecated Py_UNICODE representation's size in code units
-   (this includes surrogate pairs as 2 units).
-   If the Py_UNICODE representation is not available, it will be computed
-   on request.  Use PyUnicode_GET_LENGTH() for the length in code points. */
-
-/* Py_DEPRECATED(3.3) */
-#define PyUnicode_GET_SIZE(op)                       \
-    (_PyASCIIObject_CAST(op)->wstr ?                 \
-      PyUnicode_WSTR_LENGTH(op) :                    \
-      ((void)PyUnicode_AsUnicode(_PyObject_CAST(op)),\
-       assert(_PyASCIIObject_CAST(op)->wstr),        \
-       PyUnicode_WSTR_LENGTH(op)))
-
-/* Py_DEPRECATED(3.3) */
-#define PyUnicode_GET_DATA_SIZE(op) \
-    (PyUnicode_GET_SIZE(op) * Py_UNICODE_SIZE)
-
-/* Alias for PyUnicode_AsUnicode().  This will create a wchar_t/Py_UNICODE
-   representation on demand.  Using this macro is very inefficient now,
-   try to port your code to use the new PyUnicode_*BYTE_DATA() macros or
-   use PyUnicode_WRITE() and PyUnicode_READ(). */
-
-/* Py_DEPRECATED(3.3) */
-#define PyUnicode_AS_UNICODE(op) \
-    (_PyASCIIObject_CAST(op)->wstr ? _PyASCIIObject_CAST(op)->wstr : \
-     PyUnicode_AsUnicode(_PyObject_CAST(op)))
-
-/* Py_DEPRECATED(3.3) */
-#define PyUnicode_AS_DATA(op) \
-    ((const char *)(PyUnicode_AS_UNICODE(op)))
-
-
 /* --- Flexible String Representation Helper Macros (PEP 393) -------------- */
 
 /* Values for PyASCIIObject.state: */
@@ -458,14 +424,6 @@ static inline Py_UCS4 PyUnicode_MAX_CHAR_VALUE(PyObject *op)
 #define PyUnicode_MAX_CHAR_VALUE(op) \
     PyUnicode_MAX_CHAR_VALUE(_PyObject_CAST(op))
 
-Py_DEPRECATED(3.3)
-static inline Py_ssize_t PyUnicode_WSTR_LENGTH(PyObject *op) {
-    return PyUnicode_IS_COMPACT_ASCII(op) ?
-            _PyASCIIObject_CAST(op)->length :
-            _PyCompactUnicodeObject_CAST(op)->wstr_length;
-}
-#define PyUnicode_WSTR_LENGTH(op) PyUnicode_WSTR_LENGTH(_PyObject_CAST(op))
-
 /* === Public API ========================================================= */
 
 /* --- Plain Py_UNICODE --------------------------------------------------- */
@@ -568,20 +526,6 @@ PyAPI_FUNC(void) _PyUnicode_FastFill(
     Py_UCS4 fill_char
     );
 
-/* Create a Unicode Object from the Py_UNICODE buffer u of the given
-   size.
-
-   u may be NULL which causes the contents to be undefined. It is the
-   user's responsibility to fill in the needed data afterwards. Note
-   that modifying the Unicode object contents after construction is
-   only allowed if u was set to NULL.
-
-   The buffer is copied into the new object. */
-Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_FromUnicode(
-    const Py_UNICODE *u,        /* Unicode buffer */
-    Py_ssize_t size             /* size of buffer */
-    );
-
 /* Create a new string from a buffer of Py_UCS1, Py_UCS2 or Py_UCS4 characters.
    Scan the string to find the maximum character. */
 PyAPI_FUNC(PyObject*) PyUnicode_FromKindAndData(
@@ -601,6 +545,22 @@ PyAPI_FUNC(Py_UCS4) _PyUnicode_FindMaxChar (
     PyObject *unicode,
     Py_ssize_t start,
     Py_ssize_t end);
+
+/* --- Legacy deprecated API ---------------------------------------------- */
+
+/* Create a Unicode Object from the Py_UNICODE buffer u of the given
+   size.
+
+   u may be NULL which causes the contents to be undefined. It is the
+   user's responsibility to fill in the needed data afterwards. Note
+   that modifying the Unicode object contents after construction is
+   only allowed if u was set to NULL.
+
+   The buffer is copied into the new object. */
+Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_FromUnicode(
+    const Py_UNICODE *u,        /* Unicode buffer */
+    Py_ssize_t size             /* size of buffer */
+    );
 
 /* Return a read-only pointer to the Unicode object's internal
    Py_UNICODE buffer.
@@ -625,6 +585,48 @@ Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicodeAndSize(
     PyObject *unicode,          /* Unicode object */
     Py_ssize_t *size            /* location where to save the length */
     );
+
+
+/* Fast access macros */
+
+Py_DEPRECATED(3.3)
+static inline Py_ssize_t PyUnicode_WSTR_LENGTH(PyObject *op) {
+    return PyUnicode_IS_COMPACT_ASCII(op) ?
+            _PyASCIIObject_CAST(op)->length :
+            _PyCompactUnicodeObject_CAST(op)->wstr_length;
+}
+#define PyUnicode_WSTR_LENGTH(op) PyUnicode_WSTR_LENGTH(_PyObject_CAST(op))
+
+/* Returns the deprecated Py_UNICODE representation's size in code units
+   (this includes surrogate pairs as 2 units).
+   If the Py_UNICODE representation is not available, it will be computed
+   on request.  Use PyUnicode_GET_LENGTH() for the length in code points. */
+
+/* Py_DEPRECATED(3.3) */
+#define PyUnicode_GET_SIZE(op)                       \
+    (_PyASCIIObject_CAST(op)->wstr ?                 \
+      PyUnicode_WSTR_LENGTH(op) :                    \
+      ((void)PyUnicode_AsUnicode(_PyObject_CAST(op)),\
+       assert(_PyASCIIObject_CAST(op)->wstr),        \
+       PyUnicode_WSTR_LENGTH(op)))
+
+/* Py_DEPRECATED(3.3) */
+#define PyUnicode_GET_DATA_SIZE(op) \
+    (PyUnicode_GET_SIZE(op) * Py_UNICODE_SIZE)
+
+/* Alias for PyUnicode_AsUnicode().  This will create a wchar_t/Py_UNICODE
+   representation on demand.  Using this macro is very inefficient now,
+   try to port your code to use the new PyUnicode_*BYTE_DATA() macros or
+   use PyUnicode_WRITE() and PyUnicode_READ(). */
+
+/* Py_DEPRECATED(3.3) */
+#define PyUnicode_AS_UNICODE(op) \
+    (_PyASCIIObject_CAST(op)->wstr ? _PyASCIIObject_CAST(op)->wstr : \
+     PyUnicode_AsUnicode(_PyObject_CAST(op)))
+
+/* Py_DEPRECATED(3.3) */
+#define PyUnicode_AS_DATA(op) \
+    ((const char *)(PyUnicode_AS_UNICODE(op)))
 
 
 /* --- _PyUnicodeWriter API ----------------------------------------------- */
