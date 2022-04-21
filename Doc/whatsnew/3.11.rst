@@ -1155,6 +1155,30 @@ C API Changes
   be used for ``size``.
   (Contributed by Kumar Aditya in :issue:`46608`.)
 
+* Introduced the *semi-stable* tier of C API, intended for low-level tools like
+  debuggers and JIT compilers.
+  This API may change in each minor release of CPython without deprecation
+  warnings, and is exposed by defining :c:macro:`Py_USING_SEMI_STABLE_API`.
+  The folllowing functions and types are part of the semi-stable API.
+  Using them without defining ``Py_USING_SEMI_STABLE_API`` is deprecated and
+  will be disallowed in Python 3.12:
+
+  - :c:func:`PyEval_RequestCodeExtraIndex`
+  - :c:func:`PyCode_GetExtra`
+  - :c:func:`PyCode_SetExtra`
+  - :c:func:`PyCode_New`
+  - :c:func:`PyCode_NewWithPosOnlyArgs`,
+  - :c:func:`PyInterpreterState_GetEvalFrameFunc`
+  - :c:func:`PyInterpreterState_SetEvalFrameFunc`
+  - :c:type:`PyFrameEvalFunction`
+
+  Some of these named with a leading underscore in previous versions; the old
+  names are available as aliases.
+
+  (Contributed by Petr Viktorin, Victor Stinner and Nick Coghlan in
+  :issue:`91744`.)
+
+
 New Features
 ------------
 
