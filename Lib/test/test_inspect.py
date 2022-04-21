@@ -1582,6 +1582,20 @@ class TestGetClosureVars(unittest.TestCase):
         expected = inspect.ClosureVars({}, {}, {"path":os.path}, {"print"})
         self.assertEqual(inspect.getclosurevars(f), expected)
 
+    def test_attr_shadows_globals(self):
+        # Basic test of the 4 different resolution mechanisms
+        attr = 3
+        var = 4
+        def f():
+            var.attr = 5
+        nonlocal_vars = {"var": var}
+        global_vars = {}
+        builtin_vars = {}
+        unbound_names = {}
+        expected = inspect.ClosureVars(nonlocal_vars, global_vars,
+                                       builtin_vars, unbound_names)
+        self.assertEqual(inspect.getclosurevars(f), expected)
+
 
 class TestGetcallargsFunctions(unittest.TestCase):
 
