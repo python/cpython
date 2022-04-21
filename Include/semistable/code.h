@@ -28,12 +28,12 @@ PyAPI_FUNC(PyCodeObject *) PyCode_New(
         int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, int, PyObject *,
-        PyObject *, PyObject *, PyObject *);
+        PyObject *);
 
 _Py_NEWLY_SEMISTABLE(3.11)
 PyAPI_FUNC(PyCodeObject *) PyCode_NewWithPosOnlyArgs(
         int, int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, int, PyObject *,
-        PyObject *, PyObject *, PyObject *);
+        PyObject *);
         /* same as struct PyCodeObject */
