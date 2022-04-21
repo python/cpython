@@ -28,7 +28,7 @@ test_urlparse.py provides a good indicator of parsing behavior.
 """
 
 from collections import namedtuple
-from enum import Flag, auto
+import enum
 import functools
 import re
 import sys
@@ -47,16 +47,16 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
 # The empty string classifies URLs with no scheme specified,
 # being the default value returned by “urlsplit” and “urlparse”.
 
-class SchemeFlag(Flag):
+class SchemeFlag(enum.Flag):
     """SchemeFlag is an enum with the members RELATIVE, NETLOC, and
     PARAMS. These describe methods for URL resolution, usually by
     scheme. These resolution classes determine, namely, whether a
     scheme supports, respectively, relative addressing, preserving the
     netloc (domain name), and preserving the parameters.
     """
-    RELATIVE = auto()
-    NETLOC = auto()
-    PARAMS = auto()
+    RELATIVE = enum.auto()
+    NETLOC = enum.auto()
+    PARAMS = enum.auto()
     UNIVERSAL = RELATIVE | NETLOC | PARAMS
 
     def __repr__(self):
