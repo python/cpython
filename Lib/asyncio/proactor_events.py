@@ -459,6 +459,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                  waiter=None, extra=None):
         self._address = address
         self._empty_waiter = None
+        self._buffer_size = 0
         # We don't need to call _protocol.connection_made() since our base
         # constructor does it for us.
         super().__init__(loop, sock, protocol, waiter=waiter, extra=extra)
@@ -471,7 +472,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
         _set_socket_extra(self, sock)
 
     def get_write_buffer_size(self):
-        return sum(len(data) for data, _ in self._buffer)
+        return self._buffer_size
 
     def abort(self):
         self._force_close(None)
@@ -496,6 +497,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
 
         # Ensure that what we buffer is immutable.
         self._buffer.append((bytes(data), addr))
+        self._buffer_size += len(data)
 
         if self._write_fut is None:
             # No current write operations are active, kick one off
@@ -522,6 +524,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                 return
 
             data, addr = self._buffer.popleft()
+            self._buffer_size -= len(data)
             if self._address is not None:
                 self._write_fut = self._loop._proactor.send(self._sock,
                                                             data)

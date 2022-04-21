@@ -1,0 +1,1 @@
+Speed up iteration of ascii strings by 50%. Patch by Kumar Aditya.

@@ -1451,6 +1451,7 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         self.assertEqual(b"abcdefg", bufio.read())
 
     @support.requires_resource('cpu')
+    @threading_helper.requires_working_threading()
     def test_threads(self):
         try:
             # Write out many bytes with exactly the same number of 0's,
@@ -1825,6 +1826,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
                 self.assertEqual(f.tell(), buffer_size + 2)
 
     @support.requires_resource('cpu')
+    @threading_helper.requires_working_threading()
     def test_threads(self):
         try:
             # Write out many bytes from many threads and test they were
@@ -1895,6 +1897,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         self.assertRaises(OSError, b.close) # exception not swallowed
         self.assertTrue(b.closed)
 
+    @threading_helper.requires_working_threading()
     def test_slow_close_from_thread(self):
         # Issue #31976
         rawio = self.SlowFlushRawIO()
@@ -2733,17 +2736,6 @@ class TextIOWrapperTest(unittest.TestCase):
             os.environ.clear()
             os.environ.update(old_environ)
 
-    @support.cpython_only
-    @unittest.skipIf(sys.flags.utf8_mode, "utf-8 mode is enabled")
-    def test_device_encoding(self):
-        # Issue 15989
-        import _testcapi
-        b = self.BytesIO()
-        b.fileno = lambda: _testcapi.INT_MAX + 1
-        self.assertRaises(OverflowError, self.TextIOWrapper, b, encoding="locale")
-        b.fileno = lambda: _testcapi.UINT_MAX + 1
-        self.assertRaises(OverflowError, self.TextIOWrapper, b, encoding="locale")
-
     def test_encoding(self):
         # Check the encoding attribute is always set, and valid
         b = self.BytesIO()
@@ -3287,6 +3279,7 @@ class TextIOWrapperTest(unittest.TestCase):
             self.assertEqual(f.errors, "replace")
 
     @support.no_tracing
+    @threading_helper.requires_working_threading()
     def test_threads_write(self):
         # Issue6750: concurrent writes could duplicate data
         event = threading.Event()
@@ -4362,9 +4355,11 @@ class CMiscIOTest(MiscIOTest):
         else:
             self.assertFalse(err.strip('.!'))
 
+    @threading_helper.requires_working_threading()
     def test_daemon_threads_shutdown_stdout_deadlock(self):
         self.check_daemon_threads_shutdown_deadlock('stdout')
 
+    @threading_helper.requires_working_threading()
     def test_daemon_threads_shutdown_stderr_deadlock(self):
         self.check_daemon_threads_shutdown_deadlock('stderr')
 

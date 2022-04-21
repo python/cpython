@@ -88,6 +88,28 @@ class CAPITest(unittest.TestCase):
     def test_memoryview_from_NULL_pointer(self):
         self.assertRaises(ValueError, _testcapi.make_memoryview_from_NULL_pointer)
 
+    def test_exception(self):
+        raised_exception = ValueError("5")
+        new_exc = TypeError("TEST")
+        try:
+            raise raised_exception
+        except ValueError as e:
+            orig_sys_exception = sys.exception()
+            orig_exception = _testcapi.set_exception(new_exc)
+            new_sys_exception = sys.exception()
+            new_exception = _testcapi.set_exception(orig_exception)
+            reset_sys_exception = sys.exception()
+
+            self.assertEqual(orig_exception, e)
+
+            self.assertEqual(orig_exception, raised_exception)
+            self.assertEqual(orig_sys_exception, orig_exception)
+            self.assertEqual(reset_sys_exception, orig_exception)
+            self.assertEqual(new_exception, new_exc)
+            self.assertEqual(new_sys_exception, new_exception)
+        else:
+            self.fail("Exception not raised")
+
     def test_exc_info(self):
         raised_exception = ValueError("5")
         new_exc = TypeError("TEST")
@@ -710,6 +732,7 @@ class TestPendingCalls(unittest.TestCase):
         if False and support.verbose:
             print("(%i)"%(len(l),))
 
+    @threading_helper.requires_working_threading()
     def test_pendingcalls_threaded(self):
 
         #do every callback on a separate thread
@@ -840,6 +863,7 @@ class SubinterpreterTest(unittest.TestCase):
 class TestThreadState(unittest.TestCase):
 
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_thread_state(self):
         # some extra thread-state tests driven via _testcapi
         def target():
@@ -1097,9 +1121,10 @@ class Test_FrameAPI(unittest.TestCase):
 
     def test_frame_getters(self):
         frame = self.getframe()
-        self.assertEquals(frame.f_locals, _testcapi.frame_getlocals(frame))
+        self.assertEqual(frame.f_locals, _testcapi.frame_getlocals(frame))
         self.assertIs(frame.f_globals, _testcapi.frame_getglobals(frame))
         self.assertIs(frame.f_builtins, _testcapi.frame_getbuiltins(frame))
+        self.assertEqual(frame.f_lasti, _testcapi.frame_getlasti(frame))
 
     def test_frame_get_generator(self):
         gen = self.getgenframe()

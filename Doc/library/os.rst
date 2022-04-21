@@ -355,7 +355,8 @@ process and user.
 
    Return list of group ids that *user* belongs to. If *group* is not in the
    list, it is included; typically, *group* is specified as the group ID
-   field from the password record for *user*.
+   field from the password record for *user*, because that group ID will
+   otherwise be potentially omitted.
 
    .. availability:: Unix.
 
@@ -3555,8 +3556,8 @@ to be ignored.
    Add a path to the DLL search path.
 
    This search path is used when resolving dependencies for imported
-   extension modules (the module itself is resolved through sys.path),
-   and also by :mod:`ctypes`.
+   extension modules (the module itself is resolved through
+   :data:`sys.path`), and also by :mod:`ctypes`.
 
    Remove the directory by calling **close()** on the returned object
    or using it in a :keyword:`with` statement.
