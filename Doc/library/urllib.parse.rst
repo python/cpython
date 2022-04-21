@@ -349,7 +349,7 @@ or on combining URL components into a URL string.
    with an empty query; the RFC states that these are equivalent).
 
 
-.. function:: urljoin(base, url, allow_fragments=True, classes=SchemeFlag(0))
+.. function:: urljoin(base, url, allow_fragments=True, flags=None)
 
    Construct a full ("absolute") URL by combining a "base URL"
    (*base*) with another URL (*url*), and with behavior given by a
