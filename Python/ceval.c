@@ -72,7 +72,7 @@
 
 #undef Py_IS_TYPE
 #define Py_IS_TYPE(ob, type) \
-    (_PyObject_CAST_CONST(ob)->ob_type == (type))
+    (_PyObject_CAST(ob)->ob_type == (type))
 
 #undef _Py_DECREF_SPECIALIZED
 #define _Py_DECREF_SPECIALIZED(arg, dealloc) \
