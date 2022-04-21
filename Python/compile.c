@@ -7466,18 +7466,18 @@ write_location_byte(struct assembler* a, int val)
 }
 
 
-static void
-write_location_first_byte(struct assembler* a, int code, int length)
-{
-    assert((code & 15) == code);
-    write_location_byte(a, MSB | (code << 3) | (length - 1));
-}
-
 static uint8_t *
 location_pointer(struct assembler* a)
 {
     return (uint8_t *)PyBytes_AS_STRING(a->a_linetable) +
         a->a_location_off;
+}
+
+static void
+write_location_first_byte(struct assembler* a, int code, int length)
+{
+    a->a_location_off += write_location_entry_start(
+        location_pointer(a), code, length);
 }
 
 static void

@@ -457,6 +457,15 @@ write_signed_varint(uint8_t *ptr, int val)
     return write_varint(ptr, val);
 }
 
+static inline int
+write_location_entry_start(uint8_t *ptr, int code, int length)
+{
+    assert((code & 15) == code);
+    *ptr = 128 | (code << 3) | (length - 1);
+    return 1;
+}
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -406,14 +406,15 @@ remove_column_info(PyObject *locations)
             }
             output = (uint8_t *)PyBytes_AS_STRING(res) + write_offset;
         }
-        int blength = data[offset] & 7;
         int code = (data[offset] >> 3) & 15;
-        if (code == 15) {
-            *output++ = 0xf8 | blength;
+        if (code == PY_CODE_LOCATION_INFO_NONE) {
+            *output++ = data[offset];
         }
         else {
+            int blength = (data[offset] & 7)+1;
+            output += write_location_entry_start(
+                output, PY_CODE_LOCATION_INFO_NO_COLUMNS, blength);
             int ldelta = get_line_delta(&data[offset]);
-            *output++ = 0xe8 | blength;
             output += write_signed_varint(output, ldelta);
         }
         offset++;
