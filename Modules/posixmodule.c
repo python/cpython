@@ -7929,8 +7929,17 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
         return NULL;
     }
 #ifndef MS_WINDOWS
-    if (kill(pid, (int)signal) == -1)
+    if (kill(pid, (int)signal) == -1) {
         return posix_error();
+    }
+
+    // Check immediately if the signal was sent to the current process.
+    // Don't micro-optimize pid == getpid(), since PyErr_SetString() check
+    // is cheap.
+    if (PyErr_CheckSignals()) {
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 #else /* !MS_WINDOWS */
     PyObject *result;
