@@ -1,0 +1,10 @@
+Defining :c:macro:`Py_USING_SEMI_STABLE_API` will expose "semi-stable API",
+which may change in each minor release, without deprecation warnings. The
+functions :c:func:`PyEval_RequestCodeExtraIndex`, :c:func:`PyCode_GetExtra`,
+:c:func:`PyCode_SetExtra`, :c:func:`PyCode_New`,
+:c:func:`PyCode_NewWithPosOnlyArgs`,
+:c:func:`PyInterpreterState_GetEvalFrameFunc`,
+:c:func:`PyInterpreterState_SetEvalFrameFunc` and the type
+:c:type:`PyFrameEvalFunction` were added to semi-stable API. Some of these
+were named with a leading underscore; the old names are available as
+aliases.
