@@ -176,6 +176,9 @@ class CodeTest(unittest.TestCase):
         self.assertEqual(co.co_filename, "filename")
         self.assertEqual(co.co_name, "funcname")
         self.assertEqual(co.co_firstlineno, 15)
+        #Empty code object should raise, but not crash the VM
+        with self.assertRaises(Exception):
+            exec(co)
 
     @cpython_only
     def test_closure_injection(self):
