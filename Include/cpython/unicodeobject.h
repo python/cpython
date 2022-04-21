@@ -314,6 +314,7 @@ static inline void* _PyUnicode_COMPACT_DATA(PyObject *op) {
 }
 
 static inline void* _PyUnicode_NONCOMPACT_DATA(PyObject *op) {
+    assert(!PyUnicode_IS_COMPACT(op));
     void *data = _PyUnicodeObject_CAST(op)->data.any;
     assert(data != NULL);
     return data;
@@ -354,13 +355,16 @@ static inline void PyUnicode_WRITE(unsigned int kind, void *data,
                                    Py_ssize_t index, Py_UCS4 value)
 {
     if (kind == PyUnicode_1BYTE_KIND) {
+        assert(value <= 0xffU);
         ((Py_UCS1 *)data)[index] = (Py_UCS1)value;
     }
     else if (kind == PyUnicode_2BYTE_KIND) {
+        assert(value <= 0xffffU);
         ((Py_UCS2 *)data)[index] = (Py_UCS2)value;
     }
     else {
         assert(kind == PyUnicode_4BYTE_KIND);
+        assert(value <= 0x10ffffU);
         ((Py_UCS4 *)data)[index] = value;
     }
 }
@@ -378,6 +382,7 @@ static inline Py_UCS4 PyUnicode_READ(unsigned int kind,
     if (kind == PyUnicode_2BYTE_KIND) {
         return ((const Py_UCS2 *)data)[index];
     }
+    assert(kind == PyUnicode_4BYTE_KIND);
     return ((const Py_UCS4 *)data)[index];
 }
 #define PyUnicode_READ(kind, data, index) \
@@ -397,6 +402,7 @@ static inline Py_UCS4 PyUnicode_READ_CHAR(PyObject *unicode, Py_ssize_t index)
     if (kind == PyUnicode_2BYTE_KIND) {
         return PyUnicode_2BYTE_DATA(unicode)[index];
     }
+    assert(kind == PyUnicode_4BYTE_KIND);
     return PyUnicode_4BYTE_DATA(unicode)[index];
 }
 #define PyUnicode_READ_CHAR(unicode, index) \
@@ -419,6 +425,7 @@ static inline Py_UCS4 PyUnicode_MAX_CHAR_VALUE(PyObject *op)
     if (kind == PyUnicode_2BYTE_KIND) {
         return 0xffffU;
     }
+    assert(kind == PyUnicode_4BYTE_KIND);
     return 0x10ffffU;
 }
 #define PyUnicode_MAX_CHAR_VALUE(op) \
