@@ -85,7 +85,7 @@ uses_params = ['', 'ftp', 'hdl', 'prospero', 'http', 'imap',
                'mms', 'sftp', 'tel']
 
 
-def _scheme_classes(scheme, overrides=SchemeFlag(0)):
+def _scheme_classes(scheme, overrides=None):
     """Find out what scheme classes a given scheme fits in.
 
     This consults the variables uses_relative, uses_netloc, and
@@ -93,6 +93,9 @@ def _scheme_classes(scheme, overrides=SchemeFlag(0)):
     at least the unique classes specified by the optional overrides
     parameter.
     """
+    if overrides is None:
+        overrides = SchemeFlag(0)
+
     if scheme in uses_relative:
         overrides |= RELATIVE
 
@@ -408,7 +411,7 @@ def _fix_result_transcoding():
 _fix_result_transcoding()
 del _fix_result_transcoding
 
-def urlparse(url, scheme='', allow_fragments=True, flags=SchemeFlag(0)):
+def urlparse(url, scheme='', allow_fragments=True, flags=None):
     """Parse a URL into 6 components:
     <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
 
@@ -559,7 +562,7 @@ def urlunsplit(components):
         url = url + '#' + fragment
     return _coerce_result(url)
 
-def urljoin(base, url, allow_fragments=True, flags=SchemeFlag(0)):
+def urljoin(base, url, allow_fragments=True, flags=None):
     """Join a base URL and a possibly relative URL to form an absolute
     interpretation of the latter. Some logic may be enabled by setting
     the classes variable."""

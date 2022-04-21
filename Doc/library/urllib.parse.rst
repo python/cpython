@@ -38,7 +38,7 @@ URL Parsing
 The URL parsing functions focus on splitting a URL string into its components,
 or on combining URL components into a URL string.
 
-.. function:: urlparse(urlstring, scheme='', allow_fragments=True, flags=SchemeFlag(0))
+.. function:: urlparse(urlstring, scheme='', allow_fragments=True, flags=None)
 
    Parse a URL into six components with respect to given scheme classes,
    returning a 6-item :term:`named tuple`. This corresponds to the general
