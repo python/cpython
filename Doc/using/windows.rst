@@ -127,7 +127,7 @@ machines without user interaction.  These options may also be set without
 suppressing the UI in order to change some of the defaults.
 
 The following options (found by executing the installer with ``/?``) can be
-passed into Python:
+passed into the installer:
 
 +---------------------+--------------------------------------------------------+
 | Name                | Description                                            |
