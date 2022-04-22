@@ -635,9 +635,14 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    .. audit-event:: shutil.unpack_archive filename,extract_dir,format shutil.unpack_archive
 
+   .. warning::
+
+      Never extract archives from untrusted sources without prior inspection.
+      It is possible that files are created outside of path, e.g. members that have
+      absolute filenames starting with "/" or filenames with two dots "..".
+
    .. versionchanged:: 3.7
       Accepts a :term:`path-like object` for *filename* and *extract_dir*.
-
 
 .. function:: register_unpack_format(name, extensions, function[, extra_args[, description]])
 
