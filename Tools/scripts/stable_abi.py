@@ -17,6 +17,7 @@ import textwrap
 import tomllib
 import difflib
 import shutil
+import pprint
 import sys
 import os
 import os.path
@@ -602,6 +603,28 @@ def check_private_names(manifest):
                 f'`{name}` is private (underscore-prefixed) and should be '
                 + 'removed from the stable ABI list or or marked `abi_only`')
 
+def check_dump(manifest, filename):
+    """Check that manifest.dump() corresponds to the data.
+
+    Mainly useful when debugging this script.
+    """
+    dumped = tomllib.loads('\n'.join(manifest.dump()))
+    with filename.open('rb') as file:
+        from_file = tomllib.load(file)
+    if dumped != from_file:
+        print(f'Dump differs from loaded data!', file=sys.stderr)
+        diff = difflib.unified_diff(
+            pprint.pformat(dumped).splitlines(),
+            pprint.pformat(from_file).splitlines(),
+            '<dumped>', str(filename),
+            lineterm='',
+        )
+        for line in diff:
+            print(line, file=sys.stderr)
+        return False
+    else:
+        return True
+
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -676,7 +699,7 @@ def main():
     if args.dump:
         for line in manifest.dump():
             print(line)
-        results['dump'] = True
+        results['dump'] = check_dump(manifest, args.file)
 
     for gen in generators:
         filename = getattr(args, gen.var_name)
