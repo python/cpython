@@ -168,8 +168,8 @@ access to internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
 
-.. c:function:: void PyUnicode_WRITE(int kind, void *data, Py_ssize_t index, \
-                                     Py_UCS4 value)
+.. c:function:: void PyUnicode_WRITE(unsigned int kind, void *data, \
+                                     Py_ssize_t index, Py_UCS4 value)
 
    Write into a canonical representation *data* (as obtained with
    :c:func:`PyUnicode_DATA`).  This function performs no sanity checks, and is
@@ -181,7 +181,8 @@ access to internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
 
-.. c:function:: Py_UCS4 PyUnicode_READ(int kind, void *data, Py_ssize_t index)
+.. c:function:: Py_UCS4 PyUnicode_READ(unsigned int kind, void *data, \
+                                       Py_ssize_t index)
 
    Read a code point from a canonical representation *data* (as obtained with
    :c:func:`PyUnicode_DATA`).  No checks or ready calls are performed.
