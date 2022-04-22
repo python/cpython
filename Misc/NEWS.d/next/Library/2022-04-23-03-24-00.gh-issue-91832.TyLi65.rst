@@ -1,0 +1,1 @@
+Added 'required' to names list in Lib.argparse.Action.
