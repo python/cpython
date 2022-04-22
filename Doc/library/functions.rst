@@ -1123,8 +1123,8 @@ are always available.  They are listed here in alphabetical order.
    (which on *some* Unix systems, means that *all* writes append to the end of
    the file regardless of the current seek position).  In text mode, if
    *encoding* is not specified the encoding used is platform-dependent:
-   ``locale.getpreferredencoding(False)`` is called to get the current locale
-   encoding. (For reading and writing raw bytes use binary mode and leave
+   :func:`locale.getencoding()` is called to get the current locale encoding.
+   (For reading and writing raw bytes use binary mode and leave
    *encoding* unspecified.)  The available modes are:
 
    .. _filemodes:
@@ -1183,10 +1183,9 @@ are always available.  They are listed here in alphabetical order.
 
    *encoding* is the name of the encoding used to decode or encode the file.
    This should only be used in text mode.  The default encoding is platform
-   dependent (whatever :func:`locale.getpreferredencoding` returns), but any
-   :term:`text encoding` supported by Python
-   can be used.  See the :mod:`codecs` module for
-   the list of supported encodings.
+   dependent (whatever :func:`locale.getencoding` returns), but any
+   :term:`text encoding` supported by Python can be used.
+   See the :mod:`codecs` module for the list of supported encodings.
 
    *errors* is an optional string that specifies how encoding and decoding
    errors are to be handled—this cannot be used in binary mode.
