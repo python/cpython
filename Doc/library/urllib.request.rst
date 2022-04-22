@@ -218,6 +218,7 @@ The following classes are provided:
    (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11"``, while
    :mod:`urllib`'s default user agent string is
    ``"Python-urllib/2.6"`` (on Python 2.6).
+   All header keys are sent in camel case.
 
    An appropriate ``Content-Type`` header should be included if the *data*
    argument is present.  If this header has not been provided and *data*

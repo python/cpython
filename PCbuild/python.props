@@ -59,7 +59,7 @@
     <ExternalsDir Condition="!HasTrailingSlash($(ExternalsDir))">$(ExternalsDir)\</ExternalsDir>
     <sqlite3Dir>$(ExternalsDir)sqlite-3.37.2.0\</sqlite3Dir>
     <bz2Dir>$(ExternalsDir)bzip2-1.0.8\</bz2Dir>
-    <lzmaDir>$(ExternalsDir)xz-5.2.2\</lzmaDir>
+    <lzmaDir>$(ExternalsDir)xz-5.2.5\</lzmaDir>
     <libffiDir>$(ExternalsDir)libffi-3.3.0\</libffiDir>
     <libffiOutDir>$(ExternalsDir)libffi-3.3.0\$(ArchName)\</libffiOutDir>
     <libffiIncludeDir>$(libffiOutDir)include</libffiIncludeDir>
