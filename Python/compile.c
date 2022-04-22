@@ -906,6 +906,7 @@ compiler_next_instr(basicblock *b)
     return b->b_iused++;
 }
 
+#define COLD_VALUE(c) (c)->u->u_cold
 #define ENTER_COLD(c) (c)->u->u_cold++;
 #define EXIT_COLD(c)  (c)->u->u_cold--; assert((c)->u->u_cold >= 0);
 
@@ -7409,6 +7410,7 @@ push_cold_blocks_to_end(basicblock *entry) {
     assert(!entry->b_cold);  /* First block can't be cold */
     basicblock *tail = entry;
     while (tail->b_next) {
+        assert(tail->b_nofallthrough || (tail->b_cold == tail->b_next->b_cold));
         tail = tail->b_next;
     }
     basicblock *origtail = tail;
@@ -8362,6 +8364,9 @@ assemble(struct compiler *c, int addNone)
     int j, nblocks;
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
+
+    /* Check that ENTER_COLD/EXIT_COLD calls are balanced */
+    assert(COLD_VALUE(c) == 0);
 
     /* Make sure every block that falls off the end returns None. */
     if (!c->u->u_curblock->b_return) {
