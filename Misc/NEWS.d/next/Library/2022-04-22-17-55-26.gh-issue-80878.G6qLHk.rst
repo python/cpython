@@ -1,0 +1,1 @@
+Fixes :func:`inspect.getclosurevars` returning the wrong thing when attributes shadow a global variable.
