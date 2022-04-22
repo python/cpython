@@ -164,6 +164,12 @@ WebAssemby Options
 
    .. versionadded:: 3.11
 
+.. cmdoption:: --enable-wasm-pthreads
+
+   Turn on pthreads support for WASM.
+
+   .. versionadded:: 3.11
+
 
 Install Options
 ---------------
