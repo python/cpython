@@ -1739,7 +1739,7 @@ class ZipFile:
         with self.open(member, pwd=pwd) as source, \
              open(targetpath, "wb") as target:
             shutil.copyfileobj(source, target)
- 
+
         # Ignore permissions if the archive was created on Windows
         if member.create_system == 0 or preserve_permissions == PreserveMode.NONE:
             return targetpath
