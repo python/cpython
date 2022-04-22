@@ -4383,10 +4383,6 @@ then they can be used interchangeably to index the same dictionary entry.  (Note
 however, that since computers store floating-point numbers as approximations it
 is usually unwise to use them as dictionary keys.)
 
-Dictionaries can be created by placing a comma-separated list of ``key: value``
-pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
-'jack', 4127: 'sjoerd'}``, or by the :class:`dict` constructor.
-
 .. class:: dict(**kwargs)
            dict(mapping, **kwargs)
            dict(iterable, **kwargs)

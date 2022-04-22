@@ -956,7 +956,7 @@ static wchar_t *
 _Py_ConvertWCharForm(const wchar_t *source, Py_ssize_t size,
                      const char *tocode, const char *fromcode)
 {
-    Py_BUILD_ASSERT(sizeof(wchar_t) == 4);
+    static_assert(sizeof(wchar_t) == 4, "wchar_t must be 32-bit");
 
     /* Ensure we won't overflow the size. */
     if (size > (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t))) {
