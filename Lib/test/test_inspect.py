@@ -1586,7 +1586,7 @@ class TestGetClosureVars(unittest.TestCase):
         # Basic test of the 4 different resolution mechanisms
         attr = 3
         var = 4
-        def f():
+        def func():
             var.attr = 5
         nonlocal_vars = {"var": var}
         global_vars = {}
@@ -1594,7 +1594,18 @@ class TestGetClosureVars(unittest.TestCase):
         unbound_names = set()
         expected = inspect.ClosureVars(nonlocal_vars, global_vars,
                                        builtin_vars, unbound_names)
-        self.assertEqual(inspect.getclosurevars(f), expected)
+        self.assertEqual(inspect.getclosurevars(func), expected)
+
+    def test_import_in_function(self):
+        def func():
+            import os
+        nonlocal_vars = {}
+        global_vars = {}
+        builtin_vars = {}
+        unbound_names = set()
+        expected = inspect.ClosureVars(nonlocal_vars, global_vars,
+                                       builtin_vars, unbound_names)
+        self.assertEqual(inspect.getclosurevars(func), expected)
 
 
 class TestGetcallargsFunctions(unittest.TestCase):
