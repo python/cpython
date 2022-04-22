@@ -105,7 +105,7 @@ spammish repetition'``::
    >>> m.block_size
    64
 
-More condensed:
+More condensed, obtaining instead the hexadecimal digest of ``sha224``:
 
    >>> hashlib.sha224(b"Nobody inspects the spammish repetition").hexdigest()
    'a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2'
