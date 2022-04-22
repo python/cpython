@@ -109,11 +109,17 @@ objects.
    It is a good idea to use this macro whenever decrementing the reference
    count of an object that might be traversed during garbage collection.
 
+.. c:function:: Py_IncRef(PyObject *o)
 
-The following functions are for runtime dynamic embedding of Python:
-``Py_IncRef(PyObject *o)``, ``Py_DecRef(PyObject *o)``. They are
-simply exported function versions of :c:func:`Py_XINCREF` and
-:c:func:`Py_XDECREF`, respectively.
+   :c:func:`Py_IncRef` is a simply exported function version of :c:func:`Py_XINCREF`,
+   which provides conveniences for runtime dynamic embedding of Python.
+
+
+.. c:function:: Py_DecRef(PyObject *o)
+
+   :c:func:`Py_DecRef` is a simply exported function version of :c:func:`Py_XDECREF`,
+   which provides conveniences for runtime dynamic embedding of Python.
+
 
 The following functions or macros are only for use within the interpreter core:
 :c:func:`_Py_Dealloc`, :c:func:`_Py_ForgetReference`, :c:func:`_Py_NewReference`,
