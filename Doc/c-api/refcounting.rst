@@ -109,13 +109,13 @@ objects.
    It is a good idea to use this macro whenever decrementing the reference
    count of an object that might be traversed during garbage collection.
 
-.. c:function:: Py_IncRef(PyObject *o)
+.. c:function:: void Py_IncRef(PyObject *o)
 
    :c:func:`Py_IncRef` is a simply exported function version of :c:func:`Py_XINCREF`,
    which provides conveniences for runtime dynamic embedding of Python.
 
 
-.. c:function:: Py_DecRef(PyObject *o)
+.. c:function:: void Py_DecRef(PyObject *o)
 
    :c:func:`Py_DecRef` is a simply exported function version of :c:func:`Py_XDECREF`,
    which provides conveniences for runtime dynamic embedding of Python.
