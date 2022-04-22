@@ -593,6 +593,8 @@ class ReTests(unittest.TestCase):
         self.checkPatternError(r'()(?(1)a|b|c)',
                                'conditional backref with more than '
                                'two branches', 10)
+        self.checkPatternError(r'()(?(2)a)',
+                               "invalid group reference 2", 5)
 
     def test_re_groupref_overflow(self):
         from re._constants import MAXGROUPS
