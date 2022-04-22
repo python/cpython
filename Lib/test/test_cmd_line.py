@@ -216,7 +216,7 @@ class CmdLineTest(unittest.TestCase):
         code = (
             b'import locale; '
             b'print(ascii("' + undecodable + b'"), '
-                b'locale.getpreferredencoding())')
+                b'locale.getencoding())')
         p = subprocess.Popen(
             [sys.executable, "-c", code],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,

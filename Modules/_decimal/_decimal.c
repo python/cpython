@@ -1156,6 +1156,67 @@ context_setattr(PyObject *self, PyObject *name, PyObject *value)
     return PyObject_GenericSetAttr(self, name, value);
 }
 
+static int
+context_setattrs(PyObject *self, PyObject *prec, PyObject *rounding,
+                 PyObject *emin, PyObject *emax, PyObject *capitals,
+                 PyObject *clamp, PyObject *status, PyObject *traps) {
+
+    int ret;
+    if (prec != Py_None && context_setprec(self, prec, NULL) < 0) {
+        return -1;
+    }
+    if (rounding != Py_None && context_setround(self, rounding, NULL) < 0) {
+        return -1;
+    }
+    if (emin != Py_None && context_setemin(self, emin, NULL) < 0) {
+        return -1;
+    }
+    if (emax != Py_None && context_setemax(self, emax, NULL) < 0) {
+        return -1;
+    }
+    if (capitals != Py_None && context_setcapitals(self, capitals, NULL) < 0) {
+        return -1;
+    }
+    if (clamp != Py_None && context_setclamp(self, clamp, NULL) < 0) {
+       return -1;
+    }
+
+    if (traps != Py_None) {
+        if (PyList_Check(traps)) {
+            ret = context_settraps_list(self, traps);
+        }
+#ifdef EXTRA_FUNCTIONALITY
+        else if (PyLong_Check(traps)) {
+            ret = context_settraps(self, traps, NULL);
+        }
+#endif
+        else {
+            ret = context_settraps_dict(self, traps);
+        }
+        if (ret < 0) {
+            return ret;
+        }
+    }
+    if (status != Py_None) {
+        if (PyList_Check(status)) {
+            ret = context_setstatus_list(self, status);
+        }
+#ifdef EXTRA_FUNCTIONALITY
+        else if (PyLong_Check(status)) {
+            ret = context_setstatus(self, status, NULL);
+        }
+#endif
+        else {
+            ret = context_setstatus_dict(self, status);
+        }
+        if (ret < 0) {
+            return ret;
+        }
+    }
+
+    return 0;
+}
+
 static PyObject *
 context_clear_traps(PyObject *self, PyObject *dummy UNUSED)
 {
@@ -1255,7 +1316,6 @@ context_init(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *clamp = Py_None;
     PyObject *status = Py_None;
     PyObject *traps = Py_None;
-    int ret;
 
     assert(PyTuple_Check(args));
 
@@ -1267,59 +1327,11 @@ context_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    if (prec != Py_None && context_setprec(self, prec, NULL) < 0) {
-        return -1;
-    }
-    if (rounding != Py_None && context_setround(self, rounding, NULL) < 0) {
-        return -1;
-    }
-    if (emin != Py_None && context_setemin(self, emin, NULL) < 0) {
-        return -1;
-    }
-    if (emax != Py_None && context_setemax(self, emax, NULL) < 0) {
-        return -1;
-    }
-    if (capitals != Py_None && context_setcapitals(self, capitals, NULL) < 0) {
-        return -1;
-    }
-    if (clamp != Py_None && context_setclamp(self, clamp, NULL) < 0) {
-       return -1;
-    }
-
-    if (traps != Py_None) {
-        if (PyList_Check(traps)) {
-            ret = context_settraps_list(self, traps);
-        }
-#ifdef EXTRA_FUNCTIONALITY
-        else if (PyLong_Check(traps)) {
-            ret = context_settraps(self, traps, NULL);
-        }
-#endif
-        else {
-            ret = context_settraps_dict(self, traps);
-        }
-        if (ret < 0) {
-            return ret;
-        }
-    }
-    if (status != Py_None) {
-        if (PyList_Check(status)) {
-            ret = context_setstatus_list(self, status);
-        }
-#ifdef EXTRA_FUNCTIONALITY
-        else if (PyLong_Check(status)) {
-            ret = context_setstatus(self, status, NULL);
-        }
-#endif
-        else {
-            ret = context_setstatus_dict(self, status);
-        }
-        if (ret < 0) {
-            return ret;
-        }
-    }
-
-    return 0;
+    return context_setattrs(
+        self, prec, rounding,
+        emin, emax, capitals,
+        clamp, status, traps
+    );
 }
 
 static PyObject *
@@ -1721,13 +1733,28 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
 static PyObject *
 ctxmanager_new(PyTypeObject *type UNUSED, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"ctx", NULL};
+    static char *kwlist[] = {
+      "ctx", "prec", "rounding",
+      "Emin", "Emax", "capitals",
+      "clamp", "flags", "traps",
+      NULL
+    };
     PyDecContextManagerObject *self;
     PyObject *local = Py_None;
     PyObject *global;
 
+    PyObject *prec = Py_None;
+    PyObject *rounding = Py_None;
+    PyObject *Emin = Py_None;
+    PyObject *Emax = Py_None;
+    PyObject *capitals = Py_None;
+    PyObject *clamp = Py_None;
+    PyObject *flags = Py_None;
+    PyObject *traps = Py_None;
+
     CURRENT_CONTEXT(global);
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &local)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOOOOOOOO", kwlist, &local,
+          &prec, &rounding, &Emin, &Emax, &capitals, &clamp, &flags, &traps)) {
         return NULL;
     }
     if (local == Py_None) {
@@ -1753,6 +1780,17 @@ ctxmanager_new(PyTypeObject *type UNUSED, PyObject *args, PyObject *kwds)
     }
     self->global = global;
     Py_INCREF(self->global);
+
+    int ret = context_setattrs(
+        self->local, prec, rounding,
+        Emin, Emax, capitals,
+        clamp, flags, traps
+    );
+
+    if (ret < 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
 
     return (PyObject *)self;
 }
