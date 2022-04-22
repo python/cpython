@@ -1591,7 +1591,7 @@ class TestGetClosureVars(unittest.TestCase):
         nonlocal_vars = {"var": var}
         global_vars = {}
         builtin_vars = {}
-        unbound_names = {}
+        unbound_names = set()
         expected = inspect.ClosureVars(nonlocal_vars, global_vars,
                                        builtin_vars, unbound_names)
         self.assertEqual(inspect.getclosurevars(f), expected)
