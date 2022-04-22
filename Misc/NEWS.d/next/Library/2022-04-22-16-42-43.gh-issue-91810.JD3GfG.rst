@@ -1,0 +1,3 @@
+:meth:`ElementTree.write` and :meth:`ElementTree.tostring` now uses
+``encoding="UTF-8"`` instead of locale encoding in XML declaration when
+``encoding="unicode", xml_declaration=True`` is specified.

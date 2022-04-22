@@ -735,9 +735,7 @@ class ElementTree:
                      enc_lower not in ("utf-8", "us-ascii", "unicode"))):
                 declared_encoding = encoding
                 if enc_lower == "unicode":
-                    # Retrieve the default encoding for the xml declaration
-                    import locale
-                    declared_encoding = locale.getpreferredencoding()
+                    declared_encoding = "UTF-8"
                 write("<?xml version='1.0' encoding='%s'?>\n" % (
                     declared_encoding,))
             if method == "text":
