@@ -256,7 +256,7 @@ class _TestProcess(BaseTestCase):
 
     def test_set_executable(self):
         if self.TYPE == 'threads':
-            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+            self.skipTest(f'test not appropriate for {self.TYPE}')
         paths = [
             sys.executable,               # str
             sys.executable.encode(),      # bytes
