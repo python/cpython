@@ -1,0 +1,2 @@
+Solved the problem of the 'required' keyword not being visible in the repr of the argparser's argument.
+Added the 'required' keyword to the 'names' list.
