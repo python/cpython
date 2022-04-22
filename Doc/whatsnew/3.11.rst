@@ -920,6 +920,7 @@ Deprecated
   * :mod:`nntplib`
   * :mod:`ossaudiodev`
   * :mod:`pipes`
+  * :mod:`sndhdr`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
