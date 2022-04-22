@@ -772,6 +772,10 @@ class ReTests(unittest.TestCase):
                                "undefined character name 'SPAM'", 0)
         self.checkPatternError(r'[\N{SPAM}]',
                                "undefined character name 'SPAM'", 1)
+        self.checkPatternError(r'\N{KEYCAP NUMBER SIGN}',
+                            "undefined character name 'KEYCAP NUMBER SIGN'", 0)
+        self.checkPatternError(r'[\N{KEYCAP NUMBER SIGN}]',
+                            "undefined character name 'KEYCAP NUMBER SIGN'", 1)
         self.checkPatternError(br'\N{LESS-THAN SIGN}', r'bad escape \N', 0)
         self.checkPatternError(br'[\N{LESS-THAN SIGN}]', r'bad escape \N', 1)
 
