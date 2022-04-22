@@ -65,14 +65,6 @@ class Manifest:
             raise ValueError(f'duplicate ABI item {item.name}')
         self.contents[item.name] = item
 
-    @property
-    def feature_defines(self):
-        """Return all feature defines which affect what's available
-
-        These are e.g. HAVE_FORK and MS_WINDOWS.
-        """
-        return set(item.ifdef for item in self.contents.values()) - {None}
-
     def select(self, kinds, *, include_abi_only=True, ifdef=None):
         """Yield selected items of the manifest
 
@@ -81,7 +73,7 @@ class Manifest:
             stable ABI.
             If False, include only items from the limited API
             (i.e. items people should use today)
-        ifdef: set of feature defines (e.g. {'HAVE_FORK', 'MS_WINDOWS'}).
+        ifdef: set of feature macros (e.g. {'HAVE_FORK', 'MS_WINDOWS'}).
             If None (default), items are not filtered by this. (This is
             different from the empty set, which filters out all such
             conditional items.)
@@ -137,9 +129,9 @@ class ABIItem:
     abi_only: bool = False
     ifdef: str = None
 
-@itemclass('ifdef')
+@itemclass('feature_macro')
 @dataclasses.dataclass(kw_only=True)
-class IfDef(ABIItem):
+class FeatureMacro(ABIItem):
     name: str
     doc: str
     windows: bool = False
@@ -211,12 +203,14 @@ def gen_python3dll(manifest, args, outfile):
     def sort_key(item):
         return item.name.lower()
 
-    windows_ifdefs = {
-        item.name for item in manifest.select({'ifdef'}) if item.windows
+    windows_feature_macros = {
+        item.name for item in manifest.select({'feature_macro'}) if item.windows
     }
     for item in sorted(
             manifest.select(
-                {'function'}, include_abi_only=True, ifdef=windows_ifdefs),
+                {'function'},
+                include_abi_only=True,
+                ifdef=windows_feature_macros),
             key=sort_key):
         write(f'EXPORT_FUNC({item.name})')
 
@@ -224,7 +218,9 @@ def gen_python3dll(manifest, args, outfile):
 
     for item in sorted(
             manifest.select(
-                {'data'}, include_abi_only=True, ifdef=windows_ifdefs),
+                {'data'},
+                include_abi_only=True,
+                ifdef=windows_feature_macros),
             key=sort_key):
         write(f'EXPORT_DATA({item.name})')
 
@@ -291,7 +287,8 @@ def gen_ctypes_test(manifest, args, outfile):
                         ctypes_test.pythonapi[symbol_name]
 
             def test_feature_macros(self):
-                self.assertEqual(set(get_feature_macros()), EXPECTED_IFDEFS)
+                self.assertEqual(
+                    set(get_feature_macros()), EXPECTED_FEATURE_MACROS)
 
             # The feature macros for Windows are used in creating the DLL
             # definition, so they must be known on all platforms.
@@ -299,7 +296,7 @@ def gen_ctypes_test(manifest, args, outfile):
             # the reality.
             @unittest.skipIf(sys.platform != "win32", "Windows specific test")
             def test_windows_feature_macros(self):
-                for name, value in WINDOWS_IFDEFS.items():
+                for name, value in WINDOWS_FEATURE_MACROS.items():
                     if value != 'maybe':
                         with self.subTest(name):
                             self.assertEqual(feature_macros[name], value)
@@ -310,7 +307,7 @@ def gen_ctypes_test(manifest, args, outfile):
         {'function', 'data'},
         include_abi_only=True,
     )
-    ifdef_items = {}
+    optional_items = {}
     for item in items:
         if item.name in (
                 # Some symbols aren't exported on all platforms.
@@ -319,23 +316,23 @@ def gen_ctypes_test(manifest, args, outfile):
             ):
             continue
         if item.ifdef:
-            ifdef_items.setdefault(item.ifdef, []).append(item.name)
+            optional_items.setdefault(item.ifdef, []).append(item.name)
         else:
             write(f'    "{item.name}",')
     write(")")
-    for ifdef, names in ifdef_items.items():
+    for ifdef, names in optional_items.items():
         write(f"if feature_macros[{ifdef!r}]:")
         write(f"    SYMBOL_NAMES += (")
         for name in names:
             write(f"        {name!r},")
         write("    )")
     write("")
-    write(f"EXPECTED_IFDEFS = set({sorted(ifdef_items)})")
+    feature_macros = list(manifest.select({'feature_macro'}))
+    feature_names = sorted(m.name for m in feature_macros)
+    write(f"EXPECTED_FEATURE_MACROS = set({pprint.pformat(feature_names)})")
 
-    windows_ifdef_values = {
-        name: manifest.contents[name].windows for name in ifdef_items
-    }
-    write(f"WINDOWS_IFDEFS = {windows_ifdef_values}")
+    windows_feature_macros = {m.name: m.windows for m in feature_macros}
+    write(f"WINDOWS_FEATURE_MACROS = {pprint.pformat(windows_feature_macros)}")
 
 
 @generator("testcapi_feature_macros", 'Modules/_testcapi_feature_macros.inc')
@@ -346,7 +343,7 @@ def gen_testcapi_feature_macros(manifest, args, outfile):
     write()
     write('// Add an entry in dict `result` for each Stable ABI feature macro.')
     write()
-    for macro in manifest.select({'ifdef'}):
+    for macro in manifest.select({'feature_macro'}):
         name = macro.name
         write(f'#ifdef {name}')
         write(f'    res = PyDict_SetItemString(result, "{name}", Py_True);')
@@ -393,7 +390,8 @@ def do_unixy_check(manifest, args):
     # Get all macros first: we'll need feature macros like HAVE_FORK and
     # MS_WINDOWS for everything else
     present_macros = gcc_get_limited_api_macros(['Include/Python.h'])
-    feature_defines = manifest.feature_defines & present_macros
+    feature_macros = set(m.name for m in manifest.select({'feature_macro'}))
+    feature_macros &= present_macros
 
     # Check that we have all needed macros
     expected_macros = set(
@@ -406,7 +404,7 @@ def do_unixy_check(manifest, args):
         + 'with Py_LIMITED_API:')
 
     expected_symbols = set(item.name for item in manifest.select(
-        {'function', 'data'}, include_abi_only=True, ifdef=feature_defines,
+        {'function', 'data'}, include_abi_only=True, ifdef=feature_macros,
     ))
 
     # Check the static library (*.a)
@@ -426,7 +424,7 @@ def do_unixy_check(manifest, args):
 
     # Check definitions in the header files
     expected_defs = set(item.name for item in manifest.select(
-        {'function', 'data'}, include_abi_only=False, ifdef=feature_defines,
+        {'function', 'data'}, include_abi_only=False, ifdef=feature_macros,
     ))
     found_defs = gcc_get_limited_api_definitions(['Include/Python.h'])
     missing_defs = expected_defs - found_defs

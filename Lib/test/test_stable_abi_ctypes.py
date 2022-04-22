@@ -20,7 +20,8 @@ class TestStableABIAvailability(unittest.TestCase):
                 ctypes_test.pythonapi[symbol_name]
 
     def test_feature_macros(self):
-        self.assertEqual(set(get_feature_macros()), EXPECTED_IFDEFS)
+        self.assertEqual(
+            set(get_feature_macros()), EXPECTED_FEATURE_MACROS)
 
     # The feature macros for Windows are used in creating the DLL
     # definition, so they must be known on all platforms.
@@ -28,7 +29,7 @@ class TestStableABIAvailability(unittest.TestCase):
     # the reality.
     @unittest.skipIf(sys.platform != "win32", "Windows specific test")
     def test_windows_feature_macros(self):
-        for name, value in WINDOWS_IFDEFS.items():
+        for name, value in WINDOWS_FEATURE_MACROS.items():
             if value != 'maybe':
                 with self.subTest(name):
                     self.assertEqual(feature_macros[name], value)
@@ -909,5 +910,13 @@ if feature_macros['Py_REF_DEBUG']:
         '_Py_RefTotal',
     )
 
-EXPECTED_IFDEFS = set(['HAVE_FORK', 'MS_WINDOWS', 'PY_HAVE_THREAD_NATIVE_ID', 'Py_REF_DEBUG', 'USE_STACKCHECK'])
-WINDOWS_IFDEFS = {'MS_WINDOWS': True, 'HAVE_FORK': False, 'USE_STACKCHECK': 'maybe', 'PY_HAVE_THREAD_NATIVE_ID': True, 'Py_REF_DEBUG': 'maybe'}
+EXPECTED_FEATURE_MACROS = set(['HAVE_FORK',
+ 'MS_WINDOWS',
+ 'PY_HAVE_THREAD_NATIVE_ID',
+ 'Py_REF_DEBUG',
+ 'USE_STACKCHECK'])
+WINDOWS_FEATURE_MACROS = {'HAVE_FORK': False,
+ 'MS_WINDOWS': True,
+ 'PY_HAVE_THREAD_NATIVE_ID': True,
+ 'Py_REF_DEBUG': 'maybe',
+ 'USE_STACKCHECK': 'maybe'}

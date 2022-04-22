@@ -28,12 +28,12 @@
 #   value may change.
 # - typedef: A C typedef which is used in other definitions in the limited API.
 #   Its size/layout/signature must not change.
-# - ifdef: A feature macro: other items may be conditional on whether the macro
+# - feature_macro: Other items may be conditional on whether this macro
 #   is defined or not.
 
 # Each top-level item can have details defined for it:
 # - added: The version in which the item was added to the stable ABI.
-# - ifdef: A feature macro: the item is only available if this macro is defined
+# - ifdef: The item is only available if the given feature_macro is defined.
 # - abi_only: If present, the item is not part of the Limited API, but it *is*
 #   part of the stable ABI. The item will not show up in user-facing docs.
 #   Typically used for:
@@ -42,9 +42,10 @@
 #     of the stable ABI.
 #   - a combination of the above (functions that were called by macros that
 #     were public in the past)
-# - doc: for `ifdef`, the blurb added in documentation
-# - windows: for `ifdef`, this macro is defined on Windows. (This info is used
-#   to generate the DLL manifest and needs to be available on all platforms.)
+# - doc: for `feature_macro`, the blurb added in documentation
+# - windows: for `feature_macro`, this macro is defined on Windows.
+#   (This info is used to generate the DLL manifest and needs to be available
+#   on all platforms.)
 
 # Removing items from this file is generally not allowed, and additions should
 # be considered with that in mind. See the devguide for exact rules:
@@ -56,18 +57,18 @@
 
 # Feature macros for optional functionality:
 
-[ifdef.MS_WINDOWS]
+[feature_macro.MS_WINDOWS]
     doc = 'on Windows'
     windows = true
-[ifdef.HAVE_FORK]
+[feature_macro.HAVE_FORK]
     doc = 'on platforms with fork()'
-[ifdef.USE_STACKCHECK]
+[feature_macro.USE_STACKCHECK]
     doc = 'on platforms with USE_STACKCHECK'
     windows = 'maybe'
-[ifdef.PY_HAVE_THREAD_NATIVE_ID]
+[feature_macro.PY_HAVE_THREAD_NATIVE_ID]
     doc = 'on platforms with native thread IDs'
     windows = true
-[ifdef.Py_REF_DEBUG]
+[feature_macro.Py_REF_DEBUG]
     doc = 'when Python is compiled in debug mode (with Py_REF_DEBUG)'
     windows = 'maybe'
 
