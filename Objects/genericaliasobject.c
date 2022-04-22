@@ -683,7 +683,9 @@ ga_iter_clear(PyObject *self) {
     return 0;
 }
 
-static PyTypeObject Py_GenericAliasIterType = {
+// gh-91632: _Py_GenericAliasIterType is exported  to be cleared
+// in _PyTypes_FiniTypes.
+PyTypeObject _Py_GenericAliasIterType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "generic_alias_iterator",
     .tp_basicsize = sizeof(gaiterobject),
@@ -697,7 +699,7 @@ static PyTypeObject Py_GenericAliasIterType = {
 
 static PyObject *
 ga_iter(PyObject *self) {
-    gaiterobject *gi = PyObject_GC_New(gaiterobject, &Py_GenericAliasIterType);
+    gaiterobject *gi = PyObject_GC_New(gaiterobject, &_Py_GenericAliasIterType);
     if (gi == NULL) {
         return NULL;
     }

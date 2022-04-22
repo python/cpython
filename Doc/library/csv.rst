@@ -542,7 +542,7 @@ The corresponding simplest possible writing example is::
 
 Since :func:`open` is used to open a CSV file for reading, the file
 will by default be decoded into unicode using the system default
-encoding (see :func:`locale.getpreferredencoding`).  To decode a file
+encoding (see :func:`locale.getencoding`).  To decode a file
 using a different encoding, use the ``encoding`` argument of open::
 
    import csv
