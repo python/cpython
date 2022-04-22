@@ -31,6 +31,16 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
 
 #define _Py_FatalRefcountError(message) _Py_FatalRefcountErrorFunc(__func__, message)
 
+/// Increment reference counter by specified number of items
+static inline void Py_INCREF_n(PyObject* op, Py_ssize_t n)
+{
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal+=n;
+#endif
+    op->ob_refcnt+=n;
+}
+#define Py_INCREF_n(op, n) Py_INCREF_n(_PyObject_CAST(op), n)
+
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
