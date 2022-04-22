@@ -47,6 +47,8 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
         destruct(op);
     }
 }
+#define _Py_DECREF_SPECIALIZED(op, destruct) \
+    _Py_DECREF_SPECIALIZED((op), (const destructor)(destruct))
 
 static inline void
 _Py_DECREF_NO_DEALLOC(PyObject *op)
