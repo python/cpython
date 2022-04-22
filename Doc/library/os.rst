@@ -105,15 +105,15 @@ of the UTF-8 encoding:
 
 * Use UTF-8 as the :term:`filesystem encoding <filesystem encoding and error
   handler>`.
-* :func:`sys.getfilesystemencoding()` returns ``'UTF-8'``.
-* :func:`locale.getpreferredencoding()` returns ``'UTF-8'`` (the *do_setlocale*
+* :func:`sys.getfilesystemencoding()` returns ``'utf-8'``.
+* :func:`locale.getpreferredencoding()` returns ``'utf-8'`` (the *do_setlocale*
   argument has no effect).
 * :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr` all use
   UTF-8 as their text encoding, with the ``surrogateescape``
   :ref:`error handler <error-handlers>` being enabled for :data:`sys.stdin`
   and :data:`sys.stdout` (:data:`sys.stderr` continues to use
   ``backslashreplace`` as it does in the default locale-aware mode)
-* On Unix, :func:`os.device_encoding` returns ``'UTF-8'`` rather than the
+* On Unix, :func:`os.device_encoding` returns ``'utf-8'`` rather than the
   device encoding.
 
 Note that the standard stream settings in UTF-8 mode can be overridden by
