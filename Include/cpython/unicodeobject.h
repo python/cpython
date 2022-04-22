@@ -613,7 +613,7 @@ static inline Py_ssize_t PyUnicode_WSTR_LENGTH(PyObject *op)
    If the Py_UNICODE representation is not available, it will be computed
    on request.  Use PyUnicode_GET_LENGTH() for the length in code points. */
 
-/* Py_DEPRECATED(3.3) */
+Py_DEPRECATED(3.3)
 static inline Py_ssize_t PyUnicode_GET_SIZE(PyObject *op)
 {
     _Py_COMP_DIAG_PUSH
@@ -627,10 +627,13 @@ static inline Py_ssize_t PyUnicode_GET_SIZE(PyObject *op)
 }
 #define PyUnicode_GET_SIZE(op) PyUnicode_GET_SIZE(_PyObject_CAST(op))
 
- /* Py_DEPRECATED(3.3) */
- static inline Py_ssize_t PyUnicode_GET_DATA_SIZE(PyObject *op)
+Py_DEPRECATED(3.3)
+static inline Py_ssize_t PyUnicode_GET_DATA_SIZE(PyObject *op)
 {
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     return PyUnicode_GET_SIZE(op) * Py_UNICODE_SIZE;
+    _Py_COMP_DIAG_POP
 }
 #define PyUnicode_GET_DATA_SIZE(op) PyUnicode_GET_DATA_SIZE(_PyObject_CAST(op))
 
@@ -639,7 +642,7 @@ static inline Py_ssize_t PyUnicode_GET_SIZE(PyObject *op)
    try to port your code to use the new PyUnicode_*BYTE_DATA() macros or
    use PyUnicode_WRITE() and PyUnicode_READ(). */
 
-/* Py_DEPRECATED(3.3) */
+Py_DEPRECATED(3.3)
 static inline Py_UNICODE* PyUnicode_AS_UNICODE(PyObject *op)
 {
     wchar_t *wstr = _PyASCIIObject_CAST(op)->wstr;
@@ -654,10 +657,13 @@ static inline Py_UNICODE* PyUnicode_AS_UNICODE(PyObject *op)
 }
 #define PyUnicode_AS_UNICODE(op) PyUnicode_AS_UNICODE(_PyObject_CAST(op))
 
-/* Py_DEPRECATED(3.3) */
+Py_DEPRECATED(3.3)
 static inline const char* PyUnicode_AS_DATA(PyObject *op)
 {
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     return (const char *)PyUnicode_AS_UNICODE(op);
+    _Py_COMP_DIAG_POP
 }
 #define PyUnicode_AS_DATA(op) PyUnicode_AS_DATA(_PyObject_CAST(op))
 
