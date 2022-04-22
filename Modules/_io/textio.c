@@ -1959,6 +1959,7 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
         if (chunks != NULL) {
             if (result != NULL && PyList_Append(chunks, result) < 0)
                 goto fail;
+            _Py_DECLARE_STR(empty, "");
             Py_XSETREF(result, PyUnicode_Join(&_Py_STR(empty), chunks));
             if (result == NULL)
                 goto fail;

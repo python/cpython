@@ -1983,7 +1983,7 @@ AC_DEFUN([PY_CHECK_CC_WARNING], [
 # tweak BASECFLAGS based on compiler and platform
 case $GCC in
 yes)
-    CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
+    CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
 
     PY_CHECK_CC_WARNING([enable], [extra], [if we can add -Wextra])
     AS_VAR_IF([ac_cv_enable_extra_warning], [yes],

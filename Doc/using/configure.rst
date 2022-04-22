@@ -288,6 +288,7 @@ Effects of a debug build:
     to detect usage of uninitialized objects.
   * Ensure that functions which can clear or replace the current exception are
     not called with an exception raised.
+  * Check that deallocator functions don't change the current exception.
   * The garbage collector (:func:`gc.collect` function) runs some basic checks
     on objects consistency.
   * The :c:macro:`Py_SAFE_DOWNCAST()` macro checks for integer underflow and

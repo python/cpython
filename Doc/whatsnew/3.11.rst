@@ -919,6 +919,7 @@ Deprecated
   * :mod:`nis`
   * :mod:`nntplib`
   * :mod:`ossaudiodev`
+  * :mod:`pipes`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
@@ -1154,6 +1155,16 @@ C API Changes
   in the ``size`` field was the indicator.  Now only non-negative values
   be used for ``size``.
   (Contributed by Kumar Aditya in :issue:`46608`.)
+
+* :c:func:`_PyFrameEvalFunction` now takes ``_PyInterpreterFrame*``
+  as its second parameter, instead of ``PyFrameObject*``.
+  See :pep:`523` for more details of how to use this function pointer type.
+
+* :c:func:`PyCode_New` and :c:func:`PyCode_NewWithPosOnlyArgs` now take
+  an additional ``exception_table`` argument.
+  Using these functions should be avoided, if at all possible.
+  To get a custom code object: create a code object using the compiler,
+  then get a modified version with the ``replace`` method.
 
 New Features
 ------------

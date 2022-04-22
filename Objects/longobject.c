@@ -36,7 +36,15 @@ medium_value(PyLongObject *x)
 #define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
 
-static inline int is_medium_int(stwodigits x)
+static inline void
+_Py_DECREF_INT(PyLongObject *op)
+{
+    assert(PyLong_CheckExact(op));
+    _Py_DECREF_SPECIALIZED((PyObject *)op, (destructor)PyObject_Free);
+}
+
+static inline int
+is_medium_int(stwodigits x)
 {
     /* Take care that we are comparing unsigned values. */
     twodigits x_plus_mask = ((twodigits)x) + PyLong_MASK;
@@ -58,7 +66,7 @@ maybe_small_long(PyLongObject *v)
     if (v && IS_MEDIUM_VALUE(v)) {
         stwodigits ival = medium_value(v);
         if (IS_SMALL_INT(ival)) {
-            Py_DECREF(v);
+            _Py_DECREF_INT(v);
             return (PyLongObject *)get_small_int((sdigit)ival);
         }
     }
@@ -763,7 +771,10 @@ _PyLong_Sign(PyObject *vv)
 static int
 bit_length_digit(digit x)
 {
-    Py_BUILD_ASSERT(PyLong_SHIFT <= sizeof(unsigned long) * 8);
+    // digit can be larger than unsigned long, but only PyLong_SHIFT bits
+    // of it will be ever used.
+    static_assert(PyLong_SHIFT <= sizeof(unsigned long) * 8,
+                  "digit is larger than unsigned long");
     return _Py_bit_length((unsigned long)x);
 }
 
@@ -1856,7 +1867,7 @@ long_to_decimal_string_internal(PyObject *aa,
 #undef WRITE_DIGITS
 #undef WRITE_UNICODE_DIGITS
 
-    Py_DECREF(scratch);
+    _Py_DECREF_INT(scratch);
     if (writer) {
         writer->pos += strlen;
     }
@@ -3561,15 +3572,15 @@ k_mul(PyLongObject *a, PyLongObject *b)
      */
     i = Py_SIZE(ret) - shift;  /* # digits after shift */
     (void)v_isub(ret->ob_digit + shift, i, t2->ob_digit, Py_SIZE(t2));
-    Py_DECREF(t2);
+    _Py_DECREF_INT(t2);
 
     (void)v_isub(ret->ob_digit + shift, i, t1->ob_digit, Py_SIZE(t1));
-    Py_DECREF(t1);
+    _Py_DECREF_INT(t1);
 
     /* 6. t3 <- (ah+al)(bh+bl), and add into result. */
     if ((t1 = x_add(ah, al)) == NULL) goto fail;
-    Py_DECREF(ah);
-    Py_DECREF(al);
+    _Py_DECREF_INT(ah);
+    _Py_DECREF_INT(al);
     ah = al = NULL;
 
     if (a == b) {
@@ -3580,13 +3591,13 @@ k_mul(PyLongObject *a, PyLongObject *b)
         Py_DECREF(t1);
         goto fail;
     }
-    Py_DECREF(bh);
-    Py_DECREF(bl);
+    _Py_DECREF_INT(bh);
+    _Py_DECREF_INT(bl);
     bh = bl = NULL;
 
     t3 = k_mul(t1, t2);
-    Py_DECREF(t1);
-    Py_DECREF(t2);
+    _Py_DECREF_INT(t1);
+    _Py_DECREF_INT(t2);
     if (t3 == NULL) goto fail;
     assert(Py_SIZE(t3) >= 0);
 
@@ -3594,7 +3605,7 @@ k_mul(PyLongObject *a, PyLongObject *b)
      * See the (*) comment after this function.
      */
     (void)v_iadd(ret->ob_digit + shift, i, t3->ob_digit, Py_SIZE(t3));
-    Py_DECREF(t3);
+    _Py_DECREF_INT(t3);
 
     return long_normalize(ret);
 
@@ -3699,13 +3710,13 @@ k_lopsided_mul(PyLongObject *a, PyLongObject *b)
         /* Add into result. */
         (void)v_iadd(ret->ob_digit + nbdone, Py_SIZE(ret) - nbdone,
                      product->ob_digit, Py_SIZE(product));
-        Py_DECREF(product);
+        _Py_DECREF_INT(product);
 
         bsize -= nbtouse;
         nbdone += nbtouse;
     }
 
-    Py_DECREF(bslice);
+    _Py_DECREF_INT(bslice);
     return long_normalize(ret);
 
   fail:
@@ -5639,7 +5650,7 @@ popcount_digit(digit d)
 {
     // digit can be larger than uint32_t, but only PyLong_SHIFT bits
     // of it will be ever used.
-    Py_BUILD_ASSERT(PyLong_SHIFT <= 32);
+    static_assert(PyLong_SHIFT <= 32, "digit is larger than uint32_t");
     return _Py_popcount32((uint32_t)d);
 }
 
@@ -5993,7 +6004,7 @@ PyTypeObject PyLong_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     long_new,                                   /* tp_new */
-    PyObject_Del,                               /* tp_free */
+    PyObject_Free,                              /* tp_free */
 };
 
 static PyTypeObject Int_InfoType;
