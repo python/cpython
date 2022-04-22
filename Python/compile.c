@@ -8470,9 +8470,9 @@ assemble(struct compiler *c, int addNone)
     }
     convert_exception_handlers_to_nops(entryblock);
 
-    push_cold_blocks_to_end(a.a_entry);
+    push_cold_blocks_to_end(entryblock);
 
-    remove_redundant_jumps(a.a_entry);
+    remove_redundant_jumps(entryblock);
 
     for (basicblock *b = a.a_entry; b != NULL; b = b->b_next) {
         clean_basic_block(b);
