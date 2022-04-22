@@ -78,9 +78,10 @@ levenshtein_distance(const char *a, size_t a_size,
     // Instead of producing the whole traditional len(a)-by-len(b)
     // matrix, we can update just one row in place.
     // Initialize the buffer row
-    for (size_t i = 0; i < a_size; i++) {
+    buffer[0] = MOVE_COST;
+    for (size_t i = 1; i < a_size; i++) {
         // cost from b[:0] to a[:i+1]
-        buffer[i] = (i + 1) * MOVE_COST;
+        buffer[i] = buffer[i-1] + MOVE_COST;
     }
 
     size_t result = 0;
