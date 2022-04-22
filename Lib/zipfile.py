@@ -814,10 +814,11 @@ class ZipExtFile(io.BufferedIOBase):
     MAX_SEEK_READ = 1 << 24
 
     def __init__(self, fileobj, mode, zipinfo, pwd=None,
-                 close_fileobj=False):
+                 close_fileobj=False, fast_stored_seek_nocrc=True):
         self._fileobj = fileobj
         self._pwd = pwd
         self._close_fileobj = close_fileobj
+        self._fast_stored_seek_nocrc = fast_stored_seek_nocrc
 
         self._compress_type = zipinfo.compress_type
         self._compress_left = zipinfo.compress_size
@@ -1116,7 +1117,8 @@ class ZipExtFile(io.BufferedIOBase):
                 self._init_decrypter()
 
         # Fast seek uncompressed unencrypted file
-        if self._compress_type == ZIP_STORED and self._decrypter == None and read_offset > 0:
+        if self._fast_stored_seek_nocrc and self._compress_type == ZIP_STORED \
+                and self._decrypter == None and read_offset > 0:
             # disable CRC checking after first seeking - it would be invalid
             self._expected_crc = None
             # seek actual file taking already buffered data into account
@@ -1249,6 +1251,9 @@ class ZipFile:
                    When using ZIP_STORED or ZIP_LZMA this keyword has no effect.
                    When using ZIP_DEFLATED integers 0 through 9 are accepted.
                    When using ZIP_BZIP2 integers 1 through 9 are accepted.
+    fast_stored_seek_nocrc: if True ZipFile will use fast seeking for
+                            uncompressed (ZIP_STORED) files which also skips
+                            CRC verification after first seek operation.
 
     """
 
@@ -1256,7 +1261,8 @@ class ZipFile:
     _windows_illegal_name_trans_table = None
 
     def __init__(self, file, mode="r", compression=ZIP_STORED, allowZip64=True,
-                 compresslevel=None, *, strict_timestamps=True, metadata_encoding=None):
+                 compresslevel=None, *, strict_timestamps=True, metadata_encoding=None,
+                 fast_stored_seek_nocrc=True):
         """Open the ZIP file with mode read 'r', write 'w', exclusive create 'x',
         or append 'a'."""
         if mode not in ('r', 'w', 'x', 'a'):
@@ -1276,6 +1282,7 @@ class ZipFile:
         self._comment = b''
         self._strict_timestamps = strict_timestamps
         self.metadata_encoding = metadata_encoding
+        self._fast_stored_seek_nocrc = fast_stored_seek_nocrc
 
         # Check that we don't try to write with nonconforming codecs
         if self.metadata_encoding and mode != 'r':
@@ -1616,7 +1623,7 @@ class ZipFile:
             else:
                 pwd = None
 
-            return ZipExtFile(zef_file, mode, zinfo, pwd, True)
+            return ZipExtFile(zef_file, mode, zinfo, pwd, True, self._fast_stored_seek_nocrc)
         except:
             zef_file.close()
             raise
