@@ -46,6 +46,7 @@
 # - doc: for `ifdef`, the blurb added in documentation
 # - windows: for `ifdef`, this macro is defined on Windows. (This info is used
 #   to generate the DLL manifest and needs to be available on all platforms.)
+#   `maybe` marks macros defined on some but not all Windows builds.
 
 # For structs, one of the following must be set:
 # - opaque: The struct name is available in the Limited API, but its members
@@ -73,12 +74,13 @@ ifdef HAVE_FORK
     doc on platforms with fork()
 ifdef USE_STACKCHECK
     doc on platforms with USE_STACKCHECK
-    windows
+    windows maybe
 ifdef PY_HAVE_THREAD_NATIVE_ID
     doc on platforms with native thread IDs
     windows
 ifdef Py_REF_DEBUG
     doc when Python is compiled in debug mode (with Py_REF_DEBUG)
+    windows maybe
 
 
 # Mentioned in PEP 384:

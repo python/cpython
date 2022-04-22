@@ -187,7 +187,12 @@ def parse_manifest(file):
         elif kind in {'windows'}:
             if parent.kind not in {'ifdef'}:
                 raise_error(f'{kind} cannot go in {parent.kind}')
-            parent.windows = True
+            if not content:
+                parent.windows = True
+            elif content == 'maybe':
+                parent.windows = content
+            else:
+                raise_error(f'Unexpected: {content}')
         else:
             raise_error(f"unknown kind {kind!r}")
             # When adding more, update the comment in stable_abi.txt.
@@ -326,9 +331,10 @@ def gen_ctypes_test(manifest, args, outfile):
             # the reality.
             @unittest.skipIf(sys.platform != "win32", "Windows specific test")
             def test_windows_feature_macros(self):
-                feature_macros = get_feature_macros()
-                feature_macros['Py_REF_DEBUG'] = False
-                self.assertEqual(feature_macros, WINDOWS_IFDEFS)
+                for name, value in WINDOWS_IFDEFS.items():
+                    if value != 'maybe':
+                        with self.subTest(name):
+                            self.assertEqual(feature_macros[name], value)
 
         SYMBOL_NAMES = (
     '''))

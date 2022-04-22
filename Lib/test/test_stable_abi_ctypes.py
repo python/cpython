@@ -28,9 +28,10 @@ class TestStableABIAvailability(unittest.TestCase):
     # the reality.
     @unittest.skipIf(sys.platform != "win32", "Windows specific test")
     def test_windows_feature_macros(self):
-        feature_macros = get_feature_macros()
-        feature_macros['Py_REF_DEBUG'] = False
-        self.assertEqual(feature_macros, WINDOWS_IFDEFS)
+        for name, value in WINDOWS_IFDEFS.items():
+            if value != 'maybe':
+                with self.subTest(name):
+                    self.assertEqual(feature_macros[name], value)
 
 SYMBOL_NAMES = (
 
@@ -909,4 +910,4 @@ if feature_macros['Py_REF_DEBUG']:
     )
 
 EXPECTED_IFDEFS = set(['HAVE_FORK', 'MS_WINDOWS', 'PY_HAVE_THREAD_NATIVE_ID', 'Py_REF_DEBUG', 'USE_STACKCHECK'])
-WINDOWS_IFDEFS = {'MS_WINDOWS': True, 'HAVE_FORK': False, 'USE_STACKCHECK': True, 'PY_HAVE_THREAD_NATIVE_ID': True, 'Py_REF_DEBUG': False}
+WINDOWS_IFDEFS = {'MS_WINDOWS': True, 'HAVE_FORK': False, 'USE_STACKCHECK': 'maybe', 'PY_HAVE_THREAD_NATIVE_ID': True, 'Py_REF_DEBUG': 'maybe'}
