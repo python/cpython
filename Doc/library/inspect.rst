@@ -1200,7 +1200,7 @@ is considered deprecated and may be removed in the future.
    .. attribute:: positions
 
       A :class:`dis.Positions` object containing the start line number, end line
-      number, start column offset and end column offset associated with the
+      number, start column offset, and end column offset associated with the
       instruction being executed by the frame this record corresponds to.
 
 .. versionchanged:: 3.5
@@ -1237,8 +1237,10 @@ is considered deprecated and may be removed in the future.
 
    .. attribute:: positions
 
-      A tuple containing the start line number, end line number, start column offset and end column
-      offset associated with the instruction being executed by the frame this traceback corresponds to.
+      A :class:`dis.Positions` object containing the start line number, end
+      line number, start column offset, and end column offset associated with
+      the instruction being executed by the frame this traceback corresponds
+      to.
 
 .. note::
 

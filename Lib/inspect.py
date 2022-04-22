@@ -1641,7 +1641,7 @@ def getclosurevars(func):
 _Traceback = namedtuple('_Traceback', 'filename lineno function code_context index')
 
 class Traceback(_Traceback):
-    def __new__(cls, filename, lineno, function, code_context, index, positions=None):
+    def __new__(cls, filename, lineno, function, code_context, index, *, positions=None):
         instance = super().__new__(cls, filename, lineno, function, code_context, index)
         instance.positions = positions
         return instance
@@ -1660,6 +1660,7 @@ def _get_code_position(code, instruction_index):
     if instruction_index < 0:
         return (None, None, None, None)
     positions_gen = code.co_positions()
+    # The nth entry in code.co_positions() corresponds to instruction (2*n)th since Python 3.10+
     return next(itertools.islice(positions_gen, instruction_index // 2, None))
 
 def getframeinfo(frame, context=1):
@@ -1683,7 +1684,7 @@ def getframeinfo(frame, context=1):
     else:
         frame, *positions = (frame, *positions)
     
-    lineno, *_ = positions
+    lineno = positions[0]
 
     if not isframe(frame):
         raise TypeError('{!r} is not a frame or traceback object'.format(frame))
@@ -1703,7 +1704,7 @@ def getframeinfo(frame, context=1):
         lines = index = None
 
     return Traceback(filename, lineno, frame.f_code.co_name, lines,
-                     index, dis.Positions(*positions))
+                     index, positions=dis.Positions(*positions))
 
 def getlineno(frame):
     """Get the line number from a frame object, allowing for optimization."""
