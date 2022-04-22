@@ -5927,49 +5927,7 @@ get_feature_macros(PyObject *self, PyObject *Py_UNUSED(args))
         return NULL;
     }
     int res;
-    // Add an entry in the dict for each of the listed macro.
-    // To regenerate, run:
-    //     python Tools/clinic/clinic.py Modules/_testcapimodule.c
-/*[python input]
-for macro in 'MS_WINDOWS', 'HAVE_FORK', 'USE_STACKCHECK', 'PY_HAVE_THREAD_NATIVE_ID', 'Py_REF_DEBUG':
-    print(f'#ifdef {macro}')
-    print(f'    res = PyDict_SetItemString(result, "{macro}", Py_True);')
-    print('#else')
-    print(f'    res = PyDict_SetItemString(result, "{macro}", Py_False);')
-    print('#endif')
-    print('    if (res) {  Py_DECREF(result); return NULL; }')
-[python start generated code]*/
-#ifdef MS_WINDOWS
-    res = PyDict_SetItemString(result, "MS_WINDOWS", Py_True);
-#else
-    res = PyDict_SetItemString(result, "MS_WINDOWS", Py_False);
-#endif
-    if (res) {  Py_DECREF(result); return NULL; }
-#ifdef HAVE_FORK
-    res = PyDict_SetItemString(result, "HAVE_FORK", Py_True);
-#else
-    res = PyDict_SetItemString(result, "HAVE_FORK", Py_False);
-#endif
-    if (res) {  Py_DECREF(result); return NULL; }
-#ifdef USE_STACKCHECK
-    res = PyDict_SetItemString(result, "USE_STACKCHECK", Py_True);
-#else
-    res = PyDict_SetItemString(result, "USE_STACKCHECK", Py_False);
-#endif
-    if (res) {  Py_DECREF(result); return NULL; }
-#ifdef PY_HAVE_THREAD_NATIVE_ID
-    res = PyDict_SetItemString(result, "PY_HAVE_THREAD_NATIVE_ID", Py_True);
-#else
-    res = PyDict_SetItemString(result, "PY_HAVE_THREAD_NATIVE_ID", Py_False);
-#endif
-    if (res) {  Py_DECREF(result); return NULL; }
-#ifdef Py_REF_DEBUG
-    res = PyDict_SetItemString(result, "Py_REF_DEBUG", Py_True);
-#else
-    res = PyDict_SetItemString(result, "Py_REF_DEBUG", Py_False);
-#endif
-    if (res) {  Py_DECREF(result); return NULL; }
-/*[python end generated code: output=ac764c7dc1c0abdd input=58ecf3e00ea5b9fa]*/
+#include "_testcapi_feature_macros.inc"
     return result;
 }
 
