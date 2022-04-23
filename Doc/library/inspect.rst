@@ -1163,8 +1163,8 @@ Classes and functions
 The interpreter stack
 ---------------------
 
-When the following functions return ":class:`FrameInfo` objects," each record is a
-:class:`FrameInfo` object. For backwards compatibility these objects allow
+Some of the following functions return
+:class:`FrameInfo` objects. For backwards compatibility these objects allow
 tuple-like operations on all attributes except ``positions``. This behavior
 is considered deprecated and may be removed in the future.
 
@@ -1207,7 +1207,7 @@ is considered deprecated and may be removed in the future.
    Return a named tuple instead of a tuple.
 
 .. versionchanged:: 3.11
-   Changed the return object from a namedtuple to a regular object (that is
+   Changed the return object from a named tuple to a regular object (that is
    backwards compatible with the previous named tuple).
 
 .. class:: Traceback
