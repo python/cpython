@@ -257,7 +257,7 @@ PyMODINIT_FUNC
 PyInit_spwd(void)
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "'nis' is deprecated and slated for removal in "
+                     "'spwd' is deprecated and slated for removal in "
                      "Python 3.13",
                      7)) {
         return NULL;
