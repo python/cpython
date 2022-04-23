@@ -461,7 +461,7 @@ class TestRawDataManager(TestEmailBase):
                 content = ("áàäéèęöőáàäéèęöőáàäéèęöőáàäéèęöő"
                         "áàäéèęöőáàäéèęöőáàäéèęöőáàäéèęöő"
                         "áàäéèęöőáàäéèęöőáàäéèęöőáàäéèęöő.\n")
-                raw_data_manager.set_content(m,content)
+                raw_data_manager.set_content(m, content)
                 self.assertEqual(bytes(m), (textwrap.dedent("""\
                     Content-Type: text/plain; charset="utf-8"
                     Content-Transfer-Encoding: 8bit
