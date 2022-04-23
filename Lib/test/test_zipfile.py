@@ -1730,6 +1730,7 @@ class OtherTests(unittest.TestCase):
     def test_negative_central_directory_offset_raises_BadZipFile(self):
         # Zip file containing an empty EOCD record
         buffer = [80, 75, 5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        buffer = bytearray(b'PK\x05\x06' + b'\0'*18)
 
         # Set the size of the central directory bytes to become 1,
         # causing the central directory offset to become negative
