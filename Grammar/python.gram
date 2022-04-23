@@ -144,7 +144,7 @@ compound_stmt[stmt_ty]:
     | &('with' | ASYNC) with_stmt
     | &('pri' | ASYNC) with_stmt
     | &('for' | ASYNC) for_stmt
-    | &('pro' | ASYNC) for_stmt
+    | &("pro" | ASYNC) for_stmt
     | &'try' try_stmt
     | &'zkus' try_stmt
     | &'while' while_stmt
@@ -438,11 +438,11 @@ for_stmt[stmt_ty]:
     | invalid_for_stmt
     | 'for' t=star_targets 'in' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
         _PyAST_For(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA) }
-    | 'pro' t=star_targets 'uvnitr' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
+    | "pro" t=star_targets 'uvnitr' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
         _PyAST_For(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA) }
     | ASYNC 'for' t=star_targets 'in' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
         CHECK_VERSION(stmt_ty, 5, "Async for loops are", _PyAST_AsyncFor(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
-    | ASYNC 'pro' t=star_targets 'uvnitr' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
+    | ASYNC "pro" t=star_targets 'uvnitr' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
         CHECK_VERSION(stmt_ty, 5, "Async for loops are", _PyAST_AsyncFor(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
     | invalid_for_target
 
@@ -1025,11 +1025,11 @@ for_if_clauses[asdl_comprehension_seq*]:
 for_if_clause[comprehension_ty]:
     | ASYNC 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=disjunction { z })* {
         CHECK_VERSION(comprehension_ty, 6, "Async comprehensions are", _PyAST_comprehension(a, b, c, 1, p->arena)) }
-    | ASYNC 'pro' a=star_targets 'uvnitr' ~ b=disjunction c[asdl_expr_seq*]=('kdyz' z=disjunction { z })* {
+    | ASYNC "pro" a=star_targets 'uvnitr' ~ b=disjunction c[asdl_expr_seq*]=('kdyz' z=disjunction { z })* {
         CHECK_VERSION(comprehension_ty, 6, "Async comprehensions are", _PyAST_comprehension(a, b, c, 1, p->arena)) }
     | 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=disjunction { z })* {
         _PyAST_comprehension(a, b, c, 0, p->arena) }
-    | 'pro' a=star_targets 'uvnitr' ~ b=disjunction c[asdl_expr_seq*]=('kdyz' z=disjunction { z })* {
+    | "pro" a=star_targets 'uvnitr' ~ b=disjunction c[asdl_expr_seq*]=('kdyz' z=disjunction { z })* {
         _PyAST_comprehension(a, b, c, 0, p->arena) }
     | invalid_for_target
 
@@ -1346,7 +1346,7 @@ invalid_with_item:
 invalid_for_target:
     | ASYNC? 'for' a=star_expressions {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(FOR_TARGETS, a) }
-    | ASYNC? 'pro' a=star_expressions {
+    | ASYNC? "pro" a=star_expressions {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(FOR_TARGETS, a) }
 
 invalid_group:
@@ -1464,7 +1464,7 @@ invalid_while_stmt:
 invalid_for_stmt:
     | [ASYNC] a='for' star_targets 'in' star_expressions ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'for' statement on line %d", a->lineno) }
-    | [ASYNC] a='pro' star_targets 'uvnitr' star_expressions ':' NEWLINE !INDENT {
+    | [ASYNC] a="pro" star_targets 'uvnitr' star_expressions ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("ocekavan odsazeny blok po 'pro' statementu na radku %d", a->lineno) }
 invalid_def_raw:
     | [ASYNC] a='def' NAME '(' [params] ')' ['->' expression] ':' NEWLINE !INDENT {
