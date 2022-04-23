@@ -51,7 +51,7 @@ kwlist = [
     'konecne',
     'lambda',
     'mimo',
-    'ne',
+    'neguj',
     'neni',
     'nonlocal',
     'not',

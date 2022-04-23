@@ -18,7 +18,6 @@ static KeywordToken *reserved_keywords[] = {
         {"as", 753},
         {"in", 769},
         {"or", 642},
-        {"ne", 646},
         {"is", 655},
         {"je", 656},
         {NULL, -1},
@@ -64,6 +63,7 @@ static KeywordToken *reserved_keywords[] = {
         {"while", 765},
         {"jinak", 763},
         {"False", 693},
+        {"neguj", 646},
         {"venku", 649},
         {NULL, -1},
     },
@@ -13875,7 +13875,7 @@ conjunction_rule(Parser *p)
     return _res;
 }
 
-// inversion: 'not' inversion | 'ne' inversion | comparison
+// inversion: 'not' inversion | 'neguj' inversion | comparison
 static expr_ty
 inversion_rule(Parser *p)
 {
@@ -13938,21 +13938,21 @@ inversion_rule(Parser *p)
         D(fprintf(stderr, "%*c%s inversion[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'not' inversion"));
     }
-    { // 'ne' inversion
+    { // 'neguj' inversion
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> inversion[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'ne' inversion"));
+        D(fprintf(stderr, "%*c> inversion[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'neguj' inversion"));
         Token * _keyword;
         expr_ty a;
         if (
-            (_keyword = _PyPegen_expect_token(p, 646))  // token='ne'
+            (_keyword = _PyPegen_expect_token(p, 646))  // token='neguj'
             &&
             (a = inversion_rule(p))  // inversion
         )
         {
-            D(fprintf(stderr, "%*c+ inversion[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'ne' inversion"));
+            D(fprintf(stderr, "%*c+ inversion[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'neguj' inversion"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 p->level--;
@@ -13972,7 +13972,7 @@ inversion_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s inversion[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'ne' inversion"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'neguj' inversion"));
     }
     { // comparison
         if (p->error_indicator) {
@@ -25571,7 +25571,7 @@ invalid_except_stmt_indent_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_except_stmt_indent[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' ':' NEWLINE !INDENT"));
-            _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'except' statement on line %d" , a -> lineno );
+            _res = RAISE_SYNTAX_ERROR ( "expected an indented block after 'except' statement on line %d" , a -> lineno );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

@@ -779,7 +779,7 @@ conjunction[expr_ty] (memo):
 
 inversion[expr_ty] (memo):
     | 'not' a=inversion { _PyAST_UnaryOp(Not, a, EXTRA) }
-    | 'ne' a=inversion { _PyAST_UnaryOp(Not, a, EXTRA) }
+    | 'neguj' a=inversion { _PyAST_UnaryOp(Not, a, EXTRA) }
     | comparison
 
 # Comparison operators
