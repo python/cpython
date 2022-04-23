@@ -252,12 +252,13 @@ against a profiling library and contain extra debug information. The
 PGUpdate configuration takes the profiling data and generates optimized
 binaries.
 
-The build_pgo.bat script automates the creation of optimized binaries.
-It creates the PGI files, runs the unit test suite or PyBench with the
-PGI python, and finally creates the optimized files.
+The build.bat script has arguments `--pgo` and `--pgo-job <job>` that 
+automate the creation of optimized binaries. It creates the PGI files, 
+runs the unit test suite or PyBench with the PGI python, and finally 
+creates the optimized files. Try `build.bat -h` to learn more.
 
 See
-    http://msdn.microsoft.com/en-us/library/e7k32f4k(VS.140).aspx
+    https://docs.microsoft.com/en-us/cpp/build/profile-guided-optimizations?view=msvc-170
 for more on this topic.
 
 
