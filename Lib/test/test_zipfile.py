@@ -1737,6 +1737,7 @@ class OtherTests(unittest.TestCase):
         buffer[12] = 1
 
         f = io.BytesIO(bytes(buffer))
+        f = io.BytesIO(buffer)
         self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, f)
 
     def test_closed_zip_raises_ValueError(self):
