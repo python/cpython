@@ -52,7 +52,7 @@ A second way of starting the interpreter is ``python -c command [arg] ...``,
 which executes the statement(s) in *command*, analogous to the shell's
 :option:`-c` option.  Since Python statements often contain spaces or other
 characters that are special to the shell, it is usually advised to quote
-*command* in its entirety with single quotes.
+*command* in its entirety with double quotes.
 
 Some Python modules are also useful as scripts.  These can be invoked using
 ``python -m module [arg] ...``, which executes the source file for *module* as
