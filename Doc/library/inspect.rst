@@ -1163,16 +1163,84 @@ Classes and functions
 The interpreter stack
 ---------------------
 
-When the following functions return "frame records," each record is a
-:term:`named tuple`
-``FrameInfo(frame, filename, lineno, function, code_context, index)``.
-The tuple contains the frame object, the filename, the line number of the
-current line,
-the function name, a list of lines of context from the source code, and the
-index of the current line within that list.
+Some of the following functions return
+:class:`FrameInfo` objects. For backwards compatibility these objects allow
+tuple-like operations on all attributes except ``positions``. This behavior
+is considered deprecated and may be removed in the future.
+
+.. class:: FrameInfo
+
+   .. attribute:: frame
+
+      The :ref:`frame object <frame-objects>` that the record corresponds to.
+
+   .. attribute:: filename
+
+      The file name associated with the code being executed by the frame this record
+      corresponds to.
+
+   .. attribute:: lineno
+
+      The line number of the current line associated with the code being
+      executed by the frame this record corresponds to.
+
+   .. attribute:: function
+
+      The function name that is being executed by the frame this record corresponds to.
+
+   .. attribute:: code_context
+
+      A list of lines of context from the source code that's being executed by the frame
+      this record corresponds to.
+
+   .. attribute:: index
+
+      The index of the current line being executed in the :attr:`code_context` list.
+
+   .. attribute:: positions
+
+      A :class:`dis.Positions` object containing the start line number, end line
+      number, start column offset, and end column offset associated with the
+      instruction being executed by the frame this record corresponds to.
 
 .. versionchanged:: 3.5
    Return a named tuple instead of a tuple.
+
+.. versionchanged:: 3.11
+   Changed the return object from a named tuple to a regular object (that is
+   backwards compatible with the previous named tuple).
+
+.. class:: Traceback
+
+   .. attribute:: filename
+
+      The file name associated with the code being executed by the frame this traceback
+      corresponds to.
+
+   .. attribute:: lineno
+
+      The line number of the current line associated with the code being
+      executed by the frame this traceback corresponds to.
+
+   .. attribute:: function
+
+      The function name that is being executed by the frame this traceback corresponds to.
+
+   .. attribute:: code_context
+
+      A list of lines of context from the source code that's being executed by the frame
+      this traceback corresponds to.
+
+   .. attribute:: index
+
+      The index of the current line being executed in the :attr:`code_context` list.
+
+   .. attribute:: positions
+
+      A :class:`dis.Positions` object containing the start line number, end
+      line number, start column offset, and end column offset associated with
+      the instruction being executed by the frame this traceback corresponds
+      to.
 
 .. note::
 
@@ -1207,35 +1275,41 @@ line.
 
 .. function:: getframeinfo(frame, context=1)
 
-   Get information about a frame or traceback object.  A :term:`named tuple`
-   ``Traceback(filename, lineno, function, code_context, index)`` is returned.
+   Get information about a frame or traceback object.  A :class:`Traceback` object
+   is returned.
 
+   .. versionchanged:: 3.11
+      A :class:`Traceback` object is returned instead of a named tuple.
 
 .. function:: getouterframes(frame, context=1)
 
-   Get a list of frame records for a frame and all outer frames.  These frames
-   represent the calls that lead to the creation of *frame*. The first entry in the
-   returned list represents *frame*; the last entry represents the outermost call
-   on *frame*'s stack.
+   Get a list of :class:`FrameInfo` objects for a frame and all outer frames.
+   These frames represent the calls that lead to the creation of *frame*. The
+   first entry in the returned list represents *frame*; the last entry
+   represents the outermost call on *frame*'s stack.
 
    .. versionchanged:: 3.5
       A list of :term:`named tuples <named tuple>`
       ``FrameInfo(frame, filename, lineno, function, code_context, index)``
       is returned.
 
+   .. versionchanged:: 3.11
+      A list of :class:`FrameInfo` objects is returned.
 
 .. function:: getinnerframes(traceback, context=1)
 
-   Get a list of frame records for a traceback's frame and all inner frames.  These
-   frames represent calls made as a consequence of *frame*.  The first entry in the
-   list represents *traceback*; the last entry represents where the exception was
-   raised.
+   Get a list of :class:`FrameInfo` objects for a traceback's frame and all
+   inner frames.  These frames represent calls made as a consequence of *frame*.
+   The first entry in the list represents *traceback*; the last entry represents
+   where the exception was raised.
 
    .. versionchanged:: 3.5
       A list of :term:`named tuples <named tuple>`
       ``FrameInfo(frame, filename, lineno, function, code_context, index)``
       is returned.
 
+   .. versionchanged:: 3.11
+      A list of :class:`FrameInfo` objects is returned.
 
 .. function:: currentframe()
 
@@ -1251,28 +1325,32 @@ line.
 
 .. function:: stack(context=1)
 
-   Return a list of frame records for the caller's stack.  The first entry in the
-   returned list represents the caller; the last entry represents the outermost
-   call on the stack.
+   Return a list of :class:`FrameInfo` objects for the caller's stack.  The
+   first entry in the returned list represents the caller; the last entry
+   represents the outermost call on the stack.
 
    .. versionchanged:: 3.5
       A list of :term:`named tuples <named tuple>`
       ``FrameInfo(frame, filename, lineno, function, code_context, index)``
       is returned.
 
+   .. versionchanged:: 3.11
+      A list of :class:`FrameInfo` objects is returned.
 
 .. function:: trace(context=1)
 
-   Return a list of frame records for the stack between the current frame and the
-   frame in which an exception currently being handled was raised in.  The first
-   entry in the list represents the caller; the last entry represents where the
-   exception was raised.
+   Return a list of :class:`FrameInfo` objects for the stack between the current
+   frame and the frame in which an exception currently being handled was raised
+   in.  The first entry in the list represents the caller; the last entry
+   represents where the exception was raised.
 
    .. versionchanged:: 3.5
       A list of :term:`named tuples <named tuple>`
       ``FrameInfo(frame, filename, lineno, function, code_context, index)``
       is returned.
 
+   .. versionchanged:: 3.11
+      A list of :class:`FrameInfo` objects is returned.
 
 Fetching attributes statically
 ------------------------------

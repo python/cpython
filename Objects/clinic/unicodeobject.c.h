@@ -2,6 +2,24 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(EncodingMap_size__doc__,
+"size($self, /)\n"
+"--\n"
+"\n"
+"Return the size (in bytes) of this object.");
+
+#define ENCODINGMAP_SIZE_METHODDEF    \
+    {"size", (PyCFunction)EncodingMap_size, METH_NOARGS, EncodingMap_size__doc__},
+
+static PyObject *
+EncodingMap_size_impl(struct encoding_map *self);
+
+static PyObject *
+EncodingMap_size(struct encoding_map *self, PyObject *Py_UNUSED(ignored))
+{
+    return EncodingMap_size_impl(self);
+}
+
 PyDoc_STRVAR(unicode_title__doc__,
 "title($self, /)\n"
 "--\n"
@@ -1335,4 +1353,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c494bed46209961d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e8566b060f558f72 input=a9049054013a1b77]*/

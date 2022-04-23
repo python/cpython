@@ -267,6 +267,36 @@ fractions
   that an ``isinstance(some_fraction, typing.SupportsInt)`` check passes.
   (Contributed by Mark Dickinson in :issue:`44547`.)
 
+functools
+---------
+
+* :func:`functools.singledispatch` now supports :data:`types.UnionType`
+  and :data:`typing.Union` as annotations to the dispatch argument.::
+
+    >>> from functools import singledispatch
+    >>> @singledispatch
+    ... def fun(arg, verbose=False):
+    ...     if verbose:
+    ...         print("Let me just say,", end=" ")
+    ...     print(arg)
+    ...
+    >>> @fun.register
+    ... def _(arg: int | float, verbose=False):
+    ...     if verbose:
+    ...         print("Strength in numbers, eh?", end=" ")
+    ...     print(arg)
+    ...
+    >>> from typing import Union
+    >>> @fun.register
+    ... def _(arg: Union[list, set], verbose=False):
+    ...     if verbose:
+    ...         print("Enumerate this:")
+    ...     for i, elem in enumerate(arg):
+    ...         print(i, elem)
+    ...
+
+  (Contributed by Yurii Karabas in :issue:`46014`.)
+
 hashlib
 -------
 
@@ -295,6 +325,14 @@ inspect
 
 * Add :func:`inspect.ismethodwrapper` for checking if the type of an object is a
   :class:`~types.MethodWrapperType`. (Contributed by Hakan Çelik in :issue:`29418`.)
+
+* Change the frame-related functions in the :mod:`inspect` module to return a
+  regular object (that is backwards compatible with the old tuple-like
+  interface) that include the extended :pep:`657` position information (end
+  line number, column and end column). The affected functions are:
+  :func:`inspect.getframeinfo`, :func:`inspect.getouterframes`, :func:`inspect.getinnerframes`,
+  :func:`inspect.stack` and :func:`inspect.trace`. (Contributed by Pablo Galindo in
+  :issue:`88116`)
 
 locale
 ------
@@ -357,6 +395,10 @@ socket
 * Add CAN Socket support for NetBSD.
   (Contributed by Thomas Klausner in :issue:`30512`.)
 
+* :meth:`~socket.create_connection` has an option to raise, in case of
+  failure to connect, an :exc:`ExceptionGroup` containing all errors
+  instead of only raising the last error.
+  (Contributed by Irit Katriel in :issue:`29980`).
 
 sqlite3
 -------
@@ -884,6 +926,10 @@ Deprecated
   * :mod:`msilib`
   * :mod:`nis`
   * :mod:`nntplib`
+  * :mod:`ossaudiodev`
+  * :mod:`pipes`
+  * :mod:`sndhdr`
+  * :mod:`spwd`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
@@ -1119,6 +1165,16 @@ C API Changes
   in the ``size`` field was the indicator.  Now only non-negative values
   be used for ``size``.
   (Contributed by Kumar Aditya in :issue:`46608`.)
+
+* :c:func:`_PyFrameEvalFunction` now takes ``_PyInterpreterFrame*``
+  as its second parameter, instead of ``PyFrameObject*``.
+  See :pep:`523` for more details of how to use this function pointer type.
+
+* :c:func:`PyCode_New` and :c:func:`PyCode_NewWithPosOnlyArgs` now take
+  an additional ``exception_table`` argument.
+  Using these functions should be avoided, if at all possible.
+  To get a custom code object: create a code object using the compiler,
+  then get a modified version with the ``replace`` method.
 
 New Features
 ------------

@@ -614,6 +614,8 @@ These can be used as types in annotations and do not support ``[]``.
    that generate type checker errors could be vulnerable to an SQL
    injection attack.
 
+   .. versionadded:: 3.11
+
 .. data:: Never
 
    The `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_,
@@ -1382,6 +1384,8 @@ These are not used in annotations. They are building blocks for creating generic
         Ts = TypeVarTuple('Ts')
         tup: tuple[*Ts]         # Syntax error on Python <= 3.10!
         tup: tuple[Unpack[Ts]]  # Semantically equivalent, and backwards-compatible
+
+   .. versionadded:: 3.11
 
 .. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False)
 
