@@ -46,6 +46,9 @@ Python
     def raiseExample(x):
         raise BaseException(x)
 
+    def orAndExample(x, y):
+        return x or y, x and y
+
     def divide(x, y):
         """Copied from https://www.geeksforgeeks.org/try-except-else-and-finally-in-python/"""
         try:
@@ -71,7 +74,7 @@ Krajta
             ja.jmeno = jmeno
         
         vym maJmeno(ja):
-            kdyz ja.jmeno is Nic:
+            kdyz ja.jmeno ja Nic:
                 vrat Nepravda
             jinak:
                 vrat Pravda
@@ -104,6 +107,9 @@ Krajta
 
     vym vyvolejPriklad(x):
         vyvolej BaseException(x)
+
+    vym neboAPriklad(x, y):
+        vrat x nebo y, x a y
 
     vym divide(x, y):
         """Copied from https://www.geeksforgeeks.org/try-except-else-and-finally-in-python/"""
