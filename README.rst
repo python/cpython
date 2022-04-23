@@ -43,6 +43,9 @@ Python
     def opposite(x):
         return not x
 
+    def raiseExample(x):
+        raise BaseException(x)
+
     def divide(x, y):
         """Copied from https://www.geeksforgeeks.org/try-except-else-and-finally-in-python/"""
         try:
@@ -98,6 +101,9 @@ Krajta
 
     vym opak(x):
         vrat neguj x
+
+    vym vyvolejPriklad(x):
+        vyvolej BaseException(x)
 
     vym divide(x, y):
         """Copied from https://www.geeksforgeeks.org/try-except-else-and-finally-in-python/"""
