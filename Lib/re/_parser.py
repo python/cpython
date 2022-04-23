@@ -67,9 +67,6 @@ FLAGS = {
 TYPE_FLAGS = SRE_FLAG_ASCII | SRE_FLAG_LOCALE | SRE_FLAG_UNICODE
 GLOBAL_FLAGS = SRE_FLAG_DEBUG
 
-class Verbose(Exception):
-    pass
-
 class State:
     # keeps track of state for parsing
     def __init__(self):
@@ -77,6 +74,7 @@ class State:
         self.groupdict = {}
         self.groupwidths = [None]  # group 0
         self.lookbehindgroups = None
+        self.grouprefpos = {}
     @property
     def groups(self):
         return len(self.groupwidths)
@@ -347,7 +345,7 @@ def _class_escape(source, escape):
             charname = source.getuntil('}', 'character name')
             try:
                 c = ord(unicodedata.lookup(charname))
-            except KeyError:
+            except (KeyError, TypeError):
                 raise source.error("undefined character name %r" % charname,
                                    len(charname) + len(r'\N{}')) from None
             return LITERAL, c
@@ -407,7 +405,7 @@ def _escape(source, escape, state):
             charname = source.getuntil('}', 'character name')
             try:
                 c = ord(unicodedata.lookup(charname))
-            except KeyError:
+            except (KeyError, TypeError):
                 raise source.error("undefined character name %r" % charname,
                                    len(charname) + len(r'\N{}')) from None
             return LITERAL, c
@@ -461,6 +459,8 @@ def _parse_sub(source, state, verbose, nested):
                            not nested and not items))
         if not sourcematch("|"):
             break
+        if not nested:
+            verbose = state.flags & SRE_FLAG_VERBOSE
 
     if len(items) == 1:
         return items[0]
@@ -800,6 +800,10 @@ def _parse(source, state, verbose, nested, first=False):
                         if condgroup >= MAXGROUPS:
                             msg = "invalid group reference %d" % condgroup
                             raise source.error(msg, len(condname) + 1)
+                        if condgroup not in state.grouprefpos:
+                            state.grouprefpos[condgroup] = (
+                                source.tell() - len(condname) - 1
+                            )
                         if not (condname.isdecimal() and condname.isascii() and
                                 (condname[0] != "0" or condname == "0")):
                             import warnings
@@ -841,8 +845,7 @@ def _parse(source, state, verbose, nested, first=False):
                             raise source.error('global flags not at the start '
                                                'of the expression',
                                                source.tell() - start)
-                        if (state.flags & SRE_FLAG_VERBOSE) and not verbose:
-                            raise Verbose
+                        verbose = state.flags & SRE_FLAG_VERBOSE
                         continue
 
                     add_flags, del_flags = flags
@@ -978,22 +981,17 @@ def parse(str, flags=0, state=None):
     state.flags = flags
     state.str = str
 
-    try:
-        p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
-    except Verbose:
-        # the VERBOSE flag was switched on inside the pattern.  to be
-        # on the safe side, we'll parse the whole thing again...
-        state = State()
-        state.flags = flags | SRE_FLAG_VERBOSE
-        state.str = str
-        source.seek(0)
-        p = _parse_sub(source, state, True, 0)
-
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
     p.state.flags = fix_flags(str, p.state.flags)
 
     if source.next is not None:
         assert source.next == ")"
         raise source.error("unbalanced parenthesis")
+
+    for g in p.state.grouprefpos:
+        if g >= p.state.groups:
+            msg = "invalid group reference %d" % g
+            raise error(msg, str, p.state.grouprefpos[g])
 
     if flags & SRE_FLAG_DEBUG:
         p.dump()

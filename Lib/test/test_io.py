@@ -2726,7 +2726,7 @@ class TextIOWrapperTest(unittest.TestCase):
                 if key in os.environ:
                     del os.environ[key]
 
-            current_locale_encoding = locale.getpreferredencoding(False)
+            current_locale_encoding = locale.getencoding()
             b = self.BytesIO()
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", EncodingWarning)

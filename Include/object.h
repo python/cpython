@@ -105,7 +105,6 @@ struct _object {
 
 /* Cast argument to PyObject* type. */
 #define _PyObject_CAST(op) ((PyObject*)(op))
-#define _PyObject_CAST_CONST(op) ((const PyObject*)(op))
 
 typedef struct {
     PyObject ob_base;
@@ -114,7 +113,6 @@ typedef struct {
 
 /* Cast argument to PyVarObject* type. */
 #define _PyVarObject_CAST(op) ((PyVarObject*)(op))
-#define _PyVarObject_CAST_CONST(op) ((const PyVarObject*)(op))
 
 
 // Test if the 'x' object is the 'y' object, the same as "x is y" in Python.
@@ -122,31 +120,29 @@ PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 #define Py_Is(x, y) ((x) == (y))
 
 
-static inline Py_ssize_t Py_REFCNT(const PyObject *ob) {
+static inline Py_ssize_t Py_REFCNT(PyObject *ob) {
     return ob->ob_refcnt;
 }
-#define Py_REFCNT(ob) Py_REFCNT(_PyObject_CAST_CONST(ob))
+#define Py_REFCNT(ob) Py_REFCNT(_PyObject_CAST(ob))
 
 
 // bpo-39573: The Py_SET_TYPE() function must be used to set an object type.
-static inline PyTypeObject* Py_TYPE(const PyObject *ob) {
+static inline PyTypeObject* Py_TYPE(PyObject *ob) {
     return ob->ob_type;
 }
-#define Py_TYPE(ob) Py_TYPE(_PyObject_CAST_CONST(ob))
+#define Py_TYPE(ob) Py_TYPE(_PyObject_CAST(ob))
 
 // bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
-static inline Py_ssize_t Py_SIZE(const PyVarObject *ob) {
+static inline Py_ssize_t Py_SIZE(PyVarObject *ob) {
     return ob->ob_size;
 }
-#define Py_SIZE(ob) Py_SIZE(_PyVarObject_CAST_CONST(ob))
+#define Py_SIZE(ob) Py_SIZE(_PyVarObject_CAST(ob))
 
 
-static inline int Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
-    // bpo-44378: Don't use Py_TYPE() since Py_TYPE() requires a non-const
-    // object.
-    return ob->ob_type == type;
+static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
+    return Py_TYPE(ob) == type;
 }
-#define Py_IS_TYPE(ob, type) Py_IS_TYPE(_PyObject_CAST_CONST(ob), type)
+#define Py_IS_TYPE(ob, type) Py_IS_TYPE(_PyObject_CAST(ob), type)
 
 
 static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {

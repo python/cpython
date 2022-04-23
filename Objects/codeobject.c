@@ -626,12 +626,20 @@ PyCode_New(int argcount, int kwonlyargcount,
                                      exceptiontable);
 }
 
+static const char assert0[4] = {
+    LOAD_ASSERTION_ERROR,
+    0,
+    RAISE_VARARGS,
+    1
+};
+
 PyCodeObject *
 PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 {
     PyObject *nulltuple = NULL;
     PyObject *filename_ob = NULL;
     PyObject *funcname_ob = NULL;
+    PyObject *code_ob = NULL;
     PyCodeObject *result = NULL;
 
     nulltuple = PyTuple_New(0);
@@ -646,13 +654,17 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     if (filename_ob == NULL) {
         goto failed;
     }
+    code_ob = PyBytes_FromStringAndSize(assert0, 4);
+    if (code_ob == NULL) {
+        goto failed;
+    }
 
 #define emptystring (PyObject *)&_Py_SINGLETON(bytes_empty)
     struct _PyCodeConstructor con = {
         .filename = filename_ob,
         .name = funcname_ob,
         .qualname = funcname_ob,
-        .code = emptystring,
+        .code = code_ob,
         .firstlineno = firstlineno,
         .linetable = emptystring,
         .consts = nulltuple,
@@ -660,6 +672,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
         .localsplusnames = nulltuple,
         .localspluskinds = emptystring,
         .exceptiontable = emptystring,
+        .stacksize = 1,
     };
     result = _PyCode_New(&con);
 
@@ -667,6 +680,7 @@ failed:
     Py_XDECREF(nulltuple);
     Py_XDECREF(funcname_ob);
     Py_XDECREF(filename_ob);
+    Py_XDECREF(code_ob);
     return result;
 }
 
