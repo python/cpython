@@ -779,7 +779,7 @@ conjunction[expr_ty] (memo):
         And,
         CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)),
         EXTRA) }
-    | a=inversion b=('zaroven' c=inversion { c })+ { _PyAST_BoolOp(
+    | a=inversion b=("a" c=inversion { c })+ { _PyAST_BoolOp(
         And,
         CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)),
         EXTRA) }
