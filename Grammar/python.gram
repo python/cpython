@@ -768,6 +768,10 @@ disjunction[expr_ty] (memo):
         Or,
         CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)),
         EXTRA) }
+    | a=conjunction b=('nebo' c=conjunction { c })+ { _PyAST_BoolOp(
+        Or,
+        CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)),
+        EXTRA) }
     | conjunction
 
 conjunction[expr_ty] (memo):
