@@ -67,9 +67,6 @@ FLAGS = {
 TYPE_FLAGS = SRE_FLAG_ASCII | SRE_FLAG_LOCALE | SRE_FLAG_UNICODE
 GLOBAL_FLAGS = SRE_FLAG_DEBUG
 
-class Verbose(Exception):
-    pass
-
 class State:
     # keeps track of state for parsing
     def __init__(self):
@@ -448,6 +445,8 @@ def _parse_sub(source, state, verbose, nested):
                            not nested and not items))
         if not sourcematch("|"):
             break
+        if not nested:
+            verbose = state.flags & SRE_FLAG_VERBOSE
 
     if len(items) == 1:
         return items[0]
@@ -826,8 +825,7 @@ def _parse(source, state, verbose, nested, first=False):
                             raise source.error('global flags not at the start '
                                                'of the expression',
                                                source.tell() - start)
-                        if (state.flags & SRE_FLAG_VERBOSE) and not verbose:
-                            raise Verbose
+                        verbose = state.flags & SRE_FLAG_VERBOSE
                         continue
 
                     add_flags, del_flags = flags
@@ -963,17 +961,7 @@ def parse(str, flags=0, state=None):
     state.flags = flags
     state.str = str
 
-    try:
-        p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
-    except Verbose:
-        # the VERBOSE flag was switched on inside the pattern.  to be
-        # on the safe side, we'll parse the whole thing again...
-        state = State()
-        state.flags = flags | SRE_FLAG_VERBOSE
-        state.str = str
-        source.seek(0)
-        p = _parse_sub(source, state, True, 0)
-
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
     p.state.flags = fix_flags(str, p.state.flags)
 
     if source.next is not None:
