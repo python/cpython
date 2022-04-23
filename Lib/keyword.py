@@ -51,6 +51,7 @@ kwlist = [
     'konecne',
     'lambda',
     'mimo',
+    'nebo',
     'neguj',
     'neni',
     'nonlocal',
@@ -61,7 +62,6 @@ kwlist = [
     'pokracuj',
     'pri',
     'pripad',
-    'pro',
     'prosaz',
     'raise',
     'return',
@@ -80,15 +80,16 @@ kwlist = [
     'while',
     'with',
     'yield',
-    'zaroven',
     'zatimco',
     'zkus'
 ]
 
 softkwlist = [
     '_',
+    'a',
     'case',
-    'match'
+    'match',
+    'pro'
 ]
 
 iskeyword = frozenset(kwlist).__contains__
