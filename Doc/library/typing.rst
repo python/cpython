@@ -49,6 +49,9 @@ convenience. This is subject to change, and not all deprecations are listed.
 |  ``typing.io`` and ``typing.re`` | 3.8           | 3.12              | :issue:`38291` |
 |  submodules                      |               |                   |                |
 +----------------------------------+---------------+-------------------+----------------+
+|  ``typing`` versions of standard | 3.9           | not planned       | :pep:`585`     |
+|  collections                     |               |                   |                |
++----------------------------------+---------------+-------------------+----------------+
 
 
 .. _relevant-peps:
