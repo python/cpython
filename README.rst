@@ -27,6 +27,22 @@ Python
         for i in customRange(0, 10, 1):
             f.write(i)
 
+    def fooOrBar(fooBar):
+        match fooBar:
+            case "foo":
+                return "foo"
+            case "bar":
+                return "bar"
+
+    def isNone(x):
+        return x is None
+
+    def isNotNone(x):
+        return x is not None
+
+    def opposite(x):
+        return not x
+
     def divide(x, y):
         """Copied from https://www.geeksforgeeks.org/try-except-else-and-finally-in-python/"""
         try:
@@ -66,6 +82,22 @@ Krajta
     pri open("out.txt", "w") as f:
         pro i uvnitr customRange(0, 10, 1):
             f.write(i)
+
+    vym fooNeboBar(fooBar):
+        shodni fooBar:
+            pripad "foo":
+                vrat "foo"
+            pripad "bar":
+                vrat "bar"
+
+    vym jeNic(x):
+        vrat x je Nic
+
+    vym neniNic(x):
+        vrat x neni Nic
+
+    vym opak(x):
+        vrat neguj x
 
     vym divide(x, y):
         """Copied from https://www.geeksforgeeks.org/try-except-else-and-finally-in-python/"""
