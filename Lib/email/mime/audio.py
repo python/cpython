@@ -6,19 +6,43 @@
 
 __all__ = ['MIMEAudio']
 
-import sndhdr
-
 from io import BytesIO
 from email import encoders
 from email.mime.nonmultipart import MIMENonMultipart
 
 
-
-_sndhdr_MIMEmap = {'au'  : 'basic',
-                   'wav' :'x-wav',
-                   'aiff':'x-aiff',
-                   'aifc':'x-aiff',
-                   }
+_tests = []
+
+def _test_aifc_aiff(h, f):
+    if not h.startswith(b'FORM'):
+        return None
+    if h[8:12] in {b'AIFC', b'AIFF'}:
+        return 'x-aiff'
+    else:
+        return None
+
+_tests.append(_test_aifc_aiff)
+
+
+def _test_au(h, f):
+    if h.startswith(b'.snd'):
+        return 'basic'
+    else:
+        return None
+
+_tests.append(_test_au)
+
+
+def _test_wav(h, f):
+    import wave
+    # 'RIFF' <len> 'WAVE' 'fmt ' <len>
+    if not h.startswith(b'RIFF') or h[8:12] != b'WAVE' or h[12:16] != b'fmt ':
+        return None
+    else:
+        return "x-wav"
+
+_tests.append(_test_wav)
+
 
 # There are others in sndhdr that don't have MIME types. :(
 # Additional ones to be added to sndhdr? midi, mp3, realaudio, wma??
@@ -31,14 +55,14 @@ def _whatsnd(data):
     """
     hdr = data[:512]
     fakefile = BytesIO(hdr)
-    for testfn in sndhdr.tests:
+    for testfn in _tests:
         res = testfn(hdr, fakefile)
         if res is not None:
-            return _sndhdr_MIMEmap.get(res[0])
-    return None
+            return res
+    else:
+        return None
 
 
-
 class MIMEAudio(MIMENonMultipart):
     """Class for generating audio/* MIME documents."""
 
@@ -47,7 +71,7 @@ class MIMEAudio(MIMENonMultipart):
         """Create an audio/* type MIME document.
 
         _audiodata is a string containing the raw audio data.  If this data
-        can be decoded by the standard Python `sndhdr' module, then the
+        can be decoded as au, wav, aiff, or aifc, then the
         subtype will be automatically included in the Content-Type header.
         Otherwise, you can specify  the specific audio subtype via the
         _subtype parameter.  If _subtype is not given, and no subtype can be
