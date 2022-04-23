@@ -786,7 +786,13 @@ def _parse(source, state, verbose, nested, first=False):
                 elif char == "(":
                     # conditional backreference group
                     condname = source.getuntil(")", "group name")
-                    if not condname.isidentifier():
+                    if condname.isidentifier():
+                        source.checkgroupname(condname, 1, nested)
+                        condgroup = state.groupdict.get(condname)
+                        if condgroup is None:
+                            msg = "unknown group name %r" % condname
+                            raise source.error(msg, len(condname) + 1)
+                    else:
                         try:
                             condgroup = int(condname)
                             if condgroup < 0:
@@ -813,12 +819,6 @@ def _parse(source, state, verbose, nested, first=False):
                                  source.tell() - len(condname) - 1),
                                 DeprecationWarning, stacklevel=nested + 6
                             )
-                    else:
-                        source.checkgroupname(condname, 1, nested)
-                        condgroup = state.groupdict.get(condname)
-                        if condgroup is None:
-                            msg = "unknown group name %r" % condname
-                            raise source.error(msg, len(condname) + 1)
                     state.checklookbehindgroup(condgroup, source)
                     item_yes = _parse(source, state, verbose, nested + 1)
                     if source.match("|"):
@@ -1027,7 +1027,13 @@ def parse_template(source, state):
                 if not s.match("<"):
                     raise s.error("missing <")
                 name = s.getuntil(">", "group name")
-                if not name.isidentifier():
+                if name.isidentifier():
+                    s.checkgroupname(name, 1, -1)
+                    try:
+                        index = groupindex[name]
+                    except KeyError:
+                        raise IndexError("unknown group name %r" % name) from None
+                else:
                     try:
                         index = int(name)
                         if index < 0:
@@ -1047,12 +1053,6 @@ def parse_template(source, state):
                              s.tell() - len(name) - 1),
                             DeprecationWarning, stacklevel=5
                         )
-                else:
-                    s.checkgroupname(name, 1, -1)
-                    try:
-                        index = groupindex[name]
-                    except KeyError:
-                        raise IndexError("unknown group name %r" % name) from None
                 addgroup(index, len(name) + 1)
             elif c == "0":
                 if s.next in OCTDIGITS:
