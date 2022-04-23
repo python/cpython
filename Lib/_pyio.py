@@ -2021,14 +2021,6 @@ class TextIOWrapper(TextIOBase):
         self._check_newline(newline)
         encoding = text_encoding(encoding)
 
-        if encoding == "locale" and sys.platform == "win32":
-            # On Unix, os.device_encoding() returns "utf-8" instead of locale encoding
-            # in the UTF-8 mode. So we use os.device_encoding() only on Windows.
-            try:
-                encoding = os.device_encoding(buffer.fileno()) or "locale"
-            except (AttributeError, UnsupportedOperation):
-                pass
-
         if encoding == "locale":
             try:
                 import locale

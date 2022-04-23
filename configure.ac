@@ -1983,7 +1983,7 @@ AC_DEFUN([PY_CHECK_CC_WARNING], [
 # tweak BASECFLAGS based on compiler and platform
 case $GCC in
 yes)
-    CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
+    CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
 
     PY_CHECK_CC_WARNING([enable], [extra], [if we can add -Wextra])
     AS_VAR_IF([ac_cv_enable_extra_warning], [yes],
@@ -3552,6 +3552,12 @@ AS_VAR_IF([have_nis], [yes], [
     AC_CHECK_HEADERS([rpc/rpc.h])
   ])
 ])
+
+dnl On NetBSD, when using OSS audio, you need to link against libossaudio
+AS_CASE([$ac_sys_system],
+  [NetBSD*], [OSSAUDIODEV_LIBS="-lossaudio"],
+  [OSSAUDIODEV_LIBS=""]
+)
 
 dnl Check for SQLite library. Use pkg-config if available.
 PKG_CHECK_MODULES(
@@ -6786,7 +6792,8 @@ PY_STDLIB_MOD([_socket],
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
 PY_STDLIB_MOD([ossaudiodev],
-  [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes])
+  [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes],
+  [], [$OSSAUDIODEV_LIBS])
 PY_STDLIB_MOD([pwd], [], [test "$ac_cv_func_getpwuid" = yes -o "$ac_cv_func_getpwuid_r" = yes])
 PY_STDLIB_MOD([resource], [], [test "$ac_cv_header_sys_resource_h" = yes])
 PY_STDLIB_MOD([_scproxy],

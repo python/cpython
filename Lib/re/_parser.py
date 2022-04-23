@@ -77,6 +77,7 @@ class State:
         self.groupdict = {}
         self.groupwidths = [None]  # group 0
         self.lookbehindgroups = None
+        self.grouprefpos = {}
     @property
     def groups(self):
         return len(self.groupwidths)
@@ -333,7 +334,7 @@ def _class_escape(source, escape):
             charname = source.getuntil('}', 'character name')
             try:
                 c = ord(unicodedata.lookup(charname))
-            except KeyError:
+            except (KeyError, TypeError):
                 raise source.error("undefined character name %r" % charname,
                                    len(charname) + len(r'\N{}')) from None
             return LITERAL, c
@@ -393,7 +394,7 @@ def _escape(source, escape, state):
             charname = source.getuntil('}', 'character name')
             try:
                 c = ord(unicodedata.lookup(charname))
-            except KeyError:
+            except (KeyError, TypeError):
                 raise source.error("undefined character name %r" % charname,
                                    len(charname) + len(r'\N{}')) from None
             return LITERAL, c
@@ -795,6 +796,10 @@ def _parse(source, state, verbose, nested, first=False):
                         if condgroup >= MAXGROUPS:
                             msg = "invalid group reference %d" % condgroup
                             raise source.error(msg, len(condname) + 1)
+                        if condgroup not in state.grouprefpos:
+                            state.grouprefpos[condgroup] = (
+                                source.tell() - len(condname) - 1
+                            )
                     state.checklookbehindgroup(condgroup, source)
                     item_yes = _parse(source, state, verbose, nested + 1)
                     if source.match("|"):
@@ -974,6 +979,11 @@ def parse(str, flags=0, state=None):
     if source.next is not None:
         assert source.next == ")"
         raise source.error("unbalanced parenthesis")
+
+    for g in p.state.grouprefpos:
+        if g >= p.state.groups:
+            msg = "invalid group reference %d" % g
+            raise error(msg, str, p.state.grouprefpos[g])
 
     if flags & SRE_FLAG_DEBUG:
         p.dump()
