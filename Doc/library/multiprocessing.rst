@@ -1078,11 +1078,11 @@ Miscellaneous
 .. function:: set_start_method(method, force=False)
 
    Set the method which should be used to start child processes.
-   *method* can be ``'fork'``, ``'spawn'`` or ``'forkserver'``.  Raises
-   :exc:`RuntimeError` if the start method has already been set and *force* is not
-   set to ``True``.  If *method* is ``None`` and *force* is set to ``True`` then the
-   start method is set to ``None``.  If *method* is ``None`` and *force* is set to
-   ``False`` then the context is set to the default context.
+   The *method* argument can be ``'fork'``, ``'spawn'`` or ``'forkserver'``.
+   Raises :exc:`RuntimeError` if the start method has already been set and *force*
+   is not set to ``True``.  If *method* is ``None`` and *force* is set to ``True``
+   then the start method is set to ``None``.  If *method* is ``None`` and *force* is
+   set to ``False`` then the context is set to the default context.
 
    Note that this should be called at most once, and it should be
    protected inside the ``if __name__ == '__main__'`` clause of the
