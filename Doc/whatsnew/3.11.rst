@@ -929,6 +929,7 @@ Deprecated
   * :mod:`ossaudiodev`
   * :mod:`pipes`
   * :mod:`sndhdr`
+  * :mod:`spwd`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
