@@ -244,23 +244,30 @@ _Py_union_type_or(PyObject* self, PyObject* other)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
+    if (other == Py_None) {
+        other = (PyObject *)&_PyNone_Type;
+    }
+
     PyObject *tuple;
 
     if (_PyUnion_Check(self) && _PyUnion_Check(other)) {
-        PyObject* args = PySequence_List(((unionobject *) self)->args);
+        PyObject* args = ((unionobject *) self)->args;
+        PyObject* other_args = ((unionobject*) other)->args;
 
-        if (args == NULL) {
+        tuple = PyTuple_New(PyTuple_GET_SIZE(args) + PyTuple_GET_SIZE(other_args));
+
+        if (tuple == NULL) {
             return NULL;
         }
 
-        PyObject* other_args = ((unionobject*) other)->args;
+        int pos = PyTuple_GET_SIZE(args);
 
         for (int i = 0; i < PyTuple_GET_SIZE(other_args); i++) {
             int is_duplicate = 0;
             PyObject *other_arg = PyTuple_GET_ITEM(other_args, i);
 
-            for (int j = 0; j < PyList_GET_SIZE(args); j++) {
-                PyObject *arg = PyList_GET_ITEM(args, j);
+            for (int j = 0; j < PyTuple_GET_SIZE(args); j++) {
+                PyObject *arg = PyTuple_GET_ITEM(args, j);
                 is_duplicate = is_same(arg, other_arg);
 
                 if (is_duplicate < 0) {
@@ -273,53 +280,50 @@ _Py_union_type_or(PyObject* self, PyObject* other)
             }
 
             if (!is_duplicate) {
-                if(PyList_Append(args, other_arg) < 0) {
-                    Py_DECREF(args);
-                    return NULL;
-                }
+                Py_INCREF(other_arg);
+                PyTuple_SET_ITEM(tuple, pos++, other_arg);
             }
         }
 
-        tuple = PyList_AsTuple(args);
-        Py_DECREF(args);
-
-        if (tuple == NULL) {
+        if(_PyTuple_Resize(&tuple, pos) < 0)  {
+            Py_DECREF(tuple);
             return NULL;
         }
 
     } else if (_PyUnion_Check(self)) {
-        PyObject* args = PySequence_List(((unionobject *) self)->args);
+        PyObject* args = ((unionobject *) self)->args;
+        tuple = PyTuple_New(PyTuple_GET_SIZE(args) + 1);
 
-        if (args == NULL) {
+        if (tuple == NULL) {
             return NULL;
         }
 
         int is_duplicate = 0;
 
-        for (int i = 0; i < PyList_GET_SIZE(args); i++) {
-            is_duplicate = is_same(PyList_GET_ITEM(args, i), other);
+        for (int i = 0; i < PyTuple_GET_SIZE(args); i++) {
+            PyObject *arg = PyTuple_GET_ITEM(args, i);
 
-            if (is_duplicate < 0) {
-                Py_DECREF(args);
-                return NULL;
+            if (!is_duplicate) {
+                is_duplicate = is_same(arg, other);
+
+                if (is_duplicate < 0) {
+                    Py_DECREF(tuple);
+                    return NULL;
+                }
             }
-            if (is_duplicate) {
-                break;
-            }
+
+            Py_INCREF(arg);
+            PyTuple_SET_ITEM(tuple, i, arg);
         }
 
         if (!is_duplicate) {
-            if(PyList_Append(args, other) < 0) {
-                Py_DECREF(args);
+            Py_INCREF(other);
+            PyTuple_SET_ITEM(tuple, PyTuple_GET_SIZE(args), other);
+        } else {
+            if(_PyTuple_Resize(&tuple, PyTuple_GET_SIZE(args)) < 0) {
+                Py_DECREF(tuple);
                 return NULL;
             }
-        }
-
-        tuple = PyList_AsTuple(args);
-        Py_DECREF(args);
-
-        if (tuple == NULL) {
-            return NULL;
         }
 
     } else if (_PyUnion_Check(other)) {
@@ -353,6 +357,7 @@ _Py_union_type_or(PyObject* self, PyObject* other)
             Py_DECREF(tuple);
             return NULL;
         }
+
     } else {
         int is_duplicate = is_same(self, other);
 
