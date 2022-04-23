@@ -518,6 +518,8 @@ finally_block[asdl_stmt_seq*]:
 match_stmt[stmt_ty]:
     | "match" subject=subject_expr ':' NEWLINE INDENT cases[asdl_match_case_seq*]=case_block+ DEDENT {
         CHECK_VERSION(stmt_ty, 10, "Pattern matching is", _PyAST_Match(subject, cases, EXTRA)) }
+    | 'shodni' subject=subject_expr ':' NEWLINE INDENT cases[asdl_match_case_seq*]=case_block+ DEDENT {
+        CHECK_VERSION(stmt_ty, 10, "Pattern matching is", _PyAST_Match(subject, cases, EXTRA)) }
     | invalid_match_stmt
 
 subject_expr[expr_ty]:
@@ -528,6 +530,8 @@ subject_expr[expr_ty]:
 case_block[match_case_ty]:
     | invalid_case_block
     | "case" pattern=patterns guard=guard? ':' body=block {
+        _PyAST_match_case(pattern, guard, body, p->arena) }
+    | 'pripad' pattern=patterns guard=guard? ':' body=block {
         _PyAST_match_case(pattern, guard, body, p->arena) }
 
 guard[expr_ty]:
@@ -1408,10 +1412,16 @@ invalid_match_stmt:
     | "match" subject_expr !':' { CHECK_VERSION(void*, 10, "Pattern matching is", RAISE_SYNTAX_ERROR("expected ':'") ) }
     | a="match" subject=subject_expr ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'match' statement on line %d", a->lineno) }
+    | 'shodni' subject_expr !':' { CHECK_VERSION(void*, 10, "Pattern matching is", RAISE_SYNTAX_ERROR("expected ':'") ) }
+    | a='shodni' subject=subject_expr ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("ocekavan odsazeny blok po 'shodni' statementu na radku %d", a->lineno) }
 invalid_case_block:
     | "case" patterns guard? !':' { RAISE_SYNTAX_ERROR("expected ':'") }
     | a="case" patterns guard? ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'case' statement on line %d", a->lineno) }
+    | 'pripad' patterns guard? !':' { RAISE_SYNTAX_ERROR("ocekavana ':'") }
+    | a='pripad' patterns guard? ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("ocekavan odsazeny blok po 'pripad' statementu na radku%d", a->lineno) }
 invalid_as_pattern:
     | or_pattern 'as' a="_" { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use '_' as a target") }
     | or_pattern 'as' !NAME a=expression { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "invalid pattern target") }
