@@ -10513,6 +10513,9 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
+	Emscripten|WASI)
+		LDSHARED='$(CC) -shared'
+		LDCXXSHARED='$(CXX) -shared';;
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
@@ -22374,14 +22377,14 @@ $as_echo "$TEST_MODULES" >&6; }
 
 
 # stdlib not available
-case $ac_sys_system/$ac_sys_emscripten_target in #(
-  AIX/*) :
+case $ac_sys_system in #(
+  AIX) :
 
 
     py_cv_module__scproxy=n/a
     py_cv_module_spwd=n/a
  ;; #(
-  VxWorks*/*) :
+  VxWorks*) :
 
 
     py_cv_module__scproxy=n/a
@@ -22389,103 +22392,72 @@ case $ac_sys_system/$ac_sys_emscripten_target in #(
     py_cv_module_termios=n/a
     py_cv_module_grp=n/a
  ;; #(
-  Darwin/*) :
+  Darwin) :
 
 
     py_cv_module_ossaudiodev=n/a
     py_cv_module_spwd=n/a
  ;; #(
-  CYGWIN*/*) :
+  CYGWIN*) :
 
 
     py_cv_module__scproxy=n/a
     py_cv_module_nis=n/a
  ;; #(
-  QNX*/*) :
+  QNX*) :
 
 
     py_cv_module__scproxy=n/a
     py_cv_module_nis=n/a
  ;; #(
-  FreeBSD*/*) :
+  FreeBSD*) :
 
 
     py_cv_module__scproxy=n/a
     py_cv_module_spwd=n/a
  ;; #(
+  Emscripten|WASI) :
+
+
+
+    py_cv_module__curses=n/a
+    py_cv_module__curses_panel=n/a
+    py_cv_module__dbm=n/a
+    py_cv_module__gdbm=n/a
+    py_cv_module__multiprocessing=n/a
+    py_cv_module__posixshmem=n/a
+    py_cv_module__posixsubprocess=n/a
+    py_cv_module__scproxy=n/a
+    py_cv_module__tkinter=n/a
+    py_cv_module__xxsubinterpreters=n/a
+    py_cv_module_grp=n/a
+    py_cv_module_nis=n/a
+    py_cv_module_ossaudiodev=n/a
+    py_cv_module_pwd=n/a
+    py_cv_module_spwd=n/a
+    py_cv_module_syslog=n/a
+    py_cv_module_=n/a
+
+    case $ac_sys_system/$ac_sys_emscripten_target in #(
   Emscripten/browser*) :
 
 
 
-    py_cv_module__ctypes=n/a
-    py_cv_module__curses=n/a
-    py_cv_module__curses_panel=n/a
-    py_cv_module__dbm=n/a
-    py_cv_module__gdbm=n/a
-    py_cv_module__multiprocessing=n/a
-    py_cv_module__posixshmem=n/a
-    py_cv_module__posixsubprocess=n/a
-    py_cv_module__scproxy=n/a
-    py_cv_module__tkinter=n/a
-    py_cv_module__xxsubinterpreters=n/a
     py_cv_module_fcntl=n/a
-    py_cv_module_grp=n/a
-    py_cv_module_nis=n/a
-    py_cv_module_ossaudiodev=n/a
-    py_cv_module_pwd=n/a
     py_cv_module_resource=n/a
     py_cv_module_readline=n/a
-    py_cv_module_spwd=n/a
-    py_cv_module_syslog=n/a
     py_cv_module_termios=n/a
     py_cv_module_=n/a
 
-   ;; #(
-      Emscripten/node*) :
-
-
-
-    py_cv_module__ctypes=n/a
-    py_cv_module__curses=n/a
-    py_cv_module__curses_panel=n/a
-    py_cv_module__dbm=n/a
-    py_cv_module__gdbm=n/a
-    py_cv_module__multiprocessing=n/a
-    py_cv_module__posixshmem=n/a
-    py_cv_module__posixsubprocess=n/a
-    py_cv_module__scproxy=n/a
-    py_cv_module__tkinter=n/a
-    py_cv_module__xxsubinterpreters=n/a
-    py_cv_module_grp=n/a
-    py_cv_module_nis=n/a
-    py_cv_module_ossaudiodev=n/a
-    py_cv_module_pwd=n/a
-    py_cv_module_spwd=n/a
-    py_cv_module_syslog=n/a
-    py_cv_module_=n/a
-
-   ;; #(
+       ;; #(
+  Emscripten/node*) :
+     ;; #(
   WASI/*) :
 
-
-
-    py_cv_module__ctypes=n/a
-    py_cv_module__ctypes_test=n/a
-    py_cv_module__curses=n/a
-    py_cv_module__curses_panel=n/a
-    py_cv_module__dbm=n/a
-    py_cv_module__gdbm=n/a
-    py_cv_module__scproxy=n/a
-    py_cv_module__tkinter=n/a
-    py_cv_module__xxsubinterpreters=n/a
-    py_cv_module_grp=n/a
-    py_cv_module_nis=n/a
-    py_cv_module_ossaudiodev=n/a
-    py_cv_module_pwd=n/a
-    py_cv_module_spwd=n/a
-    py_cv_module_syslog=n/a
-    py_cv_module_=n/a
-
+     ;; #(
+  *) :
+     ;;
+esac
    ;; #(
   *) :
 

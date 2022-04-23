@@ -516,7 +516,12 @@ class CAPITest(unittest.TestCase):
         del subclass_instance
 
         # Test that setting __class__ modified the reference counts of the types
-        self.assertEqual(type_refcnt - 1, B.refcnt_in_del)
+        if Py_DEBUG:
+            # gh-89373: In debug mode, _Py_Dealloc() keeps a strong reference
+            # to the type while calling tp_dealloc()
+            self.assertEqual(type_refcnt, B.refcnt_in_del)
+        else:
+            self.assertEqual(type_refcnt - 1, B.refcnt_in_del)
         self.assertEqual(new_type_refcnt + 1, A.refcnt_in_del)
 
         # Test that the original type already has decreased its refcnt
@@ -581,7 +586,12 @@ class CAPITest(unittest.TestCase):
         del subclass_instance
 
         # Test that setting __class__ modified the reference counts of the types
-        self.assertEqual(type_refcnt - 1, _testcapi.HeapCTypeSubclassWithFinalizer.refcnt_in_del)
+        if Py_DEBUG:
+            # gh-89373: In debug mode, _Py_Dealloc() keeps a strong reference
+            # to the type while calling tp_dealloc()
+            self.assertEqual(type_refcnt, _testcapi.HeapCTypeSubclassWithFinalizer.refcnt_in_del)
+        else:
+            self.assertEqual(type_refcnt - 1, _testcapi.HeapCTypeSubclassWithFinalizer.refcnt_in_del)
         self.assertEqual(new_type_refcnt + 1, _testcapi.HeapCTypeSubclass.refcnt_in_del)
 
         # Test that the original type already has decreased its refcnt
