@@ -49,6 +49,19 @@ Python
     def orAndExample(x, y):
         return x or y, x and y
 
+    def passExample():
+        pass
+
+    def breakContinueExample():
+        for i in range(1,11):
+            if i == 5:
+                break
+            print(i)
+        for i in range(1,11):
+            if i == 5:
+                continue
+            print(i)
+
     def divide(x, y):
         """Copied from https://www.geeksforgeeks.org/try-except-else-and-finally-in-python/"""
         try:
@@ -110,6 +123,19 @@ Krajta
 
     vym neboAPriklad(x, y):
         vrat x nebo y, x a y
+
+    vym vynechPriklad():
+        vynech
+
+    vym rozbijPokracujPriklad():
+        pro i uvnitr range(1,11):
+            kdyz i == 5:
+                rozbij
+            print(i)
+        pro i uvnitr range(1,11):
+            kdyz i == 5:
+                pokracuj
+            print(i)
 
     vym divide(x, y):
         """Copied from https://www.geeksforgeeks.org/try-except-else-and-finally-in-python/"""
