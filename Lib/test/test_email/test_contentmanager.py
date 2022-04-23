@@ -481,7 +481,7 @@ class TestRawDataManager(TestEmailBase):
                 m = self.message(policy=policy)
                 content = b'b\xFFgus\tcon\nt\rent ' + b'z'*80
                 raw_data_manager.set_content(
-                    m,content, maintype='application', subtype='octet-stream')
+                    m, content, maintype='application', subtype='octet-stream')
                 self.assertEqual(bytes(m), textwrap.dedent("""\
                     Content-Type: application/octet-stream
                     Content-Transfer-Encoding: base64
