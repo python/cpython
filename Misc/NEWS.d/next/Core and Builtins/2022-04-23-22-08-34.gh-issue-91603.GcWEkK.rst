@@ -1,0 +1,2 @@
+Speed up :class:`types.UnionType` instantiation. Patch provided by Yurii
+Karabas.
