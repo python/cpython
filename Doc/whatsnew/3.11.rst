@@ -196,7 +196,7 @@ See :pep:`646` for more details.
 
 (Contributed by Matthew Rahtz in :issue:`43224`, with contributions by
 Serhiy Storchaka and Jelle Zijlstra. PEP written by Mark Mendoza, Matthew
-Rahtz, Pradeep Kumar, and Vincent Siles.)
+Rahtz, Pradeep Kumar Srinivasan, and Vincent Siles.)
 
 PEP 655: Marking individual ``TypedDict`` items as required or not-required
 ---------------------------------------------------------------------------
@@ -261,7 +261,7 @@ or attributes of the same type as their enclosing class.
 See :pep:`673` for more details.
 
 (Contributed by James Hilton-Balfe in :issue:`46534`. PEP written by
-Pradeep Kumar and James Hilton-Balfe.)
+Pradeep Kumar Srinivasan and James Hilton-Balfe.)
 
 PEP 675: Arbitrary literal string type
 --------------------------------------
@@ -295,7 +295,7 @@ For example, a SQL query function could be annotated as follows::
 See :pep:`675` for more details.
 
 (Contributed by Jelle Zijlstra in :issue:`47088`. PEP written by Pradeep
-Kumar and Graham Bleaney.)
+Kumar Srinivasan and Graham Bleaney.)
 
 
 Other Language Changes
