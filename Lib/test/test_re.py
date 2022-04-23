@@ -279,7 +279,7 @@ class ReTests(unittest.TestCase):
                                    r"bad character in group name '\\xc2\\xb5' "
                                    r"at position 4") as w:
             re.compile(b'(?P<\xc2\xb5>x)')
-        self.assertEqual(w.warnings[0].filename, __file__)
+        self.assertEqual(w.filename, __file__)
         with self.assertWarnsRegex(DeprecationWarning,
                                    r"bad character in group name '\\xc2\\xb5' "
                                    r"at position 4"):
@@ -326,7 +326,7 @@ class ReTests(unittest.TestCase):
                                    r"bad character in group name '\+1' "
                                    r"at position 3") as w:
             re.sub('(?P<a>x)', r'\g<+1>', 'xx')
-        self.assertEqual(w.warnings[0].filename, __file__)
+        self.assertEqual(w.filename, __file__)
         with self.assertWarnsRegex(DeprecationWarning,
                                    r"bad character in group name '01' "
                                    r"at position 3"):
@@ -346,7 +346,7 @@ class ReTests(unittest.TestCase):
                                    r"at position 3") as w:
             with self.assertRaisesRegex(IndexError, "unknown group name '\xc2\xb5'"):
                 re.sub(b'(?P<a>x)', b'\\g<\xc2\xb5>', b'xx')
-        self.assertEqual(w.warnings[0].filename, __file__)
+        self.assertEqual(w.filename, __file__)
         self.checkTemplateError('(?P<a>x)', r'\g<㊀>', 'xx',
                                 "bad character in group name '㊀'", 3)
         self.checkTemplateError('(?P<a>x)', r'\g<¹>', 'xx',
@@ -624,7 +624,7 @@ class ReTests(unittest.TestCase):
                                    r"bad character in group name '\+1' "
                                    r"at position 5") as w:
             re.compile(r'()(?(+1)a|b)')
-        self.assertEqual(w.warnings[0].filename, __file__)
+        self.assertEqual(w.filename, __file__)
         with self.assertWarnsRegex(DeprecationWarning,
                                    r"bad character in group name '01' "
                                    r"at position 5"):
