@@ -1,3 +1,0 @@
-Raise :exc:`IndentationError` instead of :exc:`SyntaxError` for a bare
-``except`` with no following indent. Improve :exc:`SyntaxError` locations for
-an un-parenthesized generator used as arguments. Patch by Matthieu Dartiailh.

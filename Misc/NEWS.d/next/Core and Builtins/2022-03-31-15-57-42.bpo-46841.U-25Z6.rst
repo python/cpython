@@ -1,1 +1,0 @@
-Avoid unnecessary allocations when comparing code objects.

@@ -1206,20 +1206,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             if MS_WINDOWS:
                 # Copy pythonXY.dll (or pythonXY_d.dll)
-                ver = sys.version_info
-                dll = f'python{ver.major}{ver.minor}'
-                dll3 = f'python{ver.major}'
-                if debug_build(sys.executable):
-                    dll += '_d'
-                    dll3 += '_d'
-                dll += '.dll'
-                dll3 += '.dll'
-                dll = os.path.join(os.path.dirname(self.test_exe), dll)
-                dll3 = os.path.join(os.path.dirname(self.test_exe), dll3)
-                dll_copy = os.path.join(tmpdir, os.path.basename(dll))
-                dll3_copy = os.path.join(tmpdir, os.path.basename(dll3))
-                shutil.copyfile(dll, dll_copy)
-                shutil.copyfile(dll3, dll3_copy)
+                import fnmatch
+                exedir = os.path.dirname(self.test_exe)
+                for f in os.listdir(exedir):
+                    if fnmatch.fnmatch(f, '*.dll'):
+                        shutil.copyfile(os.path.join(exedir, f), os.path.join(tmpdir, f))
 
             # Copy Python program
             exec_copy = os.path.join(tmpdir, os.path.basename(self.test_exe))

@@ -614,6 +614,8 @@ These can be used as types in annotations and do not support ``[]``.
    that generate type checker errors could be vulnerable to an SQL
    injection attack.
 
+   .. versionadded:: 3.11
+
 .. data:: Never
 
    The `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_,
@@ -1382,6 +1384,8 @@ These are not used in annotations. They are building blocks for creating generic
         Ts = TypeVarTuple('Ts')
         tup: tuple[*Ts]         # Syntax error on Python <= 3.10!
         tup: tuple[Unpack[Ts]]  # Semantically equivalent, and backwards-compatible
+
+   .. versionadded:: 3.11
 
 .. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False)
 
@@ -2406,6 +2410,35 @@ Functions and decorators
           <actual implementation>
 
    See :pep:`484` for details and comparison with other typing semantics.
+
+   .. versionchanged:: 3.11
+      Overloaded functions can now be introspected at runtime using
+      :func:`get_overloads`.
+
+
+.. function:: get_overloads(func)
+
+   Return a sequence of :func:`@overload <overload>`-decorated definitions for
+   *func*. *func* is the function object for the implementation of the
+   overloaded function. For example, given the definition of ``process`` in
+   the documentation for :func:`@overload <overload>`,
+   ``get_overloads(process)`` will return a sequence of three function objects
+   for the three defined overloads. If called on a function with no overloads,
+   ``get_overloads`` returns an empty sequence.
+
+   ``get_overloads`` can be used for introspecting an overloaded function at
+   runtime.
+
+   .. versionadded:: 3.11
+
+
+.. function:: clear_overloads()
+
+   Clear all registered overloads in the internal registry. This can be used
+   to reclaim the memory used by the registry.
+
+   .. versionadded:: 3.11
+
 
 .. decorator:: final
 

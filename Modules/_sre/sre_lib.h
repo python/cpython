@@ -450,20 +450,23 @@ do { \
 
 #define MARK_PUSH(lastmark) \
     do if (lastmark >= 0) { \
-        i = lastmark; /* ctx->lastmark may change if reallocated */ \
-        DATA_STACK_PUSH(state, state->mark, (i+1)*sizeof(void*)); \
+        size_t _marks_size = (lastmark+1) * sizeof(void*); \
+        DATA_STACK_PUSH(state, state->mark, _marks_size); \
     } while (0)
 #define MARK_POP(lastmark) \
     do if (lastmark >= 0) { \
-        DATA_STACK_POP(state, state->mark, (lastmark+1)*sizeof(void*), 1); \
+        size_t _marks_size = (lastmark+1) * sizeof(void*); \
+        DATA_STACK_POP(state, state->mark, _marks_size, 1); \
     } while (0)
 #define MARK_POP_KEEP(lastmark) \
     do if (lastmark >= 0) { \
-        DATA_STACK_POP(state, state->mark, (lastmark+1)*sizeof(void*), 0); \
+        size_t _marks_size = (lastmark+1) * sizeof(void*); \
+        DATA_STACK_POP(state, state->mark, _marks_size, 0); \
     } while (0)
 #define MARK_POP_DISCARD(lastmark) \
     do if (lastmark >= 0) { \
-        DATA_STACK_POP_DISCARD(state, (lastmark+1)*sizeof(void*)); \
+        size_t _marks_size = (lastmark+1) * sizeof(void*); \
+        DATA_STACK_POP_DISCARD(state, _marks_size); \
     } while (0)
 
 #define JUMP_NONE            0
@@ -485,16 +488,20 @@ do { \
 #define JUMP_ATOMIC_GROUP    16
 
 #define DO_JUMPX(jumpvalue, jumplabel, nextpattern, toplevel_) \
+    ctx->pattern = pattern; \
+    ctx->ptr = ptr; \
     DATA_ALLOC(SRE(match_context), nextctx); \
-    nextctx->last_ctx_pos = ctx_pos; \
-    nextctx->jump = jumpvalue; \
     nextctx->pattern = nextpattern; \
     nextctx->toplevel = toplevel_; \
+    nextctx->jump = jumpvalue; \
+    nextctx->last_ctx_pos = ctx_pos; \
+    pattern = nextpattern; \
     ctx_pos = alloc_pos; \
     ctx = nextctx; \
     goto entrance; \
     jumplabel: \
-    while (0) /* gcc doesn't like labels at end of scopes */ \
+    pattern = ctx->pattern; \
+    ptr = ctx->ptr;
 
 #define DO_JUMP(jumpvalue, jumplabel, nextpattern) \
     DO_JUMPX(jumpvalue, jumplabel, nextpattern, ctx->toplevel)
@@ -503,19 +510,49 @@ do { \
     DO_JUMPX(jumpvalue, jumplabel, nextpattern, 0)
 
 typedef struct {
-    Py_ssize_t last_ctx_pos;
-    Py_ssize_t jump;
-    const SRE_CHAR* ptr;
-    const SRE_CODE* pattern;
     Py_ssize_t count;
-    Py_ssize_t lastmark;
-    Py_ssize_t lastindex;
     union {
         SRE_CODE chr;
         SRE_REPEAT* rep;
     } u;
+    int lastmark;
+    int lastindex;
+    const SRE_CODE* pattern;
+    const SRE_CHAR* ptr;
     int toplevel;
+    int jump;
+    Py_ssize_t last_ctx_pos;
 } SRE(match_context);
+
+#define MAYBE_CHECK_SIGNALS                                        \
+    do {                                                           \
+        if ((0 == (++sigcount & 0xfff)) && PyErr_CheckSignals()) { \
+            RETURN_ERROR(SRE_ERROR_INTERRUPTED);                   \
+        }                                                          \
+    } while (0)
+
+#ifdef HAVE_COMPUTED_GOTOS
+    #ifndef USE_COMPUTED_GOTOS
+    #define USE_COMPUTED_GOTOS 1
+    #endif
+#elif defined(USE_COMPUTED_GOTOS) && USE_COMPUTED_GOTOS
+    #error "Computed gotos are not supported on this compiler."
+#else
+    #undef USE_COMPUTED_GOTOS
+    #define USE_COMPUTED_GOTOS 0
+#endif
+
+#if USE_COMPUTED_GOTOS
+    #define TARGET(OP) TARGET_ ## OP
+    #define DISPATCH                       \
+        do {                               \
+            MAYBE_CHECK_SIGNALS;           \
+            goto *sre_targets[*pattern++]; \
+        } while (0)
+#else
+    #define TARGET(OP) case OP
+    #define DISPATCH goto dispatch
+#endif
 
 /* check if string matches the given pattern.  returns <0 for
    error, 0 for failure, and 1 for success */
@@ -524,8 +561,8 @@ SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel)
 {
     const SRE_CHAR* end = (const SRE_CHAR *)state->end;
     Py_ssize_t alloc_pos, ctx_pos = -1;
-    Py_ssize_t i, ret = 0;
-    Py_ssize_t jump;
+    Py_ssize_t ret = 0;
+    int jump;
     unsigned int sigcount=0;
 
     SRE(match_context)* ctx;
@@ -536,254 +573,262 @@ SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel)
     DATA_ALLOC(SRE(match_context), ctx);
     ctx->last_ctx_pos = -1;
     ctx->jump = JUMP_NONE;
-    ctx->pattern = pattern;
     ctx->toplevel = toplevel;
     ctx_pos = alloc_pos;
 
+#if USE_COMPUTED_GOTOS
+#include "sre_targets.h"
+#endif
+
 entrance:
 
-    ctx->ptr = (SRE_CHAR *)state->ptr;
+    ;  // Fashion statement.
+    const SRE_CHAR *ptr = (SRE_CHAR *)state->ptr;
 
-    if (ctx->pattern[0] == SRE_OP_INFO) {
+    if (pattern[0] == SRE_OP_INFO) {
         /* optimization info block */
         /* <INFO> <1=skip> <2=flags> <3=min> ... */
-        if (ctx->pattern[3] && (uintptr_t)(end - ctx->ptr) < ctx->pattern[3]) {
+        if (pattern[3] && (uintptr_t)(end - ptr) < pattern[3]) {
             TRACE(("reject (got %zd chars, need %zd)\n",
-                   end - ctx->ptr, (Py_ssize_t) ctx->pattern[3]));
+                   end - ptr, (Py_ssize_t) pattern[3]));
             RETURN_FAILURE;
         }
-        ctx->pattern += ctx->pattern[1] + 1;
+        pattern += pattern[1] + 1;
     }
 
-    for (;;) {
-        ++sigcount;
-        if ((0 == (sigcount & 0xfff)) && PyErr_CheckSignals())
-            RETURN_ERROR(SRE_ERROR_INTERRUPTED);
+#if USE_COMPUTED_GOTOS
+    DISPATCH;
+#else
+dispatch:
+    MAYBE_CHECK_SIGNALS;
+    switch (*pattern++)
+#endif
+    {
 
-        switch (*ctx->pattern++) {
-
-        case SRE_OP_MARK:
+        TARGET(SRE_OP_MARK):
             /* set mark */
             /* <MARK> <gid> */
-            TRACE(("|%p|%p|MARK %d\n", ctx->pattern,
-                   ctx->ptr, ctx->pattern[0]));
-            i = ctx->pattern[0];
-            if (i & 1)
-                state->lastindex = i/2 + 1;
-            if (i > state->lastmark) {
-                /* state->lastmark is the highest valid index in the
-                   state->mark array.  If it is increased by more than 1,
-                   the intervening marks must be set to NULL to signal
-                   that these marks have not been encountered. */
-                Py_ssize_t j = state->lastmark + 1;
-                while (j < i)
-                    state->mark[j++] = NULL;
-                state->lastmark = i;
+            TRACE(("|%p|%p|MARK %d\n", pattern,
+                   ptr, pattern[0]));
+            {
+                int i = pattern[0];
+                if (i & 1)
+                    state->lastindex = i/2 + 1;
+                if (i > state->lastmark) {
+                    /* state->lastmark is the highest valid index in the
+                       state->mark array.  If it is increased by more than 1,
+                       the intervening marks must be set to NULL to signal
+                       that these marks have not been encountered. */
+                    int j = state->lastmark + 1;
+                    while (j < i)
+                        state->mark[j++] = NULL;
+                    state->lastmark = i;
+                }
+                state->mark[i] = ptr;
             }
-            state->mark[i] = ctx->ptr;
-            ctx->pattern++;
-            break;
+            pattern++;
+            DISPATCH;
 
-        case SRE_OP_LITERAL:
+        TARGET(SRE_OP_LITERAL):
             /* match literal string */
             /* <LITERAL> <code> */
-            TRACE(("|%p|%p|LITERAL %d\n", ctx->pattern,
-                   ctx->ptr, *ctx->pattern));
-            if (ctx->ptr >= end || (SRE_CODE) ctx->ptr[0] != ctx->pattern[0])
+            TRACE(("|%p|%p|LITERAL %d\n", pattern,
+                   ptr, *pattern));
+            if (ptr >= end || (SRE_CODE) ptr[0] != pattern[0])
                 RETURN_FAILURE;
-            ctx->pattern++;
-            ctx->ptr++;
-            break;
+            pattern++;
+            ptr++;
+            DISPATCH;
 
-        case SRE_OP_NOT_LITERAL:
+        TARGET(SRE_OP_NOT_LITERAL):
             /* match anything that is not literal character */
             /* <NOT_LITERAL> <code> */
-            TRACE(("|%p|%p|NOT_LITERAL %d\n", ctx->pattern,
-                   ctx->ptr, *ctx->pattern));
-            if (ctx->ptr >= end || (SRE_CODE) ctx->ptr[0] == ctx->pattern[0])
+            TRACE(("|%p|%p|NOT_LITERAL %d\n", pattern,
+                   ptr, *pattern));
+            if (ptr >= end || (SRE_CODE) ptr[0] == pattern[0])
                 RETURN_FAILURE;
-            ctx->pattern++;
-            ctx->ptr++;
-            break;
+            pattern++;
+            ptr++;
+            DISPATCH;
 
-        case SRE_OP_SUCCESS:
+        TARGET(SRE_OP_SUCCESS):
             /* end of pattern */
-            TRACE(("|%p|%p|SUCCESS\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|SUCCESS\n", pattern, ptr));
             if (ctx->toplevel &&
-                ((state->match_all && ctx->ptr != state->end) ||
-                 (state->must_advance && ctx->ptr == state->start)))
+                ((state->match_all && ptr != state->end) ||
+                 (state->must_advance && ptr == state->start)))
             {
                 RETURN_FAILURE;
             }
-            state->ptr = ctx->ptr;
+            state->ptr = ptr;
             RETURN_SUCCESS;
 
-        case SRE_OP_AT:
+        TARGET(SRE_OP_AT):
             /* match at given position */
             /* <AT> <code> */
-            TRACE(("|%p|%p|AT %d\n", ctx->pattern, ctx->ptr, *ctx->pattern));
-            if (!SRE(at)(state, ctx->ptr, *ctx->pattern))
+            TRACE(("|%p|%p|AT %d\n", pattern, ptr, *pattern));
+            if (!SRE(at)(state, ptr, *pattern))
                 RETURN_FAILURE;
-            ctx->pattern++;
-            break;
+            pattern++;
+            DISPATCH;
 
-        case SRE_OP_CATEGORY:
+        TARGET(SRE_OP_CATEGORY):
             /* match at given category */
             /* <CATEGORY> <code> */
-            TRACE(("|%p|%p|CATEGORY %d\n", ctx->pattern,
-                   ctx->ptr, *ctx->pattern));
-            if (ctx->ptr >= end || !sre_category(ctx->pattern[0], ctx->ptr[0]))
+            TRACE(("|%p|%p|CATEGORY %d\n", pattern,
+                   ptr, *pattern));
+            if (ptr >= end || !sre_category(pattern[0], ptr[0]))
                 RETURN_FAILURE;
-            ctx->pattern++;
-            ctx->ptr++;
-            break;
+            pattern++;
+            ptr++;
+            DISPATCH;
 
-        case SRE_OP_ANY:
+        TARGET(SRE_OP_ANY):
             /* match anything (except a newline) */
             /* <ANY> */
-            TRACE(("|%p|%p|ANY\n", ctx->pattern, ctx->ptr));
-            if (ctx->ptr >= end || SRE_IS_LINEBREAK(ctx->ptr[0]))
+            TRACE(("|%p|%p|ANY\n", pattern, ptr));
+            if (ptr >= end || SRE_IS_LINEBREAK(ptr[0]))
                 RETURN_FAILURE;
-            ctx->ptr++;
-            break;
+            ptr++;
+            DISPATCH;
 
-        case SRE_OP_ANY_ALL:
+        TARGET(SRE_OP_ANY_ALL):
             /* match anything */
             /* <ANY_ALL> */
-            TRACE(("|%p|%p|ANY_ALL\n", ctx->pattern, ctx->ptr));
-            if (ctx->ptr >= end)
+            TRACE(("|%p|%p|ANY_ALL\n", pattern, ptr));
+            if (ptr >= end)
                 RETURN_FAILURE;
-            ctx->ptr++;
-            break;
+            ptr++;
+            DISPATCH;
 
-        case SRE_OP_IN:
+        TARGET(SRE_OP_IN):
             /* match set member (or non_member) */
             /* <IN> <skip> <set> */
-            TRACE(("|%p|%p|IN\n", ctx->pattern, ctx->ptr));
-            if (ctx->ptr >= end ||
-                !SRE(charset)(state, ctx->pattern + 1, *ctx->ptr))
+            TRACE(("|%p|%p|IN\n", pattern, ptr));
+            if (ptr >= end ||
+                !SRE(charset)(state, pattern + 1, *ptr))
                 RETURN_FAILURE;
-            ctx->pattern += ctx->pattern[0];
-            ctx->ptr++;
-            break;
+            pattern += pattern[0];
+            ptr++;
+            DISPATCH;
 
-        case SRE_OP_LITERAL_IGNORE:
+        TARGET(SRE_OP_LITERAL_IGNORE):
             TRACE(("|%p|%p|LITERAL_IGNORE %d\n",
-                   ctx->pattern, ctx->ptr, ctx->pattern[0]));
-            if (ctx->ptr >= end ||
-                sre_lower_ascii(*ctx->ptr) != *ctx->pattern)
+                   pattern, ptr, pattern[0]));
+            if (ptr >= end ||
+                sre_lower_ascii(*ptr) != *pattern)
                 RETURN_FAILURE;
-            ctx->pattern++;
-            ctx->ptr++;
-            break;
+            pattern++;
+            ptr++;
+            DISPATCH;
 
-        case SRE_OP_LITERAL_UNI_IGNORE:
+        TARGET(SRE_OP_LITERAL_UNI_IGNORE):
             TRACE(("|%p|%p|LITERAL_UNI_IGNORE %d\n",
-                   ctx->pattern, ctx->ptr, ctx->pattern[0]));
-            if (ctx->ptr >= end ||
-                sre_lower_unicode(*ctx->ptr) != *ctx->pattern)
+                   pattern, ptr, pattern[0]));
+            if (ptr >= end ||
+                sre_lower_unicode(*ptr) != *pattern)
                 RETURN_FAILURE;
-            ctx->pattern++;
-            ctx->ptr++;
-            break;
+            pattern++;
+            ptr++;
+            DISPATCH;
 
-        case SRE_OP_LITERAL_LOC_IGNORE:
+        TARGET(SRE_OP_LITERAL_LOC_IGNORE):
             TRACE(("|%p|%p|LITERAL_LOC_IGNORE %d\n",
-                   ctx->pattern, ctx->ptr, ctx->pattern[0]));
-            if (ctx->ptr >= end
-                || !char_loc_ignore(*ctx->pattern, *ctx->ptr))
+                   pattern, ptr, pattern[0]));
+            if (ptr >= end
+                || !char_loc_ignore(*pattern, *ptr))
                 RETURN_FAILURE;
-            ctx->pattern++;
-            ctx->ptr++;
-            break;
+            pattern++;
+            ptr++;
+            DISPATCH;
 
-        case SRE_OP_NOT_LITERAL_IGNORE:
+        TARGET(SRE_OP_NOT_LITERAL_IGNORE):
             TRACE(("|%p|%p|NOT_LITERAL_IGNORE %d\n",
-                   ctx->pattern, ctx->ptr, *ctx->pattern));
-            if (ctx->ptr >= end ||
-                sre_lower_ascii(*ctx->ptr) == *ctx->pattern)
+                   pattern, ptr, *pattern));
+            if (ptr >= end ||
+                sre_lower_ascii(*ptr) == *pattern)
                 RETURN_FAILURE;
-            ctx->pattern++;
-            ctx->ptr++;
-            break;
+            pattern++;
+            ptr++;
+            DISPATCH;
 
-        case SRE_OP_NOT_LITERAL_UNI_IGNORE:
+        TARGET(SRE_OP_NOT_LITERAL_UNI_IGNORE):
             TRACE(("|%p|%p|NOT_LITERAL_UNI_IGNORE %d\n",
-                   ctx->pattern, ctx->ptr, *ctx->pattern));
-            if (ctx->ptr >= end ||
-                sre_lower_unicode(*ctx->ptr) == *ctx->pattern)
+                   pattern, ptr, *pattern));
+            if (ptr >= end ||
+                sre_lower_unicode(*ptr) == *pattern)
                 RETURN_FAILURE;
-            ctx->pattern++;
-            ctx->ptr++;
-            break;
+            pattern++;
+            ptr++;
+            DISPATCH;
 
-        case SRE_OP_NOT_LITERAL_LOC_IGNORE:
+        TARGET(SRE_OP_NOT_LITERAL_LOC_IGNORE):
             TRACE(("|%p|%p|NOT_LITERAL_LOC_IGNORE %d\n",
-                   ctx->pattern, ctx->ptr, *ctx->pattern));
-            if (ctx->ptr >= end
-                || char_loc_ignore(*ctx->pattern, *ctx->ptr))
+                   pattern, ptr, *pattern));
+            if (ptr >= end
+                || char_loc_ignore(*pattern, *ptr))
                 RETURN_FAILURE;
-            ctx->pattern++;
-            ctx->ptr++;
-            break;
+            pattern++;
+            ptr++;
+            DISPATCH;
 
-        case SRE_OP_IN_IGNORE:
-            TRACE(("|%p|%p|IN_IGNORE\n", ctx->pattern, ctx->ptr));
-            if (ctx->ptr >= end
-                || !SRE(charset)(state, ctx->pattern+1,
-                                 (SRE_CODE)sre_lower_ascii(*ctx->ptr)))
+        TARGET(SRE_OP_IN_IGNORE):
+            TRACE(("|%p|%p|IN_IGNORE\n", pattern, ptr));
+            if (ptr >= end
+                || !SRE(charset)(state, pattern+1,
+                                 (SRE_CODE)sre_lower_ascii(*ptr)))
                 RETURN_FAILURE;
-            ctx->pattern += ctx->pattern[0];
-            ctx->ptr++;
-            break;
+            pattern += pattern[0];
+            ptr++;
+            DISPATCH;
 
-        case SRE_OP_IN_UNI_IGNORE:
-            TRACE(("|%p|%p|IN_UNI_IGNORE\n", ctx->pattern, ctx->ptr));
-            if (ctx->ptr >= end
-                || !SRE(charset)(state, ctx->pattern+1,
-                                 (SRE_CODE)sre_lower_unicode(*ctx->ptr)))
+        TARGET(SRE_OP_IN_UNI_IGNORE):
+            TRACE(("|%p|%p|IN_UNI_IGNORE\n", pattern, ptr));
+            if (ptr >= end
+                || !SRE(charset)(state, pattern+1,
+                                 (SRE_CODE)sre_lower_unicode(*ptr)))
                 RETURN_FAILURE;
-            ctx->pattern += ctx->pattern[0];
-            ctx->ptr++;
-            break;
+            pattern += pattern[0];
+            ptr++;
+            DISPATCH;
 
-        case SRE_OP_IN_LOC_IGNORE:
-            TRACE(("|%p|%p|IN_LOC_IGNORE\n", ctx->pattern, ctx->ptr));
-            if (ctx->ptr >= end
-                || !SRE(charset_loc_ignore)(state, ctx->pattern+1, *ctx->ptr))
+        TARGET(SRE_OP_IN_LOC_IGNORE):
+            TRACE(("|%p|%p|IN_LOC_IGNORE\n", pattern, ptr));
+            if (ptr >= end
+                || !SRE(charset_loc_ignore)(state, pattern+1, *ptr))
                 RETURN_FAILURE;
-            ctx->pattern += ctx->pattern[0];
-            ctx->ptr++;
-            break;
+            pattern += pattern[0];
+            ptr++;
+            DISPATCH;
 
-        case SRE_OP_JUMP:
-        case SRE_OP_INFO:
+        TARGET(SRE_OP_JUMP):
+        TARGET(SRE_OP_INFO):
             /* jump forward */
             /* <JUMP> <offset> */
-            TRACE(("|%p|%p|JUMP %d\n", ctx->pattern,
-                   ctx->ptr, ctx->pattern[0]));
-            ctx->pattern += ctx->pattern[0];
-            break;
+            TRACE(("|%p|%p|JUMP %d\n", pattern,
+                   ptr, pattern[0]));
+            pattern += pattern[0];
+            DISPATCH;
 
-        case SRE_OP_BRANCH:
+        TARGET(SRE_OP_BRANCH):
             /* alternation */
             /* <BRANCH> <0=skip> code <JUMP> ... <NULL> */
-            TRACE(("|%p|%p|BRANCH\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|BRANCH\n", pattern, ptr));
             LASTMARK_SAVE();
             if (state->repeat)
                 MARK_PUSH(ctx->lastmark);
-            for (; ctx->pattern[0]; ctx->pattern += ctx->pattern[0]) {
-                if (ctx->pattern[1] == SRE_OP_LITERAL &&
-                    (ctx->ptr >= end ||
-                     (SRE_CODE) *ctx->ptr != ctx->pattern[2]))
+            for (; pattern[0]; pattern += pattern[0]) {
+                if (pattern[1] == SRE_OP_LITERAL &&
+                    (ptr >= end ||
+                     (SRE_CODE) *ptr != pattern[2]))
                     continue;
-                if (ctx->pattern[1] == SRE_OP_IN &&
-                    (ctx->ptr >= end ||
-                     !SRE(charset)(state, ctx->pattern + 3,
-                                   (SRE_CODE) *ctx->ptr)))
+                if (pattern[1] == SRE_OP_IN &&
+                    (ptr >= end ||
+                     !SRE(charset)(state, pattern + 3,
+                                   (SRE_CODE) *ptr)))
                     continue;
-                state->ptr = ctx->ptr;
-                DO_JUMP(JUMP_BRANCH, jump_branch, ctx->pattern+1);
+                state->ptr = ptr;
+                DO_JUMP(JUMP_BRANCH, jump_branch, pattern+1);
                 if (ret) {
                     if (state->repeat)
                         MARK_POP_DISCARD(ctx->lastmark);
@@ -798,7 +843,7 @@ entrance:
                 MARK_POP_DISCARD(ctx->lastmark);
             RETURN_FAILURE;
 
-        case SRE_OP_REPEAT_ONE:
+        TARGET(SRE_OP_REPEAT_ONE):
             /* match repeated sequence (maximizing regexp) */
 
             /* this operator only works if the repeated item is
@@ -808,34 +853,34 @@ entrance:
 
             /* <REPEAT_ONE> <skip> <1=min> <2=max> item <SUCCESS> tail */
 
-            TRACE(("|%p|%p|REPEAT_ONE %d %d\n", ctx->pattern, ctx->ptr,
-                   ctx->pattern[1], ctx->pattern[2]));
+            TRACE(("|%p|%p|REPEAT_ONE %d %d\n", pattern, ptr,
+                   pattern[1], pattern[2]));
 
-            if ((Py_ssize_t) ctx->pattern[1] > end - ctx->ptr)
+            if ((Py_ssize_t) pattern[1] > end - ptr)
                 RETURN_FAILURE; /* cannot match */
 
-            state->ptr = ctx->ptr;
+            state->ptr = ptr;
 
-            ret = SRE(count)(state, ctx->pattern+3, ctx->pattern[2]);
+            ret = SRE(count)(state, pattern+3, pattern[2]);
             RETURN_ON_ERROR(ret);
             DATA_LOOKUP_AT(SRE(match_context), ctx, ctx_pos);
             ctx->count = ret;
-            ctx->ptr += ctx->count;
+            ptr += ctx->count;
 
             /* when we arrive here, count contains the number of
-               matches, and ctx->ptr points to the tail of the target
+               matches, and ptr points to the tail of the target
                string.  check if the rest of the pattern matches,
                and backtrack if not. */
 
-            if (ctx->count < (Py_ssize_t) ctx->pattern[1])
+            if (ctx->count < (Py_ssize_t) pattern[1])
                 RETURN_FAILURE;
 
-            if (ctx->pattern[ctx->pattern[0]] == SRE_OP_SUCCESS &&
-                ctx->ptr == state->end &&
-                !(ctx->toplevel && state->must_advance && ctx->ptr == state->start))
+            if (pattern[pattern[0]] == SRE_OP_SUCCESS &&
+                ptr == state->end &&
+                !(ctx->toplevel && state->must_advance && ptr == state->start))
             {
                 /* tail is empty.  we're finished */
-                state->ptr = ctx->ptr;
+                state->ptr = ptr;
                 RETURN_SUCCESS;
             }
 
@@ -843,21 +888,21 @@ entrance:
             if (state->repeat)
                 MARK_PUSH(ctx->lastmark);
 
-            if (ctx->pattern[ctx->pattern[0]] == SRE_OP_LITERAL) {
+            if (pattern[pattern[0]] == SRE_OP_LITERAL) {
                 /* tail starts with a literal. skip positions where
                    the rest of the pattern cannot possibly match */
-                ctx->u.chr = ctx->pattern[ctx->pattern[0]+1];
+                ctx->u.chr = pattern[pattern[0]+1];
                 for (;;) {
-                    while (ctx->count >= (Py_ssize_t) ctx->pattern[1] &&
-                           (ctx->ptr >= end || *ctx->ptr != ctx->u.chr)) {
-                        ctx->ptr--;
+                    while (ctx->count >= (Py_ssize_t) pattern[1] &&
+                           (ptr >= end || *ptr != ctx->u.chr)) {
+                        ptr--;
                         ctx->count--;
                     }
-                    if (ctx->count < (Py_ssize_t) ctx->pattern[1])
+                    if (ctx->count < (Py_ssize_t) pattern[1])
                         break;
-                    state->ptr = ctx->ptr;
+                    state->ptr = ptr;
                     DO_JUMP(JUMP_REPEAT_ONE_1, jump_repeat_one_1,
-                            ctx->pattern+ctx->pattern[0]);
+                            pattern+pattern[0]);
                     if (ret) {
                         if (state->repeat)
                             MARK_POP_DISCARD(ctx->lastmark);
@@ -868,17 +913,17 @@ entrance:
                         MARK_POP_KEEP(ctx->lastmark);
                     LASTMARK_RESTORE();
 
-                    ctx->ptr--;
+                    ptr--;
                     ctx->count--;
                 }
                 if (state->repeat)
                     MARK_POP_DISCARD(ctx->lastmark);
             } else {
                 /* general case */
-                while (ctx->count >= (Py_ssize_t) ctx->pattern[1]) {
-                    state->ptr = ctx->ptr;
+                while (ctx->count >= (Py_ssize_t) pattern[1]) {
+                    state->ptr = ptr;
                     DO_JUMP(JUMP_REPEAT_ONE_2, jump_repeat_one_2,
-                            ctx->pattern+ctx->pattern[0]);
+                            pattern+pattern[0]);
                     if (ret) {
                         if (state->repeat)
                             MARK_POP_DISCARD(ctx->lastmark);
@@ -889,7 +934,7 @@ entrance:
                         MARK_POP_KEEP(ctx->lastmark);
                     LASTMARK_RESTORE();
 
-                    ctx->ptr--;
+                    ptr--;
                     ctx->count--;
                 }
                 if (state->repeat)
@@ -897,7 +942,7 @@ entrance:
             }
             RETURN_FAILURE;
 
-        case SRE_OP_MIN_REPEAT_ONE:
+        TARGET(SRE_OP_MIN_REPEAT_ONE):
             /* match repeated sequence (minimizing regexp) */
 
             /* this operator only works if the repeated item is
@@ -907,36 +952,36 @@ entrance:
 
             /* <MIN_REPEAT_ONE> <skip> <1=min> <2=max> item <SUCCESS> tail */
 
-            TRACE(("|%p|%p|MIN_REPEAT_ONE %d %d\n", ctx->pattern, ctx->ptr,
-                   ctx->pattern[1], ctx->pattern[2]));
+            TRACE(("|%p|%p|MIN_REPEAT_ONE %d %d\n", pattern, ptr,
+                   pattern[1], pattern[2]));
 
-            if ((Py_ssize_t) ctx->pattern[1] > end - ctx->ptr)
+            if ((Py_ssize_t) pattern[1] > end - ptr)
                 RETURN_FAILURE; /* cannot match */
 
-            state->ptr = ctx->ptr;
+            state->ptr = ptr;
 
-            if (ctx->pattern[1] == 0)
+            if (pattern[1] == 0)
                 ctx->count = 0;
             else {
                 /* count using pattern min as the maximum */
-                ret = SRE(count)(state, ctx->pattern+3, ctx->pattern[1]);
+                ret = SRE(count)(state, pattern+3, pattern[1]);
                 RETURN_ON_ERROR(ret);
                 DATA_LOOKUP_AT(SRE(match_context), ctx, ctx_pos);
-                if (ret < (Py_ssize_t) ctx->pattern[1])
+                if (ret < (Py_ssize_t) pattern[1])
                     /* didn't match minimum number of times */
                     RETURN_FAILURE;
                 /* advance past minimum matches of repeat */
                 ctx->count = ret;
-                ctx->ptr += ctx->count;
+                ptr += ctx->count;
             }
 
-            if (ctx->pattern[ctx->pattern[0]] == SRE_OP_SUCCESS &&
+            if (pattern[pattern[0]] == SRE_OP_SUCCESS &&
                 !(ctx->toplevel &&
-                  ((state->match_all && ctx->ptr != state->end) ||
-                   (state->must_advance && ctx->ptr == state->start))))
+                  ((state->match_all && ptr != state->end) ||
+                   (state->must_advance && ptr == state->start))))
             {
                 /* tail is empty.  we're finished */
-                state->ptr = ctx->ptr;
+                state->ptr = ptr;
                 RETURN_SUCCESS;
 
             } else {
@@ -945,11 +990,11 @@ entrance:
                 if (state->repeat)
                     MARK_PUSH(ctx->lastmark);
 
-                while ((Py_ssize_t)ctx->pattern[2] == SRE_MAXREPEAT
-                       || ctx->count <= (Py_ssize_t)ctx->pattern[2]) {
-                    state->ptr = ctx->ptr;
+                while ((Py_ssize_t)pattern[2] == SRE_MAXREPEAT
+                       || ctx->count <= (Py_ssize_t)pattern[2]) {
+                    state->ptr = ptr;
                     DO_JUMP(JUMP_MIN_REPEAT_ONE,jump_min_repeat_one,
-                            ctx->pattern+ctx->pattern[0]);
+                            pattern+pattern[0]);
                     if (ret) {
                         if (state->repeat)
                             MARK_POP_DISCARD(ctx->lastmark);
@@ -960,14 +1005,14 @@ entrance:
                         MARK_POP_KEEP(ctx->lastmark);
                     LASTMARK_RESTORE();
 
-                    state->ptr = ctx->ptr;
-                    ret = SRE(count)(state, ctx->pattern+3, 1);
+                    state->ptr = ptr;
+                    ret = SRE(count)(state, pattern+3, 1);
                     RETURN_ON_ERROR(ret);
                     DATA_LOOKUP_AT(SRE(match_context), ctx, ctx_pos);
                     if (ret == 0)
                         break;
                     assert(ret == 1);
-                    ctx->ptr++;
+                    ptr++;
                     ctx->count++;
                 }
                 if (state->repeat)
@@ -975,7 +1020,7 @@ entrance:
             }
             RETURN_FAILURE;
 
-        case SRE_OP_POSSESSIVE_REPEAT_ONE:
+        TARGET(SRE_OP_POSSESSIVE_REPEAT_ONE):
             /* match repeated sequence (maximizing regexp) without
                backtracking */
 
@@ -987,67 +1032,67 @@ entrance:
             /* <POSSESSIVE_REPEAT_ONE> <skip> <1=min> <2=max> item <SUCCESS>
                tail */
 
-            TRACE(("|%p|%p|POSSESSIVE_REPEAT_ONE %d %d\n", ctx->pattern,
-                   ctx->ptr, ctx->pattern[1], ctx->pattern[2]));
+            TRACE(("|%p|%p|POSSESSIVE_REPEAT_ONE %d %d\n", pattern,
+                   ptr, pattern[1], pattern[2]));
 
-            if (ctx->ptr + ctx->pattern[1] > end) {
+            if (ptr + pattern[1] > end) {
                 RETURN_FAILURE; /* cannot match */
             }
 
-            state->ptr = ctx->ptr;
+            state->ptr = ptr;
 
-            ret = SRE(count)(state, ctx->pattern + 3, ctx->pattern[2]);
+            ret = SRE(count)(state, pattern + 3, pattern[2]);
             RETURN_ON_ERROR(ret);
             DATA_LOOKUP_AT(SRE(match_context), ctx, ctx_pos);
             ctx->count = ret;
-            ctx->ptr += ctx->count;
+            ptr += ctx->count;
 
             /* when we arrive here, count contains the number of
-               matches, and ctx->ptr points to the tail of the target
+               matches, and ptr points to the tail of the target
                string.  check if the rest of the pattern matches,
                and fail if not. */
 
             /* Test for not enough repetitions in match */
-            if (ctx->count < (Py_ssize_t) ctx->pattern[1]) {
+            if (ctx->count < (Py_ssize_t) pattern[1]) {
                 RETURN_FAILURE;
             }
 
             /* Update the pattern to point to the next op code */
-            ctx->pattern += ctx->pattern[0];
+            pattern += pattern[0];
 
             /* Let the tail be evaluated separately and consider this
                match successful. */
-            if (*ctx->pattern == SRE_OP_SUCCESS &&
-                ctx->ptr == state->end &&
-                !(ctx->toplevel && state->must_advance && ctx->ptr == state->start))
+            if (*pattern == SRE_OP_SUCCESS &&
+                ptr == state->end &&
+                !(ctx->toplevel && state->must_advance && ptr == state->start))
             {
                 /* tail is empty.  we're finished */
-                state->ptr = ctx->ptr;
+                state->ptr = ptr;
                 RETURN_SUCCESS;
             }
 
             /* Attempt to match the rest of the string */
-            break;
+            DISPATCH;
 
-        case SRE_OP_REPEAT:
+        TARGET(SRE_OP_REPEAT):
             /* create repeat context.  all the hard work is done
                by the UNTIL operator (MAX_UNTIL, MIN_UNTIL) */
             /* <REPEAT> <skip> <1=min> <2=max>
                <3=repeat_index> item <UNTIL> tail */
-            TRACE(("|%p|%p|REPEAT %d %d %d\n", ctx->pattern, ctx->ptr,
-                   ctx->pattern[1], ctx->pattern[2], ctx->pattern[3]));
+            TRACE(("|%p|%p|REPEAT %d %d %d\n", pattern, ptr,
+                   pattern[1], pattern[2], pattern[3]));
 
             /* install repeat context */
-            ctx->u.rep = &state->repeats_array[ctx->pattern[3]];
+            ctx->u.rep = &state->repeats_array[pattern[3]];
 
             ctx->u.rep->count = -1;
-            ctx->u.rep->pattern = ctx->pattern;
+            ctx->u.rep->pattern = pattern;
             ctx->u.rep->prev = state->repeat;
             ctx->u.rep->last_ptr = NULL;
             state->repeat = ctx->u.rep;
 
-            state->ptr = ctx->ptr;
-            DO_JUMP(JUMP_REPEAT, jump_repeat, ctx->pattern+ctx->pattern[0]);
+            state->ptr = ptr;
+            DO_JUMP(JUMP_REPEAT, jump_repeat, pattern+pattern[0]);
             state->repeat = ctx->u.rep->prev;
 
             if (ret) {
@@ -1056,7 +1101,7 @@ entrance:
             }
             RETURN_FAILURE;
 
-        case SRE_OP_MAX_UNTIL:
+        TARGET(SRE_OP_MAX_UNTIL):
             /* maximizing repeat */
             /* <REPEAT> <skip> <1=min> <2=max>
                <3=repeat_index> item <MAX_UNTIL> tail */
@@ -1068,12 +1113,12 @@ entrance:
             if (!ctx->u.rep)
                 RETURN_ERROR(SRE_ERROR_STATE);
 
-            state->ptr = ctx->ptr;
+            state->ptr = ptr;
 
             ctx->count = ctx->u.rep->count+1;
 
-            TRACE(("|%p|%p|MAX_UNTIL %zd\n", ctx->pattern,
-                   ctx->ptr, ctx->count));
+            TRACE(("|%p|%p|MAX_UNTIL %zd\n", pattern,
+                   ptr, ctx->count));
 
             if (ctx->count < (Py_ssize_t) ctx->u.rep->pattern[1]) {
                 /* not enough matches */
@@ -1085,7 +1130,7 @@ entrance:
                     RETURN_SUCCESS;
                 }
                 ctx->u.rep->count = ctx->count-1;
-                state->ptr = ctx->ptr;
+                state->ptr = ptr;
                 RETURN_FAILURE;
             }
 
@@ -1111,20 +1156,20 @@ entrance:
                 MARK_POP(ctx->lastmark);
                 LASTMARK_RESTORE();
                 ctx->u.rep->count = ctx->count-1;
-                state->ptr = ctx->ptr;
+                state->ptr = ptr;
             }
 
             /* cannot match more repeated items here.  make sure the
                tail matches */
             state->repeat = ctx->u.rep->prev;
-            DO_JUMP(JUMP_MAX_UNTIL_3, jump_max_until_3, ctx->pattern);
+            DO_JUMP(JUMP_MAX_UNTIL_3, jump_max_until_3, pattern);
             state->repeat = ctx->u.rep; // restore repeat before return
 
             RETURN_ON_SUCCESS(ret);
-            state->ptr = ctx->ptr;
+            state->ptr = ptr;
             RETURN_FAILURE;
 
-        case SRE_OP_MIN_UNTIL:
+        TARGET(SRE_OP_MIN_UNTIL):
             /* minimizing repeat */
             /* <REPEAT> <skip> <1=min> <2=max>
                <3=repeat_index> item <MIN_UNTIL> tail */
@@ -1133,12 +1178,12 @@ entrance:
             if (!ctx->u.rep)
                 RETURN_ERROR(SRE_ERROR_STATE);
 
-            state->ptr = ctx->ptr;
+            state->ptr = ptr;
 
             ctx->count = ctx->u.rep->count+1;
 
-            TRACE(("|%p|%p|MIN_UNTIL %zd %p\n", ctx->pattern,
-                   ctx->ptr, ctx->count, ctx->u.rep->pattern));
+            TRACE(("|%p|%p|MIN_UNTIL %zd %p\n", pattern,
+                   ptr, ctx->count, ctx->u.rep->pattern));
 
             if (ctx->count < (Py_ssize_t) ctx->u.rep->pattern[1]) {
                 /* not enough matches */
@@ -1150,7 +1195,7 @@ entrance:
                     RETURN_SUCCESS;
                 }
                 ctx->u.rep->count = ctx->count-1;
-                state->ptr = ctx->ptr;
+                state->ptr = ptr;
                 RETURN_FAILURE;
             }
 
@@ -1161,7 +1206,7 @@ entrance:
             if (state->repeat)
                 MARK_PUSH(ctx->lastmark);
 
-            DO_JUMP(JUMP_MIN_UNTIL_2, jump_min_until_2, ctx->pattern);
+            DO_JUMP(JUMP_MIN_UNTIL_2, jump_min_until_2, pattern);
             SRE_REPEAT *repeat_of_tail = state->repeat;
             state->repeat = ctx->u.rep; // restore repeat before return
 
@@ -1175,7 +1220,7 @@ entrance:
                 MARK_POP(ctx->lastmark);
             LASTMARK_RESTORE();
 
-            state->ptr = ctx->ptr;
+            state->ptr = ptr;
 
             if ((ctx->count >= (Py_ssize_t) ctx->u.rep->pattern[2]
                 && ctx->u.rep->pattern[2] != SRE_MAXREPEAT) ||
@@ -1194,34 +1239,34 @@ entrance:
                 RETURN_SUCCESS;
             }
             ctx->u.rep->count = ctx->count-1;
-            state->ptr = ctx->ptr;
+            state->ptr = ptr;
             RETURN_FAILURE;
 
-        case SRE_OP_POSSESSIVE_REPEAT:
+        TARGET(SRE_OP_POSSESSIVE_REPEAT):
             /* create possessive repeat contexts. */
             /* <POSSESSIVE_REPEAT> <skip> <1=min> <2=max> pattern
                <SUCCESS> tail */
-            TRACE(("|%p|%p|POSSESSIVE_REPEAT %d %d\n", ctx->pattern,
-                   ctx->ptr, ctx->pattern[1], ctx->pattern[2]));
+            TRACE(("|%p|%p|POSSESSIVE_REPEAT %d %d\n", pattern,
+                   ptr, pattern[1], pattern[2]));
 
             /* Set the global Input pointer to this context's Input
                pointer */
-            state->ptr = ctx->ptr;
+            state->ptr = ptr;
 
             /* Initialize Count to 0 */
             ctx->count = 0;
 
             /* Check for minimum required matches. */
-            while (ctx->count < (Py_ssize_t)ctx->pattern[1]) {
+            while (ctx->count < (Py_ssize_t)pattern[1]) {
                 /* not enough matches */
-                DO_JUMP(JUMP_POSS_REPEAT_1, jump_poss_repeat_1,
-                        &ctx->pattern[3]);
+                DO_JUMP0(JUMP_POSS_REPEAT_1, jump_poss_repeat_1,
+                         &pattern[3]);
                 if (ret) {
                     RETURN_ON_ERROR(ret);
                     ctx->count++;
                 }
                 else {
-                    state->ptr = ctx->ptr;
+                    state->ptr = ptr;
                     RETURN_FAILURE;
                 }
             }
@@ -1229,13 +1274,13 @@ entrance:
             /* Clear the context's Input stream pointer so that it
                doesn't match the global state so that the while loop can
                be entered. */
-            ctx->ptr = NULL;
+            ptr = NULL;
 
             /* Keep trying to parse the <pattern> sub-pattern until the
                end is reached, creating a new context each time. */
-            while ((ctx->count < (Py_ssize_t)ctx->pattern[2] ||
-                    (Py_ssize_t)ctx->pattern[2] == SRE_MAXREPEAT) &&
-                   state->ptr != ctx->ptr) {
+            while ((ctx->count < (Py_ssize_t)pattern[2] ||
+                    (Py_ssize_t)pattern[2] == SRE_MAXREPEAT) &&
+                   state->ptr != ptr) {
                 /* Save the Capture Group Marker state into the current
                    Context and back up the current highest number
                    Capture Group marker. */
@@ -1257,12 +1302,12 @@ entrance:
                    maximum number of matches are counted, and because
                    of this, we could immediately stop at that point and
                    consider this match successful. */
-                ctx->ptr = state->ptr;
+                ptr = state->ptr;
 
                 /* We have not reached the maximin matches, so try to
                    match once more. */
-                DO_JUMP(JUMP_POSS_REPEAT_2, jump_poss_repeat_2,
-                        &ctx->pattern[3]);
+                DO_JUMP0(JUMP_POSS_REPEAT_2, jump_poss_repeat_2,
+                         &pattern[3]);
 
                 /* Check to see if the last attempted match
                    succeeded. */
@@ -1293,49 +1338,48 @@ entrance:
             /* Evaluate Tail */
             /* Jump to end of pattern indicated by skip, and then skip
                the SUCCESS op code that follows it. */
-            ctx->pattern += ctx->pattern[0] + 1;
-            ctx->ptr = state->ptr;
-            break;
+            pattern += pattern[0] + 1;
+            ptr = state->ptr;
+            DISPATCH;
 
-        case SRE_OP_ATOMIC_GROUP:
+        TARGET(SRE_OP_ATOMIC_GROUP):
             /* Atomic Group Sub Pattern */
             /* <ATOMIC_GROUP> <skip> pattern <SUCCESS> tail */
-            TRACE(("|%p|%p|ATOMIC_GROUP\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|ATOMIC_GROUP\n", pattern, ptr));
 
             /* Set the global Input pointer to this context's Input
-            pointer */
-            state->ptr = ctx->ptr;
+               pointer */
+            state->ptr = ptr;
 
             /* Evaluate the Atomic Group in a new context, terminating
                when the end of the group, represented by a SUCCESS op
                code, is reached. */
             /* Group Pattern begins at an offset of 1 code. */
-            DO_JUMP(JUMP_ATOMIC_GROUP, jump_atomic_group,
-                    &ctx->pattern[1]);
+            DO_JUMP0(JUMP_ATOMIC_GROUP, jump_atomic_group,
+                     &pattern[1]);
 
             /* Test Exit Condition */
             RETURN_ON_ERROR(ret);
 
             if (ret == 0) {
                 /* Atomic Group failed to Match. */
-                state->ptr = ctx->ptr;
+                state->ptr = ptr;
                 RETURN_FAILURE;
             }
 
             /* Evaluate Tail */
             /* Jump to end of pattern indicated by skip, and then skip
                the SUCCESS op code that follows it. */
-            ctx->pattern += ctx->pattern[0];
-            ctx->ptr = state->ptr;
-            break;
+            pattern += pattern[0];
+            ptr = state->ptr;
+            DISPATCH;
 
-        case SRE_OP_GROUPREF:
+        TARGET(SRE_OP_GROUPREF):
             /* match backreference */
-            TRACE(("|%p|%p|GROUPREF %d\n", ctx->pattern,
-                   ctx->ptr, ctx->pattern[0]));
-            i = ctx->pattern[0];
+            TRACE(("|%p|%p|GROUPREF %d\n", pattern,
+                   ptr, pattern[0]));
             {
-                Py_ssize_t groupref = i+i;
+                int groupref = pattern[0] * 2;
                 if (groupref >= state->lastmark) {
                     RETURN_FAILURE;
                 } else {
@@ -1344,23 +1388,22 @@ entrance:
                     if (!p || !e || e < p)
                         RETURN_FAILURE;
                     while (p < e) {
-                        if (ctx->ptr >= end || *ctx->ptr != *p)
+                        if (ptr >= end || *ptr != *p)
                             RETURN_FAILURE;
                         p++;
-                        ctx->ptr++;
+                        ptr++;
                     }
                 }
             }
-            ctx->pattern++;
-            break;
+            pattern++;
+            DISPATCH;
 
-        case SRE_OP_GROUPREF_IGNORE:
+        TARGET(SRE_OP_GROUPREF_IGNORE):
             /* match backreference */
-            TRACE(("|%p|%p|GROUPREF_IGNORE %d\n", ctx->pattern,
-                   ctx->ptr, ctx->pattern[0]));
-            i = ctx->pattern[0];
+            TRACE(("|%p|%p|GROUPREF_IGNORE %d\n", pattern,
+                   ptr, pattern[0]));
             {
-                Py_ssize_t groupref = i+i;
+                int groupref = pattern[0] * 2;
                 if (groupref >= state->lastmark) {
                     RETURN_FAILURE;
                 } else {
@@ -1369,24 +1412,23 @@ entrance:
                     if (!p || !e || e < p)
                         RETURN_FAILURE;
                     while (p < e) {
-                        if (ctx->ptr >= end ||
-                            sre_lower_ascii(*ctx->ptr) != sre_lower_ascii(*p))
+                        if (ptr >= end ||
+                            sre_lower_ascii(*ptr) != sre_lower_ascii(*p))
                             RETURN_FAILURE;
                         p++;
-                        ctx->ptr++;
+                        ptr++;
                     }
                 }
             }
-            ctx->pattern++;
-            break;
+            pattern++;
+            DISPATCH;
 
-        case SRE_OP_GROUPREF_UNI_IGNORE:
+        TARGET(SRE_OP_GROUPREF_UNI_IGNORE):
             /* match backreference */
-            TRACE(("|%p|%p|GROUPREF_UNI_IGNORE %d\n", ctx->pattern,
-                   ctx->ptr, ctx->pattern[0]));
-            i = ctx->pattern[0];
+            TRACE(("|%p|%p|GROUPREF_UNI_IGNORE %d\n", pattern,
+                   ptr, pattern[0]));
             {
-                Py_ssize_t groupref = i+i;
+                int groupref = pattern[0] * 2;
                 if (groupref >= state->lastmark) {
                     RETURN_FAILURE;
                 } else {
@@ -1395,24 +1437,23 @@ entrance:
                     if (!p || !e || e < p)
                         RETURN_FAILURE;
                     while (p < e) {
-                        if (ctx->ptr >= end ||
-                            sre_lower_unicode(*ctx->ptr) != sre_lower_unicode(*p))
+                        if (ptr >= end ||
+                            sre_lower_unicode(*ptr) != sre_lower_unicode(*p))
                             RETURN_FAILURE;
                         p++;
-                        ctx->ptr++;
+                        ptr++;
                     }
                 }
             }
-            ctx->pattern++;
-            break;
+            pattern++;
+            DISPATCH;
 
-        case SRE_OP_GROUPREF_LOC_IGNORE:
+        TARGET(SRE_OP_GROUPREF_LOC_IGNORE):
             /* match backreference */
-            TRACE(("|%p|%p|GROUPREF_LOC_IGNORE %d\n", ctx->pattern,
-                   ctx->ptr, ctx->pattern[0]));
-            i = ctx->pattern[0];
+            TRACE(("|%p|%p|GROUPREF_LOC_IGNORE %d\n", pattern,
+                   ptr, pattern[0]));
             {
-                Py_ssize_t groupref = i+i;
+                int groupref = pattern[0] * 2;
                 if (groupref >= state->lastmark) {
                     RETURN_FAILURE;
                 } else {
@@ -1421,64 +1462,63 @@ entrance:
                     if (!p || !e || e < p)
                         RETURN_FAILURE;
                     while (p < e) {
-                        if (ctx->ptr >= end ||
-                            sre_lower_locale(*ctx->ptr) != sre_lower_locale(*p))
+                        if (ptr >= end ||
+                            sre_lower_locale(*ptr) != sre_lower_locale(*p))
                             RETURN_FAILURE;
                         p++;
-                        ctx->ptr++;
+                        ptr++;
                     }
                 }
             }
-            ctx->pattern++;
-            break;
+            pattern++;
+            DISPATCH;
 
-        case SRE_OP_GROUPREF_EXISTS:
-            TRACE(("|%p|%p|GROUPREF_EXISTS %d\n", ctx->pattern,
-                   ctx->ptr, ctx->pattern[0]));
+        TARGET(SRE_OP_GROUPREF_EXISTS):
+            TRACE(("|%p|%p|GROUPREF_EXISTS %d\n", pattern,
+                   ptr, pattern[0]));
             /* <GROUPREF_EXISTS> <group> <skip> codeyes <JUMP> codeno ... */
-            i = ctx->pattern[0];
             {
-                Py_ssize_t groupref = i+i;
+                int groupref = pattern[0] * 2;
                 if (groupref >= state->lastmark) {
-                    ctx->pattern += ctx->pattern[1];
-                    break;
+                    pattern += pattern[1];
+                    DISPATCH;
                 } else {
                     SRE_CHAR* p = (SRE_CHAR*) state->mark[groupref];
                     SRE_CHAR* e = (SRE_CHAR*) state->mark[groupref+1];
                     if (!p || !e || e < p) {
-                        ctx->pattern += ctx->pattern[1];
-                        break;
+                        pattern += pattern[1];
+                        DISPATCH;
                     }
                 }
             }
-            ctx->pattern += 2;
-            break;
+            pattern += 2;
+            DISPATCH;
 
-        case SRE_OP_ASSERT:
+        TARGET(SRE_OP_ASSERT):
             /* assert subpattern */
             /* <ASSERT> <skip> <back> <pattern> */
-            TRACE(("|%p|%p|ASSERT %d\n", ctx->pattern,
-                   ctx->ptr, ctx->pattern[1]));
-            if (ctx->ptr - (SRE_CHAR *)state->beginning < (Py_ssize_t)ctx->pattern[1])
+            TRACE(("|%p|%p|ASSERT %d\n", pattern,
+                   ptr, pattern[1]));
+            if (ptr - (SRE_CHAR *)state->beginning < (Py_ssize_t)pattern[1])
                 RETURN_FAILURE;
-            state->ptr = ctx->ptr - ctx->pattern[1];
-            DO_JUMP0(JUMP_ASSERT, jump_assert, ctx->pattern+2);
+            state->ptr = ptr - pattern[1];
+            DO_JUMP0(JUMP_ASSERT, jump_assert, pattern+2);
             RETURN_ON_FAILURE(ret);
-            ctx->pattern += ctx->pattern[0];
-            break;
+            pattern += pattern[0];
+            DISPATCH;
 
-        case SRE_OP_ASSERT_NOT:
+        TARGET(SRE_OP_ASSERT_NOT):
             /* assert not subpattern */
             /* <ASSERT_NOT> <skip> <back> <pattern> */
-            TRACE(("|%p|%p|ASSERT_NOT %d\n", ctx->pattern,
-                   ctx->ptr, ctx->pattern[1]));
-            if (ctx->ptr - (SRE_CHAR *)state->beginning >= (Py_ssize_t)ctx->pattern[1]) {
-                state->ptr = ctx->ptr - ctx->pattern[1];
+            TRACE(("|%p|%p|ASSERT_NOT %d\n", pattern,
+                   ptr, pattern[1]));
+            if (ptr - (SRE_CHAR *)state->beginning >= (Py_ssize_t)pattern[1]) {
+                state->ptr = ptr - pattern[1];
                 LASTMARK_SAVE();
                 if (state->repeat)
                     MARK_PUSH(ctx->lastmark);
 
-                DO_JUMP0(JUMP_ASSERT_NOT, jump_assert_not, ctx->pattern+2);
+                DO_JUMP0(JUMP_ASSERT_NOT, jump_assert_not, pattern+2);
                 if (ret) {
                     if (state->repeat)
                         MARK_POP_DISCARD(ctx->lastmark);
@@ -1489,19 +1529,29 @@ entrance:
                     MARK_POP(ctx->lastmark);
                 LASTMARK_RESTORE();
             }
-            ctx->pattern += ctx->pattern[0];
-            break;
+            pattern += pattern[0];
+            DISPATCH;
 
-        case SRE_OP_FAILURE:
+        TARGET(SRE_OP_FAILURE):
             /* immediate failure */
-            TRACE(("|%p|%p|FAILURE\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|FAILURE\n", pattern, ptr));
             RETURN_FAILURE;
 
+#if !USE_COMPUTED_GOTOS
         default:
-            TRACE(("|%p|%p|UNKNOWN %d\n", ctx->pattern, ctx->ptr,
-                   ctx->pattern[-1]));
+#endif
+        // Also any unused opcodes:
+        TARGET(SRE_OP_RANGE_UNI_IGNORE):
+        TARGET(SRE_OP_SUBPATTERN):
+        TARGET(SRE_OP_RANGE):
+        TARGET(SRE_OP_NEGATE):
+        TARGET(SRE_OP_BIGCHARSET):
+        TARGET(SRE_OP_CHARSET):
+        TARGET(SRE_OP_CALL):
+            TRACE(("|%p|%p|UNKNOWN %d\n", pattern, ptr,
+                   pattern[-1]));
             RETURN_ERROR(SRE_ERROR_ILLEGAL);
-        }
+
     }
 
 exit:
@@ -1514,56 +1564,56 @@ exit:
 
     switch (jump) {
         case JUMP_MAX_UNTIL_2:
-            TRACE(("|%p|%p|JUMP_MAX_UNTIL_2\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|JUMP_MAX_UNTIL_2\n", pattern, ptr));
             goto jump_max_until_2;
         case JUMP_MAX_UNTIL_3:
-            TRACE(("|%p|%p|JUMP_MAX_UNTIL_3\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|JUMP_MAX_UNTIL_3\n", pattern, ptr));
             goto jump_max_until_3;
         case JUMP_MIN_UNTIL_2:
-            TRACE(("|%p|%p|JUMP_MIN_UNTIL_2\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|JUMP_MIN_UNTIL_2\n", pattern, ptr));
             goto jump_min_until_2;
         case JUMP_MIN_UNTIL_3:
-            TRACE(("|%p|%p|JUMP_MIN_UNTIL_3\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|JUMP_MIN_UNTIL_3\n", pattern, ptr));
             goto jump_min_until_3;
         case JUMP_BRANCH:
-            TRACE(("|%p|%p|JUMP_BRANCH\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|JUMP_BRANCH\n", pattern, ptr));
             goto jump_branch;
         case JUMP_MAX_UNTIL_1:
-            TRACE(("|%p|%p|JUMP_MAX_UNTIL_1\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|JUMP_MAX_UNTIL_1\n", pattern, ptr));
             goto jump_max_until_1;
         case JUMP_MIN_UNTIL_1:
-            TRACE(("|%p|%p|JUMP_MIN_UNTIL_1\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|JUMP_MIN_UNTIL_1\n", pattern, ptr));
             goto jump_min_until_1;
         case JUMP_POSS_REPEAT_1:
-            TRACE(("|%p|%p|JUMP_POSS_REPEAT_1\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|JUMP_POSS_REPEAT_1\n", pattern, ptr));
             goto jump_poss_repeat_1;
         case JUMP_POSS_REPEAT_2:
-            TRACE(("|%p|%p|JUMP_POSS_REPEAT_2\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|JUMP_POSS_REPEAT_2\n", pattern, ptr));
             goto jump_poss_repeat_2;
         case JUMP_REPEAT:
-            TRACE(("|%p|%p|JUMP_REPEAT\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|JUMP_REPEAT\n", pattern, ptr));
             goto jump_repeat;
         case JUMP_REPEAT_ONE_1:
-            TRACE(("|%p|%p|JUMP_REPEAT_ONE_1\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|JUMP_REPEAT_ONE_1\n", pattern, ptr));
             goto jump_repeat_one_1;
         case JUMP_REPEAT_ONE_2:
-            TRACE(("|%p|%p|JUMP_REPEAT_ONE_2\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|JUMP_REPEAT_ONE_2\n", pattern, ptr));
             goto jump_repeat_one_2;
         case JUMP_MIN_REPEAT_ONE:
-            TRACE(("|%p|%p|JUMP_MIN_REPEAT_ONE\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|JUMP_MIN_REPEAT_ONE\n", pattern, ptr));
             goto jump_min_repeat_one;
         case JUMP_ATOMIC_GROUP:
-            TRACE(("|%p|%p|JUMP_ATOMIC_GROUP\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|JUMP_ATOMIC_GROUP\n", pattern, ptr));
             goto jump_atomic_group;
         case JUMP_ASSERT:
-            TRACE(("|%p|%p|JUMP_ASSERT\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|JUMP_ASSERT\n", pattern, ptr));
             goto jump_assert;
         case JUMP_ASSERT_NOT:
-            TRACE(("|%p|%p|JUMP_ASSERT_NOT\n", ctx->pattern, ctx->ptr));
+            TRACE(("|%p|%p|JUMP_ASSERT_NOT\n", pattern, ptr));
             goto jump_assert_not;
         case JUMP_NONE:
-            TRACE(("|%p|%p|RETURN %zd\n", ctx->pattern,
-                   ctx->ptr, ret));
+            TRACE(("|%p|%p|RETURN %zd\n", pattern,
+                   ptr, ret));
             break;
     }
 

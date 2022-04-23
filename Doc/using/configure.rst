@@ -164,6 +164,12 @@ WebAssemby Options
 
    .. versionadded:: 3.11
 
+.. cmdoption:: --enable-wasm-pthreads
+
+   Turn on pthreads support for WASM.
+
+   .. versionadded:: 3.11
+
 
 Install Options
 ---------------
@@ -273,7 +279,7 @@ Effects of a debug build:
 * Add :func:`sys.gettotalrefcount` function.
 * Add :option:`-X showrefcount <-X>` command line option.
 * Add :envvar:`PYTHONTHREADDEBUG` environment variable.
-* Add support for the ``__ltrace__`` variable: enable low-level tracing in the
+* Add support for the ``__lltrace__`` variable: enable low-level tracing in the
   bytecode evaluation loop if the variable is defined.
 * Install :ref:`debug hooks on memory allocators <default-memory-allocators>`
   to detect buffer overflow and other memory errors.
@@ -288,6 +294,7 @@ Effects of a debug build:
     to detect usage of uninitialized objects.
   * Ensure that functions which can clear or replace the current exception are
     not called with an exception raised.
+  * Check that deallocator functions don't change the current exception.
   * The garbage collector (:func:`gc.collect` function) runs some basic checks
     on objects consistency.
   * The :c:macro:`Py_SAFE_DOWNCAST()` macro checks for integer underflow and

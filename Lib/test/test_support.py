@@ -123,15 +123,18 @@ class TestSupport(unittest.TestCase):
             os_helper.unlink(mod_filename)
             os_helper.rmtree('__pycache__')
 
+    @support.requires_working_socket()
     def test_HOST(self):
         s = socket.create_server((socket_helper.HOST, 0))
         s.close()
 
+    @support.requires_working_socket()
     def test_find_unused_port(self):
         port = socket_helper.find_unused_port()
         s = socket.create_server((socket_helper.HOST, port))
         s.close()
 
+    @support.requires_working_socket()
     def test_bind_port(self):
         s = socket.socket()
         socket_helper.bind_port(s)
