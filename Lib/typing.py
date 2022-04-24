@@ -3295,8 +3295,6 @@ def dataclass_transform(
 
     On a base class:
 
-        _T = TypeVar("_T")
-
         @dataclass_transform()
         class ModelBase: ...
 
@@ -3305,8 +3303,6 @@ def dataclass_transform(
             name: str
 
     On a metaclass:
-
-        _T = TypeVar("_T")
 
         @dataclass_transform()
         class ModelMeta(type): ...
