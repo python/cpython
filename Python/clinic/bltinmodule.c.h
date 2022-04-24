@@ -771,6 +771,24 @@ PyDoc_STRVAR(builtin_print__doc__,
 #define BUILTIN_PRINT_METHODDEF    \
     {"print", (PyCFunction)(void(*)(void))builtin_print, METH_FASTCALL|METH_KEYWORDS, builtin_print__doc__},
 
+PyDoc_STRVAR(builtin_tiskni__doc__,
+"tiskni($module, /, *args, sep=\' \', end=\'\\n\', file=None, flush=Nepravda)\n"
+"--\n"
+"\n"
+"Vytiskne hodnoty do proudu, nebo do sys.stdout ve výchozím nastavení.\n"
+"\n"
+"  sep\n"
+"    řetězec vkládaný mezi hodnoty, výchozí: mezera.\n"
+"  end\n"
+"    řetězec vkládaný za poslední hodnotu, výchozí: nový řádek\n"
+"  file\n"
+"    objekt podobný souboru (proud); výchozí: stávající sys.stdout.\n"
+"  flush\n"
+"    zda násilně spláchnout proud.");
+
+#define BUILTIN_TISKNI_METHODDEF    \
+    {"tiskni", (PyCFunction)(void(*)(void))builtin_print, METH_FASTCALL|METH_KEYWORDS, builtin_tiskni__doc__},
+
 static PyObject *
 builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
                    PyObject *end, PyObject *file, int flush);
