@@ -56,7 +56,6 @@ kwlist = [
     'neni',
     'nonlocal',
     'not',
-    'od',
     'or',
     'pass',
     'pokracuj',
@@ -89,6 +88,7 @@ softkwlist = [
     'a',
     'case',
     'match',
+    'od',
     'pro'
 ]
 
