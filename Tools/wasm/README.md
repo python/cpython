@@ -121,17 +121,26 @@ functions.
 - The ``select`` module is limited. ``select.select()`` crashes the runtime
   due to lack of exectfd support.
 
-## processes, threads, signals
+## processes, signals
 
 - Processes are not supported. System calls like fork, popen, and subprocess
   fail with ``ENOSYS`` or ``ENOSUP``.
 - Signal support is limited. ``signal.alarm``, ``itimer``, ``sigaction``
   are not available or do not work correctly. ``SIGTERM`` exits the runtime.
 - Keyboard interrupt (CTRL+C) handling is not implemented yet.
-- Browser builds cannot start new threads. Node's web workers consume
-  extra file descriptors.
 - Resource-related functions like ``os.nice`` and most functions of the
   ``resource`` module are not available.
+
+## threading
+
+- Threading is disabled by default. The ``configure`` option
+  ``--enable-wasm-pthreads`` adds compiler flag ``-pthread`` and
+  linker flags ``-sUSE_PTHREADS -sPROXY_TO_PTHREAD``. 
+- pthread support requires WASM threads and SharedArrayBuffer (bulk memory).
+  The Node.JS runtime keeps a pool of web workers around. Each web worker
+  uses several file descriptors (eventfd, epoll, pipe).
+- It's not advised to enable threading when building for browsers or with
+  dynamic linking support; there are performance and stability issues.
 
 ## file system
 
@@ -173,20 +182,16 @@ functions.
   distutils, multiprocessing, dbm, tests and similar modules
   are not shipped. All other modules are bundled as pre-compiled
   ``pyc`` files.
-- Threading is disabled.
 - In-memory file system (MEMFS) is not persistent and limited.
 - Test modules are disabled by default. Use ``--enable-test-modules`` build
   test modules like ``_testcapi``.
 
 ## wasm32-emscripten in node
 
-Node builds use ``NODERAWFS``, ``USE_PTHREADS`` and ``PROXY_TO_PTHREAD``
-linker options.
+Node builds use ``NODERAWFS``.
 
-- Node RawFS allows direct access to the host file system.
-- pthread support requires WASM threads and SharedArrayBuffer (bulk memory).
-  The runtime keeps a pool of web workers around. Each web worker uses
-  several file descriptors (eventfd, epoll, pipe).
+- Node RawFS allows direct access to the host file system without need to
+  perform ``FS.mount()`` call.
 
 # Hosting Python WASM builds
 

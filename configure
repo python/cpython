@@ -1018,6 +1018,7 @@ enable_framework
 with_cxx_main
 with_emscripten_target
 enable_wasm_dynamic_linking
+enable_wasm_pthreads
 with_suffix
 enable_shared
 with_static_libpython
@@ -1734,6 +1735,8 @@ Optional Features:
   --enable-wasm-dynamic-linking
                           Enable dynamic linking support for WebAssembly
                           (default is no)
+  --enable-wasm-pthreads  Enable pthread emulation for WebAssembly (default is
+                          no)
   --enable-shared         enable building a shared Python library (default is
                           no)
   --enable-profiling      enable C-level code profiling with gprof (default is
@@ -6318,6 +6321,30 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_wasm_dynamic_linking" >&5
 $as_echo "$enable_wasm_dynamic_linking" >&6; }
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-wasm-pthreads" >&5
+$as_echo_n "checking for --enable-wasm-pthreads... " >&6; }
+# Check whether --enable-wasm-pthreads was given.
+if test "${enable_wasm_pthreads+set}" = set; then :
+  enableval=$enable_wasm_pthreads;
+  case $ac_sys_system in #(
+  Emscripten) :
+     ;; #(
+  WASI) :
+    as_fn_error $? "WASI threading is not implemented yet." "$LINENO" 5 ;; #(
+  *) :
+    as_fn_error $? "--enable-wasm-pthreads only applies to Emscripten and WASI" "$LINENO" 5
+   ;;
+esac
+
+else
+
+  enable_wasm_pthreads=missing
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_wasm_pthreads" >&5
+$as_echo "$enable_wasm_pthreads" >&6; }
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-suffix" >&5
 $as_echo_n "checking for --with-suffix... " >&6; }
 
@@ -7788,43 +7815,70 @@ then
 fi
 
 # WASM flags
-case $ac_sys_system/$ac_sys_emscripten_target in #(
-  Emscripten/browser*) :
+case $ac_sys_system in #(
+  Emscripten) :
 
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH"
-    LINKFORSHARED="--preload-file=\$(WASM_ASSETS_DIR)"
+            if test "x$Py_DEBUG" = xyes; then :
+  wasm_debug=yes
+else
+  wasm_debug=no
+fi
+
+        as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH -sTOTAL_MEMORY=20971520"
+
+        as_fn_append LDFLAGS_NODIST " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
+
     if test "x$enable_wasm_dynamic_linking" = xyes; then :
 
       as_fn_append LINKFORSHARED " -sMAIN_MODULE"
 
 fi
-    WASM_ASSETS_DIR=".\$(prefix)"
-    WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
-        if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "browser-debug"; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS"
-      LINKFORSHARED="$LINKFORSHARED -gsource-map --emit-symbol-map"
-    else
-      LINKFORSHARED="$LINKFORSHARED -O2 -g0"
-    fi
-   ;; #(
-  Emscripten/node*) :
 
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH -sNODERAWFS -sUSE_PTHREADS"
-    LINKFORSHARED="-sPROXY_TO_PTHREAD -sEXIT_RUNTIME"
-    if test "x$enable_wasm_dynamic_linking" = xyes; then :
+    if test "x$enable_wasm_pthreads" = xyes; then :
 
-      as_fn_append LINKFORSHARED " -sMAIN_MODULE"
+      as_fn_append CFLAGS_NODIST " -pthread"
+      as_fn_append LDFLAGS_NODIST " -sUSE_PTHREADS"
+      as_fn_append LINKFORSHARED " -sPROXY_TO_PTHREAD"
 
 fi
-    CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
-    if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "node-debug"; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS"
-      LINKFORSHARED="$LINKFORSHARED -gseparate-dwarf --emit-symbol-map"
-    else
-      LINKFORSHARED="$LINKFORSHARED -O2 -g0"
-    fi
+
+    case $ac_sys_emscripten_target in #(
+  browser*) :
+
+        if test "x$ac_sys_emscripten_target" = xbrowser-debug; then :
+  wasm_debug=yes
+fi
+        as_fn_append LINKFORSHARED " --preload-file=\$(WASM_ASSETS_DIR)"
+        WASM_ASSETS_DIR=".\$(prefix)"
+        WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
+                WASM_LINKFORSHARED_DEBUG="-gsource-map --emit-symbol-map"
+       ;; #(
+  node*) :
+
+        if test "x$ac_sys_emscripten_target" = xnode-debug; then :
+  wasm_debug=yes
+fi
+        as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH -sNODERAWFS"
+        as_fn_append LINKFORSHARED " -sEXIT_RUNTIME"
+        WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
+
+     ;; #(
+  *) :
+     ;;
+esac
+
+    if test "x$wasm_debug" = xyes; then :
+
+      as_fn_append LDFLAGS_NODIST " -sASSERTIONS"
+      as_fn_append LINKFORSHARED " $WASM_LINKFORSHARED_DEBUG"
+
+else
+
+      as_fn_append LINKFORSHARED " -O2 -g0"
+
+fi
    ;; #(
-  WASI/*) :
+  WASI) :
 
 
 $as_echo "#define _WASI_EMULATED_SIGNAL 1" >>confdefs.h
