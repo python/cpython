@@ -3279,13 +3279,10 @@ def dataclass_transform(
     """Decorator that marks a function, class, or metaclass as providing
     dataclass-like behavior.
 
-    Example:
-
-        from typing import dataclass_transform
+    Example usage with a decorator function:
 
         _T = TypeVar("_T")
 
-        # Used on a decorator function
         @dataclass_transform()
         def create_model(cls: type[_T]) -> type[_T]:
             ...
@@ -3296,7 +3293,10 @@ def dataclass_transform(
             id: int
             name: str
 
-        # Used on a base class
+    On a base class:
+
+        _T = TypeVar("_T")
+
         @dataclass_transform()
         class ModelBase: ...
 
@@ -3304,7 +3304,10 @@ def dataclass_transform(
             id: int
             name: str
 
-        # Used on a metaclass
+    On a metaclass:
+
+        _T = TypeVar("_T")
+
         @dataclass_transform()
         class ModelMeta(type): ...
 
@@ -3331,9 +3334,9 @@ def dataclass_transform(
 
     At runtime, this decorator records its arguments in the
     ``__dataclass_transform__`` attribute on the decorated object.
+    It has no other runtime effect.
 
-    See PEP 681 for details.
-
+    See PEP 681 for more details.
     """
     def decorator(cls_or_fn):
         cls_or_fn.__dataclass_transform__ = {
