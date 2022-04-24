@@ -156,6 +156,7 @@
     <ClInclude Include="..\Include\cpython\longintrepr.h" />
     <ClInclude Include="..\Include\cpython\longobject.h" />
     <ClInclude Include="..\Include\cpython\methodobject.h" />
+    <ClInclude Include="..\Include\cpython\modsupport.h" />
     <ClInclude Include="..\Include\cpython\object.h" />
     <ClInclude Include="..\Include\cpython\objimpl.h" />
     <ClInclude Include="..\Include\cpython\odictobject.h" />
@@ -170,6 +171,7 @@
     <ClInclude Include="..\Include\cpython\pymem.h" />
     <ClInclude Include="..\Include\cpython\pystate.h" />
     <ClInclude Include="..\Include\cpython\pythonrun.h" />
+    <ClInclude Include="..\Include\cpython\pythread.h" />
     <ClInclude Include="..\Include\cpython\pytime.h" />
     <ClInclude Include="..\Include\cpython\setobject.h" />
     <ClInclude Include="..\Include\cpython\sysmodule.h" />

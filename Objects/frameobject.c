@@ -378,6 +378,7 @@ marklines(PyCodeObject *code, int len)
     PyCodeAddressRange bounds;
     _PyCode_InitAddressRange(code, &bounds);
     assert (bounds.ar_end == 0);
+    int last_line = -1;
 
     int *linestarts = PyMem_New(int, len);
     if (linestarts == NULL) {
@@ -389,7 +390,10 @@ marklines(PyCodeObject *code, int len)
 
     while (_PyLineTable_NextAddressRange(&bounds)) {
         assert(bounds.ar_start / (int)sizeof(_Py_CODEUNIT) < len);
-        linestarts[bounds.ar_start / sizeof(_Py_CODEUNIT)] = bounds.ar_line;
+        if (bounds.ar_line != last_line && bounds.ar_line != -1) {
+            linestarts[bounds.ar_start / sizeof(_Py_CODEUNIT)] = bounds.ar_line;
+            last_line = bounds.ar_line;
+        }
     }
     return linestarts;
 }

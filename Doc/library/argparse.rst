@@ -34,20 +34,20 @@ around an instance of :class:`argparse.ArgumentParser`.  It is a container for
 argument specifications and has options that apply the parser as whole::
 
    parser = argparse.ArgumentParser(
-                 prog = 'ProgramName',
-                 description = 'What the program does',
-                 epilog = 'Text at the bottom of help')
+                       prog = 'ProgramName',
+                       description = 'What the program does',
+                       epilog = 'Text at the bottom of help')
 
-The :func:`ArgumentParser.add_argument` function attaches individual argument
+The :meth:`ArgumentParser.add_argument` method attaches individual argument
 specifications to the parser.  It supports positional arguments, options that
 accept values, and on/off flags::
 
    parser.add_argument('filename')           # positional argument
-   parser.add_argument('-c', '--count')      # option that takes value
+   parser.add_argument('-c', '--count')      # option that takes a value
    parser.add_argument('-v', '--verbose',
                        action='store_true')  # on/off flag
 
-The :func:`ArgumentParser.parse_args` function runs the parser and puts
+The :meth:`ArgumentParser.parse_args` method runs the parser and places
 the extracted data in a :class:`argparse.Namespace` object::
 
    args = parser.parse_args()
@@ -61,15 +61,15 @@ Quick Links for add_argument()
 Name                   Description                                                 Values
 ====================== =========================================================== ==========================================================================================================================
 action_                Specify how an argument should be handled                   ``'store'``, ``'store_const'``, ``'store_true'``, ``'append'``, ``'append_const'``, ``'count'``, ``'help'``, ``'version'``
-choices_               Limit values to specific set of choices                     ``['foo', 'bar']``, ``range(1, 10)``, or an object that supports ``in`` operator
+choices_               Limit values to a specific set of choices                   ``['foo', 'bar']``, ``range(1, 10)``, or :class:`~collections.abc.Container` instance
 const_                 Store a constant value
-default_               Default value used when an argument is not provided
-dest_                  Specify the attribute name in result namespace
+default_               Default value used when an argument is not provided         Defaults to *None*
+dest_                  Specify the attribute name used in the result namespace
 help_                  Help message for an argument
 metavar_               Alternate display name for the argument as shown in help
-nargs_                 Number of times the argument can be used                    ``N`` (:class:`int`), ``'?'``, ``'*'``, ``'+'``, ``argparse.REMAINDER``
-required_              Indicate whether an optional argument is required or not    ``True``, ``False``
-type_                  Automatically convert an argument to the given type         :class:`int`, :class:`float`, ``argparse.FileType('w')``, or any callable function
+nargs_                 Number of times the argument can be used                    :class:`int`, ``'?'``, ``'*'``, ``'+'``, or ``argparse.REMAINDER``
+required_              Indicate whether an argument is required or optional        ``True`` or ``False``
+type_                  Automatically convert an argument to the given type         :class:`int`, :class:`float`, ``argparse.FileType('w')``, or callable function
 ====================== =========================================================== ==========================================================================================================================
 
 

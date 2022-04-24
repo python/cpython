@@ -326,6 +326,14 @@ inspect
 * Add :func:`inspect.ismethodwrapper` for checking if the type of an object is a
   :class:`~types.MethodWrapperType`. (Contributed by Hakan Çelik in :issue:`29418`.)
 
+* Change the frame-related functions in the :mod:`inspect` module to return a
+  regular object (that is backwards compatible with the old tuple-like
+  interface) that include the extended :pep:`657` position information (end
+  line number, column and end column). The affected functions are:
+  :func:`inspect.getframeinfo`, :func:`inspect.getouterframes`, :func:`inspect.getinnerframes`,
+  :func:`inspect.stack` and :func:`inspect.trace`. (Contributed by Pablo Galindo in
+  :issue:`88116`)
+
 locale
 ------
 
@@ -520,6 +528,13 @@ venv
   scheme without changing behavior of virtual environments.
   Third party code that also creates new virtual environments should do the same.
   (Contributed by Miro Hrončok in :issue:`45413`.)
+
+warnings
+--------
+
+* :func:`warnings.catch_warnings` now accepts arguments for :func:`warnings.simplefilter`,
+  providing a more concise way to locally ignore warnings or convert them to errors.
+  (Contributed by Zac Hatfield-Dodds in :issue:`47074`.)
 
 zipfile
 -------
@@ -919,6 +934,9 @@ Deprecated
   * :mod:`nis`
   * :mod:`nntplib`
   * :mod:`ossaudiodev`
+  * :mod:`pipes`
+  * :mod:`sndhdr`
+  * :mod:`spwd`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
@@ -1154,6 +1172,16 @@ C API Changes
   in the ``size`` field was the indicator.  Now only non-negative values
   be used for ``size``.
   (Contributed by Kumar Aditya in :issue:`46608`.)
+
+* :c:func:`_PyFrameEvalFunction` now takes ``_PyInterpreterFrame*``
+  as its second parameter, instead of ``PyFrameObject*``.
+  See :pep:`523` for more details of how to use this function pointer type.
+
+* :c:func:`PyCode_New` and :c:func:`PyCode_NewWithPosOnlyArgs` now take
+  an additional ``exception_table`` argument.
+  Using these functions should be avoided, if at all possible.
+  To get a custom code object: create a code object using the compiler,
+  then get a modified version with the ``replace`` method.
 
 New Features
 ------------
