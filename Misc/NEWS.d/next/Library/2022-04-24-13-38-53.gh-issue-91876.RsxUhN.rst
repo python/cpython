@@ -1,0 +1,1 @@
+Add new @threading.thread decorator to simplify creating new threads in the commonest case.
