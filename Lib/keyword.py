@@ -68,6 +68,7 @@ kwlist = [
     'rozbij',
     'shodni',
     'smaz',
+    'svetovy',
     'trida',
     'try',
     'uvnitr',
