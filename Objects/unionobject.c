@@ -545,6 +545,8 @@ PyTypeObject _PyUnion_Type = {
 static PyObject *
 make_union(PyObject *args)
 {
+    assert(PyTuple_CheckExact(args));
+
     unionobject *result = PyObject_GC_New(unionobject, &_PyUnion_Type);
     if (result == NULL) {
         return NULL;
