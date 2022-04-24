@@ -146,31 +146,28 @@ def splitdrive(p):
             sep = b'\\'
             altsep = b'/'
             colon = b':'
-            unc2 = b'\\\\'
-            unc4 = b'\\\\?\\'
-            unc8 = b'\\\\?\\UNC\\'
+            dev_prefix = b'\\\\?\\'
+            unc_prefix = b'UNC\\'
         else:
             sep = '\\'
             altsep = '/'
             colon = ':'
-            unc2 = '\\\\'
-            unc4 = '\\\\?\\'
-            unc8 = '\\\\?\\UNC\\'
+            dev_prefix = '\\\\?\\'
+            unc_prefix = 'UNC\\'
         normp = p.replace(altsep, sep)
-        offset = 0
-        if normp[:8] == unc8:
-            # is a DOS device path with a UNC link, e.g. \\?\UNC\server\share\dir\file
-            normp = sep * 8 + normp[8:]
-            offset = 6
-        elif normp[:4] == unc4:
-            # is a DOS device path without a UNC link, e.g. \\?\c:\dir\file
-            offset = 4
-        if (normp[offset:offset + 2] == unc2) and (normp[offset + 2:offset + 3] != sep):
+        start = 0
+        if normp[:4] == dev_prefix:
+            start = 4
+            if normp[4:8] == unc_prefix:
+                # prepend slashes to machine name
+                normp = 8 * sep + normp[8:]
+                start = 6
+        if (normp[start:start + 2] == sep*2) and (normp[start + 2:start + 3] != sep):
             # is a UNC path:
             # vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
             # \\machine\mountpoint\directory\etc\...
             #           directory ^^^^^^^^^^^^^^^
-            index = normp.find(sep, offset + 2)
+            index = normp.find(sep, start + 2)
             if index == -1:
                 return p[:0], p
             index2 = normp.find(sep, index + 1)
@@ -181,8 +178,8 @@ def splitdrive(p):
             if index2 == -1:
                 index2 = len(p)
             return p[:index2], p[index2:]
-        if normp[offset + 1:offset + 2] == colon:
-            return p[:offset + 2], p[offset + 2:]
+        if normp[start + 1:start + 2] == colon:
+            return p[:start + 2], p[start + 2:]
     return p[:0], p
 
 
