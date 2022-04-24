@@ -492,7 +492,7 @@ The special characters are:
    not with ``'<user@host.com'`` nor ``'user@host.com>'``.
 
    .. versionchanged:: 3.11
-      Group *id* can only contain ASCII digits and cannot start with ``0``.
+      Group *id* can only contain ASCII digits.
 
 
 The special sequences consist of ``'\'`` and a character from the list below.
@@ -1004,8 +1004,7 @@ form.
       non-empty match.
 
    .. versionchanged:: 3.11
-      Group *id* can only contain ASCII digits and cannot start with ``0``
-      (except group 0).
+      Group *id* can only contain ASCII digits.
       In bytes replacement strings group names must contain only characters
       in the ASCII range.
 

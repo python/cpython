@@ -315,8 +315,6 @@ class ReTests(unittest.TestCase):
                                 "bad character in group name '-1'", 3)
         self.checkTemplateError('(?P<a>x)', r'\g<+1>', 'xx',
                                 "bad character in group name '+1'", 3)
-        self.checkTemplateError('(?P<a>x)', r'\g<01>', 'xx',
-                                "bad character in group name '01'", 3)
         self.checkTemplateError('()'*10, r'\g<1_0>', 'xx',
                                 "bad character in group name '1_0'", 3)
         self.checkTemplateError('(?P<a>x)', r'\g< 1 >', 'xx',
@@ -598,8 +596,6 @@ class ReTests(unittest.TestCase):
                                "bad character in group name '-1'", 5)
         self.checkPatternError(r'()(?(+1)a|b)',
                                "bad character in group name '+1'", 5)
-        self.checkPatternError(r'()(?(01)a|b)',
-                               "bad character in group name '01'", 5)
         self.checkPatternError(r'()'*10 + r'(?(1_0)a|b)',
                                "bad character in group name '1_0'", 23)
         self.checkPatternError(r'()(?( 1 )a|b)',

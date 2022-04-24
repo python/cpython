@@ -780,8 +780,13 @@ def _parse(source, state, verbose, nested, first=False):
                 elif char == "(":
                     # conditional backreference group
                     condname = source.getuntil(")", "group name")
-                    if (condname.isdecimal() and condname.isascii() and
-                            (condname[0] != "0" or condname == "0")):
+                    if not (condname.isdecimal() and condname.isascii()):
+                        source.checkgroupname(condname, 1)
+                        condgroup = state.groupdict.get(condname)
+                        if condgroup is None:
+                            msg = "unknown group name %r" % condname
+                            raise source.error(msg, len(condname) + 1)
+                    else:
                         condgroup = int(condname)
                         if not condgroup:
                             raise source.error("bad group number",
@@ -793,12 +798,6 @@ def _parse(source, state, verbose, nested, first=False):
                             state.grouprefpos[condgroup] = (
                                 source.tell() - len(condname) - 1
                             )
-                    else:
-                        source.checkgroupname(condname, 1)
-                        condgroup = state.groupdict.get(condname)
-                        if condgroup is None:
-                            msg = "unknown group name %r" % condname
-                            raise source.error(msg, len(condname) + 1)
                     state.checklookbehindgroup(condgroup, source)
                     item_yes = _parse(source, state, verbose, nested + 1)
                     if source.match("|"):
@@ -1007,18 +1006,17 @@ def parse_template(source, state):
                 if not s.match("<"):
                     raise s.error("missing <")
                 name = s.getuntil(">", "group name")
-                if (name.isdecimal() and name.isascii() and
-                        (name[0] != "0" or name == "0")):
-                    index = int(name)
-                    if index >= MAXGROUPS:
-                        raise s.error("invalid group reference %d" % index,
-                                      len(name) + 1)
-                else:
+                if not (name.isdecimal() and name.isascii()):
                     s.checkgroupname(name, 1)
                     try:
                         index = groupindex[name]
                     except KeyError:
                         raise IndexError("unknown group name %r" % name) from None
+                else:
+                    index = int(name)
+                    if index >= MAXGROUPS:
+                        raise s.error("invalid group reference %d" % index,
+                                      len(name) + 1)
                 addgroup(index, len(name) + 1)
             elif c == "0":
                 if s.next in OCTDIGITS:
