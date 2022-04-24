@@ -1256,6 +1256,23 @@ class Thread:
                       DeprecationWarning, stacklevel=2)
         self.name = name
 
+def thread(func):
+    """
+    Decorator to mark that a function is to be run in its own thread.
+
+    When called, the decorated function returns the new thread in which
+    it is running.
+    """
+    def wrapped(*args, **kwds):
+        try:
+            name = wrapped.__name__
+        except AttributeError:
+            name = None
+        thread = Thread(target = func, args = args, kwargs = kwds, name = name)
+        thread.start()
+        return thread
+    return functools.update_wrapper(wrapped, func)
+
 
 try:
     from _thread import (_excepthook as excepthook,

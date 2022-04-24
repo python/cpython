@@ -458,6 +458,17 @@ since it is impossible to detect the termination of alien threads.
 
       .. deprecated:: 3.10
 
+.. decorator:: thread(func)
+
+    This decorator indicates that, when called, the wrapped function is to
+    run in its own thread. The return value of the wrapped function is the
+    new thread. For example::
+
+     @thread
+     def hello(who):
+         print("Hello,", who)
+
+     new_thread = hello("World") # Prints "Hello, World" asynchronously
 
 .. _lock-objects:
 
