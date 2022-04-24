@@ -54,6 +54,7 @@ kwlist = [
     'mimo',
     'nebo',
     'neguj',
+    'nemistni',
     'neni',
     'nonlocal',
     'not',

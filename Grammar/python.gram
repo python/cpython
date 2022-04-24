@@ -134,6 +134,7 @@ simple_stmt[stmt_ty] (memo):
     | &'global' global_stmt
     | &'svetovy' global_stmt
     | &'nonlocal' nonlocal_stmt
+    | &'nemistni' nonlocal_stmt
 
 compound_stmt[stmt_ty]:
     | &('def' | '@' | ASYNC) function_def
@@ -204,8 +205,9 @@ global_stmt[stmt_ty]:
     | 'global' a[asdl_expr_seq*]=','.NAME+ {_PyAST_Global(CHECK(asdl_identifier_seq*, _PyPegen_map_names_to_ids(p, a)), EXTRA) }
     | 'svetovy' a[asdl_expr_seq*]=','.NAME+ {_PyAST_Global(CHECK(asdl_identifier_seq*, _PyPegen_map_names_to_ids(p, a)), EXTRA) }
 
-nonlocal_stmt[stmt_ty]: 'nonlocal' a[asdl_expr_seq*]=','.NAME+ {
-    _PyAST_Nonlocal(CHECK(asdl_identifier_seq*, _PyPegen_map_names_to_ids(p, a)), EXTRA) }
+nonlocal_stmt[stmt_ty]:
+    | 'nonlocal' a[asdl_expr_seq*]=','.NAME+ {_PyAST_Nonlocal(CHECK(asdl_identifier_seq*, _PyPegen_map_names_to_ids(p, a)), EXTRA) }
+    | 'nemistni' a[asdl_expr_seq*]=','.NAME+ {_PyAST_Nonlocal(CHECK(asdl_identifier_seq*, _PyPegen_map_names_to_ids(p, a)), EXTRA) }
 
 del_stmt[stmt_ty]:
     | 'del' a=del_targets &(';' | NEWLINE) { _PyAST_Delete(a, EXTRA) }
