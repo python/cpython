@@ -146,17 +146,30 @@ def splitdrive(p):
             sep = b'\\'
             altsep = b'/'
             colon = b':'
+            unc2 = b'\\\\'
+            unc4 = b'\\\\?\\'
+            unc8 = b'\\\\?\\UNC\\'
         else:
             sep = '\\'
             altsep = '/'
             colon = ':'
+            unc2 = '\\\\'
+            unc4 = '\\\\?\\'
+            unc8 = '\\\\?\\UNC\\'
         normp = p.replace(altsep, sep)
-        if (normp[0:2] == sep*2) and (normp[2:3] != sep):
+        if normp[:8] == unc8:
+            normp = sep * 8 + normp[8:]
+            offset = 6
+        elif normp[:4] == unc4:
+            offset = 4
+        else:
+            offset = 0
+        if (normp[offset:offset + 2] == unc2) and (normp[offset + 2:offset + 3] != sep):
             # is a UNC path:
             # vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
             # \\machine\mountpoint\directory\etc\...
             #           directory ^^^^^^^^^^^^^^^
-            index = normp.find(sep, 2)
+            index = normp.find(sep, offset + 2)
             if index == -1:
                 return p[:0], p
             index2 = normp.find(sep, index + 1)
@@ -167,8 +180,8 @@ def splitdrive(p):
             if index2 == -1:
                 index2 = len(p)
             return p[:index2], p[index2:]
-        if normp[1:2] == colon:
-            return p[:2], p[2:]
+        if normp[offset + 1:offset + 2] == colon:
+            return p[:offset + 2], p[offset + 2:]
     return p[:0], p
 
 
