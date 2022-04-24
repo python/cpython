@@ -37,7 +37,7 @@ to create a gzipped tarball and a zip file.  The available formats are:
 | ``xztar`` | xz'ed tar file          | \(5)        |
 |           | (:file:`.tar.xz`)       |             |
 +-----------+-------------------------+-------------+
-| ``ztar``  | compressed tar file     | \(5)        |
+| ``ztar``  | compressed tar file     | (4),(5)     |
 |           | (:file:`.tar.Z`)        |             |
 +-----------+-------------------------+-------------+
 | ``tar``   | tar file (:file:`.tar`) | \(5)        |
@@ -62,7 +62,7 @@ Notes:
    requires the :program:`compress` program. Notice that this format is now
    pending for deprecation and will be removed in the future versions of Python.
 (5)
-  deprecated by `PEP 527 <https://www.python.org/dev/peps/pep-0527/>`_;
+  deprecated by `PEP 527 <https://peps.python.org/pep-0527/>`_;
   `PyPI <https://pypi.org>`_ only accepts ``.zip`` and ``.tar.gz`` files.
 
 When using any ``tar`` format (``gztar``, ``bztar``, ``xztar``, ``ztar`` or

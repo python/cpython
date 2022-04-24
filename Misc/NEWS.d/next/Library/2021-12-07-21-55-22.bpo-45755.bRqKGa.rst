@@ -1,3 +1,0 @@
-:mod:`typing` generic aliases now reveal the class attributes of the
-original generic class when passed to ``dir()``. This was the behavior up to
-Python 3.6, but was changed in 3.7-3.9.

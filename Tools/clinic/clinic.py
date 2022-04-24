@@ -3665,8 +3665,7 @@ class self_converter(CConverter):
             self.show_in_signature = False
 
     # tp_new (METHOD_NEW) functions are of type newfunc:
-    #     typedef PyObject *(*newfunc)(struct _typeobject *, PyObject *, PyObject *);
-    # PyTypeObject is a typedef for struct _typeobject.
+    #     typedef PyObject *(*newfunc)(PyTypeObject *, PyObject *, PyObject *);
     #
     # tp_init (METHOD_INIT) functions are of type initproc:
     #     typedef int (*initproc)(PyObject *, PyObject *, PyObject *);

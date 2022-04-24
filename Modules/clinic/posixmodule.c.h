@@ -1831,6 +1831,8 @@ exit:
 
 #endif /* defined(HAVE_SYSTEM) && !defined(MS_WINDOWS) */
 
+#if defined(HAVE_UMASK)
+
 PyDoc_STRVAR(os_umask__doc__,
 "umask($module, mask, /)\n"
 "--\n"
@@ -1858,6 +1860,8 @@ os_umask(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#endif /* defined(HAVE_UMASK) */
 
 PyDoc_STRVAR(os_unlink__doc__,
 "unlink($module, /, path, *, dir_fd=None)\n"
@@ -8812,6 +8816,10 @@ exit:
     #define OS_SYSTEM_METHODDEF
 #endif /* !defined(OS_SYSTEM_METHODDEF) */
 
+#ifndef OS_UMASK_METHODDEF
+    #define OS_UMASK_METHODDEF
+#endif /* !defined(OS_UMASK_METHODDEF) */
+
 #ifndef OS_UNAME_METHODDEF
     #define OS_UNAME_METHODDEF
 #endif /* !defined(OS_UNAME_METHODDEF) */
@@ -9295,4 +9303,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=05505f171cdcff72 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d95ba7b0b9c52685 input=a9049054013a1b77]*/

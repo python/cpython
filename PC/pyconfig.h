@@ -529,6 +529,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if you have times.  */
 /* #undef HAVE_TIMES */
 
+/* Define to 1 if you have the `umask' function. */
+#define HAVE_UMASK 1
+
 /* Define if you have uname.  */
 /* #undef HAVE_UNAME */
 

@@ -628,16 +628,27 @@ x = (
                             ["f'{}'",
                              "f'{ }'"
                              "f' {} '",
-                             "f'{!r}'",
-                             "f'{ !r}'",
                              "f'{10:{ }}'",
                              "f' { } '",
 
                              # The Python parser ignores also the following
                              # whitespace characters in additional to a space.
                              "f'''{\t\f\r\n}'''",
+                             ])
 
-                             # Catch the empty expression before the
+        # Different error messeges are raised when a specfier ('!', ':' or '=') is used after an empty expression
+        self.assertAllRaise(SyntaxError, "f-string: expression required before '!'",
+                            ["f'{!r}'",
+                             "f'{ !r}'",
+                             "f'{!}'",
+                             "f'''{\t\f\r\n!a}'''",
+
+                             # Catch empty expression before the
+                             #  missing closing brace.
+                             "f'{!'",
+                             "f'{!s:'",
+
+                             # Catch empty expression before the
                              #  invalid conversion.
                              "f'{!x}'",
                              "f'{ !xr}'",
@@ -645,16 +656,23 @@ x = (
                              "f'{!x:a}'",
                              "f'{ !xr:}'",
                              "f'{ !xr:a}'",
+                             ])
 
-                             "f'{!}'",
-                             "f'{:}'",
-
-                             # We find the empty expression before the
-                             #  missing closing brace.
-                             "f'{!'",
-                             "f'{!s:'",
+        self.assertAllRaise(SyntaxError, "f-string: expression required before ':'",
+                            ["f'{:}'",
+                             "f'{ :!}'",
+                             "f'{:2}'",
+                             "f'''{\t\f\r\n:a}'''",
                              "f'{:'",
-                             "f'{:x'",
+                             ])
+
+        self.assertAllRaise(SyntaxError, "f-string: expression required before '='",
+                            ["f'{=}'",
+                             "f'{ =}'",
+                             "f'{ =:}'",
+                             "f'{   =!}'",
+                             "f'''{\t\f\r\n=}'''",
+                             "f'{='",
                              ])
 
         # Different error message is raised for other whitespace characters.
@@ -746,12 +764,16 @@ x = (
         # differently inside f-strings.
         self.assertAllRaise(SyntaxError, r"\(unicode error\) 'unicodeescape' codec can't decode bytes in position .*: malformed \\N character escape",
                             [r"f'\N'",
+                             r"f'\N '",
+                             r"f'\N  '",  # See bpo-46503.
                              r"f'\N{'",
                              r"f'\N{GREEK CAPITAL LETTER DELTA'",
 
                              # Here are the non-f-string versions,
                              #  which should give the same errors.
                              r"'\N'",
+                             r"'\N '",
+                             r"'\N  '",
                              r"'\N{'",
                              r"'\N{GREEK CAPITAL LETTER DELTA'",
                              ])
@@ -1049,6 +1071,8 @@ x = (
                              "f'{{{'",
                              "f'{{}}{'",
                              "f'{'",
+                             "f'x{<'",  # See bpo-46762.
+                             "f'x{>'",
                              ])
 
         # But these are just normal strings.

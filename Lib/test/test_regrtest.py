@@ -22,6 +22,8 @@ from test import support
 from test.support import os_helper
 from test.libregrtest import utils, setup
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')

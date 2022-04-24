@@ -13,7 +13,7 @@ if not defined SPHINXBUILD (
     %PYTHON% -c "import sphinx" > nul 2> nul
     if errorlevel 1 (
         echo Installing sphinx with %PYTHON%
-        %PYTHON% -m pip install sphinx==2.2.0
+        %PYTHON% -m pip install -r requirements.txt
         if errorlevel 1 exit /B
     )
     set SPHINXBUILD=%PYTHON% -c "import sphinx.cmd.build, sys; sys.exit(sphinx.cmd.build.main())"
@@ -30,10 +30,22 @@ if not defined BLURB (
     %PYTHON% -c "import blurb" > nul 2> nul
     if errorlevel 1 (
         echo Installing blurb with %PYTHON%
+        rem Should have been installed with Sphinx earlier
         %PYTHON% -m pip install blurb
         if errorlevel 1 exit /B
     )
     set BLURB=%PYTHON% -m blurb
+)
+
+if not defined SPHINXLINT (
+    %PYTHON% -c "import sphinxlint" > nul 2> nul
+    if errorlevel 1 (
+        echo Installing sphinx-lint with %PYTHON%
+        rem Should have been installed with Sphinx earlier
+        %PYTHON% -m pip install sphinx-lint
+        if errorlevel 1 exit /B
+    )
+    set SPHINXLINT=%PYTHON% -m sphinxlint
 )
 
 if "%1" NEQ "htmlhelp" goto :skiphhcsearch
@@ -168,7 +180,7 @@ if EXIST "%BUILDDIR%\html\index.html" (
 goto end
 
 :check
-cmd /S /C "%PYTHON% tools\rstlint.py -i tools"
+cmd /S /C "%SPHINXLINT% -i tools"
 goto end
 
 :serve

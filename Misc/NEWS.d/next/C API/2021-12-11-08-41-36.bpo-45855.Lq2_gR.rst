@@ -1,1 +1,0 @@
-Replaced deprecated usage of :c:func:`PyImport_ImportModuleNoBlock` with :c:func:`PyImport_ImportModule` in stdlib modules. Patch by Kumar Aditya.
