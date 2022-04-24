@@ -36,11 +36,13 @@ medium_value(PyLongObject *x)
 #define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
 
+static void long_dealloc(PyLongObject *op);
+
 static inline void
 _Py_DECREF_INT(PyLongObject *op)
 {
     assert(PyLong_CheckExact(op));
-    _Py_DECREF_SPECIALIZED((PyObject *)op, (destructor)PyObject_Free);
+    _Py_DECREF_SPECIALIZED((PyObject *)op, (destructor)long_dealloc);
 }
 
 static inline int
@@ -3095,7 +3097,7 @@ PyLong_AsDouble(PyObject *v)
 /* Methods */
 
 static void
-float_dealloc(PyLongObject *op)
+long_dealloc(PyLongObject *op)
 {
 #if PyLong_MAXFREELIST > 0
     if (PyLong_CheckExact(op) && IS_MEDIUM_VALUE(op)) {
@@ -6035,7 +6037,7 @@ PyTypeObject PyLong_Type = {
     "int",                                      /* tp_name */
     offsetof(PyLongObject, ob_digit),           /* tp_basicsize */
     sizeof(digit),                              /* tp_itemsize */
-    (destructor)float_dealloc,                  /* tp_dealloc */
+    (destructor)long_dealloc,                   /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
