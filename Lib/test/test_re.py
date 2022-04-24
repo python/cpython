@@ -2608,11 +2608,11 @@ class ImplementationTest(unittest.TestCase):
         for name in deprecated:
             with self.subTest(module=name):
                 sys.modules.pop(name, None)
-                with self.assertWarns(DeprecationWarning) as cm:
+                with self.assertWarns(DeprecationWarning) as w:
                     __import__(name)
-                self.assertEqual(str(cm.warnings[0].message),
+                self.assertEqual(str(w.warning),
                                  f"module {name!r} is deprecated")
-                self.assertEqual(cm.warnings[0].filename, __file__)
+                self.assertEqual(w.filename, __file__)
                 self.assertIn(name, sys.modules)
                 mod = sys.modules[name]
                 self.assertEqual(mod.__name__, name)
