@@ -74,8 +74,11 @@ New syntax features:
 
 New typing features:
 
-* :pep:`673`: ``Self`` Type.
-  (Contributed by James Hilton-Balfe and Pradeep Kumar in :issue:`30924`.)
+* :pep:`646`: Variadic generics.
+* :pep:`655`: Marking individual TypedDict items as required or potentially-missing.
+* :pep:`673`: ``Self`` type.
+* :pep:`675`: Arbitrary literal string type.
+
 
 New Features
 ============
@@ -165,6 +168,134 @@ used to enrich exceptions with context information which is not available
 at the time when the exception is raised. The notes added appear in the
 default traceback. See :pep:`678` for more details. (Contributed by
 Irit Katriel in :issue:`45607`.)
+
+
+.. _new-feat-related-type-hints-311:
+
+New Features Related to Type Hints
+==================================
+
+This section covers major changes affecting :pep:`484` type hints and
+the :mod:`typing` module.
+
+PEP 646: Variadic generics
+--------------------------
+
+:pep:`484` introduced :data:`~typing.TypeVar`, enabling creation
+of generics parameterised with a single type. :pep:`646` introduces
+:data:`~typing.TypeVarTuple`, enabling parameterisation
+with an *arbitrary* number of types. In other words,
+a :data:`~typing.TypeVarTuple` is a *variadic* type variable,
+enabling *variadic* generics. This enables a wide variety of use cases.
+In particular, it allows the type of array-like structures
+in numerical computing libraries such as NumPy and TensorFlow to be
+parameterised with the array *shape*. Static type checkers will now
+be able to catch shape-related bugs in code that uses these libraries.
+
+See :pep:`646` for more details.
+
+(Contributed by Matthew Rahtz in :issue:`43224`, with contributions by
+Serhiy Storchaka and Jelle Zijlstra. PEP written by Mark Mendoza, Matthew
+Rahtz, Pradeep Kumar Srinivasan, and Vincent Siles.)
+
+PEP 655: Marking individual ``TypedDict`` items as required or not-required
+---------------------------------------------------------------------------
+
+:data:`~typing.Required` and :data:`~typing.NotRequired` provide a
+straightforward way to mark whether individual items in a
+:data:`~typing.TypedDict` must be present. Previously this was only possible
+using inheritance.
+
+Fields are still required by default, unless the ``total=False``
+parameter is set.
+For example, the following specifies a dictionary with one required and
+one not-required key::
+
+   class Movie(TypedDict):
+      title: str
+      year: NotRequired[int]
+
+   m1: Movie = {"title": "Black Panther", "year": 2018}  # ok
+   m2: Movie = {"title": "Star Wars"}  # ok (year is not required)
+   m3: Movie = {"year": 2022}  # error (missing required field title)
+
+The following definition is equivalent::
+
+   class Movie(TypedDict, total=False):
+      title: Required[str]
+      year: int
+
+See :pep:`655` for more details.
+
+(Contributed by David Foster and Jelle Zijlstra in :issue:`47087`. PEP
+written by David Foster.)
+
+PEP 673: ``Self`` type
+----------------------
+
+The new :data:`~typing.Self` annotation provides a simple and intuitive
+way to annotate methods that return an instance of their class. This
+behaves the same as the :data:`~typing.TypeVar`-based approach specified
+in :pep:`484` but is more concise and easier to follow.
+
+Common use cases include alternative constructors provided as classmethods
+and :meth:`~object.__enter__` methods that return ``self``::
+
+   class MyLock:
+       def __enter__(self) -> Self:
+           self.lock()
+           return self
+
+       ...
+
+   class MyInt:
+       @classmethod
+       def fromhex(cls, s: str) -> Self:
+           return cls(int(s, 16))
+
+       ...
+
+:data:`~typing.Self` can also be used to annotate method parameters
+or attributes of the same type as their enclosing class.
+
+See :pep:`673` for more details.
+
+(Contributed by James Hilton-Balfe in :issue:`46534`. PEP written by
+Pradeep Kumar Srinivasan and James Hilton-Balfe.)
+
+PEP 675: Arbitrary literal string type
+--------------------------------------
+
+The new :data:`~typing.LiteralString` annotation may be used to indicate
+that a function parameter can be of any literal string type. This allows
+a function to accept arbitrary literal string types, as well as strings
+created from other literal strings. Type checkers can then
+enforce that sensitive functions, such as those that execute SQL
+statements or shell commands, are called only with static arguments,
+providing protection against injection attacks.
+
+For example, a SQL query function could be annotated as follows::
+
+   def run_query(sql: LiteralString) -> ...
+       ...
+
+   def caller(
+       arbitrary_string: str,
+       query_string: LiteralString,
+       table_name: LiteralString,
+   ) -> None:
+       run_query("SELECT * FROM students")       # ok
+       run_query(query_string)                   # ok
+       run_query("SELECT * FROM " + table_name)  # ok
+       run_query(arbitrary_string)               # type checker error
+       run_query(                                # type checker error
+           f"SELECT * FROM students WHERE name = {arbitrary_string}"
+       )
+
+See :pep:`675` for more details.
+
+(Contributed by Jelle Zijlstra in :issue:`47088`. PEP written by Pradeep
+Kumar Srinivasan and Graham Bleaney.)
 
 
 Other Language Changes
