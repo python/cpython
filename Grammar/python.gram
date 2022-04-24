@@ -418,6 +418,9 @@ elif_stmt[stmt_ty]:
     | 'elif' a=named_expression ':' b=block c=elif_stmt {
         _PyAST_If(a, b, CHECK(asdl_stmt_seq*, _PyPegen_singleton_seq(p, c)), EXTRA) }
     | 'elif' a=named_expression ':' b=block c=[else_block] { _PyAST_If(a, b, c, EXTRA) }
+    | 'jindyz' a=named_expression ':' b=block c=elif_stmt {
+        _PyAST_If(a, b, CHECK(asdl_stmt_seq*, _PyPegen_singleton_seq(p, c)), EXTRA) }
+    | 'jindyz' a=named_expression ':' b=block c=[else_block] { _PyAST_If(a, b, c, EXTRA) }
 else_block[asdl_stmt_seq*]:
     | invalid_else_stmt
     | 'else' &&':' b=block { b }
@@ -1449,6 +1452,9 @@ invalid_elif_stmt:
     | 'elif' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='elif' named_expression ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'elif' statement on line %d", a->lineno) }
+    | 'jindyz' named_expression NEWLINE { RAISE_SYNTAX_ERROR("ocekavana ':'") }
+    | a='jindyz' named_expression ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("ocekavan odsazeny blok po 'jindyz' statementu na radku %d", a->lineno) }
 invalid_else_stmt:
     | a='else' ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'else' statement on line %d", a->lineno) }

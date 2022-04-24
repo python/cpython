@@ -47,6 +47,7 @@ kwlist = [
     'jako',
     'je',
     'jinak',
+    'jindyz',
     'kdyz',
     'konecne',
     'lambda',
