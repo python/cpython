@@ -487,7 +487,7 @@ mappingproxy(OrderedDict([('the', 0),
             lengths = {"empty": empty, "short": short, "long": long}
             prefix = "dict" if dict_class is dict else "odict"
             for name, d in lengths.items():
-                with self.subTest(lenght=name, prefix=prefix):
+                with self.subTest(length=name, prefix=prefix):
                     is_short = len(d) < 6
                     joiner = ", " if is_short else ",\n "
                     k = d.keys()
