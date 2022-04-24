@@ -164,11 +164,30 @@ _PyLong_New(Py_ssize_t size)
        sizeof(PyVarObject) instead of the offsetof, but this risks being
        incorrect in the presence of padding between the PyVarObject header
        and the digits. */
-    result = PyObject_Malloc(offsetof(PyLongObject, ob_digit) +
-                             ndigits*sizeof(digit));
-    if (!result) {
-        PyErr_NoMemory();
-        return NULL;
+#if PyLong_MAXFREELIST > 0
+    if (ndigits + 1 < 3) {
+        struct _Py_long_state *state = get_long_state();
+        result = state->free_list;
+        if (result != NULL) {
+#ifdef Py_DEBUG
+            assert(state->numfree != -1);
+#endif
+            state->free_list = (PyLongObject *) Py_TYPE(result);
+            state->numfree--;
+        }
+    } else {
+        result = NULL;
+    }
+
+    if (result == NULL)
+#endif
+    {
+        result = PyObject_Malloc(offsetof(PyLongObject, ob_digit) +
+                                 ndigits * sizeof(digit));
+        if (!result) {
+            PyErr_NoMemory();
+            return NULL;
+        }
     }
     _PyObject_InitVar((PyVarObject*)result, &PyLong_Type, size);
     return result;
