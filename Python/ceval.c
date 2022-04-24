@@ -4349,7 +4349,6 @@ handle_eval_breaker:
             SET_TOP(iter);
             if (iter == NULL)
                 goto error;
-            PREDICT(FOR_ITER);
             DISPATCH();
         }
 
@@ -4390,8 +4389,6 @@ handle_eval_breaker:
             if (next != NULL) {
                 PUSH(next);
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
-                PREDICT(STORE_FAST);
-                PREDICT(UNPACK_SEQUENCE);
                 DISPATCH();
             }
             if (_PyErr_Occurred(tstate)) {
@@ -4429,8 +4426,8 @@ handle_eval_breaker:
         TARGET(FOR_ITER_LIST) {
             // assert(cframe.use_tracing == 0); fails for some reason
             _PyListIterObject *it = (_PyListIterObject *)TOP();
-            DEOPT_IF(Py_TYPE(it) != &PyListIter_Type, JUMP_BACKWARD);
-            STAT_INC(JUMP_BACKWARD, hit);
+            DEOPT_IF(Py_TYPE(it) != &PyListIter_Type, FOR_ITER);
+            STAT_INC(FOR_ITER, hit);
             PyListObject *seq = it->it_seq;
             if (seq == NULL) {
                 goto iterator_exhausted_no_error;
