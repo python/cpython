@@ -292,7 +292,10 @@ process and user.
 .. function:: getenv(key, default=None)
 
    Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't. *key*, *default* and the result are str.
+   *default* if it doesn't. *key*, *default* and the result are str. Note that
+   since :func:`getenv` uses ``os.environ``, the mapping of :func:`getenv` is
+   similarly also captured on import, and the function may not reflect
+   future environment changes.
 
    On Unix, keys and values are decoded with :func:`sys.getfilesystemencoding`
    and ``'surrogateescape'`` error handler. Use :func:`os.getenvb` if you
@@ -514,7 +517,8 @@ process and user.
    Assignments to items in ``os.environ`` are automatically translated into
    corresponding calls to :func:`putenv`; however, calls to :func:`putenv`
    don't update ``os.environ``, so it is actually preferable to assign to items
-   of ``os.environ``.
+   of ``os.environ``. This also applies to :func:`getenv`, which uses
+   ``os.environ`` in its implementation.
 
    .. note::
 
