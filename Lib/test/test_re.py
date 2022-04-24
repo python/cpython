@@ -328,10 +328,6 @@ class ReTests(unittest.TestCase):
             re.sub('(?P<a>x)', r'\g<+1>', 'xx')
         self.assertEqual(w.filename, __file__)
         with self.assertWarnsRegex(DeprecationWarning,
-                                   r"bad character in group name '01' "
-                                   r"at position 3"):
-            re.sub('(?P<a>x)', r'\g<01>', 'xx')
-        with self.assertWarnsRegex(DeprecationWarning,
                                    r"bad character in group name '1_0' "
                                    r"at position 3"):
             re.sub('()'*10, r'\g<1_0>', 'xx')
@@ -625,10 +621,6 @@ class ReTests(unittest.TestCase):
                                    r"at position 5") as w:
             re.compile(r'()(?(+1)a|b)')
         self.assertEqual(w.filename, __file__)
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   r"bad character in group name '01' "
-                                   r"at position 5"):
-            re.compile(r'()(?(01)a|b)')
         with self.assertWarnsRegex(DeprecationWarning,
                                    r"bad character in group name '1_0' "
                                    r"at position 23"):

@@ -490,7 +490,7 @@ The special characters are:
    not with ``'<user@host.com'`` nor ``'user@host.com>'``.
 
    .. deprecated:: 3.11
-      Group *id* containing anything except ASCII digits or starting with ``0``.
+      Group *id* containing anything except ASCII digits.
 
 
 The special sequences consist of ``'\'`` and a character from the list below.
@@ -1002,8 +1002,7 @@ form.
       non-empty match.
 
    .. deprecated:: 3.11
-      Group *id* containing anything except ASCII digits or starting with ``0``
-      (except group 0).
+      Group *id* containing anything except ASCII digits.
       Group names containing non-ASCII characters in bytes replacement strings.
 
 

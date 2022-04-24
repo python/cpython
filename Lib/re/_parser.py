@@ -810,8 +810,7 @@ def _parse(source, state, verbose, nested, first=False):
                             state.grouprefpos[condgroup] = (
                                 source.tell() - len(condname) - 1
                             )
-                        if not (condname.isdecimal() and condname.isascii() and
-                                (condname[0] != "0" or condname == "0")):
+                        if not (condname.isdecimal() and condname.isascii()):
                             import warnings
                             warnings.warn(
                                 "bad character in group name %s at position %d" %
@@ -1044,8 +1043,7 @@ def parse_template(source, state):
                     if index >= MAXGROUPS:
                         raise s.error("invalid group reference %d" % index,
                                       len(name) + 1)
-                    if not (name.isdecimal() and name.isascii() and
-                            (name[0] != "0" or name == "0")):
+                    if not (name.isdecimal() and name.isascii()):
                         import warnings
                         warnings.warn(
                             "bad character in group name %s at position %d" %
