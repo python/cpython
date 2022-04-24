@@ -2067,6 +2067,11 @@ class TestsPermissionExtraction(unittest.TestCase):
         os.mkdir(TESTFNDIR)
         self.files = []
 
+        # Arbitrarily set the umask to 0 in order to retrieve the current umask
+        # Then restore the original value for the umask
+        self.umask = os.umask(0)
+        os.umask(self.umask)
+
         with zipfile.ZipFile(TESTFN2, 'w', zipfile.ZIP_STORED) as zf:
             for base_mode in range(0o1000):
                 for special_mask in range(0o10):
@@ -2085,7 +2090,7 @@ class TestsPermissionExtraction(unittest.TestCase):
         with zipfile.ZipFile(TESTFN2, 'r') as zf:
             zf.extractall()
             for filename, mode in self.files:
-                expected_mode = 0o644
+                expected_mode = 0o666 & ~self.umask
                 self.assertTrue(os.path.exists(filename))
                 self.assertEqual(os.stat(filename).st_mode,
                                  stat.S_IFREG | expected_mode)
@@ -2094,7 +2099,7 @@ class TestsPermissionExtraction(unittest.TestCase):
         with zipfile.ZipFile(TESTFN2, 'r') as zf:
             for filename, mode in self.files:
                 zf.extract(filename)
-                expected_mode = 0o644
+                expected_mode = 0o666 & ~self.umask
                 self.assertTrue(os.path.exists(filename))
                 self.assertEqual(os.stat(filename).st_mode,
                                  stat.S_IFREG | expected_mode)
