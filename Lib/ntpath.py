@@ -157,13 +157,14 @@ def splitdrive(p):
             unc4 = '\\\\?\\'
             unc8 = '\\\\?\\UNC\\'
         normp = p.replace(altsep, sep)
+        offset = 0
         if normp[:8] == unc8:
+            # is a DOS device path with a UNC link, e.g. \\?\UNC\server\share\dir\file
             normp = sep * 8 + normp[8:]
             offset = 6
         elif normp[:4] == unc4:
+            # is a DOS device path without a UNC link, e.g. \\?\c:\dir\file
             offset = 4
-        else:
-            offset = 0
         if (normp[offset:offset + 2] == unc2) and (normp[offset + 2:offset + 3] != sep):
             # is a UNC path:
             # vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
