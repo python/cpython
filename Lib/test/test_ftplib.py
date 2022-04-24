@@ -914,6 +914,8 @@ class TestTLS_FTPClassMixin(TestFTPClass):
         self.server = DummyTLS_FTPServer((HOST, 0), encoding=encoding)
         self.server.start()
         self.client = ftplib.FTP_TLS(timeout=TIMEOUT, encoding=encoding)
+        self.client.context.check_hostname = False
+        self.client.context.verify_mode = ssl.CERT_NONE
         self.client.connect(self.server.host, self.server.port)
         # enable TLS
         self.client.auth()
@@ -928,6 +930,8 @@ class TestTLS_FTPClass(TestCase):
         self.server = DummyTLS_FTPServer((HOST, 0), encoding=encoding)
         self.server.start()
         self.client = ftplib.FTP_TLS(timeout=TIMEOUT)
+        self.client.context.check_hostname = False
+        self.client.context.verify_mode = ssl.CERT_NONE
         self.client.connect(self.server.host, self.server.port)
 
     def tearDown(self):

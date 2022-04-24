@@ -17,6 +17,7 @@ from test.support import socket_helper
 from test.support import threading_helper
 
 import warnings
+
 with warnings.catch_warnings():
     warnings.simplefilter('ignore', DeprecationWarning)
     import asynchat
@@ -417,6 +418,7 @@ class TestPOP3_SSLClass(TestPOP3Class):
         self.server.handler = DummyPOP3_SSLHandler
         self.server.start()
         self.client = poplib.POP3_SSL(self.server.host, self.server.port)
+        self.client.context.load_verify_locations(CAFILE)
 
     def test__all__(self):
         self.assertIn('POP3_SSL', poplib.__all__)
@@ -459,6 +461,7 @@ class TestPOP3_TLSClass(TestPOP3Class):
         self.server.start()
         self.client = poplib.POP3(self.server.host, self.server.port,
                                   timeout=test_support.LOOPBACK_TIMEOUT)
+        self.client.context.load_verify_locations(CAFILE)
         self.client.stls()
 
     def tearDown(self):

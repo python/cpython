@@ -1,0 +1,2 @@
+:mod:`ftplib`, :mod:`imaplib`, :mod:`nntplib`, :mod:`poplib`, and
+:mod:`smtplib` now verify TLS certificate and hostname by default.
