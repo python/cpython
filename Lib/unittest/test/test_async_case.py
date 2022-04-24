@@ -259,15 +259,15 @@ class TestAsyncCase(unittest.TestCase):
 
         with self.assertWarns(DeprecationWarning) as w:
             Test('test1').run()
-        self.assertIn('It is deprecated to return a value!=None', str(w.warnings[0].message))
-        self.assertIn('test1', str(w.warnings[0].message))
-        self.assertEqual(w.warnings[0].filename, __file__)
+        self.assertIn('It is deprecated to return a value!=None', str(w.warning))
+        self.assertIn('test1', str(w.warning))
+        self.assertEqual(w.filename, __file__)
 
         with self.assertWarns(DeprecationWarning) as w:
             Test('test2').run()
-        self.assertIn('It is deprecated to return a value!=None', str(w.warnings[0].message))
-        self.assertIn('test2', str(w.warnings[0].message))
-        self.assertEqual(w.warnings[0].filename, __file__)
+        self.assertIn('It is deprecated to return a value!=None', str(w.warning))
+        self.assertIn('test2', str(w.warning))
+        self.assertEqual(w.filename, __file__)
 
     def test_cleanups_interleave_order(self):
         events = []
