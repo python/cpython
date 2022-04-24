@@ -153,6 +153,9 @@ class WasmTerminal {
         // Handle special characters
         } else if (ord < 32 || ord === 0x7f) {
             switch (data) {
+                case "\x0c": // CTRL+L
+                    this.clear();
+                    break;
                 case "\n": // ENTER
                 case "\x0a": // CTRL+J
                 case "\x0d": // CTRL+M
