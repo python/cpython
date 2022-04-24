@@ -175,16 +175,16 @@ merge_union_and_union(PyObject *left, PyObject *right) {
     Py_ssize_t pos = args_length;
 
     for (int i = 0; i < other_args_length; i++) {
-        PyObject *other_arg = PyTuple_GET_ITEM(right_args, i);
+        PyObject *arg = PyTuple_GET_ITEM(right_args, i);
 
         int is_duplicate = 0;
 
         for (int j = 0; j < args_length; j++) {
-            PyObject *arg = PyTuple_GET_ITEM(left_args, j);
-            is_duplicate = is_same(arg, other_arg);
+            PyObject *left_arg = PyTuple_GET_ITEM(left_args, j);
+            is_duplicate = is_same(left_arg, arg);
 
             if (is_duplicate < 0) {
-                Py_DECREF(left_args);
+                Py_DECREF(tuple);
                 return NULL;
             }
             if (is_duplicate) {
@@ -193,8 +193,8 @@ merge_union_and_union(PyObject *left, PyObject *right) {
         }
 
         if (!is_duplicate) {
-            Py_INCREF(other_arg);
-            PyTuple_SET_ITEM(tuple, pos++, other_arg);
+            Py_INCREF(arg);
+            PyTuple_SET_ITEM(tuple, pos++, arg);
         }
     }
 
