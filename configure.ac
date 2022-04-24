@@ -1126,6 +1126,21 @@ AC_ARG_ENABLE([wasm-dynamic-linking],
 ])
 AC_MSG_RESULT([$enable_wasm_dynamic_linking])
 
+AC_MSG_CHECKING([for --enable-wasm-pthreads])
+AC_ARG_ENABLE([wasm-pthreads],
+  [AS_HELP_STRING([--enable-wasm-pthreads],
+                  [Enable pthread emulation for WebAssembly (default is no)])],
+[
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [],
+    [WASI], [AC_MSG_ERROR([WASI threading is not implemented yet.])],
+    [AC_MSG_ERROR([--enable-wasm-pthreads only applies to Emscripten and WASI])]
+  )
+], [
+  enable_wasm_pthreads=missing
+])
+AC_MSG_RESULT([$enable_wasm_pthreads])
+
 AC_MSG_CHECKING([for --with-suffix])
 AC_ARG_WITH([suffix],
             [AS_HELP_STRING([--with-suffix=SUFFIX], [set executable suffix to SUFFIX (default is empty, yes is mapped to '.exe')])],
@@ -1909,38 +1924,53 @@ then
 fi
 
 # WASM flags
-AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [Emscripten/browser*], [
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH"
-    LINKFORSHARED="--preload-file=\$(WASM_ASSETS_DIR)"
+AS_CASE([$ac_sys_system],
+  [Emscripten], [
+    dnl build with WASM debug info if either Py_DEBUG is set or the target is
+    dnl node-debug or browser-debug.
+    AS_VAR_IF([Py_DEBUG], [yes], [wasm_debug=yes], [wasm_debug=no])
+    
+    dnl Start with 20 MB and allow to grow
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sTOTAL_MEMORY=20971520"])
+
+    dnl Include file system support
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
+
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
     ])
-    WASM_ASSETS_DIR=".\$(prefix)"
-    WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
-    dnl separate-dwarf does not seem to work in Chrome DevTools Support.
-    if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "browser-debug"; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS"
-      LINKFORSHARED="$LINKFORSHARED -gsource-map --emit-symbol-map"
-    else
-      LINKFORSHARED="$LINKFORSHARED -O2 -g0"
-    fi
-  ],
-  [Emscripten/node*], [
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH -sNODERAWFS -sUSE_PTHREADS"
-    LINKFORSHARED="-sPROXY_TO_PTHREAD -sEXIT_RUNTIME"
-    AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
-      AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
+
+    AS_VAR_IF([enable_wasm_pthreads], [yes], [
+      AS_VAR_APPEND([CFLAGS_NODIST], [" -pthread"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -sUSE_PTHREADS"])
+      AS_VAR_APPEND([LINKFORSHARED], [" -sPROXY_TO_PTHREAD"])
     ])
-    CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
-    if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "node-debug"; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS"
-      LINKFORSHARED="$LINKFORSHARED -gseparate-dwarf --emit-symbol-map"
-    else
-      LINKFORSHARED="$LINKFORSHARED -O2 -g0"
-    fi
+
+    AS_CASE([$ac_sys_emscripten_target],
+      [browser*], [
+        AS_VAR_IF([ac_sys_emscripten_target], [browser-debug], [wasm_debug=yes])
+        AS_VAR_APPEND([LINKFORSHARED], [" --preload-file=\$(WASM_ASSETS_DIR)"])
+        WASM_ASSETS_DIR=".\$(prefix)"
+        WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
+        dnl separate-dwarf does not seem to work in Chrome DevTools Support.
+        WASM_LINKFORSHARED_DEBUG="-gsource-map --emit-symbol-map"
+      ],
+      [node*], [
+        AS_VAR_IF([ac_sys_emscripten_target], [node-debug], [wasm_debug=yes])
+        AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sNODERAWFS"])
+        AS_VAR_APPEND([LINKFORSHARED], [" -sEXIT_RUNTIME"])
+        WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
+      ]
+    )
+
+    AS_VAR_IF([wasm_debug], [yes], [
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -sASSERTIONS"])
+      AS_VAR_APPEND([LINKFORSHARED], [" $WASM_LINKFORSHARED_DEBUG"])
+    ], [
+      AS_VAR_APPEND([LINKFORSHARED], [" -O2 -g0"])
+    ])
   ],
-  [WASI/*], [
+  [WASI], [
     AC_DEFINE([_WASI_EMULATED_SIGNAL], [1], [Define to 1 if you want to emulate signals on WASI])
     AC_DEFINE([_WASI_EMULATED_GETPID], [1], [Define to 1 if you want to emulate getpid() on WASI])
     AC_DEFINE([_WASI_EMULATED_PROCESS_CLOCKS], [1], [Define to 1 if you want to emulate process clocks on WASI])
