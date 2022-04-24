@@ -172,7 +172,7 @@ merge_union_and_union(PyObject *left, PyObject *right) {
         PyTuple_SET_ITEM(tuple, i, arg);
     }
 
-    int pos = args_length;
+    Py_ssize_t pos = args_length;
 
     for (int i = 0; i < other_args_length; i++) {
         PyObject *other_arg = PyTuple_GET_ITEM(right_args, i);
@@ -255,14 +255,14 @@ merge_obj_and_union(PyObject *left, PyObject *right) {
 
     PyObject *tuple = PyTuple_New(args_length + 1);
 
-    Py_INCREF(left);
-    PyTuple_SET_ITEM(tuple, 0, left);
-
     if (tuple == NULL) {
         return NULL;
     }
 
-    int pos = 1;
+    Py_INCREF(left);
+    PyTuple_SET_ITEM(tuple, 0, left);
+
+    Py_ssize_t pos = 1;
 
     for (int i = 0; i < args_length; i++) {
         PyObject *arg = PyTuple_GET_ITEM(args, i);
