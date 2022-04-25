@@ -3066,8 +3066,8 @@ class TestSlots(unittest.TestCase):
         #
         # We *do not* want the error to be caused by anything related to dataclasses.
         self.assertIs(
-            type_of_caught_exception, 
-            AttributeError, 
+            type_of_caught_exception,
+            AttributeError,
             msg=f"expected 'AttributeError', got {type_of_caught_exception.__name__!r}"
         )
 
