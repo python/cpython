@@ -1256,7 +1256,7 @@ class Thread:
                       DeprecationWarning, stacklevel=2)
         self.name = name
 
-def thread(func):
+def threaded(func):
     """
     Decorator to mark that a function is to be run in its own thread.
 
