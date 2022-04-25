@@ -10,6 +10,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_ceval.h"         // _PyEval_Vector()
+#include "pycore_long.h"          // _PyLong_RefZero()
 
 #include "clinic/bltinmodule.c.h"
 
@@ -2410,11 +2411,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
         return NULL;
 
     if (result == NULL) {
-        result = PyLong_FromLong(0);
-        if (result == NULL) {
-            Py_DECREF(iter);
-            return NULL;
-        }
+        result = _PyLong_RefZero();
     } else {
         /* reject string values for 'start' parameter */
         if (PyUnicode_Check(result)) {

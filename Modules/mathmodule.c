@@ -845,7 +845,7 @@ math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
     Py_ssize_t i;
 
     if (nargs == 0) {
-        return PyLong_FromLong(0);
+        return _PyLong_RefZero();
     }
     res = PyNumber_Index(args[0]);
     if (res == NULL) {
@@ -891,7 +891,7 @@ long_lcm(PyObject *a, PyObject *b)
     PyObject *g, *m, *f, *ab;
 
     if (Py_SIZE(a) == 0 || Py_SIZE(b) == 0) {
-        return PyLong_FromLong(0);
+        return _PyLong_RefZero();
     }
     g = _PyLong_GCD(a, b);
     if (g == NULL) {
@@ -920,7 +920,7 @@ math_lcm(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
     Py_ssize_t i;
 
     if (nargs == 0) {
-        return PyLong_FromLong(1);
+        return _PyLong_RefOne();
     }
     res = PyNumber_Index(args[0]);
     if (res == NULL) {
@@ -1797,7 +1797,7 @@ math_isqrt(PyObject *module, PyObject *n)
     }
     if (_PyLong_Sign(n) == 0) {
         Py_DECREF(n);
-        return PyLong_FromLong(0);
+        return _PyLong_RefZero();
     }
 
     /* c = (n.bit_length() - 1) // 2 */
@@ -2031,9 +2031,7 @@ factorial_odd_part(unsigned long n)
     unsigned long v, lower, upper;
     PyObject *partial, *tmp, *inner, *outer;
 
-    inner = PyLong_FromLong(1);
-    if (inner == NULL)
-        return NULL;
+    inner = _PyLong_RefOne();
     outer = inner;
     Py_INCREF(outer);
 
@@ -3383,7 +3381,7 @@ static PyObject *
 perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
 {
     if (k == 0) {
-        return PyLong_FromLong(1);
+        return _PyLong_RefOne();
     }
 
     /* For small enough n and k the result fits in the 64-bit range and can
@@ -3504,7 +3502,7 @@ static PyObject *
 perm_comb(PyObject *n, unsigned long long k, int iscomb)
 {
     if (k == 0) {
-        return PyLong_FromLong(1);
+        return _PyLong_RefOne();
     }
     if (k == 1) {
         Py_INCREF(n);
@@ -3605,7 +3603,7 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
     cmp = PyObject_RichCompareBool(n, k, Py_LT);
     if (cmp != 0) {
         if (cmp > 0) {
-            result = PyLong_FromLong(0);
+            result = _PyLong_RefZero();
             goto done;
         }
         goto error;
@@ -3701,7 +3699,7 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
         ki = PyLong_AsLongLongAndOverflow(k, &overflow);
         assert(overflow >= 0 && !PyErr_Occurred());
         if (overflow || ki > ni) {
-            result = PyLong_FromLong(0);
+            result = _PyLong_RefZero();
             goto done;
         }
         assert(ki >= 0);
@@ -3722,7 +3720,7 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
         }
         if (Py_SIZE(temp) < 0) {
             Py_DECREF(temp);
-            result = PyLong_FromLong(0);
+            result = _PyLong_RefZero();
             goto done;
         }
         cmp = PyObject_RichCompareBool(temp, k, Py_LT);

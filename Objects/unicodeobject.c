@@ -11580,13 +11580,13 @@ unicode_count(PyObject *self, PyObject *args)
     kind1 = PyUnicode_KIND(self);
     kind2 = PyUnicode_KIND(substring);
     if (kind1 < kind2)
-        return PyLong_FromLong(0);
+        return _PyLong_RefZero();
 
     len1 = PyUnicode_GET_LENGTH(self);
     len2 = PyUnicode_GET_LENGTH(substring);
     ADJUST_INDICES(start, end, len1);
     if (end - start < len2)
-        return PyLong_FromLong(0);
+        return _PyLong_RefZero();
 
     buf1 = PyUnicode_DATA(self);
     buf2 = PyUnicode_DATA(substring);

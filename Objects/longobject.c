@@ -821,7 +821,7 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
     Py_ssize_t idigit = 0;              /* next free index in v->ob_digit */
 
     if (n == 0)
-        return PyLong_FromLong(0L);
+        return _PyLong_RefZero();
 
     if (little_endian) {
         pstartbyte = bytes;
@@ -2672,9 +2672,7 @@ long_divrem(PyLongObject *a, PyLongObject *b,
         if (*prem == NULL) {
             return -1;
         }
-        PyObject *zero = _PyLong_GetZero();
-        Py_INCREF(zero);
-        *pdiv = (PyLongObject*)zero;
+        *pdiv = (PyLongObject*)_PyLong_RefZero();
         return 0;
     }
     if (size_b == 1) {
@@ -3202,7 +3200,7 @@ x_sub(PyLongObject *a, PyLongObject *b)
         while (--i >= 0 && a->ob_digit[i] == b->ob_digit[i])
             ;
         if (i < 0)
-            return (PyLongObject *)PyLong_FromLong(0);
+            return (PyLongObject *)_PyLong_RefZero();
         if (a->ob_digit[i] < b->ob_digit[i]) {
             sign = -1;
             { PyLongObject *temp = a; a = b; b = temp; }
@@ -3489,7 +3487,7 @@ k_mul(PyLongObject *a, PyLongObject *b)
     i = a == b ? KARATSUBA_SQUARE_CUTOFF : KARATSUBA_CUTOFF;
     if (asize <= i) {
         if (asize == 0)
-            return (PyLongObject *)PyLong_FromLong(0);
+            return (PyLongObject *)_PyLong_RefZero();
         else
             return x_mul(a, b);
     }
@@ -4258,15 +4256,8 @@ long_invmod(PyLongObject *a, PyLongObject *n)
     /* Should only ever be called for positive n */
     assert(Py_SIZE(n) > 0);
 
-    b = (PyLongObject *)PyLong_FromLong(1L);
-    if (b == NULL) {
-        return NULL;
-    }
-    c = (PyLongObject *)PyLong_FromLong(0L);
-    if (c == NULL) {
-        Py_DECREF(b);
-        return NULL;
-    }
+    b = (PyLongObject *)_PyLong_RefOne();
+    c = (PyLongObject *)_PyLong_RefZero();
     Py_INCREF(a);
     Py_INCREF(n);
 
@@ -4398,7 +4389,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
         /* if modulus == 1:
                return 0 */
         if ((Py_SIZE(c) == 1) && (c->ob_digit[0] == 1)) {
-            z = (PyLongObject *)PyLong_FromLong(0L);
+            z = (PyLongObject *)_PyLong_RefZero();
             goto Done;
         }
 
@@ -4444,7 +4435,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     /* At this point a, b, and c are guaranteed non-negative UNLESS
        c is NULL, in which case a may be negative. */
 
-    z = (PyLongObject *)PyLong_FromLong(1L);
+    z = (PyLongObject *)_PyLong_RefOne();
     if (z == NULL)
         goto Error;
 
@@ -4720,7 +4711,7 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     else {
         newsize = Py_SIZE(a) - wordshift;
         if (newsize <= 0)
-            return PyLong_FromLong(0);
+            return _PyLong_RefZero();
         hishift = PyLong_SHIFT - remshift;
         z = _PyLong_New(newsize);
         if (z == NULL)
@@ -4751,7 +4742,7 @@ long_rshift(PyObject *a, PyObject *b)
         return NULL;
     }
     if (Py_SIZE(a) == 0) {
-        return PyLong_FromLong(0);
+        return _PyLong_RefZero();
     }
     if (divmod_shift(b, &wordshift, &remshift) < 0)
         return NULL;
@@ -4767,7 +4758,7 @@ _PyLong_Rshift(PyObject *a, size_t shiftby)
 
     assert(PyLong_Check(a));
     if (Py_SIZE(a) == 0) {
-        return PyLong_FromLong(0);
+        return _PyLong_RefZero();
     }
     wordshift = shiftby / PyLong_SHIFT;
     remshift = shiftby % PyLong_SHIFT;
@@ -4828,7 +4819,7 @@ long_lshift(PyObject *a, PyObject *b)
         return NULL;
     }
     if (Py_SIZE(a) == 0) {
-        return PyLong_FromLong(0);
+        return _PyLong_RefZero();
     }
     if (divmod_shift(b, &wordshift, &remshift) < 0)
         return NULL;
@@ -4844,7 +4835,7 @@ _PyLong_Lshift(PyObject *a, size_t shiftby)
 
     assert(PyLong_Check(a));
     if (Py_SIZE(a) == 0) {
-        return PyLong_FromLong(0);
+        return _PyLong_RefZero();
     }
     wordshift = shiftby / PyLong_SHIFT;
     remshift = shiftby % PyLong_SHIFT;
@@ -5281,7 +5272,7 @@ long_new_impl(PyTypeObject *type, PyObject *x, PyObject *obase)
                             "int() missing string argument");
             return NULL;
         }
-        return PyLong_FromLong(0L);
+        return _PyLong_RefZero();
     }
     if (obase == NULL)
         return PyNumber_Long(x);
@@ -5359,13 +5350,13 @@ int___getnewargs___impl(PyObject *self)
 static PyObject *
 long_get0(PyObject *Py_UNUSED(self), void *Py_UNUSED(context))
 {
-    return PyLong_FromLong(0L);
+    return _PyLong_RefZero();
 }
 
 static PyObject *
 long_get1(PyObject *Py_UNUSED(self), void *Py_UNUSED(ignored))
 {
-    return PyLong_FromLong(1L);
+    return _PyLong_RefOne();
 }
 
 /*[clinic input]
@@ -5606,7 +5597,7 @@ int_bit_length_impl(PyObject *self)
 
     ndigits = Py_ABS(Py_SIZE(self));
     if (ndigits == 0)
-        return PyLong_FromLong(0);
+        return _PyLong_RefZero();
 
     msd = ((PyLongObject *)self)->ob_digit[ndigits-1];
     msd_bits = bit_length_digit(msd);

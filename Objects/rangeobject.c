@@ -29,7 +29,7 @@ validate_step(PyObject *step)
 {
     /* No step specified, use a step of 1. */
     if (!step)
-        return PyLong_FromLong(1);
+        return _PyLong_RefOne();
 
     step = PyNumber_Index(step);
     if (step && _PyLong_Sign(step) == 0) {
@@ -104,10 +104,8 @@ range_from_array(PyTypeObject *type, PyObject *const *args, Py_ssize_t num_args)
             if (!stop) {
                 return NULL;
             }
-            start = _PyLong_GetZero();
-            Py_INCREF(start);
-            step = _PyLong_GetOne();
-            Py_INCREF(step);
+            start = _PyLong_RefZero();
+            step = _PyLong_RefOne();
             break;
         case 0:
             PyErr_SetString(PyExc_TypeError,
@@ -1125,11 +1123,10 @@ range_iter(PyObject *seq)
     it->start = r->start;
     it->step = r->step;
     it->len = r->length;
-    it->index = _PyLong_GetZero();
     Py_INCREF(it->start);
     Py_INCREF(it->step);
     Py_INCREF(it->len);
-    Py_INCREF(it->index);
+    it->index = _PyLong_RefZero();
     return (PyObject *)it;
 }
 
@@ -1232,8 +1229,7 @@ long_range:
     if (!it->step)
         goto create_failure;
 
-    it->index = _PyLong_GetZero();
-    Py_INCREF(it->index);
+    it->index = _PyLong_RefZero();
     return (PyObject *)it;
 
 create_failure:
