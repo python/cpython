@@ -142,7 +142,8 @@ ABC                            Inherits from          Abstract Methods        Mi
                                                       ``insert``
 
 :class:`ByteString`            :class:`Sequence`      ``__getitem__``,        Inherited :class:`Sequence` methods
-                                                      ``__len__``
+                                                      ``__len__``,
+                                                      many others
 
 :class:`Set`                   :class:`Collection`    ``__contains__``,       ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
                                                       ``__iter__``,           ``__gt__``, ``__ge__``, ``__and__``, ``__or__``,
@@ -255,7 +256,6 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
 .. class:: Sequence
            MutableSequence
-           ByteString
 
    ABCs for read-only and mutable :term:`sequences <sequence>`.
 
@@ -271,6 +271,15 @@ Collections Abstract Base Classes -- Detailed Descriptions
    .. versionchanged:: 3.5
       The index() method added support for *stop* and *start*
       arguments.
+
+.. class:: ByteString
+
+   An ABC that provides the shared interface for :class:`bytes`
+   and :class:`bytearray`. It includes abstract methods for the
+   approximately 50 methods shared by the two types.
+
+   .. versionchanged:: 3.11
+      Previously, this ABC did not define any methods.
 
 .. class:: Set
            MutableSet

@@ -1,0 +1,2 @@
+Add numerous abstract methods to :class:`collections.abc.ByteString`. Patch
+by Jelle Zijlstra.

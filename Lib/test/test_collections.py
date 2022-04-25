@@ -1921,6 +1921,35 @@ class TestCollectionABCs(ABCTestCase):
         self.assertNotIsInstance(memoryview(b""), ByteString)
         self.assertFalse(issubclass(memoryview, ByteString))
 
+    def test_ByteString_methods(self):
+        # We want to make sure ByteString has all the shared methods of
+        # bytes and bytearray.
+        shared_methods = set(dir(bytes)) & set(dir(bytearray))
+        for method in shared_methods:
+            if method in {"maketrans", "fromhex"}:
+                continue  # classmethods
+            if method == "__rmod__":
+                continue  # not useful
+            with self.subTest(method=method):
+                self.assertTrue(hasattr(ByteString, method))
+                if method in {"__contains__", "__reduce_ex__", "__getitem__",
+                              "__iter__", "__len__", "__init_subclass__",
+                              "__hash__", "__doc__"}:
+                    continue  # inherited
+                bytestring_sig = inspect.signature(getattr(ByteString, method))
+                try:
+                    bytes_sig = inspect.signature(getattr(bytes, method))
+                except ValueError:
+                    pass  # no Argument Clinic for you
+                else:
+                    self.assertEqual(bytestring_sig, bytes_sig)
+                try:
+                    bytearray_sig = inspect.signature(getattr(bytearray, method))
+                except ValueError:
+                    pass
+                else:
+                    self.assertEqual(bytestring_sig, bytearray_sig)
+
     def test_MutableSequence(self):
         for sample in [tuple, str, bytes]:
             self.assertNotIsInstance(sample(), MutableSequence)
