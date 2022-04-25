@@ -64,88 +64,89 @@ class _NamedIntConstant(int):
 
 MAXREPEAT = _NamedIntConstant(MAXREPEAT, 'MAXREPEAT')
 
-def _makecodes(names):
-    names = names.strip().split()
+def _makecodes(*names):
     items = [_NamedIntConstant(i, name) for i, name in enumerate(names)]
     globals().update({item.name: item for item in items})
     return items
 
 # operators
-# failure=0 success=1 (just because it looks better that way :-)
-OPCODES = _makecodes("""
-    FAILURE SUCCESS
+OPCODES = _makecodes(
+    # failure=0 success=1 (just because it looks better that way :-)
+    'FAILURE', 'SUCCESS',
 
-    ANY ANY_ALL
-    ASSERT ASSERT_NOT
-    AT
-    BRANCH
-    CALL
-    CATEGORY
-    CHARSET BIGCHARSET
-    GROUPREF GROUPREF_EXISTS
-    IN
-    INFO
-    JUMP
-    LITERAL
-    MARK
-    MAX_UNTIL
-    MIN_UNTIL
-    NOT_LITERAL
-    NEGATE
-    RANGE
-    REPEAT
-    REPEAT_ONE
-    SUBPATTERN
-    MIN_REPEAT_ONE
-    ATOMIC_GROUP
-    POSSESSIVE_REPEAT
-    POSSESSIVE_REPEAT_ONE
+    'ANY', 'ANY_ALL',
+    'ASSERT', 'ASSERT_NOT',
+    'AT',
+    'BRANCH',
+    'CALL',
+    'CATEGORY',
+    'CHARSET', 'BIGCHARSET',
+    'GROUPREF', 'GROUPREF_EXISTS',
+    'IN',
+    'INFO',
+    'JUMP',
+    'LITERAL',
+    'MARK',
+    'MAX_UNTIL',
+    'MIN_UNTIL',
+    'NOT_LITERAL',
+    'NEGATE',
+    'RANGE',
+    'REPEAT',
+    'REPEAT_ONE',
+    'SUBPATTERN',
+    'MIN_REPEAT_ONE',
+    'ATOMIC_GROUP',
+    'POSSESSIVE_REPEAT',
+    'POSSESSIVE_REPEAT_ONE',
 
-    GROUPREF_IGNORE
-    IN_IGNORE
-    LITERAL_IGNORE
-    NOT_LITERAL_IGNORE
+    'GROUPREF_IGNORE',
+    'IN_IGNORE',
+    'LITERAL_IGNORE',
+    'NOT_LITERAL_IGNORE',
 
-    GROUPREF_LOC_IGNORE
-    IN_LOC_IGNORE
-    LITERAL_LOC_IGNORE
-    NOT_LITERAL_LOC_IGNORE
+    'GROUPREF_LOC_IGNORE',
+    'IN_LOC_IGNORE',
+    'LITERAL_LOC_IGNORE',
+    'NOT_LITERAL_LOC_IGNORE',
 
-    GROUPREF_UNI_IGNORE
-    IN_UNI_IGNORE
-    LITERAL_UNI_IGNORE
-    NOT_LITERAL_UNI_IGNORE
-    RANGE_UNI_IGNORE
+    'GROUPREF_UNI_IGNORE',
+    'IN_UNI_IGNORE',
+    'LITERAL_UNI_IGNORE',
+    'NOT_LITERAL_UNI_IGNORE',
+    'RANGE_UNI_IGNORE',
 
-    MIN_REPEAT MAX_REPEAT
-""")
+    # The following opcodes are only occurred in the parser output,
+    # but not in the compiled code.
+    'MIN_REPEAT', 'MAX_REPEAT',
+)
 del OPCODES[-2:] # remove MIN_REPEAT and MAX_REPEAT
 
 # positions
-ATCODES = _makecodes("""
-    AT_BEGINNING AT_BEGINNING_LINE AT_BEGINNING_STRING
-    AT_BOUNDARY AT_NON_BOUNDARY
-    AT_END AT_END_LINE AT_END_STRING
+ATCODES = _makecodes(
+    'AT_BEGINNING', 'AT_BEGINNING_LINE', 'AT_BEGINNING_STRING',
+    'AT_BOUNDARY', 'AT_NON_BOUNDARY',
+    'AT_END', 'AT_END_LINE', 'AT_END_STRING',
 
-    AT_LOC_BOUNDARY AT_LOC_NON_BOUNDARY
+    'AT_LOC_BOUNDARY', 'AT_LOC_NON_BOUNDARY',
 
-    AT_UNI_BOUNDARY AT_UNI_NON_BOUNDARY
-""")
+    'AT_UNI_BOUNDARY', 'AT_UNI_NON_BOUNDARY',
+)
 
 # categories
-CHCODES = _makecodes("""
-    CATEGORY_DIGIT CATEGORY_NOT_DIGIT
-    CATEGORY_SPACE CATEGORY_NOT_SPACE
-    CATEGORY_WORD CATEGORY_NOT_WORD
-    CATEGORY_LINEBREAK CATEGORY_NOT_LINEBREAK
+CHCODES = _makecodes(
+    'CATEGORY_DIGIT', 'CATEGORY_NOT_DIGIT',
+    'CATEGORY_SPACE', 'CATEGORY_NOT_SPACE',
+    'CATEGORY_WORD', 'CATEGORY_NOT_WORD',
+    'CATEGORY_LINEBREAK', 'CATEGORY_NOT_LINEBREAK',
 
-    CATEGORY_LOC_WORD CATEGORY_LOC_NOT_WORD
+    'CATEGORY_LOC_WORD', 'CATEGORY_LOC_NOT_WORD',
 
-    CATEGORY_UNI_DIGIT CATEGORY_UNI_NOT_DIGIT
-    CATEGORY_UNI_SPACE CATEGORY_UNI_NOT_SPACE
-    CATEGORY_UNI_WORD CATEGORY_UNI_NOT_WORD
-    CATEGORY_UNI_LINEBREAK CATEGORY_UNI_NOT_LINEBREAK
-""")
+    'CATEGORY_UNI_DIGIT', 'CATEGORY_UNI_NOT_DIGIT',
+    'CATEGORY_UNI_SPACE', 'CATEGORY_UNI_NOT_SPACE',
+    'CATEGORY_UNI_WORD', 'CATEGORY_UNI_NOT_WORD',
+    'CATEGORY_UNI_LINEBREAK', 'CATEGORY_UNI_NOT_LINEBREAK',
+)
 
 
 # replacement operations for "ignore case" mode

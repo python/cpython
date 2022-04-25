@@ -964,7 +964,7 @@ _write_size64(char *out, size_t value)
 {
     size_t i;
 
-    Py_BUILD_ASSERT(sizeof(size_t) <= 8);
+    static_assert(sizeof(size_t) <= 8, "size_t is larger than 64-bit");
 
     for (i = 0; i < sizeof(size_t); i++) {
         out[i] = (unsigned char)((value >> (8 * i)) & 0xff);

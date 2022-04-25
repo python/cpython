@@ -1051,9 +1051,10 @@ Blob Objects
 
 .. class:: Blob
 
-   A :class:`Blob` instance is a :term:`file-like object` that can read and write
-   data in an SQLite :abbr:`BLOB (Binary Large OBject)`.  Call ``len(blob)`` to
-   get the size (number of bytes) of the blob.
+   A :class:`Blob` instance is a :term:`file-like object`
+   that can read and write data in an SQLite :abbr:`BLOB (Binary Large OBject)`.
+   Call :func:`len(blob) <len>` to get the size (number of bytes) of the blob.
+   Use indices and :term:`slices <slice>` for direct access to the blob data.
 
    Use the :class:`Blob` as a :term:`context manager` to ensure that the blob
    handle is closed after use.

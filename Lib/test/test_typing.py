@@ -1,7 +1,7 @@
 import contextlib
 import collections
 from collections import defaultdict
-from functools import lru_cache
+from functools import lru_cache, wraps
 import inspect
 import pickle
 import re
@@ -68,6 +68,18 @@ class BaseTestCase(TestCase):
     def clear_caches(self):
         for f in typing._cleanups:
             f()
+
+
+def all_pickle_protocols(test_func):
+    """Runs `test_func` with various values for `proto` argument."""
+
+    @wraps(test_func)
+    def wrapper(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(pickle_proto=proto):
+                test_func(self, proto=proto)
+
+    return wrapper
 
 
 class Employee:
@@ -909,6 +921,48 @@ class TypeVarTupleTests(BaseTestCase):
         Ts1 = TypeVarTuple('Ts1')
         Ts2 = TypeVarTuple('Ts2')
         self.assertNotEqual(C[Unpack[Ts1]], C[Unpack[Ts2]])
+
+
+class TypeVarTuplePicklingTests(BaseTestCase):
+    # These are slightly awkward tests to run, because TypeVarTuples are only
+    # picklable if defined in the global scope. We therefore need to push
+    # various things defined in these tests into the global scope with `global`
+    # statements at the start of each test.
+
+    @all_pickle_protocols
+    def test_pickling_then_unpickling_results_in_same_identity(self, proto):
+        global Ts1  # See explanation at start of class.
+        Ts1 = TypeVarTuple('Ts1')
+        Ts2 = pickle.loads(pickle.dumps(Ts1, proto))
+        self.assertIs(Ts1, Ts2)
+
+    @all_pickle_protocols
+    def test_pickling_then_unpickling_unpacked_results_in_same_identity(self, proto):
+        global Ts  # See explanation at start of class.
+        Ts = TypeVarTuple('Ts')
+        unpacked1 = Unpack[Ts]
+        unpacked2 = pickle.loads(pickle.dumps(unpacked1, proto))
+        self.assertIs(unpacked1, unpacked2)
+
+    @all_pickle_protocols
+    def test_pickling_then_unpickling_tuple_with_typevartuple_equality(
+            self, proto
+    ):
+        global T, Ts  # See explanation at start of class.
+        T = TypeVar('T')
+        Ts = TypeVarTuple('Ts')
+
+        a1 = Tuple[Unpack[Ts]]
+        a2 = pickle.loads(pickle.dumps(a1, proto))
+        self.assertEqual(a1, a2)
+
+        a1 = Tuple[T, Unpack[Ts]]
+        a2 = pickle.loads(pickle.dumps(a1, proto))
+        self.assertEqual(a1, a2)
+
+        a1 = Tuple[int, Unpack[Ts]]
+        a2 = pickle.loads(pickle.dumps(a1, proto))
+        self.assertEqual(a1, a2)
 
 
 class UnionTests(BaseTestCase):

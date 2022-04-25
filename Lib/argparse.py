@@ -84,7 +84,7 @@ __all__ = [
     'ZERO_OR_MORE',
 ]
 
-import atexit as _atexit
+
 import os as _os
 import re as _re
 import sys as _sys
@@ -1268,12 +1268,8 @@ class FileType(object):
 
         # all other arguments are used as file names
         try:
-            fh = open(string, self._mode, self._bufsize, self._encoding, self._errors)
-
-            # Register cleanup function to close file
-            _atexit.register(fh.close)
-
-            return fh
+            return open(string, self._mode, self._bufsize, self._encoding,
+                        self._errors)
         except OSError as e:
             args = {'filename': string, 'error': e}
             message = _("can't open '%(filename)s': %(error)s")
