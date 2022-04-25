@@ -481,6 +481,13 @@ signal_raise_signal_impl(PyObject *module, int signalnum)
     if (err) {
         return PyErr_SetFromErrno(PyExc_OSError);
     }
+
+    // If the current thread can handle signals, handle immediately
+    // the raised signal.
+    if (PyErr_CheckSignals()) {
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 }
 

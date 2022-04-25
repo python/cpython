@@ -2253,3 +2253,8 @@ function PyMemoryView_FromBuffer
 
 data Py_Version
     added 3.11
+function PyErr_GetHandledException
+    added 3.11
+function PyErr_SetHandledException
+    added 3.11
+

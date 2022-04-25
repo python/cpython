@@ -222,12 +222,7 @@ def _can_start_thread() -> bool:
       support (-s USE_PTHREADS / __EMSCRIPTEN_PTHREADS__).
     """
     if sys.platform == "emscripten":
-        try:
-            _thread.start_new_thread(lambda: None, ())
-        except RuntimeError:
-            return False
-        else:
-            return True
+        return sys._emscripten_info.pthreads
     elif sys.platform == "wasi":
         return False
     else:

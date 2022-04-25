@@ -206,11 +206,21 @@ mark_stacks(PyCodeObject *code_obj, int len)
             switch (opcode) {
                 case JUMP_IF_FALSE_OR_POP:
                 case JUMP_IF_TRUE_OR_POP:
-                case POP_JUMP_IF_FALSE:
-                case POP_JUMP_IF_TRUE:
+                case POP_JUMP_FORWARD_IF_FALSE:
+                case POP_JUMP_BACKWARD_IF_FALSE:
+                case POP_JUMP_FORWARD_IF_TRUE:
+                case POP_JUMP_BACKWARD_IF_TRUE:
                 {
                     int64_t target_stack;
                     int j = get_arg(code, i);
+                    if (opcode == POP_JUMP_FORWARD_IF_FALSE ||
+                        opcode == POP_JUMP_FORWARD_IF_TRUE) {
+                        j += i + 1;
+                    }
+                    else if (opcode == POP_JUMP_BACKWARD_IF_FALSE ||
+                             opcode == POP_JUMP_BACKWARD_IF_TRUE) {
+                        j = i + 1 - j;
+                    }
                     assert(j < len);
                     if (stacks[j] == UNINITIALIZED && j < i) {
                         todo = 1;
@@ -368,6 +378,7 @@ marklines(PyCodeObject *code, int len)
     PyCodeAddressRange bounds;
     _PyCode_InitAddressRange(code, &bounds);
     assert (bounds.ar_end == 0);
+    int last_line = -1;
 
     int *linestarts = PyMem_New(int, len);
     if (linestarts == NULL) {
@@ -379,7 +390,10 @@ marklines(PyCodeObject *code, int len)
 
     while (_PyLineTable_NextAddressRange(&bounds)) {
         assert(bounds.ar_start / (int)sizeof(_Py_CODEUNIT) < len);
-        linestarts[bounds.ar_start / sizeof(_Py_CODEUNIT)] = bounds.ar_line;
+        if (bounds.ar_line != last_line && bounds.ar_line != -1) {
+            linestarts[bounds.ar_start / sizeof(_Py_CODEUNIT)] = bounds.ar_line;
+            last_line = bounds.ar_line;
+        }
     }
     return linestarts;
 }
@@ -1094,6 +1108,14 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
     }
 }
 
+
+int _PyFrame_IsEntryFrame(PyFrameObject *frame)
+{
+    assert(frame != NULL);
+    return frame->f_frame->is_entry;
+}
+
+
 PyCodeObject *
 PyFrame_GetCode(PyFrameObject *frame)
 {
@@ -1142,7 +1164,7 @@ PyFrame_GetLasti(PyFrameObject *frame)
     if (lasti < 0) {
         return -1;
     }
-    return lasti*2;
+    return lasti * sizeof(_Py_CODEUNIT);
 }
 
 PyObject *
