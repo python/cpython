@@ -2,10 +2,11 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
-#include "pycore_moduleobject.h"  // _PyModule_GetDict()
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_code.h"          // CO_FAST_LOCAL, etc.
 #include "pycore_function.h"      // _PyFunction_FromConstructor()
+#include "pycore_moduleobject.h"  // _PyModule_GetDict()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_opcode.h"        // _PyOpcode_Caches
 
 #include "frameobject.h"          // PyFrameObject
 #include "pycore_frame.h"
