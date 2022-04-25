@@ -194,7 +194,8 @@ merge_union_and_union(PyObject *left, PyObject *right) {
 
         if (!is_duplicate) {
             Py_INCREF(arg);
-            PyTuple_SET_ITEM(tuple, pos++, arg);
+            PyTuple_SET_ITEM(tuple, pos, arg);
+            pos++;
         }
     }
 
