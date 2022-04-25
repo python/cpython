@@ -3,12 +3,12 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_EvalFrame()
+#include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_opcode.h"        // _PyOpcode_Deopt
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_frame.h"         // _PyInterpreterFrame
-#include "frameobject.h"          // PyFrameObject
 #include "structmember.h"         // PyMemberDef
 #include "opcode.h"               // SEND
 
