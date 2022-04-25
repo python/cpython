@@ -105,7 +105,7 @@ def setup_tests(ns):
 
     # Ensure there's a non-ASCII character in env vars at all times to force
     # tests consider this case. See BPO-44647 for details.
-    if TESTFN_UNDECODABLE and hasattr(os, 'environb'):
+    if TESTFN_UNDECODABLE and os.supports_bytes_environ:
         os.environb.setdefault(UNICODE_GUARD_ENV.encode(), TESTFN_UNDECODABLE)
     elif FS_NONASCII:
         os.environ.setdefault(UNICODE_GUARD_ENV, FS_NONASCII)
