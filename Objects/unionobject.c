@@ -370,6 +370,7 @@ union_getattro(PyObject *self, PyObject *name)
 PyObject *
 _Py_union_args(PyObject *self)
 {
+    assert(_PyUnion_Check(self));
     return ((unionobject *) self)->args;
 }
 
