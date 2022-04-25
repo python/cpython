@@ -157,17 +157,23 @@ def splitdrive(p):
         normp = p.replace(altsep, sep)
         if normp[:4] == prefix:
             if normp[4:8] == unc_prefix:
+                # e.g. \\?\UNC\server\share\dir\file
                 start = 8
             elif normp[5:6] == colon and not normp[6:7].strip(sep):
+                # e.g. \\?\c:\dir\file
                 return p[:6], p[6:]
             else:
+                # anything else with a \\?\ prefix
                 return p[:0], p
         else:
             if normp[:2] == sep*2 and normp[2:3] != sep:
+                # e.g. \\server\share\dir\file
                 start = 2
             elif normp[1:2] == colon:
+                # e.g. c:\dir\file
                 return p[:2], p[2:]
             else:
+                # anything else
                 return p[:0], p
         # is a UNC path:
         # vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
