@@ -1,10 +1,12 @@
 import unittest
 from test import audiotests
-from audioop import byteswap
 import io
 import struct
 import sys
 import sunau
+from test.support import warnings_helper
+
+audioop = warnings_helper.import_deprecated("audioop")
 
 
 class SunauTest(audiotests.AudioWriteTests,
@@ -116,7 +118,7 @@ class SunauULAWTest(SunauTest, unittest.TestCase):
       E5040CBC 617C0A3C 08BC0A3C 2C7C0B3C 517C0E3C 8A8410FC B6840EBC 457C0A3C \
       """)
     if sys.byteorder != 'big':
-        frames = byteswap(frames, 2)
+        frames = audioop.byteswap(frames, 2)
 
 
 class SunauLowLevelTest(unittest.TestCase):

@@ -27,11 +27,6 @@ ac_cv_func_prlimit=no
 # unsupported syscall, https://github.com/emscripten-core/emscripten/issues/13393
 ac_cv_func_shutdown=no
 
-# clock_nanosleep() causes time.sleep() to sleep forever.
-# nanosleep() works correctly
-ac_cv_func_clock_nanosleep=no
-ac_cv_lib_rt_clock_nanosleep=no
-
 # The rest is based on pyodide
 # https://github.com/pyodide/pyodide/blob/main/cpython/pyconfig.undefs.h
 
@@ -39,20 +34,11 @@ ac_cv_func_epoll_create=no
 ac_cv_func_epoll_create1=no
 ac_cv_header_linux_vm_sockets_h=no
 ac_cv_func_socketpair=no
-ac_cv_func_utimensat=no
 ac_cv_func_sigaction=no
 
-# Untested or failing syscalls in emscripten
-ac_cv_func_openat=no
-ac_cv_func_mkdirat=no
-ac_cv_func_faccessat=no
-ac_cv_func_fchownat=no
-ac_cv_func_renameat=no
-ac_cv_func_linkat=no
+# symlinkat is implemented, but fails
 ac_cv_func_symlinkat=no
-ac_cv_func_readlinkat=no
-ac_cv_func_fchmodat=no
-ac_cv_func_dup3=no
+
 # lchmod/lchown are implemented, but fail with ENOTSUP.
 ac_cv_func_lchmod=no
 ac_cv_func_lchown=no
@@ -105,7 +91,3 @@ ac_cv_func_linkat=no
 
 # alarm signal is not delivered, may need a callback into the event loop?
 ac_cv_func_alarm=no
-
-# To use dlopen, you need to use Emscripten's linking support,
-# see https://emscripten.org/docs/compiling/Dynamic-Linking.html
-ac_cv_func_dlopen=no

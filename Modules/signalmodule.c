@@ -13,6 +13,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pylifecycle.h"   // NSIG
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
@@ -480,6 +481,13 @@ signal_raise_signal_impl(PyObject *module, int signalnum)
     if (err) {
         return PyErr_SetFromErrno(PyExc_OSError);
     }
+
+    // If the current thread can handle signals, handle immediately
+    // the raised signal.
+    if (PyErr_CheckSignals()) {
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 }
 
@@ -1797,6 +1805,7 @@ PyErr_CheckSignals(void)
 int
 _PyErr_CheckSignalsTstate(PyThreadState *tstate)
 {
+    _Py_CHECK_EMSCRIPTEN_SIGNALS();
     if (!_Py_atomic_load(&is_tripped)) {
         return 0;
     }

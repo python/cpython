@@ -660,7 +660,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
       Windows support added.
 
 
-.. function:: create_connection(address[, timeout[, source_address]])
+.. function:: create_connection(address, timeout=GLOBAL_DEFAULT, source_address=None, *, all_errors=False)
 
    Connect to a TCP service listening on the internet *address* (a 2-tuple
    ``(host, port)``), and return the socket object.  This is a higher-level
@@ -679,8 +679,17 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    socket to bind to as its source address before connecting.  If host or port
    are '' or 0 respectively the OS default behavior will be used.
 
+   When a connection cannot be created, an exception is raised. By default,
+   it is the exception from the last address in the list. If *all_errors*
+   is ``True``, it is an :exc:`ExceptionGroup` containing the errors of all
+   attempts.
+
    .. versionchanged:: 3.2
       *source_address* was added.
+
+   .. versionchanged:: 3.11
+      *all_errors* was added.
+
 
 .. function:: create_server(address, *, family=AF_INET, backlog=None, reuse_port=False, dualstack_ipv6=False)
 

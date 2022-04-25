@@ -523,7 +523,7 @@ ensure_utf8(char *line, struct tok_state *tok)
                      "Non-UTF-8 code starting with '\\x%.2x' "
                      "in file %U on line %i, "
                      "but no encoding declared; "
-                     "see https://python.org/dev/peps/pep-0263/ for details",
+                     "see https://peps.python.org/pep-0263/ for details",
                      badchar, tok->filename, tok->lineno + 1);
         return 0;
     }
@@ -2072,7 +2072,7 @@ _PyTokenizer_Get(struct tok_state *tok,
     return result;
 }
 
-#if defined(__wasi__) || defined(__EMSCRIPTEN__)
+#if defined(__wasi__) || (defined(__EMSCRIPTEN__) && (__EMSCRIPTEN_major__ >= 3))
 // fdopen() with borrowed fd. WASI does not provide dup() and Emscripten's
 // dup() emulation with open() is slow.
 typedef union {

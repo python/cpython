@@ -352,14 +352,14 @@ _PyGen_yf(PyGenObject *gen)
     if (gen->gi_frame_state < FRAME_CLEARED) {
         _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
 
-        if (frame->f_lasti < 1) {
+        if (gen->gi_frame_state == FRAME_CREATED) {
             /* Return immediately if the frame didn't start yet. SEND
                always come after LOAD_CONST: a code object should not start
                with SEND */
             assert(_Py_OPCODE(_PyCode_CODE(gen->gi_code)[0]) != SEND);
             return NULL;
         }
-        _Py_CODEUNIT next = _PyCode_CODE(gen->gi_code)[frame->f_lasti + 1];
+        _Py_CODEUNIT next = frame->prev_instr[1];
         if (_PyOpcode_Deopt[_Py_OPCODE(next)] != RESUME || _Py_OPARG(next) < 2)
         {
             /* Not in a yield from */
@@ -410,8 +410,11 @@ gen_close(PyGenObject *gen, PyObject *args)
 
 
 PyDoc_STRVAR(throw_doc,
-"throw(typ[,val[,tb]]) -> raise exception in generator,\n\
-return next yielded value or raise StopIteration.");
+"throw(value)\n\
+throw(type[,value[,tb]])\n\
+\n\
+Raise exception in generator, return next yielded value or raise\n\
+StopIteration.");
 
 static PyObject *
 _gen_throw(PyGenObject *gen, int close_on_genexit,
@@ -487,13 +490,11 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             // XXX: Performing this jump ourselves is awkward and problematic.
             // See https://github.com/python/cpython/pull/31968.
             /* Termination repetition of SEND loop */
-            assert(frame->f_lasti >= 0);
-            _Py_CODEUNIT *code = _PyCode_CODE(gen->gi_code);
+            assert(_PyInterpreterFrame_LASTI(frame) >= 0);
             /* Backup to SEND */
-            frame->f_lasti--;
-            assert(_Py_OPCODE(code[frame->f_lasti]) == SEND);
-            int jump = _Py_OPARG(code[frame->f_lasti]);
-            frame->f_lasti += jump;
+            assert(_Py_OPCODE(frame->prev_instr[-1]) == SEND);
+            int jump = _Py_OPARG(frame->prev_instr[-1]);
+            frame->prev_instr += jump - 1;
             if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send(gen, val);
                 Py_DECREF(val);
@@ -1157,8 +1158,11 @@ PyDoc_STRVAR(coro_send_doc,
 return next iterated value or raise StopIteration.");
 
 PyDoc_STRVAR(coro_throw_doc,
-"throw(typ[,val[,tb]]) -> raise exception in coroutine,\n\
-return next iterated value or raise StopIteration.");
+"throw(value)\n\
+throw(type[,value[,traceback]])\n\
+\n\
+Raise exception in coroutine, return next iterated value or raise\n\
+StopIteration.");
 
 PyDoc_STRVAR(coro_close_doc,
 "close() -> raise GeneratorExit inside coroutine.");
@@ -1338,9 +1342,8 @@ compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
     frame = current_frame;
     for (int i = 0; i < frame_count; ++i) {
         PyCodeObject *code = frame->f_code;
-        PyObject *frameinfo = Py_BuildValue("OiO",
-                                            code->co_filename,
-                                            PyCode_Addr2Line(frame->f_code, frame->f_lasti*sizeof(_Py_CODEUNIT)),
+        int line = _PyInterpreterFrame_GetLine(frame);
+        PyObject *frameinfo = Py_BuildValue("OiO", code->co_filename, line,
                                             code->co_name);
         if (!frameinfo) {
             Py_DECREF(cr_origin);

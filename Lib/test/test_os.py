@@ -1334,7 +1334,9 @@ class WalkTests(unittest.TestCase):
         else:
             self.sub2_tree = (sub2_path, ["SUB21"], ["tmp3"])
 
-        os.chmod(sub21_path, 0)
+        if not support.is_emscripten:
+            # Emscripten fails with inaccessible directory
+            os.chmod(sub21_path, 0)
         try:
             os.listdir(sub21_path)
         except PermissionError:
@@ -1517,6 +1519,9 @@ class FwalkTests(WalkTests):
                 # check that listdir() returns consistent information
                 self.assertEqual(set(os.listdir(rootfd)), set(dirs) | set(files))
 
+    @unittest.skipIf(
+        support.is_emscripten, "Cannot dup stdout on Emscripten"
+    )
     def test_fd_leak(self):
         # Since we're opening a lot of FDs, we must be careful to avoid leaks:
         # we both check that calling fwalk() a large number of times doesn't
@@ -2935,6 +2940,9 @@ class DeviceEncodingTests(unittest.TestCase):
     @unittest.skipUnless(os.isatty(0) and not win32_is_iot() and (sys.platform.startswith('win') or
             (hasattr(locale, 'nl_langinfo') and hasattr(locale, 'CODESET'))),
             'test requires a tty and either Windows or nl_langinfo(CODESET)')
+    @unittest.skipIf(
+        support.is_emscripten, "Cannot get encoding of stdin on Emscripten"
+    )
     def test_device_encoding(self):
         encoding = os.device_encoding(0)
         self.assertIsNotNone(encoding)

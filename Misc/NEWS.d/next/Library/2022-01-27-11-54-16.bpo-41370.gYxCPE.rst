@@ -1,1 +1,0 @@
-:func:`typing.get_type_hints` now supports evaluating strings as forward references in :ref:`PEP 585 generic aliases <types-genericalias>`.

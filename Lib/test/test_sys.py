@@ -401,6 +401,7 @@ class SysModuleTest(unittest.TestCase):
 
     # sys._current_frames() is a CPython-only gimmick.
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_current_frames(self):
         import threading
         import traceback
@@ -466,6 +467,7 @@ class SysModuleTest(unittest.TestCase):
         t.join()
 
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_current_exceptions(self):
         import threading
         import traceback
@@ -626,6 +628,14 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(len(info), 3)
         self.assertIn(info.name, ('nt', 'pthread', 'solaris', None))
         self.assertIn(info.lock, ('semaphore', 'mutex+cond', None))
+
+    @unittest.skipUnless(support.is_emscripten, "only available on Emscripten")
+    def test_emscripten_info(self):
+        self.assertEqual(len(sys._emscripten_info), 4)
+        self.assertIsInstance(sys._emscripten_info.emscripten_version, tuple)
+        self.assertIsInstance(sys._emscripten_info.runtime, (str, type(None)))
+        self.assertIsInstance(sys._emscripten_info.pthreads, bool)
+        self.assertIsInstance(sys._emscripten_info.shared_memory, bool)
 
     def test_43581(self):
         # Can't use sys.stdout, as this is a StringIO object when
@@ -1176,11 +1186,12 @@ class UnraisableHookTest(unittest.TestCase):
         for moduleName in 'builtins', '__main__', 'some_module':
             with self.subTest(moduleName=moduleName):
                 A.B.X.__module__ = moduleName
-                with test.support.captured_stderr() as stderr, \
-                     test.support.swap_attr(sys, 'unraisablehook',
-                                            sys.__unraisablehook__):
-                         expected = self.write_unraisable_exc(
-                             A.B.X(), "msg", "obj");
+                with test.support.captured_stderr() as stderr, test.support.swap_attr(
+                    sys, 'unraisablehook', sys.__unraisablehook__
+                ):
+                    expected = self.write_unraisable_exc(
+                        A.B.X(), "msg", "obj"
+                    )
                 report = stderr.getvalue()
                 self.assertIn(A.B.X.__qualname__, report)
                 if moduleName in ['builtins', '__main__']:

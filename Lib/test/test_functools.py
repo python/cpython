@@ -1637,6 +1637,7 @@ class TestLRU:
         for attr in self.module.WRAPPER_ASSIGNMENTS:
             self.assertEqual(getattr(g, attr), getattr(f, attr))
 
+    @threading_helper.requires_working_threading()
     def test_lru_cache_threaded(self):
         n, m = 5, 11
         def orig(x, y):
@@ -1685,6 +1686,7 @@ class TestLRU:
         finally:
             sys.setswitchinterval(orig_si)
 
+    @threading_helper.requires_working_threading()
     def test_lru_cache_threaded2(self):
         # Simultaneous call with the same arguments
         n, m = 5, 7
@@ -1712,6 +1714,7 @@ class TestLRU:
                 pause.reset()
                 self.assertEqual(f.cache_info(), (0, (i+1)*n, m*n, i+1))
 
+    @threading_helper.requires_working_threading()
     def test_lru_cache_threaded3(self):
         @self.module.lru_cache(maxsize=2)
         def f(x):
@@ -2802,8 +2805,6 @@ class TestSingleDispatch(unittest.TestCase):
             f.register(list[int] | str, lambda arg: "types.UnionTypes(types.GenericAlias)")
         with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
             f.register(typing.List[float] | bytes, lambda arg: "typing.Union[typing.GenericAlias]")
-        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(typing.Any, lambda arg: "typing.Any")
 
         self.assertEqual(f([1]), "default")
         self.assertEqual(f([1.0]), "default")
@@ -2823,8 +2824,6 @@ class TestSingleDispatch(unittest.TestCase):
             f.register(list[int] | str)
         with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
             f.register(typing.List[int] | str)
-        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(typing.Any)
 
     def test_register_genericalias_annotation(self):
         @functools.singledispatch
@@ -2847,10 +2846,6 @@ class TestSingleDispatch(unittest.TestCase):
             @f.register
             def _(arg: typing.List[float] | bytes):
                 return "typing.Union[typing.GenericAlias]"
-        with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
-            @f.register
-            def _(arg: typing.Any):
-                return "typing.Any"
 
         self.assertEqual(f([1]), "default")
         self.assertEqual(f([1.0]), "default")
@@ -2922,6 +2917,7 @@ class TestCachedProperty(unittest.TestCase):
         self.assertEqual(item.get_cost(), 4)
         self.assertEqual(item.cached_cost, 3)
 
+    @threading_helper.requires_working_threading()
     def test_threaded(self):
         go = threading.Event()
         item = CachedCostItemWait(go)

@@ -116,6 +116,9 @@ class EnvBuilder:
             elif os.path.islink(d) or os.path.isfile(d):
                 raise ValueError('Unable to create directory %r' % d)
 
+        if os.pathsep in env_dir:
+            raise ValueError(f'Refusing to create a venv in {env_dir} because '
+                             f'it contains the PATH separator {os.pathsep}.')
         if os.path.exists(env_dir) and self.clear:
             self.clear_directory(env_dir)
         context = types.SimpleNamespace()
