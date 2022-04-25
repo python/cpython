@@ -103,7 +103,10 @@ class Runner:
             try:
                 signal.signal(signal.SIGINT, sigint_handler)
             except ValueError:
-                pass
+                # `signal.signal` may throw if `threading.main_thread` does
+                # not support signals (e.g. embedded interpreter with signals
+                # not registered - see gh-91880)
+                signal_handler = None
         else:
             sigint_handler = None
 
