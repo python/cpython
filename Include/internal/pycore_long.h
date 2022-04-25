@@ -47,6 +47,7 @@ static inline PyObject* _PyLong_FromUnsignedChar(unsigned char i)
 PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
 PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
 PyObject *_PyLong_Subtract(PyLongObject *left, PyLongObject *right);
+void _PyLong_ExactDealloc(PyObject *obj);
 
 /* Used by Python/mystrtoul.c, _PyBytes_FromHex(),
    _PyBytes_DecodeEscape(), etc. */

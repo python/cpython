@@ -1979,8 +1979,8 @@ handle_eval_breaker:
             STAT_INC(BINARY_OP, hit);
             PyObject *prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(prod);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(right, (destructor)_PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, (destructor)_PyLong_ExactDealloc);
             STACK_SHRINK(1);
             if (prod == NULL) {
                 goto error;
@@ -2019,8 +2019,8 @@ handle_eval_breaker:
             STAT_INC(BINARY_OP, hit);
             PyObject *sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(sub);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(right, (destructor)_PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, (destructor)_PyLong_ExactDealloc);
             STACK_SHRINK(1);
             if (sub == NULL) {
                 goto error;
@@ -2134,8 +2134,8 @@ handle_eval_breaker:
             STAT_INC(BINARY_OP, hit);
             PyObject *sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(sum);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(right, (destructor)_PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, (destructor)_PyLong_ExactDealloc);
             STACK_SHRINK(1);
             if (sum == NULL) {
                 goto error;
@@ -2194,7 +2194,7 @@ handle_eval_breaker:
             assert(res != NULL);
             Py_INCREF(res);
             STACK_SHRINK(1);
-            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)_PyLong_ExactDealloc);
             SET_TOP(res);
             Py_DECREF(list);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
@@ -2219,7 +2219,7 @@ handle_eval_breaker:
             assert(res != NULL);
             Py_INCREF(res);
             STACK_SHRINK(1);
-            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)_PyLong_ExactDealloc);
             SET_TOP(res);
             Py_DECREF(tuple);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
@@ -2361,7 +2361,7 @@ handle_eval_breaker:
             STACK_SHRINK(3);
             assert(old_value != NULL);
             Py_DECREF(old_value);
-            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)_PyLong_ExactDealloc);
             Py_DECREF(list);
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
             NOTRACE_DISPATCH();
@@ -3797,8 +3797,8 @@ handle_eval_breaker:
             JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
             NEXTOPARG();
             STACK_SHRINK(2);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor) _PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, (destructor)_PyLong_ExactDealloc);
             assert(opcode == POP_JUMP_FORWARD_IF_FALSE ||
                    opcode == POP_JUMP_BACKWARD_IF_FALSE ||
                    opcode == POP_JUMP_FORWARD_IF_TRUE ||

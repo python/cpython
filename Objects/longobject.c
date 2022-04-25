@@ -36,13 +36,11 @@ medium_value(PyLongObject *x)
 #define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
 
-static void long_dealloc(PyLongObject *op);
-
 static inline void
 _Py_DECREF_INT(PyLongObject *op)
 {
     assert(PyLong_CheckExact(op));
-    _Py_DECREF_SPECIALIZED((PyObject *)op, (destructor)long_dealloc);
+    _Py_DECREF_SPECIALIZED((PyObject *)op, (destructor) _PyLong_ExactDealloc);
 }
 
 static inline int
@@ -3096,27 +3094,44 @@ PyLong_AsDouble(PyObject *v)
 
 /* Methods */
 
-static void
-long_dealloc(PyLongObject *op)
+void
+_PyLong_ExactDealloc(PyObject *obj)
 {
+    assert(PyLong_CheckExact(obj));
+    PyLongObject *op = (PyLongObject *)obj;
 #if PyLong_MAXFREELIST > 0
-    if (PyLong_CheckExact(op) && IS_MEDIUM_VALUE(op)) {
-        struct _Py_long_state *state = get_long_state();
+    if (!IS_MEDIUM_VALUE(op)) {
+        PyObject_Del(op);
+        return;
+    }
+    struct _Py_long_state *state = get_long_state();
 #ifdef Py_DEBUG
-        assert(state->numfree != -1);
+    assert(state->numfree != -1);
 #endif
-        if (state->numfree >= PyLong_MAXFREELIST) {
-            PyObject_Del(op);
-            return;
-        }
-        state->numfree++;
-        Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
-        state->free_list = op;
+    if (state->numfree >= PyLong_MAXFREELIST)  {
+        PyObject_Del(op);
+        return;
+    }
+    state->numfree++;
+    Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
+    state->free_list = op;
+#else
+    PyObject_Del(op);
+#endif
+}
+
+static void
+long_dealloc(PyObject *op)
+{
+    assert(PyLong_Check(op));
+#if PyLong_MAXFREELIST > 0
+    if (PyLong_CheckExact(op)) {
+        _PyLong_ExactDealloc(op);
     }
     else
 #endif
     {
-        Py_TYPE(op)->tp_free((PyObject *)op);
+        Py_TYPE(op)->tp_free(op);
     }
 }
 
