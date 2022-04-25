@@ -454,7 +454,7 @@ def spawnv_passfds(path, args, passfds):
             args, [os.fsencode(path)], True, passfds, None, None,
             -1, -1, -1, -1, -1, -1, errpipe_read, errpipe_write,
             False, False, None, None, None, -1, None,
-            subprocess.disable_vfork_reason)
+            subprocess._USE_VFORK)
     finally:
         os.close(errpipe_read)
         os.close(errpipe_write)
