@@ -567,7 +567,7 @@ Glossary
       Hashability makes an object usable as a dictionary key and a set member,
       because these data structures use the hash value internally.
 
-      Most of Python's immutable built-in objects are hashable; mutable
+      Most of Python's :term:`immutable` built-in objects are hashable; :term:`mutable`
       containers (such as lists or dictionaries) are not; immutable
       containers (such as tuples and frozensets) are only hashable if
       their elements are hashable.  Objects which are
