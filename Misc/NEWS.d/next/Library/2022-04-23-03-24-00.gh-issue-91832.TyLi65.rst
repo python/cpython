@@ -1,1 +1,1 @@
-Added 'required' to names list in Lib.argparse.Action.
+Add 'required' attr to argparse.Action repr.
