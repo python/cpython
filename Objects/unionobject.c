@@ -239,7 +239,7 @@ merge_union_and_obj(PyObject *left, PyObject *right) {
         Py_INCREF(right);
         PyTuple_SET_ITEM(tuple, args_length, right);
     } else {
-        if(_PyTuple_Resize(&tuple, args_length) < 0) {
+        if (_PyTuple_Resize(&tuple, args_length) < 0) {
             Py_DECREF(tuple);
             return NULL;
         }
