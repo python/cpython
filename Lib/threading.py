@@ -24,7 +24,7 @@ except ImportError:
 # Java inspired names.
 
 __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
-           'enumerate', 'main_thread', 'TIMEOUT_MAX', 'thread',
+           'enumerate', 'main_thread', 'TIMEOUT_MAX', 'threaded',
            'Event', 'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread',
            'Barrier', 'BrokenBarrierError', 'Timer', 'ThreadError',
            'setprofile', 'settrace', 'local', 'stack_size',
