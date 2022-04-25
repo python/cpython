@@ -9,6 +9,7 @@ import _string
 import codecs
 import itertools
 import operator
+import pickle
 import struct
 import sys
 import textwrap
@@ -184,6 +185,36 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual(next(it), "\u2222")
         self.assertEqual(next(it), "\u3333")
         self.assertRaises(StopIteration, next, it)
+
+    def test_iterators_invocation(self):
+        cases = [type(iter('abc')), type(iter('🚀'))]
+        for cls in cases:
+            with self.subTest(cls=cls):
+                self.assertRaises(TypeError, cls)
+
+    def test_iteration(self):
+        cases = ['abc', '🚀🚀🚀', "\u1111\u2222\u3333"]
+        for case in cases:
+            with self.subTest(string=case):
+                self.assertEqual(case, "".join(iter(case)))
+
+    def test_exhausted_iterator(self):
+        cases = ['abc', '🚀🚀🚀', "\u1111\u2222\u3333"]
+        for case in cases:
+            with self.subTest(case=case):
+                iterator = iter(case)
+                tuple(iterator)
+                self.assertRaises(StopIteration, next, iterator)
+
+    def test_pickle_iterator(self):
+        cases = ['abc', '🚀🚀🚀', "\u1111\u2222\u3333"]
+        for case in cases:
+            with self.subTest(case=case):
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                    it = iter(case)
+                    with self.subTest(proto=proto):
+                        pickled = "".join(pickle.loads(pickle.dumps(it, proto)))
+                        self.assertEqual(case, pickled)
 
     def test_count(self):
         string_tests.CommonTest.test_count(self)
@@ -1490,8 +1521,10 @@ class UnicodeTest(string_tests.CommonTest,
         # issue18780
         import enum
         class Float(float, enum.Enum):
+            # a mixed-in type will use the name for %s etc.
             PI = 3.1415926
         class Int(enum.IntEnum):
+            # IntEnum uses the value and not the name for %s etc.
             IDES = 15
         class Str(enum.StrEnum):
             # StrEnum uses the value and not the name for %s etc.
@@ -1508,8 +1541,10 @@ class UnicodeTest(string_tests.CommonTest,
         # formatting jobs delegated from the string implementation:
         self.assertEqual('...%(foo)s...' % {'foo':Str.ABC},
                          '...abc...')
+        self.assertEqual('...%(foo)r...' % {'foo':Int.IDES},
+                         '...<Int.IDES: 15>...')
         self.assertEqual('...%(foo)s...' % {'foo':Int.IDES},
-                         '...IDES...')
+                         '...15...')
         self.assertEqual('...%(foo)i...' % {'foo':Int.IDES},
                          '...15...')
         self.assertEqual('...%(foo)d...' % {'foo':Int.IDES},
@@ -3039,6 +3074,30 @@ class StringModuleTest(unittest.TestCase):
              (False, 'key2'),
             ]])
         self.assertRaises(TypeError, _string.formatter_field_name_split, 1)
+
+    def test_str_subclass_attr(self):
+
+        name = StrSubclass("name")
+        name2 = StrSubclass("name2")
+        class Bag:
+            pass
+
+        o = Bag()
+        with self.assertRaises(AttributeError):
+            delattr(o, name)
+        setattr(o, name, 1)
+        self.assertEqual(o.name, 1)
+        o.name = 2
+        self.assertEqual(list(o.__dict__), [name])
+
+        with self.assertRaises(AttributeError):
+            delattr(o, name2)
+        with self.assertRaises(AttributeError):
+            del o.name2
+        setattr(o, name2, 3)
+        self.assertEqual(o.name2, 3)
+        o.name2 = 4
+        self.assertEqual(list(o.__dict__), [name, name2])
 
 
 if __name__ == "__main__":

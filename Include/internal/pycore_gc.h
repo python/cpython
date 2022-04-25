@@ -20,6 +20,7 @@ typedef struct {
 } PyGC_Head;
 
 #define _Py_AS_GC(o) ((PyGC_Head *)(o)-1)
+#define _PyGC_Head_UNUSED PyGC_Head
 
 /* True if the object is currently tracked by the GC. */
 #define _PyObject_GC_IS_TRACKED(o) (_Py_AS_GC(o)->_gc_next != 0)
@@ -134,6 +135,7 @@ struct _gc_runtime_state {
     /* Current call-stack depth of tp_dealloc calls. */
     int trash_delete_nesting;
 
+    /* Is automatic collection enabled? */
     int enabled;
     int debug;
     /* linked lists of container objects */
@@ -160,6 +162,7 @@ struct _gc_runtime_state {
        the first time. */
     Py_ssize_t long_lived_pending;
 };
+
 
 extern void _PyGC_InitState(struct _gc_runtime_state *);
 

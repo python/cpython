@@ -87,6 +87,7 @@ class BlockingTestMixin:
                 self.fail("trigger thread ended but event never set")
 
 
+@threading_helper.requires_working_threading()
 class BaseQueueTestMixin(BlockingTestMixin):
     def setUp(self):
         self.cum = 0
@@ -289,6 +290,8 @@ class CPriorityQueueTest(PriorityQueueTest, unittest.TestCase):
 # A Queue subclass that can provoke failure at a moment's notice :)
 class FailingQueueException(Exception): pass
 
+
+@threading_helper.requires_working_threading()
 class FailingQueueTest(BlockingTestMixin):
 
     def setUp(self):
@@ -464,6 +467,7 @@ class BaseSimpleQueueTest:
                 return
             results.append(val)
 
+    @threading_helper.requires_working_threading()
     def run_threads(self, n_threads, q, inputs, feed_func, consume_func):
         results = []
         sentinel = None

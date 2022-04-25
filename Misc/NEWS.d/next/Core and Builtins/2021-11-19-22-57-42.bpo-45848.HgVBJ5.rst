@@ -1,2 +1,0 @@
-Allow the parser to obtain error lines directly from encoded files. Patch by
-Pablo Galindo
