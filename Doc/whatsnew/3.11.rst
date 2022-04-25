@@ -946,7 +946,7 @@ Deprecated
   The group name in bytes patterns and replacement strings could only
   contain ASCII letters and digits and underscore.
   For now, a deprecation warning is raised for such syntax.
-  (Contributed by Serhiy Storchaka in :issue:`91760`.)
+  (Contributed by Serhiy Storchaka in :gh:`91760`.)
 
 
 Removed
