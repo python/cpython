@@ -279,7 +279,8 @@ Reading and Writing Files
    object: file
 
 :func:`open` returns a :term:`file object`, and is most commonly used with
-two or three arguments: ``open(filename, mode, encoding=None)``
+two positional arguments and one keyword argument:
+``open(filename, mode, encoding=None)``
 
 ::
 
@@ -303,11 +304,11 @@ Normally, files are opened in :dfn:`text mode`, that means, you read and write
 strings from and to the file, which are encoded in a specific *encoding*.
 If *encoding* is not specified, the default is platform dependent
 (see :func:`open`).
-But passing ``encoding="utf-8"`` is highly recommended because
-UTF-8 is the most commonly used encoding for now.
-``'b'`` appended to the mode opens the file in :dfn:`binary mode`:
-now the data is read and written in the form of bytes objects.
-This mode should be used for all files that don't contain text.
+Because UTF-8 is the modern de-facto standard, ``encoding="utf-8"`` is
+recommended unless you know that you need to use a different encoding.
+Appending a ``'b'`` to the mode opens the file in :dfn:`binary mode`.
+Binary mode data is read and written as :class:`bytes` objects.
+You can not specify *encoding* when opening file in binary mode.
 
 In text mode, the default when reading is to convert platform-specific line
 endings (``\n`` on Unix, ``\r\n`` on Windows) to just ``\n``.  When writing in
@@ -500,7 +501,7 @@ To decode the object again, if ``f`` is a :term:`binary file` or
 
 .. note::
    JSON files must be encoded in UTF-8. Use ``encoding="utf-8"`` when opening
-   JSON file as :term:`text file` for both of reading and writing.
+   JSON file as a :term:`text file` for both of reading and writing.
 
 This simple serialization technique can handle lists and dictionaries, but
 serializing arbitrary class instances in JSON requires a bit of extra effort.
