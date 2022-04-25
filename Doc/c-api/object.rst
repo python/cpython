@@ -12,6 +12,13 @@ Object Protocol
    not implemented for the given type combination.
 
 
+.. c:function:: void Py_RefNotImplemented(void)
+
+   Return a new reference to :const:`NotImplemented`.
+
+   This function never returns ``NULL``.
+
+
 .. c:macro:: Py_RETURN_NOTIMPLEMENTED
 
    Properly handle returning :c:data:`Py_NotImplemented` from within a C

@@ -121,3 +121,10 @@ Ellipsis Object
    The Python ``Ellipsis`` object.  This object has no methods.  It needs to be
    treated just like any other object with respect to reference counts.  Like
    :c:data:`Py_None` it is a singleton object.
+
+
+.. c:function:: void Py_RefEllipsis(void)
+
+   Return a new reference to :const:`Ellipsis`.
+
+   This function never returns ``NULL``.

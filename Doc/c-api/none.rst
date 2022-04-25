@@ -20,7 +20,16 @@ same reason.
    counts.
 
 
+.. c:function:: void Py_RefNone(void)
+
+   Return a new reference to :const:`None`.
+
+   This function never returns ``NULL``.
+
+
 .. c:macro:: Py_RETURN_NONE
 
-   Properly handle returning :c:data:`Py_None` from within a C function (that is,
-   increment the reference count of ``None`` and return it.)
+   Properly handle returning :c:data:`Py_None` from within a C function.
+   Equivalent to::
+
+       return Py_RefNone()

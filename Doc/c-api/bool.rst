@@ -29,6 +29,20 @@ are available, however.
    just like any other object with respect to reference counts.
 
 
+.. c:function:: void Py_RefFalse(void)
+
+   Return a new reference to :const:`False`.
+
+   This function never returns ``NULL``.
+
+
+.. c:function:: void Py_RefTrue(void)
+
+   Return a new reference to :const:`True`.
+
+   This function never returns ``NULL``.
+
+
 .. c:macro:: Py_RETURN_FALSE
 
    Return :const:`Py_False` from a function, properly incrementing its reference
@@ -45,3 +59,5 @@ are available, however.
 
    Return a new reference to :const:`Py_True` or :const:`Py_False` depending on the
    truth value of *v*.
+
+   This function never returns ``NULL``.

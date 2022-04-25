@@ -10,6 +10,13 @@ PyAPI_DATA(PyObject) _Py_EllipsisObject; /* Don't use this directly */
 
 #define Py_Ellipsis (&_Py_EllipsisObject)
 
+// Return a new reference to the Ellipsis singleton.
+// The function cannot return NULL.
+static inline PyObject *Py_RefEllipsis(void)
+{
+    return Py_NewRef(Py_Ellipsis);
+}
+
 /* Slice object interface */
 
 /*

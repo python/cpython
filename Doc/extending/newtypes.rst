@@ -406,7 +406,6 @@ size of an internal pointer is equal::
    static PyObject *
    newdatatype_richcmp(PyObject *obj1, PyObject *obj2, int op)
    {
-       PyObject *result;
        int c, size1, size2;
 
        /* code to make sure that both arguments are of type
@@ -423,9 +422,7 @@ size of an internal pointer is equal::
        case Py_GT: c = size1 >  size2; break;
        case Py_GE: c = size1 >= size2; break;
        }
-       result = c ? Py_True : Py_False;
-       Py_INCREF(result);
-       return result;
+       return PyBool_FromLong(c);
     }
 
 

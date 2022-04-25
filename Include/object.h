@@ -622,8 +622,15 @@ PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
 PyAPI_FUNC(int) Py_IsNone(PyObject *x);
 #define Py_IsNone(x) Py_Is((x), Py_None)
 
+// Return a new reference to the None singleton.
+// The function cannot return NULL.
+static inline PyObject *Py_RefNone(void)
+{
+    return Py_NewRef(Py_None);
+}
+
 /* Macro for returning Py_None from a function */
-#define Py_RETURN_NONE return Py_NewRef(Py_None)
+#define Py_RETURN_NONE return Py_RefNone()
 
 /*
 Py_NotImplemented is a singleton used to signal that an operation is
@@ -632,8 +639,15 @@ not implemented for a given type combination.
 PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #define Py_NotImplemented (&_Py_NotImplementedStruct)
 
+// Return a new reference to the NotImplemented singleton.
+// The function cannot return NULL.
+static inline PyObject *Py_RefNotImplemented(void)
+{
+    return Py_NewRef(Py_NotImplemented);
+}
+
 /* Macro for returning Py_NotImplemented from a function */
-#define Py_RETURN_NOTIMPLEMENTED return Py_NewRef(Py_NotImplemented)
+#define Py_RETURN_NOTIMPLEMENTED return Py_RefNotImplemented()
 
 /* Rich comparison opcodes */
 #define Py_LT 0
