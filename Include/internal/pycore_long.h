@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_global_objects.h"  // _PY_NSMALLNEGINTS
-#include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_runtime.h"         // _PyRuntime
 
 
 /* runtime lifecycle */
@@ -33,10 +33,24 @@ extern void _PyLong_FiniTypes(PyInterpreterState *interp);
 static inline PyObject* _PyLong_GetZero(void)
 { return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS]; }
 
+// Return a new reference to the zero singleton.
+// The function cannot return NULL.
+static inline PyObject* _PyLong_RefZero(void)
+{
+    return Py_NewRef(_PyLong_GetZero());
+}
+
 // Return a borrowed reference to the one singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetOne(void)
 { return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+1]; }
+
+// Return a new reference to the one singleton.
+// The function cannot return NULL.
+static inline PyObject* _PyLong_RefOne(void)
+{
+    return Py_NewRef(_PyLong_GetOne());
+}
 
 static inline PyObject* _PyLong_FromUnsignedChar(unsigned char i)
 {
