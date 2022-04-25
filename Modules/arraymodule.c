@@ -704,12 +704,7 @@ array_richcompare(PyObject *v, PyObject *w, int op)
 
     if (Py_SIZE(va) != Py_SIZE(wa) && (op == Py_EQ || op == Py_NE)) {
         /* Shortcut: if the lengths differ, the arrays differ */
-        if (op == Py_EQ)
-            res = Py_False;
-        else
-            res = Py_True;
-        Py_INCREF(res);
-        return res;
+        return PyBool_FromLong(op != Py_EQ);
     }
 
     if (va->ob_descr == wa->ob_descr && va->ob_descr->compareitems != NULL) {
@@ -731,9 +726,7 @@ array_richcompare(PyObject *v, PyObject *w, int op)
         case Py_GE: cmp = result >= 0; break;
         default: return NULL; /* cannot happen */
         }
-        PyObject *res = cmp ? Py_True : Py_False;
-        Py_INCREF(res);
-        return res;
+        return PyBool_FromLong(cmp);
     }
 
 
@@ -773,12 +766,7 @@ array_richcompare(PyObject *v, PyObject *w, int op)
         case Py_GE: cmp = vs >= ws; break;
         default: return NULL; /* cannot happen */
         }
-        if (cmp)
-            res = Py_True;
-        else
-            res = Py_False;
-        Py_INCREF(res);
-        return res;
+        return PyBool_FromLong(cmp);
     }
 
     /* We have an item that differs.  First, shortcuts for EQ/NE */

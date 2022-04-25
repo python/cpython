@@ -246,7 +246,6 @@ static PyObject *
 method_richcompare(PyObject *self, PyObject *other, int op)
 {
     PyMethodObject *a, *b;
-    PyObject *res;
     int eq;
 
     if ((op != Py_EQ && op != Py_NE) ||
@@ -263,12 +262,7 @@ method_richcompare(PyObject *self, PyObject *other, int op)
     }
     else if (eq < 0)
         return NULL;
-    if (op == Py_EQ)
-        res = eq ? Py_True : Py_False;
-    else
-        res = eq ? Py_False : Py_True;
-    Py_INCREF(res);
-    return res;
+    return PyBool_FromLong(eq == (op == Py_EQ));
 }
 
 static PyObject *
@@ -462,7 +456,6 @@ static PyObject *
 instancemethod_richcompare(PyObject *self, PyObject *other, int op)
 {
     PyInstanceMethodObject *a, *b;
-    PyObject *res;
     int eq;
 
     if ((op != Py_EQ && op != Py_NE) ||
@@ -476,12 +469,7 @@ instancemethod_richcompare(PyObject *self, PyObject *other, int op)
     eq = PyObject_RichCompareBool(a->func, b->func, Py_EQ);
     if (eq < 0)
         return NULL;
-    if (op == Py_EQ)
-        res = eq ? Py_True : Py_False;
-    else
-        res = eq ? Py_False : Py_True;
-    Py_INCREF(res);
-    return res;
+    return PyBool_FromLong(eq == (op == Py_EQ));
 }
 
 static PyObject *

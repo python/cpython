@@ -296,7 +296,6 @@ static PyObject *
 meth_richcompare(PyObject *self, PyObject *other, int op)
 {
     PyCFunctionObject *a, *b;
-    PyObject *res;
     int eq;
 
     if ((op != Py_EQ && op != Py_NE) ||
@@ -310,12 +309,7 @@ meth_richcompare(PyObject *self, PyObject *other, int op)
     eq = a->m_self == b->m_self;
     if (eq)
         eq = a->m_ml->ml_meth == b->m_ml->ml_meth;
-    if (op == Py_EQ)
-        res = eq ? Py_True : Py_False;
-    else
-        res = eq ? Py_False : Py_True;
-    Py_INCREF(res);
-    return res;
+    return PyBool_FromLong(eq == (op == Py_EQ));
 }
 
 static Py_hash_t

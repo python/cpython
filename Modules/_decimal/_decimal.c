@@ -556,7 +556,7 @@ signaldict_getitem(PyObject *self, PyObject *key)
         return NULL;
     }
 
-    return SdFlags(self)&flag ? Py_RefTrue() : Py_RefFalse();
+    return PyBool_FromLong(SdFlags(self) & flag);
 }
 
 static int
@@ -3977,7 +3977,7 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
 static PyObject *                                           \
 dec_##MPDFUNC(PyObject *self, PyObject *dummy UNUSED)       \
 {                                                           \
-    return MPDFUNC(MPD(self)) ? Py_RefTrue() : Py_RefFalse(); \
+    return PyBool_FromLong(MPDFUNC(MPD(self)));             \
 }
 
 /* Boolean function with an optional context arg. */
@@ -3994,7 +3994,7 @@ dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)             \
     }                                                                     \
     CONTEXT_CHECK_VA(context);                                            \
                                                                           \
-    return MPDFUNC(MPD(self), CTX(context)) ? Py_RefTrue() : Py_RefFalse(); \
+    return PyBool_FromLong(MPDFUNC(MPD(self), CTX(context)));             \
 }
 
 /* Unary function with an optional context arg. */
@@ -4479,7 +4479,7 @@ dec_mpd_same_quantum(PyObject *self, PyObject *args, PyObject *kwds)
     CONTEXT_CHECK_VA(context);
     CONVERT_BINOP_RAISE(&a, &b, self, other, context);
 
-    result = mpd_same_quantum(MPD(a), MPD(b)) ? Py_RefTrue() : Py_RefFalse();
+    result = PyBool_FromLong(mpd_same_quantum(MPD(a), MPD(b)));
     Py_DECREF(a);
     Py_DECREF(b);
 
@@ -4574,7 +4574,7 @@ dec_richcompare(PyObject *v, PyObject *w, int op)
         }
         /* qNaN comparison with op={eq,ne} or comparison
          * with InvalidOperation disabled. */
-        return (op == Py_NE) ? Py_RefTrue() : Py_RefFalse();
+        return PyBool_FromLong(op == Py_NE);
     }
 
     switch (op) {
@@ -5039,7 +5039,7 @@ ctx_##MPDFUNC(PyObject *context, PyObject *v)                         \
                                                                       \
     CONVERT_OP_RAISE(&a, v, context);                                 \
                                                                       \
-    ret = MPDFUNC(MPD(a), CTX(context)) ? Py_RefTrue() : Py_RefFalse(); \
+    ret = PyBool_FromLong(MPDFUNC(MPD(a), CTX(context)));             \
     Py_DECREF(a);                                                     \
     return ret;                                                       \
 }
@@ -5054,7 +5054,7 @@ ctx_##MPDFUNC(PyObject *context, PyObject *v)           \
                                                         \
     CONVERT_OP_RAISE(&a, v, context);                   \
                                                         \
-    ret = MPDFUNC(MPD(a)) ? Py_RefTrue() : Py_RefFalse(); \
+    ret = PyBool_FromLong(MPDFUNC(MPD(a)));             \
     Py_DECREF(a);                                       \
     return ret;                                         \
 }
@@ -5341,7 +5341,7 @@ ctx_iscanonical(PyObject *context UNUSED, PyObject *v)
         return NULL;
     }
 
-    return mpd_iscanonical(MPD(v)) ? Py_RefTrue() : Py_RefFalse();
+    return PyBool_FromLong(mpd_iscanonical(MPD(v)));
 }
 
 /* Functions with a single decimal argument */
@@ -5547,7 +5547,7 @@ ctx_mpd_same_quantum(PyObject *context, PyObject *args)
 
     CONVERT_BINOP_RAISE(&a, &b, v, w, context);
 
-    result = mpd_same_quantum(MPD(a), MPD(b)) ? Py_RefTrue() : Py_RefFalse();
+    result = PyBool_FromLong(mpd_same_quantum(MPD(a), MPD(b)));
     Py_DECREF(a);
     Py_DECREF(b);
 
@@ -5999,15 +5999,12 @@ PyInit__decimal(void)
 
 #ifndef WITH_DECIMAL_CONTEXTVAR
     ASSIGN_PTR(tls_context_key, PyUnicode_FromString("___DECIMAL_CTX__"));
-    Py_INCREF(Py_False);
-    CHECK_INT(PyModule_AddObject(m, "HAVE_CONTEXTVAR", Py_False));
+    CHECK_INT(PyModule_AddObject(m, "HAVE_CONTEXTVAR", Py_RefFalse()));
 #else
     ASSIGN_PTR(current_context_var, PyContextVar_New("decimal_context", NULL));
-    Py_INCREF(Py_True);
-    CHECK_INT(PyModule_AddObject(m, "HAVE_CONTEXTVAR", Py_True));
+    CHECK_INT(PyModule_AddObject(m, "HAVE_CONTEXTVAR", Py_RefTrue()));
 #endif
-    Py_INCREF(Py_True);
-    CHECK_INT(PyModule_AddObject(m, "HAVE_THREADS", Py_True));
+    CHECK_INT(PyModule_AddObject(m, "HAVE_THREADS", Py_RefTrue()));
 
     /* Init basic context template */
     ASSIGN_PTR(basic_context_template,

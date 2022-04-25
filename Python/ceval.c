@@ -3912,10 +3912,7 @@ handle_eval_breaker:
         TARGET(IS_OP) {
             PyObject *right = POP();
             PyObject *left = TOP();
-            int res = Py_Is(left, right) ^ oparg;
-            PyObject *b = res ? Py_True : Py_False;
-            Py_INCREF(b);
-            SET_TOP(b);
+            SET_TOP(PyBool_FromLong(Py_Is(left, right) ^ oparg));
             Py_DECREF(left);
             Py_DECREF(right);
             DISPATCH();
@@ -3930,9 +3927,7 @@ handle_eval_breaker:
             if (res < 0) {
                 goto error;
             }
-            PyObject *b = (res^oparg) ? Py_True : Py_False;
-            Py_INCREF(b);
-            PUSH(b);
+            PUSH(PyBool_FromLong(res^oparg));
             DISPATCH();
         }
 
@@ -3988,7 +3983,7 @@ handle_eval_breaker:
 
             int res = PyErr_GivenExceptionMatches(left, right);
             Py_DECREF(right);
-            PUSH(Py_NewRef(res ? Py_True : Py_False));
+            PUSH(PyBool_FromLong(res));
             DISPATCH();
         }
 
@@ -4305,9 +4300,7 @@ handle_eval_breaker:
         TARGET(MATCH_MAPPING) {
             PyObject *subject = TOP();
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
-            PyObject *res = match ? Py_True : Py_False;
-            Py_INCREF(res);
-            PUSH(res);
+            PUSH(PyBool_FromLong(match));
             PREDICT(POP_JUMP_FORWARD_IF_FALSE);
             PREDICT(POP_JUMP_BACKWARD_IF_FALSE);
             DISPATCH();
@@ -4316,9 +4309,7 @@ handle_eval_breaker:
         TARGET(MATCH_SEQUENCE) {
             PyObject *subject = TOP();
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
-            PyObject *res = match ? Py_True : Py_False;
-            Py_INCREF(res);
-            PUSH(res);
+            PUSH(PyBool_FromLong(match));
             PREDICT(POP_JUMP_FORWARD_IF_FALSE);
             PREDICT(POP_JUMP_BACKWARD_IF_FALSE);
             DISPATCH();
@@ -5207,17 +5198,12 @@ handle_eval_breaker:
                 Py_DECREF(cls);
                 goto error;
             }
-            PyObject *res = PyBool_FromLong(retval);
-            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
             STACK_SHRINK(2-is_meth);
-            SET_TOP(res);
+            SET_TOP(PyBool_FromLong(retval));
             Py_DECREF(inst);
             Py_DECREF(cls);
             Py_DECREF(callable);
-            if (res == NULL) {
-                goto error;
-            }
             DISPATCH();
         }
 

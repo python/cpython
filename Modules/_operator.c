@@ -706,8 +706,7 @@ static PyObject *
 _operator_is__impl(PyObject *module, PyObject *a, PyObject *b)
 /*[clinic end generated code: output=bcd47a402e482e1d input=5fa9b97df03c427f]*/
 {
-    PyObject *result = Py_Is(a, b) ? Py_True : Py_False;
-    return Py_NewRef(result);
+    return PyBool_FromLong(Py_Is(a, b));
 }
 
 /*[clinic input]
@@ -720,10 +719,7 @@ static PyObject *
 _operator_is_not_impl(PyObject *module, PyObject *a, PyObject *b)
 /*[clinic end generated code: output=491a1f2f81f6c7f9 input=5a93f7e1a93535f1]*/
 {
-    PyObject *result;
-    result = (a != b) ? Py_True : Py_False;
-    Py_INCREF(result);
-    return result;
+    return PyBool_FromLong(a != b);
 }
 
 /* compare_digest **********************************************************/

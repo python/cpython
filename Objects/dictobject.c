@@ -3206,21 +3206,15 @@ static PyObject *
 dict_richcompare(PyObject *v, PyObject *w, int op)
 {
     int cmp;
-    PyObject *res;
 
-    if (!PyDict_Check(v) || !PyDict_Check(w)) {
-        res = Py_NotImplemented;
+    if (!PyDict_Check(v) || !PyDict_Check(w) || (op != Py_EQ && op != Py_NE)) {
+        Py_RETURN_NOTIMPLEMENTED;
     }
-    else if (op == Py_EQ || op == Py_NE) {
-        cmp = dict_equal((PyDictObject *)v, (PyDictObject *)w);
-        if (cmp < 0)
-            return NULL;
-        res = (cmp == (op == Py_EQ)) ? Py_True : Py_False;
-    }
-    else
-        res = Py_NotImplemented;
-    Py_INCREF(res);
-    return res;
+
+    cmp = dict_equal((PyDictObject *)v, (PyDictObject *)w);
+    if (cmp < 0)
+        return NULL;
+    return PyBool_FromLong(cmp == (op == Py_EQ));
 }
 
 /*[clinic input]
@@ -4643,7 +4637,6 @@ dictview_richcompare(PyObject *self, PyObject *other, int op)
 {
     Py_ssize_t len_self, len_other;
     int ok;
-    PyObject *result;
 
     assert(self != NULL);
     assert(PyDictViewSet_Check(self));
@@ -4693,9 +4686,7 @@ dictview_richcompare(PyObject *self, PyObject *other, int op)
     }
     if (ok < 0)
         return NULL;
-    result = ok ? Py_True : Py_False;
-    Py_INCREF(result);
-    return result;
+    return PyBool_FromLong(ok);
 }
 
 static PyObject *

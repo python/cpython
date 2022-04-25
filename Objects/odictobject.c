@@ -1477,7 +1477,7 @@ odict_richcompare(PyObject *v, PyObject *w, int op)
     }
 
     if (op == Py_EQ || op == Py_NE) {
-        PyObject *res, *cmp;
+        PyObject *cmp;
         int eq;
 
         cmp = PyDict_Type.tp_richcompare(v, w, op);
@@ -1496,9 +1496,7 @@ odict_richcompare(PyObject *v, PyObject *w, int op)
         if (eq < 0)
             return NULL;
 
-        res = (eq == (op == Py_EQ)) ? Py_True : Py_False;
-        Py_INCREF(res);
-        return res;
+        return PyBool_FromLong(eq == (op == Py_EQ));
     } else {
         Py_RETURN_NOTIMPLEMENTED;
     }

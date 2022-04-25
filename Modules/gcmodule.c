@@ -1869,14 +1869,7 @@ static PyObject *
 gc_is_tracked(PyObject *module, PyObject *obj)
 /*[clinic end generated code: output=14f0103423b28e31 input=d83057f170ea2723]*/
 {
-    PyObject *result;
-
-    if (_PyObject_IS_GC(obj) && _PyObject_GC_IS_TRACKED(obj))
-        result = Py_True;
-    else
-        result = Py_False;
-    Py_INCREF(result);
-    return result;
+    return PyBool_FromLong(_PyObject_IS_GC(obj) && _PyObject_GC_IS_TRACKED(obj));
 }
 
 /*[clinic input]

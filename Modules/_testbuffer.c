@@ -2504,7 +2504,6 @@ cmp_contig(PyObject *self, PyObject *args)
 {
     PyObject *b1, *b2; /* buffer objects */
     Py_buffer v1, v2;
-    PyObject *ret;
     int equal = 0;
 
     if (!PyArg_ParseTuple(args, "OO", &b1, &b2)) {
@@ -2558,9 +2557,7 @@ result:
     PyBuffer_Release(&v1);
     PyBuffer_Release(&v2);
 
-    ret = equal ? Py_True : Py_False;
-    Py_INCREF(ret);
-    return ret;
+    return PyBool_FromLong(equal);
 }
 
 static PyObject *

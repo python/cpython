@@ -4647,13 +4647,8 @@ object_richcompare(PyObject *self, PyObject *other, int op)
             Py_DECREF(res);
             if (ok < 0)
                 res = NULL;
-            else {
-                if (ok)
-                    res = Py_False;
-                else
-                    res = Py_True;
-                Py_INCREF(res);
-            }
+            else
+                res = PyBool_FromLong(!ok);
         }
         break;
 
