@@ -2883,7 +2883,9 @@ class _TypedDictMeta(type):
             tp_dict.__total__ = total
         return tp_dict
 
-    __call__ = dict  # static method
+    @staticmethod
+    def __call__(*args, **kwargs):
+        return dict(*args, **kwargs)
 
     def __subclasscheck__(cls, other):
         # Typed dicts are only for static structural subtyping.
