@@ -223,6 +223,19 @@ class AssertNeverTests(BaseTestCase):
         with self.assertRaises(AssertionError):
             assert_never(None)
 
+        value = "some value"
+        with self.assertRaisesRegex(AssertionError, value):
+            assert_never(value)
+
+        # Make sure a huge value doesn't get printed in its entirety
+        huge_value = "a" * 10000
+        with self.assertRaises(AssertionError) as cm:
+            assert_never(huge_value)
+        self.assertLess(
+            len(cm.exception.args[0]),
+            typing._ASSERT_NEVER_REPR_MAX_LENGTH * 2,
+        )
+
 
 class SelfTests(BaseTestCase):
     def test_equality(self):

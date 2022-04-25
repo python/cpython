@@ -2345,10 +2345,24 @@ Functions and decorators
                case _ as unreachable:
                    assert_never(unreachable)
 
+   Here, the annotations allow the type checker to infer that the
+   last case can never execute, because ``arg`` is either
+   an :class:`int` or a :class:`str`, and both options are covered by
+   earlier cases.
    If a type checker finds that a call to ``assert_never()`` is
-   reachable, it will emit an error.
+   reachable, it will emit an error. For example, if the type annotation
+   for ``arg`` was instead ``int | str | float``, the type checker would
+   emit an error pointing out that ``unreachable`` is of type :class:`float`.
+   For a call to ``assert_never`` to succeed, the inferred type of
+   the argument passed in must be the bottom type, :data:`Never`, and nothing
+   else.
 
    At runtime, this throws an exception when called.
+
+   .. seealso::
+      `Unreachable Code and Exhaustiveness Checking
+      <https://typing.readthedocs.io/en/latest/source/unreachable.html>_` has more
+      information about exhaustiveness checking with static typing.
 
    .. versionadded:: 3.11
 
