@@ -113,19 +113,6 @@ static PyTypeObject PyDecContextManager_Type;
 #define CtxCaps(v) (((PyDecContextObject *)v)->capitals)
 
 
-Py_LOCAL_INLINE(PyObject *)
-incr_true(void)
-{
-    return Py_RefTrue();
-}
-
-Py_LOCAL_INLINE(PyObject *)
-incr_false(void)
-{
-    return Py_RefFalse();
-}
-
-
 #ifndef WITH_DECIMAL_CONTEXTVAR
 /* Key for thread state dictionary */
 static PyObject *tls_context_key = NULL;
@@ -569,7 +556,7 @@ signaldict_getitem(PyObject *self, PyObject *key)
         return NULL;
     }
 
-    return SdFlags(self)&flag ? incr_true() : incr_false();
+    return SdFlags(self)&flag ? Py_RefTrue() : Py_RefFalse();
 }
 
 static int
@@ -3990,7 +3977,7 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
 static PyObject *                                           \
 dec_##MPDFUNC(PyObject *self, PyObject *dummy UNUSED)       \
 {                                                           \
-    return MPDFUNC(MPD(self)) ? incr_true() : incr_false(); \
+    return MPDFUNC(MPD(self)) ? Py_RefTrue() : Py_RefFalse(); \
 }
 
 /* Boolean function with an optional context arg. */
@@ -4007,7 +3994,7 @@ dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)             \
     }                                                                     \
     CONTEXT_CHECK_VA(context);                                            \
                                                                           \
-    return MPDFUNC(MPD(self), CTX(context)) ? incr_true() : incr_false(); \
+    return MPDFUNC(MPD(self), CTX(context)) ? Py_RefTrue() : Py_RefFalse(); \
 }
 
 /* Unary function with an optional context arg. */
@@ -4492,7 +4479,7 @@ dec_mpd_same_quantum(PyObject *self, PyObject *args, PyObject *kwds)
     CONTEXT_CHECK_VA(context);
     CONVERT_BINOP_RAISE(&a, &b, self, other, context);
 
-    result = mpd_same_quantum(MPD(a), MPD(b)) ? incr_true() : incr_false();
+    result = mpd_same_quantum(MPD(a), MPD(b)) ? Py_RefTrue() : Py_RefFalse();
     Py_DECREF(a);
     Py_DECREF(b);
 
@@ -4587,7 +4574,7 @@ dec_richcompare(PyObject *v, PyObject *w, int op)
         }
         /* qNaN comparison with op={eq,ne} or comparison
          * with InvalidOperation disabled. */
-        return (op == Py_NE) ? incr_true() : incr_false();
+        return (op == Py_NE) ? Py_RefTrue() : Py_RefFalse();
     }
 
     switch (op) {
@@ -5052,7 +5039,7 @@ ctx_##MPDFUNC(PyObject *context, PyObject *v)                         \
                                                                       \
     CONVERT_OP_RAISE(&a, v, context);                                 \
                                                                       \
-    ret = MPDFUNC(MPD(a), CTX(context)) ? incr_true() : incr_false(); \
+    ret = MPDFUNC(MPD(a), CTX(context)) ? Py_RefTrue() : Py_RefFalse(); \
     Py_DECREF(a);                                                     \
     return ret;                                                       \
 }
@@ -5067,7 +5054,7 @@ ctx_##MPDFUNC(PyObject *context, PyObject *v)           \
                                                         \
     CONVERT_OP_RAISE(&a, v, context);                   \
                                                         \
-    ret = MPDFUNC(MPD(a)) ? incr_true() : incr_false(); \
+    ret = MPDFUNC(MPD(a)) ? Py_RefTrue() : Py_RefFalse(); \
     Py_DECREF(a);                                       \
     return ret;                                         \
 }
@@ -5354,7 +5341,7 @@ ctx_iscanonical(PyObject *context UNUSED, PyObject *v)
         return NULL;
     }
 
-    return mpd_iscanonical(MPD(v)) ? incr_true() : incr_false();
+    return mpd_iscanonical(MPD(v)) ? Py_RefTrue() : Py_RefFalse();
 }
 
 /* Functions with a single decimal argument */
@@ -5560,7 +5547,7 @@ ctx_mpd_same_quantum(PyObject *context, PyObject *args)
 
     CONVERT_BINOP_RAISE(&a, &b, v, w, context);
 
-    result = mpd_same_quantum(MPD(a), MPD(b)) ? incr_true() : incr_false();
+    result = mpd_same_quantum(MPD(a), MPD(b)) ? Py_RefTrue() : Py_RefFalse();
     Py_DECREF(a);
     Py_DECREF(b);
 
