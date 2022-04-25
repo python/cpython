@@ -1543,6 +1543,22 @@ class ProcessTestCase(BaseTestCase):
         self.assertIsInstance(subprocess.Popen[bytes], types.GenericAlias)
         self.assertIsInstance(subprocess.CompletedProcess[str], types.GenericAlias)
 
+    @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
+                     "vfork() not enabled by configure.")
+    @mock.patch("subprocess._fork_exec")
+    def test__use_vfork(self, mock_fork_exec):
+        self.assertTrue(subprocess._USE_VFORK)  # The default value regardless.
+        mock_fork_exec.side_effect = RuntimeError("just testing args")
+        with self.assertRaises(RuntimeError):
+            subprocess.run([sys.executable, "-c", "pass"])
+        mock_fork_exec.assert_called_once()
+        self.assertTrue(mock_fork_exec.call_args.args[-1])
+        with mock.patch.object(subprocess, '_USE_VFORK', False):
+            with self.assertRaises(RuntimeError):
+                subprocess.run([sys.executable, "-c", "pass"])
+            self.assertFalse(mock_fork_exec.call_args_list[-1].args[-1])
+
+
 class RunFuncTestCase(BaseTestCase):
     def run_python(self, code, **kwargs):
         """Run Python code in a subprocess using subprocess.run"""
