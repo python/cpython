@@ -1736,8 +1736,7 @@ SetVar(TkappObject *self, PyObject *args, int flags)
         if (!ok)
             Tkinter_Error(self);
         else {
-            res = Py_None;
-            Py_INCREF(res);
+            res = Py_RefNone();
         }
         LEAVE_OVERLAP_TCL
         break;
@@ -1755,8 +1754,7 @@ SetVar(TkappObject *self, PyObject *args, int flags)
         if (!ok)
             Tkinter_Error(self);
         else {
-            res = Py_None;
-            Py_INCREF(res);
+            res = Py_RefNone();
         }
         LEAVE_OVERLAP_TCL
         break;
@@ -1842,8 +1840,7 @@ UnsetVar(TkappObject *self, PyObject *args, int flags)
     if (code == TCL_ERROR)
         res = Tkinter_Error(self);
     else {
-        Py_INCREF(Py_None);
-        res = Py_None;
+        res = Py_RefNone();
     }
     LEAVE_OVERLAP_TCL
     return res;

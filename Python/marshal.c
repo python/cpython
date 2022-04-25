@@ -1008,8 +1008,7 @@ r_object(RFILE *p)
         break;
 
     case TYPE_NONE:
-        Py_INCREF(Py_None);
-        retval = Py_None;
+        retval = Py_RefNone();
         break;
 
     case TYPE_STOPITER:
@@ -1018,18 +1017,15 @@ r_object(RFILE *p)
         break;
 
     case TYPE_ELLIPSIS:
-        Py_INCREF(Py_Ellipsis);
-        retval = Py_Ellipsis;
+        retval = Py_RefEllipsis();
         break;
 
     case TYPE_FALSE:
-        Py_INCREF(Py_False);
-        retval = Py_False;
+        retval = Py_RefFalse();
         break;
 
     case TYPE_TRUE:
-        Py_INCREF(Py_True);
-        retval = Py_True;
+        retval = Py_RefTrue();
         break;
 
     case TYPE_INT:

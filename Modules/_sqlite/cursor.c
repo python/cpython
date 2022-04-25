@@ -301,7 +301,7 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                     PyErr_NoMemory();
                     goto error;
                 }
-                converted = Py_NewRef(Py_None);
+                converted = Py_RefNone();
             }
             else {
                 nbytes = sqlite3_column_bytes(self->statement->st, i);
@@ -317,7 +317,7 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
             coltype = sqlite3_column_type(self->statement->st, i);
             Py_END_ALLOW_THREADS
             if (coltype == SQLITE_NULL) {
-                converted = Py_NewRef(Py_None);
+                converted = Py_RefNone();
             } else if (coltype == SQLITE_INTEGER) {
                 converted = PyLong_FromLongLong(sqlite3_column_int64(self->statement->st, i));
             } else if (coltype == SQLITE_FLOAT) {

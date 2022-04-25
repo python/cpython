@@ -2640,8 +2640,7 @@ PyCData_GetContainer(CDataObject *self)
             if (self->b_objects == NULL)
                 return NULL;
         } else {
-            Py_INCREF(Py_None);
-            self->b_objects = Py_None;
+            self->b_objects = Py_RefNone();
         }
     }
     return self;

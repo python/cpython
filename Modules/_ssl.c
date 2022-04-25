@@ -503,8 +503,7 @@ fill_and_set_sslerror(_sslmodulestate *state,
             if (verify_str != NULL) {
                 verify_obj = PyUnicode_FromString(verify_str);
             } else {
-                verify_obj = Py_None;
-                Py_INCREF(verify_obj);
+                verify_obj = Py_RefNone();
             }
             break;
         }
@@ -1029,8 +1028,7 @@ _asn1obj2py(_sslmodulestate *state, const ASN1_OBJECT *name, int no_name)
         }
     }
     if (!buflen && no_name) {
-        Py_INCREF(Py_None);
-        name_obj = Py_None;
+        name_obj = Py_RefNone();
     }
     else {
         name_obj = PyUnicode_FromStringAndSize(namebuf, buflen);
@@ -1879,8 +1877,7 @@ _ssl__SSLSocket_get_unverified_chain_impl(PySSLSocket *self)
         X509 *peer = SSL_get_peer_certificate(self->ssl);
 
         if (peer == NULL) {
-            peerobj = Py_None;
-            Py_INCREF(peerobj);
+            peerobj = Py_RefNone();
         } else {
             /* consume X509 reference on success */
             peerobj = _PySSL_CertificateFromX509(self->ctx->state, peer, 0);

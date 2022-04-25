@@ -555,8 +555,7 @@ static int statsForEntry(rotating_node_t *node, void *arg)
         }
     }
     else {
-        Py_INCREF(Py_None);
-        collect->sublist = Py_None;
+        collect->sublist = Py_RefNone();
     }
 
     info = PyObject_CallFunction((PyObject*) collect->state->stats_entry_type,

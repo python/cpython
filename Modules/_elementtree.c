@@ -282,11 +282,9 @@ create_new_element(PyObject* tag, PyObject* attrib)
     Py_INCREF(tag);
     self->tag = tag;
 
-    Py_INCREF(Py_None);
-    self->text = Py_None;
+    self->text = Py_RefNone();
 
-    Py_INCREF(Py_None);
-    self->tail = Py_None;
+    self->tail = Py_RefNone();
 
     self->weakreflist = NULL;
 
@@ -307,14 +305,11 @@ element_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     ElementObject *e = (ElementObject *)type->tp_alloc(type, 0);
     if (e != NULL) {
-        Py_INCREF(Py_None);
-        e->tag = Py_None;
+        e->tag = Py_RefNone();
 
-        Py_INCREF(Py_None);
-        e->text = Py_None;
+        e->text = Py_RefNone();
 
-        Py_INCREF(Py_None);
-        e->tail = Py_None;
+        e->tail = Py_RefNone();
 
         e->extra = NULL;
         e->weakreflist = NULL;
@@ -2354,10 +2349,8 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (t != NULL) {
         t->root = NULL;
 
-        Py_INCREF(Py_None);
-        t->this = Py_None;
-        Py_INCREF(Py_None);
-        t->last = Py_None;
+        t->this = Py_RefNone();
+        t->last = Py_RefNone();
 
         t->data = NULL;
         t->element_factory = NULL;
@@ -3504,8 +3497,7 @@ expat_start_doctype_handler(XMLParserObject *self,
             return;
         }
     } else {
-        Py_INCREF(Py_None);
-        sysid_obj = Py_None;
+        sysid_obj = Py_RefNone();
     }
 
     if (pubid) {
@@ -3516,8 +3508,7 @@ expat_start_doctype_handler(XMLParserObject *self,
             return;
         }
     } else {
-        Py_INCREF(Py_None);
-        pubid_obj = Py_None;
+        pubid_obj = Py_RefNone();
     }
 
     /* If the target has a handler for doctype, call it. */

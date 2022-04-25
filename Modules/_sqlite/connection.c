@@ -260,7 +260,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     self->cursors = cursors;
     self->blobs = blobs;
     self->created_cursors = 0;
-    self->row_factory = Py_NewRef(Py_None);
+    self->row_factory = Py_RefNone();
     self->text_factory = Py_NewRef(&PyUnicode_Type);
     self->trace_ctx = NULL;
     self->progress_ctx = NULL;
@@ -740,7 +740,7 @@ _pysqlite_build_py_params(sqlite3_context *context, int argc,
             }
             case SQLITE_NULL:
             default:
-                cur_py_value = Py_NewRef(Py_None);
+                cur_py_value = Py_RefNone();
         }
 
         if (!cur_py_value) {
@@ -1842,7 +1842,7 @@ pysqlite_connection_interrupt_impl(pysqlite_Connection *self)
 
     sqlite3_interrupt(self->db);
 
-    retval = Py_NewRef(Py_None);
+    retval = Py_RefNone();
 
 finally:
     return retval;

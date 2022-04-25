@@ -481,8 +481,7 @@ buffered_close(buffered *self, PyObject *args)
     if (r < 0)
         goto end;
     if (r > 0) {
-        res = Py_None;
-        Py_INCREF(res);
+        res = Py_RefNone();
         goto end;
     }
 
@@ -1007,8 +1006,7 @@ _buffered_readinto_generic(buffered *self, Py_buffer *buffer, char readinto1)
             break;
         if (n < 0) {
             if (n == -2) {
-                Py_INCREF(Py_None);
-                res = Py_None;
+                res = Py_RefNone();
             }
             goto end;
         }

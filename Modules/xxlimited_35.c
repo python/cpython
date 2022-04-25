@@ -67,8 +67,7 @@ Xxo_demo(XxoObject *self, PyObject *args)
         Py_INCREF(o);
         return o;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef Xxo_methods[] = {
@@ -176,8 +175,7 @@ xx_roj(PyObject *self, PyObject *args)
     long b;
     if (!PyArg_ParseTuple(args, "O#:roj", &a, &b))
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 

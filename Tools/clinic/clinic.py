@@ -3816,8 +3816,7 @@ class NoneType_return_converter(CReturnConverter):
 if (_return_value != Py_None) {
     goto exit;
 }
-return_value = Py_None;
-Py_INCREF(Py_None);
+return_value = Py_RefNone();
 '''.strip())
 
 class bool_return_converter(CReturnConverter):

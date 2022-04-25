@@ -39,8 +39,7 @@ spamlist_setstate(spamlistobject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:setstate", &state))
         return NULL;
     self->state = state;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -164,8 +163,7 @@ spamdict_setstate(spamdictobject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:setstate", &state))
         return NULL;
     self->state = state;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef spamdict_methods[] = {

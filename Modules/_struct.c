@@ -1445,7 +1445,7 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self = alloc_func(type, 0);
     if (self != NULL) {
         PyStructObject *s = (PyStructObject*)self;
-        s->s_format = Py_NewRef(Py_None);
+        s->s_format = Py_RefNone();
         s->s_codes = NULL;
         s->s_size = -1;
         s->s_len = -1;

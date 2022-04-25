@@ -1324,8 +1324,7 @@ tzinfo_from_isoformat_results(int rv, int tzoffset, int tz_useconds)
         Py_DECREF(delta);
     }
     else {
-        tzinfo = Py_None;
-        Py_INCREF(Py_None);
+        tzinfo = Py_RefNone();
     }
 
     return tzinfo;
@@ -4442,12 +4441,10 @@ time_richcompare(PyObject *self, PyObject *other, int op)
         result = diff_to_bool(diff, op);
     }
     else if (op == Py_EQ) {
-        result = Py_False;
-        Py_INCREF(result);
+        result = Py_RefFalse();
     }
     else if (op == Py_NE) {
-        result = Py_True;
-        Py_INCREF(result);
+        result = Py_RefTrue();
     }
     else {
         PyErr_SetString(PyExc_TypeError,
@@ -5742,12 +5739,10 @@ datetime_richcompare(PyObject *self, PyObject *other, int op)
         result = diff_to_bool(diff, op);
     }
     else if (op == Py_EQ) {
-        result = Py_False;
-        Py_INCREF(result);
+        result = Py_RefFalse();
     }
     else if (op == Py_NE) {
-        result = Py_True;
-        Py_INCREF(result);
+        result = Py_RefTrue();
     }
     else {
         PyErr_SetString(PyExc_TypeError,

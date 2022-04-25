@@ -362,8 +362,7 @@ convert_to_double(PyObject **v, double *dbl)
         }
     }
     else {
-        Py_INCREF(Py_NotImplemented);
-        *v = Py_NotImplemented;
+        *v = Py_RefNotImplemented();
         return -1;
     }
     return 0;

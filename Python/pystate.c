@@ -2065,8 +2065,7 @@ static PyObject *
 _new_none_object(_PyCrossInterpreterData *data)
 {
     // XXX Singleton refcounts are problematic across interpreters...
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static int

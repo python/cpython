@@ -7970,8 +7970,7 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
         err = GetLastError();
         result = PyErr_SetFromWindowsErr(err);
     } else {
-        Py_INCREF(Py_None);
-        result = Py_None;
+        result = Py_RefNone();
     }
 
     CloseHandle(handle);

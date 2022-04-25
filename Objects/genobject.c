@@ -192,8 +192,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
         else if (arg && !exc) {
             /* `gen` is an exhausted generator:
                only return value if called from send(). */
-            *presult = Py_None;
-            Py_INCREF(*presult);
+            *presult = Py_RefNone();
             return PYGEN_RETURN;
         }
         return PYGEN_ERROR;
@@ -687,8 +686,7 @@ _PyGen_FetchStopIterationValue(PyObject **pvalue)
         return -1;
     }
     if (value == NULL) {
-        value = Py_None;
-        Py_INCREF(value);
+        value = Py_RefNone();
     }
     *pvalue = value;
     return 0;

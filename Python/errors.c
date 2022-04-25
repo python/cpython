@@ -326,8 +326,7 @@ _PyErr_NormalizeException(PyThreadState *tstate, PyObject **exc,
        set to NULL.
     */
     if (!value) {
-        value = Py_None;
-        Py_INCREF(value);
+        value = Py_RefNone();
     }
 
     /* Normalize the exception so that if the type is a class, the

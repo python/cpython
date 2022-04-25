@@ -791,8 +791,7 @@ bytesio_getstate(bytesio *self, PyObject *Py_UNUSED(ignored))
     if (initvalue == NULL)
         return NULL;
     if (self->dict == NULL) {
-        Py_INCREF(Py_None);
-        dict = Py_None;
+        dict = Py_RefNone();
     }
     else {
         dict = PyDict_Copy(self->dict);

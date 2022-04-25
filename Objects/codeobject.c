@@ -1074,8 +1074,7 @@ lineiter_next(lineiterator *li)
     start = PyLong_FromLong(bounds->ar_start);
     end = PyLong_FromLong(bounds->ar_end);
     if (bounds->ar_line < 0) {
-        Py_INCREF(Py_None);
-        line = Py_None;
+        line = Py_RefNone();
     }
     else {
         line = PyLong_FromLong(bounds->ar_line);

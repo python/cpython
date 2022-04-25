@@ -783,12 +783,10 @@ array_richcompare(PyObject *v, PyObject *w, int op)
 
     /* We have an item that differs.  First, shortcuts for EQ/NE */
     if (op == Py_EQ) {
-        Py_INCREF(Py_False);
-        res = Py_False;
+        res = Py_RefFalse();
     }
     else if (op == Py_NE) {
-        Py_INCREF(Py_True);
-        res = Py_True;
+        res = Py_RefTrue();
     }
     else {
         /* Compare the final item again using the proper operator */
@@ -2223,8 +2221,7 @@ array_array___reduce_ex___impl(arrayobject *self, PyTypeObject *cls,
         return NULL;
     }
     if (dict == NULL) {
-        dict = Py_None;
-        Py_INCREF(dict);
+        dict = Py_RefNone();
     }
 
     mformat_code = typecode_to_mformat_code(typecode);

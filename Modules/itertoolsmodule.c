@@ -1761,8 +1761,7 @@ islice_reduce(isliceobject *lz, PyObject *Py_UNUSED(ignored))
         return Py_BuildValue("O(Nn)n", Py_TYPE(lz), empty_it, 0, 0);
     }
     if (lz->stop == -1) {
-        stop = Py_None;
-        Py_INCREF(stop);
+        stop = Py_RefNone();
     } else {
         stop = PyLong_FromSsize_t(lz->stop);
         if (stop == NULL)
@@ -3678,8 +3677,7 @@ accumulate_next(accumulateobject *lz)
 
     if (lz->initial != Py_None) {
         lz->total = lz->initial;
-        Py_INCREF(Py_None);
-        lz->initial = Py_None;
+        lz->initial = Py_RefNone();
         Py_INCREF(lz->total);
         return lz->total;
     }

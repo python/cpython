@@ -116,15 +116,13 @@ static PyTypeObject PyDecContextManager_Type;
 Py_LOCAL_INLINE(PyObject *)
 incr_true(void)
 {
-    Py_INCREF(Py_True);
-    return Py_True;
+    return Py_RefTrue();
 }
 
 Py_LOCAL_INLINE(PyObject *)
 incr_false(void)
 {
-    Py_INCREF(Py_False);
-    return Py_False;
+    return Py_RefFalse();
 }
 
 
@@ -2881,8 +2879,7 @@ convert_op(int type_err, PyObject **conv, PyObject *v, PyObject *context)
             Py_TYPE(v)->tp_name);
     }
     else {
-        Py_INCREF(Py_NotImplemented);
-        *conv = Py_NotImplemented;
+        *conv = Py_RefNotImplemented();
     }
     return 0;
 }
@@ -3074,8 +3071,7 @@ convert_op_cmp(PyObject **vcmp, PyObject **wcmp, PyObject *v, PyObject *w,
             }
         }
         else {
-            Py_INCREF(Py_NotImplemented);
-            *wcmp = Py_NotImplemented;
+            *wcmp = Py_RefNotImplemented();
         }
     }
     else {
@@ -3093,8 +3089,7 @@ convert_op_cmp(PyObject **vcmp, PyObject **wcmp, PyObject *v, PyObject *w,
             }
         }
         else {
-            Py_INCREF(Py_NotImplemented);
-            *wcmp = Py_NotImplemented;
+            *wcmp = Py_RefNotImplemented();
         }
     }
 

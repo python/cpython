@@ -52,8 +52,7 @@ Xxo_demo(XxoObject *self, PyObject *args)
 {
     if (!PyArg_ParseTuple(args, ":demo"))
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef Xxo_methods[] = {
@@ -195,8 +194,7 @@ xx_bug(PyObject *self, PyObject *args)
     printf("\n");
     /* Py_DECREF(item); */
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 /* Test bad format character */
@@ -208,8 +206,7 @@ xx_roj(PyObject *self, PyObject *args)
     long b;
     if (!PyArg_ParseTuple(args, "O#:roj", &a, &b))
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 
@@ -266,8 +263,7 @@ static PyTypeObject Str_Type = {
 static PyObject *
 null_richcompare(PyObject *self, PyObject *other, int op)
 {
-    Py_INCREF(Py_NotImplemented);
-    return Py_NotImplemented;
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 static PyTypeObject Null_Type = {

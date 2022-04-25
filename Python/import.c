@@ -1405,8 +1405,7 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
         }
     }
     else {
-        Py_INCREF(Py_None);
-        origname = Py_None;
+        origname = Py_RefNone();
     }
     err = PyDict_SetItemString(d, "__origname__", origname);
     Py_DECREF(origname);

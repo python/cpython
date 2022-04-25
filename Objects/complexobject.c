@@ -449,8 +449,7 @@ to_complex(PyObject **pobj, Py_complex *pc)
         pc->real = PyFloat_AsDouble(obj);
         return 0;
     }
-    Py_INCREF(Py_NotImplemented);
-    *pobj = Py_NotImplemented;
+    *pobj = Py_RefNotImplemented();
     return -1;
 }
 

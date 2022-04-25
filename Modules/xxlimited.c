@@ -217,8 +217,7 @@ Xxo_demo(XxoObject *self, PyTypeObject *defining_class,
         return o;
     }
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef Xxo_methods[] = {

@@ -705,8 +705,7 @@ _msi_SummaryInformation_GetProperty_impl(msiobj *self, int field)
             result = PyBytes_FromStringAndSize(sval, ssize);
             break;
         case VT_EMPTY:
-            Py_INCREF(Py_None);
-            result = Py_None;
+            result = Py_RefNone();
             break;
         default:
             PyErr_Format(PyExc_NotImplementedError, "result of type %d", type);

@@ -4241,8 +4241,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
     } while (len > 0);
     PyBuffer_Release(&pbuf);
 
-    Py_INCREF(Py_None);
-    res = Py_None;
+    res = Py_RefNone();
 
 done:
     PyBuffer_Release(&pbuf);

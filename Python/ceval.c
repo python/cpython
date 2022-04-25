@@ -1015,8 +1015,7 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
             Py_DECREF(value);
             Py_DECREF(values);
             // Return None:
-            Py_INCREF(Py_None);
-            values = Py_None;
+            values = Py_RefNone();
             goto done;
         }
         PyTuple_SET_ITEM(values, i, value);
@@ -1994,13 +1993,11 @@ handle_eval_breaker:
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
             if (err == 0) {
-                Py_INCREF(Py_True);
-                SET_TOP(Py_True);
+                SET_TOP(Py_RefTrue());
                 DISPATCH();
             }
             else if (err > 0) {
-                Py_INCREF(Py_False);
-                SET_TOP(Py_False);
+                SET_TOP(Py_RefFalse());
                 DISPATCH();
             }
             STACK_SHRINK(1);
@@ -4299,8 +4296,7 @@ handle_eval_breaker:
             }
             else {
                 // Failure!
-                Py_INCREF(Py_None);
-                SET_TOP(Py_None);
+                SET_TOP(Py_RefNone());
             }
             Py_DECREF(subject);
             DISPATCH();
@@ -4522,8 +4518,7 @@ handle_eval_breaker:
                 SET_TOP(exc_info->exc_value);
             }
             else {
-                Py_INCREF(Py_None);
-                SET_TOP(Py_None);
+                SET_TOP(Py_RefNone());
             }
 
             Py_INCREF(value);
@@ -6635,8 +6630,8 @@ exception_group_match(PyObject* exc_value, PyObject *match_type,
                       PyObject **match, PyObject **rest)
 {
     if (Py_IsNone(exc_value)) {
-        *match = Py_NewRef(Py_None);
-        *rest = Py_NewRef(Py_None);
+        *match = Py_RefNone();
+        *rest = Py_RefNone();
         return 0;
     }
     assert(PyExceptionInstance_Check(exc_value));
@@ -6660,7 +6655,7 @@ exception_group_match(PyObject* exc_value, PyObject *match_type,
             }
             *match = wrapped;
         }
-        *rest = Py_NewRef(Py_None);
+        *rest = Py_RefNone();
         return 0;
     }
 
@@ -6681,8 +6676,8 @@ exception_group_match(PyObject* exc_value, PyObject *match_type,
         return 0;
     }
     /* no match */
-    *match = Py_NewRef(Py_None);
-    *rest = Py_NewRef(Py_None);
+    *match = Py_RefNone();
+    *rest = Py_RefNone();
     return 0;
 }
 
@@ -6795,8 +6790,7 @@ call_exc_trace(Py_tracefunc func, PyObject *self,
     int err;
     _PyErr_Fetch(tstate, &type, &value, &orig_traceback);
     if (value == NULL) {
-        value = Py_None;
-        Py_INCREF(value);
+        value = Py_RefNone();
     }
     _PyErr_NormalizeException(tstate, &type, &value, &orig_traceback);
     traceback = (orig_traceback != NULL) ? orig_traceback : Py_None;

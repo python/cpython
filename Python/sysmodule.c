@@ -2308,8 +2308,7 @@ _PySys_AddXOptionWithError(const wchar_t *s)
     const wchar_t *name_end = wcschr(s, L'=');
     if (!name_end) {
         name = PyUnicode_FromWideChar(s, -1);
-        value = Py_True;
-        Py_INCREF(value);
+        value = Py_RefTrue();
     }
     else {
         name = PyUnicode_FromWideChar(s, name_end - s);
@@ -2959,8 +2958,7 @@ sys_add_xoption(PyObject *opts, const wchar_t *s)
     const wchar_t *name_end = wcschr(s, L'=');
     if (!name_end) {
         name = PyUnicode_FromWideChar(s, -1);
-        value = Py_True;
-        Py_INCREF(value);
+        value = Py_RefTrue();
     }
     else {
         name = PyUnicode_FromWideChar(s, name_end - s);

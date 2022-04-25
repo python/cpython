@@ -586,8 +586,7 @@ wchar_to_dict(PyObject *dict, const char *key, const wchar_t *s)
             return 0;
         }
     } else {
-        u = Py_None;
-        Py_INCREF(u);
+        u = Py_RefNone();
     }
     r = PyDict_SetItemString(dict, key, u) == 0;
     Py_DECREF(u);
@@ -612,8 +611,7 @@ decode_to_dict(PyObject *dict, const char *key, const char *s)
             return 0;
         }
     } else {
-        u = Py_None;
-        Py_INCREF(u);
+        u = Py_RefNone();
     }
     r = PyDict_SetItemString(dict, key, u) == 0;
     Py_DECREF(u);

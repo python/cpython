@@ -1289,7 +1289,7 @@ test_type_from_ephemeral_spec(PyObject *self, PyObject *Py_UNUSED(ignored))
     assert(strcmp(PyUnicode_AsUTF8(obj), "<test>") == 0);
     Py_CLEAR(obj);
 
-    result = Py_NewRef(Py_None);
+    result = Py_RefNone();
   finally:
     PyMem_Del(spec);
     PyMem_Del(name);
@@ -1715,8 +1715,7 @@ getargs_z_star(PyObject *self, PyObject *args)
     if (buffer.buf != NULL)
         bytes = PyBytes_FromStringAndSize(buffer.buf, buffer.len);
     else {
-        Py_INCREF(Py_None);
-        bytes = Py_None;
+        bytes = Py_RefNone();
     }
     PyBuffer_Release(&buffer);
     return bytes;
@@ -1979,8 +1978,7 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
         buffers + 4, buffers + 5, buffers + 6, buffers + 7);
 
     if (result) {
-        return_value = Py_None;
-        Py_INCREF(Py_None);
+        return_value = Py_RefNone();
     }
 
 exit:
@@ -4280,8 +4278,7 @@ test_setallocators(PyMemAllocatorDomain domain)
         goto fail;
     }
 
-    Py_INCREF(Py_None);
-    res = Py_None;
+    res = Py_RefNone();
     goto finally;
 
 fail:
@@ -4563,8 +4560,7 @@ call_in_temporary_c_thread(PyObject *self, PyObject *callback)
         PyThread_release_lock(test_c_thread.exit_event);
     Py_END_ALLOW_THREADS
 
-    Py_INCREF(Py_None);
-    res = Py_None;
+    res = Py_RefNone();
 
 exit:
     Py_CLEAR(test_c_thread.callback);

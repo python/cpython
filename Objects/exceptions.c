@@ -1285,7 +1285,7 @@ exception_group_projection(PyObject *eg, PyObject *keep)
     }
 
     PyObject *result = split_result.match ?
-        split_result.match : Py_NewRef(Py_None);
+        split_result.match : Py_RefNone();
     assert(split_result.rest == NULL);
     return result;
 }
@@ -1330,7 +1330,7 @@ _PyExc_PrepReraiseStar(PyObject *orig, PyObject *excs)
     Py_ssize_t numexcs = PyList_GET_SIZE(excs);
 
     if (numexcs == 0) {
-        return Py_NewRef(Py_None);
+        Py_RETURN_NONE;
     }
 
     if (!_PyBaseExceptionGroup_Check(orig)) {

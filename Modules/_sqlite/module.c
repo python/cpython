@@ -99,9 +99,9 @@ pysqlite_complete_statement_impl(PyObject *module, const char *statement)
 /*[clinic end generated code: output=e55f1ff1952df558 input=ac45d257375bb828]*/
 {
     if (sqlite3_complete(statement)) {
-        return Py_NewRef(Py_True);
+        return Py_RefTrue();
     } else {
-        return Py_NewRef(Py_False);
+        return Py_RefFalse();
     }
 }
 
@@ -199,7 +199,7 @@ pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
         goto error;
     }
 
-    retval = Py_NewRef(Py_None);
+    retval = Py_RefNone();
 error:
     Py_XDECREF(name);
     return retval;

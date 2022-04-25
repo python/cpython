@@ -30,8 +30,7 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->func_defaults = NULL;
     op->func_kwdefaults = NULL;
     op->func_closure = NULL;
-    Py_INCREF(Py_None);
-    op->func_doc = Py_None;
+    op->func_doc = Py_RefNone();
     op->func_dict = NULL;
     op->func_weakreflist = NULL;
     op->func_module = NULL;

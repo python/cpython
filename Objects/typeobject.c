@@ -237,7 +237,7 @@ _PyType_InitCache(PyInterpreterState *interp)
         entry->version = 0;
         // Set to None so _PyType_Lookup() can use Py_SETREF(),
         // rather than using slower Py_XSETREF().
-        entry->name = Py_NewRef(Py_None);
+        entry->name = Py_RefNone();
         entry->value = NULL;
     }
 }
@@ -877,8 +877,7 @@ type_get_doc(PyTypeObject *type, void *context)
     result = PyDict_GetItemWithError(type->tp_dict, &_Py_ID(__doc__));
     if (result == NULL) {
         if (!PyErr_Occurred()) {
-            result = Py_None;
-            Py_INCREF(result);
+            result = Py_RefNone();
         }
     }
     else if (Py_TYPE(result)->tp_descr_get) {
@@ -4639,8 +4638,7 @@ object_richcompare(PyObject *self, PyObject *other, int op)
         /* By default, __ne__() delegates to __eq__() and inverts the result,
            unless the latter returns NotImplemented. */
         if (Py_TYPE(self)->tp_richcompare == NULL) {
-            res = Py_NotImplemented;
-            Py_INCREF(res);
+            res = Py_RefNotImplemented();
             break;
         }
         res = (*Py_TYPE(self)->tp_richcompare)(self, other, Py_EQ);
@@ -4660,8 +4658,7 @@ object_richcompare(PyObject *self, PyObject *other, int op)
         break;
 
     default:
-        res = Py_NotImplemented;
-        Py_INCREF(res);
+        res = Py_RefNotImplemented();
         break;
     }
 
@@ -4972,8 +4969,7 @@ object_getstate_default(PyObject *obj, int required)
     }
 
     if (_PyObject_IsInstanceDictEmpty(obj)) {
-        state = Py_None;
-        Py_INCREF(state);
+        state = Py_RefNone();
     }
     else {
         state = PyObject_GenericGetDict(obj, NULL);
@@ -5231,8 +5227,7 @@ _PyObject_GetItemsIter(PyObject *obj, PyObject **listitems,
     }
 
     if (!PyList_Check(obj)) {
-        *listitems = Py_None;
-        Py_INCREF(*listitems);
+        *listitems = Py_RefNone();
     }
     else {
         *listitems = PyObject_GetIter(obj);
@@ -5241,8 +5236,7 @@ _PyObject_GetItemsIter(PyObject *obj, PyObject **listitems,
     }
 
     if (!PyDict_Check(obj)) {
-        *dictitems = Py_None;
-        Py_INCREF(*dictitems);
+        *dictitems = Py_RefNone();
     }
     else {
         PyObject *items = PyObject_CallMethodNoArgs(obj, &_Py_ID(items));

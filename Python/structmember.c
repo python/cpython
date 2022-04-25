@@ -49,8 +49,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         break;
     case T_STRING:
         if (*(char**)addr == NULL) {
-            Py_INCREF(Py_None);
-            v = Py_None;
+            v = Py_RefNone();
         }
         else
             v = PyUnicode_FromString(*(char**)addr);
@@ -85,8 +84,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         v = PyLong_FromUnsignedLongLong(*(unsigned long long *)addr);
         break;
     case T_NONE:
-        v = Py_None;
-        Py_INCREF(v);
+        v = Py_RefNone();
         break;
     default:
         PyErr_SetString(PyExc_SystemError, "bad memberdescr type");

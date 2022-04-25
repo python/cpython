@@ -597,8 +597,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
         goto end;
     }
     if (incache > 0) {
-        result = Py_True;
-        Py_INCREF(result);
+        result = Py_RefTrue();
         goto end;
     }
     subtype = (PyObject *)Py_TYPE(instance);
@@ -609,8 +608,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
                 goto end;
             }
             if (incache > 0) {
-                result = Py_False;
-                Py_INCREF(result);
+                result = Py_RefFalse();
                 goto end;
             }
         }
