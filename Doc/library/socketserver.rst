@@ -176,7 +176,7 @@ partially finished requests and to use :mod:`selectors` to decide which
 request to work on next (or whether to handle a new incoming request).  This is
 particularly important for stream services where each client can potentially be
 connected for a long time (if threads or subprocesses cannot be used).  See
-:mod:`asyncio` for another way to manage this.
+:mod:`asyncore` for another way to manage this.
 
 .. XXX should data and methods be intermingled, or separate?
    how should the distinction between class and instance variables be drawn?

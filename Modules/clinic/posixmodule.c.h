@@ -1317,6 +1317,38 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
+PyDoc_STRVAR(os__path_normpath__doc__,
+"_path_normpath($module, /, path)\n"
+"--\n"
+"\n"
+"Basic path normalization.");
+
+#define OS__PATH_NORMPATH_METHODDEF    \
+    {"_path_normpath", (PyCFunction)(void(*)(void))os__path_normpath, METH_FASTCALL|METH_KEYWORDS, os__path_normpath__doc__},
+
+static PyObject *
+os__path_normpath_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__path_normpath(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_path_normpath", 0};
+    PyObject *argsbuf[1];
+    PyObject *path;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    path = args[0];
+    return_value = os__path_normpath_impl(module, path);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(os_mkdir__doc__,
 "mkdir($module, /, path, mode=511, *, dir_fd=None)\n"
 "--\n"
@@ -1799,6 +1831,8 @@ exit:
 
 #endif /* defined(HAVE_SYSTEM) && !defined(MS_WINDOWS) */
 
+#if defined(HAVE_UMASK)
+
 PyDoc_STRVAR(os_umask__doc__,
 "umask($module, mask, /)\n"
 "--\n"
@@ -1826,6 +1860,8 @@ os_umask(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#endif /* defined(HAVE_UMASK) */
 
 PyDoc_STRVAR(os_unlink__doc__,
 "unlink($module, /, path, *, dir_fd=None)\n"
@@ -8780,6 +8816,10 @@ exit:
     #define OS_SYSTEM_METHODDEF
 #endif /* !defined(OS_SYSTEM_METHODDEF) */
 
+#ifndef OS_UMASK_METHODDEF
+    #define OS_UMASK_METHODDEF
+#endif /* !defined(OS_UMASK_METHODDEF) */
+
 #ifndef OS_UNAME_METHODDEF
     #define OS_UNAME_METHODDEF
 #endif /* !defined(OS_UNAME_METHODDEF) */
@@ -9263,4 +9303,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=65a85d7d3f2c487e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d95ba7b0b9c52685 input=a9049054013a1b77]*/

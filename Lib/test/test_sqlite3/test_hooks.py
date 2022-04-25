@@ -24,7 +24,7 @@ import unittest
 import sqlite3 as sqlite
 
 from test.support.os_helper import TESTFN, unlink
-from .test_userfunctions import with_tracebacks
+from test.test_sqlite3.test_userfunctions import with_tracebacks
 
 class CollationTests(unittest.TestCase):
     def test_create_collation_not_string(self):

@@ -181,6 +181,7 @@ You can get the information from the list type:
      '__ge__',
      '__getattribute__',
      '__getitem__',
+     '__getstate__',
      '__gt__',
      '__hash__',
      '__iadd__',

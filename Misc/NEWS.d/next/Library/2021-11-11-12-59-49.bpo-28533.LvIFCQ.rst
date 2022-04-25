@@ -1,3 +1,0 @@
-Remove the ``smtpd`` module, deprecated in Python 3.6: the `aiosmtpd
-<https://aiosmtpd.readthedocs.io/>`__ module can be used instead, it is based
-on asyncio. Patch by Victor Stinner.

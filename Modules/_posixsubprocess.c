@@ -685,6 +685,12 @@ do_fork_exec(char *const exec_array[],
         assert(preexec_fn == Py_None);
 
         pid = vfork();
+        if (pid == -1) {
+            /* If vfork() fails, fall back to using fork(). When it isn't
+             * allowed in a process by the kernel, vfork can return -1
+             * with errno EINVAL. https://bugs.python.org/issue47151. */
+            pid = fork();
+        }
     } else
 #endif
     {

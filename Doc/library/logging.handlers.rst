@@ -234,6 +234,19 @@ need to override.
          return the same output every time for a given input, otherwise the
          rollover behaviour may not work as expected.
 
+         It's also worth noting that care should be taken when using a namer to
+         preserve certain attributes in the filename which are used during rotation.
+         For example, :class:`RotatingFileHandler` expects to have a set of log files
+         whose names contain successive integers, so that rotation works as expected,
+         and :class:`TimedRotatingFileHandler` deletes old log files (based on the
+         ``backupCount`` parameter passed to the handler's initializer) by determining
+         the oldest files to delete. For this to happen, the filenames should be
+         sortable using the date/time portion of the filename, and a namer needs to
+         respect this. (If a namer is wanted that doesn't respect this scheme, it will
+         need to be used in a subclass of :class:`TimedRotatingFileHandler` which
+         overrides the :meth:`~TimedRotatingFileHandler.getFilesToDelete` method to
+         fit in with the custom naming scheme.)
+
       .. versionadded:: 3.3
 
 
@@ -443,6 +456,10 @@ timed intervals.
 
       Outputs the record to the file, catering for rollover as described above.
 
+   .. method:: getFilesToDelete()
+
+      Returns a list of filenames which should be deleted as part of rollover. These
+      are the absolute paths of the oldest backup log files written by the handler.
 
 .. _socket-handler:
 

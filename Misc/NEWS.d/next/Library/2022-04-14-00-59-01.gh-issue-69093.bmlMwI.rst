@@ -1,0 +1,2 @@
+Add :term:`context manager` support to :class:`sqlite3.Blob`.
+Patch by Aviv Palivoda and Erlend E. Aasland.
