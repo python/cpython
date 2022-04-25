@@ -14,17 +14,12 @@ bool_repr(PyObject *self)
 
 /* Function to return a bool from a C long */
 
+#undef PyBool_FromLong
 PyObject *PyBool_FromLong(long ok)
 {
-    PyObject *result;
-
-    if (ok)
-        result = Py_True;
-    else
-        result = Py_False;
-    Py_INCREF(result);
-    return result;
+    return _PyBool_FromLong(ok);
 }
+#define PyBool_FromLong(ok) _PyBool_FromLong(ok)
 
 /* We define bool_new to always return either Py_True or Py_False */
 

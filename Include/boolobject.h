@@ -48,8 +48,15 @@ PyAPI_FUNC(int) Py_IsFalse(PyObject *x);
 #define Py_RETURN_TRUE return Py_RefTrue()
 #define Py_RETURN_FALSE return Py_RefFalse()
 
-/* Function to return a bool from a C long */
+// Function to return a bool from a C long
+// The function cannot return NULL.
 PyAPI_FUNC(PyObject *) PyBool_FromLong(long);
+
+static inline PyObject *_PyBool_FromLong(long ok)
+{
+    return Py_NewRef(ok ? Py_True : Py_False);
+}
+#define PyBool_FromLong(ok) _PyBool_FromLong(ok)
 
 #ifdef __cplusplus
 }
