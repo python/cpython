@@ -14,7 +14,8 @@ PyAPI_FUNC(int) _PyTuple_Resize(PyObject **, Py_ssize_t);
 PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
 
 /* Cast argument to PyTupleObject* type. */
-#define _PyTuple_CAST(op) (assert(PyTuple_Check(op)), (PyTupleObject *)(op))
+#define _PyTuple_CAST(op) \
+    (assert(PyTuple_Check(op)), _Py_reinterpret_cast(PyTupleObject*, (op)))
 
 // Macros and static inline functions, trading safety for speed
 
