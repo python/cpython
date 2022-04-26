@@ -148,17 +148,22 @@ def splitdrive(p):
             colon = b':'
             prefix = b'\\\\?\\'
             unc_prefix = b'UNC\\'
+            vol_prefix = b'VOLUME'
         else:
             sep = '\\'
             altsep = '/'
             colon = ':'
             prefix = '\\\\?\\'
             unc_prefix = 'UNC\\'
+            vol_prefix = 'VOLUME'
         normp = p.replace(altsep, sep)
         if normp[:4] == prefix:
-            if normp[4:8] == unc_prefix:
+            if normp[4:8].upper() == unc_prefix:
                 # e.g. \\?\UNC\server\share\dir\file
                 start = 8
+            elif normp[4:10].upper() == vol_prefix:
+                # e.g. \\?\VOLUME{...}\dir\file
+                start = 2
             elif normp[5:6] == colon and not normp[6:7].strip(sep):
                 # e.g. \\?\c:\dir\file
                 return p[:6], p[6:]
