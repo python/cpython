@@ -2382,6 +2382,9 @@ def is_typeddict(tp):
     return isinstance(tp, _TypedDictMeta)
 
 
+_ASSERT_NEVER_REPR_MAX_LENGTH = 100
+
+
 def assert_never(arg: Never, /) -> Never:
     """Statically assert that a line of code is unreachable.
 
@@ -2402,7 +2405,10 @@ def assert_never(arg: Never, /) -> Never:
     At runtime, this throws an exception when called.
 
     """
-    raise AssertionError("Expected code to be unreachable")
+    value = repr(arg)
+    if len(value) > _ASSERT_NEVER_REPR_MAX_LENGTH:
+        value = value[:_ASSERT_NEVER_REPR_MAX_LENGTH] + '...'
+    raise AssertionError(f"Expected code to be unreachable, but got: {value}")
 
 
 def no_type_check(arg):
