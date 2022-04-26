@@ -23,16 +23,17 @@
 
 #include <stdbool.h>
 
+// Need _PyOpcode_RelativeJump of pycore_opcode.h
+#define NEED_OPCODE_TABLES
+
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
-#include "pycore_compile.h"       // _PyFuture_FromAST()
 #include "pycore_code.h"          // _PyCode_New()
-#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_compile.h"       // _PyFuture_FromAST()
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_opcode.h"        // _PyOpcode_Caches
+#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_symtable.h"      // PySTEntryObject
-
-#define NEED_OPCODE_TABLES
-#include "opcode.h"               // EXTENDED_ARG
 
 
 #define DEFAULT_BLOCK_SIZE 16
