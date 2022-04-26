@@ -1528,7 +1528,6 @@ class ProcessTestCase(BaseTestCase):
         self.assertIsInstance(subprocess.Popen[bytes], types.GenericAlias)
         self.assertIsInstance(subprocess.CompletedProcess[str], types.GenericAlias)
 
-
 class RunFuncTestCase(BaseTestCase):
     def run_python(self, code, **kwargs):
         """Run Python code in a subprocess using subprocess.run"""
