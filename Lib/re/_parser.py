@@ -183,10 +183,6 @@ class SubPattern:
                     j = max(j, h)
                 lo = lo + i
                 hi = hi + j
-            elif op is CALL:
-                i, j = av.getwidth()
-                lo = lo + i
-                hi = hi + j
             elif op is ATOMIC_GROUP:
                 i, j = av.getwidth()
                 lo = lo + i
