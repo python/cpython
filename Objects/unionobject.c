@@ -306,7 +306,8 @@ _Py_union_type_or(PyObject* self, PyObject* other)
 
     if (_PyUnion_Check(self) && _PyUnion_Check(other)) {
         tuple = merge_union_and_union(self, other);
-    } else if (_PyUnion_Check(self)) {
+    }
+    else if (_PyUnion_Check(self)) {
         tuple = merge_union_and_obj(self, other);
     } else if (_PyUnion_Check(other)) {
         tuple = merge_obj_and_union(self, other);
