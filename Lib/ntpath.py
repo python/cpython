@@ -148,7 +148,7 @@ def splitdrive(p):
             colon = b':'
             prefix = b'\\\\?\\'
             unc_prefix = b'UNC\\'
-            vol_prefix = b'VOLUME'
+            vol_prefix = b'VOLUME{'
         else:
             sep = '\\'
             altsep = '/'
