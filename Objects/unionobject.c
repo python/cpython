@@ -229,13 +229,6 @@ _Py_union_type_or(PyObject* self, PyObject* other)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-//     if (self == Py_None) {
-//         self = (PyObject *)&_PyNone_Type;
-//     }
-//     if (other == Py_None) {
-//         other = (PyObject *)&_PyNone_Type;
-//     }
-
     Py_ssize_t size1, size2;
     PyObject **items1 = get_types(&self, &size1);
     PyObject **items2 = get_types(&other, &size2);
