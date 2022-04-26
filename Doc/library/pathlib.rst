@@ -914,7 +914,7 @@ call fails (for example because the path doesn't exist).
 
    The children are yielded in arbitrary order, and the special entries
    ``'.'`` and ``'..'`` are not included.  If a file is removed from or added
-   to the directory after creating the iterator, whether an path object for
+   to the directory after creating the iterator, whether a path object for
    that file be included is unspecified.
 
 .. method:: Path.lchmod(mode)

@@ -42,7 +42,6 @@ PyAPI_FUNC(int) _PyDict_DelItem_KnownHash(PyObject *mp, PyObject *key,
                                           Py_hash_t hash);
 PyAPI_FUNC(int) _PyDict_DelItemIf(PyObject *mp, PyObject *key,
                                   int (*predicate)(PyObject *value));
-PyDictKeysObject *_PyDict_NewKeysForClass(void);
 PyAPI_FUNC(int) _PyDict_Next(
     PyObject *mp, Py_ssize_t *pos, PyObject **key, PyObject **value, Py_hash_t *hash);
 
@@ -53,11 +52,8 @@ PyAPI_FUNC(int) _PyDict_ContainsId(PyObject *, _Py_Identifier *);
 PyAPI_FUNC(PyObject *) _PyDict_NewPresized(Py_ssize_t minused);
 PyAPI_FUNC(void) _PyDict_MaybeUntrack(PyObject *mp);
 PyAPI_FUNC(int) _PyDict_HasOnlyStringKeys(PyObject *mp);
-Py_ssize_t _PyDict_KeysSize(PyDictKeysObject *keys);
 PyAPI_FUNC(Py_ssize_t) _PyDict_SizeOf(PyDictObject *);
 PyAPI_FUNC(PyObject *) _PyDict_Pop(PyObject *, PyObject *, PyObject *);
-PyObject *_PyDict_Pop_KnownHash(PyObject *, PyObject *, Py_hash_t, PyObject *);
-PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 #define _PyDict_HasSplitTable(d) ((d)->ma_values != NULL)
 
 /* Like PyDict_Merge, but override can be 0, 1 or 2.  If override is 0,
@@ -71,10 +67,6 @@ PyAPI_FUNC(int) _PyDict_SetItemId(PyObject *dp, _Py_Identifier *key, PyObject *i
 PyAPI_FUNC(int) _PyDict_DelItemId(PyObject *mp, _Py_Identifier *key);
 PyAPI_FUNC(void) _PyDict_DebugMallocStats(FILE *out);
 
-int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr, PyObject *name, PyObject *value);
-PyObject *_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
-Py_ssize_t _PyDict_GetItemHint(PyDictObject *, PyObject *, Py_ssize_t, PyObject **);
-
 /* _PyDictView */
 
 typedef struct {
@@ -84,9 +76,3 @@ typedef struct {
 
 PyAPI_FUNC(PyObject *) _PyDictView_New(PyObject *, PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyDictView_Intersect(PyObject* self, PyObject *other);
-
-/* Gets a version number unique to the current state of the keys of dict, if possible.
- * Returns the version number, or zero if it was not possible to get a version number. */
-uint32_t _PyDictKeys_GetVersionForCurrentState(PyDictKeysObject *dictkeys);
-
-Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);

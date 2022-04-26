@@ -692,7 +692,7 @@ class build_ext(Command):
         suffix = '_' + ext.name.split('.')[-1]
         try:
             # Unicode module name support as defined in PEP-489
-            # https://www.python.org/dev/peps/pep-0489/#export-hook-name
+            # https://peps.python.org/pep-0489/#export-hook-name
             suffix.encode('ascii')
         except UnicodeEncodeError:
             suffix = 'U' + suffix.encode('punycode').replace(b'-', b'_').decode('ascii')

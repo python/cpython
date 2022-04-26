@@ -15,8 +15,9 @@
 /* End includes */
 
 /* Empty initializer for deepfrozen modules */
-void _Py_Deepfreeze_Init(void)
+int _Py_Deepfreeze_Init(void)
 {
+    return 0;
 }
 /* Empty finalizer for deepfrozen modules */
 void

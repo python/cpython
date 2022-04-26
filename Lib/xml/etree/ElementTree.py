@@ -918,13 +918,9 @@ def _serialize_xml(write, elem, qnames, namespaces,
     if elem.tail:
         write(_escape_cdata(elem.tail))
 
-HTML_EMPTY = ("area", "base", "basefont", "br", "col", "frame", "hr",
-              "img", "input", "isindex", "link", "meta", "param")
-
-try:
-    HTML_EMPTY = set(HTML_EMPTY)
-except NameError:
-    pass
+HTML_EMPTY = {"area", "base", "basefont", "br", "col", "embed", "frame", "hr",
+              "img", "input", "isindex", "link", "meta", "param", "source",
+              "track", "wbr"}
 
 def _serialize_html(write, elem, qnames, namespaces, **kwargs):
     tag = elem.tag
@@ -1248,8 +1244,14 @@ def iterparse(source, events=None, parser=None):
     # Use the internal, undocumented _parser argument for now; When the
     # parser argument of iterparse is removed, this can be killed.
     pullparser = XMLPullParser(events=events, _parser=parser)
-    def iterator():
+
+    def iterator(source):
+        close_source = False
         try:
+            if not hasattr(source, "read"):
+                source = open(source, "rb")
+                close_source = True
+            yield None
             while True:
                 yield from pullparser.read_events()
                 # load event buffer
@@ -1265,16 +1267,12 @@ def iterparse(source, events=None, parser=None):
                 source.close()
 
     class IterParseIterator(collections.abc.Iterator):
-        __next__ = iterator().__next__
+        __next__ = iterator(source).__next__
     it = IterParseIterator()
     it.root = None
     del iterator, IterParseIterator
 
-    close_source = False
-    if not hasattr(source, "read"):
-        source = open(source, "rb")
-        close_source = True
-
+    next(it)
     return it
 
 

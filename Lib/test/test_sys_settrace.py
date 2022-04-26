@@ -8,6 +8,7 @@ import gc
 from functools import wraps
 import asyncio
 
+support.requires_working_socket(module=True)
 
 class tracecontext:
     """Context manager that traces its enter and exit."""

@@ -25,6 +25,11 @@ for name in opcode.opname[1:]:
             pass
     opname.append(name)
 
+# opcode_name --> opcode
+# Sort alphabetically.
+opmap = {name: i for i, name in enumerate(opname)}
+opmap = dict(sorted(opmap.items()))
+
 TOTAL = "specialization.deferred", "specialization.hit", "specialization.miss", "execution_count"
 
 def print_specialization_stats(name, family_stats, defines):
@@ -281,16 +286,16 @@ def get_total(opcode_stats):
     return total
 
 def emit_pair_counts(opcode_stats, total):
+    pair_counts = []
+    for i, opcode_stat in enumerate(opcode_stats):
+        if i == 0:
+            continue
+        for key, value in opcode_stat.items():
+            if key.startswith("pair_count"):
+                x, _, _ = key[11:].partition("]")
+                if value:
+                    pair_counts.append((value, (i, int(x))))
     with Section("Pair counts", summary="Pair counts for top 100 pairs"):
-        pair_counts = []
-        for i, opcode_stat in enumerate(opcode_stats):
-            if i == 0:
-                continue
-            for key, value in opcode_stat.items():
-                if key.startswith("pair_count"):
-                    x, _, _ = key[11:].partition("]")
-                    if value:
-                        pair_counts.append((value, (i, int(x))))
         pair_counts.sort(reverse=True)
         cumulative = 0
         rows = []
@@ -302,6 +307,36 @@ def emit_pair_counts(opcode_stats, total):
         emit_table(("Pair", "Count:", "Self:", "Cumulative:"),
             rows
         )
+    with Section("Predecessor/Successor Pairs", summary="Top 3 predecessors and successors of each opcode"):
+        predecessors = collections.defaultdict(collections.Counter)
+        successors = collections.defaultdict(collections.Counter)
+        total_predecessors = collections.Counter()
+        total_successors = collections.Counter()
+        for count, (first, second) in pair_counts:
+            if count:
+                predecessors[second][first] = count
+                successors[first][second] = count
+                total_predecessors[second] += count
+                total_successors[first] += count
+        for name, i in opmap.items():
+            total1 = total_predecessors[i]
+            total2 = total_successors[i]
+            if total1 == 0 and total2 == 0:
+                continue
+            pred_rows = succ_rows = ()
+            if total1:
+                pred_rows = [(opname[pred], count, f"{count/total1:.1%}")
+                             for (pred, count) in predecessors[i].most_common(3)]
+            if total2:
+                succ_rows = [(opname[succ], count, f"{count/total2:.1%}")
+                             for (succ, count) in successors[i].most_common(3)]
+            with Section(name, 3, f"Successors and predecessors for {name}"):
+                emit_table(("Predecessors", "Count:", "Percentage:"),
+                    pred_rows
+                )
+                emit_table(("Successors", "Count:", "Percentage:"),
+                    succ_rows
+                )
 
 def main():
     stats = gather_stats()

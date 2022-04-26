@@ -20,6 +20,7 @@ import logging
 import subprocess
 import struct
 import operator
+import pathlib
 import pickle
 import weakref
 import warnings
@@ -73,6 +74,12 @@ except ImportError:
     msvcrt = None
 
 
+if support.check_sanitizer(address=True):
+    # bpo-45200: Skip multiprocessing tests if Python is built with ASAN to
+    # work around a libasan race condition: dead lock in pthread_create().
+    raise unittest.SkipTest("libasan has a pthread_create() dead lock")
+
+
 def latin(s):
     return s.encode('latin')
 
@@ -112,6 +119,9 @@ if CHECK_TIMINGS:
     TIMEOUT1, TIMEOUT2, TIMEOUT3 = 0.82, 0.35, 1.4
 else:
     TIMEOUT1, TIMEOUT2, TIMEOUT3 = 0.1, 0.1, 0.1
+
+# BaseManager.shutdown_timeout
+SHUTDOWN_TIMEOUT = support.SHORT_TIMEOUT
 
 HAVE_GETVALUE = not getattr(_multiprocessing,
                             'HAVE_BROKEN_SEM_GETVALUE', False)
@@ -246,6 +256,45 @@ class _TestProcess(BaseTestCase):
         self.assertTrue(len(authkey) > 0)
         self.assertEqual(current.ident, os.getpid())
         self.assertEqual(current.exitcode, None)
+
+    def test_set_executable(self):
+        if self.TYPE == 'threads':
+            self.skipTest(f'test not appropriate for {self.TYPE}')
+        paths = [
+            sys.executable,               # str
+            sys.executable.encode(),      # bytes
+            pathlib.Path(sys.executable)  # os.PathLike
+        ]
+        for path in paths:
+            self.set_executable(path)
+            p = self.Process()
+            p.start()
+            p.join()
+            self.assertEqual(p.exitcode, 0)
+
+    def test_args_argument(self):
+        # bpo-45735: Using list or tuple as *args* in constructor could
+        # achieve the same effect.
+        args_cases = (1, "str", [1], (1,))
+        args_types = (list, tuple)
+
+        test_cases = itertools.product(args_cases, args_types)
+
+        for args, args_type in test_cases:
+            with self.subTest(args=args, args_type=args_type):
+                q = self.Queue(1)
+                # pass a tuple or list as args
+                p = self.Process(target=self._test_args, args=args_type((q, args)))
+                p.daemon = True
+                p.start()
+                child_args = q.get()
+                self.assertEqual(child_args, args)
+                p.join()
+                close_queue(q)
+
+    @classmethod
+    def _test_args(cls, q, arg):
+        q.put(arg)
 
     def test_daemon_argument(self):
         if self.TYPE == "threads":
@@ -2867,7 +2916,7 @@ class _TestMyManager(BaseTestCase):
     ALLOWED_TYPES = ('manager',)
 
     def test_mymanager(self):
-        manager = MyManager()
+        manager = MyManager(shutdown_timeout=SHUTDOWN_TIMEOUT)
         manager.start()
         self.common(manager)
         manager.shutdown()
@@ -2878,7 +2927,8 @@ class _TestMyManager(BaseTestCase):
         self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
 
     def test_mymanager_context(self):
-        with MyManager() as manager:
+        manager = MyManager(shutdown_timeout=SHUTDOWN_TIMEOUT)
+        with manager:
             self.common(manager)
         # bpo-30356: BaseManager._finalize_manager() sends SIGTERM
         # to the manager process if it takes longer than 1 second to stop,
@@ -2886,7 +2936,7 @@ class _TestMyManager(BaseTestCase):
         self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
 
     def test_mymanager_context_prestarted(self):
-        manager = MyManager()
+        manager = MyManager(shutdown_timeout=SHUTDOWN_TIMEOUT)
         manager.start()
         with manager:
             self.common(manager)
@@ -2948,8 +2998,8 @@ class _TestRemoteManager(BaseTestCase):
     @classmethod
     def _putter(cls, address, authkey):
         manager = QueueManager2(
-            address=address, authkey=authkey, serializer=SERIALIZER
-            )
+            address=address, authkey=authkey, serializer=SERIALIZER,
+            shutdown_timeout=SHUTDOWN_TIMEOUT)
         manager.connect()
         queue = manager.get_queue()
         # Note that xmlrpclib will deserialize object as a list not a tuple
@@ -2959,8 +3009,8 @@ class _TestRemoteManager(BaseTestCase):
         authkey = os.urandom(32)
 
         manager = QueueManager(
-            address=(socket_helper.HOST, 0), authkey=authkey, serializer=SERIALIZER
-            )
+            address=(socket_helper.HOST, 0), authkey=authkey, serializer=SERIALIZER,
+            shutdown_timeout=SHUTDOWN_TIMEOUT)
         manager.start()
         self.addCleanup(manager.shutdown)
 
@@ -2969,8 +3019,8 @@ class _TestRemoteManager(BaseTestCase):
         p.start()
 
         manager2 = QueueManager2(
-            address=manager.address, authkey=authkey, serializer=SERIALIZER
-            )
+            address=manager.address, authkey=authkey, serializer=SERIALIZER,
+            shutdown_timeout=SHUTDOWN_TIMEOUT)
         manager2.connect()
         queue = manager2.get_queue()
 
@@ -2990,7 +3040,8 @@ class _TestManagerRestart(BaseTestCase):
     @classmethod
     def _putter(cls, address, authkey):
         manager = QueueManager(
-            address=address, authkey=authkey, serializer=SERIALIZER)
+            address=address, authkey=authkey, serializer=SERIALIZER,
+            shutdown_timeout=SHUTDOWN_TIMEOUT)
         manager.connect()
         queue = manager.get_queue()
         queue.put('hello world')
@@ -2998,7 +3049,8 @@ class _TestManagerRestart(BaseTestCase):
     def test_rapid_restart(self):
         authkey = os.urandom(32)
         manager = QueueManager(
-            address=(socket_helper.HOST, 0), authkey=authkey, serializer=SERIALIZER)
+            address=(socket_helper.HOST, 0), authkey=authkey,
+            serializer=SERIALIZER, shutdown_timeout=SHUTDOWN_TIMEOUT)
         try:
             srvr = manager.get_server()
             addr = srvr.address
@@ -3018,7 +3070,8 @@ class _TestManagerRestart(BaseTestCase):
                 manager.shutdown()
 
         manager = QueueManager(
-            address=addr, authkey=authkey, serializer=SERIALIZER)
+            address=addr, authkey=authkey, serializer=SERIALIZER,
+            shutdown_timeout=SHUTDOWN_TIMEOUT)
         try:
             manager.start()
             self.addCleanup(manager.shutdown)
@@ -3029,7 +3082,8 @@ class _TestManagerRestart(BaseTestCase):
             # (sporadic failure on buildbots)
             time.sleep(1.0)
             manager = QueueManager(
-                address=addr, authkey=authkey, serializer=SERIALIZER)
+                address=addr, authkey=authkey, serializer=SERIALIZER,
+                shutdown_timeout=SHUTDOWN_TIMEOUT)
             if hasattr(manager, "shutdown"):
                 self.addCleanup(manager.shutdown)
 
@@ -5749,6 +5803,7 @@ class ProcessesMixin(BaseMixin):
     current_process = staticmethod(multiprocessing.current_process)
     parent_process = staticmethod(multiprocessing.parent_process)
     active_children = staticmethod(multiprocessing.active_children)
+    set_executable = staticmethod(multiprocessing.set_executable)
     Pool = staticmethod(multiprocessing.Pool)
     Pipe = staticmethod(multiprocessing.Pipe)
     Queue = staticmethod(multiprocessing.Queue)

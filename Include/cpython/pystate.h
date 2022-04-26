@@ -2,8 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#include <stdbool.h>
-
 
 PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_RequireIDRef(PyInterpreterState *, int);
@@ -35,7 +33,9 @@ typedef struct {
     PyCodeAddressRange bounds; // Only valid if code != NULL.
 } PyTraceInfo;
 
-typedef struct _cframe {
+// Internal structure: you should not use it directly, but use public functions
+// like PyThreadState_EnterTracing() and PyThreadState_LeaveTracing().
+typedef struct _PyCFrame {
     /* This struct will be threaded through the C stack
      * allowing fast access to per-thread state that needs
      * to be accessed quickly by the interpreter, but can
@@ -46,11 +46,11 @@ typedef struct _cframe {
      * discipline and make sure that instances of this struct cannot
      * accessed outside of their lifetime.
      */
-    int use_tracing;
+    uint8_t use_tracing;  // 0 or 255 (or'ed into opcode, hence 8-bit type)
     /* Pointer to the currently executing frame (it can be NULL) */
-    struct _interpreter_frame *current_frame;
-    struct _cframe *previous;
-} CFrame;
+    struct _PyInterpreterFrame *current_frame;
+    struct _PyCFrame *previous;
+} _PyCFrame;
 
 typedef struct _err_stackitem {
     /* This struct represents a single execution context where we might
@@ -93,7 +93,7 @@ struct _ts {
     int _initialized;
 
     /* Was this thread state statically allocated? */
-    bool _static;
+    int _static;
 
     int recursion_remaining;
     int recursion_limit;
@@ -103,10 +103,11 @@ struct _ts {
        This is to prevent the actual trace/profile code from being recorded in
        the trace/profile. */
     int tracing;
+    int tracing_what; /* The event currently being traced, if any. */
 
-    /* Pointer to current CFrame in the C stack frame of the currently,
+    /* Pointer to current _PyCFrame in the C stack frame of the currently,
      * or most recently, executing _PyEval_EvalFrameDefault. */
-    CFrame *cframe;
+    _PyCFrame *cframe;
 
     Py_tracefunc c_profilefunc;
     Py_tracefunc c_tracefunc;
@@ -198,7 +199,7 @@ struct _ts {
     _PyErr_StackItem exc_state;
 
     /* The bottom-most frame on the stack. */
-    CFrame root_cframe;
+    _PyCFrame root_cframe;
 };
 
 
@@ -260,7 +261,7 @@ PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
 /* Frame evaluation API */
 
-typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, struct _interpreter_frame *, int);
+typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, struct _PyInterpreterFrame *, int);
 
 PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
     PyInterpreterState *interp);
