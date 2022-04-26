@@ -126,7 +126,7 @@ class WasmTerminal {
 
     handleTermData = (data) => {
         const ord = data.charCodeAt(0);
-        data = data.replace(/\r|\n/g, "\r\n")  // Normalize line endings
+        data = data.replace(/\r(?!\n)/g, "\n")  // Convert lone CRs to LF
 
         // Handle pasted data
         if (data.length > 1 && data.includes("\n")) {
