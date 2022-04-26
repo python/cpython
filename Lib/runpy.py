@@ -209,13 +209,15 @@ def run_module(mod_name, init_globals=None,
        globals dictionary before the code is executed.
 
        run_name -- if not None, this will be used for setting __name__;
-       otherwise, mod_name will be used for __name__.
+       otherwise, __name__ will be set to mod_name + '__main__' if the
+       named module is a package and to just mod_name otherwise.
 
        alter_sys -- if True, sys.argv[0] is updated with the value of
        __file__ and sys.modules[__name__] is updated with a temporary
-       module object for the module being executed.
+       module object for the module being executed. Both are
+       restored to their original values before the function returns.
 
-       Returns the resulting top level namespace dictionary.
+       Returns the resulting module globals dictionary.
     """
     mod_name, mod_spec, code = _get_module_details(mod_name)
     if run_name is None:
@@ -270,7 +272,7 @@ def run_path(path_name, init_globals=None, run_name=None):
        run_name -- if not None, this will be used to set __name__;
        otherwise, '<run_path>' will be used for __name__.
 
-       Returns the resulting top level namespace dictionary.
+       Returns the resulting module globals dictionary.
     """
     if run_name is None:
         run_name = "<run_path>"
