@@ -138,7 +138,8 @@ union_richcompare(PyObject *a, PyObject *b, int op)
 }
 
 static int
-is_same(PyObject* left, PyObject* right) {
+is_same(PyObject* left, PyObject* right)
+{
     int is_ga = _PyGenericAlias_Check(left) && _PyGenericAlias_Check(right);
     return is_ga ? PyObject_RichCompareBool(left, right, Py_EQ) : left == right;
 }
