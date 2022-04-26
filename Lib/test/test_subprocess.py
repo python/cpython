@@ -1709,7 +1709,6 @@ class RunFuncTestCase(BaseTestCase):
         # probes the subprocess module for the existence and value of this
         # attribute in 3.10.5.
         self.assertTrue(subprocess._USE_VFORK)  # The default value regardless.
-        self.assertEqual(self.run_python("pass").returncode, 0)
         with mock.patch.object(subprocess, "_USE_VFORK", False):
             self.assertEqual(self.run_python("pass").returncode, 0,
                              msg="False _USE_VFORK failed")
