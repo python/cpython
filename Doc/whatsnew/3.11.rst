@@ -1069,6 +1069,7 @@ Deprecated
   * :mod:`sndhdr`
   * :mod:`spwd`
   * :mod:`sunau`
+  * :mod:`telnetlib`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
