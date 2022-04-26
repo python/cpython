@@ -3,6 +3,7 @@
 
 .. module:: mailcap
    :synopsis: Mailcap file handling.
+   :deprecated:
 
 **Source code:** :source:`Lib/mailcap.py`
 
