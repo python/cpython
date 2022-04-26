@@ -161,7 +161,7 @@ def splitdrive(p):
             if normp[4:8].upper() == unc_prefix:
                 # e.g. \\?\UNC\server\share\dir\file
                 start = 8
-            elif normp[4:10].upper() == vol_prefix:
+            elif normp[4:11].upper() == vol_prefix:
                 # e.g. \\?\VOLUME{...}\dir\file
                 start = 2
             elif normp[5:6] == colon and not normp[6:7].strip(sep):
