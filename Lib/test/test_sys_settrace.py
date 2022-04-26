@@ -2437,7 +2437,7 @@ class TestExtendedArgs(unittest.TestCase):
     def setUp(self):
         self.addCleanup(sys.settrace, sys.gettrace())
         sys.settrace(None)
-    
+
     def count_traces(self, func):
         # warmup
         for _ in range(20):
@@ -2447,7 +2447,7 @@ class TestExtendedArgs(unittest.TestCase):
         def trace(frame, event, arg):
             counts[event] += 1
             return trace
-        
+
         sys.settrace(trace)
         func()
         sys.settrace(None)
