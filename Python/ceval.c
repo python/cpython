@@ -130,7 +130,7 @@ lltrace_instruction(_PyInterpreterFrame *frame,
                     PyObject **stack_pointer,
                     _Py_CODEUNIT *next_instr)
 {
-    dump_stack(frame, stack_pointer);
+    //dump_stack(frame, stack_pointer);
     int oparg = _Py_OPARG(*next_instr);
     int opcode = _Py_OPCODE(*next_instr);
     const char *opname = _PyOpcode_OpName[opcode];
@@ -5623,6 +5623,15 @@ handle_eval_breaker:
         }
 
         TARGET(EXTENDED_ARG) {
+            assert(oparg);
+            oparg <<= 8;
+            oparg |= _Py_OPARG(*next_instr);
+            opcode = _PyOpcode_Deopt[_Py_OPCODE(*next_instr)];
+            PRE_DISPATCH_GOTO();
+            DISPATCH_GOTO();
+        }
+
+        TARGET(EXTENDED_ARG_QUICK) {
             assert(oparg);
             oparg <<= 8;
             oparg |= _Py_OPARG(*next_instr);
