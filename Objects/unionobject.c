@@ -162,12 +162,8 @@ args_contains(PyObject *args, PyObject *obj)
     for (int j = 0; j < size; j++) {
         PyObject *left_arg = PyTuple_GET_ITEM(args, j);
         int is_duplicate = is_same(left_arg, obj);
-
-        if (is_duplicate < 0) {
-            return -1;
-        }
         if (is_duplicate) {
-            return 1;
+            return is_duplicate;
         }
     }
 
@@ -209,10 +205,7 @@ merge_union_and_union(PyObject *left, PyObject *right)
         }
     }
 
-    if (_PyTuple_Resize(&tuple, pos) < 0) {
-        return NULL;
-    }
-
+    _PyTuple_Resize(&tuple, pos);
     return tuple;
 }
 
@@ -279,10 +272,7 @@ merge_obj_and_union(PyObject *left, PyObject *right)
         }
     }
 
-    if (_PyTuple_Resize(&tuple, pos) < 0) {
-        return NULL;
-    }
-
+    _PyTuple_Resize(&tuple, pos);
     return tuple;
 }
 
