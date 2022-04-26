@@ -264,13 +264,14 @@ default values. The arguments that are most commonly needed are:
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
    are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
-   integer), an existing file object, and ``None``.  :data:`PIPE` indicates
-   that a new pipe to the child should be created.  :data:`DEVNULL` indicates
-   that the special file :data:`os.devnull` will be used.  With the default
-   settings of ``None``, no redirection will occur; the child's file handles
-   will be inherited from the parent.  Additionally, *stderr* can be
-   :data:`STDOUT`, which indicates that the stderr data from the child
-   process should be captured into the same file handle as for *stdout*.
+   integer), an existing file object with a valid file descriptor, and ``None``.
+   :data:`PIPE` indicates that a new pipe to the child should be created.
+   :data:`DEVNULL` indicates that the special file :data:`os.devnull` will
+   be used.  With the default settings of ``None``, no redirection will occur;
+   the child's file handles will be inherited from the parent.
+   Additionally, *stderr* can be :data:`STDOUT`, which indicates that the
+   stderr data from the child process should be captured into the same file
+   handle as for *stdout*.
 
    .. index::
       single: universal newlines; subprocess module
@@ -482,13 +483,14 @@ functions.
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
    are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
-   integer), an existing :term:`file object`, and ``None``.  :data:`PIPE`
-   indicates that a new pipe to the child should be created.  :data:`DEVNULL`
-   indicates that the special file :data:`os.devnull` will be used. With the
-   default settings of ``None``, no redirection will occur; the child's file
-   handles will be inherited from the parent.  Additionally, *stderr* can be
-   :data:`STDOUT`, which indicates that the stderr data from the applications
-   should be captured into the same file handle as for stdout.
+   integer), an existing :term:`file object` with a valid file descriptor,
+   and ``None``.  :data:`PIPE` indicates that a new pipe to the child should
+   be created.  :data:`DEVNULL` indicates that the special file
+   :data:`os.devnull` will be used. With the default settings of ``None``,
+   no redirection will occur; the child's file handles will be inherited from
+   the parent.  Additionally, *stderr* can be :data:`STDOUT`, which indicates
+   that the stderr data from the applications should be captured into the same
+   file handle as for stdout.
 
    If *preexec_fn* is set to a callable object, this object will be called in the
    child process just before the child is executed.
@@ -1527,3 +1529,39 @@ runtime):
 
    :mod:`shlex`
       Module which provides function to parse and escape command lines.
+
+
+.. _disable_vfork:
+.. _disable_posix_spawn:
+
+Disabling use of ``vfork()`` or ``posix_spawn()``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+On Linux, :mod:`subprocess` defaults to using the ``vfork()`` system call
+internally when it is safe to do so rather than ``fork()``. This greatly
+improves performance.
+
+If you ever encounter a presumed highly-unusual situation where you need to
+prevent ``vfork()`` from being used by Python, you can set the
+:attr:`subprocess._USE_VFORK` attribute to a false value.
+
+   subprocess._USE_VFORK = False  # See CPython issue gh-NNNNNN.
+
+Setting this has no impact on use of ``posix_spawn()`` which could use
+``vfork()`` internally within its libc implementation.  There is a similar
+:attr:`subprocess._USE_POSIX_SPAWN` attribute if you need to prevent use of
+that.
+
+   subprocess._USE_POSIX_SPAWN = False  # See CPython issue gh-NNNNNN.
+
+It is safe to set these to false on any Python version. They will have no
+effect on older versions when unsupported. Do not assume the attributes are
+available to read. Despite their names, a true value does not indicate that the
+corresponding function will be used, only that that it may be.
+
+Please file issues any time you have to use these private knobs with a way to
+reproduce the issue you were seeing. Link to that issue from a comment in your
+code.
+
+.. versionadded:: 3.8 ``_USE_POSIX_SPAWN``
+.. versionadded:: 3.11 ``_USE_VFORK``

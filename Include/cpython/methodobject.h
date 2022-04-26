@@ -7,18 +7,23 @@ PyAPI_DATA(PyTypeObject) PyCMethod_Type;
 #define PyCMethod_CheckExact(op) Py_IS_TYPE(op, &PyCMethod_Type)
 #define PyCMethod_Check(op) PyObject_TypeCheck(op, &PyCMethod_Type)
 
+#define _PyCFunctionObject_CAST(func) \
+    (assert(PyCFunction_Check(func)), (PyCFunctionObject *)(func))
+#define _PyCMethodObject_CAST(func) \
+    (assert(PyCMethod_Check(func)), (PyCMethodObject *)(func))
+
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
 #define PyCFunction_GET_FUNCTION(func) \
-        (((PyCFunctionObject *)func) -> m_ml -> ml_meth)
+    (_PyCFunctionObject_CAST(func)->m_ml->ml_meth)
 #define PyCFunction_GET_SELF(func) \
-        (((PyCFunctionObject *)func) -> m_ml -> ml_flags & METH_STATIC ? \
-         NULL : ((PyCFunctionObject *)func) -> m_self)
+    (_PyCFunctionObject_CAST(func)->m_ml->ml_flags & METH_STATIC ? \
+     NULL : _PyCFunctionObject_CAST(func)->m_self)
 #define PyCFunction_GET_FLAGS(func) \
-        (((PyCFunctionObject *)func) -> m_ml -> ml_flags)
+    (_PyCFunctionObject_CAST(func)->m_ml->ml_flags)
 #define PyCFunction_GET_CLASS(func) \
-    (((PyCFunctionObject *)func) -> m_ml -> ml_flags & METH_METHOD ? \
-         ((PyCMethodObject *)func) -> mm_class : NULL)
+    (_PyCFunctionObject_CAST(func)->m_ml->ml_flags & METH_METHOD ? \
+     _PyCMethodObject_CAST(func)->mm_class : NULL)
 
 typedef struct {
     PyObject_HEAD

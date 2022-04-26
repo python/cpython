@@ -285,35 +285,26 @@ PyDoc_STRVAR(array_array_fromfile__doc__,
 "Read n objects from the file object f and append them to the end of the array.");
 
 #define ARRAY_ARRAY_FROMFILE_METHODDEF    \
-    {"fromfile", (PyCFunction)(void(*)(void))array_array_fromfile, METH_FASTCALL, array_array_fromfile__doc__},
+    {"fromfile", (PyCFunction)(void(*)(void))array_array_fromfile, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array_fromfile__doc__},
 
 static PyObject *
-array_array_fromfile_impl(arrayobject *self, PyObject *f, Py_ssize_t n);
+array_array_fromfile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f,
+                          Py_ssize_t n);
 
 static PyObject *
-array_array_fromfile(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
+array_array_fromfile(arrayobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {"On:fromfile", _keywords, 0};
     PyObject *f;
     Py_ssize_t n;
 
-    if (!_PyArg_CheckPositional("fromfile", nargs, 2, 2)) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &f, &n)) {
         goto exit;
     }
-    f = args[0];
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        n = ival;
-    }
-    return_value = array_array_fromfile_impl(self, f, n);
+    return_value = array_array_fromfile_impl(self, cls, f, n);
 
 exit:
     return return_value;
@@ -326,7 +317,28 @@ PyDoc_STRVAR(array_array_tofile__doc__,
 "Write all items (as machine values) to the file object f.");
 
 #define ARRAY_ARRAY_TOFILE_METHODDEF    \
-    {"tofile", (PyCFunction)array_array_tofile, METH_O, array_array_tofile__doc__},
+    {"tofile", (PyCFunction)(void(*)(void))array_array_tofile, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array_tofile__doc__},
+
+static PyObject *
+array_array_tofile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f);
+
+static PyObject *
+array_array_tofile(arrayobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {"O:tofile", _keywords, 0};
+    PyObject *f;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &f)) {
+        goto exit;
+    }
+    return_value = array_array_tofile_impl(self, cls, f);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(array_array_fromlist__doc__,
 "fromlist($self, list, /)\n"
@@ -544,7 +556,29 @@ PyDoc_STRVAR(array_array___reduce_ex____doc__,
 "Return state information for pickling.");
 
 #define ARRAY_ARRAY___REDUCE_EX___METHODDEF    \
-    {"__reduce_ex__", (PyCFunction)array_array___reduce_ex__, METH_O, array_array___reduce_ex____doc__},
+    {"__reduce_ex__", (PyCFunction)(void(*)(void))array_array___reduce_ex__, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array___reduce_ex____doc__},
+
+static PyObject *
+array_array___reduce_ex___impl(arrayobject *self, PyTypeObject *cls,
+                               PyObject *value);
+
+static PyObject *
+array_array___reduce_ex__(arrayobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {"O:__reduce_ex__", _keywords, 0};
+    PyObject *value;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &value)) {
+        goto exit;
+    }
+    return_value = array_array___reduce_ex___impl(self, cls, value);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(array_arrayiterator___reduce____doc__,
 "__reduce__($self, /)\n"
@@ -553,15 +587,26 @@ PyDoc_STRVAR(array_arrayiterator___reduce____doc__,
 "Return state information for pickling.");
 
 #define ARRAY_ARRAYITERATOR___REDUCE___METHODDEF    \
-    {"__reduce__", (PyCFunction)array_arrayiterator___reduce__, METH_NOARGS, array_arrayiterator___reduce____doc__},
+    {"__reduce__", (PyCFunction)(void(*)(void))array_arrayiterator___reduce__, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_arrayiterator___reduce____doc__},
 
 static PyObject *
-array_arrayiterator___reduce___impl(arrayiterobject *self);
+array_arrayiterator___reduce___impl(arrayiterobject *self, PyTypeObject *cls);
 
 static PyObject *
-array_arrayiterator___reduce__(arrayiterobject *self, PyObject *Py_UNUSED(ignored))
+array_arrayiterator___reduce__(arrayiterobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return array_arrayiterator___reduce___impl(self);
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {":__reduce__", _keywords, 0};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
+        )) {
+        goto exit;
+    }
+    return_value = array_arrayiterator___reduce___impl(self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
@@ -572,4 +617,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=f130a994f98f1227 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1db6decd8492bf91 input=a9049054013a1b77]*/

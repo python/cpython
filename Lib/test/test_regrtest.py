@@ -22,6 +22,8 @@ from test import support
 from test.support import os_helper
 from test.libregrtest import utils, setup
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
@@ -1337,7 +1339,7 @@ class ArgsTestCase(BaseTestCase):
     def test_unicode_guard_env(self):
         guard = os.environ.get(setup.UNICODE_GUARD_ENV)
         self.assertIsNotNone(guard, f"{setup.UNICODE_GUARD_ENV} not set")
-        if guard != "\N{SMILING FACE WITH SUNGLASSES}":
+        if guard.isascii():
             # Skip to signify that the env var value was changed by the user;
             # possibly to something ASCII to work around Unicode issues.
             self.skipTest("Modified guard")

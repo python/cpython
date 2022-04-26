@@ -1,0 +1,1 @@
+The LLTRACE special build now looks for the name ``__lltrace__`` defined in module globals, rather than the name ``__ltrace__``, which had been introduced as a typo.

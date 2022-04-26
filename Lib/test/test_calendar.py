@@ -619,6 +619,14 @@ class CalendarTestCase(unittest.TestCase):
                 self.assertEqual(days[0][1], firstweekday)
                 self.assertEqual(days[-1][1], (firstweekday - 1) % 7)
 
+    def test_iterweekdays(self):
+        week0 = list(range(7))
+        for firstweekday in range(7):
+            cal = calendar.Calendar(firstweekday)
+            week = list(cal.iterweekdays())
+            expected = week0[firstweekday:] + week0[:firstweekday]
+            self.assertEqual(week, expected)
+
 
 class MonthCalendarTestCase(unittest.TestCase):
     def setUp(self):
@@ -859,7 +867,8 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertFailure('-L')
         self.assertFailure('--locale')
         self.assertFailure('-L', 'en')
-        lang, enc = locale.getdefaultlocale()
+
+        lang, enc = locale.getlocale()
         lang = lang or 'C'
         enc = enc or 'UTF-8'
         try:
