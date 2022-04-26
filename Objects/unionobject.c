@@ -280,7 +280,7 @@ merge_obj_and_union(PyObject *left, PyObject *right) {
         }
     }
 
-    if(_PyTuple_Resize(&tuple, pos) < 0)  {
+    if (_PyTuple_Resize(&tuple, pos) < 0)  {
         Py_DECREF(tuple);
         return NULL;
     }
