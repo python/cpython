@@ -11,7 +11,7 @@ class NetrcTestCase(unittest.TestCase):
         if sys.platform != 'cygwin':
             mode += 't'
         temp_fd, temp_filename = tempfile.mkstemp()
-        with os.fdopen(temp_fd, mode=mode) as fp:
+        with os.fdopen(temp_fd, mode=mode, encoding="utf-8") as fp:
             fp.write(test_data)
         self.addCleanup(os.unlink, temp_filename)
         return netrc.netrc(temp_filename)
