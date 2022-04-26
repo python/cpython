@@ -610,15 +610,16 @@ the module.
    import system may opt to leave it unset if it has no semantic
    meaning (e.g. a module loaded from a database).
 
-   If ``__file__`` is set, it may also be appropriate to set the
-   ``__cached__`` attribute which is the path to any compiled version of
+   If ``__file__`` is set then the ``__cached__`` attribute might also
+   be set,  which is the path to any compiled version of
    the code (e.g. byte-compiled file). The file does not need to exist
    to set this attribute; the path can simply point to where the
    compiled file would exist (see :pep:`3147`).
 
-   It is also appropriate to set ``__cached__`` when ``__file__`` is not
+   Note that ``__cached__`` may be set even if ``__file__`` is not
    set.  However, that scenario is quite atypical.  Ultimately, the
-   loader is what makes use of ``__file__`` and/or ``__cached__``.  So
+   loader is what makes use of the module spec provided by the finder
+   (from which ``__file__`` and ``__cached__`` are derived).  So
    if a loader can load from a cached module but otherwise does not load
    from a file, that atypical scenario may be appropriate.
 
