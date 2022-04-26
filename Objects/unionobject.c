@@ -157,7 +157,6 @@ static int
 args_contains(PyObject *args, PyObject *obj)
 {
     assert(PyTuple_CheckExact(args));
-
     Py_ssize_t size = PyTuple_GET_SIZE(args);
 
     for (int j = 0; j < size; j++) {
@@ -180,10 +179,8 @@ merge_union_and_union(PyObject *left, PyObject *right)
 {
     PyObject* left_args = ((unionobject *) left)->args;
     PyObject* right_args = ((unionobject*) right)->args;
-
     Py_ssize_t left_size = PyTuple_GET_SIZE(left_args);
     Py_ssize_t right_size = PyTuple_GET_SIZE(right_args);
-
     PyObject *tuple = PyTuple_New(left_size + right_size);
 
     if (tuple == NULL) {
@@ -197,10 +194,8 @@ merge_union_and_union(PyObject *left, PyObject *right)
     }
 
     Py_ssize_t pos = left_size;
-
     for (int i = 0; i < right_size; i++) {
         PyObject *arg = PyTuple_GET_ITEM(right_args, i);
-
         int is_duplicate = args_contains(left_args, arg);
 
         if (is_duplicate < 0) {
@@ -226,7 +221,6 @@ static PyObject*
 merge_union_and_obj(PyObject *left, PyObject *right)
 {
     PyObject* args = ((unionobject *) left)->args;
-
     int is_duplicate = args_contains(args, right);
 
     if (is_duplicate < 0) {
@@ -261,7 +255,6 @@ merge_obj_and_union(PyObject *left, PyObject *right)
 {
     PyObject* args = ((unionobject *) right)->args;
     Py_ssize_t size = PyTuple_GET_SIZE(args);
-
     PyObject *tuple = PyTuple_New(size + 1);
 
     if (tuple == NULL) {
@@ -270,7 +263,6 @@ merge_obj_and_union(PyObject *left, PyObject *right)
 
     Py_INCREF(left);
     PyTuple_SET_ITEM(tuple, 0, left);
-
     Py_ssize_t pos = 1;
 
     for (int i = 0; i < size; i++) {
@@ -317,9 +309,11 @@ _Py_union_type_or(PyObject* self, PyObject* other)
     }
     else if (_PyUnion_Check(self)) {
         tuple = merge_union_and_obj(self, other);
-    } else if (_PyUnion_Check(other)) {
+    }
+    else if (_PyUnion_Check(other)) {
         tuple = merge_obj_and_union(self, other);
-    } else {
+    }
+    else {
         int is_duplicate = is_same(self, other);
 
         if (is_duplicate < 0) {
