@@ -154,7 +154,8 @@ is_unionable(PyObject *obj)
 }
 
 static PyObject*
-merge_union_and_union(PyObject *left, PyObject *right) {
+merge_union_and_union(PyObject *left, PyObject *right)
+{
     PyObject* left_args = ((unionobject *) left)->args;
     PyObject* right_args = ((unionobject*) right)->args;
 
@@ -200,7 +201,7 @@ merge_union_and_union(PyObject *left, PyObject *right) {
         }
     }
 
-    if(_PyTuple_Resize(&tuple, pos) < 0)  {
+    if (_PyTuple_Resize(&tuple, pos) < 0) {
         Py_DECREF(tuple);
         return NULL;
     }
@@ -209,7 +210,8 @@ merge_union_and_union(PyObject *left, PyObject *right) {
 }
 
 static PyObject*
-merge_union_and_obj(PyObject *left, PyObject *right) {
+merge_union_and_obj(PyObject *left, PyObject *right)
+{
     PyObject* args = ((unionobject *) left)->args;
     Py_ssize_t args_length = PyTuple_GET_SIZE(args);
 
@@ -251,7 +253,8 @@ merge_union_and_obj(PyObject *left, PyObject *right) {
 }
 
 static PyObject*
-merge_obj_and_union(PyObject *left, PyObject *right) {
+merge_obj_and_union(PyObject *left, PyObject *right)
+{
     PyObject* args = ((unionobject *) right)->args;
     Py_ssize_t args_length = PyTuple_GET_SIZE(args);
 
@@ -281,7 +284,7 @@ merge_obj_and_union(PyObject *left, PyObject *right) {
         }
     }
 
-    if (_PyTuple_Resize(&tuple, pos) < 0)  {
+    if (_PyTuple_Resize(&tuple, pos) < 0) {
         Py_DECREF(tuple);
         return NULL;
     }
