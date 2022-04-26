@@ -944,7 +944,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
             PyObject *allow_vfork_obj = PyObject_GetAttrString(
                 subprocess_module, "_USE_VFORK");
             Py_DECREF(subprocess_module);
-            if (allow_vfork_obj) {
+            if (allow_vfork_obj != NULL) {
                 allow_vfork = PyObject_IsTrue(allow_vfork_obj);
                 Py_DECREF(allow_vfork_obj);
                 if (allow_vfork < 0) {
