@@ -3546,8 +3546,8 @@ to be ignored.
    Add a path to the DLL search path.
 
    This search path is used when resolving dependencies for imported
-   extension modules (the module itself is resolved through sys.path),
-   and also by :mod:`ctypes`.
+   extension modules (the module itself is resolved through
+   :data:`sys.path`), and also by :mod:`ctypes`.
 
    Remove the directory by calling **close()** on the returned object
    or using it in a :keyword:`with` statement.

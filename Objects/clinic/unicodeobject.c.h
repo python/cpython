@@ -858,15 +858,21 @@ PyDoc_STRVAR(unicode_split__doc__,
 "split($self, /, sep=None, maxsplit=-1)\n"
 "--\n"
 "\n"
-"Return a list of the words in the string, using sep as the delimiter string.\n"
+"Return a list of the substrings in the string, using sep as the separator string.\n"
 "\n"
 "  sep\n"
-"    The delimiter according which to split the string.\n"
-"    None (the default value) means split according to any whitespace,\n"
-"    and discard empty strings from the result.\n"
+"    The separator used to split the string.\n"
+"\n"
+"    When set to None (the default value), will split on any whitespace\n"
+"    character (including \\\\n \\\\r \\\\t \\\\f and spaces) and will discard\n"
+"    empty strings from the result.\n"
 "  maxsplit\n"
-"    Maximum number of splits to do.\n"
-"    -1 (the default value) means no limit.");
+"    Maximum number of splits (starting from the left).\n"
+"    -1 (the default value) means no limit.\n"
+"\n"
+"Note, str.split() is mainly useful for data that has been intentionally\n"
+"delimited.  With natural text that includes punctuation, consider using\n"
+"the regular expression module.");
 
 #define UNICODE_SPLIT_METHODDEF    \
     {"split", (PyCFunction)(void(*)(void))unicode_split, METH_FASTCALL|METH_KEYWORDS, unicode_split__doc__},
@@ -953,17 +959,19 @@ PyDoc_STRVAR(unicode_rsplit__doc__,
 "rsplit($self, /, sep=None, maxsplit=-1)\n"
 "--\n"
 "\n"
-"Return a list of the words in the string, using sep as the delimiter string.\n"
+"Return a list of the substrings in the string, using sep as the separator string.\n"
 "\n"
 "  sep\n"
-"    The delimiter according which to split the string.\n"
-"    None (the default value) means split according to any whitespace,\n"
-"    and discard empty strings from the result.\n"
+"    The separator used to split the string.\n"
+"\n"
+"    When set to None (the default value), will split on any whitespace\n"
+"    character (including \\\\n \\\\r \\\\t \\\\f and spaces) and will discard\n"
+"    empty strings from the result.\n"
 "  maxsplit\n"
-"    Maximum number of splits to do.\n"
+"    Maximum number of splits (starting from the left).\n"
 "    -1 (the default value) means no limit.\n"
 "\n"
-"Splits are done starting at the end of the string and working to the front.");
+"Splitting starts at the end of the string and works to the front.");
 
 #define UNICODE_RSPLIT_METHODDEF    \
     {"rsplit", (PyCFunction)(void(*)(void))unicode_rsplit, METH_FASTCALL|METH_KEYWORDS, unicode_rsplit__doc__},
@@ -1327,4 +1335,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f10cf85d3935b3b7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c494bed46209961d input=a9049054013a1b77]*/

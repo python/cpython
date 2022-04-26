@@ -677,7 +677,7 @@ class BaseManager(object):
                 if hasattr(process, 'terminate'):
                     util.info('trying to `terminate()` manager process')
                     process.terminate()
-                    process.join(timeout=0.1)
+                    process.join(timeout=1.0)
                     if process.is_alive():
                         util.info('manager still alive after terminate')
 
