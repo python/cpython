@@ -1,6 +1,5 @@
 # Testing the line trace facility.
 
-from typing import Counter
 from test import support
 import unittest
 import sys
