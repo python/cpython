@@ -6,6 +6,9 @@
 
 **Source code:** :source:`Lib/mailcap.py`
 
+.. deprecated-removed:: 3.11 3.13
+   See the :mod:`mimetypes` module for an alternative.
+
 --------------
 
 Mailcap files are used to configure how MIME-aware applications such as mail
