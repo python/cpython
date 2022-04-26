@@ -82,6 +82,7 @@ HOST_PLATFORM = get_platform()
 MS_WINDOWS = (HOST_PLATFORM == 'win32')
 CYGWIN = (HOST_PLATFORM == 'cygwin')
 MACOS = (HOST_PLATFORM == 'darwin')
+SOLARIS = (HOST_PLATFORM == 'sunos5')
 AIX = (HOST_PLATFORM.startswith('aix'))
 VXWORKS = ('vxworks' in HOST_PLATFORM)
 EMSCRIPTEN = HOST_PLATFORM == 'emscripten-wasm32'
@@ -1139,6 +1140,13 @@ class PyBuildExt(build_ext):
             # Building with the system-suppied combined libncurses/libpanel
             curses_defines.append(('HAVE_NCURSESW', '1'))
             curses_defines.append(('_XOPEN_SOURCE_EXTENDED', '1'))
+
+        if SOLARIS and curses_library.startswith('ncurses'):
+            # While libncurses on Solaris doesn't have 'w' in its name, it's
+            # compiled with wide character support
+            curses_defines.append(('HAVE_NCURSESW', '1'))
+            curses_defines.append(('_XOPEN_SOURCE_EXTENDED', '1'))
+            curses_includes.append('/usr/include/ncurses')
 
         curses_enabled = True
         if curses_library.startswith('ncurses'):
