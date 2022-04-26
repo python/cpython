@@ -155,7 +155,7 @@ def splitdrive(p):
             colon = ':'
             prefix = '\\\\?\\'
             unc_prefix = 'UNC\\'
-            vol_prefix = 'VOLUME'
+            vol_prefix = 'VOLUME{'
         normp = p.replace(altsep, sep)
         if normp[:4] == prefix:
             if normp[4:8].upper() == unc_prefix:
