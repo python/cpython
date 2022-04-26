@@ -96,6 +96,12 @@ class EmbeddingTestsMixin:
             env = env.copy()
             env['SYSTEMROOT'] = os.environ['SYSTEMROOT']
 
+        if env is None and MS_WINDOWS:
+            if args[0] == "test_repeated_init_exec":
+                # PYTHONHOME needs to be removed for an executable in
+                # a build directory to import *.pyd repeatedly.
+                env = remove_python_envvars()
+
         p = subprocess.Popen(cmd,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,
@@ -346,8 +352,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_ucnhash_capi_reset(self):
         # bpo-47182: unicodeobject.c:ucnhash_capi was not reset on shutdown.
         code = "print('\\N{digit nine}')"
-        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code,
-                                                 env=remove_python_envvars())
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '9\n' * INIT_LOOPS)
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
