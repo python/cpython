@@ -210,7 +210,7 @@ class Queue(object):
 
     @staticmethod
     def _feed(buffer, notempty, send_bytes, writelock, reader_close,
-              writer_close, ignore_epipe, onerror, queue_sem, reader):
+              writer_close, ignore_epipe, onerror, queue_sem):
         debug('starting thread to feed data to pipe')
         nacquire = notempty.acquire
         nrelease = notempty.release
