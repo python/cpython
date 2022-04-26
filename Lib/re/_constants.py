@@ -13,7 +13,7 @@
 
 # update when constants are added or removed
 
-MAGIC = 20220402
+MAGIC = 20220423
 
 from _sre import MAXREPEAT, MAXGROUPS
 
@@ -78,7 +78,6 @@ OPCODES = _makecodes(
     'ASSERT', 'ASSERT_NOT',
     'AT',
     'BRANCH',
-    'CALL',
     'CATEGORY',
     'CHARSET', 'BIGCHARSET',
     'GROUPREF', 'GROUPREF_EXISTS',
