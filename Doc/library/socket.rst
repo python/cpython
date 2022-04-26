@@ -392,10 +392,10 @@ Constants
       Added ``TCP_CONNECTION_INFO``. On MacOS this constant can be used in the
       same way that ``TCP_INFO`` is used on Linux and BSD.
 
-   .. versionchanged:: 3.11
-      Added ``SO_RTABLE`` and ``SO_USER_COOKIE``. Respectively for OpenBSD
-      and FreeBSD those constants can be used in the same way that ``SO_MARK``
-      is used on Linux.
+   .. versionchanged:: 3.12
+      Added ``SO_RTABLE`` and ``SO_USER_COOKIE``. On OpenBSD
+      and FreeBSD respectively those constants can be used in the same way that
+      ``SO_MARK`` is used on Linux.
 
 .. data:: AF_CAN
           PF_CAN
