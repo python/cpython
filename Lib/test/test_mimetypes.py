@@ -1,5 +1,4 @@
 import io
-import locale
 import mimetypes
 import pathlib
 import sys
@@ -33,7 +32,7 @@ def tearDownModule():
 class MimeTypesTestCase(unittest.TestCase):
     def setUp(self):
         self.db = mimetypes.MimeTypes()
-        
+
     def test_case_sensitivity(self):
         eq = self.assertEqual
         eq(self.db.guess_type("foobar.HTML"), self.db.guess_type("foobar.html"))
@@ -145,11 +144,6 @@ class MimeTypesTestCase(unittest.TestCase):
         self.assertNotIn('.no-such-ext', all)
 
     def test_encoding(self):
-        getpreferredencoding = locale.getpreferredencoding
-        self.addCleanup(setattr, locale, 'getpreferredencoding',
-                                 getpreferredencoding)
-        locale.getpreferredencoding = lambda: 'ascii'
-
         filename = support.findfile("mime.types")
         mimes = mimetypes.MimeTypes([filename])
         exts = mimes.guess_all_extensions('application/vnd.geocube+xml',

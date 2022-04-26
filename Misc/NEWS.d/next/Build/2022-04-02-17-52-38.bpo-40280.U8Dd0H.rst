@@ -1,2 +1,0 @@
-Add configure option :option:`--enable-wasm-dynamic-linking` to enable
-``dlopen`` and MAIN_MODULE / SIDE_MODULE on ``wasm32-emscripten``.

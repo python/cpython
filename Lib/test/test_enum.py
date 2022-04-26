@@ -2949,6 +2949,7 @@ class OldTestFlag(unittest.TestCase):
         self.assertEqual(str(Color.BLUE), 'blue')
 
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_unique_composite(self):
         # override __eq__ to be identity only
         class TestFlag(Flag):
@@ -3481,6 +3482,7 @@ class OldTestIntFlag(unittest.TestCase):
         self.assertEqual(str(Color.BLUE), 'blue')
 
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_unique_composite(self):
         # override __eq__ to be identity only
         class TestFlag(IntFlag):

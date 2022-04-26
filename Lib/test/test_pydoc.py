@@ -1066,14 +1066,14 @@ class TestDescriptions(unittest.TestCase):
         self.assertIn(types.UnionType.__doc__.strip().splitlines()[0], doc)
 
     def test_special_form(self):
-        self.assertEqual(pydoc.describe(typing.Any), '_SpecialForm')
-        doc = pydoc.render_doc(typing.Any, renderer=pydoc.plaintext)
+        self.assertEqual(pydoc.describe(typing.NoReturn), '_SpecialForm')
+        doc = pydoc.render_doc(typing.NoReturn, renderer=pydoc.plaintext)
         self.assertIn('_SpecialForm in module typing', doc)
-        if typing.Any.__doc__:
-            self.assertIn('Any = typing.Any', doc)
-            self.assertIn(typing.Any.__doc__.strip().splitlines()[0], doc)
+        if typing.NoReturn.__doc__:
+            self.assertIn('NoReturn = typing.NoReturn', doc)
+            self.assertIn(typing.NoReturn.__doc__.strip().splitlines()[0], doc)
         else:
-            self.assertIn('Any = class _SpecialForm(_Final)', doc)
+            self.assertIn('NoReturn = class _SpecialForm(_Final)', doc)
 
     def test_typing_pydoc(self):
         def foo(data: typing.List[typing.Any],

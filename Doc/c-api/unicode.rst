@@ -84,8 +84,8 @@ Python:
    is exposed to Python code as ``str``.
 
 
-The following APIs are really C macros and can be used to do fast checks and to
-access internal read-only data of Unicode objects:
+The following APIs are C macros and static inlined functions for fast checks and
+access to internal read-only data of Unicode objects:
 
 .. c:function:: int PyUnicode_Check(PyObject *o)
 
@@ -168,20 +168,21 @@ access internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
 
-.. c:function:: void PyUnicode_WRITE(int kind, void *data, Py_ssize_t index, \
-                                     Py_UCS4 value)
+.. c:function:: void PyUnicode_WRITE(unsigned int kind, void *data, \
+                                     Py_ssize_t index, Py_UCS4 value)
 
    Write into a canonical representation *data* (as obtained with
-   :c:func:`PyUnicode_DATA`).  This macro does not do any sanity checks and is
+   :c:func:`PyUnicode_DATA`).  This function performs no sanity checks, and is
    intended for usage in loops.  The caller should cache the *kind* value and
-   *data* pointer as obtained from other macro calls.  *index* is the index in
+   *data* pointer as obtained from other calls.  *index* is the index in
    the string (starts at 0) and *value* is the new code point value which should
    be written to that location.
 
    .. versionadded:: 3.3
 
 
-.. c:function:: Py_UCS4 PyUnicode_READ(int kind, void *data, Py_ssize_t index)
+.. c:function:: Py_UCS4 PyUnicode_READ(unsigned int kind, void *data, \
+                                       Py_ssize_t index)
 
    Read a code point from a canonical representation *data* (as obtained with
    :c:func:`PyUnicode_DATA`).  No checks or ready calls are performed.
@@ -198,7 +199,7 @@ access internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
 
-.. c:macro:: PyUnicode_MAX_CHAR_VALUE(o)
+.. c:function:: Py_UCS4 PyUnicode_MAX_CHAR_VALUE(PyObject *o)
 
    Return the maximum code point that is suitable for creating another string
    based on *o*, which must be in the "canonical" representation.  This is
@@ -239,7 +240,7 @@ access internal read-only data of Unicode objects:
    a Unicode object (not checked).
 
    .. versionchanged:: 3.3
-      This macro is now inefficient -- because in many cases the
+      This function is now inefficient -- because in many cases the
       :c:type:`Py_UNICODE` representation does not exist and needs to be created
       -- and can fail (return ``NULL`` with an exception set).  Try to port the
       code to use the new :c:func:`PyUnicode_nBYTE_DATA` macros or use
@@ -642,8 +643,8 @@ APIs:
 .. c:function:: Py_UCS4 PyUnicode_ReadChar(PyObject *unicode, Py_ssize_t index)
 
    Read a character from a string.  This function checks that *unicode* is a
-   Unicode object and the index is not out of bounds, in contrast to the macro
-   version :c:func:`PyUnicode_READ_CHAR`.
+   Unicode object and the index is not out of bounds, in contrast to
+   :c:func:`PyUnicode_READ_CHAR`, which performs no error checking.
 
    .. versionadded:: 3.3
 

@@ -1,1 +1,0 @@
-Make :func:`io.text_encoding` returns "utf-8" when UTF-8 mode is enabled.

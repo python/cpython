@@ -1,3 +1,0 @@
-Some Windows system error codes(>= 10000) are now mapped into
-the correct errno and may now raise a subclass of :exc:`OSError`.
-Patch by Dong-hee Na.
