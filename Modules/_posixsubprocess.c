@@ -936,10 +936,10 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
 #ifdef VFORK_USABLE
     /* Use vfork() only if it's safe. See the comment above child_exec(). */
     sigset_t old_sigs;
+    int allow_vfork = 1;  /* 3.10.0 behavior */
     if (preexec_fn == Py_None) {
         PyObject *subprocess_module = PyImport_ImportModule("subprocess");
         if (subprocess_module != NULL) {
-            int allow_vfork;
             PyObject *allow_vfork_obj = PyObject_GetAttrString(
                 subprocess_module, "_USE_VFORK");
             Py_DECREF(subprocess_module);
@@ -952,29 +952,30 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
                 }
             } else {
                 PyErr_Clear();  /* No _USE_VFORK attribute. */
-                allow_vfork = 1;  /* 3.10.0 behavior */
-            }
-            if (allow_vfork && !call_setuid && !call_setgid && !call_setgroups) {
-                /* Block all signals to ensure that no signal handlers are run in the
-                 * child process while it shares memory with us. Note that signals
-                 * used internally by C libraries won't be blocked by
-                 * pthread_sigmask(), but signal handlers installed by C libraries
-                 * normally service only signals originating from *within the process*,
-                 * so it should be sufficient to consider any library function that
-                 * might send such a signal to be vfork-unsafe and do not call it in
-                 * the child.
-                 */
-                sigset_t all_sigs;
-                sigfillset(&all_sigs);
-                if ((saved_errno = pthread_sigmask(SIG_BLOCK, &all_sigs, &old_sigs))) {
-                    goto cleanup;
-                }
-                old_sigmask = &old_sigs;
             }
         } else {
             PyErr_Clear();  /* no subprocess module? suspicious; don't care. */
         }
-    }  /* no preexec_fn */
+    } else {
+        allow_vfork = 0;
+    }
+    if (allow_vfork && !call_setuid && !call_setgid && !call_setgroups) {
+        /* Block all signals to ensure that no signal handlers are run in the
+         * child process while it shares memory with us. Note that signals
+         * used internally by C libraries won't be blocked by
+         * pthread_sigmask(), but signal handlers installed by C libraries
+         * normally service only signals originating from *within the process*,
+         * so it should be sufficient to consider any library function that
+         * might send such a signal to be vfork-unsafe and do not call it in
+         * the child.
+         */
+        sigset_t all_sigs;
+        sigfillset(&all_sigs);
+        if ((saved_errno = pthread_sigmask(SIG_BLOCK, &all_sigs, &old_sigs))) {
+            goto cleanup;
+        }
+        old_sigmask = &old_sigs;
+    }
 #endif
 
     pid = do_fork_exec(exec_array, argv, envp, cwd,
