@@ -985,11 +985,6 @@ Deprecated
   be able to parse Python 3.10 or newer. See the :pep:`617` (New PEG parser for
   CPython).  (Contributed by Victor Stinner in :issue:`40360`.)
 
-* The :mod:`mailcap` module is now deprecated and will be removed in Python
-  3.13. See :pep:`594` for the rationale and the :mod:`mimetypes` module for an
-  alternative.
-  (Contributed by Victor Stinner in :gh:`68966`.)
-
 * Undocumented modules ``sre_compile``, ``sre_constants`` and ``sre_parse``
   are now deprecated.
   (Contributed by Serhiy Storchaka in :issue:`47152`.)
@@ -1066,6 +1061,7 @@ Deprecated
   * :mod:`chunk`
   * :mod:`crypt`
   * :mod:`imghdr`
+  * :mod:`mailcap`
   * :mod:`msilib`
   * :mod:`nis`
   * :mod:`nntplib`
@@ -1075,7 +1071,8 @@ Deprecated
   * :mod:`spwd`
   * :mod:`sunau`
 
-  (Contributed by Brett Cannon in :issue:`47061`.)
+  (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
+  :gh:`68966`.)
 
 
 Removed

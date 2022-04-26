@@ -6,8 +6,9 @@
 
 **Source code:** :source:`Lib/mailcap.py`
 
-.. deprecated-removed:: 3.11 3.13
-   See the :mod:`mimetypes` module for an alternative.
+.. deprecated:: 3.11
+   The :mod:`mailcap` module is deprecated. See :pep:`594` for the rationale
+   and the :mod:`mimetypes` module for an alternative.
 
 --------------
 
