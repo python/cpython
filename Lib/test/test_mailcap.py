@@ -5,12 +5,10 @@ import test.support
 import unittest
 import warnings
 from test.support import os_helper
+from test.support import warnings_helper
 
 
-with warnings.catch_warnings():
-    # mailcap is deprecated
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import mailcap
+mailcap = warnings_helper.import_deprecated('mailcap')
 
 
 # Location of mailcap file
