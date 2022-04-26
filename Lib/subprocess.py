@@ -702,7 +702,10 @@ def _use_posix_spawn():
     return False
 
 
+# These are primarily fail-safe knobs for negatives. A True value does not
+# guarantee the given libc/syscall API will be used.
 _USE_POSIX_SPAWN = _use_posix_spawn()
+_USE_VFORK = True
 
 
 class Popen:
@@ -1792,7 +1795,7 @@ class Popen:
                             errpipe_read, errpipe_write,
                             restore_signals, start_new_session,
                             gid, gids, uid, umask,
-                            preexec_fn)
+                            preexec_fn, _USE_VFORK)
                     self._child_created = True
                 finally:
                     # be sure the FD is closed no matter what
