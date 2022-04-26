@@ -936,8 +936,9 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
 #ifdef VFORK_USABLE
     /* Use vfork() only if it's safe. See the comment above child_exec(). */
     sigset_t old_sigs;
-    int allow_vfork = 1;  /* 3.10.0 behavior */
+    int allow_vfork;
     if (preexec_fn == Py_None) {
+        allow_vfork = 1;  /* 3.10.0 behavior */
         PyObject *subprocess_module = PyImport_ImportModule("subprocess");
         if (subprocess_module != NULL) {
             PyObject *allow_vfork_obj = PyObject_GetAttrString(
