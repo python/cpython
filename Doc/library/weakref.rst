@@ -172,6 +172,10 @@ See :ref:`__slots__ documentation <slots>` for details.
    existing key. Due to this, when the reference to the original key is deleted, it
    also deletes the entry in the dictionary::
 
+      class T(str):
+          pass
+      k1 = T('hello')
+      k2 = T('hello')
       d = WeakKeyDictionary()
       d[k1] = 1   # d = {k1: 1}
       d[k2] = 2   # d = {k1: 2}
