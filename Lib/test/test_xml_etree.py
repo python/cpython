@@ -129,6 +129,9 @@ def checkwarnings(*filters, quiet=False):
         return newtest
     return decorator
 
+def convlinesep(data):
+    return data.replace(b'\n', os.linesep.encode())
+
 
 class ModuleTest(unittest.TestCase):
     def test_sanity(self):
@@ -3722,9 +3725,9 @@ class IOTest(unittest.TestCase):
 
         tree.write(TESTFN, encoding='ISO-8859-1')
         with open(TESTFN, 'rb') as f:
-            self.assertEqual(f.read(),
+            self.assertEqual(f.read(), convlinesep(
                              b'''<?xml version='1.0' encoding='ISO-8859-1'?>\n'''
-                             b'''<site>\xf8</site>''')
+                             b'''<site>\xf8</site>'''))
 
     def test_write_to_filename_as_unicode(self):
         self.addCleanup(os_helper.unlink, TESTFN)
@@ -3759,17 +3762,17 @@ class IOTest(unittest.TestCase):
             tree.write(f, encoding='unicode')
             self.assertFalse(f.closed)
         with open(TESTFN, 'rb') as f:
-            self.assertEqual(f.read(),
+            self.assertEqual(f.read(),  convlinesep(
                              b'''<?xml version='1.0' encoding='ascii'?>\n'''
-                             b'''<site>&#248;</site>''')
+                             b'''<site>&#248;</site>'''))
 
         with open(TESTFN, 'w', encoding='ISO-8859-1') as f:
             tree.write(f, encoding='unicode')
             self.assertFalse(f.closed)
         with open(TESTFN, 'rb') as f:
-            self.assertEqual(f.read(),
+            self.assertEqual(f.read(),  convlinesep(
                              b'''<?xml version='1.0' encoding='ISO-8859-1'?>\n'''
-                             b'''<site>\xf8</site>''')
+                             b'''<site>\xf8</site>'''))
 
     def test_write_to_binary_file(self):
         self.addCleanup(os_helper.unlink, TESTFN)
