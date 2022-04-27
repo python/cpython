@@ -1095,7 +1095,19 @@ class ZipExtFile(io.BufferedIOBase):
         read_offset = new_pos - curr_pos
         buff_offset = read_offset + self._offset
 
-        if buff_offset >= 0 and buff_offset < len(self._readbuffer):
+        # Fast seek uncompressed unencrypted file
+        if self._compress_type == ZIP_STORED and self._decrypter is None and read_offset > 0:
+            # disable CRC checking after first seeking - it would be invalid
+            self._expected_crc = None
+            # seek actual file taking already buffered data into account
+            read_offset -= len(self._readbuffer) - self._offset
+            self._fileobj.seek(read_offset, os.SEEK_CUR)
+            self._left -= read_offset
+            read_offset = 0
+            # flush read buffer
+            self._readbuffer = b''
+            self._offset = 0
+        elif buff_offset >= 0 and buff_offset < len(self._readbuffer):
             # Just move the _offset index if the new position is in the _readbuffer
             self._offset = buff_offset
             read_offset = 0
@@ -1113,19 +1125,6 @@ class ZipExtFile(io.BufferedIOBase):
             read_offset = new_pos
             if self._decrypter is not None:
                 self._init_decrypter()
-
-        # Fast seek uncompressed unencrypted file
-        if self._compress_type == ZIP_STORED and self._decrypter is None and read_offset > 0:
-            # disable CRC checking after first seeking - it would be invalid
-            self._expected_crc = None
-            # seek actual file taking already buffered data into account
-            read_offset -= len(self._readbuffer) - self._offset
-            self._fileobj.seek(read_offset, os.SEEK_CUR)
-            self._left -= read_offset
-            read_offset = 0
-            # flush read buffer
-            self._readbuffer = b''
-            self._offset = 0
 
         while read_offset > 0:
             read_len = min(self.MAX_SEEK_READ, read_offset)
