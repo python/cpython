@@ -859,12 +859,8 @@ class Popen:
 
         self.text_mode = encoding or errors or text or universal_newlines
 
-        # PEP 597: We suppress the EncodingWarning in subprocess module
-        # for now (at Python 3.10), because we focus on files for now.
-        # This will be changed to encoding = io.text_encoding(encoding)
-        # in the future.
-        if self.text_mode and encoding is None:
-            self.encoding = encoding = "locale"
+        if self.text_mode:
+            self.encoding = encoding = io.text_encoding(encoding)
 
         # How long to resume waiting on a child after the first ^C.
         # There is no right value for this.  The purpose is to be polite
