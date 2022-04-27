@@ -1417,7 +1417,13 @@ AC_MSG_CHECKING([HOSTRUNNER])
 if test -z "$HOSTRUNNER"
 then
   AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-    [Emscripten/node*], [HOSTRUNNER='node'],
+    [Emscripten/node*], [
+      AS_VAR_IF([enable_wasm_pthreads], [yes], [
+        HOSTRUNNER='node --experimental-wasm-threads --experimental-wasm-bulk-memory'
+      ], [
+        HOSTRUNNER='node'
+      ])
+    ],
     [HOSTRUNNER='']
   )
 fi
