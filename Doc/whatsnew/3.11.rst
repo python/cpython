@@ -463,7 +463,7 @@ inspect
   line number, column and end column). The affected functions are:
   :func:`inspect.getframeinfo`, :func:`inspect.getouterframes`, :func:`inspect.getinnerframes`,
   :func:`inspect.stack` and :func:`inspect.trace`. (Contributed by Pablo Galindo in
-  :issue:`88116`)
+  :gh:`88116`)
 
 locale
 ------
@@ -1061,6 +1061,7 @@ Deprecated
   * :mod:`chunk`
   * :mod:`crypt`
   * :mod:`imghdr`
+  * :mod:`mailcap`
   * :mod:`msilib`
   * :mod:`nis`
   * :mod:`nntplib`
@@ -1068,8 +1069,11 @@ Deprecated
   * :mod:`pipes`
   * :mod:`sndhdr`
   * :mod:`spwd`
+  * :mod:`sunau`
+  * :mod:`telnetlib`
 
-  (Contributed by Brett Cannon in :issue:`47061`.)
+  (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
+  :gh:`68966`.)
 
 
 Removed
