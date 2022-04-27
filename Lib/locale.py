@@ -659,7 +659,7 @@ except NameError:
             import warnings
             warnings.warn(
                 "UTF-8 Mode affects locale.getpreferredencoding(). Consider locale.getencoding() instead.",
-                EncodingWarning, stacklevel + 1)
+                EncodingWarning, 2)
         if sys.flags.utf8_mode:
             return 'utf-8'
         return getencoding()
@@ -673,7 +673,7 @@ else:
             import warnings
             warnings.warn(
                 "UTF-8 Mode affects locale.getpreferredencoding(). Consider locale.getencoding() instead.",
-                EncodingWarning, stacklevel + 1)
+                EncodingWarning, 2)
         if sys.flags.utf8_mode:
             return 'utf-8'
 
