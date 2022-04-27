@@ -631,7 +631,7 @@ def list2cmdline(seq):
 # Various tools for executing commands and looking at their output and status.
 #
 
-def getstatusoutput(cmd, *, encoding=None):
+def getstatusoutput(cmd, *, encoding=None, errors=None):
     """Return (exitcode, output) of executing cmd in a shell.
 
     Execute the string 'cmd' in a shell with 'check_output' and
@@ -653,7 +653,8 @@ def getstatusoutput(cmd, *, encoding=None):
     (-15, '')
     """
     try:
-        data = check_output(cmd, shell=True, text=True, stderr=STDOUT)
+        data = check_output(cmd, shell=True, text=True, stderr=STDOUT,
+                            encoding=encoding, errors=errors)
         exitcode = 0
     except CalledProcessError as ex:
         data = ex.output
@@ -662,7 +663,7 @@ def getstatusoutput(cmd, *, encoding=None):
         data = data[:-1]
     return exitcode, data
 
-def getoutput(cmd, *, encoding=None):
+def getoutput(cmd, *, encoding=None, errors=None):
     """Return output (stdout or stderr) of executing cmd in a shell.
 
     Like getstatusoutput(), except the exit status is ignored and the return
@@ -672,7 +673,7 @@ def getoutput(cmd, *, encoding=None):
     >>> subprocess.getoutput('ls /bin/ls')
     '/bin/ls'
     """
-    return getstatusoutput(cmd, encoding=encoding)[1]
+    return getstatusoutput(cmd, encoding=encoding, errors=errors)[1]
 
 
 
