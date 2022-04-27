@@ -18,7 +18,10 @@ class OpcodeTests(unittest.TestCase):
         self.assertRaises(ValueError, stack_effect, dis.opmap['BUILD_SLICE'])
         self.assertRaises(ValueError, stack_effect, dis.opmap['POP_TOP'], 0)
         # All defined opcodes
-        for name, code in filter(lambda item: item[0] not in dis.deoptmap, dis.opmap.items()):
+        opnames = {name: op for name, op in dis.opmap.items()
+                   if name not in dis.deoptmap
+                   and name != 'EXTENDED_ARG_TRACE'}
+        for name, code in opnames.items():
             with self.subTest(opname=name):
                 if code < dis.HAVE_ARGUMENT:
                     stack_effect(code)
@@ -31,6 +34,8 @@ class OpcodeTests(unittest.TestCase):
             with self.subTest(opcode=code):
                 self.assertRaises(ValueError, stack_effect, code)
                 self.assertRaises(ValueError, stack_effect, code, 0)
+        self.assertRaises(ValueError, stack_effect,
+                          dis.opmap["EXTENDED_ARG_TRACE"])
 
     def test_stack_effect_jump(self):
         JUMP_IF_TRUE_OR_POP = dis.opmap['JUMP_IF_TRUE_OR_POP']
@@ -47,7 +52,10 @@ class OpcodeTests(unittest.TestCase):
         self.assertEqual(stack_effect(JUMP_FORWARD, 0, jump=False), 0)
         # All defined opcodes
         has_jump = dis.hasjabs + dis.hasjrel
-        for name, code in filter(lambda item: item[0] not in dis.deoptmap, dis.opmap.items()):
+        opnames = {name: op for name, op in dis.opmap.items()
+                   if name not in dis.deoptmap
+                   and name != 'EXTENDED_ARG_TRACE'}
+        for name, code in opnames.items():
             with self.subTest(opname=name):
                 if code < dis.HAVE_ARGUMENT:
                     common = stack_effect(code)
