@@ -1038,6 +1038,9 @@ Text I/O
 
       .. versionadded:: 3.7
 
+      .. versionchanged:: 3.11
+         The method supports ``encoding="locale"`` option.
+
 
 .. class:: StringIO(initial_value='', newline='\\n')
 
