@@ -858,8 +858,8 @@ class Popen:
                 errread = msvcrt.open_osfhandle(errread.Detach(), 0)
 
         self.text_mode = encoding or errors or text or universal_newlines
-
         if self.text_mode:
+            # Emit EncodingWarning when text mode but *encoding* is not specified.
             self.encoding = encoding = io.text_encoding(encoding)
 
         # How long to resume waiting on a child after the first ^C.
