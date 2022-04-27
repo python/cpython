@@ -84,6 +84,11 @@ The :mod:`datetime` module exports the following constants:
    The largest year number allowed in a :class:`date` or :class:`.datetime` object.
    :const:`MAXYEAR` is ``9999``.
 
+.. attribute:: UTC
+
+   alias for the UTC timezone, ``datetime.utc``.
+
+
 Available Types
 ---------------
 
