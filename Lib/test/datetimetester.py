@@ -7,6 +7,7 @@ import itertools
 import bisect
 import copy
 import decimal
+import functools
 import sys
 import os
 import pickle
@@ -20,7 +21,10 @@ from array import array
 from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
+from test.isoformat_helpers.isoformatter import IsoFormatter
+from test.isoformat_helpers import strategies as iso_strategies
 from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
+from test.support.hypothesis_helper import hypothesis
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -55,6 +59,36 @@ OTHERSTUFF = (10, 34.5, "abc", {}, [], ())
 # XXX Copied from test_float.
 INF = float("inf")
 NAN = float("nan")
+
+
+def _cross_product_examples(**kwargs):
+    """Adds the cross-product of multiple hypothesis examples.
+
+    This is a helper function to make specifying a bunch of examples less
+    complicated. By example:
+
+        @_cross_product_examples(a=[1, 2], b=["a", "b"])
+        def test_x(a, b):
+            ...
+
+    Is equivalent to this (order not guaranteed):
+
+        @hypothesis.example(a=1, b="a")
+        @hypothesis.example(a=2, b="a")
+        @hypothesis.example(a=1, b="b")
+        @hypothesis.example(a=2, b="b")
+        def test_x(a, b):
+            ...
+    """
+    params, values = zip(*kwargs.items())
+
+    def inner(f):
+        out = f
+        for value_set in itertools.product(*values):
+            out = hypothesis.example(**dict(zip(params, value_set)))(out)
+        return out
+
+    return inner
 
 
 #############################################################################
@@ -1862,7 +1896,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '2009-12-0a',       # Invalid character in day
             '2009-01-32',       # Invalid day
             '2009-02-29',       # Invalid leap day
-            '20090228',         # Valid ISO8601 output not from isoformat()
             '2009\ud80002\ud80028',     # Separators are surrogate codepoints
         ]
 
@@ -1876,6 +1909,43 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         for bad_type in bad_types:
             with self.assertRaises(TypeError):
                 self.theclass.fromisoformat(bad_type)
+
+    @hypothesis.given(
+        d=hypothesis.strategies.dates(),
+        iso_formatter=iso_strategies.DATE_ISOFORMATTERS,
+    )
+    @_cross_product_examples(
+        d=[
+            date(2025, 1, 2),
+            date(2000, 1, 1),
+            date(1, 1, 1),
+            date(9999, 12, 31),
+        ],
+        iso_formatter=map(IsoFormatter, ["%Y-%m-%d", "%Y%m%d"]),
+    )
+    @_cross_product_examples(
+        d=[date(2025, 1, 2), date(2025, 12, 31), date(2023, 1, 1)],
+        iso_formatter=map(
+            IsoFormatter, ["%G-W%V", "%GW%V", "%G-W%V-%u", "%GW%V%u"]
+        ),
+    )
+    def test_fromisoformat_dates(self, d, iso_formatter):
+        if type(d) != self.theclass:
+            d = self.theclass(d.year, d.month, d.day)
+
+        input_str = iso_formatter.format(d)
+        actual = self.theclass.fromisoformat(input_str)
+        expected = iso_formatter.truncate(d)
+
+        self.assertEqual(
+            actual,
+            expected,
+            f"\n{actual} != {expected}\n"
+            + f"actual = {actual!r}\n"
+            + f"expected = {expected!r}\n"
+            + f"input_str = {input_str}\n"
+            + f"formatter = {iso_formatter!r}",
+        )
 
     def test_fromisocalendar(self):
         # For each test case, assert that fromisocalendar is the

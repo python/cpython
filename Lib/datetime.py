@@ -265,18 +265,38 @@ def _wrap_strftime(object, format, timetuple):
 def _parse_isoformat_date(dtstr):
     # It is assumed that this function will only be called with a
     # string of length exactly 10, and (though this is not used) ASCII-only
+    assert len(dtstr) in (7, 8, 10)
     year = int(dtstr[0:4])
-    if dtstr[4] != '-':
-        raise ValueError('Invalid date separator: %s' % dtstr[4])
+    has_sep = dtstr[4] == '-'
 
-    month = int(dtstr[5:7])
+    pos = 4 + has_sep
+    if dtstr[pos:pos + 1] == "W":
+        # YYYY-?Www-?D?
+        pos += 1
+        weekno = int(dtstr[pos:pos + 2])
+        pos += 2
 
-    if dtstr[7] != '-':
-        raise ValueError('Invalid date separator')
+        dayno = 1
+        if len(dtstr) > pos:
+            if (dtstr[pos:pos + 1] == '-') != has_sep:
+                raise ValueError('Inconsistent use of dash separator')
 
-    day = int(dtstr[8:10])
+            pos += has_sep
 
-    return [year, month, day]
+            dayno = int(dtstr[pos:pos + 1])
+
+        return _isoweek_to_gregorian(year, weekno, dayno)
+    else:
+        month = int(dtstr[pos:pos + 2])
+        pos += 2
+        if (dtstr[pos:pos + 1] == "-") != has_sep:
+            raise ValueError('Inconsistent use of dash separator')
+
+        pos += has_sep
+        day = int(dtstr[pos:pos + 2])
+
+        return year, month, day
+
 
 def _parse_hh_mm_ss_ff(tstr):
     # Parses things of the form HH[:MM[:SS[.fff[fff]]]]
@@ -355,6 +375,38 @@ def _parse_isoformat_time(tstr):
     time_comps.append(tzi)
 
     return time_comps
+
+# tuple[int, int, int] -> tuple[int, int, int] version of date.fromisocalendar
+def _isoweek_to_gregorian(year, week, day):
+    # Year is bounded this way because 9999-12-31 is (9999, 52, 5)
+    if not MINYEAR <= year <= MAXYEAR:
+        raise ValueError(f"Year is out of range: {year}")
+
+    if not 0 < week < 53:
+        out_of_range = True
+
+        if week == 53:
+            # ISO years have 53 weeks in them on years starting with a
+            # Thursday and leap years starting on a Wednesday
+            first_weekday = _ymd2ord(year, 1, 1) % 7
+            if (first_weekday == 4 or (first_weekday == 3 and
+                                       _is_leap(year))):
+                out_of_range = False
+
+        if out_of_range:
+            raise ValueError(f"Invalid week: {week}")
+
+    if not 0 < day < 8:
+        raise ValueError(f"Invalid weekday: {day} (range is [1, 7])")
+
+    # Now compute the offset from (Y, 1, 1) in days:
+    day_offset = (week - 1) * 7 + (day - 1)
+
+    # Calculate the ordinal day for monday, week 1
+    day_1 = _isoweek1monday(year)
+    ord_day = day_1 + day_offset
+
+    return _ord2ymd(ord_day)
 
 
 # Just raise TypeError if the arg isn't None or a string.
@@ -851,8 +903,10 @@ class date:
         if not isinstance(date_string, str):
             raise TypeError('fromisoformat: argument must be str')
 
+        if len(date_string) not in (7, 8, 10):
+            raise ValueError(f'Invalid isoformat string: {date_string!r}')
+
         try:
-            assert len(date_string) == 10
             return cls(*_parse_isoformat_date(date_string))
         except Exception:
             raise ValueError(f'Invalid isoformat string: {date_string!r}')
@@ -862,33 +916,7 @@ class date:
         """Construct a date from the ISO year, week number and weekday.
 
         This is the inverse of the date.isocalendar() function"""
-        # Year is bounded this way because 9999-12-31 is (9999, 52, 5)
-        if not MINYEAR <= year <= MAXYEAR:
-            raise ValueError(f"Year is out of range: {year}")
-
-        if not 0 < week < 53:
-            out_of_range = True
-
-            if week == 53:
-                # ISO years have 53 weeks in them on years starting with a
-                # Thursday and leap years starting on a Wednesday
-                first_weekday = _ymd2ord(year, 1, 1) % 7
-                if (first_weekday == 4 or (first_weekday == 3 and
-                                           _is_leap(year))):
-                    out_of_range = False
-
-            if out_of_range:
-                raise ValueError(f"Invalid week: {week}")
-
-        if not 0 < day < 8:
-            raise ValueError(f"Invalid weekday: {day} (range is [1, 7])")
-
-        # Now compute the offset from (Y, 1, 1) in days:
-        day_offset = (week - 1) * 7 + (day - 1)
-
-        # Calculate the ordinal day for monday, week 1
-        day_1 = _isoweek1monday(year)
-        ord_day = day_1 + day_offset
+        return cls(*_isoweek_to_gregorian(year, week, day))
 
         return cls(*_ord2ymd(ord_day))
 
