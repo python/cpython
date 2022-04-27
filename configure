@@ -6679,14 +6679,25 @@ fi
 $as_echo_n "checking HOSTRUNNER... " >&6; }
 if test -z "$HOSTRUNNER"
 then
-	case $ac_sys_system/$ac_sys_emscripten_target in #(
+  case $ac_sys_system/$ac_sys_emscripten_target in #(
   Emscripten/node*) :
-    HOSTRUNNER='node' ;; #(
+
+      if test "x$enable_wasm_pthreads" = xyes; then :
+
+        HOSTRUNNER='node --experimental-wasm-threads --experimental-wasm-bulk-memory'
+
+else
+
+        HOSTRUNNER='node'
+
+fi
+     ;; #(
   *) :
     HOSTRUNNER=''
- ;;
+   ;;
 esac
 fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HOSTRUNNER" >&5
 $as_echo "$HOSTRUNNER" >&6; }
 
