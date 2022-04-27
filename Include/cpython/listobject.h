@@ -25,7 +25,8 @@ PyAPI_FUNC(PyObject *) _PyList_Extend(PyListObject *, PyObject *);
 PyAPI_FUNC(void) _PyList_DebugMallocStats(FILE *out);
 
 /* Cast argument to PyListObject* type. */
-#define _PyList_CAST(op) (assert(PyList_Check(op)), (PyListObject *)(op))
+#define _PyList_CAST(op) \
+    (assert(PyList_Check(op)), _Py_reinterpret_cast(PyListObject*, (op)))
 
 // Macros and static inline functions, trading safety for speed
 
