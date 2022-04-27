@@ -169,8 +169,10 @@ jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
 
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
+def_op('EXTENDED_ARG_TRACE', 143)
 def_op('EXTENDED_ARG', 144)
 EXTENDED_ARG = 144
+
 def_op('LIST_APPEND', 145)
 def_op('SET_ADD', 146)
 def_op('MAP_ADD', 147)
@@ -263,9 +265,6 @@ _specializations = {
         "COMPARE_OP_FLOAT_JUMP",
         "COMPARE_OP_INT_JUMP",
         "COMPARE_OP_STR_JUMP",
-    ],
-    "EXTENDED_ARG": [
-        "EXTENDED_ARG_QUICK",
     ],
     "JUMP_BACKWARD": [
         "JUMP_BACKWARD_QUICK",

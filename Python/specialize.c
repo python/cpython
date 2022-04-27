@@ -276,9 +276,6 @@ _PyCode_Quicken(PyCodeObject *code)
                 case RESUME:
                     _Py_SET_OPCODE(instructions[i], RESUME_QUICK);
                     break;
-                case EXTENDED_ARG:
-                    _Py_SET_OPCODE(instructions[i], EXTENDED_ARG_QUICK);
-                    break;
                 case LOAD_FAST:
                     switch(previous_opcode) {
                         case LOAD_FAST:

@@ -5627,16 +5627,16 @@ handle_eval_breaker:
             assert(oparg);
             oparg <<= 8;
             oparg |= _Py_OPARG(*next_instr);
-            opcode = _PyOpcode_Deopt[_Py_OPCODE(*next_instr)];
-            PRE_DISPATCH_GOTO();
-            DISPATCH_GOTO();
+            NOTRACE_DISPATCH_SAME_OPARG();
         }
 
-        TARGET(EXTENDED_ARG_QUICK) {
+        TARGET(EXTENDED_ARG_TRACE) {
             assert(oparg);
             oparg <<= 8;
             oparg |= _Py_OPARG(*next_instr);
-            NOTRACE_DISPATCH_SAME_OPARG();
+            opcode = _PyOpcode_Deopt[_Py_OPCODE(*next_instr)];
+            PRE_DISPATCH_GOTO();
+            DISPATCH_GOTO();
         }
 
         TARGET(CACHE) {

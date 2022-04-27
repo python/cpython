@@ -133,6 +133,7 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
         for basic, family in opcode["_specializations"].items():
             for specialized in family:
                 deoptcodes[specialized] = basic
+        deoptcodes["EXTENDED_ARG"] = "EXTENDED_ARG_TRACE"
         iobj.write("\nconst uint8_t _PyOpcode_Deopt[256] = {\n")
         for opt, deopt in sorted(deoptcodes.items()):
             iobj.write(f"    [{opt}] = {deopt},\n")
