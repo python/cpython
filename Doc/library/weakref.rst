@@ -176,7 +176,7 @@ See :ref:`__slots__ documentation <slots>` for details.
       ...     pass
       ...
       >>> k1, k2 = T(), T()
-      >>> d = WeakKeyDictionary()
+      >>> d = weakref.WeakKeyDictionary()
       >>> d[k1] = 1   # d = {k1: 1}
       >>> d[k2] = 2   # d = {k1: 2}
       >>> del k1      # d = {}
