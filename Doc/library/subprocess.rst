@@ -619,7 +619,7 @@ functions.
 
    If *encoding* or *errors* are specified, or *text* is true, the file objects
    *stdin*, *stdout* and *stderr* are opened in text mode with the specified
-   encoding and *errors*, as described above in :ref:`frequently-used-arguments`.
+   *encoding* and *errors*, as described above in :ref:`frequently-used-arguments`.
    The *universal_newlines* argument is equivalent  to *text* and is provided
    for backwards compatibility. By default, file objects are opened in binary mode.
 
