@@ -86,7 +86,7 @@ The :mod:`datetime` module exports the following constants:
 
 .. attribute:: UTC
 
-   alias for the UTC timezone, ``datetime.utc``.
+   Alias for the UTC timezone singleton :attr:`datetime.timezone.utc`.
 
 Available Types
 ---------------
