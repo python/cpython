@@ -467,6 +467,14 @@ class BasicTest(BaseTest):
             'import os; print("__PYVENV_LAUNCHER__" in os.environ)'])
         self.assertEqual(out.strip(), 'False'.encode())
 
+    def test_pathsep_error(self):
+        """
+        Test that venv creation fails when the target directory contains
+        the path separator.
+        """
+        rmtree(self.env_dir)
+        self.assertRaises(ValueError, venv.create, self.env_dir + os.pathsep)
+
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""

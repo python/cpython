@@ -796,7 +796,7 @@ static PyModuleDef def_exec_raise = TEST_MODULE_DEF(
     "_testmultiphase_exec_raise", slots_exec_raise, NULL);
 
 PyMODINIT_FUNC
-PyInit__testmultiphase_exec_raise(PyObject *mod)
+PyInit__testmultiphase_exec_raise(void)
 {
     return PyModuleDef_Init(&def_exec_raise);
 }

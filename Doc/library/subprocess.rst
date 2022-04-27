@@ -1529,3 +1529,39 @@ runtime):
 
    :mod:`shlex`
       Module which provides function to parse and escape command lines.
+
+
+.. _disable_vfork:
+.. _disable_posix_spawn:
+
+Disabling use of ``vfork()`` or ``posix_spawn()``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+On Linux, :mod:`subprocess` defaults to using the ``vfork()`` system call
+internally when it is safe to do so rather than ``fork()``. This greatly
+improves performance.
+
+If you ever encounter a presumed highly-unusual situation where you need to
+prevent ``vfork()`` from being used by Python, you can set the
+:attr:`subprocess._USE_VFORK` attribute to a false value.
+
+   subprocess._USE_VFORK = False  # See CPython issue gh-NNNNNN.
+
+Setting this has no impact on use of ``posix_spawn()`` which could use
+``vfork()`` internally within its libc implementation.  There is a similar
+:attr:`subprocess._USE_POSIX_SPAWN` attribute if you need to prevent use of
+that.
+
+   subprocess._USE_POSIX_SPAWN = False  # See CPython issue gh-NNNNNN.
+
+It is safe to set these to false on any Python version. They will have no
+effect on older versions when unsupported. Do not assume the attributes are
+available to read. Despite their names, a true value does not indicate that the
+corresponding function will be used, only that that it may be.
+
+Please file issues any time you have to use these private knobs with a way to
+reproduce the issue you were seeing. Link to that issue from a comment in your
+code.
+
+.. versionadded:: 3.8 ``_USE_POSIX_SPAWN``
+.. versionadded:: 3.11 ``_USE_VFORK``
