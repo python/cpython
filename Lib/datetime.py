@@ -2290,7 +2290,8 @@ class timezone(tzinfo):
             return f'UTC{sign}{hours:02d}:{minutes:02d}:{seconds:02d}'
         return f'UTC{sign}{hours:02d}:{minutes:02d}'
 
-UTC = timezone.utc = timezone._create(timedelta(0))
+timezone.utc = timezone._create(timedelta(0))
+
 # bpo-37642: These attributes are rounded to the nearest minute for backwards
 # compatibility, even though the constructor will accept a wider range of
 # values. This may change in the future.
@@ -2514,3 +2515,5 @@ else:
     # appropriate to maintain a single module level docstring and
     # remove the following line.
     from _datetime import __doc__
+
+UTC = timezone.utc
