@@ -67,6 +67,9 @@ class TestModule(unittest.TestCase):
         self.assertEqual(datetime.MINYEAR, 1)
         self.assertEqual(datetime.MAXYEAR, 9999)
 
+    def test_utc_alias(self):
+        self.assertIs(UTC, timezone.utc)
+
     def test_all(self):
         """Test that __all__ only points to valid attributes."""
         all_attrs = dir(datetime_module)
