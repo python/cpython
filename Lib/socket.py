@@ -806,7 +806,7 @@ def getfqdn(name=''):
 _GLOBAL_DEFAULT_TIMEOUT = object()
 
 def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
-                      source_address=None, all_errors=False):
+                      source_address=None, *, all_errors=False):
     """Connect to *address* and return the socket object.
 
     Convenience function.  Connect to *address* (a 2-tuple ``(host,

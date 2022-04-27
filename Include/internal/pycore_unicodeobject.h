@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_fileutils.h"     // _Py_error_handler
 
+void _PyUnicode_ExactDealloc(PyObject *op);
 
 /* runtime lifecycle */
 

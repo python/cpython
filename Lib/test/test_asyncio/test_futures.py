@@ -148,7 +148,7 @@ class BaseFutureTests:
         with self.assertWarns(DeprecationWarning) as cm:
             with self.assertRaisesRegex(RuntimeError, 'There is no current event loop'):
                 self._new_future()
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
 
     def test_constructor_use_running_loop(self):
         async def test():
@@ -163,7 +163,7 @@ class BaseFutureTests:
         self.addCleanup(asyncio.set_event_loop, None)
         with self.assertWarns(DeprecationWarning) as cm:
             f = self._new_future()
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
         self.assertIs(f._loop, self.loop)
         self.assertIs(f.get_loop(), self.loop)
 
@@ -510,7 +510,7 @@ class BaseFutureTests:
         with self.assertWarns(DeprecationWarning) as cm:
             with self.assertRaises(RuntimeError):
                 asyncio.wrap_future(f1)
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
         ex.shutdown(wait=True)
 
     def test_wrap_future_use_running_loop(self):
@@ -534,7 +534,7 @@ class BaseFutureTests:
         f1 = ex.submit(run, 'oi')
         with self.assertWarns(DeprecationWarning) as cm:
             f2 = asyncio.wrap_future(f1)
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
         self.assertIs(self.loop, f2._loop)
         ex.shutdown(wait=True)
 

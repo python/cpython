@@ -1547,7 +1547,6 @@ dispatch:
         TARGET(SRE_OP_NEGATE):
         TARGET(SRE_OP_BIGCHARSET):
         TARGET(SRE_OP_CHARSET):
-        TARGET(SRE_OP_CALL):
             TRACE(("|%p|%p|UNKNOWN %d\n", pattern, ptr,
                    pattern[-1]));
             RETURN_ERROR(SRE_ERROR_ILLEGAL);

@@ -14,6 +14,16 @@
 #endif
 
 
+// Macro to use C++ static_cast<> and reinterpret_cast<> in the Python C API
+#ifdef __cplusplus
+#  define _Py_static_cast(type, expr) static_cast<type>(expr)
+#  define _Py_reinterpret_cast(type, expr) reinterpret_cast<type>(expr)
+#else
+#  define _Py_static_cast(type, expr) ((type)(expr))
+#  define _Py_reinterpret_cast(type, expr) ((type)(expr))
+#endif
+
+
 /* Defines to build Python and its standard library:
  *
  * - Py_BUILD_CORE: Build Python core. Give access to Python internals, but
@@ -295,10 +305,11 @@ extern "C" {
  *    VALUE may be evaluated more than once.
  */
 #ifdef Py_DEBUG
-#define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) \
-    (assert((WIDE)(NARROW)(VALUE) == (VALUE)), (NARROW)(VALUE))
+#  define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) \
+       (assert((WIDE)(NARROW)(VALUE) == (VALUE)), (NARROW)(VALUE))
 #else
-#define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
+#  define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) \
+       _Py_reinterpret_cast(NARROW, (VALUE))
 #endif
 
 

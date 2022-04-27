@@ -15,6 +15,7 @@
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
+#include "pycore_opcode.h"        // EXTRA_CASES
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
@@ -43,6 +44,55 @@
 #if !defined(Py_BUILD_CORE)
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
+
+#ifndef Py_DEBUG
+// GH-89279: The MSVC compiler does not inline these static inline functions
+// in PGO build in _PyEval_EvalFrameDefault(), because this function is over
+// the limit of PGO, and that limit cannot be configured.
+// Define them as macros to make sure that they are always inlined by the
+// preprocessor.
+
+#undef Py_DECREF
+#define Py_DECREF(arg) \
+    do { \
+        PyObject *op = _PyObject_CAST(arg); \
+        if (--op->ob_refcnt == 0) { \
+            destructor dealloc = Py_TYPE(op)->tp_dealloc; \
+            (*dealloc)(op); \
+        } \
+    } while (0)
+
+#undef Py_XDECREF
+#define Py_XDECREF(arg) \
+    do { \
+        PyObject *xop = _PyObject_CAST(arg); \
+        if (xop != NULL) { \
+            Py_DECREF(xop); \
+        } \
+    } while (0)
+
+#undef Py_IS_TYPE
+#define Py_IS_TYPE(ob, type) \
+    (_PyObject_CAST(ob)->ob_type == (type))
+
+#undef _Py_DECREF_SPECIALIZED
+#define _Py_DECREF_SPECIALIZED(arg, dealloc) \
+    do { \
+        PyObject *op = _PyObject_CAST(arg); \
+        if (--op->ob_refcnt == 0) { \
+            destructor d = (destructor)(dealloc); \
+            d(op); \
+        } \
+    } while (0)
+#endif
+
+// GH-89279: Similar to above, force inlining by using a macro.
+#if defined(_MSC_VER) && SIZEOF_INT == 4
+#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
+#else
+#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
+#endif
+
 
 /* Forward declarations */
 static PyObject *trace_call_function(
@@ -192,10 +242,10 @@ COMPUTE_EVAL_BREAKER(PyInterpreterState *interp,
                      struct _ceval_state *ceval2)
 {
     _Py_atomic_store_relaxed(&ceval2->eval_breaker,
-        _Py_atomic_load_relaxed(&ceval2->gil_drop_request)
-        | (_Py_atomic_load_relaxed(&ceval->signals_pending)
+        _Py_atomic_load_relaxed_int32(&ceval2->gil_drop_request)
+        | (_Py_atomic_load_relaxed_int32(&ceval->signals_pending)
            && _Py_ThreadCanHandleSignals(interp))
-        | (_Py_atomic_load_relaxed(&ceval2->pending.calls_to_do)
+        | (_Py_atomic_load_relaxed_int32(&ceval2->pending.calls_to_do)
            && _Py_ThreadCanHandlePendingCalls())
         | ceval2->pending.async_exc);
 }
@@ -740,7 +790,7 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
 
     struct _pending_calls *pending = &tstate->interp->ceval.pending;
 
-    if (!_Py_atomic_load_relaxed(&(pending->calls_to_do))) {
+    if (!_Py_atomic_load_relaxed_int32(&(pending->calls_to_do))) {
         return;
     }
 
@@ -1187,7 +1237,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
     struct _ceval_runtime_state *ceval = &runtime->ceval;
 
     /* Pending signals */
-    if (_Py_atomic_load_relaxed(&ceval->signals_pending)) {
+    if (_Py_atomic_load_relaxed_int32(&ceval->signals_pending)) {
         if (handle_signals(tstate) != 0) {
             return -1;
         }
@@ -1195,14 +1245,14 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
     /* Pending calls */
     struct _ceval_state *ceval2 = &tstate->interp->ceval;
-    if (_Py_atomic_load_relaxed(&ceval2->pending.calls_to_do)) {
+    if (_Py_atomic_load_relaxed_int32(&ceval2->pending.calls_to_do)) {
         if (make_pending_calls(tstate->interp) != 0) {
             return -1;
         }
     }
 
     /* GIL drop request */
-    if (_Py_atomic_load_relaxed(&ceval2->gil_drop_request)) {
+    if (_Py_atomic_load_relaxed_int32(&ceval2->gil_drop_request)) {
         /* Give another thread a chance */
         if (_PyThreadState_Swap(&runtime->gilstate, NULL) != tstate) {
             Py_FatalError("tstate mix-up");
@@ -1360,7 +1410,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
-    if (_Py_atomic_load_relaxed(eval_breaker)) { \
+    if (_Py_atomic_load_relaxed_int32(eval_breaker)) { \
         goto handle_eval_breaker; \
     }
 
@@ -1640,10 +1690,8 @@ typedef struct {
     PyObject *kwnames;
 } CallShape;
 
-static inline bool
-is_method(PyObject **stack_pointer, int args) {
-    return PEEK(args+2) != NULL;
-}
+// GH-89279: Must be a macro to be sure it's inlined by MSVC.
+#define is_method(stack_pointer, args) (PEEK((args)+2) != NULL)
 
 #define KWNAMES_LEN() \
     (call_shape.kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(call_shape.kwnames)))
@@ -1662,7 +1710,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #ifdef Py_STATS
     int lastopcode = 0;
 #endif
-    int opcode;        /* Current opcode */
+    // opcode is an 8-bit value to improve the code generated by MSVC
+    // for the big switch below (in combination with the EXTRA_CASES macro).
+    uint8_t opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
 
@@ -1794,7 +1844,7 @@ handle_eval_breaker:
             PREDICTED(RESUME_QUICK);
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
-            if (_Py_atomic_load_relaxed(eval_breaker) && oparg < 2) {
+            if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
                 goto handle_eval_breaker;
             }
             DISPATCH();
@@ -1977,8 +2027,8 @@ handle_eval_breaker:
             STAT_INC(BINARY_OP, hit);
             PyObject *prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(prod);
-            Py_DECREF(right);
-            Py_DECREF(left);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             STACK_SHRINK(1);
             if (prod == NULL) {
                 goto error;
@@ -1998,8 +2048,8 @@ handle_eval_breaker:
                 ((PyFloatObject *)right)->ob_fval;
             PyObject *prod = PyFloat_FromDouble(dprod);
             SET_SECOND(prod);
-            Py_DECREF(right);
-            Py_DECREF(left);
+            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             STACK_SHRINK(1);
             if (prod == NULL) {
                 goto error;
@@ -2017,8 +2067,8 @@ handle_eval_breaker:
             STAT_INC(BINARY_OP, hit);
             PyObject *sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(sub);
-            Py_DECREF(right);
-            Py_DECREF(left);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             STACK_SHRINK(1);
             if (sub == NULL) {
                 goto error;
@@ -2037,8 +2087,8 @@ handle_eval_breaker:
             double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
             PyObject *sub = PyFloat_FromDouble(dsub);
             SET_SECOND(sub);
-            Py_DECREF(right);
-            Py_DECREF(left);
+            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             STACK_SHRINK(1);
             if (sub == NULL) {
                 goto error;
@@ -2057,8 +2107,8 @@ handle_eval_breaker:
             PyObject *res = PyUnicode_Concat(left, right);
             STACK_SHRINK(1);
             SET_TOP(res);
-            Py_DECREF(left);
-            Py_DECREF(right);
+            _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             if (TOP() == NULL) {
                 goto error;
             }
@@ -2090,10 +2140,10 @@ handle_eval_breaker:
              * that the string is safe to mutate.
              */
             assert(Py_REFCNT(left) >= 2);
-            Py_DECREF(left); // XXX never need to dealloc
+            _Py_DECREF_NO_DEALLOC(left);
             STACK_SHRINK(2);
             PyUnicode_Append(target_local, right);
-            Py_DECREF(right);
+            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             if (*target_local == NULL) {
                 goto error;
             }
@@ -2113,8 +2163,8 @@ handle_eval_breaker:
                 ((PyFloatObject *)right)->ob_fval;
             PyObject *sum = PyFloat_FromDouble(dsum);
             SET_SECOND(sum);
-            Py_DECREF(right);
-            Py_DECREF(left);
+            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             STACK_SHRINK(1);
             if (sum == NULL) {
                 goto error;
@@ -2132,8 +2182,8 @@ handle_eval_breaker:
             STAT_INC(BINARY_OP, hit);
             PyObject *sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(sum);
-            Py_DECREF(right);
-            Py_DECREF(left);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             STACK_SHRINK(1);
             if (sum == NULL) {
                 goto error;
@@ -2192,7 +2242,7 @@ handle_eval_breaker:
             assert(res != NULL);
             Py_INCREF(res);
             STACK_SHRINK(1);
-            Py_DECREF(sub);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             SET_TOP(res);
             Py_DECREF(list);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
@@ -2217,7 +2267,7 @@ handle_eval_breaker:
             assert(res != NULL);
             Py_INCREF(res);
             STACK_SHRINK(1);
-            Py_DECREF(sub);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             SET_TOP(res);
             Py_DECREF(tuple);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
@@ -2359,7 +2409,7 @@ handle_eval_breaker:
             STACK_SHRINK(3);
             assert(old_value != NULL);
             Py_DECREF(old_value);
-            Py_DECREF(sub);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             Py_DECREF(list);
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
             NOTRACE_DISPATCH();
@@ -3752,8 +3802,8 @@ handle_eval_breaker:
             JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
             NEXTOPARG();
             STACK_SHRINK(2);
-            Py_DECREF(left);
-            Py_DECREF(right);
+            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             assert(opcode == POP_JUMP_FORWARD_IF_FALSE ||
                    opcode == POP_JUMP_BACKWARD_IF_FALSE ||
                    opcode == POP_JUMP_FORWARD_IF_TRUE ||
@@ -3795,8 +3845,8 @@ handle_eval_breaker:
             JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
             NEXTOPARG();
             STACK_SHRINK(2);
-            Py_DECREF(left);
-            Py_DECREF(right);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             assert(opcode == POP_JUMP_FORWARD_IF_FALSE ||
                    opcode == POP_JUMP_BACKWARD_IF_FALSE ||
                    opcode == POP_JUMP_FORWARD_IF_TRUE ||
@@ -3841,8 +3891,8 @@ handle_eval_breaker:
                    opcode == POP_JUMP_FORWARD_IF_TRUE ||
                    opcode == POP_JUMP_BACKWARD_IF_TRUE);
             STACK_SHRINK(2);
-            Py_DECREF(left);
-            Py_DECREF(right);
+            _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             assert(res == 0 || res == 1);
             int sign = 1 - res;
             int jump = (9 << (sign + 1)) & when_to_jump_mask;
@@ -4008,11 +4058,11 @@ handle_eval_breaker:
             PREDICTED(POP_JUMP_BACKWARD_IF_FALSE);
             PyObject *cond = POP();
             if (Py_IsTrue(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 DISPATCH();
             }
             if (Py_IsFalse(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
@@ -4034,10 +4084,10 @@ handle_eval_breaker:
             PREDICTED(POP_JUMP_FORWARD_IF_FALSE);
             PyObject *cond = POP();
             if (Py_IsTrue(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
             }
             else if (Py_IsFalse(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 JUMPBY(oparg);
             }
             else {
@@ -4057,11 +4107,11 @@ handle_eval_breaker:
         TARGET(POP_JUMP_BACKWARD_IF_TRUE) {
             PyObject *cond = POP();
             if (Py_IsFalse(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 DISPATCH();
             }
             if (Py_IsTrue(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
@@ -4082,10 +4132,10 @@ handle_eval_breaker:
         TARGET(POP_JUMP_FORWARD_IF_TRUE) {
             PyObject *cond = POP();
             if (Py_IsFalse(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
             }
             else if (Py_IsTrue(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 JUMPBY(oparg);
             }
             else {
@@ -4110,7 +4160,7 @@ handle_eval_breaker:
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
             }
-            Py_DECREF(value);
+            _Py_DECREF_NO_DEALLOC(value);
             DISPATCH();
         }
 
@@ -4126,21 +4176,25 @@ handle_eval_breaker:
         TARGET(POP_JUMP_BACKWARD_IF_NONE) {
             PyObject *value = POP();
             if (Py_IsNone(value)) {
-                Py_DECREF(value);
+                _Py_DECREF_NO_DEALLOC(value);
                 JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
-                DISPATCH();
             }
-            Py_DECREF(value);
+            else {
+                Py_DECREF(value);
+            }
             DISPATCH();
         }
 
         TARGET(POP_JUMP_FORWARD_IF_NONE) {
             PyObject *value = POP();
             if (Py_IsNone(value)) {
+                _Py_DECREF_NO_DEALLOC(value);
                 JUMPBY(oparg);
             }
-            Py_DECREF(value);
+            else {
+                Py_DECREF(value);
+            }
             DISPATCH();
         }
 
@@ -4149,7 +4203,7 @@ handle_eval_breaker:
             int err;
             if (Py_IsTrue(cond)) {
                 STACK_SHRINK(1);
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 DISPATCH();
             }
             if (Py_IsFalse(cond)) {
@@ -4173,7 +4227,7 @@ handle_eval_breaker:
             int err;
             if (Py_IsFalse(cond)) {
                 STACK_SHRINK(1);
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 DISPATCH();
             }
             if (Py_IsTrue(cond)) {
@@ -5641,7 +5695,7 @@ handle_eval_breaker:
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
 #else
-        default:
+        EXTRA_CASES  // From opcode.h, a 'case' for each unused opcode
 #endif
             fprintf(stderr, "XXX lineno: %d, opcode: %d\n",
                     _PyInterpreterFrame_GetLine(frame),  opcode);

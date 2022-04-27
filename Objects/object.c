@@ -9,7 +9,7 @@
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_namespace.h"     // _PyNamespace_Type
-#include "pycore_object.h"        // _PyType_CheckConsistency()
+#include "pycore_object.h"        // _PyType_CheckConsistency(), _Py_FatalRefcountError()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -1834,6 +1834,7 @@ _PyTypes_InitState(PyInterpreterState *interp)
 #ifdef MS_WINDOWS
 extern PyTypeObject PyHKEY_Type;
 #endif
+extern PyTypeObject _Py_GenericAliasIterType;
 
 static PyTypeObject* static_types[] = {
     // The two most important base types: must be initialized first and
@@ -1923,6 +1924,7 @@ static PyTypeObject* static_types[] = {
     &_PyAsyncGenWrappedValue_Type,
     &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
+    &_Py_GenericAliasIterType,
     &_PyHamtItems_Type,
     &_PyHamtKeys_Type,
     &_PyHamtValues_Type,
@@ -2352,11 +2354,45 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 void
 _Py_Dealloc(PyObject *op)
 {
-    destructor dealloc = Py_TYPE(op)->tp_dealloc;
+    PyTypeObject *type = Py_TYPE(op);
+    destructor dealloc = type->tp_dealloc;
+#ifdef Py_DEBUG
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *old_exc_type = tstate->curexc_type;
+    // Keep the old exception type alive to prevent undefined behavior
+    // on (tstate->curexc_type != old_exc_type) below
+    Py_XINCREF(old_exc_type);
+    // Make sure that type->tp_name remains valid
+    Py_INCREF(type);
+#endif
+
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
     (*dealloc)(op);
+
+#ifdef Py_DEBUG
+    // gh-89373: The tp_dealloc function must leave the current exception
+    // unchanged.
+    if (tstate->curexc_type != old_exc_type) {
+        const char *err;
+        if (old_exc_type == NULL) {
+            err = "Deallocator of type '%s' raised an exception";
+        }
+        else if (tstate->curexc_type == NULL) {
+            err = "Deallocator of type '%s' cleared the current exception";
+        }
+        else {
+            // It can happen if dealloc() normalized the current exception.
+            // A deallocator function must not change the current exception,
+            // not even normalize it.
+            err = "Deallocator of type '%s' overrode the current exception";
+        }
+        _Py_FatalErrorFormat(__func__, err, type->tp_name);
+    }
+    Py_XDECREF(old_exc_type);
+    Py_DECREF(type);
+#endif
 }
 
 

@@ -196,7 +196,7 @@ def bug42562():
 
 
 # Set line number for 'pass' to None
-bug42562.__code__ = bug42562.__code__.replace(co_linetable=b'\x04\x80')
+bug42562.__code__ = bug42562.__code__.replace(co_linetable=b'\xf8')
 
 
 dis_bug42562 = """\
@@ -1560,31 +1560,18 @@ class InstructionTests(InstructionTestCase):
     @requires_debug_ranges()
     def test_co_positions_missing_info(self):
         code = compile('x, y, z', '<test>', 'exec')
-        code_without_column_table = code.replace(co_columntable=b'')
-        actual = dis.get_instructions(code_without_column_table)
+        code_without_location_table = code.replace(co_linetable=b'')
+        actual = dis.get_instructions(code_without_location_table)
         for instruction in actual:
             with self.subTest(instruction=instruction):
                 positions = instruction.positions
                 self.assertEqual(len(positions), 4)
                 if instruction.opname == "RESUME":
                     continue
-                self.assertEqual(positions.lineno, 1)
-                self.assertEqual(positions.end_lineno, 1)
+                self.assertIsNone(positions.lineno)
+                self.assertIsNone(positions.end_lineno)
                 self.assertIsNone(positions.col_offset)
                 self.assertIsNone(positions.end_col_offset)
-
-        code_without_endline_table = code.replace(co_endlinetable=b'')
-        actual = dis.get_instructions(code_without_endline_table)
-        for instruction in actual:
-            with self.subTest(instruction=instruction):
-                positions = instruction.positions
-                self.assertEqual(len(positions), 4)
-                if instruction.opname == "RESUME":
-                    continue
-                self.assertEqual(positions.lineno, 1)
-                self.assertIsNone(positions.end_lineno)
-                self.assertIsNotNone(positions.col_offset)
-                self.assertIsNotNone(positions.end_col_offset)
 
 # get_instructions has its own tests above, so can rely on it to validate
 # the object oriented API
