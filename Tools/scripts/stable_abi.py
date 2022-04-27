@@ -309,12 +309,6 @@ def gen_ctypes_test(manifest, args, outfile):
     )
     optional_items = {}
     for item in items:
-        if item.name in (
-                # Some symbols aren't exported on all platforms.
-                # This is a bug: https://bugs.python.org/issue44133
-                'PyModule_Create2', 'PyModule_FromDefAndSpec2',
-            ):
-            continue
         if item.ifdef:
             optional_items.setdefault(item.ifdef, []).append(item.name)
         else:
