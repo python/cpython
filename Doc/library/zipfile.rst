@@ -354,7 +354,9 @@ ZipFile Objects
    :data:`PreserveMode.NONE` --- do not preserve any permissions. Other
    options are to preserve a safe subset of permissions
    (:data:`PreserveMode.SAFE`) or all permissions
-   (:data:`PreserveMode.ALL`).
+   (:data:`PreserveMode.ALL`). If the archive was created on Windows,
+   the *preserve_permissions* argument is ignored and permissions are not
+   preserved.
 
    Returns the normalized path created (a directory or new file).
 
@@ -386,7 +388,8 @@ ZipFile Objects
    of zipped files are preserved.  The default is :data:`PreserveMode.NONE`
    --- do not preserve any permissions. Other options are to preserve a safe
    subset of permissions (:data:`PreserveMode.SAFE`) or all permissions
-   (:data:`PreserveMode.ALL`).
+   (:data:`PreserveMode.ALL`). If the archive was created on Windows,
+   the *preserve_pemissions* argument is ignored and permissions are not preserved.
 
 
    .. warning::
