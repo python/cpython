@@ -34,6 +34,7 @@ uint8_t _PyOpcode_Adaptive[256] = {
 Py_ssize_t _Py_QuickenedCount = 0;
 #ifdef Py_STATS
 PyStats _py_stats = { 0 };
+int _enable_py_stats = 1;
 
 #define ADD_STAT_TO_DICT(res, field) \
     do { \
@@ -127,6 +128,12 @@ _Py_GetSpecializationStats(void) {
         return NULL;
     }
     return stats;
+}
+
+void
+_Py_ClearSpecializationStats()
+{
+    memset(&_py_stats, 0, sizeof(_py_stats));
 }
 #endif
 

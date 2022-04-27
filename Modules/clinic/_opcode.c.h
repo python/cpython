@@ -57,6 +57,42 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_opcode_enable_specialization_stats__doc__,
+"enable_specialization_stats($module, /)\n"
+"--\n"
+"\n"
+"Enable the specialization stats");
+
+#define _OPCODE_ENABLE_SPECIALIZATION_STATS_METHODDEF    \
+    {"enable_specialization_stats", (PyCFunction)_opcode_enable_specialization_stats, METH_NOARGS, _opcode_enable_specialization_stats__doc__},
+
+static PyObject *
+_opcode_enable_specialization_stats_impl(PyObject *module);
+
+static PyObject *
+_opcode_enable_specialization_stats(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _opcode_enable_specialization_stats_impl(module);
+}
+
+PyDoc_STRVAR(_opcode_disable_specialization_stats__doc__,
+"disable_specialization_stats($module, /)\n"
+"--\n"
+"\n"
+"Disable the specialization stats");
+
+#define _OPCODE_DISABLE_SPECIALIZATION_STATS_METHODDEF    \
+    {"disable_specialization_stats", (PyCFunction)_opcode_disable_specialization_stats, METH_NOARGS, _opcode_disable_specialization_stats__doc__},
+
+static PyObject *
+_opcode_disable_specialization_stats_impl(PyObject *module);
+
+static PyObject *
+_opcode_disable_specialization_stats(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _opcode_disable_specialization_stats_impl(module);
+}
+
 PyDoc_STRVAR(_opcode_get_specialization_stats__doc__,
 "get_specialization_stats($module, /)\n"
 "--\n"
@@ -74,4 +110,4 @@ _opcode_get_specialization_stats(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _opcode_get_specialization_stats_impl(module);
 }
-/*[clinic end generated code: output=1699b4b1488b49c1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=359c0440090ed376 input=a9049054013a1b77]*/

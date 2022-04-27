@@ -307,16 +307,18 @@ typedef struct _stats {
 } PyStats;
 
 extern PyStats _py_stats;
+PyAPI_DATA(int) _enable_py_stats;
 
-#define STAT_INC(opname, name) _py_stats.opcode_stats[opname].specialization.name++
-#define STAT_DEC(opname, name) _py_stats.opcode_stats[opname].specialization.name--
-#define OPCODE_EXE_INC(opname) _py_stats.opcode_stats[opname].execution_count++
-#define CALL_STAT_INC(name) _py_stats.call_stats.name++
-#define OBJECT_STAT_INC(name) _py_stats.object_stats.name++
+#define STAT_INC(opname, name) _enable_py_stats && _py_stats.opcode_stats[opname].specialization.name++
+#define STAT_DEC(opname, name) _enable_py_stats && _py_stats.opcode_stats[opname].specialization.name--
+#define OPCODE_EXE_INC(opname) _enable_py_stats && _py_stats.opcode_stats[opname].execution_count++
+#define CALL_STAT_INC(name) _enable_py_stats && _py_stats.call_stats.name++
+#define OBJECT_STAT_INC(name) _enable_py_stats && _py_stats.object_stats.name++
 
 extern void _Py_PrintSpecializationStats(int to_file);
 
-extern PyObject* _Py_GetSpecializationStats(void);
+PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
+PyAPI_FUNC(void) _Py_ClearSpecializationStats(void);
 
 #else
 #define STAT_INC(opname, name) ((void)0)

@@ -76,6 +76,42 @@ _opcode_stack_effect_impl(PyObject *module, int opcode, PyObject *oparg,
 
 /*[clinic input]
 
+_opcode.enable_specialization_stats
+
+Enable the specialization stats
+[clinic start generated code]*/
+
+static PyObject *
+_opcode_enable_specialization_stats_impl(PyObject *module)
+/*[clinic end generated code: output=02d8385bbafb7b63 input=62e09e133581bdad]*/
+{
+#ifdef Py_STATS
+    _enable_py_stats = 1;
+    _Py_ClearSpecializationStats();
+#endif
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
+
+_opcode.disable_specialization_stats
+
+Disable the specialization stats
+[clinic start generated code]*/
+
+static PyObject *
+_opcode_disable_specialization_stats_impl(PyObject *module)
+/*[clinic end generated code: output=14ca17e44089d7a3 input=3213ea9f684d5f3b]*/
+{
+#ifdef Py_STATS
+    _enable_py_stats = 0;
+#endif
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+
 _opcode.get_specialization_stats
 
 Return the specialization stats
@@ -96,6 +132,8 @@ static PyMethodDef
 opcode_functions[] =  {
     _OPCODE_STACK_EFFECT_METHODDEF
     _OPCODE_GET_SPECIALIZATION_STATS_METHODDEF
+    _OPCODE_ENABLE_SPECIALIZATION_STATS_METHODDEF
+    _OPCODE_DISABLE_SPECIALIZATION_STATS_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 
