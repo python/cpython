@@ -104,7 +104,7 @@ struct _object {
 };
 
 /* Cast argument to PyObject* type. */
-#define _PyObject_CAST(op) ((PyObject*)(op))
+#define _PyObject_CAST(op) _Py_reinterpret_cast(PyObject*, (op))
 
 typedef struct {
     PyObject ob_base;
@@ -112,7 +112,7 @@ typedef struct {
 } PyVarObject;
 
 /* Cast argument to PyVarObject* type. */
-#define _PyVarObject_CAST(op) ((PyVarObject*)(op))
+#define _PyVarObject_CAST(op) _Py_reinterpret_cast(PyVarObject*, (op))
 
 
 // Test if the 'x' object is the 'y' object, the same as "x is y" in Python.
@@ -780,7 +780,8 @@ static inline int PyType_Check(PyObject *op) {
 #  define PyType_Check(op) PyType_Check(_PyObject_CAST(op))
 #endif
 
-#define _PyType_CAST(op) (assert(PyType_Check(op)), (PyTypeObject*)(op))
+#define _PyType_CAST(op) \
+    (assert(PyType_Check(op)), _Py_reinterpret_cast(PyTypeObject*, (op)))
 
 static inline int PyType_CheckExact(PyObject *op) {
     return Py_IS_TYPE(op, &PyType_Type);
