@@ -836,11 +836,9 @@ class ZipExtFile(io.BufferedIOBase):
 
         if hasattr(zipinfo, 'CRC'):
             self._expected_crc = zipinfo.CRC
-            self._orig_crc = zipinfo.CRC
             self._running_crc = crc32(b'')
         else:
             self._expected_crc = None
-            self._orig_crc = None
 
         self._seekable = False
         try:
@@ -849,6 +847,7 @@ class ZipExtFile(io.BufferedIOBase):
                 self._orig_compress_size = zipinfo.compress_size
                 self._orig_file_size = zipinfo.file_size
                 self._orig_start_crc = self._running_crc
+                self._orig_crc = self._expected_crc
                 self._seekable = True
         except AttributeError:
             pass
@@ -1116,7 +1115,7 @@ class ZipExtFile(io.BufferedIOBase):
                 self._init_decrypter()
 
         # Fast seek uncompressed unencrypted file
-        if self._compress_type == ZIP_STORED and self._decrypter == None and read_offset > 0:
+        if self._compress_type == ZIP_STORED and self._decrypter is None and read_offset > 0:
             # disable CRC checking after first seeking - it would be invalid
             self._expected_crc = None
             # seek actual file taking already buffered data into account
