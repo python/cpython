@@ -1,6 +1,6 @@
-from enum import IntEnum, _simple_enum
+from enum import StrEnum, IntEnum, _simple_enum
 
-__all__ = ['HTTPStatus']
+__all__ = ['HTTPStatus', 'HTTPMethod']
 
 
 @_simple_enum(IntEnum)
@@ -149,3 +149,30 @@ class HTTPStatus:
     NETWORK_AUTHENTICATION_REQUIRED = (511,
         'Network Authentication Required',
         'The client needs to authenticate to gain network access')
+
+
+@_simple_enum(StrEnum)
+class HTTPMethod:
+    """HTTP methods and descriptions
+
+    Methods from the following RFCs are all observed:
+
+        * RFC 7231: Hypertext Transfer Protocol (HTTP/1.1), obsoletes 2616
+        * RFC 5789: PATCH Method for HTTP
+    """
+    def __new__(cls, value, description):
+        obj = str.__new__(cls, value)
+        obj._value_ = value
+
+        obj.description = description
+        return obj
+
+    GET = 'GET', 'Transfer a current representation of the target resource.'
+    HEAD = 'HEAD', 'Same as GET, but only transfer the status line and header section.'
+    POST = 'POST', 'Perform resource-specific processing on the request payload.'
+    PUT = 'PUT', 'Replace all current representations of the target resource with the request payload.'
+    DELETE = 'DELETE', 'Remove all current representations of the target resource.'
+    CONNECT = 'CONNECT', 'Establish a tunnel to the server identified by the target resource.'
+    OPTIONS = 'OPTIONS', 'Describe the communication options for the target resource.'
+    TRACE = 'TRACE', 'Perform a message loop-back test along the path to the target resource.'
+    PATCH = 'PATCH', 'Apply partial modifications to a resource.'
