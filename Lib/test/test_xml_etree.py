@@ -3711,6 +3711,7 @@ class IOTest(unittest.TestCase):
                      "<tag key=\"åöö&lt;&gt;\" />" % enc).encode(enc))
 
     def test_write_to_filename(self):
+        self.addCleanup(os_helper.unlink, TESTFN)
         tree = ET.ElementTree(ET.XML('''<site>\xf8</site>'''))
         tree.write(TESTFN)
         with open(TESTFN, 'rb') as f:
@@ -3740,9 +3741,6 @@ class IOTest(unittest.TestCase):
         with open(TESTFN, 'rb') as f:
             data = f.read()
             expected = "<site>\xf8</site>".encode(encoding, 'xmlcharrefreplace')
-            self.assertIn(
-                "<site>\xf8</site>".encode(encoding, 'xmlcharrefreplace'),
-                data)
             if encoding.lower() in ('utf-8', 'ascii'):
                 self.assertEqual(data, expected)
             else:
