@@ -1028,7 +1028,7 @@ call fails (for example because the path doesn't exist).
 
    Rename this file or directory to the given *target*, and return a new Path
    instance pointing to *target*.  If *target* points to an existing file or
-   directory, it will be unconditionally replaced.
+   empty directory, it will be unconditionally replaced.
 
    The target path may be absolute or relative. Relative paths are interpreted
    relative to the current working directory, *not* the directory of the Path
