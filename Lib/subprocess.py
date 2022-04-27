@@ -662,7 +662,7 @@ def getstatusoutput(cmd, *, encoding=None):
         data = data[:-1]
     return exitcode, data
 
-def getoutput(cmd):
+def getoutput(cmd, *, encoding=None):
     """Return output (stdout or stderr) of executing cmd in a shell.
 
     Like getstatusoutput(), except the exit status is ignored and the return
@@ -672,7 +672,8 @@ def getoutput(cmd):
     >>> subprocess.getoutput('ls /bin/ls')
     '/bin/ls'
     """
-    return getstatusoutput(cmd)[1]
+    return getstatusoutput(cmd, encoding=encoding)[1]
+
 
 
 def _use_posix_spawn():
