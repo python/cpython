@@ -2755,6 +2755,53 @@ _ssl__SSLSocket_verify_client_post_handshake_impl(PySSLSocket *self)
 #endif
 }
 
+/*[clinic input]
+_ssl._SSLSocket.export_keying_material
+    label: Py_buffer(accept={buffer, str})
+    material_len: int
+    context: Py_buffer(accept={buffer, str, NoneType})
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_export_keying_material_impl(PySSLSocket *self,
+                                            Py_buffer *label,
+                                            int material_len,
+                                            Py_buffer *context)
+/*[clinic end generated code: output=17b975255ccb2984 input=57daff6c33809e2e]*/
+{
+    PyObject *out = NULL;
+    unsigned char *material;
+
+    if (material_len < 1) {
+        PyErr_SetString(PyExc_ValueError, "material_len must be positive");
+        return NULL;
+    }
+
+    if (!SSL_is_init_finished(self->ssl)) {
+        /* handshake not finished */
+        Py_RETURN_NONE;
+    }
+
+    out = PyBytes_FromStringAndSize(NULL, material_len);
+    if (out == NULL)
+        goto error;
+
+    material = (unsigned char *)PyBytes_AS_STRING(out);
+
+    if (!SSL_export_keying_material(self->ssl,
+                                    material, material_len,
+                                    label->buf, label->len,
+                                    context->buf, context->len,
+                                    context->buf != NULL)) {
+        Py_CLEAR(out);
+        _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
+        goto error;
+    }
+
+error:
+    return out;
+}
+
 static SSL_SESSION*
 _ssl_session_dup(SSL_SESSION *session) {
     SSL_SESSION *newsession = NULL;
@@ -2921,6 +2968,7 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_VERIFY_CLIENT_POST_HANDSHAKE_METHODDEF
     _SSL__SSLSOCKET_GET_UNVERIFIED_CHAIN_METHODDEF
     _SSL__SSLSOCKET_GET_VERIFIED_CHAIN_METHODDEF
+    _SSL__SSLSOCKET_EXPORT_KEYING_MATERIAL_METHODDEF
     {NULL, NULL}
 };
 
