@@ -40,7 +40,7 @@ bound into a function.
 
    Since the definition of the bytecode changes often, calling
    :c:func:`PyCode_New` directly can bind you to a precise Python version.
-   This function is  part of the semi-stable C API.
+   This function is part of the semi-stable C API.
    See :c:macro:`Py_USING_SEMI_STABLE_API` for usage.
 
    .. versionchanged:: 3.11

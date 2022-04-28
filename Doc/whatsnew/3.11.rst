@@ -1172,8 +1172,8 @@ C API Changes
   - :c:func:`PyInterpreterState_SetEvalFrameFunc`
   - :c:type:`PyFrameEvalFunction`
 
-  Some of these named with a leading underscore in previous versions; the old
-  names are available as aliases.
+  Some of these were named with a leading underscore in previous versions;
+  the old names are available as aliases.
 
   (Contributed by Petr Viktorin, Victor Stinner and Nick Coghlan in
   :issue:`91744`.)

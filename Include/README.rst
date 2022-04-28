@@ -5,7 +5,7 @@ The C API is divided into these sections:
 
 1. ``Include/``: Limited API
 2. ``Include/cpython/``: CPython implementation details
-3. ``Include/semi-stable/``: API that can change between minor releases
+3. ``Include/semistable/``: API that can change between minor releases
 4. ``Include/internal/``: The internal API
 
 Information on changing the C API is available `in the developer guide`_
