@@ -11,23 +11,19 @@
 There are a couple of useful utilities provided in the :mod:`email.utils`
 module:
 
-.. function:: localtime(dt=None, isdst=-1)
+.. function:: localtime(dt=None)
 
     Return local time as an aware datetime object.  If called without
     arguments, return current time.  Otherwise *dt* argument should be a
     :class:`~datetime.datetime` instance, and it is converted to the local time
     zone according to the system time zone database.  If *dt* is naive (that
-    is, ``dt.tzinfo`` is ``None``), it is assumed to be in local time.  In this
-    case, a positive or zero value for *isdst* causes ``localtime`` to presume
-    initially that summer time (for example, Daylight Saving Time) is or is not
-    (respectively) in effect for the specified time.  A negative value for
-    *isdst* causes the ``localtime`` to attempt to divine whether summer time
-    is in effect for the specified time.
+    is, ``dt.tzinfo`` is ``None``), it is assumed to be in local time.  The 
+    isdst parameter is ignored.
 
     .. versionadded:: 3.3
 
-    .. deprecated:: 3.11
-       Use of the *isdst* argument is deprecated.
+    .. deprecated-removed:: 3.11
+       Use of the *isdst* argument (which was undocumented) is deprecated.
 
 .. function:: make_msgid(idstring=None, domain=None)
 
