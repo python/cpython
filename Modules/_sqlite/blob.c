@@ -124,7 +124,7 @@ read_single(pysqlite_Blob *self, Py_ssize_t offset)
 {
     assert(offset <= sqlite3_blob_bytes(self->blob));
 
-    unsigned long buf;
+    unsigned long buf = 0;
     int rc;
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_blob_read(self->blob, (void *)&buf, 1, (int)offset);
