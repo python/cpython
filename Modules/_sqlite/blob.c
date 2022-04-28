@@ -139,7 +139,7 @@ static PyObject *
 read_multiple(pysqlite_Blob *self, Py_ssize_t length, Py_ssize_t offset)
 {
     assert(length <= sqlite3_blob_bytes(self->blob));
-    assert(offset <= sqlite3_blob_bytes(self->blob));
+    assert(offset < sqlite3_blob_bytes(self->blob));
 
     PyObject *buffer = PyBytes_FromStringAndSize(NULL, length);
     if (buffer == NULL) {
@@ -189,6 +189,11 @@ blob_read_impl(pysqlite_Blob *self, int length)
     int max_read_len = blob_len - self->offset;
     if (length < 0 || length > max_read_len) {
         length = max_read_len;
+    }
+
+    assert(length >= 0);
+    if (length == 0) {
+        return PyBytes_FromStringAndSize(NULL, 0);
     }
 
     PyObject *buffer = read_multiple(self, length, self->offset);
