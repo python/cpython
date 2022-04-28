@@ -888,6 +888,7 @@ AR
 LINK_PYTHON_OBJS
 LINK_PYTHON_DEPS
 LIBRARY_DEPS
+HOSTRUNNER
 STATIC_LIBPYTHON
 GNULD
 EXPORTSFROM
@@ -1076,6 +1077,7 @@ LDFLAGS
 LIBS
 CPPFLAGS
 CPP
+HOSTRUNNER
 PROFILE_TASK
 LIBUUID_CFLAGS
 LIBUUID_LIBS
@@ -1878,6 +1880,7 @@ Some influential environment variables:
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
               you have headers in a nonstandard directory <include dir>
   CPP         C preprocessor
+  HOSTRUNNER  Program to run CPython for the host platform
   PROFILE_TASK
               Python args for PGO generation task
   LIBUUID_CFLAGS
@@ -6670,6 +6673,33 @@ fi
 if test "$cross_compiling" = yes; then
 	RUNSHARED=
 fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking HOSTRUNNER" >&5
+$as_echo_n "checking HOSTRUNNER... " >&6; }
+if test -z "$HOSTRUNNER"
+then
+  case $ac_sys_system/$ac_sys_emscripten_target in #(
+  Emscripten/node*) :
+
+      if test "x$enable_wasm_pthreads" = xyes; then :
+
+        HOSTRUNNER='node --experimental-wasm-threads --experimental-wasm-bulk-memory'
+
+else
+
+        HOSTRUNNER='node'
+
+fi
+     ;; #(
+  *) :
+    HOSTRUNNER=''
+   ;;
+esac
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $HOSTRUNNER" >&5
+$as_echo "$HOSTRUNNER" >&6; }
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
 $as_echo "$LDLIBRARY" >&6; }
