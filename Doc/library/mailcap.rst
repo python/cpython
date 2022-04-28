@@ -26,6 +26,14 @@ The mailcap format is documented in :rfc:`1524`, "A User Agent Configuration
 Mechanism For Multimedia Mail Format Information", but is not an internet
 standard.  However, mailcap files are supported on most Unix systems.
 
+.. warning::
+
+   The Python implementation is vulnerable to shell command injection. By
+   design, the mailcap format uses shell commands. The caller is responsible to
+   validate the filename. The caller can create temporary filename, using
+   :func:`tempfile.NamedTemporaryFile` or :func:`tempfile.mkstemp` for example,
+   to get a safe filename.
+
 
 .. function:: findmatch(caps, MIMEtype, key='view', filename='/dev/null', plist=[])
 
