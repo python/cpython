@@ -48,8 +48,8 @@ standard output is written, respectively.  The return value is the
 exit status of the conversion pipeline.
 
 To open a file for reading or writing through a conversion pipeline:
-   fp = t.open(file, mode)
-where mode is 'r' to read the file, or 'w' to write it -- just like
+   fp = t.open(file, rw)
+where rw is 'r' to read the file, or 'w' to write it -- just like
 for the built-in function open() or for os.popen().
 
 To create a new template object initialized to a given one:

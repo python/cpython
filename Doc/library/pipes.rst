@@ -89,7 +89,7 @@ Template objects following methods:
    arguments.
 
 
-.. method:: Template.open(file, mode)
+.. method:: Template.open(file, rw)
 
    Return a file-like object, open to *file*, but read from or written to by the
    pipeline.  Note that only one of ``'r'``, ``'w'`` may be given.
