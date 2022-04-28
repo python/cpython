@@ -193,7 +193,7 @@ High-level Module Interface
    .. versionadded:: 3.8
 
 
-.. function:: text_encoding(encoding, stacklevel=2)
+.. function:: text_encoding(encoding, stacklevel=2, /)
 
    This is a helper function for callables that use :func:`open` or
    :class:`TextIOWrapper` and have an ``encoding=None`` parameter.
@@ -380,7 +380,7 @@ I/O Base Classes
       Return ``True`` if the stream can be read from.  If ``False``, :meth:`read`
       will raise :exc:`OSError`.
 
-   .. method:: readline(size=-1)
+   .. method:: readline(size=-1, /)
 
       Read and return one line from the stream.  If *size* is specified, at
       most *size* bytes will be read.
@@ -389,7 +389,7 @@ I/O Base Classes
       the *newline* argument to :func:`open` can be used to select the line
       terminator(s) recognized.
 
-   .. method:: readlines(hint=-1)
+   .. method:: readlines(hint=-1, /)
 
       Read and return a list of lines from the stream.  *hint* can be specified
       to control the number of lines read: no more lines will be read if the
@@ -475,7 +475,7 @@ I/O Base Classes
    :class:`RawIOBase` provides these methods in addition to those from
    :class:`IOBase`:
 
-   .. method:: read(size=-1)
+   .. method:: read(size=-1, /)
 
       Read up to *size* bytes from the object and return them.  As a convenience,
       if *size* is unspecified or -1, all bytes until EOF are returned.
@@ -585,7 +585,7 @@ I/O Base Classes
       If *size* is ``-1`` (the default), an arbitrary number of bytes are
       returned (more than zero unless EOF is reached).
 
-   .. method:: readinto(b)
+   .. method:: readinto(b, /)
 
       Read bytes into a pre-allocated, writable
       :term:`bytes-like object` *b* and return the number of bytes read.
@@ -597,7 +597,7 @@ I/O Base Classes
       A :exc:`BlockingIOError` is raised if the underlying raw stream is in non
       blocking-mode, and has no data available at the moment.
 
-   .. method:: readinto1(b)
+   .. method:: readinto1(b, /)
 
       Read bytes into a pre-allocated, writable
       :term:`bytes-like object` *b*, using at most one call to
@@ -727,7 +727,7 @@ than raw I/O does.
       Return :class:`bytes` containing the entire contents of the buffer.
 
 
-   .. method:: read1([size])
+   .. method:: read1([size], /)
 
       In :class:`BytesIO`, this is the same as :meth:`~BufferedIOBase.read`.
 
@@ -805,7 +805,7 @@ than raw I/O does.
       Force bytes held in the buffer into the raw stream.  A
       :exc:`BlockingIOError` should be raised if the raw stream blocks.
 
-   .. method:: write(b)
+   .. method:: write(b, /)
 
       Write the :term:`bytes-like object`, *b*, and return the
       number of bytes written.  When in non-blocking mode, a
@@ -828,7 +828,7 @@ than raw I/O does.
    are guaranteed to be implemented.
 
 
-.. class:: BufferedRWPair(reader, writer, buffer_size=DEFAULT_BUFFER_SIZE)
+.. class:: BufferedRWPair(reader, writer, buffer_size=DEFAULT_BUFFER_SIZE, /)
 
    A buffered binary stream providing higher-level access to two non seekable
    :class:`RawIOBase` raw binary streams---one readable, the other writeable.
@@ -895,7 +895,7 @@ Text I/O
 
       .. versionadded:: 3.1
 
-   .. method:: read(size=-1)
+   .. method:: read(size=-1, /)
 
       Read and return at most *size* characters from the stream as a single
       :class:`str`.  If *size* is negative or ``None``, reads until EOF.

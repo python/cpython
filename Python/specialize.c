@@ -6,7 +6,7 @@
 #include "pycore_long.h"
 #include "pycore_moduleobject.h"
 #include "pycore_object.h"
-#include "opcode.h"
+#include "pycore_opcode.h"        // _PyOpcode_Caches
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
 
 #include <stdlib.h> // rand()

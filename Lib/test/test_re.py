@@ -236,6 +236,16 @@ class ReTests(unittest.TestCase):
         re.compile(r'(?P<a>x)(?P=a)(?(a)y)')
         re.compile(r'(?P<a1>x)(?P=a1)(?(a1)y)')
         re.compile(r'(?P<a1>x)\1(?(1)y)')
+        re.compile(b'(?P<a1>x)(?P=a1)(?(a1)y)')
+        # New valid identifiers in Python 3
+        re.compile('(?P<µ>x)(?P=µ)(?(µ)y)')
+        re.compile('(?P<𝔘𝔫𝔦𝔠𝔬𝔡𝔢>x)(?P=𝔘𝔫𝔦𝔠𝔬𝔡𝔢)(?(𝔘𝔫𝔦𝔠𝔬𝔡𝔢)y)')
+        # Support > 100 groups.
+        pat = '|'.join('x(?P<a%d>%x)y' % (i, i) for i in range(1, 200 + 1))
+        pat = '(?:%s)(?(200)z|t)' % pat
+        self.assertEqual(re.match(pat, 'xc8yz').span(), (0, 5))
+
+    def test_symbolic_groups_errors(self):
         self.checkPatternError(r'(?P<a>)(?P<a>)',
                                "redefinition of group name 'a' as group 2; "
                                "was group 1")
@@ -261,16 +271,22 @@ class ReTests(unittest.TestCase):
         self.checkPatternError(r'(?(-1))', "bad character in group name '-1'", 3)
         self.checkPatternError(r'(?(1a))', "bad character in group name '1a'", 3)
         self.checkPatternError(r'(?(a.))', "bad character in group name 'a.'", 3)
-        # New valid/invalid identifiers in Python 3
-        re.compile('(?P<µ>x)(?P=µ)(?(µ)y)')
-        re.compile('(?P<𝔘𝔫𝔦𝔠𝔬𝔡𝔢>x)(?P=𝔘𝔫𝔦𝔠𝔬𝔡𝔢)(?(𝔘𝔫𝔦𝔠𝔬𝔡𝔢)y)')
         self.checkPatternError('(?P<©>x)', "bad character in group name '©'", 4)
-        # Support > 100 groups.
-        pat = '|'.join('x(?P<a%d>%x)y' % (i, i) for i in range(1, 200 + 1))
-        pat = '(?:%s)(?(200)z|t)' % pat
-        self.assertEqual(re.match(pat, 'xc8yz').span(), (0, 5))
+        self.checkPatternError('(?P=©)', "bad character in group name '©'", 4)
+        self.checkPatternError('(?(©)y)', "bad character in group name '©'", 3)
 
     def test_symbolic_refs(self):
+        self.assertEqual(re.sub('(?P<a>x)|(?P<b>y)', r'\g<b>', 'xx'), '')
+        self.assertEqual(re.sub('(?P<a>x)|(?P<b>y)', r'\2', 'xx'), '')
+        self.assertEqual(re.sub(b'(?P<a1>x)', br'\g<a1>', b'xx'), b'xx')
+        # New valid identifiers in Python 3
+        self.assertEqual(re.sub('(?P<µ>x)', r'\g<µ>', 'xx'), 'xx')
+        self.assertEqual(re.sub('(?P<𝔘𝔫𝔦𝔠𝔬𝔡𝔢>x)', r'\g<𝔘𝔫𝔦𝔠𝔬𝔡𝔢>', 'xx'), 'xx')
+        # Support > 100 groups.
+        pat = '|'.join('x(?P<a%d>%x)y' % (i, i) for i in range(1, 200 + 1))
+        self.assertEqual(re.sub(pat, r'\g<200>', 'xc8yzxc8y'), 'c8zc8')
+
+    def test_symbolic_refs_errors(self):
         self.checkTemplateError('(?P<a>x)', r'\g<a', 'xx',
                                 'missing >, unterminated name', 3)
         self.checkTemplateError('(?P<a>x)', r'\g<', 'xx',
@@ -288,18 +304,14 @@ class ReTests(unittest.TestCase):
                                 'invalid group reference 2', 1)
         with self.assertRaisesRegex(IndexError, "unknown group name 'ab'"):
             re.sub('(?P<a>x)', r'\g<ab>', 'xx')
-        self.assertEqual(re.sub('(?P<a>x)|(?P<b>y)', r'\g<b>', 'xx'), '')
-        self.assertEqual(re.sub('(?P<a>x)|(?P<b>y)', r'\2', 'xx'), '')
         self.checkTemplateError('(?P<a>x)', r'\g<-1>', 'xx',
                                 "bad character in group name '-1'", 3)
-        # New valid/invalid identifiers in Python 3
-        self.assertEqual(re.sub('(?P<µ>x)', r'\g<µ>', 'xx'), 'xx')
-        self.assertEqual(re.sub('(?P<𝔘𝔫𝔦𝔠𝔬𝔡𝔢>x)', r'\g<𝔘𝔫𝔦𝔠𝔬𝔡𝔢>', 'xx'), 'xx')
         self.checkTemplateError('(?P<a>x)', r'\g<©>', 'xx',
                                 "bad character in group name '©'", 3)
-        # Support > 100 groups.
-        pat = '|'.join('x(?P<a%d>%x)y' % (i, i) for i in range(1, 200 + 1))
-        self.assertEqual(re.sub(pat, r'\g<200>', 'xc8yzxc8y'), 'c8zc8')
+        self.checkTemplateError('(?P<a>x)', r'\g<㊀>', 'xx',
+                                "bad character in group name '㊀'", 3)
+        self.checkTemplateError('(?P<a>x)', r'\g<¹>', 'xx',
+                                "bad character in group name '¹'", 3)
 
     def test_re_subn(self):
         self.assertEqual(re.subn("(?i)b+", "x", "bbbb BBBB"), ('x x', 2))
@@ -561,12 +573,28 @@ class ReTests(unittest.TestCase):
         pat = '(?:%s)(?(200)z)' % pat
         self.assertEqual(re.match(pat, 'xc8yz').span(), (0, 5))
 
-        self.checkPatternError(r'(?P<a>)(?(0))', 'bad group number', 10)
+    def test_re_groupref_exists_errors(self):
+        self.checkPatternError(r'(?P<a>)(?(0)a|b)', 'bad group number', 10)
+        self.checkPatternError(r'()(?(-1)a|b)',
+                               "bad character in group name '-1'", 5)
+        self.checkPatternError(r'()(?(㊀)a|b)',
+                               "bad character in group name '㊀'", 5)
+        self.checkPatternError(r'()(?(¹)a|b)',
+                               "bad character in group name '¹'", 5)
+        self.checkPatternError(r'()(?(1',
+                               "missing ), unterminated name", 5)
+        self.checkPatternError(r'()(?(1)a',
+                               "missing ), unterminated subpattern", 2)
         self.checkPatternError(r'()(?(1)a|b',
                                'missing ), unterminated subpattern', 2)
+        self.checkPatternError(r'()(?(1)a|b|c',
+                               'conditional backref with more than '
+                               'two branches', 10)
         self.checkPatternError(r'()(?(1)a|b|c)',
                                'conditional backref with more than '
                                'two branches', 10)
+        self.checkPatternError(r'()(?(2)a)',
+                               "invalid group reference 2", 5)
 
     def test_re_groupref_overflow(self):
         from re._constants import MAXGROUPS
@@ -746,6 +774,10 @@ class ReTests(unittest.TestCase):
                                "undefined character name 'SPAM'", 0)
         self.checkPatternError(r'[\N{SPAM}]',
                                "undefined character name 'SPAM'", 1)
+        self.checkPatternError(r'\N{KEYCAP NUMBER SIGN}',
+                            "undefined character name 'KEYCAP NUMBER SIGN'", 0)
+        self.checkPatternError(r'[\N{KEYCAP NUMBER SIGN}]',
+                            "undefined character name 'KEYCAP NUMBER SIGN'", 1)
         self.checkPatternError(br'\N{LESS-THAN SIGN}', r'bad escape \N', 0)
         self.checkPatternError(br'[\N{LESS-THAN SIGN}]', r'bad escape \N', 1)
 
@@ -1628,11 +1660,6 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.match(r'(?i:(?-i:a)b)', 'Ab'))
         self.assertTrue(re.match(r'(?i:(?-i:a)b)', 'aB'))
 
-        self.assertTrue(re.match(r'(?x: a) b', 'a b'))
-        self.assertIsNone(re.match(r'(?x: a) b', ' a b'))
-        self.assertTrue(re.match(r'(?-x: a) b', ' ab', re.VERBOSE))
-        self.assertIsNone(re.match(r'(?-x: a) b', 'ab', re.VERBOSE))
-
         self.assertTrue(re.match(r'\w(?a:\W)\w', '\xe0\xe0\xe0'))
         self.assertTrue(re.match(r'(?a:\W(?u:\w)\W)', '\xe0\xe0\xe0'))
         self.assertTrue(re.match(r'\W(?u:\w)\W', '\xe0\xe0\xe0', re.ASCII))
@@ -1657,6 +1684,33 @@ class ReTests(unittest.TestCase):
         self.checkPatternError(r'(?i', 'missing -, : or )', 3)
         self.checkPatternError(r'(?i+', 'missing -, : or )', 3)
         self.checkPatternError(r'(?iz', 'unknown flag', 3)
+
+    def test_ignore_spaces(self):
+        for space in " \t\n\r\v\f":
+            self.assertTrue(re.fullmatch(space + 'a', 'a', re.VERBOSE))
+        for space in b" ", b"\t", b"\n", b"\r", b"\v", b"\f":
+            self.assertTrue(re.fullmatch(space + b'a', b'a', re.VERBOSE))
+        self.assertTrue(re.fullmatch('(?x) a', 'a'))
+        self.assertTrue(re.fullmatch(' (?x) a', 'a', re.VERBOSE))
+        self.assertTrue(re.fullmatch('(?x) (?x) a', 'a'))
+        self.assertTrue(re.fullmatch(' a(?x: b) c', ' ab c'))
+        self.assertTrue(re.fullmatch(' a(?-x: b) c', 'a bc', re.VERBOSE))
+        self.assertTrue(re.fullmatch('(?x) a(?-x: b) c', 'a bc'))
+        self.assertTrue(re.fullmatch('(?x) a| b', 'a'))
+        self.assertTrue(re.fullmatch('(?x) a| b', 'b'))
+
+    def test_comments(self):
+        self.assertTrue(re.fullmatch('#x\na', 'a', re.VERBOSE))
+        self.assertTrue(re.fullmatch(b'#x\na', b'a', re.VERBOSE))
+        self.assertTrue(re.fullmatch('(?x)#x\na', 'a'))
+        self.assertTrue(re.fullmatch('#x\n(?x)#y\na', 'a', re.VERBOSE))
+        self.assertTrue(re.fullmatch('(?x)#x\n(?x)#y\na', 'a'))
+        self.assertTrue(re.fullmatch('#x\na(?x:#y\nb)#z\nc', '#x\nab#z\nc'))
+        self.assertTrue(re.fullmatch('#x\na(?-x:#y\nb)#z\nc', 'a#y\nbc',
+                                     re.VERBOSE))
+        self.assertTrue(re.fullmatch('(?x)#x\na(?-x:#y\nb)#z\nc', 'a#y\nbc'))
+        self.assertTrue(re.fullmatch('(?x)#x\na|#y\nb', 'a'))
+        self.assertTrue(re.fullmatch('(?x)#x\na|#y\nb', 'b'))
 
     def test_bug_6509(self):
         # Replacement strings of both types must parse properly.
@@ -2216,6 +2270,10 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.fullmatch(r'a*+', 'ab'))
         self.assertIsNone(re.fullmatch(r'a?+', 'ab'))
         self.assertIsNone(re.fullmatch(r'a{1,3}+', 'ab'))
+        self.assertTrue(re.fullmatch(r'a++b', 'ab'))
+        self.assertTrue(re.fullmatch(r'a*+b', 'ab'))
+        self.assertTrue(re.fullmatch(r'a?+b', 'ab'))
+        self.assertTrue(re.fullmatch(r'a{1,3}+b', 'ab'))
 
         self.assertTrue(re.fullmatch(r'(?:ab)++', 'ab'))
         self.assertTrue(re.fullmatch(r'(?:ab)*+', 'ab'))
@@ -2225,6 +2283,10 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.fullmatch(r'(?:ab)*+', 'abc'))
         self.assertIsNone(re.fullmatch(r'(?:ab)?+', 'abc'))
         self.assertIsNone(re.fullmatch(r'(?:ab){1,3}+', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?:ab)++c', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?:ab)*+c', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?:ab)?+c', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?:ab){1,3}+c', 'abc'))
 
     def test_findall_possessive_quantifiers(self):
         self.assertEqual(re.findall(r'a++', 'aab'), ['aa'])
@@ -2260,6 +2322,10 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.fullmatch(r'(?>a*)', 'ab'))
         self.assertIsNone(re.fullmatch(r'(?>a?)', 'ab'))
         self.assertIsNone(re.fullmatch(r'(?>a{1,3})', 'ab'))
+        self.assertTrue(re.fullmatch(r'(?>a+)b', 'ab'))
+        self.assertTrue(re.fullmatch(r'(?>a*)b', 'ab'))
+        self.assertTrue(re.fullmatch(r'(?>a?)b', 'ab'))
+        self.assertTrue(re.fullmatch(r'(?>a{1,3})b', 'ab'))
 
         self.assertTrue(re.fullmatch(r'(?>(?:ab)+)', 'ab'))
         self.assertTrue(re.fullmatch(r'(?>(?:ab)*)', 'ab'))
@@ -2269,6 +2335,10 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.fullmatch(r'(?>(?:ab)*)', 'abc'))
         self.assertIsNone(re.fullmatch(r'(?>(?:ab)?)', 'abc'))
         self.assertIsNone(re.fullmatch(r'(?>(?:ab){1,3})', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?>(?:ab)+)c', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?>(?:ab)*)c', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?>(?:ab)?)c', 'abc'))
+        self.assertTrue(re.fullmatch(r'(?>(?:ab){1,3})c', 'abc'))
 
     def test_findall_atomic_grouping(self):
         self.assertEqual(re.findall(r'(?>a+)', 'aab'), ['aa'])
@@ -2280,6 +2350,10 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.findall(r'(?>(?:ab)*)', 'ababc'), ['abab', '', ''])
         self.assertEqual(re.findall(r'(?>(?:ab)?)', 'ababc'), ['ab', 'ab', '', ''])
         self.assertEqual(re.findall(r'(?>(?:ab){1,3})', 'ababc'), ['abab'])
+
+    def test_bug_gh91616(self):
+        self.assertTrue(re.fullmatch(r'(?s:(?>.*?\.).*)\Z', "a.txt")) # reproducer
+        self.assertTrue(re.fullmatch(r'(?s:(?=(?P<g0>.*?\.))(?P=g0).*)\Z', "a.txt"))
 
 
 def get_debug_out(pat):
@@ -2534,11 +2608,11 @@ class ImplementationTest(unittest.TestCase):
         for name in deprecated:
             with self.subTest(module=name):
                 sys.modules.pop(name, None)
-                with self.assertWarns(DeprecationWarning) as cm:
+                with self.assertWarns(DeprecationWarning) as w:
                     __import__(name)
-                self.assertEqual(str(cm.warnings[0].message),
+                self.assertEqual(str(w.warning),
                                  f"module {name!r} is deprecated")
-                self.assertEqual(cm.warnings[0].filename, __file__)
+                self.assertEqual(w.filename, __file__)
                 self.assertIn(name, sys.modules)
                 mod = sys.modules[name]
                 self.assertEqual(mod.__name__, name)

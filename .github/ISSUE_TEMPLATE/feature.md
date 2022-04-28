@@ -10,7 +10,7 @@ labels: "type-feature"
 
 **Pitch**
 
-(Explain why this feature or enhacement should be implemented and how it would be used.
+(Explain why this feature or enhancement should be implemented and how it would be used.
  Add examples, if applicable.)
 
 **Previous discussion**
