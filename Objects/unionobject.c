@@ -137,93 +137,80 @@ union_richcompare(PyObject *a, PyObject *b, int op)
     return result;
 }
 
-static PyObject*
-flatten_args(PyObject* args)
+static int
+is_same(PyObject *left, PyObject *right)
 {
-    Py_ssize_t arg_length = PyTuple_GET_SIZE(args);
-    Py_ssize_t total_args = 0;
-    // Get number of total args once it's flattened.
-    for (Py_ssize_t i = 0; i < arg_length; i++) {
-        PyObject *arg = PyTuple_GET_ITEM(args, i);
-        if (_PyUnion_Check(arg)) {
-            total_args += PyTuple_GET_SIZE(((unionobject*) arg)->args);
-        } else {
-            total_args++;
-        }
-    }
-    // Create new tuple of flattened args.
-    PyObject *flattened_args = PyTuple_New(total_args);
-    if (flattened_args == NULL) {
-        return NULL;
-    }
-    Py_ssize_t pos = 0;
-    for (Py_ssize_t i = 0; i < arg_length; i++) {
-        PyObject *arg = PyTuple_GET_ITEM(args, i);
-        if (_PyUnion_Check(arg)) {
-            PyObject* nested_args = ((unionobject*)arg)->args;
-            Py_ssize_t nested_arg_length = PyTuple_GET_SIZE(nested_args);
-            for (Py_ssize_t j = 0; j < nested_arg_length; j++) {
-                PyObject* nested_arg = PyTuple_GET_ITEM(nested_args, j);
-                Py_INCREF(nested_arg);
-                PyTuple_SET_ITEM(flattened_args, pos, nested_arg);
-                pos++;
-            }
-        } else {
-            if (arg == Py_None) {
-                arg = (PyObject *)&_PyNone_Type;
-            }
-            Py_INCREF(arg);
-            PyTuple_SET_ITEM(flattened_args, pos, arg);
-            pos++;
-        }
-    }
-    assert(pos == total_args);
-    return flattened_args;
+    int is_ga = _PyGenericAlias_Check(left) && _PyGenericAlias_Check(right);
+    return is_ga ? PyObject_RichCompareBool(left, right, Py_EQ) : left == right;
 }
 
-static PyObject*
-dedup_and_flatten_args(PyObject* args)
+static int
+contains(PyObject **items, Py_ssize_t size, PyObject *obj)
 {
-    args = flatten_args(args);
-    if (args == NULL) {
-        return NULL;
+    for (int i = 0; i < size; i++) {
+        int is_duplicate = is_same(items[i], obj);
+        if (is_duplicate) {  // -1 or 1
+            return is_duplicate;
+        }
     }
-    Py_ssize_t arg_length = PyTuple_GET_SIZE(args);
-    PyObject *new_args = PyTuple_New(arg_length);
-    if (new_args == NULL) {
-        Py_DECREF(args);
-        return NULL;
-    }
-    // Add unique elements to an array.
-    Py_ssize_t added_items = 0;
-    for (Py_ssize_t i = 0; i < arg_length; i++) {
-        int is_duplicate = 0;
-        PyObject* i_element = PyTuple_GET_ITEM(args, i);
-        for (Py_ssize_t j = 0; j < added_items; j++) {
-            PyObject* j_element = PyTuple_GET_ITEM(new_args, j);
-            int is_ga = _PyGenericAlias_Check(i_element) &&
-                        _PyGenericAlias_Check(j_element);
-            // RichCompare to also deduplicate GenericAlias types (slower)
-            is_duplicate = is_ga ? PyObject_RichCompareBool(i_element, j_element, Py_EQ)
-                : i_element == j_element;
-            // Should only happen if RichCompare fails
-            if (is_duplicate < 0) {
-                Py_DECREF(args);
-                Py_DECREF(new_args);
+    return 0;
+}
+
+static PyObject *
+merge(PyObject **items1, Py_ssize_t size1,
+      PyObject **items2, Py_ssize_t size2)
+{
+    PyObject *tuple = NULL;
+    Py_ssize_t pos = 0;
+
+    for (int i = 0; i < size2; i++) {
+        PyObject *arg = items2[i];
+        int is_duplicate = contains(items1, size1, arg);
+        if (is_duplicate < 0) {
+            Py_XDECREF(tuple);
+            return NULL;
+        }
+        if (is_duplicate) {
+            continue;
+        }
+
+        if (tuple == NULL) {
+            tuple = PyTuple_New(size1 + size2 - i);
+            if (tuple == NULL) {
                 return NULL;
             }
-            if (is_duplicate)
-                break;
+            for (; pos < size1; pos++) {
+                PyObject *a = items1[pos];
+                Py_INCREF(a);
+                PyTuple_SET_ITEM(tuple, pos, a);
+            }
         }
-        if (!is_duplicate) {
-            Py_INCREF(i_element);
-            PyTuple_SET_ITEM(new_args, added_items, i_element);
-            added_items++;
-        }
+        Py_INCREF(arg);
+        PyTuple_SET_ITEM(tuple, pos, arg);
+        pos++;
     }
-    Py_DECREF(args);
-    _PyTuple_Resize(&new_args, added_items);
-    return new_args;
+
+    if (tuple) {
+        (void) _PyTuple_Resize(&tuple, pos);
+    }
+    return tuple;
+}
+
+static PyObject **
+get_types(PyObject **obj, Py_ssize_t *size)
+{
+    if (*obj == Py_None) {
+        *obj = (PyObject *)&_PyNone_Type;
+    }
+    if (_PyUnion_Check(*obj)) {
+        PyObject *args = ((unionobject *) *obj)->args;
+        *size = PyTuple_GET_SIZE(args);
+        return &PyTuple_GET_ITEM(args, 0);
+    }
+    else {
+        *size = 1;
+        return obj;
+    }
 }
 
 static int
@@ -242,9 +229,16 @@ _Py_union_type_or(PyObject* self, PyObject* other)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    PyObject *tuple = PyTuple_Pack(2, self, other);
+    Py_ssize_t size1, size2;
+    PyObject **items1 = get_types(&self, &size1);
+    PyObject **items2 = get_types(&other, &size2);
+    PyObject *tuple = merge(items1, size1, items2, size2);
     if (tuple == NULL) {
-        return NULL;
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+        Py_INCREF(self);
+        return self;
     }
 
     PyObject *new_union = make_union(tuple);
@@ -468,23 +462,12 @@ make_union(PyObject *args)
 {
     assert(PyTuple_CheckExact(args));
 
-    args = dedup_and_flatten_args(args);
-    if (args == NULL) {
-        return NULL;
-    }
-    if (PyTuple_GET_SIZE(args) == 1) {
-        PyObject *result1 = PyTuple_GET_ITEM(args, 0);
-        Py_INCREF(result1);
-        Py_DECREF(args);
-        return result1;
-    }
-
     unionobject *result = PyObject_GC_New(unionobject, &_PyUnion_Type);
     if (result == NULL) {
-        Py_DECREF(args);
         return NULL;
     }
 
+    Py_INCREF(args);
     result->parameters = NULL;
     result->args = args;
     _PyObject_GC_TRACK(result);
