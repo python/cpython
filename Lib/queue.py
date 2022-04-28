@@ -85,7 +85,7 @@ class Queue:
 
         When the count of unfinished tasks drops to zero, join() unblocks.
 
-        If timeout was filled and exceed, function will raise TimeoutError.
+        If timeout was filled and exceeded, function will raise TimeoutError.
         '''
 
         if timeout is None:
