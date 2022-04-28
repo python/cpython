@@ -26,6 +26,8 @@ The mailcap format is documented in :rfc:`1524`, "A User Agent Configuration
 Mechanism For Multimedia Mail Format Information", but is not an internet
 standard.  However, mailcap files are supported on most Unix systems.
 
+.. _ailcap-shell-injection:
+
 .. warning::
 
    The Python implementation is vulnerable to shell command injection. By

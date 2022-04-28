@@ -17,6 +17,7 @@ The following modules have specific security considerations:
   basic security checks
 * :mod:`logging`: :ref:`Logging configuration uses eval()
   <logging-eval-security>`
+* :mod:`mailcap`: :ref:`Shell command injection <mailcap-shell-injection>`
 * :mod:`multiprocessing`: :ref:`Connection.recv() uses pickle
   <multiprocessing-recv-pickle-security>`
 * :mod:`pickle`: :ref:`Restricting globals in pickle <pickle-restrict>`
