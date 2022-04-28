@@ -2265,8 +2265,7 @@ class TestAddSubparsers(TestCase):
             main description
 
             positional arguments:
-              foo         
-
+              foo         \n
             options:
               -h, --help  show this help message and exit
         '''))
@@ -2282,8 +2281,7 @@ class TestAddSubparsers(TestCase):
             main description
 
             positional arguments:
-              {}          
-
+              {}          \n
             options:
               -h, --help  show this help message and exit
         '''))
