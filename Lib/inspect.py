@@ -1625,7 +1625,7 @@ def getclosurevars(func):
     for instrn in dis.get_instructions(func):
         if instrn.opname == "LOAD_GLOBAL" or instrn.opname == "STORE_GLOBAL":
             name = instrn.argval
-            if name in ("None", "True", "False"):
+            if name == "None" or name == "True" or name == "False":
                 # Because these used to be builtins instead of keywords, they
                 # may still show up as name references. We ignore them.
                 continue
@@ -1637,8 +1637,7 @@ def getclosurevars(func):
                 except KeyError:
                     unbound_names.add(name)
 
-    return ClosureVars(nonlocal_vars, global_vars,
-                       builtin_vars, unbound_names)
+    return ClosureVars(nonlocal_vars, global_vars, builtin_vars, unbound_names)
 
 # -------------------------------------------------- stack frame extraction
 
