@@ -848,6 +848,7 @@ class Action(_AttributeHolder):
             'default',
             'type',
             'choices',
+            'required',
             'help',
             'metavar',
         ]
