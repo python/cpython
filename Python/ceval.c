@@ -4409,7 +4409,7 @@ handle_eval_breaker:
         }
 
         TARGET(FOR_ITER_ADAPTIVE) {
-            // assert(cframe.use_tracing == 0); fails for some reason
+            assert(cframe.use_tracing == 0);
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (cache->counter == 0) {
                 next_instr--;
@@ -4424,7 +4424,7 @@ handle_eval_breaker:
         }
 
         TARGET(FOR_ITER_LIST) {
-            // assert(cframe.use_tracing == 0); fails for some reason
+            assert(cframe.use_tracing == 0);
             _PyListIterObject *it = (_PyListIterObject *)TOP();
             DEOPT_IF(Py_TYPE(it) != &PyListIter_Type, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
@@ -4445,7 +4445,7 @@ handle_eval_breaker:
         }
 
         TARGET(FOR_ITER_RANGE) {
-            // assert(cframe.use_tracing == 0); fails for some reason
+            assert(cframe.use_tracing == 0);
             _PyRangeIterObject *r = (_PyRangeIterObject *)TOP();
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
