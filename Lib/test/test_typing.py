@@ -1,7 +1,7 @@
 import contextlib
 import collections
 from collections import defaultdict
-from functools import lru_cache
+from functools import lru_cache, wraps
 import inspect
 import pickle
 import re
@@ -24,6 +24,7 @@ from typing import get_type_hints
 from typing import get_origin, get_args
 from typing import is_typeddict
 from typing import reveal_type
+from typing import dataclass_transform
 from typing import no_type_check, no_type_check_decorator
 from typing import Type
 from typing import NamedTuple, NotRequired, Required, TypedDict
@@ -68,6 +69,18 @@ class BaseTestCase(TestCase):
     def clear_caches(self):
         for f in typing._cleanups:
             f()
+
+
+def all_pickle_protocols(test_func):
+    """Runs `test_func` with various values for `proto` argument."""
+
+    @wraps(test_func)
+    def wrapper(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(pickle_proto=proto):
+                test_func(self, proto=proto)
+
+    return wrapper
 
 
 class Employee:
@@ -210,6 +223,19 @@ class AssertNeverTests(BaseTestCase):
     def test_exception(self):
         with self.assertRaises(AssertionError):
             assert_never(None)
+
+        value = "some value"
+        with self.assertRaisesRegex(AssertionError, value):
+            assert_never(value)
+
+        # Make sure a huge value doesn't get printed in its entirety
+        huge_value = "a" * 10000
+        with self.assertRaises(AssertionError) as cm:
+            assert_never(huge_value)
+        self.assertLess(
+            len(cm.exception.args[0]),
+            typing._ASSERT_NEVER_REPR_MAX_LENGTH * 2,
+        )
 
 
 class SelfTests(BaseTestCase):
@@ -909,6 +935,48 @@ class TypeVarTupleTests(BaseTestCase):
         Ts1 = TypeVarTuple('Ts1')
         Ts2 = TypeVarTuple('Ts2')
         self.assertNotEqual(C[Unpack[Ts1]], C[Unpack[Ts2]])
+
+
+class TypeVarTuplePicklingTests(BaseTestCase):
+    # These are slightly awkward tests to run, because TypeVarTuples are only
+    # picklable if defined in the global scope. We therefore need to push
+    # various things defined in these tests into the global scope with `global`
+    # statements at the start of each test.
+
+    @all_pickle_protocols
+    def test_pickling_then_unpickling_results_in_same_identity(self, proto):
+        global Ts1  # See explanation at start of class.
+        Ts1 = TypeVarTuple('Ts1')
+        Ts2 = pickle.loads(pickle.dumps(Ts1, proto))
+        self.assertIs(Ts1, Ts2)
+
+    @all_pickle_protocols
+    def test_pickling_then_unpickling_unpacked_results_in_same_identity(self, proto):
+        global Ts  # See explanation at start of class.
+        Ts = TypeVarTuple('Ts')
+        unpacked1 = Unpack[Ts]
+        unpacked2 = pickle.loads(pickle.dumps(unpacked1, proto))
+        self.assertIs(unpacked1, unpacked2)
+
+    @all_pickle_protocols
+    def test_pickling_then_unpickling_tuple_with_typevartuple_equality(
+            self, proto
+    ):
+        global T, Ts  # See explanation at start of class.
+        T = TypeVar('T')
+        Ts = TypeVarTuple('Ts')
+
+        a1 = Tuple[Unpack[Ts]]
+        a2 = pickle.loads(pickle.dumps(a1, proto))
+        self.assertEqual(a1, a2)
+
+        a1 = Tuple[T, Unpack[Ts]]
+        a2 = pickle.loads(pickle.dumps(a1, proto))
+        self.assertEqual(a1, a2)
+
+        a1 = Tuple[int, Unpack[Ts]]
+        a2 = pickle.loads(pickle.dumps(a1, proto))
+        self.assertEqual(a1, a2)
 
 
 class UnionTests(BaseTestCase):
@@ -6538,6 +6606,91 @@ class RevealTypeTests(BaseTestCase):
         with captured_stderr() as stderr:
             self.assertIs(obj, reveal_type(obj))
         self.assertEqual(stderr.getvalue(), "Runtime type is 'object'\n")
+
+
+class DataclassTransformTests(BaseTestCase):
+    def test_decorator(self):
+        def create_model(*, frozen: bool = False, kw_only: bool = True):
+            return lambda cls: cls
+
+        decorated = dataclass_transform(kw_only_default=True, order_default=False)(create_model)
+
+        class CustomerModel:
+            id: int
+
+        self.assertIs(decorated, create_model)
+        self.assertEqual(
+            decorated.__dataclass_transform__,
+            {
+                "eq_default": True,
+                "order_default": False,
+                "kw_only_default": True,
+                "field_specifiers": (),
+                "kwargs": {},
+            }
+        )
+        self.assertIs(
+            decorated(frozen=True, kw_only=False)(CustomerModel),
+            CustomerModel
+        )
+
+    def test_base_class(self):
+        class ModelBase:
+            def __init_subclass__(cls, *, frozen: bool = False): ...
+
+        Decorated = dataclass_transform(
+            eq_default=True,
+            order_default=True,
+            # Arbitrary unrecognized kwargs are accepted at runtime.
+            make_everything_awesome=True,
+        )(ModelBase)
+
+        class CustomerModel(Decorated, frozen=True):
+            id: int
+
+        self.assertIs(Decorated, ModelBase)
+        self.assertEqual(
+            Decorated.__dataclass_transform__,
+            {
+                "eq_default": True,
+                "order_default": True,
+                "kw_only_default": False,
+                "field_specifiers": (),
+                "kwargs": {"make_everything_awesome": True},
+            }
+        )
+        self.assertIsSubclass(CustomerModel, Decorated)
+
+    def test_metaclass(self):
+        class Field: ...
+
+        class ModelMeta(type):
+            def __new__(
+                cls, name, bases, namespace, *, init: bool = True,
+            ):
+                return super().__new__(cls, name, bases, namespace)
+
+        Decorated = dataclass_transform(
+            order_default=True, field_specifiers=(Field,)
+        )(ModelMeta)
+
+        class ModelBase(metaclass=Decorated): ...
+
+        class CustomerModel(ModelBase, init=False):
+            id: int
+
+        self.assertIs(Decorated, ModelMeta)
+        self.assertEqual(
+            Decorated.__dataclass_transform__,
+            {
+                "eq_default": True,
+                "order_default": True,
+                "kw_only_default": False,
+                "field_specifiers": (Field,),
+                "kwargs": {},
+            }
+        )
+        self.assertIsInstance(CustomerModel, Decorated)
 
 
 class AllTests(BaseTestCase):

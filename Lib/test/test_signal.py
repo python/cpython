@@ -116,6 +116,16 @@ class PosixTests(unittest.TestCase):
         self.assertNotIn(signal.NSIG, s)
         self.assertLess(len(s), signal.NSIG)
 
+        # gh-91145: Make sure that all SIGxxx constants exposed by the Python
+        # signal module have a number in the [0; signal.NSIG-1] range.
+        for name in dir(signal):
+            if not name.startswith("SIG"):
+                continue
+            with self.subTest(name=name):
+                signum = getattr(signal, name)
+                self.assertGreaterEqual(signum, 0)
+                self.assertLess(signum, signal.NSIG)
+
     @unittest.skipUnless(sys.executable, "sys.executable required.")
     @support.requires_subprocess()
     def test_keyboard_interrupt_exit_code(self):

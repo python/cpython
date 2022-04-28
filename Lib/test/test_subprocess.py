@@ -1543,6 +1543,22 @@ class ProcessTestCase(BaseTestCase):
         self.assertIsInstance(subprocess.Popen[bytes], types.GenericAlias)
         self.assertIsInstance(subprocess.CompletedProcess[str], types.GenericAlias)
 
+    @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
+                     "vfork() not enabled by configure.")
+    @mock.patch("subprocess._fork_exec")
+    def test__use_vfork(self, mock_fork_exec):
+        self.assertTrue(subprocess._USE_VFORK)  # The default value regardless.
+        mock_fork_exec.side_effect = RuntimeError("just testing args")
+        with self.assertRaises(RuntimeError):
+            subprocess.run([sys.executable, "-c", "pass"])
+        mock_fork_exec.assert_called_once()
+        self.assertTrue(mock_fork_exec.call_args.args[-1])
+        with mock.patch.object(subprocess, '_USE_VFORK', False):
+            with self.assertRaises(RuntimeError):
+                subprocess.run([sys.executable, "-c", "pass"])
+            self.assertFalse(mock_fork_exec.call_args_list[-1].args[-1])
+
+
 class RunFuncTestCase(BaseTestCase):
     def run_python(self, code, **kwargs):
         """Run Python code in a subprocess using subprocess.run"""
@@ -3107,7 +3123,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         1, 2, 3, 4,
                         True, True,
                         False, [], 0, -1,
-                        func)
+                        func, False)
                 # Attempt to prevent
                 # "TypeError: fork_exec() takes exactly N arguments (M given)"
                 # from passing the test.  More refactoring to have us start
@@ -3156,7 +3172,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         1, 2, 3, 4,
                         True, True,
                         None, None, None, -1,
-                        None)
+                        None, "no vfork")
                 self.assertIn('fds_to_keep', str(c.exception))
         finally:
             if not gc_enabled:
