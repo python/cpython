@@ -1666,6 +1666,14 @@ class CoverageOneHundredTestCase(unittest.TestCase):
         for warning in w:
             self.assertTrue(warning.category is DeprecationWarning)
 
+    def test_legacyinterpolation_deprecation(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", DeprecationWarning)
+            configparser.LegacyInterpolation()
+        self.assertGreaterEqual(len(w), 1)
+        for warning in w:
+            self.assertIs(warning.category, DeprecationWarning)
+
     def test_sectionproxy_repr(self):
         parser = configparser.ConfigParser()
         parser.read_string("""

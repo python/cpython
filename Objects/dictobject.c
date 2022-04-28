@@ -286,7 +286,7 @@ static inline Py_hash_t
 unicode_get_hash(PyObject *o)
 {
     assert(PyUnicode_CheckExact(o));
-    return ((PyASCIIObject*)o)->hash;
+    return _PyASCIIObject_CAST(o)->hash;
 }
 
 /* Print summary info about the state of the optimized allocator */

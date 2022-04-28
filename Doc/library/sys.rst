@@ -314,6 +314,35 @@ always available.
    yourself to control bytecode file generation.
 
 
+.. data:: _emscripten_info
+
+   A :term:`named tuple` holding information about the environment on the
+   *wasm32-emscripten* platform. The named tuple is provisional and may change
+   in the future.
+
+   .. tabularcolumns:: |l|L|
+
+   +-----------------------------+----------------------------------------------+
+   | Attribute                   | Explanation                                  |
+   +=============================+==============================================+
+   | :const:`emscripten_version` | Emscripten version as tuple of ints          |
+   |                             | (major, minor, micro), e.g. ``(3, 1, 8)``.   |
+   +-----------------------------+----------------------------------------------+
+   | :const:`runtime`            | Runtime string, e.g. browser user agent,     |
+   |                             | ``'Node.js v14.18.2'``, or ``'UNKNOWN'``.    |
+   +-----------------------------+----------------------------------------------+
+   | :const:`pthreads`           | ``True`` if Python is compiled with          |
+   |                             | Emscripten pthreads support.                 |
+   +-----------------------------+----------------------------------------------+
+   | :const:`shared_memory`      | ``True`` if Python is compiled with shared   |
+   |                             | memory support.                              |
+   +-----------------------------+----------------------------------------------+
+
+   .. availability:: WebAssembly Emscripten platform (*wasm32-emscripten*).
+
+   .. versionadded:: 3.11
+
+
 .. data:: pycache_prefix
 
    If this is set (not ``None``), Python will write bytecode-cache ``.pyc``
@@ -381,19 +410,12 @@ always available.
 
 .. function:: exception()
 
-   This function returns the exception instance that is currently being
-   handled.  This exception is specific both to the current thread and
-   to the current stack frame.  If the current stack frame is not handling
-   an exception, the exception is taken from the calling stack frame, or its
-   caller, and so on until a stack frame is found that is handling an
-   exception.  Here, "handling an exception" is defined as "executing an
-   except clause." For any stack frame, only the exception being currently
-   handled is accessible.
+   This function, when called while an exception handler is executing (such as
+   an ``except`` or ``except*`` clause), returns the exception instance that
+   was caught by this handler. When exception handlers are nested within one
+   another, only the exception handled by the innermost handler is accessible.
 
-   .. index:: object: traceback
-
-   If no exception is being handled anywhere on the stack, ``None`` is
-   returned.
+   If no exception handler is executing, this function returns ``None``.
 
    .. versionadded:: 3.11
 
@@ -1124,15 +1146,16 @@ always available.
    current directory first.  Notice that the script directory is inserted *before*
    the entries inserted as a result of :envvar:`PYTHONPATH`.
 
+   The initialization of :data:`sys.path` is documented at :ref:`sys-path-init`.
+
    A program is free to modify this list for its own purposes.  Only strings
    and bytes should be added to :data:`sys.path`; all other data types are
    ignored during import.
 
 
    .. seealso::
-      Module :mod:`site` This describes how to use .pth files to extend
-      :data:`sys.path`.
-
+      * Module :mod:`site` This describes how to use .pth files to
+        extend :data:`sys.path`.
 
 .. data:: path_hooks
 
@@ -1182,7 +1205,9 @@ always available.
    System           ``platform`` value
    ================ ===========================
    AIX              ``'aix'``
+   Emscripten       ``'emscripten'``
    Linux            ``'linux'``
+   WASI             ``'wasi'``
    Windows          ``'win32'``
    Windows/Cygwin   ``'cygwin'``
    macOS            ``'darwin'``

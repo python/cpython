@@ -45,11 +45,6 @@ EXCLUDED_HEADERS = {
 MACOS = (sys.platform == "darwin")
 UNIXY = MACOS or (sys.platform == "linux")  # XXX should this be "not Windows"?
 
-IFDEF_DOC_NOTES = {
-    'MS_WINDOWS': 'on Windows',
-    'HAVE_FORK': 'on platforms with fork()',
-    'USE_STACKCHECK': 'on platforms with USE_STACKCHECK',
-}
 
 # The stable ABI manifest (Misc/stable_abi.txt) exists only to fill the
 # following dataclasses.
@@ -118,9 +113,13 @@ class ABIItem:
     contents: list = dataclasses.field(default_factory=list)
     abi_only: bool = False
     ifdef: str = None
+    struct_abi_kind: str = None
+    members: list = None
+    doc: str = None
+    windows: bool = False
 
     KINDS = frozenset({
-        'struct', 'function', 'macro', 'data', 'const', 'typedef',
+        'struct', 'function', 'macro', 'data', 'const', 'typedef', 'ifdef',
     })
 
     def dump(self, indent=0):
@@ -159,8 +158,8 @@ def parse_manifest(file):
             levels.pop()
         parent = levels[-1][0]
         entry = None
-        if kind in ABIItem.KINDS:
-            if parent.kind not in {'manifest'}:
+        if parent.kind == 'manifest':
+            if kind not in kind in ABIItem.KINDS:
                 raise_error(f'{kind} cannot go in {parent.kind}')
             entry = ABIItem(kind, content)
             parent.add(entry)
@@ -172,10 +171,38 @@ def parse_manifest(file):
             if parent.kind not in {'function', 'data'}:
                 raise_error(f'{kind} cannot go in {parent.kind}')
             parent.abi_only = True
+        elif kind in {'members', 'full-abi', 'opaque'}:
+            if parent.kind not in {'struct'}:
+                raise_error(f'{kind} cannot go in {parent.kind}')
+            if prev := getattr(parent, 'struct_abi_kind', None):
+                raise_error(
+                    f'{parent.name} already has {prev}, cannot add {kind}')
+            parent.struct_abi_kind = kind
+            if kind == 'members':
+                parent.members = content.split()
+        elif kind in {'doc'}:
+            if parent.kind not in {'ifdef'}:
+                raise_error(f'{kind} cannot go in {parent.kind}')
+            parent.doc = content
+        elif kind in {'windows'}:
+            if parent.kind not in {'ifdef'}:
+                raise_error(f'{kind} cannot go in {parent.kind}')
+            if not content:
+                parent.windows = True
+            elif content == 'maybe':
+                parent.windows = content
+            else:
+                raise_error(f'Unexpected: {content}')
         else:
             raise_error(f"unknown kind {kind!r}")
             # When adding more, update the comment in stable_abi.txt.
         levels.append((entry, level))
+
+    ifdef_names = {i.name for i in manifest.select({'ifdef'})}
+    for item in manifest.contents.values():
+        if item.ifdef and item.ifdef not in ifdef_names:
+            raise ValueError(f'{item.name} uses undeclared ifdef {item.ifdef}')
+
     return manifest
 
 # The tool can run individual "actions".
@@ -219,9 +246,12 @@ def gen_python3dll(manifest, args, outfile):
     def sort_key(item):
         return item.name.lower()
 
+    windows_ifdefs = {
+        item.name for item in manifest.select({'ifdef'}) if item.windows
+    }
     for item in sorted(
             manifest.select(
-                {'function'}, include_abi_only=True, ifdef={'MS_WINDOWS'}),
+                {'function'}, include_abi_only=True, ifdef=windows_ifdefs),
             key=sort_key):
         write(f'EXPORT_FUNC({item.name})')
 
@@ -229,7 +259,7 @@ def gen_python3dll(manifest, args, outfile):
 
     for item in sorted(
             manifest.select(
-                {'data'}, include_abi_only=True, ifdef={'MS_WINDOWS'}),
+                {'data'}, include_abi_only=True, ifdef=windows_ifdefs),
             key=sort_key):
         write(f'EXPORT_DATA({item.name})')
 
@@ -246,18 +276,26 @@ REST_ROLES = {
 def gen_doc_annotations(manifest, args, outfile):
     """Generate/check the stable ABI list for documentation annotations"""
     writer = csv.DictWriter(
-        outfile, ['role', 'name', 'added', 'ifdef_note'], lineterminator='\n')
+        outfile,
+        ['role', 'name', 'added', 'ifdef_note', 'struct_abi_kind'],
+        lineterminator='\n')
     writer.writeheader()
     for item in manifest.select(REST_ROLES.keys(), include_abi_only=False):
         if item.ifdef:
-            ifdef_note = IFDEF_DOC_NOTES[item.ifdef]
+            ifdef_note = manifest.contents[item.ifdef].doc
         else:
             ifdef_note = None
         writer.writerow({
             'role': REST_ROLES[item.kind],
             'name': item.name,
             'added': item.added,
-            'ifdef_note': ifdef_note})
+            'ifdef_note': ifdef_note,
+            'struct_abi_kind': item.struct_abi_kind})
+        for member_name in item.members or ():
+            writer.writerow({
+                'role': 'member',
+                'name': f'{item.name}.{member_name}',
+                'added': item.added})
 
 @generator("ctypes_test", 'Lib/test/test_stable_abi_ctypes.py')
 def gen_ctypes_test(manifest, args, outfile):
@@ -269,23 +307,42 @@ def gen_ctypes_test(manifest, args, outfile):
         """Test that all symbols of the Stable ABI are accessible using ctypes
         """
 
+        import sys
         import unittest
         from test.support.import_helper import import_module
+        from _testcapi import get_feature_macros
 
+        feature_macros = get_feature_macros()
         ctypes_test = import_module('ctypes')
 
         class TestStableABIAvailability(unittest.TestCase):
             def test_available_symbols(self):
+
                 for symbol_name in SYMBOL_NAMES:
                     with self.subTest(symbol_name):
                         ctypes_test.pythonapi[symbol_name]
+
+            def test_feature_macros(self):
+                self.assertEqual(set(get_feature_macros()), EXPECTED_IFDEFS)
+
+            # The feature macros for Windows are used in creating the DLL
+            # definition, so they must be known on all platforms.
+            # If we are on Windows, we check that the hardcoded data matches
+            # the reality.
+            @unittest.skipIf(sys.platform != "win32", "Windows specific test")
+            def test_windows_feature_macros(self):
+                for name, value in WINDOWS_IFDEFS.items():
+                    if value != 'maybe':
+                        with self.subTest(name):
+                            self.assertEqual(feature_macros[name], value)
 
         SYMBOL_NAMES = (
     '''))
     items = manifest.select(
         {'function', 'data'},
         include_abi_only=True,
-        ifdef=set())
+    )
+    ifdef_items = {}
     for item in items:
         if item.name in (
                 # Some symbols aren't exported on all platforms.
@@ -293,8 +350,45 @@ def gen_ctypes_test(manifest, args, outfile):
                 'PyModule_Create2', 'PyModule_FromDefAndSpec2',
             ):
             continue
-        write(f'    "{item.name}",')
+        if item.ifdef:
+            ifdef_items.setdefault(item.ifdef, []).append(item.name)
+        else:
+            write(f'    "{item.name}",')
     write(")")
+    for ifdef, names in ifdef_items.items():
+        write(f"if feature_macros[{ifdef!r}]:")
+        write(f"    SYMBOL_NAMES += (")
+        for name in names:
+            write(f"        {name!r},")
+        write("    )")
+    write("")
+    write(f"EXPECTED_IFDEFS = set({sorted(ifdef_items)})")
+
+    windows_ifdef_values = {
+        name: manifest.contents[name].windows for name in ifdef_items
+    }
+    write(f"WINDOWS_IFDEFS = {windows_ifdef_values}")
+
+
+@generator("testcapi_feature_macros", 'Modules/_testcapi_feature_macros.inc')
+def gen_testcapi_feature_macros(manifest, args, outfile):
+    """Generate/check the stable ABI list for documentation annotations"""
+    write = partial(print, file=outfile)
+    write('// Generated by Tools/scripts/stable_abi.py')
+    write()
+    write('// Add an entry in dict `result` for each Stable ABI feature macro.')
+    write()
+    for macro in manifest.select({'ifdef'}):
+        name = macro.name
+        write(f'#ifdef {name}')
+        write(f'    res = PyDict_SetItemString(result, "{name}", Py_True);')
+        write('#else')
+        write(f'    res = PyDict_SetItemString(result, "{name}", Py_False);')
+        write('#endif')
+        write('if (res) {')
+        write('    Py_DECREF(result); return NULL;')
+        write('}')
+        write()
 
 
 def generate_or_check(manifest, args, path, func):
@@ -656,7 +750,7 @@ def main():
 
         And in PEP 384:
 
-        https://www.python.org/dev/peps/pep-0384/
+        https://peps.python.org/pep-0384/
         """)
 
 
