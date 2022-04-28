@@ -1071,6 +1071,7 @@ Deprecated
   * :mod:`spwd`
   * :mod:`sunau`
   * :mod:`telnetlib`
+  * :mod:`uu`
 
   (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
   :gh:`68966`.)
