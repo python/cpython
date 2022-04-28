@@ -87,7 +87,6 @@ _opcode_enable_specialization_stats_impl(PyObject *module)
 {
 #ifdef Py_STATS
     _enable_py_stats = 1;
-    _Py_ClearSpecializationStats();
 #endif
     Py_RETURN_NONE;
 }
@@ -105,6 +104,24 @@ _opcode_disable_specialization_stats_impl(PyObject *module)
 /*[clinic end generated code: output=14ca17e44089d7a3 input=3213ea9f684d5f3b]*/
 {
 #ifdef Py_STATS
+    _enable_py_stats = 0;
+#endif
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+
+_opcode.init_specialization_stats
+
+Initialize the specialization stats
+[clinic start generated code]*/
+
+static PyObject *
+_opcode_init_specialization_stats_impl(PyObject *module)
+/*[clinic end generated code: output=b067640d0e5de6a5 input=b3a1ac38507b3ced]*/
+{
+#ifdef Py_STATS
+    _Py_ClearSpecializationStats();
     _enable_py_stats = 0;
 #endif
     Py_RETURN_NONE;
@@ -134,6 +151,7 @@ opcode_functions[] =  {
     _OPCODE_GET_SPECIALIZATION_STATS_METHODDEF
     _OPCODE_ENABLE_SPECIALIZATION_STATS_METHODDEF
     _OPCODE_DISABLE_SPECIALIZATION_STATS_METHODDEF
+    _OPCODE_INIT_SPECIALIZATION_STATS_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 
