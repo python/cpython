@@ -1,0 +1,1 @@
+The interpreter can now autocomplete soft keywords, as of now the PEP-634 match / case / _(wildcard pattern).
