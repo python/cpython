@@ -264,6 +264,9 @@ _specializations = {
         "COMPARE_OP_INT_JUMP",
         "COMPARE_OP_STR_JUMP",
     ],
+    "EXTENDED_ARG": [
+        "EXTENDED_ARG_QUICK",
+    ],
     "FOR_ITER": [
         "FOR_ITER_ADAPTIVE",
         "FOR_ITER_LIST",
