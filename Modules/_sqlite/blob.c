@@ -122,8 +122,6 @@ blob_seterror(pysqlite_Blob *self, int rc)
 static PyObject *
 read_single(pysqlite_Blob *self, Py_ssize_t offset)
 {
-    assert(offset <= sqlite3_blob_bytes(self->blob));
-
     unsigned long buf = 0;
     int rc;
     Py_BEGIN_ALLOW_THREADS
