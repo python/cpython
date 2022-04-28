@@ -854,7 +854,7 @@ Deprecated
   (Contributed by Brett Cannon in :issue:`47061`.)
 
 * Deprecated the *isdst* parameter in :func:`email.utils.localtime`.
-  (Contributed by Alan Williams in :issue:`72346`.)
+  (Contributed by Alan Williams in :gh:`72346`.)
 
 
 Removed
