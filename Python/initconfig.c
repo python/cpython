@@ -1981,7 +1981,11 @@ config_init_import(PyConfig *config, int compute_path_config)
     if (config->use_frozen_modules < 0) {
         const wchar_t *value = config_get_xoption_value(config, L"frozen_modules");
         if (value == NULL) {
-            config->use_frozen_modules = !config->_is_python_build;
+#ifdef Py_DEBUG
+            config->use_frozen_modules = 0;
+#else
+            config->use_frozen_modules = 1;
+#endif
         }
         else if (wcscmp(value, L"on") == 0) {
             config->use_frozen_modules = 1;
