@@ -2522,7 +2522,7 @@ the attributes of the spec. In addition mocked functions / methods have the
 same call signature as the original so they raise a :exc:`TypeError` if they are
 called incorrectly.
 
-Before I explain how auto-speccing works, here's why it is needed.
+Before explaining how auto-speccing works, it is important to understand why it is needed.
 
 :class:`Mock` is a very powerful and flexible object, but it suffers from two flaws
 when used to mock out objects from a system under test. One of these flaws is
