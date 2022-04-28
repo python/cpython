@@ -1228,7 +1228,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    .. versionadded:: 3.8
 
-.. c:type:: PyObject* (*PyFrameEvalFunction)(PyThreadState *tstate, PyFrameObject *frame, int throwflag)
+.. c:type:: PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 
    Type of a frame evaluation function.
 
@@ -1244,11 +1244,12 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
       The function now takes a *tstate* parameter.
 
    .. versionchanged:: 3.11
+      The *frame* parameter changed from ``PyFrameObject*`` to ``_PyInterpreterFrame*``.
 
-     Renamed to ``PyFrameEvalFunction`` (without the leading undersecore).
-     The old name is available as an alias.
+      Renamed to ``PyFrameEvalFunction`` (without the leading undersecore).
+      The old name is available as an alias.
 
-     Use without ``Py_USING_SEMI_STABLE_API`` is deprecated.
+      Use without ``Py_USING_SEMI_STABLE_API`` is deprecated.
 
 .. c:function:: PyFrameEvalFunction PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
 
