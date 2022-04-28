@@ -1330,7 +1330,7 @@ C API Changes
   the old names are available as aliases.
 
   (Contributed by Petr Viktorin, Victor Stinner and Nick Coghlan in
-  :issue:`91744`.)
+  :gh:`91744`.)
 
 * :c:func:`PyFrameEvalFunction` now takes ``_PyInterpreterFrame*``
   as its second parameter, instead of ``PyFrameObject*``.
