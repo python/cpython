@@ -24,6 +24,9 @@ HyperText Transfer Protocol:
 :mod:`http` is also a module that defines a number of HTTP status codes and
 associated messages through the :class:`http.HTTPStatus` enum:
 
+
+The :mod:`http` module also defines the following enums that help you work with http related code:
+
 .. class:: HTTPStatus
 
    .. versionadded:: 3.5
@@ -136,3 +139,45 @@ equal to the constant name (i.e. ``http.HTTPStatus.OK`` is also available as
 
 .. versionadded:: 3.9
    Added ``103 EARLY_HINTS``, ``418 IM_A_TEAPOT`` and ``425 TOO_EARLY`` status codes.
+
+.. class:: HTTPMethod
+
+   .. versionadded:: 3.11
+
+   A subclass of :class:`enum.StrEnum` that defines a set of HTTP methods and descriptions written in English.
+
+   Usage::
+
+      >>> from http import HTTPMethod
+      >>> HTTMethod.GET
+      HTTMethod.GET
+      >>> HTTMethod.GET == 'GET'
+      True
+      >>> HTTMethod.GET.value
+      'GET'
+      >>> HTTMethod.GET.description
+      'Transfer a current representation of the target resource.'
+      >>> list(HTTPMethod)
+      [HTTPMethod.GET, HTTPMethod.HEAD, ...]
+
+.. _http-methods:
+
+HTTP methods
+-----------------
+
+Supported,
+`IANA-registered <https://www.iana.org/assignments/http-methods/http-methods.xhtml>`_
+methods available in :class:`http.HTTPMethod` are:
+
+==========  =================================== ==================================================================
+Method      Enum Name                           Details
+==========  =================================== ==================================================================
+``GET``     ``GET``                             HTTP/1.1 :rfc:`7231`, Section 4.3.1
+``HEAD``    ``HEAD``                            HTTP/1.1 :rfc:`7231`, Section 4.3.2
+``POST``    ``POST``                            HTTP/1.1 :rfc:`7231`, Section 4.3.3
+``PUT``     ``DELETE``                          HTTP/1.1 :rfc:`7231`, Section 4.3.4
+``DELETE``  ``DELETE``                          HTTP/1.1 :rfc:`7231`, Section 4.3.5
+``CONNECT`` ``CONNECT``                         HTTP/1.1 :rfc:`7231`, Section 4.3.6
+``OPTIONS`` ``OPTIONS``                         HTTP/1.1 :rfc:`7231`, Section 4.3.7
+``TRACE``   ``TRACE``                           HTTP/1.1 :rfc:`7231`, Section 4.3.8
+``PATCH``   ``PATCH``                           HTTP/1.1 :rfc:`5789`
