@@ -3736,9 +3736,8 @@ static PyObject *
 tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *args, *state;
-    PyObject *getinitargs, *getstate;
+    PyObject *getinitargs;
     _Py_IDENTIFIER(__getinitargs__);
-    _Py_IDENTIFIER(__getstate__);
 
     if (_PyObject_LookupAttrId(self, &PyId___getinitargs__, &getinitargs) < 0) {
         return NULL;
@@ -3754,34 +3753,13 @@ tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
 
-    if (_PyObject_LookupAttrId(self, &PyId___getstate__, &getstate) < 0) {
+    state = _PyObject_GetState(self);
+    if (state == NULL) {
         Py_DECREF(args);
         return NULL;
     }
-    if (getstate != NULL) {
-        state = PyObject_CallNoArgs(getstate);
-        Py_DECREF(getstate);
-        if (state == NULL) {
-            Py_DECREF(args);
-            return NULL;
-        }
-    }
-    else {
-        PyObject **dictptr;
-        state = Py_None;
-        dictptr = _PyObject_GetDictPtr(self);
-        if (dictptr && *dictptr && PyDict_GET_SIZE(*dictptr)) {
-            state = *dictptr;
-        }
-        Py_INCREF(state);
-    }
 
-    if (state == Py_None) {
-        Py_DECREF(state);
-        return Py_BuildValue("(ON)", Py_TYPE(self), args);
-    }
-    else
-        return Py_BuildValue("(ONN)", Py_TYPE(self), args, state);
+    return Py_BuildValue("(ONN)", Py_TYPE(self), args, state);
 }
 
 static PyMethodDef tzinfo_methods[] = {
@@ -6659,19 +6637,19 @@ _datetime_exec(PyObject *module)
     /* A 4-year cycle has an extra leap day over what we'd get from
      * pasting together 4 single years.
      */
-    Py_BUILD_ASSERT(DI4Y == 4 * 365 + 1);
+    static_assert(DI4Y == 4 * 365 + 1, "DI4Y");
     assert(DI4Y == days_before_year(4+1));
 
     /* Similarly, a 400-year cycle has an extra leap day over what we'd
      * get from pasting together 4 100-year cycles.
      */
-    Py_BUILD_ASSERT(DI400Y == 4 * DI100Y + 1);
+    static_assert(DI400Y == 4 * DI100Y + 1, "DI400Y");
     assert(DI400Y == days_before_year(400+1));
 
     /* OTOH, a 100-year cycle has one fewer leap day than we'd get from
      * pasting together 25 4-year cycles.
      */
-    Py_BUILD_ASSERT(DI100Y == 25 * DI4Y - 1);
+    static_assert(DI100Y == 25 * DI4Y - 1, "DI100Y");
     assert(DI100Y == days_before_year(100+1));
 
     us_per_ms = PyLong_FromLong(1000);

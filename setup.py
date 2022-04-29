@@ -343,7 +343,7 @@ class PyBuildExt(build_ext):
 
         Distutils appends extra args to the compiler arguments. Some flags like
         -I must appear earlier, otherwise the pre-processor picks up files
-        from system inclue directories.
+        from system include directories.
         """
         upper_name = ext.name.upper()
         # Parse compiler flags (-I, -D, -U, extra args)
@@ -1256,6 +1256,7 @@ class PyBuildExt(build_ext):
 
     def detect_sqlite(self):
         sources = [
+            "_sqlite/blob.c",
             "_sqlite/connection.c",
             "_sqlite/cursor.c",
             "_sqlite/microprotocols.c",

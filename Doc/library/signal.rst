@@ -266,6 +266,7 @@ The variables defined in the :mod:`signal` module are:
 .. data:: NSIG
 
    One more than the number of the highest signal number.
+   Use :func:`valid_signals` to get valid signal numbers.
 
 
 .. data:: ITIMER_REAL
@@ -711,10 +712,11 @@ case, wrap your entry point to catch this exception as follows::
     if __name__ == '__main__':
         main()
 
-Do not set :const:`SIGPIPE`'s disposition to :const:`SIG_DFL`
-in order to avoid :exc:`BrokenPipeError`.  Doing that would cause
-your program to exit unexpectedly also whenever any socket connection
-is interrupted while your program is still writing to it.
+Do not set :const:`SIGPIPE`'s disposition to :const:`SIG_DFL` in
+order to avoid :exc:`BrokenPipeError`.  Doing that would cause
+your program to exit unexpectedly whenever any socket
+connection is interrupted while your program is still writing to
+it.
 
 .. _handlers-and-exceptions:
 
