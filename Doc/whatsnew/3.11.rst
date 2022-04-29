@@ -327,7 +327,7 @@ For example::
 
 See :pep:`681` for more details.
 
-(Contributed by Jelle Zijlstra in :issue:`91860`. PEP written by
+(Contributed by Jelle Zijlstra in :gh:`91860`. PEP written by
 Erik De Bonte and Eric Traut.)
 
 Other Language Changes
