@@ -4,7 +4,7 @@ jobs:
   condition: and(succeeded(), eq(variables['DoNuget'], 'true'))
 
   pool:
-    vmImage: windows-2019
+    name: 'Windows Release'
 
   workspace:
     clean: all
@@ -32,9 +32,32 @@ jobs:
     inputs:
       versionSpec: '>=5.0'
 
-  - powershell: |
-      nuget pack "$(Build.BinariesDirectory)\layout\python.nuspec" -OutputDirectory $(Build.ArtifactStagingDirectory) -NoPackageAnalysis -NonInteractive
+  - powershell: >
+      nuget pack
+      "$(Build.BinariesDirectory)\layout\python.nuspec"
+      -OutputDirectory $(Build.ArtifactStagingDirectory)
+      -NoPackageAnalysis
+      -NonInteractive
+    condition: and(succeeded(), not(variables['OverrideNugetVersion']))
     displayName: 'Create nuget package'
+
+  - powershell: >
+      nuget pack
+      "$(Build.BinariesDirectory)\layout\python.nuspec"
+      -OutputDirectory $(Build.ArtifactStagingDirectory)
+      -NoPackageAnalysis
+      -NonInteractive
+      -Version "$(OverrideNugetVersion)"
+    condition: and(succeeded(), variables['OverrideNugetVersion'])
+    displayName: 'Create nuget package'
+
+  - powershell: |
+      gci *.nupkg | %{
+        nuget sign "$_" -CertificateSubjectName "$(SigningCertificate)" -Timestamper http://timestamp.digicert.com/ -Overwrite
+      }
+    displayName: 'Sign nuget package'
+    workingDirectory: $(Build.ArtifactStagingDirectory)
+    condition: and(succeeded(), variables['SigningCertificate'])
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Artifact: nuget'

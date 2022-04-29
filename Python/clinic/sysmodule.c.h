@@ -76,6 +76,28 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys_exception__doc__,
+"exception($module, /)\n"
+"--\n"
+"\n"
+"Return the current exception.\n"
+"\n"
+"Return the most recent exception caught by an except clause\n"
+"in the current stack frame or in an older stack frame, or None\n"
+"if no such exception exists.");
+
+#define SYS_EXCEPTION_METHODDEF    \
+    {"exception", (PyCFunction)sys_exception, METH_NOARGS, sys_exception__doc__},
+
+static PyObject *
+sys_exception_impl(PyObject *module);
+
+static PyObject *
+sys_exception(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys_exception_impl(module);
+}
+
 PyDoc_STRVAR(sys_exc_info__doc__,
 "exc_info($module, /)\n"
 "--\n"
@@ -372,11 +394,6 @@ sys_setrecursionlimit(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_limit;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     new_limit = _PyLong_AsInt(arg);
     if (new_limit == -1 && PyErr_Occurred()) {
         goto exit;
@@ -415,11 +432,6 @@ sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args,
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     depth = _PyLong_AsInt(args[0]);
@@ -590,11 +602,6 @@ sys_setdlopenflags(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_val;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     new_val = _PyLong_AsInt(arg);
     if (new_val == -1 && PyErr_Occurred()) {
         goto exit;
@@ -650,11 +657,6 @@ sys_mdebug(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     flag = _PyLong_AsInt(arg);
     if (flag == -1 && PyErr_Occurred()) {
         goto exit;
@@ -730,6 +732,33 @@ exit:
 
 #endif /* defined(Py_REF_DEBUG) */
 
+PyDoc_STRVAR(sys__getquickenedcount__doc__,
+"_getquickenedcount($module, /)\n"
+"--\n"
+"\n");
+
+#define SYS__GETQUICKENEDCOUNT_METHODDEF    \
+    {"_getquickenedcount", (PyCFunction)sys__getquickenedcount, METH_NOARGS, sys__getquickenedcount__doc__},
+
+static Py_ssize_t
+sys__getquickenedcount_impl(PyObject *module);
+
+static PyObject *
+sys__getquickenedcount(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t _return_value;
+
+    _return_value = sys__getquickenedcount_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys_getallocatedblocks__doc__,
 "getallocatedblocks($module, /)\n"
 "--\n"
@@ -790,11 +819,6 @@ sys__getframe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     depth = _PyLong_AsInt(args[0]);
     if (depth == -1 && PyErr_Occurred()) {
         goto exit;
@@ -824,6 +848,26 @@ static PyObject *
 sys__current_frames(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return sys__current_frames_impl(module);
+}
+
+PyDoc_STRVAR(sys__current_exceptions__doc__,
+"_current_exceptions($module, /)\n"
+"--\n"
+"\n"
+"Return a dict mapping each thread\'s identifier to its current raised exception.\n"
+"\n"
+"This function should be used for specialized purposes only.");
+
+#define SYS__CURRENT_EXCEPTIONS_METHODDEF    \
+    {"_current_exceptions", (PyCFunction)sys__current_exceptions, METH_NOARGS, sys__current_exceptions__doc__},
+
+static PyObject *
+sys__current_exceptions_impl(PyObject *module);
+
+static PyObject *
+sys__current_exceptions(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__current_exceptions_impl(module);
 }
 
 PyDoc_STRVAR(sys_call_tracing__doc__,
@@ -970,4 +1014,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=39eb34a01fb9a919 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=60756bc6f683e0c8 input=a9049054013a1b77]*/

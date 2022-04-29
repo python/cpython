@@ -1,5 +1,4 @@
 import os
-import sys
 import sysconfig
 
 
@@ -13,7 +12,8 @@ def reset_tzpath(to=None):
                 f"tzpaths must be a list or tuple, "
                 + f"not {type(tzpaths)}: {tzpaths!r}"
             )
-        elif not all(map(os.path.isabs, tzpaths)):
+
+        if not all(map(os.path.isabs, tzpaths)):
             raise ValueError(_get_invalid_paths_message(tzpaths))
         base_tzpath = tzpaths
     else:
@@ -42,7 +42,7 @@ def _parse_python_tzpath(env_var):
         msg = _get_invalid_paths_message(raw_tzpath)
 
         warnings.warn(
-            "Invalid paths specified in PYTHONTZPATH environment variable."
+            "Invalid paths specified in PYTHONTZPATH environment variable. "
             + msg,
             InvalidTZPathWarning,
         )
@@ -118,7 +118,7 @@ def available_timezones():
     # Start with loading from the tzdata package if it exists: this has a
     # pre-assembled list of zones that only requires opening one file.
     try:
-        with resources.open_text("tzdata", "zones") as f:
+        with resources.files("tzdata").joinpath("zones").open("r") as f:
             for zone in f:
                 zone = zone.strip()
                 if zone:

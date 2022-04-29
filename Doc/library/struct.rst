@@ -159,8 +159,8 @@ the :ref:`format-characters` section.
 Note the difference between ``'@'`` and ``'='``: both use native byte order, but
 the size and alignment of the latter is standardized.
 
-The form ``'!'`` is available for those poor souls who claim they can't remember
-whether network byte order is big-endian or little-endian.
+The form ``'!'`` represents the network byte order which is always big-endian
+as defined in `IETF RFC 1700 <IETF RFC 1700_>`_.
 
 There is no way to indicate non-native byte order (force byte-swapping); use the
 appropriate choice of ``'<'`` or ``'>'``.
@@ -467,3 +467,5 @@ The :mod:`struct` module also defines the following type:
 .. _half precision format: https://en.wikipedia.org/wiki/Half-precision_floating-point_format
 
 .. _ieee 754 standard: https://en.wikipedia.org/wiki/IEEE_floating_point#IEEE_754-2008
+
+.. _IETF RFC 1700: https://tools.ietf.org/html/rfc1700

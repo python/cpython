@@ -67,7 +67,7 @@ The command, if run with ``-h``, will show the available options::
     Once an environment has been created, you may wish to activate it, e.g. by
     sourcing an activate script in its bin directory.
 
-.. versionchanged:: 3.8
+.. versionchanged:: 3.9
    Add ``--upgrade-deps`` option to upgrade pip + setuptools to the latest on PyPI
 
 .. versionchanged:: 3.4
@@ -91,7 +91,7 @@ The command, if run with ``-h``, will show the available options::
    PS C:\> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
    See `About Execution Policies
-   <ttps:/go.microsoft.com/fwlink/?LinkID=135170>`_
+   <https://go.microsoft.com/fwlink/?LinkID=135170>`_
    for more information.
 
 The created ``pyvenv.cfg`` file also includes the
@@ -125,6 +125,10 @@ directory containing the virtual environment):
 +-------------+-----------------+-----------------------------------------+
 |             | PowerShell      | PS C:\\> <venv>\\Scripts\\Activate.ps1  |
 +-------------+-----------------+-----------------------------------------+
+
+When a virtual environment is active, the :envvar:`VIRTUAL_ENV` environment
+variable is set to the path of the virtual environment. This can be used to
+check if one is running inside a virtual environment.
 
 You don't specifically *need* to activate an environment; activation just
 prepends the virtual environment's binary directory to your path, so that

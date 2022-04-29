@@ -5,15 +5,20 @@
 extern "C" {
 #endif
 
-PyAPI_FUNC(PyObject *) _PyImport_FindBuiltin(
-    PyThreadState *tstate,
-    const char *name             /* UTF-8 encoded string */
-    );
-
 #ifdef HAVE_FORK
-extern void _PyImport_ReInitLock(void);
+extern PyStatus _PyImport_ReInitLock(void);
 #endif
-extern void _PyImport_Cleanup(PyThreadState *tstate);
+extern PyObject* _PyImport_BootstrapImp(PyThreadState *tstate);
+
+struct _module_alias {
+    const char *name;                 /* ASCII encoded string */
+    const char *orig;                 /* ASCII encoded string */
+};
+
+PyAPI_DATA(const struct _frozen *) _PyImport_FrozenBootstrap;
+PyAPI_DATA(const struct _frozen *) _PyImport_FrozenStdlib;
+PyAPI_DATA(const struct _frozen *) _PyImport_FrozenTest;
+extern const struct _module_alias * _PyImport_FrozenAliases;
 
 #ifdef __cplusplus
 }
