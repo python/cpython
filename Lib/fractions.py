@@ -411,7 +411,7 @@ class Fraction(numbers.Rational):
         def reverse(b, a):
             if isinstance(a, numbers.Rational):
                 # Includes ints.
-                return fallback_operator(Fraction(a), b)
+                return monomorphic_operator(Fraction(a), b)
             elif isinstance(a, numbers.Real):
                 return fallback_operator(float(a), float(b))
             elif isinstance(a, numbers.Complex):
