@@ -316,7 +316,8 @@ extern PyStats _py_stats;
 
 extern void _Py_PrintSpecializationStats(int to_file);
 
-extern PyObject* _Py_GetSpecializationStats(void);
+// Used by the _opcode extension which is built as a shared library
+PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 
 #else
 #define STAT_INC(opname, name) ((void)0)
@@ -324,7 +325,7 @@ extern PyObject* _Py_GetSpecializationStats(void);
 #define OPCODE_EXE_INC(opname) ((void)0)
 #define CALL_STAT_INC(name) ((void)0)
 #define OBJECT_STAT_INC(name) ((void)0)
-#endif
+#endif  // !Py_STATS
 
 // Cache values are only valid in memory, so use native endianness.
 #ifdef WORDS_BIGENDIAN

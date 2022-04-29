@@ -8213,6 +8213,9 @@ PyInit__socket(void)
 #ifdef  TCP_INFO
     PyModule_AddIntMacro(m, TCP_INFO);
 #endif
+#ifdef  TCP_CONNECTION_INFO
+    PyModule_AddIntMacro(m, TCP_CONNECTION_INFO);
+#endif
 #ifdef  TCP_QUICKACK
     PyModule_AddIntMacro(m, TCP_QUICKACK);
 #endif

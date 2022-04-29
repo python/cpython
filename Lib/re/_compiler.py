@@ -164,12 +164,6 @@ def _compile(data, pattern, flags):
             _compile(data, av[1], flags)
             emit(SUCCESS)
             code[skip] = _len(code) - skip
-        elif op is CALL:
-            emit(op)
-            skip = _len(code); emit(0)
-            _compile(data, av, flags)
-            emit(SUCCESS)
-            code[skip] = _len(code) - skip
         elif op is AT:
             emit(op)
             if flags & SRE_FLAG_MULTILINE:

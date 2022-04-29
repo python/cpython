@@ -36,6 +36,10 @@ New features are frequently added to the ``typing`` module.
 The `typing_extensions <https://pypi.org/project/typing-extensions/>`_ package
 provides backports of these new features to older versions of Python.
 
+For a summary of deprecated features and a deprecation timeline, please see
+`Deprecation Timeline of Major Features`_.
+
+
 .. _relevant-peps:
 
 Relevant PEPs
@@ -2345,10 +2349,24 @@ Functions and decorators
                case _ as unreachable:
                    assert_never(unreachable)
 
+   Here, the annotations allow the type checker to infer that the
+   last case can never execute, because ``arg`` is either
+   an :class:`int` or a :class:`str`, and both options are covered by
+   earlier cases.
    If a type checker finds that a call to ``assert_never()`` is
-   reachable, it will emit an error.
+   reachable, it will emit an error. For example, if the type annotation
+   for ``arg`` was instead ``int | str | float``, the type checker would
+   emit an error pointing out that ``unreachable`` is of type :class:`float`.
+   For a call to ``assert_never`` to succeed, the inferred type of
+   the argument passed in must be the bottom type, :data:`Never`, and nothing
+   else.
 
    At runtime, this throws an exception when called.
+
+   .. seealso::
+      `Unreachable Code and Exhaustiveness Checking
+      <https://typing.readthedocs.io/en/latest/source/unreachable.html>_` has more
+      information about exhaustiveness checking with static typing.
 
    .. versionadded:: 3.11
 
@@ -2630,3 +2648,20 @@ Constant
       (see :pep:`563`).
 
    .. versionadded:: 3.5.2
+
+Deprecation Timeline of Major Features
+======================================
+
+Certain features in ``typing`` are deprecated and may be removed in a future
+version of Python. The following table summarizes major deprecations for your
+convenience. This is subject to change, and not all deprecations are listed.
+
++----------------------------------+---------------+-------------------+----------------+
+|  Feature                         | Deprecated in | Projected removal | PEP/issue      |
++==================================+===============+===================+================+
+|  ``typing.io`` and ``typing.re`` | 3.8           | 3.12              | :issue:`38291` |
+|  submodules                      |               |                   |                |
++----------------------------------+---------------+-------------------+----------------+
+|  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |
+|  collections                     |               |                   |                |
++----------------------------------+---------------+-------------------+----------------+
