@@ -5,6 +5,7 @@ import ntpath
 import os
 import posixpath
 import re
+import string
 import sys
 import warnings
 from _collections_abc import Sequence
