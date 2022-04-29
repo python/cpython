@@ -1168,7 +1168,7 @@ if test ! -d CaseSensitiveTestDir; then
 mkdir CaseSensitiveTestDir
 fi
 
-if test -d casesensitivetestdir && test -z "$EXEEXT"
+if test -d casesensitivetestdir && test "${with_suffix+set}" != set && test -z "$EXEEXT"
 then
     AC_MSG_RESULT(yes)
     BUILDEXEEXT=.exe
