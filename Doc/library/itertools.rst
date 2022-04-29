@@ -721,7 +721,7 @@ Substantially all of these recipes and many, many others can be installed from
 the `more-itertools project <https://pypi.org/project/more-itertools/>`_ found
 on the Python Package Index::
 
-    pip install more-itertools
+    python -m pip install more-itertools
 
 The extended tools offer the same high performance as the underlying toolset.
 The superior memory performance is kept by processing elements one at a time
@@ -892,6 +892,12 @@ which incur interpreter overhead.
            yield from transition
            yield from it
        return true_iterator(), remainder_iterator()
+
+   def subslices(seq):
+       "Return all contiguous non-empty subslices of a sequence"
+       # subslices('ABCD') --> A AB ABC ABCD B BC BCD C CD D
+       slices = starmap(slice, combinations(range(len(seq) + 1), 2))
+       return map(operator.getitem, repeat(seq), slices)
 
    def powerset(iterable):
        "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
@@ -1187,6 +1193,9 @@ which incur interpreter overhead.
     'ABC'
     >>> ''.join(remainder)
     'dEfGhI'
+
+    >>> list(subslices('ABCD'))
+    ['A', 'AB', 'ABC', 'ABCD', 'B', 'BC', 'BCD', 'C', 'CD', 'D']
 
     >>> list(powerset([1,2,3]))
     [(), (1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)]

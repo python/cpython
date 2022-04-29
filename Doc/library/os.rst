@@ -105,15 +105,15 @@ of the UTF-8 encoding:
 
 * Use UTF-8 as the :term:`filesystem encoding <filesystem encoding and error
   handler>`.
-* :func:`sys.getfilesystemencoding()` returns ``'UTF-8'``.
-* :func:`locale.getpreferredencoding()` returns ``'UTF-8'`` (the *do_setlocale*
+* :func:`sys.getfilesystemencoding()` returns ``'utf-8'``.
+* :func:`locale.getpreferredencoding()` returns ``'utf-8'`` (the *do_setlocale*
   argument has no effect).
 * :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr` all use
   UTF-8 as their text encoding, with the ``surrogateescape``
   :ref:`error handler <error-handlers>` being enabled for :data:`sys.stdin`
   and :data:`sys.stdout` (:data:`sys.stderr` continues to use
   ``backslashreplace`` as it does in the default locale-aware mode)
-* On Unix, :func:`os.device_encoding` returns ``'UTF-8'``. rather than the
+* On Unix, :func:`os.device_encoding` returns ``'utf-8'`` rather than the
   device encoding.
 
 Note that the standard stream settings in UTF-8 mode can be overridden by
@@ -355,7 +355,8 @@ process and user.
 
    Return list of group ids that *user* belongs to. If *group* is not in the
    list, it is included; typically, *group* is specified as the group ID
-   field from the password record for *user*.
+   field from the password record for *user*, because that group ID will
+   otherwise be potentially omitted.
 
    .. availability:: Unix.
 
@@ -2050,7 +2051,8 @@ features:
 
    Create a directory named *path* with numeric mode *mode*.
 
-   If the directory already exists, :exc:`FileExistsError` is raised.
+   If the directory already exists, :exc:`FileExistsError` is raised. If a parent
+   directory in the path does not exist, :exc:`FileNotFoundError` is raised.
 
    .. _mkdir_modebits:
 
@@ -2346,7 +2348,7 @@ features:
 
 .. function:: replace(src, dst, *, src_dir_fd=None, dst_dir_fd=None)
 
-   Rename the file or directory *src* to *dst*.  If *dst* is a directory,
+   Rename the file or directory *src* to *dst*.  If *dst* is a non-empty directory,
    :exc:`OSError` will be raised.  If *dst* exists and is a file, it will
    be replaced silently if the user has permission.  The operation may fail
    if *src* and *dst* are on different filesystems.  If successful,
@@ -3554,8 +3556,8 @@ to be ignored.
    Add a path to the DLL search path.
 
    This search path is used when resolving dependencies for imported
-   extension modules (the module itself is resolved through sys.path),
-   and also by :mod:`ctypes`.
+   extension modules (the module itself is resolved through
+   :data:`sys.path`), and also by :mod:`ctypes`.
 
    Remove the directory by calling **close()** on the returned object
    or using it in a :keyword:`with` statement.
@@ -4754,6 +4756,9 @@ Miscellaneous System Information
    determine the set of names known to the system.
 
    .. availability:: Unix.
+
+   .. versionchanged:: 3.11
+      Add ``'SC_MINSIGSTKSZ'`` name.
 
 The following data values are used to support path manipulation operations.  These
 are defined for all platforms.

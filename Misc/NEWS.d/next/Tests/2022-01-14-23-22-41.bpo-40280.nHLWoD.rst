@@ -1,3 +1,0 @@
-Add :func:`test.support.requires_subprocess` decorator to mark tests which
-require working :mod:`subprocess` module or ``os.spawn*``. The
-wasm32-emscripten platform has no support for processes.
