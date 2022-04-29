@@ -1631,7 +1631,7 @@ These are not used in annotations. They are building blocks for declaring types.
       standard ``__annotations__`` attribute which has the same information.
 
    .. versionchanged:: 3.11
-      Added support of multiple inheritance with :class:`Generic`.
+      Added support for generic namedtuples.
 
 .. class:: NewType(name, tp)
 

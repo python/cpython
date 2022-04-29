@@ -1,2 +1,1 @@
-Add support of multiple inheritance of :class:`typing.NamedTuple` with
-:class:`typing.Generic`.
+Add support for generic :class:`typing.NamedTuple`.
