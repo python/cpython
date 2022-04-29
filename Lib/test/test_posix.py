@@ -1194,7 +1194,9 @@ class PosixTester(unittest.TestCase):
         mask = posix.sched_getaffinity(0)
         self.assertIsInstance(mask, set)
         self.assertGreaterEqual(len(mask), 1)
-        self.assertRaises(OSError, posix.sched_getaffinity, -1)
+        if not sys.platform.startswith("freebsd"):
+            # bpo-47205: does not raise OSError on FreeBSD
+            self.assertRaises(OSError, posix.sched_getaffinity, -1)
         for cpu in mask:
             self.assertIsInstance(cpu, int)
             self.assertGreaterEqual(cpu, 0)
@@ -1212,7 +1214,9 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(ValueError, posix.sched_setaffinity, 0, [-10])
         self.assertRaises(ValueError, posix.sched_setaffinity, 0, map(int, "0X"))
         self.assertRaises(OverflowError, posix.sched_setaffinity, 0, [1<<128])
-        self.assertRaises(OSError, posix.sched_setaffinity, -1, mask)
+        if not sys.platform.startswith("freebsd"):
+            # bpo-47205: does not raise OSError on FreeBSD
+            self.assertRaises(OSError, posix.sched_setaffinity, -1, mask)
 
     def test_rtld_constants(self):
         # check presence of major RTLD_* constants

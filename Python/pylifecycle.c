@@ -9,7 +9,6 @@
 #include "pycore_dict.h"          // _PyDict_Fini()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
-#include "pycore_frame.h"         // _PyFrame_Fini()
 #include "pycore_genobject.h"     // _PyAsyncGen_Fini()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -96,11 +95,16 @@ __attribute__((
 
 #endif
 
+/* Suppress deprecation warning for PyBytesObject.ob_shash */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
 _PyRuntimeState _PyRuntime
 #if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
 __attribute__ ((section (".PyRuntime")))
 #endif
 = _PyRuntimeState_INIT;
+_Py_COMP_DIAG_POP
+
 static int runtime_initialized = 0;
 
 PyStatus
@@ -1667,7 +1671,6 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyUnicode_FiniTypes(interp);
     _PySys_Fini(interp);
     _PyExc_Fini(interp);
-    _PyFrame_Fini(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);
     _PyFloat_FiniType(interp);

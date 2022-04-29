@@ -139,9 +139,9 @@ line, the above script produces an output that looks like this::
 Passing the ``-v`` option to your test script will instruct :func:`unittest.main`
 to enable a higher level of verbosity, and produce the following output::
 
-   test_isupper (__main__.TestStringMethods) ... ok
-   test_split (__main__.TestStringMethods) ... ok
-   test_upper (__main__.TestStringMethods) ... ok
+   test_isupper (__main__.TestStringMethods.test_isupper) ... ok
+   test_split (__main__.TestStringMethods.test_split) ... ok
+   test_upper (__main__.TestStringMethods.test_upper) ... ok
 
    ----------------------------------------------------------------------
    Ran 3 tests in 0.001s
@@ -565,10 +565,10 @@ Basic skipping looks like this::
 
 This is the output of running the example above in verbose mode::
 
-   test_format (__main__.MyTestCase) ... skipped 'not supported in this library version'
-   test_nothing (__main__.MyTestCase) ... skipped 'demonstrating skipping'
-   test_maybe_skipped (__main__.MyTestCase) ... skipped 'external resource not available'
-   test_windows_support (__main__.MyTestCase) ... skipped 'requires Windows'
+   test_format (__main__.MyTestCase.test_format) ... skipped 'not supported in this library version'
+   test_nothing (__main__.MyTestCase.test_nothing) ... skipped 'demonstrating skipping'
+   test_maybe_skipped (__main__.MyTestCase.test_maybe_skipped) ... skipped 'external resource not available'
+   test_windows_support (__main__.MyTestCase.test_windows_support) ... skipped 'requires Windows'
 
    ----------------------------------------------------------------------
    Ran 4 tests in 0.005s
@@ -661,27 +661,33 @@ For example, the following test::
 will produce the following output::
 
    ======================================================================
-   FAIL: test_even (__main__.NumbersTest) (i=1)
+   FAIL: test_even (__main__.NumbersTest.test_even) (i=1)
+   Test that numbers between 0 and 5 are all even.
    ----------------------------------------------------------------------
    Traceback (most recent call last):
-     File "subtests.py", line 32, in test_even
+     File "subtests.py", line 11, in test_even
        self.assertEqual(i % 2, 0)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
    AssertionError: 1 != 0
 
    ======================================================================
-   FAIL: test_even (__main__.NumbersTest) (i=3)
+   FAIL: test_even (__main__.NumbersTest.test_even) (i=3)
+   Test that numbers between 0 and 5 are all even.
    ----------------------------------------------------------------------
    Traceback (most recent call last):
-     File "subtests.py", line 32, in test_even
+     File "subtests.py", line 11, in test_even
        self.assertEqual(i % 2, 0)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
    AssertionError: 1 != 0
 
    ======================================================================
-   FAIL: test_even (__main__.NumbersTest) (i=5)
+   FAIL: test_even (__main__.NumbersTest.test_even) (i=5)
+   Test that numbers between 0 and 5 are all even.
    ----------------------------------------------------------------------
    Traceback (most recent call last):
-     File "subtests.py", line 32, in test_even
+     File "subtests.py", line 11, in test_even
        self.assertEqual(i % 2, 0)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
    AssertionError: 1 != 0
 
 Without using a subtest, execution would stop after the first failure,
@@ -689,7 +695,7 @@ and the error would be less easy to diagnose because the value of ``i``
 wouldn't be displayed::
 
    ======================================================================
-   FAIL: test_even (__main__.NumbersTest)
+   FAIL: test_even (__main__.NumbersTest.test_even)
    ----------------------------------------------------------------------
    Traceback (most recent call last):
      File "subtests.py", line 32, in test_even

@@ -10,6 +10,10 @@ class FinderTests(abc.FinderTests):
 
     """Test the finder for extension modules."""
 
+    def setUp(self):
+        if not self.machinery.EXTENSION_SUFFIXES:
+            raise unittest.SkipTest("Requires dynamic loading support.")
+
     def find_spec(self, fullname):
         importer = self.machinery.FileFinder(util.EXTENSIONS.path,
                                             (self.machinery.ExtensionFileLoader,

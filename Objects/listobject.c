@@ -301,26 +301,27 @@ PyList_Insert(PyObject *op, Py_ssize_t where, PyObject *newitem)
     return ins1((PyListObject *)op, where, newitem);
 }
 
-static int
-app1(PyListObject *self, PyObject *v)
+/* internal, used by _PyList_AppendTakeRef */
+int
+_PyList_AppendTakeRefListResize(PyListObject *self, PyObject *newitem)
 {
-    Py_ssize_t n = PyList_GET_SIZE(self);
-
-    assert (v != NULL);
-    assert((size_t)n + 1 < PY_SSIZE_T_MAX);
-    if (list_resize(self, n+1) < 0)
+    Py_ssize_t len = PyList_GET_SIZE(self);
+    assert(self->allocated == -1 || self->allocated == len);
+    if (list_resize(self, len + 1) < 0) {
+        Py_DECREF(newitem);
         return -1;
-
-    Py_INCREF(v);
-    PyList_SET_ITEM(self, n, v);
+    }
+    PyList_SET_ITEM(self, len, newitem);
     return 0;
 }
 
 int
 PyList_Append(PyObject *op, PyObject *newitem)
 {
-    if (PyList_Check(op) && (newitem != NULL))
-        return app1((PyListObject *)op, newitem);
+    if (PyList_Check(op) && (newitem != NULL)) {
+        Py_INCREF(newitem);
+        return _PyList_AppendTakeRef((PyListObject *)op, newitem);
+    }
     PyErr_BadInternalCall();
     return -1;
 }
@@ -844,9 +845,10 @@ static PyObject *
 list_append(PyListObject *self, PyObject *object)
 /*[clinic end generated code: output=7c096003a29c0eae input=43a3fe48a7066e91]*/
 {
-    if (app1(self, object) == 0)
-        Py_RETURN_NONE;
-    return NULL;
+    if (_PyList_AppendTakeRef(self, Py_NewRef(object)) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -865,7 +867,6 @@ list_extend(PyListObject *self, PyObject *iterable)
     PyObject *it;      /* iter(v) */
     Py_ssize_t m;                  /* size of self */
     Py_ssize_t n;                  /* guess for size of iterable */
-    Py_ssize_t mn;                 /* m + n */
     Py_ssize_t i;
     PyObject *(*iternext)(PyObject *);
 
@@ -889,7 +890,13 @@ list_extend(PyListObject *self, PyObject *iterable)
         /* It should not be possible to allocate a list large enough to cause
         an overflow on any relevant platform */
         assert(m < PY_SSIZE_T_MAX - n);
-        if (list_resize(self, m + n) < 0) {
+        if (self->ob_item == NULL) {
+            if (list_preallocate_exact(self, n) < 0) {
+                return NULL;
+            }
+            Py_SET_SIZE(self, n);
+        }
+        else if (list_resize(self, m + n) < 0) {
             Py_DECREF(iterable);
             return NULL;
         }
@@ -928,10 +935,13 @@ list_extend(PyListObject *self, PyObject *iterable)
          * eventually run out of memory during the loop.
          */
     }
+    else if (self->ob_item == NULL) {
+        if (n && list_preallocate_exact(self, n) < 0)
+            goto error;
+    }
     else {
-        mn = m + n;
         /* Make room. */
-        if (list_resize(self, mn) < 0)
+        if (list_resize(self, m + n) < 0)
             goto error;
         /* Make the list sane again. */
         Py_SET_SIZE(self, m);
@@ -955,9 +965,7 @@ list_extend(PyListObject *self, PyObject *iterable)
             Py_SET_SIZE(self, Py_SIZE(self) + 1);
         }
         else {
-            int status = app1(self, item);
-            Py_DECREF(item);  /* append creates a new ref */
-            if (status < 0)
+            if (_PyList_AppendTakeRef(self, item) < 0)
                 goto error;
         }
     }
@@ -2814,19 +2822,6 @@ list___init___impl(PyListObject *self, PyObject *iterable)
         (void)_list_clear(self);
     }
     if (iterable != NULL) {
-        if (_PyObject_HasLen(iterable)) {
-            Py_ssize_t iter_len = PyObject_Size(iterable);
-            if (iter_len == -1) {
-                if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
-                    return -1;
-                }
-                PyErr_Clear();
-            }
-            if (iter_len > 0 && self->ob_item == NULL
-                && list_preallocate_exact(self, iter_len)) {
-                return -1;
-            }
-        }
         PyObject *rv = list_extend(self, iterable);
         if (rv == NULL)
             return -1;

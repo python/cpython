@@ -22,6 +22,8 @@ with warnings.catch_warnings():
     import asynchat
     import asyncore
 
+test_support.requires_working_socket(module=True)
+
 HOST = socket_helper.HOST
 PORT = 0
 

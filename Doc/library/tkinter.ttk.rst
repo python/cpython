@@ -13,9 +13,7 @@
 --------------
 
 The :mod:`tkinter.ttk` module provides access to the Tk themed widget set,
-introduced in Tk 8.5. If Python has not been compiled against Tk 8.5, this
-module can still be accessed if *Tile* has been installed.  The former
-method using Tk 8.5 provides additional benefits including anti-aliased font
+introduced in Tk 8.5. It provides additional benefits including anti-aliased font
 rendering under X11 and window transparency (requiring a composition
 window manager on X11).
 
