@@ -414,8 +414,7 @@ class PurePath(object):
             return cls._flavour.sep.join(parts)
 
     def _join_parsed_parts(self, drv2, root2, parts2):
-        """
-        Join the two paths represented by the respective
+        """Join the two paths represented by the respective
         (drive, root, parts) tuples.  Return a new (drive, root, parts) tuple.
         """
         drv, root, parts = self._drv, self._root, self._parts
