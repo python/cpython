@@ -711,7 +711,8 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   (Contributed by Jelle Zijlstra in :gh:`90500`.)
 
 * The :func:`typing.get_overloads` function can be used for introspecting
-  the overloads of a function.
+  the overloads of a function. :func:`typing.clear_overloads` can be used
+  to clear all registered overloads of a function.
   (Contributed by Jelle Zijlstra in :gh:`89263`.)
 
 unicodedata
