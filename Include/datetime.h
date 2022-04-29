@@ -21,14 +21,40 @@ extern "C" {
  * 10
  */
 
+typedef struct
+{
+	unsigned short year;
+	unsigned char  month;
+	unsigned char  day;
+} __attribute__((packed)) _PyDateTime_DateData;
+
 /* # of bytes for year, month, and day. */
-#define _PyDateTime_DATE_DATASIZE 4
+#define _PyDateTime_DATE_DATASIZE sizeof(_PyDateTime_DateData)
+
+typedef struct
+{
+	unsigned char hour;
+	unsigned char minute;
+	unsigned int second : 8;
+	unsigned int microsecond : 24;
+} __attribute__((packed)) _PyDateTime_TimeData;
 
 /* # of bytes for hour, minute, second, and usecond. */
-#define _PyDateTime_TIME_DATASIZE 6
+#define _PyDateTime_TIME_DATASIZE sizeof(_PyDateTime_TimeData)
+
+typedef struct
+{
+	unsigned short year;
+	unsigned char  month;
+	unsigned char  day;
+	unsigned char hour;
+	unsigned char minute;
+	unsigned int second : 8;
+	unsigned int microsecond : 24;
+} __attribute__((packed)) _PyDateTime_DateTimeData;
 
 /* # of bytes for year, month, day, hour, minute, second, and usecond. */
-#define _PyDateTime_DATETIME_DATASIZE 10
+#define _PyDateTime_DATETIME_DATASIZE sizeof(_PyDateTime_DateTimeData)
 
 
 typedef struct
@@ -71,7 +97,7 @@ typedef struct
  */
 #define _PyDateTime_TIMEHEAD    \
     _PyTZINFO_HEAD              \
-    unsigned char data[_PyDateTime_TIME_DATASIZE];
+    _PyDateTime_TimeData data;
 
 typedef struct
 {
@@ -94,12 +120,12 @@ typedef struct
 typedef struct
 {
     _PyTZINFO_HEAD
-    unsigned char data[_PyDateTime_DATE_DATASIZE];
+    _PyDateTime_DateData data;
 } PyDateTime_Date;
 
 #define _PyDateTime_DATETIMEHEAD        \
     _PyTZINFO_HEAD                      \
-    unsigned char data[_PyDateTime_DATETIME_DATASIZE];
+    _PyDateTime_DateTimeData data;
 
 typedef struct
 {
@@ -119,30 +145,23 @@ typedef struct
 // o is a pointer to a time or a datetime object.
 #define _PyDateTime_HAS_TZINFO(o)  (((_PyDateTime_BaseTZInfo *)(o))->hastzinfo)
 
-#define PyDateTime_GET_YEAR(o)     ((((PyDateTime_Date*)o)->data[0] << 8) | \
-                     ((PyDateTime_Date*)o)->data[1])
-#define PyDateTime_GET_MONTH(o)    (((PyDateTime_Date*)o)->data[2])
-#define PyDateTime_GET_DAY(o)      (((PyDateTime_Date*)o)->data[3])
+#define PyDateTime_GET_YEAR(o)     (((PyDateTime_Date*)o)->data.year)
+#define PyDateTime_GET_MONTH(o)    (((PyDateTime_Date*)o)->data.month)
+#define PyDateTime_GET_DAY(o)      (((PyDateTime_Date*)o)->data.day)
 
-#define PyDateTime_DATE_GET_HOUR(o)        (((PyDateTime_DateTime*)o)->data[4])
-#define PyDateTime_DATE_GET_MINUTE(o)      (((PyDateTime_DateTime*)o)->data[5])
-#define PyDateTime_DATE_GET_SECOND(o)      (((PyDateTime_DateTime*)o)->data[6])
-#define PyDateTime_DATE_GET_MICROSECOND(o)              \
-    ((((PyDateTime_DateTime*)o)->data[7] << 16) |       \
-     (((PyDateTime_DateTime*)o)->data[8] << 8)  |       \
-      ((PyDateTime_DateTime*)o)->data[9])
+#define PyDateTime_DATE_GET_HOUR(o)        (((PyDateTime_DateTime*)o)->data.hour)
+#define PyDateTime_DATE_GET_MINUTE(o)      (((PyDateTime_DateTime*)o)->data.minute)
+#define PyDateTime_DATE_GET_SECOND(o)      (((PyDateTime_DateTime*)o)->data.second)
+#define PyDateTime_DATE_GET_MICROSECOND(o) (((PyDateTime_DateTime*)o)->data.microsecond)
 #define PyDateTime_DATE_GET_FOLD(o)        (((PyDateTime_DateTime*)o)->fold)
 #define PyDateTime_DATE_GET_TZINFO(o)      (_PyDateTime_HAS_TZINFO(o) ? \
     ((PyDateTime_DateTime *)(o))->tzinfo : Py_None)
 
 /* Apply for time instances. */
-#define PyDateTime_TIME_GET_HOUR(o)        (((PyDateTime_Time*)o)->data[0])
-#define PyDateTime_TIME_GET_MINUTE(o)      (((PyDateTime_Time*)o)->data[1])
-#define PyDateTime_TIME_GET_SECOND(o)      (((PyDateTime_Time*)o)->data[2])
-#define PyDateTime_TIME_GET_MICROSECOND(o)              \
-    ((((PyDateTime_Time*)o)->data[3] << 16) |           \
-     (((PyDateTime_Time*)o)->data[4] << 8)  |           \
-      ((PyDateTime_Time*)o)->data[5])
+#define PyDateTime_TIME_GET_HOUR(o)        (((PyDateTime_Time*)o)->data.hour)
+#define PyDateTime_TIME_GET_MINUTE(o)      (((PyDateTime_Time*)o)->data.minute)
+#define PyDateTime_TIME_GET_SECOND(o)      (((PyDateTime_Time*)o)->data.second)
+#define PyDateTime_TIME_GET_MICROSECOND(o) (((PyDateTime_Time*)o)->data.microsecond)
 #define PyDateTime_TIME_GET_FOLD(o)        (((PyDateTime_Time*)o)->fold)
 #define PyDateTime_TIME_GET_TZINFO(o)      (_PyDateTime_HAS_TZINFO(o) ? \
     ((PyDateTime_Time *)(o))->tzinfo : Py_None)
