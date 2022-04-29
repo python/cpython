@@ -2625,6 +2625,10 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
         return object_isinstance(inst, cls);
     }
 
+    if (_PyUnion_Check(cls)) {
+        cls = _Py_union_args(cls);
+    }
+
     if (PyTuple_Check(cls)) {
         /* Not a general sequence -- that opens up the road to
            recursion and stack overflow. */
@@ -2712,6 +2716,10 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
         if (derived == cls)
             return 1;
         return recursive_issubclass(derived, cls);
+    }
+
+    if (_PyUnion_Check(cls)) {
+        cls = _Py_union_args(cls);
     }
 
     if (PyTuple_Check(cls)) {

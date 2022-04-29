@@ -135,6 +135,18 @@ _Py_ClearSpecializationStats()
 {
     memset(&_py_stats, 0, sizeof(_py_stats));
 }
+
+void
+_Py_EnableSpecializationStats(void)
+{
+    _enable_py_stats = 1;
+}
+void
+_Py_DisableSpecializationStats(void)
+{
+    _enable_py_stats = 0;
+}
+
 #endif
 
 

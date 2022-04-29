@@ -506,6 +506,15 @@ os
   instead of ``CryptGenRandom()`` which is deprecated.
   (Contributed by Dong-hee Na in :issue:`44611`.)
 
+
+pathlib
+-------
+
+* :meth:`~pathlib.Path.glob` and :meth:`~pathlib.Path.rglob` return only
+  directories if *pattern* ends with a pathname components separator:
+  :data:`~os.sep` or :data:`~os.altsep`.
+  (Contributed by Eisuke Kawasima in :issue:`22276` and :issue:`33392`.)
+
 re
 --
 
@@ -1071,6 +1080,7 @@ Deprecated
   * :mod:`spwd`
   * :mod:`sunau`
   * :mod:`telnetlib`
+  * :mod:`uu`
 
   (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
   :gh:`68966`.)

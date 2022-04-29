@@ -5627,6 +5627,15 @@ handle_eval_breaker:
             assert(oparg);
             oparg <<= 8;
             oparg |= _Py_OPARG(*next_instr);
+            opcode = _PyOpcode_Deopt[_Py_OPCODE(*next_instr)];
+            PRE_DISPATCH_GOTO();
+            DISPATCH_GOTO();
+        }
+
+        TARGET(EXTENDED_ARG_QUICK) {
+            assert(oparg);
+            oparg <<= 8;
+            oparg |= _Py_OPARG(*next_instr);
             NOTRACE_DISPATCH_SAME_OPARG();
         }
 

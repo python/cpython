@@ -307,7 +307,7 @@ typedef struct _stats {
 } PyStats;
 
 extern PyStats _py_stats;
-PyAPI_DATA(int) _enable_py_stats;
+extern int _enable_py_stats;
 
 #define STAT_INC(opname, name) _enable_py_stats && _py_stats.opcode_stats[opname].specialization.name++
 #define STAT_DEC(opname, name) _enable_py_stats && _py_stats.opcode_stats[opname].specialization.name--
@@ -317,8 +317,11 @@ PyAPI_DATA(int) _enable_py_stats;
 
 extern void _Py_PrintSpecializationStats(int to_file);
 
+// Used by the _opcode extension which is built as a shared library
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 PyAPI_FUNC(void) _Py_ClearSpecializationStats(void);
+PyAPI_FUNC(void) _Py_EnableSpecializationStats(void);
+PyAPI_FUNC(void) _Py_DisableSpecializationStats(void);
 
 #else
 #define STAT_INC(opname, name) ((void)0)
@@ -326,7 +329,7 @@ PyAPI_FUNC(void) _Py_ClearSpecializationStats(void);
 #define OPCODE_EXE_INC(opname) ((void)0)
 #define CALL_STAT_INC(name) ((void)0)
 #define OBJECT_STAT_INC(name) ((void)0)
-#endif
+#endif  // !Py_STATS
 
 // Cache values are only valid in memory, so use native endianness.
 #ifdef WORDS_BIGENDIAN

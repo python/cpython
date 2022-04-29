@@ -4,16 +4,34 @@
 """Test that all symbols of the Stable ABI are accessible using ctypes
 """
 
+import sys
 import unittest
 from test.support.import_helper import import_module
+from _testcapi import get_feature_macros
 
+feature_macros = get_feature_macros()
 ctypes_test = import_module('ctypes')
 
 class TestStableABIAvailability(unittest.TestCase):
     def test_available_symbols(self):
+
         for symbol_name in SYMBOL_NAMES:
             with self.subTest(symbol_name):
                 ctypes_test.pythonapi[symbol_name]
+
+    def test_feature_macros(self):
+        self.assertEqual(set(get_feature_macros()), EXPECTED_IFDEFS)
+
+    # The feature macros for Windows are used in creating the DLL
+    # definition, so they must be known on all platforms.
+    # If we are on Windows, we check that the hardcoded data matches
+    # the reality.
+    @unittest.skipIf(sys.platform != "win32", "Windows specific test")
+    def test_windows_feature_macros(self):
+        for name, value in WINDOWS_IFDEFS.items():
+            if value != 'maybe':
+                with self.subTest(name):
+                    self.assertEqual(feature_macros[name], value)
 
 SYMBOL_NAMES = (
 
@@ -855,3 +873,41 @@ SYMBOL_NAMES = (
     "_Py_TrueStruct",
     "_Py_VaBuildValue_SizeT",
 )
+if feature_macros['MS_WINDOWS']:
+    SYMBOL_NAMES += (
+        'PyErr_SetExcFromWindowsErr',
+        'PyErr_SetExcFromWindowsErrWithFilename',
+        'PyErr_SetExcFromWindowsErrWithFilenameObject',
+        'PyErr_SetExcFromWindowsErrWithFilenameObjects',
+        'PyErr_SetFromWindowsErr',
+        'PyErr_SetFromWindowsErrWithFilename',
+        'PyExc_WindowsError',
+        'PyUnicode_AsMBCSString',
+        'PyUnicode_DecodeCodePageStateful',
+        'PyUnicode_DecodeMBCS',
+        'PyUnicode_DecodeMBCSStateful',
+        'PyUnicode_EncodeCodePage',
+    )
+if feature_macros['HAVE_FORK']:
+    SYMBOL_NAMES += (
+        'PyOS_AfterFork',
+        'PyOS_AfterFork_Child',
+        'PyOS_AfterFork_Parent',
+        'PyOS_BeforeFork',
+    )
+if feature_macros['USE_STACKCHECK']:
+    SYMBOL_NAMES += (
+        'PyOS_CheckStack',
+    )
+if feature_macros['PY_HAVE_THREAD_NATIVE_ID']:
+    SYMBOL_NAMES += (
+        'PyThread_get_thread_native_id',
+    )
+if feature_macros['Py_REF_DEBUG']:
+    SYMBOL_NAMES += (
+        '_Py_NegativeRefcount',
+        '_Py_RefTotal',
+    )
+
+EXPECTED_IFDEFS = set(['HAVE_FORK', 'MS_WINDOWS', 'PY_HAVE_THREAD_NATIVE_ID', 'Py_REF_DEBUG', 'USE_STACKCHECK'])
+WINDOWS_IFDEFS = {'MS_WINDOWS': True, 'HAVE_FORK': False, 'USE_STACKCHECK': 'maybe', 'PY_HAVE_THREAD_NATIVE_ID': True, 'Py_REF_DEBUG': 'maybe'}
