@@ -23,7 +23,6 @@ __all__ = [
 # Internals
 #
 
-_WIN_EXT_NAMESPACE_PREFIX = '\\\\?\\'
 _WIN_DRIVE_LETTERS = frozenset(string.ascii_letters)
 _WIN_RESERVED_NAMES = (
     {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
@@ -126,7 +125,7 @@ class _PreciseSelector(_Selector):
 class _WildcardSelector(_Selector):
 
     def __init__(self, pat, child_parts, flavour):
-        flags = 0 if flavour is posixpath else re.IGNORECASE
+        flags = re.NOFLAG if flavour is posixpath else re.IGNORECASE
         self.match = re.compile(fnmatch.translate(pat), flags).fullmatch
         _Selector.__init__(self, child_parts, flavour)
 
@@ -263,7 +262,7 @@ class PurePath(object):
     @classmethod
     def _split_extended_path(cls, s):
         prefix = ''
-        if s.startswith(_WIN_EXT_NAMESPACE_PREFIX):
+        if s.startswith('\\\\?\\'):
             prefix = s[:4]
             s = s[4:]
             if s.startswith('UNC\\'):
