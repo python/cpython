@@ -144,7 +144,7 @@ General Options
    .. versionadded:: 3.11
 
 WebAssembly Options
-------------------
+-------------------
 
 .. cmdoption:: --with-emscripten-target=[browser|node]
 
