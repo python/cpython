@@ -161,5 +161,31 @@ class TestRlcompleter(unittest.TestCase):
         self.assertEqual(completer.complete('Ellipsis', 0), 'Ellipsis()')
         self.assertIsNone(completer.complete('Ellipsis', 1))
 
+    def test_case_insentive_matches(self):
+        # add an additional attr for testing
+        CompleteMe.SpAm = 2
+        # enable the case insensitive option
+        rlcompleter.set_ignore_case(True)
+        # test globals
+        self.assertEqual(self.completer.global_matches('completem'),
+                         ['CompleteMe('])
+        # test attr
+        self.assertNotEqual(self.completer.attr_matches('CompleteMe.spa'),
+                         ['CompleteMe.spam', 'CompleteMe.SpAm'])
+        # disable the case insensitive option
+        rlcompleter.set_ignore_case(False)
+        # test globals
+        self.assertNotEqual(self.completer.global_matches('completem'),
+                            ['CompleteMe('])
+        self.assertEqual(self.completer.global_matches('CompleteM'),
+                         ['CompleteMe('])
+        # test attr
+        self.assertNotEqual(self.completer.attr_matches('CompleteMe.spa'),
+                            ['CompleteMe.spam', 'CompleteMe.SpAm'])
+        self.assertEqual(self.completer.attr_matches('CompleteMe.sp'),
+                         ['CompleteMe.spam'])
+        # delete the additional attr
+        del(CompleteMe.SpAm)
+
 if __name__ == '__main__':
     unittest.main()

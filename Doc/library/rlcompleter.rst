@@ -5,6 +5,7 @@
    :synopsis: Python identifier completion, suitable for the GNU readline library.
 
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
+.. sectionauthor:: Madhusudhan Kasula <kasula.madhusudhan@gmail.com>
 
 **Source code:** :source:`Lib/rlcompleter.py`
 
@@ -59,3 +60,19 @@ Completer objects have the following method:
    :func:`dir` function.  Any exception raised during the evaluation of the
    expression is caught, silenced and :const:`None` is returned.
 
+
+.. _case-sensitivity:
+
+Case Sensitivity
+-----------------
+
+You can change the Completer's default case sensitive selection to case insensitive using the following method:
+
+
+.. function:: rlcompleter.set_ignore_case(option)
+
+   Return the *None*.
+
+   If called with *True*, it will set rlcompleter for case insensitive completions.
+
+   If called with *False*, it will set to default case sensitive completions.

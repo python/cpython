@@ -1,0 +1,1 @@
+Added an option to the user to make rl completions with case insensitive / sensitive.
