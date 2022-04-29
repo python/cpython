@@ -122,7 +122,7 @@ blob_seterror(pysqlite_Blob *self, int rc)
 static PyObject *
 read_single(pysqlite_Blob *self, Py_ssize_t offset)
 {
-    unsigned long buf = 0;
+    unsigned char buf = 0;
     int rc;
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_blob_read(self->blob, (void *)&buf, 1, (int)offset);
@@ -132,7 +132,7 @@ read_single(pysqlite_Blob *self, Py_ssize_t offset)
         blob_seterror(self, rc);
         return NULL;
     }
-    return PyLong_FromUnsignedLong(buf);
+    return PyLong_FromUnsignedLong((unsigned long)buf);
 }
 
 static PyObject *
