@@ -5296,19 +5296,27 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(X.__bases__, (tuple, Generic))
         self.assertEqual(X.__orig_bases__, (NamedTuple, Generic[T]))
         self.assertEqual(X.__mro__, (X, tuple, Generic, object))
-        self.assertEqual(X.__parameters__, (T,))
 
-        A = X[int]
-        self.assertIs(A.__origin__, X)
-        self.assertEqual(A.__args__, (int,))
-        self.assertEqual(A.__parameters__, ())
+        class Y(Generic[T], NamedTuple):
+            x: T
+        self.assertEqual(Y.__bases__, (Generic, tuple))
+        self.assertEqual(Y.__orig_bases__, (Generic[T], NamedTuple))
+        self.assertEqual(Y.__mro__, (Y, Generic, tuple, object))
 
-        a = A(3)
-        self.assertIs(type(a), X)
-        self.assertEqual(a.x, 3)
+        for G in X, Y:
+            with self.subTest(type=G):
+                self.assertEqual(G.__parameters__, (T,))
+                A = G[int]
+                self.assertIs(A.__origin__, G)
+                self.assertEqual(A.__args__, (int,))
+                self.assertEqual(A.__parameters__, ())
 
-        with self.assertRaises(TypeError):
-            X[int, str]
+                a = A(3)
+                self.assertIs(type(a), G)
+                self.assertEqual(a.x, 3)
+
+                with self.assertRaises(TypeError):
+                    G[int, str]
 
     def test_namedtuple_keyword_usage(self):
         LocalEmployee = NamedTuple("LocalEmployee", name=str, age=int)
