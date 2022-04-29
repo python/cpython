@@ -302,7 +302,7 @@ PEP 681: Data Class Transforms
 
 The new :data:`~typing.dataclass_transform` annotation may be used to
 decorate a function that is itself a decorator, a class, or a metaclass.
-The presence of dataclass_transform tells a static type checker that the
+The presence of ``@dataclass_transform()`` tells a static type checker that the
 decorated function, class, or metaclass performs runtime "magic" that
 transforms a class, endowing it with dataclass-like behaviors.
 
