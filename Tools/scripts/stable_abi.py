@@ -678,7 +678,16 @@ def main():
         run_all_generators = True
         args.unixy_check = True
 
-    with args.file.open('rb') as file:
+    try:
+        file = args.file.open('rb')
+    except FileNotFoundError as err:
+        if args.file.suffix == '.txt':
+            # Provide a better error message
+            suggestion = args.file.with_suffix('.toml')
+            raise FileNotFoundError(
+                f'{args.file} not found. Did you mean {suggestion} ?') from err
+        raise
+    with file:
         manifest = parse_manifest(file)
 
     check_private_names(manifest)
