@@ -24,7 +24,7 @@ __all__ = [
 #
 
 _WIN_EXT_NAMESPACE_PREFIX = '\\\\?\\'
-_WIN_DRIVE_LETTERS = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
+_WIN_DRIVE_LETTERS = frozenset(string.ascii_letters)
 _WIN_RESERVED_NAMES = (
     {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
     {'COM%s' % c for c in '123456789\xb9\xb2\xb3'} |
@@ -301,7 +301,7 @@ class PurePath(object):
         else:
             prefix = ''
         third = part[2:3]
-        if (second == sep and first == sep and third != sep):
+        if second == sep and first == sep and third != sep:
             # is a UNC path:
             # vvvvvvvvvvvvvvvvvvvvv root
             # \\machine\mountpoint\directory\etc\...
