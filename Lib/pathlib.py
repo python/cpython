@@ -57,7 +57,7 @@ def _is_wildcard_pattern(pat):
 # Globbing helpers
 #
 
-def _make_selector(pattern_parts, path_cls):
+def _make_selector(pattern_parts, flavour):
     pat = pattern_parts[0]
     child_parts = pattern_parts[1:]
     if not pat:
@@ -70,7 +70,7 @@ def _make_selector(pattern_parts, path_cls):
         cls = _WildcardSelector
     else:
         cls = _PreciseSelector
-    return cls(pat, child_parts, path_cls)
+    return cls(pat, child_parts, flavour)
 
 if hasattr(functools, "lru_cache"):
     _make_selector = functools.lru_cache()(_make_selector)
@@ -80,10 +80,10 @@ class _Selector:
     """A selector matches a specific glob pattern part against the children
     of a given path."""
 
-    def __init__(self, child_parts, path_cls):
+    def __init__(self, child_parts, flavour):
         self.child_parts = child_parts
         if child_parts:
-            self.successor = _make_selector(child_parts, path_cls)
+            self.successor = _make_selector(child_parts, flavour)
             self.dironly = True
         else:
             self.successor = _TerminatingSelector()
@@ -109,9 +109,9 @@ class _TerminatingSelector:
 
 class _PreciseSelector(_Selector):
 
-    def __init__(self, name, child_parts, path_cls):
+    def __init__(self, name, child_parts, flavour):
         self.name = name
-        _Selector.__init__(self, child_parts, path_cls)
+        _Selector.__init__(self, child_parts, flavour)
 
     def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
@@ -125,9 +125,10 @@ class _PreciseSelector(_Selector):
 
 class _WildcardSelector(_Selector):
 
-    def __init__(self, pat, child_parts, path_cls):
-        self.match = path_cls._compile_pattern(pat)
-        _Selector.__init__(self, child_parts, path_cls)
+    def __init__(self, pat, child_parts, flavour):
+        flags = 0 if flavour is posixpath else re.IGNORECASE
+        self.match = re.compile(fnmatch.translate(pat), flags).fullmatch
+        _Selector.__init__(self, child_parts, flavour)
 
     def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
@@ -156,8 +157,8 @@ class _WildcardSelector(_Selector):
 
 class _RecursiveWildcardSelector(_Selector):
 
-    def __init__(self, pat, child_parts, path_cls):
-        _Selector.__init__(self, child_parts, path_cls)
+    def __init__(self, pat, child_parts, flavour):
+        _Selector.__init__(self, child_parts, flavour)
 
     def _iterate_directories(self, parent_path, is_dir, scandir):
         yield parent_path
@@ -258,11 +259,6 @@ class PurePath(object):
         # Using the parts tuple helps share interned path parts
         # when pickling related paths.
         return (self.__class__, tuple(self._parts))
-
-    @classmethod
-    def _compile_pattern(cls, pattern):
-        flags = 0 if cls._flavour is posixpath else re.IGNORECASE
-        return re.compile(fnmatch.translate(pattern), flags).fullmatch
 
     @classmethod
     def _split_extended_path(cls, s):
@@ -885,7 +881,7 @@ class Path(PurePath):
             raise NotImplementedError("Non-relative patterns are unsupported")
         if pattern[-1] in (self._flavour.sep, self._flavour.altsep):
             pattern_parts.append('')
-        selector = _make_selector(tuple(pattern_parts), type(self))
+        selector = _make_selector(tuple(pattern_parts), self._flavour)
         for p in selector.select_from(self):
             yield p
 
@@ -900,7 +896,7 @@ class Path(PurePath):
             raise NotImplementedError("Non-relative patterns are unsupported")
         if pattern[-1] in (self._flavour.sep, self._flavour.altsep):
             pattern_parts.append('')
-        selector = _make_selector(("**",) + tuple(pattern_parts), type(self))
+        selector = _make_selector(("**",) + tuple(pattern_parts), self._flavour)
         for p in selector.select_from(self):
             yield p
 
