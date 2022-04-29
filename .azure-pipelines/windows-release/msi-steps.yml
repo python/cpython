@@ -21,8 +21,6 @@ steps:
     inputs:
       sourceFolder: $(Build.BinariesDirectory)\doc
       targetFolder: $(Build.SourcesDirectory)\Doc\build
-      contents: |
-        htmlhelp\*.chm
 
   - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: bin_win32'

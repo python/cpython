@@ -325,7 +325,7 @@ PyTypeObject PyCField_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    "Structure/Union member",                   /* tp_doc */
+    PyDoc_STR("Structure/Union member"),        /* tp_doc */
     (traverseproc)PyCField_traverse,                    /* tp_traverse */
     (inquiry)PyCField_clear,                            /* tp_clear */
     0,                                          /* tp_richcompare */

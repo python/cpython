@@ -13,6 +13,25 @@ class property "propertyobject *" "&PyProperty_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=556352653fd4c02e]*/
 
+// see pycore_object.h
+#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+#include <emscripten.h>
+EM_JS(PyObject*, descr_set_trampoline_call, (setter set, PyObject *obj, PyObject *value, void *closure), {
+    return wasmTable.get(set)(obj, value, closure);
+});
+
+EM_JS(PyObject*, descr_get_trampoline_call, (getter get, PyObject *obj, void *closure), {
+    return wasmTable.get(get)(obj, closure);
+});
+#else
+#define descr_set_trampoline_call(set, obj, value, closure) \
+    (set)((obj), (value), (closure))
+
+#define descr_get_trampoline_call(get, obj, closure) \
+    (get)((obj), (closure))
+
+#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
+
 static void
 descr_dealloc(PyDescrObject *descr)
 {
@@ -180,7 +199,8 @@ getset_get(PyGetSetDescrObject *descr, PyObject *obj, PyObject *type)
         return NULL;
     }
     if (descr->d_getset->get != NULL)
-        return descr->d_getset->get(obj, descr->d_getset->closure);
+        return descr_get_trampoline_call(
+            descr->d_getset->get, obj, descr->d_getset->closure);
     PyErr_Format(PyExc_AttributeError,
                  "attribute '%V' of '%.100s' objects is not readable",
                  descr_name((PyDescrObject *)descr), "?",
@@ -232,8 +252,9 @@ getset_set(PyGetSetDescrObject *descr, PyObject *obj, PyObject *value)
         return -1;
     }
     if (descr->d_getset->set != NULL) {
-        return descr->d_getset->set(obj, value,
-                                    descr->d_getset->closure);
+        return descr_set_trampoline_call(
+            descr->d_getset->set, obj, value,
+            descr->d_getset->closure);
     }
     PyErr_Format(PyExc_AttributeError,
                  "attribute '%V' of '%.100s' objects is not writable",
@@ -306,7 +327,8 @@ method_vectorcall_VARARGS(
         Py_DECREF(argstuple);
         return NULL;
     }
-    PyObject *result = meth(args[0], argstuple);
+    PyObject *result = _PyCFunction_TrampolineCall(
+        meth, args[0], argstuple);
     Py_DECREF(argstuple);
     _Py_LeaveRecursiveCall(tstate);
     return result;
@@ -339,7 +361,8 @@ method_vectorcall_VARARGS_KEYWORDS(
     if (meth == NULL) {
         goto exit;
     }
-    result = meth(args[0], argstuple, kwdict);
+    result = _PyCFunctionWithKeywords_TrampolineCall(
+        meth, args[0], argstuple, kwdict);
     _Py_LeaveRecursiveCall(tstate);
 exit:
     Py_DECREF(argstuple);
@@ -427,7 +450,7 @@ method_vectorcall_NOARGS(
     if (meth == NULL) {
         return NULL;
     }
-    PyObject *result = meth(args[0], NULL);
+    PyObject *result = _PyCFunction_TrampolineCall(meth, args[0], NULL);
     _Py_LeaveRecursiveCall(tstate);
     return result;
 }
@@ -455,7 +478,7 @@ method_vectorcall_O(
     if (meth == NULL) {
         return NULL;
     }
-    PyObject *result = meth(args[0], args[1]);
+    PyObject *result = _PyCFunction_TrampolineCall(meth, args[0], args[1]);
     _Py_LeaveRecursiveCall(tstate);
     return result;
 }

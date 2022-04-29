@@ -1,0 +1,4 @@
+:class:`~pathlib.Path` methods :meth:`~pathlib.Path.glob` and :meth:`~pathlib.Path.rglob` return only
+directories if *pattern* ends with a pathname components separator
+(``/`` or :data:`~os.sep`).
+Patch by Eisuke Kawashima.

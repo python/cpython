@@ -28,7 +28,7 @@ class QueueBasicTests(unittest.IsolatedAsyncioTestCase):
             # Start a task that waits to get.
             getter = tg.create_task(q.get())
             # Let it start waiting.
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0)
             self.assertTrue('_getters[1]' in fn(q))
             # resume q.get coroutine to finish generator
             q.put_nowait(0)
@@ -42,7 +42,7 @@ class QueueBasicTests(unittest.IsolatedAsyncioTestCase):
             # Start a task that waits to put.
             putter = tg.create_task(q.put(2))
             # Let it start waiting.
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0)
             self.assertTrue('_putters[1]' in fn(q))
             # resume q.put coroutine to finish generator
             q.get_nowait()
@@ -100,14 +100,15 @@ class QueueBasicTests(unittest.IsolatedAsyncioTestCase):
             return True
 
         t = asyncio.create_task(putter())
-        await asyncio.sleep(0.01)
+        for i in range(2):
+            await asyncio.sleep(0)
 
         # The putter is blocked after putting two items.
         self.assertEqual([0, 1], have_been_put)
         self.assertEqual(0, await q.get())
 
         # Let the putter resume and put last item.
-        await asyncio.sleep(0.01)
+        await asyncio.sleep(0)
         self.assertEqual([0, 1, 2], have_been_put)
         self.assertEqual(1, await q.get())
         self.assertEqual(2, await q.get())
@@ -150,10 +151,10 @@ class QueueGetTests(unittest.IsolatedAsyncioTestCase):
             finished = True
             return res
 
-        loop.call_later(0.01, q.put_nowait, 1)
         queue_get_task = asyncio.create_task(queue_get())
         await started.wait()
         self.assertFalse(finished)
+        loop.call_later(0.01, q.put_nowait, 1)
         res = await queue_get_task
         self.assertTrue(finished)
         self.assertEqual(1, res)
@@ -166,17 +167,6 @@ class QueueGetTests(unittest.IsolatedAsyncioTestCase):
     def test_nonblocking_get_exception(self):
         q = asyncio.Queue()
         self.assertRaises(asyncio.QueueEmpty, q.get_nowait)
-
-    async def test_get_cancelled(self):
-        q = asyncio.Queue()
-
-        async def queue_get():
-            return await asyncio.wait_for(q.get(), 0.051)
-
-        get_task = asyncio.create_task(queue_get())
-        await asyncio.sleep(0.01)  # let the task start
-        q.put_nowait(1)
-        self.assertEqual(1, await get_task)
 
     async def test_get_cancelled_race(self):
         q = asyncio.Queue()
@@ -263,7 +253,7 @@ class QueuePutTests(unittest.IsolatedAsyncioTestCase):
 
         reader = asyncio.create_task(q.get())
 
-        await asyncio.sleep(0.01)
+        await asyncio.sleep(0)
 
         q.put_nowait(1)
         q.put_nowait(2)
@@ -288,7 +278,7 @@ class QueuePutTests(unittest.IsolatedAsyncioTestCase):
             reader2 = tg.create_task(q.get())
             reader3 = tg.create_task(q.get())
 
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0)
 
             q.put_nowait(1)
             q.put_nowait(2)
@@ -309,7 +299,7 @@ class QueuePutTests(unittest.IsolatedAsyncioTestCase):
 
         # putting a second item in the queue has to block (qsize=1)
         writer = asyncio.create_task(q.put(2))
-        await asyncio.sleep(0.01)
+        await asyncio.sleep(0)
 
         value1 = q.get_nowait()
         self.assertEqual(value1, 1)
@@ -410,7 +400,7 @@ class QueuePutTests(unittest.IsolatedAsyncioTestCase):
 
         # Task waiting for space to put an item in the queue.
         put_task = asyncio.create_task(queue.put(1))
-        await asyncio.sleep(0.01)
+        await asyncio.sleep(0)
 
         # Check that the putter is correctly removed from queue._putters when
         # the task is canceled.
@@ -427,7 +417,7 @@ class QueuePutTests(unittest.IsolatedAsyncioTestCase):
 
         # Task waiting for space to put a item in the queue.
         put_task = asyncio.create_task(queue.put(1))
-        await asyncio.sleep(0.01)
+        await asyncio.sleep(0)
 
         # get_nowait() remove the future of put_task from queue._putters.
         queue.get_nowait()

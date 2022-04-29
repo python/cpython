@@ -14,6 +14,16 @@
 #endif
 
 
+// Macro to use C++ static_cast<> and reinterpret_cast<> in the Python C API
+#ifdef __cplusplus
+#  define _Py_static_cast(type, expr) static_cast<type>(expr)
+#  define _Py_reinterpret_cast(type, expr) reinterpret_cast<type>(expr)
+#else
+#  define _Py_static_cast(type, expr) ((type)(expr))
+#  define _Py_reinterpret_cast(type, expr) ((type)(expr))
+#endif
+
+
 /* Defines to build Python and its standard library:
  *
  * - Py_BUILD_CORE: Build Python core. Give access to Python internals, but
@@ -170,23 +180,12 @@ typedef Py_ssize_t Py_ssize_clean_t;
  * Py_LOCAL_INLINE does the same thing, and also explicitly requests inlining,
  * for platforms that support that.
  *
- * If PY_LOCAL_AGGRESSIVE is defined before python.h is included, more
- * "aggressive" inlining/optimization is enabled for the entire module.  This
- * may lead to code bloat, and may slow things down for those reasons.  It may
- * also lead to errors, if the code relies on pointer aliasing.  Use with
- * care.
- *
  * NOTE: You can only use this for functions that are entirely local to a
  * module; functions that are exported via method tables, callbacks, etc,
  * should keep using static.
  */
 
 #if defined(_MSC_VER)
-#  if defined(PY_LOCAL_AGGRESSIVE)
-   /* enable more aggressive optimization for MSVC */
-   /* active in both release and debug builds - see bpo-43271 */
-#  pragma optimize("gt", on)
-#endif
    /* ignore warnings if the compiler decides not to inline a function */
 #  pragma warning(disable: 4710)
    /* fastest possible local call under MSVC */
@@ -306,10 +305,11 @@ extern "C" {
  *    VALUE may be evaluated more than once.
  */
 #ifdef Py_DEBUG
-#define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) \
-    (assert((WIDE)(NARROW)(VALUE) == (VALUE)), (NARROW)(VALUE))
+#  define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) \
+       (assert((WIDE)(NARROW)(VALUE) == (VALUE)), (NARROW)(VALUE))
 #else
-#define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
+#  define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) \
+       _Py_reinterpret_cast(NARROW, (VALUE))
 #endif
 
 

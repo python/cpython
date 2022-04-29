@@ -12,9 +12,10 @@ typedef struct {
     PyObject *origin;
     PyObject *args;
     PyObject *parameters;
-    PyObject* weakreflist;
+    PyObject *weakreflist;
     // Whether we're a starred type, e.g. *tuple[int].
     bool starred;
+    vectorcallfunc vectorcall;
 } gaobject;
 
 typedef struct {
@@ -340,6 +341,11 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     return newargs;
 }
 
+PyDoc_STRVAR(genericalias__doc__,
+"Represent a PEP 585 generic type\n"
+"\n"
+"E.g. for t = list[int], t.__origin__ is list and t.__args__ is (int,).");
+
 static PyObject *
 ga_getitem(PyObject *self, PyObject *item)
 {
@@ -383,13 +389,11 @@ ga_hash(PyObject *self)
     return h0 ^ h1;
 }
 
-static PyObject *
-ga_call(PyObject *self, PyObject *args, PyObject *kwds)
+static inline PyObject *
+set_orig_class(PyObject *obj, PyObject *self)
 {
-    gaobject *alias = (gaobject *)self;
-    PyObject *obj = PyObject_Call(alias->origin, args, kwds);
     if (obj != NULL) {
-        if (PyObject_SetAttrString(obj, "__orig_class__", self) < 0) {
+        if (PyObject_SetAttr(obj, &_Py_ID(__orig_class__), self) < 0) {
             if (!PyErr_ExceptionMatches(PyExc_AttributeError) &&
                 !PyErr_ExceptionMatches(PyExc_TypeError))
             {
@@ -400,6 +404,23 @@ ga_call(PyObject *self, PyObject *args, PyObject *kwds)
         }
     }
     return obj;
+}
+
+static PyObject *
+ga_call(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    gaobject *alias = (gaobject *)self;
+    PyObject *obj = PyObject_Call(alias->origin, args, kwds);
+    return set_orig_class(obj, self);
+}
+
+static PyObject *
+ga_vectorcall(PyObject *self, PyObject *const *args,
+              size_t nargsf, PyObject *kwnames)
+{
+    gaobject *alias = (gaobject *) self;
+    PyObject *obj = PyVectorcall_Function(alias->origin)(alias->origin, args, nargsf, kwnames);
+    return set_orig_class(obj, self);
 }
 
 static const char* const attr_exceptions[] = {
@@ -588,6 +609,14 @@ setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
     alias->args = args;
     alias->parameters = NULL;
     alias->weakreflist = NULL;
+
+    if (PyVectorcall_Function(origin) != NULL) {
+        alias->vectorcall = ga_vectorcall;
+    }
+    else {
+        alias->vectorcall = NULL;
+    }
+
     return 1;
 }
 
@@ -654,7 +683,9 @@ ga_iter_clear(PyObject *self) {
     return 0;
 }
 
-static PyTypeObject Py_GenericAliasIterType = {
+// gh-91632: _Py_GenericAliasIterType is exported  to be cleared
+// in _PyTypes_FiniTypes.
+PyTypeObject _Py_GenericAliasIterType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "generic_alias_iterator",
     .tp_basicsize = sizeof(gaiterobject),
@@ -668,7 +699,7 @@ static PyTypeObject Py_GenericAliasIterType = {
 
 static PyObject *
 ga_iter(PyObject *self) {
-    gaiterobject *gi = PyObject_GC_New(gaiterobject, &Py_GenericAliasIterType);
+    gaiterobject *gi = PyObject_GC_New(gaiterobject, &_Py_GenericAliasIterType);
     if (gi == NULL) {
         return NULL;
     }
@@ -679,14 +710,11 @@ ga_iter(PyObject *self) {
 
 // TODO:
 // - argument clinic?
-// - __doc__?
 // - cache?
 PyTypeObject Py_GenericAliasType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "types.GenericAlias",
-    .tp_doc = "Represent a PEP 585 generic type\n"
-              "\n"
-              "E.g. for t = list[int], t.__origin__ is list and t.__args__ is (int,).",
+    .tp_doc = genericalias__doc__,
     .tp_basicsize = sizeof(gaobject),
     .tp_dealloc = ga_dealloc,
     .tp_repr = ga_repr,
@@ -695,7 +723,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_hash = ga_hash,
     .tp_call = ga_call,
     .tp_getattro = ga_getattro,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_VECTORCALL,
     .tp_traverse = ga_traverse,
     .tp_richcompare = ga_richcompare,
     .tp_weaklistoffset = offsetof(gaobject, weakreflist),
@@ -706,6 +734,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_free = PyObject_GC_Del,
     .tp_getset = ga_properties,
     .tp_iter = (getiterfunc)ga_iter,
+    .tp_vectorcall_offset = offsetof(gaobject, vectorcall),
 };
 
 PyObject *

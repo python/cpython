@@ -207,6 +207,11 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
         This also increases the task's count of cancellation requests.
         """
+        if msg is not None:
+            warnings.warn("Passing 'msg' argument to Task.cancel() "
+                          "is deprecated since Python 3.11, and "
+                          "scheduled for removal in Python 3.14.",
+                          DeprecationWarning, stacklevel=2)
         self._log_traceback = False
         if self.done():
             return False
@@ -246,6 +251,10 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         if self._num_cancels_requested > 0:
             self._num_cancels_requested -= 1
         return self._num_cancels_requested
+
+    def _check_future(self, future):
+        """Return False if task and future loops are not compatible."""
+        return futures._get_loop(future) is self._loop
 
     def __step(self, exc=None):
         if self.done():
@@ -287,7 +296,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             blocking = getattr(result, '_asyncio_future_blocking', None)
             if blocking is not None:
                 # Yielded Future must come from Future.__iter__().
-                if futures._get_loop(result) is not self._loop:
+                if not self._check_future(result):
                     new_exc = RuntimeError(
                         f'Task {self!r} got Future '
                         f'{result!r} attached to a different loop')

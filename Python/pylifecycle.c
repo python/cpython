@@ -95,11 +95,16 @@ __attribute__((
 
 #endif
 
+/* Suppress deprecation warning for PyBytesObject.ob_shash */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
 _PyRuntimeState _PyRuntime
 #if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
 __attribute__ ((section (".PyRuntime")))
 #endif
 = _PyRuntimeState_INIT;
+_Py_COMP_DIAG_POP
+
 static int runtime_initialized = 0;
 
 PyStatus

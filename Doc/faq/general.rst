@@ -310,7 +310,7 @@ The latest stable releases can always be found on the `Python download page
 <https://www.python.org/downloads/>`_.  There are two production-ready versions
 of Python: 2.x and 3.x. The recommended version is 3.x, which is supported by
 most widely used libraries.  Although 2.x is still widely used, `it is not
-maintained anymore <https://www.python.org/dev/peps/pep-0373/>`_.
+maintained anymore <https://peps.python.org/pep-0373/>`_.
 
 How many people are using Python?
 ---------------------------------
@@ -345,7 +345,7 @@ include Google, Yahoo, and Lucasfilm Ltd.
 What new developments are expected for Python in the future?
 ------------------------------------------------------------
 
-See https://www.python.org/dev/peps/ for the Python Enhancement Proposals
+See https://peps.python.org/ for the Python Enhancement Proposals
 (PEPs). PEPs are design documents describing a suggested new feature for Python,
 providing a concise technical specification and a rationale.  Look for a PEP
 titled "Python X.Y Release Schedule", where X.Y is a version that hasn't been

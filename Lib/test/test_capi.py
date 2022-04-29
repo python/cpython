@@ -88,6 +88,28 @@ class CAPITest(unittest.TestCase):
     def test_memoryview_from_NULL_pointer(self):
         self.assertRaises(ValueError, _testcapi.make_memoryview_from_NULL_pointer)
 
+    def test_exception(self):
+        raised_exception = ValueError("5")
+        new_exc = TypeError("TEST")
+        try:
+            raise raised_exception
+        except ValueError as e:
+            orig_sys_exception = sys.exception()
+            orig_exception = _testcapi.set_exception(new_exc)
+            new_sys_exception = sys.exception()
+            new_exception = _testcapi.set_exception(orig_exception)
+            reset_sys_exception = sys.exception()
+
+            self.assertEqual(orig_exception, e)
+
+            self.assertEqual(orig_exception, raised_exception)
+            self.assertEqual(orig_sys_exception, orig_exception)
+            self.assertEqual(reset_sys_exception, orig_exception)
+            self.assertEqual(new_exception, new_exc)
+            self.assertEqual(new_sys_exception, new_exception)
+        else:
+            self.fail("Exception not raised")
+
     def test_exc_info(self):
         raised_exception = ValueError("5")
         new_exc = TypeError("TEST")
@@ -118,7 +140,7 @@ class CAPITest(unittest.TestCase):
             def __len__(self):
                 return 1
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
-                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21)
+                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22)
         # Issue #15736: overflow in _PySequence_BytesToCharpArray()
         class Z(object):
             def __len__(self):
@@ -126,7 +148,7 @@ class CAPITest(unittest.TestCase):
             def __getitem__(self, i):
                 return b'x'
         self.assertRaises(MemoryError, _posixsubprocess.fork_exec,
-                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21)
+                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22)
 
     @unittest.skipUnless(_posixsubprocess, '_posixsubprocess required for this test.')
     def test_subprocess_fork_exec(self):
@@ -136,7 +158,7 @@ class CAPITest(unittest.TestCase):
 
         # Issue #15738: crash in subprocess_fork_exec()
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
-                          Z(),[b'1'],3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21)
+                          Z(),[b'1'],3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22)
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
@@ -494,7 +516,12 @@ class CAPITest(unittest.TestCase):
         del subclass_instance
 
         # Test that setting __class__ modified the reference counts of the types
-        self.assertEqual(type_refcnt - 1, B.refcnt_in_del)
+        if Py_DEBUG:
+            # gh-89373: In debug mode, _Py_Dealloc() keeps a strong reference
+            # to the type while calling tp_dealloc()
+            self.assertEqual(type_refcnt, B.refcnt_in_del)
+        else:
+            self.assertEqual(type_refcnt - 1, B.refcnt_in_del)
         self.assertEqual(new_type_refcnt + 1, A.refcnt_in_del)
 
         # Test that the original type already has decreased its refcnt
@@ -559,7 +586,12 @@ class CAPITest(unittest.TestCase):
         del subclass_instance
 
         # Test that setting __class__ modified the reference counts of the types
-        self.assertEqual(type_refcnt - 1, _testcapi.HeapCTypeSubclassWithFinalizer.refcnt_in_del)
+        if Py_DEBUG:
+            # gh-89373: In debug mode, _Py_Dealloc() keeps a strong reference
+            # to the type while calling tp_dealloc()
+            self.assertEqual(type_refcnt, _testcapi.HeapCTypeSubclassWithFinalizer.refcnt_in_del)
+        else:
+            self.assertEqual(type_refcnt - 1, _testcapi.HeapCTypeSubclassWithFinalizer.refcnt_in_del)
         self.assertEqual(new_type_refcnt + 1, _testcapi.HeapCTypeSubclass.refcnt_in_del)
 
         # Test that the original type already has decreased its refcnt
@@ -710,6 +742,7 @@ class TestPendingCalls(unittest.TestCase):
         if False and support.verbose:
             print("(%i)"%(len(l),))
 
+    @threading_helper.requires_working_threading()
     def test_pendingcalls_threaded(self):
 
         #do every callback on a separate thread
@@ -840,6 +873,7 @@ class SubinterpreterTest(unittest.TestCase):
 class TestThreadState(unittest.TestCase):
 
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_thread_state(self):
         # some extra thread-state tests driven via _testcapi
         def target():
@@ -1085,6 +1119,27 @@ class Test_ModuleStateAccess(unittest.TestCase):
         class Subclass(BaseException, self.module.StateAccessType):
             pass
         self.assertIs(Subclass().get_defining_module(), self.module)
+
+
+class Test_FrameAPI(unittest.TestCase):
+
+    def getframe(self):
+        return sys._getframe()
+
+    def getgenframe(self):
+        yield sys._getframe()
+
+    def test_frame_getters(self):
+        frame = self.getframe()
+        self.assertEqual(frame.f_locals, _testcapi.frame_getlocals(frame))
+        self.assertIs(frame.f_globals, _testcapi.frame_getglobals(frame))
+        self.assertIs(frame.f_builtins, _testcapi.frame_getbuiltins(frame))
+        self.assertEqual(frame.f_lasti, _testcapi.frame_getlasti(frame))
+
+    def test_frame_get_generator(self):
+        gen = self.getgenframe()
+        frame = next(gen)
+        self.assertIs(gen, _testcapi.frame_getgenerator(frame))
 
 
 if __name__ == "__main__":

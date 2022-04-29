@@ -204,43 +204,6 @@ A good example of a low-level function that returns a Future object
 is :meth:`loop.run_in_executor`.
 
 
-Running an asyncio Program
-==========================
-
-.. function:: run(coro, *, debug=False)
-
-    Execute the :term:`coroutine` *coro* and return the result.
-
-    This function runs the passed coroutine, taking care of
-    managing the asyncio event loop, *finalizing asynchronous
-    generators*, and closing the threadpool.
-
-    This function cannot be called when another asyncio event loop is
-    running in the same thread.
-
-    If *debug* is ``True``, the event loop will be run in debug mode.
-
-    This function always creates a new event loop and closes it at
-    the end.  It should be used as a main entry point for asyncio
-    programs, and should ideally only be called once.
-
-    Example::
-
-        async def main():
-            await asyncio.sleep(1)
-            print('hello')
-
-        asyncio.run(main())
-
-    .. versionadded:: 3.7
-
-    .. versionchanged:: 3.9
-       Updated to use :meth:`loop.shutdown_default_executor`.
-
-    .. note::
-       The source code for ``asyncio.run()`` can be found in
-       :source:`Lib/asyncio/runners.py`.
-
 Creating Tasks
 ==============
 
@@ -810,8 +773,10 @@ Task Object
       .. versionchanged:: 3.9
          Added the *msg* parameter.
 
-      .. versionchanged:: 3.11
-         The ``msg`` parameter is propagated from cancelled task to its awaiter.
+      .. deprecated-removed:: 3.11 3.14
+         *msg* parameter is ambiguous when multiple :meth:`cancel`
+         are called with different cancellation messages.
+         The argument will be removed.
 
       .. _asyncio_example_task_cancel:
 

@@ -113,7 +113,11 @@ class BaseTaskTests:
         self.assertTrue(hasattr(t, '_cancel_message'))
         self.assertEqual(t._cancel_message, None)
 
-        t.cancel('my message')
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "Passing 'msg' argument"
+        ):
+            t.cancel('my message')
         self.assertEqual(t._cancel_message, 'my message')
 
         with self.assertRaises(asyncio.CancelledError) as cm:
@@ -125,7 +129,11 @@ class BaseTaskTests:
         async def coro():
             pass
         t = self.new_task(self.loop, coro())
-        t.cancel('my message')
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "Passing 'msg' argument"
+        ):
+            t.cancel('my message')
         t._cancel_message = 'my new message'
         self.assertEqual(t._cancel_message, 'my new message')
 
@@ -203,7 +211,7 @@ class BaseTaskTests:
         with self.assertWarns(DeprecationWarning) as cm:
             with self.assertRaisesRegex(RuntimeError, 'There is no current event loop'):
                 asyncio.ensure_future(a)
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
 
         async def test():
             return asyncio.ensure_future(notmuch())
@@ -218,7 +226,7 @@ class BaseTaskTests:
         self.addCleanup(asyncio.set_event_loop, None)
         with self.assertWarns(DeprecationWarning) as cm:
             t = asyncio.ensure_future(notmuch())
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
         self.assertIs(t._loop, self.loop)
         self.loop.run_until_complete(t)
         self.assertTrue(t.done())
@@ -582,7 +590,14 @@ class BaseTaskTests:
                 async def coro():
                     task = self.new_task(loop, sleep())
                     await asyncio.sleep(0)
-                    task.cancel(*cancel_args)
+                    if cancel_args not in ((), (None,)):
+                        with self.assertWarnsRegex(
+                                DeprecationWarning,
+                                "Passing 'msg' argument"
+                        ):
+                            task.cancel(*cancel_args)
+                    else:
+                        task.cancel(*cancel_args)
                     done, pending = await asyncio.wait([task])
                     task.result()
 
@@ -616,7 +631,14 @@ class BaseTaskTests:
                 async def coro():
                     task = self.new_task(loop, sleep())
                     await asyncio.sleep(0)
-                    task.cancel(*cancel_args)
+                    if cancel_args not in ((), (None,)):
+                        with self.assertWarnsRegex(
+                                DeprecationWarning,
+                                "Passing 'msg' argument"
+                        ):
+                            task.cancel(*cancel_args)
+                    else:
+                        task.cancel(*cancel_args)
                     done, pending = await asyncio.wait([task])
                     task.exception()
 
@@ -639,10 +661,17 @@ class BaseTaskTests:
             fut.set_result(None)
             await asyncio.sleep(10)
 
+        def cancel(task, msg):
+            with self.assertWarnsRegex(
+                    DeprecationWarning,
+                    "Passing 'msg' argument"
+            ):
+                task.cancel(msg)
+
         async def coro():
             inner_task = self.new_task(loop, sleep())
             await fut
-            loop.call_soon(inner_task.cancel, 'msg')
+            loop.call_soon(cancel, inner_task, 'msg')
             try:
                 await inner_task
             except asyncio.CancelledError as ex:
@@ -668,7 +697,11 @@ class BaseTaskTests:
         async def coro():
             task = self.new_task(loop, sleep())
             # We deliberately leave out the sleep here.
-            task.cancel('my message')
+            with self.assertWarnsRegex(
+                    DeprecationWarning,
+                    "Passing 'msg' argument"
+            ):
+                task.cancel('my message')
             done, pending = await asyncio.wait([task])
             task.exception()
 
@@ -1416,7 +1449,7 @@ class BaseTaskTests:
         with self.assertWarns(DeprecationWarning) as cm:
             with self.assertRaisesRegex(RuntimeError, 'There is no current event loop'):
                 list(futs)
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
 
     def test_as_completed_coroutine_use_running_loop(self):
         loop = self.new_test_loop()
@@ -1848,7 +1881,7 @@ class BaseTaskTests:
         with self.assertWarns(DeprecationWarning) as cm:
             with self.assertRaisesRegex(RuntimeError, 'There is no current event loop'):
                 asyncio.shield(inner)
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
 
     def test_shield_coroutine_use_running_loop(self):
         async def coro():
@@ -1870,7 +1903,7 @@ class BaseTaskTests:
         self.addCleanup(asyncio.set_event_loop, None)
         with self.assertWarns(DeprecationWarning) as cm:
             outer = asyncio.shield(coro())
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
         self.assertEqual(outer._loop, self.loop)
         res = self.loop.run_until_complete(outer)
         self.assertEqual(res, 42)
@@ -2029,7 +2062,14 @@ class BaseTaskTests:
                 async def main():
                     qwe = self.new_task(loop, test())
                     await asyncio.sleep(0.2)
-                    qwe.cancel(*cancel_args)
+                    if cancel_args not in ((), (None,)):
+                        with self.assertWarnsRegex(
+                                DeprecationWarning,
+                                "Passing 'msg' argument"
+                        ):
+                            qwe.cancel(*cancel_args)
+                    else:
+                        qwe.cancel(*cancel_args)
                     await qwe
 
                 try:
@@ -2343,7 +2383,13 @@ def add_subclass_tests(cls):
             return super().add_done_callback(*args, **kwargs)
 
     class Task(CommonFuture, BaseTask):
-        pass
+        def __init__(self, *args, **kwargs):
+            self._check_future_called = 0
+            super().__init__(*args, **kwargs)
+
+        def _check_future(self, future):
+            self._check_future_called += 1
+            return super()._check_future(future)
 
     class Future(CommonFuture, BaseFuture):
         pass
@@ -2368,6 +2414,8 @@ def add_subclass_tests(cls):
         self.assertEqual(
             dict(fut.calls),
             {'add_done_callback': 1})
+
+        self.assertEqual(1, task._check_future_called)
 
     # Add patched Task & Future back to the test case
     cls.Task = Task
@@ -2863,7 +2911,7 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         with self.assertWarns(DeprecationWarning) as cm:
             with self.assertRaises(RuntimeError):
                 asyncio.gather()
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
 
     def test_constructor_empty_sequence_use_running_loop(self):
         async def gather():
@@ -2881,7 +2929,7 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         self.addCleanup(asyncio.set_event_loop, None)
         with self.assertWarns(DeprecationWarning) as cm:
             fut = asyncio.gather()
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
         self.assertIsInstance(fut, asyncio.Future)
         self.assertIs(fut._loop, self.one_loop)
         self._run_loop(self.one_loop)
@@ -2972,7 +3020,7 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         with self.assertWarns(DeprecationWarning) as cm:
             with self.assertRaises(RuntimeError):
                 asyncio.gather(gen1, gen2)
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
 
     def test_constructor_use_running_loop(self):
         async def coro():
@@ -2995,7 +3043,7 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         gen2 = coro()
         with self.assertWarns(DeprecationWarning) as cm:
             fut = asyncio.gather(gen1, gen2)
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
         self.assertIs(fut._loop, self.other_loop)
         self.other_loop.run_until_complete(fut)
 
