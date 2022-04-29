@@ -108,13 +108,14 @@ class WindowsLoadTracker():
     def __del__(self,
                 # localize module access to prevent shutdown errors
                 _wait=_winapi.WaitForSingleObject,
+                _timeout=_winapi.INFINITE,
                 _close=_winapi.CloseHandle,
                 _signal=_overlapped.SetEvent):
         if self._running is not None:
             # tell the update thread to quit
             _signal(self._running)
             # wait for the update thread to signal done
-            _wait(self._stopped, -1)
+            _wait(self._stopped, _timeout)
             # cleanup events
             _close(self._running)
             _close(self._stopped)

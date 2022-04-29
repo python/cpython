@@ -151,8 +151,8 @@ _winapi_CreateFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HANDLE template_file;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "skk" F_POINTER "kk" F_HANDLE ":CreateFile",
-        &file_name, &desired_access, &share_mode, &security_attributes, &creation_disposition, &flags_and_attributes, &template_file)) {
+    if (!_PyArg_ParseStack(args, nargs, "sO&O&" F_POINTER "O&O&" F_HANDLE ":CreateFile",
+        &file_name, _PyLong_UnsignedLong_Converter, &desired_access, _PyLong_UnsignedLong_Converter, &share_mode, &security_attributes, _PyLong_UnsignedLong_Converter, &creation_disposition, _PyLong_UnsignedLong_Converter, &flags_and_attributes, &template_file)) {
         goto exit;
     }
     _return_value = _winapi_CreateFile_impl(module, file_name, desired_access, share_mode, security_attributes, creation_disposition, flags_and_attributes, template_file);
@@ -195,8 +195,8 @@ _winapi_CreateFileMapping(PyObject *module, PyObject *const *args, Py_ssize_t na
     LPCWSTR name;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "" F_POINTER "kkkO&:CreateFileMapping",
-        &file_handle, &security_attributes, &protect, &max_size_high, &max_size_low, _PyUnicode_WideCharString_Converter, &name)) {
+    if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "" F_POINTER "O&O&O&O&:CreateFileMapping",
+        &file_handle, &security_attributes, _PyLong_UnsignedLong_Converter, &protect, _PyLong_UnsignedLong_Converter, &max_size_high, _PyLong_UnsignedLong_Converter, &max_size_low, _PyUnicode_WideCharString_Converter, &name)) {
         goto exit;
     }
     _return_value = _winapi_CreateFileMapping_impl(module, file_handle, security_attributes, protect, max_size_high, max_size_low, name);
@@ -309,8 +309,8 @@ _winapi_CreateNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t narg
     LPSECURITY_ATTRIBUTES security_attributes;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "skkkkkk" F_POINTER ":CreateNamedPipe",
-        &name, &open_mode, &pipe_mode, &max_instances, &out_buffer_size, &in_buffer_size, &default_timeout, &security_attributes)) {
+    if (!_PyArg_ParseStack(args, nargs, "sO&O&O&O&O&O&" F_POINTER ":CreateNamedPipe",
+        &name, _PyLong_UnsignedLong_Converter, &open_mode, _PyLong_UnsignedLong_Converter, &pipe_mode, _PyLong_UnsignedLong_Converter, &max_instances, _PyLong_UnsignedLong_Converter, &out_buffer_size, _PyLong_UnsignedLong_Converter, &in_buffer_size, _PyLong_UnsignedLong_Converter, &default_timeout, &security_attributes)) {
         goto exit;
     }
     _return_value = _winapi_CreateNamedPipe_impl(module, name, open_mode, pipe_mode, max_instances, out_buffer_size, in_buffer_size, default_timeout, security_attributes);
@@ -350,8 +350,11 @@ _winapi_CreatePipe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *pipe_attrs;
     DWORD size;
 
-    if (!_PyArg_ParseStack(args, nargs, "Ok:CreatePipe",
-        &pipe_attrs, &size)) {
+    if (!_PyArg_CheckPositional("CreatePipe", nargs, 2, 2)) {
+        goto exit;
+    }
+    pipe_attrs = args[0];
+    if (!_PyLong_UnsignedLong_Converter(args[1], &size)) {
         goto exit;
     }
     return_value = _winapi_CreatePipe_impl(module, pipe_attrs, size);
@@ -404,8 +407,8 @@ _winapi_CreateProcess(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const Py_UNICODE *current_directory;
     PyObject *startup_info;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&OOOikOO&O:CreateProcess",
-        _PyUnicode_WideCharString_Opt_Converter, &application_name, &command_line, &proc_attrs, &thread_attrs, &inherit_handles, &creation_flags, &env_mapping, _PyUnicode_WideCharString_Opt_Converter, &current_directory, &startup_info)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&OOOiO&OO&O:CreateProcess",
+        _PyUnicode_WideCharString_Opt_Converter, &application_name, &command_line, &proc_attrs, &thread_attrs, &inherit_handles, _PyLong_UnsignedLong_Converter, &creation_flags, &env_mapping, _PyUnicode_WideCharString_Opt_Converter, &current_directory, &startup_info)) {
         goto exit;
     }
     return_value = _winapi_CreateProcess_impl(module, application_name, command_line, proc_attrs, thread_attrs, inherit_handles, creation_flags, env_mapping, current_directory, startup_info);
@@ -457,8 +460,8 @@ _winapi_DuplicateHandle(PyObject *module, PyObject *const *args, Py_ssize_t narg
     DWORD options = 0;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "" F_HANDLE "" F_HANDLE "ki|k:DuplicateHandle",
-        &source_process_handle, &source_handle, &target_process_handle, &desired_access, &inherit_handle, &options)) {
+    if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "" F_HANDLE "" F_HANDLE "O&i|O&:DuplicateHandle",
+        &source_process_handle, &source_handle, &target_process_handle, _PyLong_UnsignedLong_Converter, &desired_access, &inherit_handle, _PyLong_UnsignedLong_Converter, &options)) {
         goto exit;
     }
     _return_value = _winapi_DuplicateHandle_impl(module, source_process_handle, source_handle, target_process_handle, desired_access, inherit_handle, options);
@@ -648,7 +651,7 @@ _winapi_GetStdHandle(PyObject *module, PyObject *arg)
     DWORD std_handle;
     HANDLE _return_value;
 
-    if (!PyArg_Parse(arg, "k:GetStdHandle", &std_handle)) {
+    if (!_PyLong_UnsignedLong_Converter(arg, &std_handle)) {
         goto exit;
     }
     _return_value = _winapi_GetStdHandle_impl(module, std_handle);
@@ -717,8 +720,8 @@ _winapi_MapViewOfFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     size_t number_bytes;
     LPVOID _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "kkkO&:MapViewOfFile",
-        &file_map, &desired_access, &file_offset_high, &file_offset_low, _PyLong_Size_t_Converter, &number_bytes)) {
+    if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "O&O&O&O&:MapViewOfFile",
+        &file_map, _PyLong_UnsignedLong_Converter, &desired_access, _PyLong_UnsignedLong_Converter, &file_offset_high, _PyLong_UnsignedLong_Converter, &file_offset_low, _PyLong_Size_t_Converter, &number_bytes)) {
         goto exit;
     }
     _return_value = _winapi_MapViewOfFile_impl(module, file_map, desired_access, file_offset_high, file_offset_low, number_bytes);
@@ -752,8 +755,8 @@ _winapi_OpenFileMapping(PyObject *module, PyObject *const *args, Py_ssize_t narg
     LPCWSTR name;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "kiO&:OpenFileMapping",
-        &desired_access, &inherit_handle, _PyUnicode_WideCharString_Converter, &name)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&iO&:OpenFileMapping",
+        _PyLong_UnsignedLong_Converter, &desired_access, &inherit_handle, _PyUnicode_WideCharString_Converter, &name)) {
         goto exit;
     }
     _return_value = _winapi_OpenFileMapping_impl(module, desired_access, inherit_handle, name);
@@ -795,8 +798,8 @@ _winapi_OpenProcess(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     DWORD process_id;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "kik:OpenProcess",
-        &desired_access, &inherit_handle, &process_id)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&iO&:OpenProcess",
+        _PyLong_UnsignedLong_Converter, &desired_access, &inherit_handle, _PyLong_UnsignedLong_Converter, &process_id)) {
         goto exit;
     }
     _return_value = _winapi_OpenProcess_impl(module, desired_access, inherit_handle, process_id);
@@ -857,13 +860,13 @@ _winapi_ReadFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", "size", "overlapped", NULL};
-    static _PyArg_Parser _parser = {"" F_HANDLE "k|i:ReadFile", _keywords, 0};
+    static _PyArg_Parser _parser = {"" F_HANDLE "O&|i:ReadFile", _keywords, 0};
     HANDLE handle;
     DWORD size;
     int use_overlapped = 0;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &handle, &size, &use_overlapped)) {
+        &handle, _PyLong_UnsignedLong_Converter, &size, &use_overlapped)) {
         goto exit;
     }
     return_value = _winapi_ReadFile_impl(module, handle, size, use_overlapped);
@@ -985,8 +988,8 @@ _winapi_WaitNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     LPCTSTR name;
     DWORD timeout;
 
-    if (!_PyArg_ParseStack(args, nargs, "sk:WaitNamedPipe",
-        &name, &timeout)) {
+    if (!_PyArg_ParseStack(args, nargs, "sO&:WaitNamedPipe",
+        &name, _PyLong_UnsignedLong_Converter, &timeout)) {
         goto exit;
     }
     return_value = _winapi_WaitNamedPipe_impl(module, name, timeout);
@@ -1016,8 +1019,8 @@ _winapi_WaitForMultipleObjects(PyObject *module, PyObject *const *args, Py_ssize
     BOOL wait_flag;
     DWORD milliseconds = INFINITE;
 
-    if (!_PyArg_ParseStack(args, nargs, "Oi|k:WaitForMultipleObjects",
-        &handle_seq, &wait_flag, &milliseconds)) {
+    if (!_PyArg_ParseStack(args, nargs, "Oi|O&:WaitForMultipleObjects",
+        &handle_seq, &wait_flag, _PyLong_UnsignedLong_Converter, &milliseconds)) {
         goto exit;
     }
     return_value = _winapi_WaitForMultipleObjects_impl(module, handle_seq, wait_flag, milliseconds);
@@ -1051,8 +1054,8 @@ _winapi_WaitForSingleObject(PyObject *module, PyObject *const *args, Py_ssize_t 
     DWORD milliseconds;
     long _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "k:WaitForSingleObject",
-        &handle, &milliseconds)) {
+    if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "O&:WaitForSingleObject",
+        &handle, _PyLong_UnsignedLong_Converter, &milliseconds)) {
         goto exit;
     }
     _return_value = _winapi_WaitForSingleObject_impl(module, handle, milliseconds);
@@ -1184,4 +1187,4 @@ _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ac3623be6e42017c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=997b2d43122cd28a input=a9049054013a1b77]*/
