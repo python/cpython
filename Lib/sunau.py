@@ -106,6 +106,9 @@ is destroyed.
 from collections import namedtuple
 import warnings
 
+warnings._deprecated(__name__, remove=(3, 13))
+
+
 _sunau_params = namedtuple('_sunau_params',
                            'nchannels sampwidth framerate nframes comptype compname')
 
@@ -275,7 +278,9 @@ class Au_read:
                 data = self._file.read(nframes * self._framesize)
             self._soundpos += len(data) // self._framesize
             if self._encoding == AUDIO_FILE_ENCODING_MULAW_8:
-                import audioop
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', category=DeprecationWarning)
+                    import audioop
                 data = audioop.ulaw2lin(data, self._sampwidth)
             return data
         return None             # XXX--not implemented yet
@@ -421,7 +426,9 @@ class Au_write:
             data = memoryview(data).cast('B')
         self._ensure_header_written()
         if self._comptype == 'ULAW':
-            import audioop
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', category=DeprecationWarning)
+                import audioop
             data = audioop.lin2ulaw(data, self._sampwidth)
         nframes = len(data) // self._framesize
         self._file.write(data)
@@ -524,8 +531,3 @@ def open(f, mode=None):
         return Au_write(f)
     else:
         raise Error("mode must be 'r', 'rb', 'w', or 'wb'")
-
-def openfp(f, mode=None):
-    warnings.warn("sunau.openfp is deprecated since Python 3.7. "
-                  "Use sunau.open instead.", DeprecationWarning, stacklevel=2)
-    return open(f, mode=mode)

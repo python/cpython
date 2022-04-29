@@ -9,15 +9,26 @@ PyDoc_STRVAR(MD5Type_copy__doc__,
 "Return a copy of the hash object.");
 
 #define MD5TYPE_COPY_METHODDEF    \
-    {"copy", (PyCFunction)MD5Type_copy, METH_NOARGS, MD5Type_copy__doc__},
+    {"copy", (PyCFunction)(void(*)(void))MD5Type_copy, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, MD5Type_copy__doc__},
 
 static PyObject *
-MD5Type_copy_impl(MD5object *self);
+MD5Type_copy_impl(MD5object *self, PyTypeObject *cls);
 
 static PyObject *
-MD5Type_copy(MD5object *self, PyObject *Py_UNUSED(ignored))
+MD5Type_copy(MD5object *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return MD5Type_copy_impl(self);
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {":copy", _keywords, 0};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
+        )) {
+        goto exit;
+    }
+    return_value = MD5Type_copy_impl(self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(MD5Type_digest__doc__,
@@ -66,7 +77,7 @@ PyDoc_STRVAR(MD5Type_update__doc__,
     {"update", (PyCFunction)MD5Type_update, METH_O, MD5Type_update__doc__},
 
 PyDoc_STRVAR(_md5_md5__doc__,
-"md5($module, /, string=b\'\')\n"
+"md5($module, /, string=b\'\', *, usedforsecurity=True)\n"
 "--\n"
 "\n"
 "Return a new MD5 hash object; optionally initialized with a string.");
@@ -75,17 +86,18 @@ PyDoc_STRVAR(_md5_md5__doc__,
     {"md5", (PyCFunction)(void(*)(void))_md5_md5, METH_FASTCALL|METH_KEYWORDS, _md5_md5__doc__},
 
 static PyObject *
-_md5_md5_impl(PyObject *module, PyObject *string);
+_md5_md5_impl(PyObject *module, PyObject *string, int usedforsecurity);
 
 static PyObject *
 _md5_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"string", NULL};
+    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "md5", 0};
-    PyObject *argsbuf[1];
+    PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *string = NULL;
+    int usedforsecurity = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
     if (!args) {
@@ -94,11 +106,24 @@ _md5_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    string = args[0];
+    if (args[0]) {
+        string = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
 skip_optional_pos:
-    return_value = _md5_md5_impl(module, string);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    usedforsecurity = PyObject_IsTrue(args[1]);
+    if (usedforsecurity < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _md5_md5_impl(module, string, usedforsecurity);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=53133f08cf9095fc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=53ff7f22dbaaea36 input=a9049054013a1b77]*/

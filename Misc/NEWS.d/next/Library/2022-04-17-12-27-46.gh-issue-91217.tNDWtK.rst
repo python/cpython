@@ -1,0 +1,2 @@
+Deprecate the sndhdr module, as well as inline needed functionality for
+``email.mime.MIMEAudio``.
