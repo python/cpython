@@ -5296,11 +5296,9 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(X.__bases__, (tuple, Generic))
         self.assertEqual(X.__orig_bases__, (NamedTuple, Generic[T]))
         self.assertEqual(X.__mro__, (X, tuple, Generic, object))
+        self.assertEqual(X.__parameters__, (T,))
 
         A = X[int]
-        self.assertEqual(A.__bases__, (tuple, Generic))
-        self.assertEqual(A.__orig_bases__, (NamedTuple, Generic[T]))
-        self.assertEqual(A.__mro__, (X, tuple, Generic, object))
         self.assertIs(A.__origin__, X)
         self.assertEqual(A.__args__, (int,))
         self.assertEqual(A.__parameters__, ())
@@ -5309,6 +5307,8 @@ class NamedTupleTests(BaseTestCase):
         self.assertIs(type(a), X)
         self.assertEqual(a.x, 3)
 
+        with self.assertRaises(TypeError):
+            X[int, str]
 
     def test_namedtuple_keyword_usage(self):
         LocalEmployee = NamedTuple("LocalEmployee", name=str, age=int)

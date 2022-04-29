@@ -2783,12 +2783,17 @@ class NamedTupleMeta(type):
                                defaults=[ns[n] for n in default_names],
                                module=ns['__module__'])
         nm_tpl.__bases__ = bases
+        if Generic in bases:
+            class_getitem = Generic.__class_getitem__.__func__.__wrapped__
+            nm_tpl.__class_getitem__ = classmethod(_tp_cache(class_getitem))
         # update from user namespace without overriding special namedtuple attributes
         for key in ns:
             if key in _prohibited:
                 raise AttributeError("Cannot overwrite NamedTuple attribute " + key)
             elif key not in _special and key not in nm_tpl._fields:
                 setattr(nm_tpl, key, ns[key])
+        if Generic in bases:
+            nm_tpl.__init_subclass__()
         return nm_tpl
 
 
