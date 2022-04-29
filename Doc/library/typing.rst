@@ -36,6 +36,10 @@ New features are frequently added to the ``typing`` module.
 The `typing_extensions <https://pypi.org/project/typing-extensions/>`_ package
 provides backports of these new features to older versions of Python.
 
+For a summary of deprecated features and a deprecation timeline, please see
+`Deprecation Timeline of Major Features`_.
+
+
 .. _relevant-peps:
 
 Relevant PEPs
@@ -2644,3 +2648,20 @@ Constant
       (see :pep:`563`).
 
    .. versionadded:: 3.5.2
+
+Deprecation Timeline of Major Features
+======================================
+
+Certain features in ``typing`` are deprecated and may be removed in a future
+version of Python. The following table summarizes major deprecations for your
+convenience. This is subject to change, and not all deprecations are listed.
+
++----------------------------------+---------------+-------------------+----------------+
+|  Feature                         | Deprecated in | Projected removal | PEP/issue      |
++==================================+===============+===================+================+
+|  ``typing.io`` and ``typing.re`` | 3.8           | 3.12              | :issue:`38291` |
+|  submodules                      |               |                   |                |
++----------------------------------+---------------+-------------------+----------------+
+|  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |
+|  collections                     |               |                   |                |
++----------------------------------+---------------+-------------------+----------------+
