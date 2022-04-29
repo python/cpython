@@ -343,6 +343,14 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, 'Tests passed\n' * INIT_LOOPS)
 
+    def test_quickened_static_code_gets_unquickened_at_Py_FINALIZE(self):
+        # https://github.com/python/cpython/issues/92031
+        code = "import unittest; print('Tests passed')"
+        run = self.run_embedded_interpreter
+        for i in range(50):
+            out, err = run("test_repeated_init_exec", code)
+            self.assertEqual(out, 'Tests passed\n' * INIT_LOOPS)
+
     def test_ucnhash_capi_reset(self):
         # bpo-47182: unicodeobject.c:ucnhash_capi was not reset on shutdown.
         code = "print('\\N{digit nine}')"
