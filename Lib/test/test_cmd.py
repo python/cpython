@@ -61,6 +61,10 @@ class samplecmdclass(cmd.Cmd):
     []
     >>> mycmd.completenames("help")
     ['help']
+    >>> mycmd.hide_undoc = True
+    >>> mycmd.completenames("s")
+    []
+    >>> mycmd.hide_undoc = False
 
     Test for the function complete_help():
     >>> mycmd.complete_help("a")

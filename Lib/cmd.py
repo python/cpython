@@ -72,6 +72,7 @@ class Cmd:
     undoc_header = "Undocumented commands:"
     nohelp = "*** No help on %s"
     use_rawinput = 1
+    hide_undoc = 0
 
     def __init__(self, completekey='tab', stdin=None, stdout=None):
         """Instantiate a line-oriented interpreter framework.
@@ -245,8 +246,16 @@ class Cmd:
         return []
 
     def completenames(self, text, *ignored):
+        """ Method returns all commands.
+
+        If hide_undoc is True, only the commands with "help_" are returned.
+        """
         dotext = 'do_'+text
-        return [a[3:] for a in self.get_names() if a.startswith(dotext)]
+        names = self.get_names()
+        commands = [a[3:] for a in names if a.startswith(dotext)]
+        if self.hide_undoc:
+            commands = [a for a in commands if 'help_' + a in names]
+        return commands
 
     def complete(self, text, state):
         """Return the next possible completion for 'text'.
@@ -333,7 +342,8 @@ class Cmd:
             self.stdout.write("%s\n"%str(self.doc_leader))
             self.print_topics(self.doc_header,   cmds_doc,   15,80)
             self.print_topics(self.misc_header,  list(help.keys()),15,80)
-            self.print_topics(self.undoc_header, cmds_undoc, 15,80)
+            if not self.hide_undoc:
+                self.print_topics(self.undoc_header, cmds_undoc, 15,80)
 
     def print_topics(self, header, cmds, cmdlen, maxcol):
         if cmds:

@@ -224,6 +224,13 @@ Instances of :class:`Cmd` subclasses have some public instance variables:
    :mod:`readline`, on systems that support it, the interpreter will automatically
    support :program:`Emacs`\ -like line editing  and command-history keystrokes.)
 
+.. attribute:: Cmd.hide_undoc
+
+    A flag, defaulting to false. If true, :meth:`do_help` and :meth:`completenames`
+    won't include undocumented commands (that is, there are do_*() methods without
+    corresponding help_*() methods).
+
+    .. versionadded:: 3.8
 
 .. _cmd-example:
 
