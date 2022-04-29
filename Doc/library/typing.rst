@@ -2337,7 +2337,7 @@ Functions and decorators
 
 .. function:: assert_never(arg, /)
 
-   Assert to the type checker that a line of code is unreachable.
+   Ask a static type checker to confirm that a line of code is unreachable.
 
    Example::
 
