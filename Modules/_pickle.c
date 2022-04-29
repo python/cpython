@@ -1754,7 +1754,7 @@ memo_get(PicklerObject *self, PyObject *key)
 /* Store an object in the memo, assign it a new unique ID based on the number
    of objects currently stored in the memo and generate a PUT opcode. */
 static int
-memo_put(PicklerObject *self, PyObject *obj)
+memo_put(PicklerObject *self, PyObject *obj, int opt)
 {
     char pdata[30];
     Py_ssize_t len;
@@ -1762,7 +1762,7 @@ memo_put(PicklerObject *self, PyObject *obj)
 
     const char memoize_op = MEMOIZE;
 
-    if (self->fast)
+    if (self->fast || (opt && Py_REFCNT(obj) == 1))
         return 0;
 
     idx = PyMemoTable_Size(self->memo);
@@ -2391,7 +2391,7 @@ _save_bytes_data(PicklerObject *self, PyObject *obj, const char *data,
         return -1;
     }
 
-    if (memo_put(self, obj) < 0) {
+    if (memo_put(self, obj, 1) < 0) {
         return -1;
     }
 
@@ -2468,7 +2468,7 @@ _save_bytearray_data(PicklerObject *self, PyObject *obj, const char *data,
         return -1;
     }
 
-    if (memo_put(self, obj) < 0) {
+    if (memo_put(self, obj, 1) < 0) {
         return -1;
     }
 
@@ -2735,7 +2735,7 @@ save_unicode(PicklerObject *self, PyObject *obj)
         if (_Pickler_Write(self, "\n", 1) < 0)
             return -1;
     }
-    if (memo_put(self, obj) < 0)
+    if (memo_put(self, obj, 1) < 0)
         return -1;
 
     return 0;
@@ -2861,7 +2861,7 @@ save_tuple(PicklerObject *self, PyObject *obj)
     }
 
   memoize:
-    if (memo_put(self, obj) < 0)
+    if (memo_put(self, obj, 1) < 0)
         return -1;
 
     return 0;
@@ -3062,7 +3062,7 @@ save_list(PicklerObject *self, PyObject *obj)
     if ((len = PyList_Size(obj)) < 0)
         goto error;
 
-    if (memo_put(self, obj) < 0)
+    if (memo_put(self, obj, len == 0) < 0)
         goto error;
 
     if (len != 0) {
@@ -3319,10 +3319,11 @@ save_dict(PicklerObject *self, PyObject *obj)
     if (_Pickler_Write(self, header, len) < 0)
         goto error;
 
-    if (memo_put(self, obj) < 0)
+    len = PyDict_GET_SIZE(obj);
+    if (memo_put(self, obj, len == 0) < 0)
         goto error;
 
-    if (PyDict_GET_SIZE(obj)) {
+    if (len != 0) {
         /* Save the dict items. */
         if (PyDict_CheckExact(obj) && self->proto > 0) {
             /* We can take certain shortcuts if we know this is a dict and
@@ -3395,10 +3396,10 @@ save_set(PicklerObject *self, PyObject *obj)
     if (_Pickler_Write(self, &empty_set_op, 1) < 0)
         return -1;
 
-    if (memo_put(self, obj) < 0)
+    set_size = PySet_GET_SIZE(obj);
+    if (memo_put(self, obj, set_size == 0) < 0)
         return -1;
 
-    set_size = PySet_GET_SIZE(obj);
     if (set_size == 0)
         return 0;  /* nothing to do */
 
@@ -3500,7 +3501,7 @@ save_frozenset(PicklerObject *self, PyObject *obj)
 
     if (_Pickler_Write(self, &frozenset_op, 1) < 0)
         return -1;
-    if (memo_put(self, obj) < 0)
+    if (memo_put(self, obj, 1) < 0)
         return -1;
 
     return 0;
@@ -3807,7 +3808,7 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
                 goto error;
         }
         /* Memoize the object. */
-        if (memo_put(self, obj) < 0)
+        if (memo_put(self, obj, 1) < 0)
             goto error;
     }
 
@@ -4201,7 +4202,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
 
             return 0;
         }
-        else if (memo_put(self, obj) < 0)
+        else if (memo_put(self, obj, !listitems && !dictitems && !state) < 0)
             return -1;
     }
 
@@ -4435,6 +4436,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
             }
         }
     }
+    Py_DECREF(reduce_func);
 
     if (reduce_value == NULL)
         goto error;
@@ -4461,7 +4463,6 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
   done:
 
     Py_LeaveRecursiveCall();
-    Py_XDECREF(reduce_func);
     Py_XDECREF(reduce_value);
 
     return status;
