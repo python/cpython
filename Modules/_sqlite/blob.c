@@ -496,7 +496,9 @@ ass_subscript_index(pysqlite_Blob *self, PyObject *item, PyObject *value)
         PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
         return -1;
     }
-    return inner_write(self, (const void *)&val, 1, i);
+    // Downcast to avoid endianness problems.
+    unsigned char byte = (unsigned char)val;
+    return inner_write(self, (const void *)&byte, 1, i);
 }
 
 static int
