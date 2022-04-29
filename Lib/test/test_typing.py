@@ -578,12 +578,13 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[T]',                        '[int, str]',              'TypeError'),
             ('generic[T]',                        '[tuple_type[int, ...]]',  'generic[tuple_type[int, ...]]'),
             # Should raise TypeError: a) according to the tentative spec,
-            # unpacked types are only valid as arguments to a TypeVarTuple, and
-            # b) it's equivalent to generic[()].
+            # unpacked types cannot be used as arguments to aliases that expect
+            # a fixed number of arguments; b) it's equivalent to generic[()].
             ('generic[T]',                        '[*tuple[()]]',            'generic[*tuple[()]]'),
             ('generic[T]',                        '[*Tuple[()]]',            'TypeError'),
             # Should raise TypeError according to the tentative spec: unpacked
-            # types are only valid as arguments to a TypeVarTuple.
+            # types cannot be used as arguments to aliases that expect a fixed
+            # number of arguments.
             ('generic[T]',                        '[*tuple[int]]',           'generic[*tuple[int]]'),
             ('generic[T]',                        '[*Tuple[int]]',           'TypeError'),
             # Ditto.
@@ -641,7 +642,8 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[T1, T2]',                        '[*tuple_type[int, str, bool]]',                     'TypeError'),
 
             # Should raise TypeError according to the tentative spec: unpacked
-            # types are only valid as arguments to a TypeVarTuple.
+            # types cannot be used as arguments to aliases that expect a fixed
+            # number of arguments.
             ('generic[T1, T2]',                        '[*tuple[int, str], *tuple[float, bool]]',           'generic[*tuple[int, str], *tuple[float, bool]]'),
             ('generic[T1, T2]',                        '[*Tuple[int, str], *Tuple[float, bool]]',           'TypeError'),
 
@@ -649,8 +651,7 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[T1, T2]',                        '[tuple_type[int, ...], tuple_type[str, ...]]',      'generic[tuple_type[int, ...], tuple_type[str, ...]]'),
             ('generic[T1, T2]',                        '[*tuple_type[int, ...]]',                           'TypeError'),
 
-            # Should raise TypeError according to the tentative spec: unpacked
-            # types are only valid as arguments to a TypeVarTuple.
+            # Ditto.
             ('generic[T1, T2]',                        '[*tuple[int, ...], *tuple[str, ...]]',              'generic[*tuple[int, ...], *tuple[str, ...]]'),
             ('generic[T1, T2]',                        '[*Tuple[int, ...], *Tuple[str, ...]]',              'TypeError'),
 
@@ -658,7 +659,8 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[T1, T2]',                        '[T, *Ts]',                                          'TypeError'),
             ('generic[T1, T2]',                        '[*Ts, T]',                                          'TypeError'),
             # Should raise TypeError according to the tentative spec: unpacked
-            # types are only valid as arguments to a TypeVarTuple.
+            # types cannot be used as arguments to generics that expect a fixed
+            # number of arguments.
             # (None of the things in `generics` were defined using *Ts.)
             ('generic[T1, *tuple_type[int, ...]]',     '[str]',                                             'generic[str, *tuple_type[int, ...]]'),
         ]
@@ -758,7 +760,7 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('Tuple[*Ts]',                             '[tuple_type[int, ...], tuple_type[str, ...]]',   'Tuple[tuple_type[int, ...], tuple_type[str, ...]]'),
 
             ('C[*Ts]',                                 '[*tuple_type[int, ...]]',                        'C[*tuple_type[int, ...]]'),
-            ('tuple[*Ts]',                             '[*tuple_type[int, ...]]',                        'tuple[(*tuple_type[int, ...],),]'),  # Should be tuple[*tuple_tuple[int, ...]]
+            ('tuple[*Ts]',                             '[*tuple_type[int, ...]]',                        'tuple[(*tuple_type[int, ...],),]'),  # Should be tuple[*tuple_type[int, ...]]
             ('Tuple[*Ts]',                             '[*tuple_type[int, ...]]',                        'Tuple[*tuple_type[int, ...]]'),
 
             # Technically, multiple unpackings are forbidden by PEP 646, but we
@@ -793,14 +795,11 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('tuple[T, *Ts]',                          '[int, str, bool]',                               'TypeError'),  # Should be tuple[int, str, bool]
             ('Tuple[T, *Ts]',                          '[int, str, bool]',                               'Tuple[int, str, bool]'),
 
-            # Should raise TypeError according to the tentative spec:
-            # *tuple[int, ...] must 'match' exactly with a *Ts, rather than
-            # being split between a T and a *Ts.
-            ('C[T, *Ts]',                              '[*tuple[int, ...]]',                             'C[*tuple[int, ...]]'),
-            ('C[T, *Ts]',                              '[*Tuple[int, ...]]',                             'TypeError'),
-            ('tuple[T, *Ts]',                          '[*tuple_type[int, ...]]',                        'TypeError'),
-            ('Tuple[T, *Ts]',                          '[*tuple[int, ...]]',                             'Tuple[*tuple[int, ...]]'),
-            ('Tuple[T, *Ts]',                          '[*Tuple[int, ...]]',                             'TypeError'),
+            ('C[T, *Ts]',                              '[*tuple[int, ...]]',                             'C[*tuple[int, ...]]'),  # Should be C[int, *tuple[int, ...]]
+            ('C[T, *Ts]',                              '[*Tuple[int, ...]]',                             'TypeError'),  # Ditto
+            ('tuple[T, *Ts]',                          '[*tuple_type[int, ...]]',                        'TypeError'),  # Should be tuple[int, *tuple[int, ...]]
+            ('Tuple[T, *Ts]',                          '[*tuple[int, ...]]',                             'Tuple[*tuple[int, ...]]'),  # Ditto
+            ('Tuple[T, *Ts]',                          '[*Tuple[int, ...]]',                             'TypeError'),  # Ditto
 
             ('C[*Ts, T]',                              '[int]',                                          'C[int]'),
             ('tuple[*Ts, T]',                          '[int]',                                          'TypeError'),  # Should be tuple[int]
