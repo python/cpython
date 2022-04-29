@@ -11,9 +11,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_code.h"          // _PyCode_New()
-#include "pycore_floatobject.h"   // _PyFloat_Pack8()
 #include "pycore_hashtable.h"     // _Py_hashtable_t
-#include "code.h"
 #include "marshal.h"              // Py_MARSHAL_VERSION
 
 /*[clinic input]
@@ -271,8 +269,8 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
 static void
 w_float_bin(double v, WFILE *p)
 {
-    unsigned char buf[8];
-    if (_PyFloat_Pack8(v, buf, 1) < 0) {
+    char buf[8];
+    if (PyFloat_Pack8(v, buf, 1) < 0) {
         p->error = WFERR_UNMARSHALLABLE;
         return;
     }
@@ -545,13 +543,18 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
     }
     else if (PyCode_Check(v)) {
         PyCodeObject *co = (PyCodeObject *)v;
+        PyObject *co_code = _PyCode_GetCode(co);
+        if (co_code == NULL) {
+            p->error = WFERR_NOMEMORY;
+            return;
+        }
         W_TYPE(TYPE_CODE, p);
         w_long(co->co_argcount, p);
         w_long(co->co_posonlyargcount, p);
         w_long(co->co_kwonlyargcount, p);
         w_long(co->co_stacksize, p);
         w_long(co->co_flags, p);
-        w_object(co->co_code, p);
+        w_object(co_code, p);
         w_object(co->co_consts, p);
         w_object(co->co_names, p);
         w_object(co->co_localsplusnames, p);
@@ -561,9 +564,8 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_qualname, p);
         w_long(co->co_firstlineno, p);
         w_object(co->co_linetable, p);
-        w_object(co->co_endlinetable, p);
-        w_object(co->co_columntable, p);
         w_object(co->co_exceptiontable, p);
+        Py_DECREF(co_code);
     }
     else if (PyObject_CheckBuffer(v)) {
         /* Write unknown bytes-like objects as a bytes object */
@@ -883,10 +885,10 @@ r_PyLong(RFILE *p)
 static double
 r_float_bin(RFILE *p)
 {
-    const unsigned char *buf = (const unsigned char *) r_string(8, p);
+    const char *buf = r_string(8, p);
     if (buf == NULL)
         return -1;
-    return _PyFloat_Unpack8(buf, 1);
+    return PyFloat_Unpack8(buf, 1);
 }
 
 /* Issue #33720: Disable inlining for reducing the C stack consumption
@@ -1353,9 +1355,7 @@ r_object(RFILE *p)
             PyObject *name = NULL;
             PyObject *qualname = NULL;
             int firstlineno;
-            PyObject *linetable = NULL;
-            PyObject* endlinetable = NULL;
-            PyObject* columntable = NULL;
+            PyObject* linetable = NULL;
             PyObject *exceptiontable = NULL;
 
             idx = r_ref_reserve(flag, p);
@@ -1411,12 +1411,6 @@ r_object(RFILE *p)
             linetable = r_object(p);
             if (linetable == NULL)
                 goto code_error;
-            endlinetable = r_object(p);
-            if (endlinetable == NULL)
-                goto code_error;
-            columntable = r_object(p);
-            if (columntable == NULL)
-                goto code_error;
             exceptiontable = r_object(p);
             if (exceptiontable == NULL)
                 goto code_error;
@@ -1430,8 +1424,6 @@ r_object(RFILE *p)
                 .code = code,
                 .firstlineno = firstlineno,
                 .linetable = linetable,
-                .endlinetable = endlinetable,
-                .columntable = columntable,
 
                 .consts = consts,
                 .names = names,
@@ -1469,8 +1461,6 @@ r_object(RFILE *p)
             Py_XDECREF(name);
             Py_XDECREF(qualname);
             Py_XDECREF(linetable);
-            Py_XDECREF(endlinetable);
-            Py_XDECREF(columntable);
             Py_XDECREF(exceptiontable);
         }
         retval = v;

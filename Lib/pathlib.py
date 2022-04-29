@@ -60,6 +60,8 @@ def _is_wildcard_pattern(pat):
 def _make_selector(pattern_parts, path_cls):
     pat = pattern_parts[0]
     child_parts = pattern_parts[1:]
+    if not pat:
+        return _TerminatingSelector()
     if pat == '**':
         cls = _RecursiveWildcardSelector
     elif '**' in pat:
@@ -881,6 +883,8 @@ class Path(PurePath):
         drv, root, pattern_parts = self._parse_parts((pattern,))
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
+        if pattern[-1] in (self._flavour.sep, self._flavour.altsep):
+            pattern_parts.append('')
         selector = _make_selector(tuple(pattern_parts), type(self))
         for p in selector.select_from(self):
             yield p
@@ -894,6 +898,8 @@ class Path(PurePath):
         drv, root, pattern_parts = self._parse_parts((pattern,))
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
+        if pattern[-1] in (self._flavour.sep, self._flavour.altsep):
+            pattern_parts.append('')
         selector = _make_selector(("**",) + tuple(pattern_parts), type(self))
         for p in selector.select_from(self):
             yield p

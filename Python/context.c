@@ -685,7 +685,7 @@ static PyMethodDef PyContext_methods[] = {
     _CONTEXTVARS_CONTEXT_KEYS_METHODDEF
     _CONTEXTVARS_CONTEXT_VALUES_METHODDEF
     _CONTEXTVARS_CONTEXT_COPY_METHODDEF
-    {"run", (PyCFunction)(void(*)(void))context_run, METH_FASTCALL | METH_KEYWORDS, NULL},
+    {"run", _PyCFunction_CAST(context_run), METH_FASTCALL | METH_KEYWORDS, NULL},
     {NULL, NULL}
 };
 

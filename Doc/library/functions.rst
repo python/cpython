@@ -905,7 +905,8 @@ are always available.  They are listed here in alphabetical order.
    tuples) or a :ref:`types-union` of multiple types, return ``True`` if
    *object* is an instance of any of the types.
    If *classinfo* is not a type or tuple of types and such tuples,
-   a :exc:`TypeError` exception is raised.
+   a :exc:`TypeError` exception is raised. :exc:`TypeError` may not be
+   raised for an invalid type if an earlier check succeeds.
 
    .. versionchanged:: 3.10
       *classinfo* can be a :ref:`types-union`.
@@ -1123,8 +1124,8 @@ are always available.  They are listed here in alphabetical order.
    (which on *some* Unix systems, means that *all* writes append to the end of
    the file regardless of the current seek position).  In text mode, if
    *encoding* is not specified the encoding used is platform-dependent:
-   ``locale.getpreferredencoding(False)`` is called to get the current locale
-   encoding. (For reading and writing raw bytes use binary mode and leave
+   :func:`locale.getencoding()` is called to get the current locale encoding.
+   (For reading and writing raw bytes use binary mode and leave
    *encoding* unspecified.)  The available modes are:
 
    .. _filemodes:
@@ -1165,7 +1166,11 @@ are always available.  They are listed here in alphabetical order.
    *buffering* is an optional integer used to set the buffering policy.  Pass 0
    to switch buffering off (only allowed in binary mode), 1 to select line
    buffering (only usable in text mode), and an integer > 1 to indicate the size
-   in bytes of a fixed-size chunk buffer.  When no *buffering* argument is
+   in bytes of a fixed-size chunk buffer. Note that specifying a buffer size this
+   way applies for binary buffered I/O, but ``TextIOWrapper`` (i.e., files opened
+   with ``mode='r+'``) would have another buffering. To disable buffering in
+   ``TextIOWrapper``, consider using the ``write_through`` flag for
+   :func:`io.TextIOWrapper.reconfigure`. When no *buffering* argument is
    given, the default buffering policy works as follows:
 
    * Binary files are buffered in fixed-size chunks; the size of the buffer is
@@ -1179,10 +1184,9 @@ are always available.  They are listed here in alphabetical order.
 
    *encoding* is the name of the encoding used to decode or encode the file.
    This should only be used in text mode.  The default encoding is platform
-   dependent (whatever :func:`locale.getpreferredencoding` returns), but any
-   :term:`text encoding` supported by Python
-   can be used.  See the :mod:`codecs` module for
-   the list of supported encodings.
+   dependent (whatever :func:`locale.getencoding` returns), but any
+   :term:`text encoding` supported by Python can be used.
+   See the :mod:`codecs` module for the list of supported encodings.
 
    *errors* is an optional string that specifies how encoding and decoding
    errors are to be handled—this cannot be used in binary mode.

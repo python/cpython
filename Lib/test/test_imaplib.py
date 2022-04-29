@@ -11,7 +11,8 @@ import threading
 import socket
 
 from test.support import (verbose,
-                          run_with_tz, run_with_locale, cpython_only)
+                          run_with_tz, run_with_locale, cpython_only,
+                          requires_working_socket)
 from test.support import hashlib_helper
 from test.support import threading_helper
 from test.support import warnings_helper
@@ -22,6 +23,8 @@ try:
     import ssl
 except ImportError:
     ssl = None
+
+support.requires_working_socket(module=True)
 
 CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "keycert3.pem")
 CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "pycacert.pem")

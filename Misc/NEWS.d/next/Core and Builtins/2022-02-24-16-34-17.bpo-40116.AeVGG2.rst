@@ -1,2 +1,0 @@
-Fix regression that dict.update(other) may don't respect iterate order of
-other when other is key sharing dict.

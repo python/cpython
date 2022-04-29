@@ -9,7 +9,7 @@
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_namespace.h"     // _PyNamespace_Type
-#include "pycore_object.h"        // _PyType_CheckConsistency()
+#include "pycore_object.h"        // _PyType_CheckConsistency(), _Py_FatalRefcountError()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -875,19 +875,29 @@ static inline int
 set_attribute_error_context(PyObject* v, PyObject* name)
 {
     assert(PyErr_Occurred());
-    // Intercept AttributeError exceptions and augment them to offer
-    // suggestions later.
-    if (PyErr_ExceptionMatches(PyExc_AttributeError)){
-        PyObject *type, *value, *traceback;
-        PyErr_Fetch(&type, &value, &traceback);
-        PyErr_NormalizeException(&type, &value, &traceback);
-        if (PyErr_GivenExceptionMatches(value, PyExc_AttributeError) &&
-            (PyObject_SetAttr(value, &_Py_ID(name), name) ||
-             PyObject_SetAttr(value, &_Py_ID(obj), v))) {
-            return 1;
-        }
-        PyErr_Restore(type, value, traceback);
+    if (!PyErr_ExceptionMatches(PyExc_AttributeError)){
+        return 0;
     }
+    // Intercept AttributeError exceptions and augment them to offer suggestions later.
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
+    PyErr_NormalizeException(&type, &value, &traceback);
+    // Check if the normalized exception is indeed an AttributeError
+    if (!PyErr_GivenExceptionMatches(value, PyExc_AttributeError)) {
+        goto restore;
+    }
+    PyAttributeErrorObject* the_exc = (PyAttributeErrorObject*) value;
+    // Check if this exception was already augmented
+    if (the_exc->name || the_exc->obj) {
+        goto restore;
+    }
+    // Augment the exception with the name and object
+    if (PyObject_SetAttr(value, &_Py_ID(name), name) ||
+        PyObject_SetAttr(value, &_Py_ID(obj), v)) {
+        return 1;
+    }
+restore:
+    PyErr_Restore(type, value, traceback);
     return 0;
 }
 
@@ -1824,6 +1834,7 @@ _PyTypes_InitState(PyInterpreterState *interp)
 #ifdef MS_WINDOWS
 extern PyTypeObject PyHKEY_Type;
 #endif
+extern PyTypeObject _Py_GenericAliasIterType;
 
 static PyTypeObject* static_types[] = {
     // The two most important base types: must be initialized first and
@@ -1913,6 +1924,7 @@ static PyTypeObject* static_types[] = {
     &_PyAsyncGenWrappedValue_Type,
     &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
+    &_Py_GenericAliasIterType,
     &_PyHamtItems_Type,
     &_PyHamtKeys_Type,
     &_PyHamtValues_Type,
@@ -1926,6 +1938,7 @@ static PyTypeObject* static_types[] = {
     &_PyNamespace_Type,
     &_PyNone_Type,
     &_PyNotImplemented_Type,
+    &_PyUnicodeASCIIIter_Type,
     &_PyUnion_Type,
     &_PyWeakref_CallableProxyType,
     &_PyWeakref_ProxyType,
@@ -2108,7 +2121,6 @@ _PyObject_DebugTypeStats(FILE *out)
 {
     _PyDict_DebugMallocStats(out);
     _PyFloat_DebugMallocStats(out);
-    _PyFrame_DebugMallocStats(out);
     _PyList_DebugMallocStats(out);
     _PyTuple_DebugMallocStats(out);
 }
@@ -2342,11 +2354,45 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 void
 _Py_Dealloc(PyObject *op)
 {
-    destructor dealloc = Py_TYPE(op)->tp_dealloc;
+    PyTypeObject *type = Py_TYPE(op);
+    destructor dealloc = type->tp_dealloc;
+#ifdef Py_DEBUG
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *old_exc_type = tstate->curexc_type;
+    // Keep the old exception type alive to prevent undefined behavior
+    // on (tstate->curexc_type != old_exc_type) below
+    Py_XINCREF(old_exc_type);
+    // Make sure that type->tp_name remains valid
+    Py_INCREF(type);
+#endif
+
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
     (*dealloc)(op);
+
+#ifdef Py_DEBUG
+    // gh-89373: The tp_dealloc function must leave the current exception
+    // unchanged.
+    if (tstate->curexc_type != old_exc_type) {
+        const char *err;
+        if (old_exc_type == NULL) {
+            err = "Deallocator of type '%s' raised an exception";
+        }
+        else if (tstate->curexc_type == NULL) {
+            err = "Deallocator of type '%s' cleared the current exception";
+        }
+        else {
+            // It can happen if dealloc() normalized the current exception.
+            // A deallocator function must not change the current exception,
+            // not even normalize it.
+            err = "Deallocator of type '%s' overrode the current exception";
+        }
+        _Py_FatalErrorFormat(__func__, err, type->tp_name);
+    }
+    Py_XDECREF(old_exc_type);
+    Py_DECREF(type);
+#endif
 }
 
 

@@ -4,7 +4,7 @@ parameters:
 jobs:
 - job: Publish_Nuget
   displayName: Publish Nuget packages
-  condition: and(succeeded(), eq(variables['DoNuget'], 'true'))
+  condition: and(succeeded(), eq(variables['DoNuget'], 'true'), ne(variables['SkipNugetPublish'], 'true'))
 
   pool:
     vmImage: windows-2022
@@ -38,7 +38,7 @@ jobs:
   - powershell: 'gci pythonarm*.nupkg | %{ Write-Host "Not publishing: $($_.Name)"; gi $_ } | del'
     displayName: 'Prevent publishing ARM64 packages'
     workingDirectory: '$(Build.BinariesDirectory)\nuget'
-    condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
+    condition: and(succeeded(), ne(variables['PublishARM64'], 'true'))
 
   - task: NuGetCommand@2
     displayName: Push packages

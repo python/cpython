@@ -37,17 +37,6 @@ _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
     return size;
 }
 
-#if 0
-static const char *
-token_name(int type)
-{
-    if (0 <= type && type <= N_TOKENS) {
-        return _PyParser_TokenNames[type];
-    }
-    return "<Huh?>";
-}
-#endif
-
 // Here, mark is the start of the node, while p->mark is the end.
 // If node==NULL, they should be the same.
 int
