@@ -1361,8 +1361,7 @@ trace_callback(void *ctx, const char *sql)
         }
 
         PyErr_SetString(state->DataError,
-                        "Expanded SQL string exceeds the maximum string "
-                        "length");
+                "Expanded SQL string exceeds the maximum string length");
         print_or_clear_traceback((callback_context *)ctx);
 
         // Fall back to unexpanded sql
