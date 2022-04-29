@@ -34,7 +34,7 @@ standard.  However, mailcap files are supported on most Unix systems.
    design, the mailcap format uses shell commands. The caller is responsible to
    validate and sanitize input arguments.
 
-   For the filename, the caller can create temporary filename, using
+   For the filename, the caller can create a temporary filename, using
    :func:`tempfile.NamedTemporaryFile` or :func:`tempfile.mkstemp` for example,
    to get a safe filename.
 
