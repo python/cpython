@@ -6044,7 +6044,7 @@ class TypedDictTests(BaseTestCase):
 
     def test_get_type_hints_generic(self):
         self.assertEqual(
-            get_type_hints(BarGeneric[int].__origin__), 
+            get_type_hints(BarGeneric[int].__origin__),
             {'a': typing.Optional[T], 'b': int}
         )
 
@@ -6086,7 +6086,7 @@ class TypedDictTests(BaseTestCase):
         with self.assertRaises(TypeError):
            C[str]
 
-        
+
         class Point3D(Point2DGeneric[T], Generic[T, KT]):
             c: KT
 
@@ -6125,7 +6125,7 @@ class TypedDictTests(BaseTestCase):
         }
         with self.assertRaises(TypeError):
            WithImplicitAny[str]
-        
+
 
 class RequiredTests(BaseTestCase):
 

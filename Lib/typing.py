@@ -2842,7 +2842,7 @@ class _TypedDictMeta(type):
             if type(base) is not _TypedDictMeta and base is not Generic:
                 raise TypeError('cannot inherit from both a TypedDict type '
                                 'and a non-TypedDict base class')
-        
+
         if any(issubclass(b, Generic) for b in bases):
             if '__orig_bases__' in ns:
                 # Original base is a Generic[X] or A[X]
@@ -2850,7 +2850,7 @@ class _TypedDictMeta(type):
             else:
                 # Implicit Any case: a generic base with no type args
                 generic_base = ()
-                # Offloading work from Generic.__init_subclass__ 
+                # Offloading work from Generic.__init_subclass__
                 # to keep consistency with normal generic classes
                 ns['__parameters__'] = ()
         else:
