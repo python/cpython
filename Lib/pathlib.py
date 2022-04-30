@@ -273,7 +273,6 @@ class PurePath(object):
 
     @classmethod
     def _splitroot(cls, part):
-        # FIXME: This method should use os.path.splitdrive()
         sep = cls._flavour.sep
         if cls._flavour is posixpath:
             if part and part[0] == sep:
@@ -467,7 +466,6 @@ class PurePath(object):
         if not self.is_absolute():
             raise ValueError("relative path can't be expressed as a file URI")
 
-        # FIXME: move this implementation to os.path.fileuri()
         if self._flavour is posixpath:
             # On POSIX we represent the path using the local filesystem encoding,
             # for portability to other applications.
@@ -718,7 +716,6 @@ class PurePath(object):
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
         by the system, if any."""
-        # FIXME: move this implementation to os.path.isreserved()
         if self._flavour is posixpath or not self._parts:
             return False
 
