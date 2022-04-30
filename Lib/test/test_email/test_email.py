@@ -5360,6 +5360,15 @@ Content-Disposition: inline; filename*=X-UNKNOWN''myfile.txt
         msg = email.message_from_string(m)
         self.assertEqual(msg.get_filename(), 'myfile.txt')
 
+    def test_rfc2231_bad_character_in_encoding(self):
+        m = """\
+Content-Transfer-Encoding: 8bit
+Content-Disposition: inline; filename*=utf-8\udce2\udc80\udc9d''myfile.txt
+
+"""
+        msg = email.message_from_string(m)
+        self.assertEqual(msg.get_filename(), 'myfile.txt')
+
     def test_rfc2231_single_tick_in_filename_extended(self):
         eq = self.assertEqual
         m = """\
