@@ -466,11 +466,11 @@ def _check_time_fields(hour, minute, second, microsecond, submicrosecond, fold):
         raise ValueError('second must be in 0..59', second)
     if not 0 <= microsecond <= 999999:
         raise ValueError('microsecond must be in 0..999999', microsecond)
-    if not 0 <= microsecond <= 999:
+    if not 0 <= submicrosecond <= 999:
         raise ValueError('Currently submicrosecond must be in 0..999', submicrosecond)
     if fold not in (0, 1):
         raise ValueError('fold must be either 0 or 1', fold)
-    return hour, minute, second, microsecond, submicrosecond fold
+    return hour, minute, second, microsecond, submicrosecond, fold
 
 
 def _check_tzinfo_arg(tz):
@@ -1295,7 +1295,7 @@ class time:
     """
     __slots__ = '_hour', '_minute', '_second', '_microsecond', '_submicrosecond', '_tzinfo', '_hashcode', '_fold'
 
-    def __new__(cls, hour=0, minute=0, second=0, microsecond=0, tzinfo=None, *, fold=0):
+    def __new__(cls, hour=0, minute=0, second=0, microsecond=0, tzinfo=None, *, fold=0, submicrosecond=0):
         """Constructor.
 
         Arguments:
@@ -1321,8 +1321,8 @@ class time:
             self.__setstate(hour, minute or None)
             self._hashcode = -1
             return self
-        hour, minute, second, microsecond, fold = _check_time_fields(
-            hour, minute, second, microsecond, fold)
+        hour, minute, second, microsecond, submicrosecond, fold = _check_time_fields(
+            hour, minute, second, microsecond, submicrosecond, fold)
         _check_tzinfo_arg(tzinfo)
         self = object.__new__(cls)
         self._hour = hour
