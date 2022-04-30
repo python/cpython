@@ -9,15 +9,19 @@ PyDoc_STRVAR(SHA1Type_copy__doc__,
 "Return a copy of the hash object.");
 
 #define SHA1TYPE_COPY_METHODDEF    \
-    {"copy", (PyCFunction)SHA1Type_copy, METH_NOARGS, SHA1Type_copy__doc__},
+    {"copy", (PyCFunction)(void(*)(void))SHA1Type_copy, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, SHA1Type_copy__doc__},
 
 static PyObject *
-SHA1Type_copy_impl(SHA1object *self);
+SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls);
 
 static PyObject *
-SHA1Type_copy(SHA1object *self, PyObject *Py_UNUSED(ignored))
+SHA1Type_copy(SHA1object *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return SHA1Type_copy_impl(self);
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
+        return NULL;
+    }
+    return SHA1Type_copy_impl(self, cls);
 }
 
 PyDoc_STRVAR(SHA1Type_digest__doc__,
@@ -115,4 +119,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3ddd637ae17e14b3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=93ced3c8f8fa4f21 input=a9049054013a1b77]*/

@@ -63,9 +63,22 @@ static PyStructSequence_Desc struct_rusage_desc = {
     16          /* n_in_sequence */
 };
 
-static int initialized;
-static PyTypeObject StructRUsageType;
+typedef struct {
+  PyTypeObject *StructRUsageType;
+} resourcemodulestate;
 
+
+static inline resourcemodulestate*
+get_resource_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (resourcemodulestate *)state;
+}
+
+static struct PyModuleDef resourcemodule;
+
+#ifdef HAVE_GETRUSAGE
 /*[clinic input]
 resource.getrusage
 
@@ -91,7 +104,8 @@ resource_getrusage_impl(PyObject *module, int who)
         return NULL;
     }
 
-    result = PyStructSequence_New(&StructRUsageType);
+    result = PyStructSequence_New(
+        get_resource_state(module)->StructRUsageType);
     if (!result)
         return NULL;
 
@@ -121,6 +135,7 @@ resource_getrusage_impl(PyObject *module, int who)
 
     return result;
 }
+#endif
 
 static int
 py2rlimit(PyObject *limits, struct rlimit *rl_out)
@@ -313,13 +328,10 @@ resource_getpagesize_impl(PyObject *module)
     long pagesize = 0;
 #if defined(HAVE_GETPAGESIZE)
     pagesize = getpagesize();
-#elif defined(HAVE_SYSCONF)
-#if defined(_SC_PAGE_SIZE)
+#elif defined(HAVE_SYSCONF) && defined(_SC_PAGE_SIZE)
     pagesize = sysconf(_SC_PAGE_SIZE);
 #else
-    /* Irix 5.3 has _SC_PAGESIZE, but not _SC_PAGE_SIZE */
-    pagesize = sysconf(_SC_PAGESIZE);
-#endif
+#   error "unsupported platform: resource.getpagesize()"
 #endif
     return pagesize;
 }
@@ -339,10 +351,10 @@ resource_methods[] = {
 
 /* Module initialization */
 
-
 static int
 resource_exec(PyObject *module)
 {
+    resourcemodulestate *state = get_resource_state(module);
 #define ADD_INT(module, value)                                    \
     do {                                                          \
         if (PyModule_AddIntConstant(module, #value, value) < 0) { \
@@ -356,13 +368,12 @@ resource_exec(PyObject *module)
         Py_DECREF(PyExc_OSError);
         return -1;
     }
-    if (!initialized) {
-        if (PyStructSequence_InitType2(&StructRUsageType,
-                                       &struct_rusage_desc) < 0)
-            return -1;
-    }
 
-    if(PyModule_AddType(module, &StructRUsageType) < 0) {
+    state->StructRUsageType = PyStructSequence_NewType(&struct_rusage_desc);
+    if (state->StructRUsageType == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->StructRUsageType) < 0) {
         return -1;
     }
 
@@ -471,6 +482,10 @@ resource_exec(PyObject *module)
     ADD_INT(module, RLIMIT_NPTS);
 #endif
 
+#ifdef RLIMIT_KQUEUES
+    ADD_INT(module, RLIMIT_KQUEUES);
+#endif
+
     PyObject *v;
     if (sizeof(RLIM_INFINITY) > sizeof(long)) {
         v = PyLong_FromLongLong((long long) RLIM_INFINITY);
@@ -486,8 +501,6 @@ resource_exec(PyObject *module)
         Py_DECREF(v);
         return -1;
     }
-
-    initialized = 1;
     return 0;
 
 #undef ADD_INT
@@ -498,12 +511,32 @@ static struct PyModuleDef_Slot resource_slots[] = {
     {0, NULL}
 };
 
+static int
+resourcemodule_traverse(PyObject *m, visitproc visit, void *arg) {
+    Py_VISIT(get_resource_state(m)->StructRUsageType);
+    return 0;
+}
+
+static int
+resourcemodule_clear(PyObject *m) {
+    Py_CLEAR(get_resource_state(m)->StructRUsageType);
+    return 0;
+}
+
+static void
+resourcemodule_free(void *m) {
+    resourcemodule_clear((PyObject *)m);
+}
+
 static struct PyModuleDef resourcemodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "resource",
-    .m_size = 0,
+    .m_size = sizeof(resourcemodulestate),
     .m_methods = resource_methods,
     .m_slots = resource_slots,
+    .m_traverse = resourcemodule_traverse,
+    .m_clear = resourcemodule_clear,
+    .m_free = resourcemodule_free,
 };
 
 PyMODINIT_FUNC

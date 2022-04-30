@@ -284,10 +284,11 @@ a_cp1252.py
                                 # 0xe2 is not allowed in utf8
                                 print('CP1252 test P\xe2t\xe9')
                                 import b_utf8
+""" + """\
 b_utf8.py
                                 # use the default of utf8
                                 print('Unicode test A code point 2090 \u2090 that is not valid in cp1252')
-"""]
+""".encode('utf-8')]
 
 def open_file(path):
     dirname = os.path.dirname(path)

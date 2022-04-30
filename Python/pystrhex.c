@@ -1,11 +1,11 @@
-/* bytes to hex implementation */
+/* Format bytes as hexadecimal */
 
 #include "Python.h"
-
-#include "pystrhex.h"
+#include "pycore_strhex.h"        // _Py_strhex_with_sep()
+#include <stdlib.h>               // abs()
 
 static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
-                                 const PyObject* sep, int bytes_per_sep_group,
+                                 PyObject* sep, int bytes_per_sep_group,
                                  const int return_bytes)
 {
     assert(arglen >= 0);
@@ -152,21 +152,23 @@ PyObject * _Py_strhex(const char* argbuf, const Py_ssize_t arglen)
 
 /* Same as above but returns a bytes() instead of str() to avoid the
  * need to decode the str() when bytes are needed. */
-PyObject * _Py_strhex_bytes(const char* argbuf, const Py_ssize_t arglen)
+PyObject* _Py_strhex_bytes(const char* argbuf, const Py_ssize_t arglen)
 {
     return _Py_strhex_impl(argbuf, arglen, NULL, 0, 1);
 }
 
 /* These variants include support for a separator between every N bytes: */
 
-PyObject * _Py_strhex_with_sep(const char* argbuf, const Py_ssize_t arglen, const PyObject* sep, const int bytes_per_group)
+PyObject* _Py_strhex_with_sep(const char* argbuf, const Py_ssize_t arglen,
+                              PyObject* sep, const int bytes_per_group)
 {
     return _Py_strhex_impl(argbuf, arglen, sep, bytes_per_group, 0);
 }
 
 /* Same as above but returns a bytes() instead of str() to avoid the
  * need to decode the str() when bytes are needed. */
-PyObject * _Py_strhex_bytes_with_sep(const char* argbuf, const Py_ssize_t arglen, const PyObject* sep, const int bytes_per_group)
+PyObject* _Py_strhex_bytes_with_sep(const char* argbuf, const Py_ssize_t arglen,
+                                    PyObject* sep, const int bytes_per_group)
 {
     return _Py_strhex_impl(argbuf, arglen, sep, bytes_per_group, 1);
 }

@@ -160,25 +160,29 @@ PyCMethod_GetClass(PyObject *op)
 static void
 meth_dealloc(PyCFunctionObject *m)
 {
-    _PyObject_GC_UNTRACK(m);
+    // The Py_TRASHCAN mechanism requires that we be able to
+    // call PyObject_GC_UnTrack twice on an object.
+    PyObject_GC_UnTrack(m);
+    Py_TRASHCAN_BEGIN(m, meth_dealloc);
     if (m->m_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*) m);
     }
+    // Dereference class before m_self: PyCFunction_GET_CLASS accesses
+    // PyMethodDef m_ml, which could be kept alive by m_self
+    Py_XDECREF(PyCFunction_GET_CLASS(m));
     Py_XDECREF(m->m_self);
     Py_XDECREF(m->m_module);
-    Py_XDECREF(PyCFunction_GET_CLASS(m));
     PyObject_GC_Del(m);
+    Py_TRASHCAN_END;
 }
 
 static PyObject *
 meth_reduce(PyCFunctionObject *m, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(getattr);
-
     if (m->m_self == NULL || PyModule_Check(m->m_self))
         return PyUnicode_FromString(m->m_ml->ml_name);
 
-    return Py_BuildValue("N(Os)", _PyEval_GetBuiltinId(&PyId_getattr),
+    return Py_BuildValue("N(Os)", _PyEval_GetBuiltin(&_Py_ID(getattr)),
                          m->m_self, m->m_ml->ml_name);
 }
 
@@ -217,14 +221,13 @@ meth_get__qualname__(PyCFunctionObject *m, void *closure)
        Otherwise return type(m.__self__).__qualname__ + '.' + m.__name__
        (e.g. [].append.__qualname__ == 'list.append') */
     PyObject *type, *type_qualname, *res;
-    _Py_IDENTIFIER(__qualname__);
 
     if (m->m_self == NULL || PyModule_Check(m->m_self))
         return PyUnicode_FromString(m->m_ml->ml_name);
 
     type = PyType_Check(m->m_self) ? m->m_self : (PyObject*)Py_TYPE(m->m_self);
 
-    type_qualname = _PyObject_GetAttrId(type, &PyId___qualname__);
+    type_qualname = PyObject_GetAttr(type, &_Py_ID(__qualname__));
     if (type_qualname == NULL)
         return NULL;
 
@@ -243,9 +246,9 @@ meth_get__qualname__(PyCFunctionObject *m, void *closure)
 static int
 meth_traverse(PyCFunctionObject *m, visitproc visit, void *arg)
 {
+    Py_VISIT(PyCFunction_GET_CLASS(m));
     Py_VISIT(m->m_self);
     Py_VISIT(m->m_module);
-    Py_VISIT(PyCFunction_GET_CLASS(m));
     return 0;
 }
 
@@ -480,7 +483,8 @@ cfunction_vectorcall_NOARGS(
     if (meth == NULL) {
         return NULL;
     }
-    PyObject *result = meth(PyCFunction_GET_SELF(func), NULL);
+    PyObject *result = _PyCFunction_TrampolineCall(
+        meth, PyCFunction_GET_SELF(func), NULL);
     _Py_LeaveRecursiveCall(tstate);
     return result;
 }
@@ -507,7 +511,8 @@ cfunction_vectorcall_O(
     if (meth == NULL) {
         return NULL;
     }
-    PyObject *result = meth(PyCFunction_GET_SELF(func), args[0]);
+    PyObject *result = _PyCFunction_TrampolineCall(
+        meth, PyCFunction_GET_SELF(func), args[0]);
     _Py_LeaveRecursiveCall(tstate);
     return result;
 }
@@ -534,7 +539,9 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
 
     PyObject *result;
     if (flags & METH_KEYWORDS) {
-        result = (*(PyCFunctionWithKeywords)(void(*)(void))meth)(self, args, kwargs);
+        result = _PyCFunctionWithKeywords_TrampolineCall(
+            (*(PyCFunctionWithKeywords)(void(*)(void))meth),
+            self, args, kwargs);
     }
     else {
         if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
@@ -543,7 +550,15 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
                           ((PyCFunctionObject*)func)->m_ml->ml_name);
             return NULL;
         }
-        result = meth(self, args);
+        result = _PyCFunction_TrampolineCall(meth, self, args);
     }
     return _Py_CheckFunctionResult(tstate, func, result, NULL);
 }
+
+#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+#include <emscripten.h>
+
+EM_JS(PyObject*, _PyCFunctionWithKeywords_TrampolineCall, (PyCFunctionWithKeywords func, PyObject *self, PyObject *args, PyObject *kw), {
+    return wasmTable.get(func)(self, args, kw);
+});
+#endif

@@ -6,9 +6,15 @@ annotated by François Pinard, and converted to C by Raymond Hettinger.
 
 */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
+#include "pycore_list.h"          // _PyList_ITEMS()
 
 #include "clinic/_heapqmodule.c.h"
+
 
 /*[clinic input]
 module _heapq

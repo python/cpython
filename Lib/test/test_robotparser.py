@@ -5,6 +5,7 @@ import unittest
 import urllib.robotparser
 from test import support
 from test.support import socket_helper
+from test.support import threading_helper
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
@@ -307,6 +308,9 @@ class RobotHandler(BaseHTTPRequestHandler):
         pass
 
 
+@unittest.skipIf(
+    support.is_emscripten, "Socket server not available on Emscripten."
+)
 class PasswordProtectedSiteTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -330,7 +334,7 @@ class PasswordProtectedSiteTestCase(unittest.TestCase):
         self.t.join()
         self.server.server_close()
 
-    @support.reap_threads
+    @threading_helper.reap_threads
     def testPasswordProtectedSite(self):
         addr = self.server.server_address
         url = 'http://' + socket_helper.HOST + ':' + str(addr[1])

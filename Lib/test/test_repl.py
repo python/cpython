@@ -5,8 +5,13 @@ import os
 import unittest
 import subprocess
 from textwrap import dedent
-from test.support import cpython_only, SuppressCrashReport
+from test.support import cpython_only, has_subprocess_support, SuppressCrashReport
 from test.support.script_helper import kill_python
+
+
+if not has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
+
 
 def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     """Run the Python REPL with the given arguments.
@@ -29,10 +34,27 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     # test.support.script_helper.
     env = kw.setdefault('env', dict(os.environ))
     env['TERM'] = 'vt100'
-    return subprocess.Popen(cmd_line, executable=sys.executable,
+    return subprocess.Popen(cmd_line,
+                            executable=sys.executable,
+                            text=True,
                             stdin=subprocess.PIPE,
                             stdout=stdout, stderr=stderr,
                             **kw)
+
+def run_on_interactive_mode(source):
+    """Spawn a new Python interpreter, pass the given
+    input source code from the stdin and return the
+    result back. If the interpreter exits non-zero, it
+    raises a ValueError."""
+
+    process = spawn_repl()
+    process.stdin.write(source)
+    output = kill_python(process)
+
+    if process.returncode != 0:
+        raise ValueError("Process didn't exit properly.")
+    return output
+
 
 class TestInteractiveInterpreter(unittest.TestCase):
 
@@ -49,12 +71,11 @@ class TestInteractiveInterpreter(unittest.TestCase):
             sys.exit(0)
         """
         user_input = dedent(user_input)
-        user_input = user_input.encode()
         p = spawn_repl()
         with SuppressCrashReport():
             p.stdin.write(user_input)
         output = kill_python(p)
-        self.assertIn(b'After the exception.', output)
+        self.assertIn('After the exception.', output)
         # Exit code 120: Py_FinalizeEx() failed to flush stdout and stderr.
         self.assertIn(p.returncode, (1, 120))
 
@@ -86,12 +107,43 @@ class TestInteractiveInterpreter(unittest.TestCase):
         </test>"""
         '''
         user_input = dedent(user_input)
-        user_input = user_input.encode()
         p = spawn_repl()
-        with SuppressCrashReport():
-            p.stdin.write(user_input)
+        p.stdin.write(user_input)
         output = kill_python(p)
         self.assertEqual(p.returncode, 0)
+
+    def test_close_stdin(self):
+        user_input = dedent('''
+            import os
+            print("before close")
+            os.close(0)
+        ''')
+        prepare_repl = dedent('''
+            from test.support import suppress_msvcrt_asserts
+            suppress_msvcrt_asserts()
+        ''')
+        process = spawn_repl('-c', prepare_repl)
+        output = process.communicate(user_input)[0]
+        self.assertEqual(process.returncode, 0)
+        self.assertIn('before close', output)
+
+
+class TestInteractiveModeSyntaxErrors(unittest.TestCase):
+
+    def test_interactive_syntax_error_correct_line(self):
+        output = run_on_interactive_mode(dedent("""\
+        def f():
+            print(0)
+            return yield 42
+        """))
+
+        traceback_lines = output.splitlines()[-4:-1]
+        expected_lines = [
+            '    return yield 42',
+            '           ^^^^^',
+            'SyntaxError: invalid syntax'
+        ]
+        self.assertEqual(traceback_lines, expected_lines)
 
 
 if __name__ == "__main__":

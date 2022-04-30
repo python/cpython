@@ -1,8 +1,10 @@
-from enum import IntEnum
+from enum import IntEnum, _simple_enum
 
 __all__ = ['HTTPStatus']
 
-class HTTPStatus(IntEnum):
+
+@_simple_enum(IntEnum)
+class HTTPStatus:
     """HTTP status codes and reason phrases
 
     Status codes from the following RFCs are all observed:

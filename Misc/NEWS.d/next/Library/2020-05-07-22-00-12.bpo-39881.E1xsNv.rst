@@ -1,2 +1,0 @@
-PEP 554 for use in the test suite.
-(Patch By Joannah Nanjekye)

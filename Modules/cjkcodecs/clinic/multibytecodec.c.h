@@ -171,11 +171,6 @@ _multibytecodec_MultibyteIncrementalEncoder_encode(MultibyteIncrementalEncoderOb
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     final = _PyLong_AsInt(args[1]);
     if (final == -1 && PyErr_Occurred()) {
         goto exit;
@@ -287,11 +282,6 @@ _multibytecodec_MultibyteIncrementalDecoder_decode(MultibyteIncrementalDecoderOb
     }
     if (!noptargs) {
         goto skip_optional_pos;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     final = _PyLong_AsInt(args[1]);
     if (final == -1 && PyErr_Occurred()) {
@@ -491,7 +481,32 @@ PyDoc_STRVAR(_multibytecodec_MultibyteStreamWriter_write__doc__,
 "\n");
 
 #define _MULTIBYTECODEC_MULTIBYTESTREAMWRITER_WRITE_METHODDEF    \
-    {"write", (PyCFunction)_multibytecodec_MultibyteStreamWriter_write, METH_O, _multibytecodec_MultibyteStreamWriter_write__doc__},
+    {"write", (PyCFunction)(void(*)(void))_multibytecodec_MultibyteStreamWriter_write, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _multibytecodec_MultibyteStreamWriter_write__doc__},
+
+static PyObject *
+_multibytecodec_MultibyteStreamWriter_write_impl(MultibyteStreamWriterObject *self,
+                                                 PyTypeObject *cls,
+                                                 PyObject *strobj);
+
+static PyObject *
+_multibytecodec_MultibyteStreamWriter_write(MultibyteStreamWriterObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "write", 0};
+    PyObject *argsbuf[1];
+    PyObject *strobj;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    strobj = args[0];
+    return_value = _multibytecodec_MultibyteStreamWriter_write_impl(self, cls, strobj);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_multibytecodec_MultibyteStreamWriter_writelines__doc__,
 "writelines($self, lines, /)\n"
@@ -499,7 +514,32 @@ PyDoc_STRVAR(_multibytecodec_MultibyteStreamWriter_writelines__doc__,
 "\n");
 
 #define _MULTIBYTECODEC_MULTIBYTESTREAMWRITER_WRITELINES_METHODDEF    \
-    {"writelines", (PyCFunction)_multibytecodec_MultibyteStreamWriter_writelines, METH_O, _multibytecodec_MultibyteStreamWriter_writelines__doc__},
+    {"writelines", (PyCFunction)(void(*)(void))_multibytecodec_MultibyteStreamWriter_writelines, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _multibytecodec_MultibyteStreamWriter_writelines__doc__},
+
+static PyObject *
+_multibytecodec_MultibyteStreamWriter_writelines_impl(MultibyteStreamWriterObject *self,
+                                                      PyTypeObject *cls,
+                                                      PyObject *lines);
+
+static PyObject *
+_multibytecodec_MultibyteStreamWriter_writelines(MultibyteStreamWriterObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "writelines", 0};
+    PyObject *argsbuf[1];
+    PyObject *lines;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    lines = args[0];
+    return_value = _multibytecodec_MultibyteStreamWriter_writelines_impl(self, cls, lines);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_multibytecodec_MultibyteStreamWriter_reset__doc__,
 "reset($self, /)\n"
@@ -507,15 +547,20 @@ PyDoc_STRVAR(_multibytecodec_MultibyteStreamWriter_reset__doc__,
 "\n");
 
 #define _MULTIBYTECODEC_MULTIBYTESTREAMWRITER_RESET_METHODDEF    \
-    {"reset", (PyCFunction)_multibytecodec_MultibyteStreamWriter_reset, METH_NOARGS, _multibytecodec_MultibyteStreamWriter_reset__doc__},
+    {"reset", (PyCFunction)(void(*)(void))_multibytecodec_MultibyteStreamWriter_reset, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _multibytecodec_MultibyteStreamWriter_reset__doc__},
 
 static PyObject *
-_multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *self);
+_multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *self,
+                                                 PyTypeObject *cls);
 
 static PyObject *
-_multibytecodec_MultibyteStreamWriter_reset(MultibyteStreamWriterObject *self, PyObject *Py_UNUSED(ignored))
+_multibytecodec_MultibyteStreamWriter_reset(MultibyteStreamWriterObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _multibytecodec_MultibyteStreamWriter_reset_impl(self);
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "reset() takes no arguments");
+        return NULL;
+    }
+    return _multibytecodec_MultibyteStreamWriter_reset_impl(self, cls);
 }
 
 PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
@@ -525,4 +570,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=5ce6fd4ca1f95620 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0ee00c9f6883afe9 input=a9049054013a1b77]*/
