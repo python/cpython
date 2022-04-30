@@ -1332,16 +1332,16 @@ class TypeVarTuplePicklingTests(BaseTestCase):
 
     @all_pickle_protocols
     def test_pickling_then_unpickling_results_in_same_identity(self, proto):
-        global Ts1  # See explanation at start of class.
-        Ts1 = TypeVarTuple('Ts1')
-        Ts2 = pickle.loads(pickle.dumps(Ts1, proto))
-        self.assertIs(Ts1, Ts2)
+        global global_Ts1  # See explanation at start of class.
+        global_Ts1 = TypeVarTuple('global_Ts1')
+        global_Ts2 = pickle.loads(pickle.dumps(global_Ts1, proto))
+        self.assertIs(global_Ts1, global_Ts2)
 
     @all_pickle_protocols
     def test_pickling_then_unpickling_unpacked_results_in_same_identity(self, proto):
-        global Ts  # See explanation at start of class.
-        Ts = TypeVarTuple('Ts')
-        unpacked1 = Unpack[Ts]
+        global global_Ts  # See explanation at start of class.
+        global_Ts = TypeVarTuple('global_Ts')
+        unpacked1 = Unpack[global_Ts]
         unpacked2 = pickle.loads(pickle.dumps(unpacked1, proto))
         self.assertIs(unpacked1, unpacked2)
 
@@ -1349,19 +1349,19 @@ class TypeVarTuplePicklingTests(BaseTestCase):
     def test_pickling_then_unpickling_tuple_with_typevartuple_equality(
             self, proto
     ):
-        global T, Ts  # See explanation at start of class.
-        T = TypeVar('T')
-        Ts = TypeVarTuple('Ts')
+        global global_T, global_Ts  # See explanation at start of class.
+        global_T = TypeVar('global_T')
+        global_Ts = TypeVarTuple('global_Ts')
 
-        a1 = Tuple[Unpack[Ts]]
+        a1 = Tuple[Unpack[global_Ts]]
         a2 = pickle.loads(pickle.dumps(a1, proto))
         self.assertEqual(a1, a2)
 
-        a1 = Tuple[T, Unpack[Ts]]
+        a1 = Tuple[T, Unpack[global_Ts]]
         a2 = pickle.loads(pickle.dumps(a1, proto))
         self.assertEqual(a1, a2)
 
-        a1 = Tuple[int, Unpack[Ts]]
+        a1 = Tuple[int, Unpack[global_Ts]]
         a2 = pickle.loads(pickle.dumps(a1, proto))
         self.assertEqual(a1, a2)
 
