@@ -297,6 +297,38 @@ See :pep:`675` for more details.
 (Contributed by Jelle Zijlstra in :issue:`47088`. PEP written by Pradeep
 Kumar Srinivasan and Graham Bleaney.)
 
+PEP 681: Data Class Transforms
+------------------------------
+
+The new :data:`~typing.dataclass_transform` annotation may be used to
+decorate a function that is itself a decorator, a class, or a metaclass.
+The presence of ``@dataclass_transform()`` tells a static type checker that the
+decorated function, class, or metaclass performs runtime "magic" that
+transforms a class, endowing it with dataclass-like behaviors.
+
+For example::
+
+    # The ``create_model`` decorator is defined by a library.
+    @typing.dataclass_transform()
+    def create_model(cls: Type[_T]) -> Type[_T]:
+        cls.__init__ = ...
+        cls.__eq__ = ...
+        cls.__ne__ = ...
+        return cls
+
+    # The ``create_model`` decorator can now be used to create new model
+    # classes, like this:
+    @create_model
+    class CustomerModel:
+        id: int
+        name: str
+
+    c = CustomerModel(id=327, name="John Smith")
+
+See :pep:`681` for more details.
+
+(Contributed by Jelle Zijlstra in :gh:`91860`. PEP written by
+Erik De Bonte and Eric Traut.)
 
 Other Language Changes
 ======================
@@ -649,6 +681,39 @@ time
   it had a resolution of 1 millisecond (10\ :sup:`-3` seconds).
   (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
 
+typing
+------
+
+For major changes, see :ref:`new-feat-related-type-hints-311`.
+
+* Add :func:`typing.assert_never` and :class:`typing.Never`.
+  :func:`typing.assert_never` is useful for asking a type checker to confirm
+  that a line of code is not reachable. At runtime, it raises an
+  :exc:`AssertionError`.
+  (Contributed by Jelle Zijlstra in :gh:`90633`.)
+
+* Add :func:`typing.reveal_type`. This is useful for asking a type checker
+  what type it has inferred for a given expression. At runtime it prints
+  the type of the received value.
+  (Contributed by Jelle Zijlstra in :gh:`90572`.)
+
+* Add :func:`typing.assert_type`. This is useful for asking a type checker
+  to confirm that the type it has inferred for a given expression matches
+  the given type. At runtime it simply returns the received value.
+  (Contributed by Jelle Zijlstra in :gh:`90638`.)
+
+* Allow subclassing of :class:`typing.Any`. This is useful for avoiding
+  type checker errors related to highly dynamic class, such as mocks.
+  (Contributed by Shantanu Jain in :gh:`91154`.)
+
+* The :func:`typing.final` decorator now sets the ``__final__`` attributed on
+  the decorated object.
+  (Contributed by Jelle Zijlstra in :gh:`90500`.)
+
+* The :func:`typing.get_overloads` function can be used for introspecting
+  the overloads of a function. :func:`typing.clear_overloads` can be used
+  to clear all registered overloads of a function.
+  (Contributed by Jelle Zijlstra in :gh:`89263`.)
 
 unicodedata
 -----------
