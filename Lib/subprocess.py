@@ -43,6 +43,7 @@ getstatusoutput(...): Runs a command in the shell, waits for it to complete,
 import builtins
 import errno
 import io
+import locale
 import os
 import time
 import signal
@@ -344,6 +345,26 @@ def _args_from_interpreter_flags():
     return args
 
 
+def _text_encoding():
+    # Return default text encoding and emit EncodingWarning if
+    # sys.flags.warn_default_encoding is true.
+    if sys.flags.warn_default_encoding:
+        f = sys._getframe()
+        filename = f.f_code.co_filename
+        stacklevel = 2
+        while f := f.f_back:
+            if f.f_code.co_filename != filename:
+                break
+            stacklevel += 1
+        warnings.warn("'encoding' argument not specified.",
+                      EncodingWarning, stacklevel)
+
+    if sys.flags.utf8_mode:
+        return "utf-8"
+    else:
+        return locale.getencoding()
+
+
 def call(*popenargs, timeout=None, **kwargs):
     """Run command with arguments.  Wait for command to complete or
     timeout, then return the returncode attribute.
@@ -610,7 +631,7 @@ def list2cmdline(seq):
 # Various tools for executing commands and looking at their output and status.
 #
 
-def getstatusoutput(cmd):
+def getstatusoutput(cmd, *, encoding=None, errors=None):
     """Return (exitcode, output) of executing cmd in a shell.
 
     Execute the string 'cmd' in a shell with 'check_output' and
@@ -632,7 +653,8 @@ def getstatusoutput(cmd):
     (-15, '')
     """
     try:
-        data = check_output(cmd, shell=True, text=True, stderr=STDOUT)
+        data = check_output(cmd, shell=True, text=True, stderr=STDOUT,
+                            encoding=encoding, errors=errors)
         exitcode = 0
     except CalledProcessError as ex:
         data = ex.output
@@ -641,7 +663,7 @@ def getstatusoutput(cmd):
         data = data[:-1]
     return exitcode, data
 
-def getoutput(cmd):
+def getoutput(cmd, *, encoding=None, errors=None):
     """Return output (stdout or stderr) of executing cmd in a shell.
 
     Like getstatusoutput(), except the exit status is ignored and the return
@@ -651,7 +673,8 @@ def getoutput(cmd):
     >>> subprocess.getoutput('ls /bin/ls')
     '/bin/ls'
     """
-    return getstatusoutput(cmd)[1]
+    return getstatusoutput(cmd, encoding=encoding, errors=errors)[1]
+
 
 
 def _use_posix_spawn():
@@ -858,13 +881,8 @@ class Popen:
                 errread = msvcrt.open_osfhandle(errread.Detach(), 0)
 
         self.text_mode = encoding or errors or text or universal_newlines
-
-        # PEP 597: We suppress the EncodingWarning in subprocess module
-        # for now (at Python 3.10), because we focus on files for now.
-        # This will be changed to encoding = io.text_encoding(encoding)
-        # in the future.
         if self.text_mode and encoding is None:
-            self.encoding = encoding = "locale"
+            self.encoding = encoding = _text_encoding()
 
         # How long to resume waiting on a child after the first ^C.
         # There is no right value for this.  The purpose is to be polite

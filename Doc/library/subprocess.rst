@@ -619,7 +619,7 @@ functions.
 
    If *encoding* or *errors* are specified, or *text* is true, the file objects
    *stdin*, *stdout* and *stderr* are opened in text mode with the specified
-   encoding and *errors*, as described above in :ref:`frequently-used-arguments`.
+   *encoding* and *errors*, as described above in :ref:`frequently-used-arguments`.
    The *universal_newlines* argument is equivalent  to *text* and is provided
    for backwards compatibility. By default, file objects are opened in binary mode.
 
@@ -1445,12 +1445,13 @@ This module also provides the following legacy functions from the 2.x
 none of the guarantees described above regarding security and exception
 handling consistency are valid for these functions.
 
-.. function:: getstatusoutput(cmd)
+.. function:: getstatusoutput(cmd, *, encoding=None, errors=None)
 
    Return ``(exitcode, output)`` of executing *cmd* in a shell.
 
    Execute the string *cmd* in a shell with :meth:`Popen.check_output` and
-   return a 2-tuple ``(exitcode, output)``. The locale encoding is used;
+   return a 2-tuple ``(exitcode, output)``.
+   *encoding* and *errors* are used to decode output;
    see the notes on :ref:`frequently-used-arguments` for more details.
 
    A trailing newline is stripped from the output.
@@ -1475,8 +1476,10 @@ handling consistency are valid for these functions.
       as it did in Python 3.3.3 and earlier.  exitcode has the same value as
       :attr:`~Popen.returncode`.
 
+   .. versionadded:: 3.11
+      Added *encoding* and *errors* arguments.
 
-.. function:: getoutput(cmd)
+.. function:: getoutput(cmd, *, encoding=None, errors=None)
 
    Return output (stdout and stderr) of executing *cmd* in a shell.
 
@@ -1490,6 +1493,9 @@ handling consistency are valid for these functions.
 
    .. versionchanged:: 3.3.4
       Windows support added
+
+   .. versionadded:: 3.11
+      Added *encoding* and *errors* arguments.
 
 
 Notes
