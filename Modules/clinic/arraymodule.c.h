@@ -155,13 +155,15 @@ array_array_extend(arrayobject *self, PyTypeObject *cls, PyObject *const *args, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"O:extend", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "extend", 0};
+    PyObject *argsbuf[1];
     PyObject *bb;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &bb)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    bb = args[0];
     return_value = array_array_extend_impl(self, cls, bb);
 
 exit:
@@ -572,4 +574,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=f130a994f98f1227 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eb727e087d64f017 input=a9049054013a1b77]*/
