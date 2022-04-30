@@ -4733,16 +4733,24 @@ order (MRO) for bases """
         thing = Thing()
         for i in range(20):
             with self.assertRaises(TypeError):
+                # PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS
                 list.sort(thing)
         for i in range(20):
             with self.assertRaises(TypeError):
+                # PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS
                 str.split(thing)
         for i in range(20):
             with self.assertRaises(TypeError):
+                # PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS
                 str.upper(thing)
+        for i in range(20):
+            with self.assertRaises(TypeError):
+                # PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST
+                str.strip(thing)
         from collections import deque
         for i in range(20):
             with self.assertRaises(TypeError):
+                # PRECALL_NO_KW_METHOD_DESCRIPTOR_O
                 deque.append(thing, thing)
 
     def test_repr_as_str(self):
