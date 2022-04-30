@@ -1,2 +1,0 @@
-Add ``__parameters__`` attribute and ``__getitem__``
-operator to ``types.Union``. Patch provided by Yurii Karabas.

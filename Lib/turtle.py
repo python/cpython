@@ -110,6 +110,7 @@ import math
 import time
 import inspect
 import sys
+import warnings
 
 from os.path import isfile, split, join
 from copy import deepcopy
@@ -2850,20 +2851,23 @@ class RawTurtle(TPen, TNavigator):
         regardless of its current tilt-angle. DO NOT change the turtle's
         heading (direction of movement).
 
+        Deprecated since Python 3.1
 
         Examples (for a Turtle instance named turtle):
         >>> turtle.shape("circle")
         >>> turtle.shapesize(5,2)
         >>> turtle.settiltangle(45)
-        >>> stamp()
+        >>> turtle.stamp()
         >>> turtle.fd(50)
         >>> turtle.settiltangle(-45)
-        >>> stamp()
+        >>> turtle.stamp()
         >>> turtle.fd(50)
         """
-        tilt = -angle * self._degreesPerAU * self._angleOrient
-        tilt = math.radians(tilt) % math.tau
-        self.pen(resizemode="user", tilt=tilt)
+        warnings.warn("turtle.RawTurtle.settiltangle() is deprecated since "
+                      "Python 3.1 and scheduled for removal in Python 3.13."
+                      "Use tiltangle() instead.",
+                       DeprecationWarning)
+        self.tiltangle(angle)
 
     def tiltangle(self, angle=None):
         """Set or return the current tilt-angle.
@@ -2877,19 +2881,32 @@ class RawTurtle(TPen, TNavigator):
         between the orientation of the turtleshape and the heading of the
         turtle (its direction of movement).
 
-        Deprecated since Python 3.1
+        (Incorrectly marked as deprecated since Python 3.1, it is really
+        settiltangle that is deprecated.)
 
         Examples (for a Turtle instance named turtle):
         >>> turtle.shape("circle")
-        >>> turtle.shapesize(5,2)
-        >>> turtle.tilt(45)
+        >>> turtle.shapesize(5, 2)
         >>> turtle.tiltangle()
+        0.0
+        >>> turtle.tiltangle(45)
+        >>> turtle.tiltangle()
+        45.0
+        >>> turtle.stamp()
+        >>> turtle.fd(50)
+        >>> turtle.tiltangle(-45)
+        >>> turtle.tiltangle()
+        315.0
+        >>> turtle.stamp()
+        >>> turtle.fd(50)
         """
         if angle is None:
             tilt = -math.degrees(self._tilt) * self._angleOrient
             return (tilt / self._degreesPerAU) % self._fullcircle
         else:
-            self.settiltangle(angle)
+            tilt = -angle * self._degreesPerAU * self._angleOrient
+            tilt = math.radians(tilt) % math.tau
+            self.pen(resizemode="user", tilt=tilt)
 
     def tilt(self, angle):
         """Rotate the turtleshape by angle.
@@ -2908,7 +2925,7 @@ class RawTurtle(TPen, TNavigator):
         >>> turtle.tilt(30)
         >>> turtle.fd(50)
         """
-        self.settiltangle(angle + self.tiltangle())
+        self.tiltangle(angle + self.tiltangle())
 
     def shapetransform(self, t11=None, t12=None, t21=None, t22=None):
         """Set or return the current transformation matrix of the turtle shape.

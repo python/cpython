@@ -836,6 +836,27 @@ ago?  ``-190 % 12 == 2`` is useful; ``-190 % 12 == -10`` is a bug waiting to
 bite.
 
 
+How do I get int literal attribute instead of SyntaxError?
+----------------------------------------------------------
+
+Trying to lookup an ``int`` literal attribute in the normal manner gives
+a syntax error because the period is seen as a decimal point::
+
+   >>> 1.__class__
+     File "<stdin>", line 1
+     1.__class__
+      ^
+   SyntaxError: invalid decimal literal
+
+The solution is to separate the literal from the period
+with either a space or parentheses.
+
+   >>> 1 .__class__
+   <class 'int'>
+   >>> (1).__class__
+   <class 'int'>
+
+
 How do I convert a string to a number?
 --------------------------------------
 
@@ -1798,7 +1819,7 @@ for ``None``.  This reads like plain English in code and avoids confusion with
 other objects that may have boolean values that evaluate to false.
 
 2) Detecting optional arguments can be tricky when ``None`` is a valid input
-value.  In those situations, you can create an singleton sentinel object
+value.  In those situations, you can create a singleton sentinel object
 guaranteed to be distinct from other objects.  For example, here is how
 to implement a method that behaves like :meth:`dict.pop`::
 
@@ -1826,6 +1847,55 @@ For example, here is the implementation of
                 return True
         return False
 
+
+How can a subclass control what data is stored in an immutable instance?
+------------------------------------------------------------------------
+
+When subclassing an immutable type, override the :meth:`__new__` method
+instead of the :meth:`__init__` method.  The latter only runs *after* an
+instance is created, which is too late to alter data in an immutable
+instance.
+
+All of these immutable classes have a different signature than their
+parent class:
+
+.. testcode::
+
+    from datetime import date
+
+    class FirstOfMonthDate(date):
+        "Always choose the first day of the month"
+        def __new__(cls, year, month, day):
+            return super().__new__(cls, year, month, 1)
+
+    class NamedInt(int):
+        "Allow text names for some numbers"
+        xlat = {'zero': 0, 'one': 1, 'ten': 10}
+        def __new__(cls, value):
+            value = cls.xlat.get(value, value)
+            return super().__new__(cls, value)
+
+    class TitleStr(str):
+        "Convert str to name suitable for a URL path"
+        def __new__(cls, s):
+            s = s.lower().replace(' ', '-')
+            s = ''.join([c for c in s if c.isalnum() or c == '-'])
+            return super().__new__(cls, s)
+
+The classes can be used like this:
+
+.. doctest::
+
+    >>> FirstOfMonthDate(2012, 2, 14)
+    FirstOfMonthDate(2012, 2, 1)
+    >>> NamedInt('ten')
+    10
+    >>> NamedInt(20)
+    20
+    >>> TitleStr('Blog: Why Python Rocks')
+    'blog-why-python-rocks'
+
+
 How do I cache method calls?
 ----------------------------
 
@@ -1838,7 +1908,7 @@ The *cached_property* approach only works with methods that do not take
 any arguments.  It does not create a reference to the instance.  The
 cached method result will be kept only as long as the instance is alive.
 
-The advantage is that when an instance is not longer used, the cached
+The advantage is that when an instance is no longer used, the cached
 method result will be released right away.  The disadvantage is that if
 instances accumulate, so too will the accumulated method results.  They
 can grow without bound.
@@ -1881,9 +1951,9 @@ relevant instance attributes are mutable, the *cached_property* approach
 can't be made to work because it cannot detect changes to the
 attributes.
 
-The *lru_cache* approach can be made to work, but the class needs to define the
-*__eq__* and *__hash__* methods so the cache can detect relevant attribute
-updates::
+To make the *lru_cache* approach work when the *station_id* is mutable,
+the class needs to define the *__eq__* and *__hash__* methods so that
+the cache can detect relevant attribute updates::
 
     class Weather:
         "Example with a mutable station identifier"
@@ -2022,7 +2092,7 @@ Jim Roskind suggests performing steps in the following order in each module:
 * ``import`` statements
 * active code (including globals that are initialized from imported values).
 
-van Rossum doesn't like this approach much because the imports appear in a
+Van Rossum doesn't like this approach much because the imports appear in a
 strange place, but it does work.
 
 Matthias Urlichs recommends restructuring your code so that the recursive import

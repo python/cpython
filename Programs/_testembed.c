@@ -1,6 +1,7 @@
 #ifndef Py_BUILD_CORE_MODULE
 #  define Py_BUILD_CORE_MODULE
 #endif
+#define NEEDS_PY_IDENTIFIER
 
 /* Always enable assertion (even in release mode) */
 #undef NDEBUG
@@ -8,10 +9,15 @@
 #include <Python.h>
 #include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_import.h"        // _PyImport_FrozenBootstrap
 #include <Python.h>
 #include <inttypes.h>
 #include <stdio.h>
+#include <stdlib.h>               // putenv()
 #include <wchar.h>
+
+int main_argc;
+char **main_argv;
 
 /*********************************************************
  * Embedded interpreter tests that need a custom exe
@@ -19,10 +25,13 @@
  * Executed via 'EmbeddingTests' in Lib/test/test_capi.py
  *********************************************************/
 
+// Use to display the usage
+#define PROGRAM "test_embed"
+
 /* Use path starting with "./" avoids a search along the PATH */
 #define PROGRAM_NAME L"./_testembed"
 
-#define INIT_LOOPS 16
+#define INIT_LOOPS 4
 
 // Ignore Py_DEPRECATED() compiler warnings: deprecated functions are
 // tested on purpose here.
@@ -37,10 +46,39 @@ static void error(const char *msg)
 }
 
 
+static void config_set_string(PyConfig *config, wchar_t **config_str, const wchar_t *str)
+{
+    PyStatus status = PyConfig_SetString(config, config_str, str);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(config);
+        Py_ExitStatusException(status);
+    }
+}
+
+
+static void config_set_program_name(PyConfig *config)
+{
+    const wchar_t *program_name = PROGRAM_NAME;
+    config_set_string(config, &config->program_name, program_name);
+}
+
+
+static void init_from_config_clear(PyConfig *config)
+{
+    PyStatus status = Py_InitializeFromConfig(config);
+    PyConfig_Clear(config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+}
+
+
 static void _testembed_Py_Initialize(void)
 {
-    Py_SetProgramName(PROGRAM_NAME);
-    Py_Initialize();
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
+    config_set_program_name(&config);
+    init_from_config_clear(&config);
 }
 
 
@@ -110,6 +148,36 @@ PyInit_embedded_ext(void)
 {
     return PyModule_Create(&embedded_ext);
 }
+
+/****************************************************************************
+ * Call Py_Initialize()/Py_Finalize() multiple times and execute Python code
+ ***************************************************************************/
+
+// Used by bpo-46417 to test that structseq types used by the sys module are
+// cleared properly and initialized again properly when Python is finalized
+// multiple times.
+static int test_repeated_init_exec(void)
+{
+    if (main_argc < 3) {
+        fprintf(stderr, "usage: %s test_repeated_init_exec CODE\n", PROGRAM);
+        exit(1);
+    }
+    const char *code = main_argv[2];
+
+    for (int i=1; i <= INIT_LOOPS; i++) {
+        fprintf(stderr, "--- Loop #%d ---\n", i);
+        fflush(stderr);
+
+        _testembed_Py_Initialize();
+        int err = PyRun_SimpleString(code);
+        Py_Finalize();
+        if (err) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 
 /*****************************************************
  * Test forcing a particular IO encoding
@@ -211,7 +279,7 @@ static int test_pre_initialization_sys_options(void)
      * relying on the caller to keep the passed in strings alive.
      */
     const wchar_t *static_warnoption = L"once";
-    const wchar_t *static_xoption = L"also_not_an_option=2";
+    const wchar_t *static_xoption = L"utf8=1";
     size_t warnoption_len = wcslen(static_warnoption);
     size_t xoption_len = wcslen(static_xoption);
     wchar_t *dynamic_once_warnoption = \
@@ -230,7 +298,7 @@ static int test_pre_initialization_sys_options(void)
     PySys_AddWarnOption(L"module");
     PySys_AddWarnOption(L"default");
     _Py_EMBED_PREINIT_CHECK("Checking PySys_AddXOption\n");
-    PySys_AddXOption(L"not_an_option=1");
+    PySys_AddXOption(L"dev=2");
     PySys_AddXOption(dynamic_xoption);
 
     /* Delete the dynamic options early */
@@ -353,16 +421,6 @@ static int test_init_initialize_config(void)
 }
 
 
-static void config_set_string(PyConfig *config, wchar_t **config_str, const wchar_t *str)
-{
-    PyStatus status = PyConfig_SetString(config, config_str, str);
-    if (PyStatus_Exception(status)) {
-        PyConfig_Clear(config);
-        Py_ExitStatusException(status);
-    }
-}
-
-
 static void config_set_argv(PyConfig *config, Py_ssize_t argc, wchar_t * const *argv)
 {
     PyStatus status = PyConfig_SetArgv(config, argc, argv);
@@ -380,23 +438,6 @@ config_set_wide_string_list(PyConfig *config, PyWideStringList *list,
     PyStatus status = PyConfig_SetWideStringList(config, list, length, items);
     if (PyStatus_Exception(status)) {
         PyConfig_Clear(config);
-        Py_ExitStatusException(status);
-    }
-}
-
-
-static void config_set_program_name(PyConfig *config)
-{
-    const wchar_t *program_name = PROGRAM_NAME;
-    config_set_string(config, &config->program_name, program_name);
-}
-
-
-static void init_from_config_clear(PyConfig *config)
-{
-    PyStatus status = Py_InitializeFromConfig(config);
-    PyConfig_Clear(config);
-    if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
 }
@@ -529,7 +570,7 @@ static int test_init_from_config(void)
     config.import_time = 1;
 
     putenv("PYTHONNODEBUGRANGES=0");
-    config.no_debug_ranges = 1;
+    config.code_debug_ranges = 0;
 
     config.show_ref_count = 1;
     /* FIXME: test dump_refs: bpo-34223 */
@@ -548,7 +589,7 @@ static int test_init_from_config(void)
         L"-W",
         L"cmdline_warnoption",
         L"-X",
-        L"cmdline_xoption",
+        L"dev",
         L"-c",
         L"pass",
         L"arg2",
@@ -556,10 +597,9 @@ static int test_init_from_config(void)
     config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
     config.parse_argv = 1;
 
-    wchar_t* xoptions[3] = {
-        L"config_xoption1=3",
-        L"config_xoption2=",
-        L"config_xoption3",
+    wchar_t* xoptions[2] = {
+        L"dev=3",
+        L"utf8",
     };
     config_set_wide_string_list(&config, &config.xoptions,
                                 Py_ARRAY_LENGTH(xoptions), xoptions);
@@ -1375,7 +1415,6 @@ fail:
 
 static int test_init_sys_add(void)
 {
-    PySys_AddXOption(L"sysadd_xoption");
     PySys_AddXOption(L"faulthandler");
     PySys_AddWarnOption(L"ignore:::sysadd_warnoption");
 
@@ -1387,14 +1426,14 @@ static int test_init_sys_add(void)
         L"-W",
         L"ignore:::cmdline_warnoption",
         L"-X",
-        L"cmdline_xoption",
+        L"utf8",
     };
     config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
     config.parse_argv = 1;
 
     PyStatus status;
     status = PyWideStringList_Append(&config.xoptions,
-                                     L"config_xoption");
+                                     L"dev");
     if (PyStatus_Exception(status)) {
         goto fail;
     }
@@ -1676,15 +1715,26 @@ static int test_run_main(void)
 }
 
 
+static int test_run_main_loop(void)
+{
+    // bpo-40413: Calling Py_InitializeFromConfig()+Py_RunMain() multiple
+    // times must not crash.
+    for (int i=0; i<5; i++) {
+        int exitcode = test_run_main();
+        if (exitcode != 0) {
+            return exitcode;
+        }
+    }
+    return 0;
+}
+
+
 static int test_get_argc_argv(void)
 {
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
 
-    wchar_t *argv[] = {L"python3", L"-c",
-                       (L"import sys; "
-                        L"print(f'Py_RunMain(): sys.argv={sys.argv}')"),
-                       L"arg2"};
+    wchar_t *argv[] = {L"python3", L"-c", L"pass", L"arg2"};
     config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
     config_set_string(&config, &config.program_name, L"./python3");
 
@@ -1713,6 +1763,50 @@ static int test_get_argc_argv(void)
     printf("\n");
     printf("test ok\n");
     return 0;
+}
+
+
+static int check_use_frozen_modules(const char *rawval)
+{
+    wchar_t optval[100];
+    if (rawval == NULL) {
+        wcscpy(optval, L"frozen_modules");
+    }
+    else if (swprintf(optval, 100,
+#if defined(_MSC_VER)
+        L"frozen_modules=%S",
+#else
+        L"frozen_modules=%s",
+#endif
+        rawval) < 0) {
+        error("rawval is too long");
+        return -1;
+    }
+
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    config.parse_argv = 1;
+
+    wchar_t* argv[] = {
+        L"./argv0",
+        L"-X",
+        optval,
+        L"-c",
+        L"pass",
+    };
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+static int test_init_use_frozen_modules(void)
+{
+    const char *envvar = getenv("TESTFROZEN");
+    return check_use_frozen_modules(envvar);
 }
 
 
@@ -1756,30 +1850,10 @@ static int test_unicode_id_init(void)
 
 static int test_frozenmain(void)
 {
-    // Get "_frozen_importlib" and "_frozen_importlib_external"
-    // from PyImport_FrozenModules
-    const struct _frozen *importlib = NULL, *importlib_external = NULL;
-    for (const struct _frozen *mod = PyImport_FrozenModules; mod->name != NULL; mod++) {
-        if (strcmp(mod->name, "_frozen_importlib") == 0) {
-            importlib = mod;
-        }
-        else if (strcmp(mod->name, "_frozen_importlib_external") == 0) {
-            importlib_external = mod;
-        }
-    }
-    if (importlib == NULL || importlib_external == NULL) {
-        error("cannot find frozen importlib and importlib_external");
-        return 1;
-    }
-
     static struct _frozen frozen_modules[4] = {
-        {0, 0, 0},  // importlib
-        {0, 0, 0},  // importlib_external
         {"__main__", M_test_frozenmain, sizeof(M_test_frozenmain)},
         {0, 0, 0}   // sentinel
     };
-    frozen_modules[0] = *importlib;
-    frozen_modules[1] = *importlib_external;
 
     char* argv[] = {
         "./argv0",
@@ -1791,21 +1865,6 @@ static int test_frozenmain(void)
     return Py_FrozenMain(Py_ARRAY_LENGTH(argv), argv);
 }
 #endif  // !MS_WINDOWS
-
-
-// List frozen modules.
-// Command used by Tools/scripts/generate_stdlib_module_names.py script.
-static int list_frozen(void)
-{
-    const struct _frozen *p;
-    for (p = PyImport_FrozenModules; ; p++) {
-        if (p->name == NULL)
-            break;
-        printf("%s\n", p->name);
-    }
-    return 0;
-}
-
 
 static int test_repeated_init_and_inittab(void)
 {
@@ -1860,6 +1919,7 @@ struct TestCase
 
 static struct TestCase TestCases[] = {
     // Python initialization
+    {"test_repeated_init_exec", test_repeated_init_exec},
     {"test_forced_io_encoding", test_forced_io_encoding},
     {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
     {"test_repeated_init_and_inittab", test_repeated_init_and_inittab},
@@ -1900,7 +1960,9 @@ static struct TestCase TestCases[] = {
     {"test_init_warnoptions", test_init_warnoptions},
     {"test_init_set_config", test_init_set_config},
     {"test_run_main", test_run_main},
+    {"test_run_main_loop", test_run_main_loop},
     {"test_get_argc_argv", test_get_argc_argv},
+    {"test_init_use_frozen_modules", test_init_use_frozen_modules},
 
     // Audit
     {"test_open_code_hook", test_open_code_hook},
@@ -1918,14 +1980,15 @@ static struct TestCase TestCases[] = {
     {"test_frozenmain", test_frozenmain},
 #endif
 
-    // Command
-    {"list_frozen", list_frozen},
     {NULL, NULL}
 };
 
 
 int main(int argc, char *argv[])
 {
+    main_argc = argc;
+    main_argv = argv;
+
     if (argc > 1) {
         for (struct TestCase *tc = TestCases; tc && tc->name; tc++) {
             if (strcmp(argv[1], tc->name) == 0)

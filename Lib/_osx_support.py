@@ -481,7 +481,7 @@ def customize_compiler(_config_vars):
 
     This customization is performed when the first
     extension module build is requested
-    in distutils.sysconfig.customize_compiler).
+    in distutils.sysconfig.customize_compiler.
     """
 
     # Find a compiler to use for extension module builds

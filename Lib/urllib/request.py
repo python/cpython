@@ -11,8 +11,8 @@ option.  The OpenerDirector is a composite object that invokes the
 Handlers needed to open the requested URL.  For example, the
 HTTPHandler performs HTTP GET and POST requests and deals with
 non-error returns.  The HTTPRedirectHandler automatically deals with
-HTTP 301, 302, 303 and 307 redirect errors, and the HTTPDigestAuthHandler
-deals with digest authentication.
+HTTP 301, 302, 303, 307, and 308 redirect errors, and the
+HTTPDigestAuthHandler deals with digest authentication.
 
 urlopen(url, data=None) -- Basic usage is the same as original
 urllib.  pass the url and optionally data to post to an HTTP URL, and
@@ -661,7 +661,7 @@ class HTTPRedirectHandler(BaseHandler):
         but another Handler might.
         """
         m = req.get_method()
-        if (not (code in (301, 302, 303, 307) and m in ("GET", "HEAD")
+        if (not (code in (301, 302, 303, 307, 308) and m in ("GET", "HEAD")
             or code in (301, 302, 303) and m == "POST")):
             raise HTTPError(req.full_url, code, msg, headers, fp)
 
@@ -748,7 +748,7 @@ class HTTPRedirectHandler(BaseHandler):
 
         return self.parent.open(new, timeout=req.timeout)
 
-    http_error_301 = http_error_303 = http_error_307 = http_error_302
+    http_error_301 = http_error_303 = http_error_307 = http_error_308 = http_error_302
 
     inf_msg = "The HTTP server returned a redirect error that would " \
               "lead to an infinite loop.\n" \
@@ -889,10 +889,10 @@ class HTTPPasswordMgr:
             return True
         if base[0] != test[0]:
             return False
-        common = posixpath.commonprefix((base[1], test[1]))
-        if len(common) == len(base[1]):
-            return True
-        return False
+        prefix = base[1]
+        if prefix[-1:] != '/':
+            prefix += '/'
+        return test[1].startswith(prefix)
 
 
 class HTTPPasswordMgrWithDefaultRealm(HTTPPasswordMgr):
@@ -1579,8 +1579,7 @@ class FTPHandler(BaseHandler):
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, req.full_url)
         except ftplib.all_errors as exp:
-            exc = URLError('ftp error: %r' % exp)
-            raise exc.with_traceback(sys.exc_info()[2])
+            raise URLError(f'ftp error: {exp}') from exp
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         return ftpwrapper(user, passwd, host, port, dirs, timeout,
@@ -1791,7 +1790,7 @@ class URLopener:
         except (HTTPError, URLError):
             raise
         except OSError as msg:
-            raise OSError('socket error', msg).with_traceback(sys.exc_info()[2])
+            raise OSError('socket error', msg) from msg
 
     def open_unknown(self, fullurl, data=None):
         """Overridable interface to open unknown URL type."""
@@ -2093,7 +2092,7 @@ class URLopener:
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, "ftp:" + url)
         except ftperrors() as exp:
-            raise URLError('ftp error %r' % exp).with_traceback(sys.exc_info()[2])
+            raise URLError(f'ftp error: {exp}') from exp
 
     def open_data(self, url, data=None):
         """Use "data" URL."""
@@ -2208,6 +2207,13 @@ class FancyURLopener(URLopener):
         """Error 307 -- relocated, but turn POST into error."""
         if data is None:
             return self.http_error_302(url, fp, errcode, errmsg, headers, data)
+        else:
+            return self.http_error_default(url, fp, errcode, errmsg, headers)
+
+    def http_error_308(self, url, fp, errcode, errmsg, headers, data=None):
+        """Error 308 -- relocated, but turn POST into error."""
+        if data is None:
+            return self.http_error_301(url, fp, errcode, errmsg, headers, data)
         else:
             return self.http_error_default(url, fp, errcode, errmsg, headers)
 
@@ -2436,8 +2442,7 @@ class ftpwrapper:
                 conn, retrlen = self.ftp.ntransfercmd(cmd)
             except ftplib.error_perm as reason:
                 if str(reason)[:3] != '550':
-                    raise URLError('ftp error: %r' % reason).with_traceback(
-                        sys.exc_info()[2])
+                    raise URLError(f'ftp error: {reason}') from reason
         if not conn:
             # Set transfer mode to ASCII!
             self.ftp.voidcmd('TYPE A')

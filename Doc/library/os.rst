@@ -105,15 +105,15 @@ of the UTF-8 encoding:
 
 * Use UTF-8 as the :term:`filesystem encoding <filesystem encoding and error
   handler>`.
-* :func:`sys.getfilesystemencoding()` returns ``'UTF-8'``.
-* :func:`locale.getpreferredencoding()` returns ``'UTF-8'`` (the *do_setlocale*
+* :func:`sys.getfilesystemencoding()` returns ``'utf-8'``.
+* :func:`locale.getpreferredencoding()` returns ``'utf-8'`` (the *do_setlocale*
   argument has no effect).
 * :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr` all use
   UTF-8 as their text encoding, with the ``surrogateescape``
   :ref:`error handler <error-handlers>` being enabled for :data:`sys.stdin`
   and :data:`sys.stdout` (:data:`sys.stderr` continues to use
   ``backslashreplace`` as it does in the default locale-aware mode)
-* On Unix, :func:`os.device_encoding` returns ``'UTF-8'``. rather than the
+* On Unix, :func:`os.device_encoding` returns ``'utf-8'`` rather than the
   device encoding.
 
 Note that the standard stream settings in UTF-8 mode can be overridden by
@@ -170,9 +170,10 @@ process and user.
 
 .. data:: environ
 
-   A :term:`mapping` object representing the string environment. For example,
-   ``environ['HOME']`` is the pathname of your home directory (on some platforms),
-   and is equivalent to ``getenv("HOME")`` in C.
+   A :term:`mapping` object where keys and values are strings that represent
+   the process environment.  For example, ``environ['HOME']`` is the pathname
+   of your home directory (on some platforms), and is equivalent to
+   ``getenv("HOME")`` in C.
 
    This mapping is captured the first time the :mod:`os` module is imported,
    typically during Python startup as part of processing :file:`site.py`.  Changes
@@ -209,10 +210,10 @@ process and user.
 
 .. data:: environb
 
-   Bytes version of :data:`environ`: a :term:`mapping` object representing the
-   environment as byte strings. :data:`environ` and :data:`environb` are
-   synchronized (modify :data:`environb` updates :data:`environ`, and vice
-   versa).
+   Bytes version of :data:`environ`: a :term:`mapping` object where both keys
+   and values are :class:`bytes` objects representing the process environment.
+   :data:`environ` and :data:`environb` are synchronized (modifying
+   :data:`environb` updates :data:`environ`, and vice versa).
 
    :data:`environb` is only available if :data:`supports_bytes_environ` is
    ``True``.
@@ -354,7 +355,8 @@ process and user.
 
    Return list of group ids that *user* belongs to. If *group* is not in the
    list, it is included; typically, *group* is specified as the group ID
-   field from the password record for *user*.
+   field from the password record for *user*, because that group ID will
+   otherwise be potentially omitted.
 
    .. availability:: Unix.
 
@@ -1428,6 +1430,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. versionadded:: 3.3
 
+.. data:: SF_NOCACHE
+
+   Parameter to the :func:`sendfile` function, if the implementation supports
+   it. The data won't be cached in the virtual memory and will be freed afterwards.
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.11
+
 
 .. function:: splice(src, dst, count, offset_src=None, offset_dst=None)
 
@@ -2040,7 +2051,8 @@ features:
 
    Create a directory named *path* with numeric mode *mode*.
 
-   If the directory already exists, :exc:`FileExistsError` is raised.
+   If the directory already exists, :exc:`FileExistsError` is raised. If a parent
+   directory in the path does not exist, :exc:`FileNotFoundError` is raised.
 
    .. _mkdir_modebits:
 
@@ -2080,7 +2092,7 @@ features:
    directories you can set the umask before invoking :func:`makedirs`.  The
    file permission bits of existing parent directories are not changed.
 
-   If *exist_ok* is ``False`` (the default), an :exc:`FileExistsError` is
+   If *exist_ok* is ``False`` (the default), a :exc:`FileExistsError` is
    raised if the target directory already exists.
 
    .. note::
@@ -2336,7 +2348,7 @@ features:
 
 .. function:: replace(src, dst, *, src_dir_fd=None, dst_dir_fd=None)
 
-   Rename the file or directory *src* to *dst*.  If *dst* is a directory,
+   Rename the file or directory *src* to *dst*.  If *dst* is a non-empty directory,
    :exc:`OSError` will be raised.  If *dst* exists and is a file, it will
    be replaced silently if the user has permission.  The operation may fail
    if *src* and *dst* are on different filesystems.  If successful,
@@ -2356,7 +2368,7 @@ features:
 .. function:: rmdir(path, *, dir_fd=None)
 
    Remove (delete) the directory *path*.  If the directory does not exist or is
-   not empty, an :exc:`FileNotFoundError` or an :exc:`OSError` is raised
+   not empty, a :exc:`FileNotFoundError` or an :exc:`OSError` is raised
    respectively.  In order to remove whole directory trees,
    :func:`shutil.rmtree` can be used.
 
@@ -2789,7 +2801,7 @@ features:
       String that uniquely identifies the type of the filesystem that
       contains the file.
 
-   On Mac OS systems, the following attributes may also be available:
+   On macOS systems, the following attributes may also be available:
 
    .. attribute:: st_rsize
 
@@ -3544,8 +3556,8 @@ to be ignored.
    Add a path to the DLL search path.
 
    This search path is used when resolving dependencies for imported
-   extension modules (the module itself is resolved through sys.path),
-   and also by :mod:`ctypes`.
+   extension modules (the module itself is resolved through
+   :data:`sys.path`), and also by :mod:`ctypes`.
 
    Remove the directory by calling **close()** on the returned object
    or using it in a :keyword:`with` statement.
@@ -4244,20 +4256,20 @@ written in Python, such as a mail server's external command delivery program.
    Returns the current global process times.
    The return value is an object with five attributes:
 
-   * :attr:`user` - user time
-   * :attr:`system` - system time
-   * :attr:`children_user` - user time of all child processes
-   * :attr:`children_system` - system time of all child processes
-   * :attr:`elapsed` - elapsed real time since a fixed point in the past
+   * :attr:`!user` - user time
+   * :attr:`!system` - system time
+   * :attr:`!children_user` - user time of all child processes
+   * :attr:`!children_system` - system time of all child processes
+   * :attr:`!elapsed` - elapsed real time since a fixed point in the past
 
    For backwards compatibility, this object also behaves like a five-tuple
-   containing :attr:`user`, :attr:`system`, :attr:`children_user`,
-   :attr:`children_system`, and :attr:`elapsed` in that order.
+   containing :attr:`!user`, :attr:`!system`, :attr:`!children_user`,
+   :attr:`!children_system`, and :attr:`!elapsed` in that order.
 
    See the Unix manual page
    :manpage:`times(2)` and :manpage:`times(3)` manual page on Unix or `the GetProcessTimes MSDN
    <https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes>`_
-   on Windows. On Windows, only :attr:`user` and :attr:`system` are known; the other attributes are zero.
+   on Windows. On Windows, only :attr:`!user` and :attr:`!system` are known; the other attributes are zero.
 
    .. availability:: Unix, Windows.
 
@@ -4745,6 +4757,9 @@ Miscellaneous System Information
 
    .. availability:: Unix.
 
+   .. versionchanged:: 3.11
+      Add ``'SC_MINSIGSTKSZ'`` name.
+
 The following data values are used to support path manipulation operations.  These
 are defined for all platforms.
 
@@ -4869,7 +4884,7 @@ Random numbers
 
 .. function:: urandom(size)
 
-   Return a string of *size* random bytes suitable for cryptographic use.
+   Return a bytestring of *size* random bytes suitable for cryptographic use.
 
    This function returns random bytes from an OS-specific randomness source.  The
    returned data should be unpredictable enough for cryptographic applications,

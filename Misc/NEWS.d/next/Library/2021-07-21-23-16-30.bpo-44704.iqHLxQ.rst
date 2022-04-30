@@ -1,1 +1,0 @@
-The implementation of ``collections.abc.Set._hash()`` now matches that of ``frozenset.__hash__()``.

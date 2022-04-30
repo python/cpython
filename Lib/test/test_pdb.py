@@ -11,8 +11,9 @@ import subprocess
 import textwrap
 import linecache
 
-from contextlib import ExitStack
+from contextlib import ExitStack, redirect_stdout
 from io import StringIO
+from test import support
 from test.support import os_helper
 # This little helper class is essential for testing pdb under doctest.
 from test.test_doctest import _FakeInput
@@ -1363,6 +1364,7 @@ def test_pdb_issue_43318():
     """
 
 
+@support.requires_subprocess()
 class PdbTestCase(unittest.TestCase):
     def tearDown(self):
         os_helper.unlink(os_helper.TESTFN)
@@ -1473,6 +1475,27 @@ def bœr():
         stdout, stderr = proc.communicate(b'quit\n')
         self.assertNotIn(b'SyntaxError', stdout,
                          "Got a syntax error running test script under PDB")
+
+    def test_issue46434(self):
+        # Temporarily patch in an extra help command which doesn't have a
+        # docstring to emulate what happens in an embeddable distribution
+        script = """
+            def do_testcmdwithnodocs(self, arg):
+                pass
+
+            import pdb
+            pdb.Pdb.do_testcmdwithnodocs = do_testcmdwithnodocs
+        """
+        commands = """
+            continue
+            help testcmdwithnodocs
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        output = (stdout or '') + (stderr or '')
+        self.assertNotIn('AttributeError', output,
+                         'Calling help on a command with no docs should be handled gracefully')
+        self.assertIn("*** No help for 'testcmdwithnodocs'; __doc__ string missing", output,
+                      'Calling help on a command with no docs should print an error')
 
     def test_issue13183(self):
         script = """
@@ -1733,7 +1756,7 @@ def bœr():
         os_helper.rmtree(module_name)
         init_file = module_name + '/__init__.py'
         os.mkdir(module_name)
-        with open(init_file, 'w') as f:
+        with open(init_file, 'w'):
             pass
         self.addCleanup(os_helper.rmtree, module_name)
         stdout, stderr = self._run_pdb(['-m', module_name], "")
@@ -1746,7 +1769,7 @@ def bœr():
         os_helper.rmtree(pkg_name)
         modpath = pkg_name + '/' + module_name
         os.makedirs(modpath)
-        with open(modpath + '/__init__.py', 'w') as f:
+        with open(modpath + '/__init__.py', 'w'):
             pass
         self.addCleanup(os_helper.rmtree, pkg_name)
         stdout, stderr = self._run_pdb(['-m', modpath.replace('/', '.')], "")
@@ -1960,29 +1983,26 @@ class ChecklineTests(unittest.TestCase):
         self.assertEqual(db.checkline(os_helper.TESTFN, 1), 1)
 
     def test_checkline_is_not_executable(self):
+        # Test for comments, docstrings and empty lines
+        s = textwrap.dedent("""
+            # Comment
+            \"\"\" docstring \"\"\"
+            ''' docstring '''
+
+        """)
         with open(os_helper.TESTFN, "w") as f:
-            # Test for comments, docstrings and empty lines
-            s = textwrap.dedent("""
-                # Comment
-                \"\"\" docstring \"\"\"
-                ''' docstring '''
-
-            """)
             f.write(s)
-        db = pdb.Pdb()
         num_lines = len(s.splitlines()) + 2  # Test for EOF
-        for lineno in range(num_lines):
-            self.assertFalse(db.checkline(os_helper.TESTFN, lineno))
+        with redirect_stdout(StringIO()):
+            db = pdb.Pdb()
+            for lineno in range(num_lines):
+                self.assertFalse(db.checkline(os_helper.TESTFN, lineno))
 
 
-def load_tests(*args):
+def load_tests(loader, tests, pattern):
     from test import test_pdb
-    suites = [
-        unittest.makeSuite(PdbTestCase),
-        unittest.makeSuite(ChecklineTests),
-        doctest.DocTestSuite(test_pdb)
-    ]
-    return unittest.TestSuite(suites)
+    tests.addTest(doctest.DocTestSuite(test_pdb))
+    return tests
 
 
 if __name__ == '__main__':

@@ -19,9 +19,10 @@ import unittest
 from unittest import mock
 
 from test.support import os_helper
-from test.support import (is_jython, swap_attr, swap_item, cpython_only)
+from test.support import (
+    STDLIB_DIR, is_jython, swap_attr, swap_item, cpython_only, is_emscripten)
 from test.support.import_helper import (
-    forget, make_legacy_pyc, unlink, unload, DirsOnSysPath)
+    forget, make_legacy_pyc, unlink, unload, DirsOnSysPath, CleanImport)
 from test.support.os_helper import (
     TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE, temp_dir)
 from test.support import script_helper
@@ -86,8 +87,10 @@ class ImportTests(unittest.TestCase):
             from importlib import something_that_should_not_exist_anywhere
 
     def test_from_import_missing_attr_has_name_and_path(self):
-        with self.assertRaises(ImportError) as cm:
-            from os import i_dont_exist
+        with CleanImport('os'):
+            import os
+            with self.assertRaises(ImportError) as cm:
+                from os import i_dont_exist
         self.assertEqual(cm.exception.name, 'os')
         self.assertEqual(cm.exception.path, os.__file__)
         self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from 'os' \(.*os.py\)")
@@ -98,8 +101,17 @@ class ImportTests(unittest.TestCase):
         with self.assertRaises(ImportError) as cm:
             from _testcapi import i_dont_exist
         self.assertEqual(cm.exception.name, '_testcapi')
-        self.assertEqual(cm.exception.path, _testcapi.__file__)
-        self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|pyd)\)")
+        if hasattr(_testcapi, "__file__"):
+            self.assertEqual(cm.exception.path, _testcapi.__file__)
+            self.assertRegex(
+                str(cm.exception),
+                r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|pyd)\)"
+            )
+        else:
+            self.assertEqual(
+                str(cm.exception),
+                "cannot import name 'i_dont_exist' from '_testcapi' (unknown location)"
+            )
 
     def test_from_import_missing_attr_has_name(self):
         with self.assertRaises(ImportError) as cm:
@@ -436,6 +448,7 @@ class ImportTests(unittest.TestCase):
             with self.assertRaises(AttributeError):
                 os.does_not_exist
 
+    @threading_helper.requires_working_threading()
     def test_concurrency(self):
         # bpo 38091: this is a hack to slow down the code that calls
         # has_deadlock(); the logic was itself sometimes deadlocking.
@@ -493,7 +506,7 @@ class ImportTests(unittest.TestCase):
 
             env = None
             env = {k.upper(): os.environ[k] for k in os.environ}
-            env["PYTHONPATH"] = tmp2 + ";" + os.path.dirname(os.__file__)
+            env["PYTHONPATH"] = tmp2 + ";" + STDLIB_DIR
 
             # Test 1: import with added DLL directory
             subprocess.check_call([
@@ -522,6 +535,7 @@ class FilePermissionTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
+    @unittest.skipIf(is_emscripten, "Emscripten's umask is a stub.")
     def test_creation_mode(self):
         mask = 0o022
         with temp_umask(mask), _ready_to_import() as (name, path):

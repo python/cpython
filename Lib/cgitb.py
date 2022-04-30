@@ -31,6 +31,11 @@ import tempfile
 import time
 import tokenize
 import traceback
+import warnings
+from html import escape as html_escape
+
+warnings._deprecated(__name__, remove=(3, 13))
+
 
 def reset():
     """Return a string that resets the CGI and browser to a known state."""
@@ -105,10 +110,16 @@ def html(einfo, context=5):
         etype = etype.__name__
     pyver = 'Python ' + sys.version.split()[0] + ': ' + sys.executable
     date = time.ctime(time.time())
-    head = '<body bgcolor="#f0f0f8">' + pydoc.html.heading(
-        '<big><big>%s</big></big>' %
-        strong(pydoc.html.escape(str(etype))),
-        '#ffffff', '#6622aa', pyver + '<br>' + date) + '''
+    head = f'''
+<body bgcolor="#f0f0f8">
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#6622aa">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br>
+<big><big><strong>{html_escape(str(etype))}</strong></big></big></font></td>
+<td align=right valign=bottom>
+<font color="#ffffff" face="helvetica, arial">{pyver}<br>{date}</font></td>
+</tr></table>
 <p>A problem occurred in a Python script.  Here is the sequence of
 function calls leading up to the error, in the order they occurred.</p>'''
 

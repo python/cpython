@@ -191,7 +191,10 @@ named :file:`spam.py` in a list of directories given by the variable
   file is specified).
 * :envvar:`PYTHONPATH` (a list of directory names, with the same syntax as the
   shell variable :envvar:`PATH`).
-* The installation-dependent default.
+* The installation-dependent default (by convention including a
+  ``site-packages`` directory, handled by the :mod:`site` module).
+
+More details are at :ref:`sys-path-init`.
 
 .. note::
    On file systems which support symlinks, the directory containing the input
@@ -207,6 +210,8 @@ directory. This is an error unless the replacement is intended.  See section
 
 .. %
     Do we need stuff on zip files etc. ? DUBOIS
+
+.. _tut-pycache:
 
 "Compiled" Python files
 -----------------------
@@ -503,7 +508,7 @@ code::
    __all__ = ["echo", "surround", "reverse"]
 
 This would mean that ``from sound.effects import *`` would import the three
-named submodules of the :mod:`sound` package.
+named submodules of the :mod:`sound.effects` package.
 
 If ``__all__`` is not defined, the statement ``from sound.effects import *``
 does *not* import all submodules from the package :mod:`sound.effects` into the
@@ -532,6 +537,8 @@ specific_submodule``!  In fact, this is the recommended notation unless the
 importing module needs to use submodules with the same name from different
 packages.
 
+
+.. _intra-package-references:
 
 Intra-package References
 ------------------------
