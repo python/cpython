@@ -2337,7 +2337,7 @@ Functions and decorators
 
 .. function:: assert_never(arg, /)
 
-   Assert to the type checker that a line of code is unreachable.
+   Ask a static type checker to confirm that a line of code is unreachable.
 
    Example::
 
@@ -2358,7 +2358,7 @@ Functions and decorators
    reachable, it will emit an error. For example, if the type annotation
    for ``arg`` was instead ``int | str | float``, the type checker would
    emit an error pointing out that ``unreachable`` is of type :class:`float`.
-   For a call to ``assert_never`` to succeed, the inferred type of
+   For a call to ``assert_never`` to pass type checking, the inferred type of
    the argument passed in must be the bottom type, :data:`Never`, and nothing
    else.
 
