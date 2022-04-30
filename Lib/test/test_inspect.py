@@ -3604,6 +3604,9 @@ class TestParameterObject(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'not a valid parameter name'):
             inspect.Parameter('1', kind=inspect.Parameter.VAR_KEYWORD)
 
+        with self.assertRaisesRegex(ValueError, 'not a valid parameter name'):
+            inspect.Parameter('from', kind=inspect.Parameter.VAR_KEYWORD)
+
         with self.assertRaisesRegex(TypeError, 'name must be a str'):
             inspect.Parameter(None, kind=inspect.Parameter.VAR_KEYWORD)
 
