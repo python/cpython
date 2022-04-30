@@ -1151,6 +1151,14 @@ Deprecated
   (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
   :gh:`68966`.)
 
+* More strict rules will be applied now applied for numerical group references
+  and group names in regular expressions in future Python versions.
+  Only sequence of ASCII digits will be now accepted as a numerical reference.
+  The group name in bytes patterns and replacement strings could only
+  contain ASCII letters and digits and underscore.
+  For now, a deprecation warning is raised for such syntax.
+  (Contributed by Serhiy Storchaka in :gh:`91760`.)
+
 
 Removed
 =======
