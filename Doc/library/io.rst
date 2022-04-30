@@ -574,7 +574,7 @@ I/O Base Classes
       A :exc:`BlockingIOError` is raised if the underlying raw stream is in
       non blocking-mode, and has no data available at the moment.
 
-   .. method:: read1([size], /)
+   .. method:: read1(size=-1, /)
 
       Read and return up to *size* bytes, with at most one call to the
       underlying raw stream's :meth:`~RawIOBase.read` (or
@@ -692,7 +692,7 @@ Buffered Streams
 Buffered I/O streams provide a higher-level interface to an I/O device
 than raw I/O does.
 
-.. class:: BytesIO([initial_bytes])
+.. class:: BytesIO(initial_bytes=b'')
 
    A binary stream using an in-memory bytes buffer.  It inherits
    :class:`BufferedIOBase`.  The buffer is discarded when the
@@ -727,7 +727,7 @@ than raw I/O does.
       Return :class:`bytes` containing the entire contents of the buffer.
 
 
-   .. method:: read1([size], /)
+   .. method:: read1(size=-1, /)
 
       In :class:`BytesIO`, this is the same as :meth:`~BufferedIOBase.read`.
 
@@ -757,18 +757,18 @@ than raw I/O does.
    :class:`BufferedReader` provides or overrides these methods in addition to
    those from :class:`BufferedIOBase` and :class:`IOBase`:
 
-   .. method:: peek([size], /)
+   .. method:: peek(size=0, /)
 
       Return bytes from the stream without advancing the position.  At most one
       single read on the raw stream is done to satisfy the call. The number of
       bytes returned may be less or more than requested.
 
-   .. method:: read([size], /)
+   .. method:: read(size=-1, /)
 
       Read and return *size* bytes, or if *size* is not given or negative, until
       EOF or if the read call would block in non-blocking mode.
 
-   .. method:: read1([size], /)
+   .. method:: read1(size=-1, /)
 
       Read and return up to *size* bytes with only one call on the raw stream.
       If at least one byte is buffered, only buffered bytes are returned.
