@@ -104,18 +104,11 @@ _gdbm_gdbm_keys_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_keys(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":keys", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "keys() takes no arguments");
+        return NULL;
     }
-    return_value = _gdbm_gdbm_keys_impl(self, cls);
-
-exit:
-    return return_value;
+    return _gdbm_gdbm_keys_impl(self, cls);
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_firstkey__doc__,
@@ -137,18 +130,11 @@ _gdbm_gdbm_firstkey_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_firstkey(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":firstkey", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "firstkey() takes no arguments");
+        return NULL;
     }
-    return_value = _gdbm_gdbm_firstkey_impl(self, cls);
-
-exit:
-    return return_value;
+    return _gdbm_gdbm_firstkey_impl(self, cls);
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_nextkey__doc__,
@@ -212,18 +198,11 @@ _gdbm_gdbm_reorganize_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_reorganize(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":reorganize", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "reorganize() takes no arguments");
+        return NULL;
     }
-    return_value = _gdbm_gdbm_reorganize_impl(self, cls);
-
-exit:
-    return return_value;
+    return _gdbm_gdbm_reorganize_impl(self, cls);
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_sync__doc__,
@@ -244,18 +223,11 @@ _gdbm_gdbm_sync_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_sync(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":sync", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "sync() takes no arguments");
+        return NULL;
     }
-    return_value = _gdbm_gdbm_sync_impl(self, cls);
-
-exit:
-    return return_value;
+    return _gdbm_gdbm_sync_impl(self, cls);
 }
 
 PyDoc_STRVAR(dbmopen__doc__,
@@ -333,4 +305,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=63c507f93d84a3a4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fe7a0812eb560b23 input=a9049054013a1b77]*/

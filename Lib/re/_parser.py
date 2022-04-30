@@ -183,10 +183,6 @@ class SubPattern:
                     j = max(j, h)
                 lo = lo + i
                 hi = hi + j
-            elif op is CALL:
-                i, j = av.getwidth()
-                lo = lo + i
-                hi = hi + j
             elif op is ATOMIC_GROUP:
                 i, j = av.getwidth()
                 lo = lo + i
@@ -291,6 +287,8 @@ class Tokenizer:
         self.__next()
 
     def error(self, msg, offset=0):
+        if not self.istext:
+            msg = msg.encode('ascii', 'backslashreplace').decode('ascii')
         return error(msg, self.string, self.tell() - offset)
 
     def checkgroupname(self, name, offset):
@@ -798,6 +796,14 @@ def _parse(source, state, verbose, nested, first=False):
                             state.grouprefpos[condgroup] = (
                                 source.tell() - len(condname) - 1
                             )
+                        if not (condname.isdecimal() and condname.isascii()):
+                            import warnings
+                            warnings.warn(
+                                "bad character in group name %s at position %d" %
+                                (repr(condname) if source.istext else ascii(condname),
+                                 source.tell() - len(condname) - 1),
+                                DeprecationWarning, stacklevel=nested + 6
+                            )
                     state.checklookbehindgroup(condgroup, source)
                     item_yes = _parse(source, state, verbose, nested + 1)
                     if source.match("|"):
@@ -1017,6 +1023,14 @@ def parse_template(source, state):
                     if index >= MAXGROUPS:
                         raise s.error("invalid group reference %d" % index,
                                       len(name) + 1)
+                    if not (name.isdecimal() and name.isascii()):
+                        import warnings
+                        warnings.warn(
+                            "bad character in group name %s at position %d" %
+                            (repr(name) if s.istext else ascii(name),
+                             s.tell() - len(name) - 1),
+                            DeprecationWarning, stacklevel=5
+                        )
                 addgroup(index, len(name) + 1)
             elif c == "0":
                 if s.next in OCTDIGITS:

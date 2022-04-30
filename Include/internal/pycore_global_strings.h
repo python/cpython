@@ -202,6 +202,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__truediv__)
         STRUCT_FOR_ID(__trunc__)
         STRUCT_FOR_ID(__typing_subst__)
+        STRUCT_FOR_ID(__typing_unpacked__)
         STRUCT_FOR_ID(__warningregistry__)
         STRUCT_FOR_ID(__weakref__)
         STRUCT_FOR_ID(__xor__)

@@ -74,8 +74,11 @@ New syntax features:
 
 New typing features:
 
-* :pep:`673`: ``Self`` Type.
-  (Contributed by James Hilton-Balfe and Pradeep Kumar in :issue:`30924`.)
+* :pep:`646`: Variadic generics.
+* :pep:`655`: Marking individual TypedDict items as required or potentially-missing.
+* :pep:`673`: ``Self`` type.
+* :pep:`675`: Arbitrary literal string type.
+
 
 New Features
 ============
@@ -166,6 +169,166 @@ at the time when the exception is raised. The notes added appear in the
 default traceback. See :pep:`678` for more details. (Contributed by
 Irit Katriel in :issue:`45607`.)
 
+
+.. _new-feat-related-type-hints-311:
+
+New Features Related to Type Hints
+==================================
+
+This section covers major changes affecting :pep:`484` type hints and
+the :mod:`typing` module.
+
+PEP 646: Variadic generics
+--------------------------
+
+:pep:`484` introduced :data:`~typing.TypeVar`, enabling creation
+of generics parameterised with a single type. :pep:`646` introduces
+:data:`~typing.TypeVarTuple`, enabling parameterisation
+with an *arbitrary* number of types. In other words,
+a :data:`~typing.TypeVarTuple` is a *variadic* type variable,
+enabling *variadic* generics. This enables a wide variety of use cases.
+In particular, it allows the type of array-like structures
+in numerical computing libraries such as NumPy and TensorFlow to be
+parameterised with the array *shape*. Static type checkers will now
+be able to catch shape-related bugs in code that uses these libraries.
+
+See :pep:`646` for more details.
+
+(Contributed by Matthew Rahtz in :issue:`43224`, with contributions by
+Serhiy Storchaka and Jelle Zijlstra. PEP written by Mark Mendoza, Matthew
+Rahtz, Pradeep Kumar Srinivasan, and Vincent Siles.)
+
+PEP 655: Marking individual ``TypedDict`` items as required or not-required
+---------------------------------------------------------------------------
+
+:data:`~typing.Required` and :data:`~typing.NotRequired` provide a
+straightforward way to mark whether individual items in a
+:data:`~typing.TypedDict` must be present. Previously this was only possible
+using inheritance.
+
+Fields are still required by default, unless the ``total=False``
+parameter is set.
+For example, the following specifies a dictionary with one required and
+one not-required key::
+
+   class Movie(TypedDict):
+      title: str
+      year: NotRequired[int]
+
+   m1: Movie = {"title": "Black Panther", "year": 2018}  # ok
+   m2: Movie = {"title": "Star Wars"}  # ok (year is not required)
+   m3: Movie = {"year": 2022}  # error (missing required field title)
+
+The following definition is equivalent::
+
+   class Movie(TypedDict, total=False):
+      title: Required[str]
+      year: int
+
+See :pep:`655` for more details.
+
+(Contributed by David Foster and Jelle Zijlstra in :issue:`47087`. PEP
+written by David Foster.)
+
+PEP 673: ``Self`` type
+----------------------
+
+The new :data:`~typing.Self` annotation provides a simple and intuitive
+way to annotate methods that return an instance of their class. This
+behaves the same as the :data:`~typing.TypeVar`-based approach specified
+in :pep:`484` but is more concise and easier to follow.
+
+Common use cases include alternative constructors provided as classmethods
+and :meth:`~object.__enter__` methods that return ``self``::
+
+   class MyLock:
+       def __enter__(self) -> Self:
+           self.lock()
+           return self
+
+       ...
+
+   class MyInt:
+       @classmethod
+       def fromhex(cls, s: str) -> Self:
+           return cls(int(s, 16))
+
+       ...
+
+:data:`~typing.Self` can also be used to annotate method parameters
+or attributes of the same type as their enclosing class.
+
+See :pep:`673` for more details.
+
+(Contributed by James Hilton-Balfe in :issue:`46534`. PEP written by
+Pradeep Kumar Srinivasan and James Hilton-Balfe.)
+
+PEP 675: Arbitrary literal string type
+--------------------------------------
+
+The new :data:`~typing.LiteralString` annotation may be used to indicate
+that a function parameter can be of any literal string type. This allows
+a function to accept arbitrary literal string types, as well as strings
+created from other literal strings. Type checkers can then
+enforce that sensitive functions, such as those that execute SQL
+statements or shell commands, are called only with static arguments,
+providing protection against injection attacks.
+
+For example, a SQL query function could be annotated as follows::
+
+   def run_query(sql: LiteralString) -> ...
+       ...
+
+   def caller(
+       arbitrary_string: str,
+       query_string: LiteralString,
+       table_name: LiteralString,
+   ) -> None:
+       run_query("SELECT * FROM students")       # ok
+       run_query(query_string)                   # ok
+       run_query("SELECT * FROM " + table_name)  # ok
+       run_query(arbitrary_string)               # type checker error
+       run_query(                                # type checker error
+           f"SELECT * FROM students WHERE name = {arbitrary_string}"
+       )
+
+See :pep:`675` for more details.
+
+(Contributed by Jelle Zijlstra in :issue:`47088`. PEP written by Pradeep
+Kumar Srinivasan and Graham Bleaney.)
+
+PEP 681: Data Class Transforms
+------------------------------
+
+The new :data:`~typing.dataclass_transform` annotation may be used to
+decorate a function that is itself a decorator, a class, or a metaclass.
+The presence of ``@dataclass_transform()`` tells a static type checker that the
+decorated function, class, or metaclass performs runtime "magic" that
+transforms a class, endowing it with dataclass-like behaviors.
+
+For example::
+
+    # The ``create_model`` decorator is defined by a library.
+    @typing.dataclass_transform()
+    def create_model(cls: Type[_T]) -> Type[_T]:
+        cls.__init__ = ...
+        cls.__eq__ = ...
+        cls.__ne__ = ...
+        return cls
+
+    # The ``create_model`` decorator can now be used to create new model
+    # classes, like this:
+    @create_model
+    class CustomerModel:
+        id: int
+        name: str
+
+    c = CustomerModel(id=327, name="John Smith")
+
+See :pep:`681` for more details.
+
+(Contributed by Jelle Zijlstra in :gh:`91860`. PEP written by
+Erik De Bonte and Eric Traut.)
 
 Other Language Changes
 ======================
@@ -332,7 +495,7 @@ inspect
   line number, column and end column). The affected functions are:
   :func:`inspect.getframeinfo`, :func:`inspect.getouterframes`, :func:`inspect.getinnerframes`,
   :func:`inspect.stack` and :func:`inspect.trace`. (Contributed by Pablo Galindo in
-  :issue:`88116`)
+  :gh:`88116`)
 
 locale
 ------
@@ -374,6 +537,15 @@ os
 * On Windows, :func:`os.urandom` now uses ``BCryptGenRandom()``,
   instead of ``CryptGenRandom()`` which is deprecated.
   (Contributed by Dong-hee Na in :issue:`44611`.)
+
+
+pathlib
+-------
+
+* :meth:`~pathlib.Path.glob` and :meth:`~pathlib.Path.rglob` return only
+  directories if *pattern* ends with a pathname components separator:
+  :data:`~os.sep` or :data:`~os.altsep`.
+  (Contributed by Eisuke Kawasima in :issue:`22276` and :issue:`33392`.)
 
 re
 --
@@ -509,6 +681,39 @@ time
   it had a resolution of 1 millisecond (10\ :sup:`-3` seconds).
   (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
 
+typing
+------
+
+For major changes, see :ref:`new-feat-related-type-hints-311`.
+
+* Add :func:`typing.assert_never` and :class:`typing.Never`.
+  :func:`typing.assert_never` is useful for asking a type checker to confirm
+  that a line of code is not reachable. At runtime, it raises an
+  :exc:`AssertionError`.
+  (Contributed by Jelle Zijlstra in :gh:`90633`.)
+
+* Add :func:`typing.reveal_type`. This is useful for asking a type checker
+  what type it has inferred for a given expression. At runtime it prints
+  the type of the received value.
+  (Contributed by Jelle Zijlstra in :gh:`90572`.)
+
+* Add :func:`typing.assert_type`. This is useful for asking a type checker
+  to confirm that the type it has inferred for a given expression matches
+  the given type. At runtime it simply returns the received value.
+  (Contributed by Jelle Zijlstra in :gh:`90638`.)
+
+* Allow subclassing of :class:`typing.Any`. This is useful for avoiding
+  type checker errors related to highly dynamic class, such as mocks.
+  (Contributed by Shantanu Jain in :gh:`91154`.)
+
+* The :func:`typing.final` decorator now sets the ``__final__`` attributed on
+  the decorated object.
+  (Contributed by Jelle Zijlstra in :gh:`90500`.)
+
+* The :func:`typing.get_overloads` function can be used for introspecting
+  the overloads of a function. :func:`typing.clear_overloads` can be used
+  to clear all registered overloads of a function.
+  (Contributed by Jelle Zijlstra in :gh:`89263`.)
 
 unicodedata
 -----------
@@ -850,6 +1055,12 @@ CPython bytecode changes
 Deprecated
 ==========
 
+* Octal escapes with value larger than ``0o377`` now produce
+  a :exc:`DeprecationWarning`.
+  In a future Python version they will be a :exc:`SyntaxWarning` and
+  eventually a :exc:`SyntaxError`.
+  (Contributed by Serhiy Storchaka in :issue:`81548`.)
+
 * The :mod:`lib2to3` package and ``2to3`` tool are now deprecated and may not
   be able to parse Python 3.10 or newer. See the :pep:`617` (New PEG parser for
   CPython).  (Contributed by Victor Stinner in :issue:`40360`.)
@@ -930,6 +1141,7 @@ Deprecated
   * :mod:`chunk`
   * :mod:`crypt`
   * :mod:`imghdr`
+  * :mod:`mailcap`
   * :mod:`msilib`
   * :mod:`nis`
   * :mod:`nntplib`
@@ -937,8 +1149,21 @@ Deprecated
   * :mod:`pipes`
   * :mod:`sndhdr`
   * :mod:`spwd`
+  * :mod:`sunau`
+  * :mod:`telnetlib`
+  * :mod:`uu`
+  * :mod:`xdrlib`
 
-  (Contributed by Brett Cannon in :issue:`47061`.)
+  (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
+  :gh:`68966`.)
+
+* More strict rules will be applied now applied for numerical group references
+  and group names in regular expressions in future Python versions.
+  Only sequence of ASCII digits will be now accepted as a numerical reference.
+  The group name in bytes patterns and replacement strings could only
+  contain ASCII letters and digits and underscore.
+  For now, a deprecation warning is raised for such syntax.
+  (Contributed by Serhiy Storchaka in :gh:`91760`.)
 
 
 Removed

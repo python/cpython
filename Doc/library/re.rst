@@ -418,7 +418,7 @@ The special characters are:
    |                                       | * ``\1``                         |
    +---------------------------------------+----------------------------------+
 
-   .. versionchanged:: 3.11
+   .. versionchanged:: 3.12
       In bytes patterns group names must contain only characters in
       the ASCII range.
 
@@ -491,7 +491,7 @@ The special characters are:
    will match with ``'<user@host.com>'`` as well as ``'user@host.com'``, but
    not with ``'<user@host.com'`` nor ``'user@host.com>'``.
 
-   .. versionchanged:: 3.11
+   .. versionchanged:: 3.12
       Group *id* can only contain ASCII digits.
 
 
@@ -1003,7 +1003,7 @@ form.
       Empty matches for the pattern are replaced when adjacent to a previous
       non-empty match.
 
-   .. versionchanged:: 3.11
+   .. versionchanged:: 3.12
       Group *id* can only contain ASCII digits.
       In bytes replacement strings group names must contain only characters
       in the ASCII range.

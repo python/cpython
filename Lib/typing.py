@@ -123,6 +123,7 @@ __all__ = [
     'assert_never',
     'cast',
     'clear_overloads',
+    'dataclass_transform',
     'final',
     'get_args',
     'get_origin',
@@ -713,9 +714,9 @@ def Concatenate(self, parameters):
         raise TypeError("Cannot take a Concatenate of no types.")
     if not isinstance(parameters, tuple):
         parameters = (parameters,)
-    if not isinstance(parameters[-1], ParamSpec):
+    if not (parameters[-1] is ... or isinstance(parameters[-1], ParamSpec)):
         raise TypeError("The last parameter to Concatenate should be a "
-                        "ParamSpec variable.")
+                        "ParamSpec variable or ellipsis.")
     msg = "Concatenate[arg, ...]: each arg must be a type."
     parameters = (*(_type_check(p, msg) for p in parameters[:-1]), parameters[-1])
     return _ConcatenateGenericAlias(self, parameters,
@@ -1018,7 +1019,7 @@ class TypeVarTuple(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
         return self.__name__
 
     def __typing_subst__(self, arg):
-        raise AssertionError
+        raise TypeError("Substitution of bare TypeVarTuple is not supported")
 
 
 class ParamSpecArgs(_Final, _Immutable, _root=True):
@@ -1640,9 +1641,6 @@ class _ConcatenateGenericAlias(_GenericAlias, _root=True):
             return (*params[:-1], *params[-1])
         if isinstance(params[-1], _ConcatenateGenericAlias):
             params = (*params[:-1], *params[-1].__args__)
-        elif not isinstance(params[-1], ParamSpec):
-            raise TypeError("The last parameter to Concatenate should be a "
-                            "ParamSpec variable.")
         return super().copy_with(params)
 
 
@@ -1688,10 +1686,14 @@ class _UnpackGenericAlias(_GenericAlias, _root=True):
         return '*' + repr(self.__args__[0])
 
     def __getitem__(self, args):
-        if (len(self.__parameters__) == 1 and
-                isinstance(self.__parameters__[0], TypeVarTuple)):
+        if self.__typing_unpacked__():
             return args
         return super().__getitem__(args)
+
+    def __typing_unpacked__(self):
+        # If x is Unpack[tuple[...]], __parameters__ will be empty.
+        return bool(self.__parameters__ and
+                    isinstance(self.__parameters__[0], TypeVarTuple))
 
 
 class Generic:
@@ -2382,6 +2384,9 @@ def is_typeddict(tp):
     return isinstance(tp, _TypedDictMeta)
 
 
+_ASSERT_NEVER_REPR_MAX_LENGTH = 100
+
+
 def assert_never(arg: Never, /) -> Never:
     """Statically assert that a line of code is unreachable.
 
@@ -2402,7 +2407,10 @@ def assert_never(arg: Never, /) -> Never:
     At runtime, this throws an exception when called.
 
     """
-    raise AssertionError("Expected code to be unreachable")
+    value = repr(arg)
+    if len(value) > _ASSERT_NEVER_REPR_MAX_LENGTH:
+        value = value[:_ASSERT_NEVER_REPR_MAX_LENGTH] + '...'
+    raise AssertionError(f"Expected code to be unreachable, but got: {value}")
 
 
 def no_type_check(arg):
@@ -3265,3 +3273,81 @@ def reveal_type(obj: T, /) -> T:
     """
     print(f"Runtime type is {type(obj).__name__!r}", file=sys.stderr)
     return obj
+
+
+def dataclass_transform(
+    *,
+    eq_default: bool = True,
+    order_default: bool = False,
+    kw_only_default: bool = False,
+    field_specifiers: tuple[type[Any] | Callable[..., Any], ...] = (),
+    **kwargs: Any,
+) -> Callable[[T], T]:
+    """Decorator that marks a function, class, or metaclass as providing
+    dataclass-like behavior.
+
+    Example usage with a decorator function:
+
+        _T = TypeVar("_T")
+
+        @dataclass_transform()
+        def create_model(cls: type[_T]) -> type[_T]:
+            ...
+            return cls
+
+        @create_model
+        class CustomerModel:
+            id: int
+            name: str
+
+    On a base class:
+
+        @dataclass_transform()
+        class ModelBase: ...
+
+        class CustomerModel(ModelBase):
+            id: int
+            name: str
+
+    On a metaclass:
+
+        @dataclass_transform()
+        class ModelMeta(type): ...
+
+        class ModelBase(metaclass=ModelMeta): ...
+
+        class CustomerModel(ModelBase):
+            id: int
+            name: str
+
+    Each of the ``CustomerModel`` classes defined in this example will now
+    behave similarly to a dataclass created with the ``@dataclasses.dataclass``
+    decorator. For example, the type checker will synthesize an ``__init__``
+    method.
+
+    The arguments to this decorator can be used to customize this behavior:
+    - ``eq_default`` indicates whether the ``eq`` parameter is assumed to be
+        True or False if it is omitted by the caller.
+    - ``order_default`` indicates whether the ``order`` parameter is
+        assumed to be True or False if it is omitted by the caller.
+    - ``kw_only_default`` indicates whether the ``kw_only`` parameter is
+        assumed to be True or False if it is omitted by the caller.
+    - ``field_specifiers`` specifies a static list of supported classes
+        or functions that describe fields, similar to ``dataclasses.field()``.
+
+    At runtime, this decorator records its arguments in the
+    ``__dataclass_transform__`` attribute on the decorated object.
+    It has no other runtime effect.
+
+    See PEP 681 for more details.
+    """
+    def decorator(cls_or_fn):
+        cls_or_fn.__dataclass_transform__ = {
+            "eq_default": eq_default,
+            "order_default": order_default,
+            "kw_only_default": kw_only_default,
+            "field_specifiers": field_specifiers,
+            "kwargs": kwargs,
+        }
+        return cls_or_fn
+    return decorator
