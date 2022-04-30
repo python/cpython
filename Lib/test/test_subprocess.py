@@ -1743,7 +1743,7 @@ class RunFuncTestCase(BaseTestCase):
         cp = subprocess.run([sys.executable, "-Xwarn_default_encoding", "-c", code],
                             capture_output=True)
         lines = cp.stderr.splitlines()
-        self.assertEqual(len(lines), 2)
+        self.assertEqual(len(lines), 2, lines)
         self.assertTrue(lines[0].startswith(b"<string>:3: EncodingWarning: "))
         self.assertTrue(lines[1].startswith(b"<string>:4: EncodingWarning: "))
 
