@@ -444,9 +444,17 @@ Trigonometric functions
 
 .. function:: acos(x)
 
-   Return the arc cosine of *x*, in radians. The result is between ``0`` and
-   ``pi``.
+   Return the arc cosine of *x*, in radians.
 
+   * Domain: [-1,.0 1.0].
+   * Range: [0.0, ``pi``].
+
+   Examples::
+
+       >>> math.acos(-1)
+       3.141592653589793
+       >>> math.acos(1)
+       0.00
 
 .. function:: asin(x)
 
