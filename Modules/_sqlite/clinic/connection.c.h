@@ -323,16 +323,44 @@ pysqlite_connection_create_function(pysqlite_Connection *self, PyTypeObject *cls
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"name", "narg", "func", "deterministic", NULL};
-    static _PyArg_Parser _parser = {"siO|$p:create_function", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "create_function", 0};
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     const char *name;
     int narg;
     PyObject *func;
     int deterministic = 0;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &name, &narg, &func, &deterministic)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("create_function", "argument 'name'", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
+    if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    narg = _PyLong_AsInt(args[1]);
+    if (narg == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    func = args[2];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    deterministic = PyObject_IsTrue(args[3]);
+    if (deterministic < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = pysqlite_connection_create_function_impl(self, cls, name, narg, func, deterministic);
 
 exit:
@@ -369,15 +397,34 @@ create_window_function(pysqlite_Connection *self, PyTypeObject *cls, PyObject *c
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", "", NULL};
-    static _PyArg_Parser _parser = {"siO:create_window_function", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "create_window_function", 0};
+    PyObject *argsbuf[3];
     const char *name;
     int num_params;
     PyObject *aggregate_class;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &name, &num_params, &aggregate_class)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("create_window_function", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
+    if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    num_params = _PyLong_AsInt(args[1]);
+    if (num_params == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    aggregate_class = args[2];
     return_value = create_window_function_impl(self, cls, name, num_params, aggregate_class);
 
 exit:
@@ -406,15 +453,34 @@ pysqlite_connection_create_aggregate(pysqlite_Connection *self, PyTypeObject *cl
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"name", "n_arg", "aggregate_class", NULL};
-    static _PyArg_Parser _parser = {"siO:create_aggregate", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "create_aggregate", 0};
+    PyObject *argsbuf[3];
     const char *name;
     int n_arg;
     PyObject *aggregate_class;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &name, &n_arg, &aggregate_class)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("create_aggregate", "argument 'name'", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
+    if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    n_arg = _PyLong_AsInt(args[1]);
+    if (n_arg == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    aggregate_class = args[2];
     return_value = pysqlite_connection_create_aggregate_impl(self, cls, name, n_arg, aggregate_class);
 
 exit:
@@ -440,13 +506,15 @@ pysqlite_connection_set_authorizer(pysqlite_Connection *self, PyTypeObject *cls,
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"authorizer_callback", NULL};
-    static _PyArg_Parser _parser = {"O:set_authorizer", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "set_authorizer", 0};
+    PyObject *argsbuf[1];
     PyObject *callable;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &callable)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    callable = args[0];
     return_value = pysqlite_connection_set_authorizer_impl(self, cls, callable);
 
 exit:
@@ -472,12 +540,18 @@ pysqlite_connection_set_progress_handler(pysqlite_Connection *self, PyTypeObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"progress_handler", "n", NULL};
-    static _PyArg_Parser _parser = {"Oi:set_progress_handler", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "set_progress_handler", 0};
+    PyObject *argsbuf[2];
     PyObject *callable;
     int n;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &callable, &n)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    callable = args[0];
+    n = _PyLong_AsInt(args[1]);
+    if (n == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = pysqlite_connection_set_progress_handler_impl(self, cls, callable, n);
@@ -505,13 +579,15 @@ pysqlite_connection_set_trace_callback(pysqlite_Connection *self, PyTypeObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"trace_callback", NULL};
-    static _PyArg_Parser _parser = {"O:set_trace_callback", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "set_trace_callback", 0};
+    PyObject *argsbuf[1];
     PyObject *callable;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &callable)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    callable = args[0];
     return_value = pysqlite_connection_set_trace_callback_impl(self, cls, callable);
 
 exit:
@@ -830,14 +906,29 @@ pysqlite_connection_create_collation(pysqlite_Connection *self, PyTypeObject *cl
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {"sO:create_collation", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "create_collation", 0};
+    PyObject *argsbuf[2];
     const char *name;
     PyObject *callable;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &name, &callable)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("create_collation", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
+    if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    callable = args[1];
     return_value = pysqlite_connection_create_collation_impl(self, cls, name, callable);
 
 exit:
@@ -1145,4 +1236,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=be2f526e78fa65b1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6c9432a9fe0a4f5e input=a9049054013a1b77]*/
