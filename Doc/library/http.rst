@@ -53,8 +53,8 @@ HTTP status codes
 -----------------
 
 Supported,
-`IANA-registered <https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml>`_
-status codes available in :class:`http.HTTPStatus` are:
+`IANA-registered status codes <https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml>`_
+available in :class:`http.HTTPStatus` are:
 
 ======= =================================== ==================================================================
 Code    Enum Name                           Details
@@ -163,8 +163,8 @@ HTTP methods
 -----------------
 
 Supported,
-`IANA-registered <https://www.iana.org/assignments/http-methods/http-methods.xhtml>`_
-methods available in :class:`http.HTTPMethod` are:
+`IANA-registered methods <https://www.iana.org/assignments/http-methods/http-methods.xhtml>`_
+available in :class:`http.HTTPMethod` are:
 
 =========== =================================== ==================================================================
 Method      Enum Name                           Details
