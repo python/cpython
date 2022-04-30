@@ -5254,11 +5254,15 @@ handle_eval_breaker:
             assert(call_shape.kwnames == NULL);
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
-            PyObject *callable = PEEK(total_args + 1);
+            PyMethodDescrObject *callable =
+                (PyMethodDescrObject *)PEEK(total_args + 1);
             DEOPT_IF(total_args != 2, PRECALL);
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), PRECALL);
-            PyMethodDef *meth = ((PyMethodDescrObject *)callable)->d_method;
+            PyMethodDef *meth = callable->d_method;
             DEOPT_IF(meth->ml_flags != METH_O, PRECALL);
+            PyObject *arg = TOP();
+            PyObject *self = SECOND();
+            DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), PRECALL);
             STAT_INC(PRECALL, hit);
             SKIP_CALL();
             PyCFunction cfunc = meth->ml_meth;
@@ -5267,8 +5271,6 @@ handle_eval_breaker:
             if (_Py_EnterRecursiveCall(tstate, " while calling a Python object")) {
                 goto error;
             }
-            PyObject *arg = TOP();
-            PyObject *self = SECOND();
             PyObject *res = cfunc(self, arg);
             _Py_LeaveRecursiveCall(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));

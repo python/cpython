@@ -4740,6 +4740,10 @@ order (MRO) for bases """
         for i in range(20):
             with self.assertRaises(TypeError):
                 str.upper(thing)
+        from collections import deque
+        for i in range(20):
+            with self.assertRaises(TypeError):
+                deque.append(thing, thing)
 
     def test_repr_as_str(self):
         # Issue #11603: crash or infinite loop when rebinding __str__ as
