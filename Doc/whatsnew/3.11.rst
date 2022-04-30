@@ -1081,6 +1081,7 @@ Deprecated
   * :mod:`sunau`
   * :mod:`telnetlib`
   * :mod:`uu`
+  * :mod:`xdrlib`
 
   (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
   :gh:`68966`.)
