@@ -281,7 +281,7 @@ class ParserBase:
                     j = _temp + 1
                 else:
                     return -1
-                while rawdata[j].isspace():
+                while rawdata[j:j+1].isspace():
                     j = j + 1
                 if j >= len(rawdata):
                     # end of buffer, incomplete
