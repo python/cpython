@@ -21,9 +21,6 @@ HyperText Transfer Protocol:
 * :mod:`http.cookies` has utilities for implementing state management with cookies
 * :mod:`http.cookiejar` provides persistence of cookies
 
-:mod:`http` is also a module that defines a number of HTTP status codes and
-associated messages through the :class:`http.HTTPStatus` enum:
-
 
 The :mod:`http` module also defines the following enums that help you work with http related code:
 
