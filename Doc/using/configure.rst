@@ -139,7 +139,7 @@ General Options
    The statistics will be dumped to a arbitrary (probably unique) file in
    ``/tmp/py_stats/``, or ``C:\temp\py_stats\`` on Windows.
 
-   Use ``Tools//summarize_stats.py`` to read the stats.
+   Use ``Tools/scripts/summarize_stats.py`` to read the stats.
 
    .. versionadded:: 3.11
 
@@ -161,6 +161,12 @@ WebAssemby Options
 
    Dynamic linking enables ``dlopen``. File size of the executable
    increases due to limited dead code elimination and additional features.
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: --enable-wasm-pthreads
+
+   Turn on pthreads support for WASM.
 
    .. versionadded:: 3.11
 

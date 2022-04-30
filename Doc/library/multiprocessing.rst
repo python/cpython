@@ -1075,6 +1075,9 @@ Miscellaneous
    .. versionchanged:: 3.4
       Now supported on Unix when the ``'spawn'`` start method is used.
 
+   .. versionchanged:: 3.11
+      Accepts a :term:`path-like object`.
+
 .. function:: set_start_method(method)
 
    Set the method which should be used to start child processes.

@@ -3,10 +3,12 @@ import asyncio
 import contextvars
 import gc
 import re
+import signal
 import threading
 import unittest
 
 from unittest import mock
+from unittest.mock import patch
 from test.test_asyncio import utils as test_utils
 
 
@@ -373,6 +375,23 @@ class RunnerTests(BaseTest):
 
         with asyncio.Runner() as runner:
             with self.assertRaises(asyncio.CancelledError):
+                runner.run(coro())
+    
+    def test_signal_install_not_supported_ok(self):
+        # signal.signal() can throw if the "main thread" doensn't have signals enabled
+        assert threading.current_thread() is threading.main_thread()
+
+        async def coro():
+            pass
+
+        with asyncio.Runner() as runner:
+            with patch.object(
+                signal,
+                "signal",
+                side_effect=ValueError(
+                    "signal only works in main thread of the main interpreter"
+                )
+            ):
                 runner.run(coro())
 
 

@@ -1515,37 +1515,49 @@ Blah blah blah
 
 # Test the basic MIMEAudio class
 class TestMIMEAudio(unittest.TestCase):
-    def setUp(self):
-        with openfile('audiotest.au', 'rb') as fp:
+    def _make_audio(self, ext):
+        with openfile(f'sndhdr.{ext}', 'rb') as fp:
             self._audiodata = fp.read()
         self._au = MIMEAudio(self._audiodata)
 
     def test_guess_minor_type(self):
-        self.assertEqual(self._au.get_content_type(), 'audio/basic')
+        for ext, subtype in {
+            'aifc': 'x-aiff',
+            'aiff': 'x-aiff',
+            'wav': 'x-wav',
+            'au': 'basic',
+        }.items():
+            self._make_audio(ext)
+            subtype = ext if subtype is None else subtype
+            self.assertEqual(self._au.get_content_type(), f'audio/{subtype}')
 
     def test_encoding(self):
+        self._make_audio('au')
         payload = self._au.get_payload()
         self.assertEqual(base64.decodebytes(bytes(payload, 'ascii')),
-                self._audiodata)
+                         self._audiodata)
 
     def test_checkSetMinor(self):
+        self._make_audio('au')
         au = MIMEAudio(self._audiodata, 'fish')
         self.assertEqual(au.get_content_type(), 'audio/fish')
 
     def test_add_header(self):
+        self._make_audio('au')
         eq = self.assertEqual
         self._au.add_header('Content-Disposition', 'attachment',
-                            filename='audiotest.au')
+                            filename='sndhdr.au')
         eq(self._au['content-disposition'],
-           'attachment; filename="audiotest.au"')
+           'attachment; filename="sndhdr.au"')
         eq(self._au.get_params(header='content-disposition'),
-           [('attachment', ''), ('filename', 'audiotest.au')])
+           [('attachment', ''), ('filename', 'sndhdr.au')])
         eq(self._au.get_param('filename', header='content-disposition'),
-           'audiotest.au')
+           'sndhdr.au')
         missing = []
         eq(self._au.get_param('attachment', header='content-disposition'), '')
-        self.assertIs(self._au.get_param('foo', failobj=missing,
-                                         header='content-disposition'), missing)
+        self.assertIs(self._au.get_param(
+            'foo', failobj=missing,
+            header='content-disposition'), missing)
         # Try some missing stuff
         self.assertIs(self._au.get_param('foobar', missing), missing)
         self.assertIs(self._au.get_param('attachment', missing,
@@ -3462,7 +3474,7 @@ multipart/report
         self.assertEqual(s.getvalue(), msgtxt)
 
     def test_mime_classes_policy_argument(self):
-        with openfile('audiotest.au', 'rb') as fp:
+        with openfile('sndhdr.au', 'rb') as fp:
             audiodata = fp.read()
         with openfile('python.gif', 'rb') as fp:
             bindata = fp.read()
