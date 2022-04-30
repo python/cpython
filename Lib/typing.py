@@ -714,9 +714,9 @@ def Concatenate(self, parameters):
         raise TypeError("Cannot take a Concatenate of no types.")
     if not isinstance(parameters, tuple):
         parameters = (parameters,)
-    if not isinstance(parameters[-1], ParamSpec):
+    if not (parameters[-1] is ... or isinstance(parameters[-1], ParamSpec)):
         raise TypeError("The last parameter to Concatenate should be a "
-                        "ParamSpec variable.")
+                        "ParamSpec variable or ellipsis.")
     msg = "Concatenate[arg, ...]: each arg must be a type."
     parameters = (*(_type_check(p, msg) for p in parameters[:-1]), parameters[-1])
     return _ConcatenateGenericAlias(self, parameters,
@@ -1019,7 +1019,7 @@ class TypeVarTuple(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
         return self.__name__
 
     def __typing_subst__(self, arg):
-        raise AssertionError
+        raise TypeError("Substitution of bare TypeVarTuple is not supported")
 
 
 class ParamSpecArgs(_Final, _Immutable, _root=True):
@@ -1641,9 +1641,6 @@ class _ConcatenateGenericAlias(_GenericAlias, _root=True):
             return (*params[:-1], *params[-1])
         if isinstance(params[-1], _ConcatenateGenericAlias):
             params = (*params[:-1], *params[-1].__args__)
-        elif not isinstance(params[-1], ParamSpec):
-            raise TypeError("The last parameter to Concatenate should be a "
-                            "ParamSpec variable.")
         return super().copy_with(params)
 
 
@@ -1689,10 +1686,14 @@ class _UnpackGenericAlias(_GenericAlias, _root=True):
         return '*' + repr(self.__args__[0])
 
     def __getitem__(self, args):
-        if (len(self.__parameters__) == 1 and
-                isinstance(self.__parameters__[0], TypeVarTuple)):
+        if self.__typing_unpacked__():
             return args
         return super().__getitem__(args)
+
+    def __typing_unpacked__(self):
+        # If x is Unpack[tuple[...]], __parameters__ will be empty.
+        return bool(self.__parameters__ and
+                    isinstance(self.__parameters__[0], TypeVarTuple))
 
 
 class Generic:
