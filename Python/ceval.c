@@ -5294,7 +5294,7 @@ handle_eval_breaker:
             DEOPT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS), PRECALL);
             PyTypeObject *d_type = callable->d_common.d_type;
             PyObject *self = PEEK(total_args);
-            DEOPT_IF(Py_TYPE(self) != d_type, PRECALL);
+            DEOPT_IF(!Py_IS_TYPE(self, d_type), PRECALL);
             STAT_INC(PRECALL, hit);
             SKIP_CALL();
             int nargs = total_args-1;
