@@ -1,0 +1,2 @@
+:class:`collections.namedtuple` types are non-generic by default.
+Subscripting them now raises TypeError.

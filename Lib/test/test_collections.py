@@ -520,6 +520,11 @@ class TestNamedTuple(unittest.TestCase):
         with self.assertRaises(AttributeError):
             p.z
 
+    def test_non_generic(self):
+        Point = namedtuple('Point', 'x y')
+        with self.assertRaises(TypeError):
+            Point[int, str]
+
     def test_odd_sizes(self):
         Zero = namedtuple('Zero', '')
         self.assertEqual(Zero(), ())
