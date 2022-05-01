@@ -2864,8 +2864,8 @@ class RawTurtle(TPen, TNavigator):
         >>> turtle.fd(50)
         """
         warnings._deprecated("turtle.RawTurtle.settiltangle()",
-                             "{name} is deprecated since Python 3.1 and scheduled for "
-                             "removal in Python {remove}. Use tiltangle() instead.",
+                             "{name!r} is deprecated since Python 3.1 and scheduled "
+                             "for removal in Python {remove}. Use tiltangle() instead.",
                              remove=(3, 13))
         self.tiltangle(angle)
 
