@@ -787,11 +787,11 @@ how the command-line arguments should be handled. The supplied actions are:
 
 * ``'append'`` - This stores a list and appends each argument value to the
   list. This is useful for allowing an option to be specified multiple times.
-  
+
   If the option has *default* values, they will appear in the result.
   Any new values from the command line will get appended after those
   default values.
-  
+
   Example usage::
 
     >>> parser = argparse.ArgumentParser()
