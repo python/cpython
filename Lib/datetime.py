@@ -262,6 +262,60 @@ def _wrap_strftime(object, format, timetuple):
     return _time.strftime(newformat, timetuple)
 
 # Helpers for parsing the result of isoformat()
+def _find_isoformat_separator(dtstr):
+    # See the comment in _datetimemodule.c:_findisoformat_separator
+    len_dtstr = len(dtstr)
+    if len_dtstr == 7:
+        return 7
+
+    assert len_dtstr > 7
+    date_separator = "-"
+    week_indicator = "W"
+
+    if dtstr[4] == date_separator:
+        if dtstr[5] == week_indicator:
+            if len_dtstr < 8:
+                raise ValueError("Invalid ISO string")
+            if len_dtstr > 8 and dtstr[8] == date_separator:
+                if len_dtstr == 9:
+                    raise ValueError("Invalid ISO string")
+                if len_dtstr > 10 and dtstr[10].isdigit():
+                    # This is as far as we need to resolve the ambiguity for
+                    # the moment - if we have YYYY-Www-##, the separator is
+                    # either a hyphen at 8 or a number at 10.
+                    #
+                    # We'll assume it's a hyphen at 8 because it's way more
+                    # likely that someone will use a hyphen as a separator than
+                    # a number, but at this point it's really best effort
+                    # because this is an extension of the spec anyway.
+                    # TODO(pganssle): Document this
+                    return 8
+                return 10
+            else:
+                # YYYY-Www (8)
+                return 8
+        else:
+            # YYYY-MM-DD (10)
+            return 10
+    else:
+        if dtstr[4] == week_indicator:
+            # YYYYWww (7) or YYYYWwwd (8)
+            for idx in range(7, len_dtstr):
+                if not dtstr[idx].isdigit():
+                    break
+            if idx < 9:
+                return idx
+
+            if idx % 2 == 0:
+                # If the index of the last number is even, it's YYYYWwwd
+                return 7
+            else:
+                return 8
+        else:
+            # YYYYMMDD (8)
+            return 8
+
+
 def _parse_isoformat_date(dtstr):
     # It is assumed that this function will only be called with a
     # string of length exactly 10, and (though this is not used) ASCII-only
@@ -295,11 +349,14 @@ def _parse_isoformat_date(dtstr):
         pos += has_sep
         day = int(dtstr[pos:pos + 2])
 
-        return year, month, day
+        return [year, month, day]
+
+
+_FRACTION_CORRECTION = [100000, 10000, 1000, 100, 10]
 
 
 def _parse_hh_mm_ss_ff(tstr):
-    # Parses things of the form HH[:MM[:SS[.fff[fff]]]]
+    # Parses things of the form HH[:?MM[:?SS[{.,}fff[fff]]]]
     len_str = len(tstr)
 
     time_comps = [0, 0, 0, 0]
@@ -313,27 +370,36 @@ def _parse_hh_mm_ss_ff(tstr):
         pos += 2
         next_char = tstr[pos:pos+1]
 
+        if comp == 0:
+            has_sep = next_char == ':'
+
         if not next_char or comp >= 2:
             break
 
-        if next_char != ':':
+        if has_sep and next_char != ':':
             raise ValueError('Invalid time separator: %c' % next_char)
 
-        pos += 1
+        pos += has_sep
 
     if pos < len_str:
-        if tstr[pos] != '.':
+        if tstr[pos] not in '.,':
             raise ValueError('Invalid microsecond component')
         else:
             pos += 1
 
             len_remainder = len_str - pos
-            if len_remainder not in (3, 6):
-                raise ValueError('Invalid microsecond component')
 
-            time_comps[3] = int(tstr[pos:])
-            if len_remainder == 3:
-                time_comps[3] *= 1000
+            if len_remainder >= 6:
+                to_parse = 6
+            else:
+                to_parse = len_remainder
+
+            time_comps[3] = int(tstr[pos:(pos+to_parse)])
+            if to_parse < 6:
+                time_comps[3] *= _FRACTION_CORRECTION[to_parse-1]
+            if (len_remainder > to_parse
+                    and not tstr[(pos+to_parse):].isdigit()):
+                raise ValueError('Non-digit values in unparsed fraction')
 
     return time_comps
 
@@ -343,25 +409,35 @@ def _parse_isoformat_time(tstr):
     if len_str < 2:
         raise ValueError('Isoformat time too short')
 
-    # This is equivalent to re.search('[+-]', tstr), but faster
-    tz_pos = (tstr.find('-') + 1 or tstr.find('+') + 1)
+    # This is equivalent to re.search('[+-Z]', tstr), but faster
+    tz_pos = (tstr.find('-') + 1  or tstr.find('+') + 1 or tstr.find('Z') + 1)
     timestr = tstr[:tz_pos-1] if tz_pos > 0 else tstr
 
     time_comps = _parse_hh_mm_ss_ff(timestr)
 
     tzi = None
-    if tz_pos > 0:
+    if tz_pos == len_str and tstr[-1] == 'Z':
+        tzi = timezone.utc
+    elif tz_pos > 0:
         tzstr = tstr[tz_pos:]
 
         # Valid time zone strings are:
+        # HH                  len: 2
+        # HHMM                len: 4
         # HH:MM               len: 5
+        # HHMMSS              len: 6
         # HH:MM:SS            len: 8
-        # HH:MM:SS.ffffff     len: 15
+        # HH:MM:SS.f+         len: 10+
 
-        if len(tzstr) not in (5, 8, 15):
+        if (len_tzstr := len(tzstr)) < 10 and (len_tzstr % 2) and len_tzstr != 5:
             raise ValueError('Malformed time zone string')
 
-        tz_comps = _parse_hh_mm_ss_ff(tzstr)
+
+        if tzstr == 'Z':
+            tz_comps = (0, 0, 0, 0)
+        else:
+            tz_comps = _parse_hh_mm_ss_ff(tzstr)
+
         if all(x == 0 for x in tz_comps):
             tzi = timezone.utc
         else:
@@ -406,7 +482,7 @@ def _isoweek_to_gregorian(year, week, day):
     day_1 = _isoweek1monday(year)
     ord_day = day_1 + day_offset
 
-    return _ord2ymd(ord_day)
+    return list(_ord2ymd(ord_day))
 
 
 # Just raise TypeError if the arg isn't None or a string.
@@ -1743,11 +1819,15 @@ class datetime(date):
         if not isinstance(date_string, str):
             raise TypeError('fromisoformat: argument must be str')
 
-        # Split this at the separator
-        dstr = date_string[0:10]
-        tstr = date_string[11:]
+        if len(date_string) < 7:
+            raise ValueError(f'Invalid isoformat string: {date_string!r}')
 
+        # Split this at the separator
         try:
+            separator_location = _find_isoformat_separator(date_string)
+            dstr = date_string[0:separator_location]
+            tstr = date_string[(separator_location+1):]
+
             date_components = _parse_isoformat_date(dstr)
         except ValueError:
             raise ValueError(f'Invalid isoformat string: {date_string!r}')
@@ -2537,7 +2617,8 @@ else:
          _format_time, _format_offset, _index, _is_leap, _isoweek1monday, _math,
          _ord2ymd, _time, _time_class, _tzinfo_class, _wrap_strftime, _ymd2ord,
          _divide_and_round, _parse_isoformat_date, _parse_isoformat_time,
-         _parse_hh_mm_ss_ff, _IsoCalendarDate)
+         _parse_hh_mm_ss_ff, _IsoCalendarDate, _isoweek_to_gregorian,
+         _find_isoformat_separator, _FRACTION_CORRECTION)
     # XXX Since import * above excludes names that start with _,
     # docstring does not get overwritten. In the future, it may be
     # appropriate to maintain a single module level docstring and

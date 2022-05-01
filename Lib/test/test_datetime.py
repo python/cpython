@@ -8,7 +8,9 @@ TESTS = 'test.datetimetester'
 
 def load_tests(loader, tests, pattern):
     try:
-        pure_tests = import_fresh_module(TESTS, fresh=['datetime', '_strptime'],
+        pure_tests = import_fresh_module(TESTS, fresh=[
+            'datetime', '_strptime', 'test.isoformat_helpers.isoformatter',
+            'test.isoformat_helpers.strategies'],
                                         blocked=['_datetime'])
         fast_tests = import_fresh_module(TESTS, fresh=['datetime',
                                                     '_datetime', '_strptime'])

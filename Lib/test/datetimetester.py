@@ -3073,6 +3073,18 @@ class TestDateTime(TestDate):
                         dt_rt = self.theclass.fromisoformat(dtstr)
                         self.assertEqual(dt, dt_rt)
 
+    def test_fromisoformat_examples_datetime(self):
+        test_cases = [
+            ('2009-04-19T03:15:45.2345',  self.theclass(2009, 4, 19, 3, 15, 45, 234500)),
+            ('2009-04-19T03:15:45.1234567',  self.theclass(2009, 4, 19, 3, 15, 45, 123456)),
+        ]
+
+        for input_str, expected in test_cases:
+            with self.subTest(input_str=input_str):
+                actual = self.theclass.fromisoformat(input_str)
+
+                self.assertEqual(actual, expected)
+
     def test_fromisoformat_fails_datetime(self):
         # Test that fromisoformat() fails on invalid values
         bad_strs = [
@@ -3086,8 +3098,6 @@ class TestDateTime(TestDate):
             '2009-04-19T03;15:45',          # Bad first time separator
             '2009-04-19T03:15;45',          # Bad second time separator
             '2009-04-19T03:15:4500:00',     # Bad time zone separator
-            '2009-04-19T03:15:45.2345',     # Too many digits for milliseconds
-            '2009-04-19T03:15:45.1234567',  # Too many digits for microseconds
             '2009-04-19T03:15:45.123456+24:30',    # Invalid time zone offset
             '2009-04-19T03:15:45.123456-24:30',    # Invalid negative offset
             '2009-04-10ᛇᛇᛇᛇᛇ12:15',         # Too many unicode separators
@@ -4032,6 +4042,24 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
                         t_rt = self.theclass.fromisoformat(tstr)
                         self.assertEqual(t, t_rt)
 
+    def test_fromisoformat_fractions(self):
+        strs = [
+            ('12:30:45.1', (12, 30, 45, 100000)),
+            ('12:30:45.12', (12, 30, 45, 120000)),
+            ('12:30:45.123', (12, 30, 45, 123000)),
+            ('12:30:45.1234', (12, 30, 45, 123400)),
+            ('12:30:45.12345', (12, 30, 45, 123450)),
+            ('12:30:45.123456', (12, 30, 45, 123456)),
+            ('12:30:45.1234567', (12, 30, 45, 123456)),
+            ('12:30:45.12345678', (12, 30, 45, 123456)),
+        ]
+
+        for time_str, time_comps in strs:
+            expected = self.theclass(*time_comps)
+            actual = self.theclass.fromisoformat(time_str)
+
+            self.assertEqual(actual, expected)
+
     def test_fromisoformat_fails(self):
         bad_strs = [
             '',                         # Empty string
@@ -4045,15 +4073,17 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '1a:30:45.334034',          # Invalid character in hours
             '12:a0:45.334034',          # Invalid character in minutes
             '12:30:a5.334034',          # Invalid character in seconds
-            '12:30:45.1234',            # Too many digits for milliseconds
-            '12:30:45.1234567',         # Too many digits for microseconds
             '12:30:45.123456+24:30',    # Invalid time zone offset
             '12:30:45.123456-24:30',    # Invalid negative offset
             '12：30：45',                 # Uses full-width unicode colons
+            '12:30:45.123456a',         # Non-numeric data after 6 components
+            '12:30:45.123456789a',      # Non-numeric data after 9 components
             '12:30:45․123456',          # Uses \u2024 in place of decimal point
             '12:30:45a',                # Extra at tend of basic time
             '12:30:45.123a',            # Extra at end of millisecond time
             '12:30:45.123456a',         # Extra at end of microsecond time
+            '12:30:45.123456-',         # Extra at end of microsecond time
+            '12:30:45.123456+',         # Extra at end of microsecond time
             '12:30:45.123456+12:00:30a',    # Extra at end of full time
         ]
 
@@ -4079,6 +4109,62 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
 
         self.assertEqual(tsc, tsc_rt)
         self.assertIsInstance(tsc_rt, TimeSubclass)
+
+    @hypothesis.given(
+        t=hypothesis.strategies.times(
+            timezones=iso_strategies.FIXED_TIMEZONES | hypothesis.strategies.none()
+        ),
+        iso_formatter=iso_strategies.TIME_ISOFORMATTERS,
+    )
+    @_cross_product_examples(
+        t=[
+            time(0, 0),
+            time(12, 0),
+            time(23, 59, 59, 999999),
+            time(12, 0, tzinfo=timezone.utc),
+            time(12, 0, tzinfo=timezone(timedelta(hours=-5))),
+        ],
+        iso_formatter=map(
+            IsoFormatter,
+            [
+                "%H:%M:%S",
+                "%H%M%S",
+                "%H:%M:%S.%(f6)",
+                "%H%M%S.%(f6)",
+                "%H:%M:%S.%(f3)",
+                "%H%M%S.%(f3)",
+                "%H:%M:%S[TZ:%H:%M]",
+                "%H:%M:%S[TZ:%H%M]",
+            ],
+        ),
+    )
+    @hypothesis.example(
+        t=time(0, 0, tzinfo=timezone.utc),
+        iso_formatter=IsoFormatter("%H:%M:%S[TZ:Z]"),
+    )
+    @_cross_product_examples(
+        t=[
+            time(0, 0, tzinfo=timezone(timedelta(hours=5, minutes=30))),
+        ],
+        iso_formatter=map(
+            IsoFormatter, ("%H:%M:%S[TZ:%H]", "%H:%M:%S[TZ:%H:%M]")
+        ),
+    )
+    def test_isoformat_times(self, t, iso_formatter):
+        input_str = iso_formatter.format(t)
+        actual = type(t).fromisoformat(input_str)
+        expected = iso_formatter.truncate(t)
+
+        self.assertEqual(
+            actual,
+            expected,
+            f"\n{actual} != {expected}\n"
+            + f"actual = {actual!r}\n"
+            + f"expected = {expected!r} \n"
+            + f"input_str = {input_str}\n"
+            + f"formatter = {iso_formatter!r}",
+        )
+
 
     def test_subclass_timetz(self):
 
