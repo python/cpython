@@ -1702,6 +1702,28 @@ class RunFuncTestCase(BaseTestCase):
                         msg="TimeoutExpired was delayed! Bad traceback:\n```\n"
                         f"{stacks}```")
 
+    @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
+                     "vfork() not enabled by configure.")
+    def test__use_vfork(self):
+        # Attempts code coverage within _posixsubprocess.c on the code that
+        # probes the subprocess module for the existence and value of this
+        # attribute in 3.10.5.
+        self.assertTrue(subprocess._USE_VFORK)  # The default value regardless.
+        with mock.patch.object(subprocess, "_USE_VFORK", False):
+            self.assertEqual(self.run_python("pass").returncode, 0,
+                             msg="False _USE_VFORK failed")
+
+        class RaisingBool:
+            def __bool__(self):
+                raise RuntimeError("force PyObject_IsTrue to return -1")
+
+        with mock.patch.object(subprocess, "_USE_VFORK", RaisingBool()):
+            self.assertEqual(self.run_python("pass").returncode, 0,
+                             msg="odd bool()-error _USE_VFORK failed")
+            del subprocess._USE_VFORK
+            self.assertEqual(self.run_python("pass").returncode, 0,
+                             msg="lack of a _USE_VFORK attribute failed")
+
 
 def _get_test_grp_name():
     for name_group in ('staff', 'nogroup', 'grp', 'nobody', 'nfsnobody'):
