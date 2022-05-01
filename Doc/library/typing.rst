@@ -221,6 +221,10 @@ For example::
                    on_error: Callable[[int, Exception], None]) -> None:
        # Body
 
+   async def on_update(value: str) -> None:
+       # Body
+   callback: Callable[[str], Awaitable[None]] = on_update
+
 It is possible to declare the return type of a callable without specifying
 the call signature by substituting a literal ellipsis
 for the list of arguments in the type hint: ``Callable[..., ReturnType]``.
