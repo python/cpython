@@ -343,6 +343,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, 'Tests passed\n' * INIT_LOOPS)
 
+    @support.skip_if_pgo_task
     def test_quickened_static_code_gets_unquickened_at_Py_FINALIZE(self):
         # https://github.com/python/cpython/issues/92031
         code = "import unittest; print('Tests passed')"
