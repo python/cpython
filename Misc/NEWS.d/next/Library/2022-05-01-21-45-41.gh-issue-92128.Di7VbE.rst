@@ -1,0 +1,2 @@
+Add :meth:`~object.__class_getitem__` to :class:`logging.LoggerAdapter` and
+:class:`logging.StreamHandler`. Patch by Alex Waygood.
