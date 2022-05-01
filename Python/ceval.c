@@ -1357,22 +1357,35 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #endif
 
 #ifdef Py_STATS
-#define INSTRUCTION_START(op) \
+#define RECORD_STATS(op) \
     do { \
-        frame->prev_instr = next_instr++; \
         OPCODE_EXE_INC(op); \
         _py_stats.opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
-#define INSTRUCTION_START(op) (frame->prev_instr = next_instr++)
+#define RECORD_STATS(op) ((void)0)
 #endif
+
+#define INSTRUCTION_START(op) \
+    do { \
+        frame->prev_instr = next_instr++; \
+        RECORD_STATS(op); \
+    } while (0)
+
+#define SAFE_INSTRUCTION_START(op) \
+    do { \
+        next_instr++;\
+        RECORD_STATS(op); \
+    } while (0)
 
 #if USE_COMPUTED_GOTOS
 #define TARGET(op) TARGET_##op: INSTRUCTION_START(op);
+#define TARGET_SAFE(op) TARGET_##op: SAFE_INSTRUCTION_START(op);
 #define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
 #define TARGET(op) case op: INSTRUCTION_START(op);
+#define TARGET_SAFE(op) case op: SAFE_INSTRUCTION_START(op);
 #define DISPATCH_GOTO() goto dispatch_opcode
 #endif
 
@@ -1831,16 +1844,16 @@ handle_eval_breaker:
            It is essential that any operation that fails must goto error
            and that all operation that succeed call DISPATCH() ! */
 
-        TARGET(NOP) {
+        TARGET_SAFE(NOP) {
             DISPATCH();
         }
 
-        TARGET(RESUME) {
+        TARGET_SAFE(RESUME) {
             _PyCode_Warmup(frame->f_code);
             JUMP_TO_INSTRUCTION(RESUME_QUICK);
         }
 
-        TARGET(RESUME_QUICK) {
+        TARGET_SAFE(RESUME_QUICK) {
             PREDICTED(RESUME_QUICK);
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
@@ -1861,7 +1874,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(LOAD_FAST) {
+        TARGET_SAFE(LOAD_FAST) {
             PyObject *value = GETLOCAL(oparg);
             if (value == NULL) {
                 goto unbound_local_error;
@@ -1871,7 +1884,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(LOAD_CONST) {
+        TARGET_SAFE(LOAD_CONST) {
             PREDICTED(LOAD_CONST);
             PyObject *value = GETITEM(consts, oparg);
             Py_INCREF(value);
@@ -1886,7 +1899,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(LOAD_FAST__LOAD_FAST) {
+        TARGET_SAFE(LOAD_FAST__LOAD_FAST) {
             PyObject *value = GETLOCAL(oparg);
             if (value == NULL) {
                 goto unbound_local_error;
@@ -1904,7 +1917,7 @@ handle_eval_breaker:
             NOTRACE_DISPATCH();
         }
 
-        TARGET(LOAD_FAST__LOAD_CONST) {
+        TARGET_SAFE(LOAD_FAST__LOAD_CONST) {
             PyObject *value = GETLOCAL(oparg);
             if (value == NULL) {
                 goto unbound_local_error;
@@ -1943,7 +1956,7 @@ handle_eval_breaker:
             NOTRACE_DISPATCH();
         }
 
-        TARGET(LOAD_CONST__LOAD_FAST) {
+        TARGET_SAFE(LOAD_CONST__LOAD_FAST) {
             PyObject *value = GETITEM(consts, oparg);
             NEXTOPARG();
             next_instr++;
@@ -1964,7 +1977,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(PUSH_NULL) {
+        TARGET_SAFE(PUSH_NULL) {
             /* Use BASIC_PUSH as NULL is not a valid object pointer */
             BASIC_PUSH(NULL);
             DISPATCH();
@@ -2775,7 +2788,7 @@ handle_eval_breaker:
             }
         }
 
-        TARGET(LOAD_ASSERTION_ERROR) {
+        TARGET_SAFE(LOAD_ASSERTION_ERROR) {
             PyObject *value = PyExc_AssertionError;
             Py_INCREF(value);
             PUSH(value);
@@ -3122,7 +3135,7 @@ handle_eval_breaker:
             }
         }
 
-        TARGET(LOAD_GLOBAL_MODULE) {
+        TARGET_SAFE(LOAD_GLOBAL_MODULE) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             PyDictObject *dict = (PyDictObject *)GLOBALS();
@@ -3143,7 +3156,7 @@ handle_eval_breaker:
             NOTRACE_DISPATCH();
         }
 
-        TARGET(LOAD_GLOBAL_BUILTIN) {
+        TARGET_SAFE(LOAD_GLOBAL_BUILTIN) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             DEOPT_IF(!PyDict_CheckExact(BUILTINS()), LOAD_GLOBAL);
@@ -3237,7 +3250,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(LOAD_DEREF) {
+        TARGET_SAFE(LOAD_DEREF) {
             PyObject *cell = GETLOCAL(oparg);
             PyObject *value = PyCell_GET(cell);
             if (value == NULL) {
@@ -3258,7 +3271,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(COPY_FREE_VARS) {
+        TARGET_SAFE(COPY_FREE_VARS) {
             /* Copy closure variables to free variables */
             PyCodeObject *co = frame->f_code;
             PyObject *closure = frame->f_func->func_closure;
@@ -4044,12 +4057,12 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(JUMP_FORWARD) {
+        TARGET_SAFE(JUMP_FORWARD) {
             JUMPBY(oparg);
             DISPATCH();
         }
 
-        TARGET(JUMP_BACKWARD) {
+        TARGET_SAFE(JUMP_BACKWARD) {
             _PyCode_Warmup(frame->f_code);
             JUMP_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
         }
@@ -4247,7 +4260,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(JUMP_BACKWARD_NO_INTERRUPT) {
+        TARGET_SAFE(JUMP_BACKWARD_NO_INTERRUPT) {
             /* This bytecode is used in the `yield from` or `await` loop.
              * If there is an interrupt, we want it handled in the innermost
              * generator or coroutine, so we deliberately do not check it here.
@@ -4257,7 +4270,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(JUMP_BACKWARD_QUICK) {
+        TARGET_SAFE(JUMP_BACKWARD_QUICK) {
             PREDICTED(JUMP_BACKWARD_QUICK);
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
@@ -4515,7 +4528,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(PUSH_EXC_INFO) {
+        TARGET_SAFE(PUSH_EXC_INFO) {
             PyObject *value = TOP();
 
             _PyErr_StackItem *exc_info = tstate->exc_info;
@@ -4593,7 +4606,7 @@ handle_eval_breaker:
             }
         }
 
-        TARGET(LOAD_METHOD_WITH_VALUES) {
+        TARGET_SAFE(LOAD_METHOD_WITH_VALUES) {
             /* LOAD_METHOD, with cached method object */
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
@@ -4619,7 +4632,7 @@ handle_eval_breaker:
             NOTRACE_DISPATCH();
         }
 
-        TARGET(LOAD_METHOD_WITH_DICT) {
+        TARGET_SAFE(LOAD_METHOD_WITH_DICT) {
             /* LOAD_METHOD, with a dict
              Can be either a managed dict, or a tp_dictoffset offset.*/
             assert(cframe.use_tracing == 0);
@@ -4651,7 +4664,7 @@ handle_eval_breaker:
             NOTRACE_DISPATCH();
         }
 
-        TARGET(LOAD_METHOD_NO_DICT) {
+        TARGET_SAFE(LOAD_METHOD_NO_DICT) {
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
@@ -4706,7 +4719,7 @@ handle_eval_breaker:
             NOTRACE_DISPATCH();
         }
 
-        TARGET(PRECALL) {
+        TARGET_SAFE(PRECALL) {
             PREDICTED(PRECALL);
             /* Designed to work in tamdem with LOAD_METHOD. */
             /* `meth` is NULL when LOAD_METHOD thinks that it's not
@@ -4752,7 +4765,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(PRECALL_BOUND_METHOD) {
+        TARGET_SAFE(PRECALL_BOUND_METHOD) {
             DEOPT_IF(is_method(stack_pointer, oparg), PRECALL);
             PyObject *function = PEEK(oparg + 1);
             DEOPT_IF(Py_TYPE(function) != &PyMethod_Type, PRECALL);
@@ -4768,7 +4781,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(PRECALL_PYFUNC) {
+        TARGET_SAFE(PRECALL_PYFUNC) {
             int nargs = oparg + is_method(stack_pointer, oparg);
             PyObject *function = PEEK(nargs + 1);
             DEOPT_IF(Py_TYPE(function) != &PyFunction_Type, PRECALL);
@@ -4777,7 +4790,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(KW_NAMES) {
+        TARGET_SAFE(KW_NAMES) {
             assert(call_shape.kwnames == NULL);
             assert(oparg < PyTuple_GET_SIZE(consts));
             call_shape.kwnames = GETITEM(consts, oparg);
@@ -5583,7 +5596,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(COPY) {
+        TARGET_SAFE(COPY) {
             assert(oparg != 0);
             PyObject *peek = PEEK(oparg);
             Py_INCREF(peek);
@@ -5626,7 +5639,7 @@ handle_eval_breaker:
             }
         }
 
-        TARGET(SWAP) {
+        TARGET_SAFE(SWAP) {
             assert(oparg != 0);
             PyObject *top = TOP();
             SET_TOP(PEEK(oparg));
@@ -5634,7 +5647,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(EXTENDED_ARG) {
+        TARGET_SAFE(EXTENDED_ARG) {
             assert(oparg);
             oparg <<= 8;
             oparg |= _Py_OPARG(*next_instr);
@@ -5643,14 +5656,14 @@ handle_eval_breaker:
             DISPATCH_GOTO();
         }
 
-        TARGET(EXTENDED_ARG_QUICK) {
+        TARGET_SAFE(EXTENDED_ARG_QUICK) {
             assert(oparg);
             oparg <<= 8;
             oparg |= _Py_OPARG(*next_instr);
             NOTRACE_DISPATCH_SAME_OPARG();
         }
 
-        TARGET(CACHE) {
+        TARGET_SAFE(CACHE) {
             Py_UNREACHABLE();
         }
 
