@@ -4640,6 +4640,14 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
         goto invalid_string_error;
     }
 
+    // The spec actually requires that time-only ISO-8601 strings start with
+    // T, but the extended format allows this to be omitted as long as there
+    // is no ambiguity with date strings.
+    if (*p == 'T') {
+        p += 1;
+        len -= 1;
+    }
+
     int hour = 0, minute = 0, second = 0, microsecond = 0;
     int tzoffset, tzimicrosecond = 0;
     int rv = parse_isoformat_time(p, len,

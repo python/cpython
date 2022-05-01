@@ -1535,6 +1535,11 @@ class time:
         if not isinstance(time_string, str):
             raise TypeError('fromisoformat: argument must be str')
 
+        # The spec actually requires that time-only ISO-8601 strings start with
+        # T, but the extended format allows this to be omitted as long as there
+        # is no ambiguity with date strings.
+        time_string = time_string.removeprefix('T')
+
         try:
             return cls(*_parse_isoformat_time(time_string))
         except Exception:

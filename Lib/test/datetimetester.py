@@ -4127,6 +4127,9 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         iso_formatter=map(
             IsoFormatter,
             [
+                "%H:%M",
+                "T%H:%M",
+                "%H%M",
                 "%H:%M:%S",
                 "%H%M%S",
                 "%H:%M:%S.%(f6)",
@@ -4135,6 +4138,8 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
                 "%H%M%S.%(f3)",
                 "%H:%M:%S[TZ:%H:%M]",
                 "%H:%M:%S[TZ:%H%M]",
+                "T%H:%M:%S",
+                "T%H%M%S",
             ],
         ),
     )
