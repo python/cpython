@@ -116,7 +116,6 @@ class BaseTest(unittest.TestCase):
                      TemporaryDirectory, SpooledTemporaryFile,
                      Queue, SimpleQueue,
                      _AssertRaisesContext,
-                     SplitResult, ParseResult,
                      WeakSet, ReferenceType, ref,
                      ShareableList,
                      Future, _WorkItem,
@@ -138,7 +137,7 @@ class BaseTest(unittest.TestCase):
                 self.assertEqual(alias.__parameters__, ())
 
     def test_unsubscriptable(self):
-        for t in int, str, float, Sized, Hashable:
+        for t in int, str, float, Sized, Hashable, SplitResult, ParseResult:
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
                 with self.assertRaisesRegex(TypeError, tname):
