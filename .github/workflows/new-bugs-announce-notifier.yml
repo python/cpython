@@ -14,7 +14,7 @@ jobs:
           node-version: 14
       - run: npm install mailgun.js form-data
       - name: Send notification
-        uses: actions/github-script@v5
+        uses: actions/github-script@v6
         env:
           MAILGUN_API_KEY: ${{ secrets.PSF_MAILGUN_KEY }}
         with:
