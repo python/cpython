@@ -300,9 +300,12 @@ def _find_isoformat_separator(dtstr):
     else:
         if dtstr[4] == week_indicator:
             # YYYYWww (7) or YYYYWwwd (8)
-            for idx in range(7, len_dtstr):
+            idx = 7
+            while idx < len_dtstr:
                 if not dtstr[idx].isdigit():
                     break
+                idx += 1
+
             if idx < 9:
                 return idx
 
