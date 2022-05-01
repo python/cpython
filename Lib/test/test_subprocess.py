@@ -1736,16 +1736,15 @@ class RunFuncTestCase(BaseTestCase):
     def test_encoding_warning(self):
         code = textwrap.dedent("""\
             from subprocess import *
-            args = ["echo", "hello"]
-            run(args, text=True)
-            check_output(args, text=True)
+            run("echo hello", shell=True, text=True)
+            check_output("echo hello", shell=True, text=True)
             """)
         cp = subprocess.run([sys.executable, "-Xwarn_default_encoding", "-c", code],
                             capture_output=True)
         lines = cp.stderr.splitlines()
-        self.assertEqual(len(lines), 2)
-        self.assertTrue(lines[0].startswith(b"<string>:3: EncodingWarning: "))
-        self.assertTrue(lines[1].startswith(b"<string>:4: EncodingWarning: "))
+        self.assertEqual(len(lines), 2, lines)
+        self.assertTrue(lines[0].startswith(b"<string>:2: EncodingWarning: "))
+        self.assertTrue(lines[1].startswith(b"<string>:3: EncodingWarning: "))
 
 
 def _get_test_grp_name():
