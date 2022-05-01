@@ -77,6 +77,7 @@ module Python
          | Call(expr func, expr* args, keyword* keywords)
          | FormattedValue(expr value, int conversion, expr? format_spec)
          | JoinedStr(expr* values)
+         | TagString(expr tag, expr str)
          | Constant(constant value, string? kind)
 
          -- the following expression can appear in assignment context

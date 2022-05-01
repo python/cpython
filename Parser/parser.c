@@ -14111,6 +14111,7 @@ slice_rule(Parser *p)
 }
 
 // atom:
+//     | NAME &STRING strings
 //     | NAME
 //     | 'True'
 //     | 'False'
@@ -14143,6 +14144,35 @@ atom_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    { // NAME &STRING strings
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME &STRING strings"));
+        expr_ty a;
+        expr_ty b;
+        if (
+            (a = _PyPegen_name_token(p))  // NAME
+            &&
+            _PyPegen_lookahead(1, _PyPegen_string_token, p)
+            &&
+            (b = strings_rule(p))  // strings
+        )
+        {
+            D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME &STRING strings"));
+            _res = _PyPegen_tag_string ( p , a , b );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME &STRING strings"));
+    }
     { // NAME
         if (p->error_indicator) {
             p->level--;

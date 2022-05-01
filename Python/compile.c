@@ -4691,6 +4691,7 @@ check_caller(struct compiler *c, expr_ty e)
     case SetComp_kind:
     case GeneratorExp_kind:
     case JoinedStr_kind:
+    case TagString_kind:
     case FormattedValue_kind:
         return compiler_warn(c, "'%.200s' object is not callable; "
                                 "perhaps you missed a comma?",
@@ -4750,6 +4751,7 @@ check_index(struct compiler *c, expr_ty e, expr_ty s)
     case List_kind:
     case ListComp_kind:
     case JoinedStr_kind:
+    case TagString_kind:
     case FormattedValue_kind:
         return compiler_warn(c, "%.200s indices must be integers or slices, "
                                 "not %.200s; "
@@ -5835,6 +5837,9 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         break;
     case JoinedStr_kind:
         return compiler_joined_str(c, e);
+    case TagString_kind:
+        return compiler_error(c, "TagString not yet supported");
+        break;
     case FormattedValue_kind:
         return compiler_formatted_value(c, e);
     /* The following exprs can be assignment targets. */

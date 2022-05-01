@@ -870,6 +870,19 @@ _PyPegen_seq_delete_starred_exprs(Parser *p, asdl_seq *kwargs)
 }
 
 expr_ty
+_PyPegen_tag_string(Parser *p, expr_ty tag, expr_ty str)
+{
+    // No prefixes (f, r, b, u)
+    // Parse like fstring
+    // Create a node similar to f-string AST
+    return _PyAST_TagString(tag, str,
+                            tag->lineno, tag->col_offset, str->end_lineno, str->end_col_offset,
+                            p->arena);
+
+}
+
+
+expr_ty
 _PyPegen_concatenate_strings(Parser *p, asdl_seq *strings)
 {
     Py_ssize_t len = asdl_seq_LEN(strings);
