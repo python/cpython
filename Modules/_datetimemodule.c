@@ -5429,7 +5429,7 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
     // but it makes the reference counting easier if we still sanitize.
     PyObject *dtstr_clean = _sanitize_isoformat_str(dtstr);
     if (dtstr_clean == NULL) {
-        goto error;
+        goto invalid_string_error;
     }
 
     Py_ssize_t len;
