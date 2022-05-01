@@ -3,6 +3,7 @@ import itertools
 import functools
 
 from datetime import date, datetime, time, timedelta, timezone
+from typing import Any
 
 
 class IsoFormatter:
@@ -77,7 +78,11 @@ class IsoFormatter:
         return f"{self.__class__.__name__}('{self._format_str}')"
 
     @functools.singledispatchmethod
-    def format(self, dt: datetime) -> str:
+    def format(self, dt: Any) -> str:
+        raise NotImplementedError()
+
+    @format.register
+    def _(self, dt: datetime) -> str:
         """Apply the specified ISO8601 format to a datetime."""
         return (
             f"{format(dt, self._date_str)}{self._sep}"
