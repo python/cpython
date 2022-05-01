@@ -3250,7 +3250,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET_SAFE(LOAD_DEREF) {
+        TARGET(LOAD_DEREF) {
             PyObject *cell = GETLOCAL(oparg);
             PyObject *value = PyCell_GET(cell);
             if (value == NULL) {
