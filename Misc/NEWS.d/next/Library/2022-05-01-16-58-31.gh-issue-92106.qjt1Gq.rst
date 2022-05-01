@@ -1,0 +1,2 @@
+:class:`typing.TypedDict` types are non-generic by default. Subscripting
+them raises now TypeError.

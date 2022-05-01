@@ -2883,6 +2883,7 @@ class _TypedDictMeta(type):
         tp_dict.__optional_keys__ = frozenset(optional_keys)
         if not hasattr(tp_dict, '__total__'):
             tp_dict.__total__ = total
+        tp_dict.__class_getitem__ = None
         return tp_dict
 
     __call__ = dict  # static method

@@ -5812,6 +5812,8 @@ class TypedDictTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(dict, Emp)
         with self.assertRaises(TypeError):
+            Emp[int, str]
+        with self.assertRaises(TypeError):
             TypedDict('Hi', [('x', int)], y=int)
 
     def test_py36_class_syntax_usage(self):
