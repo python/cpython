@@ -3832,20 +3832,20 @@ class Color(enum.Enum)
  |\x20\x20
  |  Access them by:
  |\x20\x20
- |  - attribute access::
+ |  - attribute access:
  |\x20\x20
- |  >>> Color.CYAN
- |  <Color.CYAN: 1>
+ |    >>> Color.CYAN
+ |    <Color.CYAN: 1>
  |\x20\x20
  |  - value lookup:
  |\x20\x20
- |  >>> Color(1)
- |  <Color.CYAN: 1>
+ |    >>> Color(1)
+ |    <Color.CYAN: 1>
  |\x20\x20
  |  - name lookup:
  |\x20\x20
- |  >>> Color['CYAN']
- |  <Color.CYAN: 1>
+ |    >>> Color['CYAN']
+ |    <Color.CYAN: 1>
  |\x20\x20
  |  Enumerations can be iterated over, and know how many members they have:
  |\x20\x20
@@ -4110,20 +4110,20 @@ class MiscTestCase(unittest.TestCase):
 
                     Access them by:
 
-                    - attribute access::
+                    - attribute access:
 
-                    >>> Single.ONE
-                    <Single.ONE: 1>
+                      >>> Single.ONE
+                      <Single.ONE: 1>
 
                     - value lookup:
 
-                    >>> Single(1)
-                    <Single.ONE: 1>
+                      >>> Single(1)
+                      <Single.ONE: 1>
 
                     - name lookup:
 
-                    >>> Single['ONE']
-                    <Single.ONE: 1>
+                      >>> Single['ONE']
+                      <Single.ONE: 1>
 
                     Enumerations can be iterated over, and know how many members they have:
 
@@ -4148,20 +4148,20 @@ class MiscTestCase(unittest.TestCase):
 
                     Access them by:
 
-                    - attribute access::
+                    - attribute access:
 
-                    >>> Double.ONE
-                    <Double.ONE: 1>
+                      >>> Double.ONE
+                      <Double.ONE: 1>
 
                     - value lookup:
 
-                    >>> Double(1)
-                    <Double.ONE: 1>
+                      >>> Double(1)
+                      <Double.ONE: 1>
 
                     - name lookup:
 
-                    >>> Double['ONE']
-                    <Double.ONE: 1>
+                      >>> Double['ONE']
+                      <Double.ONE: 1>
 
                     Enumerations can be iterated over, and know how many members they have:
 
@@ -4188,20 +4188,20 @@ class MiscTestCase(unittest.TestCase):
 
                     Access them by:
 
-                    - attribute access::
+                    - attribute access:
 
-                    >>> Triple.ONE
-                    <Triple.ONE: 1>
+                      >>> Triple.ONE
+                      <Triple.ONE: 1>
 
                     - value lookup:
 
-                    >>> Triple(1)
-                    <Triple.ONE: 1>
+                      >>> Triple(1)
+                      <Triple.ONE: 1>
 
                     - name lookup:
 
-                    >>> Triple['ONE']
-                    <Triple.ONE: 1>
+                      >>> Triple['ONE']
+                      <Triple.ONE: 1>
 
                     Enumerations can be iterated over, and know how many members they have:
 
@@ -4228,20 +4228,20 @@ class MiscTestCase(unittest.TestCase):
 
                     Access them by:
 
-                    - attribute access::
+                    - attribute access:
 
-                    >>> Quadruple.ONE
-                    <Quadruple.ONE: 1>
+                      >>> Quadruple.ONE
+                      <Quadruple.ONE: 1>
 
                     - value lookup:
 
-                    >>> Quadruple(1)
-                    <Quadruple.ONE: 1>
+                      >>> Quadruple(1)
+                      <Quadruple.ONE: 1>
 
                     - name lookup:
 
-                    >>> Quadruple['ONE']
-                    <Quadruple.ONE: 1>
+                      >>> Quadruple['ONE']
+                      <Quadruple.ONE: 1>
 
                     Enumerations can be iterated over, and know how many members they have:
 

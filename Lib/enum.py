@@ -501,20 +501,20 @@ class EnumType(type):
 
                         Access them by:
 
-                        - attribute access::
+                        - attribute access:
 
-                        >>> Color.RED
-                        <Color.RED: 1>
+                          >>> Color.RED
+                          <Color.RED: 1>
 
                         - value lookup:
 
-                        >>> Color(1)
-                        <Color.RED: 1>
+                          >>> Color(1)
+                          <Color.RED: 1>
 
                         - name lookup:
 
-                        >>> Color['RED']
-                        <Color.RED: 1>
+                          >>> Color['RED']
+                          <Color.RED: 1>
 
                         Enumerations can be iterated over, and know how many members they have:
 
@@ -555,20 +555,20 @@ class EnumType(type):
 
                         Access them by:
 
-                        - attribute access::
+                        - attribute access:
 
-                        >>> %s.%s
-                        <%s.%s: %r>
+                          >>> %s.%s
+                          <%s.%s: %r>
 
                         - value lookup:
 
-                        >>> %s(%r)
-                        <%s.%s: %r>
+                          >>> %s(%r)
+                          <%s.%s: %r>
 
                         - name lookup:
 
-                        >>> %s[%r]
-                        <%s.%s: %r>
+                          >>> %s[%r]
+                          <%s.%s: %r>
 
                         Enumerations can be iterated over, and know how many members they have:
 
@@ -1087,20 +1087,20 @@ class Enum(metaclass=EnumType):
 
     Access them by:
 
-    - attribute access::
+    - attribute access:
 
-    >>> Color.RED
-    <Color.RED: 1>
+      >>> Color.RED
+      <Color.RED: 1>
 
     - value lookup:
 
-    >>> Color(1)
-    <Color.RED: 1>
+      >>> Color(1)
+      <Color.RED: 1>
 
     - name lookup:
 
-    >>> Color['RED']
-    <Color.RED: 1>
+      >>> Color['RED']
+      <Color.RED: 1>
 
     Enumerations can be iterated over, and know how many members they have:
 
