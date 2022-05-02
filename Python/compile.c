@@ -5094,6 +5094,15 @@ ex_call:
             keyword_ty kw = asdl_seq_GET(keywords, i);
             if (kw->arg == NULL) {
                 /* A keyword argument unpacking. */
+                if (nkwelts == 1) {
+                    /* Only one **kwargs passed, with no individual
+                       keyword arguments; no need to make new dict and merge
+                       as this will be done for us if needed
+                     */
+                    VISIT(c, expr, kw->value);
+                    have_dict = 1;
+                    break;
+                }
                 if (nseen) {
                     if (!compiler_subkwargs(c, keywords, i - nseen, i)) {
                         return 0;
