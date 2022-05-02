@@ -4691,7 +4691,6 @@ check_caller(struct compiler *c, expr_ty e)
     case SetComp_kind:
     case GeneratorExp_kind:
     case JoinedStr_kind:
-    case TagString_kind:
     case FormattedValue_kind:
         return compiler_warn(c, "'%.200s' object is not callable; "
                                 "perhaps you missed a comma?",
@@ -4751,7 +4750,6 @@ check_index(struct compiler *c, expr_ty e, expr_ty s)
     case List_kind:
     case ListComp_kind:
     case JoinedStr_kind:
-    case TagString_kind:
     case FormattedValue_kind:
         return compiler_warn(c, "%.200s indices must be integers or slices, "
                                 "not %.200s; "
@@ -4908,6 +4906,37 @@ compiler_joined_str(struct compiler *c, expr_ty e)
         }
     }
     return 1;
+}
+
+static int
+compiler_tag_string(struct compiler *c, expr_ty e)
+{
+    if (e->kind == TagString_kind) {
+        expr_ty tag = e->v.TagString.tag;
+        expr_ty str = e->v.TagString.str;
+        if (tag->kind == Name_kind) {
+            if (str->kind == Constant_kind) {
+                PyObject *value = str->v.Constant.value;
+                PyObject *kind = str->v.Constant.kind;
+                if (kind == NULL && PyUnicode_CheckExact(value)) {
+                    // Generate code for tag(value)
+                    asdl_expr_seq *args =
+                        _Py_asdl_expr_seq_new(1, c->c_arena);
+                    if (args == NULL)
+                        return 0;
+                    asdl_seq_SET(args, 0, str);
+                    asdl_keyword_seq *keywords =
+                        _Py_asdl_keyword_seq_new(0, c->c_arena);
+                    if (keywords == NULL)
+                        return 0;
+                    ADDOP(c, PUSH_NULL);
+                    VISIT(c, expr, tag);
+                    return compiler_call_helper(c, 0, args, keywords);
+                }
+            }
+        }
+    }
+    return compiler_error(c, "More complicated tag-string not yet supported");
 }
 
 /* Used to implement f-strings. Format a single value. */
@@ -5838,7 +5867,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     case JoinedStr_kind:
         return compiler_joined_str(c, e);
     case TagString_kind:
-        return compiler_error(c, "TagString not yet supported");
+        return compiler_tag_string(c, e);
         break;
     case FormattedValue_kind:
         return compiler_formatted_value(c, e);

@@ -887,6 +887,8 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
         return append_ast_constant(writer, e->v.Constant.value);
     case JoinedStr_kind:
         return append_joinedstr(writer, e, false);
+    case TagString_kind:
+        assert(0);  // TODO
     case FormattedValue_kind:
         return append_formattedvalue(writer, e);
     /* The following exprs can be assignment targets. */
