@@ -739,7 +739,7 @@ The following attribute and methods should only be used by classes derived from
 
    This method, if implemented, will be called by the parent
    :class:`OpenerDirector`.  It should return a file-like object as described in
-   the return value of the :meth:`open` of :class:`OpenerDirector`, or ``None``.
+   the return value of the :meth:`~OpenerDirector.open` method of :class:`OpenerDirector`, or ``None``.
    It should raise :exc:`~urllib.error.URLError`, unless a truly exceptional
    thing happens (for example, :exc:`MemoryError` should not be mapped to
    :exc:`URLError`).

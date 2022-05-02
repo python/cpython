@@ -227,5 +227,5 @@ The two following opening hooks are provided by this module:
       Added the optional *errors* parameter.
 
    .. deprecated:: 3.10
-      This function is deprecated since :func:`input` and :class:`FileInput`
+      This function is deprecated since :func:`fileinput.input` and :class:`FileInput`
       now have *encoding* and *errors* parameters.
