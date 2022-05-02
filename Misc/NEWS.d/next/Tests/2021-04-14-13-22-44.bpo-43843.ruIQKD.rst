@@ -1,5 +1,0 @@
-:mod:`test.libregrtest` now marks a test as ENV_CHANGED (altered the execution
-environment) if a thread raises an exception but does not catch it. It sets a
-hook on :func:`threading.excepthook`. Use ``--fail-env-changed`` option to mark
-the test as failed.
-Patch by Victor Stinner.

@@ -45,10 +45,10 @@ PyDoc_STRVAR(math_isqrt__doc__,
     {"isqrt", (PyCFunction)math_isqrt, METH_O, math_isqrt__doc__},
 
 PyDoc_STRVAR(math_factorial__doc__,
-"factorial($module, x, /)\n"
+"factorial($module, n, /)\n"
 "--\n"
 "\n"
-"Find x!.\n"
+"Find n!.\n"
 "\n"
 "Raise a ValueError if x is negative or non-integral.");
 
@@ -865,4 +865,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1eae2b3ef19568fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6381e7d982ff3711 input=a9049054013a1b77]*/

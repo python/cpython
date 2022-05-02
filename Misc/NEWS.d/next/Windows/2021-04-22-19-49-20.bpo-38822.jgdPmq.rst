@@ -1,3 +1,0 @@
-Fixed :func:`os.stat` failing on inaccessible directories with a trailing
-slash, rather than falling back to the parent directory's metadata. This
-implicitly affected :func:`os.path.exists` and :func:`os.path.isdir`.

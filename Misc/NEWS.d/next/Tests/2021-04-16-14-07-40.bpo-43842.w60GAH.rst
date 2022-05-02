@@ -1,4 +1,0 @@
-Fix a race condition in the SMTP test of test_logging. Don't close a file
-descriptor (socket) from a different thread while asyncore.loop() is polling
-the file descriptor.
-Patch by Victor Stinner.

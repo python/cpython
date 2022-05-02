@@ -474,7 +474,6 @@ class CmdLineTest(unittest.TestCase):
                 br'ModuleNotFoundError'),
             ('builtins.x.y', br'Error while finding module specification.*'
                 br'ModuleNotFoundError.*No module named.*not a package'),
-            ('os.path', br'loader.*cannot handle'),
             ('importlib', br'No module named.*'
                 br'is a package and cannot be directly executed'),
             ('importlib.nonexistent', br'No module named'),
@@ -548,10 +547,10 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = stderr.decode('ascii').split('\n')
-            self.assertEqual(len(text), 5)
+            self.assertEqual(len(text), 6)
             self.assertTrue(text[0].startswith('Traceback'))
             self.assertTrue(text[1].startswith('  File '))
-            self.assertTrue(text[3].startswith('NameError'))
+            self.assertTrue(text[4].startswith('NameError'))
 
     def test_non_ascii(self):
         # Mac OS X denies the creation of a file with an invalid UTF-8 name.
@@ -651,7 +650,7 @@ class CmdLineTest(unittest.TestCase):
                 stderr.splitlines()[-3:],
                 [   b'    foo = """\\q"""',
                     b'          ^^^^^^^^',
-                    b'SyntaxError: invalid escape sequence \\q'
+                    b'SyntaxError: invalid escape sequence \'\\q\''
                 ],
             )
 
@@ -739,9 +738,9 @@ class CmdLineTest(unittest.TestCase):
         self.assertNotEqual(proc.returncode, 0)
 
 
-def test_main():
-    support.run_unittest(CmdLineTest)
+def tearDownModule():
     support.reap_children()
 
+
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

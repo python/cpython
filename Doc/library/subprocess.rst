@@ -214,7 +214,9 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 .. exception:: CalledProcessError
 
     Subclass of :exc:`SubprocessError`, raised when a process run by
-    :func:`check_call` or :func:`check_output` returns a non-zero exit status.
+    :func:`check_call`, :func:`check_output`, or :func:`run` (with ``check=True``)
+    returns a non-zero exit status.
+
 
     .. attribute:: returncode
 
@@ -264,13 +266,14 @@ default values. The arguments that are most commonly needed are:
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
    are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
-   integer), an existing file object, and ``None``.  :data:`PIPE` indicates
-   that a new pipe to the child should be created.  :data:`DEVNULL` indicates
-   that the special file :data:`os.devnull` will be used.  With the default
-   settings of ``None``, no redirection will occur; the child's file handles
-   will be inherited from the parent.  Additionally, *stderr* can be
-   :data:`STDOUT`, which indicates that the stderr data from the child
-   process should be captured into the same file handle as for *stdout*.
+   integer), an existing file object with a valid file descriptor, and ``None``.
+   :data:`PIPE` indicates that a new pipe to the child should be created.
+   :data:`DEVNULL` indicates that the special file :data:`os.devnull` will
+   be used.  With the default settings of ``None``, no redirection will occur;
+   the child's file handles will be inherited from the parent.
+   Additionally, *stderr* can be :data:`STDOUT`, which indicates that the
+   stderr data from the child process should be captured into the same file
+   handle as for *stdout*.
 
    .. index::
       single: universal newlines; subprocess module
@@ -482,13 +485,14 @@ functions.
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
    are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
-   integer), an existing :term:`file object`, and ``None``.  :data:`PIPE`
-   indicates that a new pipe to the child should be created.  :data:`DEVNULL`
-   indicates that the special file :data:`os.devnull` will be used. With the
-   default settings of ``None``, no redirection will occur; the child's file
-   handles will be inherited from the parent.  Additionally, *stderr* can be
-   :data:`STDOUT`, which indicates that the stderr data from the applications
-   should be captured into the same file handle as for stdout.
+   integer), an existing :term:`file object` with a valid file descriptor,
+   and ``None``.  :data:`PIPE` indicates that a new pipe to the child should
+   be created.  :data:`DEVNULL` indicates that the special file
+   :data:`os.devnull` will be used. With the default settings of ``None``,
+   no redirection will occur; the child's file handles will be inherited from
+   the parent.  Additionally, *stderr* can be :data:`STDOUT`, which indicates
+   that the stderr data from the applications should be captured into the same
+   file handle as for stdout.
 
    If *preexec_fn* is set to a callable object, this object will be called in the
    child process just before the child is executed.
@@ -617,7 +621,7 @@ functions.
 
    If *encoding* or *errors* are specified, or *text* is true, the file objects
    *stdin*, *stdout* and *stderr* are opened in text mode with the specified
-   encoding and *errors*, as described above in :ref:`frequently-used-arguments`.
+   *encoding* and *errors*, as described above in :ref:`frequently-used-arguments`.
    The *universal_newlines* argument is equivalent  to *text* and is provided
    for backwards compatibility. By default, file objects are opened in binary mode.
 
@@ -689,7 +693,10 @@ execute, will be re-raised in the parent.
 
 The most common exception raised is :exc:`OSError`.  This occurs, for example,
 when trying to execute a non-existent file.  Applications should prepare for
-:exc:`OSError` exceptions.
+:exc:`OSError` exceptions. Note that, when ``shell=True``, :exc:`OSError`
+will be raised by the child only if the selected shell itself was not found.
+To determine if the shell failed to find the requested application, it is
+necessary to check the return code or output from the subprocess.
 
 A :exc:`ValueError` will be raised if :class:`Popen` is called with invalid
 arguments.
@@ -707,6 +714,7 @@ Exceptions defined in this module all inherit from :exc:`SubprocessError`.
    .. versionadded:: 3.3
       The :exc:`SubprocessError` base class was added.
 
+.. _subprocess-security:
 
 Security Considerations
 -----------------------
@@ -1145,6 +1153,8 @@ calls these functions.
    code was zero then return, otherwise raise :exc:`CalledProcessError`. The
    :exc:`CalledProcessError` object will have the return code in the
    :attr:`~CalledProcessError.returncode` attribute.
+   If :func:`check_call` was unable to start the process it will propagate the exception
+   that was raised.
 
    Code needing to capture stdout or stderr should use :func:`run` instead::
 
@@ -1292,11 +1302,17 @@ Replacing :func:`os.system`
 
    sts = os.system("mycmd" + " myarg")
    # becomes
-   sts = call("mycmd" + " myarg", shell=True)
+   retcode = call("mycmd" + " myarg", shell=True)
 
 Notes:
 
 * Calling the program through the shell is usually not required.
+* The :func:`call` return value is encoded differently to that of
+  :func:`os.system`.
+
+* The :func:`os.system` function ignores SIGINT and SIGQUIT signals while
+  the command is running, but the caller must do this separately when
+  using the :mod:`subprocess` module.
 
 A more realistic example would look like this::
 
@@ -1431,12 +1447,13 @@ This module also provides the following legacy functions from the 2.x
 none of the guarantees described above regarding security and exception
 handling consistency are valid for these functions.
 
-.. function:: getstatusoutput(cmd)
+.. function:: getstatusoutput(cmd, *, encoding=None, errors=None)
 
    Return ``(exitcode, output)`` of executing *cmd* in a shell.
 
    Execute the string *cmd* in a shell with :meth:`Popen.check_output` and
-   return a 2-tuple ``(exitcode, output)``. The locale encoding is used;
+   return a 2-tuple ``(exitcode, output)``.
+   *encoding* and *errors* are used to decode output;
    see the notes on :ref:`frequently-used-arguments` for more details.
 
    A trailing newline is stripped from the output.
@@ -1461,8 +1478,10 @@ handling consistency are valid for these functions.
       as it did in Python 3.3.3 and earlier.  exitcode has the same value as
       :attr:`~Popen.returncode`.
 
+   .. versionadded:: 3.11
+      Added *encoding* and *errors* arguments.
 
-.. function:: getoutput(cmd)
+.. function:: getoutput(cmd, *, encoding=None, errors=None)
 
    Return output (stdout and stderr) of executing *cmd* in a shell.
 
@@ -1476,6 +1495,9 @@ handling consistency are valid for these functions.
 
    .. versionchanged:: 3.3.4
       Windows support added
+
+   .. versionadded:: 3.11
+      Added *encoding* and *errors* arguments.
 
 
 Notes
@@ -1515,3 +1537,39 @@ runtime):
 
    :mod:`shlex`
       Module which provides function to parse and escape command lines.
+
+
+.. _disable_vfork:
+.. _disable_posix_spawn:
+
+Disabling use of ``vfork()`` or ``posix_spawn()``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+On Linux, :mod:`subprocess` defaults to using the ``vfork()`` system call
+internally when it is safe to do so rather than ``fork()``. This greatly
+improves performance.
+
+If you ever encounter a presumed highly-unusual situation where you need to
+prevent ``vfork()`` from being used by Python, you can set the
+:attr:`subprocess._USE_VFORK` attribute to a false value.
+
+   subprocess._USE_VFORK = False  # See CPython issue gh-NNNNNN.
+
+Setting this has no impact on use of ``posix_spawn()`` which could use
+``vfork()`` internally within its libc implementation.  There is a similar
+:attr:`subprocess._USE_POSIX_SPAWN` attribute if you need to prevent use of
+that.
+
+   subprocess._USE_POSIX_SPAWN = False  # See CPython issue gh-NNNNNN.
+
+It is safe to set these to false on any Python version. They will have no
+effect on older versions when unsupported. Do not assume the attributes are
+available to read. Despite their names, a true value does not indicate that the
+corresponding function will be used, only that that it may be.
+
+Please file issues any time you have to use these private knobs with a way to
+reproduce the issue you were seeing. Link to that issue from a comment in your
+code.
+
+.. versionadded:: 3.8 ``_USE_POSIX_SPAWN``
+.. versionadded:: 3.11 ``_USE_VFORK``

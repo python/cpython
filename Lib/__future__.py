@@ -143,5 +143,5 @@ generator_stop = _Feature((3, 5, 0, "beta", 1),
                           CO_FUTURE_GENERATOR_STOP)
 
 annotations = _Feature((3, 7, 0, "beta", 1),
-                       (3, 10, 0, "alpha", 0),
+                       (3, 11, 0, "alpha", 0),
                        CO_FUTURE_ANNOTATIONS)

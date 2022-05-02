@@ -1,5 +1,0 @@
-Revert making ``from __future__ import annotations`` the default. This follows
-the Steering Council decision to postpone PEP 563 changes to at least Python
-3.11. See the original email for more information regarding the decision:
-https://mail.python.org/archives/list/python-dev@python.org/thread/CLVXXPQ2T2LQ5MP2Y53VVQFCXYWQJHKZ/.
-Patch by Pablo Galindo.
