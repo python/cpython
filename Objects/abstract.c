@@ -185,11 +185,12 @@ PyObject_GetItem(PyObject *o, PyObject *key)
         if (_PyObject_LookupAttr(o, &_Py_ID(__class_getitem__), &meth) < 0) {
             return NULL;
         }
-        if (meth) {
+        if (meth && meth != Py_None) {
             result = PyObject_CallOneArg(meth, key);
             Py_DECREF(meth);
             return result;
         }
+        Py_XDECREF(meth);
         PyErr_Format(PyExc_TypeError, "type '%.200s' is not subscriptable",
                      ((PyTypeObject *)o)->tp_name);
         return NULL;
