@@ -2827,7 +2827,6 @@ class TestSingleDispatch(unittest.TestCase):
          self.assertEqual(f(1), "types.UnionType")
          self.assertEqual(f(None), "types.UnionType")
 
-
     def test_register_genericalias(self):
         @functools.singledispatch
         def f(arg):
