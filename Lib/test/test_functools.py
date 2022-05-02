@@ -2793,39 +2793,39 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(f(1.0), "types.UnionType")
 
     def test_union_None(self):
-         @functools.singledispatch
-         def f(arg):
-             return "default"
+        @functools.singledispatch
+        def f(arg):
+            return "default"
 
-         @f.register
-         def _(arg: typing.Union[str, None]):
-             return "typing.Union"
+        @f.register
+        def _(arg: typing.Union[str, None]):
+            return "typing.Union"
 
-         @f.register
-         def _(arg: int):
-             return "types.UnionType"
+        @f.register
+        def _(arg: int):
+            return "types.UnionType"
 
-         self.assertEqual(f([]), "default")
-         self.assertEqual(f(""), "typing.Union")
-         self.assertEqual(f(None), "typing.Union")
-         self.assertEqual(f(1), "types.UnionType")
+        self.assertEqual(f([]), "default")
+        self.assertEqual(f(""), "typing.Union")
+        self.assertEqual(f(None), "typing.Union")
+        self.assertEqual(f(1), "types.UnionType")
 
-         @functools.singledispatch
-         def f(arg):
-             return "default"
+        @functools.singledispatch
+        def f(arg):
+            return "default"
 
-         @f.register
-         def _(arg: str):
-             return "typing.Union"
+        @f.register
+        def _(arg: str):
+            return "typing.Union"
 
-         @f.register
-         def _(arg: int | None):
-             return "types.UnionType"
+        @f.register
+        def _(arg: int | None):
+            return "types.UnionType"
 
-         self.assertEqual(f([]), "default")
-         self.assertEqual(f(""), "typing.Union")
-         self.assertEqual(f(1), "types.UnionType")
-         self.assertEqual(f(None), "types.UnionType")
+        self.assertEqual(f([]), "default")
+        self.assertEqual(f(""), "typing.Union")
+        self.assertEqual(f(1), "types.UnionType")
+        self.assertEqual(f(None), "types.UnionType")
 
     def test_register_genericalias(self):
         @functools.singledispatch
