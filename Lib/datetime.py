@@ -429,12 +429,12 @@ def _parse_isoformat_time(tstr):
         # HHMM                len: 4
         # HH:MM               len: 5
         # HHMMSS              len: 6
+        # HHMMSS.f+           len: 7+
         # HH:MM:SS            len: 8
         # HH:MM:SS.f+         len: 10+
 
-        if (len_tzstr := len(tzstr)) < 10 and (len_tzstr % 2) and len_tzstr != 5:
+        if len(tzstr) in (1, 3):
             raise ValueError('Malformed time zone string')
-
 
         if tzstr == 'Z':
             tz_comps = (0, 0, 0, 0)

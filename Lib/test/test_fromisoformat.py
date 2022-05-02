@@ -652,6 +652,7 @@ class FromIsoformatTimeTest_Fast(FromIsoformatTimeTest_Base):
                 "%H:%M:%S.%(f6)",
                 "%H%M%S.%(f6)",
                 "%H:%M:%S.%(f3)",
+                "%H%M%S.%(f1)",
                 "%H%M%S.%(f3)",
                 "%H:%M:%S[TZ:%H:%M]",
                 "%H:%M:%S[TZ:%H%M]",
