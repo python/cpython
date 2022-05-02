@@ -1615,6 +1615,12 @@ These are not used in annotations. They are building blocks for declaring types.
           def __repr__(self) -> str:
               return f'<Employee {self.name}, id={self.id}>'
 
+   ``NamedTuple`` subclasses can be generic::
+
+      class Group(NamedTuple, Generic[T]):
+          key: T
+          group: list[T]
+
    Backward-compatible usage::
 
        Employee = NamedTuple('Employee', [('name', str), ('id', int)])
@@ -1632,6 +1638,9 @@ These are not used in annotations. They are building blocks for declaring types.
    .. versionchanged:: 3.9
       Removed the ``_field_types`` attribute in favor of the more
       standard ``__annotations__`` attribute which has the same information.
+
+   .. versionchanged:: 3.11
+      Added support for generic namedtuples.
 
 .. class:: NewType(name, tp)
 
