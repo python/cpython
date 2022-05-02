@@ -6052,7 +6052,7 @@ class TypedDictTests(BaseTestCase):
         class A(TypedDict, Generic[T]):
             a: T
 
-        self.assertEqual(A.__bases__, (Generic, dict,))
+        self.assertEqual(A.__bases__, (Generic, dict))
         self.assertEqual(A.__parameters__, (T,))
         self.assertEqual(A[str].__parameters__, ())
         self.assertEqual(A[str].__args__, (str,))
@@ -6060,7 +6060,7 @@ class TypedDictTests(BaseTestCase):
         class B(A[KT], total=False):
             b: KT
 
-        self.assertEqual(B.__bases__, (Generic, dict,))
+        self.assertEqual(B.__bases__, (Generic, dict))
         self.assertEqual(B.__parameters__, (KT, ))
         self.assertEqual(B.__total__, False)
         self.assertEqual(B.__optional_keys__, frozenset(['b']))
@@ -6073,7 +6073,7 @@ class TypedDictTests(BaseTestCase):
         class C(B[int]):
             c: int
 
-        self.assertEqual(C.__bases__, (Generic, dict,))
+        self.assertEqual(C.__bases__, (Generic, dict))
         self.assertEqual(C.__parameters__, ())
         self.assertEqual(C.__total__, True)
         self.assertEqual(C.__optional_keys__, frozenset(['b']))
@@ -6090,7 +6090,7 @@ class TypedDictTests(BaseTestCase):
         class Point3D(Point2DGeneric[T], Generic[T, KT]):
             c: KT
 
-        self.assertEqual(Point3D.__bases__, (Generic, dict,))
+        self.assertEqual(Point3D.__bases__, (Generic, dict))
         self.assertEqual(Point3D.__parameters__, (T, KT))
         self.assertEqual(Point3D.__total__, True)
         self.assertEqual(Point3D.__optional_keys__, frozenset())
