@@ -735,7 +735,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
 #ifdef Py_DEBUG
     config->use_frozen_modules = 0;
 #else
-    config->use_frozen_modules = -1;
+    config->use_frozen_modules = 1;
 #endif
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
