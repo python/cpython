@@ -1009,6 +1009,15 @@ class TestRedirectStream:
         self.redirect_stream(None)
         self.assertIs(getattr(sys, self.orig_stream), orig_stdout)
 
+
+    def test_enter_result_is_target(self):
+        f = io.StringIO()
+        with self.redirect_stream(f) as enter_result:
+            self.assertIs(enter_result, f)
+
+
+
+class TestRedirectOutputStream(TestRedirectStream):
     def test_redirect_to_string_io(self):
         f = io.StringIO()
         msg = "Consider an API like help(), which prints directly to stdout"
@@ -1018,11 +1027,6 @@ class TestRedirectStream:
         self.assertIs(getattr(sys, self.orig_stream), orig_stdout)
         s = f.getvalue().strip()
         self.assertEqual(s, msg)
-
-    def test_enter_result_is_target(self):
-        f = io.StringIO()
-        with self.redirect_stream(f) as enter_result:
-            self.assertIs(enter_result, f)
 
     def test_cm_is_reusable(self):
         f = io.StringIO()
@@ -1048,24 +1052,20 @@ class TestRedirectStream:
         s = f.getvalue()
         self.assertEqual(s, "Hello World!\n")
 
-
-class TestRedirectStdout(TestRedirectStream, unittest.TestCase):
+class TestRedirectStdout(TestRedirectOutputStream, unittest.TestCase):
 
     redirect_stream = redirect_stdout
     orig_stream = "stdout"
 
-class TestRedirectStdout(TestRedirectStream, unittest.TestCase):
-
-    redirect_stream = redirect_stdin
-    orig_stream = "stdin"
-
-
-
-class TestRedirectStderr(TestRedirectStream, unittest.TestCase):
+class TestRedirectStderr(TestRedirectOutputStream, unittest.TestCase):
 
     redirect_stream = redirect_stderr
     orig_stream = "stderr"
 
+class TestRedirectStdin(TestRedirectOutputStream, unittest.TestCase):
+
+    redirect_stream = redirect_stdin
+    orig_stream = "stdin"
 
 class TestSuppress(unittest.TestCase):
 
