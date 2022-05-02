@@ -106,6 +106,16 @@ class ContextManagerTestCase(unittest.TestCase):
         self.assertEqual(frames[0].name, 'test_contextmanager_traceback')
         self.assertEqual(frames[0].line, '1/0')
 
+        try:
+            with f():
+                raise NotImplementedError(42)
+        except NotImplementedError as e:
+            frames = traceback.extract_tb(e.__traceback__)
+
+        self.assertEqual(len(frames), 1)
+        self.assertEqual(frames[0].name, 'test_contextmanager_traceback')
+        self.assertEqual(frames[0].line, 'raise NotImplementedError(42)')
+
     def test_contextmanager_no_reraise(self):
         @contextmanager
         def whee():
