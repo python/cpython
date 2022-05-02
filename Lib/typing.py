@@ -2855,7 +2855,11 @@ class _TypedDictMeta(type):
                 ns['__parameters__'] = ()
         else:
             generic_base = ()
+
         tp_dict = type.__new__(_TypedDictMeta, name, (*generic_base, dict,), ns)
+        if generic_base:
+            class_getitem = Generic.__class_getitem__.__func__
+            tp_dict.__class_getitem__ = classmethod(class_getitem)
 
         annotations = {}
         own_annotations = ns.get('__annotations__', {})
@@ -2904,13 +2908,6 @@ class _TypedDictMeta(type):
         raise TypeError('TypedDict does not support instance and class checks')
 
     __instancecheck__ = __subclasscheck__
-
-    @_tp_cache
-    def __getitem__(cls, params):
-        if issubclass(cls, Generic):
-            return cls.__class_getitem__(params)
-
-        raise TypeError(f"'{cls!r}' is not subscriptable")
 
 
 def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
