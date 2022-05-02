@@ -890,8 +890,8 @@ The following attributes are also available:
 
 .. attribute:: Popen.returncode
 
-   The child return code. This attribute caches the returncode when :meth:`poll`, :meth:`wait`, or (indirectly) :meth:`communicate` was last called. To get the current one :meth:`poll` can be called to update the cache and get the current value. 
-
+   The child return code. The child return code. Initially ``None``, :attr:`returncode` is set by :meth:`poll` and :meth:`wait` after process termination is observed.
+   
    A ``None`` value indicates that the process
    hasn't terminated yet.
 
