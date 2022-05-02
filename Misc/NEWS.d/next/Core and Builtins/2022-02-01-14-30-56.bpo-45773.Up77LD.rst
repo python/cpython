@@ -1,1 +1,0 @@
-Remove two invalid "peephole" optimizations from the bytecode compiler.

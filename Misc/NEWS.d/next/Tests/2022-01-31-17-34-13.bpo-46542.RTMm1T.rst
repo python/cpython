@@ -1,2 +1,0 @@
-Fix a Python crash in test_lib2to3 when using Python built in debug mode:
-limit the recursion limit. Patch by Victor Stinner.

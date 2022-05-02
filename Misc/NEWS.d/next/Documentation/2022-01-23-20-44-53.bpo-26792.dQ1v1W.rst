@@ -1,0 +1,2 @@
+Improve the docstrings of :func:`runpy.run_module` and :func:`runpy.run_path`.
+Original patch by Andrew Brezovsky.

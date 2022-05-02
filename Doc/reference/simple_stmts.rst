@@ -124,9 +124,7 @@ square brackets, is recursively defined as follows.
 * If the target list is a single target with no trailing comma,
   optionally in parentheses, the object is assigned to that target.
 
-* Else: The object must be an iterable with the same number of
-  items as there are targets in the target list, and the items are assigned,
-  from left to right, to the corresponding targets.
+* Else:
 
   * If the target list contains one target prefixed with an asterisk, called a
     "starred" target: The object must be an iterable with at least as many items

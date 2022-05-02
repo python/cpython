@@ -1,2 +1,0 @@
-Improve the exc:`TypeError` message for non-string second arguments passed to
-the built-in functions :func:`getattr` and :func:`hasattr`. Patch by Géry Ogam.
