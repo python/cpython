@@ -330,7 +330,12 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     do {
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
-        n = select(max, &ifdset, &ofdset, &efdset, tvp);
+        n = select(
+            max,
+            imax ? &ifdset : NULL,
+            omax ? &ofdset : NULL,
+            emax ? &efdset : NULL,
+            tvp);
         Py_END_ALLOW_THREADS
 
         if (errno != EINTR)

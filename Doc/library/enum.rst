@@ -110,7 +110,7 @@ Module Contents
       :class:`StrEnum` defaults to the lower-cased version of the member name,
       while other Enums default to 1 and increase from there.
 
-   :func:`property`
+   :func:`~enum.property`
 
       Allows :class:`Enum` members to have attributes without conflicting with
       member names.

@@ -1,0 +1,2 @@
+:c:func:`PyThread_get_thread_native_id` is excluded from the stable ABI on
+platforms where it doesn't exist (like Solaris).
