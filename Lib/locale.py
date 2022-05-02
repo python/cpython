@@ -655,6 +655,11 @@ try:
 except NameError:
     def getpreferredencoding(do_setlocale=True):
         """Return the charset that the user is likely using."""
+        if sys.flags.warn_default_encoding:
+            import warnings
+            warnings.warn(
+                "UTF-8 Mode affects locale.getpreferredencoding(). Consider locale.getencoding() instead.",
+                EncodingWarning, 2)
         if sys.flags.utf8_mode:
             return 'utf-8'
         return getencoding()
@@ -663,6 +668,12 @@ else:
     def getpreferredencoding(do_setlocale=True):
         """Return the charset that the user is likely using,
         according to the system configuration."""
+
+        if sys.flags.warn_default_encoding:
+            import warnings
+            warnings.warn(
+                "UTF-8 Mode affects locale.getpreferredencoding(). Consider locale.getencoding() instead.",
+                EncodingWarning, 2)
         if sys.flags.utf8_mode:
             return 'utf-8'
 
