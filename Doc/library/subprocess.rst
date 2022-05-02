@@ -890,14 +890,14 @@ The following attributes are also available:
 
 .. attribute:: Popen.returncode
 
-   The child return code, set by :meth:`poll` and :meth:`wait` (and indirectly
-   by :meth:`communicate`).  A ``None`` value indicates that the process
+   The child return code. This attribute caches the returncode when :meth:`poll`, :meth:`wait`, or (indirectly) :meth:`communicate` was last called. To get the current one :meth:`poll` can be called to update the cache and get the current value. 
+
+   A ``None`` value indicates that the process
    hasn't terminated yet.
 
    A negative value ``-N`` indicates that the child was terminated by signal
    ``N`` (POSIX only).
 
-   Note: The value stored in returncode may be out-of-date. Use poll() to reliably find the current return code.
 
 
 Windows Popen Helpers
