@@ -189,7 +189,7 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.38.2, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.38.3, which is itself built by sqlite3.vcxproj
     Homepage:
         http://www.sqlite.org/
 _tkinter
