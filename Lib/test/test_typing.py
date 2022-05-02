@@ -6053,6 +6053,8 @@ class TypedDictTests(BaseTestCase):
             a: T
 
         self.assertEqual(A.__bases__, (Generic, dict))
+        self.assertEqual(A.__orig_bases__, (TypedDict, Generic[T]))
+        self.assertEqual(A.__mro__, (A, Generic, dict, object))
         self.assertEqual(A.__parameters__, (T,))
         self.assertEqual(A[str].__parameters__, ())
         self.assertEqual(A[str].__args__, (str,))
@@ -6061,6 +6063,8 @@ class TypedDictTests(BaseTestCase):
             a: T
 
         self.assertEqual(A2.__bases__, (Generic, dict))
+        self.assertEqual(A2.__orig_bases__, (Generic[T], TypedDict))
+        self.assertEqual(A2.__mro__, (A2, Generic, dict, object))
         self.assertEqual(A2.__parameters__, (T,))
         self.assertEqual(A2[str].__parameters__, ())
         self.assertEqual(A2[str].__args__, (str,))
@@ -6069,6 +6073,8 @@ class TypedDictTests(BaseTestCase):
             b: KT
 
         self.assertEqual(B.__bases__, (Generic, dict))
+        self.assertEqual(B.__orig_bases__, (A[KT],))
+        self.assertEqual(B.__mro__, (B, Generic, dict, object))
         self.assertEqual(B.__parameters__, (KT,))
         self.assertEqual(B.__total__, False)
         self.assertEqual(B.__optional_keys__, frozenset(['b']))
@@ -6082,6 +6088,8 @@ class TypedDictTests(BaseTestCase):
             c: int
 
         self.assertEqual(C.__bases__, (Generic, dict))
+        self.assertEqual(C.__orig_bases__, (B[int],))
+        self.assertEqual(C.__mro__, (C, Generic, dict, object))
         self.assertEqual(C.__parameters__, ())
         self.assertEqual(C.__total__, True)
         self.assertEqual(C.__optional_keys__, frozenset(['b']))
@@ -6099,6 +6107,8 @@ class TypedDictTests(BaseTestCase):
             c: KT
 
         self.assertEqual(Point3D.__bases__, (Generic, dict))
+        self.assertEqual(Point3D.__orig_bases__, (Point2DGeneric[T], Generic[T, KT]))
+        self.assertEqual(Point3D.__mro__, (Point3D, Generic, dict, object))
         self.assertEqual(Point3D.__parameters__, (T, KT))
         self.assertEqual(Point3D.__total__, True)
         self.assertEqual(Point3D.__optional_keys__, frozenset())
