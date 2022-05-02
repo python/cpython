@@ -326,12 +326,11 @@ class TraceCallbackTests(unittest.TestCase):
         # unexpanded SQL statement (for SQLite 3.14.0 and newer).
         # The resulting string length is limited by the runtime limit
         # SQLITE_LIMIT_LENGTH.
-        template = "select 'b' as \"a\" from sqlite_master where \"a\"="
+        template = "select 1 as a where a="
         category = sqlite.SQLITE_LIMIT_LENGTH
         with memory_database() as cx, cx_limit(cx, category=category) as lim:
-            nextra = lim - (len(template) + 2) - 1
-            ok_param = "a" * nextra
-            bad_param = "a" * (nextra + 1)
+            ok_param = "a"
+            bad_param = "a" * lim
 
             unexpanded_query = template + "?"
             expected = [unexpanded_query]
