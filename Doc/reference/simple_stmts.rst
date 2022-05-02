@@ -801,18 +801,10 @@ The :keyword:`from` form uses a slightly more complex process:
 Examples::
 
    import foo                 # foo imported and bound locally
-   import foo.bar.baz         # foo.bar.baz imported, foo bound locally
-   import foo.bar.baz as fbb  # foo.bar.baz imported and bound as fbb
-   from foo.bar import baz    # foo.bar.baz imported and bound as baz
-   from foo import attr       # foo imported and foo.attr bound as attr
-
-Note: When a submodule is imported, all parent modules are imported and may
-or may not be bounded locally. For example, ``import foo.bar.baz`` imports
-``foo``, ``foo.bar``, and ``foo.bar.baz``, all of which are bounded
-locally. ``foo`` and ``foo.bar`` can also be referenced and used locally.
-``import foo.bar.baz as fbb`` imports ``foo``, ``foo.bar``, and 
-``foo.bar.baz``, but only ``foo.bar.baz`` is bounded locally as ``baz``.
-``foo`` and ``foo.bar`` cannot be referenced and used locally.
+   import foo.bar.baz         # foo, foo.bar, and foo.bar.baz imported, foo bound locally
+   import foo.bar.baz as fbb  # foo, foo.bar, and foo.bar.baz imported, foo.bar.baz bound as fbb
+   from foo.bar import baz    # foo, foo.bar, and foo.bar.baz imported, foo.bar.baz bound as baz
+   from foo import attr       # foo and foo.attr imported and foo.attr bound as attr
 
 .. index:: single: * (asterisk); import statement
 
