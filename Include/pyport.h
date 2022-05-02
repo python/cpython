@@ -114,16 +114,22 @@ typedef intptr_t        Py_intptr_t;
 /* Py_ssize_t is a signed integral type such that sizeof(Py_ssize_t) ==
  * sizeof(size_t).  C99 doesn't define such a thing directly (size_t is an
  * unsigned integral type).  See PEP 353 for details.
+ * PY_SSIZE_T_MAX is the largest positive value of type Py_ssize_t.
  */
 #ifdef HAVE_PY_SSIZE_T
 
 #elif HAVE_SSIZE_T
 typedef ssize_t         Py_ssize_t;
+#   define PY_SSIZE_T_MAX SSIZE_MAX
 #elif SIZEOF_VOID_P == SIZEOF_SIZE_T
 typedef Py_intptr_t     Py_ssize_t;
+#   define PY_SSIZE_T_MAX INTPTR_MAX
 #else
 #   error "Python needs a typedef for Py_ssize_t in pyport.h."
 #endif
+
+/* Smallest negative value of type Py_ssize_t. */
+#define PY_SSIZE_T_MIN (-PY_SSIZE_T_MAX-1)
 
 /* Py_hash_t is the same size as a pointer. */
 #define SIZEOF_PY_HASH_T SIZEOF_SIZE_T
@@ -137,11 +143,6 @@ typedef Py_ssize_t Py_ssize_clean_t;
 
 /* Largest possible value of size_t. */
 #define PY_SIZE_MAX SIZE_MAX
-
-/* Largest positive value of type Py_ssize_t. */
-#define PY_SSIZE_T_MAX ((Py_ssize_t)(((size_t)-1)>>1))
-/* Smallest negative value of type Py_ssize_t. */
-#define PY_SSIZE_T_MIN (-PY_SSIZE_T_MAX-1)
 
 /* Macro kept for backward compatibility: use "z" in new code.
  *
