@@ -95,18 +95,20 @@ winsound_PlaySound_impl(PyObject *module, PyObject *sound, int flags)
         }
         wsound = (wchar_t *)view.buf;
     } else {
-        PyObject *obj;
-        if (PyBytes_Check(sound) || (obj = PyOS_FSPath(sound)) == NULL) {
+        PyObject *obj = PyOS_FSPath(sound);
+        // Either <obj> is unicode/bytes/NULL, or a helpful message has been surfaced
+        // to the user about how they gave a non-path.
+        if (obj == NULL) return NULL;
+        if (PyBytes_Check(obj)) {
             PyErr_Format(PyExc_TypeError,
                          "'sound' must be str, os.PathLike, or None; not '%s'",
-                         Py_TYPE(sound)->tp_name);
+                         Py_TYPE(obj)->tp_name);
+            Py_DECREF(obj);
             return NULL;
         }
         wsound = PyUnicode_AsWideCharString(obj, NULL);
         Py_DECREF(obj);
-        if (wsound == NULL) {
-            return NULL;
-        }
+        if (wsound == NULL) return NULL;
     }
 
 
