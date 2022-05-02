@@ -1,7 +1,0 @@
-The non-limited API files ``cellobject.h``, ``classobject.h``, ``context.h``,
-``funcobject.h``, ``genobject.h`` and ``longintrepr.h`` have been moved to
-the ``Include/cpython`` directory. Moreover, the ``eval.h`` header file was
-removed. These files must not be included directly, as they are already
-included in ``Python.h``: :ref:`Include Files <api-includes>`. If they have
-been included directly, consider including ``Python.h`` instead.
-Patch by Victor Stinner.

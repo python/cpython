@@ -130,14 +130,18 @@ __all__ = [
 import math
 import numbers
 import random
+import sys
 
 from fractions import Fraction
 from decimal import Decimal
 from itertools import groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
-from operator import itemgetter, mul
-from collections import Counter, namedtuple
+from functools import reduce
+from operator import mul
+from collections import Counter, namedtuple, defaultdict
+
+_SQRT2 = sqrt(2.0)
 
 # === Exceptions ===
 
@@ -180,11 +184,12 @@ def _sum(data):
     allowed.
     """
     count = 0
+    types = set()
+    types_add = types.add
     partials = {}
     partials_get = partials.get
-    T = int
     for typ, values in groupby(data, type):
-        T = _coerce(T, typ)  # or raise TypeError
+        types_add(typ)
         for n, d in map(_exact_ratio, values):
             count += 1
             partials[d] = partials_get(d, 0) + n
@@ -196,6 +201,46 @@ def _sum(data):
     else:
         # Sum all the partial sums using builtin sum.
         total = sum(Fraction(n, d) for d, n in partials.items())
+    T = reduce(_coerce, types, int)  # or raise TypeError
+    return (T, total, count)
+
+
+def _ss(data, c=None):
+    """Return sum of square deviations of sequence data.
+
+    If ``c`` is None, the mean is calculated in one pass, and the deviations
+    from the mean are calculated in a second pass. Otherwise, deviations are
+    calculated from ``c`` as given. Use the second case with care, as it can
+    lead to garbage results.
+    """
+    if c is not None:
+        T, total, count = _sum((d := x - c) * d for x in data)
+        return (T, total, count)
+    count = 0
+    types = set()
+    types_add = types.add
+    sx_partials = defaultdict(int)
+    sxx_partials = defaultdict(int)
+    for typ, values in groupby(data, type):
+        types_add(typ)
+        for n, d in map(_exact_ratio, values):
+            count += 1
+            sx_partials[d] += n
+            sxx_partials[d] += n * n
+    if not count:
+        total = Fraction(0)
+    elif None in sx_partials:
+        # The sum will be a NAN or INF. We can ignore all the finite
+        # partials, and just look at this special one.
+        total = sx_partials[None]
+        assert not _isfinite(total)
+    else:
+        sx = sum(Fraction(n, d) for d, n in sx_partials.items())
+        sxx = sum(Fraction(n, d*d) for d, n in sxx_partials.items())
+        # This formula has poor numeric properties for floats,
+        # but with fractions it is exact.
+        total = (count * sxx - sx * sx) / count
+    T = reduce(_coerce, types, int)  # or raise TypeError
     return (T, total, count)
 
 
@@ -245,6 +290,28 @@ def _exact_ratio(x):
 
     x is expected to be an int, Fraction, Decimal or float.
     """
+
+    # XXX We should revisit whether using fractions to accumulate exact
+    # ratios is the right way to go.
+
+    # The integer ratios for binary floats can have numerators or
+    # denominators with over 300 decimal digits.  The problem is more
+    # acute with decimal floats where the the default decimal context
+    # supports a huge range of exponents from Emin=-999999 to
+    # Emax=999999.  When expanded with as_integer_ratio(), numbers like
+    # Decimal('3.14E+5000') and Decimal('3.14E-5000') have large
+    # numerators or denominators that will slow computation.
+
+    # When the integer ratios are accumulated as fractions, the size
+    # grows to cover the full range from the smallest magnitude to the
+    # largest.  For example, Fraction(3.14E+300) + Fraction(3.14E-300),
+    # has a 616 digit numerator.  Likewise,
+    # Fraction(Decimal('3.14E+5000')) + Fraction(Decimal('3.14E-5000'))
+    # has 10,003 digit numerator.
+
+    # This doesn't seem to have been problem in practice, but it is a
+    # potential pitfall.
+
     try:
         return x.as_integer_ratio()
     except AttributeError:
@@ -303,6 +370,59 @@ def _fail_neg(values, errmsg='negative value'):
         yield x
 
 
+def _integer_sqrt_of_frac_rto(n: int, m: int) -> int:
+    """Square root of n/m, rounded to the nearest integer using round-to-odd."""
+    # Reference: https://www.lri.fr/~melquion/doc/05-imacs17_1-expose.pdf
+    a = math.isqrt(n // m)
+    return a | (a*a*m != n)
+
+
+# For 53 bit precision floats, the bit width used in
+# _float_sqrt_of_frac() is 109.
+_sqrt_bit_width: int = 2 * sys.float_info.mant_dig + 3
+
+
+def _float_sqrt_of_frac(n: int, m: int) -> float:
+    """Square root of n/m as a float, correctly rounded."""
+    # See principle and proof sketch at: https://bugs.python.org/msg407078
+    q = (n.bit_length() - m.bit_length() - _sqrt_bit_width) // 2
+    if q >= 0:
+        numerator = _integer_sqrt_of_frac_rto(n, m << 2 * q) << q
+        denominator = 1
+    else:
+        numerator = _integer_sqrt_of_frac_rto(n << -2 * q, m)
+        denominator = 1 << -q
+    return numerator / denominator   # Convert to float
+
+
+def _decimal_sqrt_of_frac(n: int, m: int) -> Decimal:
+    """Square root of n/m as a Decimal, correctly rounded."""
+    # Premise:  For decimal, computing (n/m).sqrt() can be off
+    #           by 1 ulp from the correctly rounded result.
+    # Method:   Check the result, moving up or down a step if needed.
+    if n <= 0:
+        if not n:
+            return Decimal('0.0')
+        n, m = -n, -m
+
+    root = (Decimal(n) / Decimal(m)).sqrt()
+    nr, dr = root.as_integer_ratio()
+
+    plus = root.next_plus()
+    np, dp = plus.as_integer_ratio()
+    # test: n / m > ((root + plus) / 2) ** 2
+    if 4 * n * (dr*dp)**2 > m * (dr*np + dp*nr)**2:
+        return plus
+
+    minus = root.next_minus()
+    nm, dm = minus.as_integer_ratio()
+    # test: n / m < ((root + minus) / 2) ** 2
+    if 4 * n * (dr*dm)**2 < m * (dr*nm + dm*nr)**2:
+        return minus
+
+    return root
+
+
 # === Measures of central tendency (averages) ===
 
 def mean(data):
@@ -321,13 +441,9 @@ def mean(data):
 
     If ``data`` is empty, StatisticsError will be raised.
     """
-    if iter(data) is data:
-        data = list(data)
-    n = len(data)
+    T, total, n = _sum(data)
     if n < 1:
         raise StatisticsError('mean requires at least one data point')
-    T, total, count = _sum(data)
-    assert count == n
     return _convert(total / n, T)
 
 
@@ -385,7 +501,7 @@ def geometric_mean(data):
         return exp(fmean(map(log, data)))
     except ValueError:
         raise StatisticsError('geometric mean requires a non-empty dataset '
-                              ' containing positive numbers') from None
+                              'containing positive numbers') from None
 
 
 def harmonic_mean(data, weights=None):
@@ -607,9 +723,11 @@ def multimode(data):
     >>> multimode('')
     []
     """
-    counts = Counter(iter(data)).most_common()
-    maxcount, mode_items = next(groupby(counts, key=itemgetter(1)), (0, []))
-    return list(map(itemgetter(0), mode_items))
+    counts = Counter(iter(data))
+    if not counts:
+        return []
+    maxcount = max(counts.values())
+    return [value for value, count in counts.items() if count == maxcount]
 
 
 # Notes on methods for computing quantiles
@@ -696,41 +814,6 @@ def quantiles(data, *, n=4, method='exclusive'):
 
 # See http://mathworld.wolfram.com/Variance.html
 #     http://mathworld.wolfram.com/SampleVariance.html
-#     http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
-#
-# Under no circumstances use the so-called "computational formula for
-# variance", as that is only suitable for hand calculations with a small
-# amount of low-precision data. It has terrible numeric properties.
-#
-# See a comparison of three computational methods here:
-# http://www.johndcook.com/blog/2008/09/26/comparing-three-methods-of-computing-standard-deviation/
-
-def _ss(data, c=None):
-    """Return sum of square deviations of sequence data.
-
-    If ``c`` is None, the mean is calculated in one pass, and the deviations
-    from the mean are calculated in a second pass. Otherwise, deviations are
-    calculated from ``c`` as given. Use the second case with care, as it can
-    lead to garbage results.
-    """
-    if c is not None:
-        T, total, count = _sum((d := x - c) * d for x in data)
-        return (T, total)
-    T, total, count = _sum(data)
-    mean_n, mean_d = (total / count).as_integer_ratio()
-    partials = Counter()
-    for n, d in map(_exact_ratio, data):
-        diff_n = n * mean_d - d * mean_n
-        diff_d = d * mean_d
-        partials[diff_d * diff_d] += diff_n * diff_n
-    if None in partials:
-        # The sum will be a NAN or INF. We can ignore all the finite
-        # partials, and just look at this special one.
-        total = partials[None]
-        assert not _isfinite(total)
-    else:
-        total = sum(Fraction(n, d) for d, n in partials.items())
-    return (T, total)
 
 
 def variance(data, xbar=None):
@@ -771,12 +854,9 @@ def variance(data, xbar=None):
     Fraction(67, 108)
 
     """
-    if iter(data) is data:
-        data = list(data)
-    n = len(data)
+    T, ss, n = _ss(data, xbar)
     if n < 2:
         raise StatisticsError('variance requires at least two data points')
-    T, ss = _ss(data, xbar)
     return _convert(ss / (n - 1), T)
 
 
@@ -815,12 +895,9 @@ def pvariance(data, mu=None):
     Fraction(13, 72)
 
     """
-    if iter(data) is data:
-        data = list(data)
-    n = len(data)
+    T, ss, n = _ss(data, mu)
     if n < 1:
         raise StatisticsError('pvariance requires at least one data point')
-    T, ss = _ss(data, mu)
     return _convert(ss / n, T)
 
 
@@ -833,14 +910,13 @@ def stdev(data, xbar=None):
     1.0810874155219827
 
     """
-    # Fixme: Despite the exact sum of squared deviations, some inaccuracy
-    # remain because there are two rounding steps.  The first occurs in
-    # the _convert() step for variance(), the second occurs in math.sqrt().
-    var = variance(data, xbar)
-    try:
-        return var.sqrt()
-    except AttributeError:
-        return math.sqrt(var)
+    T, ss, n = _ss(data, xbar)
+    if n < 2:
+        raise StatisticsError('stdev requires at least two data points')
+    mss = ss / (n - 1)
+    if issubclass(T, Decimal):
+        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
+    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
 
 
 def pstdev(data, mu=None):
@@ -852,14 +928,13 @@ def pstdev(data, mu=None):
     0.986893273527251
 
     """
-    # Fixme: Despite the exact sum of squared deviations, some inaccuracy
-    # remain because there are two rounding steps.  The first occurs in
-    # the _convert() step for pvariance(), the second occurs in math.sqrt().
-    var = pvariance(data, mu)
-    try:
-        return var.sqrt()
-    except AttributeError:
-        return math.sqrt(var)
+    T, ss, n = _ss(data, mu)
+    if n < 1:
+        raise StatisticsError('pstdev requires at least one data point')
+    mss = ss / n
+    if issubclass(T, Decimal):
+        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
+    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
 
 
 # === Statistics for relations between two inputs ===
@@ -933,13 +1008,13 @@ def correlation(x, y, /):
 LinearRegression = namedtuple('LinearRegression', ('slope', 'intercept'))
 
 
-def linear_regression(x, y, /):
+def linear_regression(x, y, /, *, proportional=False):
     """Slope and intercept for simple linear regression.
 
     Return the slope and intercept of simple linear regression
     parameters estimated using ordinary least squares. Simple linear
     regression describes relationship between an independent variable
-    *x* and a dependent variable *y* in terms of linear function:
+    *x* and a dependent variable *y* in terms of a linear function:
 
         y = slope * x + intercept + noise
 
@@ -957,21 +1032,38 @@ def linear_regression(x, y, /):
     >>> linear_regression(x, y)  #doctest: +ELLIPSIS
     LinearRegression(slope=3.09078914170..., intercept=1.75684970486...)
 
+    If *proportional* is true, the independent variable *x* and the
+    dependent variable *y* are assumed to be directly proportional.
+    The data is fit to a line passing through the origin.
+
+    Since the *intercept* will always be 0.0, the underlying linear
+    function simplifies to:
+
+        y = slope * x + noise
+
+    >>> y = [3 * x[i] + noise[i] for i in range(5)]
+    >>> linear_regression(x, y, proportional=True)  #doctest: +ELLIPSIS
+    LinearRegression(slope=3.02447542484..., intercept=0.0)
+
     """
     n = len(x)
     if len(y) != n:
         raise StatisticsError('linear regression requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('linear regression requires at least two data points')
-    xbar = fsum(x) / n
-    ybar = fsum(y) / n
-    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    sxx = fsum((d := xi - xbar) * d for xi in x)
+    if proportional:
+        sxy = fsum(xi * yi for xi, yi in zip(x, y))
+        sxx = fsum(xi * xi for xi in x)
+    else:
+        xbar = fsum(x) / n
+        ybar = fsum(y) / n
+        sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+        sxx = fsum((d := xi - xbar) * d for xi in x)
     try:
         slope = sxy / sxx   # equivalent to:  covariance(x, y) / variance(x)
     except ZeroDivisionError:
         raise StatisticsError('x is constant')
-    intercept = ybar - slope * xbar
+    intercept = 0.0 if proportional else ybar - slope * xbar
     return LinearRegression(slope=slope, intercept=intercept)
 
 
@@ -1102,7 +1194,7 @@ class NormalDist:
         "Cumulative distribution function.  P(X <= x)"
         if not self._sigma:
             raise StatisticsError('cdf() not defined when sigma is zero')
-        return 0.5 * (1.0 + erf((x - self._mu) / (self._sigma * sqrt(2.0))))
+        return 0.5 * (1.0 + erf((x - self._mu) / (self._sigma * _SQRT2)))
 
     def inv_cdf(self, p):
         """Inverse cumulative distribution function.  x : P(X <= x) = p
@@ -1158,7 +1250,7 @@ class NormalDist:
         dv = Y_var - X_var
         dm = fabs(Y._mu - X._mu)
         if not dv:
-            return 1.0 - erf(dm / (2.0 * X._sigma * sqrt(2.0)))
+            return 1.0 - erf(dm / (2.0 * X._sigma * _SQRT2))
         a = X._mu * Y_var - Y._mu * X_var
         b = X._sigma * Y._sigma * sqrt(dm * dm + dv * log(Y_var / X_var))
         x1 = (a + b) / dv

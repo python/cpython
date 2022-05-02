@@ -16,12 +16,14 @@
 #  define _SGI_MP_SOURCE
 #endif
 
-#include <string.h>               // memcpy()
-#ifndef Py_LIMITED_API
+// stdlib.h, stdio.h, errno.h and string.h headers are not used by Python
+// headers, but kept for backward compatibility. They are excluded from the
+// limited C API of Python 3.11.
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#  include <stdlib.h>
 #  include <stdio.h>              // FILE*
-#endif
-#ifdef HAVE_ERRNO_H
 #  include <errno.h>              // errno
+#  include <string.h>             // memcpy()
 #endif
 #ifndef MS_WINDOWS
 #  include <unistd.h>
@@ -37,6 +39,8 @@
 #include "pymacro.h"
 #include "pymath.h"
 #include "pymem.h"
+#include "pytypedefs.h"
+#include "pybuffer.h"
 #include "object.h"
 #include "objimpl.h"
 #include "typeslots.h"
@@ -64,12 +68,13 @@
 #include "cpython/classobject.h"
 #include "fileobject.h"
 #include "pycapsule.h"
-#include "code.h"
+#include "cpython/code.h"
 #include "pyframe.h"
 #include "traceback.h"
 #include "sliceobject.h"
 #include "cpython/cellobject.h"
 #include "iterobject.h"
+#include "cpython/initconfig.h"
 #include "pystate.h"
 #include "cpython/genobject.h"
 #include "descrobject.h"
@@ -81,7 +86,6 @@
 #include "cpython/pytime.h"
 #include "codecs.h"
 #include "pyerrors.h"
-#include "cpython/initconfig.h"
 #include "pythread.h"
 #include "cpython/context.h"
 #include "modsupport.h"

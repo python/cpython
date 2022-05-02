@@ -1,6 +1,9 @@
 
 /* interpreters module */
 /* low-level access to interpreter primitives */
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
 #include "frameobject.h"
@@ -1836,14 +1839,11 @@ _is_running(PyInterpreterState *interp)
     }
 
     assert(!PyErr_Occurred());
-    InterpreterFrame *frame = tstate->frame;
+    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
     if (frame == NULL) {
         return 0;
     }
-
-    int executing = _PyFrame_IsExecuting(frame);
-
-    return executing;
+    return 1;
 }
 
 static int

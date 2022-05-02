@@ -1,0 +1,2 @@
+Prevent creation of a venv whose path contains the PATH separator. This
+could affect the usage of the activate script. Patch by Dustin Rodrigues.

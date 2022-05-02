@@ -344,7 +344,7 @@ _locate_pythons_for_key(HKEY root, LPCWSTR subkey, REGSAM flags, int bits,
                     }
                     else if (attrs & FILE_ATTRIBUTE_DIRECTORY) {
                         debug(L"locate_pythons_for_key: '%ls' is a directory\n",
-                              ip->executable, attrs);
+                              ip->executable);
                     }
                     else if (find_existing_python(ip->executable)) {
                         debug(L"locate_pythons_for_key: %ls: already found\n",
@@ -542,8 +542,17 @@ find_python_by_version(wchar_t const * wanted_ver)
     }
     for (i = 0; i < num_installed_pythons; i++, ip++) {
         n = wcslen(ip->version);
-        if (n > wlen)
+        /*
+         * If wlen is greater than 1, we're probably trying to find a specific
+         * version and thus want an exact match: 3.1 != 3.10.  Otherwise, we
+         * just want a prefix match.
+         */
+        if ((wlen > 1) && (n != wlen)) {
+            continue;
+        }
+        if (n > wlen) {
             n = wlen;
+        }
         if ((wcsncmp(ip->version, wanted_ver, n) == 0) &&
             /* bits == 0 => don't care */
             ((bits == 0) || (ip->bits == bits))) {
@@ -1259,7 +1268,9 @@ static PYC_MAGIC magic_values[] = {
     { 3400, 3419, L"3.8" },
     { 3420, 3429, L"3.9" },
     { 3430, 3449, L"3.10" },
-    { 3450, 3469, L"3.11" },
+    /* Allow 50 magic numbers per version from here on */
+    { 3450, 3499, L"3.11" },
+    { 3500, 3549, L"3.12" },
     { 0 }
 };
 

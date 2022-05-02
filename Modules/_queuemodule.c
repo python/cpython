@@ -1,3 +1,7 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
@@ -17,7 +21,7 @@ simplequeue_get_state(PyObject *module)
 }
 static struct PyModuleDef queuemodule;
 #define simplequeue_get_state_by_type(type) \
-    (simplequeue_get_state(_PyType_GetModuleByDef(type, &queuemodule)))
+    (simplequeue_get_state(PyType_GetModuleByDef(type, &queuemodule)))
 
 typedef struct {
     PyObject_HEAD

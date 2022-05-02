@@ -11,6 +11,7 @@ import unittest
 
 from test import support
 from test.support import os_helper
+from test.support import threading_helper
 from test.libregrtest.cmdline import Namespace
 from test.libregrtest.save_env import saved_test_environment
 from test.libregrtest.utils import clear_caches, format_duration, print_warning
@@ -138,7 +139,7 @@ STDTESTS = [
 NOTTESTS = set()
 
 
-# used by --findleaks, store for gc.garbage
+# Storage of uncollectable objects
 FOUND_GARBAGE = []
 
 
@@ -179,7 +180,9 @@ def _runtest(ns: Namespace, test_name: str) -> TestResult:
 
     output_on_failure = ns.verbose3
 
-    use_timeout = (ns.timeout is not None)
+    use_timeout = (
+        ns.timeout is not None and threading_helper.can_start_thread
+    )
     if use_timeout:
         faulthandler.dump_traceback_later(ns.timeout, exit=True)
 
@@ -279,7 +282,7 @@ def save_env(ns: Namespace, test_name: str):
 
 def _runtest_inner2(ns: Namespace, test_name: str) -> bool:
     # Load the test function, run the test function, handle huntrleaks
-    # and findleaks to detect leaks
+    # to detect leaks.
 
     abstest = get_abs_module(ns, test_name)
 
