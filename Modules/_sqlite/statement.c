@@ -127,7 +127,7 @@ error:
     return NULL;
 }
 
-int
+static int
 pysqlite_statement_bind_parameter(pysqlite_state *state,
                                   pysqlite_Statement *self, int pos,
                                   PyObject *parameter)
