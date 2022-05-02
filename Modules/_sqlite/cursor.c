@@ -29,7 +29,7 @@
 #include "clinic/cursor.c.h"
 #undef clinic_state
 
-static int
+static inline int
 check_cursor_locked(pysqlite_Cursor *cur)
 {
     if (cur->locked) {
