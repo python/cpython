@@ -436,7 +436,7 @@ static inline Py_UCS4 PyUnicode_MAX_CHAR_VALUE(PyObject *op)
     if (PyUnicode_IS_ASCII(op)) {
         return 0x7fU;
     }
-    static Py_UCS4 max_char_values[] = {
+    static const Py_UCS4 max_char_values[] = {
         0, /* PyUnicode_WCHAR_KIND */
         0xffU, /* PyUnicode_1BYTE_KIND */
         0xffffU, /* PyUnicode_2BYTE_KIND */
