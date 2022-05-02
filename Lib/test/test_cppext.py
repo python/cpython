@@ -1,5 +1,6 @@
 # gh-91321: Build a basic C++ test extension to check that the Python C API is
 # compatible with C++ and does not emit C++ compiler warnings.
+import contextlib
 import os
 import sys
 import unittest
@@ -39,17 +40,24 @@ class TestCPPExt(unittest.TestCase):
             sources=[SOURCE],
             language='c++',
             extra_compile_args=CPPFLAGS)
+        capture_stdout = (not support.verbose)
 
         try:
             try:
-                with (support.captured_stdout() as stdout,
-                      support.swap_attr(sys, 'argv', ['setup.py', 'build_ext'])):
+                if capture_stdout:
+                    stdout = support.captured_stdout()
+                else:
+                    print()
+                    stdout = contextlib.nullcontext()
+                with (stdout,
+                      support.swap_attr(sys, 'argv', ['setup.py', 'build_ext', '--verbose'])):
                     setup(name="_testcppext", ext_modules=[cpp_ext])
                     return
             except:
-                # Show output on error
-                print()
-                print(stdout.getvalue())
+                if capture_stdout:
+                    # Show output on error
+                    print()
+                    print(stdout.getvalue())
                 raise
         except SystemExit:
             self.fail("Build failed")
