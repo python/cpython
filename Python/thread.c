@@ -45,11 +45,9 @@
 
 #ifdef Py_DEBUG
 static int thread_debug = 0;
-#define dprintf(args)   (void)((thread_debug & 1) && printf args)
-#define d2printf(args)  ((thread_debug & 8) && printf args)
+#  define dprintf(args)   (void)((thread_debug & 1) && printf args)
 #else
-#define dprintf(args)
-#define d2printf(args)
+#  define dprintf(args)
 #endif
 
 static int initialized;

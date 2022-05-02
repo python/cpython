@@ -476,7 +476,7 @@ PyObject Slots
 --------------
 
 The type object structure extends the :c:type:`PyVarObject` structure. The
-:attr:`ob_size` field is used for dynamic types (created by  :func:`type_new`,
+:attr:`ob_size` field is used for dynamic types (created by :func:`type_new`,
 usually called from a class statement). Note that :c:data:`PyType_Type` (the
 metatype) initializes :c:member:`~PyTypeObject.tp_itemsize`, which means that its instances (i.e.
 type objects) *must* have the :attr:`ob_size` field.
@@ -1233,7 +1233,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       .. note::
 
          :const:`Py_TPFLAGS_MAPPING` and :const:`Py_TPFLAGS_SEQUENCE` are
-         mutually exclusive; it is an error enable both flags simultaneously.
+         mutually exclusive; it is an error to enable both flags simultaneously.
 
       **Inheritance:**
 
@@ -1255,7 +1255,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       .. note::
 
          :const:`Py_TPFLAGS_MAPPING` and :const:`Py_TPFLAGS_SEQUENCE` are
-         mutually exclusive; it is an error enable both flags simultaneously.
+         mutually exclusive; it is an error to enable both flags simultaneously.
 
       **Inheritance:**
 
@@ -2000,6 +2000,17 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    For this field to be taken into account (even through inheritance),
    you must also set the :const:`Py_TPFLAGS_HAVE_FINALIZE` flags bit.
 
+   Also, note that, in a garbage collected Python,
+   :c:member:`~PyTypeObject.tp_dealloc` may be called from
+   any Python thread, not just the thread which created the object (if the object
+   becomes part of a refcount cycle, that cycle might be collected by a garbage
+   collection on any thread).  This is not a problem for Python API calls, since
+   the thread on which tp_dealloc is called will own the Global Interpreter Lock
+   (GIL). However, if the object being destroyed in turn destroys objects from some
+   other C or C++ library, care should be taken to ensure that destroying those
+   objects on the thread which called tp_dealloc will not violate any assumptions
+   of the library.
+
    **Inheritance:**
 
    This field is inherited by subtypes.
@@ -2022,17 +2033,6 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    This field is never inherited.
 
    .. versionadded:: 3.9 (the field exists since 3.8 but it's only used since 3.9)
-
-
-Also, note that, in a garbage collected Python, :c:member:`~PyTypeObject.tp_dealloc` may be called from
-any Python thread, not just the thread which created the object (if the object
-becomes part of a refcount cycle, that cycle might be collected by a garbage
-collection on any thread).  This is not a problem for Python API calls, since
-the thread on which tp_dealloc is called will own the Global Interpreter Lock
-(GIL). However, if the object being destroyed in turn destroys objects from some
-other C or C++ library, care should be taken to ensure that destroying those
-objects on the thread which called tp_dealloc will not violate any assumptions
-of the library.
 
 
 .. _static-types:
@@ -2440,7 +2440,8 @@ Async Object Structures
 
       PyObject *am_aiter(PyObject *self);
 
-   Must return an :term:`awaitable` object.  See :meth:`__anext__` for details.
+   Must return an :term:`asynchronous iterator` object.
+   See :meth:`__anext__` for details.
 
    This slot may be set to ``NULL`` if an object does not implement
    asynchronous iteration protocol.
@@ -2596,7 +2597,7 @@ A basic :ref:`static type <static-types>`::
        PyVarObject_HEAD_INIT(NULL, 0)
        .tp_name = "mymod.MyObject",
        .tp_basicsize = sizeof(MyObject),
-       .tp_doc = "My objects",
+       .tp_doc = PyDoc_STR("My objects"),
        .tp_new = myobj_new,
        .tp_dealloc = (destructor)myobj_dealloc,
        .tp_repr = (reprfunc)myobj_repr,
@@ -2626,7 +2627,7 @@ with a more verbose initializer::
        0,                              /* tp_setattro */
        0,                              /* tp_as_buffer */
        0,                              /* tp_flags */
-       "My objects",                   /* tp_doc */
+       PyDoc_STR("My objects"),        /* tp_doc */
        0,                              /* tp_traverse */
        0,                              /* tp_clear */
        0,                              /* tp_richcompare */
@@ -2659,7 +2660,7 @@ A type that supports weakrefs, instance dicts, and hashing::
        PyVarObject_HEAD_INIT(NULL, 0)
        .tp_name = "mymod.MyObject",
        .tp_basicsize = sizeof(MyObject),
-       .tp_doc = "My objects",
+       .tp_doc = PyDoc_STR("My objects"),
        .tp_weaklistoffset = offsetof(MyObject, weakreflist),
        .tp_dictoffset = offsetof(MyObject, inst_dict),
        .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
@@ -2687,7 +2688,7 @@ to create instances (e.g. uses a separate factory func) using
        .tp_name = "mymod.MyStr",
        .tp_basicsize = sizeof(MyStr),
        .tp_base = NULL,  // set to &PyUnicode_Type in module init
-       .tp_doc = "my custom str",
+       .tp_doc = PyDoc_STR("my custom str"),
        .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
        .tp_repr = (reprfunc)myobj_repr,
    };
