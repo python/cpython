@@ -307,7 +307,11 @@ process and user.
 .. function:: getenvb(key, default=None)
 
    Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't. *key*, *default* and the result are bytes.
+   *default* if it doesn't. *key*, *default* and the result are bytes. Note that
+   since :func:`getenvb` uses :data:`os.environb`, the mapping of :func:`getenvb` is
+   similarly also captured on import, and the function may not reflect
+   future environment changes.
+
 
    :func:`getenvb` is only available if :data:`supports_bytes_environ`
    is ``True``.
@@ -517,8 +521,8 @@ process and user.
    Assignments to items in ``os.environ`` are automatically translated into
    corresponding calls to :func:`putenv`; however, calls to :func:`putenv`
    don't update ``os.environ``, so it is actually preferable to assign to items
-   of ``os.environ``. This also applies to :func:`getenv` and :func:`getenvb`, which uses
-   ``os.environ`` in its implementation.
+   of ``os.environ``. This also applies to :func:`getenv` and :func:`getenvb`, which
+   respectively use ``os.environ`` and ``os.environb`` in their implementations.
 
    .. note::
 
