@@ -177,8 +177,8 @@ process and user.
 
    This mapping is captured the first time the :mod:`os` module is imported,
    typically during Python startup as part of processing :file:`site.py`.  Changes
-   to the environment made after this time are not reflected in ``os.environ``,
-   except for changes made by modifying ``os.environ`` directly.
+   to the environment made after this time are not reflected in :data:`os.environ`,
+   except for changes made by modifying :data:`os.environ` directly.
 
    This mapping may be used to modify the environment as well as query the
    environment.  :func:`putenv` will be called automatically when the mapping
@@ -190,8 +190,8 @@ process and user.
 
    .. note::
 
-      Calling :func:`putenv` directly does not change ``os.environ``, so it's better
-      to modify ``os.environ``.
+      Calling :func:`putenv` directly does not change :data:`os.environ`, so it's better
+      to modify :data:`os.environ`.
 
    .. note::
 
@@ -201,7 +201,7 @@ process and user.
 
    You can delete items in this mapping to unset environment variables.
    :func:`unsetenv` will be called automatically when an item is deleted from
-   ``os.environ``, and when one of the :meth:`pop` or :meth:`clear` methods is
+   :data:`os.environ`, and when one of the :meth:`pop` or :meth:`clear` methods is
    called.
 
    .. versionchanged:: 3.9
@@ -518,11 +518,11 @@ process and user.
    changes to the environment affect subprocesses started with :func:`os.system`,
    :func:`popen` or :func:`fork` and :func:`execv`.
 
-   Assignments to items in ``os.environ`` are automatically translated into
+   Assignments to items in :data:`os.environ` are automatically translated into
    corresponding calls to :func:`putenv`; however, calls to :func:`putenv`
-   don't update ``os.environ``, so it is actually preferable to assign to items
-   of ``os.environ``. This also applies to :func:`getenv` and :func:`getenvb`, which
-   respectively use ``os.environ`` and ``os.environb`` in their implementations.
+   don't update :data:`os.environ`, so it is actually preferable to assign to items
+   of :data:`os.environ`. This also applies to :func:`getenv` and :func:`getenvb`, which
+   respectively use :data:`os.environ` and :data:`os.environb` in their implementations.
 
    .. note::
 
@@ -721,10 +721,10 @@ process and user.
    environment affect subprocesses started with :func:`os.system`, :func:`popen` or
    :func:`fork` and :func:`execv`.
 
-   Deletion of items in ``os.environ`` is automatically translated into a
+   Deletion of items in :data:`os.environ` is automatically translated into a
    corresponding call to :func:`unsetenv`; however, calls to :func:`unsetenv`
-   don't update ``os.environ``, so it is actually preferable to delete items of
-   ``os.environ``.
+   don't update :data:`os.environ`, so it is actually preferable to delete items of
+   :data:`os.environ`.
 
    .. audit-event:: os.unsetenv key os.unsetenv
 
