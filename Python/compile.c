@@ -4918,7 +4918,7 @@ compiler_tag_string(struct compiler *c, expr_ty e)
             if (str->kind == Constant_kind) {
                 PyObject *value = str->v.Constant.value;
                 PyObject *kind = str->v.Constant.kind;
-                if (kind == NULL && PyUnicode_CheckExact(value)) {
+                if (kind == NULL && PyBytes_CheckExact(value)) {
                     // Generate code for tag(value)
                     asdl_expr_seq *args =
                         _Py_asdl_expr_seq_new(1, c->c_arena);
