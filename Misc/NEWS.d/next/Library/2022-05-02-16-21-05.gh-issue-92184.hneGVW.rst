@@ -1,0 +1,2 @@
+When creating zip files using the ``zipfile`` module, ``os.altsep`` will always
+be treated as a path separator. Patch by Carey Metcalfe.

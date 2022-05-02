@@ -352,6 +352,8 @@ def _sanitize_filename(filename):
     # ZIP format specification.
     if os.sep != "/" and os.sep in filename:
         filename = filename.replace(os.sep, "/")
+    if os.altsep and os.altsep != "/" and os.altsep in filename:
+        filename = filename.replace(os.altsep, "/")
     return filename
 
 
