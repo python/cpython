@@ -21,10 +21,7 @@ from array import array
 from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
-from test.isoformat_helpers.isoformatter import IsoFormatter
-from test.isoformat_helpers import strategies as iso_strategies
 from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
-from test.support.hypothesis_helper import hypothesis
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -59,36 +56,6 @@ OTHERSTUFF = (10, 34.5, "abc", {}, [], ())
 # XXX Copied from test_float.
 INF = float("inf")
 NAN = float("nan")
-
-
-def _cross_product_examples(**kwargs):
-    """Adds the cross-product of multiple hypothesis examples.
-
-    This is a helper function to make specifying a bunch of examples less
-    complicated. By example:
-
-        @_cross_product_examples(a=[1, 2], b=["a", "b"])
-        def test_x(a, b):
-            ...
-
-    Is equivalent to this (order not guaranteed):
-
-        @hypothesis.example(a=1, b="a")
-        @hypothesis.example(a=2, b="a")
-        @hypothesis.example(a=1, b="b")
-        @hypothesis.example(a=2, b="b")
-        def test_x(a, b):
-            ...
-    """
-    params, values = zip(*kwargs.items())
-
-    def inner(f):
-        out = f
-        for value_set in itertools.product(*values):
-            out = hypothesis.example(**dict(zip(params, value_set)))(out)
-        return out
-
-    return inner
 
 
 #############################################################################
@@ -1910,43 +1877,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             with self.assertRaises(TypeError):
                 self.theclass.fromisoformat(bad_type)
 
-    @hypothesis.given(
-        d=hypothesis.strategies.dates(),
-        iso_formatter=iso_strategies.DATE_ISOFORMATTERS,
-    )
-    @_cross_product_examples(
-        d=[
-            date(2025, 1, 2),
-            date(2000, 1, 1),
-            date(1, 1, 1),
-            date(9999, 12, 31),
-        ],
-        iso_formatter=map(IsoFormatter, ["%Y-%m-%d", "%Y%m%d"]),
-    )
-    @_cross_product_examples(
-        d=[date(2025, 1, 2), date(2025, 12, 31), date(2023, 1, 1)],
-        iso_formatter=map(
-            IsoFormatter, ["%G-W%V", "%GW%V", "%G-W%V-%u", "%GW%V%u"]
-        ),
-    )
-    def test_fromisoformat_dates(self, d, iso_formatter):
-        if type(d) != self.theclass:
-            d = self.theclass(d.year, d.month, d.day)
-
-        input_str = iso_formatter.format(d)
-        actual = self.theclass.fromisoformat(input_str)
-        expected = iso_formatter.truncate(d)
-
-        self.assertEqual(
-            actual,
-            expected,
-            f"\n{actual} != {expected}\n"
-            + f"actual = {actual!r}\n"
-            + f"expected = {expected!r}\n"
-            + f"input_str = {input_str}\n"
-            + f"formatter = {iso_formatter!r}",
-        )
-
     def test_fromisocalendar(self):
         # For each test case, assert that fromisocalendar is the
         # inverse of the isocalendar function
@@ -3085,90 +3015,6 @@ class TestDateTime(TestDate):
 
                 self.assertEqual(actual, expected)
 
-    DEFAULT_DT = datetime(2025, 1, 2, 3, 4, 5, 678901)
-    AWARE_UTC_DT = datetime(2025, 1, 2, 3, 4, 5, 678901, tzinfo=timezone.utc)
-    AWARE_POS_DT = datetime(
-        2025, 1, 2, 3, 5, 6, 678901, tzinfo=timezone(timedelta(hours=3))
-    )
-    AWARE_NEG_DT = datetime(
-        2025, 1, 2, 3, 5, 6, 678901, tzinfo=timezone(-timedelta(hours=3))
-    )
-
-    @hypothesis.given(
-        dt=hypothesis.strategies.datetimes(timezones=iso_strategies.TIMEZONES),
-        iso_formatter=iso_strategies.ISOFORMATTERS,
-    )
-    # fmt: off
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%Y-%m-%d"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%Y%m%d"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%Y%m%dT%H"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%Y-%m-%dT%H"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%Y%m%dT%H"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%Y%m%dT%H:%M"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%Y-%m-%dT%H:%M"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%Y-%m-%dT%H%M"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%Y-%m-%dT%H:%M:%S"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%Y-%m-%dT%H%M%S"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%Y-%m-%dT%H%M"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%Y-%m-%dT%H%M%S"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%Y-%m-%dT%H:%M:%S.%(f1)"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%Y-%m-%dT%H:%M:%S,%(f1)"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%Y-%m-%dT%H:%M:%S[TZ:Z]"))
-    @hypothesis.example(dt=AWARE_UTC_DT, iso_formatter=IsoFormatter("%Y-%m-%dT%H:%M:%S[TZ:Z]"))
-    @hypothesis.example(dt=AWARE_POS_DT, iso_formatter=IsoFormatter("%Y-%m-%dT%H:%M:%S[TZ:Z]"))
-    @hypothesis.example(dt=AWARE_UTC_DT, iso_formatter=IsoFormatter("%Y-%m-%dT%H:%M:%S[TZ:%H]"))
-    @hypothesis.example(dt=AWARE_NEG_DT, iso_formatter=IsoFormatter("%Y-%m-%dT%H:%M:%S[TZ:%H]"))
-    @hypothesis.example(dt=AWARE_POS_DT, iso_formatter=IsoFormatter("%Y-%m-%dT%H:%M:%S[TZ:%H]"))
-    @hypothesis.example(dt=AWARE_UTC_DT, iso_formatter=IsoFormatter("%Y-%m-%dT%H:%M:%S[TZ:%H%M]"))
-    @hypothesis.example(dt=AWARE_NEG_DT, iso_formatter=IsoFormatter("%Y-%m-%dT%H:%M:%S[TZ:%H%M]"))
-    @hypothesis.example(dt=AWARE_POS_DT, iso_formatter=IsoFormatter("%Y-%m-%dT%H:%M:%S[TZ:%H%M]"))
-    @hypothesis.example(dt=datetime(2000, 1, 1,
-                                    tzinfo=timezone(-timedelta(hours=-22, microseconds=1))),
-                        iso_formatter=IsoFormatter("%Y-%m-%dT%H[TZ:%H]"))
-    @hypothesis.example(dt=AWARE_UTC_DT,
-                        iso_formatter=IsoFormatter("%Y-%m-%d0%H:%M:%S,%(f1)[TZ:%H:%M:%S.%(f2)]"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%G-W%V"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%G-W%V-%u"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%GW%V:%H"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%GW%V5%H"))
-    @hypothesis.example(dt=DEFAULT_DT, iso_formatter=IsoFormatter("%GW%V%u5%H"))
-    @hypothesis.example(dt=AWARE_UTC_DT, iso_formatter=IsoFormatter("%G-W%V0%H[TZ:%H]"))
-    # fmt: on
-    def test_fromisoformat(self, dt, iso_formatter):
-
-        dt = self.theclass(
-            dt.year,
-            dt.month,
-            dt.day,
-            dt.hour,
-            dt.minute,
-            dt.second,
-            dt.microsecond,
-            tzinfo=dt.tzinfo,
-            fold=dt.fold
-        )
-
-        if "%G" in iso_formatter._format_str:
-            if (
-                iso_formatter._format_str.startswith("%G-W%V-%u")
-                and len(iso_formatter._format_str) > 9
-            ):
-                hypothesis.assume(not iso_formatter._format_str[9].isdigit())
-
-        input_str = iso_formatter.format(dt)
-        actual = self.theclass.fromisoformat(input_str)
-        expected = iso_formatter.truncate(dt)
-
-        self.assertEqual(
-            actual,
-            expected,
-            f"\n{actual} != {expected}\n"
-            + f"actual = {actual!r}\n"
-            + f"expected = {expected!r} \n"
-            + f"input_str = {input_str}",
-        )
-
-
     def test_fromisoformat_fails_datetime(self):
         # Test that fromisoformat() fails on invalid values
         bad_strs = [
@@ -4193,67 +4039,6 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
 
         self.assertEqual(tsc, tsc_rt)
         self.assertIsInstance(tsc_rt, TimeSubclass)
-
-    @hypothesis.given(
-        t=hypothesis.strategies.times(
-            timezones=iso_strategies.FIXED_TIMEZONES | hypothesis.strategies.none()
-        ),
-        iso_formatter=iso_strategies.TIME_ISOFORMATTERS,
-    )
-    @_cross_product_examples(
-        t=[
-            time(0, 0),
-            time(12, 0),
-            time(23, 59, 59, 999999),
-            time(12, 0, tzinfo=timezone.utc),
-            time(12, 0, tzinfo=timezone(timedelta(hours=-5))),
-        ],
-        iso_formatter=map(
-            IsoFormatter,
-            [
-                "%H:%M",
-                "T%H:%M",
-                "%H%M",
-                "%H:%M:%S",
-                "%H%M%S",
-                "%H:%M:%S.%(f6)",
-                "%H%M%S.%(f6)",
-                "%H:%M:%S.%(f3)",
-                "%H%M%S.%(f3)",
-                "%H:%M:%S[TZ:%H:%M]",
-                "%H:%M:%S[TZ:%H%M]",
-                "T%H:%M:%S",
-                "T%H%M%S",
-            ],
-        ),
-    )
-    @hypothesis.example(
-        t=time(0, 0, tzinfo=timezone.utc),
-        iso_formatter=IsoFormatter("%H:%M:%S[TZ:Z]"),
-    )
-    @_cross_product_examples(
-        t=[
-            time(0, 0, tzinfo=timezone(timedelta(hours=5, minutes=30))),
-        ],
-        iso_formatter=map(
-            IsoFormatter, ("%H:%M:%S[TZ:%H]", "%H:%M:%S[TZ:%H:%M]")
-        ),
-    )
-    def test_isoformat_times(self, t, iso_formatter):
-        input_str = iso_formatter.format(t)
-        actual = type(t).fromisoformat(input_str)
-        expected = iso_formatter.truncate(t)
-
-        self.assertEqual(
-            actual,
-            expected,
-            f"\n{actual} != {expected}\n"
-            + f"actual = {actual!r}\n"
-            + f"expected = {expected!r} \n"
-            + f"input_str = {input_str}\n"
-            + f"formatter = {iso_formatter!r}",
-        )
-
 
     def test_subclass_timetz(self):
 
