@@ -1839,14 +1839,11 @@ _is_running(PyInterpreterState *interp)
     }
 
     assert(!PyErr_Occurred());
-    InterpreterFrame *frame = tstate->cframe->current_frame;
+    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
     if (frame == NULL) {
         return 0;
     }
-
-    int executing = _PyFrame_IsExecuting(frame);
-
-    return executing;
+    return 1;
 }
 
 static int

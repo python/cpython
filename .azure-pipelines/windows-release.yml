@@ -38,10 +38,22 @@ parameters:
   displayName: "Publish ARM64 build"
   type: boolean
   default: true
+# Because there is no ARM64 Tcl/Tk pre-3.11, we need a separate option
+# to keep those builds working when the files are going to be absent.
+# Eventually when we stop releasing anything that old, we can drop this
+# argument (and make it implicitly always 'true')
+- name: ARM64TclTk
+  displayName: "Use Tcl/Tk for ARM64 (3.11 and later)"
+  type: boolean
+  default: true
 - name: DoPGO
   displayName: "Run PGO"
   type: boolean
   default: true
+- name: DoCHM
+  displayName: "Produce compiled help document (pre-3.11)"
+  type: boolean
+  default: false
 - name: DoLayout
   displayName: "Produce full layout artifact"
   type: boolean
@@ -78,6 +90,7 @@ variables:
   ${{ if ne(parameters.SigningCertificate, 'Unsigned') }}:
     SigningCertificate: ${{ parameters.SigningCertificate }}
   SigningDescription: ${{ parameters.SigningDescription }}
+  DoCHM: ${{ parameters.DoCHM }}
   DoLayout: ${{ parameters.DoLayout }}
   DoMSIX: ${{ parameters.DoMSIX }}
   DoNuget: ${{ parameters.DoNuget }}
@@ -98,6 +111,8 @@ stages:
     displayName: Build binaries
     jobs:
     - template: windows-release/stage-build.yml
+      parameters:
+        ARM64TclTk: ${{ parameters.ARM64TclTk }}
 
   - stage: Sign
     displayName: Sign binaries
@@ -110,6 +125,8 @@ stages:
     dependsOn: Sign
     jobs:
     - template: windows-release/stage-layout-full.yml
+      parameters:
+        ARM64TclTk: ${{ parameters.ARM64TclTk }}
     - template: windows-release/stage-layout-embed.yml
     - template: windows-release/stage-layout-nuget.yml
 
@@ -124,65 +141,80 @@ stages:
     - template: windows-release/stage-test-embed.yml
     - template: windows-release/stage-test-nuget.yml
 
-  - stage: Layout_MSIX
-    displayName: Generate MSIX layouts
-    dependsOn: Sign
-    condition: and(succeeded(), eq(variables['DoMSIX'], 'true'))
-    jobs:
-    - template: windows-release/stage-layout-msix.yml
+  - ${{ if eq(parameters.DoMSIX, 'true') }}:
+    - stage: Layout_MSIX
+      displayName: Generate MSIX layouts
+      dependsOn: Sign
+      jobs:
+      - template: windows-release/stage-layout-msix.yml
+        parameters:
+          ARM64TclTk: ${{ parameters.ARM64TclTk }}
 
-  - stage: Pack_MSIX
-    displayName: Package MSIX
-    dependsOn: Layout_MSIX
-    jobs:
-    - template: windows-release/stage-pack-msix.yml
+    - stage: Pack_MSIX
+      displayName: Package MSIX
+      dependsOn: Layout_MSIX
+      jobs:
+      - template: windows-release/stage-pack-msix.yml
 
-  - stage: Build_MSI
-    displayName: Build MSI installer
-    dependsOn: Sign
-    condition: and(succeeded(), eq(variables['DoMSI'], 'true'))
-    jobs:
-    - template: windows-release/stage-msi.yml
+  - ${{ if eq(parameters.DoMSI, 'true') }}:
+    - stage: Build_MSI
+      displayName: Build MSI installer
+      dependsOn: Sign
+      jobs:
+      - template: windows-release/stage-msi.yml
+        parameters:
+          ARM64TclTk: ${{ parameters.ARM64TclTk }}
 
-  - stage: Test_MSI
-    displayName: Test MSI installer
-    dependsOn: Build_MSI
-    jobs:
-    - template: windows-release/stage-test-msi.yml
+    - stage: Test_MSI
+      displayName: Test MSI installer
+      dependsOn: Build_MSI
+      jobs:
+      - template: windows-release/stage-test-msi.yml
 
   - ${{ if eq(parameters.DoPublish, 'true') }}:
-    - stage: PublishPyDotOrg
-      displayName: Publish to python.org
-      dependsOn: ['Test_MSI', 'Test']
-      jobs:
-      - template: windows-release/stage-publish-pythonorg.yml
+    - ${{ if eq(parameters.DoMSI, 'true') }}:
+      - stage: PublishPyDotOrg
+        displayName: Publish to python.org
+        dependsOn: ['Test_MSI', 'Test']
+        jobs:
+        - template: windows-release/stage-publish-pythonorg.yml
 
-    - stage: PublishNuget
-      displayName: Publish to nuget.org
-      dependsOn: Test
-      jobs:
-      - template: windows-release/stage-publish-nugetorg.yml
+    - ${{ if eq(parameters.DoNuget, 'true') }}:
+      - stage: PublishNuget
+        displayName: Publish to nuget.org
+        ${{ if eq(parameters.DoMSI, 'true') }}:
+          dependsOn: ['Test_MSI', 'Test']
+        ${{ else }}:
+          dependsOn: 'Test'
+        jobs:
+        - template: windows-release/stage-publish-nugetorg.yml
 
-    - stage: PublishStore
-      displayName: Publish to Store
-      dependsOn: Pack_MSIX
-      jobs:
-      - template: windows-release/stage-publish-store.yml
+    - ${{ if eq(parameters.DoMSIX, 'true') }}:
+      - stage: PublishStore
+        displayName: Publish to Store
+        ${{ if eq(parameters.DoMSI, 'true') }}:
+          dependsOn: ['Test_MSI', 'Pack_MSIX']
+        ${{ else }}:
+          dependsOn: 'Pack_MSIX'
+        jobs:
+        - template: windows-release/stage-publish-store.yml
 
 - ${{ else }}:
   - stage: PublishExisting
     displayName: Publish existing build
     dependsOn: []
-    condition: and(succeeded(), eq(variables['DoPublish'], 'true'))
     jobs:
-    - template: windows-release/stage-publish-pythonorg.yml
-      parameters:
-        BuildToPublish: ${{ parameters.BuildToPublish }}
+    - ${{ if eq(parameters.DoMSI, 'true') }}:
+      - template: windows-release/stage-publish-pythonorg.yml
+        parameters:
+          BuildToPublish: ${{ parameters.BuildToPublish }}
 
-    - template: windows-release/stage-publish-nugetorg.yml
-      parameters:
-        BuildToPublish: ${{ parameters.BuildToPublish }}
+    - ${{ if eq(parameters.DoNuget, 'true') }}:
+      - template: windows-release/stage-publish-nugetorg.yml
+        parameters:
+          BuildToPublish: ${{ parameters.BuildToPublish }}
 
-    - template: windows-release/stage-publish-store.yml
-      parameters:
-        BuildToPublish: ${{ parameters.BuildToPublish }}
+    - ${{ if eq(parameters.DoMSIX, 'true') }}:
+      - template: windows-release/stage-publish-store.yml
+        parameters:
+          BuildToPublish: ${{ parameters.BuildToPublish }}

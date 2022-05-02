@@ -25,6 +25,7 @@ from unittest import mock
 from test import lock_tests
 from test import support
 
+threading_helper.requires_working_threading(module=True)
 
 # Between fork() and exec(), only async-safe functions are allowed (issues
 # #12316 and #11870), and fork() from a worker thread is known to trigger
@@ -122,6 +123,32 @@ class ThreadTests(BaseTestCase):
         with mock.patch.object(threading, '_counter', return_value=5):
             thread = threading.Thread(target=func)
             self.assertEqual(thread.name, "Thread-5 (func)")
+
+    def test_args_argument(self):
+        # bpo-45735: Using list or tuple as *args* in constructor could
+        # achieve the same effect.
+        num_list = [1]
+        num_tuple = (1,)
+
+        str_list = ["str"]
+        str_tuple = ("str",)
+
+        list_in_tuple = ([1],)
+        tuple_in_list = [(1,)]
+
+        test_cases = (
+            (num_list, lambda arg: self.assertEqual(arg, 1)),
+            (num_tuple, lambda arg: self.assertEqual(arg, 1)),
+            (str_list, lambda arg: self.assertEqual(arg, "str")),
+            (str_tuple, lambda arg: self.assertEqual(arg, "str")),
+            (list_in_tuple, lambda arg: self.assertEqual(arg, [1])),
+            (tuple_in_list, lambda arg: self.assertEqual(arg, (1,)))
+        )
+
+        for args, target in test_cases:
+            with self.subTest(target=target, args=args):
+                t = threading.Thread(target=target, args=args)
+                t.start()
 
     @cpython_only
     def test_disallow_instantiation(self):

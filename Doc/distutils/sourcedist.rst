@@ -62,7 +62,7 @@ Notes:
    requires the :program:`compress` program. Notice that this format is now
    pending for deprecation and will be removed in the future versions of Python.
 (5)
-  deprecated by `PEP 527 <https://www.python.org/dev/peps/pep-0527/>`_;
+  deprecated by `PEP 527 <https://peps.python.org/pep-0527/>`_;
   `PyPI <https://pypi.org>`_ only accepts ``.zip`` and ``.tar.gz`` files.
 
 When using any ``tar`` format (``gztar``, ``bztar``, ``xztar``, ``ztar`` or

@@ -342,7 +342,7 @@ class PropertyUnreachableAttributeWithName(_PropertyUnreachableAttribute, unitte
 
 
 class PropertyUnreachableAttributeNoName(_PropertyUnreachableAttribute, unittest.TestCase):
-    msg_format = "^property of 'PropertyUnreachableAttributeNoName\.cls' object {}$"
+    msg_format = r"^property of 'PropertyUnreachableAttributeNoName\.cls' object {}$"
 
     class cls:
         pass
