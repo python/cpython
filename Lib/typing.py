@@ -2859,7 +2859,6 @@ class _TypedDictMeta(type):
 
         annotations = {}
         own_annotations = ns.get('__annotations__', {})
-        own_annotation_keys = set(own_annotations.keys())
         msg = "TypedDict('Name', {f0: t0, f1: t1, ...}); each t must be a type"
         own_annotations = {
             n: _type_check(tp, msg, module=tp_dict.__module__)
