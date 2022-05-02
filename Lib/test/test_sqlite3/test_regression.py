@@ -470,7 +470,8 @@ class RegressionTests(unittest.TestCase):
             self.assertEqual(steps, values)
 
 
-class ConverterProgrammingErrorTestCase(unittest.TestCase):
+class RecursiveUseOfCursors(unittest.TestCase):
+    # GH-80254: sqlite3 should not segfault for recursive use of cursors.
     msg = "Recursive use of cursors not allowed"
 
     def setUp(self):
