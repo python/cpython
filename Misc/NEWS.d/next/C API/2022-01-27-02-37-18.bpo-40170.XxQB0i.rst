@@ -1,2 +1,0 @@
-Move _Py_GetAllocatedBlocks() and _PyObject_DebugMallocStats() private
-functions to the internal C API. Patch by Victor Stinner.

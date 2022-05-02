@@ -685,6 +685,12 @@ do_fork_exec(char *const exec_array[],
         assert(preexec_fn == Py_None);
 
         pid = vfork();
+        if (pid == -1) {
+            /* If vfork() fails, fall back to using fork(). When it isn't
+             * allowed in a process by the kernel, vfork can return -1
+             * with errno EINVAL. https://bugs.python.org/issue47151. */
+            pid = fork();
+        }
     } else
 #endif
     {
@@ -745,9 +751,10 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     Py_ssize_t arg_num, num_groups = 0;
     int need_after_fork = 0;
     int saved_errno = 0;
+    int allow_vfork;
 
     if (!PyArg_ParseTuple(
-            args, "OOpO!OOiiiiiiiiiiOOOiO:fork_exec",
+            args, "OOpO!OOiiiiiiiiiiOOOiOp:fork_exec",
             &process_args, &executable_list,
             &close_fds, &PyTuple_Type, &py_fds_to_keep,
             &cwd_obj, &env_list,
@@ -755,7 +762,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
             &errread, &errwrite, &errpipe_read, &errpipe_write,
             &restore_signals, &call_setsid,
             &gid_object, &groups_list, &uid_object, &child_umask,
-            &preexec_fn))
+            &preexec_fn, &allow_vfork))
         return NULL;
 
     if ((preexec_fn != Py_None) &&
@@ -934,7 +941,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
 #ifdef VFORK_USABLE
     /* Use vfork() only if it's safe. See the comment above child_exec(). */
     sigset_t old_sigs;
-    if (preexec_fn == Py_None &&
+    if (preexec_fn == Py_None && allow_vfork &&
         !call_setuid && !call_setgid && !call_setgroups) {
         /* Block all signals to ensure that no signal handlers are run in the
          * child process while it shares memory with us. Note that signals

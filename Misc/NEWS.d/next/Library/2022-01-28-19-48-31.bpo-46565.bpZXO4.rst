@@ -1,1 +1,0 @@
-Remove loop variables that are leaking into modules' namespaces.

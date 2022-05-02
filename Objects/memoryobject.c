@@ -67,14 +67,6 @@ class memoryview "PyMemoryViewObject *" "&PyMemoryView_Type"
 */
 
 
-#define CHECK_MBUF_RELEASED(mbuf) \
-    if (((_PyManagedBufferObject *)mbuf)->flags&_Py_MANAGED_BUFFER_RELEASED) { \
-        PyErr_SetString(PyExc_ValueError,                                      \
-            "operation forbidden on released memoryview object");              \
-        return NULL;                                                           \
-    }
-
-
 static inline _PyManagedBufferObject *
 mbuf_alloc(void)
 {
