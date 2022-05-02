@@ -293,7 +293,7 @@ process and user.
 
    Return the value of the environment variable *key* if it exists, or
    *default* if it doesn't. *key*, *default* and the result are str. Note that
-   since :func:`getenv` uses ``os.environ``, the mapping of :func:`getenv` is
+   since :func:`getenv` uses :data:`os.environ`, the mapping of :func:`getenv` is
    similarly also captured on import, and the function may not reflect
    future environment changes.
 
@@ -517,7 +517,7 @@ process and user.
    Assignments to items in ``os.environ`` are automatically translated into
    corresponding calls to :func:`putenv`; however, calls to :func:`putenv`
    don't update ``os.environ``, so it is actually preferable to assign to items
-   of ``os.environ``. This also applies to :func:`getenv`, which uses
+   of ``os.environ``. This also applies to :func:`getenv` and :func:`getenvb`, which uses
    ``os.environ`` in its implementation.
 
    .. note::
