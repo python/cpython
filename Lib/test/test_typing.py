@@ -6117,6 +6117,13 @@ class TypedDictTests(BaseTestCase):
             class Point3D(Point2DGeneric[T], Generic[KT]):
                 c: KT
 
+    def test_implicit_any_inheritance(self):
+        class A(TypedDict, Generic[T]):
+            a: T
+        
+        class B(A[KT], total=False):
+            b: KT
+
         class WithImplicitAny(B):
             c: int
 
