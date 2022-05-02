@@ -2851,9 +2851,6 @@ class _TypedDictMeta(type):
             generic_base = ()
 
         tp_dict = type.__new__(_TypedDictMeta, name, (*generic_base, dict), ns)
-        if generic_base:
-            class_getitem = Generic.__class_getitem__.__func__
-            tp_dict.__class_getitem__ = classmethod(class_getitem)
 
         annotations = {}
         own_annotations = ns.get('__annotations__', {})
