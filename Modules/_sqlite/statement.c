@@ -127,7 +127,10 @@ error:
     return NULL;
 }
 
-int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObject* parameter)
+int
+pysqlite_statement_bind_parameter(pysqlite_state *state,
+                                  pysqlite_Statement *self, int pos,
+                                  PyObject *parameter)
 {
     int rc = SQLITE_OK;
     const char *string;
@@ -203,6 +206,9 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
             break;
         }
         case TYPE_UNKNOWN:
+            PyErr_Format(state->ProgrammingError,
+                    "Error binding parameter %d: type '%s' in not supported",
+                    pos, Py_TYPE(parameter)->tp_name);
             rc = -1;
     }
 
@@ -289,15 +295,15 @@ pysqlite_statement_bind_parameters(pysqlite_state *state,
                 }
             }
 
-            rc = pysqlite_statement_bind_parameter(self, i + 1, adapted);
+            rc = pysqlite_statement_bind_parameter(state, self, i+1, adapted);
             Py_DECREF(adapted);
 
             if (rc != SQLITE_OK) {
-                if (!PyErr_Occurred()) {
-                    PyErr_Format(state->InterfaceError,
-                                 "Error binding parameter %d - "
-                                 "probably unsupported type.", i);
-                }
+                PyObject *exc, *val, *tb;
+                PyErr_Fetch(&exc, &val, &tb);
+                sqlite3 *db = sqlite3_db_handle(self->st);
+                _pysqlite_seterror(state, db);
+                _PyErr_ChainExceptions(exc, val, tb);
                 return;
             }
         }
@@ -349,15 +355,15 @@ pysqlite_statement_bind_parameters(pysqlite_state *state,
                 }
             }
 
-            rc = pysqlite_statement_bind_parameter(self, i, adapted);
+            rc = pysqlite_statement_bind_parameter(state, self, i, adapted);
             Py_DECREF(adapted);
 
             if (rc != SQLITE_OK) {
-                if (!PyErr_Occurred()) {
-                    PyErr_Format(state->InterfaceError,
-                                 "Error binding parameter :%s - "
-                                 "probably unsupported type.", binding_name);
-                }
+                PyObject *exc, *val, *tb;
+                PyErr_Fetch(&exc, &val, &tb);
+                sqlite3 *db = sqlite3_db_handle(self->st);
+                _pysqlite_seterror(state, db);
+                _PyErr_ChainExceptions(exc, val, tb);
                 return;
            }
         }
