@@ -5394,7 +5394,7 @@ _find_isoformat_separator(const char *dtstr, Py_ssize_t len, unsigned char* mode
         if (dtstr[4] == week_indicator) {
             *mode = MODE_ISOCALENDAR;
             // YYYYWww (7) or YYYYWwwd (8)
-            ssize_t idx = 7;
+            size_t idx = 7;
             for (; idx < len; ++idx) {
                 // Keep going until we run out of digits.
                 if (!is_digit(dtstr[idx])) {
