@@ -876,6 +876,15 @@ class ForwardRef(_Final, _root=True):
         return f'ForwardRef({self.__forward_arg__!r}{module_repr})'
 
 
+def _is_unpacked_type(x: Any) -> bool:
+    return (
+        # E.g. *tuple[int]
+        (isinstance(x, GenericAlias) and x.__unpacked__)
+        or
+        # E.g. Unpack[tuple[int]]
+        (isinstance(x, _GenericAlias) and x.__origin__ is Unpack)
+    )
+
 def _is_unpacked_typevartuple(x: Any) -> bool:
     return (
             isinstance(x, _UnpackGenericAlias)
@@ -995,7 +1004,7 @@ class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
     def __typing_subst__(self, arg):
         msg = "Parameters to generic types must be types."
         arg = _type_check(arg, msg, is_argument=True)
-        if (isinstance(arg, _GenericAlias) and arg.__origin__ is Unpack):
+        if _is_unpacked_type(arg):
             raise TypeError(f"{arg} is not valid as type argument")
         return arg
 
