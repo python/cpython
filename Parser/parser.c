@@ -14159,7 +14159,7 @@ atom_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME STRING"));
-            _res = _PyPegen_tag_string ( p , a , b );
+            _res = _PyPegen_tag_string ( p , a , ( Token* ) b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -15488,7 +15488,7 @@ strings_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ strings[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "STRING+"));
-            _res = _PyPegen_concatenate_strings ( p , a );
+            _res = _PyPegen_concatenate_strings ( p , a , 0 );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

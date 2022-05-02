@@ -870,14 +870,18 @@ _PyPegen_seq_delete_starred_exprs(Parser *p, asdl_seq *kwargs)
 }
 
 expr_ty
-_PyPegen_tag_string(Parser *p, expr_ty tag, Token *t)
+_PyPegen_tag_string(Parser *p, expr_ty tag, Token *tok)
 {
     // No prefixes (f, r, b, u)
     // Parse like fstring
     // Create a node similar to f-string AST
-    expr_ty str = _PyAST_Constant(t->bytes, NULL, t->lineno,
-                               t->col_offset, t->end_lineno,
-                               t->end_col_offset, p->arena);
+    asdl_generic_seq *tokens = _Py_asdl_generic_seq_new(1, p->arena);
+    if (tokens == NULL)
+        return NULL;
+    asdl_seq_SET(tokens, 0, tok);
+    expr_ty str = _PyPegen_concatenate_strings(p, (asdl_seq *)tokens, 1);
+    if (str == NULL)
+        return NULL;
     return _PyAST_TagString(tag, str,
                             tag->lineno, tag->col_offset, str->end_lineno, str->end_col_offset,
                             p->arena);
@@ -886,7 +890,7 @@ _PyPegen_tag_string(Parser *p, expr_ty tag, Token *t)
 
 
 expr_ty
-_PyPegen_concatenate_strings(Parser *p, asdl_seq *strings)
+_PyPegen_concatenate_strings(Parser *p, asdl_seq *strings, int tagged)
 {
     Py_ssize_t len = asdl_seq_LEN(strings);
     assert(len > 0);
@@ -898,7 +902,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_seq *strings)
     PyObject *bytes_str = NULL;
 
     FstringParser state;
-    _PyPegen_FstringParser_Init(&state);
+    _PyPegen_FstringParser_Init(&state, tagged);
 
     for (Py_ssize_t i = 0; i < len; i++) {
         Token *t = asdl_seq_GET_UNTYPED(strings, i);
@@ -909,7 +913,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_seq *strings)
         const char *fstr;
         Py_ssize_t fstrlen = -1;
 
-        if (_PyPegen_parsestr(p, &this_bytesmode, &this_rawmode, &s, &fstr, &fstrlen, t) != 0) {
+        if (_PyPegen_parsestr(p, &this_bytesmode, &this_rawmode, &s, &fstr, &fstrlen, t, tagged) != 0) {
             goto error;
         }
 

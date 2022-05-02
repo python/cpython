@@ -796,7 +796,7 @@ slice[expr_ty]:
     | a=named_expression { a }
 
 atom[expr_ty]:
-    | a=NAME b=STRING { _PyPegen_tag_string(p, a, b) }
+    | a=NAME b=STRING { _PyPegen_tag_string(p, a, (Token *)b) }
     | NAME
     | 'True' { _PyAST_Constant(Py_True, NULL, EXTRA) }
     | 'False' { _PyAST_Constant(Py_False, NULL, EXTRA) }
@@ -871,7 +871,7 @@ lambda_param[arg_ty]: a=NAME { _PyAST_arg(a->v.Name.id, NULL, NULL, EXTRA) }
 # LITERALS
 # ========
 
-strings[expr_ty] (memo): a=STRING+ { _PyPegen_concatenate_strings(p, a) }
+strings[expr_ty] (memo): a=STRING+ { _PyPegen_concatenate_strings(p, a, 0) }
 
 list[expr_ty]:
     | '[' a=[star_named_expressions] ']' { _PyAST_List(a, Load, EXTRA) }

@@ -166,7 +166,7 @@ decode_bytes_with_escapes(Parser *p, const char *s, Py_ssize_t len, Token *t)
    string object.  Return 0 if no errors occurred.  */
 int
 _PyPegen_parsestr(Parser *p, int *bytesmode, int *rawmode, PyObject **result,
-                  const char **fstr, Py_ssize_t *fstrlen, Token *t)
+                  const char **fstr, Py_ssize_t *fstrlen, Token *t, int tagged)
 {
     const char *s = PyBytes_AsString(t->bytes);
     if (s == NULL) {
@@ -175,12 +175,16 @@ _PyPegen_parsestr(Parser *p, int *bytesmode, int *rawmode, PyObject **result,
 
     size_t len;
     int quote = Py_CHARMASK(*s);
-    int fmode = 0;
+    int fmode = tagged;
     *bytesmode = 0;
-    *rawmode = 0;
+    *rawmode = tagged;
     *result = NULL;
     *fstr = NULL;
     if (Py_ISALPHA(quote)) {
+        if (tagged) {
+            RAISE_SYNTAX_ERROR("Cannot combine tag and letter prefix");
+            return -1;
+        }
         while (!*bytesmode || !*rawmode) {
             if (quote == 'b' || quote == 'B') {
                 quote =(unsigned char)*++s;
@@ -1030,10 +1034,10 @@ FstringParser_check_invariants(FstringParser *state)
 #endif
 
 void
-_PyPegen_FstringParser_Init(FstringParser *state)
+_PyPegen_FstringParser_Init(FstringParser *state, int fmode)
 {
     state->last_str = NULL;
-    state->fmode = 0;
+    state->fmode = fmode;
     ExprList_Init(&state->expr_list);
     FstringParser_check_invariants(state);
 }
@@ -1245,7 +1249,7 @@ fstring_parse(Parser *p, const char **str, const char *end, int raw,
 {
     FstringParser state;
 
-    _PyPegen_FstringParser_Init(&state);
+    _PyPegen_FstringParser_Init(&state, 0);
     if (_PyPegen_FstringParser_ConcatFstring(p, &state, str, end, raw, recurse_lvl,
                                     first_token, t, last_token) < 0) {
         _PyPegen_FstringParser_Dealloc(&state);

@@ -4915,24 +4915,20 @@ compiler_tag_string(struct compiler *c, expr_ty e)
         expr_ty tag = e->v.TagString.tag;
         expr_ty str = e->v.TagString.str;
         if (tag->kind == Name_kind) {
-            if (str->kind == Constant_kind) {
-                PyObject *value = str->v.Constant.value;
-                PyObject *kind = str->v.Constant.kind;
-                if (kind == NULL && PyBytes_CheckExact(value)) {
-                    // Generate code for tag(value)
-                    asdl_expr_seq *args =
-                        _Py_asdl_expr_seq_new(1, c->c_arena);
-                    if (args == NULL)
-                        return 0;
-                    asdl_seq_SET(args, 0, str);
-                    asdl_keyword_seq *keywords =
-                        _Py_asdl_keyword_seq_new(0, c->c_arena);
-                    if (keywords == NULL)
-                        return 0;
-                    ADDOP(c, PUSH_NULL);
-                    VISIT(c, expr, tag);
-                    return compiler_call_helper(c, 0, args, keywords);
-                }
+            if (str->kind == JoinedStr_kind) {
+                // Generate code for tag(str)
+                asdl_expr_seq *args =
+                    _Py_asdl_expr_seq_new(1, c->c_arena);
+                if (args == NULL)
+                    return 0;
+                asdl_seq_SET(args, 0, str);
+                asdl_keyword_seq *keywords =
+                    _Py_asdl_keyword_seq_new(0, c->c_arena);
+                if (keywords == NULL)
+                    return 0;
+                ADDOP(c, PUSH_NULL);
+                VISIT(c, expr, tag);
+                return compiler_call_helper(c, 0, args, keywords);
             }
         }
     }
