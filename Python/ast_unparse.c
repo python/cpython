@@ -663,6 +663,18 @@ append_joinedstr(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
 }
 
 static int
+append_tagstring(_PyUnicodeWriter *writer, expr_ty e, int level)
+{
+    if (-1 == append_ast_expr(writer, e->v.TagString.tag, level))
+        return -1;
+    if (-1 == append_charp(writer, " "))
+        return -1;
+    if (-1 == append_ast_expr(writer, e->v.TagString.str, level))
+        return -1;
+    return 0;
+}
+
+static int
 append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e)
 {
     const char *conversion;
@@ -888,7 +900,7 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
     case JoinedStr_kind:
         return append_joinedstr(writer, e, false);
     case TagString_kind:
-        assert(0);  // TODO
+        return append_tagstring(writer, e, level);
     case FormattedValue_kind:
         return append_formattedvalue(writer, e);
     /* The following exprs can be assignment targets. */
