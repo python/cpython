@@ -6057,11 +6057,19 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(A[str].__parameters__, ())
         self.assertEqual(A[str].__args__, (str,))
 
+        class A2(Generic[T], TypedDict):
+            a: T
+
+        self.assertEqual(A2.__bases__, (Generic, dict))
+        self.assertEqual(A2.__parameters__, (T,))
+        self.assertEqual(A2[str].__parameters__, ())
+        self.assertEqual(A2[str].__args__, (str,))
+
         class B(A[KT], total=False):
             b: KT
 
         self.assertEqual(B.__bases__, (Generic, dict))
-        self.assertEqual(B.__parameters__, (KT, ))
+        self.assertEqual(B.__parameters__, (KT,))
         self.assertEqual(B.__total__, False)
         self.assertEqual(B.__optional_keys__, frozenset(['b']))
         self.assertEqual(B.__required_keys__, frozenset(['a']))
