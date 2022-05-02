@@ -311,25 +311,6 @@ Standard names are defined for the following types:
    .. versionchanged:: 3.9.2
       This type can now be subclassed.
 
-   .. attribute:: __origin__
-
-      The non-parameterized generic class.
-
-   .. attribute:: __args__
-
-      The :class:`tuple` of types which parameterize the generic class.
-
-   .. attribute:: __parameters__
-
-      The :data:`~typing.TypeVar`\ s which serve as type parameters for
-      the generic class.
-
-   .. attribute:: __unpacked__
-
-      A boolean that is true if the alias has been unpacked using the
-      ``*`` operator (see :data:`~typing.TypeVarTuple`).
-
-      .. versionadded:: 3.11
 
 .. class:: UnionType
 
