@@ -806,7 +806,7 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
         return NULL;
     }
 
-    self->locked = 1;
+    self->locked = 1;  // GH-80254: Prevent recursive use of cursors.
     PyObject *row = _pysqlite_fetch_one_row(self);
     self->locked = 0;
     if (row == NULL) {
