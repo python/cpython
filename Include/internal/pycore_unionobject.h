@@ -15,6 +15,7 @@ extern PyObject *_Py_union_type_or(PyObject *, PyObject *);
 #define _PyGenericAlias_Check(op) PyObject_TypeCheck(op, &Py_GenericAliasType)
 extern PyObject *_Py_subs_parameters(PyObject *, PyObject *, PyObject *, PyObject *);
 extern PyObject *_Py_make_parameters(PyObject *);
+extern PyObject *_Py_union_args(PyObject *self);
 
 #ifdef __cplusplus
 }

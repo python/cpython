@@ -1,0 +1,1 @@
+Integer mod/remainder operations, including the three-argument form of :func:`pow`, now consistently return ints from the global small integer cache when applicable.

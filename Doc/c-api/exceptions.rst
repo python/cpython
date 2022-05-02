@@ -253,6 +253,14 @@ For convenience, some of these functions will always return a
    .. versionadded:: 3.3
 
 
+.. c:function:: PyObject* PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg, PyObject *name, PyObject *path)
+
+   Much like :c:func:`PyErr_SetImportError` but this function allows for
+   specifying a subclass of :exc:`ImportError` to raise.
+
+   .. versionadded:: 3.6
+
+
 .. c:function:: void PyErr_SyntaxLocationObject(PyObject *filename, int lineno, int col_offset)
 
    Set file, line, and offset information for the current exception.  If the
@@ -273,7 +281,7 @@ For convenience, some of these functions will always return a
 
 .. c:function:: void PyErr_SyntaxLocation(const char *filename, int lineno)
 
-   Like :c:func:`PyErr_SyntaxLocationEx`, but the col_offset parameter is
+   Like :c:func:`PyErr_SyntaxLocationEx`, but the *col_offset* parameter is
    omitted.
 
 
@@ -320,19 +328,12 @@ an error value).
    :mod:`warnings` module and the :option:`-W` option in the command line
    documentation.  There is no C API for warning control.
 
-.. c:function:: PyObject* PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg, PyObject *name, PyObject *path)
-
-   Much like :c:func:`PyErr_SetImportError` but this function allows for
-   specifying a subclass of :exc:`ImportError` to raise.
-
-   .. versionadded:: 3.6
-
 
 .. c:function:: int PyErr_WarnExplicitObject(PyObject *category, PyObject *message, PyObject *filename, int lineno, PyObject *module, PyObject *registry)
 
    Issue a warning message with explicit control over all warning attributes.  This
    is a straightforward wrapper around the Python function
-   :func:`warnings.warn_explicit`, see there for more information.  The *module*
+   :func:`warnings.warn_explicit`; see there for more information.  The *module*
    and *registry* arguments may be set to ``NULL`` to get the default effect
    described there.
 
@@ -440,7 +441,7 @@ Querying the error indicator
       error indicator.
 
 
-.. c:function:: void PyErr_NormalizeException(PyObject**exc, PyObject**val, PyObject**tb)
+.. c:function:: void PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 
    Under certain circumstances, the values returned by :c:func:`PyErr_Fetch` below
    can be "unnormalized", meaning that ``*exc`` is a class object but ``*val`` is
@@ -459,12 +460,46 @@ Querying the error indicator
          }
 
 
+.. c:function:: PyObject* PyErr_GetHandledException(void)
+
+   Retrieve the active exception instance, as would be returned by :func:`sys.exception`.
+   This refers to an exception that was *already caught*, not to an exception that was
+   freshly raised. Returns a new reference to the exception or ``NULL``.
+   Does not modify the interpreter's exception state.
+
+   .. note::
+
+      This function is not normally used by code that wants to handle exceptions.
+      Rather, it can be used when code needs to save and restore the exception
+      state temporarily.  Use :c:func:`PyErr_SetHandledException` to restore or
+      clear the exception state.
+
+   .. versionadded:: 3.11
+
+.. c:function:: void PyErr_SetHandledException(PyObject *exc)
+
+   Set the active exception, as known from ``sys.exception()``.  This refers
+   to an exception that was *already caught*, not to an exception that was
+   freshly raised.
+   To clear the exception state, pass ``NULL``.
+
+   .. note::
+
+      This function is not normally used by code that wants to handle exceptions.
+      Rather, it can be used when code needs to save and restore the exception
+      state temporarily.  Use :c:func:`PyErr_GetHandledException` to get the exception
+      state.
+
+   .. versionadded:: 3.11
+
 .. c:function:: void PyErr_GetExcInfo(PyObject **ptype, PyObject **pvalue, PyObject **ptraceback)
 
-   Retrieve the exception info, as known from ``sys.exc_info()``.  This refers
-   to an exception that was *already caught*, not to an exception that was
-   freshly raised.  Returns new references for the three objects, any of which
-   may be ``NULL``.  Does not modify the exception info state.
+   Retrieve the old-style representation of the exception info, as known from
+   :func:`sys.exc_info`.  This refers to an exception that was *already caught*,
+   not to an exception that was freshly raised.  Returns new references for the
+   three objects, any of which may be ``NULL``.  Does not modify the exception
+   info state.  This function is kept for backwards compatibility. Prefer using
+   :c:func:`PyErr_GetHandledException`.
 
    .. note::
 
@@ -482,6 +517,8 @@ Querying the error indicator
    to an exception that was *already caught*, not to an exception that was
    freshly raised.  This function steals the references of the arguments.
    To clear the exception state, pass ``NULL`` for all three arguments.
+   This function is kept for backwards compatibility. Prefer using
+   :c:func:`PyErr_SetHandledException`.
 
    .. note::
 

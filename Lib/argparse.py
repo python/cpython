@@ -728,7 +728,7 @@ def _get_action_name(argument):
     if argument is None:
         return None
     elif argument.option_strings:
-        return  '/'.join(argument.option_strings)
+        return '/'.join(argument.option_strings)
     elif argument.metavar not in (None, SUPPRESS):
         return argument.metavar
     elif argument.dest not in (None, SUPPRESS):
@@ -850,6 +850,7 @@ class Action(_AttributeHolder):
             'default',
             'type',
             'choices',
+            'required',
             'help',
             'metavar',
         ]
@@ -1170,6 +1171,13 @@ class _SubParsersAction(Action):
 
         aliases = kwargs.pop('aliases', ())
 
+        if name in self._name_parser_map:
+            raise ArgumentError(self, _('conflicting subparser: %s') % name)
+        for alias in aliases:
+            if alias in self._name_parser_map:
+                raise ArgumentError(
+                    self, _('conflicting subparser alias: %s') % alias)
+
         # create a pseudo-action to hold the choice help
         if 'help' in kwargs:
             help = kwargs.pop('help')
@@ -1259,9 +1267,9 @@ class FileType(object):
         # the special argument "-" means sys.std{in,out}
         if string == '-':
             if 'r' in self._mode:
-                return _sys.stdin
-            elif 'w' in self._mode:
-                return _sys.stdout
+                return _sys.stdin.buffer if 'b' in self._mode else _sys.stdin
+            elif any(c in self._mode for c in 'wax'):
+                return _sys.stdout.buffer if 'b' in self._mode else _sys.stdout
             else:
                 msg = _('argument "-" with mode %r') % self._mode
                 raise ValueError(msg)

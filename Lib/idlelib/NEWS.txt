@@ -4,6 +4,9 @@ Released on 2022-10-03
 =========================
 
 
+bpo-28950: Apply IDLE syntax highlighting to `.pyi` files.  Add util.py
+for common components.  Patch by Alex Waygood and Terry Jan Reedy.
+
 bpo-46630: Make query dialogs on Windows start with a cursor in the
 entry box.
 
