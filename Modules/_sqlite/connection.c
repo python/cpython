@@ -1050,33 +1050,65 @@ static int _progress_handler(void* user_arg)
  * may change in future releases. Callback implementations should return zero
  * to ensure future compatibility.
  */
-static int _trace_callback(unsigned int type, void* user_arg, void* prepared_statement, void* statement_string)
+static int
+_trace_callback(unsigned int type, void *callable, void *stmt, void *sql)
 #else
-static void _trace_callback(void* user_arg, const char* statement_string)
+static void
+_trace_callback(void *callable, const char *sql)
 #endif
 {
-    PyObject *py_statement = NULL;
-    PyObject *ret = NULL;
-
-    PyGILState_STATE gilstate;
-
 #ifdef HAVE_TRACE_V2
     if (type != SQLITE_TRACE_STMT) {
         return 0;
     }
 #endif
 
-    gilstate = PyGILState_Ensure();
-    py_statement = PyUnicode_DecodeUTF8(statement_string,
-            strlen(statement_string), "replace");
-    if (py_statement) {
-        ret = PyObject_CallOneArg((PyObject*)user_arg, py_statement);
-        Py_DECREF(py_statement);
-    }
+    PyGILState_STATE gilstate = PyGILState_Ensure();
 
-    if (ret) {
-        Py_DECREF(ret);
-    } else {
+    PyObject *py_statement = NULL;
+#ifdef HAVE_TRACE_V2
+    const char *expanded_sql = sqlite3_expanded_sql((sqlite3_stmt *)stmt);
+    if (expanded_sql == NULL) {
+        sqlite3 *db = sqlite3_db_handle((sqlite3_stmt *)stmt);
+        if (sqlite3_errcode(db) == SQLITE_NOMEM) {
+            (void)PyErr_NoMemory();
+            goto exit;
+        }
+
+        PyErr_SetString(pysqlite_DataError,
+                "Expanded SQL string exceeds the maximum string length");
+        if (_pysqlite_enable_callback_tracebacks) {
+            PyErr_Print();
+        } else {
+            PyErr_Clear();
+        }
+
+        // Fall back to unexpanded sql
+        py_statement = PyUnicode_FromString((const char *)sql);
+    }
+    else {
+        py_statement = PyUnicode_FromString(expanded_sql);
+        sqlite3_free((void *)expanded_sql);
+    }
+#else
+    if (sql == NULL) {
+        PyErr_SetString(pysqlite_DataError,
+                "Expanded SQL string exceeds the maximum string length");
+        if (_pysqlite_enable_callback_tracebacks) {
+            PyErr_Print();
+        } else {
+            PyErr_Clear();
+        }
+        goto exit;
+    }
+    py_statement = PyUnicode_FromString(sql);
+#endif
+    if (py_statement) {
+        PyObject *ret = PyObject_CallOneArg((PyObject *)callable, py_statement);
+        Py_DECREF(py_statement);
+        Py_XDECREF(ret);
+    }
+    if (PyErr_Occurred()) {
         if (_pysqlite_enable_callback_tracebacks) {
             PyErr_Print();
         } else {
@@ -1084,6 +1116,7 @@ static void _trace_callback(void* user_arg, const char* statement_string)
         }
     }
 
+exit:
     PyGILState_Release(gilstate);
 #ifdef HAVE_TRACE_V2
     return 0;

@@ -20,6 +20,7 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+import contextlib
 import unittest
 import sqlite3 as sqlite
 
@@ -200,6 +201,16 @@ class ProgressTests(unittest.TestCase):
         self.assertEqual(action, 0, "progress handler was not cleared")
 
 class TraceCallbackTests(unittest.TestCase):
+    @contextlib.contextmanager
+    def check_stmt_trace(self, cx, expected):
+        try:
+            traced = []
+            cx.set_trace_callback(lambda stmt: traced.append(stmt))
+            yield
+        finally:
+            self.assertEqual(traced, expected)
+            cx.set_trace_callback(None)
+
     def test_trace_callback_used(self):
         """
         Test that the trace callback is invoked once it is set.
@@ -260,6 +271,21 @@ class TraceCallbackTests(unittest.TestCase):
         con2.execute("create table bar(x)")
         cur.execute(queries[1])
         self.assertEqual(traced_statements, queries)
+
+    def test_trace_expanded_sql(self):
+        expected = [
+            "create table t(t)",
+            "BEGIN ",
+            "insert into t values(0)",
+            "insert into t values(1)",
+            "insert into t values(2)",
+            "COMMIT",
+        ]
+        cx = sqlite.connect(":memory:")
+        with self.check_stmt_trace(cx, expected):
+            with cx:
+                cx.execute("create table t(t)")
+                cx.executemany("insert into t values(?)", ((v,) for v in range(3)))
 
 
 def suite():
