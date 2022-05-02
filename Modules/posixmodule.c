@@ -7378,11 +7378,9 @@ error:
 #endif /* defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX) */
 
 
-#ifdef HAVE_SETSID
-#if defined(TIOCSCTTY) || defined(HAVE_TTYNAME)
+#if defined(HAVE_SETSID) && defined(TIOCSCTTY)
 #define HAVE_FALLBACK_LOGIN_TTY 1
-#endif /* defined(TIOCSCTTY) || defined(HAVE_TTYNAME) */
-#endif /* HAVE_SETSID */
+#endif /* defined(HAVE_SETSID) && defined(TIOCSCTTY) */
 
 #if defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY)
 /*[clinic input]
@@ -7413,37 +7411,9 @@ os_login_tty_impl(PyObject *module, int fd)
     }
 
     /* The tty becomes the controlling terminal. */
-#ifdef TIOCSCTTY
     if (ioctl(fd, TIOCSCTTY, (char *)NULL) == -1) {
         return posix_error();
     }
-#else /* defined(HAVE_TTYNAME) */
-    /* Fallback method (archaic); from Advanced Programming in the UNIX(R)
-     * Environment, Third edition, 2013, Section 9.6 - Controlling Terminal:
-     * "Systems derived from UNIX System V allocate the controlling
-     * terminal for a session when the session leader opens the first
-     * terminal device that is not already associated with a session, as
-     * long as the call to open does not specify the O_NOCTTY flag." */
-    char *tmppath = ttyname(fd);
-    if (tmppath == NULL) {
-        return posix_error();
-    }
-
-#define CLOSE_IF_NOT_FD(otherfd) \
-    if (fd != otherfd) { \
-        close(otherfd); \
-    } \
-
-    CLOSE_IF_NOT_FD(0);
-    CLOSE_IF_NOT_FD(1);
-    CLOSE_IF_NOT_FD(2);
-
-    int tmpfd = open(tmppath, O_RDWR);
-    if (tmpfd == -1) {
-        return posix_error();
-    }
-    close(tmpfd);
-#endif /* TIOCSCTTY */
 
     /* The tty becomes stdin/stdout/stderr */
     if (dup2(fd, 0) == -1 || dup2(fd, 1) == -1 || dup2(fd, 2) == -1) {
