@@ -202,6 +202,24 @@ def _is_param_expr(arg):
             (tuple, list, ParamSpec, _ConcatenateGenericAlias))
 
 
+def _should_unflatten_callable_args(typ, args):
+    """Internal helper for munging collections.abc.Callable's __args__.
+
+    The canonical representation for a Callable's __args__ flattens the
+    argument types, see https://bugs.python.org/issue42195. For example:
+
+        collections.abc.Callable[[int, int], str].__args__ == (int, int, str)
+        collections.abc.Callable[ParamSpec, str].__args__ == (ParamSpec, str)
+
+    As a result, if we need to reconstruct the Callable from its __args__,
+    we need to unflatten it.
+    """
+    return (
+        typ.__origin__ is collections.abc.Callable
+        and not (len(args) == 2 and _is_param_expr(args[0]))
+    )
+
+
 def _type_repr(obj):
     """Return the repr() of an object, special-casing types (internal helper).
 
@@ -350,8 +368,7 @@ def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
                 ForwardRef(arg) if isinstance(arg, str) else arg
                 for arg in t.__args__
             )
-            if (t.__origin__ is collections.abc.Callable
-                    and not (len(args) == 2 and _is_param_expr(args[0]))):
+            if _should_unflatten_callable_args(t, args):
                 t = t.__origin__[(args[:-1], args[-1])]
             else:
                 t = t.__origin__[args]
@@ -2350,8 +2367,7 @@ def get_args(tp):
         return (tp.__origin__,) + tp.__metadata__
     if isinstance(tp, (_GenericAlias, GenericAlias)):
         res = tp.__args__
-        if (tp.__origin__ is collections.abc.Callable
-                and not (len(res) == 2 and _is_param_expr(res[0]))):
+        if _should_unflatten_callable_args(tp, res):
             res = (list(res[:-1]), res[-1])
         return res
     if isinstance(tp, types.UnionType):
