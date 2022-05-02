@@ -25,6 +25,7 @@ To use, simply 'import logging' and log away!
 
 import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
 
+from types import GenericAlias
 from string import Template
 from string import Formatter as StrFormatter
 
@@ -1145,6 +1146,8 @@ class StreamHandler(Handler):
             name += ' '
         return '<%s %s(%s)>' % (self.__class__.__name__, name, level)
 
+    __class_getitem__ = classmethod(GenericAlias)
+
 
 class FileHandler(StreamHandler):
     """
@@ -1938,6 +1941,8 @@ class LoggerAdapter(object):
         logger = self.logger
         level = getLevelName(logger.getEffectiveLevel())
         return '<%s %s (%s)>' % (self.__class__.__name__, logger.name, level)
+
+    __class_getitem__ = classmethod(GenericAlias)
 
 root = RootLogger(WARNING)
 Logger.root = root
