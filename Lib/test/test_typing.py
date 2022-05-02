@@ -6084,7 +6084,7 @@ class TypedDictTests(BaseTestCase):
             'c': int,
         }
         with self.assertRaises(TypeError):
-           C[str]
+            C[str]
 
 
         class Point3D(Point2DGeneric[T], Generic[T, KT]):
@@ -6124,7 +6124,7 @@ class TypedDictTests(BaseTestCase):
             'c': int,
         }
         with self.assertRaises(TypeError):
-           WithImplicitAny[str]
+            WithImplicitAny[str]
 
 
 class RequiredTests(BaseTestCase):
