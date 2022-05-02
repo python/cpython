@@ -10,7 +10,6 @@ from test.support import os_helper
 with warnings.catch_warnings():
     warnings.simplefilter('ignore', DeprecationWarning)
     from distutils.core import setup, Extension
-    # Import sysconfig here to make the DeprecationWarning quiet
     import distutils.sysconfig
 
 
@@ -64,6 +63,12 @@ class TestCPPExt(unittest.TestCase):
             os.environ.clear()
             os.environ.update(old_env)
         self.addCleanup(restore_env, dict(os.environ))
+
+        def restore_sysconfig_vars(old_config_vars):
+            distutils.sysconfig._config_vars.clear()
+            distutils.sysconfig._config_vars.update(old_config_vars)
+        self.addCleanup(restore_sysconfig_vars,
+                        dict(distutils.sysconfig._config_vars))
 
         # Build in a temporary directory
         with os_helper.temp_cwd():
