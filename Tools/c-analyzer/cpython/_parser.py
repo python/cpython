@@ -202,6 +202,7 @@ Include/cpython/sysmodule.h	Py_CPYTHON_SYSMODULE_H	1
 Include/cpython/traceback.h	Py_CPYTHON_TRACEBACK_H	1
 Include/cpython/tupleobject.h	Py_CPYTHON_TUPLEOBJECT_H	1
 Include/cpython/unicodeobject.h	Py_CPYTHON_UNICODEOBJECT_H	1
+Include/internal/pycore_code.h	SIZEOF_VOID_P	8
 
 # implied include of pyport.h
 Include/**/*.h	PyAPI_DATA(RTYPE)	extern RTYPE
