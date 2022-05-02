@@ -869,12 +869,21 @@ _PyPegen_seq_delete_starred_exprs(Parser *p, asdl_seq *kwargs)
     return new_seq;
 }
 
+static expr_ty
+lambdafy(Parser *p, expr_ty arg)
+{
+    assert(arg->kind == FormattedValue_kind);
+    arguments_ty args = _PyPegen_empty_arguments(p);
+    if (args == NULL)
+        return NULL;
+    return _PyAST_Lambda(args, arg,
+            arg->lineno, arg->col_offset, arg->end_lineno, arg->end_col_offset,
+            p->arena);
+}
+
 expr_ty
 _PyPegen_tag_string(Parser *p, expr_ty tag, Token *tok)
 {
-    // No prefixes (f, r, b, u)
-    // Parse like fstring
-    // Create a node similar to f-string AST
     asdl_generic_seq *tokens = _Py_asdl_generic_seq_new(1, p->arena);
     if (tokens == NULL)
         return NULL;
@@ -882,12 +891,24 @@ _PyPegen_tag_string(Parser *p, expr_ty tag, Token *tok)
     expr_ty str = _PyPegen_concatenate_strings(p, (asdl_seq *)tokens, 1);
     if (str == NULL)
         return NULL;
+    if (str->kind == JoinedStr_kind) {
+        // Transform FormattedValue items into thunks
+        asdl_expr_seq *values = str->v.JoinedStr.values;
+        int nvalues = asdl_seq_LEN(values);
+        for (int i = 0; i < nvalues; i++) {
+            expr_ty value = asdl_seq_GET(values, i);
+            if (value->kind == FormattedValue_kind) {
+                value = lambdafy(p, value);
+                if (value == NULL)
+                    return NULL;
+                asdl_seq_SET(values, i, value);
+            }
+        }
+    }
     return _PyAST_TagString(tag, str,
                             tag->lineno, tag->col_offset, str->end_lineno, str->end_col_offset,
                             p->arena);
-
 }
-
 
 expr_ty
 _PyPegen_concatenate_strings(Parser *p, asdl_seq *strings, int tagged)
