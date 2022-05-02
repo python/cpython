@@ -897,6 +897,8 @@ The following attributes are also available:
    A negative value ``-N`` indicates that the child was terminated by signal
    ``N`` (POSIX only).
 
+   Note: The value stored in returncode may be out-of-date. Use poll() to reliably find the current return code.
+
 
 Windows Popen Helpers
 ---------------------
