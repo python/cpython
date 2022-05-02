@@ -355,6 +355,16 @@ Functions and classes provided:
    .. versionadded:: 3.5
 
 
+.. function:: redirect_stdin(new_target)
+
+   Similar to :func:`~contextlib.redirect_stdout` but redirecting
+   :data:`sys.stdin` to another file or file-like object.
+
+   This context manager is :ref:`reentrant <reentrant-cms>`.
+
+   .. versionadded:: 3.11
+
+
 .. function:: chdir(path)
 
    Non parallel-safe context manager to change the current working directory.
