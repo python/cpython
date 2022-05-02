@@ -876,6 +876,15 @@ class ForwardRef(_Final, _root=True):
         return f'ForwardRef({self.__forward_arg__!r}{module_repr})'
 
 
+def _is_unpacked_type(x: Any) -> bool:
+    return (
+        # E.g. *tuple[int]
+        (isinstance(x, GenericAlias) and x.__unpacked__)
+        or
+        # E.g. Unpack[tuple[int]]
+        (isinstance(x, _GenericAlias) and x.__origin__ is Unpack)
+    )
+
 def _is_unpacked_typevartuple(x: Any) -> bool:
     return (
             isinstance(x, _UnpackGenericAlias)
@@ -995,7 +1004,7 @@ class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
     def __typing_subst__(self, arg):
         msg = "Parameters to generic types must be types."
         arg = _type_check(arg, msg, is_argument=True)
-        if (isinstance(arg, _GenericAlias) and arg.__origin__ is Unpack):
+        if _is_unpacked_type(arg):
             raise TypeError(f"{arg} is not valid as type argument")
         return arg
 
@@ -1232,42 +1241,92 @@ class _BaseGenericAlias(_Final, _root=True):
                 + [attr for attr in dir(self.__origin__) if not _is_dunder(attr)]))
 
 
-def _is_unpacked_tuple(x: Any) -> bool:
-    # Is `x` something like `*tuple[int]` or `*tuple[int, ...]`?
+def _is_unpacked_native_tuple(x: Any) -> bool:
+    """Checks whether x is an unpacked tuple - e.g. *tuple[int].
+
+    Specifically, this functions checks for an unpacked *native* tuple - *not*
+    an unpacked typing.Tuple like *Tuple[int].
+
+    This function works whether the tuple is unpacked using * or Unpack[].
+    """
+    return (
+        isinstance(x, types.GenericAlias)
+        and x.__origin__ is tuple
+        and x.__unpacked__
+    )
+
+
+def _is_unpacked_typing_tuple(x: Any) -> bool:
+    """Checks whether x is an unpacked Tuple - e.g. *Tuple[int].
+
+    Specifically, this functions checks for an unpacked typing.Tuple - *not* an
+    unpacked native tuple like *tuple[int].
+
+    This function works whether the Tuple is unpacked using * or Unpack[].
+    """
+    # Does x appear to be an unpacked type from typing.py?
     if not isinstance(x, _UnpackGenericAlias):
         return False
-    # Alright, `x` is `Unpack[something]`.
-
-    # `x` will always have `__args__`, because Unpack[] and Unpack[()]
-    # aren't legal.
+    # Ok, so x is an Unpack[something].
+    # (Even if we did *Tuple[int] instead of Unpack[tuple[int]],
+    # the result is still represented as Unpack[tuple[int]].)
+    # Let's get the 'something'.
+    # Unpack[] always takes exactly one argument, so we don't need to worry
+    # about x.__args__ being empty.
     unpacked_type = x.__args__[0]
-
+    # Finally, is that 'something' tuple?
+    # (Yes, Tuple[int].__origin__ is still tuple rather than Tuple.)
     return getattr(unpacked_type, '__origin__', None) is tuple
 
 
+def _is_unpacked_tuple(x: Any) -> bool:
+    return _is_unpacked_native_tuple(x) or _is_unpacked_typing_tuple(x)
+
+
+def _get_unpacked_tuple_args(
+    # types.GenericAlias for unpacked native tuple, e.g. *tuple[int];
+    # _UnpackGenericAlias for unpacked typing tuple, e.g. *Tuple[int].
+    x: 'types.GenericAlias | _UnpackGenericAlias',
+) -> tuple[Any, ...]:
+    if _is_unpacked_native_tuple(x):
+        return x.__args__
+    elif _is_unpacked_typing_tuple(x):
+        # Unpack[] always takes exactly one argument,
+        # so x.__args__ will always have length 1.
+        unpacked_type = x.__args__[0]  # E.g. Tuple[int]
+        return unpacked_type.__args__
+    else:
+        raise TypeError(f"'{x}' is not an unpacked tuple")
+
+
 def _is_unpacked_arbitrary_length_tuple(x: Any) -> bool:
-    if not _is_unpacked_tuple(x):
+    """Checks whether x is something like *tuple[int, ...]."""
+    try:
+        tuple_args = _get_unpacked_tuple_args(x)
+    except TypeError:
         return False
-    unpacked_tuple = x.__args__[0]
-
-    if not hasattr(unpacked_tuple, '__args__'):
-        # It's `Unpack[tuple]`. We can't make any assumptions about the length
-        # of the tuple, so it's effectively an arbitrary-length tuple.
-        return True
-
-    tuple_args = unpacked_tuple.__args__
-    if not tuple_args:
-        # It's `Unpack[tuple[()]]`.
-        return False
-
     last_arg = tuple_args[-1]
-    if last_arg is Ellipsis:
-        # It's `Unpack[tuple[something, ...]]`, which is arbitrary-length.
-        return True
+    return last_arg is Ellipsis
 
-    # If the arguments didn't end with an ellipsis, then it's not an
-    # arbitrary-length tuple.
-    return False
+
+def _extract_types_from_unpacked_tuples(type_list: tuple[Any]) -> tuple[Any]:
+    """Extracts inner types from unpacked tuples like *tuple[int, str].
+
+    For example, if called with:
+        (int, *tuple[bool, float], str)
+    then we would return:
+        (int, bool, float, str)
+    """
+    new_type_list = []
+    for t in type_list:
+        # If t is an unpacked arbitrary-length tuple like *tuple[int, ...],
+        # there'd no way to represent the result, so we leave it as it is.
+        if _is_unpacked_tuple(t) and not _is_unpacked_arbitrary_length_tuple(t):
+            args = _get_unpacked_tuple_args(t)
+            new_type_list.extend(args)
+        else:
+            new_type_list.append(t)
+    return tuple(new_type_list)
 
 
 # Special typing constructs Union, Optional, Generic, Callable and Tuple
@@ -1355,10 +1414,24 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             # Can't subscript Generic[...] or Protocol[...].
             raise TypeError(f"Cannot subscript already-subscripted {self}")
 
-        # Preprocess `args`.
         if not isinstance(args, tuple):
             args = (args,)
+
+        accepts_arbitrary_num_type_arguments = any(
+            isinstance(param, TypeVarTuple) for param in self.__parameters__
+        )
+        if not accepts_arbitrary_num_type_arguments:
+            for arg in args:
+                if _is_unpacked_type(arg):
+                    raise TypeError(
+                        f"Generic alias '{self}' cannot accept an arbitrary "
+                        "number of type arguments, so cannot accept unpacked "
+                        f"type argument '{arg}'."
+                    )
+
+        # Preprocess `args`.
         args = tuple(_type_convert(p) for p in args)
+        args = _extract_types_from_unpacked_tuples(args)
         if (self._paramspec_tvars
                 and any(isinstance(t, ParamSpec) for t in self.__parameters__)):
             args = _prepare_paramspec_params(self, args)
