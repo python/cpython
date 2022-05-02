@@ -1673,7 +1673,8 @@ zips together prompts from the sidebar with lines from the selected text.
 .. nonce: 3EFl1H
 .. section: IDLE
 
-Fix reference leak in test_squeezer. Patch by Pablo Galindo
+Fix reference leak in test_sidebar and test_squeezer.
+Patches by Terry Jan Reedy and Pablo Galindo
 
 ..
 

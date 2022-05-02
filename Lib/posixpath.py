@@ -241,7 +241,11 @@ def expanduser(path):
         i = len(path)
     if i == 1:
         if 'HOME' not in os.environ:
-            import pwd
+            try:
+                import pwd
+            except ImportError:
+                # pwd module unavailable, return path unchanged
+                return path
             try:
                 userhome = pwd.getpwuid(os.getuid()).pw_dir
             except KeyError:
@@ -251,7 +255,11 @@ def expanduser(path):
         else:
             userhome = os.environ['HOME']
     else:
-        import pwd
+        try:
+            import pwd
+        except ImportError:
+            # pwd module unavailable, return path unchanged
+            return path
         name = path[1:i]
         if isinstance(name, bytes):
             name = str(name, 'ASCII')

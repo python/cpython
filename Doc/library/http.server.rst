@@ -412,17 +412,22 @@ the current directory::
 .. _http-server-cli:
 
 :mod:`http.server` can also be invoked directly using the :option:`-m`
-switch of the interpreter with a ``port number`` argument.  Similar to
+switch of the interpreter.  Similar to
 the previous example, this serves files relative to the current directory::
 
-        python -m http.server 8000
+        python -m http.server
 
-By default, server binds itself to all interfaces.  The option ``-b/--bind``
+The server listens to port 8000 by default. The default can be overridden
+by passing the desired port number as an argument::
+
+        python -m http.server 9000
+
+By default, the server binds itself to all interfaces.  The option ``-b/--bind``
 specifies a specific address to which it should bind. Both IPv4 and IPv6
 addresses are supported. For example, the following command causes the server
 to bind to localhost only::
 
-        python -m http.server 8000 --bind 127.0.0.1
+        python -m http.server --bind 127.0.0.1
 
 .. versionadded:: 3.4
     ``--bind`` argument was introduced.
@@ -430,14 +435,14 @@ to bind to localhost only::
 .. versionadded:: 3.8
     ``--bind`` argument enhanced to support IPv6
 
-By default, server uses the current directory. The option ``-d/--directory``
+By default, the server uses the current directory. The option ``-d/--directory``
 specifies a directory to which it should serve the files. For example,
 the following command uses a specific directory::
 
         python -m http.server --directory /tmp/
 
 .. versionadded:: 3.7
-    ``--directory`` specify alternate directory
+    ``--directory`` argument was introduced.
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 
@@ -482,4 +487,4 @@ the following command uses a specific directory::
 :class:`CGIHTTPRequestHandler` can be enabled in the command line by passing
 the ``--cgi`` option::
 
-        python -m http.server --cgi 8000
+        python -m http.server --cgi
