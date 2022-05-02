@@ -6044,7 +6044,7 @@ class TypedDictTests(BaseTestCase):
 
     def test_get_type_hints_generic(self):
         self.assertEqual(
-            get_type_hints(BarGeneric[int].__origin__),
+            get_type_hints(BarGeneric),
             {'a': typing.Optional[T], 'b': int}
         )
 
