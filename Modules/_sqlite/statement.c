@@ -368,7 +368,8 @@ pysqlite_statement_bind_parameters(pysqlite_state *state,
            }
         }
     } else {
-        PyErr_SetString(PyExc_ValueError, "parameters are of unsupported type");
+        PyErr_SetString(state->ProgrammingError,
+                        "parameters are of unsupported type");
     }
 }
 
