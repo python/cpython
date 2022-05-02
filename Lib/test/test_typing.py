@@ -6024,6 +6024,19 @@ class TypedDictTests(BaseTestCase):
             {'a': typing.Optional[int], 'b': int}
         )
 
+    def test_non_generic_subscript(self):
+        # For backward compatibility, subscription works
+        # on arbitrary TypedDict types.
+        class TD(TypedDict):
+            a: T
+        A = TD[int]
+        self.assertEqual(A.__origin__, TD)
+        self.assertEqual(A.__parameters__, ())
+        self.assertEqual(A.__args__, (int,))
+        a = A(a = 1)
+        self.assertIs(type(a), dict)
+        self.assertEqual(a, {'a': 1})
+
 
 class RequiredTests(BaseTestCase):
 
