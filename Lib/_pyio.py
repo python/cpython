@@ -2021,14 +2021,6 @@ class TextIOWrapper(TextIOBase):
         self._check_newline(newline)
         encoding = text_encoding(encoding)
 
-        if encoding == "locale" and sys.platform == "win32":
-            # On Unix, os.device_encoding() returns "utf-8" instead of locale encoding
-            # in the UTF-8 mode. So we use os.device_encoding() only on Windows.
-            try:
-                encoding = os.device_encoding(buffer.fileno()) or "locale"
-            except (AttributeError, UnsupportedOperation):
-                pass
-
         if encoding == "locale":
             try:
                 import locale
@@ -2169,6 +2161,8 @@ class TextIOWrapper(TextIOBase):
         else:
             if not isinstance(encoding, str):
                 raise TypeError("invalid encoding: %r" % encoding)
+            if encoding == "locale":
+                encoding = locale.getencoding()
 
         if newline is Ellipsis:
             newline = self._readnl

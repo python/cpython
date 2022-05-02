@@ -110,12 +110,13 @@ newXxoObject(PyObject *module)
 /* Xxo finalization */
 
 static int
-Xxo_traverse(XxoObject *self, visitproc visit, void *arg)
+Xxo_traverse(PyObject *self_obj, visitproc visit, void *arg)
 {
     // Visit the type
-    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(Py_TYPE(self_obj));
 
     // Visit the attribute dict
+    XxoObject *self = (XxoObject *)self_obj;
     Py_VISIT(self->x_attr);
     return 0;
 }
@@ -128,13 +129,14 @@ Xxo_clear(XxoObject *self)
 }
 
 static void
-Xxo_finalize(XxoObject *self)
+Xxo_finalize(PyObject *self_obj)
 {
+    XxoObject *self = (XxoObject *)self_obj;
     Py_CLEAR(self->x_attr);
 }
 
 static void
-Xxo_dealloc(XxoObject *self)
+Xxo_dealloc(PyObject *self)
 {
     Xxo_finalize(self);
     PyTypeObject *tp = Py_TYPE(self);

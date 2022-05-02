@@ -10,7 +10,7 @@ class NetrcTestCase(unittest.TestCase):
         mode = 'w'
         if sys.platform != 'cygwin':
             mode += 't'
-        with open(temp_filename, mode) as fp:
+        with open(temp_filename, mode, encoding="utf-8") as fp:
             fp.write(test_data)
         try:
             nrc = netrc.netrc(temp_filename)

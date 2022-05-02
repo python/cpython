@@ -36,6 +36,10 @@ New features are frequently added to the ``typing`` module.
 The `typing_extensions <https://pypi.org/project/typing-extensions/>`_ package
 provides backports of these new features to older versions of Python.
 
+For a summary of deprecated features and a deprecation timeline, please see
+`Deprecation Timeline of Major Features`_.
+
+
 .. _relevant-peps:
 
 Relevant PEPs
@@ -216,6 +220,10 @@ For example::
    def async_query(on_success: Callable[[int], None],
                    on_error: Callable[[int, Exception], None]) -> None:
        # Body
+
+   async def on_update(value: str) -> None:
+       # Body
+   callback: Callable[[str], Awaitable[None]] = on_update
 
 It is possible to declare the return type of a callable without specifying
 the call signature by substituting a literal ellipsis
@@ -614,6 +622,8 @@ These can be used as types in annotations and do not support ``[]``.
    that generate type checker errors could be vulnerable to an SQL
    injection attack.
 
+   .. versionadded:: 3.11
+
 .. data:: Never
 
    The `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_,
@@ -846,7 +856,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    callable.  Usage is in the form
    ``Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable]``. ``Concatenate``
    is currently only valid when used as the first argument to a :data:`Callable`.
-   The last parameter to ``Concatenate`` must be a :class:`ParamSpec`.
+   The last parameter to ``Concatenate`` must be a :class:`ParamSpec` or
+   ellipsis (``...``).
 
    For example, to annotate a decorator ``with_lock`` which provides a
    :class:`threading.Lock` to the decorated function,  ``Concatenate`` can be
@@ -1361,27 +1372,29 @@ These are not used in annotations. They are building blocks for creating generic
 
 .. data:: Unpack
 
-    A typing operator that conceptually marks an object as having been
-    unpacked. For example, using the unpack operator ``*`` on a
-    :class:`type variable tuple <TypeVarTuple>` is equivalent to using ``Unpack``
-    to mark the type variable tuple as having been unpacked::
+   A typing operator that conceptually marks an object as having been
+   unpacked. For example, using the unpack operator ``*`` on a
+   :class:`type variable tuple <TypeVarTuple>` is equivalent to using ``Unpack``
+   to mark the type variable tuple as having been unpacked::
 
-        Ts = TypeVarTuple('Ts')
-        tup: tuple[*Ts]
-        # Effectively does:
-        tup: tuple[Unpack[Ts]]
+      Ts = TypeVarTuple('Ts')
+      tup: tuple[*Ts]
+      # Effectively does:
+      tup: tuple[Unpack[Ts]]
 
-    In fact, ``Unpack`` can be used interchangeably with ``*`` in the context
-    of types. You might see ``Unpack`` being used explicitly in older versions
-    of Python, where ``*`` couldn't be used in certain places::
+   In fact, ``Unpack`` can be used interchangeably with ``*`` in the context
+   of types. You might see ``Unpack`` being used explicitly in older versions
+   of Python, where ``*`` couldn't be used in certain places::
 
-        # In older versions of Python, TypeVarTuple and Unpack
-        # are located in the `typing_extensions` backports package.
-        from typing_extensions import TypeVarTuple, Unpack
+      # In older versions of Python, TypeVarTuple and Unpack
+      # are located in the `typing_extensions` backports package.
+      from typing_extensions import TypeVarTuple, Unpack
 
-        Ts = TypeVarTuple('Ts')
-        tup: tuple[*Ts]         # Syntax error on Python <= 3.10!
-        tup: tuple[Unpack[Ts]]  # Semantically equivalent, and backwards-compatible
+      Ts = TypeVarTuple('Ts')
+      tup: tuple[*Ts]         # Syntax error on Python <= 3.10!
+      tup: tuple[Unpack[Ts]]  # Semantically equivalent, and backwards-compatible
+
+   .. versionadded:: 3.11
 
 .. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False)
 
@@ -2328,7 +2341,7 @@ Functions and decorators
 
 .. function:: assert_never(arg, /)
 
-   Assert to the type checker that a line of code is unreachable.
+   Ask a static type checker to confirm that a line of code is unreachable.
 
    Example::
 
@@ -2341,10 +2354,24 @@ Functions and decorators
                case _ as unreachable:
                    assert_never(unreachable)
 
+   Here, the annotations allow the type checker to infer that the
+   last case can never execute, because ``arg`` is either
+   an :class:`int` or a :class:`str`, and both options are covered by
+   earlier cases.
    If a type checker finds that a call to ``assert_never()`` is
-   reachable, it will emit an error.
+   reachable, it will emit an error. For example, if the type annotation
+   for ``arg`` was instead ``int | str | float``, the type checker would
+   emit an error pointing out that ``unreachable`` is of type :class:`float`.
+   For a call to ``assert_never`` to pass type checking, the inferred type of
+   the argument passed in must be the bottom type, :data:`Never`, and nothing
+   else.
 
    At runtime, this throws an exception when called.
+
+   .. seealso::
+      `Unreachable Code and Exhaustiveness Checking
+      <https://typing.readthedocs.io/en/latest/source/unreachable.html>_` has more
+      information about exhaustiveness checking with static typing.
 
    .. versionadded:: 3.11
 
@@ -2406,6 +2433,35 @@ Functions and decorators
           <actual implementation>
 
    See :pep:`484` for details and comparison with other typing semantics.
+
+   .. versionchanged:: 3.11
+      Overloaded functions can now be introspected at runtime using
+      :func:`get_overloads`.
+
+
+.. function:: get_overloads(func)
+
+   Return a sequence of :func:`@overload <overload>`-decorated definitions for
+   *func*. *func* is the function object for the implementation of the
+   overloaded function. For example, given the definition of ``process`` in
+   the documentation for :func:`@overload <overload>`,
+   ``get_overloads(process)`` will return a sequence of three function objects
+   for the three defined overloads. If called on a function with no overloads,
+   ``get_overloads`` returns an empty sequence.
+
+   ``get_overloads`` can be used for introspecting an overloaded function at
+   runtime.
+
+   .. versionadded:: 3.11
+
+
+.. function:: clear_overloads()
+
+   Clear all registered overloads in the internal registry. This can be used
+   to reclaim the memory used by the registry.
+
+   .. versionadded:: 3.11
+
 
 .. decorator:: final
 
@@ -2597,3 +2653,20 @@ Constant
       (see :pep:`563`).
 
    .. versionadded:: 3.5.2
+
+Deprecation Timeline of Major Features
+======================================
+
+Certain features in ``typing`` are deprecated and may be removed in a future
+version of Python. The following table summarizes major deprecations for your
+convenience. This is subject to change, and not all deprecations are listed.
+
++----------------------------------+---------------+-------------------+----------------+
+|  Feature                         | Deprecated in | Projected removal | PEP/issue      |
++==================================+===============+===================+================+
+|  ``typing.io`` and ``typing.re`` | 3.8           | 3.12              | :issue:`38291` |
+|  submodules                      |               |                   |                |
++----------------------------------+---------------+-------------------+----------------+
+|  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |
+|  collections                     |               |                   |                |
++----------------------------------+---------------+-------------------+----------------+

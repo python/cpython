@@ -417,6 +417,9 @@ The special characters are:
    |                                       | * ``\1``                         |
    +---------------------------------------+----------------------------------+
 
+   .. deprecated:: 3.11
+      Group names containing non-ASCII characters in bytes patterns.
+
 .. index:: single: (?P=; in regular expressions
 
 ``(?P=name)``
@@ -485,6 +488,9 @@ The special characters are:
    ``(<)?(\w+@\w+(?:\.\w+)+)(?(1)>|$)`` is a poor email matching pattern, which
    will match with ``'<user@host.com>'`` as well as ``'user@host.com'``, but
    not with ``'<user@host.com'`` nor ``'user@host.com>'``.
+
+   .. deprecated:: 3.11
+      Group *id* containing anything except ASCII digits.
 
 
 The special sequences consist of ``'\'`` and a character from the list below.
@@ -994,6 +1000,10 @@ form.
    .. versionchanged:: 3.7
       Empty matches for the pattern are replaced when adjacent to a previous
       non-empty match.
+
+   .. deprecated:: 3.11
+      Group *id* containing anything except ASCII digits.
+      Group names containing non-ASCII characters in bytes replacement strings.
 
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)
