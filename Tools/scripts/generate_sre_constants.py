@@ -29,7 +29,11 @@ sre_constants_header = """\
 
 """
 
-def main(infile='Lib/re/_constants.py', outfile='Modules/_sre/sre_constants.h'):
+def main(
+    infile="Lib/re/_constants.py",
+    outfile_constants="Modules/_sre/sre_constants.h",
+    outfile_targets="Modules/_sre/sre_targets.h",
+):
     ns = {}
     with open(infile) as fp:
         code = fp.read()
@@ -46,6 +50,11 @@ def main(infile='Lib/re/_constants.py', outfile='Modules/_sre/sre_constants.h'):
         for value, name in sorted(items):
             yield "#define %s %d\n" % (name, value)
 
+    def dump_gotos(d, prefix):
+        for i, item in enumerate(sorted(d)):
+            assert i == item
+            yield f"    &&{prefix}_{item},\n"
+
     content = [sre_constants_header]
     content.append("#define SRE_MAGIC %d\n" % ns["MAGIC"])
     content.extend(dump(ns["OPCODES"], "SRE_OP"))
@@ -54,7 +63,14 @@ def main(infile='Lib/re/_constants.py', outfile='Modules/_sre/sre_constants.h'):
     content.extend(dump2(ns, "SRE_FLAG_"))
     content.extend(dump2(ns, "SRE_INFO_"))
 
-    update_file(outfile, ''.join(content))
+    update_file(outfile_constants, ''.join(content))
+
+    content = [sre_constants_header]
+    content.append(f"static void *sre_targets[{len(ns['OPCODES'])}] = {{\n")
+    content.extend(dump_gotos(ns["OPCODES"], "TARGET_SRE_OP"))
+    content.append("};\n")
+
+    update_file(outfile_targets, ''.join(content))
 
 
 if __name__ == '__main__':

@@ -1845,26 +1845,46 @@ bytearray_remove_impl(PyByteArrayObject *self, int value)
     Py_RETURN_NONE;
 }
 
-/* XXX These two helpers could be optimized if argsize == 1 */
+#define LEFTSTRIP 0
+#define RIGHTSTRIP 1
+#define BOTHSTRIP 2
 
-static Py_ssize_t
-lstrip_helper(const char *myptr, Py_ssize_t mysize,
-              const void *argptr, Py_ssize_t argsize)
+static PyObject*
+bytearray_strip_impl_helper(PyByteArrayObject* self, PyObject* bytes, int striptype)
 {
-    Py_ssize_t i = 0;
-    while (i < mysize && memchr(argptr, (unsigned char) myptr[i], argsize))
-        i++;
-    return i;
-}
+    Py_ssize_t mysize, byteslen;
+    const char* myptr;
+    const char* bytesptr;
+    Py_buffer vbytes;
 
-static Py_ssize_t
-rstrip_helper(const char *myptr, Py_ssize_t mysize,
-              const void *argptr, Py_ssize_t argsize)
-{
-    Py_ssize_t i = mysize - 1;
-    while (i >= 0 && memchr(argptr, (unsigned char) myptr[i], argsize))
-        i--;
-    return i + 1;
+    if (bytes == Py_None) {
+        bytesptr = "\t\n\r\f\v ";
+        byteslen = 6;
+    }
+    else {
+        if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
+            return NULL;
+        bytesptr = (const char*)vbytes.buf;
+        byteslen = vbytes.len;
+    }
+    myptr = PyByteArray_AS_STRING(self);
+    mysize = Py_SIZE(self);
+
+    Py_ssize_t left = 0;
+    if (striptype != RIGHTSTRIP) {
+        while (left < mysize && memchr(bytesptr, (unsigned char)myptr[left], byteslen))
+            left++;
+    }
+    Py_ssize_t right = mysize;
+    if (striptype != LEFTSTRIP) {
+        do {
+            right--;
+        } while (right >= left && memchr(bytesptr, (unsigned char)myptr[right], byteslen));
+        right++;
+    }
+    if (bytes != Py_None)
+        PyBuffer_Release(&vbytes);
+    return PyByteArray_FromStringAndSize(myptr + left, right - left);
 }
 
 /*[clinic input]
@@ -1882,31 +1902,7 @@ static PyObject *
 bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes)
 /*[clinic end generated code: output=760412661a34ad5a input=ef7bb59b09c21d62]*/
 {
-    Py_ssize_t left, right, mysize, byteslen;
-    char *myptr;
-    const char *bytesptr;
-    Py_buffer vbytes;
-
-    if (bytes == Py_None) {
-        bytesptr = "\t\n\r\f\v ";
-        byteslen = 6;
-    }
-    else {
-        if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
-            return NULL;
-        bytesptr = (const char *) vbytes.buf;
-        byteslen = vbytes.len;
-    }
-    myptr = PyByteArray_AS_STRING(self);
-    mysize = Py_SIZE(self);
-    left = lstrip_helper(myptr, mysize, bytesptr, byteslen);
-    if (left == mysize)
-        right = left;
-    else
-        right = rstrip_helper(myptr, mysize, bytesptr, byteslen);
-    if (bytes != Py_None)
-        PyBuffer_Release(&vbytes);
-    return PyByteArray_FromStringAndSize(myptr + left, right - left);
+    return bytearray_strip_impl_helper(self, bytes, BOTHSTRIP);
 }
 
 /*[clinic input]
@@ -1924,28 +1920,7 @@ static PyObject *
 bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes)
 /*[clinic end generated code: output=d005c9d0ab909e66 input=80843f975dd7c480]*/
 {
-    Py_ssize_t left, right, mysize, byteslen;
-    char *myptr;
-    const char *bytesptr;
-    Py_buffer vbytes;
-
-    if (bytes == Py_None) {
-        bytesptr = "\t\n\r\f\v ";
-        byteslen = 6;
-    }
-    else {
-        if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
-            return NULL;
-        bytesptr = (const char *) vbytes.buf;
-        byteslen = vbytes.len;
-    }
-    myptr = PyByteArray_AS_STRING(self);
-    mysize = Py_SIZE(self);
-    left = lstrip_helper(myptr, mysize, bytesptr, byteslen);
-    right = mysize;
-    if (bytes != Py_None)
-        PyBuffer_Release(&vbytes);
-    return PyByteArray_FromStringAndSize(myptr + left, right - left);
+    return bytearray_strip_impl_helper(self, bytes, LEFTSTRIP);
 }
 
 /*[clinic input]
@@ -1963,27 +1938,7 @@ static PyObject *
 bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes)
 /*[clinic end generated code: output=030e2fbd2f7276bd input=e728b994954cfd91]*/
 {
-    Py_ssize_t right, mysize, byteslen;
-    char *myptr;
-    const char *bytesptr;
-    Py_buffer vbytes;
-
-    if (bytes == Py_None) {
-        bytesptr = "\t\n\r\f\v ";
-        byteslen = 6;
-    }
-    else {
-        if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
-            return NULL;
-        bytesptr = (const char *) vbytes.buf;
-        byteslen = vbytes.len;
-    }
-    myptr = PyByteArray_AS_STRING(self);
-    mysize = Py_SIZE(self);
-    right = rstrip_helper(myptr, mysize, bytesptr, byteslen);
-    if (bytes != Py_None)
-        PyBuffer_Release(&vbytes);
-    return PyByteArray_FromStringAndSize(myptr, right);
+    return bytearray_strip_impl_helper(self, bytes, RIGHTSTRIP);
 }
 
 /*[clinic input]

@@ -26,6 +26,7 @@
 #include "connection.h"
 #include "statement.h"
 #include "cursor.h"
+#include "blob.h"
 #include "prepare_protocol.h"
 #include "util.h"
 
@@ -234,10 +235,17 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
         return -1;
     }
 
-    // Create list of weak references to cursors.
+    /* Create lists of weak references to cursors and blobs */
     PyObject *cursors = PyList_New(0);
     if (cursors == NULL) {
-        Py_DECREF(statement_cache);
+        Py_XDECREF(statement_cache);
+        return -1;
+    }
+
+    PyObject *blobs = PyList_New(0);
+    if (blobs == NULL) {
+        Py_XDECREF(statement_cache);
+        Py_XDECREF(cursors);
         return -1;
     }
 
@@ -250,6 +258,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     self->thread_ident = PyThread_get_thread_ident();
     self->statement_cache = statement_cache;
     self->cursors = cursors;
+    self->blobs = blobs;
     self->created_cursors = 0;
     self->row_factory = Py_NewRef(Py_None);
     self->text_factory = Py_NewRef(&PyUnicode_Type);
@@ -291,6 +300,7 @@ connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->statement_cache);
     Py_VISIT(self->cursors);
+    Py_VISIT(self->blobs);
     Py_VISIT(self->row_factory);
     Py_VISIT(self->text_factory);
     VISIT_CALLBACK_CONTEXT(self->trace_ctx);
@@ -314,6 +324,7 @@ connection_clear(pysqlite_Connection *self)
 {
     Py_CLEAR(self->statement_cache);
     Py_CLEAR(self->cursors);
+    Py_CLEAR(self->blobs);
     Py_CLEAR(self->row_factory);
     Py_CLEAR(self->text_factory);
     clear_callback_context(self->trace_ctx);
@@ -430,6 +441,80 @@ pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
 }
 
 /*[clinic input]
+_sqlite3.Connection.blobopen as blobopen
+
+    table: str
+        Table name.
+    column as col: str
+        Column name.
+    row: int
+        Row index.
+    /
+    *
+    readonly: bool(accept={int}) = False
+        Open the BLOB without write permissions.
+    name: str = "main"
+        Database name.
+
+Open and return a BLOB object.
+[clinic start generated code]*/
+
+static PyObject *
+blobopen_impl(pysqlite_Connection *self, const char *table, const char *col,
+              int row, int readonly, const char *name)
+/*[clinic end generated code: output=0c8e2e58516d0b5c input=1e7052516acfc94d]*/
+{
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+
+    int rc;
+    sqlite3_blob *blob;
+
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_blob_open(self->db, name, table, col, row, !readonly, &blob);
+    Py_END_ALLOW_THREADS
+
+    if (rc == SQLITE_MISUSE) {
+        PyErr_Format(self->state->InterfaceError, sqlite3_errstr(rc));
+        return NULL;
+    }
+    else if (rc != SQLITE_OK) {
+        _pysqlite_seterror(self->state, self->db);
+        return NULL;
+    }
+
+    pysqlite_Blob *obj = PyObject_GC_New(pysqlite_Blob, self->state->BlobType);
+    if (obj == NULL) {
+        goto error;
+    }
+
+    obj->connection = (pysqlite_Connection *)Py_NewRef(self);
+    obj->blob = blob;
+    obj->offset = 0;
+    obj->in_weakreflist = NULL;
+
+    PyObject_GC_Track(obj);
+
+    // Add our blob to connection blobs list
+    PyObject *weakref = PyWeakref_NewRef((PyObject *)obj, NULL);
+    if (weakref == NULL) {
+        goto error;
+    }
+    rc = PyList_Append(self->blobs, weakref);
+    Py_DECREF(weakref);
+    if (rc < 0) {
+        goto error;
+    }
+
+    return (PyObject *)obj;
+
+error:
+    Py_XDECREF(obj);
+    return NULL;
+}
+
+/*[clinic input]
 _sqlite3.Connection.close as pysqlite_connection_close
 
 Closes the connection.
@@ -451,6 +536,7 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
         return NULL;
     }
 
+    pysqlite_close_all_blobs(self);
     Py_CLEAR(self->statement_cache);
     connection_close(self);
 
@@ -1246,11 +1332,10 @@ progress_callback(void *ctx)
  * to ensure future compatibility.
  */
 static int
-trace_callback(unsigned int type, void *ctx, void *prepared_statement,
-               void *statement_string)
+trace_callback(unsigned int type, void *ctx, void *stmt, void *sql)
 #else
 static void
-trace_callback(void *ctx, const char *statement_string)
+trace_callback(void *ctx, const char *sql)
 #endif
 {
 #ifdef HAVE_TRACE_V2
@@ -1261,24 +1346,51 @@ trace_callback(void *ctx, const char *statement_string)
 
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
-    PyObject *py_statement = NULL;
-    PyObject *ret = NULL;
-    py_statement = PyUnicode_DecodeUTF8(statement_string,
-            strlen(statement_string), "replace");
     assert(ctx != NULL);
-    if (py_statement) {
-        PyObject *callable = ((callback_context *)ctx)->callable;
-        ret = PyObject_CallOneArg(callable, py_statement);
-        Py_DECREF(py_statement);
-    }
+    pysqlite_state *state = ((callback_context *)ctx)->state;
+    assert(state != NULL);
 
-    if (ret) {
-        Py_DECREF(ret);
+    PyObject *py_statement = NULL;
+#ifdef HAVE_TRACE_V2
+    const char *expanded_sql = sqlite3_expanded_sql((sqlite3_stmt *)stmt);
+    if (expanded_sql == NULL) {
+        sqlite3 *db = sqlite3_db_handle((sqlite3_stmt *)stmt);
+        if (sqlite3_errcode(db) == SQLITE_NOMEM) {
+            (void)PyErr_NoMemory();
+            goto exit;
+        }
+
+        PyErr_SetString(state->DataError,
+                "Expanded SQL string exceeds the maximum string length");
+        print_or_clear_traceback((callback_context *)ctx);
+
+        // Fall back to unexpanded sql
+        py_statement = PyUnicode_FromString((const char *)sql);
     }
     else {
-        print_or_clear_traceback(ctx);
+        py_statement = PyUnicode_FromString(expanded_sql);
+        sqlite3_free((void *)expanded_sql);
+    }
+#else
+    if (sql == NULL) {
+        PyErr_SetString(state->DataError,
+                "Expanded SQL string exceeds the maximum string length");
+        print_or_clear_traceback((callback_context *)ctx);
+        goto exit;
+    }
+    py_statement = PyUnicode_FromString(sql);
+#endif
+    if (py_statement) {
+        PyObject *callable = ((callback_context *)ctx)->callable;
+        PyObject *ret = PyObject_CallOneArg(callable, py_statement);
+        Py_DECREF(py_statement);
+        Py_XDECREF(ret);
+    }
+    if (PyErr_Occurred()) {
+        print_or_clear_traceback((callback_context *)ctx);
     }
 
+exit:
     PyGILState_Release(gilstate);
 #ifdef HAVE_TRACE_V2
     return 0;
@@ -2257,6 +2369,7 @@ static PyMethodDef connection_methods[] = {
     SERIALIZE_METHODDEF
     DESERIALIZE_METHODDEF
     CREATE_WINDOW_FUNCTION_METHODDEF
+    BLOBOPEN_METHODDEF
     {NULL, NULL}
 };
 

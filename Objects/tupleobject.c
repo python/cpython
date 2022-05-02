@@ -5,8 +5,7 @@
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
-#include "pycore_object.h"        // _PyObject_GC_TRACK()
-#include "pycore_pyerrors.h"      // _Py_FatalRefcountError()
+#include "pycore_object.h"        // _PyObject_GC_TRACK(), _Py_FatalRefcountError()
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"

@@ -1,0 +1,3 @@
+Fix C++ compiler warnings about "old-style cast" (``g++ -Wold-style-cast``) in
+the Python C API. Use C++ ``reinterpret_cast<>`` and ``static_cast<>`` casts
+when the Python C API is used in C++. Patch by Victor Stinner.

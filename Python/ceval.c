@@ -15,6 +15,7 @@
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
+#include "pycore_opcode.h"        // EXTRA_CASES
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
@@ -44,6 +45,55 @@
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
 
+#ifndef Py_DEBUG
+// GH-89279: The MSVC compiler does not inline these static inline functions
+// in PGO build in _PyEval_EvalFrameDefault(), because this function is over
+// the limit of PGO, and that limit cannot be configured.
+// Define them as macros to make sure that they are always inlined by the
+// preprocessor.
+
+#undef Py_DECREF
+#define Py_DECREF(arg) \
+    do { \
+        PyObject *op = _PyObject_CAST(arg); \
+        if (--op->ob_refcnt == 0) { \
+            destructor dealloc = Py_TYPE(op)->tp_dealloc; \
+            (*dealloc)(op); \
+        } \
+    } while (0)
+
+#undef Py_XDECREF
+#define Py_XDECREF(arg) \
+    do { \
+        PyObject *xop = _PyObject_CAST(arg); \
+        if (xop != NULL) { \
+            Py_DECREF(xop); \
+        } \
+    } while (0)
+
+#undef Py_IS_TYPE
+#define Py_IS_TYPE(ob, type) \
+    (_PyObject_CAST(ob)->ob_type == (type))
+
+#undef _Py_DECREF_SPECIALIZED
+#define _Py_DECREF_SPECIALIZED(arg, dealloc) \
+    do { \
+        PyObject *op = _PyObject_CAST(arg); \
+        if (--op->ob_refcnt == 0) { \
+            destructor d = (destructor)(dealloc); \
+            d(op); \
+        } \
+    } while (0)
+#endif
+
+// GH-89279: Similar to above, force inlining by using a macro.
+#if defined(_MSC_VER) && SIZEOF_INT == 4
+#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
+#else
+#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
+#endif
+
+
 /* Forward declarations */
 static PyObject *trace_call_function(
     PyThreadState *tstate, PyObject *callable, PyObject **stack,
@@ -54,15 +104,77 @@ static PyObject * do_call_core(
 
 #ifdef LLTRACE
 static int lltrace;
-static int prtrace(PyThreadState *, PyObject *, const char *);
-static void lltrace_instruction(_PyInterpreterFrame *frame, int opcode, int oparg)
+static void
+dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
+    PyObject **stack_base = _PyFrame_Stackbase(frame);
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
+    printf("    stack=[");
+    for (PyObject **ptr = stack_base; ptr < stack_pointer; ptr++) {
+        if (ptr != stack_base) {
+            printf(", ");
+        }
+        if (PyObject_Print(*ptr, stdout, 0) != 0) {
+            PyErr_Clear();
+            printf("<%s object at %p>",
+                   Py_TYPE(*ptr)->tp_name, (void *)(*ptr));
+        }
+    }
+    printf("]\n");
+    fflush(stdout);
+    PyErr_Restore(type, value, traceback);
+}
+
+static void
+lltrace_instruction(_PyInterpreterFrame *frame,
+                    PyObject **stack_pointer,
+                    _Py_CODEUNIT *next_instr)
+{
+    dump_stack(frame, stack_pointer);
+    int oparg = _Py_OPARG(*next_instr);
+    int opcode = _Py_OPCODE(*next_instr);
+    const char *opname = _PyOpcode_OpName[opcode];
+    assert(opname != NULL);
+    int offset = (int)(next_instr - _PyCode_CODE(frame->f_code));
     if (HAS_ARG(opcode)) {
-        printf("%d: %d, %d\n", _PyInterpreterFrame_LASTI(frame), opcode, oparg);
+        printf("%d: %s %d\n", offset * 2, opname, oparg);
     }
     else {
-        printf("%d: %d\n", _PyInterpreterFrame_LASTI(frame), opcode);
+        printf("%d: %s\n", offset * 2, opname);
     }
+    fflush(stdout);
+}
+static void
+lltrace_resume_frame(_PyInterpreterFrame *frame)
+{
+    PyFunctionObject *f = frame->f_func;
+    if (f == NULL) {
+        printf("\nResuming frame.");
+        return;
+    }
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
+    PyObject *name = f->func_qualname;
+    if (name == NULL) {
+        name = f->func_name;
+    }
+    printf("\nResuming frame");
+    if (name) {
+        printf(" for ");
+        if (PyObject_Print(name, stdout, 0) < 0) {
+            PyErr_Clear();
+        }
+    }
+    if (f->func_module) {
+        printf(" in module ");
+        if (PyObject_Print(f->func_module, stdout, 0) < 0) {
+            PyErr_Clear();
+        }
+    }
+    printf("\n");
+    fflush(stdout);
+    PyErr_Restore(type, value, traceback);
 }
 #endif
 static int call_trace(Py_tracefunc, PyObject *,
@@ -130,10 +242,10 @@ COMPUTE_EVAL_BREAKER(PyInterpreterState *interp,
                      struct _ceval_state *ceval2)
 {
     _Py_atomic_store_relaxed(&ceval2->eval_breaker,
-        _Py_atomic_load_relaxed(&ceval2->gil_drop_request)
-        | (_Py_atomic_load_relaxed(&ceval->signals_pending)
+        _Py_atomic_load_relaxed_int32(&ceval2->gil_drop_request)
+        | (_Py_atomic_load_relaxed_int32(&ceval->signals_pending)
            && _Py_ThreadCanHandleSignals(interp))
-        | (_Py_atomic_load_relaxed(&ceval2->pending.calls_to_do)
+        | (_Py_atomic_load_relaxed_int32(&ceval2->pending.calls_to_do)
            && _Py_ThreadCanHandlePendingCalls())
         | ceval2->pending.async_exc);
 }
@@ -678,7 +790,7 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
 
     struct _pending_calls *pending = &tstate->interp->ceval.pending;
 
-    if (!_Py_atomic_load_relaxed(&(pending->calls_to_do))) {
+    if (!_Py_atomic_load_relaxed_int32(&(pending->calls_to_do))) {
         return;
     }
 
@@ -1125,7 +1237,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
     struct _ceval_runtime_state *ceval = &runtime->ceval;
 
     /* Pending signals */
-    if (_Py_atomic_load_relaxed(&ceval->signals_pending)) {
+    if (_Py_atomic_load_relaxed_int32(&ceval->signals_pending)) {
         if (handle_signals(tstate) != 0) {
             return -1;
         }
@@ -1133,14 +1245,14 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
     /* Pending calls */
     struct _ceval_state *ceval2 = &tstate->interp->ceval;
-    if (_Py_atomic_load_relaxed(&ceval2->pending.calls_to_do)) {
+    if (_Py_atomic_load_relaxed_int32(&ceval2->pending.calls_to_do)) {
         if (make_pending_calls(tstate->interp) != 0) {
             return -1;
         }
     }
 
     /* GIL drop request */
-    if (_Py_atomic_load_relaxed(&ceval2->gil_drop_request)) {
+    if (_Py_atomic_load_relaxed_int32(&ceval2->gil_drop_request)) {
         /* Give another thread a chance */
         if (_PyThreadState_Swap(&runtime->gilstate, NULL) != tstate) {
             Py_FatalError("tstate mix-up");
@@ -1266,7 +1378,8 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
-#define PRE_DISPATCH_GOTO() if (lltrace) { lltrace_instruction(frame, opcode, oparg); }
+#define PRE_DISPATCH_GOTO() if (lltrace) { \
+    lltrace_instruction(frame, stack_pointer, next_instr); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
@@ -1288,9 +1401,16 @@ eval_frame_handle_pending(PyThreadState *tstate)
         DISPATCH_GOTO(); \
     }
 
+#define NOTRACE_DISPATCH_SAME_OPARG() \
+    { \
+        opcode = _Py_OPCODE(*next_instr); \
+        PRE_DISPATCH_GOTO(); \
+        DISPATCH_GOTO(); \
+    }
+
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
-    if (_Py_atomic_load_relaxed(eval_breaker)) { \
+    if (_Py_atomic_load_relaxed_int32(eval_breaker)) { \
         goto handle_eval_breaker; \
     }
 
@@ -1375,6 +1495,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 /* The stack can grow at most MAXINT deep, as co_nlocals and
    co_stacksize are ints. */
 #define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(frame)))
+#define STACK_SIZE()      (frame->f_code->co_stacksize)
 #define EMPTY()           (STACK_LEVEL() == 0)
 #define TOP()             (stack_pointer[-1])
 #define SECOND()          (stack_pointer[-2])
@@ -1387,23 +1508,21 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define BASIC_PUSH(v)     (*stack_pointer++ = (v))
 #define BASIC_POP()       (*--stack_pointer)
 
-#ifdef LLTRACE
-#define PUSH(v)         { (void)(BASIC_PUSH(v), \
-                          lltrace && prtrace(tstate, TOP(), "push")); \
-                          assert(STACK_LEVEL() <= frame->f_code->co_stacksize); }
-#define POP()           ((void)(lltrace && prtrace(tstate, TOP(), "pop")), \
-                         BASIC_POP())
+#ifdef Py_DEBUG
+#define PUSH(v)         do { \
+                            BASIC_PUSH(v); \
+                            assert(STACK_LEVEL() <= STACK_SIZE()); \
+                        } while (0)
+#define POP()           (assert(STACK_LEVEL() > 0), BASIC_POP())
 #define STACK_GROW(n)   do { \
-                          assert(n >= 0); \
-                          (void)(BASIC_STACKADJ(n), \
-                          lltrace && prtrace(tstate, TOP(), "stackadj")); \
-                          assert(STACK_LEVEL() <= frame->f_code->co_stacksize); \
+                            assert(n >= 0); \
+                            BASIC_STACKADJ(n); \
+                            assert(STACK_LEVEL() <= STACK_SIZE()); \
                         } while (0)
 #define STACK_SHRINK(n) do { \
                             assert(n >= 0); \
-                            (void)(lltrace && prtrace(tstate, TOP(), "stackadj")); \
-                            (void)(BASIC_STACKADJ(-(n))); \
-                            assert(STACK_LEVEL() <= frame->f_code->co_stacksize); \
+                            assert(STACK_LEVEL() >= n); \
+                            BASIC_STACKADJ(-(n)); \
                         } while (0)
 #else
 #define PUSH(v)                BASIC_PUSH(v)
@@ -1571,10 +1690,8 @@ typedef struct {
     PyObject *kwnames;
 } CallShape;
 
-static inline bool
-is_method(PyObject **stack_pointer, int args) {
-    return PEEK(args+2) != NULL;
-}
+// GH-89279: Must be a macro to be sure it's inlined by MSVC.
+#define is_method(stack_pointer, args) (PEEK((args)+2) != NULL)
 
 #define KWNAMES_LEN() \
     (call_shape.kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(call_shape.kwnames)))
@@ -1593,7 +1710,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #ifdef Py_STATS
     int lastopcode = 0;
 #endif
-    int opcode;        /* Current opcode */
+    // opcode is an 8-bit value to improve the code generated by MSVC
+    // for the big switch below (in combination with the EXTRA_CASES macro).
+    uint8_t opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
 
@@ -1667,11 +1786,14 @@ resume_frame:
 
 #ifdef LLTRACE
     {
-        int r = PyDict_Contains(GLOBALS(), &_Py_ID(__ltrace__));
+        int r = PyDict_Contains(GLOBALS(), &_Py_ID(__lltrace__));
         if (r < 0) {
             goto exit_unwind;
         }
         lltrace = r;
+    }
+    if (lltrace) {
+        lltrace_resume_frame(frame);
     }
 #endif
 
@@ -1722,7 +1844,7 @@ handle_eval_breaker:
             PREDICTED(RESUME_QUICK);
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
-            if (_Py_atomic_load_relaxed(eval_breaker) && oparg < 2) {
+            if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
                 goto handle_eval_breaker;
             }
             DISPATCH();
@@ -1905,8 +2027,8 @@ handle_eval_breaker:
             STAT_INC(BINARY_OP, hit);
             PyObject *prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(prod);
-            Py_DECREF(right);
-            Py_DECREF(left);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             STACK_SHRINK(1);
             if (prod == NULL) {
                 goto error;
@@ -1926,8 +2048,8 @@ handle_eval_breaker:
                 ((PyFloatObject *)right)->ob_fval;
             PyObject *prod = PyFloat_FromDouble(dprod);
             SET_SECOND(prod);
-            Py_DECREF(right);
-            Py_DECREF(left);
+            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             STACK_SHRINK(1);
             if (prod == NULL) {
                 goto error;
@@ -1945,8 +2067,8 @@ handle_eval_breaker:
             STAT_INC(BINARY_OP, hit);
             PyObject *sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(sub);
-            Py_DECREF(right);
-            Py_DECREF(left);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             STACK_SHRINK(1);
             if (sub == NULL) {
                 goto error;
@@ -1965,8 +2087,8 @@ handle_eval_breaker:
             double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
             PyObject *sub = PyFloat_FromDouble(dsub);
             SET_SECOND(sub);
-            Py_DECREF(right);
-            Py_DECREF(left);
+            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             STACK_SHRINK(1);
             if (sub == NULL) {
                 goto error;
@@ -1985,8 +2107,8 @@ handle_eval_breaker:
             PyObject *res = PyUnicode_Concat(left, right);
             STACK_SHRINK(1);
             SET_TOP(res);
-            Py_DECREF(left);
-            Py_DECREF(right);
+            _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             if (TOP() == NULL) {
                 goto error;
             }
@@ -2018,10 +2140,10 @@ handle_eval_breaker:
              * that the string is safe to mutate.
              */
             assert(Py_REFCNT(left) >= 2);
-            Py_DECREF(left); // XXX never need to dealloc
+            _Py_DECREF_NO_DEALLOC(left);
             STACK_SHRINK(2);
             PyUnicode_Append(target_local, right);
-            Py_DECREF(right);
+            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             if (*target_local == NULL) {
                 goto error;
             }
@@ -2041,8 +2163,8 @@ handle_eval_breaker:
                 ((PyFloatObject *)right)->ob_fval;
             PyObject *sum = PyFloat_FromDouble(dsum);
             SET_SECOND(sum);
-            Py_DECREF(right);
-            Py_DECREF(left);
+            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             STACK_SHRINK(1);
             if (sum == NULL) {
                 goto error;
@@ -2060,8 +2182,8 @@ handle_eval_breaker:
             STAT_INC(BINARY_OP, hit);
             PyObject *sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(sum);
-            Py_DECREF(right);
-            Py_DECREF(left);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             STACK_SHRINK(1);
             if (sum == NULL) {
                 goto error;
@@ -2093,7 +2215,7 @@ handle_eval_breaker:
                 if (_Py_Specialize_BinarySubscr(container, sub, next_instr) < 0) {
                     goto error;
                 }
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(BINARY_SUBSCR, deferred);
@@ -2120,7 +2242,7 @@ handle_eval_breaker:
             assert(res != NULL);
             Py_INCREF(res);
             STACK_SHRINK(1);
-            Py_DECREF(sub);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             SET_TOP(res);
             Py_DECREF(list);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
@@ -2145,7 +2267,7 @@ handle_eval_breaker:
             assert(res != NULL);
             Py_INCREF(res);
             STACK_SHRINK(1);
-            Py_DECREF(sub);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             SET_TOP(res);
             Py_DECREF(tuple);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
@@ -2258,7 +2380,7 @@ handle_eval_breaker:
                 if (_Py_Specialize_StoreSubscr(container, sub, next_instr) < 0) {
                     goto error;
                 }
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(STORE_SUBSCR, deferred);
@@ -2287,7 +2409,7 @@ handle_eval_breaker:
             STACK_SHRINK(3);
             assert(old_value != NULL);
             Py_DECREF(old_value);
-            Py_DECREF(sub);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             Py_DECREF(list);
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
             NOTRACE_DISPATCH();
@@ -2748,7 +2870,7 @@ handle_eval_breaker:
                 PyObject *seq = TOP();
                 next_instr--;
                 _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(UNPACK_SEQUENCE, deferred);
@@ -2991,7 +3113,7 @@ handle_eval_breaker:
                 if (_Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name) < 0) {
                     goto error;
                 }
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(LOAD_GLOBAL, deferred);
@@ -3152,12 +3274,8 @@ handle_eval_breaker:
 
         TARGET(BUILD_STRING) {
             PyObject *str;
-            PyObject *empty = PyUnicode_New(0, 0);
-            if (empty == NULL) {
-                goto error;
-            }
-            str = _PyUnicode_JoinArray(empty, stack_pointer - oparg, oparg);
-            Py_DECREF(empty);
+            str = _PyUnicode_JoinArray(&_Py_STR(empty),
+                                       stack_pointer - oparg, oparg);
             if (str == NULL)
                 goto error;
             while (--oparg >= 0) {
@@ -3420,7 +3538,7 @@ handle_eval_breaker:
                 if (_Py_Specialize_LoadAttr(owner, next_instr, name) < 0) {
                     goto error;
                 }
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(LOAD_ATTR, deferred);
@@ -3529,7 +3647,7 @@ handle_eval_breaker:
                 if (_Py_Specialize_StoreAttr(owner, next_instr, name) < 0) {
                     goto error;
                 }
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(STORE_ATTR, deferred);
@@ -3657,7 +3775,7 @@ handle_eval_breaker:
                 PyObject *left = SECOND();
                 next_instr--;
                 _Py_Specialize_CompareOp(left, right, next_instr, oparg);
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(COMPARE_OP, deferred);
@@ -3684,8 +3802,8 @@ handle_eval_breaker:
             JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
             NEXTOPARG();
             STACK_SHRINK(2);
-            Py_DECREF(left);
-            Py_DECREF(right);
+            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             assert(opcode == POP_JUMP_FORWARD_IF_FALSE ||
                    opcode == POP_JUMP_BACKWARD_IF_FALSE ||
                    opcode == POP_JUMP_FORWARD_IF_TRUE ||
@@ -3727,8 +3845,8 @@ handle_eval_breaker:
             JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
             NEXTOPARG();
             STACK_SHRINK(2);
-            Py_DECREF(left);
-            Py_DECREF(right);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             assert(opcode == POP_JUMP_FORWARD_IF_FALSE ||
                    opcode == POP_JUMP_BACKWARD_IF_FALSE ||
                    opcode == POP_JUMP_FORWARD_IF_TRUE ||
@@ -3773,8 +3891,8 @@ handle_eval_breaker:
                    opcode == POP_JUMP_FORWARD_IF_TRUE ||
                    opcode == POP_JUMP_BACKWARD_IF_TRUE);
             STACK_SHRINK(2);
-            Py_DECREF(left);
-            Py_DECREF(right);
+            _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             assert(res == 0 || res == 1);
             int sign = 1 - res;
             int jump = (9 << (sign + 1)) & when_to_jump_mask;
@@ -3940,11 +4058,11 @@ handle_eval_breaker:
             PREDICTED(POP_JUMP_BACKWARD_IF_FALSE);
             PyObject *cond = POP();
             if (Py_IsTrue(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 DISPATCH();
             }
             if (Py_IsFalse(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
@@ -3966,10 +4084,10 @@ handle_eval_breaker:
             PREDICTED(POP_JUMP_FORWARD_IF_FALSE);
             PyObject *cond = POP();
             if (Py_IsTrue(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
             }
             else if (Py_IsFalse(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 JUMPBY(oparg);
             }
             else {
@@ -3989,11 +4107,11 @@ handle_eval_breaker:
         TARGET(POP_JUMP_BACKWARD_IF_TRUE) {
             PyObject *cond = POP();
             if (Py_IsFalse(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 DISPATCH();
             }
             if (Py_IsTrue(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
@@ -4014,10 +4132,10 @@ handle_eval_breaker:
         TARGET(POP_JUMP_FORWARD_IF_TRUE) {
             PyObject *cond = POP();
             if (Py_IsFalse(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
             }
             else if (Py_IsTrue(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 JUMPBY(oparg);
             }
             else {
@@ -4042,7 +4160,7 @@ handle_eval_breaker:
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
             }
-            Py_DECREF(value);
+            _Py_DECREF_NO_DEALLOC(value);
             DISPATCH();
         }
 
@@ -4058,21 +4176,25 @@ handle_eval_breaker:
         TARGET(POP_JUMP_BACKWARD_IF_NONE) {
             PyObject *value = POP();
             if (Py_IsNone(value)) {
-                Py_DECREF(value);
+                _Py_DECREF_NO_DEALLOC(value);
                 JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
-                DISPATCH();
             }
-            Py_DECREF(value);
+            else {
+                Py_DECREF(value);
+            }
             DISPATCH();
         }
 
         TARGET(POP_JUMP_FORWARD_IF_NONE) {
             PyObject *value = POP();
             if (Py_IsNone(value)) {
+                _Py_DECREF_NO_DEALLOC(value);
                 JUMPBY(oparg);
             }
-            Py_DECREF(value);
+            else {
+                Py_DECREF(value);
+            }
             DISPATCH();
         }
 
@@ -4081,11 +4203,11 @@ handle_eval_breaker:
             int err;
             if (Py_IsTrue(cond)) {
                 STACK_SHRINK(1);
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 DISPATCH();
             }
             if (Py_IsFalse(cond)) {
-                JUMPTO(oparg);
+                JUMPBY(oparg);
                 DISPATCH();
             }
             err = PyObject_IsTrue(cond);
@@ -4094,7 +4216,7 @@ handle_eval_breaker:
                 Py_DECREF(cond);
             }
             else if (err == 0)
-                JUMPTO(oparg);
+                JUMPBY(oparg);
             else
                 goto error;
             DISPATCH();
@@ -4105,16 +4227,16 @@ handle_eval_breaker:
             int err;
             if (Py_IsFalse(cond)) {
                 STACK_SHRINK(1);
-                Py_DECREF(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 DISPATCH();
             }
             if (Py_IsTrue(cond)) {
-                JUMPTO(oparg);
+                JUMPBY(oparg);
                 DISPATCH();
             }
             err = PyObject_IsTrue(cond);
             if (err > 0) {
-                JUMPTO(oparg);
+                JUMPBY(oparg);
             }
             else if (err == 0) {
                 STACK_SHRINK(1);
@@ -4462,7 +4584,7 @@ handle_eval_breaker:
                 if (_Py_Specialize_LoadMethod(owner, next_instr, name) < 0) {
                     goto error;
                 }
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(LOAD_METHOD, deferred);
@@ -4736,7 +4858,7 @@ handle_eval_breaker:
                 if (err < 0) {
                     goto error;
                 }
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(PRECALL, deferred);
@@ -4757,7 +4879,7 @@ handle_eval_breaker:
                 if (err < 0) {
                     goto error;
                 }
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(CALL, deferred);
@@ -5132,11 +5254,15 @@ handle_eval_breaker:
             assert(call_shape.kwnames == NULL);
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
-            PyObject *callable = PEEK(total_args + 1);
+            PyMethodDescrObject *callable =
+                (PyMethodDescrObject *)PEEK(total_args + 1);
             DEOPT_IF(total_args != 2, PRECALL);
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), PRECALL);
-            PyMethodDef *meth = ((PyMethodDescrObject *)callable)->d_method;
+            PyMethodDef *meth = callable->d_method;
             DEOPT_IF(meth->ml_flags != METH_O, PRECALL);
+            PyObject *arg = TOP();
+            PyObject *self = SECOND();
+            DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), PRECALL);
             STAT_INC(PRECALL, hit);
             SKIP_CALL();
             PyCFunction cfunc = meth->ml_meth;
@@ -5145,8 +5271,6 @@ handle_eval_breaker:
             if (_Py_EnterRecursiveCall(tstate, " while calling a Python object")) {
                 goto error;
             }
-            PyObject *arg = TOP();
-            PyObject *self = SECOND();
             PyObject *res = cfunc(self, arg);
             _Py_LeaveRecursiveCall(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -5165,17 +5289,22 @@ handle_eval_breaker:
         TARGET(PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) {
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
-            PyObject *callable = PEEK(total_args + 1);
+            PyMethodDescrObject *callable =
+                (PyMethodDescrObject *)PEEK(total_args + 1);
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), PRECALL);
-            PyMethodDef *meth = ((PyMethodDescrObject *)callable)->d_method;
+            PyMethodDef *meth = callable->d_method;
             DEOPT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS), PRECALL);
+            PyTypeObject *d_type = callable->d_common.d_type;
+            PyObject *self = PEEK(total_args);
+            DEOPT_IF(!Py_IS_TYPE(self, d_type), PRECALL);
             STAT_INC(PRECALL, hit);
             SKIP_CALL();
             int nargs = total_args-1;
             STACK_SHRINK(nargs);
-            _PyCFunctionFastWithKeywords cfunc = (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
-            PyObject *self = TOP();
-            PyObject *res = cfunc(self, stack_pointer, nargs - KWNAMES_LEN(), call_shape.kwnames);
+            _PyCFunctionFastWithKeywords cfunc =
+                (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+            PyObject *res = cfunc(self, stack_pointer, nargs - KWNAMES_LEN(),
+                                  call_shape.kwnames);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             call_shape.kwnames = NULL;
 
@@ -5200,9 +5329,11 @@ handle_eval_breaker:
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
             DEOPT_IF(total_args != 1, PRECALL);
-            PyObject *callable = SECOND();
+            PyMethodDescrObject *callable = (PyMethodDescrObject *)SECOND();
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), PRECALL);
-            PyMethodDef *meth = ((PyMethodDescrObject *)callable)->d_method;
+            PyMethodDef *meth = callable->d_method;
+            PyObject *self = TOP();
+            DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), PRECALL);
             DEOPT_IF(meth->ml_flags != METH_NOARGS, PRECALL);
             STAT_INC(PRECALL, hit);
             SKIP_CALL();
@@ -5212,7 +5343,6 @@ handle_eval_breaker:
             if (_Py_EnterRecursiveCall(tstate, " while calling a Python object")) {
                 goto error;
             }
-            PyObject *self = TOP();
             PyObject *res = cfunc(self, NULL);
             _Py_LeaveRecursiveCall(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -5231,17 +5361,20 @@ handle_eval_breaker:
             assert(call_shape.kwnames == NULL);
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
-            PyObject *callable = PEEK(total_args + 1);
+            PyMethodDescrObject *callable =
+                (PyMethodDescrObject *)PEEK(total_args + 1);
             /* Builtin METH_FASTCALL methods, without keywords */
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), PRECALL);
-            PyMethodDef *meth = ((PyMethodDescrObject *)callable)->d_method;
+            PyMethodDef *meth = callable->d_method;
             DEOPT_IF(meth->ml_flags != METH_FASTCALL, PRECALL);
+            PyObject *self = PEEK(total_args);
+            DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), PRECALL);
             STAT_INC(PRECALL, hit);
             SKIP_CALL();
-            _PyCFunctionFast cfunc = (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
+            _PyCFunctionFast cfunc =
+                (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args-1;
             STACK_SHRINK(nargs);
-            PyObject *self = TOP();
             PyObject *res = cfunc(self, stack_pointer, nargs);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Clear the stack of the arguments. */
@@ -5484,7 +5617,7 @@ handle_eval_breaker:
                 PyObject *rhs = TOP();
                 next_instr--;
                 _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
-                DISPATCH();
+                NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(BINARY_OP, deferred);
@@ -5503,11 +5636,18 @@ handle_eval_breaker:
 
         TARGET(EXTENDED_ARG) {
             assert(oparg);
-            int oldoparg = oparg;
-            NEXTOPARG();
-            oparg |= oldoparg << 8;
+            oparg <<= 8;
+            oparg |= _Py_OPARG(*next_instr);
+            opcode = _PyOpcode_Deopt[_Py_OPCODE(*next_instr)];
             PRE_DISPATCH_GOTO();
             DISPATCH_GOTO();
+        }
+
+        TARGET(EXTENDED_ARG_QUICK) {
+            assert(oparg);
+            oparg <<= 8;
+            oparg |= _Py_OPARG(*next_instr);
+            NOTRACE_DISPATCH_SAME_OPARG();
         }
 
         TARGET(CACHE) {
@@ -5575,7 +5715,7 @@ handle_eval_breaker:
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
 #else
-        default:
+        EXTRA_CASES  // From opcode.h, a 'case' for each unused opcode
 #endif
             fprintf(stderr, "XXX lineno: %d, opcode: %d\n",
                     _PyInterpreterFrame_GetLine(frame),  opcode);
@@ -6666,23 +6806,6 @@ Error:
     Py_XDECREF(it);
     return 0;
 }
-
-#ifdef LLTRACE
-static int
-prtrace(PyThreadState *tstate, PyObject *v, const char *str)
-{
-    printf("%s ", str);
-    PyObject *type, *value, *traceback;
-    PyErr_Fetch(&type, &value, &traceback);
-    if (PyObject_Print(v, stdout, 0) != 0) {
-        /* Don't know what else to do */
-        _PyErr_Clear(tstate);
-    }
-    printf("\n");
-    PyErr_Restore(type, value, traceback);
-    return 1;
-}
-#endif
 
 static void
 call_exc_trace(Py_tracefunc func, PyObject *self,
