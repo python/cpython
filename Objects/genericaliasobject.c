@@ -516,6 +516,7 @@ ga_vectorcall(PyObject *self, PyObject *const *args,
 static const char* const attr_exceptions[] = {
     "__origin__",
     "__args__",
+    "__unpacked__",
     "__parameters__",
     "__mro_entries__",
     "__reduce_ex__",  // needed so we don't look up object.__reduce_ex__
@@ -657,6 +658,7 @@ static PyMethodDef ga_methods[] = {
 static PyMemberDef ga_members[] = {
     {"__origin__", T_OBJECT, offsetof(gaobject, origin), READONLY},
     {"__args__", T_OBJECT, offsetof(gaobject, args), READONLY},
+    {"__unpacked__", T_BOOL, offsetof(gaobject, starred), READONLY},
     {0}
 };
 
