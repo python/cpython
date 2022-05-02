@@ -1,4 +1,0 @@
-Remove the undocumented private ``float.__set_format__()`` method, previously
-known as ``float.__setformat__()`` in Python 3.7. Its docstring said: "You
-probably don't want to use this function. It exists mainly to be used in
-Python's test suite." Patch by Victor Stinner.

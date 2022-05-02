@@ -55,14 +55,12 @@ typedef struct PyModuleDef_Base {
     NULL, /* m_copy */          \
   }
 
-struct PyModuleDef_Slot;
-
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
 /* New in 3.5 */
-typedef struct PyModuleDef_Slot{
+struct PyModuleDef_Slot {
     int slot;
     void *value;
-} PyModuleDef_Slot;
+};
 
 #define Py_mod_create 1
 #define Py_mod_exec 2
