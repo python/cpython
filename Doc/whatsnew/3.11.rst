@@ -715,6 +715,10 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   to clear all registered overloads of a function.
   (Contributed by Jelle Zijlstra in :gh:`89263`.)
 
+* :class:`~typing.NamedTuple` subclasses can be generic.
+  (Contributed by Serhiy Storchaka in :issue:`43923`.)
+
+
 unicodedata
 -----------
 
