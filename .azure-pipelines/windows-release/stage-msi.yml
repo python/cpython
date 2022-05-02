@@ -1,10 +1,13 @@
+parameters:
+  ARM64TclTk: true
+
 jobs:
 - job: Make_MSI
   displayName: Make MSI
   condition: and(succeeded(), not(variables['SigningCertificate']))
 
   pool:
-    vmImage: windows-2019
+    vmImage: windows-2022
 
   variables:
     ReleaseUri: http://www.python.org/{arch}
@@ -16,6 +19,8 @@ jobs:
 
   steps:
   - template: msi-steps.yml
+    parameters:
+      ARM64TclTk: ${{ parameters.ARM64TclTk }}
 
 - job: Make_Signed_MSI
   displayName: Make signed MSI
@@ -34,3 +39,5 @@ jobs:
 
   steps:
   - template: msi-steps.yml
+    parameters:
+      ARM64TclTk: ${{ parameters.ARM64TclTk }}

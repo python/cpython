@@ -1,6 +1,5 @@
 from warnings import catch_warnings
-from .. import abc
-from .. import util
+from test.test_importlib import abc, util
 
 machinery = util.import_importlib('importlib.machinery')
 
@@ -13,11 +12,14 @@ import importlib.util
 import importlib
 from test.support.script_helper import assert_python_failure
 
+
 class LoaderTests(abc.LoaderTests):
 
     """Test load_module() for extension modules."""
 
     def setUp(self):
+        if not self.machinery.EXTENSION_SUFFIXES:
+            raise unittest.SkipTest("Requires dynamic loading support.")
         self.loader = self.machinery.ExtensionFileLoader(util.EXTENSIONS.name,
                                                          util.EXTENSIONS.file_path)
 
@@ -92,6 +94,8 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
     # Test loading extension modules with multi-phase initialization (PEP 489).
 
     def setUp(self):
+        if not self.machinery.EXTENSION_SUFFIXES:
+            raise unittest.SkipTest("Requires dynamic loading support.")
         self.name = '_testmultiphase'
         finder = self.machinery.FileFinder(None)
         self.spec = importlib.util.find_spec(self.name)

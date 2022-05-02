@@ -1,9 +1,11 @@
+parameters:
+  ARM64TclTk: true
+
 jobs:
 - job: Build_Docs
   displayName: Docs build
   pool:
-    name: 'Windows Release'
-    #vmImage: windows-2019
+    vmImage: windows-2022
 
   workspace:
     clean: all
@@ -18,13 +20,9 @@ jobs:
 
   - script: Doc\make.bat htmlhelp
     displayName: 'Build CHM docs'
+    condition: and(succeeded(), eq(variables['DoCHM'], 'true'))
     env:
       BUILDDIR: $(Build.BinariesDirectory)\Doc
-
-  #- powershell: |
-  #    mkdir -Force "$(Build.BinariesDirectory)\Doc\htmlhelp"
-  #    iwr "https://www.python.org/ftp/python/3.8.0/python380.chm" -OutFile "$(Build.BinariesDirectory)\Doc\htmlhelp\python390a0.chm"
-  #  displayName: 'Cheat at building CHM docs'
 
   - task: CopyFiles@2
     displayName: 'Assemble artifact: Doc'
@@ -41,11 +39,12 @@ jobs:
       targetPath: $(Build.ArtifactStagingDirectory)\Doc
       artifactName: doc
 
+
 - job: Build_Python
   displayName: Python build
 
   pool:
-    vmImage: windows-2019
+    vmImage: windows-2022
 
   workspace:
     clean: all
@@ -91,7 +90,7 @@ jobs:
   condition: and(succeeded(), ne(variables['DoPGO'], 'true'))
 
   pool:
-    vmImage: windows-2019
+    vmImage: windows-2022
 
   workspace:
     clean: all
@@ -141,7 +140,7 @@ jobs:
   displayName: Publish Tcl/Tk Library
 
   pool:
-    vmImage: windows-2019
+    vmImage: windows-2022
 
   workspace:
     clean: all
@@ -166,6 +165,14 @@ jobs:
       platform: x64
       msbuildArguments: /t:CopyTclTkLib /p:OutDir="$(Build.ArtifactStagingDirectory)\tcl_amd64"
 
+  - ${{ if eq(parameters.ARM64TclTk, true) }}:
+    - task: MSBuild@1
+      displayName: 'Copy Tcl/Tk lib for publish'
+      inputs:
+        solution: PCbuild\tcltk.props
+        platform: ARM64
+        msbuildArguments: /t:CopyTclTkLib /p:OutDir="$(Build.ArtifactStagingDirectory)\tcl_arm64"
+
   - task: PublishPipelineArtifact@0
     displayName: 'Publish artifact: tcltk_lib_win32'
     inputs:
@@ -177,3 +184,10 @@ jobs:
     inputs:
       targetPath: '$(Build.ArtifactStagingDirectory)\tcl_amd64'
       artifactName: tcltk_lib_amd64
+
+  - ${{ if eq(parameters.ARM64TclTk, true) }}:
+    - task: PublishPipelineArtifact@0
+      displayName: 'Publish artifact: tcltk_lib_arm64'
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)\tcl_arm64'
+        artifactName: tcltk_lib_arm64
