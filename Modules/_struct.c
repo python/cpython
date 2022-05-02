@@ -10,7 +10,6 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "pycore_floatobject.h"   // _PyFloat_Unpack2()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 #include <ctype.h>
@@ -303,9 +302,7 @@ static PyObject *
 unpack_halffloat(const char *p,  /* start of 2-byte string */
                  int le)         /* true for little-endian, false for big-endian */
 {
-    double x;
-
-    x = _PyFloat_Unpack2((unsigned char *)p, le);
+    double x = PyFloat_Unpack2(p, le);
     if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
@@ -324,7 +321,7 @@ pack_halffloat(_structmodulestate *state,
                         "required argument is not a float");
         return -1;
     }
-    return _PyFloat_Pack2(x, (unsigned char *)p, le);
+    return PyFloat_Pack2(x, p, le);
 }
 
 static PyObject *
@@ -333,7 +330,7 @@ unpack_float(const char *p,  /* start of 4-byte string */
 {
     double x;
 
-    x = _PyFloat_Unpack4((unsigned char *)p, le);
+    x = PyFloat_Unpack4(p, le);
     if (x == -1.0 && PyErr_Occurred())
         return NULL;
     return PyFloat_FromDouble(x);
@@ -345,7 +342,7 @@ unpack_double(const char *p,  /* start of 8-byte string */
 {
     double x;
 
-    x = _PyFloat_Unpack8((unsigned char *)p, le);
+    x = PyFloat_Unpack8(p, le);
     if (x == -1.0 && PyErr_Occurred())
         return NULL;
     return PyFloat_FromDouble(x);
@@ -979,7 +976,7 @@ bp_float(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
                         "required argument is not a float");
         return -1;
     }
-    return _PyFloat_Pack4(x, (unsigned char *)p, 0);
+    return PyFloat_Pack4(x, p, 0);
 }
 
 static int
@@ -991,7 +988,7 @@ bp_double(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
                         "required argument is not a float");
         return -1;
     }
-    return _PyFloat_Pack8(x, (unsigned char *)p, 0);
+    return PyFloat_Pack8(x, p, 0);
 }
 
 static int
@@ -1194,7 +1191,7 @@ lp_float(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
                         "required argument is not a float");
         return -1;
     }
-    return _PyFloat_Pack4(x, (unsigned char *)p, 1);
+    return PyFloat_Pack4(x, p, 1);
 }
 
 static int
@@ -1206,7 +1203,7 @@ lp_double(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
                         "required argument is not a float");
         return -1;
     }
-    return _PyFloat_Pack8(x, (unsigned char *)p, 1);
+    return PyFloat_Pack8(x, p, 1);
 }
 
 static formatdef lilendian_table[] = {

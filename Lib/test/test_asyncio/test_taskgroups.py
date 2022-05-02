@@ -2,6 +2,7 @@
 
 
 import asyncio
+import contextvars
 
 from asyncio import taskgroups
 import unittest
@@ -120,7 +121,11 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(t2_cancel)
         self.assertTrue(t2.cancelled())
 
-    async def test_taskgroup_05(self):
+    async def test_cancel_children_on_child_error(self):
+        """
+        When a child task raises an error, the rest of the children
+        are cancelled and the errors are gathered into an EG.
+        """
 
         NUM = 0
         t2_cancel = False
@@ -165,7 +170,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(t2_cancel)
         self.assertTrue(runner_cancel)
 
-    async def test_taskgroup_06(self):
+    async def test_cancellation(self):
 
         NUM = 0
 
@@ -187,7 +192,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(r.done())
         r.cancel()
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(asyncio.CancelledError) as cm:
             await r
 
         self.assertEqual(NUM, 5)
@@ -226,7 +231,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(NUM, 15)
 
-    async def test_taskgroup_08(self):
+    async def test_cancellation_in_body(self):
 
         async def foo():
             await asyncio.sleep(0.1)
@@ -247,7 +252,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(r.done())
         r.cancel()
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(asyncio.CancelledError) as cm:
             await r
 
     async def test_taskgroup_09(self):
@@ -368,11 +373,11 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             raise ValueError(t)
 
         async def runner():
-            async with taskgroups.TaskGroup(name='g1') as g1:
+            async with taskgroups.TaskGroup() as g1:
                 g1.create_task(crash_after(0.1))
 
-                async with taskgroups.TaskGroup(name='g2') as g2:
-                    g2.create_task(crash_after(0.2))
+                async with taskgroups.TaskGroup() as g2:
+                    g2.create_task(crash_after(10))
 
         r = asyncio.create_task(runner())
         with self.assertRaises(ExceptionGroup) as cm:
@@ -387,10 +392,10 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             raise ValueError(t)
 
         async def runner():
-            async with taskgroups.TaskGroup(name='g1') as g1:
+            async with taskgroups.TaskGroup() as g1:
                 g1.create_task(crash_after(10))
 
-                async with taskgroups.TaskGroup(name='g2') as g2:
+                async with taskgroups.TaskGroup() as g2:
                     g2.create_task(crash_after(0.1))
 
         r = asyncio.create_task(runner())
@@ -407,7 +412,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             1 / 0
 
         async def runner():
-            async with taskgroups.TaskGroup(name='g1') as g1:
+            async with taskgroups.TaskGroup() as g1:
                 g1.create_task(crash_soon())
                 try:
                     await asyncio.sleep(10)
@@ -430,7 +435,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             1 / 0
 
         async def nested_runner():
-            async with taskgroups.TaskGroup(name='g1') as g1:
+            async with taskgroups.TaskGroup() as g1:
                 g1.create_task(crash_soon())
                 try:
                     await asyncio.sleep(10)
@@ -692,3 +697,31 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
         self.assertGreaterEqual(nhydras, 10)
+
+    async def test_taskgroup_task_name(self):
+        async def coro():
+            await asyncio.sleep(0)
+        async with taskgroups.TaskGroup() as g:
+            t = g.create_task(coro(), name="yolo")
+            self.assertEqual(t.get_name(), "yolo")
+
+    async def test_taskgroup_task_context(self):
+        cvar = contextvars.ContextVar('cvar')
+
+        async def coro(val):
+            await asyncio.sleep(0)
+            cvar.set(val)
+
+        async with taskgroups.TaskGroup() as g:
+            ctx = contextvars.copy_context()
+            self.assertIsNone(ctx.get(cvar))
+            t1 = g.create_task(coro(1), context=ctx)
+            await t1
+            self.assertEqual(1, ctx.get(cvar))
+            t2 = g.create_task(coro(2), context=ctx)
+            await t2
+            self.assertEqual(2, ctx.get(cvar))
+
+
+if __name__ == "__main__":
+    unittest.main()

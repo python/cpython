@@ -152,7 +152,14 @@ def search_function(encoding):
     # Return the registry entry
     return entry
 
+# Register the search_function in the Python codec registry
+codecs.register(search_function)
+
 if sys.platform == 'win32':
+    # bpo-671666, bpo-46668: If Python does not implement a codec for current
+    # Windows ANSI code page, use the "mbcs" codec instead:
+    # WideCharToMultiByte() and MultiByteToWideChar() functions with CP_ACP.
+    # Python does not support custom code pages.
     def _alias_mbcs(encoding):
         try:
             import _winapi
@@ -164,8 +171,4 @@ if sys.platform == 'win32':
             # Imports may fail while we are shutting down
             pass
 
-    # It must be registered before search_function()
     codecs.register(_alias_mbcs)
-
-# Register the search_function in the Python codec registry
-codecs.register(search_function)

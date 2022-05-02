@@ -1,3 +1,6 @@
+parameters:
+  ARM64TclTk: true
+
 jobs:
 - job: Make_MSI
   displayName: Make MSI
@@ -16,6 +19,8 @@ jobs:
 
   steps:
   - template: msi-steps.yml
+    parameters:
+      ARM64TclTk: ${{ parameters.ARM64TclTk }}
 
 - job: Make_Signed_MSI
   displayName: Make signed MSI
@@ -34,3 +39,5 @@ jobs:
 
   steps:
   - template: msi-steps.yml
+    parameters:
+      ARM64TclTk: ${{ parameters.ARM64TclTk }}

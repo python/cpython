@@ -1,19 +1,13 @@
 import contextlib
-import glob
+import io
 import os.path
 import re
-import sys
-
 
 __file__ = os.path.abspath(__file__)
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 INTERNAL = os.path.join(ROOT, 'Include', 'internal')
 
 
-STRING_LITERALS = {
-    'empty': '',
-    'dot': '.',
-}
 IGNORED = {
     'ACTION',  # Python/_warnings.c
     'ATTR',  # Python/_warnings.c and Objects/funcobject.c
@@ -100,24 +94,34 @@ IDENTIFIERS = [
 #######################################
 # helpers
 
+def iter_files():
+    for name in ('Modules', 'Objects', 'Parser', 'PC', 'Programs', 'Python'):
+        root = os.path.join(ROOT, name)
+        for dirname, _, files in os.walk(root):
+            for name in files:
+                if not name.endswith(('.c', '.h')):
+                    continue
+                yield os.path.join(dirname, name)
+
+
 def iter_global_strings():
     id_regex = re.compile(r'\b_Py_ID\((\w+)\)')
     str_regex = re.compile(r'\b_Py_DECLARE_STR\((\w+), "(.*?)"\)')
-    for dirname, _, files in os.walk(ROOT):
-        if os.path.relpath(dirname, ROOT).startswith('Include'):
+    for filename in iter_files():
+        try:
+            infile = open(filename, encoding='utf-8')
+        except FileNotFoundError:
+            # The file must have been a temporary file.
             continue
-        for name in files:
-            if not name.endswith(('.c', '.h')):
-                continue
-            filename = os.path.join(dirname, name)
-            with open(os.path.join(filename), encoding='utf-8') as infile:
-                for lno, line in enumerate(infile, 1):
-                    for m in id_regex.finditer(line):
-                        identifier, = m.groups()
-                        yield identifier, None, filename, lno, line
-                    for m in str_regex.finditer(line):
-                        varname, string = m.groups()
-                        yield varname, string, filename, lno, line
+        with infile:
+            for lno, line in enumerate(infile, 1):
+                for m in id_regex.finditer(line):
+                    identifier, = m.groups()
+                    yield identifier, None, filename, lno, line
+                for m in str_regex.finditer(line):
+                    varname, string = m.groups()
+                    yield varname, string, filename, lno, line
+
 
 def iter_to_marker(lines, marker):
     for line in lines:
@@ -161,6 +165,19 @@ class Printer:
         self.write("}" + suffix)
 
 
+@contextlib.contextmanager
+def open_for_changes(filename, orig):
+    """Like open() but only write to the file if it changed."""
+    outfile = io.StringIO()
+    yield outfile
+    text = outfile.getvalue()
+    if text != orig:
+        with open(filename, 'w', encoding='utf-8') as outfile:
+            outfile.write(text)
+    else:
+        print(f'# not changed: {filename}')
+
+
 #######################################
 # the global objects
 
@@ -173,25 +190,33 @@ def generate_global_strings(identifiers, strings):
 
     # Read the non-generated part of the file.
     with open(filename) as infile:
-        before = ''.join(iter_to_marker(infile, START))[:-1]
-        for _ in iter_to_marker(infile, END):
-            pass
-        after = infile.read()[:-1]
+        orig = infile.read()
+    lines = iter(orig.rstrip().splitlines())
+    before = '\n'.join(iter_to_marker(lines, START))
+    for _ in iter_to_marker(lines, END):
+        pass
+    after = '\n'.join(lines)
 
     # Generate the file.
-    with open(filename, 'w', encoding='utf-8') as outfile:
+    with open_for_changes(filename, orig) as outfile:
         printer = Printer(outfile)
         printer.write(before)
         printer.write(START)
         with printer.block('struct _Py_global_strings', ';'):
             with printer.block('struct', ' literals;'):
-                for name, literal in sorted(strings.items()):
+                for literal, name in sorted(strings.items(), key=lambda x: x[1]):
                     printer.write(f'STRUCT_FOR_STR({name}, "{literal}")')
             outfile.write('\n')
             with printer.block('struct', ' identifiers;'):
                 for name in sorted(identifiers):
                     assert name.isidentifier(), name
                     printer.write(f'STRUCT_FOR_ID({name})')
+            with printer.block('struct', ' ascii[128];'):
+                printer.write("PyASCIIObject _ascii;")
+                printer.write("uint8_t _data[2];")
+            with printer.block('struct', ' latin1[128];'):
+                printer.write("PyCompactUnicodeObject _latin1;")
+                printer.write("uint8_t _data[2];")
         printer.write(END)
         printer.write(after)
 
@@ -216,13 +241,15 @@ def generate_runtime_init(identifiers, strings):
 
     # Read the non-generated part of the file.
     with open(filename) as infile:
-        before = ''.join(iter_to_marker(infile, START))[:-1]
-        for _ in iter_to_marker(infile, END):
-            pass
-        after = infile.read()[:-1]
+        orig = infile.read()
+    lines = iter(orig.rstrip().splitlines())
+    before = '\n'.join(iter_to_marker(lines, START))
+    for _ in iter_to_marker(lines, END):
+        pass
+    after = '\n'.join(lines)
 
     # Generate the file.
-    with open(filename, 'w', encoding='utf-8') as outfile:
+    with open_for_changes(filename, orig) as outfile:
         printer = Printer(outfile)
         printer.write(before)
         printer.write(START)
@@ -242,179 +269,52 @@ def generate_runtime_init(identifiers, strings):
                 # Global strings.
                 with printer.block('.strings =', ','):
                     with printer.block('.literals =', ','):
-                        for name, literal in sorted(strings.items()):
+                        for literal, name in sorted(strings.items(), key=lambda x: x[1]):
                             printer.write(f'INIT_STR({name}, "{literal}"),')
                     with printer.block('.identifiers =', ','):
                         for name in sorted(identifiers):
                             assert name.isidentifier(), name
                             printer.write(f'INIT_ID({name}),')
+                    with printer.block('.ascii =', ','):
+                        for i in range(128):
+                            printer.write(f'_PyASCIIObject_INIT("\\x{i:02x}"),')
+                    with printer.block('.latin1 =', ','):
+                        for i in range(128, 256):
+                            printer.write(f'_PyUnicode_LATIN1_INIT("\\x{i:02x}"),')
+                printer.write('')
+                with printer.block('.tuple_empty =', ','):
+                    printer.write('.ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0)')
         printer.write(END)
         printer.write(after)
 
 
-#######################################
-# checks
-
-def err(msg):
-    print(msg, file=sys.stderr)
-
-
-GETTER_RE = re.compile(r'''
-    ^
-    .*?
-    (?:
-        (?:
-            _Py_ID
-            [(]
-            ( \w+ )  # <identifier>
-            [)]
-         )
-        |
-        (?:
-            _Py_STR
-            [(]
-            ( \w+ )  # <literal>
-            [)]
-         )
-     )
-''', re.VERBOSE)
-TYPESLOTS_RE = re.compile(r'''
-    ^
-    .*?
-    (?:
-        (?:
-            SLOT0 [(] .*?, \s*
-            ( \w+ )  # <slot0>
-            [)]
-         )
-        |
-        (?:
-            SLOT1 [(] .*?, \s*
-            ( \w+ )  # <slot1>
-            , .* [)]
-         )
-        |
-        (?:
-            SLOT1BIN [(] .*?, .*?, \s*
-            ( \w+ )  # <slot1bin>
-            , \s*
-            ( \w+ )  # <reverse>
-            [)]
-         )
-        |
-        (?:
-            SLOT1BINFULL [(] .*?, .*?, .*?, \s*
-            ( \w+ )  # <slot1binfull>
-            , \s*
-            ( \w+ )  # <fullreverse>
-            [)]
-         )
-        |
-        ( SLOT \d .* [^)] $ )  # <wrapped>
-     )
-''', re.VERBOSE)
-
-def check_orphan_strings(identifiers):
-    literals = set(n for n, s in STRING_LITERALS.items() if s)
-    identifiers = set(identifiers)
-    files = glob.iglob(os.path.join(ROOT, '**', '*.[ch]'), recursive=True)
-    for i, filename in enumerate(files, start=1):
-        print('.', end='')
-        if i % 5 == 0:
-            print(' ', end='')
-        if i % 20 == 0:
-            print()
-        if i % 100 == 0:
-            print()
-        with open(filename) as infile:
-            wrapped = None
-            for line in infile:
-                identifier = literal = reverse = None
-
-                line = line.splitlines()[0]
-                if wrapped:
-                    line = f'{wrapped.rstrip()} {line}'
-                    wrapped = None
-
-                if os.path.basename(filename) == '_warnings.c':
-                    m = re.match(r'^.* = GET_WARNINGS_ATTR[(][^,]*, (\w+),', line)
-                    if m:
-                        identifier, = m.groups()
-                elif os.path.basename(filename) == 'typeobject.c':
-                    m = TYPESLOTS_RE.match(line)
-                    if m:
-                        (slot0,
-                         slot1,
-                         slot1bin, reverse,
-                         slot1binfull, fullreverse,
-                         wrapped,
-                         ) = m.groups()
-                        identifier = slot0 or slot1 or slot1bin or slot1binfull
-                        reverse = reverse or fullreverse
-
-                if not identifier and not literal:
-                    m = GETTER_RE.match(line)
-                    if not m:
-                        continue
-                    identifier, literal = m.groups()
-
-                if literal:
-                    if literals and literal in literals:
-                        literals.remove(literal)
-                if identifier:
-                    if identifiers and identifier in identifiers:
-                        identifiers.remove(identifier)
-                if reverse:
-                    if identifiers and reverse in identifiers:
-                        identifiers.remove(reverse)
-                if not literals and not identifiers:
-                    break
-            else:
-                continue
-            break
-    if i % 20:
-        print()
-    if not literals and not identifiers:
-        return
-    print('ERROR:', file=sys.stderr)
-    if literals:
-        err(' unused global string literals:')
-        for name in sorted(literals):
-            err(f'   {name}')
-    if identifiers:
-        if literals:
-            print()
-        err(' unused global identifiers:')
-        for name in sorted(identifiers):
-            err(f'   {name}')
+def get_identifiers_and_strings() -> 'tuple[set[str], dict[str, str]]':
+    identifiers = set(IDENTIFIERS)
+    strings = {}
+    for name, string, *_ in iter_global_strings():
+        if string is None:
+            if name not in IGNORED:
+                identifiers.add(name)
+        else:
+            if string not in strings:
+                strings[string] = name
+            elif name != strings[string]:
+                raise ValueError(f'string mismatch for {name!r} ({string!r} != {strings[name]!r}')
+    return identifiers, strings
 
 
 #######################################
 # the script
 
-def main(*, check=False) -> None:
-    identifiers = set(IDENTIFIERS)
-    strings = dict(STRING_LITERALS)
-    for name, string, filename, lno, _ in iter_global_strings():
-        if string is None:
-            if name not in IGNORED:
-                identifiers.add(name)
-        else:
-            if name not in strings:
-                strings[name] = string
-            elif string != strings[name]:
-                raise ValueError(f'string mismatch for {name!r} ({string!r} != {strings[name]!r}')
+def main() -> None:
+    identifiers, strings = get_identifiers_and_strings()
 
     generate_global_strings(identifiers, strings)
     generate_runtime_init(identifiers, strings)
-
-    if check:
-        check_orphan_strings(identifiers)
 
 
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     main(**vars(args))
