@@ -4916,19 +4916,14 @@ compiler_tag_string(struct compiler *c, expr_ty e)
         expr_ty str = e->v.TagString.str;
         if (tag->kind == Name_kind) {
             if (str->kind == JoinedStr_kind) {
-                // Generate code for tag(str)
-                asdl_expr_seq *args =
-                    _Py_asdl_expr_seq_new(1, c->c_arena);
-                if (args == NULL)
-                    return 0;
-                asdl_seq_SET(args, 0, str);
+                // Generate code for tag(str1, str2, ...)
                 asdl_keyword_seq *keywords =
                     _Py_asdl_keyword_seq_new(0, c->c_arena);
                 if (keywords == NULL)
                     return 0;
                 ADDOP(c, PUSH_NULL);
                 VISIT(c, expr, tag);
-                return compiler_call_helper(c, 0, args, keywords);
+                return compiler_call_helper(c, 0, str->v.JoinedStr.values, keywords);
             }
         }
     }
