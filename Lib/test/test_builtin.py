@@ -24,7 +24,7 @@ from functools import partial
 from inspect import CO_COROUTINE
 from itertools import product
 from textwrap import dedent
-from types import AsyncGeneratorType, FunctionType
+from types import AsyncGeneratorType, FunctionType, CellType
 from operator import neg
 from test import support
 from test.support import (swap_attr, maybe_get_event_loop_policy)
@@ -771,6 +771,48 @@ class BuiltinTest(unittest.TestCase):
             pass
         finally:
             sys.stdout = savestdout
+
+    def test_exec_closure(self):
+        result = 0
+        def make_closure_functions():
+            a = 2
+            b = 3
+            c = 5
+            def two_freevars():
+                nonlocal result
+                nonlocal a
+                nonlocal b
+                result = a*b
+            def three_freevars():
+                nonlocal result
+                nonlocal a
+                nonlocal b
+                nonlocal c
+                result = a*b*c
+            return two_freevars, three_freevars
+        two_freevars, three_freevars = make_closure_functions()
+
+        exec(two_freevars.__code__,
+            two_freevars.__globals__,
+            closure=two_freevars.__closure__)
+        self.assertEquals(result, 6)
+
+        result = 0
+        my_closure = list(two_freevars.__closure__)
+        my_closure[0] = CellType(35)
+        my_closure[1] = CellType(72)
+        my_closure = tuple(my_closure)
+        exec(two_freevars.__code__,
+            two_freevars.__globals__,
+            closure=my_closure)
+        self.assertEquals(result, 2520)
+
+        self.assertRaises(ValueError,
+            exec,
+            two_freevars.__code__,
+            two_freevars.__globals__,
+            closure=three_freevars.__closure__)
+
 
     def test_filter(self):
         self.assertEqual(list(filter(lambda c: 'a' <= c <= 'z', 'Hello World')), list('elloorld'))

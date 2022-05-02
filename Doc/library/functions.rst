@@ -496,7 +496,7 @@ are always available.  They are listed here in alphabetical order.
               n += 1
 
 
-.. function:: eval(expression[, globals[, locals]])
+.. function:: eval(expression[, globals[, locals]], *, closure=None)
 
    The arguments are a string and optional globals and locals.  If provided,
    *globals* must be a dictionary.  If provided, *locals* can be any mapping
@@ -576,6 +576,11 @@ are always available.  They are listed here in alphabetical order.
    builtins are available to the executed code by inserting your own
    ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
 
+   The *closure* argument specifies a closure--a tuple of cellvars.
+   It's only valid when the *object* is a code object containing free variables.
+   The length of the tuple must exactly match the number of free variables
+   referenced by the code object.
+
    .. audit-event:: exec code_object exec
 
       Raises an :ref:`auditing event <auditing>` ``exec`` with the code object
@@ -593,6 +598,9 @@ are always available.  They are listed here in alphabetical order.
       modifications to the default *locals* dictionary should not be attempted.
       Pass an explicit *locals* dictionary if you need to see effects of the
       code on *locals* after function :func:`exec` returns.
+
+   .. versionchanged:: 3.11
+      Added the *closure* parameter.
 
 
 .. function:: filter(function, iterable)
