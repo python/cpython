@@ -806,6 +806,14 @@ Examples::
    from foo.bar import baz    # foo.bar.baz imported and bound as baz
    from foo import attr       # foo imported and foo.attr bound as attr
 
+Note: When a submodule is imported, all parent modules are imported and may
+or may not be bounded locally. For example, ``import foo.bar.baz`` imports
+``foo``, ``foo.bar``, and ``foo.bar.baz``, all of which are bounded
+locally. ``foo`` and ``foo.bar`` can also be referenced and used locally.
+``import foo.bar.baz as fbb`` imports ``foo``, ``foo.bar``, and 
+``foo.bar.baz``, but only ``foo.bar.baz`` is bounded locally as ``baz``.
+``foo`` and ``foo.bar`` cannot be referenced and used locally.
+
 .. index:: single: * (asterisk); import statement
 
 If the list of identifiers is replaced by a star (``'*'``), all public
