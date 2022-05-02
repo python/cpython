@@ -14,10 +14,20 @@
 #endif
 
 
-// Macro to use C++ static_cast<> and reinterpret_cast<> in the Python C API
+// Macro to use C++ static_cast<>, reinterpret_cast<> and const_cast<>
+// in the Python C API.
+//
+// In C++, _Py_reinterpret_cast(type, expr) converts a constant expression to a
+// non constant type using const_cast<type>. For example,
+// _Py_reinterpret_cast(PyObject*, op) can convert a "const PyObject*" to
+// "PyObject*".
+//
+// The type argument must not be constant. For example, in C++,
+// _Py_reinterpret_cast(const PyObject*, expr) fails with a compiler error.
 #ifdef __cplusplus
 #  define _Py_static_cast(type, expr) static_cast<type>(expr)
-#  define _Py_reinterpret_cast(type, expr) reinterpret_cast<type>(expr)
+#  define _Py_reinterpret_cast(type, expr) \
+       const_cast<type>(reinterpret_cast<const type>(expr))
 #else
 #  define _Py_static_cast(type, expr) ((type)(expr))
 #  define _Py_reinterpret_cast(type, expr) ((type)(expr))
@@ -307,10 +317,10 @@ extern "C" {
  */
 #ifdef Py_DEBUG
 #  define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) \
-       (assert((WIDE)(NARROW)(VALUE) == (VALUE)), (NARROW)(VALUE))
+       (assert(_Py_static_cast(WIDE, _Py_static_cast(NARROW, (VALUE))) == (VALUE)), \
+        _Py_static_cast(NARROW, (VALUE)))
 #else
-#  define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) \
-       _Py_reinterpret_cast(NARROW, (VALUE))
+#  define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) _Py_static_cast(NARROW, (VALUE))
 #endif
 
 

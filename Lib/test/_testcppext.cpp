@@ -1,6 +1,9 @@
 // gh-91321: Very basic C++ test extension to check that the Python C API is
 // compatible with C++ and does not emit C++ compiler warnings.
 
+// Always enable assertions
+#undef NDEBUG
+
 #include "Python.h"
 
 PyDoc_STRVAR(_testcppext_add_doc,
@@ -20,8 +23,36 @@ _testcppext_add(PyObject *Py_UNUSED(module), PyObject *args)
 }
 
 
+static PyObject *
+test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    PyObject *obj = Py_BuildValue("(ii)", 1, 2);
+    if (obj == nullptr) {
+        return nullptr;
+    }
+
+    // gh-92138: For backward compatibility, functions of Python C API accepts
+    // "const PyObject*". Check that using it does not emit C++ compiler
+    // warnings.
+    const PyObject *const_obj = obj;
+    Py_INCREF(const_obj);
+    Py_DECREF(const_obj);
+    PyTypeObject *type = Py_TYPE(const_obj);
+    assert(Py_REFCNT(const_obj) >= 1);
+
+    assert(type == &PyTuple_Type);
+    assert(PyTuple_GET_SIZE(const_obj) == 2);
+    PyObject *one = PyTuple_GET_ITEM(const_obj, 0);
+    assert(PyLong_AsLong(one) == 1);
+
+    Py_DECREF(obj);
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef _testcppext_methods[] = {
     {"add", _testcppext_add, METH_VARARGS, _testcppext_add_doc},
+    {"test_api_casts", test_api_casts, METH_NOARGS, NULL},
     {nullptr, nullptr, 0, nullptr}  /* sentinel */
 };
 
