@@ -14,6 +14,7 @@ from contextvars import ContextVar, Token
 from dataclasses import Field
 from functools import partial, partialmethod, cached_property
 from graphlib import TopologicalSorter
+from logging import LoggerAdapter, StreamHandler
 from mailbox import Mailbox, _PartialFile
 try:
     import ctypes
@@ -113,6 +114,7 @@ class BaseTest(unittest.TestCase):
                      MappingProxyType, AsyncGeneratorType,
                      DirEntry,
                      chain,
+                     LoggerAdapter, StreamHandler,
                      TemporaryDirectory, SpooledTemporaryFile,
                      Queue, SimpleQueue,
                      _AssertRaisesContext,
