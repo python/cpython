@@ -1,0 +1,2 @@
+Add provisional :data:`sys._emscripten_info` named tuple with build-time and
+run-time information about Emscripten platform.

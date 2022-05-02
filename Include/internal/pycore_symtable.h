@@ -128,8 +128,6 @@ extern struct symtable* _Py_SymtableStringObjectFlags(
     int start,
     PyCompilerFlags *flags);
 
-extern void _PySymtable_Fini(void);
-
 #ifdef __cplusplus
 }
 #endif

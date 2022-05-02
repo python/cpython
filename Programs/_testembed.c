@@ -1,6 +1,7 @@
 #ifndef Py_BUILD_CORE_MODULE
 #  define Py_BUILD_CORE_MODULE
 #endif
+#define NEEDS_PY_IDENTIFIER
 
 /* Always enable assertion (even in release mode) */
 #undef NDEBUG
