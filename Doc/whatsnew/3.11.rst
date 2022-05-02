@@ -1408,6 +1408,10 @@ C API Changes
   To get a custom code object: create a code object using the compiler,
   then get a modified version with the ``replace`` method.
 
+* :c:type:`PyCodeObject` no longer has a ``co_code`` field.  Instead,
+  use ``PyObject_GetAttrString(code_object, 'co_code')`` or
+  :c:func:`PyCode_GetCode` to get the underlying bytes object.
+
 New Features
 ------------
 
