@@ -134,6 +134,9 @@ uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
     if (func->func_version != 0) {
         return func->func_version;
     }
+    if (func->vectorcall != _PyFunction_Vectorcall) {
+        return 0;
+    }
     if (next_func_version == 0) {
         return 0;
     }
