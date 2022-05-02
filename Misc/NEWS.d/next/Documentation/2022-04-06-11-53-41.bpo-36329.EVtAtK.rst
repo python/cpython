@@ -1,0 +1,1 @@
+Remove 'make -C Doc serve' in favour of 'make -C Doc htmlview'

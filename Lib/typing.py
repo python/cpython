@@ -21,6 +21,7 @@ At large scale, the structure of the module is following:
 
 from abc import abstractmethod, ABCMeta
 import collections
+from collections import defaultdict
 import collections.abc
 import contextlib
 import functools
@@ -121,19 +122,25 @@ __all__ = [
     'assert_type',
     'assert_never',
     'cast',
+    'clear_overloads',
+    'dataclass_transform',
     'final',
     'get_args',
     'get_origin',
+    'get_overloads',
     'get_type_hints',
     'is_typeddict',
+    'LiteralString',
     'Never',
     'NewType',
     'no_type_check',
     'no_type_check_decorator',
     'NoReturn',
+    'NotRequired',
     'overload',
     'ParamSpecArgs',
     'ParamSpecKwargs',
+    'Required',
     'reveal_type',
     'runtime_checkable',
     'Self',
@@ -180,7 +187,7 @@ def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
-    if arg in (Any, NoReturn, Never, Self, TypeAlias):
+    if arg in (Any, LiteralString, NoReturn, Never, Self, TypeAlias):
         return arg
     if allow_special_forms and arg in (ClassVar, Final):
         return arg
@@ -429,8 +436,17 @@ class _LiteralSpecialForm(_SpecialForm, _root=True):
         return self._getitem(self, *parameters)
 
 
-@_SpecialForm
-def Any(self, parameters):
+class _AnyMeta(type):
+    def __instancecheck__(self, obj):
+        if self is Any:
+            raise TypeError("typing.Any cannot be used with isinstance()")
+        return super().__instancecheck__(obj)
+
+    def __repr__(self):
+        return "typing.Any"
+
+
+class Any(metaclass=_AnyMeta):
     """Special type indicating an unconstrained type.
 
     - Any is compatible with every type.
@@ -439,9 +455,13 @@ def Any(self, parameters):
 
     Note that all the above statements are true from the point of view of
     static type checkers. At runtime, Any should not be used with instance
-    or class checks.
+    checks.
     """
-    raise TypeError(f"{self} is not subscriptable")
+    def __new__(cls, *args, **kwargs):
+        if cls is Any:
+            raise TypeError("Any cannot be instantiated")
+        return super().__new__(cls, *args, **kwargs)
+
 
 @_SpecialForm
 def NoReturn(self, parameters):
@@ -506,6 +526,34 @@ def Self(self, parameters):
     This is especially useful for:
         - classmethods that are used as alternative constructors
         - annotating an `__enter__` method which returns self
+    """
+    raise TypeError(f"{self} is not subscriptable")
+
+
+@_SpecialForm
+def LiteralString(self, parameters):
+    """Represents an arbitrary literal string.
+
+    Example::
+
+        from typing import LiteralString
+
+        def run_query(sql: LiteralString) -> ...
+            ...
+
+        def caller(arbitrary_string: str, literal_string: LiteralString) -> None:
+            run_query("SELECT * FROM students")  # ok
+            run_query(literal_string)  # ok
+            run_query("SELECT * FROM " + literal_string)  # ok
+            run_query(arbitrary_string)  # type checker error
+            run_query(  # type checker error
+                f"SELECT * FROM students WHERE name = {arbitrary_string}"
+            )
+
+    Only string literals and other LiteralStrings are compatible
+    with LiteralString. This provides a tool to help prevent
+    security issues such as SQL injection.
+
     """
     raise TypeError(f"{self} is not subscriptable")
 
@@ -666,9 +714,9 @@ def Concatenate(self, parameters):
         raise TypeError("Cannot take a Concatenate of no types.")
     if not isinstance(parameters, tuple):
         parameters = (parameters,)
-    if not isinstance(parameters[-1], ParamSpec):
+    if not (parameters[-1] is ... or isinstance(parameters[-1], ParamSpec)):
         raise TypeError("The last parameter to Concatenate should be a "
-                        "ParamSpec variable.")
+                        "ParamSpec variable or ellipsis.")
     msg = "Concatenate[arg, ...]: each arg must be a type."
     parameters = (*(_type_check(p, msg) for p in parameters[:-1]), parameters[-1])
     return _ConcatenateGenericAlias(self, parameters,
@@ -820,6 +868,13 @@ def _is_typevar_like(x: Any) -> bool:
     return isinstance(x, (TypeVar, ParamSpec)) or _is_unpacked_typevartuple(x)
 
 
+class _PickleUsingNameMixin:
+    """Mixin enabling pickling based on self.__name__."""
+
+    def __reduce__(self):
+        return self.__name__
+
+
 class _BoundVarianceMixin:
     """Mixin giving __init__ bound and variance arguments.
 
@@ -856,11 +911,9 @@ class _BoundVarianceMixin:
             prefix = '~'
         return prefix + self.__name__
 
-    def __reduce__(self):
-        return self.__name__
 
-
-class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _root=True):
+class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
+              _root=True):
     """Type variable.
 
     Usage::
@@ -921,10 +974,12 @@ class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _root=True):
     def __typing_subst__(self, arg):
         msg = "Parameters to generic types must be types."
         arg = _type_check(arg, msg, is_argument=True)
+        if (isinstance(arg, _GenericAlias) and arg.__origin__ is Unpack):
+            raise TypeError(f"{arg} is not valid as type argument")
         return arg
 
 
-class TypeVarTuple(_Final, _Immutable, _root=True):
+class TypeVarTuple(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
     """Type variable tuple.
 
     Usage:
@@ -945,10 +1000,17 @@ class TypeVarTuple(_Final, _Immutable, _root=True):
       C[()]        # Even this is fine
 
     For more details, see PEP 646.
+
+    Note that only TypeVarTuples defined in global scope can be pickled.
     """
 
     def __init__(self, name):
         self.__name__ = name
+
+        # Used for pickling.
+        def_mod = _caller()
+        if def_mod != 'typing':
+            self.__module__ = def_mod
 
     def __iter__(self):
         yield Unpack[self]
@@ -957,7 +1019,7 @@ class TypeVarTuple(_Final, _Immutable, _root=True):
         return self.__name__
 
     def __typing_subst__(self, arg):
-        raise AssertionError
+        raise TypeError("Substitution of bare TypeVarTuple is not supported")
 
 
 class ParamSpecArgs(_Final, _Immutable, _root=True):
@@ -1008,7 +1070,8 @@ class ParamSpecKwargs(_Final, _Immutable, _root=True):
         return self.__origin__ == other.__origin__
 
 
-class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _root=True):
+class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
+                _root=True):
     """Parameter specification variable.
 
     Usage::
@@ -1578,9 +1641,6 @@ class _ConcatenateGenericAlias(_GenericAlias, _root=True):
             return (*params[:-1], *params[-1])
         if isinstance(params[-1], _ConcatenateGenericAlias):
             params = (*params[:-1], *params[-1].__args__)
-        elif not isinstance(params[-1], ParamSpec):
-            raise TypeError("The last parameter to Concatenate should be a "
-                            "ParamSpec variable.")
         return super().copy_with(params)
 
 
@@ -1626,10 +1686,14 @@ class _UnpackGenericAlias(_GenericAlias, _root=True):
         return '*' + repr(self.__args__[0])
 
     def __getitem__(self, args):
-        if (len(self.__parameters__) == 1 and
-                isinstance(self.__parameters__[0], TypeVarTuple)):
+        if self.__typing_unpacked__():
             return args
         return super().__getitem__(args)
+
+    def __typing_unpacked__(self):
+        # If x is Unpack[tuple[...]], __parameters__ will be empty.
+        return bool(self.__parameters__ and
+                    isinstance(self.__parameters__[0], TypeVarTuple))
 
 
 class Generic:
@@ -1955,7 +2019,8 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                     issubclass(base, Generic) and base._is_protocol):
                 raise TypeError('Protocols can only inherit from other'
                                 ' protocols, got %r' % base)
-        cls.__init__ = _no_init_or_replace_init
+        if cls.__init__ is Protocol.__init__:
+            cls.__init__ = _no_init_or_replace_init
 
 
 class _AnnotatedAlias(_GenericAlias, _root=True):
@@ -2033,6 +2098,17 @@ class Annotated:
 
         OptimizedList = Annotated[List[T], runtime.Optimize()]
         OptimizedList[int] == Annotated[List[int], runtime.Optimize()]
+
+    - Annotated cannot be used with an unpacked TypeVarTuple::
+
+        Annotated[*Ts, Ann1]  # NOT valid
+
+      This would be equivalent to
+
+        Annotated[T1, T2, T3, ..., Ann1]
+
+      where T1, T2 etc. are TypeVars, which would be invalid, because
+      only one type should be passed to Annotated.
     """
 
     __slots__ = ()
@@ -2046,6 +2122,9 @@ class Annotated:
             raise TypeError("Annotated[...] should be used "
                             "with at least two arguments (a type and an "
                             "annotation).")
+        if _is_unpacked_typevartuple(params[0]):
+            raise TypeError("Annotated[...] should not be used with an "
+                            "unpacked TypeVarTuple")
         msg = "Annotated[t, ...]: t must be a type."
         origin = _type_check(params[0], msg, allow_special_forms=True)
         metadata = tuple(params[1:])
@@ -2219,6 +2298,8 @@ def _strip_annotations(t):
     """
     if isinstance(t, _AnnotatedAlias):
         return _strip_annotations(t.__origin__)
+    if hasattr(t, "__origin__") and t.__origin__ in (Required, NotRequired):
+        return _strip_annotations(t.__args__[0])
     if isinstance(t, _GenericAlias):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:
@@ -2303,6 +2384,9 @@ def is_typeddict(tp):
     return isinstance(tp, _TypedDictMeta)
 
 
+_ASSERT_NEVER_REPR_MAX_LENGTH = 100
+
+
 def assert_never(arg: Never, /) -> Never:
     """Statically assert that a line of code is unreachable.
 
@@ -2323,7 +2407,10 @@ def assert_never(arg: Never, /) -> Never:
     At runtime, this throws an exception when called.
 
     """
-    raise AssertionError("Expected code to be unreachable")
+    value = repr(arg)
+    if len(value) > _ASSERT_NEVER_REPR_MAX_LENGTH:
+        value = value[:_ASSERT_NEVER_REPR_MAX_LENGTH] + '...'
+    raise AssertionError(f"Expected code to be unreachable, but got: {value}")
 
 
 def no_type_check(arg):
@@ -2387,6 +2474,10 @@ def _overload_dummy(*args, **kwds):
         "by an implementation that is not @overload-ed.")
 
 
+# {module: {qualname: {firstlineno: func}}}
+_overload_registry = defaultdict(functools.partial(defaultdict, dict))
+
+
 def overload(func):
     """Decorator for overloaded functions/methods.
 
@@ -2412,8 +2503,35 @@ def overload(func):
       def utf8(value: str) -> bytes: ...
       def utf8(value):
           # implementation goes here
+
+    The overloads for a function can be retrieved at runtime using the
+    get_overloads() function.
     """
+    # classmethod and staticmethod
+    f = getattr(func, "__func__", func)
+    try:
+        _overload_registry[f.__module__][f.__qualname__][f.__code__.co_firstlineno] = func
+    except AttributeError:
+        # Not a normal function; ignore.
+        pass
     return _overload_dummy
+
+
+def get_overloads(func):
+    """Return all defined overloads for *func* as a sequence."""
+    # classmethod and staticmethod
+    f = getattr(func, "__func__", func)
+    if f.__module__ not in _overload_registry:
+        return []
+    mod_dict = _overload_registry[f.__module__]
+    if f.__qualname__ not in mod_dict:
+        return []
+    return list(mod_dict[f.__qualname__].values())
+
+
+def clear_overloads():
+    """Clear all overloads in the registry."""
+    _overload_registry.clear()
 
 
 def final(f):
@@ -2743,10 +2861,22 @@ class _TypedDictMeta(type):
             optional_keys.update(base.__dict__.get('__optional_keys__', ()))
 
         annotations.update(own_annotations)
-        if total:
-            required_keys.update(own_annotation_keys)
-        else:
-            optional_keys.update(own_annotation_keys)
+        for annotation_key, annotation_type in own_annotations.items():
+            annotation_origin = get_origin(annotation_type)
+            if annotation_origin is Annotated:
+                annotation_args = get_args(annotation_type)
+                if annotation_args:
+                    annotation_type = annotation_args[0]
+                    annotation_origin = get_origin(annotation_type)
+
+            if annotation_origin is Required:
+                required_keys.add(annotation_key)
+            elif annotation_origin is NotRequired:
+                optional_keys.add(annotation_key)
+            elif total:
+                required_keys.add(annotation_key)
+            else:
+                optional_keys.add(annotation_key)
 
         tp_dict.__annotations__ = annotations
         tp_dict.__required_keys__ = frozenset(required_keys)
@@ -2829,6 +2959,45 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
 
 _TypedDict = type.__new__(_TypedDictMeta, 'TypedDict', (), {})
 TypedDict.__mro_entries__ = lambda bases: (_TypedDict,)
+
+
+@_SpecialForm
+def Required(self, parameters):
+    """A special typing construct to mark a key of a total=False TypedDict
+    as required. For example:
+
+        class Movie(TypedDict, total=False):
+            title: Required[str]
+            year: int
+
+        m = Movie(
+            title='The Matrix',  # typechecker error if key is omitted
+            year=1999,
+        )
+
+    There is no runtime checking that a required key is actually provided
+    when instantiating a related TypedDict.
+    """
+    item = _type_check(parameters, f'{self._name} accepts only a single type.')
+    return _GenericAlias(self, (item,))
+
+
+@_SpecialForm
+def NotRequired(self, parameters):
+    """A special typing construct to mark a key of a TypedDict as
+    potentially missing. For example:
+
+        class Movie(TypedDict):
+            title: str
+            year: NotRequired[int]
+
+        m = Movie(
+            title='The Matrix',  # typechecker error if key is omitted
+            year=1999,
+        )
+    """
+    item = _type_check(parameters, f'{self._name} accepts only a single type.')
+    return _GenericAlias(self, (item,))
 
 
 class NewType:
@@ -3104,3 +3273,81 @@ def reveal_type(obj: T, /) -> T:
     """
     print(f"Runtime type is {type(obj).__name__!r}", file=sys.stderr)
     return obj
+
+
+def dataclass_transform(
+    *,
+    eq_default: bool = True,
+    order_default: bool = False,
+    kw_only_default: bool = False,
+    field_specifiers: tuple[type[Any] | Callable[..., Any], ...] = (),
+    **kwargs: Any,
+) -> Callable[[T], T]:
+    """Decorator that marks a function, class, or metaclass as providing
+    dataclass-like behavior.
+
+    Example usage with a decorator function:
+
+        _T = TypeVar("_T")
+
+        @dataclass_transform()
+        def create_model(cls: type[_T]) -> type[_T]:
+            ...
+            return cls
+
+        @create_model
+        class CustomerModel:
+            id: int
+            name: str
+
+    On a base class:
+
+        @dataclass_transform()
+        class ModelBase: ...
+
+        class CustomerModel(ModelBase):
+            id: int
+            name: str
+
+    On a metaclass:
+
+        @dataclass_transform()
+        class ModelMeta(type): ...
+
+        class ModelBase(metaclass=ModelMeta): ...
+
+        class CustomerModel(ModelBase):
+            id: int
+            name: str
+
+    Each of the ``CustomerModel`` classes defined in this example will now
+    behave similarly to a dataclass created with the ``@dataclasses.dataclass``
+    decorator. For example, the type checker will synthesize an ``__init__``
+    method.
+
+    The arguments to this decorator can be used to customize this behavior:
+    - ``eq_default`` indicates whether the ``eq`` parameter is assumed to be
+        True or False if it is omitted by the caller.
+    - ``order_default`` indicates whether the ``order`` parameter is
+        assumed to be True or False if it is omitted by the caller.
+    - ``kw_only_default`` indicates whether the ``kw_only`` parameter is
+        assumed to be True or False if it is omitted by the caller.
+    - ``field_specifiers`` specifies a static list of supported classes
+        or functions that describe fields, similar to ``dataclasses.field()``.
+
+    At runtime, this decorator records its arguments in the
+    ``__dataclass_transform__`` attribute on the decorated object.
+    It has no other runtime effect.
+
+    See PEP 681 for more details.
+    """
+    def decorator(cls_or_fn):
+        cls_or_fn.__dataclass_transform__ = {
+            "eq_default": eq_default,
+            "order_default": order_default,
+            "kw_only_default": kw_only_default,
+            "field_specifiers": field_specifiers,
+            "kwargs": kwargs,
+        }
+        return cls_or_fn
+    return decorator

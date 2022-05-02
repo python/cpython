@@ -155,13 +155,15 @@ array_array_extend(arrayobject *self, PyTypeObject *cls, PyObject *const *args, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"O:extend", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "extend", 0};
+    PyObject *argsbuf[1];
     PyObject *bb;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &bb)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    bb = args[0];
     return_value = array_array_extend_impl(self, cls, bb);
 
 exit:
@@ -296,13 +298,27 @@ array_array_fromfile(arrayobject *self, PyTypeObject *cls, PyObject *const *args
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {"On:fromfile", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "fromfile", 0};
+    PyObject *argsbuf[2];
     PyObject *f;
     Py_ssize_t n;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &f, &n)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
+    }
+    f = args[0];
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        n = ival;
     }
     return_value = array_array_fromfile_impl(self, cls, f, n);
 
@@ -327,13 +343,15 @@ array_array_tofile(arrayobject *self, PyTypeObject *cls, PyObject *const *args, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"O:tofile", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "tofile", 0};
+    PyObject *argsbuf[1];
     PyObject *f;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &f)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    f = args[0];
     return_value = array_array_tofile_impl(self, cls, f);
 
 exit:
@@ -567,13 +585,15 @@ array_array___reduce_ex__(arrayobject *self, PyTypeObject *cls, PyObject *const 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"O:__reduce_ex__", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "__reduce_ex__", 0};
+    PyObject *argsbuf[1];
     PyObject *value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &value)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    value = args[0];
     return_value = array_array___reduce_ex___impl(self, cls, value);
 
 exit:
@@ -595,18 +615,11 @@ array_arrayiterator___reduce___impl(arrayiterobject *self, PyTypeObject *cls);
 static PyObject *
 array_arrayiterator___reduce__(arrayiterobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":__reduce__", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "__reduce__() takes no arguments");
+        return NULL;
     }
-    return_value = array_arrayiterator___reduce___impl(self, cls);
-
-exit:
-    return return_value;
+    return array_arrayiterator___reduce___impl(self, cls);
 }
 
 PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
@@ -617,4 +630,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=1db6decd8492bf91 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7f48d1691fa27442 input=a9049054013a1b77]*/

@@ -96,9 +96,9 @@ Operating System Utilities
 
    Return true when the interpreter runs out of stack space.  This is a reliable
    check, but is only available when :const:`USE_STACKCHECK` is defined (currently
-   on Windows using the Microsoft Visual C++ compiler).  :const:`USE_STACKCHECK`
-   will be defined automatically; you should never change the definition in your
-   own code.
+   on certain versions of Windows using the Microsoft Visual C++ compiler).
+   :const:`USE_STACKCHECK` will be defined automatically; you should never
+   change the definition in your own code.
 
 
 .. c:function:: PyOS_sighandler_t PyOS_getsig(int i)

@@ -630,6 +630,7 @@ class HandlerTest(BaseTest):
     @unittest.skipIf(
         support.is_emscripten, "Emscripten cannot fstat unlinked files."
     )
+    @threading_helper.requires_working_threading()
     def test_race(self):
         # Issue #14632 refers.
         def remove_loop(fname, tries):
@@ -679,6 +680,7 @@ class HandlerTest(BaseTest):
     # This helps ensure that when fork exists (the important concept) that the
     # register_at_fork mechanism is also present and used.
     @support.requires_fork()
+    @threading_helper.requires_working_threading()
     def test_post_fork_child_no_deadlock(self):
         """Ensure child logging locks are not held; bpo-6721 & bpo-36533."""
         class _OurHandler(logging.Handler):
@@ -1063,6 +1065,7 @@ if hasattr(socket, "AF_UNIX"):
 # - end of server_helper section
 
 @support.requires_working_socket()
+@threading_helper.requires_working_threading()
 class SMTPHandlerTest(BaseTest):
     # bpo-14314, bpo-19665, bpo-34092: don't wait forever
     TIMEOUT = support.LONG_TIMEOUT
@@ -1172,6 +1175,7 @@ class MemoryHandlerTest(BaseTest):
         # assert that no new lines have been added
         self.assert_log_lines(lines)  # no change
 
+    @threading_helper.requires_working_threading()
     def test_race_between_set_target_and_flush(self):
         class MockRaceConditionHandler:
             def __init__(self, mem_hdlr):
@@ -1687,6 +1691,7 @@ class ConfigFileTest(BaseTest):
 
 
 @support.requires_working_socket()
+@threading_helper.requires_working_threading()
 class SocketHandlerTest(BaseTest):
 
     """Test for SocketHandler objects."""
@@ -1802,6 +1807,7 @@ class UnixSocketHandlerTest(SocketHandlerTest):
         os_helper.unlink(self.address)
 
 @support.requires_working_socket()
+@threading_helper.requires_working_threading()
 class DatagramHandlerTest(BaseTest):
 
     """Test for DatagramHandler."""
@@ -1884,6 +1890,7 @@ class UnixDatagramHandlerTest(DatagramHandlerTest):
         os_helper.unlink(self.address)
 
 @support.requires_working_socket()
+@threading_helper.requires_working_threading()
 class SysLogHandlerTest(BaseTest):
 
     """Test for SysLogHandler using UDP."""
@@ -1994,6 +2001,7 @@ class IPv6SysLogHandlerTest(SysLogHandlerTest):
         super(IPv6SysLogHandlerTest, self).tearDown()
 
 @support.requires_working_socket()
+@threading_helper.requires_working_threading()
 class HTTPHandlerTest(BaseTest):
     """Test for HTTPHandler."""
 
@@ -3575,6 +3583,7 @@ class LogRecordFactoryTest(BaseTest):
         ])
 
 
+@threading_helper.requires_working_threading()
 class QueueHandlerTest(BaseTest):
     # Do not bother with a logger name group.
     expected_log_pat = r"^[\w.]+ -> (\w+): (\d+)$"
@@ -3684,6 +3693,7 @@ if hasattr(logging.handlers, 'QueueListener'):
     import multiprocessing
     from unittest.mock import patch
 
+    @threading_helper.requires_working_threading()
     class QueueListenerTest(BaseTest):
         """
         Tests based on patch submitted for issue #27930. Ensure that
