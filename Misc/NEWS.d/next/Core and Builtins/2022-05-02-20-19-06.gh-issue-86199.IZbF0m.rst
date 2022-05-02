@@ -1,0 +1,6 @@
+`PyObject_Call` now guarantees any kwargs `dict` passed is shallow-copied
+before being passed to the callee, matching the documented equivalence with
+`callable(*args, **kwargs)`, fixing #86795.     When a function call's sole source of
+keyword arguments is a single `**`     unpacked `dict`, no copy is performed
+when the callable uses the vectorcall     protocol and no copy is needed to
+protect the caller's `dict` from mutation.
