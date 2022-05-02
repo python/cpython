@@ -1,0 +1,1 @@
+Fix the ``closure`` argument to :c:func:`PyEval_EvalCodeEx`.
