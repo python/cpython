@@ -6048,6 +6048,14 @@ class TypedDictTests(BaseTestCase):
             {'a': typing.Optional[T], 'b': int}
         )
 
+        class FooBarGeneric(BarGeneric[int]):
+            c: str
+
+        self.assertEqual(
+            get_type_hints(FooBarGeneric),
+            {'a': typing.Optional[T], 'b': int, 'c': str}
+        )
+
     def test_generic_inheritance(self):
         class A(TypedDict, Generic[T]):
             a: T
