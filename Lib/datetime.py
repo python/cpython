@@ -336,7 +336,7 @@ def _parse_isoformat_date(dtstr):
         dayno = 1
         if len(dtstr) > pos:
             if (dtstr[pos:pos + 1] == '-') != has_sep:
-                raise ValueError('Inconsistent use of dash separator')
+                raise ValueError("Inconsistent use of dash separator")
 
             pos += has_sep
 
@@ -347,7 +347,7 @@ def _parse_isoformat_date(dtstr):
         month = int(dtstr[pos:pos + 2])
         pos += 2
         if (dtstr[pos:pos + 1] == "-") != has_sep:
-            raise ValueError('Inconsistent use of dash separator')
+            raise ValueError("Inconsistent use of dash separator")
 
         pos += has_sep
         day = int(dtstr[pos:pos + 2])
@@ -366,7 +366,7 @@ def _parse_hh_mm_ss_ff(tstr):
     pos = 0
     for comp in range(0, 3):
         if (len_str - pos) < 2:
-            raise ValueError('Incomplete time component')
+            raise ValueError("Incomplete time component")
 
         time_comps[comp] = int(tstr[pos:pos+2])
 
@@ -380,13 +380,13 @@ def _parse_hh_mm_ss_ff(tstr):
             break
 
         if has_sep and next_char != ':':
-            raise ValueError('Invalid time separator: %c' % next_char)
+            raise ValueError("Invalid time separator: %c" % next_char)
 
         pos += has_sep
 
     if pos < len_str:
         if tstr[pos] not in '.,':
-            raise ValueError('Invalid microsecond component')
+            raise ValueError("Invalid microsecond component")
         else:
             pos += 1
 
@@ -402,7 +402,7 @@ def _parse_hh_mm_ss_ff(tstr):
                 time_comps[3] *= _FRACTION_CORRECTION[to_parse-1]
             if (len_remainder > to_parse
                     and not tstr[(pos+to_parse):].isdigit()):
-                raise ValueError('Non-digit values in unparsed fraction')
+                raise ValueError("Non-digit values in unparsed fraction")
 
     return time_comps
 
@@ -410,7 +410,7 @@ def _parse_isoformat_time(tstr):
     # Format supported is HH[:MM[:SS[.fff[fff]]]][+HH:MM[:SS[.ffffff]]]
     len_str = len(tstr)
     if len_str < 2:
-        raise ValueError('Isoformat time too short')
+        raise ValueError("Isoformat time too short")
 
     # This is equivalent to re.search('[+-Z]', tstr), but faster
     tz_pos = (tstr.find('-') + 1  or tstr.find('+') + 1 or tstr.find('Z') + 1)
@@ -434,7 +434,7 @@ def _parse_isoformat_time(tstr):
         # HH:MM:SS.f+         len: 10+
 
         if len(tzstr) in (1, 3):
-            raise ValueError('Malformed time zone string')
+            raise ValueError("Malformed time zone string")
 
         if tzstr == 'Z':
             tz_comps = (0, 0, 0, 0)
