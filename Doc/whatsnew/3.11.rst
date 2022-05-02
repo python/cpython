@@ -718,6 +718,9 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
 * :data:`typing.TypedDict` subclasses can now be generic. (Contributed by
   Samodya Abey in :gh:`89026`.)
 
+* :class:`~typing.NamedTuple` subclasses can now be generic.
+  (Contributed by Serhiy Storchaka in :issue:`43923`.)
+
 
 unicodedata
 -----------
