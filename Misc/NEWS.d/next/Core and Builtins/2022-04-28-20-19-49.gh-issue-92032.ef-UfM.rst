@@ -1,0 +1,2 @@
+The interpreter can now autocomplete soft keywords, as of now
+``match``, ``case``, and ``_`` (wildcard pattern) from :pep:`634`.

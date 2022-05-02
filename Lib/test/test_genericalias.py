@@ -418,6 +418,12 @@ class BaseTest(unittest.TestCase):
                 self.assertEqual(copied.__args__, alias.__args__)
                 self.assertEqual(copied.__parameters__, alias.__parameters__)
 
+    def test_unpack(self):
+        alias = tuple[str, ...]
+        self.assertIs(alias.__unpacked__, False)
+        unpacked = (*alias,)[0]
+        self.assertIs(unpacked.__unpacked__, True)
+
     def test_union(self):
         a = typing.Union[list[int], list[str]]
         self.assertEqual(a.__args__, (list[int], list[str]))
