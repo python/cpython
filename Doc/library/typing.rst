@@ -221,6 +221,10 @@ For example::
                    on_error: Callable[[int, Exception], None]) -> None:
        # Body
 
+   async def on_update(value: str) -> None:
+       # Body
+   callback: Callable[[str], Awaitable[None]] = on_update
+
 It is possible to declare the return type of a callable without specifying
 the call signature by substituting a literal ellipsis
 for the list of arguments in the type hint: ``Callable[..., ReturnType]``.
@@ -1368,27 +1372,27 @@ These are not used in annotations. They are building blocks for creating generic
 
 .. data:: Unpack
 
-    A typing operator that conceptually marks an object as having been
-    unpacked. For example, using the unpack operator ``*`` on a
-    :class:`type variable tuple <TypeVarTuple>` is equivalent to using ``Unpack``
-    to mark the type variable tuple as having been unpacked::
+   A typing operator that conceptually marks an object as having been
+   unpacked. For example, using the unpack operator ``*`` on a
+   :class:`type variable tuple <TypeVarTuple>` is equivalent to using ``Unpack``
+   to mark the type variable tuple as having been unpacked::
 
-        Ts = TypeVarTuple('Ts')
-        tup: tuple[*Ts]
-        # Effectively does:
-        tup: tuple[Unpack[Ts]]
+      Ts = TypeVarTuple('Ts')
+      tup: tuple[*Ts]
+      # Effectively does:
+      tup: tuple[Unpack[Ts]]
 
-    In fact, ``Unpack`` can be used interchangeably with ``*`` in the context
-    of types. You might see ``Unpack`` being used explicitly in older versions
-    of Python, where ``*`` couldn't be used in certain places::
+   In fact, ``Unpack`` can be used interchangeably with ``*`` in the context
+   of types. You might see ``Unpack`` being used explicitly in older versions
+   of Python, where ``*`` couldn't be used in certain places::
 
-        # In older versions of Python, TypeVarTuple and Unpack
-        # are located in the `typing_extensions` backports package.
-        from typing_extensions import TypeVarTuple, Unpack
+      # In older versions of Python, TypeVarTuple and Unpack
+      # are located in the `typing_extensions` backports package.
+      from typing_extensions import TypeVarTuple, Unpack
 
-        Ts = TypeVarTuple('Ts')
-        tup: tuple[*Ts]         # Syntax error on Python <= 3.10!
-        tup: tuple[Unpack[Ts]]  # Semantically equivalent, and backwards-compatible
+      Ts = TypeVarTuple('Ts')
+      tup: tuple[*Ts]         # Syntax error on Python <= 3.10!
+      tup: tuple[Unpack[Ts]]  # Semantically equivalent, and backwards-compatible
 
    .. versionadded:: 3.11
 
@@ -2337,7 +2341,7 @@ Functions and decorators
 
 .. function:: assert_never(arg, /)
 
-   Assert to the type checker that a line of code is unreachable.
+   Ask a static type checker to confirm that a line of code is unreachable.
 
    Example::
 
@@ -2358,7 +2362,7 @@ Functions and decorators
    reachable, it will emit an error. For example, if the type annotation
    for ``arg`` was instead ``int | str | float``, the type checker would
    emit an error pointing out that ``unreachable`` is of type :class:`float`.
-   For a call to ``assert_never`` to succeed, the inferred type of
+   For a call to ``assert_never`` to pass type checking, the inferred type of
    the argument passed in must be the bottom type, :data:`Never`, and nothing
    else.
 

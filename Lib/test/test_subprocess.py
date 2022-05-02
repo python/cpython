@@ -1733,6 +1733,19 @@ class RunFuncTestCase(BaseTestCase):
                         msg="TimeoutExpired was delayed! Bad traceback:\n```\n"
                         f"{stacks}```")
 
+    def test_encoding_warning(self):
+        code = textwrap.dedent("""\
+            from subprocess import *
+            run("echo hello", shell=True, text=True)
+            check_output("echo hello", shell=True, text=True)
+            """)
+        cp = subprocess.run([sys.executable, "-Xwarn_default_encoding", "-c", code],
+                            capture_output=True)
+        lines = cp.stderr.splitlines()
+        self.assertEqual(len(lines), 2, lines)
+        self.assertTrue(lines[0].startswith(b"<string>:2: EncodingWarning: "))
+        self.assertTrue(lines[1].startswith(b"<string>:3: EncodingWarning: "))
+
 
 def _get_test_grp_name():
     for name_group in ('staff', 'nogroup', 'grp', 'nobody', 'nfsnobody'):

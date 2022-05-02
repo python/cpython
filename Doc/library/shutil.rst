@@ -160,7 +160,8 @@ Directory and files operations
    Copies the file *src* to the file or directory *dst*.  *src* and *dst*
    should be :term:`path-like objects <path-like object>` or strings.  If
    *dst* specifies a directory, the file will be copied into *dst* using the
-   base filename from *src*.  Returns the path to the newly created file.
+   base filename from *src*. If *dst* specifies a file that already exists,
+   it will be replaced. Returns the path to the newly created file.
 
    If *follow_symlinks* is false, and *src* is a symbolic link,
    *dst* will be created as a symbolic link.  If *follow_symlinks*

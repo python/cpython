@@ -106,7 +106,7 @@ class Runner:
                 # `signal.signal` may throw if `threading.main_thread` does
                 # not support signals (e.g. embedded interpreter with signals
                 # not registered - see gh-91880)
-                signal_handler = None
+                sigint_handler = None
         else:
             sigint_handler = None
 

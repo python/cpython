@@ -1171,6 +1171,13 @@ class _SubParsersAction(Action):
 
         aliases = kwargs.pop('aliases', ())
 
+        if name in self._name_parser_map:
+            raise ArgumentError(self, _('conflicting subparser: %s') % name)
+        for alias in aliases:
+            if alias in self._name_parser_map:
+                raise ArgumentError(
+                    self, _('conflicting subparser alias: %s') % alias)
+
         # create a pseudo-action to hold the choice help
         if 'help' in kwargs:
             help = kwargs.pop('help')

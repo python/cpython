@@ -4804,6 +4804,19 @@ class TestConflictHandling(TestCase):
               --spam NEW_SPAM
             '''))
 
+    def test_subparser_conflict(self):
+        parser = argparse.ArgumentParser()
+        sp = parser.add_subparsers()
+        sp.add_parser('fullname', aliases=['alias'])
+        self.assertRaises(argparse.ArgumentError,
+                          sp.add_parser, 'fullname')
+        self.assertRaises(argparse.ArgumentError,
+                          sp.add_parser, 'alias')
+        self.assertRaises(argparse.ArgumentError,
+                          sp.add_parser, 'other', aliases=['fullname'])
+        self.assertRaises(argparse.ArgumentError,
+                          sp.add_parser, 'other', aliases=['alias'])
+
 
 # =============================
 # Help and Version option tests
