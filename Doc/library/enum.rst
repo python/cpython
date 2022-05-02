@@ -110,7 +110,7 @@ Module Contents
       :class:`StrEnum` defaults to the lower-cased version of the member name,
       while other Enums default to 1 and increase from there.
 
-   :func:`property`
+   :func:`~enum.property`
 
       Allows :class:`Enum` members to have attributes without conflicting with
       member names.
@@ -420,7 +420,7 @@ Data Types
 
    .. note:: :meth:`__str__` is :func:`str.__str__` to better support the
       *replacement of existing constants* use-case.  :meth:`__format__` is likewise
-      :func:`int.__format__` for that same reason.
+      :func:`str.__format__` for that same reason.
 
    .. versionadded:: 3.11
 

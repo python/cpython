@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <WixLocalization Culture="en-us" Language="1033" xmlns="http://schemas.microsoft.com/wix/2006/localization">
   <String Id="Caption">[WixBundleName] Setup</String>
-  <String Id="Title">[WixBundleName]</String>
   <String Id="Installing">Installing</String>
   <String Id="Installation">Setup</String>
   <String Id="Modifying">Updating</String>
@@ -68,7 +67,7 @@ Select Customize to review current options.</String>
   <String Id="CustomBackButton">&amp;Back</String>
   <String Id="CustomBrowseButton">B&amp;rowse</String>
   <String Id="Include_docLabel">&amp;Documentation</String>
-  <String Id="Include_docHelpLabel">Installs the Python documentation file.</String>
+  <String Id="Include_docHelpLabel">Installs the Python documentation files.</String>
   <String Id="Include_pipLabel">&amp;pip</String>
   <String Id="Include_pipHelpLabel">Installs pip, which can download and install other Python packages.</String>
   <String Id="Include_tcltkLabel">tcl/tk and &amp;IDLE</String>
