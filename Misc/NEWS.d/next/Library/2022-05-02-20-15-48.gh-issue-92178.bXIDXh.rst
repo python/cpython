@@ -1,0 +1,2 @@
+Adds a new :meth:`contextlib.redirect_stdin` context manager to redirect
+``sys.stdin`` to another file.
