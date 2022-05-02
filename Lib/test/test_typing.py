@@ -6145,7 +6145,8 @@ class TypedDictTests(BaseTestCase):
         class WithImplicitAny(B):
             c: int
 
-        self.assertEqual(WithImplicitAny.__bases__, (dict,))
+        self.assertEqual(WithImplicitAny.__bases__, (Generic, dict,))
+        self.assertEqual(WithImplicitAny.__mro__, (WithImplicitAny, Generic, dict, object))
         # Consistent with GenericTests.test_implicit_any
         self.assertEqual(WithImplicitAny.__parameters__, ())
         self.assertEqual(WithImplicitAny.__total__, True)

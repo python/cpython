@@ -1775,7 +1775,9 @@ class Generic:
         if '__orig_bases__' in cls.__dict__:
             error = Generic in cls.__orig_bases__
         else:
-            error = Generic in cls.__bases__ and cls.__name__ != 'Protocol'
+            error = (Generic in cls.__bases__ and 
+                        cls.__name__ != 'Protocol' and 
+                        type(cls) != _TypedDictMeta)
         if error:
             raise TypeError("Cannot inherit from plain Generic")
         if '__orig_bases__' in cls.__dict__:
@@ -2844,15 +2846,7 @@ class _TypedDictMeta(type):
                                 'and a non-TypedDict base class')
 
         if any(issubclass(b, Generic) for b in bases):
-            if '__orig_bases__' in ns:
-                # Original base is a Generic[X] or A[X]
-                generic_base = (Generic,)
-            else:
-                # Implicit Any case: a generic base with no type args
-                generic_base = ()
-                # Offloading work from Generic.__init_subclass__
-                # to keep consistency with normal generic classes
-                ns['__parameters__'] = ()
+            generic_base = (Generic,)
         else:
             generic_base = ()
 
