@@ -21,7 +21,7 @@ simplequeue_get_state(PyObject *module)
 }
 static struct PyModuleDef queuemodule;
 #define simplequeue_get_state_by_type(type) \
-    (simplequeue_get_state(_PyType_GetModuleByDef(type, &queuemodule)))
+    (simplequeue_get_state(PyType_GetModuleByDef(type, &queuemodule)))
 
 typedef struct {
     PyObject_HEAD

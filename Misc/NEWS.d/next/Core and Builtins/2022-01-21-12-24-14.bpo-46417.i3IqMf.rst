@@ -1,3 +1,0 @@
-``python -X showrefcount`` now shows the total reference count after clearing
-and destroyed the main Python interpreter. Previously, it was shown before.
-Patch by Victor Stinner.

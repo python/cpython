@@ -6,6 +6,7 @@ import errno
 import re
 import sys
 import traceback
+import unittest
 import warnings
 
 
@@ -78,6 +79,7 @@ def call_func(info_add, name, mod, func_name, *, formatter=None):
 
 def collect_sys(info_add):
     attributes = (
+        '_emscripten_info',
         '_framework',
         'abiflags',
         'api_version',
@@ -154,7 +156,7 @@ def collect_platform(info_add):
 def collect_locale(info_add):
     import locale
 
-    info_add('locale.encoding', locale.getpreferredencoding(False))
+    info_add('locale.getencoding', locale.getencoding())
 
 
 def collect_builtins(info_add):
@@ -615,7 +617,7 @@ def collect_resource(info_add):
 def collect_test_socket(info_add):
     try:
         from test import test_socket
-    except ImportError:
+    except (ImportError, unittest.SkipTest):
         return
 
     # all check attributes like HAVE_SOCKET_CAN
@@ -731,9 +733,12 @@ def collect_windows(info_add):
 
     import subprocess
     try:
+        # When wmic.exe output is redirected to a pipe,
+        # it uses the OEM code page
         proc = subprocess.Popen(["wmic", "os", "get", "Caption,Version", "/value"],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
+                                encoding="oem",
                                 text=True)
         output, stderr = proc.communicate()
         if proc.returncode:

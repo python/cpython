@@ -1,3 +1,0 @@
-Skip test_builtin PTY tests on non-ASCII characters if the readline module
-is loaded. The readline module changes input() behavior, but test_builtin is
-not intented to test the readline module. Patch by Victor Stinner.

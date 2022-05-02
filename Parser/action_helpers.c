@@ -1145,7 +1145,7 @@ _PyPegen_get_expr_name(expr_ty e)
     }
 }
 
-static inline expr_ty
+expr_ty
 _PyPegen_get_last_comprehension_item(comprehension_ty comprehension) {
     if (comprehension->ifs == NULL || asdl_seq_LEN(comprehension->ifs) == 0) {
         return comprehension->iter;

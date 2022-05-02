@@ -43,6 +43,7 @@ getstatusoutput(...): Runs a command in the shell, waits for it to complete,
 import builtins
 import errno
 import io
+import locale
 import os
 import time
 import signal
@@ -65,10 +66,15 @@ __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            # NOTE: We intentionally exclude list2cmdline as it is
            # considered an internal implementation detail.  issue10838.
 
-_mswindows = sys.platform == "win32"
+# use presence of msvcrt to detect Windows-like platforms (see bpo-8110)
+try:
+    import msvcrt
+except ModuleNotFoundError:
+    _mswindows = False
+else:
+    _mswindows = True
 
 if _mswindows:
-    import msvcrt
     import _winapi
     from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
                          STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
@@ -91,7 +97,13 @@ if _mswindows:
                     "CREATE_NO_WINDOW", "DETACHED_PROCESS",
                     "CREATE_DEFAULT_ERROR_MODE", "CREATE_BREAKAWAY_FROM_JOB"])
 else:
-    import _posixsubprocess
+    if sys.platform in {"emscripten", "wasi"}:
+        def _fork_exec(*args, **kwargs):
+            raise OSError(
+                errno.ENOTSUP, f"{sys.platform} does not support processes."
+            )
+    else:
+        from _posixsubprocess import fork_exec as _fork_exec
     import select
     import selectors
 
@@ -331,6 +343,26 @@ def _args_from_interpreter_flags():
             args.extend(('-X', arg))
 
     return args
+
+
+def _text_encoding():
+    # Return default text encoding and emit EncodingWarning if
+    # sys.flags.warn_default_encoding is true.
+    if sys.flags.warn_default_encoding:
+        f = sys._getframe()
+        filename = f.f_code.co_filename
+        stacklevel = 2
+        while f := f.f_back:
+            if f.f_code.co_filename != filename:
+                break
+            stacklevel += 1
+        warnings.warn("'encoding' argument not specified.",
+                      EncodingWarning, stacklevel)
+
+    if sys.flags.utf8_mode:
+        return "utf-8"
+    else:
+        return locale.getencoding()
 
 
 def call(*popenargs, timeout=None, **kwargs):
@@ -599,7 +631,7 @@ def list2cmdline(seq):
 # Various tools for executing commands and looking at their output and status.
 #
 
-def getstatusoutput(cmd):
+def getstatusoutput(cmd, *, encoding=None, errors=None):
     """Return (exitcode, output) of executing cmd in a shell.
 
     Execute the string 'cmd' in a shell with 'check_output' and
@@ -621,7 +653,8 @@ def getstatusoutput(cmd):
     (-15, '')
     """
     try:
-        data = check_output(cmd, shell=True, text=True, stderr=STDOUT)
+        data = check_output(cmd, shell=True, text=True, stderr=STDOUT,
+                            encoding=encoding, errors=errors)
         exitcode = 0
     except CalledProcessError as ex:
         data = ex.output
@@ -630,7 +663,7 @@ def getstatusoutput(cmd):
         data = data[:-1]
     return exitcode, data
 
-def getoutput(cmd):
+def getoutput(cmd, *, encoding=None, errors=None):
     """Return output (stdout or stderr) of executing cmd in a shell.
 
     Like getstatusoutput(), except the exit status is ignored and the return
@@ -640,7 +673,8 @@ def getoutput(cmd):
     >>> subprocess.getoutput('ls /bin/ls')
     '/bin/ls'
     """
-    return getstatusoutput(cmd)[1]
+    return getstatusoutput(cmd, encoding=encoding, errors=errors)[1]
+
 
 
 def _use_posix_spawn():
@@ -691,7 +725,10 @@ def _use_posix_spawn():
     return False
 
 
+# These are primarily fail-safe knobs for negatives. A True value does not
+# guarantee the given libc/syscall API will be used.
 _USE_POSIX_SPAWN = _use_posix_spawn()
+_USE_VFORK = True
 
 
 class Popen:
@@ -844,13 +881,8 @@ class Popen:
                 errread = msvcrt.open_osfhandle(errread.Detach(), 0)
 
         self.text_mode = encoding or errors or text or universal_newlines
-
-        # PEP 597: We suppress the EncodingWarning in subprocess module
-        # for now (at Python 3.10), because we focus on files for now.
-        # This will be changed to encoding = io.text_encoding(encoding)
-        # in the future.
         if self.text_mode and encoding is None:
-            self.encoding = encoding = "locale"
+            self.encoding = encoding = _text_encoding()
 
         # How long to resume waiting on a child after the first ^C.
         # There is no right value for this.  The purpose is to be polite
@@ -1772,7 +1804,7 @@ class Popen:
                             for dir in os.get_exec_path(env))
                     fds_to_keep = set(pass_fds)
                     fds_to_keep.add(errpipe_write)
-                    self.pid = _posixsubprocess.fork_exec(
+                    self.pid = _fork_exec(
                             args, executable_list,
                             close_fds, tuple(sorted(map(int, fds_to_keep))),
                             cwd, env_list,
@@ -1781,7 +1813,7 @@ class Popen:
                             errpipe_read, errpipe_write,
                             restore_signals, start_new_session,
                             gid, gids, uid, umask,
-                            preexec_fn)
+                            preexec_fn, _USE_VFORK)
                     self._child_created = True
                 finally:
                     # be sure the FD is closed no matter what

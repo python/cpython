@@ -2,8 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#include <stdbool.h>
-
 
 PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_RequireIDRef(PyInterpreterState *, int);
@@ -35,7 +33,9 @@ typedef struct {
     PyCodeAddressRange bounds; // Only valid if code != NULL.
 } PyTraceInfo;
 
-typedef struct _cframe {
+// Internal structure: you should not use it directly, but use public functions
+// like PyThreadState_EnterTracing() and PyThreadState_LeaveTracing().
+typedef struct _PyCFrame {
     /* This struct will be threaded through the C stack
      * allowing fast access to per-thread state that needs
      * to be accessed quickly by the interpreter, but can
@@ -46,11 +46,11 @@ typedef struct _cframe {
      * discipline and make sure that instances of this struct cannot
      * accessed outside of their lifetime.
      */
-    int use_tracing;
+    uint8_t use_tracing;  // 0 or 255 (or'ed into opcode, hence 8-bit type)
     /* Pointer to the currently executing frame (it can be NULL) */
-    struct _interpreter_frame *current_frame;
-    struct _cframe *previous;
-} CFrame;
+    struct _PyInterpreterFrame *current_frame;
+    struct _PyCFrame *previous;
+} _PyCFrame;
 
 typedef struct _err_stackitem {
     /* This struct represents a single execution context where we might
@@ -79,12 +79,11 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
-// The PyThreadState typedef is in Include/pystate.h.
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
-    struct _ts *prev;
-    struct _ts *next;
+    PyThreadState *prev;
+    PyThreadState *next;
     PyInterpreterState *interp;
 
     /* Has been initialized to a safe state.
@@ -94,7 +93,7 @@ struct _ts {
     int _initialized;
 
     /* Was this thread state statically allocated? */
-    bool _static;
+    int _static;
 
     int recursion_remaining;
     int recursion_limit;
@@ -104,10 +103,11 @@ struct _ts {
        This is to prevent the actual trace/profile code from being recorded in
        the trace/profile. */
     int tracing;
+    int tracing_what; /* The event currently being traced, if any. */
 
-    /* Pointer to current CFrame in the C stack frame of the currently,
+    /* Pointer to current _PyCFrame in the C stack frame of the currently,
      * or most recently, executing _PyEval_EvalFrameDefault. */
-    CFrame *cframe;
+    _PyCFrame *cframe;
 
     Py_tracefunc c_profilefunc;
     Py_tracefunc c_tracefunc;
@@ -187,16 +187,19 @@ struct _ts {
     /* The following fields are here to avoid allocation during init.
        The data is exposed through PyThreadState pointer fields.
        These fields should not be accessed directly outside of init.
+       This is indicated by an underscore prefix on the field names.
 
        All other PyInterpreterState pointer fields are populated when
        needed and default to NULL.
        */
+       // Note some fields do not have a leading underscore for backward
+       // compatibility.  See https://bugs.python.org/issue45953#msg412046.
 
     /* The thread's exception stack entry.  (Always the last entry.) */
-    _PyErr_StackItem _exc_state;
+    _PyErr_StackItem exc_state;
 
     /* The bottom-most frame on the stack. */
-    CFrame _root_cframe;
+    _PyCFrame root_cframe;
 };
 
 
@@ -258,7 +261,7 @@ PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
 /* Frame evaluation API */
 
-typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, struct _interpreter_frame *, int);
+typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, struct _PyInterpreterFrame *, int);
 
 PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
     PyInterpreterState *interp);
@@ -305,12 +308,12 @@ PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 
 /* cross-interpreter data */
 
-struct _xid;
-
 // _PyCrossInterpreterData is similar to Py_buffer as an effectively
 // opaque struct that holds data outside the object machinery.  This
 // is necessary to pass safely between interpreters in the same process.
-typedef struct _xid {
+typedef struct _xid _PyCrossInterpreterData;
+
+struct _xid {
     // data is the cross-interpreter-safe derivation of a Python object
     // (see _PyObject_GetCrossInterpreterData).  It will be NULL if the
     // new_object func (below) encodes the data.
@@ -336,7 +339,7 @@ typedef struct _xid {
     // interpreter given the data.  The resulting object (a new
     // reference) will be equivalent to the original object.  This field
     // is required.
-    PyObject *(*new_object)(struct _xid *);
+    PyObject *(*new_object)(_PyCrossInterpreterData *);
     // free is called when the data is released.  If it is NULL then
     // nothing will be done to free the data.  For some types this is
     // okay (e.g. bytes) and for those types this field should be set
@@ -347,7 +350,7 @@ typedef struct _xid {
     // to PyMem_RawFree (the default if not explicitly set to NULL).
     // The call will happen with the original interpreter activated.
     void (*free)(void *);
-} _PyCrossInterpreterData;
+};
 
 PyAPI_FUNC(int) _PyObject_GetCrossInterpreterData(PyObject *, _PyCrossInterpreterData *);
 PyAPI_FUNC(PyObject *) _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *);
@@ -357,7 +360,7 @@ PyAPI_FUNC(int) _PyObject_CheckCrossInterpreterData(PyObject *);
 
 /* cross-interpreter data registry */
 
-typedef int (*crossinterpdatafunc)(PyObject *, struct _xid *);
+typedef int (*crossinterpdatafunc)(PyObject *, _PyCrossInterpreterData *);
 
 PyAPI_FUNC(int) _PyCrossInterpreterData_RegisterClass(PyTypeObject *, crossinterpdatafunc);
 PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
