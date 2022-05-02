@@ -25,8 +25,9 @@ ranges expressed with ``[]`` will be correctly matched.  This is done by using
 the :func:`os.scandir` and :func:`fnmatch.fnmatch` functions in concert, and
 not by actually invoking a subshell.
 
-Note that :mod:`glob` treats filenames beginning with a dot (``.``) as special
-cases, unlike :func:`fnmatch.fnmatch` or :func:`pathlib.Path.glob`.
+Note that files beginning with a dot (``.``) can only be matched by :mod:`glob`
+patterns that also start with a dot,
+unlike :func:`fnmatch.fnmatch` or :func:`pathlib.Path.glob`.
 (For tilde and shell variable expansion, use :func:`os.path.expanduser` and
 :func:`os.path.expandvars`.)
 
