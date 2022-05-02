@@ -3106,41 +3106,6 @@ os_openpty(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* (defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)) */
 
-#if (defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY))
-
-PyDoc_STRVAR(os_login_tty__doc__,
-"login_tty($module, fd, /)\n"
-"--\n"
-"\n"
-"Prepare the tty of which fd is a file descriptor for a new login session.\n"
-"\n"
-"Make the calling process a session leader; make the tty the\n"
-"controlling tty, the stdin, the stdout, and the stderr of the\n"
-"calling process; close fd.");
-
-#define OS_LOGIN_TTY_METHODDEF    \
-    {"login_tty", (PyCFunction)os_login_tty, METH_O, os_login_tty__doc__},
-
-static PyObject *
-os_login_tty_impl(PyObject *module, int fd);
-
-static PyObject *
-os_login_tty(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    int fd;
-
-    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
-        goto exit;
-    }
-    return_value = os_login_tty_impl(module, fd);
-
-exit:
-    return return_value;
-}
-
-#endif /* (defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY)) */
-
 #if defined(HAVE_FORKPTY)
 
 PyDoc_STRVAR(os_forkpty__doc__,
@@ -8325,12 +8290,10 @@ static PyObject *
 os_DirEntry_is_symlink(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":is_symlink", _keywords, 0};
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "is_symlink() takes no arguments");
         goto exit;
     }
     _return_value = os_DirEntry_is_symlink_impl(self, defining_class);
@@ -8361,13 +8324,23 @@ os_DirEntry_stat(DirEntry *self, PyTypeObject *defining_class, PyObject *const *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"|$p:stat", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "stat", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    follow_symlinks = PyObject_IsTrue(args[0]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_DirEntry_stat_impl(self, defining_class, follow_symlinks);
 
 exit:
@@ -8392,14 +8365,24 @@ os_DirEntry_is_dir(DirEntry *self, PyTypeObject *defining_class, PyObject *const
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"|$p:is_dir", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "is_dir", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int follow_symlinks = 1;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    follow_symlinks = PyObject_IsTrue(args[0]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     _return_value = os_DirEntry_is_dir_impl(self, defining_class, follow_symlinks);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -8428,14 +8411,24 @@ os_DirEntry_is_file(DirEntry *self, PyTypeObject *defining_class, PyObject *cons
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"|$p:is_file", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "is_file", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int follow_symlinks = 1;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    follow_symlinks = PyObject_IsTrue(args[0]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     _return_value = os_DirEntry_is_file_impl(self, defining_class, follow_symlinks);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -8938,10 +8931,6 @@ exit:
 #ifndef OS_OPENPTY_METHODDEF
     #define OS_OPENPTY_METHODDEF
 #endif /* !defined(OS_OPENPTY_METHODDEF) */
-
-#ifndef OS_LOGIN_TTY_METHODDEF
-    #define OS_LOGIN_TTY_METHODDEF
-#endif /* !defined(OS_LOGIN_TTY_METHODDEF) */
 
 #ifndef OS_FORKPTY_METHODDEF
     #define OS_FORKPTY_METHODDEF
