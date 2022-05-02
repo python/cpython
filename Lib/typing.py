@@ -1775,8 +1775,8 @@ class Generic:
         if '__orig_bases__' in cls.__dict__:
             error = Generic in cls.__orig_bases__
         else:
-            error = (Generic in cls.__bases__ and 
-                        cls.__name__ != 'Protocol' and 
+            error = (Generic in cls.__bases__ and
+                        cls.__name__ != 'Protocol' and
                         type(cls) != _TypedDictMeta)
         if error:
             raise TypeError("Cannot inherit from plain Generic")
