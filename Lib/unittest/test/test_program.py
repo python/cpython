@@ -6,7 +6,7 @@ import subprocess
 from test import support
 import unittest
 import unittest.test
-from .test_result import BufferedWriter
+from unittest.test.test_result import BufferedWriter
 
 
 class Test_TestProgram(unittest.TestCase):
@@ -196,6 +196,7 @@ class FakeRunner(object):
         return RESULT
 
 
+@support.requires_subprocess()
 class TestCommandLineArgs(unittest.TestCase):
 
     def setUp(self):
@@ -460,14 +461,14 @@ class TestCommandLineArgs(unittest.TestCase):
             return stderr.decode()
 
         t = '_test_warnings'
-        self.assertIn('Ran 5 tests', run_unittest([t]))
-        self.assertIn('Ran 5 tests', run_unittest(['-k', 'TestWarnings', t]))
-        self.assertIn('Ran 5 tests', run_unittest(['discover', '-p', '*_test*', '-k', 'TestWarnings']))
-        self.assertIn('Ran 1 test ', run_unittest(['-k', 'f', t]))
-        self.assertIn('Ran 5 tests', run_unittest(['-k', 't', t]))
-        self.assertIn('Ran 2 tests', run_unittest(['-k', '*t', t]))
-        self.assertIn('Ran 5 tests', run_unittest(['-k', '*test_warnings.*Warning*', t]))
-        self.assertIn('Ran 1 test ', run_unittest(['-k', '*test_warnings.*warning*', t]))
+        self.assertIn('Ran 7 tests', run_unittest([t]))
+        self.assertIn('Ran 7 tests', run_unittest(['-k', 'TestWarnings', t]))
+        self.assertIn('Ran 7 tests', run_unittest(['discover', '-p', '*_test*', '-k', 'TestWarnings']))
+        self.assertIn('Ran 2 tests', run_unittest(['-k', 'f', t]))
+        self.assertIn('Ran 7 tests', run_unittest(['-k', 't', t]))
+        self.assertIn('Ran 3 tests', run_unittest(['-k', '*t', t]))
+        self.assertIn('Ran 7 tests', run_unittest(['-k', '*test_warnings.*Warning*', t]))
+        self.assertIn('Ran 1 test', run_unittest(['-k', '*test_warnings.*warning*', t]))
 
 
 if __name__ == '__main__':

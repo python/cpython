@@ -33,6 +33,7 @@
 # PREFIX            -- [in] sysconfig.get_config_var(...)
 # EXEC_PREFIX       -- [in] sysconfig.get_config_var(...)
 # PYTHONPATH        -- [in] sysconfig.get_config_var(...)
+# WITH_NEXT_FRAMEWORK   -- [in] sysconfig.get_config_var(...)
 # VPATH             -- [in] sysconfig.get_config_var(...)
 # PLATLIBDIR        -- [in] sysconfig.get_config_var(...)
 # PYDEBUGEXT        -- [in, opt] '_d' on Windows for debug builds
@@ -277,7 +278,7 @@ elif os_name == 'darwin':
     # executable path was provided in the config.
     real_executable = executable
 
-if not executable and program_name:
+if not executable and program_name and ENV_PATH:
     # Resolve names against PATH.
     # NOTE: The use_environment value is ignored for this lookup.
     # To properly isolate, launch Python with a full path.
@@ -301,9 +302,19 @@ if ENV_PYTHONEXECUTABLE or ENV___PYVENV_LAUNCHER__:
     # If set, these variables imply that we should be using them as
     # sys.executable and when searching for venvs. However, we should
     # use the argv0 path for prefix calculation
-    base_executable = executable
+
+    if os_name == 'darwin' and WITH_NEXT_FRAMEWORK:
+        # In a framework build the binary in {sys.exec_prefix}/bin is
+        # a stub executable that execs the real interpreter in an
+        # embedded app bundle. That bundle is an implementation detail
+        # and should not affect base_executable.
+        base_executable = f"{dirname(library)}/bin/python{VERSION_MAJOR}.{VERSION_MINOR}"
+    else:
+        base_executable = executable
+
     if not real_executable:
-        real_executable = executable
+        real_executable = base_executable
+        #real_executable_dir = dirname(real_executable)
     executable = ENV_PYTHONEXECUTABLE or ENV___PYVENV_LAUNCHER__
     executable_dir = dirname(executable)
 
@@ -351,7 +362,18 @@ if not home and not py_setpath:
         key, had_equ, value = line.partition('=')
         if had_equ and key.strip().lower() == 'home':
             executable_dir = real_executable_dir = value.strip()
-            base_executable = joinpath(executable_dir, basename(executable))
+            if not base_executable:
+                # First try to resolve symlinked executables, since that may be
+                # more accurate than assuming the executable in 'home'.
+                try:
+                    base_executable = realpath(executable)
+                    if base_executable == executable:
+                        # No change, so probably not a link. Clear it and fall back
+                        base_executable = ''
+                except OSError:
+                    pass
+                if not base_executable:
+                    base_executable = joinpath(executable_dir, basename(executable))
             break
     else:
         venv_prefix = None
