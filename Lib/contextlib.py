@@ -10,8 +10,8 @@ from types import MethodType, GenericAlias
 __all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
            "AbstractContextManager", "AbstractAsyncContextManager",
            "AsyncExitStack", "ContextDecorator", "ExitStack",
-           "redirect_stdout", "redirect_stderr", "suppress", "aclosing",
-           "chdir"]
+           "redirect_stdin", "redirect_stdout", "redirect_stderr",
+           "suppress", "aclosing", "chdir"]
 
 
 class AbstractContextManager(abc.ABC):
@@ -401,6 +401,10 @@ class redirect_stdout(_RedirectStream):
 
     _stream = "stdout"
 
+class redirect_stdin(_RedirectStream):
+    """Context manager for temporarily redirecting stdin to another file."""
+
+    _stream = "stdin"
 
 class redirect_stderr(_RedirectStream):
     """Context manager for temporarily redirecting stderr to another file."""

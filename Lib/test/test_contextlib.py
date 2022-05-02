@@ -1054,6 +1054,12 @@ class TestRedirectStdout(TestRedirectStream, unittest.TestCase):
     redirect_stream = redirect_stdout
     orig_stream = "stdout"
 
+class TestRedirectStdout(TestRedirectStream, unittest.TestCase):
+
+    redirect_stream = redirect_stdin
+    orig_stream = "stdin"
+
+
 
 class TestRedirectStderr(TestRedirectStream, unittest.TestCase):
 
