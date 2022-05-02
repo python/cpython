@@ -2265,8 +2265,7 @@ class TestAddSubparsers(TestCase):
             main description
 
             positional arguments:
-              foo         
-
+              foo         \n
             options:
               -h, --help  show this help message and exit
         '''))
@@ -2282,8 +2281,7 @@ class TestAddSubparsers(TestCase):
             main description
 
             positional arguments:
-              {}          
-
+              {}          \n
             options:
               -h, --help  show this help message and exit
         '''))
@@ -4806,6 +4804,19 @@ class TestConflictHandling(TestCase):
               --spam NEW_SPAM
             '''))
 
+    def test_subparser_conflict(self):
+        parser = argparse.ArgumentParser()
+        sp = parser.add_subparsers()
+        sp.add_parser('fullname', aliases=['alias'])
+        self.assertRaises(argparse.ArgumentError,
+                          sp.add_parser, 'fullname')
+        self.assertRaises(argparse.ArgumentError,
+                          sp.add_parser, 'alias')
+        self.assertRaises(argparse.ArgumentError,
+                          sp.add_parser, 'other', aliases=['fullname'])
+        self.assertRaises(argparse.ArgumentError,
+                          sp.add_parser, 'other', aliases=['alias'])
+
 
 # =============================
 # Help and Version option tests
@@ -4902,12 +4913,13 @@ class TestStrings(TestCase):
             nargs='+',
             default=42,
             choices=[1, 2, 3],
+            required=False,
             help='HELP',
             metavar='METAVAR')
         string = (
             "Action(option_strings=['--foo', '-a', '-b'], dest='b', "
             "nargs='+', const=None, default=42, type='int', "
-            "choices=[1, 2, 3], help='HELP', metavar='METAVAR')")
+            "choices=[1, 2, 3], required=False, help='HELP', metavar='METAVAR')")
         self.assertStringEqual(option, string)
 
     def test_argument(self):
@@ -4918,12 +4930,13 @@ class TestStrings(TestCase):
             nargs='?',
             default=2.5,
             choices=[0.5, 1.5, 2.5],
+            required=True,
             help='H HH H',
             metavar='MV MV MV')
         string = (
             "Action(option_strings=[], dest='x', nargs='?', "
             "const=None, default=2.5, type=%r, choices=[0.5, 1.5, 2.5], "
-            "help='H HH H', metavar='MV MV MV')" % float)
+            "required=True, help='H HH H', metavar='MV MV MV')" % float)
         self.assertStringEqual(argument, string)
 
     def test_namespace(self):
