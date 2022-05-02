@@ -436,17 +436,17 @@ static inline Py_UCS4 PyUnicode_MAX_CHAR_VALUE(PyObject *op)
     if (PyUnicode_IS_ASCII(op)) {
         return 0x7fU;
     }
-
+    static const Py_UCS4 max_char_values[] = {
+        [PyUnicode_1BYTE_KIND] = 0xffU,
+        [PyUnicode_2BYTE_KIND] = 0xffffU,
+        [PyUnicode_4BYTE_KIND] = 0x10ffffU,
+    };
     unsigned int kind = PyUnicode_KIND(op);
-    if (kind == PyUnicode_1BYTE_KIND) {
-       return 0xffU;
-    }
-    if (kind == PyUnicode_2BYTE_KIND) {
-        return 0xffffU;
-    }
-    assert(kind == PyUnicode_4BYTE_KIND);
-    return 0x10ffffU;
+    const Py_UCS4 value = max_char_values[kind];
+    assert(value);
+    return value;
 }
+
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define PyUnicode_MAX_CHAR_VALUE(op) \
        PyUnicode_MAX_CHAR_VALUE(_PyObject_CAST(op))
