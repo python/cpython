@@ -607,8 +607,13 @@ static PyObject *
 ga_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     gaobject *alias = (gaobject *)self;
-    return Py_BuildValue("O(OOb)", Py_TYPE(alias),
-                         alias->origin, alias->args, alias->starred);
+    PyObject *starred = PyBool_FromLong(alias->starred);
+    PyObject *value = Py_BuildValue("O(OOO)", Py_TYPE(alias),
+                                    alias->origin, alias->args, starred);
+    // Avoid double increment of reference count on Py_True/Py_False - once from
+    // PyBool_FromLong, and once from Py_BuildValue.
+    Py_CLEAR(starred);
+    return value;
 }
 
 static PyObject *
@@ -734,6 +739,13 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         starred = false;
     } else {
         PyObject *py_starred = PyTuple_GET_ITEM(args, 2);
+        if (!PyBool_Check(py_starred)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "Third argument to constructor of GenericAlias "
+                            "must be a bool (since it's a flag controlling "
+                            "whether the alias is unpacked)");
+            return NULL;
+        }
         starred = PyLong_AsLong(py_starred);
     }
 

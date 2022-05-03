@@ -423,6 +423,14 @@ class BaseTest(unittest.TestCase):
                 self.assertEqual(copied.__args__, alias.__args__)
                 self.assertEqual(copied.__parameters__, alias.__parameters__)
 
+    def test_non_bool_to_third_constructor_argument_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            GenericAlias(tuple, int, 0)
+        with self.assertRaises(TypeError):
+            GenericAlias(tuple, int, 'foo')
+        with self.assertRaises(TypeError):
+            GenericAlias(tuple, int, list)
+
     def test_unpack(self):
         alias1 = tuple[str, ...]
         self.assertIs(alias1.__unpacked__, False)
