@@ -730,7 +730,7 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *arguments = PyTuple_GET_ITEM(args, 1);
 
     bool starred;
-    if (PyTuple_Size(args) < 3) {
+    if (PyTuple_GET_SIZE(args) < 3) {
         starred = false;
     } else {
         PyObject *py_starred = PyTuple_GET_ITEM(args, 2);
