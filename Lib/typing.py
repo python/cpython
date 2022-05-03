@@ -123,6 +123,7 @@ __all__ = [
     'assert_never',
     'cast',
     'clear_overloads',
+    'dataclass_transform',
     'final',
     'get_args',
     'get_origin',
@@ -200,6 +201,24 @@ def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=
 def _is_param_expr(arg):
     return arg is ... or isinstance(arg,
             (tuple, list, ParamSpec, _ConcatenateGenericAlias))
+
+
+def _should_unflatten_callable_args(typ, args):
+    """Internal helper for munging collections.abc.Callable's __args__.
+
+    The canonical representation for a Callable's __args__ flattens the
+    argument types, see https://bugs.python.org/issue42195. For example:
+
+        collections.abc.Callable[[int, int], str].__args__ == (int, int, str)
+        collections.abc.Callable[ParamSpec, str].__args__ == (ParamSpec, str)
+
+    As a result, if we need to reconstruct the Callable from its __args__,
+    we need to unflatten it.
+    """
+    return (
+        typ.__origin__ is collections.abc.Callable
+        and not (len(args) == 2 and _is_param_expr(args[0]))
+    )
 
 
 def _type_repr(obj):
@@ -350,7 +369,10 @@ def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
                 ForwardRef(arg) if isinstance(arg, str) else arg
                 for arg in t.__args__
             )
-            t = t.__origin__[args]
+            if _should_unflatten_callable_args(t, args):
+                t = t.__origin__[(args[:-1], args[-1])]
+            else:
+                t = t.__origin__[args]
         ev_args = tuple(_eval_type(a, globalns, localns, recursive_guard) for a in t.__args__)
         if ev_args == t.__args__:
             return t
@@ -713,9 +735,9 @@ def Concatenate(self, parameters):
         raise TypeError("Cannot take a Concatenate of no types.")
     if not isinstance(parameters, tuple):
         parameters = (parameters,)
-    if not isinstance(parameters[-1], ParamSpec):
+    if not (parameters[-1] is ... or isinstance(parameters[-1], ParamSpec)):
         raise TypeError("The last parameter to Concatenate should be a "
-                        "ParamSpec variable.")
+                        "ParamSpec variable or ellipsis.")
     msg = "Concatenate[arg, ...]: each arg must be a type."
     parameters = (*(_type_check(p, msg) for p in parameters[:-1]), parameters[-1])
     return _ConcatenateGenericAlias(self, parameters,
@@ -867,6 +889,13 @@ def _is_typevar_like(x: Any) -> bool:
     return isinstance(x, (TypeVar, ParamSpec)) or _is_unpacked_typevartuple(x)
 
 
+class _PickleUsingNameMixin:
+    """Mixin enabling pickling based on self.__name__."""
+
+    def __reduce__(self):
+        return self.__name__
+
+
 class _BoundVarianceMixin:
     """Mixin giving __init__ bound and variance arguments.
 
@@ -903,11 +932,9 @@ class _BoundVarianceMixin:
             prefix = '~'
         return prefix + self.__name__
 
-    def __reduce__(self):
-        return self.__name__
 
-
-class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _root=True):
+class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
+              _root=True):
     """Type variable.
 
     Usage::
@@ -973,7 +1000,7 @@ class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _root=True):
         return arg
 
 
-class TypeVarTuple(_Final, _Immutable, _root=True):
+class TypeVarTuple(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
     """Type variable tuple.
 
     Usage:
@@ -994,10 +1021,17 @@ class TypeVarTuple(_Final, _Immutable, _root=True):
       C[()]        # Even this is fine
 
     For more details, see PEP 646.
+
+    Note that only TypeVarTuples defined in global scope can be pickled.
     """
 
     def __init__(self, name):
         self.__name__ = name
+
+        # Used for pickling.
+        def_mod = _caller()
+        if def_mod != 'typing':
+            self.__module__ = def_mod
 
     def __iter__(self):
         yield Unpack[self]
@@ -1006,7 +1040,7 @@ class TypeVarTuple(_Final, _Immutable, _root=True):
         return self.__name__
 
     def __typing_subst__(self, arg):
-        raise AssertionError
+        raise TypeError("Substitution of bare TypeVarTuple is not supported")
 
 
 class ParamSpecArgs(_Final, _Immutable, _root=True):
@@ -1057,7 +1091,8 @@ class ParamSpecKwargs(_Final, _Immutable, _root=True):
         return self.__origin__ == other.__origin__
 
 
-class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _root=True):
+class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
+                _root=True):
     """Parameter specification variable.
 
     Usage::
@@ -1627,9 +1662,6 @@ class _ConcatenateGenericAlias(_GenericAlias, _root=True):
             return (*params[:-1], *params[-1])
         if isinstance(params[-1], _ConcatenateGenericAlias):
             params = (*params[:-1], *params[-1].__args__)
-        elif not isinstance(params[-1], ParamSpec):
-            raise TypeError("The last parameter to Concatenate should be a "
-                            "ParamSpec variable.")
         return super().copy_with(params)
 
 
@@ -1675,10 +1707,14 @@ class _UnpackGenericAlias(_GenericAlias, _root=True):
         return '*' + repr(self.__args__[0])
 
     def __getitem__(self, args):
-        if (len(self.__parameters__) == 1 and
-                isinstance(self.__parameters__[0], TypeVarTuple)):
+        if self.__typing_unpacked__():
             return args
         return super().__getitem__(args)
+
+    def __typing_unpacked__(self):
+        # If x is Unpack[tuple[...]], __parameters__ will be empty.
+        return bool(self.__parameters__ and
+                    isinstance(self.__parameters__[0], TypeVarTuple))
 
 
 class Generic:
@@ -2346,8 +2382,7 @@ def get_args(tp):
         return (tp.__origin__,) + tp.__metadata__
     if isinstance(tp, (_GenericAlias, GenericAlias)):
         res = tp.__args__
-        if (tp.__origin__ is collections.abc.Callable
-                and not (len(res) == 2 and _is_param_expr(res[0]))):
+        if _should_unflatten_callable_args(tp, res):
             res = (list(res[:-1]), res[-1])
         return res
     if isinstance(tp, types.UnionType):
@@ -2367,6 +2402,9 @@ def is_typeddict(tp):
         is_typeddict(Union[list, str])  # => False
     """
     return isinstance(tp, _TypedDictMeta)
+
+
+_ASSERT_NEVER_REPR_MAX_LENGTH = 100
 
 
 def assert_never(arg: Never, /) -> Never:
@@ -2389,7 +2427,10 @@ def assert_never(arg: Never, /) -> Never:
     At runtime, this throws an exception when called.
 
     """
-    raise AssertionError("Expected code to be unreachable")
+    value = repr(arg)
+    if len(value) > _ASSERT_NEVER_REPR_MAX_LENGTH:
+        value = value[:_ASSERT_NEVER_REPR_MAX_LENGTH] + '...'
+    raise AssertionError(f"Expected code to be unreachable, but got: {value}")
 
 
 def no_type_check(arg):
@@ -2743,7 +2784,12 @@ _special = frozenset({'__module__', '__name__', '__annotations__'})
 class NamedTupleMeta(type):
 
     def __new__(cls, typename, bases, ns):
-        assert bases[0] is _NamedTuple
+        assert _NamedTuple in bases
+        for base in bases:
+            if base is not _NamedTuple and base is not Generic:
+                raise TypeError(
+                    'can only inherit from a NamedTuple type and Generic')
+        bases = tuple(tuple if base is _NamedTuple else base for base in bases)
         types = ns.get('__annotations__', {})
         default_names = []
         for field_name in types:
@@ -2757,12 +2803,18 @@ class NamedTupleMeta(type):
         nm_tpl = _make_nmtuple(typename, types.items(),
                                defaults=[ns[n] for n in default_names],
                                module=ns['__module__'])
+        nm_tpl.__bases__ = bases
+        if Generic in bases:
+            class_getitem = Generic.__class_getitem__.__func__
+            nm_tpl.__class_getitem__ = classmethod(class_getitem)
         # update from user namespace without overriding special namedtuple attributes
         for key in ns:
             if key in _prohibited:
                 raise AttributeError("Cannot overwrite NamedTuple attribute " + key)
             elif key not in _special and key not in nm_tpl._fields:
                 setattr(nm_tpl, key, ns[key])
+        if Generic in bases:
+            nm_tpl.__init_subclass__()
         return nm_tpl
 
 
@@ -2800,9 +2852,7 @@ def NamedTuple(typename, fields=None, /, **kwargs):
 _NamedTuple = type.__new__(NamedTupleMeta, 'NamedTuple', (), {})
 
 def _namedtuple_mro_entries(bases):
-    if len(bases) > 1:
-        raise TypeError("Multiple inheritance with NamedTuple is not supported")
-    assert bases[0] is NamedTuple
+    assert NamedTuple in bases
     return (_NamedTuple,)
 
 NamedTuple.__mro_entries__ = _namedtuple_mro_entries
@@ -3252,3 +3302,81 @@ def reveal_type(obj: T, /) -> T:
     """
     print(f"Runtime type is {type(obj).__name__!r}", file=sys.stderr)
     return obj
+
+
+def dataclass_transform(
+    *,
+    eq_default: bool = True,
+    order_default: bool = False,
+    kw_only_default: bool = False,
+    field_specifiers: tuple[type[Any] | Callable[..., Any], ...] = (),
+    **kwargs: Any,
+) -> Callable[[T], T]:
+    """Decorator that marks a function, class, or metaclass as providing
+    dataclass-like behavior.
+
+    Example usage with a decorator function:
+
+        _T = TypeVar("_T")
+
+        @dataclass_transform()
+        def create_model(cls: type[_T]) -> type[_T]:
+            ...
+            return cls
+
+        @create_model
+        class CustomerModel:
+            id: int
+            name: str
+
+    On a base class:
+
+        @dataclass_transform()
+        class ModelBase: ...
+
+        class CustomerModel(ModelBase):
+            id: int
+            name: str
+
+    On a metaclass:
+
+        @dataclass_transform()
+        class ModelMeta(type): ...
+
+        class ModelBase(metaclass=ModelMeta): ...
+
+        class CustomerModel(ModelBase):
+            id: int
+            name: str
+
+    Each of the ``CustomerModel`` classes defined in this example will now
+    behave similarly to a dataclass created with the ``@dataclasses.dataclass``
+    decorator. For example, the type checker will synthesize an ``__init__``
+    method.
+
+    The arguments to this decorator can be used to customize this behavior:
+    - ``eq_default`` indicates whether the ``eq`` parameter is assumed to be
+        True or False if it is omitted by the caller.
+    - ``order_default`` indicates whether the ``order`` parameter is
+        assumed to be True or False if it is omitted by the caller.
+    - ``kw_only_default`` indicates whether the ``kw_only`` parameter is
+        assumed to be True or False if it is omitted by the caller.
+    - ``field_specifiers`` specifies a static list of supported classes
+        or functions that describe fields, similar to ``dataclasses.field()``.
+
+    At runtime, this decorator records its arguments in the
+    ``__dataclass_transform__`` attribute on the decorated object.
+    It has no other runtime effect.
+
+    See PEP 681 for more details.
+    """
+    def decorator(cls_or_fn):
+        cls_or_fn.__dataclass_transform__ = {
+            "eq_default": eq_default,
+            "order_default": order_default,
+            "kw_only_default": kw_only_default,
+            "field_specifiers": field_specifiers,
+            "kwargs": kwargs,
+        }
+        return cls_or_fn
+    return decorator

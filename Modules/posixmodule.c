@@ -29,6 +29,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_signal.h"        // Py_NSIG
 
 #include "structmember.h"         // PyMemberDef
 #ifndef MS_WINDOWS
@@ -1503,10 +1504,11 @@ _Py_Sigset_Converter(PyObject *obj, void *addr)
     while ((item = PyIter_Next(iterator)) != NULL) {
         signum = PyLong_AsLongAndOverflow(item, &overflow);
         Py_DECREF(item);
-        if (signum <= 0 || signum >= NSIG) {
+        if (signum <= 0 || signum >= Py_NSIG) {
             if (overflow || signum != -1 || !PyErr_Occurred()) {
                 PyErr_Format(PyExc_ValueError,
-                             "signal number %ld out of range", signum);
+                             "signal number %ld out of range [1; %i]",
+                             signum, Py_NSIG - 1);
             }
             goto error;
         }
@@ -1888,7 +1890,17 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             /* Try reading the parent directory. */
             if (!attributes_from_dir(path, &fileInfo, &tagInfo.ReparseTag)) {
                 /* Cannot read the parent directory. */
-                SetLastError(error);
+                switch (GetLastError()) {
+                case ERROR_FILE_NOT_FOUND: /* File cannot be found */
+                case ERROR_PATH_NOT_FOUND: /* File parent directory cannot be found */
+                case ERROR_NOT_READY: /* Drive exists but unavailable */
+                case ERROR_BAD_NET_NAME: /* Remote drive unavailable */
+                    break;
+                /* Restore the error from CreateFileW(). */
+                default:
+                    SetLastError(error);
+                }
+
                 return -1;
             }
             if (fileInfo.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
@@ -7929,8 +7941,17 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
         return NULL;
     }
 #ifndef MS_WINDOWS
-    if (kill(pid, (int)signal) == -1)
+    if (kill(pid, (int)signal) == -1) {
         return posix_error();
+    }
+
+    // Check immediately if the signal was sent to the current process.
+    // Don't micro-optimize pid == getpid(), since PyErr_SetString() check
+    // is cheap.
+    if (PyErr_CheckSignals()) {
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 #else /* !MS_WINDOWS */
     PyObject *result;

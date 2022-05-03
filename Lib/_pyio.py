@@ -2161,6 +2161,8 @@ class TextIOWrapper(TextIOBase):
         else:
             if not isinstance(encoding, str):
                 raise TypeError("invalid encoding: %r" % encoding)
+            if encoding == "locale":
+                encoding = locale.getencoding()
 
         if newline is Ellipsis:
             newline = self._readnl

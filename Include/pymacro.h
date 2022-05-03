@@ -1,6 +1,15 @@
 #ifndef Py_PYMACRO_H
 #define Py_PYMACRO_H
 
+// gh-91782: On FreeBSD 12, if the _POSIX_C_SOURCE and _XOPEN_SOURCE macros are
+// defined, <sys/cdefs.h> disables C11 support and <assert.h> does not define
+// the static_assert() macro. Define the static_assert() macro in Python until
+// <sys/cdefs.h> suports C11:
+// https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=255290
+#if defined(__FreeBSD__) && !defined(static_assert)
+#  define static_assert _Static_assert
+#endif
+
 /* Minimum value between x and y */
 #define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))
 

@@ -1,0 +1,8 @@
+Change the frame-related functions in the :mod:`inspect` module to return a
+regular object (that is backwards compatible with the old tuple-like interface)
+that include the extended :pep:`657` position information (end line number,
+column and end column). The affected functions are: :func:`inspect.getframeinfo`,
+:func:`inspect.getouterframes`, :func:`inspect.getinnerframes`, :func:`inspect.stack` and
+:func:`inspect.trace`. Patch by Pablo Galindo.
+
+

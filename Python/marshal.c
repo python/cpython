@@ -564,8 +564,6 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_qualname, p);
         w_long(co->co_firstlineno, p);
         w_object(co->co_linetable, p);
-        w_object(co->co_endlinetable, p);
-        w_object(co->co_columntable, p);
         w_object(co->co_exceptiontable, p);
         Py_DECREF(co_code);
     }
@@ -1357,9 +1355,7 @@ r_object(RFILE *p)
             PyObject *name = NULL;
             PyObject *qualname = NULL;
             int firstlineno;
-            PyObject *linetable = NULL;
-            PyObject* endlinetable = NULL;
-            PyObject* columntable = NULL;
+            PyObject* linetable = NULL;
             PyObject *exceptiontable = NULL;
 
             idx = r_ref_reserve(flag, p);
@@ -1415,12 +1411,6 @@ r_object(RFILE *p)
             linetable = r_object(p);
             if (linetable == NULL)
                 goto code_error;
-            endlinetable = r_object(p);
-            if (endlinetable == NULL)
-                goto code_error;
-            columntable = r_object(p);
-            if (columntable == NULL)
-                goto code_error;
             exceptiontable = r_object(p);
             if (exceptiontable == NULL)
                 goto code_error;
@@ -1434,8 +1424,6 @@ r_object(RFILE *p)
                 .code = code,
                 .firstlineno = firstlineno,
                 .linetable = linetable,
-                .endlinetable = endlinetable,
-                .columntable = columntable,
 
                 .consts = consts,
                 .names = names,
@@ -1473,8 +1461,6 @@ r_object(RFILE *p)
             Py_XDECREF(name);
             Py_XDECREF(qualname);
             Py_XDECREF(linetable);
-            Py_XDECREF(endlinetable);
-            Py_XDECREF(columntable);
             Py_XDECREF(exceptiontable);
         }
         retval = v;
