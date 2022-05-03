@@ -9,10 +9,10 @@ PyAPI_DATA(PyTypeObject) PyCMethod_Type;
 
 #define _PyCFunctionObject_CAST(func) \
     (assert(PyCFunction_Check(func)), \
-     _Py_reinterpret_cast(PyCFunctionObject*, (func)))
+     _Py_CAST(PyCFunctionObject*, (func)))
 #define _PyCMethodObject_CAST(func) \
     (assert(PyCMethod_Check(func)), \
-     _Py_reinterpret_cast(PyCMethodObject*, (func)))
+     _Py_CAST(PyCMethodObject*, (func)))
 
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
