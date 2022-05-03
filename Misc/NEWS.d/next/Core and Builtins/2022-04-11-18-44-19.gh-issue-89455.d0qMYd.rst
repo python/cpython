@@ -1,0 +1,2 @@
+Fixed an uninitialized bool value in the traceback printing code path that
+was introduced by the initial bpo-45292 exception groups work.

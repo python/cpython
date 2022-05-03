@@ -1,1 +1,0 @@
-:mod:`pydoc` now excludes __future__ imports from the module's data items.

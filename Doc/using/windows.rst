@@ -618,7 +618,7 @@ UTF-8 mode
 
 Windows still uses legacy encodings for the system encoding (the ANSI Code
 Page).  Python uses it for the default encoding of text files (e.g.
-:func:`locale.getpreferredencoding`).
+:func:`locale.getencoding`).
 
 This may cause issues because UTF-8 is widely used on the internet
 and most Unix systems, including WSL (Windows Subsystem for Linux).
@@ -713,6 +713,12 @@ If you see the following error, you do not have the launcher installed:
 
 Per-user installations of Python do not add the launcher to :envvar:`PATH`
 unless the option was selected on installation.
+
+::
+
+  py --list
+
+You should see the currently installed versions of Python.
 
 Virtual environments
 ^^^^^^^^^^^^^^^^^^^^

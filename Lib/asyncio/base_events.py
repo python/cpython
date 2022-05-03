@@ -888,7 +888,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         # non-mmap files even if sendfile is supported by OS
         raise exceptions.SendfileNotAvailableError(
             f"syscall sendfile is not available for socket {sock!r} "
-            "and file {file!r} combination")
+            f"and file {file!r} combination")
 
     async def _sock_sendfile_fallback(self, sock, file, offset, count):
         if offset:

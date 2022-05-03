@@ -59,11 +59,6 @@ extern PyObject* _PyEval_BuiltinsFromGlobals(
     PyObject *globals);
 
 
-PyAPI_FUNC(PyObject *) _PyEval_EvalFrameDefault(
-    PyThreadState *tstate,
-    struct _PyInterpreterFrame *frame,
-    int throwflag);
-
 static inline PyObject*
 _PyEval_EvalFrame(PyThreadState *tstate, struct _PyInterpreterFrame *frame, int throwflag)
 {

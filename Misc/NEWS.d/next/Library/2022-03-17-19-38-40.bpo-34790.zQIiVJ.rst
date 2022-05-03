@@ -1,1 +1,0 @@
-Remove passing coroutine objects to :func:`asyncio.wait`.

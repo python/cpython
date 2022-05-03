@@ -1,3 +1,0 @@
-When subprocess tries to use vfork, it now falls back to fork if vfork
-returns an error. This allows use in situations where vfork isn't allowed
-by the OS kernel.
