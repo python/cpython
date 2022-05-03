@@ -70,7 +70,7 @@ class samplecmdclass(cmd.Cmd):
     >>> mycmd.complete_help("12")
     []
     >>> sorted(mycmd.complete_help(""))
-    ['add', 'exit', 'help', 'meaning', 'shell']
+    ['add', 'exit', 'help', 'life', 'meaning', 'shell']
 
     Test for the function do_help():
     >>> mycmd.do_help("testet")
@@ -91,7 +91,7 @@ class samplecmdclass(cmd.Cmd):
     <BLANKLINE>
     Miscellaneous help topics:
     ==========================
-    meaning
+    life  meaning
     <BLANKLINE>
     Undocumented commands:
     ======================
@@ -137,7 +137,7 @@ class samplecmdclass(cmd.Cmd):
     <BLANKLINE>
     Miscellaneous help topics:
     ==========================
-    meaning
+    life  meaning
     <BLANKLINE>
     Undocumented commands:
     ======================
@@ -183,6 +183,10 @@ class samplecmdclass(cmd.Cmd):
               "good book every now and then, get some walking in, "
               "and try to live together in peace and harmony with "
               "people of all creeds and nations.")
+        return
+
+    def help_life(self):
+        print("Always look on the bright side of life")
         return
 
     def do_exit(self, arg):
