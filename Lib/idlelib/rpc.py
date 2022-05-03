@@ -64,8 +64,7 @@ def dumps(obj, protocol=None):
 
 
 class CodePickler(pickle.Pickler):
-    dispatch_table = {types.CodeType: pickle_code}
-    dispatch_table.update(copyreg.dispatch_table)
+    dispatch_table = {types.CodeType: pickle_code, **copyreg.dispatch_table}
 
 
 BUFSIZE = 8*1024
@@ -126,7 +125,7 @@ request_queue = queue.Queue(0)
 response_queue = queue.Queue(0)
 
 
-class SocketIO(object):
+class SocketIO:
 
     nextseq = 0
 
@@ -487,7 +486,7 @@ class SocketIO(object):
 
 #----------------- end class SocketIO --------------------
 
-class RemoteObject(object):
+class RemoteObject:
     # Token mix-in class
     pass
 
@@ -498,7 +497,7 @@ def remoteref(obj):
     return RemoteProxy(oid)
 
 
-class RemoteProxy(object):
+class RemoteProxy:
 
     def __init__(self, oid):
         self.oid = oid
@@ -548,7 +547,7 @@ class RPCClient(SocketIO):
         return RPCProxy(self, oid)
 
 
-class RPCProxy(object):
+class RPCProxy:
 
     __methods = None
     __attributes = None
@@ -597,14 +596,14 @@ def _getattributes(obj, attributes):
             attributes[name] = 1
 
 
-class MethodProxy(object):
+class MethodProxy:
 
     def __init__(self, sockio, oid, name):
         self.sockio = sockio
         self.oid = oid
         self.name = name
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, /, *args, **kwargs):
         value = self.sockio.remotecall(self.oid, self.name, args, kwargs)
         return value
 

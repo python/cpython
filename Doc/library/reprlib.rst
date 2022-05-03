@@ -42,6 +42,9 @@ In addition to size-limiting tools, the module also provides a decorator for
 detecting recursive calls to :meth:`__repr__` and substituting a placeholder
 string instead.
 
+
+.. index:: single: ...; placeholder
+
 .. decorator:: recursive_repr(fillvalue="...")
 
    Decorator for :meth:`__repr__` methods to detect recursive calls within the
@@ -71,6 +74,14 @@ Repr Objects
 :class:`Repr` instances provide several attributes which can be used to provide
 size limits for the representations of different object types,  and methods
 which format specific object types.
+
+
+.. attribute:: Repr.fillvalue
+
+   This string is displayed for recursive references. It defaults to
+   ``...``.
+
+   .. versionadded:: 3.11
 
 
 .. attribute:: Repr.maxlevel

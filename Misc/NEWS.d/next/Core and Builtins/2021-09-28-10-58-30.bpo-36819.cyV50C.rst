@@ -1,0 +1,2 @@
+Fix crashes in built-in encoders with error handlers that return position
+less or equal than the starting position of non-encodable characters.

@@ -8,6 +8,7 @@ import sys
 from .base_events import *
 from .coroutines import *
 from .events import *
+from .exceptions import *
 from .futures import *
 from .locks import *
 from .protocols import *
@@ -16,15 +17,15 @@ from .queues import *
 from .streams import *
 from .subprocess import *
 from .tasks import *
+from .taskgroups import *
+from .timeouts import *
+from .threads import *
 from .transports import *
-
-# Exposed for _asynciomodule.c to implement now deprecated
-# Task.all_tasks() method.  This function will be removed in 3.9.
-from .tasks import _all_tasks_compat  # NoQA
 
 __all__ = (base_events.__all__ +
            coroutines.__all__ +
            events.__all__ +
+           exceptions.__all__ +
            futures.__all__ +
            locks.__all__ +
            protocols.__all__ +
@@ -33,6 +34,8 @@ __all__ = (base_events.__all__ +
            streams.__all__ +
            subprocess.__all__ +
            tasks.__all__ +
+           threads.__all__ +
+           timeouts.__all__ +
            transports.__all__)
 
 if sys.platform == 'win32':  # pragma: no cover

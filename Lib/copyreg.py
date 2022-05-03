@@ -36,6 +36,12 @@ else:
 
     pickle(complex, pickle_complex, complex)
 
+def pickle_union(obj):
+    import functools, operator
+    return functools.reduce, (operator.or_, obj.__args__)
+
+pickle(type(int | str), pickle_union)
+
 # Support for pickling new-style objects
 
 def _reconstructor(cls, base, state):
@@ -48,34 +54,45 @@ def _reconstructor(cls, base, state):
     return obj
 
 _HEAPTYPE = 1<<9
+_new_type = type(int.__new__)
 
 # Python code for object.__reduce_ex__ for protocols 0 and 1
 
 def _reduce_ex(self, proto):
     assert proto < 2
-    for base in self.__class__.__mro__:
+    cls = self.__class__
+    for base in cls.__mro__:
         if hasattr(base, '__flags__') and not base.__flags__ & _HEAPTYPE:
+            break
+        new = base.__new__
+        if isinstance(new, _new_type) and new.__self__ is base:
             break
     else:
         base = object # not really reachable
     if base is object:
         state = None
     else:
-        if base is self.__class__:
-            raise TypeError("can't pickle %s objects" % base.__name__)
+        if base is cls:
+            raise TypeError(f"cannot pickle {cls.__name__!r} object")
         state = base(self)
-    args = (self.__class__, base, state)
+    args = (cls, base, state)
     try:
         getstate = self.__getstate__
     except AttributeError:
         if getattr(self, "__slots__", None):
-            raise TypeError("a class that defines __slots__ without "
-                            "defining __getstate__ cannot be pickled") from None
+            raise TypeError(f"cannot pickle {cls.__name__!r} object: "
+                            f"a class that defines __slots__ without "
+                            f"defining __getstate__ cannot be pickled "
+                            f"with protocol {proto}") from None
         try:
             dict = self.__dict__
         except AttributeError:
             dict = None
     else:
+        if (type(self).__getstate__ is object.__getstate__ and
+            getattr(self, "__slots__", None)):
+            raise TypeError("a class that defines __slots__ without "
+                            "defining __getstate__ cannot be pickled")
         dict = getstate()
     if dict:
         return _reconstructor, args, dict

@@ -23,7 +23,7 @@ Prevent __class__ assignment to immutable built-in objects.
 .. nonce: 2gLdfN
 .. section: Core and Builtins
 
-Fix AST compilation for PEP 448 syntax.
+Fix AST compilation for :pep:`448` syntax.
 
 ..
 
