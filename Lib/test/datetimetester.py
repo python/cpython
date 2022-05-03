@@ -1863,6 +1863,12 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             ('2022-W52', self.theclass(2022, 12, 26)),
             ('2022W527', self.theclass(2023, 1, 1)),
             ('2022-W52-7', self.theclass(2023, 1, 1)),
+            ('2015W534', self.theclass(2015, 12, 31)),      # Has week 53
+            ('2015-W53-4', self.theclass(2015, 12, 31)),    # Has week 53
+            ('2015-W53-5', self.theclass(2016, 1, 1)),
+            ('2020W531', self.theclass(2020, 12, 28)),      # Leap year
+            ('2020-W53-1', self.theclass(2020, 12, 28)),    # Leap year
+            ('2020-W53-6', self.theclass(2021, 1, 2)),
         ]
 
         for input_str, expected in examples:
@@ -1892,6 +1898,8 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '2009-12-0a',       # Invalid character in day
             '2009-01-32',       # Invalid day
             '2009-02-29',       # Invalid leap day
+            '2019-W53-1',       # No week 53 in 2019
+            '2020-W54-1',       # No week 54
             '2009\ud80002\ud80028',     # Separators are surrogate codepoints
         ]
 
@@ -3103,6 +3111,8 @@ class TestDateTime(TestDate):
             ('2025W014 121431', self.theclass(2025, 1, 2, 12, 14, 31)),
             ('2025W014T030405', self.theclass(2025, 1, 2, 3, 4, 5)),
             ('2025W014 030405', self.theclass(2025, 1, 2, 3, 4, 5)),
+            ('2020-W53-6T03:04:05', self.theclass(2021, 1, 2, 3, 4, 5)),
+            ('2020W537 03:04:05', self.theclass(2021, 1, 3, 3, 4, 5)),
             ('2025-W01-4T03:04:05', self.theclass(2025, 1, 2, 3, 4, 5)),
             ('2025-W01-4T03:04:05.678901',
              self.theclass(2025, 1, 2, 3, 4, 5, 678901)),
