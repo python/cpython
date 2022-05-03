@@ -46,6 +46,7 @@ def clean_lines(text):
 @end=sh@
 '''
 
+# XXX Handle these.
 EXCLUDED = clean_lines('''
 # @begin=conf@
 
@@ -69,6 +70,7 @@ Python/dynload_aix.c            # sys/ldr.h
 Python/dynload_dl.c             # dl.h
 Python/dynload_hpux.c           # dl.h
 Python/thread_pthread.h
+Python/emscripten_signal.c
 
 # only huge constants (safe but parsing is slow)
 Modules/_blake2/impl/blake2-kat.h
