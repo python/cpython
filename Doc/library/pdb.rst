@@ -67,14 +67,13 @@ useful than quitting the debugger upon program's exit.
    before the first line of the module.
 
 
-The typical usage to break into the debugger from a running program is to
-insert ::
+The typical usage to break into the debugger is to insert::
 
    import pdb; pdb.set_trace()
 
-at the location you want to break into the debugger.  You can then step through
-the code following this statement, and continue running without the debugger
-using the :pdbcmd:`continue` command.
+at the location you want to break into the debugger, and then run the program.
+You can then step through the code following this statement, and continue
+running without the debugger using the :pdbcmd:`continue` command.
 
 .. versionadded:: 3.7
    The built-in :func:`breakpoint()`, when called with defaults, can be used

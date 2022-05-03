@@ -135,7 +135,7 @@ def v4_int_to_packed(address):
 
     """
     try:
-        return address.to_bytes(4, 'big')
+        return address.to_bytes(4)  # big endian
     except OverflowError:
         raise ValueError("Address negative or too large for IPv4")
 
@@ -151,7 +151,7 @@ def v6_int_to_packed(address):
 
     """
     try:
-        return address.to_bytes(16, 'big')
+        return address.to_bytes(16)  # big endian
     except OverflowError:
         raise ValueError("Address negative or too large for IPv6")
 
@@ -1297,7 +1297,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
         # Constructing from a packed address
         if isinstance(address, bytes):
             self._check_packed_address(address, 4)
-            self._ip = int.from_bytes(address, 'big')
+            self._ip = int.from_bytes(address)  # big endian
             return
 
         # Assume input argument to be string or any object representation

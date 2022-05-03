@@ -1,4 +1,3 @@
-
 #ifndef Py_PYTHREAD_H
 #define Py_PYTHREAD_H
 
@@ -16,10 +15,6 @@ typedef enum PyLockStatus {
     PY_LOCK_INTR
 } PyLockStatus;
 
-#ifndef Py_LIMITED_API
-#define PYTHREAD_INVALID_THREAD_ID ((unsigned long)-1)
-#endif
-
 PyAPI_FUNC(void) PyThread_init_thread(void);
 PyAPI_FUNC(unsigned long) PyThread_start_new_thread(void (*)(void *), void *);
 PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
@@ -35,15 +30,6 @@ PyAPI_FUNC(void) PyThread_free_lock(PyThread_type_lock);
 PyAPI_FUNC(int) PyThread_acquire_lock(PyThread_type_lock, int);
 #define WAIT_LOCK       1
 #define NOWAIT_LOCK     0
-
-#ifndef Py_LIMITED_API
-#ifdef HAVE_FORK
-/* Private function to reinitialize a lock at fork in the child process.
-   Reset the lock to the unlocked state.
-   Return 0 on success, return -1 on error. */
-PyAPI_FUNC(int) _PyThread_at_fork_reinit(PyThread_type_lock *lock);
-#endif  /* HAVE_FORK */
-#endif  /* !Py_LIMITED_API */
 
 /* PY_TIMEOUT_T is the integral type used to specify timeouts when waiting
    on a lock (see PyThread_acquire_lock_timed() below).
@@ -61,9 +47,11 @@ PyAPI_FUNC(int) _PyThread_at_fork_reinit(PyThread_type_lock *lock);
       convert microseconds to nanoseconds. */
 #  define PY_TIMEOUT_MAX (LLONG_MAX / 1000)
 #elif defined (NT_THREADS)
-   /* In the NT API, the timeout is a DWORD and is expressed in milliseconds */
-#  if 0xFFFFFFFFLL * 1000 < LLONG_MAX
-#    define PY_TIMEOUT_MAX (0xFFFFFFFFLL * 1000)
+   // WaitForSingleObject() accepts timeout in milliseconds in the range
+   // [0; 0xFFFFFFFE] (DWORD type). INFINITE value (0xFFFFFFFF) means no
+   // timeout. 0xFFFFFFFE milliseconds is around 49.7 days.
+#  if 0xFFFFFFFELL * 1000 < LLONG_MAX
+#    define PY_TIMEOUT_MAX (0xFFFFFFFELL * 1000)
 #  else
 #    define PY_TIMEOUT_MAX LLONG_MAX
 #  endif
@@ -122,35 +110,6 @@ Py_DEPRECATED(3.7) PyAPI_FUNC(void) PyThread_ReInitTLS(void);
 
 typedef struct _Py_tss_t Py_tss_t;  /* opaque */
 
-#ifndef Py_LIMITED_API
-#if defined(_POSIX_THREADS)
-    /* Darwin needs pthread.h to know type name the pthread_key_t. */
-#   include <pthread.h>
-#   define NATIVE_TSS_KEY_T     pthread_key_t
-#elif defined(NT_THREADS)
-    /* In Windows, native TSS key type is DWORD,
-       but hardcode the unsigned long to avoid errors for include directive.
-    */
-#   define NATIVE_TSS_KEY_T     unsigned long
-#else
-#   error "Require native threads. See https://bugs.python.org/issue31370"
-#endif
-
-/* When Py_LIMITED_API is not defined, the type layout of Py_tss_t is
-   exposed to allow static allocation in the API clients.  Even in this case,
-   you must handle TSS keys through API functions due to compatibility.
-*/
-struct _Py_tss_t {
-    int _is_initialized;
-    NATIVE_TSS_KEY_T _key;
-};
-
-#undef NATIVE_TSS_KEY_T
-
-/* When static allocation, you must initialize with Py_tss_NEEDS_INIT. */
-#define Py_tss_NEEDS_INIT   {0}
-#endif  /* !Py_LIMITED_API */
-
 PyAPI_FUNC(Py_tss_t *) PyThread_tss_alloc(void);
 PyAPI_FUNC(void) PyThread_tss_free(Py_tss_t *key);
 
@@ -162,8 +121,13 @@ PyAPI_FUNC(int) PyThread_tss_set(Py_tss_t *key, void *value);
 PyAPI_FUNC(void *) PyThread_tss_get(Py_tss_t *key);
 #endif  /* New in 3.7 */
 
+#ifndef Py_LIMITED_API
+#  define Py_CPYTHON_PYTHREAD_H
+#  include "cpython/pythread.h"
+#  undef Py_CPYTHON_PYTHREAD_H
+#endif
+
 #ifdef __cplusplus
 }
 #endif
-
 #endif /* !Py_PYTHREAD_H */

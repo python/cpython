@@ -1,3 +1,0 @@
-Implement the :meth:`__bytes__` special method on the :class:`bytes` type,
-so a bytes object ``b``  passes an ``isinstance(b, typing.SupportsBytes)``
-check.

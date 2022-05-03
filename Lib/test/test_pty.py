@@ -1,8 +1,9 @@
 from test.support import verbose, reap_children
 from test.support.import_helper import import_module
 
-# Skip these tests if termios is not available
+# Skip these tests if termios or fcntl are not available
 import_module('termios')
+import_module("fcntl")
 
 import errno
 import os
@@ -16,7 +17,6 @@ import io # readline
 import unittest
 
 import struct
-import tty
 import fcntl
 import warnings
 
@@ -136,7 +136,7 @@ class PtyTest(unittest.TestCase):
             mode = None
 
         new_stdin_winsz = None
-        if self.stdin_rows != None and self.stdin_cols != None:
+        if self.stdin_rows is not None and self.stdin_cols is not None:
             try:
                 # Modify pty.STDIN_FILENO window size; we need to
                 # check if pty.openpty() is able to set pty slave

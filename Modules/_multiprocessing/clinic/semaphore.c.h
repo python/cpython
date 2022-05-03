@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(MS_WINDOWS)
+#if defined(HAVE_MP_SEMAPHORE) && defined(MS_WINDOWS)
 
 PyDoc_STRVAR(_multiprocessing_SemLock_acquire__doc__,
 "acquire($self, /, block=True, timeout=None)\n"
@@ -52,9 +52,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_MP_SEMAPHORE) && defined(MS_WINDOWS) */
 
-#if defined(MS_WINDOWS)
+#if defined(HAVE_MP_SEMAPHORE) && defined(MS_WINDOWS)
 
 PyDoc_STRVAR(_multiprocessing_SemLock_release__doc__,
 "release($self, /)\n"
@@ -74,9 +74,9 @@ _multiprocessing_SemLock_release(SemLockObject *self, PyObject *Py_UNUSED(ignore
     return _multiprocessing_SemLock_release_impl(self);
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_MP_SEMAPHORE) && defined(MS_WINDOWS) */
 
-#if !defined(MS_WINDOWS)
+#if defined(HAVE_MP_SEMAPHORE) && !defined(MS_WINDOWS)
 
 PyDoc_STRVAR(_multiprocessing_SemLock_acquire__doc__,
 "acquire($self, /, block=True, timeout=None)\n"
@@ -126,9 +126,9 @@ exit:
     return return_value;
 }
 
-#endif /* !defined(MS_WINDOWS) */
+#endif /* defined(HAVE_MP_SEMAPHORE) && !defined(MS_WINDOWS) */
 
-#if !defined(MS_WINDOWS)
+#if defined(HAVE_MP_SEMAPHORE) && !defined(MS_WINDOWS)
 
 PyDoc_STRVAR(_multiprocessing_SemLock_release__doc__,
 "release($self, /)\n"
@@ -148,7 +148,9 @@ _multiprocessing_SemLock_release(SemLockObject *self, PyObject *Py_UNUSED(ignore
     return _multiprocessing_SemLock_release_impl(self);
 }
 
-#endif /* !defined(MS_WINDOWS) */
+#endif /* defined(HAVE_MP_SEMAPHORE) && !defined(MS_WINDOWS) */
+
+#if defined(HAVE_MP_SEMAPHORE)
 
 static PyObject *
 _multiprocessing_SemLock_impl(PyTypeObject *type, int kind, int value,
@@ -208,6 +210,10 @@ exit:
     return return_value;
 }
 
+#endif /* defined(HAVE_MP_SEMAPHORE) */
+
+#if defined(HAVE_MP_SEMAPHORE)
+
 PyDoc_STRVAR(_multiprocessing_SemLock__rebuild__doc__,
 "_rebuild($type, handle, kind, maxvalue, name, /)\n"
 "--\n"
@@ -240,6 +246,10 @@ exit:
     return return_value;
 }
 
+#endif /* defined(HAVE_MP_SEMAPHORE) */
+
+#if defined(HAVE_MP_SEMAPHORE)
+
 PyDoc_STRVAR(_multiprocessing_SemLock__count__doc__,
 "_count($self, /)\n"
 "--\n"
@@ -257,6 +267,10 @@ _multiprocessing_SemLock__count(SemLockObject *self, PyObject *Py_UNUSED(ignored
 {
     return _multiprocessing_SemLock__count_impl(self);
 }
+
+#endif /* defined(HAVE_MP_SEMAPHORE) */
+
+#if defined(HAVE_MP_SEMAPHORE)
 
 PyDoc_STRVAR(_multiprocessing_SemLock__is_mine__doc__,
 "_is_mine($self, /)\n"
@@ -276,6 +290,10 @@ _multiprocessing_SemLock__is_mine(SemLockObject *self, PyObject *Py_UNUSED(ignor
     return _multiprocessing_SemLock__is_mine_impl(self);
 }
 
+#endif /* defined(HAVE_MP_SEMAPHORE) */
+
+#if defined(HAVE_MP_SEMAPHORE)
+
 PyDoc_STRVAR(_multiprocessing_SemLock__get_value__doc__,
 "_get_value($self, /)\n"
 "--\n"
@@ -293,6 +311,10 @@ _multiprocessing_SemLock__get_value(SemLockObject *self, PyObject *Py_UNUSED(ign
 {
     return _multiprocessing_SemLock__get_value_impl(self);
 }
+
+#endif /* defined(HAVE_MP_SEMAPHORE) */
+
+#if defined(HAVE_MP_SEMAPHORE)
 
 PyDoc_STRVAR(_multiprocessing_SemLock__is_zero__doc__,
 "_is_zero($self, /)\n"
@@ -312,6 +334,10 @@ _multiprocessing_SemLock__is_zero(SemLockObject *self, PyObject *Py_UNUSED(ignor
     return _multiprocessing_SemLock__is_zero_impl(self);
 }
 
+#endif /* defined(HAVE_MP_SEMAPHORE) */
+
+#if defined(HAVE_MP_SEMAPHORE)
+
 PyDoc_STRVAR(_multiprocessing_SemLock__after_fork__doc__,
 "_after_fork($self, /)\n"
 "--\n"
@@ -330,6 +356,10 @@ _multiprocessing_SemLock__after_fork(SemLockObject *self, PyObject *Py_UNUSED(ig
     return _multiprocessing_SemLock__after_fork_impl(self);
 }
 
+#endif /* defined(HAVE_MP_SEMAPHORE) */
+
+#if defined(HAVE_MP_SEMAPHORE)
+
 PyDoc_STRVAR(_multiprocessing_SemLock___enter____doc__,
 "__enter__($self, /)\n"
 "--\n"
@@ -347,6 +377,10 @@ _multiprocessing_SemLock___enter__(SemLockObject *self, PyObject *Py_UNUSED(igno
 {
     return _multiprocessing_SemLock___enter___impl(self);
 }
+
+#endif /* defined(HAVE_MP_SEMAPHORE) */
+
+#if defined(HAVE_MP_SEMAPHORE)
 
 PyDoc_STRVAR(_multiprocessing_SemLock___exit____doc__,
 "__exit__($self, exc_type=None, exc_value=None, exc_tb=None, /)\n"
@@ -392,6 +426,8 @@ exit:
     return return_value;
 }
 
+#endif /* defined(HAVE_MP_SEMAPHORE) */
+
 #ifndef _MULTIPROCESSING_SEMLOCK_ACQUIRE_METHODDEF
     #define _MULTIPROCESSING_SEMLOCK_ACQUIRE_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK_ACQUIRE_METHODDEF) */
@@ -399,4 +435,36 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK_RELEASE_METHODDEF
     #define _MULTIPROCESSING_SEMLOCK_RELEASE_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK_RELEASE_METHODDEF) */
-/*[clinic end generated code: output=e7fd938150601fe5 input=a9049054013a1b77]*/
+
+#ifndef _MULTIPROCESSING_SEMLOCK__REBUILD_METHODDEF
+    #define _MULTIPROCESSING_SEMLOCK__REBUILD_METHODDEF
+#endif /* !defined(_MULTIPROCESSING_SEMLOCK__REBUILD_METHODDEF) */
+
+#ifndef _MULTIPROCESSING_SEMLOCK__COUNT_METHODDEF
+    #define _MULTIPROCESSING_SEMLOCK__COUNT_METHODDEF
+#endif /* !defined(_MULTIPROCESSING_SEMLOCK__COUNT_METHODDEF) */
+
+#ifndef _MULTIPROCESSING_SEMLOCK__IS_MINE_METHODDEF
+    #define _MULTIPROCESSING_SEMLOCK__IS_MINE_METHODDEF
+#endif /* !defined(_MULTIPROCESSING_SEMLOCK__IS_MINE_METHODDEF) */
+
+#ifndef _MULTIPROCESSING_SEMLOCK__GET_VALUE_METHODDEF
+    #define _MULTIPROCESSING_SEMLOCK__GET_VALUE_METHODDEF
+#endif /* !defined(_MULTIPROCESSING_SEMLOCK__GET_VALUE_METHODDEF) */
+
+#ifndef _MULTIPROCESSING_SEMLOCK__IS_ZERO_METHODDEF
+    #define _MULTIPROCESSING_SEMLOCK__IS_ZERO_METHODDEF
+#endif /* !defined(_MULTIPROCESSING_SEMLOCK__IS_ZERO_METHODDEF) */
+
+#ifndef _MULTIPROCESSING_SEMLOCK__AFTER_FORK_METHODDEF
+    #define _MULTIPROCESSING_SEMLOCK__AFTER_FORK_METHODDEF
+#endif /* !defined(_MULTIPROCESSING_SEMLOCK__AFTER_FORK_METHODDEF) */
+
+#ifndef _MULTIPROCESSING_SEMLOCK___ENTER___METHODDEF
+    #define _MULTIPROCESSING_SEMLOCK___ENTER___METHODDEF
+#endif /* !defined(_MULTIPROCESSING_SEMLOCK___ENTER___METHODDEF) */
+
+#ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
+    #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
+#endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
+/*[clinic end generated code: output=fde05a081b5bdba4 input=a9049054013a1b77]*/

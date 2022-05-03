@@ -1317,6 +1317,38 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
+PyDoc_STRVAR(os__path_normpath__doc__,
+"_path_normpath($module, /, path)\n"
+"--\n"
+"\n"
+"Basic path normalization.");
+
+#define OS__PATH_NORMPATH_METHODDEF    \
+    {"_path_normpath", (PyCFunction)(void(*)(void))os__path_normpath, METH_FASTCALL|METH_KEYWORDS, os__path_normpath__doc__},
+
+static PyObject *
+os__path_normpath_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__path_normpath(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_path_normpath", 0};
+    PyObject *argsbuf[1];
+    PyObject *path;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    path = args[0];
+    return_value = os__path_normpath_impl(module, path);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(os_mkdir__doc__,
 "mkdir($module, /, path, mode=511, *, dir_fd=None)\n"
 "--\n"
@@ -1799,6 +1831,8 @@ exit:
 
 #endif /* defined(HAVE_SYSTEM) && !defined(MS_WINDOWS) */
 
+#if defined(HAVE_UMASK)
+
 PyDoc_STRVAR(os_umask__doc__,
 "umask($module, mask, /)\n"
 "--\n"
@@ -1826,6 +1860,8 @@ os_umask(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#endif /* defined(HAVE_UMASK) */
 
 PyDoc_STRVAR(os_unlink__doc__,
 "unlink($module, /, path, *, dir_fd=None)\n"
@@ -8254,12 +8290,10 @@ static PyObject *
 os_DirEntry_is_symlink(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":is_symlink", _keywords, 0};
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "is_symlink() takes no arguments");
         goto exit;
     }
     _return_value = os_DirEntry_is_symlink_impl(self, defining_class);
@@ -8290,13 +8324,23 @@ os_DirEntry_stat(DirEntry *self, PyTypeObject *defining_class, PyObject *const *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"|$p:stat", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "stat", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    follow_symlinks = PyObject_IsTrue(args[0]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_DirEntry_stat_impl(self, defining_class, follow_symlinks);
 
 exit:
@@ -8321,14 +8365,24 @@ os_DirEntry_is_dir(DirEntry *self, PyTypeObject *defining_class, PyObject *const
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"|$p:is_dir", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "is_dir", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int follow_symlinks = 1;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    follow_symlinks = PyObject_IsTrue(args[0]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     _return_value = os_DirEntry_is_dir_impl(self, defining_class, follow_symlinks);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -8357,14 +8411,24 @@ os_DirEntry_is_file(DirEntry *self, PyTypeObject *defining_class, PyObject *cons
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"|$p:is_file", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "is_file", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int follow_symlinks = 1;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    follow_symlinks = PyObject_IsTrue(args[0]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     _return_value = os_DirEntry_is_file_impl(self, defining_class, follow_symlinks);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -8779,6 +8843,10 @@ exit:
 #ifndef OS_SYSTEM_METHODDEF
     #define OS_SYSTEM_METHODDEF
 #endif /* !defined(OS_SYSTEM_METHODDEF) */
+
+#ifndef OS_UMASK_METHODDEF
+    #define OS_UMASK_METHODDEF
+#endif /* !defined(OS_UMASK_METHODDEF) */
 
 #ifndef OS_UNAME_METHODDEF
     #define OS_UNAME_METHODDEF
@@ -9263,4 +9331,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=65a85d7d3f2c487e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c8c5b148b96068b4 input=a9049054013a1b77]*/

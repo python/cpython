@@ -35,18 +35,11 @@ _dbm_dbm_keys_impl(dbmobject *self, PyTypeObject *cls);
 static PyObject *
 _dbm_dbm_keys(dbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":keys", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "keys() takes no arguments");
+        return NULL;
     }
-    return_value = _dbm_dbm_keys_impl(self, cls);
-
-exit:
-    return return_value;
+    return _dbm_dbm_keys_impl(self, cls);
 }
 
 PyDoc_STRVAR(_dbm_dbm_get__doc__,
@@ -149,13 +142,6 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("open", nargs, 1, 3)) {
         goto exit;
     }
-    if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("open", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     filename = args[0];
     if (nargs < 2) {
         goto skip_optional;
@@ -186,4 +172,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=13b6d821416be228 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=492be70729515fe3 input=a9049054013a1b77]*/

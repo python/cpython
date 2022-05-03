@@ -1,2 +1,0 @@
-Remove switch statement for interpreter loop when using computed gotos. This
-makes sure that we only have one dispatch table in the interpreter.
