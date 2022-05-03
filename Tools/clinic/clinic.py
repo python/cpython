@@ -1633,7 +1633,7 @@ class BlockParser:
                 if remainder.isspace():
                     return True
                 else:
-                    fail(f"Garbage after stop line: '{remainder.strip()}'")
+                    fail(f"Garbage after stop line: {remainder!r}")
             # gh-92256: don't allow incorrectly formatted stop lines
             elif line.lstrip().startswith(stop_line):
                 fail("Whitespace is not allowed before the stop line")
