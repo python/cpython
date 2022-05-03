@@ -4890,6 +4890,7 @@ handle_eval_breaker:
 
         TARGET(CALL_PY_EXACT_ARGS) {
             assert(call_shape.kwnames == NULL);
+            DEOPT_IF(tstate->interp->eval_frame, CALL);
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             int is_meth = is_method(stack_pointer, oparg);
             int argcount = oparg + is_meth;
@@ -4923,6 +4924,7 @@ handle_eval_breaker:
 
         TARGET(CALL_PY_WITH_DEFAULTS) {
             assert(call_shape.kwnames == NULL);
+            DEOPT_IF(tstate->interp->eval_frame, CALL);
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             int is_meth = is_method(stack_pointer, oparg);
             int argcount = oparg + is_meth;

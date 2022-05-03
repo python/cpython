@@ -1142,5 +1142,33 @@ class Test_FrameAPI(unittest.TestCase):
         self.assertIs(gen, _testcapi.frame_getgenerator(frame))
 
 
+SUFFICIENT_TO_SPECIALIZE = 50
+
+
+class Test_Pep523API(unittest.TestCase):
+
+    def do_test(self, func):
+        calls = []
+        _testinternalcapi.set_eval_frame_record(calls)
+        for _ in range(SUFFICIENT_TO_SPECIALIZE):
+            func()
+        _testinternalcapi.set_eval_frame_default()
+        self.assertEqual(len(calls), SUFFICIENT_TO_SPECIALIZE)
+        for name in calls:
+            self.assertEqual(name, func.__name__)
+
+    def test_intercept_before_specialize(self):
+        def func1():
+            pass
+        self.do_test(func1)
+
+    def test_specialize_before_intercept(self):
+        def func2():
+            pass
+        for _ in range(SUFFICIENT_TO_SPECIALIZE):
+            func2()
+        self.do_test(func2)
+
+
 if __name__ == "__main__":
     unittest.main()
