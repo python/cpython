@@ -310,15 +310,16 @@ _PyObject_FastCall(PyObject *func, PyObject *const *args, Py_ssize_t nargs)
 
 
 static PyObject*
-_new_dict_if_nonempty(PyObject *mapping)
+_copy_kwds(PyObject *mapping)
 {
     PyObject *newdict = NULL;
 
     if (mapping != NULL) {
+        assert(PyDict_Check(mapping));
+
         Py_ssize_t kwlen = PyDict_Size(mapping);
-        if (kwlen < 0) {
-            return NULL;
-        } else if (kwlen > 0) {
+        assert(kwlen >= 0);
+        if (kwlen > 0) {
             newdict = _PyDict_NewPresized(kwlen);
             if (newdict == NULL) {
                 return NULL;
@@ -367,12 +368,13 @@ _PyObject_Call(PyThreadState *tstate, PyObject *callable,
            The dict must be copied to ensure the caller's copy isn't modified.
            Not needed when following vectorcall paths that don't use the dict.
            */
-        kwcopy = _new_dict_if_nonempty(kwargs);
+        kwcopy = _copy_kwds(kwargs);
         if (kwcopy == NULL && _PyErr_Occurred(tstate)) {
             return NULL;
         }
 
         if (_Py_EnterRecursiveCall(tstate, " while calling a Python object")) {
+            Py_XDECREF(kwcopy);
             return NULL;
         }
 
