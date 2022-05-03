@@ -91,10 +91,7 @@ class ContextManagerTestCase(unittest.TestCase):
     def test_contextmanager_traceback(self):
         @contextmanager
         def f():
-            try:
-                yield
-            finally:
-                pass
+            yield
 
         try:
             with f():
@@ -106,6 +103,7 @@ class ContextManagerTestCase(unittest.TestCase):
         self.assertEqual(frames[0].name, 'test_contextmanager_traceback')
         self.assertEqual(frames[0].line, '1/0')
 
+        # Repeat with RuntimeError (which goes through a different code path)
         try:
             with f():
                 raise NotImplementedError(42)
