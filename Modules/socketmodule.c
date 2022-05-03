@@ -328,6 +328,16 @@ static FlagRuntimeInfo win_runtime_flags[] = {
     {14393, "TCP_FASTOPEN"}
 };
 
+/*[clinic input]
+ module _socket
+ [clinic start generated code]*/
+ /*[clinic end generated code: output=da39a3ee5e6b4b0d input=4a04c1cd4d2530a1]*/
+
+ /*[clinic input]
+ class _socket.socket "PySocketSockObject *" "&sock_type"
+ [clinic start generated code]*/
+ /*[clinic end generated code: output=da39a3ee5e6b4b0d input=3e0d64ca2c658496]*/
+
 static int
 remove_unusable_flags(PyObject *m)
 {
@@ -510,6 +520,8 @@ remove_unusable_flags(PyObject *m)
 #ifndef INADDR_NONE
 #define INADDR_NONE (-1)
 #endif
+
+#include "clinic/socketmodule.c.h"
 
 /* XXX There's a problem here: *static* functions are not supposed to have
    a Py prefix (or use CapitalizedWords).  Later... */
@@ -5103,14 +5115,25 @@ static int sock_cloexec_works = -1;
 #endif
 
 /*ARGSUSED*/
+
+/*[clinic input]
+_socket.socket.__init__
+    family: int = -1
+    type: int = -1
+    proto: int = -1
+    fileno as fdobj: object = NULL
+[clinic start generated code]*/
+
 static int
-sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
+_socket_socket___init___impl(PySocketSockObject *self, int family, int type,
+                              int proto, PyObject *fdobj)
+ /*[clinic end generated code: output=8d20ec7eb58df701 input=c0966eb4587c4634]*/
 {
-    PySocketSockObject *s = (PySocketSockObject *)self;
-    PyObject *fdobj = NULL;
+    //PySocketSockObject *s = (PySocketSockObject *)self;
+    //PyObject *fdobj = NULL;
     SOCKET_T fd = INVALID_SOCKET;
-    int family = -1, type = -1, proto = -1;
-    static char *keywords[] = {"family", "type", "proto", "fileno", 0};
+    //int family = -1, type = -1, proto = -1;
+    //static char *keywords[] = {"family", "type", "proto", "fileno", 0};
 #ifndef MS_WINDOWS
 #ifdef SOCK_CLOEXEC
     int *atomic_flag_works = &sock_cloexec_works;
@@ -5119,10 +5142,10 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
 #endif
 #endif
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "|iiiO:socket", keywords,
-                                     &family, &type, &proto, &fdobj))
-        return -1;
+    //if (!PyArg_ParseTupleAndKeywords(args, kwds,
+    //                                 "|iiiO:socket", keywords,
+    //                                 &family, &type, &proto, &fdobj))
+    //     return -1;
 
 #ifdef MS_WINDOWS
     /* In this case, we don't use the family, type and proto args */
@@ -5130,7 +5153,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
 #endif
     {
         if (PySys_Audit("socket.__new__", "Oiii",
-                        s, family, type, proto) < 0) {
+                        self, family, type, proto) < 0) {
             return -1;
         }
     }
@@ -5318,7 +5341,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
         }
 #endif
     }
-    if (init_sockobject(s, fd, family, type, proto) == -1) {
+    if (init_sockobject(self, fd, family, type, proto) == -1) {
         SOCKETCLOSE(fd);
         return -1;
     }
@@ -5366,7 +5389,7 @@ static PyTypeObject sock_type = {
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    sock_initobj,                               /* tp_init */
+    _socket_socket___init__,                    /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     sock_new,                                   /* tp_new */
     PyObject_Del,                               /* tp_free */
