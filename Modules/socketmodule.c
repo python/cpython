@@ -5129,11 +5129,9 @@ _socket_socket___init___impl(PySocketSockObject *self, int family, int type,
                               int proto, PyObject *fdobj)
  /*[clinic end generated code: output=8d20ec7eb58df701 input=c0966eb4587c4634]*/
 {
-    //PySocketSockObject *s = (PySocketSockObject *)self;
-    //PyObject *fdobj = NULL;
+
     SOCKET_T fd = INVALID_SOCKET;
-    //int family = -1, type = -1, proto = -1;
-    //static char *keywords[] = {"family", "type", "proto", "fileno", 0};
+
 #ifndef MS_WINDOWS
 #ifdef SOCK_CLOEXEC
     int *atomic_flag_works = &sock_cloexec_works;
@@ -5141,11 +5139,6 @@ _socket_socket___init___impl(PySocketSockObject *self, int family, int type,
     int *atomic_flag_works = NULL;
 #endif
 #endif
-
-    //if (!PyArg_ParseTupleAndKeywords(args, kwds,
-    //                                 "|iiiO:socket", keywords,
-    //                                 &family, &type, &proto, &fdobj))
-    //     return -1;
 
 #ifdef MS_WINDOWS
     /* In this case, we don't use the family, type and proto args */
