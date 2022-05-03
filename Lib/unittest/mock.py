@@ -1181,7 +1181,6 @@ class CallableMixin(Base):
         if self._mock_wraps is not None:
             return self._mock_wraps(*args, **kwargs)
 
-        # print('self', self)
         return self.return_value
 
 
