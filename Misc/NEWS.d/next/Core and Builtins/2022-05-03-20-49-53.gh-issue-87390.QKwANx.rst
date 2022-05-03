@@ -1,0 +1,1 @@
+Give ``types.GenericAlias`` constructor an optional third ``bool`` argument that controls whether it represents an unpacked type (e.g. ``*tuple[int, str]``).
