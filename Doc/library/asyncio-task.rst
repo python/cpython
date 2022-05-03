@@ -223,21 +223,6 @@ Creating Tasks
    :exc:`RuntimeError` is raised if there is no running loop in
    current thread.
 
-   This function has been **added in Python 3.7**.  Prior to
-   Python 3.7, the low-level :func:`asyncio.ensure_future` function
-   can be used instead::
-
-       async def coro():
-           ...
-
-       # In Python 3.7+
-       task = asyncio.create_task(coro())
-       ...
-
-       # This works in all Python versions but is less readable
-       task = asyncio.ensure_future(coro())
-       ...
-
    .. important::
 
       Save a reference to the result of this function, to avoid
