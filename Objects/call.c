@@ -310,7 +310,7 @@ _PyObject_FastCall(PyObject *func, PyObject *const *args, Py_ssize_t nargs)
 
 
 static PyObject*
-_copy_kwds(PyObject *mapping)
+copy_kwds(PyObject *mapping)
 {
     PyObject *newdict = NULL;
 
@@ -368,7 +368,7 @@ _PyObject_Call(PyThreadState *tstate, PyObject *callable,
            The dict must be copied to ensure the caller's copy isn't modified.
            Not needed when following vectorcall paths that don't use the dict.
            */
-        kwcopy = _copy_kwds(kwargs);
+        kwcopy = copy_kwds(kwargs);
         if (kwcopy == NULL && _PyErr_Occurred(tstate)) {
             return NULL;
         }
