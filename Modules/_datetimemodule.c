@@ -3565,7 +3565,7 @@ static PyMethodDef date_methods[] = {
 
      {"fromisoformat", (PyCFunction)date_fromisoformat,  METH_O |
                                                          METH_CLASS,
-      PyDoc_STR("str -> Construct a date from the output of date.isoformat()")},
+      PyDoc_STR("str -> Construct a date from a string in ISO 8601 format.")},
 
      {"fromisocalendar", _PyCFunction_CAST(date_fromisocalendar),
       METH_VARARGS | METH_KEYWORDS | METH_CLASS,
@@ -4755,7 +4755,7 @@ static PyMethodDef time_methods[] = {
      PyDoc_STR("Return time with new specified fields.")},
 
      {"fromisoformat", (PyCFunction)time_fromisoformat, METH_O | METH_CLASS,
-     PyDoc_STR("string -> time from time.isoformat() output")},
+     PyDoc_STR("string -> time from a string in ISO 8601 format")},
 
     {"__reduce_ex__", (PyCFunction)time_reduce_ex,        METH_VARARGS,
      PyDoc_STR("__reduce_ex__(proto) -> (cls, state)")},
@@ -6543,7 +6543,7 @@ static PyMethodDef datetime_methods[] = {
 
     {"fromisoformat", (PyCFunction)datetime_fromisoformat,
      METH_O | METH_CLASS,
-     PyDoc_STR("string -> datetime from datetime.isoformat() output")},
+     PyDoc_STR("string -> datetime from a string in most ISO 8601 formats")},
 
     /* Instance methods: */
 

@@ -978,7 +978,7 @@ class date:
 
     @classmethod
     def fromisoformat(cls, date_string):
-        """Construct a date from the output of date.isoformat()."""
+        """Construct a date from a string in ISO 8601 format."""
         if not isinstance(date_string, str):
             raise TypeError('fromisoformat: argument must be str')
 
@@ -1534,7 +1534,7 @@ class time:
 
     @classmethod
     def fromisoformat(cls, time_string):
-        """Construct a time from the output of isoformat()."""
+        """Construct a time from a string in one of the ISO 8601 formats."""
         if not isinstance(time_string, str):
             raise TypeError('fromisoformat: argument must be str')
 
@@ -1823,7 +1823,7 @@ class datetime(date):
 
     @classmethod
     def fromisoformat(cls, date_string):
-        """Construct a datetime from the output of datetime.isoformat()."""
+        """Construct a datetime from a string in one of the ISO 8601 formats."""
         if not isinstance(date_string, str):
             raise TypeError('fromisoformat: argument must be str')
 
