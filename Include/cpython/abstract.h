@@ -51,7 +51,7 @@ PyAPI_FUNC(PyObject *) _PyObject_MakeTpCall(
     PyObject *keywords);
 
 #define PY_VECTORCALL_ARGUMENTS_OFFSET \
-    (_Py_static_cast(size_t, 1) << (8 * sizeof(size_t) - 1))
+    (_Py_STATIC_CAST(size_t, 1) << (8 * sizeof(size_t) - 1))
 
 static inline Py_ssize_t
 PyVectorcall_NARGS(size_t n)

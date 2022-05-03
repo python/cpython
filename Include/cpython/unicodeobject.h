@@ -237,13 +237,13 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
 
 #define _PyASCIIObject_CAST(op) \
     (assert(PyUnicode_Check(op)), \
-     _Py_reinterpret_cast(PyASCIIObject*, (op)))
+     _Py_CAST(PyASCIIObject*, (op)))
 #define _PyCompactUnicodeObject_CAST(op) \
     (assert(PyUnicode_Check(op)), \
-     _Py_reinterpret_cast(PyCompactUnicodeObject*, (op)))
+     _Py_CAST(PyCompactUnicodeObject*, (op)))
 #define _PyUnicodeObject_CAST(op) \
     (assert(PyUnicode_Check(op)), \
-     _Py_reinterpret_cast(PyUnicodeObject*, (op)))
+     _Py_CAST(PyUnicodeObject*, (op)))
 
 
 /* --- Flexible String Representation Helper Macros (PEP 393) -------------- */
