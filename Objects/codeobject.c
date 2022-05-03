@@ -1370,6 +1370,11 @@ _PyCode_GetCode(PyCodeObject *co)
     return code;
 }
 
+PyObject *
+PyCode_GetCode(PyCodeObject *co)
+{
+    return _PyCode_GetCode(co);
+}
 
 /******************
  * PyCode_Type
