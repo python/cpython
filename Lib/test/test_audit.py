@@ -16,6 +16,8 @@ AUDIT_TESTS_PY = support.findfile("audit-tests.py")
 
 
 class AuditTest(unittest.TestCase):
+
+    @support.requires_subprocess()
     def do_test(self, *args):
         with subprocess.Popen(
             [sys.executable, "-Xutf8", AUDIT_TESTS_PY, *args],
@@ -29,6 +31,7 @@ class AuditTest(unittest.TestCase):
             if p.returncode:
                 self.fail("".join(p.stderr))
 
+    @support.requires_subprocess()
     def run_python(self, *args):
         events = []
         with subprocess.Popen(

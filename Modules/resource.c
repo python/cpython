@@ -78,6 +78,7 @@ get_resource_state(PyObject *module)
 
 static struct PyModuleDef resourcemodule;
 
+#ifdef HAVE_GETRUSAGE
 /*[clinic input]
 resource.getrusage
 
@@ -134,6 +135,7 @@ resource_getrusage_impl(PyObject *module, int who)
 
     return result;
 }
+#endif
 
 static int
 py2rlimit(PyObject *limits, struct rlimit *rl_out)

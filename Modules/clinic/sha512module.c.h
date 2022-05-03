@@ -17,18 +17,11 @@ SHA512Type_copy_impl(SHAobject *self, PyTypeObject *cls);
 static PyObject *
 SHA512Type_copy(SHAobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":copy", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
+        return NULL;
     }
-    return_value = SHA512Type_copy_impl(self, cls);
-
-exit:
-    return return_value;
+    return SHA512Type_copy_impl(self, cls);
 }
 
 PyDoc_STRVAR(SHA512Type_digest__doc__,
@@ -177,4 +170,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9ff9f11937fabf35 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=26d2fe27b9673ac2 input=a9049054013a1b77]*/

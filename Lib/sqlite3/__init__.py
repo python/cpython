@@ -21,7 +21,7 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 """
-The sqlite3 extension module provides a DB-API 2.0 (PEP 249) compilant
+The sqlite3 extension module provides a DB-API 2.0 (PEP 249) compliant
 interface to the SQLite library, and requires SQLite 3.7.15 or newer.
 
 To use the module, start by creating a database Connection object:

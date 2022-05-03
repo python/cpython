@@ -129,13 +129,12 @@ _pysqlite_get_converter(pysqlite_state *state, const char *keystr,
     PyObject *key;
     PyObject *upcase_key;
     PyObject *retval;
-    _Py_IDENTIFIER(upper);
 
     key = PyUnicode_FromStringAndSize(keystr, keylen);
     if (!key) {
         return NULL;
     }
-    upcase_key = _PyObject_CallMethodIdNoArgs(key, &PyId_upper);
+    upcase_key = PyObject_CallMethodNoArgs(key, state->str_upper);
     Py_DECREF(key);
     if (!upcase_key) {
         return NULL;
@@ -455,7 +454,19 @@ get_statement_from_cache(pysqlite_Cursor *self, PyObject *operation)
     return PyObject_Vectorcall(cache, args + 1, nargsf, NULL);
 }
 
-static PyObject *
+static inline int
+stmt_step(sqlite3_stmt *statement)
+{
+    int rc;
+
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_step(statement);
+    Py_END_ALLOW_THREADS
+
+    return rc;
+}
+
+PyObject *
 _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation, PyObject* second_argument)
 {
     PyObject* parameters_list = NULL;
@@ -465,7 +476,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     int rc;
     int numcols;
     PyObject* column_name;
-    sqlite_int64 lastrowid;
 
     if (!check_cursor(self)) {
         goto error;
@@ -572,7 +582,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             goto error;
         }
 
-        rc = pysqlite_step(self->statement->st);
+        rc = stmt_step(self->statement->st);
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
             if (PyErr_Occurred()) {
                 /* there was an error that occurred in a user-defined callback */
@@ -630,16 +640,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             self->rowcount= -1L;
         }
 
-        if (!multiple) {
-            Py_BEGIN_ALLOW_THREADS
-            lastrowid = sqlite3_last_insert_rowid(self->connection->db);
-            Py_END_ALLOW_THREADS
-            Py_SETREF(self->lastrowid, PyLong_FromLongLong(lastrowid));
-            if (self->lastrowid == NULL) {
-                goto error;
-            }
-        }
-
         if (rc == SQLITE_DONE && !multiple) {
             pysqlite_statement_reset(self->statement);
             Py_CLEAR(self->statement);
@@ -649,6 +649,17 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             pysqlite_statement_reset(self->statement);
         }
         Py_XDECREF(parameters);
+    }
+
+    if (!multiple) {
+        sqlite_int64 lastrowid;
+
+        Py_BEGIN_ALLOW_THREADS
+        lastrowid = sqlite3_last_insert_rowid(self->connection->db);
+        Py_END_ALLOW_THREADS
+
+        Py_SETREF(self->lastrowid, PyLong_FromLongLong(lastrowid));
+        // Fall through on error.
     }
 
 error:
@@ -673,13 +684,13 @@ _sqlite3.Cursor.execute as pysqlite_cursor_execute
     parameters: object(c_default = 'NULL') = ()
     /
 
-Executes a SQL statement.
+Executes an SQL statement.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_cursor_execute_impl(pysqlite_Cursor *self, PyObject *sql,
                              PyObject *parameters)
-/*[clinic end generated code: output=d81b4655c7c0bbad input=91d7bb36f127f597]*/
+/*[clinic end generated code: output=d81b4655c7c0bbad input=a8e0200a11627f94]*/
 {
     return _pysqlite_query_execute(self, 0, sql, parameters);
 }
@@ -691,13 +702,13 @@ _sqlite3.Cursor.executemany as pysqlite_cursor_executemany
     seq_of_parameters: object
     /
 
-Repeatedly executes a SQL statement.
+Repeatedly executes an SQL statement.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_cursor_executemany_impl(pysqlite_Cursor *self, PyObject *sql,
                                  PyObject *seq_of_parameters)
-/*[clinic end generated code: output=2c65a3c4733fb5d8 input=440707b7af87fba8]*/
+/*[clinic end generated code: output=2c65a3c4733fb5d8 input=0d0a52e5eb7ccd35]*/
 {
     return _pysqlite_query_execute(self, 1, sql, seq_of_parameters);
 }
@@ -708,13 +719,13 @@ _sqlite3.Cursor.executescript as pysqlite_cursor_executescript
     sql_script: str
     /
 
-Executes multiple SQL statements at once. Non-standard.
+Executes multiple SQL statements at once.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
                                    const char *sql_script)
-/*[clinic end generated code: output=8fd726dde1c65164 input=1ac0693dc8db02a8]*/
+/*[clinic end generated code: output=8fd726dde1c65164 input=78f093be415a8a2c]*/
 {
     if (!check_cursor(self)) {
         return NULL;
@@ -800,7 +811,7 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
     if (row == NULL) {
         return NULL;
     }
-    int rc = pysqlite_step(stmt);
+    int rc = stmt_step(stmt);
     if (rc == SQLITE_DONE) {
         (void)pysqlite_statement_reset(self->statement);
     }
@@ -922,12 +933,12 @@ _sqlite3.Cursor.setinputsizes as pysqlite_cursor_setinputsizes
     sizes: object
     /
 
-Required by DB-API. Does nothing in pysqlite.
+Required by DB-API. Does nothing in sqlite3.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_cursor_setinputsizes(pysqlite_Cursor *self, PyObject *sizes)
-/*[clinic end generated code: output=893c817afe9d08ad input=7cffbb168663bc69]*/
+/*[clinic end generated code: output=893c817afe9d08ad input=de7950a3aec79bdf]*/
 {
     Py_RETURN_NONE;
 }
@@ -939,13 +950,13 @@ _sqlite3.Cursor.setoutputsize as pysqlite_cursor_setoutputsize
     column: object = None
     /
 
-Required by DB-API. Does nothing in pysqlite.
+Required by DB-API. Does nothing in sqlite3.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_cursor_setoutputsize_impl(pysqlite_Cursor *self, PyObject *size,
                                    PyObject *column)
-/*[clinic end generated code: output=018d7e9129d45efe input=077b017da58b9389]*/
+/*[clinic end generated code: output=018d7e9129d45efe input=607a6bece8bbb273]*/
 {
     Py_RETURN_NONE;
 }
