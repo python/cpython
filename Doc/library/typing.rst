@@ -1738,7 +1738,7 @@ These are not used in annotations. They are building blocks for declaring types.
           z: int
 
    A ``TypedDict`` cannot inherit from a non-TypedDict class,
-   notably including :class:`Generic`. For example::
+   except for :class:`Generic`. For example::
 
       class X(TypedDict):
           x: int
@@ -1754,6 +1754,12 @@ These are not used in annotations. They are building blocks for declaring types.
 
       T = TypeVar('T')
       class XT(X, Generic[T]): pass  # raises TypeError
+
+   A ``TypedDict`` can be generic::
+
+      class Group(TypedDict, Generic[T]):
+          key: T
+          group: list[T]
 
    A ``TypedDict`` can be introspected via annotations dicts
    (see :ref:`annotations-howto` for more information on annotations best practices),
@@ -1801,6 +1807,9 @@ These are not used in annotations. They are building blocks for declaring types.
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.11
+      Added support for generic ``TypedDict``\ s.
 
 Generic concrete collections
 ----------------------------
