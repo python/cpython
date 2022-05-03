@@ -587,7 +587,7 @@ static inline void Py_DECREF(PyObject *op)
 /* Function to use in case the object pointer can be NULL: */
 static inline void Py_XINCREF(PyObject *op)
 {
-    if (op != NULL) {
+    if (op != _Py_NULL) {
         Py_INCREF(op);
     }
 }
@@ -597,7 +597,7 @@ static inline void Py_XINCREF(PyObject *op)
 
 static inline void Py_XDECREF(PyObject *op)
 {
-    if (op != NULL) {
+    if (op != _Py_NULL) {
         Py_DECREF(op);
     }
 }
