@@ -20,10 +20,7 @@ if support.PGO:
 
 support.requires_working_socket(module=True)
 
-import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import asyncore
+asyncore = warnings_helper.import_deprecated('asyncore')
 
 
 HAS_UNIX_SOCKETS = hasattr(socket, 'AF_UNIX')
