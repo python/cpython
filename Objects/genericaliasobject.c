@@ -567,6 +567,9 @@ ga_richcompare(PyObject *a, PyObject *b, int op)
 
     gaobject *aa = (gaobject *)a;
     gaobject *bb = (gaobject *)b;
+    if (aa->starred != bb->starred) {
+        Py_RETURN_FALSE;
+    }
     int eq = PyObject_RichCompareBool(aa->origin, bb->origin, Py_EQ);
     if (eq < 0) {
         return NULL;
@@ -604,8 +607,8 @@ static PyObject *
 ga_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     gaobject *alias = (gaobject *)self;
-    return Py_BuildValue("O(OO)", Py_TYPE(alias),
-                         alias->origin, alias->args);
+    return Py_BuildValue("O(OOb)", Py_TYPE(alias),
+                         alias->origin, alias->args, alias->starred);
 }
 
 static PyObject *
@@ -685,7 +688,7 @@ static PyGetSetDef ga_properties[] = {
  * Returns 1 on success, 0 on failure.
  */
 static inline int
-setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
+setup_ga(gaobject *alias, PyObject *origin, PyObject *args, bool starred) {
     if (!PyTuple_Check(args)) {
         args = PyTuple_Pack(1, args);
         if (args == NULL) {
@@ -700,6 +703,7 @@ setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
     alias->origin = origin;
     alias->args = args;
     alias->parameters = NULL;
+    alias->starred = starred;
     alias->weakreflist = NULL;
 
     if (PyVectorcall_Function(origin) != NULL) {
@@ -718,16 +722,26 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!_PyArg_NoKeywords("GenericAlias", kwds)) {
         return NULL;
     }
-    if (!_PyArg_CheckPositional("GenericAlias", PyTuple_GET_SIZE(args), 2, 2)) {
+    if (!_PyArg_CheckPositional("GenericAlias", PyTuple_GET_SIZE(args), 2, 3)) {
         return NULL;
     }
+
     PyObject *origin = PyTuple_GET_ITEM(args, 0);
     PyObject *arguments = PyTuple_GET_ITEM(args, 1);
+
+    bool starred;
+    if (PyTuple_Size(args) < 3) {
+        starred = false;
+    } else {
+        PyObject *py_starred = PyTuple_GET_ITEM(args, 2);
+        starred = PyLong_AsLong(py_starred);
+    }
+
     gaobject *self = (gaobject *)type->tp_alloc(type, 0);
     if (self == NULL) {
         return NULL;
     }
-    if (!setup_ga(self, origin, arguments)) {
+    if (!setup_ga(self, origin, arguments, starred)) {
         Py_DECREF(self);
         return NULL;
     }
@@ -837,7 +851,7 @@ Py_GenericAlias(PyObject *origin, PyObject *args)
     if (alias == NULL) {
         return NULL;
     }
-    if (!setup_ga(alias, origin, args)) {
+    if (!setup_ga(alias, origin, args, false)) {
         Py_DECREF(alias);
         return NULL;
     }

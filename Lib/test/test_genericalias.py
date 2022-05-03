@@ -343,6 +343,8 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(list[int], list[int])
         self.assertEqual(dict[str, int], dict[str, int])
         self.assertEqual((*tuple[int],)[0], (*tuple[int],)[0])
+        self.assertNotEqual(tuple[int], (*tuple[int],)[0])
+        self.assertNotEqual(tuple[int], Unpack[tuple[int]])
         self.assertEqual(
             tuple[
                 tuple(  # Effectively the same as starring; TODO
@@ -394,6 +396,8 @@ class BaseTest(unittest.TestCase):
                     self.assertEqual(loaded.__origin__, alias.__origin__)
                     self.assertEqual(loaded.__args__, alias.__args__)
                     self.assertEqual(loaded.__parameters__, alias.__parameters__)
+                    if isinstance(alias, GenericAlias):
+                        self.assertEqual(loaded.__unpacked__, alias.__unpacked__)
 
     def test_copy(self):
         class X(list):
@@ -419,10 +423,18 @@ class BaseTest(unittest.TestCase):
                 self.assertEqual(copied.__parameters__, alias.__parameters__)
 
     def test_unpack(self):
-        alias = tuple[str, ...]
-        self.assertIs(alias.__unpacked__, False)
-        unpacked = (*alias,)[0]
+        alias1 = tuple[str, ...]
+        self.assertIs(alias1.__unpacked__, False)
+        unpacked = (*alias1,)[0]
         self.assertIs(unpacked.__unpacked__, True)
+
+        # The third positional argument should control unpackedness.
+        alias2 = GenericAlias(tuple, int)
+        self.assertIs(alias2.__unpacked__, False)
+        alias3 = GenericAlias(tuple, int, False)
+        self.assertIs(alias3.__unpacked__, False)
+        alias4 = GenericAlias(tuple, int, True)
+        self.assertIs(alias4.__unpacked__, True)
 
     def test_union(self):
         a = typing.Union[list[int], list[str]]
