@@ -1,0 +1,2 @@
+Improve Argument Clinic error messages for wrongly formatted clinic end
+lines. Patch by Erlend E. Aasland.
