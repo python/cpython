@@ -905,7 +905,8 @@ are always available.  They are listed here in alphabetical order.
    tuples) or a :ref:`types-union` of multiple types, return ``True`` if
    *object* is an instance of any of the types.
    If *classinfo* is not a type or tuple of types and such tuples,
-   a :exc:`TypeError` exception is raised.
+   a :exc:`TypeError` exception is raised. :exc:`TypeError` may not be
+   raised for an invalid type if an earlier check succeeds.
 
    .. versionchanged:: 3.10
       *classinfo* can be a :ref:`types-union`.
@@ -916,7 +917,8 @@ are always available.  They are listed here in alphabetical order.
    Return ``True`` if *class* is a subclass (direct, indirect, or :term:`virtual
    <abstract base class>`) of *classinfo*.  A
    class is considered a subclass of itself. *classinfo* may be a tuple of class
-   objects or a :ref:`types-union`, in which case return ``True`` if *class* is a
+   objects (or recursively, other such tuples)
+   or a :ref:`types-union`, in which case return ``True`` if *class* is a
    subclass of any entry in *classinfo*.  In any other case, a :exc:`TypeError`
    exception is raised.
 

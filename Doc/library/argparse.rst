@@ -22,8 +22,8 @@
 The :mod:`argparse` module makes it easy to write user-friendly command-line
 interfaces. The program defines what arguments it requires, and :mod:`argparse`
 will figure out how to parse those out of :data:`sys.argv`.  The :mod:`argparse`
-module also automatically generates help and usage messages and issues errors
-when users give the program invalid arguments.
+module also automatically generates help and usage messages.  The module
+will also issue errors when users give the program invalid arguments.
 
 
 Core Functionality
@@ -91,8 +91,8 @@ produces either the sum or the max::
    args = parser.parse_args()
    print(args.accumulate(args.integers))
 
-Assuming the Python code above is saved into a file called ``prog.py``, it can
-be run at the command line and provides useful help messages:
+Assuming the above Python code is saved into a file called ``prog.py``, it can
+be run at the command line and it provides useful help messages:
 
 .. code-block:: shell-session
 
@@ -119,7 +119,7 @@ the command-line integers:
    $ python prog.py 1 2 3 4 --sum
    10
 
-If invalid arguments are passed in, it will issue an error:
+If invalid arguments are passed in, an error will be displayed:
 
 .. code-block:: shell-session
 
@@ -159,7 +159,7 @@ used when :meth:`~ArgumentParser.parse_args` is called. For example::
 
 Later, calling :meth:`~ArgumentParser.parse_args` will return an object with
 two attributes, ``integers`` and ``accumulate``.  The ``integers`` attribute
-will be a list of one or more ints, and the ``accumulate`` attribute will be
+will be a list of one or more integers, and the ``accumulate`` attribute will be
 either the :func:`sum` function, if ``--sum`` was specified at the command line,
 or the :func:`max` function if it was not.
 
@@ -555,7 +555,7 @@ disallowed.
 fromfile_prefix_chars
 ^^^^^^^^^^^^^^^^^^^^^
 
-Sometimes, for example when dealing with a particularly long argument lists, it
+Sometimes, when dealing with a particularly long argument lists, it
 may make sense to keep the list of arguments in a file rather than typing it out
 at the command line.  If the ``fromfile_prefix_chars=`` argument is given to the
 :class:`ArgumentParser` constructor, then arguments that start with any of the
@@ -1228,7 +1228,7 @@ Any container can be passed as the *choices* value, so :class:`list` objects,
 Use of :class:`enum.Enum` is not recommended because it is difficult to
 control its appearance in usage, help, and error messages.
 
-Formatted choices overrides the default *metavar* which is normally derived
+Formatted choices override the default *metavar* which is normally derived
 from *dest*.  This is usually what you want because the user never sees the
 *dest* parameter.  If this display isn't desirable (perhaps because there are
 many choices), just specify an explicit metavar_.

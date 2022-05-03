@@ -162,8 +162,10 @@ WIN32 is still required for the locale module.
 /* Define like size_t, omitting the "unsigned" */
 #ifdef MS_WIN64
 typedef __int64 Py_ssize_t;
+#   define PY_SSIZE_T_MAX LLONG_MAX
 #else
 typedef _W64 int Py_ssize_t;
+#   define PY_SSIZE_T_MAX INT_MAX
 #endif
 #define HAVE_PY_SSIZE_T 1
 

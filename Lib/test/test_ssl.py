@@ -12,7 +12,6 @@ from test.support import warnings_helper
 import socket
 import select
 import time
-import datetime
 import enum
 import gc
 import os
@@ -30,10 +29,9 @@ try:
 except ImportError:
     ctypes = None
 
-import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import asyncore
+
+asyncore = warnings_helper.import_deprecated('asyncore')
+
 
 ssl = import_helper.import_module("ssl")
 import _ssl
