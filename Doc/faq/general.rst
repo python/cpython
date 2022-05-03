@@ -230,7 +230,7 @@ You can also access the development version of Python through Git.  See
 How do I submit bug reports and patches for Python?
 ---------------------------------------------------
 
-To report a bug or submit a patch, please use the GitHub issues board at
+To report a bug or submit a patch, use the issue tracker at
 https://github.com/python/cpython/issues.
 
 For more information on how Python is developed, consult `the Python Developer's
