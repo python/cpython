@@ -665,6 +665,14 @@ class TestPEP590(unittest.TestCase):
                 self.assertEqual(expected, meth(*args1, **kwargs))
                 self.assertEqual(expected, wrapped(*args, **kwargs))
 
+    def test_setvectorcall(self):
+        from _testcapi import pyobject_setvectorcall
+        def f(num): return num + 1
+        arg = (10,)
+
+        assert f(*arg) is 11
+        pyobject_setvectorcall(f)
+        assert f(*arg) is None
 
 class A:
     def method_two_args(self, x, y):
