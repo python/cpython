@@ -134,7 +134,7 @@ called with a non-bytes parameter.
 
 .. c:function:: Py_ssize_t PyBytes_GET_SIZE(PyObject *o)
 
-   Macro form of :c:func:`PyBytes_Size` but without error checking.
+   Similar to :c:func:`PyBytes_Size`, but without error checking.
 
 
 .. c:function:: char* PyBytes_AsString(PyObject *o)
@@ -151,7 +151,7 @@ called with a non-bytes parameter.
 
 .. c:function:: char* PyBytes_AS_STRING(PyObject *string)
 
-   Macro form of :c:func:`PyBytes_AsString` but without error checking.
+   Similar to :c:func:`PyBytes_AsString`, but without error checking.
 
 
 .. c:function:: int PyBytes_AsStringAndSize(PyObject *obj, char **buffer, Py_ssize_t *length)
