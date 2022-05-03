@@ -199,6 +199,8 @@ class TestSealable(unittest.TestCase):
                 self.assertIsInstance(foo.Baz, mock.MagicMock)
                 self.assertIsInstance(foo.Baz.baz, mock.NonCallableMagicMock)
                 self.assertIsInstance(foo.Baz.ban, mock.MagicMock)
+
+                # see gh-91803
                 self.assertIsInstance(foo.bar2(), mock.Mock)
 
                 self.assertEqual(foo.bar1(), 'a')
