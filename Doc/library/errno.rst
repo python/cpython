@@ -8,8 +8,8 @@
 
 This module makes available standard ``errno`` system symbols. The value of each
 symbol is the corresponding integer value. The names and descriptions are
-borrowed from :file:`linux/include/errno.h`, which should be
-all-inclusive.
+borrowed from :file:`linux/include/errno.h`, (`an archive <https://kernel.googlesource.com/pub/scm/linux/kernel/git/nico/archive/+/v0.97/include/linux/errno.h>`_ which contains error codes) which should be
+all-inclusive. 
 
 
 .. data:: errorcode
