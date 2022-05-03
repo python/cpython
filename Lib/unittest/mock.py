@@ -1181,6 +1181,7 @@ class CallableMixin(Base):
         if self._mock_wraps is not None:
             return self._mock_wraps(*args, **kwargs)
 
+        # print('self', self)
         return self.return_value
 
 
@@ -2731,6 +2732,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                               _new_parent=parent,
                               **kwargs)
             mock._mock_children[entry] = new
+            new.return_value = Mock()
             _check_signature(original, new, skipfirst=skipfirst)
 
         # so functions created with _set_signature become instance attributes,

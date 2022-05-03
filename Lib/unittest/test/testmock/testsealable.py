@@ -211,8 +211,6 @@ class TestSealable(unittest.TestCase):
                     foo.foo()
                 with self.assertRaises(AttributeError):
                     foo.bar = 1
-                with self.assertRaises(AttributeError):
-                    foo.bar2()
 
                 foo.bar2.return_value = 'bar2'
                 self.assertEqual(foo.bar2(), 'bar2')
