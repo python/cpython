@@ -754,6 +754,12 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
     }
 }
 
+static inline void
+stmt_mark_dirty(pysqlite_Statement *self)
+{
+    self->in_use = 1;
+}
+
 PyObject *
 _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation, PyObject* second_argument)
 {
@@ -844,7 +850,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     }
 
     stmt_reset(self->statement);
-    pysqlite_statement_mark_dirty(self->statement);
+    stmt_mark_dirty(self->statement);
 
     /* We start a transaction implicitly before a DML statement.
        SELECT is the only exception. See #9924. */
@@ -863,7 +869,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             break;
         }
 
-        pysqlite_statement_mark_dirty(self->statement);
+        stmt_mark_dirty(self->statement);
 
         bind_parameters(state, self->statement, parameters);
         if (PyErr_Occurred()) {
