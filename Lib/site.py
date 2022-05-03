@@ -400,6 +400,11 @@ def setquit():
     builtins.quit = _sitebuiltins.Quitter('quit', eof)
     builtins.exit = _sitebuiltins.Quitter('exit', eof)
 
+def setclear():
+    """Define new builtin 'clear'.
+    """
+    builtins.clear = _sitebuiltins.Clearer("clear")
+
 
 def setcopyright():
     """Set 'copyright' and 'credits' in builtins"""
@@ -602,6 +607,7 @@ def main():
     known_paths = addusersitepackages(known_paths)
     known_paths = addsitepackages(known_paths)
     setquit()
+    setclear()
     setcopyright()
     sethelper()
     if not sys.flags.isolated:

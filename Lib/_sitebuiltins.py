@@ -25,6 +25,15 @@ class Quitter(object):
             pass
         raise SystemExit(code)
 
+class Clearer(object):
+    def __init__(self, name):
+        self.name = name
+    def __repr__(self):
+        return 'Use %s() to clear screen' % self.name
+    def __call__(self):
+        import os
+        os.system('cls' if os.name == 'nt' else 'clear')
+
 
 class _Printer(object):
     """interactive prompt objects for printing the license text, a list of
