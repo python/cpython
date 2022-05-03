@@ -5378,7 +5378,7 @@ static PyTypeObject sock_type = {
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    _socket_socket___init__,                    /* tp_init */
+    sock_initobj,                               /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     sock_new,                                   /* tp_new */
     PyObject_Del,                               /* tp_free */
