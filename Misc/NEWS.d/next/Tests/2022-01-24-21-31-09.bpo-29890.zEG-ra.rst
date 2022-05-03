@@ -1,0 +1,2 @@
+Add tests for :class:`ipaddress.IPv4Interface` and :class:`ipaddress.IPv6Interface` construction with tuple arguments.
+Original patch and tests by louisom.

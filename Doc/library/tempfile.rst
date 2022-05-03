@@ -123,6 +123,11 @@ The module defines the following user-callable items:
    .. versionchanged:: 3.8
       Added *errors* parameter.
 
+   .. versionchanged:: 3.11
+      Fully implements the :class:`io.BufferedIOBase` and
+      :class:`io.TextIOBase` abstract base classes (depending on whether binary
+      or text *mode* was specified).
+
 
 .. class:: TemporaryDirectory(suffix=None, prefix=None, dir=None, ignore_cleanup_errors=False)
 

@@ -1173,8 +1173,7 @@ class NormalDist:
         "Make a normal distribution instance from sample data."
         if not isinstance(data, (list, tuple)):
             data = list(data)
-        xbar = fmean(data)
-        return cls(xbar, stdev(data, xbar))
+        return cls(mean(data), stdev(data))
 
     def samples(self, n, *, seed=None):
         "Generate *n* samples for a given mean and standard deviation."
