@@ -767,6 +767,39 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         shutil.copytree(src_dir, dst_dir, symlinks=True)
         self.assertIn('test.txt', os.listdir(dst_dir))
 
+    # Issue 47049: See https://bugs.python.org/issue47049
+    # Create following filesystem structure:
+    #
+    # src_dir
+    # ├── test.txt
+    # └── subdir
+    #     ├── doesnotexist.txt -> IDONOTEXIST
+    #     └── test.txt -> ../test.txt
+    #
+    # Then use copytree with symlinks=False and ignore_dangling_symlinks=True
+    # As a result, in the destination file structure the symlink should become
+    # a file and its contents should be the same as that of the original source
+    # file that the symlink was pointing to. The symlink doesnotexist.txt
+    # should be ignored, no error should occur, and no copy should appear in
+    # the destination file tree.
+    @os_helper.skip_unless_symlink
+    def test_copytree_no_symlinks_ignore_dangling_symlinks(self):
+        src_dir = self.mkdtemp()
+        dst_dir = os.path.join(self.mkdtemp(), 'destination')
+        src_subdir = os.path.join(src_dir, 'subdir')
+        src_file = os.path.join(src_dir, 'test.txt')
+        dst_file = os.path.join(dst_dir, 'subdir', 'test.txt')
+        dst_nonexisting_file = os.path.join(dst_dir, 'subdir', 'doesnotexist.txt')
+        write_file(src_file, 'dummy content')
+        os.mkdir(src_subdir)
+        with os_helper.change_cwd(src_subdir):
+            os.symlink(os.path.join('..', 'test.txt'), 'test.txt')
+            os.symlink('IDONOTEXIST', 'doesnotexist.txt')
+        shutil.copytree(src_dir, dst_dir, symlinks=False, ignore_dangling_symlinks=True)
+        self.assertFalse(os.path.islink(dst_file))
+        self.assertFalse(os.path.exists(dst_nonexisting_file))
+        self.assertEqual(read_file(dst_file), 'dummy content')
+
     @os_helper.skip_unless_symlink
     def test_copytree_symlink_dir(self):
         src_dir = self.mkdtemp()
