@@ -4105,5 +4105,26 @@ class TestKeywordArgs(unittest.TestCase):
         self.assertFalse(fields(B)[1].kw_only)
 
 
+class TestNotUsedTwice(unittest.TestCase):
+    def test_called_twice_error(self):
+        with self.assertRaisesRegex(TypeError, 'is already a dataclass'):
+            @dataclass
+            @dataclass
+            class C:
+                pass
+
+    def test_with_intermediate_non_dataclass(self):
+        @dataclass
+        class A:
+            pass
+
+        class B(A):
+            pass
+
+        @dataclass
+        class C(B):
+            pass
+
+
 if __name__ == '__main__':
     unittest.main()
