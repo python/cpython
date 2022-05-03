@@ -33,7 +33,7 @@ PyDoc_STRVAR(_msi_FCICreate__doc__,
 "    and the name of the file inside the CAB file");
 
 #define _MSI_FCICREATE_METHODDEF    \
-    {"FCICreate", (PyCFunction)(void(*)(void))_msi_FCICreate, METH_FASTCALL, _msi_FCICreate__doc__},
+    {"FCICreate", _PyCFunction_CAST(_msi_FCICreate), METH_FASTCALL, _msi_FCICreate__doc__},
 
 static PyObject *
 _msi_FCICreate_impl(PyObject *module, const char *cabname, PyObject *files);
@@ -185,7 +185,7 @@ PyDoc_STRVAR(_msi_Record_SetString__doc__,
 "Set field to a string value.");
 
 #define _MSI_RECORD_SETSTRING_METHODDEF    \
-    {"SetString", (PyCFunction)(void(*)(void))_msi_Record_SetString, METH_FASTCALL, _msi_Record_SetString__doc__},
+    {"SetString", _PyCFunction_CAST(_msi_Record_SetString), METH_FASTCALL, _msi_Record_SetString__doc__},
 
 static PyObject *
 _msi_Record_SetString_impl(msiobj *self, int field, const Py_UNICODE *value);
@@ -234,7 +234,7 @@ PyDoc_STRVAR(_msi_Record_SetStream__doc__,
 "Set field to the contents of the file named value.");
 
 #define _MSI_RECORD_SETSTREAM_METHODDEF    \
-    {"SetStream", (PyCFunction)(void(*)(void))_msi_Record_SetStream, METH_FASTCALL, _msi_Record_SetStream__doc__},
+    {"SetStream", _PyCFunction_CAST(_msi_Record_SetStream), METH_FASTCALL, _msi_Record_SetStream__doc__},
 
 static PyObject *
 _msi_Record_SetStream_impl(msiobj *self, int field, const Py_UNICODE *value);
@@ -283,7 +283,7 @@ PyDoc_STRVAR(_msi_Record_SetInteger__doc__,
 "Set field to an integer value.");
 
 #define _MSI_RECORD_SETINTEGER_METHODDEF    \
-    {"SetInteger", (PyCFunction)(void(*)(void))_msi_Record_SetInteger, METH_FASTCALL, _msi_Record_SetInteger__doc__},
+    {"SetInteger", _PyCFunction_CAST(_msi_Record_SetInteger), METH_FASTCALL, _msi_Record_SetInteger__doc__},
 
 static PyObject *
 _msi_Record_SetInteger_impl(msiobj *self, int field, int value);
@@ -373,7 +373,7 @@ PyDoc_STRVAR(_msi_SummaryInformation_SetProperty__doc__,
 "    the new value of the property (integer or string)");
 
 #define _MSI_SUMMARYINFORMATION_SETPROPERTY_METHODDEF    \
-    {"SetProperty", (PyCFunction)(void(*)(void))_msi_SummaryInformation_SetProperty, METH_FASTCALL, _msi_SummaryInformation_SetProperty__doc__},
+    {"SetProperty", _PyCFunction_CAST(_msi_SummaryInformation_SetProperty), METH_FASTCALL, _msi_SummaryInformation_SetProperty__doc__},
 
 static PyObject *
 _msi_SummaryInformation_SetProperty_impl(msiobj *self, int field,
@@ -492,7 +492,7 @@ PyDoc_STRVAR(_msi_View_Modify__doc__,
 "    a record describing the new data");
 
 #define _MSI_VIEW_MODIFY_METHODDEF    \
-    {"Modify", (PyCFunction)(void(*)(void))_msi_View_Modify, METH_FASTCALL, _msi_View_Modify__doc__},
+    {"Modify", _PyCFunction_CAST(_msi_View_Modify), METH_FASTCALL, _msi_View_Modify__doc__},
 
 static PyObject *
 _msi_View_Modify_impl(msiobj *self, int kind, PyObject *data);
@@ -641,7 +641,7 @@ PyDoc_STRVAR(_msi_OpenDatabase__doc__,
 "    the persistence mode");
 
 #define _MSI_OPENDATABASE_METHODDEF    \
-    {"OpenDatabase", (PyCFunction)(void(*)(void))_msi_OpenDatabase, METH_FASTCALL, _msi_OpenDatabase__doc__},
+    {"OpenDatabase", _PyCFunction_CAST(_msi_OpenDatabase), METH_FASTCALL, _msi_OpenDatabase__doc__},
 
 static PyObject *
 _msi_OpenDatabase_impl(PyObject *module, const Py_UNICODE *path, int persist);
@@ -713,4 +713,4 @@ _msi_CreateRecord(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=49debf733ee5cab2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d7eb07e6bfcdc13f input=a9049054013a1b77]*/
