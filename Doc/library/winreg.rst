@@ -278,6 +278,41 @@ This module offers the following functions:
       isn't.
 
 
+.. function:: GetValue(key, sub_key, value_name, flags=RRF_RT_ANY)
+
+   Retrieves the type and data for a specified value name associated with
+   an open registry key.
+
+   Behaves mostly like :meth:`QueryValueEx()`,
+   but you needn't :meth:`OpenKey()` and :meth:`CloseKey()`
+   if the key is any one of the predefined :ref:`HKEY_* constants <hkey-constants>`.
+
+   *key* is an already open key, or one of the predefined
+   :ref:`HKEY_* constants <hkey-constants>`.
+
+   *sub_key* is a string that holds the name of the subkey with which the value is
+   associated.  If this parameter is ``None`` or empty, the value will be read from *key*.
+
+   *value_name* is a string indicating the value to query.
+
+   *flags* is an integer that restricts the allowed data type of the value
+   to be queried. It must include the bitwise OR of one or more of the
+   ``RRF_RT_*`` data types. It may also include ``RRF_NOEXPAND`` or one of
+   the ``RRF_SUBKEY_*`` constants. The default is ``RRF_RT_ANY``. For more
+   information, see :ref:`RRF_* constants <rrf-constants>`.
+
+   The result is a tuple of 2 items, similar to :meth:`QueryValueEx`
+
+   .. note::
+
+      This function automatically expands environment variables in ``REG_EXPAND_SZ`` strings
+      and returns the type as ``REG_SZ``. You can disable it with :const:`RRF_NOEXPAND`.
+
+   .. audit-event:: winreg.GetValue key,sub_key,value_name,flags winreg.GetValue
+
+   .. versionadded:: 3.11
+
+
 .. function:: LoadKey(key, sub_key, file_name)
 
    Creates a subkey under the specified key and stores registration information
@@ -735,6 +770,57 @@ For more information, see `Registry Value Types
 .. data:: REG_SZ
 
    A null-terminated string.
+
+
+.. _rrf-constants:
+
+RRF_* Constants
+++++++++++++++++
+
+Used by :func:`GetValue`.
+
+For more information, see `RegGetValueW function
+<https://docs.microsoft.com/windows/win32/api/winreg/nf-winreg-reggetvaluew>`__.
+
+.. versionadded:: 3.11
+
+.. data:: RRF_RT_ANY
+
+   No type restriction.
+
+.. data:: RRF_RT_DWORD
+
+   Restrict type to 32-bit RRF_RT_REG_BINARY | RRF_RT_REG_DWORD.
+
+.. data:: RRF_RT_QWORD
+
+   Restrict type to 64-bit RRF_RT_REG_BINARY | RRF_RT_REG_DWORD.
+
+.. data:: RRF_RT_REG_BINARY
+
+.. data:: RRF_RT_REG_DWORD
+
+.. data:: RRF_RT_REG_EXPAND_SZ
+
+.. data:: RRF_RT_REG_MULTI_SZ
+
+.. data:: RRF_RT_REG_NONE
+
+.. data:: RRF_RT_REG_QWORD
+
+.. data:: RRF_RT_REG_SZ
+
+.. data:: RRF_NOEXPAND
+
+   Do not automatically expand environment strings if the value is of type REG_EXPAND_SZ.
+
+.. data:: RRF_SUBKEY_WOW6464KEY
+
+   You cannot specify RRF_SUBKEY_WOW6464KEY in combination with RRF_SUBKEY_WOW6432KEY.
+
+   Only effective starting with Windows 10.
+
+.. data:: RRF_SUBKEY_WOW6432KEY
 
 
 .. _handle-object:

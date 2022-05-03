@@ -52,6 +52,7 @@ PyDoc_STRVAR(module_doc,
 "ExpandEnvironmentStrings() - Expand the env strings in a REG_EXPAND_SZ\n"
 "                             string.\n"
 "FlushKey() - Writes all the attributes of the specified key to the registry.\n"
+"GetValue() - Retrieves the type and data for the specified registry value.\n"
 "LoadKey() - Creates a subkey under HKEY_USER or HKEY_LOCAL_MACHINE and\n"
 "            stores registration information from a specified file into that\n"
 "            subkey.\n"
@@ -1319,6 +1320,80 @@ winreg_FlushKey_impl(PyObject *module, HKEY key)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+winreg.GetValue
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    sub_key: Py_UNICODE(accept={str, NoneType})
+        A string that names the subkey with which the value is associated.
+    name: Py_UNICODE(accept={str, NoneType})
+        A string indicating the value to query.
+    flags: int(c_default='RRF_RT_ANY') = winreg.RRF_RT_ANY
+        Restrict the data type of value to be queried.
+    /
+
+Retrieves the type and data for the specified registry value.
+
+Behaves mostly like QueryValueEx(), but you needn't OpenKey() and CloseKey()
+if the key is any one of the predefined HKEY_* constants.
+
+The return value is a tuple of the value and the type_id.
+[clinic start generated code]*/
+
+static PyObject *
+winreg_GetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
+                     const Py_UNICODE *name, int flags)
+/*[clinic end generated code: output=e1fb82a79347f49e input=f5d2a23e3d4f4207]*/
+{
+    long rc;
+    BYTE *retBuf, *tmp;
+    DWORD bufSize = 0, retSize;
+    DWORD typ;
+    PyObject *obData;
+    PyObject *result;
+
+    if (PySys_Audit("winreg.GetValue", "nuuI",
+                    (Py_ssize_t)key, sub_key, name, flags) < 0) {
+        return NULL;
+    }
+
+    rc = RegGetValueW(key, sub_key, name, flags, NULL, NULL, &bufSize);
+    if (rc == ERROR_MORE_DATA)
+        bufSize = 256;
+    else if (rc != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc, "RegGetValue");
+    retBuf = (BYTE *)PyMem_Malloc(bufSize);
+    if (retBuf == NULL)
+        return PyErr_NoMemory();
+
+    while (1) {
+        retSize = bufSize;
+        rc = RegGetValueW(key, sub_key, name, flags, &typ, (BYTE *)retBuf, &retSize);
+        if (rc != ERROR_MORE_DATA)
+            break;
+
+        bufSize *= 2;
+        tmp = (char *) PyMem_Realloc(retBuf, bufSize);
+        if (tmp == NULL) {
+            PyMem_Free(retBuf);
+            return PyErr_NoMemory();
+        }
+       retBuf = tmp;
+    }
+
+    if (rc != ERROR_SUCCESS) {
+        PyMem_Free(retBuf);
+        return PyErr_SetFromWindowsErrWithFunction(rc, "RegGetValue");
+    }
+    obData = Reg2Py(retBuf, bufSize, typ);
+    PyMem_Free(retBuf);
+    if (obData == NULL)
+        return NULL;
+    result = Py_BuildValue("Oi", obData, typ);
+    Py_DECREF(obData);
+    return result;
+}
 
 /*[clinic input]
 winreg.LoadKey
@@ -1988,6 +2063,7 @@ static struct PyMethodDef winreg_methods[] = {
     WINREG_ENUMVALUE_METHODDEF
     WINREG_EXPANDENVIRONMENTSTRINGS_METHODDEF
     WINREG_FLUSHKEY_METHODDEF
+    WINREG_GETVALUE_METHODDEF
     WINREG_LOADKEY_METHODDEF
     WINREG_OPENKEY_METHODDEF
     WINREG_OPENKEYEX_METHODDEF
@@ -2112,5 +2188,24 @@ PyMODINIT_FUNC PyInit_winreg(void)
     ADD_INT(REG_RESOURCE_LIST);
     ADD_INT(REG_FULL_RESOURCE_DESCRIPTOR);
     ADD_INT(REG_RESOURCE_REQUIREMENTS_LIST);
+    ADD_INT(RRF_RT_ANY);
+    ADD_INT(RRF_RT_DWORD);
+    ADD_INT(RRF_RT_QWORD);
+    ADD_INT(RRF_RT_REG_BINARY);
+    ADD_INT(RRF_RT_REG_DWORD);
+    ADD_INT(RRF_RT_REG_EXPAND_SZ);
+    ADD_INT(RRF_RT_REG_MULTI_SZ);
+    ADD_INT(RRF_RT_REG_NONE);
+    ADD_INT(RRF_RT_REG_QWORD);
+    ADD_INT(RRF_RT_REG_SZ);
+    ADD_INT(RRF_NOEXPAND);
+#ifndef RRF_SUBKEY_WOW6464KEY
+#define RRF_SUBKEY_WOW6464KEY 0x00010000
+#endif
+#ifndef RRF_SUBKEY_WOW6432KEY
+#define RRF_SUBKEY_WOW6432KEY 0x00020000
+#endif
+    ADD_INT(RRF_SUBKEY_WOW6464KEY);
+    ADD_INT(RRF_SUBKEY_WOW6432KEY);
     return m;
 }
