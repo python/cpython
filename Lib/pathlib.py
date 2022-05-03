@@ -1127,18 +1127,11 @@ class Path(PurePath):
         """
         self.chmod(mode, follow_symlinks=False)
 
-    def chown(self, uid, gid, *, dir_fd=None, follow_symlinks=True):
+    def chown(self, uid, gid, *, follow_symlinks=True):
         """
         Change the owner and group id of path to the numeric uid and gid, like os.chown().
         """
-        os.chown(self, uid, gid, dir_fd=dir_fd, follow_symlinks=follow_symlinks)
-
-    def lchown(self, uid, gid, *, dir_fd=None):
-        """
-        Like chown(), except if the path points to a symlink, the symlink's
-        permissions are changed, rather than its target's.
-        """
-        self.chown(uid, gid, dir_fd=dir_fd, follow_symlinks=False)
+        os.chown(self, uid, gid, follow_symlinks=follow_symlinks)
 
     def unlink(self, missing_ok=False):
         """
@@ -1407,8 +1400,5 @@ class WindowsPath(Path, PureWindowsPath):
     def is_mount(self):
         raise NotImplementedError("Path.is_mount() is unsupported on this system")
 
-    def chown(self, uid, gid, *, dir_fd=None, follow_symlinks=True):
+    def chown(self, uid, gid, *, follow_symlinks=True):
         raise NotImplementedError("Path.chown() is unsupported on this system")
-
-    def lchown(self, uid, gid, *, dir_fd=None):
-        raise NotImplementedError("Path.lchown() is unsupported on this system")

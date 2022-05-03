@@ -1926,26 +1926,6 @@ class _BasePathTest(object):
         new_gid = 503
         with self.assertRaises(NotImplementedError):
             p.chown(uid=new_uid, gid=new_gid)
-    
-    @only_posix
-    @mock.patch('pathlib.Path.chown')
-    def test_lchown(self, chown_mock):
-        new_uid = 503
-        new_gid = 503
-
-        p = self.cls(BASE) / 'fileA'
-
-        p.lchown(new_uid, new_gid)
-        chown_mock.assert_called_with(new_uid, new_gid, dir_fd=None, follow_symlinks=False)
-
-    @only_nt
-    def test_lchown_windows(self):
-        p = self.cls(BASE) / 'fileA'
-
-        new_uid = 503
-        new_gid = 503
-        with self.assertRaises(NotImplementedError):
-            p.lchown(uid=new_uid, gid=new_gid)
 
     # On Windows, os.chmod does not follow symlinks (issue #15411)
     @only_posix

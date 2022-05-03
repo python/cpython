@@ -755,13 +755,13 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.10
       The *follow_symlinks* parameter was added.
 
-.. method:: Path.chown(uid, gid, *, dir_fd=None, follow_symlinks=True)
+.. method:: Path.chown(uid, gid, *, follow_symlinks=True)
 
    Change the file ownership, like :func:`os.chown`.
 
    This method normally follows symlinks. Some Unix flavours support changing
    permissions on the symlink itself; on these platforms you may add the
-   argument ``follow_symlinks=False``, or use :meth:`~Path.lchown`.
+   argument ``follow_symlinks=False``.
 
    ::
 
@@ -945,14 +945,6 @@ call fails (for example because the path doesn't exist).
 
    Like :meth:`Path.chmod` but, if the path points to a symbolic link, the
    symbolic link's mode is changed rather than its target's.
-
-
-.. method:: Path.lchown(uid, gid, *, dir_fd=None)
-
-   Like :meth:`Path.chown`, but if the path points to a symbolic link, the
-   symbolic link's mode is changed rather than its target's.
-
-   .. availability:: Unix.
 
 
 .. method:: Path.lstat()
