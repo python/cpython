@@ -4640,7 +4640,7 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
         goto invalid_string_error;
     }
 
-    // The spec actually requires that time-only ISO-8601 strings start with
+    // The spec actually requires that time-only ISO 8601 strings start with
     // T, but the extended format allows this to be omitted as long as there
     // is no ambiguity with date strings.
     if (*p == 'T') {
@@ -5269,7 +5269,7 @@ static PyObject *
 _sanitize_isoformat_str(PyObject *dtstr)
 {
     Py_ssize_t len = PyUnicode_GetLength(dtstr);
-    if (len < 7) {  // All valid ISO8601 strings are at least 7 characters long
+    if (len < 7) {  // All valid ISO 8601 strings are at least 7 characters long
         return NULL;
     }
 

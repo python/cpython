@@ -527,7 +527,7 @@ Other constructors, all class methods:
 .. classmethod:: date.fromisoformat(date_string)
 
    Return a :class:`date` corresponding to a *date_string* given in any valid
-   ISO-8601 format:
+   ISO 8601 format:
 
       >>> from datetime import date
       >>> date.fromisoformat('2019-12-04')
@@ -995,7 +995,7 @@ Other constructors, all class methods:
 .. classmethod:: datetime.fromisoformat(date_string)
 
    Return a :class:`.datetime` corresponding to a *date_string* in any valid
-   ISO-8601 format, with the following exceptions:
+   ISO 8601 format, with the following exceptions:
 
    1. Time zone offsets may have fractional seconds.
    2. The `T` separator may be replaced by any single unicode character.
@@ -1768,7 +1768,7 @@ Other constructor:
 .. classmethod:: time.fromisoformat(time_string)
 
    Return a :class:`.time` corresponding to a *time_string* in any valid
-   ISO-8601 format, with the following exceptions:
+   ISO 8601 format, with the following exceptions:
 
    1. Time zone offsets may have fractional seconds.
    2. The leading `T`, normally required in cases where there may be ambiguity between
