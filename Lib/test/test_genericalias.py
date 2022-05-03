@@ -399,6 +399,7 @@ class BaseTest(unittest.TestCase):
                     if isinstance(alias, GenericAlias):
                         self.assertEqual(loaded.__unpacked__, alias.__unpacked__)
 
+
     def test_copy(self):
         class X(list):
             def __copy__(self):
@@ -428,7 +429,7 @@ class BaseTest(unittest.TestCase):
         unpacked = (*alias1,)[0]
         self.assertIs(unpacked.__unpacked__, True)
 
-        # The third positional argument should control unpackedness.
+        # The (optional) third positional argument should control unpackedness.
         alias2 = GenericAlias(tuple, int)
         self.assertIs(alias2.__unpacked__, False)
         alias3 = GenericAlias(tuple, int, False)
