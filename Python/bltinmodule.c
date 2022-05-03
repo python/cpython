@@ -994,7 +994,7 @@ when source is a code object requiring exactly that many cellvars.
 static PyObject *
 builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
                   PyObject *locals, PyObject *closure)
-/*[clinic end generated code: output=7579eb4e7646743d input=9fb91ea3cb24f475]*/
+/*[clinic end generated code: output=7579eb4e7646743d input=f13a7e2b503d1d9a]*/
 {
     PyObject *v;
 

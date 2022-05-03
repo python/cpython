@@ -419,7 +419,7 @@ PyDoc_STRVAR(builtin_exec__doc__,
 "defaulting to the current globals and locals.\n"
 "If only globals is given, locals defaults to it.\n"
 "The closure must be a tuple of cellvars, and can only be used\n"
-"when source is a code object.");
+"when source is a code object requiring exactly that many cellvars.");
 
 #define BUILTIN_EXEC_METHODDEF    \
     {"exec", (PyCFunction)(void(*)(void))builtin_exec, METH_FASTCALL|METH_KEYWORDS, builtin_exec__doc__},
@@ -1045,4 +1045,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=02fca5efe8a1b52a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=82a03162d11a826b input=a9049054013a1b77]*/
