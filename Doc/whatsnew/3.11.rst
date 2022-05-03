@@ -172,6 +172,8 @@ Irit Katriel in :issue:`45607`.)
 
 .. _new-feat-related-type-hints-311:
 
+
+
 New Features Related to Type Hints
 ==================================
 
@@ -1467,6 +1469,11 @@ New Features
   :c:func:`PyErr_GetExcInfo()` which work with the legacy 3-tuple
   representation of exceptions.
   (Contributed by Irit Katriel in :issue:`46343`.)
+
+
+* Add new function :c:func:`PyFunction_SetVectorcall` to the C API
+  which sets the vectorcall field of a given PyFunctionObject
+  (Contributed by Andrew Frost in :issue:`91049`.)
 
 
 Porting to Python 3.11
