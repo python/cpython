@@ -11,7 +11,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock_acquire__doc__,
 "Acquire the semaphore/lock.");
 
 #define _MULTIPROCESSING_SEMLOCK_ACQUIRE_METHODDEF    \
-    {"acquire", (PyCFunction)(void(*)(void))_multiprocessing_SemLock_acquire, METH_FASTCALL|METH_KEYWORDS, _multiprocessing_SemLock_acquire__doc__},
+    {"acquire", _PyCFunction_CAST(_multiprocessing_SemLock_acquire), METH_FASTCALL|METH_KEYWORDS, _multiprocessing_SemLock_acquire__doc__},
 
 static PyObject *
 _multiprocessing_SemLock_acquire_impl(SemLockObject *self, int blocking,
@@ -85,7 +85,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock_acquire__doc__,
 "Acquire the semaphore/lock.");
 
 #define _MULTIPROCESSING_SEMLOCK_ACQUIRE_METHODDEF    \
-    {"acquire", (PyCFunction)(void(*)(void))_multiprocessing_SemLock_acquire, METH_FASTCALL|METH_KEYWORDS, _multiprocessing_SemLock_acquire__doc__},
+    {"acquire", _PyCFunction_CAST(_multiprocessing_SemLock_acquire), METH_FASTCALL|METH_KEYWORDS, _multiprocessing_SemLock_acquire__doc__},
 
 static PyObject *
 _multiprocessing_SemLock_acquire_impl(SemLockObject *self, int blocking,
@@ -220,7 +220,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock__rebuild__doc__,
 "\n");
 
 #define _MULTIPROCESSING_SEMLOCK__REBUILD_METHODDEF    \
-    {"_rebuild", (PyCFunction)(void(*)(void))_multiprocessing_SemLock__rebuild, METH_FASTCALL|METH_CLASS, _multiprocessing_SemLock__rebuild__doc__},
+    {"_rebuild", _PyCFunction_CAST(_multiprocessing_SemLock__rebuild), METH_FASTCALL|METH_CLASS, _multiprocessing_SemLock__rebuild__doc__},
 
 static PyObject *
 _multiprocessing_SemLock__rebuild_impl(PyTypeObject *type, SEM_HANDLE handle,
@@ -389,7 +389,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock___exit____doc__,
 "Exit the semaphore/lock.");
 
 #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF    \
-    {"__exit__", (PyCFunction)(void(*)(void))_multiprocessing_SemLock___exit__, METH_FASTCALL, _multiprocessing_SemLock___exit____doc__},
+    {"__exit__", _PyCFunction_CAST(_multiprocessing_SemLock___exit__), METH_FASTCALL, _multiprocessing_SemLock___exit____doc__},
 
 static PyObject *
 _multiprocessing_SemLock___exit___impl(SemLockObject *self,
@@ -467,4 +467,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=fde05a081b5bdba4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=64ba32544811c9e6 input=a9049054013a1b77]*/

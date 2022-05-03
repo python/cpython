@@ -5055,6 +5055,15 @@ All parameterized generics implement special read-only attributes.
       have correct ``__parameters__`` after substitution because
       :class:`typing.ParamSpec` is intended primarily for static type checking.
 
+
+.. attribute:: genericalias.__unpacked__
+
+   A boolean that is true if the alias has been unpacked using the
+   ``*`` operator (see :data:`~typing.TypeVarTuple`).
+
+   .. versionadded:: 3.11
+
+
 .. seealso::
 
    :pep:`484` - Type Hints
