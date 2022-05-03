@@ -807,7 +807,7 @@ class BuiltinTest(unittest.TestCase):
             closure=my_closure)
         self.assertEquals(result, 2520)
 
-        self.assertRaises(ValueError,
+        self.assertRaises(TypeError,
             exec,
             two_freevars.__code__,
             two_freevars.__globals__,
