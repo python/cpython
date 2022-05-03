@@ -776,26 +776,27 @@ class TestCopyTree(BaseTest, unittest.TestCase):
     #     ├── doesnotexist.txt -> IDONOTEXIST
     #     └── test.txt -> ../test.txt
     #
-    # Then use copytree with symlinks=False and ignore_dangling_symlinks=True
-    # As a result, in the destination file structure the symlink should become
-    # a file and its contents should be the same as that of the original source
-    # file that the symlink was pointing to. The symlink doesnotexist.txt
-    # should be ignored, no error should occur, and no copy should appear in
-    # the destination file tree.
+    # Then use copytree with symlinks=False and ignore_dangling_symlinks=True.
+    # It is important to copy src_dir/subdir and not the entire src_dir to
+    # reproduce the wrong behavior. As a result, in the destination file
+    # structure the symlink should become a file and its contents should be
+    # the same as that of the original source file that the symlink was
+    # pointing to. The symlink doesnotexist.txt should be ignored, no error
+    # should occur, and no copy should appear in the destination file tree.
     @os_helper.skip_unless_symlink
     def test_copytree_no_symlinks_ignore_dangling_symlinks(self):
         src_dir = self.mkdtemp()
         dst_dir = os.path.join(self.mkdtemp(), 'destination')
         src_subdir = os.path.join(src_dir, 'subdir')
         src_file = os.path.join(src_dir, 'test.txt')
-        dst_file = os.path.join(dst_dir, 'subdir', 'test.txt')
-        dst_nonexisting_file = os.path.join(dst_dir, 'subdir', 'doesnotexist.txt')
+        dst_file = os.path.join(dst_dir, 'test.txt')
+        dst_nonexisting_file = os.path.join(dst_dir, 'doesnotexist.txt')
         write_file(src_file, 'dummy content')
         os.mkdir(src_subdir)
         with os_helper.change_cwd(src_subdir):
             os.symlink(os.path.join('..', 'test.txt'), 'test.txt')
             os.symlink('IDONOTEXIST', 'doesnotexist.txt')
-        shutil.copytree(src_dir, dst_dir, symlinks=False, ignore_dangling_symlinks=True)
+        shutil.copytree(src_subdir, dst_dir, symlinks=False, ignore_dangling_symlinks=True)
         self.assertFalse(os.path.islink(dst_file))
         self.assertFalse(os.path.exists(dst_nonexisting_file))
         self.assertEqual(read_file(dst_file), 'dummy content')
