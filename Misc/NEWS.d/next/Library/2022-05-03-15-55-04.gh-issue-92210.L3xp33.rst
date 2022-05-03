@@ -1,1 +1,0 @@
-Port of Cinder's socket.__init__ which uses argument clinic cpython.
