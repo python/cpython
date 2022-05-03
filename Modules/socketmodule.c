@@ -5164,7 +5164,7 @@ _socket_socket___init___impl(PySocketSockObject *self, int family, int type,
             }
             memcpy(&info, PyBytes_AS_STRING(fdobj), sizeof(info));
 
-            if (PySys_Audit("socket.__new__", "Oiii", s,
+            if (PySys_Audit("socket.__new__", "Oiii", self,
                             info.iAddressFamily, info.iSocketType,
                             info.iProtocol) < 0) {
                 return -1;
