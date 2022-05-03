@@ -669,11 +669,11 @@ class TestPEP590(unittest.TestCase):
         from _testcapi import pyobject_setvectorcall
         def f(num): return num + 1
         num = 10
-        assert f(num) is 11
+        self.assertEqual(11, f(num))
         pyobject_setvectorcall(f)
         # make sure specializer is triggered by running > 50 times
         for _ in range(51):
-            assert f(num) is None
+            self.assertIsNone(f(num))
 
 class A:
     def method_two_args(self, x, y):
