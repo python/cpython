@@ -48,73 +48,6 @@ union_hash(PyObject *self)
     return hash;
 }
 
-static int
-is_generic_alias_in_args(PyObject *args)
-{
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
-        PyObject *arg = PyTuple_GET_ITEM(args, iarg);
-        if (_PyGenericAlias_Check(arg)) {
-            return 0;
-        }
-    }
-    return 1;
-}
-
-static PyObject *
-union_instancecheck(PyObject *self, PyObject *instance)
-{
-    unionobject *alias = (unionobject *) self;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(alias->args);
-    if (!is_generic_alias_in_args(alias->args)) {
-        PyErr_SetString(PyExc_TypeError,
-            "isinstance() argument 2 cannot contain a parameterized generic");
-        return NULL;
-    }
-    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
-        PyObject *arg = PyTuple_GET_ITEM(alias->args, iarg);
-        if (PyType_Check(arg)) {
-            int res = PyObject_IsInstance(instance, arg);
-            if (res < 0) {
-                return NULL;
-            }
-            if (res) {
-                Py_RETURN_TRUE;
-            }
-        }
-    }
-    Py_RETURN_FALSE;
-}
-
-static PyObject *
-union_subclasscheck(PyObject *self, PyObject *instance)
-{
-    if (!PyType_Check(instance)) {
-        PyErr_SetString(PyExc_TypeError, "issubclass() arg 1 must be a class");
-        return NULL;
-    }
-    unionobject *alias = (unionobject *)self;
-    if (!is_generic_alias_in_args(alias->args)) {
-        PyErr_SetString(PyExc_TypeError,
-            "issubclass() argument 2 cannot contain a parameterized generic");
-        return NULL;
-    }
-    Py_ssize_t nargs = PyTuple_GET_SIZE(alias->args);
-    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
-        PyObject *arg = PyTuple_GET_ITEM(alias->args, iarg);
-        if (PyType_Check(arg)) {
-            int res = PyObject_IsSubclass(instance, arg);
-            if (res < 0) {
-                return NULL;
-            }
-            if (res) {
-                Py_RETURN_TRUE;
-            }
-        }
-    }
-    Py_RETURN_FALSE;
-}
-
 static PyObject *
 union_richcompare(PyObject *a, PyObject *b, int op)
 {
@@ -342,12 +275,6 @@ static PyMemberDef union_members[] = {
         {0}
 };
 
-static PyMethodDef union_methods[] = {
-        {"__instancecheck__", union_instancecheck, METH_O},
-        {"__subclasscheck__", union_subclasscheck, METH_O},
-        {0}};
-
-
 static PyObject *
 union_getitem(PyObject *self, PyObject *item)
 {
@@ -434,6 +361,13 @@ union_getattro(PyObject *self, PyObject *name)
     return PyObject_GenericGetAttr(self, name);
 }
 
+PyObject *
+_Py_union_args(PyObject *self)
+{
+    assert(_PyUnion_Check(self));
+    return ((unionobject *) self)->args;
+}
+
 PyTypeObject _PyUnion_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "types.UnionType",
@@ -449,7 +383,6 @@ PyTypeObject _PyUnion_Type = {
     .tp_hash = union_hash,
     .tp_getattro = union_getattro,
     .tp_members = union_members,
-    .tp_methods = union_methods,
     .tp_richcompare = union_richcompare,
     .tp_as_mapping = &union_as_mapping,
     .tp_as_number = &union_as_number,

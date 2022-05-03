@@ -184,6 +184,9 @@ PyAPI_FUNC(PyObject*) _PyCode_ConstantKey(PyObject *obj);
 PyAPI_FUNC(PyObject*) PyCode_Optimize(PyObject *code, PyObject* consts,
                                       PyObject *names, PyObject *lnotab);
 
+/* Equivalent to getattr(code, 'co_code') in Python.
+   Returns a strong reference to a bytes object. */
+PyAPI_FUNC(PyObject *) PyCode_GetCode(PyCodeObject *code);
 
 typedef enum _PyCodeLocationInfoKind {
     /* short forms are 0 to 9 */

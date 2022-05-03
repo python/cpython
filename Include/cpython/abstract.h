@@ -51,7 +51,7 @@ PyAPI_FUNC(PyObject *) _PyObject_MakeTpCall(
     PyObject *keywords);
 
 #define PY_VECTORCALL_ARGUMENTS_OFFSET \
-    (_Py_static_cast(size_t, 1) << (8 * sizeof(size_t) - 1))
+    (_Py_STATIC_CAST(size_t, 1) << (8 * sizeof(size_t) - 1))
 
 static inline Py_ssize_t
 PyVectorcall_NARGS(size_t n)
@@ -103,8 +103,8 @@ PyAPI_FUNC(PyObject *) PyObject_VectorcallMethod(
 static inline PyObject *
 PyObject_CallMethodNoArgs(PyObject *self, PyObject *name)
 {
-    return PyObject_VectorcallMethod(name, &self,
-           1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+    size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    return PyObject_VectorcallMethod(name, &self, nargsf, _Py_NULL);
 }
 
 static inline PyObject *
@@ -113,8 +113,8 @@ PyObject_CallMethodOneArg(PyObject *self, PyObject *name, PyObject *arg)
     PyObject *args[2] = {self, arg};
 
     assert(arg != NULL);
-    return PyObject_VectorcallMethod(name, args,
-           2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+    size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    return PyObject_VectorcallMethod(name, args, nargsf, _Py_NULL);
 }
 
 PyAPI_FUNC(PyObject *) _PyObject_CallMethod(PyObject *obj,
@@ -144,7 +144,7 @@ _PyObject_VectorcallMethodId(
 {
     PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
     if (!oname) {
-        return NULL;
+        return _Py_NULL;
     }
     return PyObject_VectorcallMethod(oname, args, nargsf, kwnames);
 }
@@ -152,8 +152,8 @@ _PyObject_VectorcallMethodId(
 static inline PyObject *
 _PyObject_CallMethodIdNoArgs(PyObject *self, _Py_Identifier *name)
 {
-    return _PyObject_VectorcallMethodId(name, &self,
-           1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+    size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    return _PyObject_VectorcallMethodId(name, &self, nargsf, _Py_NULL);
 }
 
 static inline PyObject *
@@ -162,8 +162,8 @@ _PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg
     PyObject *args[2] = {self, arg};
 
     assert(arg != NULL);
-    return _PyObject_VectorcallMethodId(name, args,
-           2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+    size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    return _PyObject_VectorcallMethodId(name, args, nargsf, _Py_NULL);
 }
 
 PyAPI_FUNC(int) _PyObject_HasLen(PyObject *o);
