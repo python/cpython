@@ -211,12 +211,11 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
     return 0;
 }
 
-int
+void
 PyFunction_SetVectorcall(PyFunctionObject *func, vectorcallfunc vectorcall)
 {
     func->func_version = 0;
     func->vectorcall = vectorcall;
-    return 0;
 }
 
 PyObject *

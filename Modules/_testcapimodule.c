@@ -5292,16 +5292,13 @@ override_vectorcall(
 }
 
 static PyObject *
-test_pyobject_setvectorcall(PyObject *self, PyObject *args)
+function_setvectorcall(PyObject *self, PyObject *func)
 {
-    PyFunctionObject *func = NULL;
-    if (!PyArg_ParseTuple(args, "O", &func)) {
+    if (!PyFunction_Check(func)) {
+        PyErr_BadInternalCall();
         return NULL;
     }
-    if(PyFunction_SetVectorcall(func, (vectorcallfunc)override_vectorcall) != 0) {
-        PyErr_SetString(PyExc_TypeError, "Something went wrong setting vectorcall field");
-        return NULL;
-    }
+    PyFunction_SetVectorcall((PyFunctionObject *)func, (vectorcallfunc)override_vectorcall);
     Py_RETURN_NONE;
 }
 
@@ -6206,7 +6203,7 @@ static PyMethodDef TestMethods[] = {
     {"pyobject_fastcall", test_pyobject_fastcall, METH_VARARGS},
     {"pyobject_fastcalldict", test_pyobject_fastcalldict, METH_VARARGS},
     {"pyobject_vectorcall", test_pyobject_vectorcall, METH_VARARGS},
-    {"pyobject_setvectorcall", test_pyobject_setvectorcall, METH_VARARGS},
+    {"function_setvectorcall", function_setvectorcall, METH_O},
     {"pyvectorcall_call", test_pyvectorcall_call, METH_VARARGS},
     {"stack_pointer", stack_pointer, METH_NOARGS},
 #ifdef W_STOPCODE
