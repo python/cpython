@@ -1,3 +1,0 @@
-Use pure Python ``freeze_module`` for all but importlib bootstrap files.
-``--with-freeze-module`` :program:`configure` option is no longer needed for
-cross builds.

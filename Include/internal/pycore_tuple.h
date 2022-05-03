@@ -20,30 +20,45 @@ extern void _PyTuple_Fini(PyInterpreterState *);
 
 /* other API */
 
-#ifndef WITH_FREELISTS
-// without freelists
-// for tuples only store empty tuple singleton
-#  define PyTuple_MAXSAVESIZE 1
-#  define PyTuple_MAXFREELIST 1
-#endif
+// PyTuple_MAXSAVESIZE - largest tuple to save on free list
+// PyTuple_MAXFREELIST - maximum number of tuples of each size to save
 
-/* Speed optimization to avoid frequent malloc/free of small tuples */
-#ifndef PyTuple_MAXSAVESIZE
-   // Largest tuple to save on free list
-#  define PyTuple_MAXSAVESIZE 20
-#endif
-#ifndef PyTuple_MAXFREELIST
-   // Maximum number of tuples of each size to save
-#  define PyTuple_MAXFREELIST 2000
+#if defined(PyTuple_MAXSAVESIZE) && PyTuple_MAXSAVESIZE <= 0
+   // A build indicated that tuple freelists should not be used.
+#  define PyTuple_NFREELISTS 0
+#  undef PyTuple_MAXSAVESIZE
+#  undef PyTuple_MAXFREELIST
+
+#elif !defined(WITH_FREELISTS)
+#  define PyTuple_NFREELISTS 0
+#  undef PyTuple_MAXSAVESIZE
+#  undef PyTuple_MAXFREELIST
+
+#else
+   // We are using a freelist for tuples.
+#  ifndef PyTuple_MAXSAVESIZE
+#    define PyTuple_MAXSAVESIZE 20
+#  endif
+#  define PyTuple_NFREELISTS PyTuple_MAXSAVESIZE
+#  ifndef PyTuple_MAXFREELIST
+#    define PyTuple_MAXFREELIST 2000
+#  endif
 #endif
 
 struct _Py_tuple_state {
-#if PyTuple_MAXSAVESIZE > 0
-    /* Entries 1 up to PyTuple_MAXSAVESIZE are free lists,
-       entry 0 is the empty tuple () of which at most one instance
-       will be allocated. */
-    PyTupleObject *free_list[PyTuple_MAXSAVESIZE];
-    int numfree[PyTuple_MAXSAVESIZE];
+#if PyTuple_NFREELISTS > 0
+    /* There is one freelist for each size from 1 to PyTuple_MAXSAVESIZE.
+       The empty tuple is handled separately.
+
+       Each tuple stored in the array is the head of the linked list
+       (and the next available tuple) for that size.  The actual tuple
+       object is used as the linked list node, with its first item
+       (ob_item[0]) pointing to the next node (i.e. the previous head).
+       Each linked list is initially NULL. */
+    PyTupleObject *free_list[PyTuple_NFREELISTS];
+    int numfree[PyTuple_NFREELISTS];
+#else
+    char _unused;  // Empty structs are not allowed.
 #endif
 };
 

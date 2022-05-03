@@ -8,6 +8,7 @@ import gc
 from functools import wraps
 import asyncio
 
+support.requires_working_socket(module=True)
 
 class tracecontext:
     """Context manager that traces its enter and exit."""
@@ -644,16 +645,57 @@ class TraceTestCase(unittest.TestCase):
                 4
             else:
                 6
+                if False:
+                    8
+                else:
+                    10
+                if func.__name__ == 'Fred':
+                    12
             finally:
-                8
+                14
 
         self.run_and_compare(func,
             [(0, 'call'),
              (1, 'line'),
              (2, 'line'),
              (6, 'line'),
+             (7, 'line'),
+             (10, 'line'),
+             (11, 'line'),
+             (14, 'line'),
+             (14, 'return')])
+
+    def test_try_exception_in_else(self):
+
+        def func():
+            try:
+                try:
+                    3
+                except:
+                    5
+                else:
+                    7
+                    raise Exception
+                finally:
+                    10
+            except:
+                12
+            finally:
+                14
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (7, 'line'),
              (8, 'line'),
-             (8, 'return')])
+             (8, 'exception'),
+             (10, 'line'),
+             (11, 'line'),
+             (12, 'line'),
+             (14, 'line'),
+             (14, 'return')])
 
     def test_nested_loops(self):
 
@@ -1222,16 +1264,25 @@ class TraceTestCase(unittest.TestCase):
                 4
             else:
                 6
+                if False:
+                    8
+                else:
+                    10
+                if func.__name__ == 'Fred':
+                    12
             finally:
-                8
+                14
 
         self.run_and_compare(func,
             [(0, 'call'),
              (1, 'line'),
              (2, 'line'),
              (6, 'line'),
-             (8, 'line'),
-             (8, 'return')])
+             (7, 'line'),
+             (10, 'line'),
+             (11, 'line'),
+             (14, 'line'),
+             (14, 'return')])
 
     def test_try_except_star_named_no_exception(self):
 
@@ -1387,6 +1438,40 @@ class TraceTestCase(unittest.TestCase):
              (18, 'line'),
              (19, 'line'),
              (19, 'return')])
+
+    def test_notrace_lambda(self):
+        #Regression test for issue 46314
+
+        def func():
+            1
+            lambda x: 2
+            3
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'return')])
+
+    def test_class_creation_with_docstrings(self):
+
+        def func():
+            class Class_1:
+                ''' the docstring. 2'''
+                def __init__(self):
+                    ''' Another docstring. 4'''
+                    self.a = 5
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (1, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'return'),
+             (1, 'return')])
 
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
@@ -2345,6 +2430,48 @@ output.append(4)
             yield 3
         next(gen())
         output.append(5)
+
+
+class TestExtendedArgs(unittest.TestCase):
+
+    def setUp(self):
+        self.addCleanup(sys.settrace, sys.gettrace())
+        sys.settrace(None)
+
+    def count_traces(self, func):
+        # warmup
+        for _ in range(20):
+            func()
+
+        counts = {"call": 0, "line": 0, "return": 0}
+        def trace(frame, event, arg):
+            counts[event] += 1
+            return trace
+
+        sys.settrace(trace)
+        func()
+        sys.settrace(None)
+
+        return counts
+
+    def test_trace_unpack_long_sequence(self):
+        ns = {}
+        code = "def f():\n  (" + "y,\n   "*300 + ") = range(300)"
+        exec(code, ns)
+        counts = self.count_traces(ns["f"])
+        self.assertEqual(counts, {'call': 1, 'line': 301, 'return': 1})
+
+    def test_trace_lots_of_globals(self):
+        code = """if 1:
+            def f():
+                return (
+                    {}
+                )
+        """.format("\n+\n".join(f"var{i}\n" for i in range(1000)))
+        ns = {f"var{i}": i for i in range(1000)}
+        exec(code, ns)
+        counts = self.count_traces(ns["f"])
+        self.assertEqual(counts, {'call': 1, 'line': 2000, 'return': 1})
 
 
 if __name__ == "__main__":

@@ -146,12 +146,13 @@ import itertools
 import os
 import re
 import sys
+import warnings
 
 __all__ = ["NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
            "InterpolationMissingOptionError", "InterpolationSyntaxError",
            "ParsingError", "MissingSectionHeaderError",
-           "ConfigParser", "RawConfigParser",
+           "ConfigParser", "SafeConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
            "LegacyInterpolation", "SectionProxy", "ConverterMapping",
            "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH"]
@@ -310,6 +311,26 @@ class ParsingError(Error):
         self.source = source
         self.errors = []
         self.args = (source, )
+
+    @property
+    def filename(self):
+        """Deprecated, use `source'."""
+        warnings.warn(
+            "The 'filename' attribute will be removed in Python 3.12. "
+            "Use 'source' instead.",
+            DeprecationWarning, stacklevel=2
+        )
+        return self.source
+
+    @filename.setter
+    def filename(self, value):
+        """Deprecated, user `source'."""
+        warnings.warn(
+            "The 'filename' attribute will be removed in Python 3.12. "
+            "Use 'source' instead.",
+            DeprecationWarning, stacklevel=2
+        )
+        self.source = value
 
     def append(self, lineno, line):
         self.errors.append((lineno, line))
@@ -504,6 +525,15 @@ class LegacyInterpolation(Interpolation):
 
     _KEYCRE = re.compile(r"%\(([^)]*)\)s|.")
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        warnings.warn(
+            "LegacyInterpolation has been deprecated since Python 3.2 "
+            "and will be removed from the configparser module in Python 3.13. "
+            "Use BasicInterpolation or ExtendedInterpolation instead.",
+            DeprecationWarning, stacklevel=2
+        )
+
     def before_get(self, parser, section, option, value, vars):
         rawval = value
         depth = MAX_INTERPOLATION_DEPTH
@@ -612,6 +642,11 @@ class RawConfigParser(MutableMapping):
             self._interpolation = self._DEFAULT_INTERPOLATION
         if self._interpolation is None:
             self._interpolation = Interpolation()
+        if not isinstance(self._interpolation, Interpolation):
+            raise TypeError(
+                f"interpolation= must be None or an instance of Interpolation;"
+                f" got an object of type {type(self._interpolation)}"
+            )
         if converters is not _UNSET:
             self._converters.update(converters)
         if defaults:
@@ -732,6 +767,15 @@ class RawConfigParser(MutableMapping):
                     raise DuplicateOptionError(section, key, source)
                 elements_added.add((section, key))
                 self.set(section, key, value)
+
+    def readfp(self, fp, filename=None):
+        """Deprecated, use read_file instead."""
+        warnings.warn(
+            "This method will be removed in Python 3.12. "
+            "Use 'parser.read_file()' instead.",
+            DeprecationWarning, stacklevel=2
+        )
+        self.read_file(fp, source=filename)
 
     def get(self, section, option, *, raw=False, vars=None, fallback=_UNSET):
         """Get an option value for a given section.
@@ -1193,6 +1237,19 @@ class ConfigParser(RawConfigParser):
             self.read_dict({self.default_section: defaults})
         finally:
             self._interpolation = hold_interpolation
+
+
+class SafeConfigParser(ConfigParser):
+    """ConfigParser alias for backwards compatibility purposes."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        warnings.warn(
+            "The SafeConfigParser class has been renamed to ConfigParser "
+            "in Python 3.2. This alias will be removed in Python 3.12."
+            " Use ConfigParser directly instead.",
+            DeprecationWarning, stacklevel=2
+        )
 
 
 class SectionProxy(MutableMapping):

@@ -3,7 +3,7 @@ jobs:
   displayName: Test MSI
 
   pool:
-    vmImage: windows-2019
+    vmImage: windows-2022
 
   workspace:
     clean: all
@@ -11,19 +11,19 @@ jobs:
   strategy:
     matrix:
       win32_User:
-        ExeMatch: 'python-[\dabrc.]+-webinstall\.exe'
+        ExeMatch: 'python-[\dabrc.]+\.exe'
         Logs: $(Build.ArtifactStagingDirectory)\logs\win32_User
         InstallAllUsers: 0
       win32_Machine:
-        ExeMatch: 'python-[\dabrc.]+-webinstall\.exe'
+        ExeMatch: 'python-[\dabrc.]+\.exe'
         Logs: $(Build.ArtifactStagingDirectory)\logs\win32_Machine
         InstallAllUsers: 1
       amd64_User:
-        ExeMatch: 'python-[\dabrc.]+-amd64-webinstall\.exe'
+        ExeMatch: 'python-[\dabrc.]+-amd64\.exe'
         Logs: $(Build.ArtifactStagingDirectory)\logs\amd64_User
         InstallAllUsers: 0
       amd64_Machine:
-        ExeMatch: 'python-[\dabrc.]+-amd64-webinstall\.exe'
+        ExeMatch: 'python-[\dabrc.]+-amd64\.exe'
         Logs: $(Build.ArtifactStagingDirectory)\logs\amd64_Machine
         InstallAllUsers: 1
 

@@ -1,0 +1,2 @@
+The ``PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS`` instruction
+now ensures methods are called only on objects of the correct type.
