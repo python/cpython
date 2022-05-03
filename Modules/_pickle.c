@@ -9,7 +9,6 @@
 #endif
 
 #include "Python.h"
-#include "pycore_floatobject.h"   // _PyFloat_Pack8()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -965,7 +964,7 @@ _write_size64(char *out, size_t value)
 {
     size_t i;
 
-    Py_BUILD_ASSERT(sizeof(size_t) <= 8);
+    static_assert(sizeof(size_t) <= 8, "size_t is larger than 64-bit");
 
     for (i = 0; i < sizeof(size_t); i++) {
         out[i] = (unsigned char)((value >> (8 * i)) & 0xff);
@@ -1813,7 +1812,7 @@ get_dotted_path(PyObject *obj, PyObject *name)
 {
     PyObject *dotted_path;
     Py_ssize_t i, n;
-
+    _Py_DECLARE_STR(dot, ".");
     dotted_path = PyUnicode_Split(name, &_Py_STR(dot), -1);
     if (dotted_path == NULL)
         return NULL;
@@ -2244,7 +2243,7 @@ save_float(PicklerObject *self, PyObject *obj)
     if (self->bin) {
         char pdata[9];
         pdata[0] = BINFLOAT;
-        if (_PyFloat_Pack8(x, (unsigned char *)&pdata[1], 0) < 0)
+        if (PyFloat_Pack8(x, &pdata[1], 0) < 0)
             return -1;
         if (_Pickler_Write(self, pdata, 9) < 0)
             return -1;
@@ -5395,7 +5394,7 @@ load_binfloat(UnpicklerObject *self)
     if (_Unpickler_Read(self, &s, 8) < 0)
         return -1;
 
-    x = _PyFloat_Unpack8((unsigned char *)s, 0);
+    x = PyFloat_Unpack8(s, 0);
     if (x == -1.0 && PyErr_Occurred())
         return -1;
 

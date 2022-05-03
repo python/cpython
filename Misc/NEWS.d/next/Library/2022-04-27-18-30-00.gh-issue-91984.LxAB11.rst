@@ -1,0 +1,1 @@
+Modified test strings in test_argparse.py to not contain trailing spaces before end of line.

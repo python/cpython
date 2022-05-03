@@ -343,6 +343,11 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, 'Tests passed\n' * INIT_LOOPS)
 
+    def test_ucnhash_capi_reset(self):
+        # bpo-47182: unicodeobject.c:ucnhash_capi was not reset on shutdown.
+        code = "print('\\N{digit nine}')"
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
+        self.assertEqual(out, '9\n' * INIT_LOOPS)
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
@@ -1201,20 +1206,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             if MS_WINDOWS:
                 # Copy pythonXY.dll (or pythonXY_d.dll)
-                ver = sys.version_info
-                dll = f'python{ver.major}{ver.minor}'
-                dll3 = f'python{ver.major}'
-                if debug_build(sys.executable):
-                    dll += '_d'
-                    dll3 += '_d'
-                dll += '.dll'
-                dll3 += '.dll'
-                dll = os.path.join(os.path.dirname(self.test_exe), dll)
-                dll3 = os.path.join(os.path.dirname(self.test_exe), dll3)
-                dll_copy = os.path.join(tmpdir, os.path.basename(dll))
-                dll3_copy = os.path.join(tmpdir, os.path.basename(dll3))
-                shutil.copyfile(dll, dll_copy)
-                shutil.copyfile(dll3, dll3_copy)
+                import fnmatch
+                exedir = os.path.dirname(self.test_exe)
+                for f in os.listdir(exedir):
+                    if fnmatch.fnmatch(f, '*.dll'):
+                        shutil.copyfile(os.path.join(exedir, f), os.path.join(tmpdir, f))
 
             # Copy Python program
             exec_copy = os.path.join(tmpdir, os.path.basename(self.test_exe))
@@ -1645,24 +1641,29 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
                          '-X showrefcount requires a Python debug build')
     def test_no_memleak(self):
         # bpo-1635741: Python must release all memory at exit
-        cmd = [sys.executable, "-I", "-X", "showrefcount", "-c", "pass"]
-        proc = subprocess.run(cmd,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT,
-                              text=True)
-        self.assertEqual(proc.returncode, 0)
-        out = proc.stdout.rstrip()
-        match = re.match(r'^\[(-?\d+) refs, (-?\d+) blocks\]', out)
-        if not match:
-            self.fail(f"unexpected output: {out!a}")
-        refs = int(match.group(1))
-        blocks = int(match.group(2))
-        self.assertEqual(refs, 0, out)
-        if not MS_WINDOWS:
-            self.assertEqual(blocks, 0, out)
-        else:
-            # bpo-46857: on Windows, Python still leaks 1 memory block at exit
-            self.assertIn(blocks, (0, 1), out)
+        tests = (
+            ('off', 'pass'),
+            ('on', 'pass'),
+            ('off', 'import __hello__'),
+            ('on', 'import __hello__'),
+        )
+        for flag, stmt in tests:
+            xopt = f"frozen_modules={flag}"
+            cmd = [sys.executable, "-I", "-X", "showrefcount", "-X", xopt, "-c", stmt]
+            proc = subprocess.run(cmd,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT,
+                                  text=True)
+            self.assertEqual(proc.returncode, 0)
+            out = proc.stdout.rstrip()
+            match = re.match(r'^\[(-?\d+) refs, (-?\d+) blocks\]', out)
+            if not match:
+                self.fail(f"unexpected output: {out!a}")
+            refs = int(match.group(1))
+            blocks = int(match.group(2))
+            with self.subTest(frozen_modules=flag, stmt=stmt):
+                self.assertEqual(refs, 0, out)
+                self.assertEqual(blocks, 0, out)
 
 
 class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):

@@ -330,7 +330,7 @@ Creating Futures and Tasks
 
    .. versionadded:: 3.5.2
 
-.. method:: loop.create_task(coro, *, name=None)
+.. method:: loop.create_task(coro, *, name=None, context=None)
 
    Schedule the execution of a :ref:`coroutine`.
    Return a :class:`Task` object.
@@ -342,8 +342,15 @@ Creating Futures and Tasks
    If the *name* argument is provided and not ``None``, it is set as
    the name of the task using :meth:`Task.set_name`.
 
+   An optional keyword-only *context* argument allows specifying a
+   custom :class:`contextvars.Context` for the *coro* to run in.
+   The current context copy is created when no *context* is provided.
+
    .. versionchanged:: 3.8
       Added the *name* parameter.
+
+   .. versionchanged:: 3.11
+      Added the *context* parameter.
 
 .. method:: loop.set_task_factory(factory)
 
@@ -352,7 +359,7 @@ Creating Futures and Tasks
 
    If *factory* is ``None`` the default task factory will be set.
    Otherwise, *factory* must be a *callable* with the signature matching
-   ``(loop, coro)``, where *loop* is a reference to the active
+   ``(loop, coro, context=None)``, where *loop* is a reference to the active
    event loop, and *coro* is a coroutine object.  The callable
    must return a :class:`asyncio.Future`-compatible object.
 
@@ -922,6 +929,29 @@ convenient.
 
    .. versionadded:: 3.7
 
+.. coroutinemethod:: loop.sock_recvfrom(sock, bufsize)
+
+   Receive a datagram of up to *bufsize* from *sock*.  Asynchronous version of
+   :meth:`socket.recvfrom() <socket.socket.recvfrom>`.
+
+   Return a tuple of (received data, remote address).
+
+   *sock* must be a non-blocking socket.
+
+   .. versionadded:: 3.11
+
+.. coroutinemethod:: loop.sock_recvfrom_into(sock, buf, nbytes=0)
+
+   Receive a datagram of up to *nbytes* from *sock* into *buf*.
+   Asynchronous version of
+   :meth:`socket.recvfrom_into() <socket.socket.recvfrom_into>`.
+
+   Return a tuple of (number of bytes received, remote address).
+
+   *sock* must be a non-blocking socket.
+
+   .. versionadded:: 3.11
+
 .. coroutinemethod:: loop.sock_sendall(sock, data)
 
    Send *data* to the *sock* socket. Asynchronous version of
@@ -939,6 +969,18 @@ convenient.
       Even though the method was always documented as a coroutine
       method, before Python 3.7 it returned a :class:`Future`.
       Since Python 3.7, this is an ``async def`` method.
+
+.. coroutinemethod:: loop.sock_sendto(sock, data, address)
+
+   Send a datagram from *sock* to *address*.
+   Asynchronous version of
+   :meth:`socket.sendto() <socket.socket.sendto>`.
+
+   Return the number of bytes sent.
+
+   *sock* must be a non-blocking socket.
+
+   .. versionadded:: 3.11
 
 .. coroutinemethod:: loop.sock_connect(sock, address)
 

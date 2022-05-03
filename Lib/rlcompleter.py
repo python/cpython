@@ -117,14 +117,14 @@ class Completer:
         matches = []
         seen = {"__builtins__"}
         n = len(text)
-        for word in keyword.kwlist:
+        for word in keyword.kwlist + keyword.softkwlist:
             if word[:n] == text:
                 seen.add(word)
                 if word in {'finally', 'try'}:
                     word = word + ':'
                 elif word not in {'False', 'None', 'True',
                                   'break', 'continue', 'pass',
-                                  'else'}:
+                                  'else', '_'}:
                     word = word + ' '
                 matches.append(word)
         for nspace in [self.namespace, builtins.__dict__]:

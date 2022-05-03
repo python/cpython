@@ -3759,7 +3759,7 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
 {
     Py_hash_t hash;
     if (!PyUnicode_CheckExact(name) ||
-        (hash = ((PyASCIIObject *) name)->hash) == -1)
+        (hash = _PyASCIIObject_CAST(name)->hash) == -1)
     {
         hash = PyObject_Hash(name);
         if (hash == -1) {
@@ -3853,7 +3853,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         struct type_cache_entry *entry = &cache->hashtable[h];
         entry->version = type->tp_version_tag;
         entry->value = res;  /* borrowed */
-        assert(((PyASCIIObject *)(name))->hash != -1);
+        assert(_PyASCIIObject_CAST(name)->hash != -1);
 #if MCACHE_STATS
         if (entry->name != Py_None && entry->name != name) {
             cache->collisions++;
@@ -4960,141 +4960,172 @@ _PyType_GetSlotNames(PyTypeObject *cls)
 }
 
 static PyObject *
-_PyObject_GetState(PyObject *obj, int required)
+object_getstate_default(PyObject *obj, int required)
 {
     PyObject *state;
-    PyObject *getstate;
+    PyObject *slotnames;
 
-    if (_PyObject_LookupAttr(obj, &_Py_ID(__getstate__), &getstate) < 0) {
+    if (required && Py_TYPE(obj)->tp_itemsize) {
+        PyErr_Format(PyExc_TypeError,
+                     "cannot pickle %.200s objects",
+                     Py_TYPE(obj)->tp_name);
         return NULL;
     }
-    if (getstate == NULL) {
-        PyObject *slotnames;
 
-        if (required && Py_TYPE(obj)->tp_itemsize) {
+    if (_PyObject_IsInstanceDictEmpty(obj)) {
+        state = Py_None;
+        Py_INCREF(state);
+    }
+    else {
+        state = PyObject_GenericGetDict(obj, NULL);
+        if (state == NULL) {
+            return NULL;
+        }
+    }
+
+    slotnames = _PyType_GetSlotNames(Py_TYPE(obj));
+    if (slotnames == NULL) {
+        Py_DECREF(state);
+        return NULL;
+    }
+
+    assert(slotnames == Py_None || PyList_Check(slotnames));
+    if (required) {
+        Py_ssize_t basicsize = PyBaseObject_Type.tp_basicsize;
+        if (Py_TYPE(obj)->tp_dictoffset &&
+            (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0)
+        {
+            basicsize += sizeof(PyObject *);
+        }
+        if (Py_TYPE(obj)->tp_weaklistoffset) {
+            basicsize += sizeof(PyObject *);
+        }
+        if (slotnames != Py_None) {
+            basicsize += sizeof(PyObject *) * PyList_GET_SIZE(slotnames);
+        }
+        if (Py_TYPE(obj)->tp_basicsize > basicsize) {
+            Py_DECREF(slotnames);
+            Py_DECREF(state);
             PyErr_Format(PyExc_TypeError,
                          "cannot pickle '%.200s' object",
                          Py_TYPE(obj)->tp_name);
             return NULL;
         }
-        if (_PyObject_IsInstanceDictEmpty(obj)) {
-            state = Py_None;
-            Py_INCREF(state);
-        }
-        else {
-            state = PyObject_GenericGetDict(obj, NULL);
-            if (state == NULL) {
-                return NULL;
-            }
-        }
+    }
 
-        slotnames = _PyType_GetSlotNames(Py_TYPE(obj));
-        if (slotnames == NULL) {
+    if (slotnames != Py_None && PyList_GET_SIZE(slotnames) > 0) {
+        PyObject *slots;
+        Py_ssize_t slotnames_size, i;
+
+        slots = PyDict_New();
+        if (slots == NULL) {
+            Py_DECREF(slotnames);
             Py_DECREF(state);
             return NULL;
         }
 
-        assert(slotnames == Py_None || PyList_Check(slotnames));
-        if (required) {
-            Py_ssize_t basicsize = PyBaseObject_Type.tp_basicsize;
-            if (Py_TYPE(obj)->tp_dictoffset &&
-                (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0)
-            {
-                basicsize += sizeof(PyObject *);
+        slotnames_size = PyList_GET_SIZE(slotnames);
+        for (i = 0; i < slotnames_size; i++) {
+            PyObject *name, *value;
+
+            name = PyList_GET_ITEM(slotnames, i);
+            Py_INCREF(name);
+            if (_PyObject_LookupAttr(obj, name, &value) < 0) {
+                Py_DECREF(name);
+                goto error;
             }
-            if (Py_TYPE(obj)->tp_weaklistoffset) {
-                basicsize += sizeof(PyObject *);
+            if (value == NULL) {
+                Py_DECREF(name);
+                /* It is not an error if the attribute is not present. */
             }
-            if (slotnames != Py_None) {
-                basicsize += sizeof(PyObject *) * PyList_GET_SIZE(slotnames);
+            else {
+                int err = PyDict_SetItem(slots, name, value);
+                Py_DECREF(name);
+                Py_DECREF(value);
+                if (err) {
+                    goto error;
+                }
             }
-            if (Py_TYPE(obj)->tp_basicsize > basicsize) {
+
+            /* The list is stored on the class so it may mutate while we
+               iterate over it */
+            if (slotnames_size != PyList_GET_SIZE(slotnames)) {
+                PyErr_Format(PyExc_RuntimeError,
+                             "__slotsname__ changed size during iteration");
+                goto error;
+            }
+
+            /* We handle errors within the loop here. */
+            if (0) {
+              error:
                 Py_DECREF(slotnames);
+                Py_DECREF(slots);
                 Py_DECREF(state);
-                PyErr_Format(PyExc_TypeError,
-                             "cannot pickle '%.200s' object",
-                             Py_TYPE(obj)->tp_name);
                 return NULL;
             }
         }
 
-        if (slotnames != Py_None && PyList_GET_SIZE(slotnames) > 0) {
-            PyObject *slots;
-            Py_ssize_t slotnames_size, i;
+        /* If we found some slot attributes, pack them in a tuple along
+           the original attribute dictionary. */
+        if (PyDict_GET_SIZE(slots) > 0) {
+            PyObject *state2;
 
-            slots = PyDict_New();
-            if (slots == NULL) {
+            state2 = PyTuple_Pack(2, state, slots);
+            Py_DECREF(state);
+            if (state2 == NULL) {
                 Py_DECREF(slotnames);
-                Py_DECREF(state);
+                Py_DECREF(slots);
                 return NULL;
             }
-
-            slotnames_size = PyList_GET_SIZE(slotnames);
-            for (i = 0; i < slotnames_size; i++) {
-                PyObject *name, *value;
-
-                name = PyList_GET_ITEM(slotnames, i);
-                Py_INCREF(name);
-                if (_PyObject_LookupAttr(obj, name, &value) < 0) {
-                    goto error;
-                }
-                if (value == NULL) {
-                    Py_DECREF(name);
-                    /* It is not an error if the attribute is not present. */
-                }
-                else {
-                    int err = PyDict_SetItem(slots, name, value);
-                    Py_DECREF(name);
-                    Py_DECREF(value);
-                    if (err) {
-                        goto error;
-                    }
-                }
-
-                /* The list is stored on the class so it may mutate while we
-                   iterate over it */
-                if (slotnames_size != PyList_GET_SIZE(slotnames)) {
-                    PyErr_Format(PyExc_RuntimeError,
-                                 "__slotsname__ changed size during iteration");
-                    goto error;
-                }
-
-                /* We handle errors within the loop here. */
-                if (0) {
-                  error:
-                    Py_DECREF(slotnames);
-                    Py_DECREF(slots);
-                    Py_DECREF(state);
-                    return NULL;
-                }
-            }
-
-            /* If we found some slot attributes, pack them in a tuple along
-               the original attribute dictionary. */
-            if (PyDict_GET_SIZE(slots) > 0) {
-                PyObject *state2;
-
-                state2 = PyTuple_Pack(2, state, slots);
-                Py_DECREF(state);
-                if (state2 == NULL) {
-                    Py_DECREF(slotnames);
-                    Py_DECREF(slots);
-                    return NULL;
-                }
-                state = state2;
-            }
-            Py_DECREF(slots);
+            state = state2;
         }
-        Py_DECREF(slotnames);
+        Py_DECREF(slots);
     }
-    else { /* getstate != NULL */
-        state = _PyObject_CallNoArgs(getstate);
-        Py_DECREF(getstate);
-        if (state == NULL)
-            return NULL;
-    }
+    Py_DECREF(slotnames);
 
     return state;
+}
+
+static PyObject *
+object_getstate(PyObject *obj, int required)
+{
+    PyObject *getstate, *state;
+
+    getstate = PyObject_GetAttr(obj, &_Py_ID(__getstate__));
+    if (getstate == NULL) {
+        return NULL;
+    }
+    if (PyCFunction_Check(getstate) &&
+        PyCFunction_GET_SELF(getstate) == obj &&
+        PyCFunction_GET_FUNCTION(getstate) == object___getstate__)
+    {
+        /* If __getstate__ is not overriden pass the required argument. */
+        state = object_getstate_default(obj, required);
+    }
+    else {
+        state = _PyObject_CallNoArgs(getstate);
+    }
+    Py_DECREF(getstate);
+    return state;
+}
+
+PyObject *
+_PyObject_GetState(PyObject *obj)
+{
+    return object_getstate(obj, 0);
+}
+
+/*[clinic input]
+object.__getstate__
+
+Helper for pickle.
+[clinic start generated code]*/
+
+static PyObject *
+object___getstate___impl(PyObject *self)
+/*[clinic end generated code: output=5a2500dcb6217e9e input=692314d8fbe194ee]*/
+{
+    return object_getstate_default(self, 0);
 }
 
 static int
@@ -5309,8 +5340,7 @@ reduce_newobj(PyObject *obj)
         return NULL;
     }
 
-    state = _PyObject_GetState(obj,
-                !hasargs && !PyList_Check(obj) && !PyDict_Check(obj));
+    state = object_getstate(obj, !(hasargs || PyList_Check(obj) || PyDict_Check(obj)));
     if (state == NULL) {
         Py_DECREF(newobj);
         Py_DECREF(newargs);
@@ -5558,6 +5588,7 @@ error:
 static PyMethodDef object_methods[] = {
     OBJECT___REDUCE_EX___METHODDEF
     OBJECT___REDUCE___METHODDEF
+    OBJECT___GETSTATE___METHODDEF
     {"__subclasshook__", object_subclasshook, METH_CLASS | METH_VARARGS,
      object_subclasshook_doc},
     {"__init_subclass__", object_init_subclass, METH_CLASS | METH_NOARGS,
@@ -8948,8 +8979,11 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
     if (firstarg != NULL && (_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL)) {
         // "firstarg" is a cell here unless (very unlikely) super()
         // was called from the C-API before the first MAKE_CELL op.
-        if (cframe->f_lasti >= 0) {
-            assert(_Py_OPCODE(*co->co_firstinstr) == MAKE_CELL || _Py_OPCODE(*co->co_firstinstr) == COPY_FREE_VARS);
+        if (_PyInterpreterFrame_LASTI(cframe) >= 0) {
+            // MAKE_CELL and COPY_FREE_VARS have no quickened forms, so no need
+            // to use _PyOpcode_Deopt here:
+            assert(_Py_OPCODE(_PyCode_CODE(co)[0]) == MAKE_CELL ||
+                   _Py_OPCODE(_PyCode_CODE(co)[0]) == COPY_FREE_VARS);
             assert(PyCell_Check(firstarg));
             firstarg = PyCell_GET(firstarg);
         }
@@ -9000,19 +9034,28 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
     return 0;
 }
 
+static int super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj);
+
 static int
 super_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    superobject *su = (superobject *)self;
     PyTypeObject *type = NULL;
     PyObject *obj = NULL;
-    PyTypeObject *obj_type = NULL;
 
     if (!_PyArg_NoKeywords("super", kwds))
         return -1;
     if (!PyArg_ParseTuple(args, "|O!O:super", &PyType_Type, &type, &obj))
         return -1;
+    if (super_init_impl(self, type, obj) < 0) {
+        return -1;
+    }
+    return 0;
+}
 
+static inline int
+super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj) {
+    superobject *su = (superobject *)self;
+    PyTypeObject *obj_type = NULL;
     if (type == NULL) {
         /* Call super(), without args -- fill in from __class__
            and first local variable on the stack. */
@@ -9072,6 +9115,47 @@ super_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
+static PyObject *
+super_vectorcall(PyObject *self, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    assert(PyType_Check(self));
+    if (!_PyArg_NoKwnames("super", kwnames)) {
+        return NULL;
+    }
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("super()", nargs, 0, 2)) {
+        return NULL;
+    }
+    PyTypeObject *type = NULL;
+    PyObject *obj = NULL;
+    PyTypeObject *self_type = (PyTypeObject *)self;
+    PyObject *su = self_type->tp_alloc(self_type, 0);
+    if (su == NULL) {
+        return NULL;
+    }
+    // 1 or 2 argument form super().
+    if (nargs != 0) {
+        PyObject *arg0 = args[0];
+        if (!PyType_Check(arg0)) {
+            PyErr_Format(PyExc_TypeError,
+                "super() argument 1 must be a type, not %.200s", Py_TYPE(arg0)->tp_name);
+            goto fail;
+        }
+        type = (PyTypeObject *)arg0;
+    }
+    if (nargs == 2) {
+        obj = args[1];
+    }
+    if (super_init_impl(su, type, obj) < 0) {
+        goto fail;
+    }
+    return su;
+fail:
+    Py_DECREF(su);
+    return NULL;
+}
+
 PyTypeObject PySuper_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "super",                                    /* tp_name */
@@ -9114,4 +9198,5 @@ PyTypeObject PySuper_Type = {
     PyType_GenericAlloc,                        /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
+    .tp_vectorcall = (vectorcallfunc)super_vectorcall,
 };
