@@ -5117,7 +5117,7 @@ static int sock_cloexec_works = -1;
 /*ARGSUSED*/
 
 /*[clinic input]
-_socket.socket.__init__
+_socket.socket.__init__ as sock_initobj
     family: int = -1
     type: int = -1
     proto: int = -1
