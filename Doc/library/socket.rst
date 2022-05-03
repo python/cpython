@@ -577,10 +577,12 @@ Constants
 
 .. data:: SO_INCOMING_CPU
 
-   Constant to optimize cpu locality, to be used in conjunction with
-   `SO_REUSEPORT`.
+   Constant to optimize CPU locality, to be used in conjunction with
+   :data:`SO_REUSEPORT`.
 
   .. versionadded:: 3.11
+
+  .. availability:: Linux >= 3.9
 
   .. availability:: Linux >= 3.9
 
