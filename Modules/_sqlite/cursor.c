@@ -27,10 +27,25 @@
 
 PyObject* pysqlite_cursor_iternext(pysqlite_Cursor* self);
 
+static inline int
+check_cursor_locked(pysqlite_Cursor *cur)
+{
+    if (cur->locked) {
+        PyErr_SetString(pysqlite_ProgrammingError,
+                        "Recursive use of cursors not allowed.");
+        return 0;
+    }
+    return 1;
+}
+
 static const char errmsg_fetch_across_rollback[] = "Cursor needed to be reset because of commit/rollback and can no longer be fetched from.";
 
 static int pysqlite_cursor_init(pysqlite_Cursor* self, PyObject* args, PyObject* kwargs)
 {
+    if (!check_cursor_locked(self)) {
+        return -1;
+    }
+
     pysqlite_Connection* connection;
 
     if (!PyArg_ParseTuple(args, "O!", &pysqlite_ConnectionType, &connection))
@@ -357,12 +372,9 @@ static int check_cursor(pysqlite_Cursor* cur)
         return 0;
     }
 
-    if (cur->locked) {
-        PyErr_SetString(pysqlite_ProgrammingError, "Recursive use of cursors not allowed.");
-        return 0;
-    }
-
-    return pysqlite_check_thread(cur->connection) && pysqlite_check_connection(cur->connection);
+    return (pysqlite_check_thread(cur->connection)
+            && pysqlite_check_connection(cur->connection)
+            && check_cursor_locked(cur));
 }
 
 static PyObject *
@@ -773,7 +785,9 @@ PyObject* pysqlite_cursor_iternext(pysqlite_Cursor *self)
         }
 
         if (rc == SQLITE_ROW) {
+            self->locked = 1;  // GH-80254: Prevent recursive use of cursors.
             self->next_row = _pysqlite_fetch_one_row(self);
+            self->locked = 0;
             if (self->next_row == NULL) {
                 (void)pysqlite_statement_reset(self->statement);
                 return NULL;
@@ -876,6 +890,10 @@ PyObject* pysqlite_noop(pysqlite_Connection* self, PyObject* args)
 
 PyObject* pysqlite_cursor_close(pysqlite_Cursor* self, PyObject* args)
 {
+    if (!check_cursor_locked(self)) {
+        return NULL;
+    }
+
     if (!self->connection) {
         PyErr_SetString(pysqlite_ProgrammingError,
                         "Base Cursor.__init__ not called.");
