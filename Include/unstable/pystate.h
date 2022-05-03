@@ -1,4 +1,4 @@
-#ifndef Py_SEMISTABLE_PYSTATE_H
+#ifndef Py_UNSTABLE_PYSTATE_H
 #  error "this header file must not be included directly"
 #endif
 
@@ -7,11 +7,11 @@
 struct _PyInterpreterFrame;
 typedef PyObject* (*PyFrameEvalFunction)(PyThreadState *tstate, struct _PyInterpreterFrame *, int);
 
-_Py_NEWLY_SEMISTABLE(3.11)
+_Py_NEWLY_UNSTABLE(3.11)
 PyAPI_FUNC(PyFrameEvalFunction) PyInterpreterState_GetEvalFrameFunc(
     PyInterpreterState *interp);
 
-_Py_NEWLY_SEMISTABLE(3.11)
+_Py_NEWLY_UNSTABLE(3.11)
 PyAPI_FUNC(void) PyInterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
     PyFrameEvalFunction eval_frame);

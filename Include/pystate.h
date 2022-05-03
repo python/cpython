@@ -121,9 +121,9 @@ PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 
 
 #ifndef Py_LIMITED_API
-#  define Py_SEMISTABLE_PYSTATE_H
-#  include "semistable/pystate.h"
-#  undef Py_SEMISTABLE_PYSTATE_H
+#  define Py_UNSTABLE_PYSTATE_H
+#  include "unstable/pystate.h"
+#  undef Py_UNSTABLE_PYSTATE_H
 
 #  define Py_CPYTHON_PYSTATE_H
 #  include "cpython/pystate.h"

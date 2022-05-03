@@ -198,9 +198,9 @@ typedef enum _PyCodeLocationInfoKind {
     PY_CODE_LOCATION_INFO_NONE = 15
 } _PyCodeLocationInfoKind;
 
-#define Py_SEMISTABLE_CODE_H
-#include "semistable/code.h"
-#undef Py_SEMISTABLE_CODE_H
+#define Py_UNSTABLE_CODE_H
+#include "unstable/code.h"
+#undef Py_UNSTABLE_CODE_H
 
 
 #ifdef __cplusplus

@@ -43,9 +43,9 @@
 #  define Py_BUILD_CORE
 #endif
 
-// Expose semi-stable API when building Python
+// Expose unstable API when building Python
 #ifdef Py_BUILD_CORE
-#define Py_USING_SEMI_STABLE_API
+#define Py_USING_UNSTABLE_API
 #endif
 
 /**************************************************************************
@@ -356,13 +356,13 @@ extern "C" {
 #define _Py_COMP_DIAG_POP
 #endif
 
-/* _Py_NEWLY_SEMISTABLE:  Provide deprecation warnings for users that
- * don't opt in to semi-stable API.
+/* _Py_NEWLY_UNSTABLE:  Provide deprecation warnings for users that
+ * don't opt in to unstable API.
  */
-#ifdef Py_USING_SEMI_STABLE_API
-#define _Py_NEWLY_SEMISTABLE(VERSION_UNUSED)
+#ifdef Py_USING_UNSTABLE_API
+#define _Py_NEWLY_UNSTABLE(VERSION_UNUSED)
 #else
-#define _Py_NEWLY_SEMISTABLE(VERSION) Py_DEPRECATED(VERSION)
+#define _Py_NEWLY_UNSTABLE(VERSION) Py_DEPRECATED(VERSION)
 #endif
 
 /* _Py_HOT_FUNCTION
