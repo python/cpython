@@ -327,6 +327,8 @@ STRUCT_MEMBER_DECL = textwrap.dedent(rf'''
                 (?:  # <SIZE>
                     # This is actually a "constant expression".
                     \d+
+                    |
+                    [^'",}}]+
                  )
              )?
             \s*
