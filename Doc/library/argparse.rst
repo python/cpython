@@ -430,8 +430,8 @@ formatter_class
 ^^^^^^^^^^^^^^^
 
 :class:`ArgumentParser` objects allow the help formatting to be customized by
-specifying an alternate formatting class.  Currently, there are four such
-classes:
+specifying an alternate formatting class or a :class:`CustomHelpFormat` object.
+Currently, there are four alternate formatting classes:
 
 .. class:: RawDescriptionHelpFormatter
            RawTextHelpFormatter
@@ -2207,6 +2207,77 @@ containing the populated namespace and the list of remaining argument strings.
 remaining unparsed argument strings.
 
 .. versionadded:: 3.7
+
+
+Custom help format
+^^^^^^^^^^^^^^^^^^
+
+.. class:: CustomHelpFormat(indent_increment=2, max_help_position=24, \
+                            width=None, raw_description=False, \
+                            raw_text=False, arg_defaults=False, \
+                            metavar_type=False, **kwargs)
+
+   A :class:`CustomHelpFormat` object can be passed as formatter_class_ parameter
+   to the :class:`ArgumentParser` constructor instead of a formatter class.
+   Using custom help format object allows to easy mix behavior or several
+   formatter classes and also provides easy way to modify some basic format
+   properties, such as indentation.
+
+   In contrast to alternate formatting classes, such as the
+   :class:`RawTextHelpFormatter` class, in case of :class:`CustomHelpFormat`,
+   an instantiated object is passed to the :class:`ArgumentParser` constructor,
+   not a class type.
+
+   Selection of help format is done by setting either passing keyword arguments
+   to the constructor or setting attributes of the instantiated
+   :class:`CustomHelpFormat` object, before passing it to the
+   :class:`ArgumentParser` constructor::
+
+      >>> my_format = argparse.CustomHelpFormat()
+      >>> my_format.indent_increment = 4
+      >>> my_format.arg_defaults = True
+      >>> parser = argparse.ArgumentParser(prog='PROG', formatter_class=my_format)
+      >>> parser.add_argument('--foo', type=int, default=42, help='FOO!')
+      >>> parser.add_argument('bar', nargs='*', default=[1, 2, 3], help='BAR!')
+      >>> parser.print_help()
+      usage: PROG [-h] [--foo FOO] [bar ...]
+
+      positional arguments:
+         bar         BAR! (default: [1, 2, 3])
+
+      options:
+         -h, --help  show this help message and exit
+         --foo FOO   FOO! (default: 42)
+
+   Keyword arguments and attributes of the :class:`CustomHelpFormat` class are:
+
+   * indent_increment - Sets number of spaces added for each indentation level.
+     The default is two spaces per indentation level.
+
+   * max_help_position - Sets maximum indentation of the parameters description
+     block. The default is 24.
+
+   * width - Set width of the terminal for line-wrapping. In most cases it's best
+     to leave this attribute ``None`` to allow argparse determine the width
+     automatically.
+
+   * raw_description - Setting ``raw_description`` to ``True`` disables formatting of
+     parser description_ and epilog_, as with :class:`RawDescriptionHelpFormatter`.
+
+   * raw_text - Setting this attribute to ``True`` disables formatting of parameters
+     help text, as with :class:`RawTextHelpFormatter`.
+
+   * arg_defaults - Setting this attribute to ``True`` adds information about default
+     values, as with :class:`ArgumentDefaultsHelpFormatter`.
+
+   * metavar_type - Setting this attribute to ``True`` enabled using the name of the
+     type_ argument passed to :meth:`ArgumentParser.add_argument` function as the
+     display name, as with :class:`MetavarTypeHelpFormatter`.
+
+   Unknown keyword arguments passed to the class constructor are ignored.
+
+   .. versionadded:: 3.10
+
 
 .. _upgrading-optparse-code:
 
