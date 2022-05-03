@@ -1034,10 +1034,10 @@ FstringParser_check_invariants(FstringParser *state)
 #endif
 
 void
-_PyPegen_FstringParser_Init(FstringParser *state, int fmode)
+_PyPegen_FstringParser_Init(FstringParser *state)
 {
     state->last_str = NULL;
-    state->fmode = fmode;
+    state->fmode = 0;
     ExprList_Init(&state->expr_list);
     FstringParser_check_invariants(state);
 }
@@ -1249,7 +1249,7 @@ fstring_parse(Parser *p, const char **str, const char *end, int raw,
 {
     FstringParser state;
 
-    _PyPegen_FstringParser_Init(&state, 0);
+    _PyPegen_FstringParser_Init(&state);
     if (_PyPegen_FstringParser_ConcatFstring(p, &state, str, end, raw, recurse_lvl,
                                     first_token, t, last_token) < 0) {
         _PyPegen_FstringParser_Dealloc(&state);

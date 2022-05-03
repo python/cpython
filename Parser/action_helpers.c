@@ -973,7 +973,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_seq *strings, int tagged)
     PyObject *bytes_str = NULL;
 
     FstringParser state;
-    _PyPegen_FstringParser_Init(&state, tagged);
+    _PyPegen_FstringParser_Init(&state);
 
     for (Py_ssize_t i = 0; i < len; i++) {
         Token *t = asdl_seq_GET_UNTYPED(strings, i);
