@@ -413,7 +413,7 @@ def _parse_isoformat_time(tstr):
         raise ValueError("Isoformat time too short")
 
     # This is equivalent to re.search('[+-Z]', tstr), but faster
-    tz_pos = (tstr.find('-') + 1  or tstr.find('+') + 1 or tstr.find('Z') + 1)
+    tz_pos = (tstr.find('-') + 1 or tstr.find('+') + 1 or tstr.find('Z') + 1)
     timestr = tstr[:tz_pos-1] if tz_pos > 0 else tstr
 
     time_comps = _parse_hh_mm_ss_ff(timestr)
