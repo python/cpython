@@ -1061,6 +1061,30 @@ class TestSpooledTemporaryFile(BaseTestCase):
         f = self.do_create(max_size=100, pre="a", suf=".txt")
         self.assertFalse(f._rolled)
 
+    def test_is_iobase(self):
+        # SpooledTemporaryFile should implement io.IOBase
+        self.assertIsInstance(self.do_create(), io.IOBase)
+
+    def test_iobase_interface(self):
+        # SpooledTemporaryFile should implement the io.IOBase interface.
+        # Ensure it has all the required methods and properties.
+        iobase_attrs = {
+            # From IOBase
+            'fileno', 'seek', 'truncate', 'close', 'closed', '__enter__',
+            '__exit__', 'flush', 'isatty', '__iter__', '__next__', 'readable',
+            'readline', 'readlines', 'seekable', 'tell', 'writable',
+            'writelines',
+            # From BufferedIOBase (binary mode) and TextIOBase (text mode)
+            'detach', 'read', 'read1', 'write', 'readinto', 'readinto1',
+            'encoding', 'errors', 'newlines',
+        }
+        spooledtempfile_attrs = set(dir(tempfile.SpooledTemporaryFile))
+        missing_attrs = iobase_attrs - spooledtempfile_attrs
+        self.assertFalse(
+            missing_attrs,
+            'SpooledTemporaryFile missing attributes from IOBase/BufferedIOBase/TextIOBase'
+        )
+
     def test_del_on_close(self):
         # A SpooledTemporaryFile is deleted when closed
         dir = tempfile.mkdtemp()
@@ -1075,6 +1099,30 @@ class TestSpooledTemporaryFile(BaseTestCase):
                         "SpooledTemporaryFile %s exists after close" % filename)
         finally:
             os.rmdir(dir)
+
+    def test_del_unrolled_file(self):
+        # The unrolled SpooledTemporaryFile should raise a ResourceWarning
+        # when deleted since the file was not explicitly closed.
+        f = self.do_create(max_size=10)
+        f.write(b'foo')
+        self.assertEqual(f.name, None)  # Unrolled so no filename/fd
+        with self.assertWarns(ResourceWarning):
+            f.__del__()
+
+    def test_del_rolled_file(self):
+        # The rolled file should be deleted when the SpooledTemporaryFile
+        # object is deleted. This should raise a ResourceWarning since the file
+        # was not explicitly closed.
+        f = self.do_create(max_size=2)
+        f.write(b'foo')
+        name = f.name  # This is a fd on posix+cygwin, a filename everywhere else
+        self.assertTrue(os.path.exists(name))
+        with self.assertWarns(ResourceWarning):
+            f.__del__()
+        self.assertFalse(
+            os.path.exists(name),
+            "Rolled SpooledTemporaryFile (name=%s) exists after delete" % name
+        )
 
     def test_rewrite_small(self):
         # A SpooledTemporaryFile can be written to multiple within the max_size
