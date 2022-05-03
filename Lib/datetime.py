@@ -433,7 +433,7 @@ def _parse_isoformat_time(tstr):
         # HH:MM:SS            len: 8
         # HH:MM:SS.f+         len: 10+
 
-        if len(tzstr) in (1, 3):
+        if len(tzstr) in (0, 1, 3):
             raise ValueError("Malformed time zone string")
 
         if tzstr == 'Z':
