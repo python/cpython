@@ -95,7 +95,6 @@ class MimeTypesTestCase(unittest.TestCase):
         eq = self.assertEqual
         # First try strict
         eq(self.db.guess_type('foo.xul', strict=True), (None, None))
-        eq(self.db.guess_type('foo.xul', strict=True), (None, None))
         eq(self.db.guess_extension('image/jpg', strict=True), None)
         eq(self.db.guess_extension('image/webp', strict=True), None)
         # And then non-strict
