@@ -301,7 +301,8 @@ class ReloadTests:
         name = 'spam'
         with os_helper.temp_cwd(None) as cwd:
             with test_util.uncache('spam'):
-                with import_helper.DirsOnSysPath(cwd):
+                with test_util.import_state(path=[cwd]):
+                    self.init._bootstrap_external._install(self.init._bootstrap)
                     # Start as a namespace package.
                     self.init.invalidate_caches()
                     bad_path = os.path.join(cwd, name, '__init.py')
