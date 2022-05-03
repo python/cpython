@@ -27,6 +27,8 @@ if not MS_WINDOWS:
         # a C++ extension using the Python C API does not emit C++ compiler
         # warnings
         '-Werror',
+        # Warn on old-style cast (C cast) like: (PyObject*)op
+        '-Wold-style-cast',
     ]
 else:
     # Don't pass any compiler flag to MSVC
