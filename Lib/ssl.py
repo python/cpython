@@ -21,7 +21,7 @@ Functions:
   get_server_certificate (addr, ssl_version, ca_certs, timeout) -- Retrieve the
                           certificate from the server at the specified
                           address and return it as a PEM-encoded string
-                          
+
 
 Integer constants:
 
