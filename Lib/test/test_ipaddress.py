@@ -743,7 +743,7 @@ class NetmaskTestMixin_v6(CommonTestMixin_v6):
     def test_valid_netmask(self):
         # We only support CIDR for IPv6, because expanded netmasks are not
         # standard notation.
-        self.assertEqual(str(self.factory(('2001:db8::', 32))), 
+        self.assertEqual(str(self.factory(('2001:db8::', 32))),
                          '2001:db8::/32')
         self.assertEqual(str(self.factory(('2001:db8::', '32'))),
                          '2001:db8::/32')
