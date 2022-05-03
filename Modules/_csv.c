@@ -1704,11 +1704,11 @@ PyDoc_STRVAR(csv_register_dialect_doc,
 "    dialect = csv.register_dialect(name[, dialect[, **fmtparams]])");
 
 static struct PyMethodDef csv_methods[] = {
-    { "reader", (PyCFunction)(void(*)(void))csv_reader,
+    { "reader", _PyCFunction_CAST(csv_reader),
         METH_VARARGS | METH_KEYWORDS, csv_reader_doc},
-    { "writer", (PyCFunction)(void(*)(void))csv_writer,
+    { "writer", _PyCFunction_CAST(csv_writer),
         METH_VARARGS | METH_KEYWORDS, csv_writer_doc},
-    { "register_dialect", (PyCFunction)(void(*)(void))csv_register_dialect,
+    { "register_dialect", _PyCFunction_CAST(csv_register_dialect),
         METH_VARARGS | METH_KEYWORDS, csv_register_dialect_doc},
     _CSV_LIST_DIALECTS_METHODDEF
     _CSV_UNREGISTER_DIALECT_METHODDEF
