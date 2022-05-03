@@ -584,8 +584,6 @@ Constants
 
   .. availability:: Linux >= 3.9
 
-  .. availability:: Linux >= 3.9
-
 Functions
 ^^^^^^^^^
 
