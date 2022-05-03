@@ -33,6 +33,14 @@
 #  define _Py_CAST(type, expr) ((type)(expr))
 #endif
 
+// Static inline functions should use _Py_NULL rather than using directly NULL
+// to prevent C++ compiler warnings. In C++, _Py_NULL uses nullptr.
+#ifdef __cplusplus
+#  define _Py_NULL nullptr
+#else
+#  define _Py_NULL NULL
+#endif
+
 
 /* Defines to build Python and its standard library:
  *
