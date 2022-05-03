@@ -5934,19 +5934,24 @@ get_feature_macros(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 test_code_api(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    PyObject *co = PyCode_NewEmpty("_testcapi", "dummy", 1);
+    PyObject *co = (PyObject *)PyCode_NewEmpty("_testcapi", "dummy", 1);
     if (co == NULL) {
         return NULL;
     }
     PyObject *co_code = PyCode_GetCode(co);
     if (co_code == NULL) {
+        Py_DECREF(co);
         return NULL;
     }
     assert(PyBytes_CheckExact(co_code));
     if (PyObject_Length(co_code) == 0) {
         PyErr_SetString(PyExc_ValueError, "empty co_code");
+        Py_DECREF(co);
+        Py_DECREF(co_code);
         return NULL;
     }
+    Py_DECREF(co);
+    Py_DECREF(co_code);
     Py_RETURN_NONE;
 }
 
