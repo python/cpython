@@ -872,7 +872,6 @@ _PyPegen_seq_delete_starred_exprs(Parser *p, asdl_seq *kwargs)
 static expr_ty
 lambdafy(Parser *p, expr_ty arg)
 {
-    assert(arg->kind == FormattedValue_kind);
     arguments_ty args = _PyPegen_empty_arguments(p);
     if (args == NULL)
         return NULL;
@@ -898,10 +897,10 @@ _PyPegen_tag_string(Parser *p, expr_ty tag, Token *tok)
         for (int i = 0; i < nvalues; i++) {
             expr_ty value = asdl_seq_GET(values, i);
             if (value->kind == FormattedValue_kind) {
-                value = lambdafy(p, value);
-                if (value == NULL)
+                expr_ty lambda = lambdafy(p, value->v.FormattedValue.value);
+                if (lambda == NULL)
                     return NULL;
-                asdl_seq_SET(values, i, value);
+                asdl_seq_SET(values, i, lambda);
             }
         }
     }
