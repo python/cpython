@@ -6634,6 +6634,10 @@ _datetime_exec(PyObject *module)
         return -1;
     }
 
+    if (PyModule_AddObjectRef(module, "UTC", PyDateTime_TimeZone_UTC) < 0) {
+        return -1;
+    }
+
     /* A 4-year cycle has an extra leap day over what we'd get from
      * pasting together 4 single years.
      */
