@@ -5931,6 +5931,29 @@ get_feature_macros(PyObject *self, PyObject *Py_UNUSED(args))
     return result;
 }
 
+static PyObject *
+test_code_api(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyCodeObject *co = PyCode_NewEmpty("_testcapi", "dummy", 1);
+    if (co == NULL) {
+        return NULL;
+    }
+    PyObject *co_code = PyCode_GetCode(co);
+    if (co_code == NULL) {
+        Py_DECREF(co);
+        return NULL;
+    }
+    assert(PyBytes_CheckExact(co_code));
+    if (PyObject_Length(co_code) == 0) {
+        PyErr_SetString(PyExc_ValueError, "empty co_code");
+        Py_DECREF(co);
+        Py_DECREF(co_code);
+        return NULL;
+    }
+    Py_DECREF(co);
+    Py_DECREF(co_code);
+    Py_RETURN_NONE;
+}
 
 static PyObject *negative_dictoffset(PyObject *, PyObject *);
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
@@ -6227,6 +6250,7 @@ static PyMethodDef TestMethods[] = {
     {"frame_getbuiltins", frame_getbuiltins, METH_O, NULL},
     {"frame_getlasti", frame_getlasti, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
+    {"test_code_api", test_code_api, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
