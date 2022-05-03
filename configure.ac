@@ -1412,6 +1412,24 @@ if test "$cross_compiling" = yes; then
 	RUNSHARED=
 fi
 
+AC_ARG_VAR([HOSTRUNNER], [Program to run CPython for the host platform])
+AC_MSG_CHECKING([HOSTRUNNER])
+if test -z "$HOSTRUNNER"
+then
+  AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+    [Emscripten/node*], [
+      AS_VAR_IF([enable_wasm_pthreads], [yes], [
+        HOSTRUNNER='node --experimental-wasm-threads --experimental-wasm-bulk-memory'
+      ], [
+        HOSTRUNNER='node'
+      ])
+    ],
+    [HOSTRUNNER='']
+  )
+fi
+AC_SUBST([HOSTRUNNER])
+AC_MSG_RESULT([$HOSTRUNNER])
+
 AC_MSG_RESULT($LDLIBRARY)
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable

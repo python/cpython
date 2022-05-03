@@ -13,7 +13,6 @@ PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
 SPHINXERRORHANDLING = -W
-SERVE_PORT   =
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_elements.papersize=a4paper
@@ -45,7 +44,6 @@ help:
 	@echo "  dist       to create a \"dist\" directory with archived docs for download"
 	@echo "  suspicious to check for suspicious markup in output text"
 	@echo "  check      to run a check for frequent markup errors"
-	@echo "  serve      to serve the documentation on the localhost (8000)"
 
 build:
 	-mkdir -p build
@@ -141,7 +139,7 @@ pydoc-topics: build
 	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py"
 
 htmlview: html
-	 $(PYTHON) -c "import webbrowser; webbrowser.open('build/html/index.html')"
+	$(PYTHON) -c "import os, webbrowser; webbrowser.open('file://' + os.path.realpath('build/html/index.html'))"
 
 clean: clean-venv
 	-rm -rf build/*
@@ -219,7 +217,7 @@ check:
 	$(SPHINXLINT) ../Misc/NEWS.d/next/
 
 serve:
-	$(PYTHON) ../Tools/scripts/serve.py build/html $(SERVE_PORT)
+	@echo "The serve target was removed, use htmlview instead (see bpo-36329)"
 
 # Targets for daily automated doc build
 # By default, Sphinx only rebuilds pages where the page content has changed.

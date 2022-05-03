@@ -1,0 +1,4 @@
+More strict rules will be applied for numerical group references and group
+names in regular expressions. For now, a deprecation warning is emitted for
+group references and group names which will be errors in future Python
+versions.
