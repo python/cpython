@@ -38,6 +38,17 @@ typedef enum {
 #include "clinic/cursor.c.h"
 #undef clinic_state
 
+static inline int
+check_cursor_locked(pysqlite_Cursor *cur)
+{
+    if (cur->locked) {
+        PyErr_SetString(cur->connection->ProgrammingError,
+                        "Recursive use of cursors not allowed.");
+        return 0;
+    }
+    return 1;
+}
+
 /*[clinic input]
 module _sqlite3
 class _sqlite3.Cursor "pysqlite_Cursor *" "clinic_state()->CursorType"
@@ -79,6 +90,10 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
                           pysqlite_Connection *connection)
 /*[clinic end generated code: output=ac59dce49a809ca8 input=23d4265b534989fb]*/
 {
+    if (!check_cursor_locked(self)) {
+        return -1;
+    }
+
     Py_INCREF(connection);
     Py_XSETREF(self->connection, connection);
     Py_CLEAR(self->statement);
@@ -456,13 +471,9 @@ static int check_cursor(pysqlite_Cursor* cur)
         return 0;
     }
 
-    if (cur->locked) {
-        PyErr_SetString(cur->connection->state->ProgrammingError,
-                        "Recursive use of cursors not allowed.");
-        return 0;
-    }
-
-    return pysqlite_check_thread(cur->connection) && pysqlite_check_connection(cur->connection);
+    return (pysqlite_check_thread(cur->connection)
+            && pysqlite_check_connection(cur->connection)
+            && check_cursor_locked(cur));
 }
 
 static int
@@ -1101,7 +1112,9 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
         return NULL;
     }
 
+    self->locked = 1;  // GH-80254: Prevent recursive use of cursors.
     PyObject *row = _pysqlite_fetch_one_row(self);
+    self->locked = 0;
     if (row == NULL) {
         return NULL;
     }
@@ -1265,6 +1278,10 @@ static PyObject *
 pysqlite_cursor_close_impl(pysqlite_Cursor *self)
 /*[clinic end generated code: output=b6055e4ec6fe63b6 input=08b36552dbb9a986]*/
 {
+    if (!check_cursor_locked(self)) {
+        return NULL;
+    }
+
     if (!self->connection) {
         PyTypeObject *tp = Py_TYPE(self);
         pysqlite_state *state = pysqlite_get_state_by_type(tp);
