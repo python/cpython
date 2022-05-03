@@ -1838,13 +1838,15 @@ class datetime(date):
 
             date_components = _parse_isoformat_date(dstr)
         except ValueError:
-            raise ValueError(f'Invalid isoformat string: {date_string!r}')
+            raise ValueError(
+                f'Invalid isoformat string: {date_string!r}') from None
 
         if tstr:
             try:
                 time_components = _parse_isoformat_time(tstr)
             except ValueError:
-                raise ValueError(f'Invalid isoformat string: {date_string!r}')
+                raise ValueError(
+                    f'Invalid isoformat string: {date_string!r}') from None
         else:
             time_components = [0, 0, 0, 0, None]
 
