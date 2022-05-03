@@ -13726,7 +13726,7 @@ $as_echo_n "checking for --with-dbmliborder... " >&6; }
 if test "${with_dbmliborder+set}" = set; then :
   withval=$with_dbmliborder;
 else
-  with_dbmliborder=ndbm:gdbm:bdb
+  with_dbmliborder=gdbm:ndbm:bdb
 fi
 
 
@@ -13749,7 +13749,7 @@ done
 IFS=$as_save_IFS
 if test "x$with_dbmliborder" = xerror; then :
 
-  as_fn_error $? "proper usage is --with-dbmliborder=db1:db2:... (ndbm:gdbm:bdb)" "$LINENO" 5
+  as_fn_error $? "proper usage is --with-dbmliborder=db1:db2:... (gdbm:ndbm:bdb)" "$LINENO" 5
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_dbmliborder" >&5
