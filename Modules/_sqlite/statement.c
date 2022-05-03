@@ -116,11 +116,6 @@ error:
     return NULL;
 }
 
-void pysqlite_statement_mark_dirty(pysqlite_Statement* self)
-{
-    self->in_use = 1;
-}
-
 static void
 stmt_dealloc(pysqlite_Statement *self)
 {
