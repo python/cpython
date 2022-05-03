@@ -475,7 +475,8 @@ class FromIsoformatDateTest_Fast(FromIsoformatDateTest_Base):
         iso_formatter=map(IsoFormatter, ["%Y-%m-%d", "%Y%m%d"]),
     )
     @_cross_product_examples(
-        d=[date(2025, 1, 2), date(2025, 12, 31), date(2023, 1, 1)],
+        d=[date(2025, 1, 2), date(2025, 12, 31), date(2023, 1, 1),
+           date(2020, 12, 29), date(2021, 1, 1), date(2015, 12, 31)],
         iso_formatter=map(
             IsoFormatter, ["%G-W%V", "%GW%V", "%G-W%V-%u", "%GW%V%u"]
         ),
