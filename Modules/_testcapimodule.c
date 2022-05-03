@@ -5934,7 +5934,7 @@ get_feature_macros(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 test_code_api(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    PyObject *co = (PyObject *)PyCode_NewEmpty("_testcapi", "dummy", 1);
+    PyCodeObject *co = PyCode_NewEmpty("_testcapi", "dummy", 1);
     if (co == NULL) {
         return NULL;
     }

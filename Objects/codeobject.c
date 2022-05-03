@@ -1371,13 +1371,9 @@ _PyCode_GetCode(PyCodeObject *co)
 }
 
 PyObject *
-PyCode_GetCode(PyObject *co)
+PyCode_GetCode(PyCodeObject *co)
 {
-    if (!PyCode_Check(co)) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-    return _PyCode_GetCode((PyCodeObject *)co);
+    return _PyCode_GetCode(co);
 }
 
 /******************
