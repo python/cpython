@@ -779,16 +779,20 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
             context.keylog_filename = keylogfile
     return context
 
-def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
-                           check_hostname=False, purpose=Purpose.SERVER_AUTH,
-                           certfile=None, keyfile=None,
-                           cafile=None, capath=None, cadata=None):
-    """Create a SSLContext object for Python stdlib modules
+
+def _create_verified_context(
+    protocol=None, *, cert_reqs=None, check_hostname=None,
+    purpose=Purpose.SERVER_AUTH, certfile=None, keyfile=None,
+    cafile=None, capath=None, cadata=None
+):
+    """Create a SSLContext for Python stdlib modules (verified)
 
     All Python stdlib modules shall use this function to create SSLContext
     objects in order to keep common settings in one place. The configuration
     is less restrict than create_default_context()'s to increase backward
     compatibility.
+
+    Cert and hostname verification is enabled by default for client contexts.
     """
     if not isinstance(purpose, _ASN1Object):
         raise TypeError(purpose)
@@ -800,9 +804,17 @@ def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
         # verify certs and host name in client mode
         if protocol is None:
             protocol = PROTOCOL_TLS_CLIENT
+        if cert_reqs is None:
+            cert_reqs = CERT_REQUIRED
+        if check_hostname is None:
+            check_hostname = True
     elif purpose == Purpose.CLIENT_AUTH:
         if protocol is None:
             protocol = PROTOCOL_TLS_SERVER
+        if cert_reqs is None:
+            cert_reqs = CERT_NONE
+        if check_hostname is None:
+            check_hostname = False
     else:
         raise ValueError(purpose)
 
@@ -833,12 +845,28 @@ def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
             context.keylog_filename = keylogfile
     return context
 
+
+def _create_unverified_context(
+    protocol=None, *, cert_reqs=CERT_NONE, check_hostname=False,
+    purpose=Purpose.SERVER_AUTH, certfile=None, keyfile=None,
+    cafile=None, capath=None, cadata=None
+):
+    """Create a SSLContext for Python stdlib modules (unverified)
+
+    Cert and hostname verification is **disabled** by default.
+    """
+    return _create_verified_context(
+        protocol, cert_reqs=cert_reqs, check_hostname=check_hostname,
+        purpose=purpose, certfile=certfile, keyfile=keyfile,
+        cafile=cafile, capath=capath, cadata=cadata
+    )
+
+
 # Used by http.client if no context is explicitly passed.
 _create_default_https_context = create_default_context
 
-
 # Backwards compatibility alias, even though it's not a public name.
-_create_stdlib_context = _create_unverified_context
+_create_stdlib_context = _create_verified_context
 
 
 class SSLObject:
@@ -1520,9 +1548,9 @@ def get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT,
         cert_reqs = CERT_REQUIRED
     else:
         cert_reqs = CERT_NONE
-    context = _create_stdlib_context(ssl_version,
-                                     cert_reqs=cert_reqs,
-                                     cafile=ca_certs)
+    context = _create_unverified_context(
+        ssl_version, cert_reqs=cert_reqs, cafile=ca_certs
+    )
     with create_connection(addr, timeout=timeout) as sock:
         with context.wrap_socket(sock, server_hostname=host) as sslsock:
             dercert = sslsock.getpeercert(True)

@@ -1632,7 +1632,8 @@ class LocalServerTests(unittest.TestCase):
     def test_starttls(self):
         file = self.nntp.file
         sock = self.nntp.sock
-        self.nntp.starttls()
+        context = ssl._create_unverified_context()
+        self.nntp.starttls(context=context)
         # Check that the socket and internal pseudo-file really were
         # changed.
         self.assertNotEqual(file, self.nntp.file)
