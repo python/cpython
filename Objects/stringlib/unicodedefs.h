@@ -22,6 +22,7 @@
 #define STRINGLIB_NEW            PyUnicode_FromUnicode
 #define STRINGLIB_CHECK          PyUnicode_Check
 #define STRINGLIB_CHECK_EXACT    PyUnicode_CheckExact
+#define STRINGLIB_MUTABLE 0
 
 #define STRINGLIB_TOSTR          PyObject_Str
 #define STRINGLIB_TOASCII        PyObject_ASCII

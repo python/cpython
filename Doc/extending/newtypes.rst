@@ -393,7 +393,7 @@ analogous to the :ref:`rich comparison methods <richcmpfuncs>`, like
 :c:func:`PyObject_RichCompareBool`.
 
 This function is called with two Python objects and the operator as arguments,
-where the operator is one of ``Py_EQ``, ``Py_NE``, ``Py_LE``, ``Py_GT``,
+where the operator is one of ``Py_EQ``, ``Py_NE``, ``Py_LE``, ``Py_GE``,
 ``Py_LT`` or ``Py_GT``.  It should compare the two objects with respect to the
 specified operator and return ``Py_True`` or ``Py_False`` if the comparison is
 successful, ``Py_NotImplemented`` to indicate that comparison is not

@@ -1132,6 +1132,14 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(ipaddress.IPv4Interface((3221225985, 24)),
                          ipaddress.IPv4Interface('192.0.2.1/24'))
 
+        # Invalid netmask
+        with self.assertRaises(ValueError):
+            ipaddress.IPv4Network(('192.0.2.1', '255.255.255.255.0'))
+
+        # Invalid netmask using factory
+        with self.assertRaises(ValueError):
+            ipaddress.ip_network(('192.0.2.1', '255.255.255.255.0'))
+
     # issue #16531: constructing IPv6Network from an (address, mask) tuple
     def testIPv6Tuple(self):
         # /128
@@ -1190,6 +1198,14 @@ class IpaddrUnitTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             ipaddress.IPv6Network((ip_scoped, 96))
         # strict=False and host bits set
+
+        # Invalid netmask
+        with self.assertRaises(ValueError):
+            ipaddress.IPv6Network(('2001:db8::1', '255.255.255.0'))
+
+        # Invalid netmask using factory
+        with self.assertRaises(ValueError):
+            ipaddress.ip_network(('2001:db8::1', '255.255.255.0'))
 
     # issue57
     def testAddressIntMath(self):

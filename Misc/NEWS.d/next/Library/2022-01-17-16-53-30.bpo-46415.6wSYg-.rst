@@ -1,0 +1,2 @@
+Fix ipaddress.ip_{address,interface,network} raising TypeError instead of
+ValueError if given invalid tuple as address parameter.

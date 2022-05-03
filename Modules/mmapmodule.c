@@ -18,8 +18,14 @@
  / ftp://squirl.nightmare.com/pub/python/python-ext.
 */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include "pycore_bytesobject.h"   // _PyBytes_Find()
+#include "pycore_fileutils.h"     // _Py_stat_struct
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
@@ -32,7 +38,6 @@
 
 #ifdef MS_WINDOWS
 #include <windows.h>
-#include <winternl.h>
 static int
 my_getpagesize(void)
 {
@@ -311,12 +316,8 @@ mmap_gfind(mmap_object *self,
     if (!PyArg_ParseTuple(args, reverse ? "y*|nn:rfind" : "y*|nn:find",
                           &view, &start, &end)) {
         return NULL;
-    } else {
-        const char *p, *start_p, *end_p;
-        int sign = reverse ? -1 : 1;
-        const char *needle = view.buf;
-        Py_ssize_t len = view.len;
-
+    }
+    else {
         if (start < 0)
             start += self->size;
         if (start < 0)
@@ -331,21 +332,19 @@ mmap_gfind(mmap_object *self,
         else if (end > self->size)
             end = self->size;
 
-        start_p = self->data + start;
-        end_p = self->data + end;
-
-        for (p = (reverse ? end_p - len : start_p);
-             (p >= start_p) && (p + len <= end_p); p += sign) {
-            Py_ssize_t i;
-            for (i = 0; i < len && needle[i] == p[i]; ++i)
-                /* nothing */;
-            if (i == len) {
-                PyBuffer_Release(&view);
-                return PyLong_FromSsize_t(p - self->data);
-            }
+        Py_ssize_t res;
+        if (reverse) {
+            res = _PyBytes_ReverseFind(
+                self->data + start, end - start,
+                view.buf, view.len, start);
+        }
+        else {
+            res = _PyBytes_Find(
+                self->data + start, end - start,
+                view.buf, view.len, start);
         }
         PyBuffer_Release(&view);
-        return PyLong_FromLong(-1);
+        return PyLong_FromSsize_t(res);
     }
 }
 
@@ -505,21 +504,6 @@ mmap_resize_method(mmap_object *self,
     }
 
     {
-        /*
-        To resize an mmap on Windows:
-
-        - Close the existing mapping
-        - If the mapping is backed to a named file:
-            unmap the view, clear the data, and resize the file
-            If the file can't be resized (eg because it has other mapped references
-            to it) then let the mapping be recreated at the original size and set
-            an error code so an exception will be raised.
-        - Create a new mapping of the relevant size to the same file
-        - Map a new view of the resized file
-        - If the mapping is backed by the pagefile:
-            copy any previous data into the new mapped area
-            unmap the original view which will release the memory
-        */
 #ifdef MS_WINDOWS
         DWORD error = 0, file_resize_error = 0;
         char* old_data = self->data;
@@ -552,7 +536,8 @@ mmap_resize_method(mmap_object *self,
                 !SetEndOfFile(self->file_handle)) {
                 /* resizing failed. try to remap the file */
                 file_resize_error = GetLastError();
-                new_size = max_size.QuadPart = self->size;
+                max_size.QuadPart = self->size;
+                new_size = self->size;
             }
         }
 
@@ -567,6 +552,11 @@ mmap_resize_method(mmap_object *self,
             self->tagname);
 
         error = GetLastError();
+        /* ERROR_ALREADY_EXISTS implies that between our closing the handle above and
+        calling CreateFileMapping here, someone's created a different mapping with
+        the same name. There's nothing we can usefully do so we invalidate our
+        mapping and error out.
+        */
         if (error == ERROR_ALREADY_EXISTS) {
             CloseHandle(self->map_handle);
             self->map_handle = NULL;
@@ -775,9 +765,7 @@ mmap__enter__method(mmap_object *self, PyObject *args)
 static PyObject *
 mmap__exit__method(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(close);
-
-    return _PyObject_CallMethodIdNoArgs(self, &PyId_close);
+    return mmap_close_method((mmap_object *)self, NULL);
 }
 
 static PyObject *
@@ -1647,6 +1635,11 @@ mmap_exec(PyObject *module)
 #endif
 #ifdef MAP_POPULATE
     ADD_INT_MACRO(module, MAP_POPULATE);
+#endif
+#ifdef MAP_STACK
+    // Mostly a no-op on Linux and NetBSD, but useful on OpenBSD
+    // for stack usage (even on x86 arch)
+    ADD_INT_MACRO(module, MAP_STACK);
 #endif
     if (PyModule_AddIntConstant(module, "PAGESIZE", (long)my_getpagesize()) < 0 ) {
         return -1;
