@@ -13,6 +13,11 @@
 
 This module defines a number of utilities for use by CGI scripts
 written in Python.
+
+The global variable maxlen can be set to an integer indicating the maximum size
+of a POST request. POST requests larger than this size will result in a
+ValueError being raised during parsing. The default value of this variable is 0,
+meaning the request size is unlimited.
 """
 
 # History
@@ -41,11 +46,15 @@ from email.message import Message
 import html
 import locale
 import tempfile
+import warnings
 
 __all__ = ["MiniFieldStorage", "FieldStorage", "parse", "parse_multipart",
            "parse_header", "test", "print_exception", "print_environ",
            "print_form", "print_directory", "print_arguments",
            "print_environ_usage"]
+
+
+warnings._deprecated(__name__, remove=(3,13))
 
 # Logging support
 # ===============
@@ -77,9 +86,11 @@ def initlog(*allargs):
 
     """
     global log, logfile, logfp
+    warnings.warn("cgi.log() is deprecated as of 3.10. Use logging instead",
+                  DeprecationWarning, stacklevel=2)
     if logfile and not logfp:
         try:
-            logfp = open(logfile, "a")
+            logfp = open(logfile, "a", encoding="locale")
         except OSError:
             pass
     if not logfp:

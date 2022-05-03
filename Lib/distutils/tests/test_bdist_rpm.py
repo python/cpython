@@ -44,7 +44,7 @@ class BuildRpmTestCase(support.TempdirManager,
     # spurious sdtout/stderr output under Mac OS X
     @unittest.skipUnless(sys.platform.startswith('linux'),
                          'spurious sdtout/stderr output under Mac OS X')
-    @requires_zlib
+    @requires_zlib()
     @unittest.skipIf(find_executable('rpm') is None,
                      'the rpm command is not found')
     @unittest.skipIf(find_executable('rpmbuild') is None,
@@ -87,7 +87,7 @@ class BuildRpmTestCase(support.TempdirManager,
     # spurious sdtout/stderr output under Mac OS X
     @unittest.skipUnless(sys.platform.startswith('linux'),
                          'spurious sdtout/stderr output under Mac OS X')
-    @requires_zlib
+    @requires_zlib()
     # http://bugs.python.org/issue1533164
     @unittest.skipIf(find_executable('rpm') is None,
                      'the rpm command is not found')
@@ -129,7 +129,7 @@ class BuildRpmTestCase(support.TempdirManager,
         os.remove(os.path.join(pkg_dir, 'dist', 'foo-0.1-1.noarch.rpm'))
 
 def test_suite():
-    return unittest.makeSuite(BuildRpmTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(BuildRpmTestCase)
 
 if __name__ == '__main__':
     run_unittest(test_suite())

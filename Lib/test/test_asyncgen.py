@@ -1,9 +1,16 @@
 import inspect
 import types
 import unittest
+import contextlib
 
 from test.support.import_helper import import_module
+from test.support import gc_collect, requires_working_socket
 asyncio = import_module("asyncio")
+
+
+requires_working_socket(module=True)
+
+_no_default = object()
 
 
 class AwaitException(Exception):
@@ -42,6 +49,37 @@ def to_list(gen):
         return res
 
     return run_until_complete(iterate())
+
+
+def py_anext(iterator, default=_no_default):
+    """Pure-Python implementation of anext() for testing purposes.
+
+    Closely matches the builtin anext() C implementation.
+    Can be used to compare the built-in implementation of the inner
+    coroutines machinery to C-implementation of __anext__() and send()
+    or throw() on the returned generator.
+    """
+
+    try:
+        __anext__ = type(iterator).__anext__
+    except AttributeError:
+        raise TypeError(f'{iterator!r} is not an async iterator')
+
+    if default is _no_default:
+        return __anext__(iterator)
+
+    async def anext_impl():
+        try:
+            # The C code is way more low-level than this, as it implements
+            # all methods of the iterator protocol. In this implementation
+            # we're relying on higher-level coroutine concepts, but that's
+            # exactly what we want -- crosstest pure-Python high-level
+            # implementation and low-level C anext() iterators.
+            return await __anext__(iterator)
+        except StopAsyncIteration:
+            return default
+
+    return anext_impl()
 
 
 class AsyncGenSyntaxTest(unittest.TestCase):
@@ -373,6 +411,12 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         asyncio.set_event_loop_policy(None)
 
     def check_async_iterator_anext(self, ait_class):
+        with self.subTest(anext="pure-Python"):
+            self._check_async_iterator_anext(ait_class, py_anext)
+        with self.subTest(anext="builtin"):
+            self._check_async_iterator_anext(ait_class, anext)
+
+    def _check_async_iterator_anext(self, ait_class, anext):
         g = ait_class()
         async def consume():
             results = []
@@ -403,6 +447,24 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             return "completed"
 
         result = self.loop.run_until_complete(test_2())
+        self.assertEqual(result, "completed")
+
+        def test_send():
+            p = ait_class()
+            obj = anext(p, "completed")
+            with self.assertRaises(StopIteration):
+                with contextlib.closing(obj.__await__()) as g:
+                    g.send(None)
+
+        test_send()
+
+        async def test_throw():
+            p = ait_class()
+            obj = anext(p, "completed")
+            self.assertRaises(SyntaxError, obj.throw, SyntaxError)
+            return "completed"
+
+        result = self.loop.run_until_complete(test_throw())
         self.assertEqual(result, "completed")
 
     def test_async_generator_anext(self):
@@ -567,6 +629,119 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             return "completed"
         result = self.loop.run_until_complete(do_test())
         self.assertEqual(result, "completed")
+
+    def test_anext_iter(self):
+        @types.coroutine
+        def _async_yield(v):
+            return (yield v)
+
+        class MyError(Exception):
+            pass
+
+        async def agenfn():
+            try:
+                await _async_yield(1)
+            except MyError:
+                await _async_yield(2)
+            return
+            yield
+
+        def test1(anext):
+            agen = agenfn()
+            with contextlib.closing(anext(agen, "default").__await__()) as g:
+                self.assertEqual(g.send(None), 1)
+                self.assertEqual(g.throw(MyError, MyError(), None), 2)
+                try:
+                    g.send(None)
+                except StopIteration as e:
+                    err = e
+                else:
+                    self.fail('StopIteration was not raised')
+                self.assertEqual(err.value, "default")
+
+        def test2(anext):
+            agen = agenfn()
+            with contextlib.closing(anext(agen, "default").__await__()) as g:
+                self.assertEqual(g.send(None), 1)
+                self.assertEqual(g.throw(MyError, MyError(), None), 2)
+                with self.assertRaises(MyError):
+                    g.throw(MyError, MyError(), None)
+
+        def test3(anext):
+            agen = agenfn()
+            with contextlib.closing(anext(agen, "default").__await__()) as g:
+                self.assertEqual(g.send(None), 1)
+                g.close()
+                with self.assertRaisesRegex(RuntimeError, 'cannot reuse'):
+                    self.assertEqual(g.send(None), 1)
+
+        def test4(anext):
+            @types.coroutine
+            def _async_yield(v):
+                yield v * 10
+                return (yield (v * 10 + 1))
+
+            async def agenfn():
+                try:
+                    await _async_yield(1)
+                except MyError:
+                    await _async_yield(2)
+                return
+                yield
+
+            agen = agenfn()
+            with contextlib.closing(anext(agen, "default").__await__()) as g:
+                self.assertEqual(g.send(None), 10)
+                self.assertEqual(g.throw(MyError, MyError(), None), 20)
+                with self.assertRaisesRegex(MyError, 'val'):
+                    g.throw(MyError, MyError('val'), None)
+
+        def test5(anext):
+            @types.coroutine
+            def _async_yield(v):
+                yield v * 10
+                return (yield (v * 10 + 1))
+
+            async def agenfn():
+                try:
+                    await _async_yield(1)
+                except MyError:
+                    return
+                yield 'aaa'
+
+            agen = agenfn()
+            with contextlib.closing(anext(agen, "default").__await__()) as g:
+                self.assertEqual(g.send(None), 10)
+                with self.assertRaisesRegex(StopIteration, 'default'):
+                    g.throw(MyError, MyError(), None)
+
+        def test6(anext):
+            @types.coroutine
+            def _async_yield(v):
+                yield v * 10
+                return (yield (v * 10 + 1))
+
+            async def agenfn():
+                await _async_yield(1)
+                yield 'aaa'
+
+            agen = agenfn()
+            with contextlib.closing(anext(agen, "default").__await__()) as g:
+                with self.assertRaises(MyError):
+                    g.throw(MyError, MyError(), None)
+
+        def run_test(test):
+            with self.subTest('pure-Python anext()'):
+                test(py_anext)
+            with self.subTest('builtin anext()'):
+                test(anext)
+
+        run_test(test1)
+        run_test(test2)
+        run_test(test3)
+        run_test(test4)
+        run_test(test5)
+        run_test(test6)
 
     def test_aiter_bad_args(self):
         async def gen():
@@ -871,6 +1046,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             await g.__anext__()
             await g.__anext__()
             del g
+            gc_collect()  # For PyPy or other GCs.
 
             await asyncio.sleep(0.1)
 
@@ -1286,6 +1462,85 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.loop.run_until_complete(self.loop.shutdown_asyncgens())
 
         self.assertEqual(finalized, 2)
+
+    def test_async_gen_asyncio_shutdown_02(self):
+        messages = []
+
+        def exception_handler(loop, context):
+            messages.append(context)
+
+        async def async_iterate():
+            yield 1
+            yield 2
+
+        it = async_iterate()
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.set_exception_handler(exception_handler)
+
+            async for i in it:
+                break
+
+        asyncio.run(main())
+
+        self.assertEqual(messages, [])
+
+    def test_async_gen_asyncio_shutdown_exception_01(self):
+        messages = []
+
+        def exception_handler(loop, context):
+            messages.append(context)
+
+        async def async_iterate():
+            try:
+                yield 1
+                yield 2
+            finally:
+                1/0
+
+        it = async_iterate()
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.set_exception_handler(exception_handler)
+
+            async for i in it:
+                break
+
+        asyncio.run(main())
+
+        message, = messages
+        self.assertEqual(message['asyncgen'], it)
+        self.assertIsInstance(message['exception'], ZeroDivisionError)
+        self.assertIn('an error occurred during closing of asynchronous generator',
+                      message['message'])
+
+    def test_async_gen_asyncio_shutdown_exception_02(self):
+        messages = []
+
+        def exception_handler(loop, context):
+            messages.append(context)
+
+        async def async_iterate():
+            try:
+                yield 1
+                yield 2
+            finally:
+                1/0
+
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.set_exception_handler(exception_handler)
+
+            async for i in async_iterate():
+                break
+            gc_collect()
+
+        asyncio.run(main())
+
+        message, = messages
+        self.assertIsInstance(message['exception'], ZeroDivisionError)
+        self.assertIn('unhandled exception during asyncio.run() shutdown',
+                      message['message'])
 
     def test_async_gen_expression_01(self):
         async def arange(n):

@@ -124,7 +124,6 @@ help_entries = (  # (help_label,  help_doc)
     )
 
 
-
 class DemoWindow(object):
 
     def __init__(self, filename=None):
@@ -171,15 +170,23 @@ class DemoWindow(object):
         self.output_lbl = Label(root, height= 1, text=" --- ", bg="#ddf",
                                 font=("Arial", 16, 'normal'), borderwidth=2,
                                 relief=RIDGE)
-        self.start_btn = Button(root, text=" START ", font=btnfont,
-                                fg="white", disabledforeground = "#fed",
-                                command=self.startDemo)
-        self.stop_btn = Button(root, text=" STOP ", font=btnfont,
-                               fg="white", disabledforeground = "#fed",
-                               command=self.stopIt)
-        self.clear_btn = Button(root, text=" CLEAR ", font=btnfont,
-                                fg="white", disabledforeground="#fed",
-                                command = self.clearCanvas)
+        if darwin:  # Leave Mac button colors alone - #44254.
+            self.start_btn = Button(root, text=" START ", font=btnfont,
+                                    fg='#00cc22', command=self.startDemo)
+            self.stop_btn = Button(root, text=" STOP ", font=btnfont,
+                                   fg='#00cc22', command=self.stopIt)
+            self.clear_btn = Button(root, text=" CLEAR ", font=btnfont,
+                                    fg='#00cc22', command = self.clearCanvas)
+        else:
+            self.start_btn = Button(root, text=" START ", font=btnfont,
+                                    fg="white", disabledforeground = "#fed",
+                                    command=self.startDemo)
+            self.stop_btn = Button(root, text=" STOP ", font=btnfont,
+                                   fg="white", disabledforeground = "#fed",
+                                   command=self.stopIt)
+            self.clear_btn = Button(root, text=" CLEAR ", font=btnfont,
+                                    fg="white", disabledforeground="#fed",
+                                    command = self.clearCanvas)
         self.output_lbl.grid(row=1, column=0, sticky='news', padx=(0,5))
         self.start_btn.grid(row=1, column=1, sticky='ew')
         self.stop_btn.grid(row=1, column=2, sticky='ew')
@@ -267,12 +274,17 @@ class DemoWindow(object):
             return self.increase_size()
 
     def configGUI(self, start, stop, clear, txt="", color="blue"):
-        self.start_btn.config(state=start,
-                              bg="#d00" if start == NORMAL else "#fca")
-        self.stop_btn.config(state=stop,
-                             bg="#d00" if stop == NORMAL else "#fca")
-        self.clear_btn.config(state=clear,
-                              bg="#d00" if clear == NORMAL else "#fca")
+        if darwin:  # Leave Mac button colors alone - #44254.
+            self.start_btn.config(state=start)
+            self.stop_btn.config(state=stop)
+            self.clear_btn.config(state=clear)
+        else:
+            self.start_btn.config(state=start,
+                                  bg="#d00" if start == NORMAL else "#fca")
+            self.stop_btn.config(state=stop,
+                                 bg="#d00" if stop == NORMAL else "#fca")
+            self.clear_btn.config(state=clear,
+                                  bg="#d00" if clear == NORMAL else "#fca")
         self.output_lbl.config(text=txt, fg=color)
 
     def makeLoadDemoMenu(self, master):

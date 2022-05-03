@@ -11,16 +11,10 @@
 
 --------------
 
-This module implements some useful functions on pathnames. To read or
-write files see :func:`open`, and for accessing the filesystem see the
-:mod:`os` module. The path parameters can be passed as either strings,
-or bytes. Applications are encouraged to represent file names as
-(Unicode) character strings. Unfortunately, some file names may not be
-representable as strings on Unix, so applications that need to support
-arbitrary file names on Unix should use bytes objects to represent
-path names. Vice versa, using bytes objects cannot represent all file
-names on Windows (in the standard ``mbcs`` encoding), hence Windows
-applications should use string objects to access all files.
+This module implements some useful functions on pathnames. To read or write
+files see :func:`open`, and for accessing the filesystem see the :mod:`os`
+module. The path parameters can be passed as strings, or bytes, or any object
+implementing the :class:`os.PathLike` protocol.
 
 Unlike a unix shell, Python does not do any *automatic* path expansions.
 Functions such as :func:`expanduser` and :func:`expandvars` can be invoked
@@ -37,7 +31,6 @@ the :mod:`glob` module.)
    All of these functions accept either only bytes or only string objects as
    their parameters.  The result is an object of the same type, if a path or
    file name is returned.
-
 
 .. note::
 
@@ -340,25 +333,45 @@ the :mod:`glob` module.)
    that contains symbolic links.  On Windows, it converts forward slashes to
    backward slashes. To normalize case, use :func:`normcase`.
 
+  .. note::
+      On POSIX systems, in accordance with `IEEE Std 1003.1 2013 Edition; 4.13
+      Pathname Resolution <http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>`_,
+      if a pathname begins with exactly two slashes, the first component
+      following the leading characters may be interpreted in an implementation-defined
+      manner, although more than two leading characters shall be treated as a
+      single character.
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
 
-.. function:: realpath(path)
+.. function:: realpath(path, *, strict=False)
 
    Return the canonical path of the specified filename, eliminating any symbolic
    links encountered in the path (if they are supported by the operating
    system).
 
+   If a path doesn't exist or a symlink loop is encountered, and *strict* is
+   ``True``, :exc:`OSError` is raised. If *strict* is ``False``, the path is
+   resolved as far as possible and any remainder is appended without checking
+   whether it exists.
+
    .. note::
-      When symbolic link cycles occur, the returned path will be one member of
-      the cycle, but no guarantee is made about which member that will be.
+      This function emulates the operating system's procedure for making a path
+      canonical, which differs slightly between Windows and UNIX with respect
+      to how links and subsequent path components interact.
+
+      Operating system APIs make paths canonical as needed, so it's not
+      normally necessary to call this function.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
    .. versionchanged:: 3.8
       Symbolic links and junctions are now resolved on Windows.
+
+   .. versionchanged:: 3.10
+      The *strict* parameter was added.
 
 
 .. function:: relpath(path, start=os.curdir)
@@ -450,12 +463,16 @@ the :mod:`glob` module.)
    On Windows, splits a pathname into drive/UNC sharepoint and relative path.
 
    If the path contains a drive letter, drive will contain everything
-   up to and including the colon.
-   e.g. ``splitdrive("c:/dir")`` returns ``("c:", "/dir")``
+   up to and including the colon::
+
+      >>> splitdrive("c:/dir")
+      ("c:", "/dir")
 
    If the path contains a UNC path, drive will contain the host name
-   and share, up to but not including the fourth separator.
-   e.g. ``splitdrive("//host/computer/dir")`` returns ``("//host/computer", "/dir")``
+   and share, up to but not including the fourth separator::
+
+      >>> splitdrive("//host/computer/dir")
+      ("//host/computer", "/dir")
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -464,9 +481,29 @@ the :mod:`glob` module.)
 .. function:: splitext(path)
 
    Split the pathname *path* into a pair ``(root, ext)``  such that ``root + ext ==
-   path``, and *ext* is empty or begins with a period and contains at most one
-   period. Leading periods on the basename are  ignored; ``splitext('.cshrc')``
-   returns  ``('.cshrc', '')``.
+   path``, and the extension, *ext*, is empty or begins with a period and contains at
+   most one period.
+
+   If the path contains no extension, *ext* will be ``''``::
+
+      >>> splitext('bar')
+      ('bar', '')
+
+   If the path contains an extension, then *ext* will be set to this extension,
+   including the leading period. Note that previous periods will be ignored::
+
+      >>> splitext('foo.bar.exe')
+      ('foo.bar', '.exe')
+      >>> splitext('/foo/bar.exe')
+      ('/foo/bar', '.exe')
+
+   Leading periods of the last component of the path are considered to
+   be part of the root::
+
+      >>> splitext('.cshrc')
+      ('.cshrc', '')
+      >>> splitext('/foo/....jpg')
+      ('/foo/....jpg', '')
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.

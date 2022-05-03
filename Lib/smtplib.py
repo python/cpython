@@ -168,7 +168,7 @@ def quotedata(data):
     """Quote data for email.
 
     Double leading '.', and change Unix newline '\\n', or Mac '\\r' into
-    Internet CRLF end-of-line.
+    internet CRLF end-of-line.
     """
     return re.sub(r'(?m)^\.', '..',
         re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data))
@@ -231,8 +231,8 @@ class SMTP:
                  source_address=None):
         """Initialize a new instance.
 
-        If specified, `host' is the name of the remote host to which to
-        connect.  If specified, `port' specifies the port to which to connect.
+        If specified, `host` is the name of the remote host to which to
+        connect.  If specified, `port` specifies the port to which to connect.
         By default, smtplib.SMTP_PORT is used.  If a host is specified the
         connect method is called, and if it returns anything other than a
         success code an SMTPConnectError is raised.  If specified,
@@ -367,10 +367,15 @@ class SMTP:
     def putcmd(self, cmd, args=""):
         """Send a command to the server."""
         if args == "":
-            str = '%s%s' % (cmd, CRLF)
+            s = cmd
         else:
-            str = '%s %s%s' % (cmd, args, CRLF)
-        self.send(str)
+            s = f'{cmd} {args}'
+        if '\r' in s or '\n' in s:
+            s = s.replace('\n', '\\n').replace('\r', '\\r')
+            raise ValueError(
+                f'command and arguments contain prohibited newline characters: {s}'
+            )
+        self.send(f'{s}{CRLF}')
 
     def getreply(self):
         """Get a reply from the server.

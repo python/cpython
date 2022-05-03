@@ -210,21 +210,17 @@ class FileInput:
 
         # We can not use io.text_encoding() here because old openhook doesn't
         # take encoding parameter.
-        if "b" not in mode and encoding is None and sys.flags.warn_default_encoding:
+        if (sys.flags.warn_default_encoding and
+                "b" not in mode and encoding is None and openhook is None):
             import warnings
             warnings.warn("'encoding' argument not specified.",
                           EncodingWarning, 2)
 
         # restrict mode argument to reading modes
-        if mode not in ('r', 'rU', 'U', 'rb'):
-            raise ValueError("FileInput opening mode must be one of "
-                             "'r', 'rU', 'U' and 'rb'")
-        if 'U' in mode:
-            import warnings
-            warnings.warn("'U' mode is deprecated",
-                          DeprecationWarning, 2)
+        if mode not in ('r', 'rb'):
+            raise ValueError("FileInput opening mode must be 'r' or 'rb'")
         self._mode = mode
-        self._write_mode = mode.replace('r', 'w') if 'U' not in mode else 'w'
+        self._write_mode = mode.replace('r', 'w')
         if openhook:
             if inplace:
                 raise ValueError("FileInput cannot use an opening hook in inplace mode")
@@ -260,21 +256,6 @@ class FileInput:
                 raise StopIteration
             self.nextfile()
             # repeat with next file
-
-    def __getitem__(self, i):
-        import warnings
-        warnings.warn(
-            "Support for indexing FileInput objects is deprecated. "
-            "Use iterator protocol instead.",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        if i != self.lineno():
-            raise RuntimeError("accessing lines out of order")
-        try:
-            return self.__next__()
-        except StopIteration:
-            raise IndexError("end of input reached")
 
     def nextfile(self):
         savestdout = self._savestdout
@@ -330,6 +311,13 @@ class FileInput:
         self._file = None
         self._isstdin = False
         self._backupfilename = 0
+
+        # EncodingWarning is emitted in __init__() already
+        if "b" not in self._mode:
+            encoding = self._encoding or "locale"
+        else:
+            encoding = None
+
         if self._filename == '-':
             self._filename = '<stdin>'
             if 'b' in self._mode:
@@ -347,18 +335,18 @@ class FileInput:
                     pass
                 # The next few lines may raise OSError
                 os.rename(self._filename, self._backupfilename)
-                self._file = open(self._backupfilename, self._mode)
+                self._file = open(self._backupfilename, self._mode, encoding=encoding)
                 try:
                     perm = os.fstat(self._file.fileno()).st_mode
                 except OSError:
-                    self._output = open(self._filename, self._write_mode)
+                    self._output = open(self._filename, self._write_mode, encoding=encoding)
                 else:
                     mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
                     if hasattr(os, 'O_BINARY'):
                         mode |= os.O_BINARY
 
                     fd = os.open(self._filename, mode, perm)
-                    self._output = os.fdopen(fd, self._write_mode)
+                    self._output = os.fdopen(fd, self._write_mode, encoding=encoding)
                     try:
                         os.chmod(self._filename, perm)
                     except OSError:
@@ -376,11 +364,6 @@ class FileInput:
                         self._file = self._openhook(
                             self._filename, self._mode, encoding=self._encoding, errors=self._errors)
                 else:
-                    # EncodingWarning is emitted in __init__() already
-                    if "b" not in self._mode:
-                        encoding = self._encoding or "locale"
-                    else:
-                        encoding = None
                     self._file = open(self._filename, self._mode, encoding=encoding, errors=self._errors)
         self._readline = self._file.readline  # hide FileInput._readline
         return self._readline()

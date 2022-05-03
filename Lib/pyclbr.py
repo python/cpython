@@ -42,7 +42,6 @@ shouldn't happen often.
 """
 
 import ast
-import copy
 import sys
 import importlib.util
 
