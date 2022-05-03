@@ -77,11 +77,11 @@ bound into a function.
 
    Returns ``1`` if the function succeeds and 0 otherwise.
 
-.. c:function:: PyObject *PyCode_GetCode(PyObject *co)
+.. c:function:: PyObject* PyCode_GetCode(PyObject *co)
 
    Equivalent to the Python code ``getattr(co, 'co_code')``.
    Returns a strong reference to a :c:type:`PyBytesObject` representing the
-   bytecode in a code object. On error, a ``NULL`` is returned.
+   bytecode in a code object. On error, ``NULL`` is returned.
 
    This `PyBytesObject` may be created on-demand by the interpreter and does not
    necessarily represent the bytecode actually executed by CPython. The primary
