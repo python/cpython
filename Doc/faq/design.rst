@@ -266,12 +266,9 @@ For cases where you need to choose from a very large number of possibilities,
 you can create a dictionary mapping case values to functions to call.  For
 example::
 
-   def function_1(...):
-       ...
-
    functions = {'a': function_1,
                 'b': function_2,
-                'c': self.method_1, ...}
+                'c': self.method_1}
 
    func = functions[value]
    func()
@@ -279,14 +276,14 @@ example::
 For calling methods on objects, you can simplify yet further by using the
 :func:`getattr` built-in to retrieve methods with a particular name::
 
-   def visit_a(self, ...):
-       ...
-   ...
+   class MyVisitor:
+       def visit_a(self):
+           ...
 
-   def dispatch(self, value):
-       method_name = 'visit_' + str(value)
-       method = getattr(self, method_name)
-       method()
+       def dispatch(self, value):
+           method_name = 'visit_' + str(value)
+           method = getattr(self, method_name)
+           method()
 
 It's suggested that you use a prefix for the method names, such as ``visit_`` in
 this example.  Without such a prefix, if values are coming from an untrusted

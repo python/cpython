@@ -1,1 +1,0 @@
-Improve output of ``dir()`` with Enums.

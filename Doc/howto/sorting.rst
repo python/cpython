@@ -325,7 +325,7 @@ Odd and Ends
     >>> standard_way
     [('red', 1), ('red', 2), ('blue', 1), ('blue', 2)]
 
-* The sort routines are guaranteed to use :meth:`__lt__` when making comparisons
+* The sort routines use ``<`` when making comparisons
   between two objects. So, it is easy to add a standard sort order to a class by
   defining an :meth:`__lt__` method:
 
@@ -334,6 +334,9 @@ Odd and Ends
     >>> Student.__lt__ = lambda self, other: self.age < other.age
     >>> sorted(student_objects)
     [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
+
+  However, note that ``<`` can fall back to using :meth:`__gt__` if
+  :meth:`__lt__` is not implemented (see :func:`object.__lt__`).
 
 * Key functions need not depend directly on the objects being sorted. A key
   function can also access external resources. For instance, if the student grades

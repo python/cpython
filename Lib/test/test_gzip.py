@@ -12,7 +12,7 @@ import unittest
 from subprocess import PIPE, Popen
 from test.support import import_helper
 from test.support import os_helper
-from test.support import _4G, bigmemtest
+from test.support import _4G, bigmemtest, requires_subprocess
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 gzip = import_helper.import_module('gzip')
@@ -552,6 +552,15 @@ class TestGzip(BaseTest):
                         f.read(1) # to set mtime attribute
                         self.assertEqual(f.mtime, mtime)
 
+    def test_compress_correct_level(self):
+        # gzip.compress calls with mtime == 0 take a different code path.
+        for mtime in (0, 42):
+            with self.subTest(mtime=mtime):
+                nocompress = gzip.compress(data1, compresslevel=0, mtime=mtime)
+                yescompress = gzip.compress(data1, compresslevel=1, mtime=mtime)
+                self.assertIn(data1, nocompress)
+                self.assertNotIn(data1, yescompress)
+
     def test_decompress(self):
         for data in (data1, data2):
             buf = io.BytesIO()
@@ -760,6 +769,7 @@ def create_and_remove_directory(directory):
 class TestCommandLine(unittest.TestCase):
     data = b'This is a simple test with gzip'
 
+    @requires_subprocess()
     def test_decompress_stdin_stdout(self):
         with io.BytesIO() as bytes_io:
             with gzip.GzipFile(fileobj=bytes_io, mode='wb') as gzip_file:
@@ -795,6 +805,7 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(rc, 1)
         self.assertEqual(out, b'')
 
+    @requires_subprocess()
     @create_and_remove_directory(TEMPDIR)
     def test_compress_stdin_outfile(self):
         args = sys.executable, '-m', 'gzip'

@@ -677,14 +677,16 @@ class TestNamedTuple(unittest.TestCase):
         self.assertRaises(AttributeError, Point.x.__set__, p, 33)
         self.assertRaises(AttributeError, Point.x.__delete__, p)
 
-        class NewPoint(tuple):
-            x = pickle.loads(pickle.dumps(Point.x))
-            y = pickle.loads(pickle.dumps(Point.y))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                class NewPoint(tuple):
+                    x = pickle.loads(pickle.dumps(Point.x, proto))
+                    y = pickle.loads(pickle.dumps(Point.y, proto))
 
-        np = NewPoint([1, 2])
+                np = NewPoint([1, 2])
 
-        self.assertEqual(np.x, 1)
-        self.assertEqual(np.y, 2)
+                self.assertEqual(np.x, 1)
+                self.assertEqual(np.y, 2)
 
     def test_new_builtins_issue_43102(self):
         obj = namedtuple('C', ())

@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_pylifecycle.h"   // _PyArg_Fini
 
 #include <ctype.h>
 #include <float.h>

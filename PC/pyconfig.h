@@ -162,8 +162,10 @@ WIN32 is still required for the locale module.
 /* Define like size_t, omitting the "unsigned" */
 #ifdef MS_WIN64
 typedef __int64 Py_ssize_t;
+#   define PY_SSIZE_T_MAX LLONG_MAX
 #else
 typedef _W64 int Py_ssize_t;
+#   define PY_SSIZE_T_MAX INT_MAX
 #endif
 #define HAVE_PY_SSIZE_T 1
 
@@ -528,6 +530,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if you have times.  */
 /* #undef HAVE_TIMES */
+
+/* Define to 1 if you have the `umask' function. */
+#define HAVE_UMASK 1
 
 /* Define if you have uname.  */
 /* #undef HAVE_UNAME */

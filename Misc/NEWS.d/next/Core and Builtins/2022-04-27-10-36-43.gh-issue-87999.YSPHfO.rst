@@ -1,0 +1,3 @@
+The warning emitted by the Python parser for a numeric literal immediately
+followed by keyword has been changed from deprecation warning to syntax
+warning.

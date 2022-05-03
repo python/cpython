@@ -18,12 +18,18 @@ import threading
 
 import unittest
 from test import support, mock_socket
-from test.support import _asyncore as asyncore
-from test.support import _smtpd as smtpd
 from test.support import hashlib_helper
 from test.support import socket_helper
 from test.support import threading_helper
+from test.support import warnings_helper
 from unittest.mock import Mock
+
+
+asyncore = warnings_helper.import_deprecated('asyncore')
+smtpd = warnings_helper.import_deprecated('smtpd')
+
+
+support.requires_working_socket(module=True)
 
 HOST = socket_helper.HOST
 
@@ -1167,7 +1173,7 @@ class SMTPSimTests(unittest.TestCase):
         finally:
             smtp.close()
 
-    @hashlib_helper.requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def testAUTH_CRAM_MD5(self):
         self.serv.add_feature("AUTH CRAM-MD5")
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
@@ -1176,7 +1182,7 @@ class SMTPSimTests(unittest.TestCase):
         self.assertEqual(resp, (235, b'Authentication Succeeded'))
         smtp.close()
 
-    @hashlib_helper.requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def testAUTH_multiple(self):
         # Test that multiple authentication methods are tried.
         self.serv.add_feature("AUTH BOGUS PLAIN LOGIN CRAM-MD5")

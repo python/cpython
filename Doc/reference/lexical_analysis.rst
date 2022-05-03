@@ -101,11 +101,10 @@ addition, if the first bytes of the file are the UTF-8 byte-order mark
 (``b'\xef\xbb\xbf'``), the declared file encoding is UTF-8 (this is supported,
 among others, by Microsoft's :program:`notepad`).
 
-If an encoding is declared, the encoding name must be recognized by Python. The
+If an encoding is declared, the encoding name must be recognized by Python
+(see :ref:`standard-encodings`). The
 encoding is used for all lexical analysis, including string literals, comments
 and identifiers.
-
-.. XXX there should be a list of supported encodings.
 
 
 .. _explicit-joining:
@@ -596,6 +595,11 @@ Notes:
 
 (1)
    As in Standard C, up to three octal digits are accepted.
+
+   .. versionchanged:: 3.11
+      Octal escapes with value larger than ``0o377`` produce a :exc:`DeprecationWarning`.
+      In a future Python version they will be a :exc:`SyntaxWarning` and
+      eventually a :exc:`SyntaxError`.
 
 (2)
    Unlike in Standard C, exactly two hex digits are required.

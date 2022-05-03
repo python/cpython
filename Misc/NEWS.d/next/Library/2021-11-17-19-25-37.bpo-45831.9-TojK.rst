@@ -1,5 +1,0 @@
-:mod:`faulthandler` can now write ASCII-only strings (like filenames and
-function names) with a single write() syscall when dumping a traceback. It
-reduces the risk of getting an unreadable dump when two threads or two
-processes dump a traceback to the same file (like stderr) at the same time.
-Patch by Victor Stinner.

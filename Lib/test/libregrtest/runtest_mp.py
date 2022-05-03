@@ -2,6 +2,7 @@ import faulthandler
 import json
 import os
 import queue
+import shlex
 import signal
 import subprocess
 import sys
@@ -55,8 +56,12 @@ def run_test_in_subprocess(testname: str, ns: Namespace) -> subprocess.Popen:
     ns_dict = vars(ns)
     worker_args = (ns_dict, testname)
     worker_args = json.dumps(worker_args)
-
-    cmd = [sys.executable, *support.args_from_interpreter_flags(),
+    if ns.python is not None:
+        # The "executable" may be two or more parts, e.g. "node python.js"
+        executable = shlex.split(ns.python)
+    else:
+        executable = [sys.executable]
+    cmd = [*executable, *support.args_from_interpreter_flags(),
            '-u',    # Unbuffered stdout and stderr
            '-m', 'test.regrtest',
            '--worker-args', worker_args]
@@ -392,16 +397,12 @@ class MultiprocessTestRunner:
             worker.wait_stopped(start_time)
 
     def _get_result(self) -> QueueOutput | None:
-        if not any(worker.is_alive() for worker in self.workers):
-            # all worker threads are done: consume pending results
-            try:
-                return self.output.get(timeout=0)
-            except queue.Empty:
-                return None
-
         use_faulthandler = (self.ns.timeout is not None)
         timeout = PROGRESS_UPDATE
-        while True:
+
+        # bpo-46205: check the status of workers every iteration to avoid
+        # waiting forever on an empty queue.
+        while any(worker.is_alive() for worker in self.workers):
             if use_faulthandler:
                 faulthandler.dump_traceback_later(MAIN_PROCESS_TIMEOUT,
                                                   exit=True)
@@ -416,6 +417,12 @@ class MultiprocessTestRunner:
             running = get_running(self.workers)
             if running and not self.ns.pgo:
                 self.log('running: %s' % ', '.join(running))
+
+        # all worker threads are done: consume pending results
+        try:
+            return self.output.get(timeout=0)
+        except queue.Empty:
+            return None
 
     def display_result(self, mp_result: MultiprocessResult) -> None:
         result = mp_result.result

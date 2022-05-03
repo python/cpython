@@ -1113,7 +1113,7 @@ class DocTestFinder:
         if inspect.istraceback(obj): obj = obj.tb_frame
         if inspect.isframe(obj): obj = obj.f_code
         if inspect.iscode(obj):
-            lineno = getattr(obj, 'co_firstlineno', None)-1
+            lineno = obj.co_firstlineno - 1
 
         # Find the line number where the docstring starts.  Assume
         # that it's the first line that begins with a quote mark.
@@ -2171,6 +2171,7 @@ class DocTestCase(unittest.TestCase):
         unittest.TestCase.__init__(self)
         self._dt_optionflags = optionflags
         self._dt_checker = checker
+        self._dt_globs = test.globs.copy()
         self._dt_test = test
         self._dt_setUp = setUp
         self._dt_tearDown = tearDown
@@ -2187,7 +2188,9 @@ class DocTestCase(unittest.TestCase):
         if self._dt_tearDown is not None:
             self._dt_tearDown(test)
 
+        # restore the original globs
         test.globs.clear()
+        test.globs.update(self._dt_globs)
 
     def runTest(self):
         test = self._dt_test

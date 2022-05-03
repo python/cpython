@@ -4,7 +4,7 @@
 
 typedef struct {
     PyObject_VAR_HEAD
-    Py_hash_t ob_shash;
+    Py_DEPRECATED(3.11) Py_hash_t ob_shash;
     char ob_sval[1];
 
     /* Invariants:
