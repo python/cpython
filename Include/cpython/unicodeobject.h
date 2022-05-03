@@ -642,9 +642,9 @@ static inline Py_ssize_t PyUnicode_GET_SIZE(PyObject *op)
 {
     _Py_COMP_DIAG_PUSH
     _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    if (_PyASCIIObject_CAST(op)->wstr == NULL) {
+    if (_PyASCIIObject_CAST(op)->wstr == _Py_NULL) {
         (void)PyUnicode_AsUnicode(op);
-        assert(_PyASCIIObject_CAST(op)->wstr != NULL);
+        assert(_PyASCIIObject_CAST(op)->wstr != _Py_NULL);
     }
     return PyUnicode_WSTR_LENGTH(op);
     _Py_COMP_DIAG_POP
@@ -674,7 +674,7 @@ Py_DEPRECATED(3.3)
 static inline Py_UNICODE* PyUnicode_AS_UNICODE(PyObject *op)
 {
     wchar_t *wstr = _PyASCIIObject_CAST(op)->wstr;
-    if (wstr != NULL) {
+    if (wstr != _Py_NULL) {
         return wstr;
     }
 

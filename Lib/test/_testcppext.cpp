@@ -52,7 +52,7 @@ test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 
 static PyMethodDef _testcppext_methods[] = {
     {"add", _testcppext_add, METH_VARARGS, _testcppext_add_doc},
-    {"test_api_casts", test_api_casts, METH_NOARGS, NULL},
+    {"test_api_casts", test_api_casts, METH_NOARGS, nullptr},
     {nullptr, nullptr, 0, nullptr}  /* sentinel */
 };
 
@@ -68,7 +68,7 @@ _testcppext_exec(PyObject *module)
 
 static PyModuleDef_Slot _testcppext_slots[] = {
     {Py_mod_exec, reinterpret_cast<void*>(_testcppext_exec)},
-    {0, NULL}
+    {0, nullptr}
 };
 
 
@@ -81,8 +81,8 @@ static struct PyModuleDef _testcppext_module = {
     0,  // m_size
     _testcppext_methods,  // m_methods
     _testcppext_slots,  // m_slots
-    NULL,  // m_traverse
-    NULL,  // m_clear
+    nullptr,  // m_traverse
+    nullptr,  // m_clear
     nullptr,  // m_free
 };
 
