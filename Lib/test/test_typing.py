@@ -1482,6 +1482,15 @@ class UnionTests(BaseTestCase):
         with self.assertRaises(TypeError):
             type(u)()
 
+    def test_cannot_iterate(self):
+        with self.assertRaises(TypeError):
+            iter(Union)
+        with self.assertRaises(TypeError):
+            list(Union)
+        with self.assertRaises(TypeError):
+            for _ in Union:
+                pass
+
     def test_union_generalization(self):
         self.assertFalse(Union[str, typing.Iterable[int]] == str)
         self.assertFalse(Union[str, typing.Iterable[int]] == typing.Iterable[int])
