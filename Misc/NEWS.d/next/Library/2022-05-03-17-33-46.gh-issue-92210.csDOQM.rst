@@ -1,1 +1,1 @@
-OPort of Cinder's ``socket.__init__`` which uses Argument Clinic to CPython.
+Port ``socket.__init__`` to Argument Clinic. Patch by Cinder.

@@ -3,11 +3,11 @@ preserve
 [clinic start generated code]*/
 
 static int
-_socket_socket___init___impl(PySocketSockObject *self, int family, int type,
-                             int proto, PyObject *fdobj);
+sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
+                  PyObject *fdobj);
 
 static int
-_socket_socket___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+sock_initobj(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"family", "type", "proto", "fileno", NULL};
@@ -57,9 +57,9 @@ _socket_socket___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     fdobj = fastargs[3];
 skip_optional_pos:
-    return_value = _socket_socket___init___impl((PySocketSockObject *)self, family, type, proto, fdobj);
+    return_value = sock_initobj_impl((PySocketSockObject *)self, family, type, proto, fdobj);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=22aa2b498a4e55d1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2433d6ac51bc962a input=a9049054013a1b77]*/

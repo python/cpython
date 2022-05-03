@@ -329,14 +329,10 @@ static FlagRuntimeInfo win_runtime_flags[] = {
 };
 
 /*[clinic input]
- module _socket
- [clinic start generated code]*/
- /*[clinic end generated code: output=da39a3ee5e6b4b0d input=4a04c1cd4d2530a1]*/
-
- /*[clinic input]
- class _socket.socket "PySocketSockObject *" "&sock_type"
- [clinic start generated code]*/
- /*[clinic end generated code: output=da39a3ee5e6b4b0d input=3e0d64ca2c658496]*/
+module _socket
+class _socket.socket "PySocketSockObject *" "&sock_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7a8313d9b7f51988]*/
 
 static int
 remove_unusable_flags(PyObject *m)
@@ -1720,7 +1716,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         }
         addr->sun_family = s->sock_family;
         memcpy(addr->sun_path, path.buf, path.len);
-        
+
         retval = 1;
     unix_out:
         PyBuffer_Release(&path);
@@ -5117,7 +5113,7 @@ static int sock_cloexec_works = -1;
 /*ARGSUSED*/
 
 /*[clinic input]
-_socket.socket.__init__
+_socket.socket.__init__ as sock_initobj
     family: int = -1
     type: int = -1
     proto: int = -1
@@ -5125,9 +5121,9 @@ _socket.socket.__init__
 [clinic start generated code]*/
 
 static int
-_socket_socket___init___impl(PySocketSockObject *self, int family, int type,
-                              int proto, PyObject *fdobj)
- /*[clinic end generated code: output=8d20ec7eb58df701 input=c0966eb4587c4634]*/
+sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
+                  PyObject *fdobj)
+/*[clinic end generated code: output=d114d026b9a9a810 input=04cfc32953f5cc25]*/
 {
 
     SOCKET_T fd = INVALID_SOCKET;
@@ -5382,7 +5378,7 @@ static PyTypeObject sock_type = {
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    _socket_socket___init__,                    /* tp_init */
+    sock_initobj,                               /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     sock_new,                                   /* tp_new */
     PyObject_Del,                               /* tp_free */
