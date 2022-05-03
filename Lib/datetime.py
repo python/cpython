@@ -320,8 +320,8 @@ def _find_isoformat_separator(dtstr):
 
 
 def _parse_isoformat_date(dtstr):
-    # It is assumed that this function will only be called with a
-    # string of length exactly 10, and (though this is not used) ASCII-only
+    # It is assumed that this is an ASCII-only string of lengths 7, 8 or 10,
+    # see the comment on Modules/_datetimemodule.c:_find_isoformat_separator
     assert len(dtstr) in (7, 8, 10)
     year = int(dtstr[0:4])
     has_sep = dtstr[4] == '-'
