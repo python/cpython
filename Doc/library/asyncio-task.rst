@@ -204,53 +204,20 @@ A good example of a low-level function that returns a Future object
 is :meth:`loop.run_in_executor`.
 
 
-Running an asyncio Program
-==========================
-
-.. function:: run(coro, *, debug=False)
-
-    Execute the :term:`coroutine` *coro* and return the result.
-
-    This function runs the passed coroutine, taking care of
-    managing the asyncio event loop, *finalizing asynchronous
-    generators*, and closing the threadpool.
-
-    This function cannot be called when another asyncio event loop is
-    running in the same thread.
-
-    If *debug* is ``True``, the event loop will be run in debug mode.
-
-    This function always creates a new event loop and closes it at
-    the end.  It should be used as a main entry point for asyncio
-    programs, and should ideally only be called once.
-
-    Example::
-
-        async def main():
-            await asyncio.sleep(1)
-            print('hello')
-
-        asyncio.run(main())
-
-    .. versionadded:: 3.7
-
-    .. versionchanged:: 3.9
-       Updated to use :meth:`loop.shutdown_default_executor`.
-
-    .. note::
-       The source code for ``asyncio.run()`` can be found in
-       :source:`Lib/asyncio/runners.py`.
-
 Creating Tasks
 ==============
 
-.. function:: create_task(coro, *, name=None)
+.. function:: create_task(coro, *, name=None, context=None)
 
    Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
    and schedule its execution.  Return the Task object.
 
    If *name* is not ``None``, it is set as the name of the task using
    :meth:`Task.set_name`.
+
+   An optional keyword-only *context* argument allows specifying a
+   custom :class:`contextvars.Context` for the *coro* to run in.
+   The current context copy is created when no *context* is provided.
 
    The task is executed in the loop returned by :func:`get_running_loop`,
    :exc:`RuntimeError` is raised if there is no running loop in
@@ -280,6 +247,9 @@ Creating Tasks
 
    .. versionchanged:: 3.8
       Added the *name* parameter.
+
+   .. versionchanged:: 3.11
+      Added the *context* parameter.
 
 
 Sleeping
@@ -527,7 +497,7 @@ Waiting Primitives
 
 .. coroutinefunction:: wait(aws, *, timeout=None, return_when=ALL_COMPLETED)
 
-   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
+   Run :class:`~asyncio.Future` and :class:`~asyncio.Task` instances in the *aws*
    iterable concurrently and block until the condition specified
    by *return_when*.
 
@@ -570,51 +540,11 @@ Waiting Primitives
    Unlike :func:`~asyncio.wait_for`, ``wait()`` does not cancel the
    futures when a timeout occurs.
 
-   .. deprecated:: 3.8
-
-      If any awaitable in *aws* is a coroutine, it is automatically
-      scheduled as a Task.  Passing coroutines objects to
-      ``wait()`` directly is deprecated as it leads to
-      :ref:`confusing behavior <asyncio_example_wait_coroutine>`.
-
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
-   .. _asyncio_example_wait_coroutine:
-   .. note::
-
-      ``wait()`` schedules coroutines as Tasks automatically and later
-      returns those implicitly created Task objects in ``(done, pending)``
-      sets.  Therefore the following code won't work as expected::
-
-          async def foo():
-              return 42
-
-          coro = foo()
-          done, pending = await asyncio.wait({coro})
-
-          if coro in done:
-              # This branch will never be run!
-
-      Here is how the above snippet can be fixed::
-
-          async def foo():
-              return 42
-
-          task = asyncio.create_task(foo())
-          done, pending = await asyncio.wait({task})
-
-          if task in done:
-              # Everything will work as expected now.
-
-   .. deprecated-removed:: 3.8 3.11
-
-      Passing coroutine objects to ``wait()`` directly is
-      deprecated.
-
-   .. versionchanged:: 3.10
-      Removed the *loop* parameter.
-
+   .. versionchanged:: 3.11
+      Passing coroutine objects to ``wait()`` directly is forbidden.
 
 .. function:: as_completed(aws, *, timeout=None)
 
@@ -843,8 +773,10 @@ Task Object
       .. versionchanged:: 3.9
          Added the *msg* parameter.
 
-      .. versionchanged:: 3.11
-         The ``msg`` parameter is propagated from cancelled task to its awaiter.
+      .. deprecated-removed:: 3.11 3.14
+         *msg* parameter is ambiguous when multiple :meth:`cancel`
+         are called with different cancellation messages.
+         The argument will be removed.
 
       .. _asyncio_example_task_cancel:
 

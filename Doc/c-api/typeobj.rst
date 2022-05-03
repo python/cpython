@@ -1233,7 +1233,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       .. note::
 
          :const:`Py_TPFLAGS_MAPPING` and :const:`Py_TPFLAGS_SEQUENCE` are
-         mutually exclusive; it is an error enable both flags simultaneously.
+         mutually exclusive; it is an error to enable both flags simultaneously.
 
       **Inheritance:**
 
@@ -1255,7 +1255,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       .. note::
 
          :const:`Py_TPFLAGS_MAPPING` and :const:`Py_TPFLAGS_SEQUENCE` are
-         mutually exclusive; it is an error enable both flags simultaneously.
+         mutually exclusive; it is an error to enable both flags simultaneously.
 
       **Inheritance:**
 
@@ -2597,7 +2597,7 @@ A basic :ref:`static type <static-types>`::
        PyVarObject_HEAD_INIT(NULL, 0)
        .tp_name = "mymod.MyObject",
        .tp_basicsize = sizeof(MyObject),
-       .tp_doc = "My objects",
+       .tp_doc = PyDoc_STR("My objects"),
        .tp_new = myobj_new,
        .tp_dealloc = (destructor)myobj_dealloc,
        .tp_repr = (reprfunc)myobj_repr,
@@ -2627,7 +2627,7 @@ with a more verbose initializer::
        0,                              /* tp_setattro */
        0,                              /* tp_as_buffer */
        0,                              /* tp_flags */
-       "My objects",                   /* tp_doc */
+       PyDoc_STR("My objects"),        /* tp_doc */
        0,                              /* tp_traverse */
        0,                              /* tp_clear */
        0,                              /* tp_richcompare */
@@ -2660,7 +2660,7 @@ A type that supports weakrefs, instance dicts, and hashing::
        PyVarObject_HEAD_INIT(NULL, 0)
        .tp_name = "mymod.MyObject",
        .tp_basicsize = sizeof(MyObject),
-       .tp_doc = "My objects",
+       .tp_doc = PyDoc_STR("My objects"),
        .tp_weaklistoffset = offsetof(MyObject, weakreflist),
        .tp_dictoffset = offsetof(MyObject, inst_dict),
        .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
@@ -2688,7 +2688,7 @@ to create instances (e.g. uses a separate factory func) using
        .tp_name = "mymod.MyStr",
        .tp_basicsize = sizeof(MyStr),
        .tp_base = NULL,  // set to &PyUnicode_Type in module init
-       .tp_doc = "my custom str",
+       .tp_doc = PyDoc_STR("my custom str"),
        .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
        .tp_repr = (reprfunc)myobj_repr,
    };

@@ -4,7 +4,7 @@ parameters:
 jobs:
 - job: Publish_Store
   displayName: Publish Store packages
-  condition: and(succeeded(), eq(variables['DoMSIX'], 'true'))
+  condition: and(succeeded(), eq(variables['DoMSIX'], 'true'), ne(variables['SkipMSIXPublish'], 'true'))
 
   pool:
     vmImage: windows-2022

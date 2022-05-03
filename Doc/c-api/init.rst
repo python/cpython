@@ -553,7 +553,7 @@ Process-wide parameters
    period.  The returned string points into static storage; the caller should not
    modify its value.  The value is available to Python code as :data:`sys.version`.
 
-   See also the :data:`Py_Version` constant.
+   See also the :c:var:`Py_Version` constant.
 
 
 .. c:function:: const char* Py_GetPlatform()
@@ -1228,7 +1228,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    .. versionadded:: 3.8
 
-.. c:type:: PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, PyFrameObject *frame, int throwflag)
+.. c:type:: PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 
    Type of a frame evaluation function.
 
@@ -1237,6 +1237,9 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    .. versionchanged:: 3.9
       The function now takes a *tstate* parameter.
+
+   .. versionchanged:: 3.11
+      The *frame* parameter changed from ``PyFrameObject*`` to ``_PyInterpreterFrame*``.
 
 .. c:function:: _PyFrameEvalFunction _PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
 
@@ -1783,7 +1786,7 @@ is not possible due to its implementation being opaque at build time.
    argument is `NULL`.
 
    .. note::
-      A freed key becomes a dangling pointer, you should reset the key to
+      A freed key becomes a dangling pointer. You should reset the key to
       `NULL`.
 
 

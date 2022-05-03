@@ -138,12 +138,15 @@ class TaskGroup:
             me = BaseExceptionGroup('unhandled errors in a TaskGroup', errors)
             raise me from None
 
-    def create_task(self, coro, *, name=None):
+    def create_task(self, coro, *, name=None, context=None):
         if not self._entered:
             raise RuntimeError(f"TaskGroup {self!r} has not been entered")
         if self._exiting and self._unfinished_tasks == 0:
             raise RuntimeError(f"TaskGroup {self!r} is finished")
-        task = self._loop.create_task(coro)
+        if context is None:
+            task = self._loop.create_task(coro)
+        else:
+            task = self._loop.create_task(coro, context=context)
         tasks._set_task_name(task, name)
         task.add_done_callback(self._on_task_done)
         self._unfinished_tasks += 1

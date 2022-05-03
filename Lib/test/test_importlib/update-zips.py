@@ -42,7 +42,7 @@ def generate(suffix):
 
 def walk(datapath):
     for dirpath, dirnames, filenames in os.walk(datapath):
-        with contextlib.suppress(KeyError):
+        with contextlib.suppress(ValueError):
             dirnames.remove('__pycache__')
         for filename in filenames:
             res = pathlib.Path(dirpath) / filename

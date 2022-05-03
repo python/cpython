@@ -43,6 +43,11 @@ typedef struct {
     PyObject *me_value; /* This field is only meaningful for combined tables */
 } PyDictKeyEntry;
 
+typedef struct {
+    PyObject *me_key;   /* The key must be Unicode and have hash. */
+    PyObject *me_value; /* This field is only meaningful for combined tables */
+} PyDictUnicodeEntry;
+
 extern PyDictKeysObject *_PyDict_NewKeysForClass(void);
 extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 
@@ -70,6 +75,7 @@ extern PyObject *_PyDict_Pop_KnownHash(PyObject *, PyObject *, Py_hash_t, PyObje
 #define DKIX_EMPTY (-1)
 #define DKIX_DUMMY (-2)  /* Used internally */
 #define DKIX_ERROR (-3)
+#define DKIX_KEY_CHANGED (-4) /* Used internally */
 
 typedef enum {
     DICT_KEYS_GENERAL = 0,
@@ -114,7 +120,7 @@ struct _dictkeysobject {
        Dynamically sized, SIZEOF_VOID_P is minimum. */
     char dk_indices[];  /* char is required to avoid strict aliasing. */
 
-    /* "PyDictKeyEntry dk_entries[dk_usable];" array follows:
+    /* "PyDictKeyEntry or PyDictUnicodeEntry dk_entries[USABLE_FRACTION(DK_SIZE(dk))];" array follows:
        see the DK_ENTRIES() macro */
 };
 
@@ -148,13 +154,20 @@ struct _dictvalues {
             2 : sizeof(int32_t))
 #endif
 #define DK_ENTRIES(dk) \
-    ((PyDictKeyEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
+    (assert(dk->dk_kind == DICT_KEYS_GENERAL), (PyDictKeyEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
+#define DK_UNICODE_ENTRIES(dk) \
+    (assert(dk->dk_kind != DICT_KEYS_GENERAL), (PyDictUnicodeEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
+#define DK_IS_UNICODE(dk) ((dk)->dk_kind != DICT_KEYS_GENERAL)
 
 extern uint64_t _pydict_global_version;
 
 #define DICT_NEXT_VERSION() (++_pydict_global_version)
 
 extern PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
+extern PyObject *_PyDict_FromItems(
+        PyObject *const *keys, Py_ssize_t keys_offset,
+        PyObject *const *values, Py_ssize_t values_offset,
+        Py_ssize_t length);
 
 static inline void
 _PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)

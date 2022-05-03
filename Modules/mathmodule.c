@@ -2093,17 +2093,17 @@ static const unsigned long SmallFactorials[] = {
 /*[clinic input]
 math.factorial
 
-    x as arg: object
+    n as arg: object
     /
 
-Find x!.
+Find n!.
 
 Raise a ValueError if x is negative or non-integral.
 [clinic start generated code]*/
 
 static PyObject *
 math_factorial(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=6686f26fae00e9ca input=6d1c8105c0d91fb4]*/
+/*[clinic end generated code: output=6686f26fae00e9ca input=713fb771677e8c31]*/
 {
     long x, two_valuation;
     int overflow;

@@ -441,8 +441,8 @@ since it is impossible to detect the termination of alien threads.
 
    .. attribute:: daemon
 
-      A boolean value indicating whether this thread is a daemon thread (True)
-      or not (False).  This must be set before :meth:`~Thread.start` is called,
+      A boolean value indicating whether this thread is a daemon thread (``True``)
+      or not (``False``).  This must be set before :meth:`~Thread.start` is called,
       otherwise :exc:`RuntimeError` is raised.  Its initial value is inherited
       from the creating thread; the main thread is not a daemon thread and
       therefore all threads created in the main thread default to
@@ -516,7 +516,7 @@ All methods are executed atomically.
       value, block for at most the number of seconds specified by *timeout*
       and as long as the lock cannot be acquired.  A *timeout* argument of ``-1``
       specifies an unbounded wait.  It is forbidden to specify a *timeout*
-      when *blocking* is false.
+      when *blocking* is ``False``.
 
       The return value is ``True`` if the lock is acquired successfully,
       ``False`` if not (for example if the *timeout* expired).
@@ -544,7 +544,7 @@ All methods are executed atomically.
 
    .. method:: locked()
 
-      Return true if the lock is acquired.
+      Return ``True`` if the lock is acquired.
 
 
 
@@ -593,17 +593,17 @@ Reentrant locks also support the :ref:`context management protocol <with-locks>`
       is unlocked, only one at a time will be able to grab ownership of the lock.
       There is no return value in this case.
 
-      When invoked with the *blocking* argument set to true, do the same thing as when
+      When invoked with the *blocking* argument set to ``True``, do the same thing as when
       called without arguments, and return ``True``.
 
-      When invoked with the *blocking* argument set to false, do not block.  If a call
+      When invoked with the *blocking* argument set to ``False``, do not block.  If a call
       without an argument would block, return ``False`` immediately; otherwise, do the
       same thing as when called without arguments, and return ``True``.
 
       When invoked with the floating-point *timeout* argument set to a positive
       value, block for at most the number of seconds specified by *timeout*
       and as long as the lock cannot be acquired.  Return ``True`` if the lock has
-      been acquired, false if the timeout has elapsed.
+      been acquired, ``False`` if the timeout has elapsed.
 
       .. versionchanged:: 3.2
          The *timeout* parameter is new.
@@ -844,7 +844,7 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
         thread will be awoken by each call to :meth:`~Semaphore.release`.  The
         order in which threads are awoken should not be relied on.
 
-      When invoked with *blocking* set to false, do not block.  If a call
+      When invoked with *blocking* set to ``False``, do not block.  If a call
       without an argument would block, return ``False`` immediately; otherwise, do
       the same thing as when called without arguments, and return ``True``.
 

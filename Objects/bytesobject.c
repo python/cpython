@@ -4,6 +4,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_bytesobject.h"   // _PyBytes_Find(), _PyBytes_Repeat()
 #include "pycore_bytes_methods.h" // _Py_bytes_startswith()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_format.h"        // F_LJUST
@@ -104,7 +105,10 @@ _PyBytes_FromSize(Py_ssize_t size, int use_calloc)
         return PyErr_NoMemory();
     }
     _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     op->ob_shash = -1;
+_Py_COMP_DIAG_POP
     if (!use_calloc) {
         op->ob_sval[size] = '\0';
     }
@@ -168,7 +172,10 @@ PyBytes_FromString(const char *str)
         return PyErr_NoMemory();
     }
     _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     op->ob_shash = -1;
+_Py_COMP_DIAG_POP
     memcpy(op->ob_sval, str, size+1);
     return (PyObject *) op;
 }
@@ -408,6 +415,7 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     PyObject *result;
     double x;
     size_t len;
+    int dtoa_flags = 0;
 
     x = PyFloat_AsDouble(v);
     if (x == -1.0 && PyErr_Occurred()) {
@@ -419,8 +427,13 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     if (prec < 0)
         prec = 6;
 
-    p = PyOS_double_to_string(x, type, prec,
-                              (flags & F_ALT) ? Py_DTSF_ALT : 0, NULL);
+    if (flags & F_ALT) {
+        dtoa_flags |= Py_DTSF_ALT;
+    }
+    if (flags & F_NO_NEG_0) {
+        dtoa_flags |= Py_DTSF_NO_NEG_0;
+    }
+    p = PyOS_double_to_string(x, type, prec, dtoa_flags, NULL);
 
     if (p == NULL)
         return NULL;
@@ -699,6 +712,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 case ' ': flags |= F_BLANK; continue;
                 case '#': flags |= F_ALT; continue;
                 case '0': flags |= F_ZERO; continue;
+                case 'z': flags |= F_NO_NEG_0; continue;
                 }
                 break;
             }
@@ -1099,6 +1113,12 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
                 if (s < end && '0' <= *s && *s <= '7')
                     c = (c<<3) + *s++ - '0';
             }
+            if (c > 0377) {
+                if (*first_invalid_escape == NULL) {
+                    *first_invalid_escape = s-3; /* Back up 3 chars, since we've
+                                                    already incremented s. */
+                }
+            }
             *p++ = c;
             break;
         case 'x':
@@ -1165,11 +1185,24 @@ PyObject *PyBytes_DecodeEscape(const char *s,
     if (result == NULL)
         return NULL;
     if (first_invalid_escape != NULL) {
-        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                             "invalid escape sequence '\\%c'",
-                             (unsigned char)*first_invalid_escape) < 0) {
-            Py_DECREF(result);
-            return NULL;
+        unsigned char c = *first_invalid_escape;
+        if ('4' <= c && c <= '7') {
+            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                                 "invalid octal escape sequence '\\%.3s'",
+                                 first_invalid_escape) < 0)
+            {
+                Py_DECREF(result);
+                return NULL;
+            }
+        }
+        else {
+            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                                 "invalid escape sequence '\\%c'",
+                                 c) < 0)
+            {
+                Py_DECREF(result);
+                return NULL;
+            }
         }
     }
     return result;
@@ -1246,6 +1279,24 @@ PyBytes_AsStringAndSize(PyObject *obj,
 #include "stringlib/transmogrify.h"
 
 #undef STRINGLIB_GET_EMPTY
+
+Py_ssize_t
+_PyBytes_Find(const char *haystack, Py_ssize_t len_haystack,
+              const char *needle, Py_ssize_t len_needle,
+              Py_ssize_t offset)
+{
+    return stringlib_find(haystack, len_haystack,
+                          needle, len_needle, offset);
+}
+
+Py_ssize_t
+_PyBytes_ReverseFind(const char *haystack, Py_ssize_t len_haystack,
+                     const char *needle, Py_ssize_t len_needle,
+                     Py_ssize_t offset)
+{
+    return stringlib_rfind(haystack, len_haystack,
+                           needle, len_needle, offset);
+}
 
 PyObject *
 PyBytes_Repr(PyObject *obj, int smartquotes)
@@ -1396,8 +1447,6 @@ bytes_concat(PyObject *a, PyObject *b)
 static PyObject *
 bytes_repeat(PyBytesObject *a, Py_ssize_t n)
 {
-    Py_ssize_t i;
-    Py_ssize_t j;
     Py_ssize_t size;
     PyBytesObject *op;
     size_t nbytes;
@@ -1427,22 +1476,14 @@ bytes_repeat(PyBytesObject *a, Py_ssize_t n)
         return PyErr_NoMemory();
     }
     _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     op->ob_shash = -1;
+_Py_COMP_DIAG_POP
     op->ob_sval[size] = '\0';
-    if (Py_SIZE(a) == 1 && n > 0) {
-        memset(op->ob_sval, a->ob_sval[0] , n);
-        return (PyObject *) op;
-    }
-    i = 0;
-    if (i < size) {
-        memcpy(op->ob_sval, a->ob_sval, Py_SIZE(a));
-        i = Py_SIZE(a);
-    }
-    while (i < size) {
-        j = (i <= size-i)  ?  i  :  size-i;
-        memcpy(op->ob_sval+i, op->ob_sval, j);
-        i += j;
-    }
+
+    _PyBytes_Repeat(op->ob_sval, size, a->ob_sval, Py_SIZE(a));
+
     return (PyObject *) op;
 }
 
@@ -1459,7 +1500,7 @@ bytes_item(PyBytesObject *a, Py_ssize_t i)
         PyErr_SetString(PyExc_IndexError, "index out of range");
         return NULL;
     }
-    return PyLong_FromLong((unsigned char)a->ob_sval[i]);
+    return _PyLong_FromUnsignedChar((unsigned char)a->ob_sval[i]);
 }
 
 static int
@@ -1543,11 +1584,14 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
 static Py_hash_t
 bytes_hash(PyBytesObject *a)
 {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     if (a->ob_shash == -1) {
         /* Can't fail */
         a->ob_shash = _Py_HashBytes(a->ob_sval, Py_SIZE(a));
     }
     return a->ob_shash;
+_Py_COMP_DIAG_POP
 }
 
 static PyObject*
@@ -1564,7 +1608,7 @@ bytes_subscript(PyBytesObject* self, PyObject* item)
                             "index out of range");
             return NULL;
         }
-        return PyLong_FromLong((unsigned char)self->ob_sval[i]);
+        return _PyLong_FromUnsignedChar((unsigned char)self->ob_sval[i]);
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelength, i;
@@ -2836,6 +2880,25 @@ PyBytes_FromObject(PyObject *x)
     return NULL;
 }
 
+/* This allocator is needed for subclasses don't want to use __new__.
+ * See https://github.com/python/cpython/issues/91020#issuecomment-1096793239
+ *
+ * This allocator will be removed when ob_shash is removed.
+ */
+static PyObject *
+bytes_alloc(PyTypeObject *self, Py_ssize_t nitems)
+{
+    PyBytesObject *obj = (PyBytesObject*)PyType_GenericAlloc(self, nitems);
+    if (obj == NULL) {
+        return NULL;
+    }
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    obj->ob_shash = -1;
+_Py_COMP_DIAG_POP
+    return (PyObject*)obj;
+}
+
 static PyObject *
 bytes_subtype_new(PyTypeObject *type, PyObject *tmp)
 {
@@ -2849,8 +2912,11 @@ bytes_subtype_new(PyTypeObject *type, PyObject *tmp)
     if (pnew != NULL) {
         memcpy(PyBytes_AS_STRING(pnew),
                   PyBytes_AS_STRING(tmp), n+1);
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         ((PyBytesObject *)pnew)->ob_shash =
             ((PyBytesObject *)tmp)->ob_shash;
+_Py_COMP_DIAG_POP
     }
     return pnew;
 }
@@ -2909,7 +2975,7 @@ PyTypeObject PyBytes_Type = {
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
     0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
+    bytes_alloc,                                /* tp_alloc */
     bytes_new,                                  /* tp_new */
     PyObject_Del,                               /* tp_free */
 };
@@ -3032,7 +3098,10 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
     sv = (PyBytesObject *) *pv;
     Py_SET_SIZE(sv, newsize);
     sv->ob_sval[newsize] = '\0';
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     sv->ob_shash = -1;          /* invalidate cached hash value */
+_Py_COMP_DIAG_POP
     return 0;
 error:
     *pv = 0;
@@ -3096,7 +3165,7 @@ striter_next(striterobject *it)
     assert(PyBytes_Check(seq));
 
     if (it->it_index < PyBytes_GET_SIZE(seq)) {
-        return PyLong_FromLong(
+        return _PyLong_FromUnsignedChar(
             (unsigned char)seq->ob_sval[it->it_index++]);
     }
 
@@ -3491,3 +3560,28 @@ _PyBytesWriter_WriteBytes(_PyBytesWriter *writer, void *ptr,
 
     return str;
 }
+
+
+void
+_PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
+    const char* src, Py_ssize_t len_src)
+{
+    if (len_dest == 0) {
+        return;
+    }
+    if (len_src == 1) {
+        memset(dest, src[0], len_dest);
+    }
+    else {
+        if (src != dest) {
+            memcpy(dest, src, len_src);
+        }
+        Py_ssize_t copied = len_src;
+        while (copied < len_dest) {
+            Py_ssize_t bytes_to_copy = Py_MIN(copied, len_dest - copied);
+            memcpy(dest + copied, dest, bytes_to_copy);
+            copied += bytes_to_copy;
+        }
+    }
+}
+
