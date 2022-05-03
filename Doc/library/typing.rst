@@ -1601,7 +1601,6 @@ These are not used in annotations. They are building blocks for declaring types.
    The resulting class has an extra attribute ``__annotations__`` giving a
    dict that maps the field names to the field types.  (The field names are in
    the ``_fields`` attribute and the default values are in the
-```suggestion
    ``_field_defaults`` attribute, both of which are part of the :func:`~collections.namedtuple`
    API.)
 
