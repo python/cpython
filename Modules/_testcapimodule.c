@@ -5931,6 +5931,29 @@ get_feature_macros(PyObject *self, PyObject *Py_UNUSED(args))
     return result;
 }
 
+static PyObject *
+test_code_api(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyCodeObject *co = PyCode_NewEmpty("_testcapi", "dummy", 1);
+    if (co == NULL) {
+        return NULL;
+    }
+    PyObject *co_code = PyCode_GetCode(co);
+    if (co_code == NULL) {
+        Py_DECREF(co);
+        return NULL;
+    }
+    assert(PyBytes_CheckExact(co_code));
+    if (PyObject_Length(co_code) == 0) {
+        PyErr_SetString(PyExc_ValueError, "empty co_code");
+        Py_DECREF(co);
+        Py_DECREF(co_code);
+        return NULL;
+    }
+    Py_DECREF(co);
+    Py_DECREF(co_code);
+    Py_RETURN_NONE;
+}
 
 static PyObject *negative_dictoffset(PyObject *, PyObject *);
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
@@ -6011,15 +6034,15 @@ static PyMethodDef TestMethods[] = {
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
     {"test_type_from_ephemeral_spec", test_type_from_ephemeral_spec, METH_NOARGS},
-    {"get_kwargs", (PyCFunction)(void(*)(void))get_kwargs,
+    {"get_kwargs", _PyCFunction_CAST(get_kwargs),
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
-    {"getargs_keywords", (PyCFunction)(void(*)(void))getargs_keywords,
+    {"getargs_keywords", _PyCFunction_CAST(getargs_keywords),
       METH_VARARGS|METH_KEYWORDS},
-    {"getargs_keyword_only", (PyCFunction)(void(*)(void))getargs_keyword_only,
+    {"getargs_keyword_only", _PyCFunction_CAST(getargs_keyword_only),
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_positional_only_and_keywords",
-      (PyCFunction)(void(*)(void))getargs_positional_only_and_keywords,
+      _PyCFunction_CAST(getargs_positional_only_and_keywords),
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_b",               getargs_b,                       METH_VARARGS},
     {"getargs_B",               getargs_B,                       METH_VARARGS},
@@ -6047,7 +6070,7 @@ static PyMethodDef TestMethods[] = {
     {"getargs_s",               getargs_s,                       METH_VARARGS},
     {"getargs_s_star",          getargs_s_star,                  METH_VARARGS},
     {"getargs_s_hash",          getargs_s_hash,                  METH_VARARGS},
-    {"getargs_s_hash_int",      (PyCFunction)(void(*)(void))getargs_s_hash_int,
+    {"getargs_s_hash_int",      _PyCFunction_CAST(getargs_s_hash_int),
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_z",               getargs_z,                       METH_VARARGS},
     {"getargs_z_star",          getargs_z_star,                  METH_VARARGS},
@@ -6095,7 +6118,7 @@ static PyMethodDef TestMethods[] = {
     {"set_exc_info",            test_set_exc_info,               METH_VARARGS},
     {"argparsing",              argparsing,                      METH_VARARGS},
     {"code_newempty",           code_newempty,                   METH_VARARGS},
-    {"make_exception_with_doc", (PyCFunction)(void(*)(void))make_exception_with_doc,
+    {"make_exception_with_doc", _PyCFunction_CAST(make_exception_with_doc),
      METH_VARARGS | METH_KEYWORDS},
     {"make_memoryview_from_NULL_pointer", make_memoryview_from_NULL_pointer,
      METH_NOARGS},
@@ -6196,18 +6219,18 @@ static PyMethodDef TestMethods[] = {
     {"get_mapping_items", get_mapping_items, METH_O},
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
     {"hamt", new_hamt, METH_NOARGS},
-    {"bad_get", (PyCFunction)(void(*)(void))bad_get, METH_FASTCALL},
+    {"bad_get", _PyCFunction_CAST(bad_get), METH_FASTCALL},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
 #endif
     {"write_unraisable_exc", test_write_unraisable_exc, METH_VARARGS},
     {"sequence_getitem", sequence_getitem, METH_VARARGS},
     {"meth_varargs", meth_varargs, METH_VARARGS},
-    {"meth_varargs_keywords", (PyCFunction)(void(*)(void))meth_varargs_keywords, METH_VARARGS|METH_KEYWORDS},
+    {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS},
     {"meth_o", meth_o, METH_O},
     {"meth_noargs", meth_noargs, METH_NOARGS},
-    {"meth_fastcall", (PyCFunction)(void(*)(void))meth_fastcall, METH_FASTCALL},
-    {"meth_fastcall_keywords", (PyCFunction)(void(*)(void))meth_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS},
+    {"meth_fastcall", _PyCFunction_CAST(meth_fastcall), METH_FASTCALL},
+    {"meth_fastcall_keywords", _PyCFunction_CAST(meth_fastcall_keywords), METH_FASTCALL|METH_KEYWORDS},
     {"pynumber_tobase", pynumber_tobase, METH_VARARGS},
     {"without_gc", without_gc, METH_O},
     {"test_set_type_size", test_set_type_size, METH_NOARGS},
@@ -6227,6 +6250,7 @@ static PyMethodDef TestMethods[] = {
     {"frame_getbuiltins", frame_getbuiltins, METH_O, NULL},
     {"frame_getlasti", frame_getlasti, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
+    {"test_code_api", test_code_api, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
@@ -6736,7 +6760,7 @@ generic_alias_mro_entries(PyGenericAliasObject *self, PyObject *bases)
 }
 
 static PyMethodDef generic_alias_methods[] = {
-    {"__mro_entries__", (PyCFunction)(void(*)(void))generic_alias_mro_entries, METH_O, NULL},
+    {"__mro_entries__", _PyCFunction_CAST(generic_alias_mro_entries), METH_O, NULL},
     {NULL}  /* sentinel */
 };
 
@@ -7359,11 +7383,11 @@ static PyType_Spec HeapCTypeSetattr_spec = {
 
 static PyMethodDef meth_instance_methods[] = {
     {"meth_varargs", meth_varargs, METH_VARARGS},
-    {"meth_varargs_keywords", (PyCFunction)(void(*)(void))meth_varargs_keywords, METH_VARARGS|METH_KEYWORDS},
+    {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS},
     {"meth_o", meth_o, METH_O},
     {"meth_noargs", meth_noargs, METH_NOARGS},
-    {"meth_fastcall", (PyCFunction)(void(*)(void))meth_fastcall, METH_FASTCALL},
-    {"meth_fastcall_keywords", (PyCFunction)(void(*)(void))meth_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS},
+    {"meth_fastcall", _PyCFunction_CAST(meth_fastcall), METH_FASTCALL},
+    {"meth_fastcall_keywords", _PyCFunction_CAST(meth_fastcall_keywords), METH_FASTCALL|METH_KEYWORDS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -7381,11 +7405,11 @@ static PyTypeObject MethInstance_Type = {
 
 static PyMethodDef meth_class_methods[] = {
     {"meth_varargs", meth_varargs, METH_VARARGS|METH_CLASS},
-    {"meth_varargs_keywords", (PyCFunction)(void(*)(void))meth_varargs_keywords, METH_VARARGS|METH_KEYWORDS|METH_CLASS},
+    {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS|METH_CLASS},
     {"meth_o", meth_o, METH_O|METH_CLASS},
     {"meth_noargs", meth_noargs, METH_NOARGS|METH_CLASS},
-    {"meth_fastcall", (PyCFunction)(void(*)(void))meth_fastcall, METH_FASTCALL|METH_CLASS},
-    {"meth_fastcall_keywords", (PyCFunction)(void(*)(void))meth_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS|METH_CLASS},
+    {"meth_fastcall", _PyCFunction_CAST(meth_fastcall), METH_FASTCALL|METH_CLASS},
+    {"meth_fastcall_keywords", _PyCFunction_CAST(meth_fastcall_keywords), METH_FASTCALL|METH_KEYWORDS|METH_CLASS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -7403,11 +7427,11 @@ static PyTypeObject MethClass_Type = {
 
 static PyMethodDef meth_static_methods[] = {
     {"meth_varargs", meth_varargs, METH_VARARGS|METH_STATIC},
-    {"meth_varargs_keywords", (PyCFunction)(void(*)(void))meth_varargs_keywords, METH_VARARGS|METH_KEYWORDS|METH_STATIC},
+    {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS|METH_STATIC},
     {"meth_o", meth_o, METH_O|METH_STATIC},
     {"meth_noargs", meth_noargs, METH_NOARGS|METH_STATIC},
-    {"meth_fastcall", (PyCFunction)(void(*)(void))meth_fastcall, METH_FASTCALL|METH_STATIC},
-    {"meth_fastcall_keywords", (PyCFunction)(void(*)(void))meth_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS|METH_STATIC},
+    {"meth_fastcall", _PyCFunction_CAST(meth_fastcall), METH_FASTCALL|METH_STATIC},
+    {"meth_fastcall_keywords", _PyCFunction_CAST(meth_fastcall_keywords), METH_FASTCALL|METH_KEYWORDS|METH_STATIC},
     {NULL, NULL} /* sentinel */
 };
 

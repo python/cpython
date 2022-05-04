@@ -153,6 +153,7 @@ def _copy_items(items):
 # Formatting Help
 # ===============
 
+
 class HelpFormatter(object):
     """Formatter for generating usage messages and argument help strings.
 
@@ -695,13 +696,25 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
     """
 
     def _get_help_string(self, action):
+        """
+        Add the default value to the option help message.
+
+        ArgumentDefaultsHelpFormatter and BooleanOptionalAction when it isn't
+        already present. This code will do that, detecting cornercases to
+        prevent duplicates or cases where it wouldn't make sense to the end
+        user.
+        """
         help = action.help
-        if '%(default)' not in action.help:
+        if help is None:
+            help = ''
+
+        if '%(default)' not in help:
             if action.default is not SUPPRESS:
                 defaulting_nargs = [OPTIONAL, ZERO_OR_MORE]
                 if action.option_strings or action.nargs in defaulting_nargs:
                     help += ' (default: %(default)s)'
         return help
+
 
 
 class MetavarTypeHelpFormatter(HelpFormatter):
@@ -717,7 +730,6 @@ class MetavarTypeHelpFormatter(HelpFormatter):
 
     def _get_default_metavar_for_positional(self, action):
         return action.type.__name__
-
 
 
 # =====================
@@ -882,9 +894,6 @@ class BooleanOptionalAction(Action):
                 option_string = '--no-' + option_string[2:]
                 _option_strings.append(option_string)
 
-        if help is not None and default is not None and default is not SUPPRESS:
-            help += " (default: %(default)s)"
-
         super().__init__(
             option_strings=_option_strings,
             dest=dest,
@@ -895,6 +904,7 @@ class BooleanOptionalAction(Action):
             required=required,
             help=help,
             metavar=metavar)
+
 
     def __call__(self, parser, namespace, values, option_string=None):
         if option_string in self.option_strings:

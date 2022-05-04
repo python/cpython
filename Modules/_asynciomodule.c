@@ -1724,7 +1724,7 @@ FutureIter_traverse(futureiterobject *it, visitproc visit, void *arg)
 
 static PyMethodDef FutureIter_methods[] = {
     {"send",  (PyCFunction)FutureIter_send, METH_O, NULL},
-    {"throw", (PyCFunction)(void(*)(void))FutureIter_throw, METH_FASTCALL, NULL},
+    {"throw", _PyCFunction_CAST(FutureIter_throw), METH_FASTCALL, NULL},
     {"close", (PyCFunction)FutureIter_close, METH_NOARGS, NULL},
     {NULL, NULL}        /* Sentinel */
 };

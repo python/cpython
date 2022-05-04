@@ -3852,11 +3852,11 @@ static PyMethodDef math_methods[] = {
     {"asin",            math_asin,      METH_O,         math_asin_doc},
     {"asinh",           math_asinh,     METH_O,         math_asinh_doc},
     {"atan",            math_atan,      METH_O,         math_atan_doc},
-    {"atan2",           (PyCFunction)(void(*)(void))math_atan2,     METH_FASTCALL,  math_atan2_doc},
+    {"atan2",           _PyCFunction_CAST(math_atan2),     METH_FASTCALL,  math_atan2_doc},
     {"atanh",           math_atanh,     METH_O,         math_atanh_doc},
     {"cbrt",            math_cbrt,      METH_O,         math_cbrt_doc},
     MATH_CEIL_METHODDEF
-    {"copysign",        (PyCFunction)(void(*)(void))math_copysign,  METH_FASTCALL,  math_copysign_doc},
+    {"copysign",        _PyCFunction_CAST(math_copysign),  METH_FASTCALL,  math_copysign_doc},
     {"cos",             math_cos,       METH_O,         math_cos_doc},
     {"cosh",            math_cosh,      METH_O,         math_cosh_doc},
     MATH_DEGREES_METHODDEF
@@ -3873,14 +3873,14 @@ static PyMethodDef math_methods[] = {
     MATH_FREXP_METHODDEF
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
-    {"gcd",             (PyCFunction)(void(*)(void))math_gcd,       METH_FASTCALL,  math_gcd_doc},
-    {"hypot",           (PyCFunction)(void(*)(void))math_hypot,     METH_FASTCALL,  math_hypot_doc},
+    {"gcd",             _PyCFunction_CAST(math_gcd),       METH_FASTCALL,  math_gcd_doc},
+    {"hypot",           _PyCFunction_CAST(math_hypot),     METH_FASTCALL,  math_hypot_doc},
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
     MATH_ISINF_METHODDEF
     MATH_ISNAN_METHODDEF
     MATH_ISQRT_METHODDEF
-    {"lcm",             (PyCFunction)(void(*)(void))math_lcm,       METH_FASTCALL,  math_lcm_doc},
+    {"lcm",             _PyCFunction_CAST(math_lcm),       METH_FASTCALL,  math_lcm_doc},
     MATH_LDEXP_METHODDEF
     {"lgamma",          math_lgamma,    METH_O,         math_lgamma_doc},
     MATH_LOG_METHODDEF
@@ -3890,7 +3890,7 @@ static PyMethodDef math_methods[] = {
     MATH_MODF_METHODDEF
     MATH_POW_METHODDEF
     MATH_RADIANS_METHODDEF
-    {"remainder",       (PyCFunction)(void(*)(void))math_remainder, METH_FASTCALL,  math_remainder_doc},
+    {"remainder",       _PyCFunction_CAST(math_remainder), METH_FASTCALL,  math_remainder_doc},
     {"sin",             math_sin,       METH_O,         math_sin_doc},
     {"sinh",            math_sinh,      METH_O,         math_sinh_doc},
     {"sqrt",            math_sqrt,      METH_O,         math_sqrt_doc},
