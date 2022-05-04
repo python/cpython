@@ -234,7 +234,7 @@ def _ss(data, c=None):
         # The sum will be a NAN or INF. We can ignore all the finite
         # partials, and just look at this special one.
         ssd = c = sx_partials[None]
-        assert not _isfinite(total)
+        assert not _isfinite(ssd)
     else:
         sx = sum(Fraction(n, d) for d, n in sx_partials.items())
         sxx = sum(Fraction(n, d*d) for d, n in sxx_partials.items())
