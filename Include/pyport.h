@@ -14,13 +14,31 @@
 #endif
 
 
-// Macro to use C++ static_cast<> and reinterpret_cast<> in the Python C API
+// Macro to use C++ static_cast<>, reinterpret_cast<> and const_cast<>
+// in the Python C API.
+//
+// In C++, _Py_CAST(type, expr) converts a constant expression to a
+// non constant type using const_cast<type>. For example,
+// _Py_CAST(PyObject*, op) can convert a "const PyObject*" to
+// "PyObject*".
+//
+// The type argument must not be constant. For example, in C++,
+// _Py_CAST(const PyObject*, expr) fails with a compiler error.
 #ifdef __cplusplus
-#  define _Py_static_cast(type, expr) static_cast<type>(expr)
-#  define _Py_reinterpret_cast(type, expr) reinterpret_cast<type>(expr)
+#  define _Py_STATIC_CAST(type, expr) static_cast<type>(expr)
+#  define _Py_CAST(type, expr) \
+       const_cast<type>(reinterpret_cast<const type>(expr))
 #else
-#  define _Py_static_cast(type, expr) ((type)(expr))
-#  define _Py_reinterpret_cast(type, expr) ((type)(expr))
+#  define _Py_STATIC_CAST(type, expr) ((type)(expr))
+#  define _Py_CAST(type, expr) ((type)(expr))
+#endif
+
+// Static inline functions should use _Py_NULL rather than using directly NULL
+// to prevent C++ compiler warnings. In C++, _Py_NULL uses nullptr.
+#ifdef __cplusplus
+#  define _Py_NULL nullptr
+#else
+#  define _Py_NULL NULL
 #endif
 
 
@@ -114,16 +132,22 @@ typedef intptr_t        Py_intptr_t;
 /* Py_ssize_t is a signed integral type such that sizeof(Py_ssize_t) ==
  * sizeof(size_t).  C99 doesn't define such a thing directly (size_t is an
  * unsigned integral type).  See PEP 353 for details.
+ * PY_SSIZE_T_MAX is the largest positive value of type Py_ssize_t.
  */
 #ifdef HAVE_PY_SSIZE_T
 
 #elif HAVE_SSIZE_T
 typedef ssize_t         Py_ssize_t;
+#   define PY_SSIZE_T_MAX SSIZE_MAX
 #elif SIZEOF_VOID_P == SIZEOF_SIZE_T
 typedef Py_intptr_t     Py_ssize_t;
+#   define PY_SSIZE_T_MAX INTPTR_MAX
 #else
 #   error "Python needs a typedef for Py_ssize_t in pyport.h."
 #endif
+
+/* Smallest negative value of type Py_ssize_t. */
+#define PY_SSIZE_T_MIN (-PY_SSIZE_T_MAX-1)
 
 /* Py_hash_t is the same size as a pointer. */
 #define SIZEOF_PY_HASH_T SIZEOF_SIZE_T
@@ -137,11 +161,6 @@ typedef Py_ssize_t Py_ssize_clean_t;
 
 /* Largest possible value of size_t. */
 #define PY_SIZE_MAX SIZE_MAX
-
-/* Largest positive value of type Py_ssize_t. */
-#define PY_SSIZE_T_MAX ((Py_ssize_t)(((size_t)-1)>>1))
-/* Smallest negative value of type Py_ssize_t. */
-#define PY_SSIZE_T_MIN (-PY_SSIZE_T_MAX-1)
 
 /* Macro kept for backward compatibility: use "z" in new code.
  *
@@ -306,10 +325,10 @@ extern "C" {
  */
 #ifdef Py_DEBUG
 #  define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) \
-       (assert((WIDE)(NARROW)(VALUE) == (VALUE)), (NARROW)(VALUE))
+       (assert(_Py_STATIC_CAST(WIDE, _Py_STATIC_CAST(NARROW, (VALUE))) == (VALUE)), \
+        _Py_STATIC_CAST(NARROW, (VALUE)))
 #else
-#  define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) \
-       _Py_reinterpret_cast(NARROW, (VALUE))
+#  define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) _Py_STATIC_CAST(NARROW, (VALUE))
 #endif
 
 

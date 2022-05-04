@@ -893,7 +893,7 @@ PyDoc_STRVAR(_operator_call__doc__,
 "Same as obj(*args, **kwargs).");
 
 #define _OPERATOR_CALL_METHODDEF    \
-    {"call", (PyCFunction)(void(*)(void))_operator_call, METH_FASTCALL | METH_KEYWORDS, _operator_call__doc__},
+    {"call", _PyCFunction_CAST(_operator_call), METH_FASTCALL | METH_KEYWORDS, _operator_call__doc__},
 
 static PyObject *
 _operator_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)

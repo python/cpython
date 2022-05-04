@@ -1,0 +1,2 @@
+Fix BooleanOptionalAction to not automatically add a default string.  If a
+default string is desired, use a formatter to add it.

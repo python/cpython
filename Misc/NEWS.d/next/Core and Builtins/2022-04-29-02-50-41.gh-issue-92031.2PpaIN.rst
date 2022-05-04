@@ -1,0 +1,1 @@
+Deoptimize statically-allocated code objects during ``Py_FINALIZE()`` so that future ``_PyCode_Quicken`` calls always start with unquickened code.

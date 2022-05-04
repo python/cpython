@@ -1,0 +1,4 @@
+Fully implement the :class:`io.BufferedIOBase` or :class:`io.TextIOBase`
+interface for :class:`tempfile.SpooledTemporaryFile` objects. This lets them
+work correctly with higher-level layers (like compression modules). Patch by
+Carey Metcalfe.

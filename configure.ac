@@ -1412,6 +1412,24 @@ if test "$cross_compiling" = yes; then
 	RUNSHARED=
 fi
 
+AC_ARG_VAR([HOSTRUNNER], [Program to run CPython for the host platform])
+AC_MSG_CHECKING([HOSTRUNNER])
+if test -z "$HOSTRUNNER"
+then
+  AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+    [Emscripten/node*], [
+      AS_VAR_IF([enable_wasm_pthreads], [yes], [
+        HOSTRUNNER='node --experimental-wasm-threads --experimental-wasm-bulk-memory'
+      ], [
+        HOSTRUNNER='node'
+      ])
+    ],
+    [HOSTRUNNER='']
+  )
+fi
+AC_SUBST([HOSTRUNNER])
+AC_MSG_RESULT([$HOSTRUNNER])
+
 AC_MSG_RESULT($LDLIBRARY)
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
@@ -3832,7 +3850,7 @@ AC_CHECK_HEADERS([db.h], [
 AC_MSG_CHECKING(for --with-dbmliborder)
 AC_ARG_WITH(dbmliborder,
             AS_HELP_STRING([--with-dbmliborder=db1:db2:...], [override order to check db backends for dbm; a valid value is a colon separated string with the backend names `ndbm', `gdbm' and `bdb'.]),
-[], [with_dbmliborder=ndbm:gdbm:bdb])
+[], [with_dbmliborder=gdbm:ndbm:bdb])
 
 have_gdbm_dbmliborder=no
 as_save_IFS=$IFS
@@ -3847,7 +3865,7 @@ for db in $with_dbmliborder; do
 done
 IFS=$as_save_IFS
 AS_VAR_IF([with_dbmliborder], [error], [
-  AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:... (ndbm:gdbm:bdb)])
+  AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:... (gdbm:ndbm:bdb)])
 ])
 AC_MSG_RESULT($with_dbmliborder)
 
