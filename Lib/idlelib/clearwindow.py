@@ -107,3 +107,4 @@ class clearwindowdeletecommand(DeleteCommand):
         for value in tag:
             text.tag_add(value, tag[value], self.index2)
         text.see('insert')
+
