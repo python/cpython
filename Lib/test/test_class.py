@@ -609,7 +609,7 @@ class ClassTests(unittest.TestCase):
             pass
 
         with self.assertRaises(TypeError):
-             type.__setattr__(A, b'x', None)
+            type.__setattr__(A, b'x', None)
 
     def testTypeAttributeAccessErrorMessages(self):
         class A:
