@@ -214,6 +214,10 @@ _FIELDS = '__dataclass_fields__'
 # @dataclass.
 _PARAMS = '__dataclass_params__'
 
+# The name of an attribute on the class that stores if it has been
+# decorated with @dataclass or not.
+_DECORATED = '__dataclass_decorated__'
+
 # The name of the function, that if it exists, is called at the end of
 # __init__.
 _POST_INIT_NAME = '__post_init__'
@@ -1204,6 +1208,9 @@ def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
     """
 
     def wrap(cls):
+        if getattr(cls, _DECORATED, None):
+            raise TypeError("cannot use this decorator more than once on same class")
+        setattr(cls, _DECORATED, True)
         return _process_class(cls, init, repr, eq, order, unsafe_hash,
                               frozen, match_args, kw_only, slots,
                               weakref_slot)

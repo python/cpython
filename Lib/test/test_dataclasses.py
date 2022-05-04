@@ -24,6 +24,25 @@ import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work a
 class CustomError(Exception): pass
 
 class TestCase(unittest.TestCase):
+    def test_decorated_multiple_times(self):
+        with self.assertRaises(TypeError):
+            @dataclass
+            @dataclass
+            class C:
+                pass
+
+        with self.assertRaises(TypeError):
+            @dataclass(repr=False)
+            @dataclass(repr=True)
+            class C:
+                pass
+
+        with self.assertRaises(TypeError):
+            @dataclass()
+            @dataclass()
+            class C:
+                pass
+
     def test_no_fields(self):
         @dataclass
         class C:

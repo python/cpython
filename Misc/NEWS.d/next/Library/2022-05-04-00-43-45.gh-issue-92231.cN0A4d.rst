@@ -1,0 +1,1 @@
+Prevent @dataclass from being called more than once on the same class
