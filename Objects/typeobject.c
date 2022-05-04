@@ -4289,7 +4289,7 @@ type___sizeof___impl(PyTypeObject *self)
 static PyMethodDef type_methods[] = {
     TYPE_MRO_METHODDEF
     TYPE___SUBCLASSES___METHODDEF
-    {"__prepare__", (PyCFunction)(void(*)(void))type_prepare,
+    {"__prepare__", _PyCFunction_CAST(type_prepare),
      METH_FASTCALL | METH_KEYWORDS | METH_CLASS,
      PyDoc_STR("__prepare__() -> dict\n"
                "used to create the namespace for the class statement")},
@@ -7141,7 +7141,7 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static struct PyMethodDef tp_new_methoddef[] = {
-    {"__new__", (PyCFunction)(void(*)(void))tp_new_wrapper, METH_VARARGS|METH_KEYWORDS,
+    {"__new__", _PyCFunction_CAST(tp_new_wrapper), METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("__new__($type, *args, **kwargs)\n--\n\n"
                "Create and return a new object.  "
                "See help(type) for accurate signature.")},
@@ -8390,7 +8390,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
         }
         else if (Py_IS_TYPE(descr, &PyCFunction_Type) &&
                  PyCFunction_GET_FUNCTION(descr) ==
-                 (PyCFunction)(void(*)(void))tp_new_wrapper &&
+                 _PyCFunction_CAST(tp_new_wrapper) &&
                  ptr == (void**)&type->tp_new)
         {
             /* The __new__ wrapper is not a wrapper descriptor,

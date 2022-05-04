@@ -579,6 +579,10 @@ class NetmaskTestMixin_v4(CommonTestMixin_v4):
         assertBadAddress("1.2.3.256", re.escape("256 (> 255)"))
 
     def test_valid_netmask(self):
+        self.assertEqual(str(self.factory(('192.0.2.0', 24))), '192.0.2.0/24')
+        self.assertEqual(str(self.factory(('192.0.2.0', '24'))), '192.0.2.0/24')
+        self.assertEqual(str(self.factory(('192.0.2.0', '255.255.255.0'))),
+                         '192.0.2.0/24')
         self.assertEqual(str(self.factory('192.0.2.0/255.255.255.0')),
                          '192.0.2.0/24')
         for i in range(0, 33):
@@ -739,6 +743,10 @@ class NetmaskTestMixin_v6(CommonTestMixin_v6):
     def test_valid_netmask(self):
         # We only support CIDR for IPv6, because expanded netmasks are not
         # standard notation.
+        self.assertEqual(str(self.factory(('2001:db8::', 32))),
+                         '2001:db8::/32')
+        self.assertEqual(str(self.factory(('2001:db8::', '32'))),
+                         '2001:db8::/32')
         self.assertEqual(str(self.factory('2001:db8::/32')), '2001:db8::/32')
         for i in range(0, 129):
             # Generate and re-parse the CIDR format (trivial).

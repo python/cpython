@@ -3489,7 +3489,7 @@ _PyBytesWriter_Alloc(_PyBytesWriter *writer, Py_ssize_t size)
        Don't modify the _PyBytesWriter structure (use a shorter small buffer)
        in debug mode to also be able to detect stack overflow when running
        tests in debug mode. The _PyBytesWriter is large (more than 512 bytes),
-       if Py_EnterRecursiveCall() is not used in deep C callback, we may hit a
+       if _Py_EnterRecursiveCall() is not used in deep C callback, we may hit a
        stack overflow. */
     writer->allocated = Py_MIN(writer->allocated, 10);
     /* _PyBytesWriter_CheckConsistency() requires the last byte to be 0,
