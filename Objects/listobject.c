@@ -573,7 +573,7 @@ list_repeat(PyListObject *a, Py_ssize_t n)
     }
     else {
         PyObject **src = a->ob_item;
-        for (Py_ssize_t i = 0; i < length; ++i) {
+        for (Py_ssize_t i = 0; i < length; i++) {
             elem = src[i];
             Py_SET_REFCNT(elem, Py_REFCNT(elem) + n);
 #ifdef Py_REF_DEBUG
@@ -769,8 +769,9 @@ list_inplace_repeat(PyListObject *self, Py_ssize_t n)
         return NULL;
 
     items = self->ob_item;
-    for (Py_ssize_t i = 0; i < size; ++i) {
-        Py_SET_REFCNT((elem = items[i]), Py_REFCNT(elem) + n);
+    for (Py_ssize_t i = 0; i < size; i++) {
+        elem = items[i];
+        Py_SET_REFCNT(elem, Py_REFCNT(elem) + n);
 #ifdef Py_REF_DEBUG
         _Py_RefTotal += n;
 #endif
