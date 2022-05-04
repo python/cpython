@@ -206,16 +206,17 @@ def _sum(data):
 
 
 def _ss(data, c=None):
-    """Return sum of square deviations of sequence data.
+    """Return the exact mean and sum of square deviations of sequence data.
 
-    If ``c`` is None, the mean is calculated in one pass, and the deviations
-    from the mean are calculated in a second pass. Otherwise, deviations are
-    calculated from ``c`` as given. Use the second case with care, as it can
-    lead to garbage results.
+    Calculations are done in a single pass, allowing the input to be an iterator.
+
+    If given *c* is used the mean; otherwise, it is calculated from the data.
+    Use the *c* argument with care, as it can lead to garbage results.
+
     """
     if c is not None:
-        T, total, count = _sum((d := x - c) * d for x in data)
-        return (T, total, count)
+        T, ssd, count = _sum((d := x - c) * d for x in data)
+        return (T, ssd, c, count)
     count = 0
     types = set()
     types_add = types.add
@@ -228,20 +229,21 @@ def _ss(data, c=None):
             sx_partials[d] += n
             sxx_partials[d] += n * n
     if not count:
-        total = Fraction(0)
+        ssd = c = Fraction(0)
     elif None in sx_partials:
         # The sum will be a NAN or INF. We can ignore all the finite
         # partials, and just look at this special one.
-        total = sx_partials[None]
+        ssd = c = sx_partials[None]
         assert not _isfinite(total)
     else:
         sx = sum(Fraction(n, d) for d, n in sx_partials.items())
         sxx = sum(Fraction(n, d*d) for d, n in sxx_partials.items())
         # This formula has poor numeric properties for floats,
         # but with fractions it is exact.
-        total = (count * sxx - sx * sx) / count
+        ssd = (count * sxx - sx * sx) / count
+        c = sx / count
     T = reduce(_coerce, types, int)  # or raise TypeError
-    return (T, total, count)
+    return (T, ssd, c, count)
 
 
 def _isfinite(x):
@@ -854,7 +856,7 @@ def variance(data, xbar=None):
     Fraction(67, 108)
 
     """
-    T, ss, n = _ss(data, xbar)
+    T, ss, c, n = _ss(data, xbar)
     if n < 2:
         raise StatisticsError('variance requires at least two data points')
     return _convert(ss / (n - 1), T)
@@ -895,7 +897,7 @@ def pvariance(data, mu=None):
     Fraction(13, 72)
 
     """
-    T, ss, n = _ss(data, mu)
+    T, ss, c, n = _ss(data, mu)
     if n < 1:
         raise StatisticsError('pvariance requires at least one data point')
     return _convert(ss / n, T)
@@ -910,7 +912,7 @@ def stdev(data, xbar=None):
     1.0810874155219827
 
     """
-    T, ss, n = _ss(data, xbar)
+    T, ss, c, n = _ss(data, xbar)
     if n < 2:
         raise StatisticsError('stdev requires at least two data points')
     mss = ss / (n - 1)
@@ -928,13 +930,22 @@ def pstdev(data, mu=None):
     0.986893273527251
 
     """
-    T, ss, n = _ss(data, mu)
+    T, ss, c, n = _ss(data, mu)
     if n < 1:
         raise StatisticsError('pstdev requires at least one data point')
     mss = ss / n
     if issubclass(T, Decimal):
         return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
     return _float_sqrt_of_frac(mss.numerator, mss.denominator)
+
+
+def _mean_stdev(data):
+    """In one pass, compute the mean and sample standard deviation as floats."""
+    T, ss, xbar, n = _ss(data)
+    if n < 2:
+        raise StatisticsError('stdev requires at least two data points')
+    mss = ss / (n - 1)
+    return float(xbar), _float_sqrt_of_frac(mss.numerator, mss.denominator)
 
 
 # === Statistics for relations between two inputs ===
@@ -1171,9 +1182,7 @@ class NormalDist:
     @classmethod
     def from_samples(cls, data):
         "Make a normal distribution instance from sample data."
-        if not isinstance(data, (list, tuple)):
-            data = list(data)
-        return cls(mean(data), stdev(data))
+        return cls(*_mean_stdev(data))
 
     def samples(self, n, *, seed=None):
         "Generate *n* samples for a given mean and standard deviation."
