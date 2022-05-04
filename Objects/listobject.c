@@ -576,6 +576,8 @@ list_repeat(PyListObject *a, Py_ssize_t n)
 #ifdef Py_REF_DEBUG
             _Py_RefTotal += n;
 #endif
+            /* Fill up the first block in the destination list so
+               memcpy won't copy from garbage memory. */
             dest[i] = elem;
         }
         Py_ssize_t copied = length;
