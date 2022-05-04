@@ -1173,14 +1173,14 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(len(self.blob), 50)
 
     def test_blob_get_item(self):
-        self.assertEqual(self.blob[5], b"b")
-        self.assertEqual(self.blob[6], b"l")
-        self.assertEqual(self.blob[7], b"o")
-        self.assertEqual(self.blob[8], b"b")
-        self.assertEqual(self.blob[-1], b"!")
+        self.assertEqual(self.blob[5], ord("b"))
+        self.assertEqual(self.blob[6], ord("l"))
+        self.assertEqual(self.blob[7], ord("o"))
+        self.assertEqual(self.blob[8], ord("b"))
+        self.assertEqual(self.blob[-1], ord("!"))
 
     def test_blob_set_item(self):
-        self.blob[0] = b"b"
+        self.blob[0] = ord("b")
         expected = b"b" + self.data[1:]
         actual = self.cx.execute("select b from test").fetchone()[0]
         self.assertEqual(actual, expected)
@@ -1188,23 +1188,14 @@ class BlobTests(unittest.TestCase):
     def test_blob_set_item_with_offset(self):
         self.blob.seek(0, SEEK_END)
         self.assertEqual(self.blob.read(), b"")  # verify that we're at EOB
-        self.blob[0] = b"T"
-        self.blob[-1] = b"."
+        self.blob[0] = ord("T")
+        self.blob[-1] = ord(".")
         self.blob.seek(0, SEEK_SET)
         expected = b"This blob data string is exactly fifty bytes long."
         self.assertEqual(self.blob.read(), expected)
 
-    def test_blob_set_buffer_object(self):
+    def test_blob_set_slice_buffer_object(self):
         from array import array
-        self.blob[0] = memoryview(b"1")
-        self.assertEqual(self.blob[0], b"1")
-
-        self.blob[1] = bytearray(b"2")
-        self.assertEqual(self.blob[1], b"2")
-
-        self.blob[2] = array("b", [4])
-        self.assertEqual(self.blob[2], b"\x04")
-
         self.blob[0:5] = memoryview(b"12345")
         self.assertEqual(self.blob[0:5], b"12345")
 
@@ -1215,8 +1206,8 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(self.blob[0:5], b"\x01\x02\x03\x04\x05")
 
     def test_blob_set_item_negative_index(self):
-        self.blob[-1] = b"z"
-        self.assertEqual(self.blob[-1], b"z")
+        self.blob[-1] = 255
+        self.assertEqual(self.blob[-1], 255)
 
     def test_blob_get_slice(self):
         self.assertEqual(self.blob[5:14], b"blob data")
@@ -1264,13 +1255,29 @@ class BlobTests(unittest.TestCase):
         with self.assertRaisesRegex(IndexError, "cannot fit 'int'"):
             self.blob[ULLONG_MAX]
 
+        # Provoke read error
+        self.cx.execute("update test set b='aaaa' where rowid=1")
+        with self.assertRaises(sqlite.OperationalError):
+            self.blob[0]
+
     def test_blob_set_item_error(self):
-        with self.assertRaisesRegex(ValueError, "must be a single byte"):
+        with self.assertRaisesRegex(TypeError, "cannot be interpreted"):
             self.blob[0] = b"multiple"
+        with self.assertRaisesRegex(TypeError, "cannot be interpreted"):
+            self.blob[0] = b"1"
+        with self.assertRaisesRegex(TypeError, "cannot be interpreted"):
+            self.blob[0] = bytearray(b"1")
         with self.assertRaisesRegex(TypeError, "doesn't support.*deletion"):
             del self.blob[0]
         with self.assertRaisesRegex(IndexError, "Blob index out of range"):
-            self.blob[1000] = b"a"
+            self.blob[1000] = 0
+        with self.assertRaisesRegex(ValueError, "must be in range"):
+            self.blob[0] = -1
+        with self.assertRaisesRegex(ValueError, "must be in range"):
+            self.blob[0] = 256
+        # Overflow errors are overridden with ValueError
+        with self.assertRaisesRegex(ValueError, "must be in range"):
+            self.blob[0] = 2**65
 
     def test_blob_set_slice_error(self):
         with self.assertRaisesRegex(IndexError, "wrong size"):

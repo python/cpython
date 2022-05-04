@@ -15,7 +15,7 @@ PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
 
 /* Cast argument to PyTupleObject* type. */
 #define _PyTuple_CAST(op) \
-    (assert(PyTuple_Check(op)), _Py_reinterpret_cast(PyTupleObject*, (op)))
+    (assert(PyTuple_Check(op)), _Py_CAST(PyTupleObject*, (op)))
 
 // Macros and static inline functions, trading safety for speed
 

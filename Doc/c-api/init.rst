@@ -553,7 +553,7 @@ Process-wide parameters
    period.  The returned string points into static storage; the caller should not
    modify its value.  The value is available to Python code as :data:`sys.version`.
 
-   See also the :data:`Py_Version` constant.
+   See also the :c:var:`Py_Version` constant.
 
 
 .. c:function:: const char* Py_GetPlatform()

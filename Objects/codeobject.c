@@ -1350,26 +1350,37 @@ _PyCode_GetFreevars(PyCodeObject *co)
     return get_localsplus_names(co, CO_FAST_FREE, co->co_nfreevars);
 }
 
-PyObject *
-_PyCode_GetCode(PyCodeObject *co)
+static void
+deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
 {
-    PyObject *code = PyBytes_FromStringAndSize(NULL, _PyCode_NBYTES(co));
-    if (code == NULL) {
-        return NULL;
-    }
-    _Py_CODEUNIT *instructions = (_Py_CODEUNIT *)PyBytes_AS_STRING(code);
-    for (int i = 0; i < Py_SIZE(co); i++) {
-        _Py_CODEUNIT instruction = _PyCode_CODE(co)[i];
-        int opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
+    for (int i = 0; i < len; i++) {
+        _Py_CODEUNIT instruction = instructions[i];
+        int opcode = _PyOpcode_Original[_Py_OPCODE(instruction)];
         int caches = _PyOpcode_Caches[opcode];
         instructions[i] = _Py_MAKECODEUNIT(opcode, _Py_OPARG(instruction));
         while (caches--) {
             instructions[++i] = _Py_MAKECODEUNIT(CACHE, 0);
         }
     }
+}
+
+PyObject *
+_PyCode_GetCode(PyCodeObject *co)
+{
+    PyObject *code = PyBytes_FromStringAndSize((const char *)_PyCode_CODE(co),
+                                               _PyCode_NBYTES(co));
+    if (code == NULL) {
+        return NULL;
+    }
+    deopt_code((_Py_CODEUNIT *)PyBytes_AS_STRING(code), Py_SIZE(co));
     return code;
 }
 
+PyObject *
+PyCode_GetCode(PyCodeObject *co)
+{
+    return _PyCode_GetCode(co);
+}
 
 /******************
  * PyCode_Type
@@ -2071,6 +2082,7 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
     if (co->co_warmup == 0) {
          _Py_QuickenedCount--;
     }
+    deopt_code(_PyCode_CODE(co), Py_SIZE(co));
     co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
     PyMem_Free(co->co_extra);
     co->co_extra = NULL;
