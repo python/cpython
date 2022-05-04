@@ -213,6 +213,7 @@ dist:
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
 
 check:
+	# --severity=0 enables all checks, but we don't want to check for long lines
 	$(SPHINXLINT) -i tools -i $(VENVDIR) -i README.rst --severity=0 --disable='line too long'
 	$(SPHINXLINT) --severity=0 --disable='line too long' ../Misc/NEWS.d/next/
 
