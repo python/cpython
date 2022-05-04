@@ -1,0 +1,1 @@
+Optimized list repeating by using the same algorithm/method in ``_PyBytes_Repeat``. Patch by Jeremiah Gabriel Pascual.
