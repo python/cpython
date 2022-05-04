@@ -320,7 +320,7 @@ copy_kwds(PyObject *mapping)
         Py_ssize_t kwlen = PyDict_Size(mapping);
         assert(kwlen >= 0);
         if (kwlen > 0) {
-            newdict = _PyDict_NewPresized(kwlen);
+            newdict = PyDict_New();
             if (newdict == NULL) {
                 return NULL;
             }
