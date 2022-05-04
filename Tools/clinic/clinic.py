@@ -1630,14 +1630,14 @@ class BlockParser:
             # doesn't end with EOL (it could be the very end of the file)
             if line.startswith(stop_line):
                 remainder = line[len(stop_line):]
-                if remainder.isspace():
-                    return True
-                else:
+                if remainder and not remainder.isspace():
                     fail(f"Garbage after stop line: {remainder!r}")
-            # gh-92256: don't allow incorrectly formatted stop lines
-            elif line.lstrip().startswith(stop_line):
-                fail("Whitespace is not allowed before the stop line: {stop_line!r}")
-            return False
+                return True
+            else:
+                # gh-92256: don't allow incorrectly formatted stop lines
+                if line.lstrip().startswith(stop_line):
+                    fail("Whitespace is not allowed before the stop line: {stop_line!r}")
+                return False
 
         # consume body of program
         while self.input:
