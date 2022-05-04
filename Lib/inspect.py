@@ -1645,7 +1645,7 @@ class Traceback(_Traceback):
         instance = super().__new__(cls, filename, lineno, function, code_context, index)
         instance.positions = positions
         return instance
-    
+
     def __repr__(self):
         return ('Traceback(filename={!r}, lineno={!r}, function={!r}, '
                'code_context={!r}, index={!r}, positions={!r})'.format(
@@ -1683,7 +1683,7 @@ def getframeinfo(frame, context=1):
         frame, *positions = (frame, lineno, *positions[1:])
     else:
         frame, *positions = (frame, *positions)
-    
+
     lineno = positions[0]
 
     if not isframe(frame):
