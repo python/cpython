@@ -133,7 +133,14 @@ applies :func:`repr`::
    >>> print(f'My hovercraft is full of {animals!r}.')
    My hovercraft is full of 'eels'.
 
-For a reference on these format specifications, see
+The ``=`` specifier can be used to expand an expression and its evaluation:
+
+   >>> fruit = 'durians'
+   >>> print(f'This pie is filled with {fruit=}.')
+   This pie is filled with fruit='durians'.
+
+See :ref:`self-documenting expressions <bpo-36817-whatsnew>` for more information
+on the ``=`` specifier. For a reference on these format specifications, see
 the reference guide for the :ref:`formatspec`.
 
 .. _tut-string-format:
