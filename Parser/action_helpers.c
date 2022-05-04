@@ -883,6 +883,13 @@ lambdafy(Parser *p, expr_ty arg)
 expr_ty
 _PyPegen_tag_string(Parser *p, expr_ty tag, Token *tok)
 {
+    if (tag->end_lineno != tok->lineno ||
+        tag->end_col_offset != tok->col_offset) {
+        RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError,
+            tag->end_lineno, tag->end_col_offset,
+            tok->lineno, tok->col_offset,
+            "cannot have space between tag and string");
+    }
     asdl_generic_seq *tokens = _Py_asdl_generic_seq_new(1, p->arena);
     if (tokens == NULL)
         return NULL;
