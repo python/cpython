@@ -523,10 +523,8 @@ character ``'$'``.
 
 ``\w``
    For Unicode (str) patterns:
-      Matches Unicode word characters; this includes most alphanumeric characters
-      as well as the underscore. In Unicode, alphanumeric characters are defined
-      to be the general categories L + N
-      (see `Unicode General Category Values <https://unicode.org/reports/tr44/#General_Category_Values>`_).
+      Matches Unicode word characters; this includes alphanumeric characters (as defined by :meth:`str.isalnum`)
+      as well as the underscore (``_``).
       If the :const:`ASCII` flag is used, only ``[a-zA-Z0-9_]`` is matched.
 
    For 8-bit (bytes) patterns:
