@@ -234,7 +234,7 @@ def _ss(data, c=None):
         # The sum will be a NAN or INF. We can ignore all the finite
         # partials, and just look at this special one.
         ssd = c = sx_partials[None]
-        assert not _isfinite(total)
+        assert not _isfinite(ssd)
     else:
         sx = sum(Fraction(n, d) for d, n in sx_partials.items())
         sxx = sum(Fraction(n, d*d) for d, n in sxx_partials.items())
@@ -945,7 +945,11 @@ def _mean_stdev(data):
     if n < 2:
         raise StatisticsError('stdev requires at least two data points')
     mss = ss / (n - 1)
-    return float(xbar), _float_sqrt_of_frac(mss.numerator, mss.denominator)
+    try:
+        return float(xbar), _float_sqrt_of_frac(mss.numerator, mss.denominator)
+    except AttributeError:
+        # Handle Nans and Infs gracefully
+        return float(xbar), float(xbar) / float(ss)
 
 
 # === Statistics for relations between two inputs ===
