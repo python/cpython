@@ -1066,7 +1066,7 @@ Deprecated
   now deprecated, use ``fullname`` instead. This brings the name in line with
   the rest of :mod:`importlib` and what the documentation has always said the
   name of the parameter was.
-  (Contributed by Sayan Chowdhury and Adam Chhina in :issue:`74460`.)
+  (Contributed by Sayan Chowdhury and Adam Chhina in :gh:`74460`.)
 
 * Octal escapes with value larger than ``0o377`` now produce
   a :exc:`DeprecationWarning`.
