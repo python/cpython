@@ -1,0 +1,1 @@
+Fix an issue where specialized opcodes with extended arguments could produce incorrect tracing output or lead to assertion failures.

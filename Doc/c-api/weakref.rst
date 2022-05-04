@@ -66,5 +66,4 @@ as much as it can.
 
 .. c:function:: PyObject* PyWeakref_GET_OBJECT(PyObject *ref)
 
-   Similar to :c:func:`PyWeakref_GetObject`, but implemented as a macro that does no
-   error checking.
+   Similar to :c:func:`PyWeakref_GetObject`, but does no error checking.

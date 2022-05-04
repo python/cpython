@@ -48,6 +48,10 @@ extern void *PyWin_DLLhModule;
 extern const char *PyWin_DLLVersionString;
 #endif
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 /*[clinic input]
 module sys
 [clinic start generated code]*/
@@ -2686,6 +2690,107 @@ error:
     return NULL;
 }
 
+#ifdef __EMSCRIPTEN__
+
+PyDoc_STRVAR(emscripten_info__doc__,
+"sys._emscripten_info\n\
+\n\
+WebAssembly Emscripten platform information.");
+
+static PyTypeObject *EmscriptenInfoType;
+
+static PyStructSequence_Field emscripten_info_fields[] = {
+    {"emscripten_version", "Emscripten version (major, minor, micro)"},
+    {"runtime", "Runtime (Node.JS version, browser user agent)"},
+    {"pthreads", "pthread support"},
+    {"shared_memory", "shared memory support"},
+    {0}
+};
+
+static PyStructSequence_Desc emscripten_info_desc = {
+    "sys._emscripten_info",     /* name */
+    emscripten_info__doc__ ,    /* doc */
+    emscripten_info_fields,     /* fields */
+    4
+};
+
+EM_JS(char *, _Py_emscripten_runtime, (void), {
+    var info;
+    if (typeof navigator == 'object') {
+        info = navigator.userAgent;
+    } else if (typeof process == 'object') {
+        info = "Node.js ".concat(process.version)
+    } else {
+        info = "UNKNOWN"
+    }
+    var len = lengthBytesUTF8(info) + 1;
+    var res = _malloc(len);
+    stringToUTF8(info, res, len);
+    return res;
+});
+
+static PyObject *
+make_emscripten_info(void)
+{
+    PyObject *emscripten_info = NULL;
+    PyObject *version = NULL;
+    char *ua;
+    int pos = 0;
+
+    emscripten_info = PyStructSequence_New(EmscriptenInfoType);
+    if (emscripten_info == NULL) {
+        return NULL;
+    }
+
+    version = Py_BuildValue("(iii)",
+        __EMSCRIPTEN_major__, __EMSCRIPTEN_minor__, __EMSCRIPTEN_tiny__);
+    if (version == NULL) {
+        goto error;
+    }
+    PyStructSequence_SET_ITEM(emscripten_info, pos++, version);
+
+    ua = _Py_emscripten_runtime();
+    if (ua != NULL) {
+        PyObject *oua = PyUnicode_DecodeUTF8(ua, strlen(ua), "strict");
+        free(ua);
+        if (oua == NULL) {
+            goto error;
+        }
+        PyStructSequence_SET_ITEM(emscripten_info, pos++, oua);
+    } else {
+        Py_INCREF(Py_None);
+        PyStructSequence_SET_ITEM(emscripten_info, pos++, Py_None);
+    }
+
+#define SetBoolItem(flag) \
+    PyStructSequence_SET_ITEM(emscripten_info, pos++, PyBool_FromLong(flag))
+
+#ifdef __EMSCRIPTEN_PTHREADS__
+    SetBoolItem(1);
+#else
+    SetBoolItem(0);
+#endif
+
+#ifdef __EMSCRIPTEN_SHARED_MEMORY__
+    SetBoolItem(1);
+#else
+    SetBoolItem(0);
+#endif
+
+#undef SetBoolItem
+
+    if (PyErr_Occurred()) {
+        goto error;
+    }
+    return emscripten_info;
+
+  error:
+    Py_CLEAR(emscripten_info);
+    return NULL;
+}
+
+#endif // __EMSCRIPTEN__
+
 static struct PyModuleDef sysmodule = {
     PyModuleDef_HEAD_INIT,
     "sys",
@@ -2820,6 +2925,16 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
             goto type_init_failed;
         }
     }
+
+#ifdef __EMSCRIPTEN__
+    if (EmscriptenInfoType == NULL) {
+        EmscriptenInfoType = PyStructSequence_NewType(&emscripten_info_desc);
+        if (EmscriptenInfoType == NULL) {
+            goto type_init_failed;
+        }
+    }
+    SET_SYS("_emscripten_info", make_emscripten_info());
+#endif
 
     /* adding sys.path_hooks and sys.path_importer_cache */
     SET_SYS("meta_path", PyList_New(0));
@@ -3066,6 +3181,9 @@ _PySys_Fini(PyInterpreterState *interp)
 #endif
         _PyStructSequence_FiniType(&Hash_InfoType);
         _PyStructSequence_FiniType(&AsyncGenHooksType);
+#ifdef __EMSCRIPTEN__
+        Py_CLEAR(EmscriptenInfoType);
+#endif
     }
 }
 

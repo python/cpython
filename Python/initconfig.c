@@ -732,7 +732,11 @@ _PyConfig_InitCompatConfig(PyConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
 #endif
-    config->use_frozen_modules = -1;
+#ifdef Py_DEBUG
+    config->use_frozen_modules = 0;
+#else
+    config->use_frozen_modules = 1;
+#endif
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
 }
@@ -1507,9 +1511,11 @@ config_get_xoption_value(const PyConfig *config, wchar_t *name)
 static PyStatus
 config_init_hash_seed(PyConfig *config)
 {
+    static_assert(sizeof(_Py_HashSecret_t) == sizeof(_Py_HashSecret.uc),
+                  "_Py_HashSecret_t has wrong size");
+
     const char *seed_text = config_get_env(config, "PYTHONHASHSEED");
 
-    Py_BUILD_ASSERT(sizeof(_Py_HashSecret_t) == sizeof(_Py_HashSecret.uc));
     /* Convert a text seed to a numeric one */
     if (seed_text && strcmp(seed_text, "random") != 0) {
         const char *endptr = seed_text;
@@ -1976,25 +1982,22 @@ config_init_import(PyConfig *config, int compute_path_config)
     }
 
     /* -X frozen_modules=[on|off] */
-    if (config->use_frozen_modules < 0) {
-        const wchar_t *value = config_get_xoption_value(config, L"frozen_modules");
-        if (value == NULL) {
-            config->use_frozen_modules = !config->_is_python_build;
-        }
-        else if (wcscmp(value, L"on") == 0) {
-            config->use_frozen_modules = 1;
-        }
-        else if (wcscmp(value, L"off") == 0) {
-            config->use_frozen_modules = 0;
-        }
-        else if (wcslen(value) == 0) {
-            // "-X frozen_modules" and "-X frozen_modules=" both imply "on".
-            config->use_frozen_modules = 1;
-        }
-        else {
-            return PyStatus_Error("bad value for option -X frozen_modules "
-                                  "(expected \"on\" or \"off\")");
-        }
+    const wchar_t *value = config_get_xoption_value(config, L"frozen_modules");
+    if (value == NULL) {
+    }
+    else if (wcscmp(value, L"on") == 0) {
+        config->use_frozen_modules = 1;
+    }
+    else if (wcscmp(value, L"off") == 0) {
+        config->use_frozen_modules = 0;
+    }
+    else if (wcslen(value) == 0) {
+        // "-X frozen_modules" and "-X frozen_modules=" both imply "on".
+        config->use_frozen_modules = 1;
+    }
+    else {
+        return PyStatus_Error("bad value for option -X frozen_modules "
+                              "(expected \"on\" or \"off\")");
     }
 
     return _PyStatus_OK();

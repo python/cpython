@@ -120,8 +120,27 @@ blob_seterror(pysqlite_Blob *self, int rc)
 }
 
 static PyObject *
-inner_read(pysqlite_Blob *self, int length, int offset)
+read_single(pysqlite_Blob *self, Py_ssize_t offset)
 {
+    unsigned char buf = 0;
+    int rc;
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_blob_read(self->blob, (void *)&buf, 1, (int)offset);
+    Py_END_ALLOW_THREADS
+
+    if (rc != SQLITE_OK) {
+        blob_seterror(self, rc);
+        return NULL;
+    }
+    return PyLong_FromUnsignedLong((unsigned long)buf);
+}
+
+static PyObject *
+read_multiple(pysqlite_Blob *self, Py_ssize_t length, Py_ssize_t offset)
+{
+    assert(length <= sqlite3_blob_bytes(self->blob));
+    assert(offset < sqlite3_blob_bytes(self->blob));
+
     PyObject *buffer = PyBytes_FromStringAndSize(NULL, length);
     if (buffer == NULL) {
         return NULL;
@@ -130,7 +149,7 @@ inner_read(pysqlite_Blob *self, int length, int offset)
     char *raw_buffer = PyBytes_AS_STRING(buffer);
     int rc;
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_blob_read(self->blob, raw_buffer, length, offset);
+    rc = sqlite3_blob_read(self->blob, raw_buffer, (int)length, (int)offset);
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
@@ -172,7 +191,12 @@ blob_read_impl(pysqlite_Blob *self, int length)
         length = max_read_len;
     }
 
-    PyObject *buffer = inner_read(self, length, self->offset);
+    assert(length >= 0);
+    if (length == 0) {
+        return PyBytes_FromStringAndSize(NULL, 0);
+    }
+
+    PyObject *buffer = read_multiple(self, length, self->offset);
     if (buffer == NULL) {
         return NULL;
     }
@@ -181,17 +205,20 @@ blob_read_impl(pysqlite_Blob *self, int length)
 };
 
 static int
-inner_write(pysqlite_Blob *self, const void *buf, Py_ssize_t len, int offset)
+inner_write(pysqlite_Blob *self, const void *buf, Py_ssize_t len,
+            Py_ssize_t offset)
 {
-    int remaining_len = sqlite3_blob_bytes(self->blob) - self->offset;
+    Py_ssize_t blob_len = sqlite3_blob_bytes(self->blob);
+    Py_ssize_t remaining_len = blob_len - offset;
     if (len > remaining_len) {
         PyErr_SetString(PyExc_ValueError, "data longer than blob length");
         return -1;
     }
 
+    assert(offset <= blob_len);
     int rc;
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_blob_write(self->blob, buf, (int)len, offset);
+    rc = sqlite3_blob_write(self->blob, buf, (int)len, (int)offset);
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
@@ -347,6 +374,197 @@ blob_exit_impl(pysqlite_Blob *self, PyObject *type, PyObject *val,
     Py_RETURN_FALSE;
 }
 
+static Py_ssize_t
+blob_length(pysqlite_Blob *self)
+{
+    if (!check_blob(self)) {
+        return -1;
+    }
+    return sqlite3_blob_bytes(self->blob);
+};
+
+static Py_ssize_t
+get_subscript_index(pysqlite_Blob *self, PyObject *item)
+{
+    Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
+    if (i == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+    int blob_len = sqlite3_blob_bytes(self->blob);
+    if (i < 0) {
+        i += blob_len;
+    }
+    if (i < 0 || i >= blob_len) {
+        PyErr_SetString(PyExc_IndexError, "Blob index out of range");
+        return -1;
+    }
+    return i;
+}
+
+static PyObject *
+subscript_index(pysqlite_Blob *self, PyObject *item)
+{
+    Py_ssize_t i = get_subscript_index(self, item);
+    if (i < 0) {
+        return NULL;
+    }
+    return read_single(self, i);
+}
+
+static int
+get_slice_info(pysqlite_Blob *self, PyObject *item, Py_ssize_t *start,
+               Py_ssize_t *stop, Py_ssize_t *step, Py_ssize_t *slicelen)
+{
+    if (PySlice_Unpack(item, start, stop, step) < 0) {
+        return -1;
+    }
+    int len = sqlite3_blob_bytes(self->blob);
+    *slicelen = PySlice_AdjustIndices(len, start, stop, *step);
+    return 0;
+}
+
+static PyObject *
+subscript_slice(pysqlite_Blob *self, PyObject *item)
+{
+    Py_ssize_t start, stop, step, len;
+    if (get_slice_info(self, item, &start, &stop, &step, &len) < 0) {
+        return NULL;
+    }
+
+    if (step == 1) {
+        return read_multiple(self, len, start);
+    }
+    PyObject *blob = read_multiple(self, stop - start, start);
+    if (blob == NULL) {
+        return NULL;
+    }
+    PyObject *result = PyBytes_FromStringAndSize(NULL, len);
+    if (result != NULL) {
+        char *blob_buf = PyBytes_AS_STRING(blob);
+        char *res_buf = PyBytes_AS_STRING(result);
+        for (Py_ssize_t i = 0, j = 0; i < len; i++, j += step) {
+            res_buf[i] = blob_buf[j];
+        }
+        Py_DECREF(blob);
+    }
+    return result;
+}
+
+static PyObject *
+blob_subscript(pysqlite_Blob *self, PyObject *item)
+{
+    if (!check_blob(self)) {
+        return NULL;
+    }
+
+    if (PyIndex_Check(item)) {
+        return subscript_index(self, item);
+    }
+    if (PySlice_Check(item)) {
+        return subscript_slice(self, item);
+    }
+
+    PyErr_SetString(PyExc_TypeError, "Blob indices must be integers");
+    return NULL;
+}
+
+static int
+ass_subscript_index(pysqlite_Blob *self, PyObject *item, PyObject *value)
+{
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Blob doesn't support item deletion");
+        return -1;
+    }
+    if (!PyLong_Check(value)) {
+        PyErr_Format(PyExc_TypeError,
+                     "'%s' object cannot be interpreted as an integer",
+                     Py_TYPE(value)->tp_name);
+        return -1;
+    }
+    Py_ssize_t i = get_subscript_index(self, item);
+    if (i < 0) {
+        return -1;
+    }
+
+    long val = PyLong_AsLong(value);
+    if (val == -1 && PyErr_Occurred()) {
+        PyErr_Clear();
+        val = -1;
+    }
+    if (val < 0 || val > 255) {
+        PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
+        return -1;
+    }
+    // Downcast to avoid endianness problems.
+    unsigned char byte = (unsigned char)val;
+    return inner_write(self, (const void *)&byte, 1, i);
+}
+
+static int
+ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
+{
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Blob doesn't support slice deletion");
+        return -1;
+    }
+
+    Py_ssize_t start, stop, step, len;
+    if (get_slice_info(self, item, &start, &stop, &step, &len) < 0) {
+        return -1;
+    }
+
+    if (len == 0) {
+        return 0;
+    }
+
+    Py_buffer vbuf;
+    if (PyObject_GetBuffer(value, &vbuf, PyBUF_SIMPLE) < 0) {
+        return -1;
+    }
+
+    int rc = -1;
+    if (vbuf.len != len) {
+        PyErr_SetString(PyExc_IndexError,
+                        "Blob slice assignment is wrong size");
+    }
+    else if (step == 1) {
+        rc = inner_write(self, vbuf.buf, len, start);
+    }
+    else {
+        PyObject *blob_bytes = read_multiple(self, stop - start, start);
+        if (blob_bytes != NULL) {
+            char *blob_buf = PyBytes_AS_STRING(blob_bytes);
+            for (Py_ssize_t i = 0, j = 0; i < len; i++, j += step) {
+                blob_buf[j] = ((char *)vbuf.buf)[i];
+            }
+            rc = inner_write(self, blob_buf, stop - start, start);
+            Py_DECREF(blob_bytes);
+        }
+    }
+    PyBuffer_Release(&vbuf);
+    return rc;
+}
+
+static int
+blob_ass_subscript(pysqlite_Blob *self, PyObject *item, PyObject *value)
+{
+    if (!check_blob(self)) {
+        return -1;
+    }
+
+    if (PyIndex_Check(item)) {
+        return ass_subscript_index(self, item, value);
+    }
+    if (PySlice_Check(item)) {
+        return ass_subscript_slice(self, item, value);
+    }
+
+    PyErr_SetString(PyExc_TypeError, "Blob indices must be integers");
+    return -1;
+}
+
 
 static PyMethodDef blob_methods[] = {
     BLOB_CLOSE_METHODDEF
@@ -370,6 +588,11 @@ static PyType_Slot blob_slots[] = {
     {Py_tp_clear, blob_clear},
     {Py_tp_methods, blob_methods},
     {Py_tp_members, blob_members},
+
+    // Mapping protocol
+    {Py_mp_length, blob_length},
+    {Py_mp_subscript, blob_subscript},
+    {Py_mp_ass_subscript, blob_ass_subscript},
     {0, NULL},
 };
 
