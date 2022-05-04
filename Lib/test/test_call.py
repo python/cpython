@@ -215,6 +215,32 @@ class TestCallingConventions(unittest.TestCase):
             (self.expected_self, (1, 2), {'a': 3, 'b': 4})
         )
 
+    def test_keywords_copied_python(self):
+        d = {}
+        self.assertIsNot(
+            self.obj.meth_varargs_keywords(**d)[2],
+            d
+        )
+
+        d = {'a': 1}
+        self.assertIsNot(
+            self.obj.meth_varargs_keywords(**d)[2],
+            d
+        )
+
+    def test_keywords_copied_capi(self):
+        d = {}
+        self.assertIsNot(
+            self.obj.object_call(self.obj.meth_varargs_keywords, (), d)[2],
+            d
+        )
+
+        d = {'a': 1}
+        self.assertIsNot(
+            self.obj.object_call(self.obj.meth_varargs_keywords, (), d)[2],
+            d
+        )
+
     def test_o(self):
         self.assertEqual(self.obj.meth_o(1), (self.expected_self, 1))
 

@@ -1,0 +1,6 @@
+:c:func:`PyObject_Call` now guarantees any kwargs :class:`dict` passed is
+shallow-copied before being passed to the callee, matching the documented
+equivalence with ``callable(*args, **kwargs)``.
+When a function call's sole source of keyword arguments is a single ``**``
+unpacked :class:`dict`, no copy is performed when the callable uses
+:ref:`vectorcall <vectorcall>`, which does not expose the dict to the callee.

@@ -309,6 +309,31 @@ _PyObject_FastCall(PyObject *func, PyObject *const *args, Py_ssize_t nargs)
 }
 
 
+static PyObject*
+copy_kwds(PyObject *mapping)
+{
+    PyObject *newdict = NULL;
+
+    if (mapping != NULL) {
+        assert(PyDict_Check(mapping));
+
+        Py_ssize_t kwlen = PyDict_Size(mapping);
+        assert(kwlen >= 0);
+        if (kwlen > 0) {
+            newdict = PyDict_New();
+            if (newdict == NULL) {
+                return NULL;
+            }
+            if (_PyDict_MergeEx(newdict, mapping, 2) < 0) {
+                Py_DECREF(newdict);
+                return NULL;
+            }
+        }
+    }
+
+    return newdict;
+}
+
 PyObject *
 _PyObject_Call(PyThreadState *tstate, PyObject *callable,
                PyObject *args, PyObject *kwargs)
@@ -328,6 +353,7 @@ _PyObject_Call(PyThreadState *tstate, PyObject *callable,
         return _PyVectorcall_Call(tstate, vector_func, callable, args, kwargs);
     }
     else {
+        PyObject *kwcopy;
         call = Py_TYPE(callable)->tp_call;
         if (call == NULL) {
             _PyErr_Format(tstate, PyExc_TypeError,
@@ -336,13 +362,27 @@ _PyObject_Call(PyThreadState *tstate, PyObject *callable,
             return NULL;
         }
 
-        if (_Py_EnterRecursiveCall(tstate, " while calling a Python object")) {
+        /* Adhere to documented equivalence:
+           callable(*args, **kwargs) == PyObject_Call(callable, args, kwargs)
+
+           The dict must be copied to ensure the caller's copy isn't modified.
+           Not needed when following vectorcall paths that don't use the dict.
+           */
+        kwcopy = copy_kwds(kwargs);
+        if (kwcopy == NULL && _PyErr_Occurred(tstate)) {
             return NULL;
         }
 
-        result = (*call)(callable, args, kwargs);
+        if (_Py_EnterRecursiveCall(tstate, " while calling a Python object")) {
+            Py_XDECREF(kwcopy);
+            return NULL;
+        }
+
+        result = (*call)(callable, args, kwcopy);
 
         _Py_LeaveRecursiveCall(tstate);
+
+        Py_XDECREF(kwcopy);
 
         return _Py_CheckFunctionResult(tstate, callable, result, NULL);
     }

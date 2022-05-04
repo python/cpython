@@ -5508,6 +5508,25 @@ _null_to_none(PyObject* obj)
     return obj;
 }
 
+/* For testing unpacking behaviors in C API without eval loop
+ * changing behavior by potentially copying structures dict implicitly
+ */
+static PyObject*
+object_call(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *func, *posargs, *kwargs;
+
+    if (!_PyArg_CheckPositional("object_call", nargs, 2, 3)) {
+        return NULL;
+    }
+
+    func = args[0];
+    posargs = args[1];
+    kwargs = PyVectorcall_NARGS(nargs) == 3 ? args[2] : NULL;
+
+    return PyObject_Call(func, posargs, kwargs);
+}
+
 static PyObject*
 meth_varargs(PyObject* self, PyObject* args)
 {
@@ -6225,6 +6244,7 @@ static PyMethodDef TestMethods[] = {
 #endif
     {"write_unraisable_exc", test_write_unraisable_exc, METH_VARARGS},
     {"sequence_getitem", sequence_getitem, METH_VARARGS},
+    {"object_call", (PyCFunction)(void(*)(void))object_call, METH_FASTCALL},
     {"meth_varargs", meth_varargs, METH_VARARGS},
     {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS},
     {"meth_o", meth_o, METH_O},
@@ -7382,6 +7402,7 @@ static PyType_Spec HeapCTypeSetattr_spec = {
 };
 
 static PyMethodDef meth_instance_methods[] = {
+    {"object_call", (PyCFunction)(void(*)(void))object_call, METH_FASTCALL},
     {"meth_varargs", meth_varargs, METH_VARARGS},
     {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS},
     {"meth_o", meth_o, METH_O},
@@ -7404,6 +7425,7 @@ static PyTypeObject MethInstance_Type = {
 };
 
 static PyMethodDef meth_class_methods[] = {
+    {"object_call", (PyCFunction)(void(*)(void))object_call, METH_FASTCALL|METH_CLASS},
     {"meth_varargs", meth_varargs, METH_VARARGS|METH_CLASS},
     {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS|METH_CLASS},
     {"meth_o", meth_o, METH_O|METH_CLASS},
@@ -7426,6 +7448,7 @@ static PyTypeObject MethClass_Type = {
 };
 
 static PyMethodDef meth_static_methods[] = {
+    {"object_call", (PyCFunction)(void(*)(void))object_call, METH_FASTCALL|METH_STATIC},
     {"meth_varargs", meth_varargs, METH_VARARGS|METH_STATIC},
     {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS|METH_STATIC},
     {"meth_o", meth_o, METH_O|METH_STATIC},
