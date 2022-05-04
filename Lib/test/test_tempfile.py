@@ -1467,6 +1467,25 @@ class TestTemporaryDirectory(BaseTestCase):
             with open(os.path.join(path, "test%d.txt" % i), "wb") as f:
                 f.write(b"Hello world!")
 
+    def test_absolute_path(self):
+        """Test that the absolute path to the temporary directory is returned"""
+        with tempfile.TemporaryDirectory() as working_dir, contextlib.chdir(working_dir):
+            with tempfile.TemporaryDirectory(dir=".") as temp_dir:
+                self.assertEqual(os.path.dirname(temp_dir), os.path.realpath(working_dir))
+
+    def test_mkdtemp_rename_dir_failure(self):
+        """Test that after renaming the parent directory, the temporary directory is not deleted
+        See: https://github.com/python/cpython/issues/64466#issuecomment-1093642375
+        """
+        with tempfile.TemporaryDirectory() as working_dir, contextlib.chdir(working_dir):
+            parent_path = pathlib.Path(working_dir) / "parent"
+            parent_path.mkdir()
+            os.chdir(parent_path)
+            with self.do_create(dir=".") as temp_dir:
+                parent_path.rename("../parent2")
+            self.assertFalse(os.path.exists(temp_dir))
+            self.assertTrue((parent_path.parent / "parent2").exists())
+
     def test_mkdtemp_failure(self):
         # Check no additional exception if mkdtemp fails
         # Previously would raise AttributeError instead
