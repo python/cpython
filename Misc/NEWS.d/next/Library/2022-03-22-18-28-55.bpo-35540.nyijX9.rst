@@ -1,1 +1,1 @@
-Fix :func:`dataclasses.asdict` crash when :class:`collections.defaultdict`s are present in the attributes.
+Fix :func:`dataclasses.asdict` crash when :class:`collections.defaultdict` is present in the attributes.
