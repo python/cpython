@@ -715,7 +715,10 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   to clear all registered overloads of a function.
   (Contributed by Jelle Zijlstra in :gh:`89263`.)
 
-* :class:`~typing.NamedTuple` subclasses can be generic.
+* :data:`typing.TypedDict` subclasses can now be generic. (Contributed by
+  Samodya Abey in :gh:`89026`.)
+
+* :class:`~typing.NamedTuple` subclasses can now be generic.
   (Contributed by Serhiy Storchaka in :issue:`43923`.)
 
 
@@ -1411,6 +1414,11 @@ C API Changes
   Using these functions should be avoided, if at all possible.
   To get a custom code object: create a code object using the compiler,
   then get a modified version with the ``replace`` method.
+
+* :c:type:`PyCodeObject` no longer has a ``co_code`` field.  Instead,
+  use ``PyObject_GetAttrString(code_object, "co_code")`` or
+  :c:func:`PyCode_GetCode` to get the underlying bytes object.
+  (Contributed by Brandt Bucher in :issue:`46841` and Ken Jin in :gh:`92154`.)
 
 New Features
 ------------

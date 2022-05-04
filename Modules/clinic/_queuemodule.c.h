@@ -42,7 +42,7 @@ PyDoc_STRVAR(_queue_SimpleQueue_put__doc__,
 "never blocks.  They are provided for compatibility with the Queue class.");
 
 #define _QUEUE_SIMPLEQUEUE_PUT_METHODDEF    \
-    {"put", (PyCFunction)(void(*)(void))_queue_SimpleQueue_put, METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_put__doc__},
+    {"put", _PyCFunction_CAST(_queue_SimpleQueue_put), METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_put__doc__},
 
 static PyObject *
 _queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item,
@@ -95,7 +95,7 @@ PyDoc_STRVAR(_queue_SimpleQueue_put_nowait__doc__,
 "for compatibility with the Queue class.");
 
 #define _QUEUE_SIMPLEQUEUE_PUT_NOWAIT_METHODDEF    \
-    {"put_nowait", (PyCFunction)(void(*)(void))_queue_SimpleQueue_put_nowait, METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_put_nowait__doc__},
+    {"put_nowait", _PyCFunction_CAST(_queue_SimpleQueue_put_nowait), METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_put_nowait__doc__},
 
 static PyObject *
 _queue_SimpleQueue_put_nowait_impl(simplequeueobject *self, PyObject *item);
@@ -135,7 +135,7 @@ PyDoc_STRVAR(_queue_SimpleQueue_get__doc__,
 "in that case).");
 
 #define _QUEUE_SIMPLEQUEUE_GET_METHODDEF    \
-    {"get", (PyCFunction)(void(*)(void))_queue_SimpleQueue_get, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_get__doc__},
+    {"get", _PyCFunction_CAST(_queue_SimpleQueue_get), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_get__doc__},
 
 static PyObject *
 _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
@@ -186,7 +186,7 @@ PyDoc_STRVAR(_queue_SimpleQueue_get_nowait__doc__,
 "raise the Empty exception.");
 
 #define _QUEUE_SIMPLEQUEUE_GET_NOWAIT_METHODDEF    \
-    {"get_nowait", (PyCFunction)(void(*)(void))_queue_SimpleQueue_get_nowait, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_get_nowait__doc__},
+    {"get_nowait", _PyCFunction_CAST(_queue_SimpleQueue_get_nowait), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_get_nowait__doc__},
 
 static PyObject *
 _queue_SimpleQueue_get_nowait_impl(simplequeueobject *self,
@@ -257,4 +257,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=36301c405a858f39 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=88ec8033aeb7241c input=a9049054013a1b77]*/
