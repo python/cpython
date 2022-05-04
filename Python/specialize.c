@@ -440,6 +440,7 @@ initial_counter_value(void) {
 #define SPEC_FAIL_CALL_METHOD_WRAPPER 26
 #define SPEC_FAIL_CALL_OPERATOR_WRAPPER 27
 #define SPEC_FAIL_CALL_PYFUNCTION 28
+#define SPEC_FAIL_CALL_PEP_523 29
 
 /* COMPARE_OP */
 #define SPEC_FAIL_COMPARE_OP_DIFFERENT_TYPES 12
@@ -1471,6 +1472,11 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
     assert(_Py_OPCODE(*instr) == CALL_ADAPTIVE);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     int kind = function_kind(code);
+    /* Don't specialize if PEP 523 is active */
+    if (_PyInterpreterState_GET()->eval_frame) {
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_PEP_523);
+        return -1;
+    }
     if (kwnames) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_KWNAMES);
         return -1;
