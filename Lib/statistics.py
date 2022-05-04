@@ -206,14 +206,13 @@ def _sum(data):
 
 
 def _ss(data, c=None):
-    """Return exact mean and sum of square deviations of sequence data.
+    """Return the exact mean and sum of square deviations of sequence data.
 
     Calculations are done in a single pass, allowing the input to be an iterator.
 
     If given *c* is used the mean; otherwise, it is calculated from the data.
     Use the *c* argument with care, as it can lead to garbage results.
 
-    Returns aggregate type
     """
     if c is not None:
         T, ssd, count = _sum((d := x - c) * d for x in data)
