@@ -1,0 +1,1 @@
+Improve exception message to contain ``repr`` of the item being removed in :meth:`list.remove`. Patch by Kumar Aditya.
