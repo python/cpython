@@ -692,6 +692,18 @@ elif not pythonpath:
         if stdlib_dir:
             pythonpath.append(stdlib_dir)
         if platstdlib_dir:
+            if os_name == 'nt' and real_executable_dir and \
+                    isfile(joinpath(real_executable_dir, BUILDDIR_TXT)):
+                p = platstdlib_dir
+                try:
+                    p = joinpath(
+                        real_executable_dir,
+                        readlines(joinpath(real_executable_dir, BUILDDIR_TXT))[0],
+                    )
+                except IndexError:
+                    p = real_executable_dir
+                if p != platstdlib_dir:
+                    pythonpath.append(p)  # prior to platstdlib_dir
             pythonpath.append(platstdlib_dir)
 
     config['module_search_paths'] = pythonpath
