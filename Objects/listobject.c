@@ -546,12 +546,13 @@ static PyObject *
 list_repeat(PyListObject *a, Py_ssize_t n)
 {
     Py_ssize_t size;
+    Py_ssize_t length;
     PyListObject *np;
     if (n < 0)
         n = 0;
     if (n > 0 && Py_SIZE(a) > PY_SSIZE_T_MAX / n)
         return PyErr_NoMemory();
-    size = Py_SIZE(a) * n;
+    size = (length = Py_SIZE(a)) * n;
     if (size == 0)
         return PyList_New(0);
     np = (PyListObject *) list_new_prealloc(size);
@@ -560,7 +561,7 @@ list_repeat(PyListObject *a, Py_ssize_t n)
     PyObject **dest = np->ob_item;
     PyObject **dest_end = dest + size;
     PyObject *elem;
-    if (Py_SIZE(a) == 1) {
+    if (length == 1) {
         Py_SET_REFCNT((elem = a->ob_item[0]), Py_REFCNT(elem) + n);
 #ifdef Py_REF_DEBUG
         _Py_RefTotal += n;
