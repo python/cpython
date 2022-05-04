@@ -52,6 +52,11 @@ if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
 mswindows = (sys.platform == "win32")
+if mswindows:
+    try:
+        import ctypes
+    except ImportError:
+        ctypes = None
 
 #
 # Depends on the following external programs: Python
@@ -2255,6 +2260,10 @@ class POSIXProcessTestCase(BaseTestCase):
                           [sys.executable, "-c",
                            "import sys; sys.exit(47)"],
                           creationflags=47)
+        self.assertRaises(ValueError, subprocess.call,
+                          [sys.executable, "-c",
+                           "import sys; sys.exit(47)"],
+                          force_hide=47)
 
     def test_shell_sequence(self):
         # Run command through the shell (sequence)
@@ -3364,12 +3373,23 @@ class Win32ProcessTestCase(BaseTestCase):
             self.assertEqual(startupinfo.lpAttributeList, {"handle_list": []})
 
     def test_creationflags(self):
-        # creationflags argument
-        CREATE_NEW_CONSOLE = 16
         sys.stderr.write("    a DOS box should flash briefly ...\n")
         subprocess.call(sys.executable +
                         ' -c "import time; time.sleep(0.25)"',
-                        creationflags=CREATE_NEW_CONSOLE)
+                        creationflags=subprocess.CREATE_NEW_CONSOLE)
+
+    def test_force_hide(self):
+        if ctypes:
+            script = textwrap.dedent(r'''
+                import sys, ctypes
+                GetConsoleWindow = ctypes.WinDLL('kernel32').GetConsoleWindow
+                IsWindowVisible = ctypes.WinDLL('user32').IsWindowVisible
+                sys.exit(IsWindowVisible(GetConsoleWindow()))
+            ''')
+        else:
+            script = 'import sys; sys.exit(0)'
+        rc = subprocess.call([sys.executable, '-c', script], force_hide=True)
+        self.assertEqual(rc, 0)
 
     def test_invalid_args(self):
         # invalid arguments should raise ValueError
