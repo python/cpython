@@ -180,7 +180,8 @@ if EXIST "%BUILDDIR%\html\index.html" (
 goto end
 
 :check
-cmd /S /C "%SPHINXLINT% -i tools"
+cmd /S /C "%SPHINXLINT% -i tools -i README.rst --severity=0 --disable='line too long'"
+cmd /S /C "%SPHINXLINT% --severity=0 --disable='line too long' ..\Misc\NEWS.d\next\ "
 goto end
 
 :serve
