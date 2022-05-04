@@ -1636,7 +1636,7 @@ class BlockParser:
             else:
                 # gh-92256: don't allow incorrectly formatted stop lines
                 if line.lstrip().startswith(stop_line):
-                    fail("Whitespace is not allowed before the stop line: {stop_line!r}")
+                    fail(f"Whitespace is not allowed before the stop line: {line!r}")
                 return False
 
         # consume body of program
