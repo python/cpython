@@ -1,0 +1,3 @@
+Rename *name* argument to *fullname* to
+:class:`importlib.machinery.ExtensionFileLoader`. Patch by Sayan Chowdhury
+and Adam Chhina.
