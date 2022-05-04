@@ -214,7 +214,7 @@ dist:
 
 check:
 	$(SPHINXLINT) -i tools -i $(VENVDIR) -i README.rst --severity=0 --disable='line too long'
-	$(SPHINXLINT) ../Misc/NEWS.d/next/ --severity=0 --disable='line too long'
+	$(SPHINXLINT) --severity=0 --disable='line too long' ../Misc/NEWS.d/next/
 
 serve:
 	@echo "The serve target was removed, use htmlview instead (see bpo-36329)"
