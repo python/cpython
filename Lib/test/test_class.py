@@ -604,13 +604,6 @@ class ClassTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             A() + 1
 
-    def testSetattrNonStringName(self):
-        class A:
-            pass
-
-        with self.assertRaises(TypeError):
-            type.__setattr__(A, b'x', None)
-
     def testConstructorErrorMessages(self):
         # bpo-31506: Improves the error message logic for object_new & object_init
 
