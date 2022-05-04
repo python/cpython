@@ -98,7 +98,7 @@ menudefs = [
 
  ('options', [
    ('Configure _IDLE', '<<open-config-dialog>>'),
-   None,
+   ("Clear Window", "<<clear-window>>"),
    ('Show _Code Context', '<<toggle-code-context>>'),
    ('Show _Line Numbers', '<<toggle-line-numbers>>'),
    ('_Zoom Height', '<<zoom-height>>'),
