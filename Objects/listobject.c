@@ -572,7 +572,7 @@ list_repeat(PyListObject *a, Py_ssize_t n)
     }
     else {
         PyObject **src = a->ob_item;
-        while (src < src_end) {
+        for (Py_ssize_t i = 0; i < length; ++i) {
             Py_SET_REFCNT((elem = src[i]), Py_REFCNT(elem) + n);
 #ifdef Py_REF_DEBUG
             _Py_RefTotal += n;
@@ -743,7 +743,8 @@ static PyObject *
 list_inplace_repeat(PyListObject *self, Py_ssize_t n)
 {
     PyObject **items;
-    Py_ssize_t size, i, j, p;
+    PyObject *elem;
+    Py_ssize_t size, new_size, copied, remaining, size_copy;
 
 
     size = PyList_GET_SIZE(self);
@@ -762,17 +763,22 @@ list_inplace_repeat(PyListObject *self, Py_ssize_t n)
         return PyErr_NoMemory();
     }
 
-    if (list_resize(self, size*n) < 0)
+    if (list_resize(self, (new_size = size*n)) < 0)
         return NULL;
 
-    p = size;
     items = self->ob_item;
-    for (i = 1; i < n; i++) { /* Start counting at 1, not 0 */
-        for (j = 0; j < size; j++) {
-            PyObject *o = items[j];
-            Py_INCREF(o);
-            items[p++] = o;
-        }
+    for (Py_ssize_t i = 0; i < size; ++i) {
+        Py_SET_REFCNT((elem = items[i]), Py_REFCNT(elem) + n);
+#ifdef Py_REF_DEBUG
+        _Py_RefTotal += n;
+#endif
+    }
+    copied = size;
+    while (copied < new_size) {
+        remaining = new_size - copied;
+        size_copy = Py_MIN(copied, remaining);
+        memcpy(items + copied, items, size_copy * sizeof(PyObject *));
+        copied += size_copy;
     }
     Py_INCREF(self);
     return (PyObject *)self;
