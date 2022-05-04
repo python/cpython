@@ -604,6 +604,13 @@ class ClassTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             A() + 1
 
+    def testSetattrNonStringName(self):
+        class A:
+            pass
+
+        with self.assertRaises(TypeError):
+             type.__setattr__(A, b'x', None)
+
     def testTypeAttributeAccessErrorMessages(self):
         class A:
             pass
