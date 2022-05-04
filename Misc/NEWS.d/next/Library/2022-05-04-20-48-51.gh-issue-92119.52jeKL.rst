@@ -1,0 +1,1 @@
+Change the way :c:func:`_ctypes_extend_error` prints the type of raised exception: use :c:func:`PyType_GetQualName` instead of :c:func:`PyObject_Str`.
