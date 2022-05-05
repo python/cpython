@@ -46,6 +46,9 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-P
 ]
 [
+.B \-p
+]
+[
 .B \-s
 ]
 [
@@ -184,6 +187,9 @@ compiled (bytecode) files by adding .opt-2 before the .pyc extension.
 Don't automatically prepend a potentially unsafe path to \fBsys.path\fP such
 as the current directory, the script's directory or an empty string. See also the
 \fBPYTHONSAFEPATH\fP environment variable.
+.TP
+.B \-p
+Ignore the \fB\-P\fP option and the \fBPYTHONSAFEPATH\fP environment variable.
 .TP
 .B \-q
 Do not print the version and copyright messages. These messages are
@@ -409,7 +415,7 @@ interpreter.
 .IP PYTHONSAFEPATH
 If this is set to a non-empty string, don't automatically prepend a potentially
 unsafe path to \fBsys.path\fP such as the current directory, the script's
-directory or an empty string. See also the \fB\-P\fP option.
+directory or an empty string. See also \fB\-P\fP and\fB\-p\fP options.
 .IP PYTHONHOME
 Change the location of the standard Python libraries.  By default, the
 libraries are searched in ${prefix}/lib/python<version> and

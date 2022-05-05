@@ -284,6 +284,11 @@ Miscellaneous options
    variables are ignored, too. Further restrictions may be imposed to prevent
    the user from injecting malicious code.
 
+   The :option:`-p` option can be used with the :option:`-I` option to ignore
+   the :option:`-P` implied by the :option:`-I` option: prepend a potentially
+   unsafe path to :data:`sys.path` such as the current directory, the script's
+   directory or an empty string.
+
    .. versionadded:: 3.4
 
 
@@ -319,10 +324,28 @@ Miscellaneous options
    * ``python -c code`` and ``python`` (REPL) command lines: Don't prepend an
      empty string, which means the current working directory.
 
-   See also the :envvar:`PYTHONSAFEPATH` environment variable, and :option:`-E`
+   See also the :envvar:`PYTHONSAFEPATH` environment variable, and :option:`-p`
    and :option:`-I` (isolated) options.
 
    .. versionadded:: 3.11
+
+
+.. cmdoption:: -p
+
+   Prepend a potentially unsafe path to :data:`sys.path` such as the current
+   directory, the script's directory or an empty string; opposite of the
+   :option:`-P` option.
+
+   This is the default Python behavior. This option can be used to ignore the
+   :option:`-P` command line option and the :envvar:`PYTHONSAFEPATH`
+   environment variable.
+
+   The :option:`-p` option takes precedence over the :option:`-P` option and
+   the :envvar:`PYTHONSAFEPATH` environment variable. It also takes precedence
+   over the :option:`-P` option implied by the :option:`-I` option (isolated
+   mode).
+
+   .. versionadded:: 3.12
 
 
 .. cmdoption:: -q
@@ -606,11 +629,18 @@ conflict.
    :ref:`using-on-interface-options`. The search path can be manipulated from
    within a Python program as the variable :data:`sys.path`.
 
+   See also the :option:`-p` and :option:`-P` options and the
+   :envvar:`PYTHONSAFEPATH` environment variable.
+
 
 .. envvar:: PYTHONSAFEPATH
 
    If this is set to a non-empty string, don't prepend a potentially unsafe
-   path to :data:`sys.path`: see the :option:`-P` option for details.
+   path to :data:`sys.path` such as the current directory, the script's
+   directory or an empty string; same effect as the :option:`-P` option.
+
+   See also the :option:`-P` and :option:`-p` option and the
+   :envvar:`PYTHONPATH` environment variable.
 
    .. versionadded:: 3.11
 

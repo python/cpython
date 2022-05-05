@@ -1,0 +1,4 @@
+Add the :option:`-p` option to ignore the :option:`-P` option and the
+:envvar:`PYTHONSAFEPATH` environment variable. It also causes the :option:`-P`
+option implied by the :option:`-I` option (isolated mode) to be ignored. Patch
+by Victor Stinner.

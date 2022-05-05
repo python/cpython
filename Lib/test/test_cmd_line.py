@@ -360,8 +360,6 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(path1.encode('ascii'), out)
         self.assertIn(path2.encode('ascii'), out)
 
-    @unittest.skipIf(sys.flags.safe_path,
-                     'PYTHONSAFEPATH changes default sys.path')
     def test_empty_PYTHONPATH_issue16309(self):
         # On Posix, it is documented that setting PATH to the
         # empty string is equivalent to not setting PATH at all,
@@ -373,8 +371,8 @@ class CmdLineTest(unittest.TestCase):
             path = ":".join(sys.path)
             path = path.encode("ascii", "backslashreplace")
             sys.stdout.buffer.write(path)"""
-        rc1, out1, err1 = assert_python_ok('-c', code, PYTHONPATH="")
-        rc2, out2, err2 = assert_python_ok('-c', code, __isolated=False)
+        rc1, out1, err1 = assert_python_ok('-p', '-c', code, PYTHONPATH="")
+        rc2, out2, err2 = assert_python_ok('-p', '-c', code, __isolated=False)
         # regarding to Posix specification, outputs should be equal
         # for empty and unset PYTHONPATH
         self.assertEqual(out1, out2)
@@ -593,10 +591,9 @@ class CmdLineTest(unittest.TestCase):
             with open(main, "w", encoding="utf-8") as f:
                 f.write("import uuid\n")
                 f.write("print('ok')\n")
-            # Use -E to ignore PYTHONSAFEPATH env var
             self.assertRaises(subprocess.CalledProcessError,
                               subprocess.check_output,
-                              [sys.executable, '-E', main], cwd=tmpdir,
+                              [sys.executable, '-p', main], cwd=tmpdir,
                               stderr=subprocess.DEVNULL)
             out = subprocess.check_output([sys.executable, "-I", main],
                                           cwd=tmpdir)
@@ -853,6 +850,35 @@ class CmdLineTest(unittest.TestCase):
         err_msg = "unknown option --unknown-option\nusage: "
         self.assertTrue(proc.stderr.startswith(err_msg), proc.stderr)
         self.assertNotEqual(proc.returncode, 0)
+
+    def test_safe_path(self):
+        code = 'import sys; print(sys.flags.safe_path)'
+        for env in (False, True):
+            environ = dict(os.environ)
+            if env:
+                environ['PYTHONSAFEPATH'] = '1'
+            else:
+                environ.pop('PYTHONSAFEPATH', '')
+            for options, safe_path in (
+                # PYTHONSAFEPATH env var
+                ([], env),
+                (["-E"], False),
+                (["-E", "-P"], True),
+                # isolated mode (-I)
+                (["-I"], True),
+                (["-I", "-P"], True),
+                (["-I", "-p"], False),
+                (["-I", "-p", "-P"], False),
+                # -p and -P options
+                (["-P"], True),
+                (["-p"], False),
+                (["-p", "-P"], False),
+                (["-P", "-p"], False),
+            ):
+                with self.subTest(env=env, options=options, safe_path=safe_path):
+                    cmd = [sys.executable, *options, "-c", code]
+                    out = subprocess.check_output(cmd, text=True, env=environ)
+                    self.assertEqual(out.strip(), repr(safe_path))
 
 
 @unittest.skipIf(interpreter_requires_environment(),

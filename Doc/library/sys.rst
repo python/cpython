@@ -1142,9 +1142,9 @@ always available.
    the environment variable :envvar:`PYTHONPATH`, plus an installation-dependent
    default.
 
-   By default, as initialized upon program startup, a potentially unsafe path
-   is prepended to :data:`sys.path` (*before* the entries inserted as a result
-   of :envvar:`PYTHONPATH`):
+   By default, as initialized upon program startup, the following path is
+   prepended to :data:`sys.path` (*before* the entries inserted as a result of
+   :envvar:`PYTHONPATH`):
 
    * ``python -m module`` command line: prepend the current working
      directory.
@@ -1154,7 +1154,9 @@ always available.
      string, which means the current working directory.
 
    To not prepend this potentially unsafe path, use the :option:`-P` command
-   line option or the :envvar:`PYTHONSAFEPATH` environment variable?
+   line option or the :envvar:`PYTHONSAFEPATH` environment variable. The
+   :option:`-p` option causes the :option:`-P` option and the
+   :envvar:`PYTHONSAFEPATH` environment variable to be ignored.
 
    A program is free to modify this list for its own purposes.  Only strings
    and bytes should be added to :data:`sys.path`; all other data types are

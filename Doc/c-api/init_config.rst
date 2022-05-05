@@ -560,6 +560,10 @@ PyConfig
       Set to ``1`` by the :option:`-P` command line option and the
       :envvar:`PYTHONSAFEPATH` environment variable.
 
+      Set to 0 by the :option:`-p` command line option, which takes precedence
+      over the :option:`-P` option and the :envvar:`PYTHONSAFEPATH` environment
+      variable (and the :option:`-P` option implied by the :option:`-I` option).
+
       Default: ``0`` in Python config, ``1`` in isolated config.
 
       .. versionadded:: 3.11

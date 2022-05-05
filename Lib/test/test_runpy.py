@@ -782,8 +782,7 @@ class TestExit(unittest.TestCase):
 
     @requires_subprocess()
     def assertSigInt(self, cmd, *args, **kwargs):
-        # Use -E to ignore PYTHONSAFEPATH
-        cmd = [sys.executable, '-E', *cmd]
+        cmd = [sys.executable, '-p', *cmd]
         proc = subprocess.run(cmd, *args, **kwargs, text=True, stderr=subprocess.PIPE)
         self.assertTrue(proc.stderr.endswith("\nKeyboardInterrupt\n"), proc.stderr)
         self.assertEqual(proc.returncode, self.EXPECTED_CODE)

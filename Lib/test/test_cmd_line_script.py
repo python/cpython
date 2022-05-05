@@ -116,9 +116,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(printed_file.encode('utf-8'), data)
         self.assertIn(printed_package.encode('utf-8'), data)
         self.assertIn(printed_argv0.encode('utf-8'), data)
-        # PYTHONSAFEPATH=1 changes the default sys.path[0]
-        if not sys.flags.safe_path:
-            self.assertIn(printed_path0.encode('utf-8'), data)
+        self.assertIn(printed_path0.encode('utf-8'), data)
         self.assertIn(printed_cwd.encode('utf-8'), data)
 
     def _check_script(self, script_exec_args, expected_file,
@@ -127,7 +125,7 @@ class CmdLineTest(unittest.TestCase):
                             *cmd_line_switches, cwd=None, **env_vars):
         if isinstance(script_exec_args, str):
             script_exec_args = [script_exec_args]
-        run_args = [*support.optim_args_from_interpreter_flags(),
+        run_args = [*support.optim_args_from_interpreter_flags(), '-p',
                     *cmd_line_switches, *script_exec_args, *example_args]
         rc, out, err = assert_python_ok(
             *run_args, __isolated=False, __cwd=cwd, **env_vars

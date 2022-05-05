@@ -49,6 +49,8 @@ static const char usage_2[] = "\
          .pyc extension; also PYTHONOPTIMIZE=x\n\
 -OO    : do -O changes and also discard docstrings; add .opt-2 before\n\
          .pyc extension\n\
+-p     : prepend a potentially unsafe path to sys.path\n\
+         (override PYTHONSAFEPATH)\n\
 -P     : don't prepend a potentially unsafe path to sys.path\n\
 -q     : don't print version and copyright messages on interactive startup\n\
 -s     : don't add user site directory to sys.path; also PYTHONNOUSERSITE\n\
@@ -743,7 +745,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
 #else
     config->use_frozen_modules = 1;
 #endif
-    config->safe_path = 0;
+    config->safe_path = -1;
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
 }
@@ -799,7 +801,6 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->use_hash_seed = 0;
     config->faulthandler = 0;
     config->tracemalloc = 0;
-    config->safe_path = 1;
     config->pathconfig_warnings = 0;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
@@ -1644,7 +1645,7 @@ config_read_env_vars(PyConfig *config)
         }
     }
 
-    if (config_get_env(config, "PYTHONSAFEPATH")) {
+    if (config_get_env(config, "PYTHONSAFEPATH") && config->safe_path < 0) {
         config->safe_path = 1;
     }
 
@@ -2158,6 +2159,15 @@ config_read(PyConfig *config, int compute_path_config)
         config->parse_argv = 2;
     }
 
+    if (config->safe_path < 0) {
+        if (config->_config_init == _PyConfig_INIT_ISOLATED) {
+            config->safe_path = 1;
+        }
+        else {
+            config->safe_path = 0;
+        }
+    }
+
     return _PyStatus_OK();
 }
 
@@ -2343,8 +2353,15 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
             config->optimization_level++;
             break;
 
+        case 'p':
+            config->safe_path = 0;
+            break;
+
         case 'P':
-            config->safe_path = 1;
+            // -p option takes precedence over -P option
+            if (config->safe_path < 0) {
+                config->safe_path = 1;
+            }
             break;
 
         case 'B':

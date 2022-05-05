@@ -79,6 +79,12 @@ New Features
 Other Language Changes
 ======================
 
+* Add the :option:`-p` command line option to prepend the potentially unsafe
+  path to :data:`sys.path`. It causes the :option:`-P` option and the
+  :envvar:`PYTHONSAFEPATH` environment variable to be ignored. It also causes
+  the :option:`-P` option implied by the :option:`-I` option (isolated mode) to
+  be ignored.
+  (Contributed by Victor Stinner in :gh:`57684`.)
 
 
 New Modules
