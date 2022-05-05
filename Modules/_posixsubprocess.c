@@ -402,7 +402,16 @@ _close_open_fds_maybe_unsafe(int start_fd, PyObject* py_fds_to_keep)
 
 #endif  /* else NOT (defined(__linux__) && defined(HAVE_SYS_SYSCALL_H)) */
 
-#ifdef HAVE_CLOSE_RANGE
+/* We can use close_range() library function only if it's known to be
+ * async-signal-safe.
+ *
+ * On Linux, glibc explicitly documents it to be a thin wrapper over
+ * the system call, and other C libraries are likely to follow glibc.
+ */
+#if defined(HAVE_CLOSE_RANGE) && \
+    (defined(__linux__) || defined(__FreeBSD__))
+#define HAVE_ASYNC_SAFE_CLOSE_RANGE
+
 static int
 _close_range_closer(int first, int last)
 {
@@ -413,7 +422,7 @@ _close_range_closer(int first, int last)
 static void
 _close_open_fds(int start_fd, PyObject* py_fds_to_keep)
 {
-#ifdef HAVE_CLOSE_RANGE
+#ifdef HAVE_ASYNC_SAFE_CLOSE_RANGE
     if (_close_range_except(
             start_fd, INT_MAX, py_fds_to_keep,
             _close_range_closer) == 0) {
