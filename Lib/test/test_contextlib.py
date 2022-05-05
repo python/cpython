@@ -4,6 +4,7 @@ import io
 import sys
 import tempfile
 import threading
+import traceback
 import unittest
 from contextlib import *  # Tests __all__
 from test import support
