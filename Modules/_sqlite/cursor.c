@@ -822,15 +822,11 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
     if (self->statement) {
         rc = pysqlite_step(self->statement->st, self->connection);
         if (PyErr_Occurred()) {
-            (void)pysqlite_statement_reset(self->statement);
-            Py_DECREF(next_row);
-            return NULL;
+            goto error;
         }
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
-            (void)pysqlite_statement_reset(self->statement);
-            Py_DECREF(next_row);
             _pysqlite_seterror(self->connection->db, NULL);
-            return NULL;
+            goto error;
         }
 
         if (rc == SQLITE_ROW) {
@@ -838,13 +834,17 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
             self->next_row = _pysqlite_fetch_one_row(self);
             self->locked = 0;
             if (self->next_row == NULL) {
-                (void)pysqlite_statement_reset(self->statement);
-                return NULL;
+                goto error;
             }
         }
     }
 
     return next_row;
+
+error:
+    (void)pysqlite_statement_reset(self->statement);
+    Py_DECREF(next_row);
+    return NULL;
 }
 
 /*[clinic input]
