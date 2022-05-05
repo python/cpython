@@ -133,7 +133,7 @@ long_normalize(PyLongObject *v)
 }
 
 #if PyLong_MAXFREELIST > 0
-static struct _Py_long_state *
+static inline struct _Py_long_state *
 get_long_state(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -238,7 +238,6 @@ _PyLong_FromMedium(sdigit x)
     else
 #endif
     {
-        /* We could use a freelist here */
         v = PyObject_Malloc(sizeof(PyLongObject));
         if (v == NULL) {
             PyErr_NoMemory();
@@ -3101,7 +3100,7 @@ _PyLong_ExactDealloc(PyObject *obj)
     PyLongObject *op = (PyLongObject *)obj;
 #if PyLong_MAXFREELIST > 0
     if (!IS_MEDIUM_VALUE(op)) {
-        PyObject_Del(op);
+        PyObject_FREE(op);
         return;
     }
     struct _Py_long_state *state = get_long_state();
@@ -3109,7 +3108,7 @@ _PyLong_ExactDealloc(PyObject *obj)
     assert(state->numfree != -1);
 #endif
     if (state->numfree >= PyLong_MAXFREELIST)  {
-        PyObject_Del(op);
+        PyObject_FREE(op);
         return;
     }
     state->numfree++;
