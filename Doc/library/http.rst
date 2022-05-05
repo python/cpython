@@ -172,7 +172,7 @@ Method      Enum Name                           Details
 ``GET``     ``GET``                             HTTP/1.1 :rfc:`7231`, Section 4.3.1
 ``HEAD``    ``HEAD``                            HTTP/1.1 :rfc:`7231`, Section 4.3.2
 ``POST``    ``POST``                            HTTP/1.1 :rfc:`7231`, Section 4.3.3
-``PUT``     ``DELETE``                          HTTP/1.1 :rfc:`7231`, Section 4.3.4
+``PUT``     ``PUT``                             HTTP/1.1 :rfc:`7231`, Section 4.3.4
 ``DELETE``  ``DELETE``                          HTTP/1.1 :rfc:`7231`, Section 4.3.5
 ``CONNECT`` ``CONNECT``                         HTTP/1.1 :rfc:`7231`, Section 4.3.6
 ``OPTIONS`` ``OPTIONS``                         HTTP/1.1 :rfc:`7231`, Section 4.3.7

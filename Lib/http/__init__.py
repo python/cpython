@@ -163,16 +163,15 @@ class HTTPMethod:
     def __new__(cls, value, description):
         obj = str.__new__(cls, value)
         obj._value_ = value
-
         obj.description = description
         return obj
 
-    GET = 'GET', 'Transfer a current representation of the target resource.'
-    HEAD = 'HEAD', 'Same as GET, but only transfer the status line and header section.'
-    POST = 'POST', 'Perform resource-specific processing on the request payload.'
-    PUT = 'PUT', 'Replace all current representations of the target resource with the request payload.'
-    DELETE = 'DELETE', 'Remove all current representations of the target resource.'
-    CONNECT = 'CONNECT', 'Establish a tunnel to the server identified by the target resource.'
-    OPTIONS = 'OPTIONS', 'Describe the communication options for the target resource.'
-    TRACE = 'TRACE', 'Perform a message loop-back test along the path to the target resource.'
-    PATCH = 'PATCH', 'Apply partial modifications to a resource.'
+    CONNECT = 'CONNECT', 'Establish a connection to the server.'
+    DELETE = 'DELETE', 'Remove the target.'
+    GET = 'GET', 'Retrieve the target.'
+    HEAD = 'HEAD', 'Same as GET, but only retrieve the status line and header section.'
+    OPTIONS = 'OPTIONS', 'Describe the communication options for the target.'
+    PATCH = 'PATCH', 'Apply partial modifications to a target.'
+    POST = 'POST', 'Perform target-specific processing with the request payload.'
+    PUT = 'PUT', 'Replace the target with the request payload.'
+    TRACE = 'TRACE', 'Perform a message loop-back test along the path to the target.'
