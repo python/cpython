@@ -118,7 +118,7 @@ Initialize the specialization stats
 
 static PyObject *
 _opcode_init_specialization_stats_impl(PyObject *module)
-/*[clinic end generated code: output=b067640d0e5de6a5 input=b3a1ac38507b3ced]*/
+/*[clinic end generated code: output=b067640d0e5de6a5 input=94c13e3ae8629a21]*/
 {
 #ifdef Py_STATS
     _Py_ClearSpecializationStats();

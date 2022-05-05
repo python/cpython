@@ -1199,7 +1199,7 @@ regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
 # ABI
 
 regen-limited-abi: all
-	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.txt
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.toml
 
 ############################################################################
 # Regenerate all generated files
@@ -2476,7 +2476,7 @@ patchcheck: @DEF_MAKE_RULE@
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/patchcheck.py
 
 check-limited-abi: all
-	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --all $(srcdir)/Misc/stable_abi.txt
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --all $(srcdir)/Misc/stable_abi.toml
 
 .PHONY: update-config
 update-config:

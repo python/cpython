@@ -135,6 +135,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.sub('(?P<a>x)', r'\g<a>\g<1>', 'xx'), 'xxxx')
         self.assertEqual(re.sub('(?P<unk>x)', r'\g<unk>\g<unk>', 'xx'), 'xxxx')
         self.assertEqual(re.sub('(?P<unk>x)', r'\g<1>\g<1>', 'xx'), 'xxxx')
+        self.assertEqual(re.sub('()x', r'\g<0>\g<0>', 'xx'), 'xxxx')
 
         self.assertEqual(re.sub('a', r'\t\n\v\r\f\a\b', 'a'), '\t\n\v\r\f\a\b')
         self.assertEqual(re.sub('a', '\t\n\v\r\f\a\b', 'a'), '\t\n\v\r\f\a\b')
@@ -274,6 +275,21 @@ class ReTests(unittest.TestCase):
         self.checkPatternError('(?P<©>x)', "bad character in group name '©'", 4)
         self.checkPatternError('(?P=©)', "bad character in group name '©'", 4)
         self.checkPatternError('(?(©)y)', "bad character in group name '©'", 3)
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"bad character in group name '\\xc2\\xb5' "
+                                   r"at position 4") as w:
+            re.compile(b'(?P<\xc2\xb5>x)')
+        self.assertEqual(w.filename, __file__)
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"bad character in group name '\\xc2\\xb5' "
+                                   r"at position 4"):
+            self.checkPatternError(b'(?P=\xc2\xb5)',
+                                   r"unknown group name '\xc2\xb5'", 4)
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"bad character in group name '\\xc2\\xb5' "
+                                   r"at position 3"):
+            self.checkPatternError(b'(?(\xc2\xb5)y)',
+                                   r"unknown group name '\xc2\xb5'", 3)
 
     def test_symbolic_refs(self):
         self.assertEqual(re.sub('(?P<a>x)|(?P<b>y)', r'\g<b>', 'xx'), '')
@@ -306,12 +322,35 @@ class ReTests(unittest.TestCase):
             re.sub('(?P<a>x)', r'\g<ab>', 'xx')
         self.checkTemplateError('(?P<a>x)', r'\g<-1>', 'xx',
                                 "bad character in group name '-1'", 3)
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"bad character in group name '\+1' "
+                                   r"at position 3") as w:
+            re.sub('(?P<a>x)', r'\g<+1>', 'xx')
+        self.assertEqual(w.filename, __file__)
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"bad character in group name '1_0' "
+                                   r"at position 3"):
+            re.sub('()'*10, r'\g<1_0>', 'xx')
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"bad character in group name ' 1 ' "
+                                   r"at position 3"):
+            re.sub('(?P<a>x)', r'\g< 1 >', 'xx')
         self.checkTemplateError('(?P<a>x)', r'\g<©>', 'xx',
                                 "bad character in group name '©'", 3)
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"bad character in group name '\\xc2\\xb5' "
+                                   r"at position 3") as w:
+            with self.assertRaisesRegex(IndexError, "unknown group name '\xc2\xb5'"):
+                re.sub(b'(?P<a>x)', b'\\g<\xc2\xb5>', b'xx')
+        self.assertEqual(w.filename, __file__)
         self.checkTemplateError('(?P<a>x)', r'\g<㊀>', 'xx',
                                 "bad character in group name '㊀'", 3)
         self.checkTemplateError('(?P<a>x)', r'\g<¹>', 'xx',
                                 "bad character in group name '¹'", 3)
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"bad character in group name '१' "
+                                   r"at position 3"):
+            re.sub('(?P<a>x)', r'\g<१>', 'xx')
 
     def test_re_subn(self):
         self.assertEqual(re.subn("(?i)b+", "x", "bbbb BBBB"), ('x x', 2))
@@ -577,10 +616,27 @@ class ReTests(unittest.TestCase):
         self.checkPatternError(r'(?P<a>)(?(0)a|b)', 'bad group number', 10)
         self.checkPatternError(r'()(?(-1)a|b)',
                                "bad character in group name '-1'", 5)
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"bad character in group name '\+1' "
+                                   r"at position 5") as w:
+            re.compile(r'()(?(+1)a|b)')
+        self.assertEqual(w.filename, __file__)
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"bad character in group name '1_0' "
+                                   r"at position 23"):
+            re.compile(r'()'*10 + r'(?(1_0)a|b)')
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"bad character in group name ' 1 ' "
+                                   r"at position 5"):
+            re.compile(r'()(?( 1 )a|b)')
         self.checkPatternError(r'()(?(㊀)a|b)',
                                "bad character in group name '㊀'", 5)
         self.checkPatternError(r'()(?(¹)a|b)',
                                "bad character in group name '¹'", 5)
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"bad character in group name '१' "
+                                   r"at position 5"):
+            re.compile(r'()(?(१)a|b)')
         self.checkPatternError(r'()(?(1',
                                "missing ), unterminated name", 5)
         self.checkPatternError(r'()(?(1)a',

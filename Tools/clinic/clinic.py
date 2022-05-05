@@ -639,6 +639,10 @@ class CLanguage(Language):
         assert parameters
         assert isinstance(parameters[0].converter, self_converter)
         del parameters[0]
+        requires_defining_class = False
+        if parameters and isinstance(parameters[0].converter, defining_class_converter):
+            requires_defining_class = True
+            del parameters[0]
         converters = [p.converter for p in parameters]
 
         has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
@@ -667,10 +671,6 @@ class CLanguage(Language):
                 if not p.is_optional():
                     min_pos = i
 
-        requires_defining_class = any(
-            isinstance(p.converter, defining_class_converter)
-            for p in parameters)
-
         meth_o = (len(parameters) == 1 and
               parameters[0].is_positional_only() and
               not converters[0].is_optional() and
@@ -694,7 +694,7 @@ class CLanguage(Language):
 
         methoddef_define = normalize_snippet("""
             #define {methoddef_name}    \\
-                {{"{name}", {methoddef_cast}{c_basename}, {methoddef_flags}, {c_basename}__doc__}},
+                {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, {methoddef_flags}, {c_basename}__doc__}},
             """)
         if new_or_init and not f.docstring:
             docstring_prototype = docstring_definition = ''
@@ -773,24 +773,40 @@ class CLanguage(Language):
             return linear_format(output(), parser_declarations=declarations)
 
         if not parameters:
-            # no parameters, METH_NOARGS
+            if not requires_defining_class:
+                # no parameters, METH_NOARGS
+                flags = "METH_NOARGS"
 
-            flags = "METH_NOARGS"
+                parser_prototype = normalize_snippet("""
+                    static PyObject *
+                    {c_basename}({self_type}{self_name}, PyObject *Py_UNUSED(ignored))
+                    """)
+                parser_code = []
 
-            parser_prototype = normalize_snippet("""
-                static PyObject *
-                {c_basename}({self_type}{self_name}, PyObject *Py_UNUSED(ignored))
-                """)
-            parser_definition = parser_prototype
+            else:
+                assert not new_or_init
+
+                flags = "METH_METHOD|METH_FASTCALL|METH_KEYWORDS"
+
+                parser_prototype = parser_prototype_def_class
+                return_error = ('return NULL;' if default_return_converter
+                                else 'goto exit;')
+                parser_code = [normalize_snippet("""
+                    if (nargs) {{
+                        PyErr_SetString(PyExc_TypeError, "{name}() takes no arguments");
+                        %s
+                    }}
+                    """ % return_error, indent=4)]
 
             if default_return_converter:
-                parser_definition = parser_prototype + '\n' + normalize_snippet("""
-                    {{
-                        return {c_basename}_impl({impl_arguments});
-                    }}
-                    """)
+                parser_definition = '\n'.join([
+                    parser_prototype,
+                    '{{',
+                    *parser_code,
+                    '    return {c_basename}_impl({impl_arguments});',
+                    '}}'])
             else:
-                parser_definition = parser_body(parser_prototype)
+                parser_definition = parser_body(parser_prototype, *parser_code)
 
         elif meth_o:
             flags = "METH_O"
@@ -993,6 +1009,9 @@ class CLanguage(Language):
 
             add_label = None
             for i, p in enumerate(parameters):
+                if isinstance(p.converter, defining_class_converter):
+                    raise ValueError("defining_class should be the first "
+                                     "parameter (after self)")
                 displayname = p.get_displayname(i+1)
                 parsearg = p.converter.parse_arg(argname_fmt % i, displayname)
                 if parsearg is None:
@@ -1112,14 +1131,17 @@ class CLanguage(Language):
 
         if flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
             methoddef_cast = "(PyCFunction)"
+            methoddef_cast_end = ""
         else:
-            methoddef_cast = "(PyCFunction)(void(*)(void))"
+            methoddef_cast = "_PyCFunction_CAST("
+            methoddef_cast_end = ")"
 
         if f.methoddef_flags:
             flags += '|' + f.methoddef_flags
 
         methoddef_define = methoddef_define.replace('{methoddef_flags}', flags)
         methoddef_define = methoddef_define.replace('{methoddef_cast}', methoddef_cast)
+        methoddef_define = methoddef_define.replace('{methoddef_cast_end}', methoddef_cast_end)
 
         methoddef_ifndef = ''
         conditional = self.cpp.condition()
