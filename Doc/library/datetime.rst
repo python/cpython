@@ -527,7 +527,7 @@ Other constructors, all class methods:
 .. classmethod:: date.fromisoformat(date_string)
 
    Return a :class:`date` corresponding to a *date_string* given in any valid
-   ISO 8601 format, except ordinal dates (e.g. ``YYYY-DDD``).
+   ISO 8601 format, except ordinal dates (e.g. ``YYYY-DDD``)::
 
       >>> from datetime import date
       >>> date.fromisoformat('2019-12-04')
