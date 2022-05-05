@@ -742,6 +742,9 @@ parse_isoformat_date(const char *dtstr, const size_t len, int *year, int *month,
      *       0:  Success
      *      -1:  Failed to parse date component
      *      -2:  Inconsistent date separator usage
+     *      -3:  Failed to parse ISO week.
+     *      -4:  Failed to parse ISO day.
+     *      -5, -6: Failure in iso_to_ymd
      */
     const char *p = dtstr;
     p = parse_digits(p, year, 4);
@@ -781,7 +784,7 @@ parse_isoformat_date(const char *dtstr, const size_t len, int *year, int *month,
 
         int rv = iso_to_ymd(*year, iso_week, iso_day, year, month, day);
         if (rv) {
-            return 3 - rv;
+            return -3 + rv;
         } else {
             return 0;
         }
@@ -792,10 +795,8 @@ parse_isoformat_date(const char *dtstr, const size_t len, int *year, int *month,
         return -1;
     }
 
-    if (uses_separator) {
-        if (*(p++) != '-') {
-            return -2;
-        }
+    if (uses_separator && *(p++) != '-') {
+        return -2;
     }
     p = parse_digits(p, day, 2);
     if (p == NULL) {
@@ -808,9 +809,11 @@ static int
 parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
                   int *minute, int *second, int *microsecond)
 {
+    *hour = *minute = *second = *microsecond = 0;
     const char *p = tstr;
     const char *p_end = tstr_end;
     int *vals[3] = {hour, minute, second};
+    // This is initialized to satisfy an erroneous compiler warning.
     unsigned char has_separator = 1;
 
     // Parse [HH[:?MM[:?SS]]]
@@ -852,7 +855,7 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
         return -3;
     }
 
-    static int correction[5] = {
+    static int correction[] = {
         100000, 10000, 1000, 100, 10
     };
 
@@ -860,11 +863,8 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
         *microsecond *= correction[to_parse-1];
     }
 
-    for (size_t i = 0; i < len_remains - 6; ++i) {
-        if (!is_digit(*p)) {
-            break;
-        }
-        p++;
+    while (is_digit(*p)){
+        ++p; // skip truncated digits
     }
 
     // Return 1 if it's not the end of the string
@@ -918,7 +918,7 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
         *tzmicrosecond = 0;
 
         if (*(tzinfo_pos + 1) != '\0') {
-            return -6;
+            return -5;
         } else {
             return 1;
         }
@@ -933,7 +933,7 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
     *tzoffset = tzsign * ((tzhour * 3600) + (tzminute * 60) + tzsecond);
     *tzmicrosecond *= tzsign;
 
-    return rv ? -7 : 1;
+    return rv ? -5 : 1;
 }
 
 /* ---------------------------------------------------------------------------
@@ -3120,7 +3120,7 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
     }
 
     int month;
-    Py_ssize_t rv = iso_to_ymd(year, week, day, &year, &month, &day);
+    int rv = iso_to_ymd(year, week, day, &year, &month, &day);
 
 
     if (rv == -2) {
@@ -4644,7 +4644,7 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
     // T, but the extended format allows this to be omitted as long as there
     // is no ambiguity with date strings.
     if (*p == 'T') {
-        p += 1;
+        ++p;
         len -= 1;
     }
 
@@ -5286,10 +5286,12 @@ _sanitize_isoformat_str(PyObject *dtstr)
     // in positions 7, 8 or 10. We'll check each of these for a surrogate and
     // if we find one, replace it with `T`. If there is more than one surrogate,
     // we don't have to bother sanitizing it, because the function will later
-    // fail when we try to convert the function into unicode characters.
+    // fail when we try to encode the string as ASCII.
     static const size_t potential_separators[3] = {7, 8, 10};
     size_t surrogate_separator = 0;
-    for(size_t idx = 0; idx < 3; ++idx) {
+    for(size_t idx = 0;
+         idx < sizeof(potential_separators) / sizeof(*potential_separators);
+         ++idx) {
         size_t pos = potential_separators[idx];
         if (pos > (size_t)len) {
             break;

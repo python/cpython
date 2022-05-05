@@ -262,6 +262,9 @@ def _wrap_strftime(object, format, timetuple):
     return _time.strftime(newformat, timetuple)
 
 # Helpers for parsing the result of isoformat()
+def _is_ascii_digit(c):
+    return c in "0123456789"
+
 def _find_isoformat_datetime_separator(dtstr):
     # See the comment in _datetimemodule.c:_find_isoformat_datetime_separator
     len_dtstr = len(dtstr)
@@ -279,7 +282,7 @@ def _find_isoformat_datetime_separator(dtstr):
             if len_dtstr > 8 and dtstr[8] == date_separator:
                 if len_dtstr == 9:
                     raise ValueError("Invalid ISO string")
-                if len_dtstr > 10 and dtstr[10].isdigit():
+                if len_dtstr > 10 and _is_ascii_digit(dtstr[10]):
                     # This is as far as we need to resolve the ambiguity for
                     # the moment - if we have YYYY-Www-##, the separator is
                     # either a hyphen at 8 or a number at 10.
@@ -302,7 +305,7 @@ def _find_isoformat_datetime_separator(dtstr):
             # YYYYWww (7) or YYYYWwwd (8)
             idx = 7
             while idx < len_dtstr:
-                if not dtstr[idx].isdigit():
+                if not _is_ascii_digit(dtstr[idx]):
                     break
                 idx += 1
 
@@ -342,7 +345,7 @@ def _parse_isoformat_date(dtstr):
 
             dayno = int(dtstr[pos:pos + 1])
 
-        return _isoweek_to_gregorian(year, weekno, dayno)
+        return list(_isoweek_to_gregorian(year, weekno, dayno))
     else:
         month = int(dtstr[pos:pos + 2])
         pos += 2
@@ -401,7 +404,7 @@ def _parse_hh_mm_ss_ff(tstr):
             if to_parse < 6:
                 time_comps[3] *= _FRACTION_CORRECTION[to_parse-1]
             if (len_remainder > to_parse
-                    and not tstr[(pos+to_parse):].isdigit()):
+                    and not all(map(_is_ascii_digit, tstr[(pos+to_parse):]))):
                 raise ValueError("Non-digit values in unparsed fraction")
 
     return time_comps
@@ -482,7 +485,7 @@ def _isoweek_to_gregorian(year, week, day):
     day_1 = _isoweek1monday(year)
     ord_day = day_1 + day_offset
 
-    return list(_ord2ymd(ord_day))
+    return _ord2ymd(ord_day)
 
 
 # Just raise TypeError if the arg isn't None or a string.
@@ -993,8 +996,6 @@ class date:
 
         This is the inverse of the date.isocalendar() function"""
         return cls(*_isoweek_to_gregorian(year, week, day))
-
-        return cls(*_ord2ymd(ord_day))
 
     # Conversions to string
 
@@ -2625,7 +2626,8 @@ else:
          _ord2ymd, _time, _time_class, _tzinfo_class, _wrap_strftime, _ymd2ord,
          _divide_and_round, _parse_isoformat_date, _parse_isoformat_time,
          _parse_hh_mm_ss_ff, _IsoCalendarDate, _isoweek_to_gregorian,
-         _find_isoformat_datetime_separator, _FRACTION_CORRECTION)
+         _find_isoformat_datetime_separator, _FRACTION_CORRECTION,
+         _is_ascii_digit)
     # XXX Since import * above excludes names that start with _,
     # docstring does not get overwritten. In the future, it may be
     # appropriate to maintain a single module level docstring and
