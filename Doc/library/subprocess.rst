@@ -567,7 +567,7 @@ functions.
    .. versionchanged:: 3.2
       *restore_signals* was added.
 
-   If *start_new_session* is true the setsid() system call will be made in the
+   If *start_new_session* is true the ``setsid()`` system call will be made in the
    child process prior to the execution of the subprocess.
 
    .. availability:: POSIX
