@@ -625,12 +625,12 @@ def median_grouped(data, interval=1):
     by the 5-year midpoints of the intervals:
 
         >>> demographics = Counter({
-        25: 172,   # 20 to 30 years old
-        35: 484,   # 30 to 40 years old
-        45: 387,   # 40 to 50 years old
-        55:  22,   # 50 to 60 years old
-        65:   6,   # 60 to 70 years old
-        })
+        ...    25: 172,   # 20 to 30 years old
+        ...    35: 484,   # 30 to 40 years old
+        ...    45: 387,   # 40 to 50 years old
+        ...    55:  22,   # 50 to 60 years old
+        ...    65:   6,   # 60 to 70 years old
+        ... })
 
     The 50th percentile (median) is the 536th person out of the 1071
     member cohort.  That person is in the 30 to 40 year old age group.
