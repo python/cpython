@@ -2,6 +2,7 @@
 
 import io
 import os
+import shutil
 import sys
 import tempfile
 import threading
@@ -1220,9 +1221,60 @@ class TestChdir(unittest.TestCase):
         try:
             with chdir(target):
                 self.assertEqual(os.getcwd(), target)
-                raise RuntimeError("boom")
+                raise RuntimeError('boom')
         except RuntimeError as re:
-            self.assertEqual(str(re), "boom")
+            self.assertEqual(str(re), 'boom')
+        self.assertEqual(os.getcwd(), old_cwd)
+
+    def test_long_path(self):
+        if hasattr(os, 'pathconf_names') and 'PC_NAME_MAX' in os.pathconf_names:
+            nmax = os.pathconf(os.getcwd(), 'PC_NAME_MAX')
+            pmax = os.pathconf(os.getcwd(), 'PC_NAME_MAX')
+        else:
+            nmax = 255
+            pmax = 1024
+        long_filename = '_' * pmax
+        names_to_path_max = (pmax - len(os.getcwd())) // (nmax + 1)
+
+        long_path = old_cwd = os.getcwd()
+        for _ in range(names_to_path_max):
+            long_path = os.path.join(long_path, long_filename)
+            os.mkdir(long_path)
+        os.chdir(long_path)
+        os.mkdir(long_filename)
+        with chdir(long_filename):
+            self.assertEqual(os.getcwd(), os.path.join(long_path, long_filename))
+        self.assertEqual(os.getcwd(), old_cwd)
+
+    def test_deleted_dir_without_ignore(self):
+        old_cwd = os.getcwd()
+        os.mkdir('dead_dir')
+
+        with self.assertRaises(FileNotFoundError):
+            with chdir('dead_dir'):
+                os.mkdir('dead')
+                with chdir('dead'):
+                    shutil.rmtree('../../dead_dir')
+
+    def test_deleted_dir_with_ignore(self):
+        old_cwd = os.getcwd()
+        os.mkdir('dead_dir')
+
+        with chdir('dead_dir', ignore_errors=True):
+            os.mkdir('dead')
+            with chdir('dead', ignore_errors=True):
+                shutil.rmtree('../../dead_dir')
+        self.assertEqual(os.getcwd(), old_cwd)
+
+    def test_with_os_chdir(self):
+        old_cwd = os.getcwd()
+        target1 = os.path.join(os.path.dirname(__file__), 'data')
+        target2 = os.path.join(os.path.dirname(__file__), 'ziptestdata')
+
+        with chdir(target1):
+            self.assertEqual(os.getcwd(), target1)
+            os.chdir(target2)
+            self.assertEqual(os.getcwd(), target2)
         self.assertEqual(os.getcwd(), old_cwd)
 
 
