@@ -1300,7 +1300,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         else:
             self.fail(f"Unable to find home in {paths!r}")
 
-        ziplib = os.path.basename(self.module_search_paths()[-3])
         pyddir = os.path.dirname(
             import_helper.import_module('_testinternalcapi').__file__
         )
@@ -1309,7 +1308,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'home': home,
                 'pythonpath_env': pyddir,
                 'module_search_paths': [
-                    os.path.join(tmpdir, ziplib),
+                    os.path.join(tmpdir, os.path.basename(paths[0])),  # zip
                     os.path.join(home, "Lib"),
                     os.path.join(home, 'DLLs'),
                 ],
