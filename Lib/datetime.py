@@ -436,10 +436,7 @@ def _parse_isoformat_time(tstr):
         if len(tzstr) in (0, 1, 3):
             raise ValueError("Malformed time zone string")
 
-        if tzstr == 'Z':
-            tz_comps = (0, 0, 0, 0)
-        else:
-            tz_comps = _parse_hh_mm_ss_ff(tzstr)
+        tz_comps = _parse_hh_mm_ss_ff(tzstr)
 
         if all(x == 0 for x in tz_comps):
             tzi = timezone.utc
