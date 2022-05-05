@@ -570,7 +570,7 @@ pymain_run_python(int *exitcode)
             goto error;
         }
     }
-    else if (!config->isolated) {
+    else if (!config->safe_path) {
         PyObject *path0 = NULL;
         int res = _PyPathConfig_ComputeSysPath0(&config->argv, &path0);
         if (res < 0) {

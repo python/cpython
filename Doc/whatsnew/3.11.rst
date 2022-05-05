@@ -362,6 +362,11 @@ Other Language Changes
   pickles instance attributes implemented as :term:`slots <__slots__>`.
   (Contributed by Serhiy Storchaka in :issue:`26579`.)
 
+* Add :option:`-P` command line option and :envvar:`PYTHONSAFEPATH` environment
+  variable to not prepend a potentially unsafe path to :data:`sys.path` such as
+  the current directory, the script's directory or an empty string.
+  (Contributed by Victor Stinner in :gh:`57684`.)
+
 
 Other CPython Implementation Changes
 ====================================
@@ -635,6 +640,9 @@ sys
 * Add :func:`sys.exception` which returns the active exception instance
   (equivalent to ``sys.exc_info()[1]``).
   (Contributed by Irit Katriel in :issue:`46328`.)
+
+* Add the :data:`sys.flags.safe_path <sys.flags>` flag.
+  (Contributed by Victor Stinner in :gh:`57684`.)
 
 
 sysconfig
@@ -1480,6 +1488,8 @@ New Features
   representation of exceptions.
   (Contributed by Irit Katriel in :issue:`46343`.)
 
+* Added the :c:member:`PyConfig.safe_path` member.
+  (Contributed by Victor Stinner in :gh:`57684`.)
 
 Porting to Python 3.11
 ----------------------
