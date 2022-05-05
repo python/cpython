@@ -748,6 +748,39 @@ class TestBaseExitStack:
             stack.push(lambda *exc: True)
             1/0
 
+    def test_exit_exception_traceback(self):
+        # This test captures the current behavior of ExitStack so that we know
+        # if we ever unintendedly change it. It is not a statement of what the
+        # desired behavior is (for instance, we may want to remove some of the
+        # internal contextlib frames).
+
+        def raise_exc(exc):
+            raise exc
+
+        try:
+            with self.exit_stack() as stack:
+                stack.callback(raise_exc, ValueError)
+                1/0
+        except ValueError as e:
+            exc = e
+
+        self.assertIsInstance(exc, ValueError)
+        ve_frames = traceback.extract_tb(exc.__traceback__)
+        self.assertEqual(len(ve_frames), 5)
+        self.assertEqual(
+            [(f.name, f.line) for f in ve_frames],
+            [('test_exit_exception_traceback', 'with self.exit_stack() as stack:'),
+             ('__exit__', 'raise exc_details[1]'),
+             ('__exit__', 'if cb(*exc_details):'),
+             ('_exit_wrapper', 'callback(*args, **kwds)'),
+             ('raise_exc', 'raise exc')])
+
+        self.assertIsInstance(exc.__context__, ZeroDivisionError)
+        zde_frames = traceback.extract_tb(exc.__context__.__traceback__)
+        self.assertEqual(len(zde_frames), 1)
+        self.assertEqual([(f.name, f.line) for f in zde_frames],
+                         [('test_exit_exception_traceback', '1/0')])
+
     def test_exit_exception_chaining_reference(self):
         # Sanity check to make sure that ExitStack chaining matches
         # actual nested with statements
