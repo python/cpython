@@ -1142,5 +1142,33 @@ class Test_FrameAPI(unittest.TestCase):
         self.assertIs(gen, _testcapi.frame_getgenerator(frame))
 
 
+SUFFICIENT_TO_DEOPT_AND_SPECIALIZE = 100
+
+class Test_Pep523API(unittest.TestCase):
+
+    def do_test(self, func):
+        calls = []
+        start = SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
+        count = start + SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
+        for i in range(count):
+            if i == start:
+                _testinternalcapi.set_eval_frame_record(calls)
+            func()
+        _testinternalcapi.set_eval_frame_default()
+        self.assertEqual(len(calls), SUFFICIENT_TO_DEOPT_AND_SPECIALIZE)
+        for name in calls:
+            self.assertEqual(name, func.__name__)
+
+    def test_pep523_with_specialization_simple(self):
+        def func1():
+            pass
+        self.do_test(func1)
+
+    def test_pep523_with_specialization_with_default(self):
+        def func2(x=None):
+            pass
+        self.do_test(func2)
+
+
 if __name__ == "__main__":
     unittest.main()
