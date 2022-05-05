@@ -510,7 +510,7 @@ functions.
       If you need to modify the environment for the child use the *env*
       parameter rather than doing it in a *preexec_fn*.
       The *start_new_session* and *setpgid* parameters should take the place of
-      code using *preexec_fn* to call os.setsid() or os.setpgid() in the child.
+      code using *preexec_fn* to call :func:`os.setsid` or :func:`os.setpgid` in the child.
 
    .. versionchanged:: 3.8
 
