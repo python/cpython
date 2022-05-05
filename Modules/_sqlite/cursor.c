@@ -26,6 +26,17 @@
 #include "util.h"
 #include "clinic/cursor.c.h"
 
+static inline int
+check_cursor_locked(pysqlite_Cursor *cur)
+{
+    if (cur->locked) {
+        PyErr_SetString(pysqlite_ProgrammingError,
+                        "Recursive use of cursors not allowed.");
+        return 0;
+    }
+    return 1;
+}
+
 /*[clinic input]
 module _sqlite3
 class _sqlite3.Cursor "pysqlite_Cursor *" "pysqlite_CursorType"
@@ -47,6 +58,10 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
                           pysqlite_Connection *connection)
 /*[clinic end generated code: output=ac59dce49a809ca8 input=a8a4f75ac90999b2]*/
 {
+    if (!check_cursor_locked(self)) {
+        return -1;
+    }
+
     Py_INCREF(connection);
     Py_XSETREF(self->connection, connection);
     Py_CLEAR(self->statement);
@@ -407,12 +422,9 @@ static int check_cursor(pysqlite_Cursor* cur)
         return 0;
     }
 
-    if (cur->locked) {
-        PyErr_SetString(pysqlite_ProgrammingError, "Recursive use of cursors not allowed.");
-        return 0;
-    }
-
-    return pysqlite_check_thread(cur->connection) && pysqlite_check_connection(cur->connection);
+    return (pysqlite_check_thread(cur->connection)
+            && pysqlite_check_connection(cur->connection)
+            && check_cursor_locked(cur));
 }
 
 static PyObject *
@@ -810,27 +822,29 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
     if (self->statement) {
         rc = pysqlite_step(self->statement->st, self->connection);
         if (PyErr_Occurred()) {
-            (void)pysqlite_statement_reset(self->statement);
-            Py_DECREF(next_row);
-            return NULL;
+            goto error;
         }
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
-            (void)pysqlite_statement_reset(self->statement);
-            Py_DECREF(next_row);
             _pysqlite_seterror(self->connection->db, NULL);
-            return NULL;
+            goto error;
         }
 
         if (rc == SQLITE_ROW) {
+            self->locked = 1;  // GH-80254: Prevent recursive use of cursors.
             self->next_row = _pysqlite_fetch_one_row(self);
+            self->locked = 0;
             if (self->next_row == NULL) {
-                (void)pysqlite_statement_reset(self->statement);
-                return NULL;
+                goto error;
             }
         }
     }
 
     return next_row;
+
+error:
+    (void)pysqlite_statement_reset(self->statement);
+    Py_DECREF(next_row);
+    return NULL;
 }
 
 /*[clinic input]
@@ -973,6 +987,10 @@ static PyObject *
 pysqlite_cursor_close_impl(pysqlite_Cursor *self)
 /*[clinic end generated code: output=b6055e4ec6fe63b6 input=08b36552dbb9a986]*/
 {
+    if (!check_cursor_locked(self)) {
+        return NULL;
+    }
+
     if (!self->connection) {
         PyErr_SetString(pysqlite_ProgrammingError,
                         "Base Cursor.__init__ not called.");
