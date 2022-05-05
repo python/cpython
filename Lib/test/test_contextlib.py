@@ -766,7 +766,6 @@ class TestBaseExitStack:
 
         self.assertIsInstance(exc, ValueError)
         ve_frames = traceback.extract_tb(exc.__traceback__)
-        self.assertEqual(len(ve_frames), 5)
         self.assertEqual(
             [(f.name, f.line) for f in ve_frames],
             [('test_exit_exception_traceback', 'with self.exit_stack() as stack:'),
@@ -777,7 +776,6 @@ class TestBaseExitStack:
 
         self.assertIsInstance(exc.__context__, ZeroDivisionError)
         zde_frames = traceback.extract_tb(exc.__context__.__traceback__)
-        self.assertEqual(len(zde_frames), 1)
         self.assertEqual([(f.name, f.line) for f in zde_frames],
                          [('test_exit_exception_traceback', '1/0')])
 
