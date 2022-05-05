@@ -1255,6 +1255,15 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             # Because we are specifying 'home', module search paths
             # are fairly static
             expected_paths = [paths[0], stdlib, os.path.join(home, 'DLLs')]
+            # gh-91985 Replace the DLLs path according to pybuilddir.txt
+            p = os.path.dirname(self.test_exe)
+            try:
+                with open(os.path.join(p, 'pybuilddir.txt'), encoding="utf8") as f:
+                    expected_paths[-1] = os.path.normpath(
+                        os.path.join(p, f'{f.read()}\n$'.splitlines()[0])
+                    )
+            except FileNotFoundError:
+                pass
         else:
             version = f'{sys.version_info.major}.{sys.version_info.minor}'
             stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
@@ -1274,6 +1283,41 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         env = {'TESTHOME': home, 'PYTHONPATH': paths_str}
         self.check_all_configs("test_init_setpythonhome", config,
                                api=API_COMPAT, env=env)
+
+    @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
+    def test_init_setpythonhome_in_tmpdir(self):
+        # Test Py_SetPythonHome(home) with PYTHONPATH env var,
+        # running in a temp directory where pybuilddir.txt does not exist.
+        config = self._get_expected_config()
+        paths = config['config']['module_search_paths']
+
+        for path in paths:
+            if not os.path.isdir(path):
+                continue
+            if os.path.exists(os.path.join(path, 'os.py')):
+                home = os.path.dirname(path)
+                break
+        else:
+            self.fail(f"Unable to find home in {paths!r}")
+
+        ziplib = os.path.basename(self.module_search_paths()[-3])
+        pyddir = os.path.dirname(
+            import_helper.import_module('_testinternalcapi').__file__
+        )
+        with self.tmpdir_with_python() as tmpdir:
+            config = {
+                'home': home,
+                'pythonpath_env': pyddir,
+                'module_search_paths': [
+                    os.path.join(tmpdir, ziplib),
+                    os.path.join(home, "Lib"),
+                    os.path.join(home, 'DLLs'),
+                ],
+            }
+            self.default_program_name(config)
+            env = {'TESTHOME': home, 'PYTHONPATH': pyddir}
+            self.check_all_configs("test_init_setpythonhome", config,
+                                   api=API_COMPAT, env=env)
 
     def copy_paths_by_env(self, config):
         all_configs = self._get_expected_config()
