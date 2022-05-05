@@ -134,7 +134,9 @@ _Py_GetSpecializationStats(void) {
 void
 _Py_ClearSpecializationStats()
 {
-    memset(&_py_stats.opcode_stats, 0, sizeof(OpcodeStats) * 256);
+    for (Py_ssize_t i = 0; i < 256; i++) {
+        memset(&_py_stats.opcode_stats[i].specialization, 0, sizeof(SpecializationStats));
+    }
 }
 
 void

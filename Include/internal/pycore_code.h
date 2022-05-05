@@ -316,7 +316,7 @@ extern int _enable_spec_stats;
 
 #define STAT_INC(opname, name) _enable_spec_stats && _py_stats.opcode_stats[opname].specialization.name++
 #define STAT_DEC(opname, name) _enable_spec_stats && _py_stats.opcode_stats[opname].specialization.name--
-#define OPCODE_EXE_INC(opname) _enable_spec_stats && _py_stats.opcode_stats[opname].execution_count++
+#define OPCODE_EXE_INC(opname) _py_stats.opcode_stats[opname].execution_count++
 #define CALL_STAT_INC(name) _py_stats.call_stats.name++
 #define OBJECT_STAT_INC(name) _py_stats.object_stats.name++
 #define OBJECT_STAT_INC_COND(name, cond) \
