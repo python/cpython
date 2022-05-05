@@ -23,4 +23,4 @@ jobs:
           python -u ./.github/actions/roundup_summary.py
         env:
           github_api_token: ${{ secrets.GITHUB_TOKEN }}
-          mailgun_api_key: ${{ secrets.GITHUB_TOKEN }}
+          mailgun_api_key: ${{ secrets.PSF_MAILGUN_KEY }}
