@@ -76,15 +76,16 @@ def b64decode(s, altchars=None, validate=False):
     normal base-64 alphabet nor the alternative alphabet are discarded prior
     to the padding check.  If validate is True, these non-alphabet characters
     in the input result in a binascii.Error.
+    For more information about the strict base64 check, see:
+
+    https://docs.python.org/3.11/library/binascii.html#binascii.a2b_base64
     """
     s = _bytes_from_decode_data(s)
     if altchars is not None:
         altchars = _bytes_from_decode_data(altchars)
         assert len(altchars) == 2, repr(altchars)
         s = s.translate(bytes.maketrans(altchars, b'+/'))
-    if validate and not re.fullmatch(b'[A-Za-z0-9+/]*={0,2}', s):
-        raise binascii.Error('Non-base64 digit found')
-    return binascii.a2b_base64(s)
+    return binascii.a2b_base64(s, strict_mode=validate)
 
 
 def standard_b64encode(s):
@@ -181,7 +182,7 @@ def _b32encode(alphabet, s):
     from_bytes = int.from_bytes
     b32tab2 = _b32tab2[alphabet]
     for i in range(0, len(s), 5):
-        c = from_bytes(s[i: i + 5], 'big')
+        c = from_bytes(s[i: i + 5])              # big endian
         encoded += (b32tab2[c >> 30] +           # bits 1 - 10
                     b32tab2[(c >> 20) & 0x3ff] + # bits 11 - 20
                     b32tab2[(c >> 10) & 0x3ff] + # bits 21 - 30
@@ -233,13 +234,13 @@ def _b32decode(alphabet, s, casefold=False, map01=None):
                 acc = (acc << 5) + b32rev[c]
         except KeyError:
             raise binascii.Error('Non-base32 digit found') from None
-        decoded += acc.to_bytes(5, 'big')
+        decoded += acc.to_bytes(5)  # big endian
     # Process the last, partial quanta
     if l % 8 or padchars not in {0, 1, 3, 4, 6}:
         raise binascii.Error('Incorrect padding')
     if padchars and decoded:
         acc <<= 5 * padchars
-        last = acc.to_bytes(5, 'big')
+        last = acc.to_bytes(5)  # big endian
         leftover = (43 - 5 * padchars) // 8  # 1: 4, 3: 3, 4: 2, 6: 1
         decoded[-5:] = last[:leftover]
     return bytes(decoded)
@@ -344,7 +345,7 @@ def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
     global _a85chars, _a85chars2
     # Delay the initialization of tables to not waste memory
     # if the function is never called
-    if _a85chars is None:
+    if _a85chars2 is None:
         _a85chars = [bytes((i,)) for i in range(33, 118)]
         _a85chars2 = [(a + b) for a in _a85chars for b in _a85chars]
 
@@ -452,7 +453,7 @@ def b85encode(b, pad=False):
     global _b85chars, _b85chars2
     # Delay the initialization of tables to not waste memory
     # if the function is never called
-    if _b85chars is None:
+    if _b85chars2 is None:
         _b85chars = [bytes((i,)) for i in _b85alphabet]
         _b85chars2 = [(a + b) for a in _b85chars for b in _b85chars]
     return _85encode(b, _b85chars, _b85chars2, pad)
@@ -566,15 +567,17 @@ def decodebytes(s):
 def main():
     """Small main program"""
     import sys, getopt
+    usage = """usage: %s [-h|-d|-e|-u|-t] [file|-]
+        -h: print this help message and exit
+        -d, -u: decode
+        -e: encode (default)
+        -t: encode and decode string 'Aladdin:open sesame'"""%sys.argv[0]
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'deut')
+        opts, args = getopt.getopt(sys.argv[1:], 'hdeut')
     except getopt.error as msg:
         sys.stdout = sys.stderr
         print(msg)
-        print("""usage: %s [-d|-e|-u|-t] [file|-]
-        -d, -u: decode
-        -e: encode (default)
-        -t: encode and decode string 'Aladdin:open sesame'"""%sys.argv[0])
+        print(usage)
         sys.exit(2)
     func = encode
     for o, a in opts:
@@ -582,6 +585,7 @@ def main():
         if o == '-d': func = decode
         if o == '-u': func = decode
         if o == '-t': test(); return
+        if o == '-h': print(usage); return
     if args and args[0] != '-':
         with open(args[0], 'rb') as f:
             func(f, sys.stdout.buffer)

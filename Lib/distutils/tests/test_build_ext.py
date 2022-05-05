@@ -17,6 +17,7 @@ import unittest
 from test import support
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok
+from test.support import threading_helper
 
 # http://bugs.python.org/issue4373
 # Don't load the xx module more than once.
@@ -35,6 +36,7 @@ class BuildExtTestCase(TempdirManager,
         site.USER_BASE = self.mkdtemp()
         from distutils.command import build_ext
         build_ext.USER_BASE = site.USER_BASE
+        self.old_config_vars = dict(sysconfig._config_vars)
 
         # bpo-30132: On Windows, a .pdb file may be created in the current
         # working directory. Create a temporary working directory to cleanup
@@ -48,11 +50,14 @@ class BuildExtTestCase(TempdirManager,
         site.USER_BASE = self.old_user_base
         from distutils.command import build_ext
         build_ext.USER_BASE = self.old_user_base
+        sysconfig._config_vars.clear()
+        sysconfig._config_vars.update(self.old_config_vars)
         super(BuildExtTestCase, self).tearDown()
 
     def build_ext(self, *args, **kwargs):
         return build_ext(*args, **kwargs)
 
+    @support.requires_subprocess()
     def test_build_ext(self):
         cmd = support.missing_compiler_executable()
         if cmd is not None:
@@ -161,6 +166,7 @@ class BuildExtTestCase(TempdirManager,
         self.assertIn(lib, cmd.rpath)
         self.assertIn(incl, cmd.include_dirs)
 
+    @threading_helper.requires_working_threading()
     def test_optional_extension(self):
 
         # this extension will fail, but let's ignore this failure
@@ -329,6 +335,7 @@ class BuildExtTestCase(TempdirManager,
         cmd.run()
         self.assertEqual(cmd.compiler, 'unix')
 
+    @support.requires_subprocess()
     def test_get_outputs(self):
         cmd = support.missing_compiler_executable()
         if cmd is not None:
@@ -456,7 +463,7 @@ class BuildExtTestCase(TempdirManager,
         deptarget = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
         if deptarget:
             # increment the minor version number (i.e. 10.6 -> 10.7)
-            deptarget = [int(x) for x in str(deptarget).split('.')]
+            deptarget = [int(x) for x in deptarget.split('.')]
             deptarget[-1] += 1
             deptarget = '.'.join(str(i) for i in deptarget)
             self._try_compile_deployment_target('<', deptarget)
@@ -489,7 +496,7 @@ class BuildExtTestCase(TempdirManager,
 
         # get the deployment target that the interpreter was built with
         target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
-        target = tuple(map(int, str(target).split('.')[0:2]))
+        target = tuple(map(int, target.split('.')[0:2]))
         # format the target value as defined in the Apple
         # Availability Macros.  We can't use the macro names since
         # at least one value we test with will not exist yet.
@@ -542,8 +549,8 @@ class ParallelBuildExtTestCase(BuildExtTestCase):
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(BuildExtTestCase))
-    suite.addTest(unittest.makeSuite(ParallelBuildExtTestCase))
+    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(BuildExtTestCase))
+    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(ParallelBuildExtTestCase))
     return suite
 
 if __name__ == '__main__':

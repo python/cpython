@@ -1,11 +1,15 @@
-
 /* Testing module for multi-phase initialization of extension modules (PEP 489)
  */
+
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
 
 #ifdef MS_WINDOWS
 
+#include "pycore_fileutils.h"     // _Py_get_osfhandle()
 #include "..\modules\_io\_iomodule.h"
 
 #define WIN32_LEAN_AND_MEAN
@@ -13,10 +17,10 @@
 #include <fcntl.h>
 
  /* The full definition is in iomodule. We reproduce
- enough here to get the handle, which is all we want. */
+ enough here to get the fd, which is all we want. */
 typedef struct {
     PyObject_HEAD
-    HANDLE handle;
+    int fd;
 } winconsoleio;
 
 
@@ -67,7 +71,10 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file,
         prec->Event.KeyEvent.uChar.UnicodeChar = *p;
     }
 
-    HANDLE hInput = ((winconsoleio*)file)->handle;
+    HANDLE hInput = _Py_get_osfhandle(((winconsoleio*)file)->fd);
+    if (hInput == INVALID_HANDLE_VALUE)
+        goto error;
+
     DWORD total = 0;
     while (total < size) {
         DWORD wrote;

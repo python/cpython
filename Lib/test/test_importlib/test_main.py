@@ -1,10 +1,9 @@
-# coding: utf-8
-
 import re
 import json
 import pickle
 import textwrap
 import unittest
+import warnings
 import importlib.metadata
 
 try:
@@ -14,10 +13,15 @@ except ImportError:
 
 from . import fixtures
 from importlib.metadata import (
-    Distribution, EntryPoint,
-    PackageNotFoundError, distributions,
-    entry_points, metadata, version,
-    )
+    Distribution,
+    EntryPoint,
+    PackageNotFoundError,
+    distributions,
+    entry_points,
+    metadata,
+    packages_distributions,
+    version,
+)
 
 
 class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
@@ -56,13 +60,11 @@ class ImportTests(fixtures.DistInfoPkg, unittest.TestCase):
             importlib.import_module('does_not_exist')
 
     def test_resolve(self):
-        entries = dict(entry_points()['entries'])
-        ep = entries['main']
+        ep = entry_points(group='entries')['main']
         self.assertEqual(ep.load().__name__, "main")
 
     def test_entrypoint_with_colon_in_name(self):
-        entries = dict(entry_points()['entries'])
-        ep = entries['ns:sub']
+        ep = entry_points(group='entries')['ns:sub']
         self.assertEqual(ep.value, 'mod:main')
 
     def test_resolve_without_attr(self):
@@ -70,12 +72,11 @@ class ImportTests(fixtures.DistInfoPkg, unittest.TestCase):
             name='ep',
             value='importlib.metadata',
             group='grp',
-            )
+        )
         assert ep.load() is importlib.metadata
 
 
-class NameNormalizationTests(
-        fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
+class NameNormalizationTests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
     @staticmethod
     def pkg_with_dashes(site_dir):
         """
@@ -85,7 +86,7 @@ class NameNormalizationTests(
         metadata_dir = site_dir / 'my_pkg.dist-info'
         metadata_dir.mkdir()
         metadata = metadata_dir / 'METADATA'
-        with metadata.open('w') as strm:
+        with metadata.open('w', encoding='utf-8') as strm:
             strm.write('Version: 1.0\n')
         return 'my-pkg'
 
@@ -106,7 +107,7 @@ class NameNormalizationTests(
         metadata_dir = site_dir / 'CherryPy.dist-info'
         metadata_dir.mkdir()
         metadata = metadata_dir / 'METADATA'
-        with metadata.open('w') as strm:
+        with metadata.open('w', encoding='utf-8') as strm:
             strm.write('Version: 1.0\n')
         return 'CherryPy'
 
@@ -131,7 +132,7 @@ class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
         metadata_dir.mkdir()
         metadata = metadata_dir / 'METADATA'
         with metadata.open('w', encoding='utf-8') as fp:
-            fp.write('Description: pôrˈtend\n')
+            fp.write('Description: pôrˈtend')
         return 'portend'
 
     @staticmethod
@@ -144,11 +145,15 @@ class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
         metadata_dir.mkdir()
         metadata = metadata_dir / 'METADATA'
         with metadata.open('w', encoding='utf-8') as fp:
-            fp.write(textwrap.dedent("""
+            fp.write(
+                textwrap.dedent(
+                    """
                 Name: portend
 
                 pôrˈtend
-                """).lstrip())
+                """
+                ).strip()
+            )
         return 'portend'
 
     def test_metadata_loads(self):
@@ -159,27 +164,15 @@ class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
     def test_metadata_loads_egg_info(self):
         pkg_name = self.pkg_with_non_ascii_description_egg_info(self.site_dir)
         meta = metadata(pkg_name)
-        assert meta.get_payload() == 'pôrˈtend\n'
+        assert meta['Description'] == 'pôrˈtend'
 
 
-class DiscoveryTests(fixtures.EggInfoPkg,
-                     fixtures.DistInfoPkg,
-                     unittest.TestCase):
-
+class DiscoveryTests(fixtures.EggInfoPkg, fixtures.DistInfoPkg, unittest.TestCase):
     def test_package_discovery(self):
         dists = list(distributions())
-        assert all(
-            isinstance(dist, Distribution)
-            for dist in dists
-            )
-        assert any(
-            dist.metadata['Name'] == 'egginfo-pkg'
-            for dist in dists
-            )
-        assert any(
-            dist.metadata['Name'] == 'distinfo-pkg'
-            for dist in dists
-            )
+        assert all(isinstance(dist, Distribution) for dist in dists)
+        assert any(dist.metadata['Name'] == 'egginfo-pkg' for dist in dists)
+        assert any(dist.metadata['Name'] == 'distinfo-pkg' for dist in dists)
 
     def test_invalid_usage(self):
         with self.assertRaises(ValueError):
@@ -217,7 +210,7 @@ class InaccessibleSysPath(fixtures.OnSysPath, ffs.TestCase):
     site_dir = '/access-denied'
 
     def setUp(self):
-        super(InaccessibleSysPath, self).setUp()
+        super().setUp()
         self.setUpPyfakefs()
         self.fs.create_dir(self.site_dir, perm_bits=000)
 
@@ -231,12 +224,20 @@ class InaccessibleSysPath(fixtures.OnSysPath, ffs.TestCase):
 
 class TestEntryPoints(unittest.TestCase):
     def __init__(self, *args):
-        super(TestEntryPoints, self).__init__(*args)
-        self.ep = importlib.metadata.EntryPoint('name', 'value', 'group')
+        super().__init__(*args)
+        self.ep = importlib.metadata.EntryPoint(
+            name='name', value='value', group='group'
+        )
 
     def test_entry_point_pickleable(self):
         revived = pickle.loads(pickle.dumps(self.ep))
         assert revived == self.ep
+
+    def test_positional_args(self):
+        """
+        Capture legacy (namedtuple) construction, discouraged.
+        """
+        EntryPoint('name', 'value', 'group')
 
     def test_immutable(self):
         """EntryPoints should be immutable"""
@@ -257,7 +258,8 @@ class TestEntryPoints(unittest.TestCase):
         json should not expect to be able to dump an EntryPoint
         """
         with self.assertRaises(Exception):
-            json.dumps(self.ep)
+            with warnings.catch_warnings(record=True):
+                json.dumps(self.ep)
 
     def test_module(self):
         assert self.ep.module == 'value'
@@ -265,10 +267,21 @@ class TestEntryPoints(unittest.TestCase):
     def test_attr(self):
         assert self.ep.attr is None
 
+    def test_sortable(self):
+        """
+        EntryPoint objects are sortable, but result is undefined.
+        """
+        sorted(
+            [
+                EntryPoint(name='b', value='val', group='group'),
+                EntryPoint(name='a', value='val', group='group'),
+            ]
+        )
+
 
 class FileSystem(
-        fixtures.OnSysPath, fixtures.SiteDir, fixtures.FileBuilder,
-        unittest.TestCase):
+    fixtures.OnSysPath, fixtures.SiteDir, fixtures.FileBuilder, unittest.TestCase
+):
     def test_unicode_dir_on_sys_path(self):
         """
         Ensure a Unicode subdirectory of a directory on sys.path
@@ -277,5 +290,40 @@ class FileSystem(
         fixtures.build_files(
             {self.unicode_filename(): {}},
             prefix=self.site_dir,
-            )
+        )
         list(distributions())
+
+
+class PackagesDistributionsPrebuiltTest(fixtures.ZipFixtures, unittest.TestCase):
+    def test_packages_distributions_example(self):
+        self._fixture_on_path('example-21.12-py3-none-any.whl')
+        assert packages_distributions()['example'] == ['example']
+
+    def test_packages_distributions_example2(self):
+        """
+        Test packages_distributions on a wheel built
+        by trampolim.
+        """
+        self._fixture_on_path('example2-1.0.0-py3-none-any.whl')
+        assert packages_distributions()['example2'] == ['example2']
+
+
+class PackagesDistributionsTest(
+    fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase
+):
+    def test_packages_distributions_neither_toplevel_nor_files(self):
+        """
+        Test a package built without 'top-level.txt' or a file list.
+        """
+        fixtures.build_files(
+            {
+                'trim_example-1.0.0.dist-info': {
+                    'METADATA': """
+                Name: trim_example
+                Version: 1.0.0
+                """,
+                }
+            },
+            prefix=self.site_dir,
+        )
+        packages_distributions()

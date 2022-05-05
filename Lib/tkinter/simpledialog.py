@@ -24,7 +24,8 @@ askstring -- get a string from the user
 """
 
 from tkinter import *
-from tkinter import messagebox, _get_default_root
+from tkinter import _get_temp_root, _destroy_temp_root
+from tkinter import messagebox
 
 
 class SimpleDialog:
@@ -39,6 +40,9 @@ class SimpleDialog:
         if title:
             self.root.title(title)
             self.root.iconname(title)
+
+        _setup_dialog(self.root)
+
         self.message = Message(self.root, text=text, aspect=400)
         self.message.pack(expand=1, fill=BOTH)
         self.frame = Frame(self.root)
@@ -99,8 +103,8 @@ class Dialog(Toplevel):
             title -- the dialog title
         '''
         master = parent
-        if not master:
-            master = _get_default_root('create dialog window')
+        if master is None:
+            master = _get_temp_root()
 
         Toplevel.__init__(self, master)
 
@@ -114,6 +118,8 @@ class Dialog(Toplevel):
         if title:
             self.title(title)
 
+        _setup_dialog(self)
+
         self.parent = parent
 
         self.result = None
@@ -124,7 +130,7 @@ class Dialog(Toplevel):
 
         self.buttonbox()
 
-        if not self.initial_focus:
+        if self.initial_focus is None:
             self.initial_focus = self
 
         self.protocol("WM_DELETE_WINDOW", self.cancel)
@@ -142,6 +148,7 @@ class Dialog(Toplevel):
         '''Destroy the window'''
         self.initial_focus = None
         Toplevel.destroy(self)
+        _destroy_temp_root(self.master)
 
     #
     # construction hooks
@@ -249,6 +256,13 @@ def _place_window(w, parent=None):
     w.wm_geometry('+%d+%d' % (x, y))
     w.wm_deiconify() # Become visible at the desired location
 
+
+def _setup_dialog(w):
+    if w._windowingsystem == "aqua":
+        w.tk.call("::tk::unsupported::MacWindowStyle", "style",
+                  w, "moveableModal", "")
+    elif w._windowingsystem == "x11":
+        w.wm_attributes("-type", "dialog")
 
 # --------------------------------------------------------------------
 # convenience dialogues

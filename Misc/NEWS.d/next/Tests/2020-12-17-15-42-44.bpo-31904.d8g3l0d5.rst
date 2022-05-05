@@ -1,1 +1,0 @@
-Skip some asyncio tests on VxWorks.

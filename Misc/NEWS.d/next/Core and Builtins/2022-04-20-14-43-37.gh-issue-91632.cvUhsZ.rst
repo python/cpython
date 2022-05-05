@@ -1,0 +1,1 @@
+Fix a minor memory leak at exit: release the memory of the :class:`generic_alias_iterator` type. Patch by Dong-hee Na.

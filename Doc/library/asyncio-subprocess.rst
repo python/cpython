@@ -75,6 +75,9 @@ Creating Subprocesses
    See the documentation of :meth:`loop.subprocess_exec` for other
    parameters.
 
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
+
 
 .. coroutinefunction:: create_subprocess_shell(cmd, stdin=None, \
                           stdout=None, stderr=None, limit=None, **kwds)
@@ -98,6 +101,9 @@ Creating Subprocesses
       vulnerabilities. The :func:`shlex.quote` function can be used to properly
       escape whitespace and special shell characters in strings that are going
       to be used to construct shell commands.
+
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
 .. note::
 
@@ -242,7 +248,7 @@ their completion.
 
    .. method:: kill()
 
-      Kill the child.
+      Kill the child process.
 
       On POSIX systems this method sends :py:data:`SIGKILL` to the child
       process.
@@ -269,7 +275,7 @@ their completion.
       Use the :meth:`communicate` method rather than
       :attr:`process.stdin.write() <stdin>`,
       :attr:`await process.stdout.read() <stdout>` or
-      :attr:`await process.stderr.read <stderr>`.
+      :attr:`await process.stderr.read() <stderr>`.
       This avoids deadlocks due to streams pausing reading or writing
       and blocking the child process.
 

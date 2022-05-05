@@ -116,7 +116,7 @@ Here is the :class:`Header` class description:
       if *s* is a byte string.
 
 
-   .. method:: encode(splitchars=';, \t', maxlinelen=None, linesep='\n')
+   .. method:: encode(splitchars=';, \\t', maxlinelen=None, linesep='\\n')
 
       Encode a message header into an RFC-compliant format, possibly wrapping
       long lines and encapsulating non-ASCII parts in base64 or quoted-printable

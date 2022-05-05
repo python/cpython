@@ -1,3 +1,0 @@
-Make sure that the ``f_lasti`` and ``f_lineno`` attributes of a frame are
-set correctly when an exception is raised or re-raised. Required for PEP
-626.

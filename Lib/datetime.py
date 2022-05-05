@@ -5,7 +5,7 @@ time zone and DST data sources.
 """
 
 __all__ = ("date", "datetime", "time", "timedelta", "timezone", "tzinfo",
-           "MINYEAR", "MAXYEAR")
+           "MINYEAR", "MAXYEAR", "UTC")
 
 
 import time as _time
@@ -1169,15 +1169,7 @@ class tzinfo:
             args = getinitargs()
         else:
             args = ()
-        getstate = getattr(self, "__getstate__", None)
-        if getstate:
-            state = getstate()
-        else:
-            state = getattr(self, "__dict__", None) or None
-        if state is None:
-            return (self.__class__, args)
-        else:
-            return (self.__class__, args, state)
+        return (self.__class__, args, self.__getstate__())
 
 
 class IsoCalendarDate(tuple):
@@ -2298,7 +2290,8 @@ class timezone(tzinfo):
             return f'UTC{sign}{hours:02d}:{minutes:02d}:{seconds:02d}'
         return f'UTC{sign}{hours:02d}:{minutes:02d}'
 
-timezone.utc = timezone._create(timedelta(0))
+UTC = timezone.utc = timezone._create(timedelta(0))
+
 # bpo-37642: These attributes are rounded to the nearest minute for backwards
 # compatibility, even though the constructor will accept a wider range of
 # values. This may change in the future.
@@ -2327,7 +2320,7 @@ _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 #    This is again a requirement for a sane tzinfo class.
 #
 # 4. (x+k).s = x.s
-#    This follows from #2, and that datimetimetz+timedelta preserves tzinfo.
+#    This follows from #2, and that datetime.timetz+timedelta preserves tzinfo.
 #
 # 5. (x+k).n = x.n + k
 #    Again follows from how arithmetic is defined.

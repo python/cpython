@@ -1,2 +1,0 @@
-:func:`posixpath.expanduser` returns the input *path* unchanged if
-user home directory is None on VxWorks.

@@ -1,0 +1,2 @@
+gdbm-compat is now preferred over ndbm if both are available on the system.
+This allows avoiding the problematic ndbm.h on macOS.

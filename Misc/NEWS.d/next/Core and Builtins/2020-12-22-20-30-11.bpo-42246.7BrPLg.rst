@@ -1,1 +1,0 @@
-Jumps to jumps are not eliminated when it would break PEP 626.

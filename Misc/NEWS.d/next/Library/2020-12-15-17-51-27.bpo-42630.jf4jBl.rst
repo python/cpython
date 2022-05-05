@@ -1,4 +1,0 @@
-:mod:`tkinter` functions and constructors which need a default root window
-raise now :exc:`RuntimeError` with descriptive message instead of obscure
-:exc:`AttributeError` or :exc:`NameError` if it is not created yet or cannot
-be created automatically.

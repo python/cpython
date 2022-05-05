@@ -25,11 +25,11 @@ def _captured_script(script):
     indented = script.replace('\n', '\n                ')
     wrapped = dedent(f"""
         import contextlib
-        with open({w}, 'w') as spipe:
+        with open({w}, 'w', encoding="utf-8") as spipe:
             with contextlib.redirect_stdout(spipe):
                 {indented}
         """)
-    return wrapped, open(r)
+    return wrapped, open(r, encoding="utf-8")
 
 
 def _run_output(interp, request, shared=None):
@@ -39,22 +39,37 @@ def _run_output(interp, request, shared=None):
         return rpipe.read()
 
 
+def _wait_for_interp_to_run(interp, timeout=None):
+    # bpo-37224: Running this test file in multiprocesses will fail randomly.
+    # The failure reason is that the thread can't acquire the cpu to
+    # run subinterpreter eariler than the main thread in multiprocess.
+    if timeout is None:
+        timeout = support.SHORT_TIMEOUT
+    start_time = time.monotonic()
+    deadline = start_time + timeout
+    while not interpreters.is_running(interp):
+        if time.monotonic() > deadline:
+            raise RuntimeError('interp is not running')
+        time.sleep(0.010)
+
+
 @contextlib.contextmanager
 def _running(interp):
     r, w = os.pipe()
     def run():
         interpreters.run_string(interp, dedent(f"""
             # wait for "signal"
-            with open({r}) as rpipe:
+            with open({r}, encoding="utf-8") as rpipe:
                 rpipe.read()
             """))
 
     t = threading.Thread(target=run)
     t.start()
+    _wait_for_interp_to_run(interp)
 
     yield
 
-    with open(w, 'w') as spipe:
+    with open(w, 'w', encoding="utf-8") as spipe:
         spipe.write('done')
     t.join()
 
@@ -803,10 +818,10 @@ class RunStringTests(TestBase):
 
         self.assertEqual(out, 'it worked!')
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @support.requires_fork()
     def test_fork(self):
         import tempfile
-        with tempfile.NamedTemporaryFile('w+') as file:
+        with tempfile.NamedTemporaryFile('w+', encoding="utf-8") as file:
             file.write('')
             file.flush()
 
@@ -816,7 +831,7 @@ class RunStringTests(TestBase):
                 try:
                     os.fork()
                 except RuntimeError:
-                    with open('{file.name}', 'w') as out:
+                    with open('{file.name}', 'w', encoding='utf-8') as out:
                         out.write('{expected}')
                 """)
             interpreters.run_string(self.id, script)
@@ -1206,7 +1221,7 @@ class ChannelTests(TestBase):
             import _xxsubinterpreters as _interpreters
             obj = _interpreters.channel_recv({cid})
             """))
-        # Test for channel that has boths ends associated to an interpreter.
+        # Test for channel that has both ends associated to an interpreter.
         send_interps = interpreters.channel_list_interpreters(cid, send=True)
         recv_interps = interpreters.channel_list_interpreters(cid, send=False)
         self.assertEqual(send_interps, [interp0])

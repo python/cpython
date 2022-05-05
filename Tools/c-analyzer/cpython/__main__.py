@@ -111,6 +111,7 @@ def cmd_parse(filenames=None, **kwargs):
     c_parser.cmd_parse(
         filenames,
         relroot=REPO_ROOT,
+        file_maxsizes=_parser.MAX_SIZES,
         **kwargs
     )
 
@@ -127,6 +128,7 @@ def cmd_check(filenames=None, **kwargs):
         relroot=REPO_ROOT,
         _analyze=_analyzer.analyze,
         _CHECKS=CHECKS,
+        file_maxsizes=_parser.MAX_SIZES,
         **kwargs
     )
 
@@ -141,6 +143,7 @@ def cmd_analyze(filenames=None, **kwargs):
         relroot=REPO_ROOT,
         _analyze=_analyzer.analyze,
         formats=formats,
+        file_maxsizes=_parser.MAX_SIZES,
         **kwargs
     )
 
@@ -241,7 +244,7 @@ def _cli_capi(parser):
         for raw in args.kinds or ():
             for kind in raw.replace(',', ' ').strip().split():
                 if kind in _capi.KINDS:
-                    kind.append(kind)
+                    kinds.append(kind)
                 else:
                     parser.error(f'expected KIND to be one of {sorted(_capi.KINDS)}, got {kind!r}')
         args.kinds = set(kinds)
@@ -249,7 +252,7 @@ def _cli_capi(parser):
     parser.add_argument('--group-by', dest='groupby',
                         choices=['level', 'kind'])
 
-    parser.add_argument('--format', default='brief')
+    parser.add_argument('--format', default='table')
     parser.add_argument('--summary', dest='format',
                         action='store_const', const='summary')
     def process_format(args, *, argv=None):
@@ -259,12 +262,27 @@ def _cli_capi(parser):
             if args.format not in _capi._FORMATS:
                 parser.error(f'unsupported format {orig!r}')
 
+    parser.add_argument('--show-empty', dest='showempty', action='store_true')
+    parser.add_argument('--no-show-empty', dest='showempty', action='store_false')
+    parser.set_defaults(showempty=None)
+
+    # XXX Add --sort-by, --sort and --no-sort.
+
+    parser.add_argument('--ignore', dest='ignored', action='append')
+    def process_ignored(args, *, argv=None):
+        ignored = []
+        for raw in args.ignored or ():
+            ignored.extend(raw.replace(',', ' ').strip().split())
+        args.ignored = ignored or None
+
     parser.add_argument('filenames', nargs='*', metavar='FILENAME')
     process_progress = add_progress_cli(parser)
 
     return [
         process_levels,
+        process_kinds,
         process_format,
+        process_ignored,
         process_progress,
     ]
 
@@ -273,7 +291,9 @@ def cmd_capi(filenames=None, *,
              levels=None,
              kinds=None,
              groupby='kind',
-             format='brief',
+             format='table',
+             showempty=None,
+             ignored=None,
              track_progress=None,
              verbosity=VERBOSITY,
              **kwargs
@@ -282,7 +302,7 @@ def cmd_capi(filenames=None, *,
 
     filenames = _files.iter_header_files(filenames, levels=levels)
     #filenames = (file for file, _ in main_for_filenames(filenames))
-    if track_progress is not None:
+    if track_progress:
         filenames = track_progress(filenames)
     items = _capi.iter_capi(filenames)
     if levels:
@@ -290,7 +310,16 @@ def cmd_capi(filenames=None, *,
     if kinds:
         items = (item for item in items if item.kind in kinds)
 
-    lines = render(items, groupby=groupby, verbose=verbosity > VERBOSITY)
+    filter = _capi.resolve_filter(ignored)
+    if filter:
+        items = (item for item in items if filter(item, log=lambda msg: logger.log(1, msg)))
+
+    lines = render(
+        items,
+        groupby=groupby,
+        showempty=showempty,
+        verbose=verbosity > VERBOSITY,
+    )
     print()
     for line in lines:
         print(line)
@@ -316,7 +345,7 @@ COMMANDS = {
         cmd_parse,
     ),
     'data': (
-        'check/manage local data (e.g. knwon types, ignored vars, caches)',
+        'check/manage local data (e.g. known types, ignored vars, caches)',
         [_cli_data],
         cmd_data,
     ),

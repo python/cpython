@@ -92,6 +92,38 @@ for the I/O buffer escapes completely the Python memory manager.
    statistics of the :ref:`pymalloc memory allocator <pymalloc>` every time a
    new pymalloc object arena is created, and on shutdown.
 
+Allocator Domains
+=================
+
+All allocating functions belong to one of three different "domains" (see also
+:c:type:`PyMemAllocatorDomain`). These domains represent different allocation
+strategies and are optimized for different purposes. The specific details on
+how every domain allocates memory or what internal functions each domain calls
+is considered an implementation detail, but for debugging purposes a simplified
+table can be found at :ref:`here <default-memory-allocators>`. There is no hard
+requirement to use the memory returned by the allocation functions belonging to
+a given domain for only the purposes hinted by that domain (although this is the
+recommended practice). For example, one could use the memory returned by
+:c:func:`PyMem_RawMalloc` for allocating Python objects or the memory returned
+by :c:func:`PyObject_Malloc` for allocating memory for buffers.
+
+The three allocation domains are:
+
+* Raw domain: intended for allocating memory for general-purpose memory
+  buffers where the allocation *must* go to the system allocator or where the
+  allocator can operate without the :term:`GIL`. The memory is requested directly
+  to the system.
+
+* "Mem" domain: intended for allocating memory for Python buffers and
+  general-purpose memory buffers where the allocation must be performed with
+  the :term:`GIL` held. The memory is taken from the Python private heap.
+
+* Object domain: intended for allocating memory belonging to Python objects. The
+  memory is taken from the Python private heap.
+
+When freeing memory previously allocated by the allocating functions belonging to a
+given domain,the matching specific deallocating functions must be used. For example,
+:c:func:`PyMem_Free` must be used to free memory allocated using :c:func:`PyMem_Malloc`.
 
 Raw Memory Interface
 ====================
@@ -272,6 +304,12 @@ The following function sets, modeled after the ANSI C standard, but specifying
 behavior when requesting zero bytes, are available for allocating and releasing
 memory from the Python heap.
 
+.. note::
+    There is no guarantee that the memory returned by these allocators can be
+    successfully cast to a Python object when intercepting the allocating
+    functions in this domain by the methods described in
+    the :ref:`Customize Memory Allocators <customize-memory-allocators>` section.
+
 The :ref:`default object allocator <default-memory-allocators>` uses the
 :ref:`pymalloc memory allocator <pymalloc>`.
 
@@ -347,12 +385,15 @@ Debug build, without pymalloc    ``"malloc_debug"``    ``malloc`` + debug  ``mal
 
 Legend:
 
-* Name: value for :envvar:`PYTHONMALLOC` environment variable
+* Name: value for :envvar:`PYTHONMALLOC` environment variable.
 * ``malloc``: system allocators from the standard C library, C functions:
-  :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`
-* ``pymalloc``: :ref:`pymalloc memory allocator <pymalloc>`
-* "+ debug": with debug hooks installed by :c:func:`PyMem_SetupDebugHooks`
+  :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`.
+* ``pymalloc``: :ref:`pymalloc memory allocator <pymalloc>`.
+* "+ debug": with :ref:`debug hooks on the Python memory allocators
+  <pymem-debug-hooks>`.
+* "Debug build": :ref:`Python build in debug mode <debug-build>`.
 
+.. _customize-memory-allocators:
 
 Customize Memory Allocators
 ===========================
@@ -362,7 +403,7 @@ Customize Memory Allocators
 .. c:type:: PyMemAllocatorEx
 
    Structure used to describe a memory block allocator. The structure has
-   four fields:
+   the following fields:
 
    +----------------------------------------------------------+---------------------------------------+
    | Field                                                    | Meaning                               |
@@ -435,48 +476,118 @@ Customize Memory Allocators
    the :c:func:`PyMem_SetupDebugHooks` function must be called to reinstall the
    debug hooks on top on the new allocator.
 
+   See also :c:member:`PyPreConfig.allocator` and :ref:`Preinitialize Python
+   with PyPreConfig <c-preinit>`.
 
 .. c:function:: void PyMem_SetupDebugHooks(void)
 
-   Setup hooks to detect bugs in the Python memory allocator functions.
+   Setup :ref:`debug hooks in the Python memory allocators <pymem-debug-hooks>`
+   to detect memory errors.
 
-   Newly allocated memory is filled with the byte ``0xCD`` (``CLEANBYTE``),
-   freed memory is filled with the byte ``0xDD`` (``DEADBYTE``). Memory blocks
-   are surrounded by "forbidden bytes" (``FORBIDDENBYTE``: byte ``0xFD``).
 
-   Runtime checks:
+.. _pymem-debug-hooks:
 
-   - Detect API violations, ex: :c:func:`PyObject_Free` called on a buffer
-     allocated by :c:func:`PyMem_Malloc`
-   - Detect write before the start of the buffer (buffer underflow)
-   - Detect write after the end of the buffer (buffer overflow)
-   - Check that the :term:`GIL <global interpreter lock>` is held when
-     allocator functions of :c:data:`PYMEM_DOMAIN_OBJ` (ex:
-     :c:func:`PyObject_Malloc`) and :c:data:`PYMEM_DOMAIN_MEM` (ex:
-     :c:func:`PyMem_Malloc`) domains are called
+Debug hooks on the Python memory allocators
+===========================================
 
-   On error, the debug hooks use the :mod:`tracemalloc` module to get the
-   traceback where a memory block was allocated. The traceback is only
-   displayed if :mod:`tracemalloc` is tracing Python memory allocations and the
-   memory block was traced.
+When :ref:`Python is built in debug mode <debug-build>`, the
+:c:func:`PyMem_SetupDebugHooks` function is called at the :ref:`Python
+preinitialization <c-preinit>` to setup debug hooks on Python memory allocators
+to detect memory errors.
 
-   These hooks are :ref:`installed by default <default-memory-allocators>` if
-   Python is compiled in debug
-   mode. The :envvar:`PYTHONMALLOC` environment variable can be used to install
-   debug hooks on a Python compiled in release mode.
+The :envvar:`PYTHONMALLOC` environment variable can be used to install debug
+hooks on a Python compiled in release mode (ex: ``PYTHONMALLOC=debug``).
 
-   .. versionchanged:: 3.6
-      This function now also works on Python compiled in release mode.
-      On error, the debug hooks now use :mod:`tracemalloc` to get the traceback
-      where a memory block was allocated. The debug hooks now also check
-      if the GIL is held when functions of :c:data:`PYMEM_DOMAIN_OBJ` and
-      :c:data:`PYMEM_DOMAIN_MEM` domains are called.
+The :c:func:`PyMem_SetupDebugHooks` function can be used to set debug hooks
+after calling :c:func:`PyMem_SetAllocator`.
 
-   .. versionchanged:: 3.8
-      Byte patterns ``0xCB`` (``CLEANBYTE``), ``0xDB`` (``DEADBYTE``) and
-      ``0xFB`` (``FORBIDDENBYTE``) have been replaced with ``0xCD``, ``0xDD``
-      and ``0xFD`` to use the same values than Windows CRT debug ``malloc()``
-      and ``free()``.
+These debug hooks fill dynamically allocated memory blocks with special,
+recognizable bit patterns. Newly allocated memory is filled with the byte
+``0xCD`` (``PYMEM_CLEANBYTE``), freed memory is filled with the byte ``0xDD``
+(``PYMEM_DEADBYTE``). Memory blocks are surrounded by "forbidden bytes"
+filled with the byte ``0xFD`` (``PYMEM_FORBIDDENBYTE``). Strings of these bytes
+are unlikely to be valid addresses, floats, or ASCII strings.
+
+Runtime checks:
+
+- Detect API violations. For example, detect if :c:func:`PyObject_Free` is
+  called on a memory block allocated by :c:func:`PyMem_Malloc`.
+- Detect write before the start of the buffer (buffer underflow).
+- Detect write after the end of the buffer (buffer overflow).
+- Check that the :term:`GIL <global interpreter lock>` is held when
+  allocator functions of :c:data:`PYMEM_DOMAIN_OBJ` (ex:
+  :c:func:`PyObject_Malloc`) and :c:data:`PYMEM_DOMAIN_MEM` (ex:
+  :c:func:`PyMem_Malloc`) domains are called.
+
+On error, the debug hooks use the :mod:`tracemalloc` module to get the
+traceback where a memory block was allocated. The traceback is only displayed
+if :mod:`tracemalloc` is tracing Python memory allocations and the memory block
+was traced.
+
+Let *S* = ``sizeof(size_t)``. ``2*S`` bytes are added at each end of each block
+of *N* bytes requested.  The memory layout is like so, where p represents the
+address returned by a malloc-like or realloc-like function (``p[i:j]`` means
+the slice of bytes from ``*(p+i)`` inclusive up to ``*(p+j)`` exclusive; note
+that the treatment of negative indices differs from a Python slice):
+
+``p[-2*S:-S]``
+    Number of bytes originally asked for.  This is a size_t, big-endian (easier
+    to read in a memory dump).
+``p[-S]``
+    API identifier (ASCII character):
+
+    * ``'r'`` for :c:data:`PYMEM_DOMAIN_RAW`.
+    * ``'m'`` for :c:data:`PYMEM_DOMAIN_MEM`.
+    * ``'o'`` for :c:data:`PYMEM_DOMAIN_OBJ`.
+
+``p[-S+1:0]``
+    Copies of PYMEM_FORBIDDENBYTE.  Used to catch under- writes and reads.
+
+``p[0:N]``
+    The requested memory, filled with copies of PYMEM_CLEANBYTE, used to catch
+    reference to uninitialized memory.  When a realloc-like function is called
+    requesting a larger memory block, the new excess bytes are also filled with
+    PYMEM_CLEANBYTE.  When a free-like function is called, these are
+    overwritten with PYMEM_DEADBYTE, to catch reference to freed memory.  When
+    a realloc- like function is called requesting a smaller memory block, the
+    excess old bytes are also filled with PYMEM_DEADBYTE.
+
+``p[N:N+S]``
+    Copies of PYMEM_FORBIDDENBYTE.  Used to catch over- writes and reads.
+
+``p[N+S:N+2*S]``
+    Only used if the ``PYMEM_DEBUG_SERIALNO`` macro is defined (not defined by
+    default).
+
+    A serial number, incremented by 1 on each call to a malloc-like or
+    realloc-like function.  Big-endian ``size_t``.  If "bad memory" is detected
+    later, the serial number gives an excellent way to set a breakpoint on the
+    next run, to capture the instant at which this block was passed out.  The
+    static function bumpserialno() in obmalloc.c is the only place the serial
+    number is incremented, and exists so you can set such a breakpoint easily.
+
+A realloc-like or free-like function first checks that the PYMEM_FORBIDDENBYTE
+bytes at each end are intact.  If they've been altered, diagnostic output is
+written to stderr, and the program is aborted via Py_FatalError().  The other
+main failure mode is provoking a memory error when a program reads up one of
+the special bit patterns and tries to use it as an address.  If you get in a
+debugger then and look at the object, you're likely to see that it's entirely
+filled with PYMEM_DEADBYTE (meaning freed memory is getting used) or
+PYMEM_CLEANBYTE (meaning uninitialized memory is getting used).
+
+.. versionchanged:: 3.6
+   The :c:func:`PyMem_SetupDebugHooks` function now also works on Python
+   compiled in release mode.  On error, the debug hooks now use
+   :mod:`tracemalloc` to get the traceback where a memory block was allocated.
+   The debug hooks now also check if the GIL is held when functions of
+   :c:data:`PYMEM_DOMAIN_OBJ` and :c:data:`PYMEM_DOMAIN_MEM` domains are
+   called.
+
+.. versionchanged:: 3.8
+   Byte patterns ``0xCB`` (``PYMEM_CLEANBYTE``), ``0xDB`` (``PYMEM_DEADBYTE``)
+   and ``0xFB`` (``PYMEM_FORBIDDENBYTE``) have been replaced with ``0xCD``,
+   ``0xDD`` and ``0xFD`` to use the same values than Windows CRT debug
+   ``malloc()`` and ``free()``.
 
 
 .. _pymalloc:
@@ -499,6 +610,10 @@ The arena allocator uses the following functions:
 * :c:func:`mmap` and :c:func:`munmap` if available,
 * :c:func:`malloc` and :c:func:`free` otherwise.
 
+This allocator is disabled if Python is configured with the
+:option:`--without-pymalloc` option. It can also be disabled at runtime using
+the :envvar:`PYTHONMALLOC` environment variable (ex: ``PYTHONMALLOC=malloc``).
+
 Customize pymalloc Arena Allocator
 ----------------------------------
 
@@ -516,7 +631,7 @@ Customize pymalloc Arena Allocator
    +--------------------------------------------------+---------------------------------------+
    | ``void* alloc(void *ctx, size_t size)``          | allocate an arena of size bytes       |
    +--------------------------------------------------+---------------------------------------+
-   | ``void free(void *ctx, size_t size, void *ptr)`` | free an arena                         |
+   | ``void free(void *ctx, void *ptr, size_t size)`` | free an arena                         |
    +--------------------------------------------------+---------------------------------------+
 
 .. c:function:: void PyObject_GetArenaAllocator(PyObjectArenaAllocator *allocator)
@@ -601,4 +716,3 @@ heap, objects in Python are allocated and released with :c:func:`PyObject_New`,
 
 These will be explained in the next chapter on defining and implementing new
 object types in C.
-

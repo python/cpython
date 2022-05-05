@@ -29,6 +29,7 @@ from pegen.build import build_parser
 from pegen.grammar import (
     Alt,
     Cut,
+    Forced,
     Grammar,
     Group,
     Leaf,
@@ -41,7 +42,10 @@ from pegen.grammar import (
     Rhs,
 )
 
-argparser = argparse.ArgumentParser(prog="graph_grammar", description="Graph a grammar tree",)
+argparser = argparse.ArgumentParser(
+    prog="graph_grammar",
+    description="Graph a grammar tree",
+)
 argparser.add_argument(
     "-s",
     "--start",
@@ -57,6 +61,8 @@ def references_for_item(item: Any) -> List[Any]:
         return [_ref for _item in item.items for _ref in references_for_item(_item)]
     elif isinstance(item, Cut):
         return []
+    elif isinstance(item, Forced):
+        return references_for_item(item.node)
     elif isinstance(item, Group):
         return references_for_item(item.rhs)
     elif isinstance(item, Lookahead):

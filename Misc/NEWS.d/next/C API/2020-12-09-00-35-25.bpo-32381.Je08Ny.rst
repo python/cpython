@@ -1,3 +1,0 @@
-Remove the private :c:func:`_Py_fopen` function which is no longer needed.
-Use :c:func:`_Py_wfopen` or :c:func:`_Py_fopen_obj` instead. Patch by Victor
-Stinner.

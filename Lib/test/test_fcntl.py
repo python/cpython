@@ -6,7 +6,7 @@ import struct
 import sys
 import unittest
 from multiprocessing import Process
-from test.support import (verbose, run_unittest, cpython_only)
+from test.support import verbose, cpython_only
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 
@@ -210,8 +210,5 @@ class TestFcntl(unittest.TestCase):
             os.close(test_pipe_w)
 
 
-def test_main():
-    run_unittest(TestFcntl)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

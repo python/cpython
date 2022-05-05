@@ -331,8 +331,8 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     import os
     from os.path import join, getsize
     for root, dirs, files in os.walk('python/Lib/email'):
-        print(root, "consumes", end="")
-        print(sum(getsize(join(root, name)) for name in files), end="")
+        print(root, "consumes ")
+        print(sum(getsize(join(root, name)) for name in files), end=" ")
         print("bytes in", len(files), "non-directory files")
         if 'CVS' in dirs:
             dirs.remove('CVS')  # don't visit CVS directories
@@ -461,8 +461,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                 dirs.remove('CVS')  # don't visit CVS directories
         """
         sys.audit("os.fwalk", top, topdown, onerror, follow_symlinks, dir_fd)
-        if not isinstance(top, int) or not hasattr(top, '__index__'):
-            top = fspath(top)
+        top = fspath(top)
         # Note: To guard against symlink races, we use the standard
         # lstat()/open()/fstat() trick.
         if not follow_symlinks:
@@ -704,9 +703,11 @@ class _Environ(MutableMapping):
         return len(self._data)
 
     def __repr__(self):
-        return 'environ({{{}}})'.format(', '.join(
-            ('{!r}: {!r}'.format(self.decodekey(key), self.decodevalue(value))
-            for key, value in self._data.items())))
+        formatted_items = ", ".join(
+            f"{self.decodekey(key)!r}: {self.decodevalue(value)!r}"
+            for key, value in self._data.items()
+        )
+        return f"environ({{{formatted_items}}})"
 
     def copy(self):
         return dict(self)
@@ -983,16 +984,16 @@ if sys.platform != 'vxworks':
         import subprocess, io
         if mode == "r":
             proc = subprocess.Popen(cmd,
-                                    shell=True,
+                                    shell=True, text=True,
                                     stdout=subprocess.PIPE,
                                     bufsize=buffering)
-            return _wrap_close(io.TextIOWrapper(proc.stdout), proc)
+            return _wrap_close(proc.stdout, proc)
         else:
             proc = subprocess.Popen(cmd,
-                                    shell=True,
+                                    shell=True, text=True,
                                     stdin=subprocess.PIPE,
                                     bufsize=buffering)
-            return _wrap_close(io.TextIOWrapper(proc.stdin), proc)
+            return _wrap_close(proc.stdin, proc)
 
     # Helper for popen() -- a proxy for a file whose close waits for the process
     class _wrap_close:
@@ -1020,11 +1021,13 @@ if sys.platform != 'vxworks':
     __all__.append("popen")
 
 # Supply os.fdopen()
-def fdopen(fd, *args, **kwargs):
+def fdopen(fd, mode="r", buffering=-1, encoding=None, *args, **kwargs):
     if not isinstance(fd, int):
         raise TypeError("invalid fd type (%s, expected integer)" % type(fd))
     import io
-    return io.open(fd, *args, **kwargs)
+    if "b" not in mode:
+        encoding = io.text_encoding(encoding)
+    return io.open(fd, mode, buffering, encoding, *args, **kwargs)
 
 
 # For testing purposes, make sure the function is available when the C

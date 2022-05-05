@@ -1,1 +1,0 @@
-:func:`random.sample` no longer warns on a sequence which is also a set.

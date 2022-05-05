@@ -10,7 +10,7 @@
 
 __all__ = ["Dialog"]
 
-from tkinter import Frame
+from tkinter import Frame, _get_temp_root, _destroy_temp_root
 
 
 class Dialog:
@@ -18,7 +18,7 @@ class Dialog:
     command = None
 
     def __init__(self, master=None, **options):
-        if not master:
+        if master is None:
             master = options.get('parent')
         self.master = master
         self.options = options
@@ -37,22 +37,17 @@ class Dialog:
 
         self._fixoptions()
 
-        # we need a dummy widget to properly process the options
-        # (at least as long as we use Tkinter 1.63)
-        w = Frame(self.master)
-
+        master = self.master
+        if master is None:
+            master = _get_temp_root()
         try:
-
-            s = w.tk.call(self.command, *w._options(self.options))
-
-            s = self._fixresult(w, s)
-
+            self._test_callback(master)  # The function below is replaced for some tests.
+            s = master.tk.call(self.command, *master._options(self.options))
+            s = self._fixresult(master, s)
         finally:
-
-            try:
-                # get rid of the widget
-                w.destroy()
-            except:
-                pass
+            _destroy_temp_root(master)
 
         return s
+
+    def _test_callback(self, master):
+        pass

@@ -1,4 +1,0 @@
-Now all platforms use a value for the "EXT_SUFFIX" build variable derived
-from SOABI (for instance in freeBSD, "EXT_SUFFIX" is now ".cpython-310d.so"
-instead of ".so"). Previosuly only Linux, Mac and VxWorks were using a value
-for "EXT_SUFFIX" that included "SOABI".

@@ -105,7 +105,7 @@ The following warnings category classes are currently defined:
 |                                  | :class:`bytes` and :class:`bytearray`.        |
 +----------------------------------+-----------------------------------------------+
 | :exc:`ResourceWarning`           | Base category for warnings related to         |
-|                                  | resource usage.                               |
+|                                  | resource usage (ignored by default).          |
 +----------------------------------+-----------------------------------------------+
 
 .. versionchanged:: 3.7
@@ -229,7 +229,7 @@ In regular release builds, the default warning filter has the following entries
     ignore::ImportWarning
     ignore::ResourceWarning
 
-In debug builds, the list of default warning filters is empty.
+In a :ref:`debug build <debug-build>`, the list of default warning filters is empty.
 
 .. versionchanged:: 3.2
    :exc:`DeprecationWarning` is now ignored by default in addition to
@@ -491,7 +491,7 @@ Available Functions
 Available Context Managers
 --------------------------
 
-.. class:: catch_warnings(*, record=False, module=None)
+.. class:: catch_warnings(*, record=False, module=None, action=None, category=Warning, lineno=0, append=False)
 
     A context manager that copies and, upon exit, restores the warnings filter
     and the :func:`showwarning` function.
@@ -507,6 +507,10 @@ Available Context Managers
     protected. This argument exists primarily for testing the :mod:`warnings`
     module itself.
 
+    If the *action* argument is not ``None``, the remaining arguments are
+    passed to :func:`simplefilter` as if it were called immediately on
+    entering the context.
+
     .. note::
 
         The :class:`catch_warnings` manager works by replacing and
@@ -514,3 +518,7 @@ Available Context Managers
         :func:`showwarning` function and internal list of filter
         specifications.  This means the context manager is modifying
         global state and therefore is not thread-safe.
+
+    .. versionchanged:: 3.11
+
+        Added the *action*, *category*, *lineno*, and *append* parameters.
