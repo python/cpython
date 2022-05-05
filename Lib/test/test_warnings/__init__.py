@@ -373,6 +373,25 @@ class FilterTests(BaseTest):
                 "appended duplicate changed order of filters"
             )
 
+    def test_catchwarnings_with_simplefilter_ignore(self):
+        with original_warnings.catch_warnings(module=self.module):
+            self.module.resetwarnings()
+            self.module.simplefilter("error")
+            with self.module.catch_warnings(
+                module=self.module, action="ignore"
+            ):
+                self.module.warn("This will be ignored")
+
+    def test_catchwarnings_with_simplefilter_error(self):
+        with original_warnings.catch_warnings(module=self.module):
+            self.module.resetwarnings()
+            with self.module.catch_warnings(
+                module=self.module, action="error", category=FutureWarning
+            ):
+                self.module.warn("Other types of warnings are not errors")
+                self.assertRaises(FutureWarning,
+                                  self.module.warn, FutureWarning("msg"))
+
 class CFilterTests(FilterTests, unittest.TestCase):
     module = c_warnings
 

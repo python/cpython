@@ -482,8 +482,7 @@ class Regrtest:
         if cpu_count:
             print("== CPU count:", cpu_count)
         print("== encodings: locale=%s, FS=%s"
-              % (locale.getpreferredencoding(False),
-                 sys.getfilesystemencoding()))
+              % (locale.getencoding(), sys.getfilesystemencoding()))
 
     def get_tests_result(self):
         result = []

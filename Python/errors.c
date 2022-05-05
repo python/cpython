@@ -520,9 +520,7 @@ PyErr_GetHandledException(void)
 void
 _PyErr_SetHandledException(PyThreadState *tstate, PyObject *exc)
 {
-    PyObject *oldexc = tstate->exc_info->exc_value;
-    tstate->exc_info->exc_value = Py_XNewRef(exc);
-    Py_XDECREF(oldexc);
+    Py_XSETREF(tstate->exc_info->exc_value, Py_XNewRef(exc));
 }
 
 void
@@ -543,6 +541,7 @@ void
 PyErr_SetExcInfo(PyObject *type, PyObject *value, PyObject *traceback)
 {
     PyErr_SetHandledException(value);
+    Py_XDECREF(value);
     /* These args are no longer used, but we still need to steal a ref */
     Py_XDECREF(type);
     Py_XDECREF(traceback);

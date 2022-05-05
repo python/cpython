@@ -44,6 +44,7 @@ import suspicious
 
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
+GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
 SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
@@ -58,8 +59,30 @@ Body.enum.converters['loweralpha'] = \
 
 def issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     issue = utils.unescape(text)
+    # sanity check: there are no bpo issues within these two values
+    if 47261 < int(issue) < 400000:
+        msg = inliner.reporter.error(f'The BPO ID {text!r} seems too high -- '
+                                     'use :gh:`...` for GitHub IDs', line=lineno)
+        prb = inliner.problematic(rawtext, rawtext, msg)
+        return [prb], [msg]
     text = 'bpo-' + issue
     refnode = nodes.reference(text, text, refuri=ISSUE_URI % issue)
+    return [refnode], []
+
+
+# Support for marking up and linking to GitHub issues
+
+def gh_issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
+    issue = utils.unescape(text)
+    # sanity check: all GitHub issues have ID >= 32426
+    # even though some of them are also valid BPO IDs
+    if int(issue) < 32426:
+        msg = inliner.reporter.error(f'The GitHub ID {text!r} seems too low -- '
+                                     'use :issue:`...` for BPO IDs', line=lineno)
+        prb = inliner.problematic(rawtext, rawtext, msg)
+        return [prb], [msg]
+    text = 'gh-' + issue
+    refnode = nodes.reference(text, text, refuri=GH_ISSUE_URI % issue)
     return [refnode], []
 
 
@@ -615,6 +638,7 @@ def process_audit_events(app, doctree, fromdocname):
 
 def setup(app):
     app.add_role('issue', issue_role)
+    app.add_role('gh', gh_issue_role)
     app.add_role('source', source_role)
     app.add_directive('impl-detail', ImplementationDetail)
     app.add_directive('availability', Availability)

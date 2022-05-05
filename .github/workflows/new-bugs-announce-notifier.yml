@@ -9,12 +9,12 @@ jobs:
   notify-new-bugs-announce:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: 14
       - run: npm install mailgun.js form-data
       - name: Send notification
-        uses: actions/github-script@v5
+        uses: actions/github-script@v6
         env:
           MAILGUN_API_KEY: ${{ secrets.PSF_MAILGUN_KEY }}
         with:

@@ -1,0 +1,1 @@
+Disable frozen modules in debug builds. Patch by Kumar Aditya.

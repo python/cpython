@@ -125,6 +125,9 @@ class _ExceptionWithTraceback:
     def __init__(self, exc, tb):
         tb = ''.join(format_exception(type(exc), exc, tb))
         self.exc = exc
+        # Traceback object needs to be garbage-collected as its frames
+        # contain references to all the objects in the exception scope
+        self.exc.__traceback__ = None
         self.tb = '\n"""\n%s"""' % tb
     def __reduce__(self):
         return _rebuild_exc, (self.exc, self.tb)
