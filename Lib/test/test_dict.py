@@ -71,10 +71,18 @@ class DictTest(unittest.TestCase):
         self.assertEqual(a.__ior__(""), {0: 0, 1: 1, 2: 1})
 
     def test_bool(self):
-        self.assertIs(not {}, True)
+        self.assertFalse({})
+        self.assertFalse(dict())
+        self.assertTrue(not {})
+        self.assertTrue(not dict())
         self.assertTrue({1: 2})
-        self.assertIs(bool({}), False)
-        self.assertIs(bool({1: 2}), True)
+        self.assertTrue(dict(key=1))
+        self.assertFalse(not {1: 2})
+        self.assertFalse(not dict(key=1))
+        self.assertFalse(bool({}))
+        self.assertTrue(bool({1: 2}))
+        self.assertFalse(bool(dict()))
+        self.assertTrue(bool(dict(key=1)))
 
     def test_keys(self):
         d = {}
