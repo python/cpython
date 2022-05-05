@@ -348,22 +348,6 @@ def _convert(value, T):
             raise
 
 
-def _find_lteq(a, x):
-    'Locate the leftmost value exactly equal to x'
-    i = bisect_left(a, x)
-    if i != len(a) and a[i] == x:
-        return i
-    raise ValueError
-
-
-def _find_rteq(a, l, x):
-    'Locate the rightmost value exactly equal to x'
-    i = bisect_right(a, x, lo=l)
-    if i != (len(a) + 1) and a[i - 1] == x:
-        return i - 1
-    raise ValueError
-
-
 def _fail_neg(values, errmsg='negative value'):
     """Iterate over values, failing if any are less than zero."""
     for x in values:
@@ -659,26 +643,30 @@ def median_grouped(data, interval=1):
         raise StatisticsError("no median for empty data")
     elif n == 1:
         return data[0]
+
     # Find the value at the midpoint. Remember this corresponds to the
-    # centre of the class interval.
+    # midpoint of the class interval.
     x = data[n // 2]
+
+    # Generate a clear error message for non-numeric data
     for obj in (x, interval):
         if isinstance(obj, (str, bytes)):
-            raise TypeError('expected number but got %r' % obj)
+            raise TypeError(f'expected a number but got {obj!r}')
+
+    # Using O(log n) bisection, find where all the x values occur in the data.
+    # All x will lie within data[i:j].
+    i = bisect_left(data, x)
+    j = bisect_right(data, x, lo=i)
+
+    # Interpolate the median using the formula found at:
+    # https://www.cuemath.com/data/median-of-grouped-data/
     try:
         L = x - interval / 2  # The lower limit of the median interval.
     except TypeError:
-        # Mixed type. For now we just coerce to float.
+        # Coerce mixed types to float.
         L = float(x) - float(interval) / 2
-
-    # Uses bisection search to search for x in data with log(n) time complexity
-    # Find the position of leftmost occurrence of x in data
-    l1 = _find_lteq(data, x)
-    # Find the position of rightmost occurrence of x in data[l1...len(data)]
-    # Assuming always l1 <= l2
-    l2 = _find_rteq(data, l1, x)
-    cf = l1
-    f = l2 - l1 + 1
+    cf = i                    # Cumulative frequency of the preceding interval
+    f = j - i                 # Number of elements in the median internal
     return L + interval * (n / 2 - cf) / f
 
 
