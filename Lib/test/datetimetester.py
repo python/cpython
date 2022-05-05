@@ -3095,6 +3095,7 @@ class TestDateTime(TestDate):
              self.theclass(2025, 1, 2, 3, 4, 5, 678901)),
             ('20250102T030405.6789010',
              self.theclass(2025, 1, 2, 3, 4, 5, 678901)),
+            ('2022W01', self.theclass(2022, 1, 3)),
             ('2022W52520', self.theclass(2022, 12, 26, 20, 0)),
             ('2022W527520', self.theclass(2023, 1, 1, 20, 0)),
             ('2026W01516', self.theclass(2025, 12, 29, 16, 0)),

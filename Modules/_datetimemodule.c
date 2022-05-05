@@ -5352,7 +5352,9 @@ _find_isoformat_datetime_separator(const char *dtstr, Py_ssize_t len) {
     static const char date_separator = '-';
     static const char week_indicator = 'W';
 
-    assert(len > 7);
+    if (len == 7) {
+        return 7;
+    }
 
     if (dtstr[4] == date_separator) {
         // YYYY-???
