@@ -603,22 +603,16 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[T]',                        '[int]',                   'generic[int]'),
             ('generic[T]',                        '[int, str]',              'TypeError'),
             ('generic[T]',                        '[tuple_type[int, ...]]',  'generic[tuple_type[int, ...]]'),
+            ('generic[T]',                        '[*tuple_type[int]]',      'generic[int]'),
             # Should raise TypeError: a) according to the tentative spec,
             # unpacked types cannot be used as arguments to aliases that expect
             # a fixed number of arguments; b) it's equivalent to generic[()].
-            ('generic[T]',                        '[*tuple[()]]',            'generic[*tuple[()]]'),
-            ('generic[T]',                        '[*Tuple[()]]',            'TypeError'),
+            ('generic[T]',                        '[*tuple_type[()]]',       'TypeError'),
+            ('generic[T]',                        '[*tuple_type[int, str]]', 'TypeError'),
             # Should raise TypeError according to the tentative spec: unpacked
             # types cannot be used as arguments to aliases that expect a fixed
             # number of arguments.
-            ('generic[T]',                        '[*tuple[int]]',           'generic[*tuple[int]]'),
-            ('generic[T]',                        '[*Tuple[int]]',           'TypeError'),
-            # Ditto.
-            ('generic[T]',                        '[*tuple[int, str]]',      'generic[*tuple[int, str]]'),
-            ('generic[T]',                        '[*Tuple[int, str]]',      'TypeError'),
-            # Ditto.
-            ('generic[T]',                        '[*tuple[int, ...]]',      'generic[*tuple[int, ...]]'),
-            ('generic[T]',                        '[*Tuple[int, ...]]',      'TypeError'),
+            ('generic[T]',                        '[*tuple_type[int, ...]]', 'TypeError'),
             ('generic[T]',                        '[*Ts]',                   'TypeError'),
             ('generic[T]',                        '[T, *Ts]',                'TypeError'),
             ('generic[T]',                        '[*Ts, T]',                'TypeError'),
@@ -664,23 +658,29 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[T1, T2]',                        '[int, str]',                                        'generic[int, str]'),
             ('generic[T1, T2]',                        '[int, str, bool]',                                  'TypeError'),
             ('generic[T1, T2]',                        '[*tuple_type[int]]',                                'TypeError'),
-            ('generic[T1, T2]',                        '[*tuple_type[int, str]]',                           'TypeError'),
+            ('generic[T1, T2]',                        '[*tuple_type[int, str]]',                           'generic[int, str]'),
             ('generic[T1, T2]',                        '[*tuple_type[int, str, bool]]',                     'TypeError'),
 
-            # Should raise TypeError according to the tentative spec: unpacked
-            # types cannot be used as arguments to aliases that expect a fixed
-            # number of arguments.
-            ('generic[T1, T2]',                        '[*tuple[int, str], *tuple[float, bool]]',           'generic[*tuple[int, str], *tuple[float, bool]]'),
-            ('generic[T1, T2]',                        '[*Tuple[int, str], *Tuple[float, bool]]',           'TypeError'),
+            ('generic[T1, T2]',                        '[int, *tuple_type[str]]',                           'generic[int, str]'),
+            ('generic[T1, T2]',                        '[*tuple_type[int], str]',                           'generic[int, str]'),
+            ('generic[T1, T2]',                        '[*tuple_type[int], *tuple_type[str]]',              'generic[int, str]'),
+            ('generic[T1, T2]',                        '[*tuple_type[int, str], *tuple_type[()]]',          'generic[int, str]'),
+            ('generic[T1, T2]',                        '[*tuple_type[()], *tuple_type[int, str]]',          'generic[int, str]'),
+            ('generic[T1, T2]',                        '[*tuple_type[int], *tuple_type[()]]',               'TypeError'),
+            ('generic[T1, T2]',                        '[*tuple_type[()], *tuple_type[int]]',               'TypeError'),
+            ('generic[T1, T2]',                        '[*tuple_type[int, str], *tuple_type[float]]',       'TypeError'),
+            ('generic[T1, T2]',                        '[*tuple_type[int], *tuple_type[str, float]]',       'TypeError'),
+            ('generic[T1, T2]',                        '[*tuple_type[int, str], *tuple_type[float, bool]]', 'TypeError'),
 
             ('generic[T1, T2]',                        '[tuple_type[int, ...]]',                            'TypeError'),
             ('generic[T1, T2]',                        '[tuple_type[int, ...], tuple_type[str, ...]]',      'generic[tuple_type[int, ...], tuple_type[str, ...]]'),
+            # Should raise TypeError according to the tentative spec: unpacked
+            # types cannot be used as arguments to aliases that expect a fixed
+            # number of arguments.
             ('generic[T1, T2]',                        '[*tuple_type[int, ...]]',                           'TypeError'),
-
-            # Ditto.
-            ('generic[T1, T2]',                        '[*tuple[int, ...], *tuple[str, ...]]',              'generic[*tuple[int, ...], *tuple[str, ...]]'),
-            ('generic[T1, T2]',                        '[*Tuple[int, ...], *Tuple[str, ...]]',              'TypeError'),
-
+            ('generic[T1, T2]',                        '[int, *tuple_type[str, ...]]',                      'TypeError'),
+            ('generic[T1, T2]',                        '[*tuple_type[int, ...], str]',                      'TypeError'),
+            ('generic[T1, T2]',                        '[*tuple_type[int, ...], *tuple_type[str, ...]]',    'TypeError'),
             ('generic[T1, T2]',                        '[*Ts]',                                             'TypeError'),
             ('generic[T1, T2]',                        '[T, *Ts]',                                          'TypeError'),
             ('generic[T1, T2]',                        '[*Ts, T]',                                          'TypeError'),
@@ -720,7 +720,7 @@ class GenericAliasSubstitutionTests(BaseTestCase):
         tests = [
             # Alias                                    # Args                                               # Expected result
             ('generic[T1, bool, T2]',                  '[int, str]',                                        'generic[int, bool, str]'),
-            ('generic[T1, bool, T2]',                  '[*tuple_type[int, str]]',                           'TypeError'),
+            ('generic[T1, bool, T2]',                  '[*tuple_type[int, str]]',                           'generic[int, bool, str]'),
         ]
 
         for alias_template, args_template, expected_template in tests:
@@ -765,17 +765,17 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('tuple[*Ts]',                             '[int, str]',                                     'tuple[int, str]'),
             ('Tuple[*Ts]',                             '[int, str]',                                     'Tuple[int, str]'),
 
-            ('C[*Ts]',                                 '[*tuple_type[int]]',                             'C[*tuple_type[int]]'),  # Should be C[int]
-            ('tuple[*Ts]',                             '[*tuple_type[int]]',                             'tuple[*tuple_type[int]]'),  # Should be tuple[int]
-            ('Tuple[*Ts]',                             '[*tuple_type[int]]',                             'Tuple[*tuple_type[int]]'),  # Should be Tuple[int]
+            ('C[*Ts]',                                 '[*tuple_type[int]]',                             'C[int]'),
+            ('tuple[*Ts]',                             '[*tuple_type[int]]',                             'tuple[int]'),
+            ('Tuple[*Ts]',                             '[*tuple_type[int]]',                             'Tuple[int]'),
 
-            ('C[*Ts]',                                 '[*tuple_type[*Ts]]',                             'C[*tuple_type[*Ts]]'),  # Should be C[*Ts]
-            ('tuple[*Ts]',                             '[*tuple_type[*Ts]]',                             'tuple[*tuple_type[*Ts]]'),  # Should be tuple[*Ts]
-            ('Tuple[*Ts]',                             '[*tuple_type[*Ts]]',                             'Tuple[*tuple_type[*Ts]]'),  # Should be Tuple[*Ts]
+            ('C[*Ts]',                                 '[*tuple_type[*Ts]]',                             'C[*Ts]'),
+            ('tuple[*Ts]',                             '[*tuple_type[*Ts]]',                             'tuple[*Ts]'),
+            ('Tuple[*Ts]',                             '[*tuple_type[*Ts]]',                             'Tuple[*Ts]'),
 
-            ('C[*Ts]',                                 '[*tuple_type[int, str]]',                        'C[*tuple_type[int, str]]'),  # Should be C[int, str]
-            ('tuple[*Ts]',                             '[*tuple_type[int, str]]',                        'tuple[*tuple_type[int, str]]'),  # Should be tuple[int, str]
-            ('Tuple[*Ts]',                             '[*tuple_type[int, str]]',                        'Tuple[*tuple_type[int, str]]'),  # Should be Tuple[int, str]
+            ('C[*Ts]',                                 '[*tuple_type[int, str]]',                        'C[int, str]'),
+            ('tuple[*Ts]',                             '[*tuple_type[int, str]]',                        'tuple[int, str]'),
+            ('Tuple[*Ts]',                             '[*tuple_type[int, str]]',                        'Tuple[int, str]'),
 
             ('C[*Ts]',                                 '[tuple_type[int, ...]]',                         'C[tuple_type[int, ...]]'),
             ('tuple[*Ts]',                             '[tuple_type[int, ...]]',                         'tuple[tuple_type[int, ...]]'),
@@ -820,11 +820,11 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('tuple[T, *Ts]',                          '[int, str, bool]',                               'tuple[int, str, bool]'),
             ('Tuple[T, *Ts]',                          '[int, str, bool]',                               'Tuple[int, str, bool]'),
 
-            ('C[T, *Ts]',                              '[*tuple[int, ...]]',                             'C[*tuple[int, ...]]'),  # Should be C[int, *tuple[int, ...]]
+            ('C[T, *Ts]',                              '[*tuple[int, ...]]',                             'TypeError'),  # Should be C[int, *tuple[int, ...]]
             ('C[T, *Ts]',                              '[*Tuple[int, ...]]',                             'TypeError'),  # Ditto
-            ('tuple[T, *Ts]',                          '[*tuple[int, ...]]',                             'tuple[*tuple[int, ...]]'),  # Should be tuple[int, *tuple[int, ...]]
+            ('tuple[T, *Ts]',                          '[*tuple[int, ...]]',                             'TypeError'),  # Should be tuple[int, *tuple[int, ...]]
             ('tuple[T, *Ts]',                          '[*Tuple[int, ...]]',                             'TypeError'),  # Should be tuple[int, *Tuple[int, ...]]
-            ('Tuple[T, *Ts]',                          '[*tuple[int, ...]]',                             'Tuple[*tuple[int, ...]]'),  # Should be Tuple[int, *tuple[int, ...]]
+            ('Tuple[T, *Ts]',                          '[*tuple[int, ...]]',                             'TypeError'),  # Should be Tuple[int, *tuple[int, ...]]
             ('Tuple[T, *Ts]',                          '[*Tuple[int, ...]]',                             'TypeError'),  # Should be Tuple[int, *Tuple[int, ...]]
 
             ('C[*Ts, T]',                              '[int]',                                          'C[int]'),
