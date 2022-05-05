@@ -1,0 +1,2 @@
+``marshal.dumps()`` uses ``FLAG_REF`` for all interned strings.  This makes
+output more deterministic and helps reproducible build.

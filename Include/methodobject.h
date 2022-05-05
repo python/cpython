@@ -42,7 +42,8 @@ typedef PyObject *(*PyCMethod)(PyObject *, PyTypeObject *, PyObject *const *,
 // used to prevent a compiler warning. If the function has a single parameter,
 // it triggers an undefined behavior when Python calls it with 2 parameters
 // (bpo-33012).
-#define _PyCFunction_CAST(func) ((PyCFunction)(void(*)(void))(func))
+#define _PyCFunction_CAST(func) \
+    _Py_CAST(PyCFunction, _Py_CAST(void(*)(void), (func)))
 
 PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);
 PyAPI_FUNC(PyObject *) PyCFunction_GetSelf(PyObject *);

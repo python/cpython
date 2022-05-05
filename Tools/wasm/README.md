@@ -4,10 +4,16 @@
 
 This directory contains configuration and helpers to facilitate cross
 compilation of CPython to WebAssembly (WASM). For now we support
-*wasm32-emscripten* builds for modern browser and for *Node.js*. It's not
-possible to build for *wasm32-wasi* out-of-the-box yet.
+*wasm32-emscripten* builds for modern browser and for *Node.js*. WASI
+(*wasm32-wasi*) is work-in-progress
 
 ## wasm32-emscripten build
+
+For now the build system has two target flavors. The ``Emscripten/browser``
+target (``--with-emscripten-target=browser``) is optimized for browsers.
+It comes with a reduced and preloaded stdlib without tests and threading
+support. The ``Emscripten/node`` target has threading enabled and can
+access the file system directly.
 
 Cross compiling to the wasm32-emscripten platform needs the
 [Emscripten](https://emscripten.org/) SDK and a build Python interpreter.
@@ -76,7 +82,7 @@ and header files with debug builds.
 
 ### Cross compile to wasm32-emscripten for node
 
-```
+```shell
 mkdir -p builddir/emscripten-node
 pushd builddir/emscripten-node
 
@@ -91,7 +97,7 @@ emmake make -j$(nproc)
 popd
 ```
 
-```
+```shell
 node --experimental-wasm-threads --experimental-wasm-bulk-memory builddir/emscripten-node/python.js
 ```
 
@@ -115,17 +121,26 @@ functions.
 - The ``select`` module is limited. ``select.select()`` crashes the runtime
   due to lack of exectfd support.
 
-## processes, threads, signals
+## processes, signals
 
 - Processes are not supported. System calls like fork, popen, and subprocess
   fail with ``ENOSYS`` or ``ENOSUP``.
 - Signal support is limited. ``signal.alarm``, ``itimer``, ``sigaction``
   are not available or do not work correctly. ``SIGTERM`` exits the runtime.
 - Keyboard interrupt (CTRL+C) handling is not implemented yet.
-- Browser builds cannot start new threads. Node's web workers consume
-  extra file descriptors.
 - Resource-related functions like ``os.nice`` and most functions of the
   ``resource`` module are not available.
+
+## threading
+
+- Threading is disabled by default. The ``configure`` option
+  ``--enable-wasm-pthreads`` adds compiler flag ``-pthread`` and
+  linker flags ``-sUSE_PTHREADS -sPROXY_TO_PTHREAD``. 
+- pthread support requires WASM threads and SharedArrayBuffer (bulk memory).
+  The Node.JS runtime keeps a pool of web workers around. Each web worker
+  uses several file descriptors (eventfd, epoll, pipe).
+- It's not advised to enable threading when building for browsers or with
+  dynamic linking support; there are performance and stability issues.
 
 ## file system
 
@@ -150,9 +165,9 @@ functions.
 - Most stdlib modules with a dependency on external libraries are missing,
   e.g. ``ctypes``, ``readline``, ``sqlite3``, ``ssl``, and more.
 - Shared extension modules are not implemented yet. All extension modules
-  are statically linked into the main binary.
-  The experimental configure option ``--enable-wasm-dynamic-linking`` enables
-  dynamic extensions.
+  are statically linked into the main binary. The experimental configure
+  option ``--enable-wasm-dynamic-linking`` enables dynamic extensions
+  supports. It's currently known to crash in combination with threading.
 - glibc extensions for date and time formatting are not available.
 - ``locales`` module is affected by musl libc issues,
   [bpo-46390](https://bugs.python.org/issue46390).
@@ -167,18 +182,16 @@ functions.
   distutils, multiprocessing, dbm, tests and similar modules
   are not shipped. All other modules are bundled as pre-compiled
   ``pyc`` files.
-- Threading is not supported.
 - In-memory file system (MEMFS) is not persistent and limited.
+- Test modules are disabled by default. Use ``--enable-test-modules`` build
+  test modules like ``_testcapi``.
 
 ## wasm32-emscripten in node
 
-Node builds use ``NODERAWFS``, ``USE_PTHREADS`` and ``PROXY_TO_PTHREAD``
-linker options.
+Node builds use ``NODERAWFS``.
 
-- Node RawFS allows direct access to the host file system.
-- pthread support requires WASM threads and SharedArrayBuffer (bulk memory).
-  The runtime keeps a pool of web workers around. Each web worker uses
-  several file descriptors (eventfd, epoll, pipe).
+- Node RawFS allows direct access to the host file system without need to
+  perform ``FS.mount()`` call.
 
 # Hosting Python WASM builds
 
@@ -205,11 +218,17 @@ AddType application/wasm wasm
 </IfModule>
 ```
 
+# WASI (wasm32-wasi)
+
+WASI builds require [WASI SDK](https://github.com/WebAssembly/wasi-sdk) and
+currently [wasix](https://github.com/singlestore-labs/wasix) for POSIX
+compatibility stubs.
+
 # Detect WebAssembly builds
 
 ## Python code
 
-```# python
+```python
 import os, sys
 
 if sys.platform == "emscripten":
@@ -222,7 +241,36 @@ if os.name == "posix":
     # Windows does not provide os.uname().
     machine = os.uname().machine
     if machine.startswith("wasm"):
-        # WebAssembly (wasm32 or wasm64)
+        # WebAssembly (wasm32, wasm64 in the future)
+```
+
+```python
+>>> import os, sys
+>>> os.uname()
+posix.uname_result(sysname='Emscripten', nodename='emscripten', release='1.0', version='#1', machine='wasm32')
+>>> os.name
+'posix'
+>>> sys.platform
+'emscripten'
+>>> sys._emscripten_info
+sys._emscripten_info(
+    emscripten_version=(3, 1, 8),
+    runtime='Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:99.0) Gecko/20100101 Firefox/99.0',
+    pthreads=False,
+    shared_memory=False
+)
+>>> sys._emscripten_info
+sys._emscripten_info(emscripten_version=(3, 1, 8), runtime='Node.js v14.18.2', pthreads=True, shared_memory=True)
+```
+
+```python
+>>> import os, sys
+>>> os.uname()
+posix.uname_result(sysname='wasi', nodename='(none)', release='0.0.0', version='0.0.0', machine='wasm32')
+>>> os.name
+'posix'
+>>> sys.platform
+'wasi'
 ```
 
 ## C code
@@ -231,7 +279,7 @@ Emscripten SDK and WASI SDK define several built-in macros. You can dump a
 full list of built-ins with ``emcc -dM -E - < /dev/null`` and
 ``/path/to/wasi-sdk/bin/clang -dM -E - < /dev/null``.
 
-```# C
+```C
 #ifdef __EMSCRIPTEN__
     // Python on Emscripten
 #endif

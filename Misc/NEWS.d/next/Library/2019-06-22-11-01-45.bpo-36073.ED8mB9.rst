@@ -1,0 +1,2 @@
+Raise :exc:`~sqlite3.ProgrammingError` instead of segfaulting on recursive
+usage of cursors in :mod:`sqlite3` converters. Patch by Sergey Fedoseev.

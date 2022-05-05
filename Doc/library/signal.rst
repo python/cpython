@@ -266,6 +266,7 @@ The variables defined in the :mod:`signal` module are:
 .. data:: NSIG
 
    One more than the number of the highest signal number.
+   Use :func:`valid_signals` to get valid signal numbers.
 
 
 .. data:: ITIMER_REAL
