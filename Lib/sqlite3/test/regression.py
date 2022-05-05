@@ -431,6 +431,8 @@ class RecursiveUseOfCursors(unittest.TestCase):
     def tearDown(self):
         self.cur.close()
         self.con.close()
+        del self.cur
+        del self.con
 
     def test_recursive_cursor_init(self):
         conv = lambda x: self.cur.__init__(self.con)
