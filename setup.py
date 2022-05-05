@@ -1207,7 +1207,7 @@ class PyBuildExt(build_ext):
             if dbm_args:
                 dbm_order = [arg.split('=')[-1] for arg in dbm_args][-1].split(":")
             else:
-                dbm_order = "ndbm:gdbm:bdb".split(":")
+                dbm_order = "gdbm:ndbm:bdb".split(":")
             dbmext = None
             for cand in dbm_order:
                 if cand == "ndbm":
@@ -1256,6 +1256,7 @@ class PyBuildExt(build_ext):
 
     def detect_sqlite(self):
         sources = [
+            "_sqlite/blob.c",
             "_sqlite/connection.c",
             "_sqlite/cursor.c",
             "_sqlite/microprotocols.c",

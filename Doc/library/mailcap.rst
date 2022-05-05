@@ -3,8 +3,13 @@
 
 .. module:: mailcap
    :synopsis: Mailcap file handling.
+   :deprecated:
 
 **Source code:** :source:`Lib/mailcap.py`
+
+.. deprecated:: 3.11
+   The :mod:`mailcap` module is deprecated. See :pep:`594` for the rationale
+   and the :mod:`mimetypes` module for an alternative.
 
 --------------
 
