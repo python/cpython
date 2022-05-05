@@ -1176,6 +1176,11 @@ Deprecated
 Pending Removal in Python 3.12
 ==============================
 
+The following APIs have been deprecated in earlier Python releases, and are now
+pending removal in Python 3.12.
+
+Python API::
+
 * :class:`pkgutil.ImpImporter`
 * :class:`pkgutil.ImpLoader`
 * :envvar:`PYTHONTHREADDEBUG`
@@ -1202,6 +1207,9 @@ Pending Removal in Python 3.12
 * ``cgi.log()``
 * ``sqlite3.OptimizedUnicode``
 * ``sqlite3.enable_shared_cache``
+
+C API::
+
 * :c:func:`PyUnicode_AS_DATA`
 * :c:func:`PyUnicode_AS_UNICODE`
 * :c:func:`PyUnicode_AsUnicodeAndSize`
@@ -1217,6 +1225,7 @@ Pending Removal in Python 3.12
 * :c:func:`_PyUnicode_AsUnicode`
 * :c:macro:`PyUnicode_WCHAR_KIND`
 * c:type:`PyUnicodeObject`
+* ``PyUnicode_InternImmortal()``
 
 
 Removed
