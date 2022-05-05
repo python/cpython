@@ -1179,7 +1179,7 @@ Pending Removal in Python 3.12
 The following APIs have been deprecated in earlier Python releases, and are now
 pending removal in Python 3.12.
 
-Python API::
+Python API:
 
 * :class:`pkgutil.ImpImporter`
 * :class:`pkgutil.ImpLoader`
@@ -1208,7 +1208,7 @@ Python API::
 * ``sqlite3.OptimizedUnicode``
 * ``sqlite3.enable_shared_cache``
 
-C API::
+C API:
 
 * :c:func:`PyUnicode_AS_DATA`
 * :c:func:`PyUnicode_AS_UNICODE`
