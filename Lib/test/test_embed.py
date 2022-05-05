@@ -1255,15 +1255,16 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             # Because we are specifying 'home', module search paths
             # are fairly static
             expected_paths = [paths[0], stdlib, os.path.join(home, 'DLLs')]
-            # gh-91985 insert a dll build path
-            p = os.path.dirname(self.test_exe)
             try:
-                with open(os.path.join(p, 'pybuilddir.txt'), encoding="utf8") as f:
+                # gh-91985 insert a dll build path
+                p = os.path.dirname(self.test_exe)
+                with open(os.path.join(p, 'pybuilddir.txt'), encoding='utf8') as f:
                     p = os.path.normpath(
                         os.path.join(p, f'{f.read()}\n$'.splitlines()[0])
                     )
                 if p != expected_paths[-1]:
                     expected_paths.insert(-1, p)
+                del p
             except FileNotFoundError:
                 pass
         else:
