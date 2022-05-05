@@ -578,7 +578,7 @@ functions.
    be made in the child process prior to the execution of the subprocess.
 
    .. availability:: POSIX
-   .. versionchanged:: 3.10
+   .. versionchanged:: 3.11
       *setpgid* was added.
 
    If *group* is not ``None``, the setregid() system call will be made in the
