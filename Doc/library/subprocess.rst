@@ -344,7 +344,7 @@ functions.
                  startupinfo=None, creationflags=0, restore_signals=True, \
                  start_new_session=False, pass_fds=(), *, group=None, \
                  extra_groups=None, user=None, umask=-1, \
-                 encoding=None, errors=None, text=None, pipesize=-1,
+                 encoding=None, errors=None, text=None, pipesize=-1, \
                  setpgid=-1)
 
    Execute a child program in a new process.  On POSIX, the class uses
