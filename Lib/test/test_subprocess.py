@@ -1915,14 +1915,14 @@ class POSIXProcessTestCase(BaseTestCase):
 
     @unittest.skipUnless(hasattr(os, 'setpgid') and hasattr(os, 'getpgid'),
                          'no setpgid or getpgid on platform')
-    def test_setpgid_0(self):
+    def test_process_group_0(self):
         # For code coverage of calling setpgid().  We don't care if we get an
         # EPERM error from it depending on the test execution environment, that
         # still indicates that it was called.
         try:
             output = subprocess.check_output(
                     [sys.executable, "-c", "import os; print(os.getpgid(0))"],
-                    setpgid=0)
+                    process_group=0)
         except PermissionError as e:
             if e.errno != errno.EPERM:
                 raise  # EACCES?

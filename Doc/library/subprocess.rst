@@ -345,7 +345,7 @@ functions.
                  start_new_session=False, pass_fds=(), *, group=None, \
                  extra_groups=None, user=None, umask=-1, \
                  encoding=None, errors=None, text=None, pipesize=-1, \
-                 setpgid=-1)
+                 process_group=None)
 
    Execute a child program in a new process.  On POSIX, the class uses
    :meth:`os.execvpe`-like behavior to execute the child program.  On Windows,
@@ -509,7 +509,7 @@ functions.
 
       If you need to modify the environment for the child use the *env*
       parameter rather than doing it in a *preexec_fn*.
-      The *start_new_session* and *setpgid* parameters should take the place of
+      The *start_new_session* and *process_group* parameters should take the place of
       code using *preexec_fn* to call :func:`os.setsid` or :func:`os.setpgid` in the child.
 
    .. versionchanged:: 3.8
@@ -574,12 +574,12 @@ functions.
    .. versionchanged:: 3.2
       *start_new_session* was added.
 
-   If *setpgid* is a non-negative value, the ``setpgid(0, value)`` system call will
+   If *process_group* is a non-negative integer, the ``setpgid(0, value)`` system call will
    be made in the child process prior to the execution of the subprocess.
 
    .. availability:: POSIX
    .. versionchanged:: 3.11
-      *setpgid* was added.
+      *process_group* was added.
 
    If *group* is not ``None``, the setregid() system call will be made in the
    child process prior to the execution of the subprocess. If the provided
