@@ -1792,6 +1792,9 @@ Other constructor:
        datetime.time(4, 23, 1, tzinfo=datetime.timezone(datetime.timedelta(seconds=14400)))
        >>> time.fromisoformat('04:23:01Z')
        datetime.time(4, 23, 1, tzinfo=datetime.timezone.utc)
+       >>> time.fromisoformat('04:23:01+00:00')
+       datetime.time(4, 23, 1, tzinfo=datetime.timezone.utc)
+
 
    .. versionadded:: 3.7
    .. versionchanged:: 3.11
