@@ -237,13 +237,13 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
 
 #define _PyASCIIObject_CAST(op) \
     (assert(PyUnicode_Check(op)), \
-     _Py_reinterpret_cast(PyASCIIObject*, (op)))
+     _Py_CAST(PyASCIIObject*, (op)))
 #define _PyCompactUnicodeObject_CAST(op) \
     (assert(PyUnicode_Check(op)), \
-     _Py_reinterpret_cast(PyCompactUnicodeObject*, (op)))
+     _Py_CAST(PyCompactUnicodeObject*, (op)))
 #define _PyUnicodeObject_CAST(op) \
     (assert(PyUnicode_Check(op)), \
-     _Py_reinterpret_cast(PyUnicodeObject*, (op)))
+     _Py_CAST(PyUnicodeObject*, (op)))
 
 
 /* --- Flexible String Representation Helper Macros (PEP 393) -------------- */
@@ -314,16 +314,15 @@ enum PyUnicode_Kind {
 
 /* Return one of the PyUnicode_*_KIND values defined above. */
 #define PyUnicode_KIND(op) \
-    (assert(PyUnicode_Check(op)), \
-     assert(PyUnicode_IS_READY(op)), \
-     ((PyASCIIObject *)(op))->state.kind)
+    (assert(PyUnicode_IS_READY(op)), \
+     _PyASCIIObject_CAST(op)->state.kind)
 
 /* Return a void pointer to the raw unicode buffer. */
 static inline void* _PyUnicode_COMPACT_DATA(PyObject *op) {
     if (PyUnicode_IS_ASCII(op)) {
-        return (void*)(_PyASCIIObject_CAST(op) + 1);
+        return _Py_STATIC_CAST(void*, (_PyASCIIObject_CAST(op) + 1));
     }
-    return (void*)(_PyCompactUnicodeObject_CAST(op) + 1);
+    return _Py_STATIC_CAST(void*, (_PyCompactUnicodeObject_CAST(op) + 1));
 }
 
 static inline void* _PyUnicode_NONCOMPACT_DATA(PyObject *op) {
@@ -348,9 +347,9 @@ static inline void* PyUnicode_DATA(PyObject *op) {
    No checks are performed, use PyUnicode_KIND() before to ensure
    these will work correctly. */
 
-#define PyUnicode_1BYTE_DATA(op) ((Py_UCS1*)PyUnicode_DATA(op))
-#define PyUnicode_2BYTE_DATA(op) ((Py_UCS2*)PyUnicode_DATA(op))
-#define PyUnicode_4BYTE_DATA(op) ((Py_UCS4*)PyUnicode_DATA(op))
+#define PyUnicode_1BYTE_DATA(op) _Py_STATIC_CAST(Py_UCS1*, PyUnicode_DATA(op))
+#define PyUnicode_2BYTE_DATA(op) _Py_STATIC_CAST(Py_UCS2*, PyUnicode_DATA(op))
+#define PyUnicode_4BYTE_DATA(op) _Py_STATIC_CAST(Py_UCS4*, PyUnicode_DATA(op))
 
 /* Returns the length of the unicode string. The caller has to make sure that
    the string has it's canonical representation set before calling
@@ -373,16 +372,16 @@ static inline void PyUnicode_WRITE(unsigned int kind, void *data,
 {
     if (kind == PyUnicode_1BYTE_KIND) {
         assert(value <= 0xffU);
-        ((Py_UCS1 *)data)[index] = (Py_UCS1)value;
+        _Py_STATIC_CAST(Py_UCS1*, data)[index] = _Py_STATIC_CAST(Py_UCS1, value);
     }
     else if (kind == PyUnicode_2BYTE_KIND) {
         assert(value <= 0xffffU);
-        ((Py_UCS2 *)data)[index] = (Py_UCS2)value;
+        _Py_STATIC_CAST(Py_UCS2*, data)[index] = _Py_STATIC_CAST(Py_UCS2, value);
     }
     else {
         assert(kind == PyUnicode_4BYTE_KIND);
         assert(value <= 0x10ffffU);
-        ((Py_UCS4 *)data)[index] = value;
+        _Py_STATIC_CAST(Py_UCS4*, data)[index] = value;
     }
 }
 #define PyUnicode_WRITE(kind, data, index, value) \
@@ -394,13 +393,13 @@ static inline Py_UCS4 PyUnicode_READ(unsigned int kind,
                                      const void *data, Py_ssize_t index)
 {
     if (kind == PyUnicode_1BYTE_KIND) {
-        return ((const Py_UCS1 *)data)[index];
+        return _Py_STATIC_CAST(const Py_UCS1*, data)[index];
     }
     if (kind == PyUnicode_2BYTE_KIND) {
-        return ((const Py_UCS2 *)data)[index];
+        return _Py_STATIC_CAST(const Py_UCS2*, data)[index];
     }
     assert(kind == PyUnicode_4BYTE_KIND);
-    return ((const Py_UCS4 *)data)[index];
+    return _Py_STATIC_CAST(const Py_UCS4*, data)[index];
 }
 #define PyUnicode_READ(kind, data, index) \
     PyUnicode_READ((unsigned int)(kind), (const void*)(data), (index))
@@ -643,9 +642,9 @@ static inline Py_ssize_t PyUnicode_GET_SIZE(PyObject *op)
 {
     _Py_COMP_DIAG_PUSH
     _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    if (_PyASCIIObject_CAST(op)->wstr == NULL) {
+    if (_PyASCIIObject_CAST(op)->wstr == _Py_NULL) {
         (void)PyUnicode_AsUnicode(op);
-        assert(_PyASCIIObject_CAST(op)->wstr != NULL);
+        assert(_PyASCIIObject_CAST(op)->wstr != _Py_NULL);
     }
     return PyUnicode_WSTR_LENGTH(op);
     _Py_COMP_DIAG_POP
@@ -675,7 +674,7 @@ Py_DEPRECATED(3.3)
 static inline Py_UNICODE* PyUnicode_AS_UNICODE(PyObject *op)
 {
     wchar_t *wstr = _PyASCIIObject_CAST(op)->wstr;
-    if (wstr != NULL) {
+    if (wstr != _Py_NULL) {
         return wstr;
     }
 
@@ -693,7 +692,9 @@ static inline const char* PyUnicode_AS_DATA(PyObject *op)
 {
     _Py_COMP_DIAG_PUSH
     _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    return (const char *)PyUnicode_AS_UNICODE(op);
+    Py_UNICODE *data = PyUnicode_AS_UNICODE(op);
+    // In C++, casting directly PyUnicode* to const char* is not valid
+    return _Py_STATIC_CAST(const char*, _Py_STATIC_CAST(const void*, data));
     _Py_COMP_DIAG_POP
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000

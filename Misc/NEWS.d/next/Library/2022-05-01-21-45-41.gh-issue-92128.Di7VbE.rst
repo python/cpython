@@ -1,0 +1,3 @@
+Add :meth:`~object.__class_getitem__` to :class:`logging.LoggerAdapter` and
+:class:`logging.StreamHandler`, allowing them to be parameterized at runtime.
+Patch by Alex Waygood.

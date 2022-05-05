@@ -1195,6 +1195,7 @@ maybe_freelist_pop(Py_ssize_t size)
 #endif
             _Py_NewReference((PyObject *)op);
             /* END inlined _PyObject_InitVar() */
+            OBJECT_STAT_INC(from_freelist);
             return op;
         }
     }
@@ -1224,6 +1225,7 @@ maybe_freelist_push(PyTupleObject *op)
         op->ob_item[0] = (PyObject *) STATE.free_list[index];
         STATE.free_list[index] = op;
         STATE.numfree[index]++;
+        OBJECT_STAT_INC(to_freelist);
         return 1;
     }
 #endif
