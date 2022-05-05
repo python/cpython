@@ -1224,7 +1224,7 @@ C API::
 * :c:func:`Py_UNICODE_WSTR_LENGTH`
 * :c:func:`_PyUnicode_AsUnicode`
 * :c:macro:`PyUnicode_WCHAR_KIND`
-* c:type:`PyUnicodeObject`
+* :c:type:`PyUnicodeObject`
 * ``PyUnicode_InternImmortal()``
 
 
