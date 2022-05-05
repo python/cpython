@@ -694,7 +694,6 @@ elif not pythonpath:
         if platstdlib_dir:
             if os_name == 'nt' and real_executable_dir and \
                     isfile(joinpath(real_executable_dir, BUILDDIR_TXT)):
-                p = platstdlib_dir
                 try:
                     p = joinpath(
                         real_executable_dir,
