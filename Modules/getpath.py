@@ -603,6 +603,17 @@ if not stdlib_dir:
         stdlib_dir = ''
 
 if not platstdlib_dir:
+    if os_name == 'nt' and real_executable_dir and \
+            isfile(joinpath(real_executable_dir, BUILDDIR_TXT)):
+        try:
+            platstdlib_dir = joinpath(
+                real_executable_dir,
+                readlines(joinpath(real_executable_dir, BUILDDIR_TXT))[0],
+            )
+        except IndexError:
+            platstdlib_dir = real_executable_dir
+
+if not platstdlib_dir:
     if exec_prefix:
         platstdlib_dir = joinpath(exec_prefix, PLATSTDLIB_LANDMARK)
     else:
