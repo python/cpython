@@ -1,0 +1,2 @@
+Improve the :exc:`AttributeError` message when deleting a missing attribute.
+Patch by Géry Ogam.
