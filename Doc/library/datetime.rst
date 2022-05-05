@@ -527,7 +527,7 @@ Other constructors, all class methods:
 .. classmethod:: date.fromisoformat(date_string)
 
    Return a :class:`date` corresponding to a *date_string* given in any valid
-   ISO 8601 format:
+   ISO 8601 format, except ordinal dates (e.g. ``YYYY-DDD``).
 
       >>> from datetime import date
       >>> date.fromisoformat('2019-12-04')
@@ -999,10 +999,8 @@ Other constructors, all class methods:
 
    1. Time zone offsets may have fractional seconds.
    2. The `T` separator may be replaced by any single unicode character.
-   3. You may *not* omit the separator character.
-   4. Fractional seconds may have any number of digits (anything beyond 6 will
-      be truncated).
-   5. Fractional hours and minutes are not supported.
+   3. Ordinal dates are not currently supported.
+   4. Fractional hours and minutes are not supported.
 
    Examples::
 
