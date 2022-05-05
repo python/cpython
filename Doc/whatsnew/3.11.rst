@@ -1225,7 +1225,7 @@ C API:
 * :c:func:`_PyUnicode_AsUnicode`
 * :c:macro:`PyUnicode_WCHAR_KIND`
 * :c:type:`PyUnicodeObject`
-* ``PyUnicode_InternImmortal()``
+* :c:func:`PyUnicode_InternImmortal()`
 
 
 Removed
