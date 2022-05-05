@@ -574,7 +574,7 @@ functions.
    .. versionchanged:: 3.2
       *start_new_session* was added.
 
-   If *setpgid* is a non-negative value, the setpgid(0, value) system call will
+   If *setpgid* is a non-negative value, the ``setpgid(0, value)`` system call will
    be made in the child process prior to the execution of the subprocess.
 
    .. availability:: POSIX
