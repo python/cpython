@@ -23,16 +23,17 @@
 
 #include <stdbool.h>
 
+// Need _PyOpcode_RelativeJump of pycore_opcode.h
+#define NEED_OPCODE_TABLES
+
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
-#include "pycore_compile.h"       // _PyFuture_FromAST()
 #include "pycore_code.h"          // _PyCode_New()
-#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_compile.h"       // _PyFuture_FromAST()
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_opcode.h"        // _PyOpcode_Caches
+#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_symtable.h"      // PySTEntryObject
-
-#define NEED_OPCODE_TABLES
-#include "opcode.h"               // EXTENDED_ARG
 
 
 #define DEFAULT_BLOCK_SIZE 16
@@ -210,13 +211,13 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
     int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {
         case 4:
-            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 24) & 0xFF);
+            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG_QUICK, (oparg >> 24) & 0xFF);
             /* fall through */
         case 3:
-            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 16) & 0xFF);
+            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG_QUICK, (oparg >> 16) & 0xFF);
             /* fall through */
         case 2:
-            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 8) & 0xFF);
+            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG_QUICK, (oparg >> 8) & 0xFF);
             /* fall through */
         case 1:
             *codestr++ = _Py_MAKECODEUNIT(opcode, oparg & 0xFF);
@@ -8253,6 +8254,7 @@ fix_cell_offsets(struct compiler *c, basicblock *entryblock, int *fixedmap)
             struct instr *inst = &b->b_instr[i];
             // This is called before extended args are generated.
             assert(inst->i_opcode != EXTENDED_ARG);
+            assert(inst->i_opcode != EXTENDED_ARG_QUICK);
             int oldoffset = inst->i_oparg;
             switch(inst->i_opcode) {
                 case MAKE_CELL:

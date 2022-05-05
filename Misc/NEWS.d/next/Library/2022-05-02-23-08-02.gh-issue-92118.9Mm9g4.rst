@@ -1,0 +1,1 @@
+Fix a 3.11 regression in :func:`~contextlib.contextmanager`, which caused it to propagate exceptions with incorrect tracebacks.
