@@ -358,6 +358,10 @@ pipes, etc).  Returned from methods like
 
     * - :meth:`transport.get_write_buffer_size()
         <WriteTransport.get_write_buffer_size>`
+      - Return the current size of the output buffer.
+
+    * - :meth:`transport.get_write_buffer_limits()
+        <WriteTransport.get_write_buffer_limits>`
       - Return high and low water marks for write flow control.
 
     * - :meth:`transport.set_write_buffer_limits()
