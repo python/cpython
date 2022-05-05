@@ -796,7 +796,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     int p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite;
     int errpipe_read, errpipe_write, close_fds, restore_signals;
     int call_setsid;
-    pid_t pgid_to_set;
+    pid_t pgid_to_set = -1;
     int call_setgid = 0, call_setgroups = 0, call_setuid = 0;
     uid_t uid;
     gid_t gid, *groups = NULL;
