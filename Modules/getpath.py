@@ -612,9 +612,7 @@ if not platstdlib_dir:
             )
         except IndexError:
             platstdlib_dir = real_executable_dir
-
-if not platstdlib_dir:
-    if exec_prefix:
+    elif exec_prefix:
         platstdlib_dir = joinpath(exec_prefix, PLATSTDLIB_LANDMARK)
     else:
         platstdlib_dir = ''
