@@ -2165,6 +2165,12 @@ gc_fini_untrack(PyGC_Head *list)
     for (gc = GC_NEXT(list); gc != list; gc = GC_NEXT(list)) {
         PyObject *op = FROM_GC(gc);
         _PyObject_GC_UNTRACK(op);
+        // gh-92036: If a deallocator function expect the object to be tracked
+        // by the GC (ex: func_dealloc()), it can crash if called on an object
+        // which is no longer tracked by the GC. Leak one strong reference on
+        // purpose so the object is never deleted and its deallocator is not
+        // called.
+        Py_INCREF(op);
     }
 }
 
