@@ -5319,9 +5319,6 @@ _sanitize_isoformat_str(PyObject *dtstr)
     return str_out;
 }
 
-#define MODE_STANDARD 0
-#define MODE_ISOCALENDAR 1
-#define MODE_AMBIGUOUS 2
 
 static Py_ssize_t
 _find_isoformat_datetime_separator(const char *dtstr, Py_ssize_t len) {
@@ -5357,16 +5354,18 @@ _find_isoformat_datetime_separator(const char *dtstr, Py_ssize_t len) {
 
     assert(len > 7);
 
-    *mode = MODE_STANDARD;
     if (dtstr[4] == date_separator) {
+        // YYYY-???
+
         if (dtstr[5] == week_indicator) {
-            *mode = MODE_ISOCALENDAR;
+            // YYYY-W??
+
             if (len < 8) {
                 return -1;
             }
 
-            // YYYY-Www-D (10) or YYYY-Www-HH (8)
             if (len > 8 && dtstr[8] == date_separator) {
+                // YYYY-Www-D (10) or YYYY-Www-HH (8)
                 if (len == 9) { return -1; }
                 if (len > 10 && is_digit(dtstr[10])) {
                     // This is as far as we'll try to go to resolve the
@@ -5377,7 +5376,6 @@ _find_isoformat_datetime_separator(const char *dtstr, Py_ssize_t len) {
                     // likely that someone will use a hyphen as a separator
                     // than a number, but at this point it's really best effort
                     // because this is an extension of the spec anyway.
-                    *mode = *mode | MODE_AMBIGUOUS;
                     return 8;
                 }
 
@@ -5391,8 +5389,8 @@ _find_isoformat_datetime_separator(const char *dtstr, Py_ssize_t len) {
             return 10;
         }
     } else {
+        // YYYY???
         if (dtstr[4] == week_indicator) {
-            *mode = MODE_ISOCALENDAR;
             // YYYYWww (7) or YYYYWwwd (8)
             size_t idx = 7;
             for (; idx < len; ++idx) {
@@ -5407,7 +5405,7 @@ _find_isoformat_datetime_separator(const char *dtstr, Py_ssize_t len) {
             }
 
             if (idx % 2 == 0) {
-                // If the index of the last number is even, it's YYYYWwwd
+                // If the index of the last number is even, it's YYYYWww
                 return 7;
             } else {
                 return 8;
