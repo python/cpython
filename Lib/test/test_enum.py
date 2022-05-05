@@ -938,6 +938,50 @@ class TestSpecial(unittest.TestCase):
             raise Theory
         self.assertEqual(Theory.__qualname__, 'spanish_inquisition')
 
+    def test_enum_of_types(self):
+        """Support using Enum to refer to types deliberately."""
+        class MyTypes(Enum):
+            i = int
+            f = float
+            s = str
+        self.assertEqual(MyTypes.i.value, int)
+        self.assertEqual(MyTypes.f.value, float)
+        self.assertEqual(MyTypes.s.value, str)
+        class Foo:
+            pass
+        class Bar:
+            pass
+        class MyTypes2(Enum):
+            a = Foo
+            b = Bar
+        self.assertEqual(MyTypes2.a.value, Foo)
+        self.assertEqual(MyTypes2.b.value, Bar)
+        class SpamEnumNotInner:
+            pass
+        class SpamEnum(Enum):
+            spam = SpamEnumNotInner
+        self.assertEqual(SpamEnum.spam.value, SpamEnumNotInner)
+
+    def test_nested_classes_in_enum(self):
+        """Support locally-defined nested classes."""
+        class Outer(Enum):
+            a = 1
+            b = 2
+            class Inner(Enum):
+                foo = 10
+                bar = 11
+        self.assertTrue(isinstance(Outer.Inner, type))
+        self.assertEqual(Outer.a.value, 1)
+        self.assertEqual(Outer.Inner.foo.value, 10)
+        self.assertEqual(
+            list(Outer.Inner),
+            [Outer.Inner.foo, Outer.Inner.bar],
+            )
+        self.assertEqual(
+            list(Outer),
+            [Outer.a, Outer.b],
+            )
+
     def test_enum_with_value_name(self):
         class Huh(Enum):
             name = 1

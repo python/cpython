@@ -52,6 +52,10 @@ def _is_sunder(name):
             name[-2:-1] != '_'
             )
 
+def _is_internal_class(cls_name, obj):
+    qualname = getattr(obj, '__qualname__', '')
+    return not _is_descriptor(obj) and re.search(r"\.?%s\.\w+$" % cls_name, qualname)
+
 def _is_private(cls_name, name):
     # do not use `re` as `re` imports `enum`
     pattern = '_%s__' % (cls_name, )
@@ -325,8 +329,11 @@ class _EnumDict(dict):
 
         Single underscore (sunder) names are reserved.
         """
-        if _is_private(self._cls_name, key):
+        if _is_internal_class(slf._cls_name, value):
             # do nothing, name will be a normal attribute
+            pass
+        elif _is_private(self._cls_name, key):
+            # also do nothing, name will be a normal attribute
             pass
         elif _is_sunder(key):
             if key not in (
