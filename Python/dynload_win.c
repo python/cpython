@@ -3,7 +3,6 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_add_relfile()
-#include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #ifdef HAVE_DIRECT_H
