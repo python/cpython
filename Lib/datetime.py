@@ -262,8 +262,8 @@ def _wrap_strftime(object, format, timetuple):
     return _time.strftime(newformat, timetuple)
 
 # Helpers for parsing the result of isoformat()
-def _find_isoformat_separator(dtstr):
-    # See the comment in _datetimemodule.c:_findisoformat_separator
+def _find_isoformat_datetime_separator(dtstr):
+    # See the comment in _datetimemodule.c:_find_isoformat_datetime_separator
     len_dtstr = len(dtstr)
     if len_dtstr == 7:
         return 7
@@ -321,7 +321,7 @@ def _find_isoformat_separator(dtstr):
 
 def _parse_isoformat_date(dtstr):
     # It is assumed that this is an ASCII-only string of lengths 7, 8 or 10,
-    # see the comment on Modules/_datetimemodule.c:_find_isoformat_separator
+    # see the comment on Modules/_datetimemodule.c:_find_isoformat_datetime_separator
     assert len(dtstr) in (7, 8, 10)
     year = int(dtstr[0:4])
     has_sep = dtstr[4] == '-'
@@ -1832,7 +1832,7 @@ class datetime(date):
 
         # Split this at the separator
         try:
-            separator_location = _find_isoformat_separator(date_string)
+            separator_location = _find_isoformat_datetime_separator(date_string)
             dstr = date_string[0:separator_location]
             tstr = date_string[(separator_location+1):]
 
@@ -2628,7 +2628,7 @@ else:
          _ord2ymd, _time, _time_class, _tzinfo_class, _wrap_strftime, _ymd2ord,
          _divide_and_round, _parse_isoformat_date, _parse_isoformat_time,
          _parse_hh_mm_ss_ff, _IsoCalendarDate, _isoweek_to_gregorian,
-         _find_isoformat_separator, _FRACTION_CORRECTION)
+         _find_isoformat_datetime_separator, _FRACTION_CORRECTION)
     # XXX Since import * above excludes names that start with _,
     # docstring does not get overwritten. In the future, it may be
     # appropriate to maintain a single module level docstring and

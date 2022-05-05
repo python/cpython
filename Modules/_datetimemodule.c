@@ -5324,7 +5324,7 @@ _sanitize_isoformat_str(PyObject *dtstr)
 #define MODE_AMBIGUOUS 2
 
 static Py_ssize_t
-_find_isoformat_separator(const char *dtstr, Py_ssize_t len, unsigned char* mode) {
+_find_isoformat_datetime_separator(const char *dtstr, Py_ssize_t len) {
     // The valid date formats can all be distinguished by characters 4 and 5
     // and further narrowed down by character
     // which tells us where to look for the separator character.
@@ -5453,9 +5453,8 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
         }
     }
 
-    unsigned char mode;
-    const Py_ssize_t separator_location = _find_isoformat_separator(
-            dt_ptr, len, &mode);
+    const Py_ssize_t separator_location = _find_isoformat_datetime_separator(
+            dt_ptr, len);
 
 
     const char *p = dt_ptr;
