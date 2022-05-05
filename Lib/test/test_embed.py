@@ -1258,7 +1258,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             # gh-91985 Replace the DLLs path according to pybuilddir.txt
             p = os.path.dirname(self.test_exe)
             try:
-                with open(os.path.join(p, 'pybuilddir.txt'), encoding="utf8") as f:
+                with open(os.path.join(p, 'pybuilddir.txt'), encoding='utf8') as f:
                     expected_paths[-1] = os.path.normpath(
                         os.path.join(p, f'{f.read()}\n$'.splitlines()[0])
                     )
@@ -1301,15 +1301,14 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             self.fail(f"Unable to find home in {paths!r}")
 
         pyddir = os.path.dirname(
-            import_helper.import_module('_testinternalcapi').__file__
-        )
+            import_helper.import_module('_testinternalcapi').__file__)
         with self.tmpdir_with_python() as tmpdir:
             config = {
                 'home': home,
                 'pythonpath_env': pyddir,
                 'module_search_paths': [
                     os.path.join(tmpdir, os.path.basename(paths[0])),  # zip
-                    os.path.join(home, "Lib"),
+                    os.path.join(home, 'Lib'),
                     os.path.join(home, 'DLLs'),
                 ],
             }
