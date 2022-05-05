@@ -766,13 +766,14 @@ class TestBaseExitStack:
 
         self.assertIsInstance(exc, ValueError)
         ve_frames = traceback.extract_tb(exc.__traceback__)
+        expected = \
+            [('test_exit_exception_traceback', 'with self.exit_stack() as stack:')] + \
+            self.callback_error_internal_frames + \
+            [('_exit_wrapper', 'callback(*args, **kwds)'),
+             ('raise_exc', 'raise exc')]
+
         self.assertEqual(
-            [(f.name, f.line) for f in ve_frames],
-            [('test_exit_exception_traceback', 'with self.exit_stack() as stack:'),
-             ('__exit__', 'raise exc_details[1]'),
-             ('__exit__', 'if cb(*exc_details):'),
-             ('_exit_wrapper', 'callback(*args, **kwds)'),
-             ('raise_exc', 'raise exc')])
+            [(f.name, f.line) for f in ve_frames], expected)
 
         self.assertIsInstance(exc.__context__, ZeroDivisionError)
         zde_frames = traceback.extract_tb(exc.__context__.__traceback__)
@@ -1048,6 +1049,10 @@ class TestBaseExitStack:
 
 class TestExitStack(TestBaseExitStack, unittest.TestCase):
     exit_stack = ExitStack
+    callback_error_internal_frames = [
+        ('__exit__', 'raise exc_details[1]'),
+        ('__exit__', 'if cb(*exc_details):'),
+    ]
 
 
 class TestRedirectStream:
