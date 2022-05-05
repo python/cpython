@@ -182,7 +182,7 @@ compiled (bytecode) files by adding .opt-2 before the .pyc extension.
 .TP
 .B \-P
 Don't automatically prepend a potentially unsafe path to \fBsys.path\fP such
-as the current directory, script directory or empty string. See also the
+as the current directory, the script's directory or an empty string. See also the
 \fBPYTHONSAFEPATH\fP environment variable.
 .TP
 .B \-q
@@ -408,8 +408,8 @@ interpreter.
 .SH ENVIRONMENT VARIABLES
 .IP PYTHONSAFEPATH
 If this is set to a non-empty string, don't automatically prepend a potentially
-unsafe path to \fBsys.path\fP such as the current directory, script directory
-or empty string. See also the \fB\-P\fP option.
+unsafe path to \fBsys.path\fP such as the current directory, the script's
+directory or an empty string. See also the \fB\-P\fP option.
 .IP PYTHONHOME
 Change the location of the standard Python libraries.  By default, the
 libraries are searched in ${prefix}/lib/python<version> and

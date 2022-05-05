@@ -311,10 +311,10 @@ Miscellaneous options
 
    * ``python -m module`` command line: Don't prepend the current working
      directory.
-   * ``python script.py`` command line: Don't prepend the script path.
+   * ``python script.py`` command line: Don't prepend the script's directory.
      If it's a symbolic link, resolve symbolic links.
    * ``python -c code`` and ``python`` (REPL) command lines: Don't prepend an
-     empty string.
+     empty string, which means the current working directory.
 
    See also the :envvar:`PYTHONSAFEPATH` environment variable, and :option:`-E`
    and :option:`-I` (isolated) options.

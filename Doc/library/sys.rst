@@ -1148,10 +1148,10 @@ always available.
 
    * ``python -m module`` command line: prepend the current working
      directory.
-   * ``python script.py`` command line: prepend the script path.
+   * ``python script.py`` command line: prepend the script's directory.
      If it's a symbolic link, resolve symbolic links.
    * ``python -c code`` and ``python`` (REPL) command lines: prepend an empty
-     string.
+     string, which means the current working directory.
 
    To not prepend this potentially unsafe path, use the :option:`-P` command
    line option or the :envvar:`PYTHONSAFEPATH` environment variable?

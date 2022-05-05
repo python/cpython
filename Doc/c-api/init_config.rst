@@ -550,9 +550,10 @@ PyConfig
 
       * If :c:member:`argv[0] <PyConfig.argv>` is equal to ``L"-m"``
         (``python -m module``), prepend the current working directory.
-      * If running a script (``python script.py``), prepend the script path.
-        If it's a symbolic link, resolve symbolic links.
-      * Otherwise (``python -c code`` and ``python``), prepend an empty string.
+      * If running a script (``python script.py``), prepend the script's
+        directory.  If it's a symbolic link, resolve symbolic links.
+      * Otherwise (``python -c code`` and ``python``), prepend an empty string,
+        which means the current working directory.
 
       Set to 1 by the :option:`-P` command line option and the
       :envvar:`PYTHONSAFEPATH` environment variable.
