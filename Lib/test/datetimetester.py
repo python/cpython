@@ -7,6 +7,7 @@ import itertools
 import bisect
 import copy
 import decimal
+import functools
 import sys
 import os
 import pickle
@@ -1840,6 +1841,41 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
                 self.assertEqual(dt, dt_rt)
 
+    def test_fromisoformat_date_examples(self):
+        examples = [
+            ('00010101', self.theclass(1, 1, 1)),
+            ('20000101', self.theclass(2000, 1, 1)),
+            ('20250102', self.theclass(2025, 1, 2)),
+            ('99991231', self.theclass(9999, 12, 31)),
+            ('0001-01-01', self.theclass(1, 1, 1)),
+            ('2000-01-01', self.theclass(2000, 1, 1)),
+            ('2025-01-02', self.theclass(2025, 1, 2)),
+            ('9999-12-31', self.theclass(9999, 12, 31)),
+            ('2025W01', self.theclass(2024, 12, 30)),
+            ('2025-W01', self.theclass(2024, 12, 30)),
+            ('2025W014', self.theclass(2025, 1, 2)),
+            ('2025-W01-4', self.theclass(2025, 1, 2)),
+            ('2026W01', self.theclass(2025, 12, 29)),
+            ('2026-W01', self.theclass(2025, 12, 29)),
+            ('2026W013', self.theclass(2025, 12, 31)),
+            ('2026-W01-3', self.theclass(2025, 12, 31)),
+            ('2022W52', self.theclass(2022, 12, 26)),
+            ('2022-W52', self.theclass(2022, 12, 26)),
+            ('2022W527', self.theclass(2023, 1, 1)),
+            ('2022-W52-7', self.theclass(2023, 1, 1)),
+            ('2015W534', self.theclass(2015, 12, 31)),      # Has week 53
+            ('2015-W53-4', self.theclass(2015, 12, 31)),    # Has week 53
+            ('2015-W53-5', self.theclass(2016, 1, 1)),
+            ('2020W531', self.theclass(2020, 12, 28)),      # Leap year
+            ('2020-W53-1', self.theclass(2020, 12, 28)),    # Leap year
+            ('2020-W53-6', self.theclass(2021, 1, 2)),
+        ]
+
+        for input_str, expected in examples:
+            with self.subTest(input_str=input_str):
+                actual = self.theclass.fromisoformat(input_str)
+                self.assertEqual(actual, expected)
+
     def test_fromisoformat_subclass(self):
         class DateSubclass(self.theclass):
             pass
@@ -1862,7 +1898,8 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '2009-12-0a',       # Invalid character in day
             '2009-01-32',       # Invalid day
             '2009-02-29',       # Invalid leap day
-            '20090228',         # Valid ISO8601 output not from isoformat()
+            '2019-W53-1',       # No week 53 in 2019
+            '2020-W54-1',       # No week 54
             '2009\ud80002\ud80028',     # Separators are surrogate codepoints
         ]
 
@@ -3003,6 +3040,140 @@ class TestDateTime(TestDate):
                         dt_rt = self.theclass.fromisoformat(dtstr)
                         self.assertEqual(dt, dt_rt)
 
+    def test_fromisoformat_datetime_examples(self):
+        UTC = timezone.utc
+        BST = timezone(timedelta(hours=1), 'BST')
+        EST = timezone(timedelta(hours=-5), 'EST')
+        EDT = timezone(timedelta(hours=-4), 'EDT')
+        examples = [
+            ('2025-01-02', self.theclass(2025, 1, 2, 0, 0)),
+            ('2025-01-02T03', self.theclass(2025, 1, 2, 3, 0)),
+            ('2025-01-02T03:04', self.theclass(2025, 1, 2, 3, 4)),
+            ('2025-01-02T0304', self.theclass(2025, 1, 2, 3, 4)),
+            ('2025-01-02T03:04:05', self.theclass(2025, 1, 2, 3, 4, 5)),
+            ('2025-01-02T030405', self.theclass(2025, 1, 2, 3, 4, 5)),
+            ('2025-01-02T03:04:05.6',
+             self.theclass(2025, 1, 2, 3, 4, 5, 600000)),
+            ('2025-01-02T03:04:05,6',
+             self.theclass(2025, 1, 2, 3, 4, 5, 600000)),
+            ('2025-01-02T03:04:05.678',
+             self.theclass(2025, 1, 2, 3, 4, 5, 678000)),
+            ('2025-01-02T03:04:05.678901',
+             self.theclass(2025, 1, 2, 3, 4, 5, 678901)),
+            ('2025-01-02T03:04:05,678901',
+             self.theclass(2025, 1, 2, 3, 4, 5, 678901)),
+            ('2025-01-02T030405.678901',
+             self.theclass(2025, 1, 2, 3, 4, 5, 678901)),
+            ('2025-01-02T030405,678901',
+             self.theclass(2025, 1, 2, 3, 4, 5, 678901)),
+            ('2025-01-02T03:04:05.6789010',
+             self.theclass(2025, 1, 2, 3, 4, 5, 678901)),
+            ('2009-04-19T03:15:45.2345',
+             self.theclass(2009, 4, 19, 3, 15, 45, 234500)),
+            ('2009-04-19T03:15:45.1234567',
+             self.theclass(2009, 4, 19, 3, 15, 45, 123456)),
+            ('2025-01-02T03:04:05,678',
+             self.theclass(2025, 1, 2, 3, 4, 5, 678000)),
+            ('20250102', self.theclass(2025, 1, 2, 0, 0)),
+            ('20250102T03', self.theclass(2025, 1, 2, 3, 0)),
+            ('20250102T03:04', self.theclass(2025, 1, 2, 3, 4)),
+            ('20250102T03:04:05', self.theclass(2025, 1, 2, 3, 4, 5)),
+            ('20250102T030405', self.theclass(2025, 1, 2, 3, 4, 5)),
+            ('20250102T03:04:05.6',
+             self.theclass(2025, 1, 2, 3, 4, 5, 600000)),
+            ('20250102T03:04:05,6',
+             self.theclass(2025, 1, 2, 3, 4, 5, 600000)),
+            ('20250102T03:04:05.678',
+             self.theclass(2025, 1, 2, 3, 4, 5, 678000)),
+            ('20250102T03:04:05,678',
+             self.theclass(2025, 1, 2, 3, 4, 5, 678000)),
+            ('20250102T03:04:05.678901',
+             self.theclass(2025, 1, 2, 3, 4, 5, 678901)),
+            ('20250102T030405.678901',
+             self.theclass(2025, 1, 2, 3, 4, 5, 678901)),
+            ('20250102T030405,678901',
+             self.theclass(2025, 1, 2, 3, 4, 5, 678901)),
+            ('20250102T030405.6789010',
+             self.theclass(2025, 1, 2, 3, 4, 5, 678901)),
+            ('2022W01', self.theclass(2022, 1, 3)),
+            ('2022W52520', self.theclass(2022, 12, 26, 20, 0)),
+            ('2022W527520', self.theclass(2023, 1, 1, 20, 0)),
+            ('2026W01516', self.theclass(2025, 12, 29, 16, 0)),
+            ('2026W013516', self.theclass(2025, 12, 31, 16, 0)),
+            ('2025W01503', self.theclass(2024, 12, 30, 3, 0)),
+            ('2025W014503', self.theclass(2025, 1, 2, 3, 0)),
+            ('2025W01512', self.theclass(2024, 12, 30, 12, 0)),
+            ('2025W014512', self.theclass(2025, 1, 2, 12, 0)),
+            ('2025W014T121431', self.theclass(2025, 1, 2, 12, 14, 31)),
+            ('2026W013T162100', self.theclass(2025, 12, 31, 16, 21)),
+            ('2026W013 162100', self.theclass(2025, 12, 31, 16, 21)),
+            ('2022W527T202159', self.theclass(2023, 1, 1, 20, 21, 59)),
+            ('2022W527 202159', self.theclass(2023, 1, 1, 20, 21, 59)),
+            ('2025W014 121431', self.theclass(2025, 1, 2, 12, 14, 31)),
+            ('2025W014T030405', self.theclass(2025, 1, 2, 3, 4, 5)),
+            ('2025W014 030405', self.theclass(2025, 1, 2, 3, 4, 5)),
+            ('2020-W53-6T03:04:05', self.theclass(2021, 1, 2, 3, 4, 5)),
+            ('2020W537 03:04:05', self.theclass(2021, 1, 3, 3, 4, 5)),
+            ('2025-W01-4T03:04:05', self.theclass(2025, 1, 2, 3, 4, 5)),
+            ('2025-W01-4T03:04:05.678901',
+             self.theclass(2025, 1, 2, 3, 4, 5, 678901)),
+            ('2025-W01-4T12:14:31', self.theclass(2025, 1, 2, 12, 14, 31)),
+            ('2025-W01-4T12:14:31.012345',
+             self.theclass(2025, 1, 2, 12, 14, 31, 12345)),
+            ('2026-W01-3T16:21:00', self.theclass(2025, 12, 31, 16, 21)),
+            ('2026-W01-3T16:21:00.000000', self.theclass(2025, 12, 31, 16, 21)),
+            ('2022-W52-7T20:21:59',
+             self.theclass(2023, 1, 1, 20, 21, 59)),
+            ('2022-W52-7T20:21:59.999999',
+             self.theclass(2023, 1, 1, 20, 21, 59, 999999)),
+            ('2025-W01003+00',
+             self.theclass(2024, 12, 30, 3, 0, tzinfo=UTC)),
+            ('2025-01-02T03:04:05+00',
+             self.theclass(2025, 1, 2, 3, 4, 5, tzinfo=UTC)),
+            ('2025-01-02T03:04:05Z',
+             self.theclass(2025, 1, 2, 3, 4, 5, tzinfo=UTC)),
+            ('2025-01-02003:04:05,6+00:00:00.00',
+             self.theclass(2025, 1, 2, 3, 4, 5, 600000, tzinfo=UTC)),
+            ('2000-01-01T00+21',
+             self.theclass(2000, 1, 1, 0, 0, tzinfo=timezone(timedelta(hours=21)))),
+            ('2025-01-02T03:05:06+0300',
+             self.theclass(2025, 1, 2, 3, 5, 6,
+                           tzinfo=timezone(timedelta(hours=3)))),
+            ('2025-01-02T03:05:06-0300',
+             self.theclass(2025, 1, 2, 3, 5, 6,
+                           tzinfo=timezone(timedelta(hours=-3)))),
+            ('2025-01-02T03:04:05+0000',
+             self.theclass(2025, 1, 2, 3, 4, 5, tzinfo=UTC)),
+            ('2025-01-02T03:05:06+03',
+             self.theclass(2025, 1, 2, 3, 5, 6,
+                           tzinfo=timezone(timedelta(hours=3)))),
+            ('2025-01-02T03:05:06-03',
+             self.theclass(2025, 1, 2, 3, 5, 6,
+                           tzinfo=timezone(timedelta(hours=-3)))),
+            ('2020-01-01T03:05:07.123457-05:00',
+             self.theclass(2020, 1, 1, 3, 5, 7, 123457, tzinfo=EST)),
+            ('2020-01-01T03:05:07.123457-0500',
+             self.theclass(2020, 1, 1, 3, 5, 7, 123457, tzinfo=EST)),
+            ('2020-06-01T04:05:06.111111-04:00',
+             self.theclass(2020, 6, 1, 4, 5, 6, 111111, tzinfo=EDT)),
+            ('2020-06-01T04:05:06.111111-0400',
+             self.theclass(2020, 6, 1, 4, 5, 6, 111111, tzinfo=EDT)),
+            ('2021-10-31T01:30:00.000000+01:00',
+             self.theclass(2021, 10, 31, 1, 30, tzinfo=BST)),
+            ('2021-10-31T01:30:00.000000+0100',
+             self.theclass(2021, 10, 31, 1, 30, tzinfo=BST)),
+            ('2025-01-02T03:04:05,6+000000.00',
+             self.theclass(2025, 1, 2, 3, 4, 5, 600000, tzinfo=UTC)),
+            ('2025-01-02T03:04:05,678+00:00:10',
+             self.theclass(2025, 1, 2, 3, 4, 5, 678000,
+                           tzinfo=timezone(timedelta(seconds=10)))),
+        ]
+
+        for input_str, expected in examples:
+            with self.subTest(input_str=input_str):
+                actual = self.theclass.fromisoformat(input_str)
+                self.assertEqual(actual, expected)
+
     def test_fromisoformat_fails_datetime(self):
         # Test that fromisoformat() fails on invalid values
         bad_strs = [
@@ -3016,8 +3187,6 @@ class TestDateTime(TestDate):
             '2009-04-19T03;15:45',          # Bad first time separator
             '2009-04-19T03:15;45',          # Bad second time separator
             '2009-04-19T03:15:4500:00',     # Bad time zone separator
-            '2009-04-19T03:15:45.2345',     # Too many digits for milliseconds
-            '2009-04-19T03:15:45.1234567',  # Too many digits for microseconds
             '2009-04-19T03:15:45.123456+24:30',    # Invalid time zone offset
             '2009-04-19T03:15:45.123456-24:30',    # Invalid negative offset
             '2009-04-10ᛇᛇᛇᛇᛇ12:15',         # Too many unicode separators
@@ -3962,6 +4131,76 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
                         t_rt = self.theclass.fromisoformat(tstr)
                         self.assertEqual(t, t_rt)
 
+    def test_fromisoformat_fractions(self):
+        strs = [
+            ('12:30:45.1', (12, 30, 45, 100000)),
+            ('12:30:45.12', (12, 30, 45, 120000)),
+            ('12:30:45.123', (12, 30, 45, 123000)),
+            ('12:30:45.1234', (12, 30, 45, 123400)),
+            ('12:30:45.12345', (12, 30, 45, 123450)),
+            ('12:30:45.123456', (12, 30, 45, 123456)),
+            ('12:30:45.1234567', (12, 30, 45, 123456)),
+            ('12:30:45.12345678', (12, 30, 45, 123456)),
+        ]
+
+        for time_str, time_comps in strs:
+            expected = self.theclass(*time_comps)
+            actual = self.theclass.fromisoformat(time_str)
+
+            self.assertEqual(actual, expected)
+
+    def test_fromisoformat_time_examples(self):
+        examples = [
+            ('0000', self.theclass(0, 0)),
+            ('00:00', self.theclass(0, 0)),
+            ('000000', self.theclass(0, 0)),
+            ('00:00:00', self.theclass(0, 0)),
+            ('000000.0', self.theclass(0, 0)),
+            ('00:00:00.0', self.theclass(0, 0)),
+            ('000000.000', self.theclass(0, 0)),
+            ('00:00:00.000', self.theclass(0, 0)),
+            ('000000.000000', self.theclass(0, 0)),
+            ('00:00:00.000000', self.theclass(0, 0)),
+            ('1200', self.theclass(12, 0)),
+            ('12:00', self.theclass(12, 0)),
+            ('120000', self.theclass(12, 0)),
+            ('12:00:00', self.theclass(12, 0)),
+            ('120000.0', self.theclass(12, 0)),
+            ('12:00:00.0', self.theclass(12, 0)),
+            ('120000.000', self.theclass(12, 0)),
+            ('12:00:00.000', self.theclass(12, 0)),
+            ('120000.000000', self.theclass(12, 0)),
+            ('12:00:00.000000', self.theclass(12, 0)),
+            ('2359', self.theclass(23, 59)),
+            ('23:59', self.theclass(23, 59)),
+            ('235959', self.theclass(23, 59, 59)),
+            ('23:59:59', self.theclass(23, 59, 59)),
+            ('235959.9', self.theclass(23, 59, 59, 900000)),
+            ('23:59:59.9', self.theclass(23, 59, 59, 900000)),
+            ('235959.999', self.theclass(23, 59, 59, 999000)),
+            ('23:59:59.999', self.theclass(23, 59, 59, 999000)),
+            ('235959.999999', self.theclass(23, 59, 59, 999999)),
+            ('23:59:59.999999', self.theclass(23, 59, 59, 999999)),
+            ('00:00:00Z', self.theclass(0, 0, tzinfo=timezone.utc)),
+            ('12:00:00+0000', self.theclass(12, 0, tzinfo=timezone.utc)),
+            ('12:00:00+00:00', self.theclass(12, 0, tzinfo=timezone.utc)),
+            ('00:00:00+05',
+             self.theclass(0, 0, tzinfo=timezone(timedelta(hours=5)))),
+            ('00:00:00+05:30',
+             self.theclass(0, 0, tzinfo=timezone(timedelta(hours=5, minutes=30)))),
+            ('12:00:00-05:00',
+             self.theclass(12, 0, tzinfo=timezone(timedelta(hours=-5)))),
+            ('12:00:00-0500',
+             self.theclass(12, 0, tzinfo=timezone(timedelta(hours=-5)))),
+            ('00:00:00,000-23:59:59.999999',
+             self.theclass(0, 0, tzinfo=timezone(-timedelta(hours=23, minutes=59, seconds=59, microseconds=999999)))),
+        ]
+
+        for input_str, expected in examples:
+            with self.subTest(input_str=input_str):
+                actual = self.theclass.fromisoformat(input_str)
+                self.assertEqual(actual, expected)
+
     def test_fromisoformat_fails(self):
         bad_strs = [
             '',                         # Empty string
@@ -3975,15 +4214,17 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '1a:30:45.334034',          # Invalid character in hours
             '12:a0:45.334034',          # Invalid character in minutes
             '12:30:a5.334034',          # Invalid character in seconds
-            '12:30:45.1234',            # Too many digits for milliseconds
-            '12:30:45.1234567',         # Too many digits for microseconds
             '12:30:45.123456+24:30',    # Invalid time zone offset
             '12:30:45.123456-24:30',    # Invalid negative offset
             '12：30：45',                 # Uses full-width unicode colons
+            '12:30:45.123456a',         # Non-numeric data after 6 components
+            '12:30:45.123456789a',      # Non-numeric data after 9 components
             '12:30:45․123456',          # Uses \u2024 in place of decimal point
             '12:30:45a',                # Extra at tend of basic time
             '12:30:45.123a',            # Extra at end of millisecond time
             '12:30:45.123456a',         # Extra at end of microsecond time
+            '12:30:45.123456-',         # Extra at end of microsecond time
+            '12:30:45.123456+',         # Extra at end of microsecond time
             '12:30:45.123456+12:00:30a',    # Extra at end of full time
         ]
 
