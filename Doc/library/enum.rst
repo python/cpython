@@ -802,13 +802,13 @@ Utilities and Decorators
 
 .. decorator:: member
 
-   A decorator for use in enums: it's target will become a member.
+   A decorator for use in enums: its target will become a member.
 
    .. versionadded:: 3.11
 
 .. decorator:: nonmember
 
-   A decorator for use in enums: it's target will not become a member.
+   A decorator for use in enums: its target will not become a member.
 
    .. versionadded:: 3.11
 
