@@ -1,0 +1,2 @@
+Deprecate :class:`typing.Text` (removal of the class is currently not
+planned). Patch by Alex Waygood.
