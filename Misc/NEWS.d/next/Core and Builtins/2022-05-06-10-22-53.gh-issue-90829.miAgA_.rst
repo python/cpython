@@ -1,0 +1,2 @@
+Changing the error message -  "ValueError: min() arg is an empty sequence"   to   "ValueError: should have at least 1 element as an argument but, there is no argument and it is an empty sequence".
+- This can make the error message more comprehendible.
