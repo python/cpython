@@ -1977,8 +1977,8 @@ Other concrete types
    .. versionadded:: 3.5.2
 
    .. deprecated:: 3.11
-      Python 2 is no longer supported and most type checkers no longer
-      support type checking Python 2 code either. Users should now use
+      Python 2 is no longer supported, and most type checkers also no longer
+      support type checking Python 2 code. Users should now use
       :class:`str` instead of ``Text`` wherever possible.
 
 Abstract Base Classes
