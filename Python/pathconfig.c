@@ -73,6 +73,7 @@ _PyPathConfig_ClearGlobal(void)
     CLEAR(calculated_module_search_path);
     CLEAR(program_name);
     CLEAR(home);
+    _Py_path_config._is_python_build = 0;
 
 #undef CLEAR
 
