@@ -1772,7 +1772,7 @@ min_max(PyObject *args, PyObject *kwds, int op)
             maxitem = defaultval;
         } else {
             PyErr_Format(PyExc_ValueError,
-                         "%s() arg is an empty sequence", name);
+                         "%s() should have at least 1 iterable element as an argument but, there is no argument hence it is an empty sequence", name);
         }
     }
     else
