@@ -1041,8 +1041,8 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         Py_ssize_t num_free = PyCode_GetNumFree((PyCodeObject *)source);
         if (num_free == 0) {
             if (closure) {
-                PyErr_SetString(PyExc_ValueError,
-                    "code object cannot use a closure");
+                PyErr_SetString(PyExc_TypeError,
+                    "cannot use a closure with this code object");
                 return NULL;
             }
         } else {

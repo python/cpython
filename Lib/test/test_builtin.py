@@ -773,6 +773,9 @@ class BuiltinTest(unittest.TestCase):
             sys.stdout = savestdout
 
     def test_exec_closure(self):
+        def function_without_closures():
+            return 3 * 5
+
         result = 0
         def make_closure_functions():
             a = 2
@@ -792,29 +795,44 @@ class BuiltinTest(unittest.TestCase):
             return three_freevars, four_freevars
         three_freevars, four_freevars = make_closure_functions()
 
+        # "smoke" test
+        result = 0
         exec(three_freevars.__code__,
             three_freevars.__globals__,
             closure=three_freevars.__closure__)
         self.assertEqual(result, 6)
 
+        # should also work with a manually created closure
         result = 0
-        my_closure = list(three_freevars.__closure__)
-        my_closure[0] = CellType(35)
-        my_closure[1] = CellType(72)
-        my_closure = tuple(my_closure)
+        my_closure = (CellType(35), CellType(72), three_freevars.__closure__[2])
         exec(three_freevars.__code__,
             three_freevars.__globals__,
             closure=my_closure)
         self.assertEqual(result, 2520)
 
-        # test with tuple of wrong length
+        # should fail: closure isn't allowed
+        # for functions without free vars
+        self.assertRaises(TypeError,
+            exec,
+            function_without_closures.__code__,
+            function_without_closures.__globals__,
+            closure=my_closure)
+
+        # should fail: closure required but wasn't specified
+        self.assertRaises(TypeError,
+            exec,
+            three_freevars.__code__,
+            three_freevars.__globals__,
+            closure=None)
+
+        # should fail: closure of wrong length
         self.assertRaises(TypeError,
             exec,
             three_freevars.__code__,
             three_freevars.__globals__,
             closure=four_freevars.__closure__)
 
-        # test with list instead of tuple
+        # should fail: closure using a list instead of a tuple
         my_closure = list(my_closure)
         self.assertRaises(TypeError,
             exec,
@@ -822,7 +840,7 @@ class BuiltinTest(unittest.TestCase):
             three_freevars.__globals__,
             closure=my_closure)
 
-        # test with non-cellvar in tuple
+        # should fail: closure tuple with one non-cell-var
         my_closure[0] = int
         my_closure = tuple(my_closure)
         self.assertRaises(TypeError,
