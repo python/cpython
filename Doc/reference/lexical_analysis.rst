@@ -101,11 +101,10 @@ addition, if the first bytes of the file are the UTF-8 byte-order mark
 (``b'\xef\xbb\xbf'``), the declared file encoding is UTF-8 (this is supported,
 among others, by Microsoft's :program:`notepad`).
 
-If an encoding is declared, the encoding name must be recognized by Python. The
+If an encoding is declared, the encoding name must be recognized by Python
+(see :ref:`standard-encodings`). The
 encoding is used for all lexical analysis, including string literals, comments
 and identifiers.
-
-.. XXX there should be a list of supported encodings.
 
 
 .. _explicit-joining:
@@ -469,10 +468,10 @@ String literals are described by the following lexical definitions:
    bytesescapeseq: "\" <any ASCII character>
 
 One syntactic restriction not indicated by these productions is that whitespace
-is not allowed between the :token:`stringprefix` or :token:`bytesprefix` and the
-rest of the literal. The source character set is defined by the encoding
-declaration; it is UTF-8 if no encoding declaration is given in the source file;
-see section :ref:`encodings`.
+is not allowed between the :token:`~python-grammar:stringprefix` or
+:token:`~python-grammar:bytesprefix` and the rest of the literal. The source
+character set is defined by the encoding declaration; it is UTF-8 if no encoding
+declaration is given in the source file; see section :ref:`encodings`.
 
 .. index:: triple-quoted string, Unicode Consortium, raw string
    single: """; string literal
@@ -596,6 +595,11 @@ Notes:
 
 (1)
    As in Standard C, up to three octal digits are accepted.
+
+   .. versionchanged:: 3.11
+      Octal escapes with value larger than ``0o377`` produce a :exc:`DeprecationWarning`.
+      In a future Python version they will be a :exc:`SyntaxWarning` and
+      eventually a :exc:`SyntaxError`.
 
 (2)
    Unlike in Standard C, exactly two hex digits are required.

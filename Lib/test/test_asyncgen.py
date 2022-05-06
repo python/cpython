@@ -4,9 +4,11 @@ import unittest
 import contextlib
 
 from test.support.import_helper import import_module
-from test.support import gc_collect
+from test.support import gc_collect, requires_working_socket
 asyncio = import_module("asyncio")
 
+
+requires_working_socket(module=True)
 
 _no_default = object()
 
