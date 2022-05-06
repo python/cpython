@@ -425,6 +425,14 @@ asyncio
   existing stream-based connections to TLS. (Contributed by Ian Good in
   :issue:`34975`.)
 
+datetime
+--------
+
+* :meth:`datetime.date.fromisoformat`, :meth:`datetime.time.fromisoformat` and
+  :meth:`datetime.datetime.fromisoformat` can now be used to parse most ISO 8601
+  formats (barring only those that support fractional hours and minutes).
+  (Contributed by Paul Ganssle in :gh:`80010`.)
+
 fractions
 ---------
 
