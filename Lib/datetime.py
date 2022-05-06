@@ -1679,7 +1679,7 @@ class datetime(date):
                 return result
 
             y, m, d, hh, mm, ss = converter(t - max_fold_seconds)[:6]
-            probe1 = cls(y, m, d, hh, mm, ss, us, tz)
+            probe1 = cls(y, m, d, hh, mm, ss, us, tz, submicrosecond=sus)
             trans = result - probe1 - timedelta(0, max_fold_seconds)
             if trans.days < 0:
                 y, m, d, hh, mm, ss = converter(t + trans // timedelta(0, 1))[:6]
