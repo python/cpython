@@ -1,6 +1,5 @@
 """Disassembler of Python byte code into mnemonics."""
 
-from distutils.command.build_ext import extension_name_re
 import sys
 import types
 import collections
