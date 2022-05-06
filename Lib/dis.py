@@ -440,11 +440,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         for i in range(start, end):
             labels.add(target)
     starts_line = None
-    cache_counter = 0
     for offset, op, arg in _unpack_opargs(code):
-        if cache_counter > 0:
-            cache_counter -= 1
-            continue
         if linestarts is not None:
             starts_line = linestarts.get(offset, None)
             if starts_line is not None:
@@ -454,7 +450,6 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         argrepr = ''
         positions = Positions(*next(co_positions, ()))
         deop = _deoptop(op)
-        cache_counter = _inline_cache_entries[deop]
         if arg is not None:
             #  Set argval to the dereferenced value of the argument when
             #  available, and argrepr to the string representation of argval.
@@ -497,7 +492,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         yield Instruction(_all_opname[op], op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target, positions)
-        if show_caches and cache_counter:
+        if show_caches and _inline_cache_entries[deop]:
             for name, caches in _cache_format[opname[deop]].items():
                 data = code[offset + 2: offset + 2 + caches * 2]
                 argrepr = f"{name}: {int.from_bytes(data, sys.byteorder)}"
@@ -586,9 +581,16 @@ _INT_OVERFLOW = 2 ** (_INT_BITS - 1)
 
 def _unpack_opargs(code):
     extended_arg = 0
+    caches = 0
     for i in range(0, len(code), 2):
+        # Skip inline CACHE entries:
+        if caches:
+            caches -= 1
+            continue
         op = code[i]
-        if _deoptop(op) >= HAVE_ARGUMENT:
+        deop = _deoptop(op)
+        caches = _inline_cache_entries[deop]
+        if deop >= HAVE_ARGUMENT:
             arg = code[i+1] | extended_arg
             extended_arg = (arg << 8) if op == EXTENDED_ARG else 0
             # The oparg is stored as a signed integer
