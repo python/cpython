@@ -1084,8 +1084,8 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
     }
     else {
         if (closure != NULL) {
-            PyErr_SetString(PyExc_ValueError,
-                "closure cannot be used when source is a string");
+            PyErr_SetString(PyExc_TypeError,
+                "closure can only be used when source is a code object");
         }
         PyObject *source_copy;
         const char *str;

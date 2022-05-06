@@ -778,40 +778,58 @@ class BuiltinTest(unittest.TestCase):
             a = 2
             b = 3
             c = 5
-            def two_freevars():
+            def three_freevars():
                 nonlocal result
                 nonlocal a
                 nonlocal b
                 result = a*b
-            def three_freevars():
+            def four_freevars():
                 nonlocal result
                 nonlocal a
                 nonlocal b
                 nonlocal c
                 result = a*b*c
-            return two_freevars, three_freevars
-        two_freevars, three_freevars = make_closure_functions()
+            return three_freevars, four_freevars
+        three_freevars, four_freevars = make_closure_functions()
 
-        exec(two_freevars.__code__,
-            two_freevars.__globals__,
-            closure=two_freevars.__closure__)
-        self.assertEquals(result, 6)
+        exec(three_freevars.__code__,
+            three_freevars.__globals__,
+            closure=three_freevars.__closure__)
+        self.assertEqual(result, 6)
 
         result = 0
-        my_closure = list(two_freevars.__closure__)
+        my_closure = list(three_freevars.__closure__)
         my_closure[0] = CellType(35)
         my_closure[1] = CellType(72)
         my_closure = tuple(my_closure)
-        exec(two_freevars.__code__,
-            two_freevars.__globals__,
+        exec(three_freevars.__code__,
+            three_freevars.__globals__,
             closure=my_closure)
-        self.assertEquals(result, 2520)
+        self.assertEqual(result, 2520)
 
+        # test with tuple of wrong length
         self.assertRaises(TypeError,
             exec,
-            two_freevars.__code__,
-            two_freevars.__globals__,
-            closure=three_freevars.__closure__)
+            three_freevars.__code__,
+            three_freevars.__globals__,
+            closure=four_freevars.__closure__)
+
+        # test with list instead of tuple
+        my_closure = list(my_closure)
+        self.assertRaises(TypeError,
+            exec,
+            three_freevars.__code__,
+            three_freevars.__globals__,
+            closure=my_closure)
+
+        # test with non-cellvar in tuple
+        my_closure[0] = int
+        my_closure = tuple(my_closure)
+        self.assertRaises(TypeError,
+            exec,
+            three_freevars.__code__,
+            three_freevars.__globals__,
+            closure=my_closure)
 
 
     def test_filter(self):
