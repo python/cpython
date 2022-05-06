@@ -499,17 +499,15 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                           offset, starts_line, is_jump_target, positions)
         if show_caches and cache_counter:
             for name, caches in _cache_format[opname[deop]].items():
-                offset += 2
-                cache = code[offset: offset + 2 * caches]
-                argrepr = f"{name}: {int.from_bytes(cache, sys.byteorder)}"
-                yield Instruction(
-                    "CACHE", 0, 0, None, argrepr, offset, None, False, None
-                )
-                for _ in range(caches - 1):
+                data = code[offset + 2: offset + 2 + caches * 2]
+                argrepr = f"{name}: {int.from_bytes(data, sys.byteorder)}"
+                for _ in range(caches):
                     offset += 2
                     yield Instruction(
-                        "CACHE", 0, 0, None, "", offset, None, False, None
+                        "CACHE", 0, 0, None, argrepr, offset, None, False, None
                     )
+                    # Only show the actual value for the first cache entry:
+                    argrepr = ""
 
 def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False):
     """Disassemble a code object."""
