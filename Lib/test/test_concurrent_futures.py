@@ -1027,6 +1027,8 @@ class ProcessPoolExecutorTest(ExecutorTest):
     def test_idle_process_reuse_one(self):
         executor = self.executor
         assert executor._max_workers >= 4
+        if self.get_context().get_start_method(allow_none=False) == "fork":
+            raise unittest.SkipTest("Incompatible with the fork start method.")
         executor.submit(mul, 21, 2).result()
         executor.submit(mul, 6, 7).result()
         executor.submit(mul, 3, 14).result()
@@ -1035,6 +1037,8 @@ class ProcessPoolExecutorTest(ExecutorTest):
     def test_idle_process_reuse_multiple(self):
         executor = self.executor
         assert executor._max_workers <= 5
+        if self.get_context().get_start_method(allow_none=False) == "fork":
+            raise unittest.SkipTest("Incompatible with the fork start method.")
         executor.submit(mul, 12, 7).result()
         executor.submit(mul, 33, 25)
         executor.submit(mul, 25, 26).result()
