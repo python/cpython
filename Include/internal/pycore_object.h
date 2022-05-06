@@ -14,7 +14,6 @@ extern "C" {
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _PyRuntime
 
-
 #define _PyObject_IMMORTAL_INIT(type) \
     { \
         .ob_refcnt = 999999999, \
@@ -26,6 +25,42 @@ extern "C" {
         .ob_size = size, \
     }
 
+PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
+    const char *func,
+    const char *message);
+
+#define _Py_FatalRefcountError(message) _Py_FatalRefcountErrorFunc(__func__, message)
+
+static inline void
+_Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
+{
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
+#endif
+    if (--op->ob_refcnt != 0) {
+        assert(op->ob_refcnt > 0);
+    }
+    else {
+#ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+#endif
+        destruct(op);
+    }
+}
+
+static inline void
+_Py_DECREF_NO_DEALLOC(PyObject *op)
+{
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
+#endif
+    op->ob_refcnt--;
+#ifdef Py_DEBUG
+    if (op->ob_refcnt <= 0) {
+        _Py_FatalRefcountError("Expected a positive remaining refcount");
+    }
+#endif
+}
 
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);

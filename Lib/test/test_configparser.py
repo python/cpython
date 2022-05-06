@@ -1028,7 +1028,9 @@ class ConfigParserTestCaseNoInterpolation(BasicTestCase, unittest.TestCase):
 
 class ConfigParserTestCaseLegacyInterpolation(ConfigParserTestCase):
     config_class = configparser.ConfigParser
-    interpolation = configparser.LegacyInterpolation()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        interpolation = configparser.LegacyInterpolation()
 
     def test_set_malformatted_interpolation(self):
         cf = self.fromstring("[sect]\n"

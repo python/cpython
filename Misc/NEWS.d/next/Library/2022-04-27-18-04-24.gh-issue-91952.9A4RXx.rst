@@ -1,0 +1,1 @@
+Add ``encoding="locale"`` support to :meth:`TextIOWrapper.reconfigure`.

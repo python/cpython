@@ -1307,11 +1307,11 @@ _parse_voidp(PyObject *obj, void **address)
 
 #ifdef MS_WIN32
 
-static const char format_error_doc[] =
+PyDoc_STRVAR(format_error_doc,
 "FormatError([integer]) -> string\n\
 \n\
 Convert a win32 error code into a string. If the error code is not\n\
-given, the return value of a call to GetLastError() is used.\n";
+given, the return value of a call to GetLastError() is used.\n");
 static PyObject *format_error(PyObject *self, PyObject *args)
 {
     PyObject *result;
@@ -1331,13 +1331,13 @@ static PyObject *format_error(PyObject *self, PyObject *args)
     return result;
 }
 
-static const char load_library_doc[] =
+PyDoc_STRVAR(load_library_doc,
 "LoadLibrary(name, load_flags) -> handle\n\
 \n\
 Load an executable (usually a DLL), and return a handle to it.\n\
 The handle may be used to locate exported functions in this\n\
 module. load_flags are as defined for LoadLibraryEx in the\n\
-Windows API.\n";
+Windows API.\n");
 static PyObject *load_library(PyObject *self, PyObject *args)
 {
     PyObject *nameobj;
@@ -1382,10 +1382,10 @@ static PyObject *load_library(PyObject *self, PyObject *args)
 #endif
 }
 
-static const char free_library_doc[] =
+PyDoc_STRVAR(free_library_doc,
 "FreeLibrary(handle) -> void\n\
 \n\
-Free the handle of an executable previously loaded by LoadLibrary.\n";
+Free the handle of an executable previously loaded by LoadLibrary.\n");
 static PyObject *free_library(PyObject *self, PyObject *args)
 {
     void *hMod;
@@ -1405,8 +1405,8 @@ static PyObject *free_library(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static const char copy_com_pointer_doc[] =
-"CopyComPointer(src, dst) -> HRESULT value\n";
+PyDoc_STRVAR(copy_com_pointer_doc,
+"CopyComPointer(src, dst) -> HRESULT value\n");
 
 static PyObject *
 copy_com_pointer(PyObject *self, PyObject *args)
@@ -1644,10 +1644,10 @@ call_cdeclfunction(PyObject *self, PyObject *args)
 /*****************************************************************
  * functions
  */
-static const char sizeof_doc[] =
+PyDoc_STRVAR(sizeof_doc,
 "sizeof(C type) -> integer\n"
 "sizeof(C instance) -> integer\n"
-"Return the size in bytes of a C instance";
+"Return the size in bytes of a C instance");
 
 static PyObject *
 sizeof_func(PyObject *self, PyObject *obj)
@@ -1665,10 +1665,10 @@ sizeof_func(PyObject *self, PyObject *obj)
     return NULL;
 }
 
-static const char alignment_doc[] =
+PyDoc_STRVAR(alignment_doc,
 "alignment(C type) -> integer\n"
 "alignment(C instance) -> integer\n"
-"Return the alignment requirements of a C instance";
+"Return the alignment requirements of a C instance");
 
 static PyObject *
 align_func(PyObject *self, PyObject *obj)
@@ -1688,10 +1688,10 @@ align_func(PyObject *self, PyObject *obj)
     return NULL;
 }
 
-static const char byref_doc[] =
+PyDoc_STRVAR(byref_doc,
 "byref(C instance[, offset=0]) -> byref-object\n"
 "Return a pointer lookalike to a C instance, only usable\n"
-"as function argument";
+"as function argument");
 
 /*
  * We must return something which can be converted to a parameter,
@@ -1732,9 +1732,9 @@ byref(PyObject *self, PyObject *args)
     return (PyObject *)parg;
 }
 
-static const char addressof_doc[] =
+PyDoc_STRVAR(addressof_doc,
 "addressof(C instance) -> integer\n"
-"Return the address of the C instance internal buffer";
+"Return the address of the C instance internal buffer");
 
 static PyObject *
 addressof(PyObject *self, PyObject *obj)
