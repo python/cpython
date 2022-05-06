@@ -1976,6 +1976,11 @@ Other concrete types
 
    .. versionadded:: 3.5.2
 
+   .. deprecated:: 3.11
+      Python 2 is no longer supported, and most type checkers also no longer
+      support type checking Python 2 code. Users should now use
+      :class:`str` instead of ``Text`` wherever possible.
+
 Abstract Base Classes
 ---------------------
 
@@ -2686,4 +2691,6 @@ convenience. This is subject to change, and not all deprecations are listed.
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |
 |  collections                     |               |                   |                |
++----------------------------------+---------------+-------------------+----------------+
+|  ``typing.Text``                 | 3.11          | Undecided         | :gh:`92332`    |
 +----------------------------------+---------------+-------------------+----------------+
