@@ -79,6 +79,12 @@ New typing features:
 * :pep:`673`: ``Self`` type.
 * :pep:`675`: Arbitrary literal string type.
 
+Security improvements:
+
+* New :option:`-P` command line option and :envvar:`PYTHONSAFEPATH` environment
+  variable to not prepend a potentially unsafe path to :data:`sys.path` such as
+  the current directory, the script's directory or an empty string.
+
 
 New Features
 ============
