@@ -3926,7 +3926,7 @@ written in Python, such as a mail server's external command delivery program.
    documentation for more powerful ways to manage and communicate with
    subprocesses.
 
-   .. versionchanged: 3.11
+   .. versionchanged:: 3.11
       Added the *encoding* parameter.
 
 
