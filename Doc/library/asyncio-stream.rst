@@ -311,7 +311,7 @@ StreamWriter
         handshake to complete before aborting the connection.  ``60.0`` seconds
         if ``None`` (default).
 
-      .. versionadded:: 3.8
+      .. versionadded:: 3.11
 
    .. method:: is_closing()
 
