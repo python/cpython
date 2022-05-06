@@ -1382,7 +1382,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         return -1;
 
     Py_INCREF(name);
-
+    Py_INCREF(tp);
     descr = _PyType_Lookup(tp, name);
 
     if (descr != NULL) {
@@ -1426,11 +1426,21 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
             res = PyDict_SetItem(dict, name, value);
         Py_DECREF(dict);
     }
-    if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
-        PyErr_SetObject(PyExc_AttributeError, name);
-
+    if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
+        if (PyType_IsSubtype(tp, &PyType_Type)) {
+            PyErr_Format(PyExc_AttributeError,
+                         "type object '%.50s' has no attribute '%U'",
+                         ((PyTypeObject*)obj)->tp_name, name);
+        }
+        else {
+            PyErr_Format(PyExc_AttributeError,
+                         "'%.100s' object has no attribute '%U'",
+                         tp->tp_name, name);
+        }
+    }
   done:
     Py_XDECREF(descr);
+    Py_DECREF(tp);
     Py_DECREF(name);
     return res;
 }
