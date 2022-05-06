@@ -932,6 +932,7 @@ to adapt to new circumstances.
 (PEP written by Mark Shannon, with ideas inspired by Stefan Brunthaler.
 See :pep:`659` for more information. Implementation by Mark Shannon and Brandt
 Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
+
 ..
    If I missed out anyone, please add them.
 
