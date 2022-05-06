@@ -384,6 +384,7 @@ _unpack_args(PyObject *item)
                 Py_DECREF(subargs);
                 continue;
             }
+            Py_XDECREF(subargs);
             if (PyErr_Occurred()) {
                 Py_DECREF(newargs);
                 return NULL;
