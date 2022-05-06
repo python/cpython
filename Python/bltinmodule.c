@@ -1061,7 +1061,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
             }
             if (!closure_is_ok) {
                 PyErr_Format(PyExc_TypeError,
-                    "code object requires a closure of exactly length %d",
+                    "code object requires a closure of exactly length %zd",
                     num_free);
                 return NULL;
             }
