@@ -1798,7 +1798,9 @@ class FileCookieJar(CookieJar):
             if self.filename is not None: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
-        with open(filename) as f:
+        # We use latin-1 here because WSGI uses latin-1 for HTTP headers too.
+        # See gh-87888 for more info.
+        with open(filename, encoding="latin1") as f:
             self._really_load(f, filename, ignore_discard, ignore_expires)
 
     def revert(self, filename=None,
@@ -1890,7 +1892,7 @@ class LWPCookieJar(FileCookieJar):
             if self.filename is not None: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding="latin1") as f:
             # There really isn't an LWP Cookies 2.0 format, but this indicates
             # that there is extra information in here (domain_dot and
             # port_spec) while still being compatible with libwww-perl, I hope.
@@ -2086,7 +2088,7 @@ class MozillaCookieJar(FileCookieJar):
             if self.filename is not None: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding="latin1") as f:
             f.write(NETSCAPE_HEADER_TEXT)
             now = time.time()
             for cookie in self:

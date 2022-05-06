@@ -1,0 +1,2 @@
+Changed encoding used by :class:`http.cookiejar.FileCookieJar` and its
+subclasses from locale encoding to "latin-1".
