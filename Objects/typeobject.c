@@ -358,8 +358,8 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
  clear:
     Py_XDECREF(mro_meth);
     Py_XDECREF(type_mro_meth);
-    type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
-    type->tp_version_tag = 0; /* 0 is not a valid version tag */
+    type->tp_flags &= ~(Py_TPFLAGS_HAVE_VERSION_TAG|
+                        Py_TPFLAGS_VALID_VERSION_TAG);
 }
 
 #ifdef MCACHE
