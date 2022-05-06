@@ -1,0 +1,2 @@
+Add a ``process_group`` parameter to :class:`subprocess.Popen` to help move
+more things off of the unsafe ``preexec_fn`` parameter.

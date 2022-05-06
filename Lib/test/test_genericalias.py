@@ -358,6 +358,8 @@ class BaseTest(unittest.TestCase):
         self.assertNotEqual(dict[str, int], dict[str, str])
         self.assertNotEqual(list, list[int])
         self.assertNotEqual(list[int], list)
+        self.assertNotEqual(list[int], tuple[int])
+        self.assertNotEqual((*tuple[int],)[0], tuple[int])
 
     def test_isinstance(self):
         self.assertTrue(isinstance([], list))
@@ -394,6 +396,7 @@ class BaseTest(unittest.TestCase):
                     self.assertEqual(loaded.__origin__, alias.__origin__)
                     self.assertEqual(loaded.__args__, alias.__args__)
                     self.assertEqual(loaded.__parameters__, alias.__parameters__)
+                    self.assertEqual(type(loaded), type(alias))
 
     def test_copy(self):
         class X(list):

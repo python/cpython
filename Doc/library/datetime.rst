@@ -84,6 +84,12 @@ The :mod:`datetime` module exports the following constants:
    The largest year number allowed in a :class:`date` or :class:`.datetime` object.
    :const:`MAXYEAR` is ``9999``.
 
+.. attribute:: UTC
+
+   Alias for the UTC timezone singleton :attr:`datetime.timezone.utc`.
+
+   .. versionadded:: 3.11
+
 Available Types
 ---------------
 
@@ -520,18 +526,20 @@ Other constructors, all class methods:
 
 .. classmethod:: date.fromisoformat(date_string)
 
-   Return a :class:`date` corresponding to a *date_string* given in the format
-   ``YYYY-MM-DD``::
+   Return a :class:`date` corresponding to a *date_string* given in any valid
+   ISO 8601 format, except ordinal dates (e.g. ``YYYY-DDD``)::
 
       >>> from datetime import date
       >>> date.fromisoformat('2019-12-04')
       datetime.date(2019, 12, 4)
-
-   This is the inverse of :meth:`date.isoformat`. It only supports the format
-   ``YYYY-MM-DD``.
+      >>> date.fromisoformat('20191204')
+      datetime.date(2019, 12, 4)
+      >>> date.fromisoformat('2021-W01-1')
+      datetime.date(2021, 1, 4)
 
    .. versionadded:: 3.7
-
+   .. versionchanged:: 3.11
+      Previously, this method only supported the format ``YYYY-MM-DD``.
 
 .. classmethod:: date.fromisocalendar(year, week, day)
 
@@ -703,8 +711,6 @@ Instance methods:
        >>> from datetime import date
        >>> date(2002, 12, 4).isoformat()
        '2002-12-04'
-
-   This is the inverse of :meth:`date.fromisoformat`.
 
 .. method:: date.__str__()
 
@@ -988,31 +994,29 @@ Other constructors, all class methods:
 
 .. classmethod:: datetime.fromisoformat(date_string)
 
-   Return a :class:`.datetime` corresponding to a *date_string* in one of the
-   formats emitted by :meth:`date.isoformat` and :meth:`datetime.isoformat`.
+   Return a :class:`.datetime` corresponding to a *date_string* in any valid
+   ISO 8601 format, with the following exceptions:
 
-   Specifically, this function supports strings in the format:
-
-   .. code-block:: none
-
-      YYYY-MM-DD[*HH[:MM[:SS[.fff[fff]]]][+HH:MM[:SS[.ffffff]]]]
-
-   where ``*`` can match any single character.
-
-   .. caution::
-
-     This does *not* support parsing arbitrary ISO 8601 strings - it is only intended
-     as the inverse operation of :meth:`datetime.isoformat`. A more full-featured
-     ISO 8601 parser, ``dateutil.parser.isoparse`` is available in the third-party package
-     `dateutil <https://dateutil.readthedocs.io/en/stable/parser.html#dateutil.parser.isoparse>`__.
+   1. Time zone offsets may have fractional seconds.
+   2. The `T` separator may be replaced by any single unicode character.
+   3. Ordinal dates are not currently supported.
+   4. Fractional hours and minutes are not supported.
 
    Examples::
 
        >>> from datetime import datetime
        >>> datetime.fromisoformat('2011-11-04')
        datetime.datetime(2011, 11, 4, 0, 0)
+       >>> datetime.fromisoformat('20111104')
+       datetime.datetime(2011, 11, 4, 0, 0)
        >>> datetime.fromisoformat('2011-11-04T00:05:23')
        datetime.datetime(2011, 11, 4, 0, 5, 23)
+       >>> datetime.fromisoformat('2011-11-04T00:05:23Z')
+       datetime.datetime(2011, 11, 4, 0, 5, 23, tzinfo=datetime.timezone.utc)
+       >>> datetime.fromisoformat('20111104T000523')
+       datetime.datetime(2011, 11, 4, 0, 5, 23)
+       >>> datetime.fromisoformat('2011-W01-2T00:05:23.283')
+       datetime.datetime(2011, 1, 4, 0, 5, 23, 283000)
        >>> datetime.fromisoformat('2011-11-04 00:05:23.283')
        datetime.datetime(2011, 11, 4, 0, 5, 23, 283000)
        >>> datetime.fromisoformat('2011-11-04 00:05:23.283+00:00')
@@ -1022,6 +1026,10 @@ Other constructors, all class methods:
            tzinfo=datetime.timezone(datetime.timedelta(seconds=14400)))
 
    .. versionadded:: 3.7
+   .. versionchanged:: 3.11
+      Previously, this method only supported formats that could be emitted by
+      :meth:`date.isoformat()` or :meth:`datetime.isoformat()`.
+
 
 .. classmethod:: datetime.fromisocalendar(year, week, day)
 
@@ -1757,30 +1765,41 @@ Other constructor:
 
 .. classmethod:: time.fromisoformat(time_string)
 
-   Return a :class:`.time` corresponding to a *time_string* in one of the
-   formats emitted by :meth:`time.isoformat`. Specifically, this function supports
-   strings in the format:
+   Return a :class:`.time` corresponding to a *time_string* in any valid
+   ISO 8601 format, with the following exceptions:
 
-   .. code-block:: none
-
-      HH[:MM[:SS[.fff[fff]]]][+HH:MM[:SS[.ffffff]]]
-
-   .. caution::
-
-     This does *not* support parsing arbitrary ISO 8601 strings. It is only
-     intended as the inverse operation of :meth:`time.isoformat`.
+   1. Time zone offsets may have fractional seconds.
+   2. The leading `T`, normally required in cases where there may be ambiguity between
+      a date and a time, is not required.
+   3. Fractional seconds may have any number of digits (anything beyond 6 will
+      be truncated).
+   4. Fractional hours and minutes are not supported.
 
    Examples::
 
        >>> from datetime import time
        >>> time.fromisoformat('04:23:01')
        datetime.time(4, 23, 1)
+       >>> time.fromisoformat('T04:23:01')
+       datetime.time(4, 23, 1)
+       >>> time.fromisoformat('T042301')
+       datetime.time(4, 23, 1)
        >>> time.fromisoformat('04:23:01.000384')
+       datetime.time(4, 23, 1, 384)
+       >>> time.fromisoformat('04:23:01,000')
        datetime.time(4, 23, 1, 384)
        >>> time.fromisoformat('04:23:01+04:00')
        datetime.time(4, 23, 1, tzinfo=datetime.timezone(datetime.timedelta(seconds=14400)))
+       >>> time.fromisoformat('04:23:01Z')
+       datetime.time(4, 23, 1, tzinfo=datetime.timezone.utc)
+       >>> time.fromisoformat('04:23:01+00:00')
+       datetime.time(4, 23, 1, tzinfo=datetime.timezone.utc)
+
 
    .. versionadded:: 3.7
+   .. versionchanged:: 3.11
+      Previously, this method only supported formats that could be emitted by
+      :meth:`time.isoformat()`.
 
 
 Instance methods:

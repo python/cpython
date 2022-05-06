@@ -226,27 +226,27 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     pysqlite_state *state = pysqlite_get_state_by_type(Py_TYPE(self));
     if (rc != SQLITE_OK) {
         _pysqlite_seterror(state, db);
-        return -1;
+        goto error;
     }
 
     // Create LRU statement cache; returns a new reference.
     PyObject *statement_cache = new_statement_cache(self, state, cache_size);
     if (statement_cache == NULL) {
-        return -1;
+        goto error;
     }
 
     /* Create lists of weak references to cursors and blobs */
     PyObject *cursors = PyList_New(0);
     if (cursors == NULL) {
-        Py_XDECREF(statement_cache);
-        return -1;
+        Py_DECREF(statement_cache);
+        goto error;
     }
 
     PyObject *blobs = PyList_New(0);
     if (blobs == NULL) {
-        Py_XDECREF(statement_cache);
-        Py_XDECREF(cursors);
-        return -1;
+        Py_DECREF(statement_cache);
+        Py_DECREF(cursors);
+        goto error;
     }
 
     // Init connection state members.
@@ -279,11 +279,18 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     self->NotSupportedError     = state->NotSupportedError;
 
     if (PySys_Audit("sqlite3.connect/handle", "O", self) < 0) {
-        return -1;
+        return -1;  // Don't goto error; at this point, dealloc will clean up.
     }
 
     self->initialized = 1;
     return 0;
+
+error:
+    // There are no statements or other SQLite objects attached to the
+    // database, so sqlite3_close() should always return SQLITE_OK.
+    rc = sqlite3_close(db);
+    assert(rc == SQLITE_OK);
+    return -1;
 }
 
 #define VISIT_CALLBACK_CONTEXT(ctx) \
@@ -369,32 +376,6 @@ connection_dealloc(pysqlite_Connection *self)
 
     tp->tp_free(self);
     Py_DECREF(tp);
-}
-
-/*
- * Registers a cursor with the connection.
- *
- * 0 => error; 1 => ok
- */
-int pysqlite_connection_register_cursor(pysqlite_Connection* connection, PyObject* cursor)
-{
-    PyObject* weakref;
-
-    weakref = PyWeakref_NewRef((PyObject*)cursor, NULL);
-    if (!weakref) {
-        goto error;
-    }
-
-    if (PyList_Append(connection->cursors, weakref) != 0) {
-        Py_CLEAR(weakref);
-        goto error;
-    }
-
-    Py_DECREF(weakref);
-
-    return 1;
-error:
-    return 0;
 }
 
 /*[clinic input]
