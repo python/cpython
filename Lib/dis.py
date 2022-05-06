@@ -6,8 +6,14 @@ import collections
 import io
 
 from opcode import *
-from opcode import __all__ as _opcodes_all
-from opcode import _nb_ops, _inline_cache_entries, _specializations, _specialized_instructions
+from opcode import (
+    __all__ as _opcodes_all,
+    _cache_format,
+    _inline_cache_entries,
+    _nb_ops,
+    _specializations,
+    _specialized_instructions,
+)
 
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
            "findlinestarts", "findlabels", "show_code",
@@ -437,9 +443,6 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
     cache_counter = 0
     for offset, op, arg in _unpack_opargs(code):
         if cache_counter > 0:
-            if show_caches:
-                yield Instruction("CACHE", 0, None, None, '',
-                                  offset, None, False, None)
             cache_counter -= 1
             continue
         if linestarts is not None:
@@ -494,6 +497,19 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         yield Instruction(_all_opname[op], op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target, positions)
+        if show_caches and cache_counter:
+            for name, caches in _cache_format[opname[deop]].items():
+                offset += 2
+                cache = code[offset: offset + 2 * caches]
+                argrepr = f"{name}: {int.from_bytes(cache, sys.byteorder)}"
+                yield Instruction(
+                    "CACHE", 0, 0, None, argrepr, offset, None, False, None
+                )
+                for _ in range(caches - 1):
+                    offset += 2
+                    yield Instruction(
+                        "CACHE", 0, 0, None, "", offset, None, False, None
+                    )
 
 def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False):
     """Disassemble a code object."""
