@@ -1202,6 +1202,12 @@ Deprecated
   For now, a deprecation warning is raised for such syntax.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
 
+* :class:`typing.Text`, which exists solely to provide compatibility support
+  between Python 2 and Python 3 code, is now deprecated. Its removal is
+  currently unplanned, but users are encouraged to use :class:`str` instead
+  wherever possible.
+  (Contributed by Alex Waygood in :gh:`92332`.)
+
 
 Removed
 =======
