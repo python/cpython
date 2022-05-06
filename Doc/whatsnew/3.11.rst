@@ -749,7 +749,7 @@ tkinter
 
 * Added method ``info_patchlevel()`` which returns the exact version of
   the Tcl library as a named tuple similar to :data:`sys.version_info`.
-  (Contributed by Serhiy Storchaka in :issue:`91827`.)
+  (Contributed by Serhiy Storchaka in :gh:`91827`.)
 
 
 unicodedata
