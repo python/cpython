@@ -617,14 +617,16 @@ class ProcessPoolExecutor(_base.Executor):
                 execute the given calls. If None or not given then as many
                 worker processes will be created as the machine has processors.
             mp_context: A multiprocessing context to launch the workers. This
-                object should provide SimpleQueue, Queue and Process.
+                object should provide SimpleQueue, Queue and Process. Useful
+                to allow specific multiprocessing start methods.
             initializer: A callable used to initialize worker processes.
             initargs: A tuple of arguments to pass to the initializer.
-            max_tasks_per_child: The maximum number of tasks a worker process can
-                complete before it will exit and be replaced with a fresh
-                worker process, to enable unused resources to be freed. The
-                default value is None, which means worker process will live
-                as long as the executor will live.
+            max_tasks_per_child: The maximum number of tasks a worker process
+                can complete before it will exit and be replaced with a fresh
+                worker process. The default of None means worker process will
+                live as long as the executor. Requires a non-'fork' mp_context
+                start method. When given, we default to using 'spawn' if no
+                mp_context is supplied.
         """
         _check_system_limits()
 
@@ -644,7 +646,10 @@ class ProcessPoolExecutor(_base.Executor):
             self._max_workers = max_workers
 
         if mp_context is None:
-            mp_context = mp.get_context()
+            if max_tasks_per_child is not None:
+                mp_context = mp.get_context("spawn")
+            else:
+                mp_context = mp.get_context()
         self._mp_context = mp_context
 
         if initializer is not None and not callable(initializer):
@@ -657,6 +662,11 @@ class ProcessPoolExecutor(_base.Executor):
                 raise TypeError("max_tasks_per_child must be an integer")
             elif max_tasks_per_child <= 0:
                 raise ValueError("max_tasks_per_child must be >= 1")
+            if self._mp_context.get_start_method(allow_none=False) == "fork":
+                # https://github.com/python/cpython/issues/90622
+                raise ValueError("max_tasks_per_child is incompatible with"
+                                 " the 'fork' multiprocessing start method;"
+                                 " supply a different mp_context.")
         self._max_tasks_per_child = max_tasks_per_child
 
         # Management thread
