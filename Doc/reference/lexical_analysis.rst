@@ -469,9 +469,10 @@ see section :ref:`encodings`.
 In plain English: Both types of literals can be enclosed in matching single quotes
 (``'``) or double quotes (``"``).  They can also be enclosed in matching groups
 of three single or double quotes (these are generally referred to as
-*triple-quoted strings*).  The backslash (``\``) character is used to escape
-characters that otherwise have a special meaning, such as newline, backslash
-itself, or the quote character.
+*triple-quoted strings*).  The backslash (``\``) character is used in
+:ref:`escape sequences <escape-sequences>` to denote characters that may not
+otherwise appear in the literal, such as quotes, the backslash itself, or newline
+characters.
 
 .. index::
    single: b'; bytes literal
@@ -514,6 +515,8 @@ formatted strings are possible, but formatted bytes literals are not.
 In triple-quoted literals, unescaped newlines and quotes are allowed (and are
 retained), except that three unescaped quotes in a row terminate the literal.  (A
 "quote" is the character used to open the literal, i.e. either ``'`` or ``"``.)
+
+.. _escape-sequences:
 
 .. index:: physical line, escape sequence, Standard C, C
    single: \ (backslash); escape sequence
