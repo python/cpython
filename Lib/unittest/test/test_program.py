@@ -454,7 +454,9 @@ class TestCommandLineArgs(unittest.TestCase):
 
     def testSelectedTestNamesFunctionalTest(self):
         def run_unittest(args):
-            p = subprocess.Popen([sys.executable, '-m', 'unittest'] + args,
+            # Use -E to ignore PYTHONSAFEPATH env var
+            cmd = [sys.executable, '-E', '-m', 'unittest'] + args
+            p = subprocess.Popen(cmd,
                 stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, cwd=os.path.dirname(__file__))
             with p:
                 _, stderr = p.communicate()
