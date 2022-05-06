@@ -1,0 +1,2 @@
+Added the :c:func:`PyCode_GetCode` function. This function does the
+equivalent of the Python code ``getattr(code_object, 'co_code')``.
