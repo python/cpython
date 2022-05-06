@@ -1708,14 +1708,13 @@ class datetime(date):
     @classmethod
     def now(cls, tz=None):
         "Construct a datetime from time.time() and optional time zone info."
-        t = _time.time_ns()
-        t = t / 1e9
+        t = _time.time_ns() / 1e9
         return cls.fromtimestamp(t, tz)
 
     @classmethod
     def utcnow(cls):
         "Construct a UTC datetime from time.time()."
-        t = _time.time_ns()
+        t = _time.time_ns() / 1e9
         return cls.utcfromtimestamp(t)
 
     @classmethod
