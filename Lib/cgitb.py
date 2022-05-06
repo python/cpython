@@ -31,7 +31,11 @@ import tempfile
 import time
 import tokenize
 import traceback
+import warnings
 from html import escape as html_escape
+
+warnings._deprecated(__name__, remove=(3, 13))
+
 
 def reset():
     """Return a string that resets the CGI and browser to a known state."""

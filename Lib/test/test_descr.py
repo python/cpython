@@ -1961,6 +1961,20 @@ order (MRO) for bases """
         del a[0:10]
         self.assertEqual(a.delitem, (slice(0, 10)))
 
+    def test_load_attr_extended_arg(self):
+        # https://github.com/python/cpython/issues/91625
+        class Numbers:
+            def __getattr__(self, attr):
+                return int(attr.lstrip("_"))
+        attrs = ", ".join(f"Z._{n:03d}" for n in range(280))
+        code = f"def number_attrs(Z):\n    return [ {attrs} ]"
+        ns = {}
+        exec(code, ns)
+        number_attrs = ns["number_attrs"]
+        # Warm up the the function for quickening (PEP 659)
+        for _ in range(30):
+            self.assertEqual(number_attrs(Numbers()), list(range(280)))
+
     def test_methods(self):
         # Testing methods...
         class C(object):
@@ -4435,8 +4449,8 @@ order (MRO) for bases """
                 raise RuntimeError(f"Premature access to sys.stdout.{attr}")
 
         with redirect_stdout(StdoutGuard()):
-             with self.assertRaises(RuntimeError):
-                 print("Oops!")
+            with self.assertRaises(RuntimeError):
+                print("Oops!")
 
     def test_vicious_descriptor_nonsense(self):
         # Testing vicious_descriptor_nonsense...
@@ -4711,6 +4725,33 @@ order (MRO) for bases """
         # call a slot wrapper descriptor
         with self.assertRaises(TypeError):
             str.__add__(fake_str, "abc")
+
+    def test_specialized_method_calls_check_types(self):
+        # https://github.com/python/cpython/issues/92063
+        class Thing:
+            pass
+        thing = Thing()
+        for i in range(20):
+            with self.assertRaises(TypeError):
+                # PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS
+                list.sort(thing)
+        for i in range(20):
+            with self.assertRaises(TypeError):
+                # PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS
+                str.split(thing)
+        for i in range(20):
+            with self.assertRaises(TypeError):
+                # PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS
+                str.upper(thing)
+        for i in range(20):
+            with self.assertRaises(TypeError):
+                # PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST
+                str.strip(thing)
+        from collections import deque
+        for i in range(20):
+            with self.assertRaises(TypeError):
+                # PRECALL_NO_KW_METHOD_DESCRIPTOR_O
+                deque.append(thing, thing)
 
     def test_repr_as_str(self):
         # Issue #11603: crash or infinite loop when rebinding __str__ as
@@ -5742,6 +5783,23 @@ class MroTest(unittest.TestCase):
 
         class A(metaclass=M):
             pass
+
+    def test_disappearing_custom_mro(self):
+        """
+        gh-92112: A custom mro() returning a result conflicting with
+        __bases__ and deleting itself caused a double free.
+        """
+        class B:
+            pass
+
+        class M(DebugHelperMeta):
+            def mro(cls):
+                del M.mro
+                return (B,)
+
+        with self.assertRaises(TypeError):
+            class A(metaclass=M):
+                pass
 
 
 if __name__ == "__main__":

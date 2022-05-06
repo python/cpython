@@ -46,7 +46,7 @@ typedef struct _PyCFrame {
      * discipline and make sure that instances of this struct cannot
      * accessed outside of their lifetime.
      */
-    int use_tracing;
+    uint8_t use_tracing;  // 0 or 255 (or'ed into opcode, hence 8-bit type)
     /* Pointer to the currently executing frame (it can be NULL) */
     struct _PyInterpreterFrame *current_frame;
     struct _PyCFrame *previous;
@@ -103,6 +103,7 @@ struct _ts {
        This is to prevent the actual trace/profile code from being recorded in
        the trace/profile. */
     int tracing;
+    int tracing_what; /* The event currently being traced, if any. */
 
     /* Pointer to current _PyCFrame in the C stack frame of the currently,
      * or most recently, executing _PyEval_EvalFrameDefault. */

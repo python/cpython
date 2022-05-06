@@ -1975,5 +1975,12 @@ static struct PyModuleDef audioopmodule = {
 PyMODINIT_FUNC
 PyInit_audioop(void)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "'audioop' is deprecated and slated for removal in "
+                     "Python 3.13",
+                     7)) {
+        return NULL;
+    }
+
     return PyModuleDef_Init(&audioopmodule);
 }

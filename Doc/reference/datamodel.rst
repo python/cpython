@@ -1501,7 +1501,7 @@ Basic customization
 
    Called by built-in function :func:`hash` and for operations on members of
    hashed collections including :class:`set`, :class:`frozenset`, and
-   :class:`dict`.  :meth:`__hash__` should return an integer. The only required
+   :class:`dict`.  The ``__hash__()`` method should return an integer. The only required
    property is that objects which compare equal have the same hash value; it is
    advised to mix together the hash values of the components of the object that
    also play a part in comparison of objects by packing them into a tuple and
@@ -2984,7 +2984,8 @@ generators, coroutines do not directly support iteration.
    :exc:`StopIteration`, or other exception) is the same as when
    iterating over the :meth:`__await__` return value, described above.
 
-.. method:: coroutine.throw(type[, value[, traceback]])
+.. method:: coroutine.throw(value)
+            coroutine.throw(type[, value[, traceback]])
 
    Raises the specified exception in the coroutine.  This method delegates
    to the :meth:`~generator.throw` method of the iterator that caused

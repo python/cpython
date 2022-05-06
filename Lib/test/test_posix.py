@@ -30,8 +30,11 @@ except ImportError:
 _DUMMY_SYMLINK = os.path.join(tempfile.gettempdir(),
                               os_helper.TESTFN + '-dummy-symlink')
 
-requires_32b = unittest.skipUnless(sys.maxsize < 2**32,
-        'test is only meaningful on 32-bit builds')
+requires_32b = unittest.skipUnless(
+    # Emscripten has 32 bits pointers, but support 64 bits syscall args.
+    sys.maxsize < 2**32 and not support.is_emscripten,
+    'test is only meaningful on 32-bit builds'
+)
 
 def _supports_sched():
     if not hasattr(posix, 'sched_getscheduler'):
@@ -578,6 +581,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'O_CLOEXEC'), "needs os.O_CLOEXEC")
     @support.requires_linux_version(2, 6, 23)
+    @support.requires_subprocess()
     def test_oscloexec(self):
         fd = os.open(os_helper.TESTFN, os.O_RDONLY|os.O_CLOEXEC)
         self.addCleanup(os.close, fd)
@@ -737,7 +741,11 @@ class PosixTester(unittest.TestCase):
             is_root = (uid in (0, 1))
         else:
             is_root = (uid == 0)
-        if is_root:
+        if support.is_emscripten:
+            # Emscripten getuid() / geteuid() always return 0 (root), but
+            # cannot chown uid/gid to random value.
+            pass
+        elif is_root:
             # Try an amusingly large uid/gid to make sure we handle
             # large unsigned values.  (chown lets you use any
             # uid/gid you like, even if they aren't defined.)
@@ -1186,7 +1194,9 @@ class PosixTester(unittest.TestCase):
         mask = posix.sched_getaffinity(0)
         self.assertIsInstance(mask, set)
         self.assertGreaterEqual(len(mask), 1)
-        self.assertRaises(OSError, posix.sched_getaffinity, -1)
+        if not sys.platform.startswith("freebsd"):
+            # bpo-47205: does not raise OSError on FreeBSD
+            self.assertRaises(OSError, posix.sched_getaffinity, -1)
         for cpu in mask:
             self.assertIsInstance(cpu, int)
             self.assertGreaterEqual(cpu, 0)
@@ -1204,7 +1214,9 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(ValueError, posix.sched_setaffinity, 0, [-10])
         self.assertRaises(ValueError, posix.sched_setaffinity, 0, map(int, "0X"))
         self.assertRaises(OverflowError, posix.sched_setaffinity, 0, [1<<128])
-        self.assertRaises(OSError, posix.sched_setaffinity, -1, mask)
+        if not sys.platform.startswith("freebsd"):
+            # bpo-47205: does not raise OSError on FreeBSD
+            self.assertRaises(OSError, posix.sched_setaffinity, -1, mask)
 
     def test_rtld_constants(self):
         # check presence of major RTLD_* constants
