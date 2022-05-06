@@ -1269,8 +1269,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 p = os.path.dirname(self.test_exe)
                 with open(os.path.join(p, 'pybuilddir.txt'), encoding='utf8') as f:
                     p = os.path.normpath(
-                        os.path.join(p, f'{f.read()}\n$'.splitlines()[0])
-                    )
+                        os.path.join(p, f'{f.read()}\n$'.splitlines()[0]))
                 if p != expected_paths[-1]:
                     expected_paths.insert(-1, p)
                 del p
