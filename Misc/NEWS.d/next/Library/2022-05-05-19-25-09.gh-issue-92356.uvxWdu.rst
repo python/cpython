@@ -1,0 +1,1 @@
+Fixed a performance regression in ctypes function calls.
