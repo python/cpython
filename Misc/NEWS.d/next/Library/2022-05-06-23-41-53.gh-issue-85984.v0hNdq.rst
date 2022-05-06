@@ -1,0 +1,2 @@
+Soumendra Ganguly: new additions to the tty library. Functions added: cfmakeecho(), cfmakeraw(), and cfmakecbreak().
+The functions setcbreak() and setraw() now return original termios to save an extra tcgetattr() call.
