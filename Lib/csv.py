@@ -4,6 +4,7 @@ csv.py - read/write/investigate CSV files
 """
 
 import re
+import types
 from _csv import Error, __version__, writer, reader, register_dialect, \
                  unregister_dialect, get_dialect, list_dialects, \
                  field_size_limit, \
@@ -126,6 +127,8 @@ class DictReader:
                 d[key] = self.restval
         return d
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
 
 class DictWriter:
     def __init__(self, f, fieldnames, restval="", extrasaction="raise",
@@ -155,6 +158,8 @@ class DictWriter:
 
     def writerows(self, rowdicts):
         return self.writer.writerows(map(self._dict_to_list, rowdicts))
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 # Guard Sniffer's type checking against builds that exclude complex()
 try:
