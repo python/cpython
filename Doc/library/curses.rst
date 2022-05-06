@@ -27,20 +27,6 @@ Linux and the BSD variants of Unix.
    Whenever the documentation mentions a *character string* it can be specified
    as a Unicode string or a byte string.
 
-.. note::
-
-   Since version 5.4, the ncurses library decides how to interpret non-ASCII data
-   using the ``nl_langinfo`` function.  That means that you have to call
-   :func:`locale.setlocale` in the application and encode Unicode strings
-   using one of the system's available encodings.  This example uses the
-   system's default encoding::
-
-      import locale
-      locale.setlocale(locale.LC_ALL, '')
-      code = locale.getpreferredencoding()
-
-   Then use *code* as the encoding for :meth:`str.encode` calls.
-
 .. seealso::
 
    Module :mod:`curses.ascii`
@@ -368,7 +354,7 @@ The module :mod:`curses` defines the following functions:
 
    Set the maximum time in milliseconds that can elapse between press and release
    events in order for them to be recognized as a click, and return the previous
-   interval value.  The default value is 200 msec, or one fifth of a second.
+   interval value.  The default value is 200 milliseconds, or one fifth of a second.
 
 
 .. function:: mousemask(mousemask)
@@ -923,8 +909,8 @@ the following methods and attributes:
 
    Encoding used to encode method arguments (Unicode strings and characters).
    The encoding attribute is inherited from the parent window when a subwindow
-   is created, for example with :meth:`window.subwin`. By default, the locale
-   encoding is used (see :func:`locale.getpreferredencoding`).
+   is created, for example with :meth:`window.subwin`.
+   By default, current locale encoding is used (see :func:`locale.getencoding`).
 
    .. versionadded:: 3.3
 

@@ -21,6 +21,7 @@ import io
 import threading
 from traceback import print_exc
 
+threading_helper.requires_working_threading(module=True)
 
 NUM_THREADS = 20
 FILES_PER_THREAD = 50

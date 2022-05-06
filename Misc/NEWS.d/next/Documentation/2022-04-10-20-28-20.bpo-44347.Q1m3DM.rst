@@ -1,0 +1,1 @@
+Clarify the meaning of *dirs_exist_ok*, a kwarg of :func:`shutil.copytree`.

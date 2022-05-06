@@ -9,6 +9,8 @@ import weakref
 
 from test import lock_tests
 
+threading_helper.requires_working_threading(module=True)
+
 NUMTASKS = 10
 NUMTRIPS = 3
 POLL_SLEEP = 0.010 # seconds = 10 ms
@@ -224,7 +226,7 @@ class TestForkInThread(unittest.TestCase):
     def setUp(self):
         self.read_fd, self.write_fd = os.pipe()
 
-    @unittest.skipUnless(hasattr(os, 'fork'), 'need os.fork')
+    @support.requires_fork()
     @threading_helper.reap_threads
     def test_forkinthread(self):
         pid = None

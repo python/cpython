@@ -128,7 +128,7 @@ class TestSealable(unittest.TestCase):
             m.attr_sample2
 
     def test_integration_with_spec_method_definition(self):
-        """You need to defin the methods, even if they are in the spec"""
+        """You need to define the methods, even if they are in the spec"""
         m = mock.Mock(SampleObject)
 
         m.method_sample1.return_value = 1

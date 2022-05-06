@@ -23,25 +23,25 @@ option, for example::
 
 to create a gzipped tarball and a zip file.  The available formats are:
 
-+-----------+-------------------------+---------+
-| Format    | Description             | Notes   |
-+===========+=========================+=========+
-| ``zip``   | zip file (:file:`.zip`) | (1),(3) |
-+-----------+-------------------------+---------+
-| ``gztar`` | gzip'ed tar file        | \(2)    |
-|           | (:file:`.tar.gz`)       |         |
-+-----------+-------------------------+---------+
-| ``bztar`` | bzip2'ed tar file       |         |
-|           | (:file:`.tar.bz2`)      |         |
-+-----------+-------------------------+---------+
-| ``xztar`` | xz'ed tar file          |         |
-|           | (:file:`.tar.xz`)       |         |
-+-----------+-------------------------+---------+
-| ``ztar``  | compressed tar file     | \(4)    |
-|           | (:file:`.tar.Z`)        |         |
-+-----------+-------------------------+---------+
-| ``tar``   | tar file (:file:`.tar`) |         |
-+-----------+-------------------------+---------+
++-----------+-------------------------+-------------+
+| Format    | Description             | Notes       |
++===========+=========================+=============+
+| ``zip``   | zip file (:file:`.zip`) | (1),(3)     |
++-----------+-------------------------+-------------+
+| ``gztar`` | gzip'ed tar file        | \(2)        |
+|           | (:file:`.tar.gz`)       |             |
++-----------+-------------------------+-------------+
+| ``bztar`` | bzip2'ed tar file       | \(5)        |
+|           | (:file:`.tar.bz2`)      |             |
++-----------+-------------------------+-------------+
+| ``xztar`` | xz'ed tar file          | \(5)        |
+|           | (:file:`.tar.xz`)       |             |
++-----------+-------------------------+-------------+
+| ``ztar``  | compressed tar file     | (4),(5)     |
+|           | (:file:`.tar.Z`)        |             |
++-----------+-------------------------+-------------+
+| ``tar``   | tar file (:file:`.tar`) | \(5)        |
++-----------+-------------------------+-------------+
 
 .. versionchanged:: 3.5
    Added support for the ``xztar`` format.
@@ -61,6 +61,9 @@ Notes:
 (4)
    requires the :program:`compress` program. Notice that this format is now
    pending for deprecation and will be removed in the future versions of Python.
+(5)
+  deprecated by `PEP 527 <https://peps.python.org/pep-0527/>`_;
+  `PyPI <https://pypi.org>`_ only accepts ``.zip`` and ``.tar.gz`` files.
 
 When using any ``tar`` format (``gztar``, ``bztar``, ``xztar``, ``ztar`` or
 ``tar``), under Unix you can specify the ``owner`` and ``group`` names

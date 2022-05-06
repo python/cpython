@@ -46,19 +46,47 @@ def updating_file_with_tmpfile(filename, tmpfile=None):
     update_file_with_tmpfile(filename, tmpfile)
 
 
-def update_file_with_tmpfile(filename, tmpfile):
-    with open(filename, 'rb') as f:
-        old_contents = f.read()
-    with open(tmpfile, 'rb') as f:
-        new_contents = f.read()
-    if old_contents != new_contents:
+def update_file_with_tmpfile(filename, tmpfile, *, create=False):
+    try:
+        targetfile = open(filename, 'rb')
+    except FileNotFoundError:
+        if not create:
+            raise  # re-raise
+        outcome = 'created'
         os.replace(tmpfile, filename)
     else:
-        os.unlink(tmpfile)
+        with targetfile:
+            old_contents = targetfile.read()
+        with open(tmpfile, 'rb') as f:
+            new_contents = f.read()
+        # Now compare!
+        if old_contents != new_contents:
+            outcome = 'updated'
+            os.replace(tmpfile, filename)
+        else:
+            outcome = 'same'
+            os.unlink(tmpfile)
+    return outcome
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print("Usage: %s <path to be updated> <path with new contents>" % (sys.argv[0],))
-        sys.exit(1)
-    update_file_with_tmpfile(sys.argv[1], sys.argv[2])
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--create', action='store_true')
+    parser.add_argument('--exitcode', action='store_true')
+    parser.add_argument('filename', help='path to be updated')
+    parser.add_argument('tmpfile', help='path with new contents')
+    args = parser.parse_args()
+    kwargs = vars(args)
+    setexitcode = kwargs.pop('exitcode')
+
+    outcome = update_file_with_tmpfile(**kwargs)
+    if setexitcode:
+        if outcome == 'same':
+            sys.exit(0)
+        elif outcome == 'updated':
+            sys.exit(1)
+        elif outcome == 'created':
+            sys.exit(2)
+        else:
+            raise NotImplementedError

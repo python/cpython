@@ -52,16 +52,16 @@
         <Text X="185" Y="11" Width="-11" Height="36" FontId="1" DisablePrefix="yes">#(loc.Custom1Header)</Text>
         <Image X="0" Y="0" Width="178" Height="382" ImageFile="SideBar.png"/>
         
-        <Checkbox Name="Include_doc" X="185" Y="51" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="yes">#(loc.Include_docLabel)</Checkbox>
+        <Checkbox Name="Include_doc" X="185" Y="51" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_docLabel)</Checkbox>
         <Text X="205" Y="76" Width="-11" Height="24" TabStop="no" FontId="5">#(loc.Include_docHelpLabel)</Text>
         
-        <Checkbox Name="Include_pip" X="185" Y="101" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="yes">#(loc.Include_pipLabel)</Checkbox>
+        <Checkbox Name="Include_pip" X="185" Y="101" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_pipLabel)</Checkbox>
         <Text X="205" Y="126" Width="-11" Height="24" TabStop="no" FontId="5">#(loc.Include_pipHelpLabel)</Text>
         
-        <Checkbox Name="Include_tcltk" X="185" Y="151" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="yes">#(loc.Include_tcltkLabel)</Checkbox>
-        <Text X="205" Y="176" Width="-11" Height="24" TabStop="no" FontId="5">#(loc.Include_tcltkHelpLabel)</Text>
+        <Checkbox Name="Include_tcltk" X="185" Y="151" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_tcltkLabel)</Checkbox>
+        <Text Name="Include_tcltkLabel" X="205" Y="176" Width="-11" Height="24" TabStop="no" FontId="5">#(loc.Include_tcltkHelpLabel)</Text>
         
-        <Checkbox Name="Include_test" X="185" Y="201" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="yes">#(loc.Include_testLabel)</Checkbox>
+        <Checkbox Name="Include_test" X="185" Y="201" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_testLabel)</Checkbox>
         <Text X="205" Y="226" Width="-11" Height="24" TabStop="no" FontId="5">#(loc.Include_testHelpLabel)</Text>
 
         <Checkbox Name="Include_launcher" X="185" Y="251" Width="100" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_launcherLabel)</Checkbox>

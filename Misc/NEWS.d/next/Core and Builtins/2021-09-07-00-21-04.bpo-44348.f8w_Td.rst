@@ -1,8 +1,0 @@
-The deallocator function of the :exc:`BaseException` type now uses the
-trashcan mecanism to prevent stack overflow. For example, when a
-:exc:`RecursionError` instance is raised, it can be linked to another
-RecursionError through the ``__context__`` attribute or the
-``__traceback__`` attribute, and then a chain of exceptions is created. When
-the chain is destroyed, nested deallocator function calls can crash with a
-stack overflow if the chain is too long compared to the available stack
-memory. Patch by Victor Stinner.

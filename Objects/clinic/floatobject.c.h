@@ -83,7 +83,7 @@ PyDoc_STRVAR(float___round____doc__,
 "When an argument is passed, work like built-in round(x, ndigits).");
 
 #define FLOAT___ROUND___METHODDEF    \
-    {"__round__", (PyCFunction)(void(*)(void))float___round__, METH_FASTCALL, float___round____doc__},
+    {"__round__", _PyCFunction_CAST(float___round__), METH_FASTCALL, float___round____doc__},
 
 static PyObject *
 float___round___impl(PyObject *self, PyObject *o_ndigits);
@@ -290,73 +290,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(float___set_format____doc__,
-"__set_format__($type, typestr, fmt, /)\n"
-"--\n"
-"\n"
-"You probably don\'t want to use this function.\n"
-"\n"
-"  typestr\n"
-"    Must be \'double\' or \'float\'.\n"
-"  fmt\n"
-"    Must be one of \'unknown\', \'IEEE, big-endian\' or \'IEEE, little-endian\',\n"
-"    and in addition can only be one of the latter two if it appears to\n"
-"    match the underlying C reality.\n"
-"\n"
-"It exists mainly to be used in Python\'s test suite.\n"
-"\n"
-"Override the automatic determination of C-level floating point type.\n"
-"This affects how floats are converted to and from binary strings.");
-
-#define FLOAT___SET_FORMAT___METHODDEF    \
-    {"__set_format__", (PyCFunction)(void(*)(void))float___set_format__, METH_FASTCALL|METH_CLASS, float___set_format____doc__},
-
-static PyObject *
-float___set_format___impl(PyTypeObject *type, const char *typestr,
-                          const char *fmt);
-
-static PyObject *
-float___set_format__(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    const char *typestr;
-    const char *fmt;
-
-    if (!_PyArg_CheckPositional("__set_format__", nargs, 2, 2)) {
-        goto exit;
-    }
-    if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("__set_format__", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    Py_ssize_t typestr_length;
-    typestr = PyUnicode_AsUTF8AndSize(args[0], &typestr_length);
-    if (typestr == NULL) {
-        goto exit;
-    }
-    if (strlen(typestr) != (size_t)typestr_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
-    if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("__set_format__", "argument 2", "str", args[1]);
-        goto exit;
-    }
-    Py_ssize_t fmt_length;
-    fmt = PyUnicode_AsUTF8AndSize(args[1], &fmt_length);
-    if (fmt == NULL) {
-        goto exit;
-    }
-    if (strlen(fmt) != (size_t)fmt_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
-    return_value = float___set_format___impl(type, typestr, fmt);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(float___format____doc__,
 "__format__($self, format_spec, /)\n"
 "--\n"
@@ -388,4 +321,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=122a73f4c9d25806 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a6e6467624a92a43 input=a9049054013a1b77]*/

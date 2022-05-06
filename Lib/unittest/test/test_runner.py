@@ -3,6 +3,7 @@ import os
 import sys
 import pickle
 import subprocess
+from test import support
 
 import unittest
 from unittest.case import _Outcome
@@ -1249,6 +1250,7 @@ class Test_TextTestRunner(unittest.TestCase):
         expectedresult = (runner.stream, DESCRIPTIONS, VERBOSITY)
         self.assertEqual(runner._makeResult(), expectedresult)
 
+    @support.requires_subprocess()
     def test_warnings(self):
         """
         Check that warnings argument of TextTestRunner correctly affects the
@@ -1260,6 +1262,8 @@ class Test_TextTestRunner(unittest.TestCase):
             return [b.splitlines() for b in p.communicate()]
         opts = dict(stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                     cwd=os.path.dirname(__file__))
+        ae_msg = b'Please use assertEqual instead.'
+        at_msg = b'Please use assertTrue instead.'
 
         # no args -> all the warnings are printed, unittest warnings only once
         p = subprocess.Popen([sys.executable, '-E', '_test_warnings.py'], **opts)
@@ -1267,11 +1271,11 @@ class Test_TextTestRunner(unittest.TestCase):
             out, err = get_parse_out_err(p)
         self.assertIn(b'OK', err)
         # check that the total number of warnings in the output is correct
-        self.assertEqual(len(out), 10)
+        self.assertEqual(len(out), 12)
         # check that the numbers of the different kind of warnings is correct
         for msg in [b'dw', b'iw', b'uw']:
             self.assertEqual(out.count(msg), 3)
-        for msg in [b'rw']:
+        for msg in [ae_msg, at_msg, b'rw']:
             self.assertEqual(out.count(msg), 1)
 
         args_list = (
@@ -1298,9 +1302,11 @@ class Test_TextTestRunner(unittest.TestCase):
         with p:
             out, err = get_parse_out_err(p)
         self.assertIn(b'OK', err)
-        self.assertEqual(len(out), 12)
+        self.assertEqual(len(out), 14)
         for msg in [b'dw', b'iw', b'uw', b'rw']:
             self.assertEqual(out.count(msg), 3)
+        for msg in [ae_msg, at_msg]:
+            self.assertEqual(out.count(msg), 1)
 
     def testStdErrLookedUpAtInstantiationTime(self):
         # see issue 10786

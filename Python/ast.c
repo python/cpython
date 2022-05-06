@@ -817,6 +817,31 @@ validate_stmt(struct validator *state, stmt_ty stmt)
             (!asdl_seq_LEN(stmt->v.Try.orelse) ||
              validate_stmts(state, stmt->v.Try.orelse));
         break;
+    case TryStar_kind:
+        if (!validate_body(state, stmt->v.TryStar.body, "TryStar"))
+            return 0;
+        if (!asdl_seq_LEN(stmt->v.TryStar.handlers) &&
+            !asdl_seq_LEN(stmt->v.TryStar.finalbody)) {
+            PyErr_SetString(PyExc_ValueError, "TryStar has neither except handlers nor finalbody");
+            return 0;
+        }
+        if (!asdl_seq_LEN(stmt->v.TryStar.handlers) &&
+            asdl_seq_LEN(stmt->v.TryStar.orelse)) {
+            PyErr_SetString(PyExc_ValueError, "TryStar has orelse but no except handlers");
+            return 0;
+        }
+        for (i = 0; i < asdl_seq_LEN(stmt->v.TryStar.handlers); i++) {
+            excepthandler_ty handler = asdl_seq_GET(stmt->v.TryStar.handlers, i);
+            if ((handler->v.ExceptHandler.type &&
+                 !validate_expr(state, handler->v.ExceptHandler.type, Load)) ||
+                !validate_body(state, handler->v.ExceptHandler.body, "ExceptHandler"))
+                return 0;
+        }
+        ret = (!asdl_seq_LEN(stmt->v.TryStar.finalbody) ||
+                validate_stmts(state, stmt->v.TryStar.finalbody)) &&
+            (!asdl_seq_LEN(stmt->v.TryStar.orelse) ||
+             validate_stmts(state, stmt->v.TryStar.orelse));
+        break;
     case Assert_kind:
         ret = validate_expr(state, stmt->v.Assert.test, Load) &&
             (!stmt->v.Assert.msg || validate_expr(state, stmt->v.Assert.msg, Load));
@@ -933,8 +958,9 @@ _PyAST_Validate(mod_ty mod)
         return 0;
     }
     /* Be careful here to prevent overflow. */
-    starting_recursion_depth = (tstate->recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        tstate->recursion_depth * COMPILER_STACK_FRAME_SCALE : tstate->recursion_depth;
+    int recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
+    starting_recursion_depth = (recursion_depth< INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
+        recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
     state.recursion_depth = starting_recursion_depth;
     state.recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
         recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;

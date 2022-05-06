@@ -1,0 +1,3 @@
+For @dataclass, add weakref_slot. Default is False. If True, and if
+slots=True, add a slot named "__weakref__", which will allow instances to be
+weakref'd. Contributed by Eric V. Smith

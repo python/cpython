@@ -567,9 +567,6 @@ expression.  Currently the following are explicitly supported:
 * Simple symbolic constants like ``sys.maxsize``, which must
   start with the name of the module
 
-In case you're curious, this is implemented in  ``from_builtin()``
-in ``Lib/inspect.py``.
-
 (In the future, this may need to get even more elaborate,
 to allow full expressions like ``CONSTANT - 1``.)
 
@@ -1252,15 +1249,15 @@ The ``defining_class`` converter is not compatible with ``__init__`` and ``__new
 methods, which cannot use the ``METH_METHOD`` convention.
 
 It is not possible to use ``defining_class`` with slot methods.  In order to
-fetch the module state from such methods, use ``_PyType_GetModuleByDef`` to
-look up the module and then :c:func:`PyModule_GetState` to fetch the module
+fetch the module state from such methods, use :c:func:`PyType_GetModuleByDef`
+to look up the module and then :c:func:`PyModule_GetState` to fetch the module
 state.  Example from the ``setattro`` slot method in
 ``Modules/_threadmodule.c``::
 
     static int
     local_setattro(localobject *self, PyObject *name, PyObject *v)
     {
-        PyObject *module = _PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
+        PyObject *module = PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
         thread_module_state *state = get_thread_state(module);
         ...
     }
