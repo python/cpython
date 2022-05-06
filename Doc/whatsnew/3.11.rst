@@ -744,6 +744,14 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   (Contributed by Serhiy Storchaka in :issue:`43923`.)
 
 
+tkinter
+-------
+
+* Added method ``info_patchlevel()`` which returns the exact version of
+  the Tcl library as a named tuple similar to :data:`sys.version_info`.
+  (Contributed by Serhiy Storchaka in :issue:`91827`.)
+
+
 unicodedata
 -----------
 
