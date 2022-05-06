@@ -36,6 +36,7 @@ typedef struct _PyPathConfig {
     wchar_t *program_name;
     /* Set by Py_SetPythonHome() or PYTHONHOME environment variable */
     wchar_t *home;
+    int _is_python_build;
 } _PyPathConfig;
 
 #  define _PyPathConfig_INIT \
@@ -105,6 +106,7 @@ _PyPathConfig_ReadGlobal(PyConfig *config)
     COPY(program_name);
     COPY(home);
     COPY2(executable, program_full_path);
+    config->_is_python_build = _Py_path_config._is_python_build;
     // module_search_path must be initialised - not read
 #undef COPY
 #undef COPY2
@@ -143,6 +145,7 @@ _PyPathConfig_UpdateGlobal(const PyConfig *config)
     COPY(program_name);
     COPY(home);
     COPY2(program_full_path, executable);
+    _Py_path_config._is_python_build = config->_is_python_build;
 #undef COPY
 #undef COPY2
 
