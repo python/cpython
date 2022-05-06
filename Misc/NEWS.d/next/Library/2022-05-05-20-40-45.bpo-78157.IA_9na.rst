@@ -1,0 +1,3 @@
+Deprecate nested classes in enum definitions becoming members -- in 3.13
+they will be normal classes; add `member` and `nonmember` functions to allow
+control over results now.

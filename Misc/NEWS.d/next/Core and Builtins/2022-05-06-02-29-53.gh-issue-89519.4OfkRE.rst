@@ -1,0 +1,4 @@
+Chaining classmethod descriptors (introduced in bpo-19072) is deprecated. It
+can no longer be used to wrap other descriptors such as property().  The
+core design of this feature was flawed, and it caused a number of downstream
+problems.
