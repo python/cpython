@@ -706,7 +706,7 @@ class ProcessPoolExecutor(_base.Executor):
         if self._executor_manager_thread is None:
             # Start the processes so that their sentinels are known.
             if not self._safe_to_dynamically_spawn_children:  # ie, using fork.
-                self.__launch_processes()
+                self._launch_processes()
             self._executor_manager_thread = _ExecutorManagerThread(self)
             self._executor_manager_thread.start()
             _threads_wakeups[self._executor_manager_thread] = \
@@ -719,18 +719,23 @@ class ProcessPoolExecutor(_base.Executor):
 
         process_count = len(self._processes)
         if process_count < self._max_workers:
-            assert self._safe_to_dynamically_spawn_children or not self._executor_manager_thread, 'https://github.com/python/cpython/issues/90622'
-            self.__spawn_process()
+            # Assertion disabled as this codepath is also used to replace a
+            # worker that unexpectedly dies, even when using the 'fork' start
+            # method. That means there is still a potential deadlock bug. If a
+            # 'fork' mp_context worker dies, we'll be forking a new one when
+            # we know a thread is running (self._executor_manager_thread).
+            #assert self._safe_to_dynamically_spawn_children or not self._executor_manager_thread, 'https://github.com/python/cpython/issues/90622'
+            self._spawn_process()
 
-    def __launch_processes(self):
+    def _launch_processes(self):
         # https://github.com/python/cpython/issues/90622
         assert not self._executor_manager_thread, (
                 'Processes cannot be fork()ed after the thread has started, '
                 'deadlock in the child processes could result.')
         for _ in range(len(self._processes), self._max_workers):
-            self.__spawn_process()
+            self._spawn_process()
 
-    def __spawn_process(self):
+    def _spawn_process(self):
         p = self._mp_context.Process(
             target=_process_worker,
             args=(self._call_queue,
