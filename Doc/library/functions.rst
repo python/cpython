@@ -271,6 +271,11 @@ are always available.  They are listed here in alphabetical order.
       ``__name__``, ``__qualname__``, ``__doc__`` and ``__annotations__``) and
       have a new ``__wrapped__`` attribute.
 
+   .. versionchanged:: 3.11
+      Class methods can no longer wrap other :term:`descriptors <descriptor>` such as
+      :func:`property`.
+
+
 .. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
 
    Compile the *source* into a code or AST object.  Code objects can be executed

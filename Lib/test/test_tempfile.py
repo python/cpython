@@ -1109,6 +1109,9 @@ class TestSpooledTemporaryFile(BaseTestCase):
         with self.assertWarns(ResourceWarning):
             f.__del__()
 
+    @unittest.skipIf(
+        support.is_emscripten, "Emscripten cannot fstat renamed files."
+    )
     def test_del_rolled_file(self):
         # The rolled file should be deleted when the SpooledTemporaryFile
         # object is deleted. This should raise a ResourceWarning since the file
