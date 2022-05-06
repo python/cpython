@@ -1126,6 +1126,21 @@ AC_ARG_ENABLE([wasm-dynamic-linking],
 ])
 AC_MSG_RESULT([$enable_wasm_dynamic_linking])
 
+AC_MSG_CHECKING([for --enable-wasm-pthreads])
+AC_ARG_ENABLE([wasm-pthreads],
+  [AS_HELP_STRING([--enable-wasm-pthreads],
+                  [Enable pthread emulation for WebAssembly (default is no)])],
+[
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [],
+    [WASI], [AC_MSG_ERROR([WASI threading is not implemented yet.])],
+    [AC_MSG_ERROR([--enable-wasm-pthreads only applies to Emscripten and WASI])]
+  )
+], [
+  enable_wasm_pthreads=missing
+])
+AC_MSG_RESULT([$enable_wasm_pthreads])
+
 AC_MSG_CHECKING([for --with-suffix])
 AC_ARG_WITH([suffix],
             [AS_HELP_STRING([--with-suffix=SUFFIX], [set executable suffix to SUFFIX (default is empty, yes is mapped to '.exe')])],
@@ -1247,7 +1262,7 @@ AC_MSG_RESULT($EXPORTSYMS)
 # make sure we default having it set to "no": this is used by
 # distutils.unixccompiler to know if it should add --enable-new-dtags
 # to linker command lines, and failing to detect GNU ld simply results
-# in the same bahaviour as before.
+# in the same behaviour as before.
 AC_SUBST(GNULD)
 AC_MSG_CHECKING(for GNU ld)
 ac_prog=ld
@@ -1396,6 +1411,24 @@ fi
 if test "$cross_compiling" = yes; then
 	RUNSHARED=
 fi
+
+AC_ARG_VAR([HOSTRUNNER], [Program to run CPython for the host platform])
+AC_MSG_CHECKING([HOSTRUNNER])
+if test -z "$HOSTRUNNER"
+then
+  AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+    [Emscripten/node*], [
+      AS_VAR_IF([enable_wasm_pthreads], [yes], [
+        HOSTRUNNER='node --experimental-wasm-threads --experimental-wasm-bulk-memory'
+      ], [
+        HOSTRUNNER='node'
+      ])
+    ],
+    [HOSTRUNNER='']
+  )
+fi
+AC_SUBST([HOSTRUNNER])
+AC_MSG_RESULT([$HOSTRUNNER])
 
 AC_MSG_RESULT($LDLIBRARY)
 
@@ -1574,10 +1607,10 @@ if test "$Py_OPT" = 'true' ; then
       ])
       ;;
   esac
-elif test "$ac_sys_system" = "Emscripten"; then
+elif test "$ac_sys_system" = "Emscripten" -o "$ac_sys_system" = "WASI"; then
   dnl Emscripten does not support shared extensions yet. Build
-  dnl "python.[js,html,wasm]", "pybuilddir.txt", and "platform" files.
-  DEF_MAKE_ALL_RULE="build_platform"
+  dnl "python.[js,wasm]", "pybuilddir.txt", and "platform" files.
+  DEF_MAKE_ALL_RULE="build_wasm"
   REQUIRE_PGO="no"
   DEF_MAKE_RULE="all"
 else
@@ -1909,38 +1942,53 @@ then
 fi
 
 # WASM flags
-AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [Emscripten/browser*], [
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH=1"
-    LINKFORSHARED="--preload-file=\$(WASM_ASSETS_DIR)"
+AS_CASE([$ac_sys_system],
+  [Emscripten], [
+    dnl build with WASM debug info if either Py_DEBUG is set or the target is
+    dnl node-debug or browser-debug.
+    AS_VAR_IF([Py_DEBUG], [yes], [wasm_debug=yes], [wasm_debug=no])
+    
+    dnl Start with 20 MB and allow to grow
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sTOTAL_MEMORY=20971520"])
+
+    dnl Include file system support
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
+
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
-      AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE=1"])
+      AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
     ])
-    WASM_ASSETS_DIR=".\$(prefix)"
-    WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
-    dnl separate-dwarf does not seem to work in Chrome DevTools Support.
-    if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "browser-debug"; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS=1"
-      LINKFORSHARED="$LINKFORSHARED -gsource-map --emit-symbol-map"
-    else
-      LINKFORSHARED="$LINKFORSHARED -O2 -g0"
-    fi
-  ],
-  [Emscripten/node*], [
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH=1 -sNODERAWFS=1 -sUSE_PTHREADS=1"
-    LINKFORSHARED="-sPROXY_TO_PTHREAD=1 -sEXIT_RUNTIME=1"
-    AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
-      AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE=1"])
+
+    AS_VAR_IF([enable_wasm_pthreads], [yes], [
+      AS_VAR_APPEND([CFLAGS_NODIST], [" -pthread"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -sUSE_PTHREADS"])
+      AS_VAR_APPEND([LINKFORSHARED], [" -sPROXY_TO_PTHREAD"])
     ])
-    CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
-    if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "node-debug"; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS=1"
-      LINKFORSHARED="$LINKFORSHARED -gseparate-dwarf --emit-symbol-map"
-    else
-      LINKFORSHARED="$LINKFORSHARED -O2 -g0"
-    fi
+
+    AS_CASE([$ac_sys_emscripten_target],
+      [browser*], [
+        AS_VAR_IF([ac_sys_emscripten_target], [browser-debug], [wasm_debug=yes])
+        AS_VAR_APPEND([LINKFORSHARED], [" --preload-file=\$(WASM_ASSETS_DIR)"])
+        WASM_ASSETS_DIR=".\$(prefix)"
+        WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
+        dnl separate-dwarf does not seem to work in Chrome DevTools Support.
+        WASM_LINKFORSHARED_DEBUG="-gsource-map --emit-symbol-map"
+      ],
+      [node*], [
+        AS_VAR_IF([ac_sys_emscripten_target], [node-debug], [wasm_debug=yes])
+        AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sNODERAWFS"])
+        AS_VAR_APPEND([LINKFORSHARED], [" -sEXIT_RUNTIME"])
+        WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
+      ]
+    )
+
+    AS_VAR_IF([wasm_debug], [yes], [
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -sASSERTIONS"])
+      AS_VAR_APPEND([LINKFORSHARED], [" $WASM_LINKFORSHARED_DEBUG"])
+    ], [
+      AS_VAR_APPEND([LINKFORSHARED], [" -O2 -g0"])
+    ])
   ],
-  [WASI/*], [
+  [WASI], [
     AC_DEFINE([_WASI_EMULATED_SIGNAL], [1], [Define to 1 if you want to emulate signals on WASI])
     AC_DEFINE([_WASI_EMULATED_GETPID], [1], [Define to 1 if you want to emulate getpid() on WASI])
     AC_DEFINE([_WASI_EMULATED_PROCESS_CLOCKS], [1], [Define to 1 if you want to emulate process clocks on WASI])
@@ -1983,7 +2031,7 @@ AC_DEFUN([PY_CHECK_CC_WARNING], [
 # tweak BASECFLAGS based on compiler and platform
 case $GCC in
 yes)
-    CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
+    CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
 
     PY_CHECK_CC_WARNING([enable], [extra], [if we can add -Wextra])
     AS_VAR_IF([ac_cv_enable_extra_warning], [yes],
@@ -2460,7 +2508,7 @@ AC_CHECK_HEADERS([ \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
   sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h \
   sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
-  termios.h util.h utime.h \
+  termios.h util.h utime.h utmp.h \
 ])
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
@@ -2954,6 +3002,9 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
+	Emscripten|WASI)
+		LDSHARED='$(CC) -shared'
+		LDCXXSHARED='$(CXX) -shared';;
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
@@ -3009,7 +3060,7 @@ fi
 dnl Emscripten's emconfigure sets LDSHARED. Set BLDSHARED outside the
 dnl test -z $LDSHARED block to configure BLDSHARED for side module support.
 if test "$enable_wasm_dynamic_linking" = "yes" -a "$ac_sys_system" = "Emscripten"; then
-  BLDSHARED='$(CC) -shared -sSIDE_MODULE=1 -sWASM=1'
+  BLDSHARED='$(CC) -shared -sSIDE_MODULE=1'
 fi
 
 AC_MSG_RESULT($LDSHARED)
@@ -3553,6 +3604,12 @@ AS_VAR_IF([have_nis], [yes], [
   ])
 ])
 
+dnl On NetBSD, when using OSS audio, you need to link against libossaudio
+AS_CASE([$ac_sys_system],
+  [NetBSD*], [OSSAUDIODEV_LIBS="-lossaudio"],
+  [OSSAUDIODEV_LIBS=""]
+)
+
 dnl Check for SQLite library. Use pkg-config if available.
 PKG_CHECK_MODULES(
   [LIBSQLITE3], [sqlite3 >= 3.7.15], [], [
@@ -3793,7 +3850,7 @@ AC_CHECK_HEADERS([db.h], [
 AC_MSG_CHECKING(for --with-dbmliborder)
 AC_ARG_WITH(dbmliborder,
             AS_HELP_STRING([--with-dbmliborder=db1:db2:...], [override order to check db backends for dbm; a valid value is a colon separated string with the backend names `ndbm', `gdbm' and `bdb'.]),
-[], [with_dbmliborder=ndbm:gdbm:bdb])
+[], [with_dbmliborder=gdbm:ndbm:bdb])
 
 have_gdbm_dbmliborder=no
 as_save_IFS=$IFS
@@ -3808,7 +3865,7 @@ for db in $with_dbmliborder; do
 done
 IFS=$as_save_IFS
 AS_VAR_IF([with_dbmliborder], [error], [
-  AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:... (ndbm:gdbm:bdb)])
+  AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:... (gdbm:ndbm:bdb)])
 ])
 AC_MSG_RESULT($with_dbmliborder)
 
@@ -4549,8 +4606,8 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
 ])
 
 if test "$have_zlib" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$ZLIB_LIBS" = "-lz"; then
-  ZLIB_CFLAGS="-sUSE_ZLIB=1"
-  ZLIB_LIBS="-sUSE_ZLIB=1"
+  ZLIB_CFLAGS="-sUSE_ZLIB"
+  ZLIB_LIBS="-sUSE_ZLIB"
 fi
 
 dnl binascii can use zlib for optimized crc32.
@@ -4572,8 +4629,8 @@ PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
 ])
 
 if test "$have_bzip2" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$BZIP2_LIBS" = "-lbz2"; then
-  BZIP2_CFLAGS="-sUSE_BZIP2=1"
-  BZIP2_LIBS="-sUSE_BZIP2=1"
+  BZIP2_CFLAGS="-sUSE_BZIP2"
+  BZIP2_LIBS="-sUSE_BZIP2"
 fi
 
 
@@ -4613,13 +4670,16 @@ PY_CHECK_FUNC([setgroups], [
 #endif
 ])
 
-# check for openpty and forkpty
+# check for openpty, login_tty, and forkpty
 
 AC_CHECK_FUNCS(openpty,,
    AC_CHECK_LIB(util,openpty,
      [AC_DEFINE(HAVE_OPENPTY) LIBS="$LIBS -lutil"],
      AC_CHECK_LIB(bsd,openpty, [AC_DEFINE(HAVE_OPENPTY) LIBS="$LIBS -lbsd"])
    )
+)
+AC_SEARCH_LIBS([login_tty], [util],
+ [AC_DEFINE([HAVE_LOGIN_TTY], [1], [Define to 1 if you have the `login_tty' function.])]
 )
 AC_CHECK_FUNCS(forkpty,,
    AC_CHECK_LIB(util,forkpty,
@@ -6557,21 +6617,18 @@ fi],
 
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.
-AC_MSG_CHECKING(for --disable-test-modules)
-AC_ARG_ENABLE(test-modules,
-              AS_HELP_STRING([--disable-test-modules], [don't build nor install test modules]))
-if test "$enable_test_modules" = no; then
-    TEST_MODULES=no
-else
-    AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-      [Emscripten/browser*], [TEST_MODULES=no],
-      [TEST_MODULES=yes]
-    )
-fi
-AS_VAR_IF([TEST_MODULES], [yes],
-  [AC_MSG_RESULT(no)], [AC_MSG_RESULT(yes)]
-)
-AC_SUBST(TEST_MODULES)
+AC_MSG_CHECKING([for --disable-test-modules])
+AC_ARG_ENABLE([test-modules],
+  [AS_HELP_STRING([--disable-test-modules], [don't build nor install test modules])], [
+  AS_VAR_IF([enable_test_modules], [yes], [TEST_MODULES=yes], [TEST_MODULES=no])
+], [
+  AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+    [Emscripten/browser*], [TEST_MODULES=no],
+    [TEST_MODULES=yes]
+  )
+])
+AC_MSG_RESULT([$TEST_MODULES])
+AC_SUBST([TEST_MODULES])
 
 AC_DEFUN([PY_STDLIB_MOD_SET_NA], [
   m4_foreach([mod], [$@], [
@@ -6582,43 +6639,19 @@ AC_DEFUN([PY_STDLIB_MOD_SET_NA], [
 dnl Modules that are not available on some platforms
 dnl AIX has shadow passwords, but access is not via getspent()
 dnl VxWorks does not provide crypt() function
-AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [AIX/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
-  [VxWorks*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [_crypt], [termios], [grp])],
-  [Darwin/*], [PY_STDLIB_MOD_SET_NA([ossaudiodev], [spwd])],
-  [CYGWIN*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
-  [QNX*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
-  [FreeBSD*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
-  [Emscripten/browser*], [
+AS_CASE([$ac_sys_system],
+  [AIX], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
+  [VxWorks*], [PY_STDLIB_MOD_SET_NA([_scproxy], [_crypt], [termios], [grp])],
+  [Darwin], [PY_STDLIB_MOD_SET_NA([ossaudiodev], [spwd])],
+  [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
+  [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
+  [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
+  [Emscripten|WASI], [
+    dnl subprocess and multiprocessing are not supported (no fork syscall).
+    dnl curses and tkinter user interface are not available.
+    dnl dbm and gdbm aren't available, too.
+    dnl Emscripten and WASI provide only stubs for pwd, grp APIs.
     PY_STDLIB_MOD_SET_NA(
-      [_ctypes],
-      [_curses],
-      [_curses_panel],
-      [_dbm],
-      [_gdbm],
-      [_multiprocessing],
-      [_posixshmem],
-      [_posixsubprocess],
-      [_scproxy],
-      [_tkinter],
-      [_xxsubinterpreters],
-      [fcntl],
-      [grp],
-      [nis],
-      [ossaudiodev],
-      [pwd],
-      [resource],
-      [readline],
-      [spwd],
-      [syslog],
-      [termios],
-    )
-  ],
-  dnl Some modules like _posixsubprocess do not work. We build them anyway
-  dnl so imports in tests do not fail.
-  [Emscripten/node*], [
-    PY_STDLIB_MOD_SET_NA(
-      [_ctypes],
       [_curses],
       [_curses_panel],
       [_dbm],
@@ -6636,24 +6669,18 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
       [spwd],
       [syslog],
     )
-  ],
-  [WASI/*], [
-    PY_STDLIB_MOD_SET_NA(
-      [_ctypes],
-      [_ctypes_test],
-      [_curses],
-      [_curses_panel],
-      [_dbm],
-      [_gdbm],
-      [_scproxy],
-      [_tkinter],
-      [_xxsubinterpreters],
-      [grp],
-      [nis],
-      [ossaudiodev],
-      [pwd],
-      [spwd],
-      [syslog],
+    AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+      [Emscripten/browser*], [
+        dnl These modules are not particularly useful in browsers.
+        PY_STDLIB_MOD_SET_NA(
+          [fcntl],
+          [resource],
+          [readline],
+          [termios],
+        )
+      ],
+      [Emscripten/node*], [],
+      [WASI/*], []
     )
   ],
   [PY_STDLIB_MOD_SET_NA([_scproxy])]
@@ -6789,7 +6816,8 @@ PY_STDLIB_MOD([_socket],
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
 PY_STDLIB_MOD([ossaudiodev],
-  [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes])
+  [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes],
+  [], [$OSSAUDIODEV_LIBS])
 PY_STDLIB_MOD([pwd], [], [test "$ac_cv_func_getpwuid" = yes -o "$ac_cv_func_getpwuid_r" = yes])
 PY_STDLIB_MOD([resource], [], [test "$ac_cv_header_sys_resource_h" = yes])
 PY_STDLIB_MOD([_scproxy],

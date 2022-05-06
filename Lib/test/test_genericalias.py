@@ -14,6 +14,7 @@ from contextvars import ContextVar, Token
 from dataclasses import Field
 from functools import partial, partialmethod, cached_property
 from graphlib import TopologicalSorter
+from logging import LoggerAdapter, StreamHandler
 from mailbox import Mailbox, _PartialFile
 try:
     import ctypes
@@ -113,6 +114,7 @@ class BaseTest(unittest.TestCase):
                      MappingProxyType, AsyncGeneratorType,
                      DirEntry,
                      chain,
+                     LoggerAdapter, StreamHandler,
                      TemporaryDirectory, SpooledTemporaryFile,
                      Queue, SimpleQueue,
                      _AssertRaisesContext,
@@ -356,6 +358,8 @@ class BaseTest(unittest.TestCase):
         self.assertNotEqual(dict[str, int], dict[str, str])
         self.assertNotEqual(list, list[int])
         self.assertNotEqual(list[int], list)
+        self.assertNotEqual(list[int], tuple[int])
+        self.assertNotEqual((*tuple[int],)[0], tuple[int])
 
     def test_isinstance(self):
         self.assertTrue(isinstance([], list))
@@ -392,6 +396,7 @@ class BaseTest(unittest.TestCase):
                     self.assertEqual(loaded.__origin__, alias.__origin__)
                     self.assertEqual(loaded.__args__, alias.__args__)
                     self.assertEqual(loaded.__parameters__, alias.__parameters__)
+                    self.assertEqual(type(loaded), type(alias))
 
     def test_copy(self):
         class X(list):
@@ -415,6 +420,12 @@ class BaseTest(unittest.TestCase):
                 self.assertEqual(copied.__origin__, alias.__origin__)
                 self.assertEqual(copied.__args__, alias.__args__)
                 self.assertEqual(copied.__parameters__, alias.__parameters__)
+
+    def test_unpack(self):
+        alias = tuple[str, ...]
+        self.assertIs(alias.__unpacked__, False)
+        unpacked = (*alias,)[0]
+        self.assertIs(unpacked.__unpacked__, True)
 
     def test_union(self):
         a = typing.Union[list[int], list[str]]

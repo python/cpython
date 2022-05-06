@@ -1,0 +1,2 @@
+In ``importlib.resources.abc``, refined the documentation of the Traversable
+Protocol, applying changes from importlib_resources 5.7.1.

@@ -6,7 +6,7 @@
 #include "pycore_long.h"
 #include "pycore_moduleobject.h"
 #include "pycore_object.h"
-#include "opcode.h"
+#include "pycore_opcode.h"        // _PyOpcode_Caches
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
 
 #include <stdlib.h> // rand()
@@ -183,7 +183,12 @@ print_call_stats(FILE *out, CallStats *stats)
 static void
 print_object_stats(FILE *out, ObjectStats *stats)
 {
+    fprintf(out, "Object allocations from freelist: %" PRIu64 "\n", stats->from_freelist);
+    fprintf(out, "Object frees to freelist: %" PRIu64 "\n", stats->to_freelist);
     fprintf(out, "Object allocations: %" PRIu64 "\n", stats->allocations);
+    fprintf(out, "Object allocations to 512 bytes: %" PRIu64 "\n", stats->allocations512);
+    fprintf(out, "Object allocations to 4 kbytes: %" PRIu64 "\n", stats->allocations4k);
+    fprintf(out, "Object allocations over 4 kbytes: %" PRIu64 "\n", stats->allocations_big);
     fprintf(out, "Object frees: %" PRIu64 "\n", stats->frees);
     fprintf(out, "Object new values: %" PRIu64 "\n", stats->new_values);
     fprintf(out, "Object materialize dict (on request): %" PRIu64 "\n", stats->dict_materialized_on_request);
@@ -435,6 +440,7 @@ initial_counter_value(void) {
 #define SPEC_FAIL_CALL_METHOD_WRAPPER 26
 #define SPEC_FAIL_CALL_OPERATOR_WRAPPER 27
 #define SPEC_FAIL_CALL_PYFUNCTION 28
+#define SPEC_FAIL_CALL_PEP_523 29
 
 /* COMPARE_OP */
 #define SPEC_FAIL_COMPARE_OP_DIFFERENT_TYPES 12
@@ -1466,6 +1472,11 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
     assert(_Py_OPCODE(*instr) == CALL_ADAPTIVE);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     int kind = function_kind(code);
+    /* Don't specialize if PEP 523 is active */
+    if (_PyInterpreterState_GET()->eval_frame) {
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_PEP_523);
+        return -1;
+    }
     if (kwnames) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_KWNAMES);
         return -1;
@@ -1883,7 +1894,10 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
     assert(_PyOpcode_Caches[COMPARE_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
     _PyCompareOpCache *cache = (_PyCompareOpCache *)(instr + 1);
     int next_opcode = _Py_OPCODE(instr[INLINE_CACHE_ENTRIES_COMPARE_OP + 1]);
-    if (next_opcode != POP_JUMP_IF_FALSE && next_opcode != POP_JUMP_IF_TRUE) {
+    if (next_opcode != POP_JUMP_FORWARD_IF_FALSE &&
+        next_opcode != POP_JUMP_BACKWARD_IF_FALSE &&
+        next_opcode != POP_JUMP_FORWARD_IF_TRUE &&
+        next_opcode != POP_JUMP_BACKWARD_IF_TRUE) {
         // Can't ever combine, so don't don't bother being adaptive (unless
         // we're collecting stats, where it's more important to get accurate hit
         // counts for the unadaptive version and each of the different failure
@@ -1901,8 +1915,13 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
     }
     assert(oparg <= Py_GE);
     int when_to_jump_mask = compare_masks[oparg];
-    if (next_opcode == POP_JUMP_IF_FALSE) {
+    if (next_opcode == POP_JUMP_FORWARD_IF_FALSE ||
+        next_opcode == POP_JUMP_BACKWARD_IF_FALSE) {
         when_to_jump_mask = (1 | 2 | 4) & ~when_to_jump_mask;
+    }
+    if (next_opcode == POP_JUMP_BACKWARD_IF_TRUE ||
+        next_opcode == POP_JUMP_BACKWARD_IF_FALSE) {
+        when_to_jump_mask <<= 3;
     }
     if (Py_TYPE(lhs) != Py_TYPE(rhs)) {
         SPECIALIZATION_FAIL(COMPARE_OP, compare_op_fail_kind(lhs, rhs));
@@ -1931,7 +1950,7 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         }
         else {
             _Py_SET_OPCODE(*instr, COMPARE_OP_STR_JUMP);
-            cache->mask = (when_to_jump_mask & 2) == 0;
+            cache->mask = when_to_jump_mask;
             goto success;
         }
     }

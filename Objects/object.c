@@ -3,13 +3,13 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_context.h"       // _PyContextTokenMissing_Type
 #include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_namespace.h"     // _PyNamespace_Type
-#include "pycore_object.h"        // _PyType_CheckConsistency()
+#include "pycore_object.h"        // _PyType_CheckConsistency(), _Py_FatalRefcountError()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -427,12 +427,12 @@ PyObject_Repr(PyObject *v)
 
     /* It is possible for a type to have a tp_repr representation that loops
        infinitely. */
-    if (_Py_EnterRecursiveCall(tstate,
-                               " while getting the repr of an object")) {
+    if (_Py_EnterRecursiveCallTstate(tstate,
+                                     " while getting the repr of an object")) {
         return NULL;
     }
     res = (*Py_TYPE(v)->tp_repr)(v);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
 
     if (res == NULL) {
         return NULL;
@@ -487,11 +487,11 @@ PyObject_Str(PyObject *v)
 
     /* It is possible for a type to have a tp_str representation that loops
        infinitely. */
-    if (_Py_EnterRecursiveCall(tstate, " while getting the str of an object")) {
+    if (_Py_EnterRecursiveCallTstate(tstate, " while getting the str of an object")) {
         return NULL;
     }
     res = (*Py_TYPE(v)->tp_str)(v);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
 
     if (res == NULL) {
         return NULL;
@@ -724,11 +724,11 @@ PyObject_RichCompare(PyObject *v, PyObject *w, int op)
         }
         return NULL;
     }
-    if (_Py_EnterRecursiveCall(tstate, " in comparison")) {
+    if (_Py_EnterRecursiveCallTstate(tstate, " in comparison")) {
         return NULL;
     }
     PyObject *res = do_richcompare(tstate, v, w, op);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return res;
 }
 
@@ -1382,7 +1382,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         return -1;
 
     Py_INCREF(name);
-
+    Py_INCREF(tp);
     descr = _PyType_Lookup(tp, name);
 
     if (descr != NULL) {
@@ -1426,11 +1426,21 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
             res = PyDict_SetItem(dict, name, value);
         Py_DECREF(dict);
     }
-    if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
-        PyErr_SetObject(PyExc_AttributeError, name);
-
+    if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
+        if (PyType_IsSubtype(tp, &PyType_Type)) {
+            PyErr_Format(PyExc_AttributeError,
+                         "type object '%.50s' has no attribute '%U'",
+                         ((PyTypeObject*)obj)->tp_name, name);
+        }
+        else {
+            PyErr_Format(PyExc_AttributeError,
+                         "'%.100s' object has no attribute '%U'",
+                         tp->tp_name, name);
+        }
+    }
   done:
     Py_XDECREF(descr);
+    Py_DECREF(tp);
     Py_DECREF(name);
     return res;
 }
@@ -1834,6 +1844,7 @@ _PyTypes_InitState(PyInterpreterState *interp)
 #ifdef MS_WINDOWS
 extern PyTypeObject PyHKEY_Type;
 #endif
+extern PyTypeObject _Py_GenericAliasIterType;
 
 static PyTypeObject* static_types[] = {
     // The two most important base types: must be initialized first and
@@ -1923,6 +1934,7 @@ static PyTypeObject* static_types[] = {
     &_PyAsyncGenWrappedValue_Type,
     &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
+    &_Py_GenericAliasIterType,
     &_PyHamtItems_Type,
     &_PyHamtKeys_Type,
     &_PyHamtValues_Type,
@@ -1936,6 +1948,7 @@ static PyTypeObject* static_types[] = {
     &_PyNamespace_Type,
     &_PyNone_Type,
     &_PyNotImplemented_Type,
+    &_PyUnicodeASCIIIter_Type,
     &_PyUnion_Type,
     &_PyWeakref_CallableProxyType,
     &_PyWeakref_ProxyType,
@@ -2351,11 +2364,45 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 void
 _Py_Dealloc(PyObject *op)
 {
-    destructor dealloc = Py_TYPE(op)->tp_dealloc;
+    PyTypeObject *type = Py_TYPE(op);
+    destructor dealloc = type->tp_dealloc;
+#ifdef Py_DEBUG
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *old_exc_type = tstate->curexc_type;
+    // Keep the old exception type alive to prevent undefined behavior
+    // on (tstate->curexc_type != old_exc_type) below
+    Py_XINCREF(old_exc_type);
+    // Make sure that type->tp_name remains valid
+    Py_INCREF(type);
+#endif
+
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
     (*dealloc)(op);
+
+#ifdef Py_DEBUG
+    // gh-89373: The tp_dealloc function must leave the current exception
+    // unchanged.
+    if (tstate->curexc_type != old_exc_type) {
+        const char *err;
+        if (old_exc_type == NULL) {
+            err = "Deallocator of type '%s' raised an exception";
+        }
+        else if (tstate->curexc_type == NULL) {
+            err = "Deallocator of type '%s' cleared the current exception";
+        }
+        else {
+            // It can happen if dealloc() normalized the current exception.
+            // A deallocator function must not change the current exception,
+            // not even normalize it.
+            err = "Deallocator of type '%s' overrode the current exception";
+        }
+        _Py_FatalErrorFormat(__func__, err, type->tp_name);
+    }
+    Py_XDECREF(old_exc_type);
+    Py_DECREF(type);
+#endif
 }
 
 

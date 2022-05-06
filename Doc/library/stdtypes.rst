@@ -2189,7 +2189,11 @@ expression support in the :mod:`re` module).
         >>> "they're bill's friends from the UK".title()
         "They'Re Bill'S Friends From The Uk"
 
-   A workaround for apostrophes can be constructed using regular expressions::
+   The :func:`string.capwords` function does not have this problem, as it
+   splits words on spaces only.
+
+   Alternatively, a workaround for apostrophes can be constructed using regular
+   expressions::
 
         >>> import re
         >>> def titlecase(s):
@@ -3618,7 +3622,7 @@ The conversion types are:
 |            | be used for Python2/3 code bases.                   |       |
 +------------+-----------------------------------------------------+-------+
 | ``'a'``    | Bytes (converts any Python object using             | \(5)  |
-|            | ``repr(obj).encode('ascii','backslashreplace)``).   |       |
+|            | ``repr(obj).encode('ascii', 'backslashreplace')``). |       |
 +------------+-----------------------------------------------------+-------+
 | ``'r'``    | ``'r'`` is an alias for ``'a'`` and should only     | \(7)  |
 |            | be used for Python2/3 code bases.                   |       |
@@ -4379,10 +4383,6 @@ then they can be used interchangeably to index the same dictionary entry.  (Note
 however, that since computers store floating-point numbers as approximations it
 is usually unwise to use them as dictionary keys.)
 
-Dictionaries can be created by placing a comma-separated list of ``key: value``
-pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
-'jack', 4127: 'sjoerd'}``, or by the :class:`dict` constructor.
-
 .. class:: dict(**kwargs)
            dict(mapping, **kwargs)
            dict(iterable, **kwargs)
@@ -5054,6 +5054,15 @@ All parameterized generics implement special read-only attributes.
       A ``GenericAlias`` object with :class:`typing.ParamSpec` parameters may not
       have correct ``__parameters__`` after substitution because
       :class:`typing.ParamSpec` is intended primarily for static type checking.
+
+
+.. attribute:: genericalias.__unpacked__
+
+   A boolean that is true if the alias has been unpacked using the
+   ``*`` operator (see :data:`~typing.TypeVarTuple`).
+
+   .. versionadded:: 3.11
+
 
 .. seealso::
 
