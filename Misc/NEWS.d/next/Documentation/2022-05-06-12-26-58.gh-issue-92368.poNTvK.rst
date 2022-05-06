@@ -1,0 +1,1 @@
+Fix missing possessive apostrophe in 'Battery Included' section
