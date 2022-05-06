@@ -8857,7 +8857,7 @@ for ac_header in  \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
   sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h \
   sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
-  termios.h util.h utime.h \
+  termios.h util.h utime.h utmp.h \
 
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
@@ -13726,7 +13726,7 @@ $as_echo_n "checking for --with-dbmliborder... " >&6; }
 if test "${with_dbmliborder+set}" = set; then :
   withval=$with_dbmliborder;
 else
-  with_dbmliborder=ndbm:gdbm:bdb
+  with_dbmliborder=gdbm:ndbm:bdb
 fi
 
 
@@ -13749,7 +13749,7 @@ done
 IFS=$as_save_IFS
 if test "x$with_dbmliborder" = xerror; then :
 
-  as_fn_error $? "proper usage is --with-dbmliborder=db1:db2:... (ndbm:gdbm:bdb)" "$LINENO" 5
+  as_fn_error $? "proper usage is --with-dbmliborder=db1:db2:... (gdbm:ndbm:bdb)" "$LINENO" 5
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_dbmliborder" >&5
@@ -16750,7 +16750,7 @@ fi
 
 
 
-# check for openpty and forkpty
+# check for openpty, login_tty, and forkpty
 
 for ac_func in openpty
 do :
@@ -16848,6 +16848,65 @@ fi
 
 fi
 done
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing login_tty" >&5
+$as_echo_n "checking for library containing login_tty... " >&6; }
+if ${ac_cv_search_login_tty+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char login_tty ();
+int
+main ()
+{
+return login_tty ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' util; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_login_tty=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_login_tty+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_login_tty+:} false; then :
+
+else
+  ac_cv_search_login_tty=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_login_tty" >&5
+$as_echo "$ac_cv_search_login_tty" >&6; }
+ac_res=$ac_cv_search_login_tty
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+$as_echo "#define HAVE_LOGIN_TTY 1" >>confdefs.h
+
+
+fi
 
 for ac_func in forkpty
 do :

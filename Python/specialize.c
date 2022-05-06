@@ -183,7 +183,12 @@ print_call_stats(FILE *out, CallStats *stats)
 static void
 print_object_stats(FILE *out, ObjectStats *stats)
 {
+    fprintf(out, "Object allocations from freelist: %" PRIu64 "\n", stats->from_freelist);
+    fprintf(out, "Object frees to freelist: %" PRIu64 "\n", stats->to_freelist);
     fprintf(out, "Object allocations: %" PRIu64 "\n", stats->allocations);
+    fprintf(out, "Object allocations to 512 bytes: %" PRIu64 "\n", stats->allocations512);
+    fprintf(out, "Object allocations to 4 kbytes: %" PRIu64 "\n", stats->allocations4k);
+    fprintf(out, "Object allocations over 4 kbytes: %" PRIu64 "\n", stats->allocations_big);
     fprintf(out, "Object frees: %" PRIu64 "\n", stats->frees);
     fprintf(out, "Object new values: %" PRIu64 "\n", stats->new_values);
     fprintf(out, "Object materialize dict (on request): %" PRIu64 "\n", stats->dict_materialized_on_request);
@@ -435,6 +440,7 @@ initial_counter_value(void) {
 #define SPEC_FAIL_CALL_METHOD_WRAPPER 26
 #define SPEC_FAIL_CALL_OPERATOR_WRAPPER 27
 #define SPEC_FAIL_CALL_PYFUNCTION 28
+#define SPEC_FAIL_CALL_PEP_523 29
 
 /* COMPARE_OP */
 #define SPEC_FAIL_COMPARE_OP_DIFFERENT_TYPES 12
@@ -1466,6 +1472,11 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
     assert(_Py_OPCODE(*instr) == CALL_ADAPTIVE);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     int kind = function_kind(code);
+    /* Don't specialize if PEP 523 is active */
+    if (_PyInterpreterState_GET()->eval_frame) {
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_PEP_523);
+        return -1;
+    }
     if (kwnames) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_KWNAMES);
         return -1;

@@ -1,0 +1,3 @@
+Add support for generalized ISO 8601 parsing to
+:meth:`datetime.datetime.fromisoformat`, :meth:`datetime.date.fromisoformat`
+and :meth:`datetime.time.fromisoformat`. Patch by Paul Ganssle.

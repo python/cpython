@@ -1,0 +1,2 @@
+:class:`inspect.Parameter` now raises :exc:`ValueError` if ``name`` is
+a keyword, in addition to the existing check that it is an identifier.

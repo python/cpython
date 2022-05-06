@@ -516,6 +516,7 @@ ga_vectorcall(PyObject *self, PyObject *const *args,
 static const char* const attr_exceptions[] = {
     "__origin__",
     "__args__",
+    "__unpacked__",
     "__parameters__",
     "__mro_entries__",
     "__reduce_ex__",  // needed so we don't look up object.__reduce_ex__
@@ -566,6 +567,9 @@ ga_richcompare(PyObject *a, PyObject *b, int op)
 
     gaobject *aa = (gaobject *)a;
     gaobject *bb = (gaobject *)b;
+    if (aa->starred != bb->starred) {
+        Py_RETURN_FALSE;
+    }
     int eq = PyObject_RichCompareBool(aa->origin, bb->origin, Py_EQ);
     if (eq < 0) {
         return NULL;
@@ -603,6 +607,16 @@ static PyObject *
 ga_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     gaobject *alias = (gaobject *)self;
+    if (alias->starred) {
+        PyObject *tmp = Py_GenericAlias(alias->origin, alias->args);
+        if (tmp != NULL) {
+            Py_SETREF(tmp, PyObject_GetIter(tmp));
+        }
+        if (tmp == NULL) {
+            return NULL;
+        }
+        return Py_BuildValue("N(N)", _PyEval_GetBuiltin(&_Py_ID(next)), tmp);
+    }
     return Py_BuildValue("O(OO)", Py_TYPE(alias),
                          alias->origin, alias->args);
 }
@@ -657,6 +671,7 @@ static PyMethodDef ga_methods[] = {
 static PyMemberDef ga_members[] = {
     {"__origin__", T_OBJECT, offsetof(gaobject, origin), READONLY},
     {"__args__", T_OBJECT, offsetof(gaobject, args), READONLY},
+    {"__unpacked__", T_BOOL, offsetof(gaobject, starred), READONLY},
     {0}
 };
 
@@ -773,6 +788,18 @@ ga_iter_clear(PyObject *self) {
     return 0;
 }
 
+static PyObject *
+ga_iter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    gaiterobject *gi = (gaiterobject *)self;
+    return Py_BuildValue("N(O)", _PyEval_GetBuiltin(&_Py_ID(iter)), gi->obj);
+}
+
+static PyMethodDef ga_iter_methods[] = {
+    {"__reduce__", ga_iter_reduce, METH_NOARGS},
+    {0}
+};
+
 // gh-91632: _Py_GenericAliasIterType is exported  to be cleared
 // in _PyTypes_FiniTypes.
 PyTypeObject _Py_GenericAliasIterType = {
@@ -782,6 +809,7 @@ PyTypeObject _Py_GenericAliasIterType = {
     .tp_iter = PyObject_SelfIter,
     .tp_iternext = (iternextfunc)ga_iternext,
     .tp_traverse = (traverseproc)ga_iter_traverse,
+    .tp_methods = ga_iter_methods,
     .tp_dealloc = (destructor)ga_iter_dealloc,
     .tp_clear = (inquiry)ga_iter_clear,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,

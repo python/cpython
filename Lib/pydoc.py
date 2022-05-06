@@ -1891,6 +1891,7 @@ class Helper:
             if topic not in topics:
                 topics = topics + ' ' + topic
             symbols[symbol] = topics
+    del topic, symbols_, symbol, topics
 
     topics = {
         'TYPES': ('types', 'STRINGS UNICODE NUMBERS SEQUENCES MAPPINGS '

@@ -1,0 +1,3 @@
+``pymain_run_python()`` now imports ``readline`` and ``rlcompleter`` before
+sys.path is extended to include the current working directory of an
+interactive interpreter. Non-interactive interpreters are not affected.

@@ -9,8 +9,8 @@ with con.blobopen("test", "blob_col", 1) as blob:
     blob.write(b"hello, ")
     blob.write(b"world.")
     # Modify the first and last bytes of our blob
-    blob[0] = b"H"
-    blob[-1] = b"!"
+    blob[0] = ord("H")
+    blob[-1] = ord("!")
 
 # Read the contents of our blob
 with con.blobopen("test", "blob_col", 1) as blob:
