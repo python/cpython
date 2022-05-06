@@ -1742,6 +1742,9 @@ Deprecated
   * :c:func:`PySys_AddWarnOption`
   * :c:func:`PySys_AddXOption`
   * :c:func:`PySys_HasWarnOptions`
+  * :c:func:`PySys_SetArgvEx`
+  * :c:func:`PySys_SetArgv`
+  * :c:func:`PySys_SetPath`
   * :c:func:`Py_SetPath`
   * :c:func:`Py_SetProgramName`
   * :c:func:`Py_SetPythonHome`
@@ -1750,7 +1753,7 @@ Deprecated
 
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
   <init-config>` instead (:pep:`587`).
-  (Contributed by Victor Stinner in :issue:`44113`.)
+  (Contributed by Victor Stinner in :gh:`88279`.)
 
 * Deprecate the ``ob_shash`` member of the :c:type:`PyBytesObject`. Use :c:func:`PyObject_Hash` instead.
   (Contributed by Inada Naoki in :issue:`46864`.)
