@@ -1269,8 +1269,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 exedir = os.path.dirname(self.test_exe)
                 with open(os.path.join(exedir, 'pybuilddir.txt'), encoding='utf8') as f:
                     expected_paths[-1] = os.path.normpath(
-                        os.path.join(exedir, f'{f.read()}\n$'.splitlines()[0])
-                    )
+                        os.path.join(exedir, f'{f.read()}\n$'.splitlines()[0]))
             except FileNotFoundError:
                 pass
         else:
