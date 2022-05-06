@@ -9,7 +9,7 @@ PyDoc_STRVAR(OrderedDict_fromkeys__doc__,
 "Create a new ordered dictionary with keys from iterable and values set to value.");
 
 #define ORDEREDDICT_FROMKEYS_METHODDEF    \
-    {"fromkeys", (PyCFunction)OrderedDict_fromkeys, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, OrderedDict_fromkeys__doc__},
+    {"fromkeys", _PyCFunction_CAST(OrderedDict_fromkeys), METH_FASTCALL|METH_KEYWORDS|METH_CLASS, OrderedDict_fromkeys__doc__},
 
 static PyObject *
 OrderedDict_fromkeys_impl(PyTypeObject *type, PyObject *seq, PyObject *value);
@@ -19,14 +19,22 @@ OrderedDict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "value", NULL};
-    static _PyArg_Parser _parser = {"O|O:fromkeys", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "fromkeys", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *seq;
     PyObject *value = Py_None;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &seq, &value)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    seq = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    value = args[1];
+skip_optional_pos:
     return_value = OrderedDict_fromkeys_impl(type, seq, value);
 
 exit:
@@ -42,7 +50,7 @@ PyDoc_STRVAR(OrderedDict_setdefault__doc__,
 "Return the value for key if key is in the dictionary, else default.");
 
 #define ORDEREDDICT_SETDEFAULT_METHODDEF    \
-    {"setdefault", (PyCFunction)OrderedDict_setdefault, METH_FASTCALL|METH_KEYWORDS, OrderedDict_setdefault__doc__},
+    {"setdefault", _PyCFunction_CAST(OrderedDict_setdefault), METH_FASTCALL|METH_KEYWORDS, OrderedDict_setdefault__doc__},
 
 static PyObject *
 OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
@@ -53,15 +61,66 @@ OrderedDict_setdefault(PyODictObject *self, PyObject *const *args, Py_ssize_t na
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "default", NULL};
-    static _PyArg_Parser _parser = {"O|O:setdefault", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "setdefault", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &key, &default_value)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    key = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    default_value = args[1];
+skip_optional_pos:
     return_value = OrderedDict_setdefault_impl(self, key, default_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(OrderedDict_pop__doc__,
+"pop($self, /, key, default=<unrepresentable>)\n"
+"--\n"
+"\n"
+"od.pop(key[,default]) -> v, remove specified key and return the corresponding value.\n"
+"\n"
+"If the key is not found, return the default if given; otherwise,\n"
+"raise a KeyError.");
+
+#define ORDEREDDICT_POP_METHODDEF    \
+    {"pop", _PyCFunction_CAST(OrderedDict_pop), METH_FASTCALL|METH_KEYWORDS, OrderedDict_pop__doc__},
+
+static PyObject *
+OrderedDict_pop_impl(PyODictObject *self, PyObject *key,
+                     PyObject *default_value);
+
+static PyObject *
+OrderedDict_pop(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"key", "default", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "pop", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *key;
+    PyObject *default_value = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    key = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    default_value = args[1];
+skip_optional_pos:
+    return_value = OrderedDict_pop_impl(self, key, default_value);
 
 exit:
     return return_value;
@@ -76,7 +135,7 @@ PyDoc_STRVAR(OrderedDict_popitem__doc__,
 "Pairs are returned in LIFO order if last is true or FIFO order if false.");
 
 #define ORDEREDDICT_POPITEM_METHODDEF    \
-    {"popitem", (PyCFunction)OrderedDict_popitem, METH_FASTCALL|METH_KEYWORDS, OrderedDict_popitem__doc__},
+    {"popitem", _PyCFunction_CAST(OrderedDict_popitem), METH_FASTCALL|METH_KEYWORDS, OrderedDict_popitem__doc__},
 
 static PyObject *
 OrderedDict_popitem_impl(PyODictObject *self, int last);
@@ -86,13 +145,23 @@ OrderedDict_popitem(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"last", NULL};
-    static _PyArg_Parser _parser = {"|p:popitem", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "popitem", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int last = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &last)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    last = PyObject_IsTrue(args[0]);
+    if (last < 0) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = OrderedDict_popitem_impl(self, last);
 
 exit:
@@ -108,7 +177,7 @@ PyDoc_STRVAR(OrderedDict_move_to_end__doc__,
 "Raise KeyError if the element does not exist.");
 
 #define ORDEREDDICT_MOVE_TO_END_METHODDEF    \
-    {"move_to_end", (PyCFunction)OrderedDict_move_to_end, METH_FASTCALL|METH_KEYWORDS, OrderedDict_move_to_end__doc__},
+    {"move_to_end", _PyCFunction_CAST(OrderedDict_move_to_end), METH_FASTCALL|METH_KEYWORDS, OrderedDict_move_to_end__doc__},
 
 static PyObject *
 OrderedDict_move_to_end_impl(PyODictObject *self, PyObject *key, int last);
@@ -118,17 +187,28 @@ OrderedDict_move_to_end(PyODictObject *self, PyObject *const *args, Py_ssize_t n
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "last", NULL};
-    static _PyArg_Parser _parser = {"O|p:move_to_end", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "move_to_end", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *key;
     int last = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &key, &last)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    key = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    last = PyObject_IsTrue(args[1]);
+    if (last < 0) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = OrderedDict_move_to_end_impl(self, key, last);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7f23d569eda2a558 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4182a5dab66963d0 input=a9049054013a1b77]*/

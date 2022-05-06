@@ -1,0 +1,1 @@
+Fix crash triggered by an evil custom ``mro()`` on a metaclass.

@@ -38,6 +38,42 @@ float___trunc__(PyObject *self, PyObject *Py_UNUSED(ignored))
     return float___trunc___impl(self);
 }
 
+PyDoc_STRVAR(float___floor____doc__,
+"__floor__($self, /)\n"
+"--\n"
+"\n"
+"Return the floor as an Integral.");
+
+#define FLOAT___FLOOR___METHODDEF    \
+    {"__floor__", (PyCFunction)float___floor__, METH_NOARGS, float___floor____doc__},
+
+static PyObject *
+float___floor___impl(PyObject *self);
+
+static PyObject *
+float___floor__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return float___floor___impl(self);
+}
+
+PyDoc_STRVAR(float___ceil____doc__,
+"__ceil__($self, /)\n"
+"--\n"
+"\n"
+"Return the ceiling as an Integral.");
+
+#define FLOAT___CEIL___METHODDEF    \
+    {"__ceil__", (PyCFunction)float___ceil__, METH_NOARGS, float___ceil____doc__},
+
+static PyObject *
+float___ceil___impl(PyObject *self);
+
+static PyObject *
+float___ceil__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return float___ceil___impl(self);
+}
+
 PyDoc_STRVAR(float___round____doc__,
 "__round__($self, ndigits=None, /)\n"
 "--\n"
@@ -47,7 +83,7 @@ PyDoc_STRVAR(float___round____doc__,
 "When an argument is passed, work like built-in round(x, ndigits).");
 
 #define FLOAT___ROUND___METHODDEF    \
-    {"__round__", (PyCFunction)float___round__, METH_FASTCALL, float___round____doc__},
+    {"__round__", _PyCFunction_CAST(float___round__), METH_FASTCALL, float___round____doc__},
 
 static PyObject *
 float___round___impl(PyObject *self, PyObject *o_ndigits);
@@ -56,13 +92,16 @@ static PyObject *
 float___round__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *o_ndigits = NULL;
+    PyObject *o_ndigits = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "__round__",
-        0, 1,
-        &o_ndigits)) {
+    if (!_PyArg_CheckPositional("__round__", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    o_ndigits = args[0];
+skip_optional:
     return_value = float___round___impl(self, o_ndigits);
 
 exit:
@@ -167,17 +206,21 @@ static PyObject *
 float_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    PyObject *x = _PyLong_Zero;
+    PyObject *x = NULL;
 
-    if ((type == &PyFloat_Type) &&
+    if ((type == &PyFloat_Type ||
+         type->tp_init == PyFloat_Type.tp_init) &&
         !_PyArg_NoKeywords("float", kwargs)) {
         goto exit;
     }
-    if (!PyArg_UnpackTuple(args, "float",
-        0, 1,
-        &x)) {
+    if (!_PyArg_CheckPositional("float", PyTuple_GET_SIZE(args), 0, 1)) {
         goto exit;
     }
+    if (PyTuple_GET_SIZE(args) < 1) {
+        goto skip_optional;
+    }
+    x = PyTuple_GET_ITEM(args, 0);
+skip_optional:
     return_value = float_new_impl(type, x);
 
 exit:
@@ -228,52 +271,20 @@ float___getformat__(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     const char *typestr;
 
-    if (!PyArg_Parse(arg, "s:__getformat__", &typestr)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("__getformat__", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t typestr_length;
+    typestr = PyUnicode_AsUTF8AndSize(arg, &typestr_length);
+    if (typestr == NULL) {
+        goto exit;
+    }
+    if (strlen(typestr) != (size_t)typestr_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = float___getformat___impl(type, typestr);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(float___set_format____doc__,
-"__set_format__($type, typestr, fmt, /)\n"
-"--\n"
-"\n"
-"You probably don\'t want to use this function.\n"
-"\n"
-"  typestr\n"
-"    Must be \'double\' or \'float\'.\n"
-"  fmt\n"
-"    Must be one of \'unknown\', \'IEEE, big-endian\' or \'IEEE, little-endian\',\n"
-"    and in addition can only be one of the latter two if it appears to\n"
-"    match the underlying C reality.\n"
-"\n"
-"It exists mainly to be used in Python\'s test suite.\n"
-"\n"
-"Override the automatic determination of C-level floating point type.\n"
-"This affects how floats are converted to and from binary strings.");
-
-#define FLOAT___SET_FORMAT___METHODDEF    \
-    {"__set_format__", (PyCFunction)float___set_format__, METH_FASTCALL|METH_CLASS, float___set_format____doc__},
-
-static PyObject *
-float___set_format___impl(PyTypeObject *type, const char *typestr,
-                          const char *fmt);
-
-static PyObject *
-float___set_format__(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    const char *typestr;
-    const char *fmt;
-
-    if (!_PyArg_ParseStack(args, nargs, "ss:__set_format__",
-        &typestr, &fmt)) {
-        goto exit;
-    }
-    return_value = float___set_format___impl(type, typestr, fmt);
 
 exit:
     return return_value;
@@ -297,12 +308,17 @@ float___format__(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *format_spec;
 
-    if (!PyArg_Parse(arg, "U:__format__", &format_spec)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    format_spec = arg;
     return_value = float___format___impl(self, format_spec);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a3c366a156be61f9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a6e6467624a92a43 input=a9049054013a1b77]*/

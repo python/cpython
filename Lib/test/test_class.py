@@ -529,7 +529,7 @@ class ClassTests(unittest.TestCase):
             # In debug mode, printed XXX undetected error and
             #  raises AttributeError
             I()
-        except AttributeError as x:
+        except AttributeError:
             pass
         else:
             self.fail("attribute error for I.__init__ got masked")
@@ -611,6 +611,49 @@ class ClassTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             type.__setattr__(A, b'x', None)
 
+    def testTypeAttributeAccessErrorMessages(self):
+        class A:
+            pass
+
+        error_msg = "type object 'A' has no attribute 'x'"
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            A.x
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            del A.x
+
+    def testObjectAttributeAccessErrorMessages(self):
+        class A:
+            pass
+        class B:
+            y = 0
+            __slots__ = ('z',)
+
+        error_msg = "'A' object has no attribute 'x'"
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            A().x
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            del A().x
+
+        error_msg = "'B' object has no attribute 'x'"
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            B().x
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            del B().x
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            B().x = 0
+
+        error_msg = "'B' object attribute 'y' is read-only"
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            del B().y
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            B().y = 0
+
+        error_msg = 'z'
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            B().z
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            del B().z
+
     def testConstructorErrorMessages(self):
         # bpo-31506: Improves the error message logic for object_new & object_init
 
@@ -618,19 +661,21 @@ class ClassTests(unittest.TestCase):
         class C:
             pass
 
+        error_msg = r'C.__init__\(\) takes exactly one argument \(the instance to initialize\)'
+
         with self.assertRaisesRegex(TypeError, r'C\(\) takes no arguments'):
             C(42)
 
         with self.assertRaisesRegex(TypeError, r'C\(\) takes no arguments'):
             C.__new__(C, 42)
 
-        with self.assertRaisesRegex(TypeError, r'C\(\).__init__\(\) takes no arguments'):
+        with self.assertRaisesRegex(TypeError, error_msg):
             C().__init__(42)
 
         with self.assertRaisesRegex(TypeError, r'C\(\) takes no arguments'):
             object.__new__(C, 42)
 
-        with self.assertRaisesRegex(TypeError, r'C\(\).__init__\(\) takes no arguments'):
+        with self.assertRaisesRegex(TypeError, error_msg):
             object.__init__(C(), 42)
 
         # Class with both `__init__` & `__new__` method overridden
@@ -640,13 +685,15 @@ class ClassTests(unittest.TestCase):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
 
-        with self.assertRaisesRegex(TypeError, r'object.__new__\(\) takes no argument'):
+        error_msg =  r'object.__new__\(\) takes exactly one argument \(the type to instantiate\)'
+
+        with self.assertRaisesRegex(TypeError, error_msg):
             D(42)
 
-        with self.assertRaisesRegex(TypeError, r'object.__new__\(\) takes no argument'):
+        with self.assertRaisesRegex(TypeError, error_msg):
             D.__new__(D, 42)
 
-        with self.assertRaisesRegex(TypeError, r'object.__new__\(\) takes no argument'):
+        with self.assertRaisesRegex(TypeError, error_msg):
             object.__new__(D, 42)
 
         # Class that only overrides __init__
@@ -654,11 +701,31 @@ class ClassTests(unittest.TestCase):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
 
-        with self.assertRaisesRegex(TypeError, r'object.__init__\(\) takes no argument'):
+        error_msg = r'object.__init__\(\) takes exactly one argument \(the instance to initialize\)'
+
+        with self.assertRaisesRegex(TypeError, error_msg):
             E().__init__(42)
 
-        with self.assertRaisesRegex(TypeError, r'object.__init__\(\) takes no argument'):
+        with self.assertRaisesRegex(TypeError, error_msg):
             object.__init__(E(), 42)
+
+    def testClassWithExtCall(self):
+        class Meta(int):
+            def __init__(*args, **kwargs):
+                pass
+
+            def __new__(cls, name, bases, attrs, **kwargs):
+                return bases, kwargs
+
+        d = {'metaclass': Meta}
+
+        class A(**d): pass
+        self.assertEqual(A, ((), {}))
+        class A(0, 1, 2, 3, 4, 5, 6, 7, **d): pass
+        self.assertEqual(A, (tuple(range(8)), {}))
+        class A(0, *range(1, 8), **d, foo='bar'): pass
+        self.assertEqual(A, (tuple(range(8)), {'foo': 'bar'}))
+
 
 if __name__ == '__main__':
     unittest.main()
