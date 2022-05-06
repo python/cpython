@@ -373,12 +373,12 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     if (custom) {
         PyObject *mro_meth, *type_mro_meth;
         mro_meth = lookup_maybe_method(
-            (PyObject *)type, &_Py_ID(mro), &unbound);
+            (PyObject *)type, &PyId_mro, &unbound);
         if (mro_meth == NULL) {
             goto clear;
         }
         type_mro_meth = lookup_maybe_method(
-            (PyObject *)&PyType_Type, &_Py_ID(mro), &unbound);
+            (PyObject *)&PyType_Type, &PyId_mro, &unbound);
         if (type_mro_meth == NULL) {
             Py_DECREF(mro_meth);
             goto clear;
