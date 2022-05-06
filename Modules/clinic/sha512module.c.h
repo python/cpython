@@ -9,7 +9,7 @@ PyDoc_STRVAR(SHA512Type_copy__doc__,
 "Return a copy of the hash object.");
 
 #define SHA512TYPE_COPY_METHODDEF    \
-    {"copy", (PyCFunction)(void(*)(void))SHA512Type_copy, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, SHA512Type_copy__doc__},
+    {"copy", _PyCFunction_CAST(SHA512Type_copy), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, SHA512Type_copy__doc__},
 
 static PyObject *
 SHA512Type_copy_impl(SHAobject *self, PyTypeObject *cls);
@@ -17,18 +17,11 @@ SHA512Type_copy_impl(SHAobject *self, PyTypeObject *cls);
 static PyObject *
 SHA512Type_copy(SHAobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":copy", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
+        return NULL;
     }
-    return_value = SHA512Type_copy_impl(self, cls);
-
-exit:
-    return return_value;
+    return SHA512Type_copy_impl(self, cls);
 }
 
 PyDoc_STRVAR(SHA512Type_digest__doc__,
@@ -83,7 +76,7 @@ PyDoc_STRVAR(_sha512_sha512__doc__,
 "Return a new SHA-512 hash object; optionally initialized with a string.");
 
 #define _SHA512_SHA512_METHODDEF    \
-    {"sha512", (PyCFunction)(void(*)(void))_sha512_sha512, METH_FASTCALL|METH_KEYWORDS, _sha512_sha512__doc__},
+    {"sha512", _PyCFunction_CAST(_sha512_sha512), METH_FASTCALL|METH_KEYWORDS, _sha512_sha512__doc__},
 
 static PyObject *
 _sha512_sha512_impl(PyObject *module, PyObject *string, int usedforsecurity);
@@ -134,7 +127,7 @@ PyDoc_STRVAR(_sha512_sha384__doc__,
 "Return a new SHA-384 hash object; optionally initialized with a string.");
 
 #define _SHA512_SHA384_METHODDEF    \
-    {"sha384", (PyCFunction)(void(*)(void))_sha512_sha384, METH_FASTCALL|METH_KEYWORDS, _sha512_sha384__doc__},
+    {"sha384", _PyCFunction_CAST(_sha512_sha384), METH_FASTCALL|METH_KEYWORDS, _sha512_sha384__doc__},
 
 static PyObject *
 _sha512_sha384_impl(PyObject *module, PyObject *string, int usedforsecurity);
@@ -177,4 +170,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9ff9f11937fabf35 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=60a0a1a28c07f391 input=a9049054013a1b77]*/

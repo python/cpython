@@ -2,6 +2,7 @@ import contextlib
 import itertools
 import os
 import re
+import shutil
 import subprocess
 import sys
 import sysconfig
@@ -59,12 +60,18 @@ TEST_DATA = {
     }
 }
 
-TEST_PY_COMMANDS = textwrap.dedent("""
-    [defaults]
-    py_python=PythonTestSuite/3.100
-    py_python2=PythonTestSuite/3.100-32
-    py_python3=PythonTestSuite/3.100-arm64
-""")
+
+TEST_PY_ENV = dict(
+    PY_PYTHON="PythonTestSuite/3.100",
+    PY_PYTHON2="PythonTestSuite/3.100-32",
+    PY_PYTHON3="PythonTestSuite/3.100-arm64",
+)
+
+
+TEST_PY_COMMANDS = "\n".join([
+    "[defaults]",
+    *[f"{k.lower()}={v}" for k, v in TEST_PY_ENV.items()]
+])
 
 
 def create_registry_data(root, data):
@@ -151,6 +158,30 @@ class RunPyMixin:
                     py_exe = Path(p) / PY_EXE
                     if py_exe.is_file():
                         break
+            else:
+                py_exe = None
+
+        # Test launch and check version, to exclude installs of older
+        # releases when running outside of a source tree
+        if py_exe:
+            try:
+                with subprocess.Popen(
+                    [py_exe, "-h"],
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    encoding="ascii",
+                    errors="ignore",
+                ) as p:
+                    p.stdin.close()
+                    version = next(p.stdout).splitlines()[0].rpartition(" ")[2]
+                    p.stdout.read()
+                    p.wait(10)
+                if not sys.version.startswith(version):
+                    py_exe = None
+            except OSError:
+                py_exe = None
+
         if not py_exe:
             raise unittest.SkipTest(
                 "cannot locate '{}' for test".format(PY_EXE)
@@ -161,7 +192,13 @@ class RunPyMixin:
         if not self.py_exe:
             self.py_exe = self.find_py()
 
-        env = {**os.environ, **(env or {}), "PYLAUNCHER_DEBUG": "1", "PYLAUNCHER_DRYRUN": "1"}
+        ignore = {"VIRTUAL_ENV", "PY_PYTHON", "PY_PYTHON2", "PY_PYTHON3"}
+        env = {
+            **{k.upper(): v for k, v in os.environ.items() if k.upper() not in ignore},
+            **{k.upper(): v for k, v in (env or {}).items()},
+            "PYLAUNCHER_DEBUG": "1",
+            "PYLAUNCHER_DRYRUN": "1",
+        }
         with subprocess.Popen(
             [self.py_exe, *args],
             env=env,
@@ -216,7 +253,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
 
         if support.verbose:
             p = subprocess.check_output("reg query HKCU\\Software\\Python /s")
-            print(p.decode('mbcs'))
+            #print(p.decode('mbcs'))
 
 
     @classmethod
@@ -251,9 +288,9 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         found = {}
         expect = {}
         for line in data["stdout"].splitlines():
-            m = re.match(r"\s*(.+?)\s+(.+)$", line)
+            m = re.match(r"\s*(.+?)\s+?(\*\s+)?(.+)$", line)
             if m:
-                found[m.group(1)] = m.group(2)
+                found[m.group(1)] = m.group(3)
         for company in TEST_DATA:
             company_data = TEST_DATA[company]
             tags = [t for t in company_data if isinstance(company_data[t], dict)]
@@ -276,9 +313,9 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         found = {}
         expect = {}
         for line in data["stdout"].splitlines():
-            m = re.match(r"\s*(.+?)\s+(.+)$", line)
+            m = re.match(r"\s*(.+?)\s+?(\*\s+)?(.+)$", line)
             if m:
-                found[m.group(1)] = m.group(2)
+                found[m.group(1)] = m.group(3)
         for company in TEST_DATA:
             company_data = TEST_DATA[company]
             tags = [t for t in company_data if isinstance(company_data[t], dict)]
@@ -385,6 +422,60 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("3.100-arm64", data["SearchInfo.tag"])
         self.assertEqual("X.Y-arm64.exe -X fake_arg_for_test -arg", data["stdout"].strip())
 
+    def test_py_default_env(self):
+        data = self.run_py(["-arg"], env=TEST_PY_ENV)
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100", data["SearchInfo.tag"])
+        self.assertEqual("X.Y.exe -arg", data["stdout"].strip())
+
+    def test_py2_default_env(self):
+        data = self.run_py(["-2", "-arg"], env=TEST_PY_ENV)
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100-32", data["SearchInfo.tag"])
+        self.assertEqual("X.Y-32.exe -arg", data["stdout"].strip())
+
+    def test_py3_default_env(self):
+        data = self.run_py(["-3", "-arg"], env=TEST_PY_ENV)
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100-arm64", data["SearchInfo.tag"])
+        self.assertEqual("X.Y-arm64.exe -X fake_arg_for_test -arg", data["stdout"].strip())
+
+    def test_py_default_in_list(self):
+        data = self.run_py(["-0"], env=TEST_PY_ENV)
+        default = None
+        for line in data["stdout"].splitlines():
+            m = re.match(r"\s*-V:(.+?)\s+?\*\s+(.+)$", line)
+            if m:
+                default = m.group(1)
+                break
+        self.assertEqual("PythonTestSuite/3.100", default)
+
+    def test_virtualenv_in_list(self):
+        venv = Path.cwd() / "Scripts"
+        venv.mkdir(exist_ok=True, parents=True)
+        venv_exe = (venv / Path(sys.executable).name)
+        venv_exe.touch()
+        try:
+            data = self.run_py(["-0p"], env={"VIRTUAL_ENV": str(venv.parent)})
+            for line in data["stdout"].splitlines():
+                m = re.match(r"\s*\*\s+(.+)$", line)
+                if m:
+                    self.assertEqual(str(venv_exe), m.group(1))
+                    break
+            else:
+                self.fail("did not find active venv path")
+
+            data = self.run_py(["-0"], env={"VIRTUAL_ENV": str(venv.parent)})
+            for line in data["stdout"].splitlines():
+                m = re.match(r"\s*\*\s+(.+)$", line)
+                if m:
+                    self.assertEqual("Active venv", m.group(1))
+                    break
+            else:
+                self.fail("did not find active venv entry")
+        finally:
+            shutil.rmtree(venv)
+
     def test_py_shebang(self):
         with self.py_ini(TEST_PY_COMMANDS):
             with self.script("#! /usr/bin/env python -prearg") as script:
@@ -415,9 +506,10 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         # If winget is runnable, we should find it. Otherwise, we'll be trying
         # to open the Store.
         try:
-            subprocess.check_call(["winget.exe", "--version"])
+            subprocess.check_call(["winget.exe", "--version"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         except FileNotFoundError:
             self.assertIn("ms-windows-store://", cmd)
         else:
             self.assertIn("winget.exe", cmd)
+        # Both command lines include the store ID
         self.assertIn("9PJPW5LDXLZ5", cmd)

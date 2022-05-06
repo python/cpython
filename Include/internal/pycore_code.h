@@ -176,8 +176,6 @@ struct _PyCodeConstructor {
     PyObject *code;
     int firstlineno;
     PyObject *linetable;
-    PyObject *endlinetable;
-    PyObject *columntable;
 
     /* used by the code */
     PyObject *consts;
@@ -221,21 +219,10 @@ extern PyObject* _PyCode_GetCellvars(PyCodeObject *);
 extern PyObject* _PyCode_GetFreevars(PyCodeObject *);
 extern PyObject* _PyCode_GetCode(PyCodeObject *);
 
-/* Return the ending source code line number from a bytecode index. */
-extern int _PyCode_Addr2EndLine(PyCodeObject *, int);
-
-/* Return the ending source code line number from a bytecode index. */
-extern int _PyCode_Addr2EndLine(PyCodeObject *, int);
-/* Return the starting source code column offset from a bytecode index. */
-extern int _PyCode_Addr2Offset(PyCodeObject *, int);
-/* Return the ending source code column offset from a bytecode index. */
-extern int _PyCode_Addr2EndOffset(PyCodeObject *, int);
-
 /** API for initializing the line number tables. */
 extern int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
-extern int _PyCode_InitEndAddressRange(PyCodeObject* co, PyCodeAddressRange* bounds);
 
-/** Out of process API for initializing the line number table. */
+/** Out of process API for initializing the location table. */
 extern void _PyLineTable_InitAddressRange(
     const char *linetable,
     Py_ssize_t length,
@@ -305,7 +292,12 @@ typedef struct _call_stats {
 
 typedef struct _object_stats {
     uint64_t allocations;
+    uint64_t allocations512;
+    uint64_t allocations4k;
+    uint64_t allocations_big;
     uint64_t frees;
+    uint64_t to_freelist;
+    uint64_t from_freelist;
     uint64_t new_values;
     uint64_t dict_materialized_on_request;
     uint64_t dict_materialized_new_key;
@@ -326,10 +318,13 @@ extern PyStats _py_stats;
 #define OPCODE_EXE_INC(opname) _py_stats.opcode_stats[opname].execution_count++
 #define CALL_STAT_INC(name) _py_stats.call_stats.name++
 #define OBJECT_STAT_INC(name) _py_stats.object_stats.name++
+#define OBJECT_STAT_INC_COND(name, cond) \
+    do { if (cond) _py_stats.object_stats.name++; } while (0)
 
 extern void _Py_PrintSpecializationStats(int to_file);
 
-extern PyObject* _Py_GetSpecializationStats(void);
+// Used by the _opcode extension which is built as a shared library
+PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 
 #else
 #define STAT_INC(opname, name) ((void)0)
@@ -337,7 +332,8 @@ extern PyObject* _Py_GetSpecializationStats(void);
 #define OPCODE_EXE_INC(opname) ((void)0)
 #define CALL_STAT_INC(name) ((void)0)
 #define OBJECT_STAT_INC(name) ((void)0)
-#endif
+#define OBJECT_STAT_INC_COND(name, cond) ((void)0)
+#endif  // !Py_STATS
 
 // Cache values are only valid in memory, so use native endianness.
 #ifdef WORDS_BIGENDIAN
@@ -444,6 +440,40 @@ read_obj(uint16_t *p)
 #endif
     return (PyObject *)val;
 }
+
+static inline int
+write_varint(uint8_t *ptr, unsigned int val)
+{
+    int written = 1;
+    while (val >= 64) {
+        *ptr++ = 64 | (val & 63);
+        val >>= 6;
+        written++;
+    }
+    *ptr = val;
+    return written;
+}
+
+static inline int
+write_signed_varint(uint8_t *ptr, int val)
+{
+    if (val < 0) {
+        val = ((-val)<<1) | 1;
+    }
+    else {
+        val = val << 1;
+    }
+    return write_varint(ptr, val);
+}
+
+static inline int
+write_location_entry_start(uint8_t *ptr, int code, int length)
+{
+    assert((code & 15) == code);
+    *ptr = 128 | (code << 3) | (length - 1);
+    return 1;
+}
+
 
 #ifdef __cplusplus
 }

@@ -150,11 +150,10 @@
 # needs -lcrypt
 @MODULE__HASHLIB_TRUE@_hashlib _hashopenssl.c
 
-# needs -ltk, -ltcl, and sometimes -lX11
-#@MODULE__TKINTER_TRUE@_tkinter _tkinter.c tkappinit.c
-
 # Linux: -luuid, BSD/AIX: libc's uuid_create()
 @MODULE__UUID_TRUE@_uuid _uuidmodule.c
+
+@MODULE__TKINTER_TRUE@_tkinter _tkinter.c tkappinit.c
 
 ############################################################################
 # macOS specific modules

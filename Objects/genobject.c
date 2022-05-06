@@ -3,12 +3,12 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_EvalFrame()
+#include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_opcode.h"        // _PyOpcode_Deopt
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_frame.h"         // _PyInterpreterFrame
-#include "frameobject.h"          // PyFrameObject
 #include "structmember.h"         // PyMemberDef
 #include "opcode.h"               // SEND
 
@@ -352,14 +352,14 @@ _PyGen_yf(PyGenObject *gen)
     if (gen->gi_frame_state < FRAME_CLEARED) {
         _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
 
-        if (frame->f_lasti < 1) {
+        if (gen->gi_frame_state == FRAME_CREATED) {
             /* Return immediately if the frame didn't start yet. SEND
                always come after LOAD_CONST: a code object should not start
                with SEND */
             assert(_Py_OPCODE(_PyCode_CODE(gen->gi_code)[0]) != SEND);
             return NULL;
         }
-        _Py_CODEUNIT next = _PyCode_CODE(gen->gi_code)[frame->f_lasti + 1];
+        _Py_CODEUNIT next = frame->prev_instr[1];
         if (_PyOpcode_Deopt[_Py_OPCODE(next)] != RESUME || _Py_OPARG(next) < 2)
         {
             /* Not in a yield from */
@@ -410,8 +410,11 @@ gen_close(PyGenObject *gen, PyObject *args)
 
 
 PyDoc_STRVAR(throw_doc,
-"throw(typ[,val[,tb]]) -> raise exception in generator,\n\
-return next yielded value or raise StopIteration.");
+"throw(value)\n\
+throw(type[,value[,tb]])\n\
+\n\
+Raise exception in generator, return next yielded value or raise\n\
+StopIteration.");
 
 static PyObject *
 _gen_throw(PyGenObject *gen, int close_on_genexit,
@@ -799,7 +802,7 @@ PyDoc_STRVAR(sizeof__doc__,
 
 static PyMethodDef gen_methods[] = {
     {"send",(PyCFunction)gen_send, METH_O, send_doc},
-    {"throw",(PyCFunction)(void(*)(void))gen_throw, METH_FASTCALL, throw_doc},
+    {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, throw_doc},
     {"close",(PyCFunction)gen_close, METH_NOARGS, close_doc},
     {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
     {NULL, NULL}        /* Sentinel */
@@ -1136,15 +1139,18 @@ PyDoc_STRVAR(coro_send_doc,
 return next iterated value or raise StopIteration.");
 
 PyDoc_STRVAR(coro_throw_doc,
-"throw(typ[,val[,tb]]) -> raise exception in coroutine,\n\
-return next iterated value or raise StopIteration.");
+"throw(value)\n\
+throw(type[,value[,traceback]])\n\
+\n\
+Raise exception in coroutine, return next iterated value or raise\n\
+StopIteration.");
 
 PyDoc_STRVAR(coro_close_doc,
 "close() -> raise GeneratorExit inside coroutine.");
 
 static PyMethodDef coro_methods[] = {
     {"send",(PyCFunction)gen_send, METH_O, coro_send_doc},
-    {"throw",(PyCFunction)(void(*)(void))gen_throw, METH_FASTCALL, coro_throw_doc},
+    {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, coro_throw_doc},
     {"close",(PyCFunction)gen_close, METH_NOARGS, coro_close_doc},
     {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
     {NULL, NULL}        /* Sentinel */
@@ -1251,7 +1257,7 @@ coro_wrapper_traverse(PyCoroWrapper *cw, visitproc visit, void *arg)
 
 static PyMethodDef coro_wrapper_methods[] = {
     {"send",(PyCFunction)coro_wrapper_send, METH_O, coro_send_doc},
-    {"throw",(PyCFunction)(void(*)(void))coro_wrapper_throw,
+    {"throw",_PyCFunction_CAST(coro_wrapper_throw),
     METH_FASTCALL, coro_throw_doc},
     {"close",(PyCFunction)coro_wrapper_close, METH_NOARGS, coro_close_doc},
     {NULL, NULL}        /* Sentinel */
@@ -1317,9 +1323,8 @@ compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
     frame = current_frame;
     for (int i = 0; i < frame_count; ++i) {
         PyCodeObject *code = frame->f_code;
-        PyObject *frameinfo = Py_BuildValue("OiO",
-                                            code->co_filename,
-                                            PyCode_Addr2Line(frame->f_code, frame->f_lasti*sizeof(_Py_CODEUNIT)),
+        int line = _PyInterpreterFrame_GetLine(frame);
+        PyObject *frameinfo = Py_BuildValue("OiO", code->co_filename, line,
                                             code->co_name);
         if (!frameinfo) {
             Py_DECREF(cr_origin);
@@ -1807,7 +1812,7 @@ async_gen_asend_close(PyAsyncGenASend *o, PyObject *args)
 
 static PyMethodDef async_gen_asend_methods[] = {
     {"send", (PyCFunction)async_gen_asend_send, METH_O, send_doc},
-    {"throw", (PyCFunction)(void(*)(void))async_gen_asend_throw, METH_FASTCALL, throw_doc},
+    {"throw", _PyCFunction_CAST(async_gen_asend_throw), METH_FASTCALL, throw_doc},
     {"close", (PyCFunction)async_gen_asend_close, METH_NOARGS, close_doc},
     {NULL, NULL}        /* Sentinel */
 };
@@ -1918,6 +1923,7 @@ async_gen_wrapped_val_dealloc(_PyAsyncGenWrappedValue *o)
     if (state->value_numfree < _PyAsyncGen_MAXFREELIST) {
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
         state->value_freelist[state->value_numfree++] = o;
+        OBJECT_STAT_INC(to_freelist);
     }
     else
 #endif
@@ -1994,6 +2000,7 @@ _PyAsyncGenValueWrapperNew(PyObject *val)
     if (state->value_numfree) {
         state->value_numfree--;
         o = state->value_freelist[state->value_numfree];
+        OBJECT_STAT_INC(from_freelist);
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
         _Py_NewReference((PyObject*)o);
     }
@@ -2224,7 +2231,7 @@ async_gen_athrow_close(PyAsyncGenAThrow *o, PyObject *args)
 
 static PyMethodDef async_gen_athrow_methods[] = {
     {"send", (PyCFunction)async_gen_athrow_send, METH_O, send_doc},
-    {"throw", (PyCFunction)(void(*)(void))async_gen_athrow_throw,
+    {"throw", _PyCFunction_CAST(async_gen_athrow_throw),
     METH_FASTCALL, throw_doc},
     {"close", (PyCFunction)async_gen_athrow_close, METH_NOARGS, close_doc},
     {NULL, NULL}        /* Sentinel */

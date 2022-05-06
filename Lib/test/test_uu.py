@@ -4,12 +4,13 @@ Nick Mathewson
 """
 
 import unittest
-from test.support import os_helper
+from test.support import os_helper, warnings_helper
+
+uu = warnings_helper.import_deprecated("uu")
 
 import os
 import stat
 import sys
-import uu
 import io
 
 plaintext = b"The symbols on top of your keyboard are !@#$%^&*()_+|~\n"

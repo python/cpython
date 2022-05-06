@@ -616,6 +616,10 @@ PyMem_Malloc(size_t size)
     /* see PyMem_RawMalloc() */
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
+    OBJECT_STAT_INC_COND(allocations512, size < 512);
+    OBJECT_STAT_INC_COND(allocations4k, size >= 512 && size < 4094);
+    OBJECT_STAT_INC_COND(allocations_big, size >= 4094);
+    OBJECT_STAT_INC(allocations);
     return _PyMem.malloc(_PyMem.ctx, size);
 }
 
@@ -625,6 +629,10 @@ PyMem_Calloc(size_t nelem, size_t elsize)
     /* see PyMem_RawMalloc() */
     if (elsize != 0 && nelem > (size_t)PY_SSIZE_T_MAX / elsize)
         return NULL;
+    OBJECT_STAT_INC_COND(allocations512, elsize < 512);
+    OBJECT_STAT_INC_COND(allocations4k, elsize >= 512 && elsize < 4094);
+    OBJECT_STAT_INC_COND(allocations_big, elsize >= 4094);
+    OBJECT_STAT_INC(allocations);
     return _PyMem.calloc(_PyMem.ctx, nelem, elsize);
 }
 
@@ -640,6 +648,7 @@ PyMem_Realloc(void *ptr, size_t new_size)
 void
 PyMem_Free(void *ptr)
 {
+    OBJECT_STAT_INC(frees);
     _PyMem.free(_PyMem.ctx, ptr);
 }
 
@@ -696,6 +705,9 @@ PyObject_Malloc(size_t size)
     /* see PyMem_RawMalloc() */
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
+    OBJECT_STAT_INC_COND(allocations512, size < 512);
+    OBJECT_STAT_INC_COND(allocations4k, size >= 512 && size < 4094);
+    OBJECT_STAT_INC_COND(allocations_big, size >= 4094);
     OBJECT_STAT_INC(allocations);
     return _PyObject.malloc(_PyObject.ctx, size);
 }
@@ -706,6 +718,9 @@ PyObject_Calloc(size_t nelem, size_t elsize)
     /* see PyMem_RawMalloc() */
     if (elsize != 0 && nelem > (size_t)PY_SSIZE_T_MAX / elsize)
         return NULL;
+    OBJECT_STAT_INC_COND(allocations512, elsize < 512);
+    OBJECT_STAT_INC_COND(allocations4k, elsize >= 512 && elsize < 4094);
+    OBJECT_STAT_INC_COND(allocations_big, elsize >= 4094);
     OBJECT_STAT_INC(allocations);
     return _PyObject.calloc(_PyObject.ctx, nelem, elsize);
 }

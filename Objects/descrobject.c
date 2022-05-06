@@ -1,7 +1,7 @@
 /* Descriptors -- a new, flexible way to describe attributes */
 
 #include "Python.h"
-#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
@@ -12,6 +12,25 @@ class mappingproxy "mappingproxyobject *" "&PyDictProxy_Type"
 class property "propertyobject *" "&PyProperty_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=556352653fd4c02e]*/
+
+// see pycore_object.h
+#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+#include <emscripten.h>
+EM_JS(PyObject*, descr_set_trampoline_call, (setter set, PyObject *obj, PyObject *value, void *closure), {
+    return wasmTable.get(set)(obj, value, closure);
+});
+
+EM_JS(PyObject*, descr_get_trampoline_call, (getter get, PyObject *obj, void *closure), {
+    return wasmTable.get(get)(obj, closure);
+});
+#else
+#define descr_set_trampoline_call(set, obj, value, closure) \
+    (set)((obj), (value), (closure))
+
+#define descr_get_trampoline_call(get, obj, closure) \
+    (get)((obj), (closure))
+
+#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
 
 static void
 descr_dealloc(PyDescrObject *descr)
@@ -180,7 +199,8 @@ getset_get(PyGetSetDescrObject *descr, PyObject *obj, PyObject *type)
         return NULL;
     }
     if (descr->d_getset->get != NULL)
-        return descr->d_getset->get(obj, descr->d_getset->closure);
+        return descr_get_trampoline_call(
+            descr->d_getset->get, obj, descr->d_getset->closure);
     PyErr_Format(PyExc_AttributeError,
                  "attribute '%V' of '%.100s' objects is not readable",
                  descr_name((PyDescrObject *)descr), "?",
@@ -232,8 +252,9 @@ getset_set(PyGetSetDescrObject *descr, PyObject *obj, PyObject *value)
         return -1;
     }
     if (descr->d_getset->set != NULL) {
-        return descr->d_getset->set(obj, value,
-                                    descr->d_getset->closure);
+        return descr_set_trampoline_call(
+            descr->d_getset->set, obj, value,
+            descr->d_getset->closure);
     }
     PyErr_Format(PyExc_AttributeError,
                  "attribute '%V' of '%.100s' objects is not writable",
@@ -281,7 +302,7 @@ typedef void (*funcptr)(void);
 static inline funcptr
 method_enter_call(PyThreadState *tstate, PyObject *func)
 {
-    if (_Py_EnterRecursiveCall(tstate, " while calling a Python object")) {
+    if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
         return NULL;
     }
     return (funcptr)((PyMethodDescrObject *)func)->d_method->ml_meth;
@@ -306,9 +327,10 @@ method_vectorcall_VARARGS(
         Py_DECREF(argstuple);
         return NULL;
     }
-    PyObject *result = meth(args[0], argstuple);
+    PyObject *result = _PyCFunction_TrampolineCall(
+        meth, args[0], argstuple);
     Py_DECREF(argstuple);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return result;
 }
 
@@ -339,8 +361,9 @@ method_vectorcall_VARARGS_KEYWORDS(
     if (meth == NULL) {
         goto exit;
     }
-    result = meth(args[0], argstuple, kwdict);
-    _Py_LeaveRecursiveCall(tstate);
+    result = _PyCFunctionWithKeywords_TrampolineCall(
+        meth, args[0], argstuple, kwdict);
+    _Py_LeaveRecursiveCallTstate(tstate);
 exit:
     Py_DECREF(argstuple);
     Py_XDECREF(kwdict);
@@ -363,7 +386,7 @@ method_vectorcall_FASTCALL_KEYWORDS_METHOD(
     PyObject *result = meth(args[0],
                             ((PyMethodDescrObject *)func)->d_common.d_type,
                             args+1, nargs-1, kwnames);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall();
     return result;
 }
 
@@ -382,7 +405,7 @@ method_vectorcall_FASTCALL(
         return NULL;
     }
     PyObject *result = meth(args[0], args+1, nargs-1);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return result;
 }
 
@@ -401,7 +424,7 @@ method_vectorcall_FASTCALL_KEYWORDS(
         return NULL;
     }
     PyObject *result = meth(args[0], args+1, nargs-1, kwnames);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return result;
 }
 
@@ -427,8 +450,8 @@ method_vectorcall_NOARGS(
     if (meth == NULL) {
         return NULL;
     }
-    PyObject *result = meth(args[0], NULL);
-    _Py_LeaveRecursiveCall(tstate);
+    PyObject *result = _PyCFunction_TrampolineCall(meth, args[0], NULL);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return result;
 }
 
@@ -455,8 +478,8 @@ method_vectorcall_O(
     if (meth == NULL) {
         return NULL;
     }
-    PyObject *result = meth(args[0], args[1]);
-    _Py_LeaveRecursiveCall(tstate);
+    PyObject *result = _PyCFunction_TrampolineCall(meth, args[0], args[1]);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return result;
 }
 
@@ -1122,7 +1145,7 @@ mappingproxy_reversed(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
             to the underlying mapping */
 
 static PyMethodDef mappingproxy_methods[] = {
-    {"get",       (PyCFunction)(void(*)(void))mappingproxy_get, METH_FASTCALL,
+    {"get",       _PyCFunction_CAST(mappingproxy_get), METH_FASTCALL,
      PyDoc_STR("D.get(k[,d]) -> D[k] if k in D, else d."
                "  d defaults to None.")},
     {"keys",      (PyCFunction)mappingproxy_keys,       METH_NOARGS,

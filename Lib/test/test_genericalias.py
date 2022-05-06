@@ -14,6 +14,7 @@ from contextvars import ContextVar, Token
 from dataclasses import Field
 from functools import partial, partialmethod, cached_property
 from graphlib import TopologicalSorter
+from logging import LoggerAdapter, StreamHandler
 from mailbox import Mailbox, _PartialFile
 try:
     import ctypes
@@ -47,11 +48,43 @@ from unittest.case import _AssertRaisesContext
 from queue import Queue, SimpleQueue
 from weakref import WeakSet, ReferenceType, ref
 import typing
+from typing import Unpack
 
 from typing import TypeVar
 T = TypeVar('T')
 K = TypeVar('K')
 V = TypeVar('V')
+
+_UNPACKED_TUPLES = [
+    # Unpacked tuple using `*`
+    (*tuple[int],)[0],
+    (*tuple[T],)[0],
+    (*tuple[int, str],)[0],
+    (*tuple[int, ...],)[0],
+    (*tuple[T, ...],)[0],
+    tuple[*tuple[int, ...]],
+    tuple[*tuple[T, ...]],
+    tuple[str, *tuple[int, ...]],
+    tuple[*tuple[int, ...], str],
+    tuple[float, *tuple[int, ...], str],
+    tuple[*tuple[*tuple[int, ...]]],
+    # Unpacked tuple using `Unpack`
+    Unpack[tuple[int]],
+    Unpack[tuple[T]],
+    Unpack[tuple[int, str]],
+    Unpack[tuple[int, ...]],
+    Unpack[tuple[T, ...]],
+    tuple[Unpack[tuple[int, ...]]],
+    tuple[Unpack[tuple[T, ...]]],
+    tuple[str, Unpack[tuple[int, ...]]],
+    tuple[Unpack[tuple[int, ...]], str],
+    tuple[float, Unpack[tuple[int, ...]], str],
+    tuple[Unpack[tuple[Unpack[tuple[int, ...]]]]],
+    # Unpacked tuple using `*` AND `Unpack`
+    tuple[Unpack[tuple[*tuple[int, ...]]]],
+    tuple[*tuple[Unpack[tuple[int, ...]]]],
+]
+
 
 class BaseTest(unittest.TestCase):
     """Test basics."""
@@ -81,6 +114,7 @@ class BaseTest(unittest.TestCase):
                      MappingProxyType, AsyncGeneratorType,
                      DirEntry,
                      chain,
+                     LoggerAdapter, StreamHandler,
                      TemporaryDirectory, SpooledTemporaryFile,
                      Queue, SimpleQueue,
                      _AssertRaisesContext,
@@ -324,6 +358,8 @@ class BaseTest(unittest.TestCase):
         self.assertNotEqual(dict[str, int], dict[str, str])
         self.assertNotEqual(list, list[int])
         self.assertNotEqual(list[int], list)
+        self.assertNotEqual(list[int], tuple[int])
+        self.assertNotEqual((*tuple[int],)[0], tuple[int])
 
     def test_isinstance(self):
         self.assertTrue(isinstance([], list))
@@ -351,13 +387,16 @@ class BaseTest(unittest.TestCase):
             MyType[int]
 
     def test_pickle(self):
-        alias = GenericAlias(list, T)
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            s = pickle.dumps(alias, proto)
-            loaded = pickle.loads(s)
-            self.assertEqual(loaded.__origin__, alias.__origin__)
-            self.assertEqual(loaded.__args__, alias.__args__)
-            self.assertEqual(loaded.__parameters__, alias.__parameters__)
+        aliases = [GenericAlias(list, T)] + _UNPACKED_TUPLES
+        for alias in aliases:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(alias=alias, proto=proto):
+                    s = pickle.dumps(alias, proto)
+                    loaded = pickle.loads(s)
+                    self.assertEqual(loaded.__origin__, alias.__origin__)
+                    self.assertEqual(loaded.__args__, alias.__args__)
+                    self.assertEqual(loaded.__parameters__, alias.__parameters__)
+                    self.assertEqual(type(loaded), type(alias))
 
     def test_copy(self):
         class X(list):
@@ -366,16 +405,27 @@ class BaseTest(unittest.TestCase):
             def __deepcopy__(self, memo):
                 return self
 
-        for origin in list, deque, X:
-            alias = GenericAlias(origin, T)
-            copied = copy.copy(alias)
-            self.assertEqual(copied.__origin__, alias.__origin__)
-            self.assertEqual(copied.__args__, alias.__args__)
-            self.assertEqual(copied.__parameters__, alias.__parameters__)
-            copied = copy.deepcopy(alias)
-            self.assertEqual(copied.__origin__, alias.__origin__)
-            self.assertEqual(copied.__args__, alias.__args__)
-            self.assertEqual(copied.__parameters__, alias.__parameters__)
+        aliases = [
+            GenericAlias(list, T),
+            GenericAlias(deque, T),
+            GenericAlias(X, T)
+        ] + _UNPACKED_TUPLES
+        for alias in aliases:
+            with self.subTest(alias=alias):
+                copied = copy.copy(alias)
+                self.assertEqual(copied.__origin__, alias.__origin__)
+                self.assertEqual(copied.__args__, alias.__args__)
+                self.assertEqual(copied.__parameters__, alias.__parameters__)
+                copied = copy.deepcopy(alias)
+                self.assertEqual(copied.__origin__, alias.__origin__)
+                self.assertEqual(copied.__args__, alias.__args__)
+                self.assertEqual(copied.__parameters__, alias.__parameters__)
+
+    def test_unpack(self):
+        alias = tuple[str, ...]
+        self.assertIs(alias.__unpacked__, False)
+        unpacked = (*alias,)[0]
+        self.assertIs(unpacked.__unpacked__, True)
 
     def test_union(self):
         a = typing.Union[list[int], list[str]]

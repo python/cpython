@@ -1023,7 +1023,7 @@ _io.TextIOWrapper.__init__
 Character and line based layer over a BufferedIOBase object, buffer.
 
 encoding gives the name of the encoding that the stream will be
-decoded or encoded with. It defaults to locale.getpreferredencoding(False).
+decoded or encoded with. It defaults to locale.getencoding().
 
 errors determines the strictness of encoding and decoding (see
 help(codecs.Codec) or the documentation for codecs.register) and
@@ -1055,10 +1055,9 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                                 const char *encoding, PyObject *errors,
                                 const char *newline, int line_buffering,
                                 int write_through)
-/*[clinic end generated code: output=72267c0c01032ed2 input=77d8696d1a1f460b]*/
+/*[clinic end generated code: output=72267c0c01032ed2 input=72590963698f289b]*/
 {
     PyObject *raw, *codec_info = NULL;
-    _PyIO_State *state = NULL;
     PyObject *res;
     int r;
 
@@ -1073,9 +1072,6 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                 return -1;
             }
         }
-    }
-    else if (strcmp(encoding, "locale") == 0) {
-        encoding = NULL;
     }
 
     if (errors == Py_None) {
@@ -1113,44 +1109,18 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     self->encodefunc = NULL;
     self->b2cratio = 0.0;
 
-    if (encoding == NULL) {
-        /* Try os.device_encoding(fileno) */
-        PyObject *fileno;
-        state = IO_STATE();
-        if (state == NULL)
-            goto error;
-        fileno = PyObject_CallMethodNoArgs(buffer, &_Py_ID(fileno));
-        /* Ignore only AttributeError and UnsupportedOperation */
-        if (fileno == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError) ||
-                PyErr_ExceptionMatches(state->unsupported_operation)) {
-                PyErr_Clear();
-            }
-            else {
-                goto error;
-            }
-        }
-        else {
-            int fd = _PyLong_AsInt(fileno);
-            Py_DECREF(fileno);
-            if (fd == -1 && PyErr_Occurred()) {
-                goto error;
-            }
-
-            self->encoding = _Py_device_encoding(fd);
-            if (self->encoding == NULL)
-                goto error;
-            else if (!PyUnicode_Check(self->encoding))
-                Py_CLEAR(self->encoding);
-        }
+    if (encoding == NULL && _PyRuntime.preconfig.utf8_mode) {
+        _Py_DECLARE_STR(utf_8, "utf-8");
+        self->encoding = Py_NewRef(&_Py_STR(utf_8));
     }
-    if (encoding == NULL && self->encoding == NULL) {
+    else if (encoding == NULL || (strcmp(encoding, "locale") == 0)) {
         self->encoding = _Py_GetLocaleEncodingObject();
         if (self->encoding == NULL) {
             goto error;
         }
         assert(PyUnicode_Check(self->encoding));
     }
+
     if (self->encoding != NULL) {
         encoding = PyUnicode_AsUTF8(self->encoding);
         if (encoding == NULL)
@@ -1278,8 +1248,16 @@ textiowrapper_change_encoding(textio *self, PyObject *encoding,
             errors = self->errors;
         }
     }
-    else if (errors == Py_None) {
-        errors = &_Py_ID(strict);
+    else {
+        if (_PyUnicode_EqualToASCIIString(encoding, "locale")) {
+            encoding = _Py_GetLocaleEncodingObject();
+            if (encoding == NULL) {
+                return -1;
+            }
+        }
+        if (errors == Py_None) {
+            errors = &_Py_ID(strict);
+        }
     }
 
     const char *c_errors = PyUnicode_AsUTF8(errors);
@@ -1989,6 +1967,7 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
         if (chunks != NULL) {
             if (result != NULL && PyList_Append(chunks, result) < 0)
                 goto fail;
+            _Py_DECLARE_STR(empty, "");
             Py_XSETREF(result, PyUnicode_Join(&_Py_STR(empty), chunks));
             if (result == NULL)
                 goto fail;

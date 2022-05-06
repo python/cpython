@@ -72,13 +72,30 @@ unittest.main()
 
 @support.requires_subprocess()
 class TestCParser(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        # When running under regtest, a seperate tempdir is used
+        # as the current directory and watched for left-overs.
+        # Reusing that as the base for temporary directories
+        # ensures everything is cleaned up properly and
+        # cleans up afterwards if not (with warnings).
+        cls.tmp_base = os.getcwd()
+        if os.path.samefile(cls.tmp_base, os_helper.SAVEDCWD):
+            cls.tmp_base = None
+        # Create a directory for the reuseable static library part of
+        # the pegen extension build process.  This greatly reduces the
+        # runtime overhead of spawning compiler processes.
+        cls.library_dir = tempfile.mkdtemp(dir=cls.tmp_base)
+        cls.addClassCleanup(shutil.rmtree, cls.library_dir)
+
     def setUp(self):
         self._backup_config_vars = dict(sysconfig._CONFIG_VARS)
         cmd = support.missing_compiler_executable()
         if cmd is not None:
             self.skipTest("The %r command is not found" % cmd)
         self.old_cwd = os.getcwd()
-        self.tmp_path = tempfile.mkdtemp()
+        self.tmp_path = tempfile.mkdtemp(dir=self.tmp_base)
         change_cwd = os_helper.change_cwd(self.tmp_path)
         change_cwd.__enter__()
         self.addCleanup(change_cwd.__exit__, None, None, None)
@@ -91,7 +108,10 @@ class TestCParser(unittest.TestCase):
 
     def build_extension(self, grammar_source):
         grammar = parse_string(grammar_source, GrammarParser)
-        generate_parser_c_extension(grammar, Path(self.tmp_path))
+        # Because setUp() already changes the current directory to the
+        # temporary path, use a relative path here to prevent excessive
+        # path lengths when compiling.
+        generate_parser_c_extension(grammar, Path('.'), library_dir=self.library_dir)
 
     def run_test(self, grammar_source, test_source):
         self.build_extension(grammar_source)

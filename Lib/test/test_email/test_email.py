@@ -7,6 +7,7 @@ import time
 import base64
 import unittest
 import textwrap
+import warnings
 
 from io import StringIO, BytesIO
 from itertools import chain
@@ -797,7 +798,7 @@ class TestMessageAPI(TestEmailBase):
 class TestEncoders(unittest.TestCase):
 
     def test_EncodersEncode_base64(self):
-        with openfile('PyBanner048.gif', 'rb') as fp:
+        with openfile('python.gif', 'rb') as fp:
             bindata = fp.read()
         mimed = email.mime.image.MIMEImage(bindata)
         base64ed = mimed.get_payload()
@@ -1514,37 +1515,49 @@ Blah blah blah
 
 # Test the basic MIMEAudio class
 class TestMIMEAudio(unittest.TestCase):
-    def setUp(self):
-        with openfile('audiotest.au', 'rb') as fp:
+    def _make_audio(self, ext):
+        with openfile(f'sndhdr.{ext}', 'rb') as fp:
             self._audiodata = fp.read()
         self._au = MIMEAudio(self._audiodata)
 
     def test_guess_minor_type(self):
-        self.assertEqual(self._au.get_content_type(), 'audio/basic')
+        for ext, subtype in {
+            'aifc': 'x-aiff',
+            'aiff': 'x-aiff',
+            'wav': 'x-wav',
+            'au': 'basic',
+        }.items():
+            self._make_audio(ext)
+            subtype = ext if subtype is None else subtype
+            self.assertEqual(self._au.get_content_type(), f'audio/{subtype}')
 
     def test_encoding(self):
+        self._make_audio('au')
         payload = self._au.get_payload()
         self.assertEqual(base64.decodebytes(bytes(payload, 'ascii')),
-                self._audiodata)
+                         self._audiodata)
 
     def test_checkSetMinor(self):
+        self._make_audio('au')
         au = MIMEAudio(self._audiodata, 'fish')
         self.assertEqual(au.get_content_type(), 'audio/fish')
 
     def test_add_header(self):
+        self._make_audio('au')
         eq = self.assertEqual
         self._au.add_header('Content-Disposition', 'attachment',
-                            filename='audiotest.au')
+                            filename='sndhdr.au')
         eq(self._au['content-disposition'],
-           'attachment; filename="audiotest.au"')
+           'attachment; filename="sndhdr.au"')
         eq(self._au.get_params(header='content-disposition'),
-           [('attachment', ''), ('filename', 'audiotest.au')])
+           [('attachment', ''), ('filename', 'sndhdr.au')])
         eq(self._au.get_param('filename', header='content-disposition'),
-           'audiotest.au')
+           'sndhdr.au')
         missing = []
         eq(self._au.get_param('attachment', header='content-disposition'), '')
-        self.assertIs(self._au.get_param('foo', failobj=missing,
-                                         header='content-disposition'), missing)
+        self.assertIs(self._au.get_param(
+            'foo', failobj=missing,
+            header='content-disposition'), missing)
         # Try some missing stuff
         self.assertIs(self._au.get_param('foobar', missing), missing)
         self.assertIs(self._au.get_param('attachment', missing,
@@ -1554,24 +1567,44 @@ class TestMIMEAudio(unittest.TestCase):
 
 # Test the basic MIMEImage class
 class TestMIMEImage(unittest.TestCase):
-    def setUp(self):
-        with openfile('PyBanner048.gif', 'rb') as fp:
+    def _make_image(self, ext):
+        with openfile(f'python.{ext}', 'rb') as fp:
             self._imgdata = fp.read()
         self._im = MIMEImage(self._imgdata)
 
     def test_guess_minor_type(self):
-        self.assertEqual(self._im.get_content_type(), 'image/gif')
+        for ext, subtype in {
+            'bmp': None,
+            'exr': None,
+            'gif': None,
+            'jpg': 'jpeg',
+            'pbm': None,
+            'pgm': None,
+            'png': None,
+            'ppm': None,
+            'ras': 'rast',
+            'sgi': 'rgb',
+            'tiff': None,
+            'webp': None,
+            'xbm': None,
+        }.items():
+            self._make_image(ext)
+            subtype = ext if subtype is None else subtype
+            self.assertEqual(self._im.get_content_type(), f'image/{subtype}')
 
     def test_encoding(self):
+        self._make_image('gif')
         payload = self._im.get_payload()
         self.assertEqual(base64.decodebytes(bytes(payload, 'ascii')),
-                self._imgdata)
+                         self._imgdata)
 
     def test_checkSetMinor(self):
+        self._make_image('gif')
         im = MIMEImage(self._imgdata, 'fish')
         self.assertEqual(im.get_content_type(), 'image/fish')
 
     def test_add_header(self):
+        self._make_image('gif')
         eq = self.assertEqual
         self._im.add_header('Content-Disposition', 'attachment',
                             filename='dingusfish.gif')
@@ -1589,7 +1622,6 @@ class TestMIMEImage(unittest.TestCase):
         self.assertIs(self._im.get_param('foobar', missing), missing)
         self.assertIs(self._im.get_param('attachment', missing,
                                          header='foobar'), missing)
-
 
 
 # Test the basic MIMEApplication class
@@ -1747,7 +1779,7 @@ class TestMIMEText(unittest.TestCase):
 # Test complicated multipart/* messages
 class TestMultipart(TestEmailBase):
     def setUp(self):
-        with openfile('PyBanner048.gif', 'rb') as fp:
+        with openfile('python.gif', 'rb') as fp:
             data = fp.read()
         container = MIMEBase('multipart', 'mixed', boundary='BOUNDARY')
         image = MIMEImage(data, name='dingusfish.gif')
@@ -3285,6 +3317,7 @@ Foo
         addrs = utils.getaddresses([Header('Al Person <aperson@dom.ain>')])
         self.assertEqual(addrs[0][1], 'aperson@dom.ain')
 
+    @threading_helper.requires_working_threading()
     def test_make_msgid_collisions(self):
         # Test make_msgid uniqueness, even with multiple threads
         class MsgidsThread(Thread):
@@ -3441,9 +3474,9 @@ multipart/report
         self.assertEqual(s.getvalue(), msgtxt)
 
     def test_mime_classes_policy_argument(self):
-        with openfile('audiotest.au', 'rb') as fp:
+        with openfile('sndhdr.au', 'rb') as fp:
             audiodata = fp.read()
-        with openfile('PyBanner048.gif', 'rb') as fp:
+        with openfile('python.gif', 'rb') as fp:
             bindata = fp.read()
         classes = [
             (MIMEApplication, ('',)),
@@ -5322,6 +5355,15 @@ Content-Disposition: inline;
         m = """\
 Content-Transfer-Encoding: 8bit
 Content-Disposition: inline; filename*=X-UNKNOWN''myfile.txt
+
+"""
+        msg = email.message_from_string(m)
+        self.assertEqual(msg.get_filename(), 'myfile.txt')
+
+    def test_rfc2231_bad_character_in_encoding(self):
+        m = """\
+Content-Transfer-Encoding: 8bit
+Content-Disposition: inline; filename*=utf-8\udce2\udc80\udc9d''myfile.txt
 
 """
         msg = email.message_from_string(m)
