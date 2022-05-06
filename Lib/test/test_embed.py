@@ -1266,7 +1266,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                     expected_paths.insert(-1, p)
                 del p
             except FileNotFoundError:
-                pass
+                del p
         else:
             version = f'{sys.version_info.major}.{sys.version_info.minor}'
             stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
