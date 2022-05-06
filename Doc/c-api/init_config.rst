@@ -282,8 +282,8 @@ PyPreConfig
 
    .. c:member:: int dev_mode
 
-      If non-zero, enables the :ref:`Python Development Mode <devmode>`:
-      see :c:member:`PyConfig.dev_mode`.
+      :ref:`Python Development Mode <devmode>`: see
+      :c:member:`PyConfig.dev_mode`.
 
       Default: ``-1`` in Python mode, ``0`` in isolated mode.
 
@@ -329,8 +329,10 @@ PyPreConfig
 
       If non-zero, enable the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
-      Set by the :option:`-X utf8 <-X>` command line option and the
+      Set to 0 or 1 by the :option:`-X utf8 <-X>` command line option and the
       :envvar:`PYTHONUTF8` environment variable.
+
+      Also set to 1 if the ``LC_CTYPE`` locale is ``C`` or ``POSIX``.
 
       Default: ``-1`` in Python config and ``0`` in isolated config.
 
@@ -671,6 +673,9 @@ PyConfig
 
       If non-zero, enable the :ref:`Python Development Mode <devmode>`.
 
+      Set to 1 by the :option:`-X dev <-X>` option and the
+      :envvar:`PYTHONDEVMODE` environment variable.
+
       Default: ``-1`` in Python mode, ``0`` in isolated mode.
 
    .. c:member:: int dump_refs
@@ -836,6 +841,8 @@ PyConfig
         site directory to :data:`sys.path`.
       * Python REPL doesn't import :mod:`readline` nor enable default readline
         configuration on interactive prompts.
+
+      Set to 1 by the :option:`-I` command line option.
 
       Default: ``0`` in Python mode, ``1`` in isolated mode.
 
@@ -1149,6 +1156,8 @@ PyConfig
 
       If equals to zero, ignore the :ref:`environment variables
       <using-on-envvars>`.
+
+      Set to 0 by the :option:`-E` environment variable.
 
       Default: ``1`` in Python config and ``0`` in isolated config.
 
