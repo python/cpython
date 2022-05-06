@@ -140,7 +140,7 @@ class CAPITest(unittest.TestCase):
             def __len__(self):
                 return 1
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
-                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22)
+                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)
         # Issue #15736: overflow in _PySequence_BytesToCharpArray()
         class Z(object):
             def __len__(self):
@@ -148,7 +148,7 @@ class CAPITest(unittest.TestCase):
             def __getitem__(self, i):
                 return b'x'
         self.assertRaises(MemoryError, _posixsubprocess.fork_exec,
-                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22)
+                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)
 
     @unittest.skipUnless(_posixsubprocess, '_posixsubprocess required for this test.')
     def test_subprocess_fork_exec(self):
@@ -158,7 +158,7 @@ class CAPITest(unittest.TestCase):
 
         # Issue #15738: crash in subprocess_fork_exec()
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
-                          Z(),[b'1'],3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22)
+                          Z(),[b'1'],3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
@@ -1140,6 +1140,34 @@ class Test_FrameAPI(unittest.TestCase):
         gen = self.getgenframe()
         frame = next(gen)
         self.assertIs(gen, _testcapi.frame_getgenerator(frame))
+
+
+SUFFICIENT_TO_DEOPT_AND_SPECIALIZE = 100
+
+class Test_Pep523API(unittest.TestCase):
+
+    def do_test(self, func):
+        calls = []
+        start = SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
+        count = start + SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
+        for i in range(count):
+            if i == start:
+                _testinternalcapi.set_eval_frame_record(calls)
+            func()
+        _testinternalcapi.set_eval_frame_default()
+        self.assertEqual(len(calls), SUFFICIENT_TO_DEOPT_AND_SPECIALIZE)
+        for name in calls:
+            self.assertEqual(name, func.__name__)
+
+    def test_pep523_with_specialization_simple(self):
+        def func1():
+            pass
+        self.do_test(func1)
+
+    def test_pep523_with_specialization_with_default(self):
+        def func2(x=None):
+            pass
+        self.do_test(func2)
 
 
 if __name__ == "__main__":

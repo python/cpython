@@ -479,6 +479,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         '_init_main': 1,
         '_isolated_interpreter': 0,
         'use_frozen_modules': not Py_DEBUG,
+        'safe_path': 0,
         '_is_python_build': IGNORE_CONFIG,
     }
     if MS_WINDOWS:
@@ -496,6 +497,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         isolated=1,
         use_environment=0,
         user_site_directory=0,
+        safe_path=1,
         dev_mode=0,
         install_signal_handlers=0,
         use_hash_seed=0,
@@ -855,6 +857,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'faulthandler': 1,
             'platlibdir': 'my_platlibdir',
             'module_search_paths': self.IGNORE_CONFIG,
+            'safe_path': 1,
 
             'check_hash_pycs_mode': 'always',
             'pathconfig_warnings': 0,
@@ -889,6 +892,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'warnoptions': ['EnvVar'],
             'platlibdir': 'env_platlibdir',
             'module_search_paths': self.IGNORE_CONFIG,
+            'safe_path': 1,
         }
         self.check_all_configs("test_init_compat_env", config, preconfig,
                                api=API_COMPAT)
@@ -919,6 +923,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'warnoptions': ['EnvVar'],
             'platlibdir': 'env_platlibdir',
             'module_search_paths': self.IGNORE_CONFIG,
+            'safe_path': 1,
         }
         self.check_all_configs("test_init_python_env", config, preconfig,
                                api=API_PYTHON)
@@ -959,12 +964,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         config = {
             'argv': ['script.py'],
-            'orig_argv': ['python3', '-X', 'dev', 'script.py'],
+            'orig_argv': ['python3', '-X', 'dev', '-P', 'script.py'],
             'run_filename': os.path.abspath('script.py'),
             'dev_mode': 1,
             'faulthandler': 1,
             'warnoptions': ['default'],
             'xoptions': ['dev'],
+            'safe_path': 1,
         }
         self.check_all_configs("test_preinit_parse_argv", config, preconfig,
                                api=API_PYTHON)
@@ -975,7 +981,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'isolated': 0,
         }
         argv = ["python3",
-               "-E", "-I",
+               "-E", "-I", "-P",
                "-X", "dev",
                "-X", "utf8",
                "script.py"]
@@ -990,6 +996,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_init_isolated_flag(self):
         config = {
             'isolated': 1,
+            'safe_path': 1,
             'use_environment': 0,
             'user_site_directory': 0,
         }
@@ -999,6 +1006,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # _PyPreConfig.isolated=1, _PyCoreConfig.isolated not set
         config = {
             'isolated': 1,
+            'safe_path': 1,
             'use_environment': 0,
             'user_site_directory': 0,
         }
@@ -1008,6 +1016,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # _PyPreConfig.isolated=0, _PyCoreConfig.isolated=1
         config = {
             'isolated': 1,
+            'safe_path': 1,
             'use_environment': 0,
             'user_site_directory': 0,
         }

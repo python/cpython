@@ -5784,6 +5784,23 @@ class MroTest(unittest.TestCase):
         class A(metaclass=M):
             pass
 
+    def test_disappearing_custom_mro(self):
+        """
+        gh-92112: A custom mro() returning a result conflicting with
+        __bases__ and deleting itself caused a double free.
+        """
+        class B:
+            pass
+
+        class M(DebugHelperMeta):
+            def mro(cls):
+                del M.mro
+                return (B,)
+
+        with self.assertRaises(TypeError):
+            class A(metaclass=M):
+                pass
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1000,6 +1000,17 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
+.. function:: login_tty(fd)
+
+   Prepare the tty of which fd is a file descriptor for a new login session.
+   Make the calling process a session leader; make the tty the controlling tty,
+   the stdin, the stdout, and the stderr of the calling process; close fd.
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.11
+
+
 .. function:: lseek(fd, pos, how)
 
    Set the current position of file descriptor *fd* to position *pos*, modified
@@ -3905,12 +3916,13 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Unix.
 
 
-.. function:: popen(cmd, mode='r', buffering=-1)
+.. function:: popen(cmd, mode='r', buffering=-1, encoding=None)
 
    Open a pipe to or from command *cmd*.
    The return value is an open file object
    connected to the pipe, which can be read or written depending on whether *mode*
-   is ``'r'`` (default) or ``'w'``. The *buffering* argument has the same meaning as
+   is ``'r'`` (default) or ``'w'``.
+   The *buffering* and *encoding* arguments have the same meaning as
    the corresponding argument to the built-in :func:`open` function. The
    returned file object reads or writes text strings rather than bytes.
 
@@ -3932,6 +3944,9 @@ written in Python, such as a mail server's external command delivery program.
    This is implemented using :class:`subprocess.Popen`; see that class's
    documentation for more powerful ways to manage and communicate with
    subprocesses.
+
+   .. versionchanged:: 3.11
+      Added the *encoding* parameter.
 
 
 .. function:: posix_spawn(path, argv, env, *, file_actions=None, \

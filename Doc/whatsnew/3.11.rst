@@ -79,6 +79,12 @@ New typing features:
 * :pep:`673`: ``Self`` type.
 * :pep:`675`: Arbitrary literal string type.
 
+Security improvements:
+
+* New :option:`-P` command line option and :envvar:`PYTHONSAFEPATH` environment
+  variable to not prepend a potentially unsafe path to :data:`sys.path` such as
+  the current directory, the script's directory or an empty string.
+
 
 New Features
 ============
@@ -362,6 +368,11 @@ Other Language Changes
   pickles instance attributes implemented as :term:`slots <__slots__>`.
   (Contributed by Serhiy Storchaka in :issue:`26579`.)
 
+* Add :option:`-P` command line option and :envvar:`PYTHONSAFEPATH` environment
+  variable to not prepend a potentially unsafe path to :data:`sys.path` such as
+  the current directory, the script's directory or an empty string.
+  (Contributed by Victor Stinner in :gh:`57684`.)
+
 
 Other CPython Implementation Changes
 ====================================
@@ -419,6 +430,14 @@ asyncio
 * Add :meth:`~asyncio.streams.StreamWriter.start_tls` method for upgrading
   existing stream-based connections to TLS. (Contributed by Ian Good in
   :issue:`34975`.)
+
+datetime
+--------
+
+* :meth:`datetime.date.fromisoformat`, :meth:`datetime.time.fromisoformat` and
+  :meth:`datetime.datetime.fromisoformat` can now be used to parse most ISO 8601
+  formats (barring only those that support fractional hours and minutes).
+  (Contributed by Paul Ganssle in :gh:`80010`.)
 
 fractions
 ---------
@@ -635,6 +654,9 @@ sys
 * Add :func:`sys.exception` which returns the active exception instance
   (equivalent to ``sys.exc_info()[1]``).
   (Contributed by Irit Katriel in :issue:`46328`.)
+
+* Add the :data:`sys.flags.safe_path <sys.flags>` flag.
+  (Contributed by Victor Stinner in :gh:`57684`.)
 
 
 sysconfig
@@ -1062,6 +1084,14 @@ CPython bytecode changes
 Deprecated
 ==========
 
+* Chaining :class:`classmethod` descriptors (introduced in :issue:`19072`)
+  is now deprecated.  It can no longer be used to wrap other descriptors
+  such as :class:`property`.  The core design of this feature was flawed
+  and caused a number of downstream problems.  To "pass-through" a
+  :class:`classmethod`, consider using the ``__wrapped__`` attribute
+  that was added in Python 3.10.
+  (Contributed by Raymond Hettinger in :gh:`89519`.)
+
 * Octal escapes with value larger than ``0o377`` now produce
   a :exc:`DeprecationWarning`.
   In a future Python version they will be a :exc:`SyntaxWarning` and
@@ -1480,6 +1510,8 @@ New Features
   representation of exceptions.
   (Contributed by Irit Katriel in :issue:`46343`.)
 
+* Added the :c:member:`PyConfig.safe_path` member.
+  (Contributed by Victor Stinner in :gh:`57684`.)
 
 Porting to Python 3.11
 ----------------------
@@ -1718,6 +1750,9 @@ Deprecated
   * :c:func:`PySys_AddWarnOption`
   * :c:func:`PySys_AddXOption`
   * :c:func:`PySys_HasWarnOptions`
+  * :c:func:`PySys_SetArgvEx`
+  * :c:func:`PySys_SetArgv`
+  * :c:func:`PySys_SetPath`
   * :c:func:`Py_SetPath`
   * :c:func:`Py_SetProgramName`
   * :c:func:`Py_SetPythonHome`
@@ -1726,7 +1761,7 @@ Deprecated
 
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
   <init-config>` instead (:pep:`587`).
-  (Contributed by Victor Stinner in :issue:`44113`.)
+  (Contributed by Victor Stinner in :gh:`88279`.)
 
 * Deprecate the ``ob_shash`` member of the :c:type:`PyBytesObject`. Use :c:func:`PyObject_Hash` instead.
   (Contributed by Inada Naoki in :issue:`46864`.)
