@@ -369,15 +369,13 @@ class Condition:
         if not self._is_owned():
             raise RuntimeError("cannot notify on un-acquired lock")
         all_waiters = self._waiters
-        waiters_to_notify = _deque(_islice(all_waiters, n))
-        if not waiters_to_notify:
+
+        if not all_waiters:
             return
-        for waiter in waiters_to_notify:
+        num_to_notify = min(n, len(all_waiters))
+        for i in range(num_to_notify):
+            waiter = all_waiters.popleft()
             waiter.release()
-            try:
-                all_waiters.remove(waiter)
-            except ValueError:
-                pass
 
     def notify_all(self):
         """Wake up all threads waiting on this condition.
