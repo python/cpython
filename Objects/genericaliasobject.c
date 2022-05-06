@@ -338,11 +338,15 @@ _unpacked_tuple_args(PyObject *arg)
     PyObject *result;
     assert(!PyType_Check(arg));
     // Fast path
-    if (_PyGenericAlias_Check(arg) && ((gaobject *)arg)->starred && ((gaobject *)arg)->origin == (PyObject *)&PyTuple_Type) {
+    if (_PyGenericAlias_Check(arg) &&
+            ((gaobject *)arg)->starred &&
+            ((gaobject *)arg)->origin == (PyObject *)&PyTuple_Type)
+    {
         result = ((gaobject *)arg)->args;
         Py_INCREF(result);
         return result;
     }
+
     if (_PyObject_LookupAttr(arg, &_Py_ID(__typing_unpacked_tuple_args__), &result) > 0) {
         if (result == Py_None) {
             Py_DECREF(result);
@@ -368,9 +372,9 @@ _unpack_args(PyObject *item)
         if (!PyType_Check(item)) {
             PyObject *subargs = _unpacked_tuple_args(item);
             if (subargs != NULL &&
-                    PyTuple_Check(subargs) &&
-                    !(PyTuple_GET_SIZE(subargs) &&
-                      PyTuple_GET_ITEM(subargs, PyTuple_GET_SIZE(subargs)-1) == Py_Ellipsis))
+                PyTuple_Check(subargs) &&
+                !(PyTuple_GET_SIZE(subargs) &&
+                  PyTuple_GET_ITEM(subargs, PyTuple_GET_SIZE(subargs)-1) == Py_Ellipsis))
             {
                 if (PyList_SetSlice(newargs, PY_SSIZE_T_MAX, PY_SSIZE_T_MAX, subargs) < 0) {
                     Py_DECREF(subargs);
