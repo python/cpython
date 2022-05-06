@@ -628,8 +628,8 @@ PyCode_New(int argcount, int kwonlyargcount,
 }
 
 static const char assert0[4] = {
-    LOAD_ASSERTION_ERROR,
-    0,
+    LOAD_EXCEPTION_TYPE,
+    0,  // AssertionError
     RAISE_VARARGS,
     1
 };

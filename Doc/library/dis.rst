@@ -671,12 +671,14 @@ iterations of the loop.
        Exception representation on the stack now consist of one, not three, items.
 
 
-.. opcode:: LOAD_ASSERTION_ERROR
+.. opcode:: LOAD_EXCEPTION_TYPE (type)
 
-   Pushes :exc:`AssertionError` onto the stack.  Used by the :keyword:`assert`
-   statement.
+   Pushes an exception type onto the stack, depending on the value of *type*:
 
-   .. versionadded:: 3.9
+   * ``0``: :exc:`AssertionError`
+   * ``1``: :exc:`StopIteration`
+
+   .. versionadded:: 3.11
 
 
 .. opcode:: LOAD_BUILD_CLASS

@@ -169,7 +169,7 @@ def bug1333982(x=[]):
 dis_bug1333982 = """\
 %3d        RESUME                   0
 
-%3d        LOAD_ASSERTION_ERROR
+%3d        LOAD_EXCEPTION_TYPE      0 (AssertionError)
            LOAD_CONST               2 (<code object <listcomp> at 0x..., file "%s", line %d>)
            MAKE_FUNCTION            0
            LOAD_FAST                0 (x)
@@ -1171,7 +1171,6 @@ Flags:             OPTIMIZED, NEWLOCALS, COROUTINE
 Constants:
    0: None
    1: 1
-   2: <class 'StopIteration'>
 Names:
    0: value
    1: b

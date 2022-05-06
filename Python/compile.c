@@ -1169,7 +1169,7 @@ stack_effect(int opcode, int oparg, int jump)
             return (oparg & FVS_MASK) == FVS_HAVE_SPEC ? -1 : 0;
         case LOAD_METHOD:
             return 1;
-        case LOAD_ASSERTION_ERROR:
+        case LOAD_EXCEPTION_TYPE:
             return 1;
         case LIST_TO_TUPLE:
             return 0;
@@ -1961,7 +1961,6 @@ compiler_add_yield_from(struct compiler *c, int await)
     RETURN_IF_FALSE(stopiter = compiler_new_block(c));
     RETURN_IF_FALSE(error = compiler_new_block(c));
     RETURN_IF_FALSE(exit = compiler_new_block(c));
-
     compiler_use_next_block(c, start);
     ADDOP_JUMP(c, SEND, exit);
     compiler_use_next_block(c, resume);
@@ -1976,7 +1975,7 @@ compiler_add_yield_from(struct compiler *c, int await)
     ADDOP_I(c, RESUME, await ? 3 : 2);
     ADDOP_JUMP(c, JUMP_NO_INTERRUPT, start);
     compiler_use_next_block(c, stopiter);
-    ADDOP_LOAD_CONST(c, PyExc_StopIteration);  // StopIteration is marshallable!
+    ADDOP_I(c, LOAD_EXCEPTION_TYPE, 1);  // StopIteration
     ADDOP(c, CHECK_EXC_MATCH);
     ADDOP_JUMP(c, POP_JUMP_IF_FALSE, error);
     // StopIteration was raised. Push the return value and continue execution:
@@ -4018,7 +4017,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
         return 0;
     if (!compiler_jump_if(c, s->v.Assert.test, end, 1))
         return 0;
-    ADDOP(c, LOAD_ASSERTION_ERROR);
+    ADDOP_I(c, LOAD_EXCEPTION_TYPE, 0);  // AssertionError
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
         ADDOP_I(c, PRECALL, 0);

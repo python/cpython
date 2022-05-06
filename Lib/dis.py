@@ -31,6 +31,7 @@ LOAD_CONST = opmap['LOAD_CONST']
 LOAD_GLOBAL = opmap['LOAD_GLOBAL']
 BINARY_OP = opmap['BINARY_OP']
 JUMP_BACKWARD = opmap['JUMP_BACKWARD']
+LOAD_EXCEPTION_TYPE = opmap['LOAD_EXCEPTION_TYPE']
 
 CACHE = opmap["CACHE"]
 
@@ -491,6 +492,8 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                                     if arg & (1<<i))
             elif deop == BINARY_OP:
                 _, argrepr = _nb_ops[arg]
+            elif deop == LOAD_EXCEPTION_TYPE:
+                argrepr = "StopIteration" if arg else "AssertionError"
         yield Instruction(_all_opname[op], op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target, positions)

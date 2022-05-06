@@ -94,7 +94,6 @@ def_op('GET_YIELD_FROM_ITER', 69)
 def_op('PRINT_EXPR', 70)
 def_op('LOAD_BUILD_CLASS', 71)
 
-def_op('LOAD_ASSERTION_ERROR', 74)
 def_op('RETURN_GENERATOR', 75)
 
 def_op('LIST_TO_TUPLE', 82)
@@ -166,7 +165,7 @@ hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
 jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
-
+def_op('LOAD_EXCEPTION_TYPE', 141)
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
 def_op('EXTENDED_ARG', 144)
