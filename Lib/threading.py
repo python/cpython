@@ -368,13 +368,13 @@ class Condition:
         """
         if not self._is_owned():
             raise RuntimeError("cannot notify on un-acquired lock")
-        all_waiters = self._waiters
+        waiters = self._waiters
 
-        if not all_waiters:
+        if not waiters:
             return
-        num_to_notify = min(n, len(all_waiters))
+        num_to_notify = min(n, len(waiters))
         for i in range(num_to_notify):
-            waiter = all_waiters.popleft()
+            waiter = waiters.popleft()
             waiter.release()
 
     def notify_all(self):
