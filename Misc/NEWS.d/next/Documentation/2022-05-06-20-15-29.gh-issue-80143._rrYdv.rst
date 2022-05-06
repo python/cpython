@@ -1,2 +1,0 @@
-Clarify that a backslash may not only escape special characters, but also be
-used to denote them.
