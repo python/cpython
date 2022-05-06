@@ -50,7 +50,7 @@ PyDoc_STRVAR(termios_tcsetattr__doc__,
 "queued output and discarding all queued input.");
 
 #define TERMIOS_TCSETATTR_METHODDEF    \
-    {"tcsetattr", (PyCFunction)(void(*)(void))termios_tcsetattr, METH_FASTCALL, termios_tcsetattr__doc__},
+    {"tcsetattr", _PyCFunction_CAST(termios_tcsetattr), METH_FASTCALL, termios_tcsetattr__doc__},
 
 static PyObject *
 termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term);
@@ -90,7 +90,7 @@ PyDoc_STRVAR(termios_tcsendbreak__doc__,
 "has a system dependent meaning.");
 
 #define TERMIOS_TCSENDBREAK_METHODDEF    \
-    {"tcsendbreak", (PyCFunction)(void(*)(void))termios_tcsendbreak, METH_FASTCALL, termios_tcsendbreak__doc__},
+    {"tcsendbreak", _PyCFunction_CAST(termios_tcsendbreak), METH_FASTCALL, termios_tcsendbreak__doc__},
 
 static PyObject *
 termios_tcsendbreak_impl(PyObject *module, int fd, int duration);
@@ -156,7 +156,7 @@ PyDoc_STRVAR(termios_tcflush__doc__,
 "both queues.");
 
 #define TERMIOS_TCFLUSH_METHODDEF    \
-    {"tcflush", (PyCFunction)(void(*)(void))termios_tcflush, METH_FASTCALL, termios_tcflush__doc__},
+    {"tcflush", _PyCFunction_CAST(termios_tcflush), METH_FASTCALL, termios_tcflush__doc__},
 
 static PyObject *
 termios_tcflush_impl(PyObject *module, int fd, int queue);
@@ -195,7 +195,7 @@ PyDoc_STRVAR(termios_tcflow__doc__,
 "or termios.TCION to restart input.");
 
 #define TERMIOS_TCFLOW_METHODDEF    \
-    {"tcflow", (PyCFunction)(void(*)(void))termios_tcflow, METH_FASTCALL, termios_tcflow__doc__},
+    {"tcflow", _PyCFunction_CAST(termios_tcflow), METH_FASTCALL, termios_tcflow__doc__},
 
 static PyObject *
 termios_tcflow_impl(PyObject *module, int fd, int action);
@@ -222,4 +222,68 @@ termios_tcflow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a129179f1e2545cc input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(termios_tcgetwinsize__doc__,
+"tcgetwinsize($module, fd, /)\n"
+"--\n"
+"\n"
+"Get the tty winsize for file descriptor fd.\n"
+"\n"
+"Returns a tuple (ws_row, ws_col).");
+
+#define TERMIOS_TCGETWINSIZE_METHODDEF    \
+    {"tcgetwinsize", (PyCFunction)termios_tcgetwinsize, METH_O, termios_tcgetwinsize__doc__},
+
+static PyObject *
+termios_tcgetwinsize_impl(PyObject *module, int fd);
+
+static PyObject *
+termios_tcgetwinsize(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+        goto exit;
+    }
+    return_value = termios_tcgetwinsize_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(termios_tcsetwinsize__doc__,
+"tcsetwinsize($module, fd, winsize, /)\n"
+"--\n"
+"\n"
+"Set the tty winsize for file descriptor fd.\n"
+"\n"
+"The winsize to be set is taken from the winsize argument, which\n"
+"is a two-item tuple (ws_row, ws_col) like the one returned by tcgetwinsize().");
+
+#define TERMIOS_TCSETWINSIZE_METHODDEF    \
+    {"tcsetwinsize", _PyCFunction_CAST(termios_tcsetwinsize), METH_FASTCALL, termios_tcsetwinsize__doc__},
+
+static PyObject *
+termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz);
+
+static PyObject *
+termios_tcsetwinsize(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    PyObject *winsz;
+
+    if (!_PyArg_CheckPositional("tcsetwinsize", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    winsz = args[1];
+    return_value = termios_tcsetwinsize_impl(module, fd, winsz);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=ef9ab888876fac17 input=a9049054013a1b77]*/

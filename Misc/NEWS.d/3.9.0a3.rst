@@ -178,7 +178,7 @@ last iteration of asynchronous for loops. Patch by Pablo Galindo.
 .. nonce: WG9alt
 .. section: Core and Builtins
 
-Fix incorrent line execution reporting in trace functions when tracing
+Fix incorrect line execution reporting in trace functions when tracing
 exception handlers with name binding. Patch by Pablo Galindo.
 
 ..
@@ -685,7 +685,7 @@ but not required. Patch by Juergen Gmach.
 .. section: Library
 
 Fixed __subclasshook__ of :class:`os.PathLike` to return a correct result
-upon inheritence. Patch by Bar Harel.
+upon inheritance. Patch by Bar Harel.
 
 ..
 

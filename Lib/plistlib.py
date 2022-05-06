@@ -61,7 +61,8 @@ import struct
 from xml.parsers.expat import ParserCreate
 
 
-PlistFormat = enum.global_enum(enum.Enum('PlistFormat', 'FMT_XML FMT_BINARY', module=__name__))
+PlistFormat = enum.Enum('PlistFormat', 'FMT_XML FMT_BINARY', module=__name__)
+globals().update(PlistFormat.__members__)
 
 
 class UID:
@@ -177,8 +178,8 @@ class _PlistParser:
         return self.root
 
     def handle_entity_decl(self, entity_name, is_parameter_entity, value, base, system_id, public_id, notation_name):
-        # Reject plist files with entity declarations to avoid XML vulnerabilies in expat.
-        # Regular plist files don't contain those declerations, and Apple's plutil tool does not
+        # Reject plist files with entity declarations to avoid XML vulnerabilities in expat.
+        # Regular plist files don't contain those declarations, and Apple's plutil tool does not
         # accept them either.
         raise InvalidFileException("XML entity declarations are not supported in plist files")
 

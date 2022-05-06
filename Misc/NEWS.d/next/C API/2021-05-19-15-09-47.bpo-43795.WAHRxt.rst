@@ -1,1 +1,0 @@
-The undocumented function :c:func:`Py_FrozenMain` is removed from the Limited API.

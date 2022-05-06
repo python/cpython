@@ -6,6 +6,7 @@ module with arguments identifying each test.
 """
 
 import contextlib
+import os
 import sys
 
 
@@ -104,6 +105,32 @@ def test_block_add_hook_baseexception():
             # Adding this next hook should raise BaseException
             with TestHook() as hook2:
                 pass
+
+
+def test_marshal():
+    import marshal
+    o = ("a", "b", "c", 1, 2, 3)
+    payload = marshal.dumps(o)
+
+    with TestHook() as hook:
+        assertEqual(o, marshal.loads(marshal.dumps(o)))
+
+        try:
+            with open("test-marshal.bin", "wb") as f:
+                marshal.dump(o, f)
+            with open("test-marshal.bin", "rb") as f:
+                assertEqual(o, marshal.load(f))
+        finally:
+            os.unlink("test-marshal.bin")
+
+    actual = [(a[0], a[1]) for e, a in hook.seen if e == "marshal.dumps"]
+    assertSequenceEqual(actual, [(o, marshal.version)] * 2)
+
+    actual = [a[0] for e, a in hook.seen if e == "marshal.loads"]
+    assertSequenceEqual(actual, [payload])
+
+    actual = [e for e, a in hook.seen if e == "marshal.load"]
+    assertSequenceEqual(actual, ["marshal.load"])
 
 
 def test_pickle():

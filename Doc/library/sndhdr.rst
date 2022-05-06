@@ -3,6 +3,7 @@
 
 .. module:: sndhdr
    :synopsis: Determine type of a sound file.
+   :deprecated:
 
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. Based on comments in the module source file.
@@ -12,6 +13,9 @@
 .. index::
    single: A-LAW
    single: u-LAW
+
+.. deprecated:: 3.11
+   The :mod:`sndhdr` module is deprecated (see :pep:`594` for details).
 
 --------------
 

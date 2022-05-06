@@ -5,9 +5,6 @@ import unittest
 from test import support
 from test.support import socket_helper
 
-# This requires the 'network' resource as given on the regrtest command line.
-skip_expected = not support.is_resource_enabled('network')
-
 import time
 import errno
 import socket
@@ -290,13 +287,10 @@ class UDPTimeoutTestCase(TimeoutTestCase):
         self._sock_operation(1, 1.5, 'recvfrom', 1024)
 
 
-def test_main():
+def setUpModule():
     support.requires('network')
-    support.run_unittest(
-        CreationTestCase,
-        TCPTimeoutTestCase,
-        UDPTimeoutTestCase,
-    )
+    support.requires_working_socket(module=True)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
