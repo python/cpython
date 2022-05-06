@@ -1,0 +1,1 @@
+Optimizes ``Condition.notify()`` by removing unneeded construction of a ``_deque``
