@@ -43,6 +43,9 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-OO
 ]
 [
+.B \-P
+]
+[
 .B \-s
 ]
 [
@@ -154,7 +157,7 @@ useful to inspect global variables or a stack trace when a script
 raises an exception.
 .TP
 .B \-I
-Run Python in isolated mode. This also implies \fB\-E\fP and \fB\-s\fP. In
+Run Python in isolated mode. This also implies \fB\-E\fP, \fB\-P\fP and \fB\-s\fP. In
 isolated mode sys.path contains neither the script's directory nor the user's
 site-packages directory. All PYTHON* environment variables are ignored, too.
 Further restrictions may be imposed to prevent the user from injecting
@@ -176,6 +179,11 @@ adding .opt-1 before the .pyc extension.
 .B \-OO
 Do \fB-O\fP and also discard docstrings; change the filename for
 compiled (bytecode) files by adding .opt-2 before the .pyc extension.
+.TP
+.B \-P
+Don't automatically prepend a potentially unsafe path to \fBsys.path\fP such
+as the current directory, the script's directory or an empty string. See also the
+\fBPYTHONSAFEPATH\fP environment variable.
 .TP
 .B \-q
 Do not print the version and copyright messages. These messages are
@@ -398,6 +406,10 @@ needed for developing Python extensions and embedding the
 interpreter.
 .RE
 .SH ENVIRONMENT VARIABLES
+.IP PYTHONSAFEPATH
+If this is set to a non-empty string, don't automatically prepend a potentially
+unsafe path to \fBsys.path\fP such as the current directory, the script's
+directory or an empty string. See also the \fB\-P\fP option.
 .IP PYTHONHOME
 Change the location of the standard Python libraries.  By default, the
 libraries are searched in ${prefix}/lib/python<version> and

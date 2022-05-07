@@ -13,7 +13,7 @@
 
 # update when constants are added or removed
 
-MAGIC = 20220402
+MAGIC = 20220423
 
 from _sre import MAXREPEAT, MAXGROUPS
 
@@ -62,6 +62,8 @@ class _NamedIntConstant(int):
     def __repr__(self):
         return self.name
 
+    __reduce__ = None
+
 MAXREPEAT = _NamedIntConstant(MAXREPEAT, 'MAXREPEAT')
 
 def _makecodes(*names):
@@ -78,7 +80,6 @@ OPCODES = _makecodes(
     'ASSERT', 'ASSERT_NOT',
     'AT',
     'BRANCH',
-    'CALL',
     'CATEGORY',
     'CHARSET', 'BIGCHARSET',
     'GROUPREF', 'GROUPREF_EXISTS',

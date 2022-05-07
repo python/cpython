@@ -1,0 +1,1 @@
+Add ``SO_INCOMING_CPU`` constant to :mod:`socket`.
