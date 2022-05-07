@@ -1,6 +1,5 @@
 """Tests for C-implemented GenericAlias."""
 
-import collections
 import unittest
 import pickle
 import copy
@@ -505,7 +504,7 @@ class TypeIterationTests(unittest.TestCase):
 
     def test_is_not_instance_of_iterable(self):
         for type_to_test in self._UNITERABLE_TYPES:
-            self.assertNotIsInstance(type_to_test, collections.abc.Iterable)
+            self.assertNotIsInstance(type_to_test, Iterable)
 
 
 if __name__ == "__main__":
