@@ -3916,7 +3916,7 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Unix.
 
 
-.. function:: popen(cmd, mode='r', buffering=-1, encoding=None)
+.. function:: popen(cmd, mode='r', buffering=-1, *, encoding=None)
 
    Open a pipe to or from command *cmd*.
    The return value is an open file object
