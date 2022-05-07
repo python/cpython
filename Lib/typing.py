@@ -405,9 +405,24 @@ class _Immutable:
         return self
 
 
+class _NotIterable:
+    """Mixin to prevent iteration, without being compatible with Iterable.
+
+    That is, we could do:
+        def __iter__(self): raise TypeError()
+    But this would make users of this mixin duck type-compatible with
+    collections.abc.Iterable - isinstance(foo, Iterable) would be True.
+
+    Luckily, we can instead prevent iteration by setting __iter__ to None, which
+    is treated specially.
+    """
+
+    __iter__ = None
+
+
 # Internal indicator of special typing constructs.
 # See __doc__ instance attribute for specific docs.
-class _SpecialForm(_Final, _root=True):
+class _SpecialForm(_Final, _NotIterable, _root=True):
     __slots__ = ('_name', '__doc__', '_getitem')
 
     def __init__(self, getitem):
@@ -448,10 +463,6 @@ class _SpecialForm(_Final, _root=True):
     @_tp_cache
     def __getitem__(self, parameters):
         return self._getitem(self, parameters)
-
-    # Prevent iteration without making ourselves duck type-compatible
-    # with Iterable.
-    __iter__ = None
 
 
 class _LiteralSpecialForm(_SpecialForm, _root=True):
@@ -1502,7 +1513,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
 # 1 for List and 2 for Dict.  It may be -1 if variable number of
 # parameters are accepted (needs custom __getitem__).
 
-class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
+class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
     def __init__(self, origin, nparams, *, inst=True, name=None):
         if name is None:
             name = origin.__name__
@@ -1545,7 +1556,7 @@ class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
     def __ror__(self, left):
         return Union[left, self]
 
-class _CallableGenericAlias(_GenericAlias, _root=True):
+class _CallableGenericAlias(_NotIterable, _GenericAlias, _root=True):
     def __repr__(self):
         assert self._name == 'Callable'
         args = self.__args__
@@ -1610,7 +1621,7 @@ class _TupleType(_SpecialGenericAlias, _root=True):
         return self.copy_with(params)
 
 
-class _UnionGenericAlias(_GenericAlias, _root=True):
+class _UnionGenericAlias(_NotIterable, _GenericAlias, _root=True):
     def copy_with(self, params):
         return Union[params]
 
@@ -2050,7 +2061,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
             cls.__init__ = _no_init_or_replace_init
 
 
-class _AnnotatedAlias(_GenericAlias, _root=True):
+class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
     """Runtime representation of an annotated type.
 
     At its core 'Annotated[t, dec1, dec2, ...]' is an alias for the type 't'

@@ -1482,19 +1482,6 @@ class UnionTests(BaseTestCase):
         with self.assertRaises(TypeError):
             type(u)()
 
-    def test_cannot_iterate(self):
-        expected_message = "^'_SpecialForm' object is not iterable$"
-        with self.assertRaisesRegex(TypeError, expected_message):
-            iter(Union)
-        with self.assertRaisesRegex(TypeError, expected_message):
-            list(Union)
-        with self.assertRaisesRegex(TypeError, expected_message):
-            for _ in Union:
-                pass
-
-    def test_is_not_instance_of_iterable(self):
-        self.assertNotIsInstance(Union, collections.abc.Iterable)
-
     def test_union_generalization(self):
         self.assertFalse(Union[str, typing.Iterable[int]] == str)
         self.assertFalse(Union[str, typing.Iterable[int]] == typing.Iterable[int])
@@ -7346,6 +7333,37 @@ class AllTests(BaseTestCase):
         }
         self.assertSetEqual(computed_all, actual_all)
 
+
+class TypeIterationTests(BaseTestCase):
+    _EXPECTED_ERROR_BY_TYPE = {
+        Any: "'_AnyMeta' object is not iterable",
+        Union: "'_SpecialForm' object is not iterable",
+        Union[str, int]: "'_UnionGenericAlias' object is not iterable",
+        Union[str, T]: "'_UnionGenericAlias' object is not iterable",
+        List: "'_SpecialGenericAlias' object is not iterable",
+        Tuple: "'_TupleType' object is not iterable",
+        Callable: "'_CallableType' object is not iterable",
+        Callable[..., T]: "'_CallableGenericAlias' object is not iterable",
+        Callable[[T], str]: "'_CallableGenericAlias' object is not iterable",
+        Annotated: "'type' object is not iterable",
+        Annotated[T, '']: "'_AnnotatedAlias' object is not iterable",
+    }
+
+    def test_cannot_iterate(self):
+        for test_type, expected_error in self._EXPECTED_ERROR_BY_TYPE.items():
+            with self.subTest(type=test_type):
+                expected_error_regex = '^{}$'.format(expected_error)
+                with self.assertRaisesRegex(TypeError, expected_error_regex):
+                    iter(test_type)
+                with self.assertRaisesRegex(TypeError, expected_error_regex):
+                    list(test_type)
+                with self.assertRaisesRegex(TypeError, expected_error_regex):
+                    for _ in test_type:
+                        pass
+
+    def test_is_not_instance_of_iterable(self):
+        for type_to_test in self._EXPECTED_ERROR_BY_TYPE.keys():
+            self.assertNotIsInstance(type_to_test, collections.abc.Iterable)
 
 
 if __name__ == '__main__':
