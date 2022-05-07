@@ -433,9 +433,6 @@ class _SpecialForm(_Final, _root=True):
     def __call__(self, *args, **kwds):
         raise TypeError(f"Cannot instantiate {self!r}")
 
-    def __iter__(self):
-        raise TypeError(f"{self} does not support iteration")
-
     def __or__(self, other):
         return Union[self, other]
 
@@ -451,6 +448,10 @@ class _SpecialForm(_Final, _root=True):
     @_tp_cache
     def __getitem__(self, parameters):
         return self._getitem(self, parameters)
+
+    # Prevent iteration without making ourselves duck type-compatible
+    # with Iterable.
+    __iter__ = None
 
 
 class _LiteralSpecialForm(_SpecialForm, _root=True):
