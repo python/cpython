@@ -896,7 +896,9 @@ cm_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     }
     if (type == NULL)
         type = (PyObject *)(Py_TYPE(obj));
-    if (Py_TYPE(cm->cm_callable)->tp_descr_get != NULL) {
+    if (Py_TYPE(cm->cm_callable)->tp_descr_get != NULL &&
+            !PyCallable_Check(cm->cm_callable))
+    {
         return Py_TYPE(cm->cm_callable)->tp_descr_get(cm->cm_callable, type,
                                                       type);
     }
@@ -913,6 +915,14 @@ cm_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     if (!PyArg_UnpackTuple(args, "classmethod", 1, 1, &callable))
         return -1;
+    if (Py_TYPE(callable)->tp_descr_get != NULL && !PyCallable_Check(callable)) {
+        if (PyErr_WarnFormat(PyExc_FutureWarning, 1,
+                             "chaining classmethod and %.200s is deprecated",
+                             Py_TYPE(callable)->tp_name))
+        {
+            return -1;
+        }
+    }
     Py_INCREF(callable);
     Py_XSETREF(cm->cm_callable, callable);
 

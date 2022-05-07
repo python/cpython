@@ -1,0 +1,2 @@
+Emit :exc:`FutureWarning` when :func:`classmethod` wraps a non-callable
+descriptor (such as :class:`property`).
