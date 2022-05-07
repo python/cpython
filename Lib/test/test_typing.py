@@ -7349,24 +7349,24 @@ class AllTests(BaseTestCase):
 
 
 class TypeIterationTests(BaseTestCase):
-    _EXPECTED_ERROR_BY_TYPE = {
-        Any: "'_AnyMeta' object is not iterable",
-        Union: "'_SpecialForm' object is not iterable",
-        Union[str, int]: "'_UnionGenericAlias' object is not iterable",
-        Union[str, T]: "'_UnionGenericAlias' object is not iterable",
-        List: "'_SpecialGenericAlias' object is not iterable",
-        Tuple: "'_TupleType' object is not iterable",
-        Callable: "'_CallableType' object is not iterable",
-        Callable[..., T]: "'_CallableGenericAlias' object is not iterable",
-        Callable[[T], str]: "'_CallableGenericAlias' object is not iterable",
-        Annotated: "'type' object is not iterable",
-        Annotated[T, '']: "'_AnnotatedAlias' object is not iterable",
-    }
+    _UNITERABLE_TYPES = (
+        Any,
+        Union,
+        Union[str, int],
+        Union[str, T],
+        List,
+        Tuple,
+        Callable,
+        Callable[..., T],
+        Callable[[T], str],
+        Annotated,
+        Annotated[T, ''],
+    )
 
     def test_cannot_iterate(self):
-        for test_type, expected_error in self._EXPECTED_ERROR_BY_TYPE.items():
+        expected_error_regex = "object is not iterable"
+        for test_type in self._UNITERABLE_TYPES:
             with self.subTest(type=test_type):
-                expected_error_regex = '^{}$'.format(expected_error)
                 with self.assertRaisesRegex(TypeError, expected_error_regex):
                     iter(test_type)
                 with self.assertRaisesRegex(TypeError, expected_error_regex):
@@ -7376,7 +7376,7 @@ class TypeIterationTests(BaseTestCase):
                         pass
 
     def test_is_not_instance_of_iterable(self):
-        for type_to_test in self._EXPECTED_ERROR_BY_TYPE.keys():
+        for type_to_test in self._UNITERABLE_TYPES:
             self.assertNotIsInstance(type_to_test, collections.abc.Iterable)
 
 
