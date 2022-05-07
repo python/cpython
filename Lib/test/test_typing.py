@@ -1483,11 +1483,12 @@ class UnionTests(BaseTestCase):
             type(u)()
 
     def test_cannot_iterate(self):
-        with self.assertRaises(TypeError):
+        expected_message = "^'_SpecialForm' object is not iterable$"
+        with self.assertRaisesRegex(TypeError, expected_message):
             iter(Union)
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, expected_message):
             list(Union)
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, expected_message):
             for _ in Union:
                 pass
 
