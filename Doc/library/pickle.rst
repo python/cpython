@@ -502,10 +502,10 @@ The following types can be pickled:
 
 * tuples, lists, sets, and dictionaries containing only picklable objects;
 
-* functions (built-in and user-defined) defined at the top level of a module
-  (using :keyword:`def`, not :keyword:`lambda`);
+* functions (built-in and user-defined) accessible from the top level of a
+  module (using :keyword:`def`, not :keyword:`lambda`);
 
-* classes defined at the top level of a module;
+* classes accessible from the top level of a module;
 
 * instances of such classes whose the result of calling :meth:`__getstate__`
   is picklable  (see section :ref:`pickle-inst` for details).
