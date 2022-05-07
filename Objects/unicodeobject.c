@@ -14214,7 +14214,7 @@ static PyMethodDef unicode_methods[] = {
     UNICODE_ISIDENTIFIER_METHODDEF
     UNICODE_ISPRINTABLE_METHODDEF
     UNICODE_ZFILL_METHODDEF
-    {"format", (PyCFunction)(void(*)(void)) do_string_format, METH_VARARGS | METH_KEYWORDS, format__doc__},
+    {"format", _PyCFunction_CAST(do_string_format), METH_VARARGS | METH_KEYWORDS, format__doc__},
     {"format_map", (PyCFunction) do_string_format_map, METH_O, format_map__doc__},
     UNICODE___FORMAT___METHODDEF
     UNICODE_MAKETRANS_METHODDEF

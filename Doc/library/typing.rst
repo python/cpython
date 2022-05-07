@@ -125,7 +125,7 @@ Note that ``None`` as a type hint is a special case and is replaced by
 NewType
 =======
 
-Use the :class:`NewType` helper class to create distinct types::
+Use the :class:`NewType` helper to create distinct types::
 
    from typing import NewType
 
@@ -154,7 +154,7 @@ accidentally creating a ``UserId`` in an invalid way::
 
 Note that these checks are enforced only by the static type checker. At runtime,
 the statement ``Derived = NewType('Derived', Base)`` will make ``Derived`` a
-class that immediately returns whatever parameter you pass it. That means
+callable that immediately returns whatever parameter you pass it. That means
 the expression ``Derived(some_value)`` does not create a new class or introduce
 much overhead beyond that of a regular function call.
 
@@ -242,7 +242,7 @@ respectively.
    See :pep:`612` for more information.
 
 .. seealso::
-   The documentation for :class:`ParamSpec` and :class:`Concatenate` provide
+   The documentation for :class:`ParamSpec` and :class:`Concatenate` provides
    examples of usage in ``Callable``.
 
 .. _generics:
@@ -411,7 +411,7 @@ to this is that a list of types can be used to substitute a :class:`ParamSpec`::
 Furthermore, a generic with only one parameter specification variable will accept
 parameter lists in the forms ``X[[Type1, Type2, ...]]`` and also
 ``X[Type1, Type2, ...]`` for aesthetic reasons.  Internally, the latter is converted
-to the former and are thus equivalent::
+to the former, so the following are equivalent::
 
    >>> class X(Generic[P]): ...
    ...
@@ -515,7 +515,7 @@ manner. Use :data:`Any` to indicate that a value is dynamically typed.
 Nominal vs structural subtyping
 ===============================
 
-Initially :pep:`484` defined Python static type system as using
+Initially :pep:`484` defined the Python static type system as using
 *nominal subtyping*. This means that a class ``A`` is allowed where
 a class ``B`` is expected if and only if ``A`` is a subclass of ``B``.
 
@@ -590,10 +590,10 @@ These can be used as types in annotations and do not support ``[]``.
    * Every type is compatible with :data:`Any`.
    * :data:`Any` is compatible with every type.
 
-    .. versionchanged:: 3.11
-       :data:`Any` can now be used as a base class. This can be useful for
-       avoiding type checker errors with classes that can duck type anywhere or
-       are highly dynamic.
+   .. versionchanged:: 3.11
+      :data:`Any` can now be used as a base class. This can be useful for
+      avoiding type checker errors with classes that can duck type anywhere or
+      are highly dynamic.
 
 .. data:: LiteralString
 
@@ -708,9 +708,9 @@ These can be used as types in annotations and do not support ``[]``.
 
    Other common use cases include:
 
-      - :class:`classmethod`\s that are used as alternative constructors and return instances
-        of the ``cls`` parameter.
-      - Annotating an :meth:`object.__enter__` method which returns self.
+   - :class:`classmethod`\s that are used as alternative constructors and return instances
+     of the ``cls`` parameter.
+   - Annotating an :meth:`~object.__enter__` method which returns self.
 
    For more information, see :pep:`673`.
 
@@ -880,7 +880,6 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
       def with_lock(f: Callable[Concatenate[Lock, P], R]) -> Callable[P, R]:
           '''A type-safe decorator which provides a lock.'''
-          global my_lock
           def inner(*args: P.args, **kwargs: P.kwargs) -> R:
               # Provide the lock as the first argument.
               return f(my_lock, *args, **kwargs)
@@ -1036,7 +1035,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    ``no_type_check`` functionality that currently exists in the ``typing``
    module which completely disables typechecking annotations on a function
    or a class, the ``Annotated`` type allows for both static typechecking
-   of ``T`` (e.g., via mypy or Pyre, which can safely ignore ``x``)
+   of ``T`` (which can safely ignore ``x``)
    together with runtime access to ``x`` within a specific application.
 
    Ultimately, the responsibility of how to interpret the annotations (if
@@ -1140,7 +1139,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    2. If the return value is ``True``, the type of its argument
       is the type inside ``TypeGuard``.
 
-      For example::
+   For example::
 
          def is_str_list(val: list[object]) -> TypeGuard[list[str]]:
              '''Determines whether all objects in the list are strings'''
@@ -1279,7 +1278,7 @@ These are not used in annotations. They are building blocks for creating generic
 
 .. class:: TypeVarTuple
 
-    Type variable tuple. A specialized form of :class:`Type variable <TypeVar>`
+    Type variable tuple. A specialized form of :class:`type variable <TypeVar>`
     that enables *variadic* generics.
 
     A normal type variable enables parameterization with a single type. A type
@@ -1440,11 +1439,11 @@ These are not used in annotations. They are building blocks for creating generic
    use a :class:`TypeVar` with bound ``Callable[..., Any]``.  However this
    causes two problems:
 
-      1. The type checker can't type check the ``inner`` function because
-         ``*args`` and ``**kwargs`` have to be typed :data:`Any`.
-      2. :func:`~cast` may be required in the body of the ``add_logging``
-         decorator when returning the ``inner`` function, or the static type
-         checker must be told to ignore the ``return inner``.
+   1. The type checker can't type check the ``inner`` function because
+      ``*args`` and ``**kwargs`` have to be typed :data:`Any`.
+   2. :func:`~cast` may be required in the body of the ``add_logging``
+      decorator when returning the ``inner`` function, or the static type
+      checker must be told to ignore the ``return inner``.
 
    .. attribute:: args
    .. attribute:: kwargs
@@ -1602,7 +1601,7 @@ These are not used in annotations. They are building blocks for declaring types.
    The resulting class has an extra attribute ``__annotations__`` giving a
    dict that maps the field names to the field types.  (The field names are in
    the ``_fields`` attribute and the default values are in the
-   ``_field_defaults`` attribute both of which are part of the namedtuple
+   ``_field_defaults`` attribute, both of which are part of the :func:`~collections.namedtuple`
    API.)
 
    ``NamedTuple`` subclasses can also have docstrings and methods::
@@ -1614,6 +1613,12 @@ These are not used in annotations. They are building blocks for declaring types.
 
           def __repr__(self) -> str:
               return f'<Employee {self.name}, id={self.id}>'
+
+   ``NamedTuple`` subclasses can be generic::
+
+      class Group(NamedTuple, Generic[T]):
+          key: T
+          group: list[T]
 
    Backward-compatible usage::
 
@@ -1632,6 +1637,9 @@ These are not used in annotations. They are building blocks for declaring types.
    .. versionchanged:: 3.9
       Removed the ``_field_types`` attribute in favor of the more
       standard ``__annotations__`` attribute which has the same information.
+
+   .. versionchanged:: 3.11
+      Added support for generic namedtuples.
 
 .. class:: NewType(name, tp)
 
@@ -1686,7 +1694,7 @@ These are not used in annotations. They are building blocks for declaring types.
       in 3.13. It may also be unsupported by static type checkers.
 
    The functional syntax should also be used when any of the keys are not valid
-   :ref:`identifiers`, for example because they are keywords or contain hyphens.
+   :ref:`identifiers <identifiers>`, for example because they are keywords or contain hyphens.
    Example::
 
       # raises SyntaxError
@@ -1728,8 +1736,8 @@ These are not used in annotations. They are building blocks for declaring types.
           y: int
           z: int
 
-   A ``TypedDict`` cannot inherit from a non-TypedDict class,
-   notably including :class:`Generic`. For example::
+   A ``TypedDict`` cannot inherit from a non-\ ``TypedDict`` class,
+   except for :class:`Generic`. For example::
 
       class X(TypedDict):
           x: int
@@ -1745,6 +1753,12 @@ These are not used in annotations. They are building blocks for declaring types.
 
       T = TypeVar('T')
       class XT(X, Generic[T]): pass  # raises TypeError
+
+   A ``TypedDict`` can be generic::
+
+      class Group(TypedDict, Generic[T]):
+          key: T
+          group: list[T]
 
    A ``TypedDict`` can be introspected via annotations dicts
    (see :ref:`annotations-howto` for more information on annotations best practices),
@@ -1792,6 +1806,9 @@ These are not used in annotations. They are building blocks for declaring types.
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.11
+      Added support for generic ``TypedDict``\ s.
 
 Generic concrete collections
 ----------------------------
@@ -1958,6 +1975,11 @@ Other concrete types
            return text + u' \u2713'
 
    .. versionadded:: 3.5.2
+
+   .. deprecated:: 3.11
+      Python 2 is no longer supported, and most type checkers also no longer
+      support type checking Python 2 code. Users should now use
+      :class:`str` instead of ``Text`` wherever possible.
 
 Abstract Base Classes
 ---------------------
@@ -2137,7 +2159,7 @@ Corresponding to other types in :mod:`collections.abc`
 
 .. class:: Hashable
 
-   An alias to :class:`collections.abc.Hashable`
+   An alias to :class:`collections.abc.Hashable`.
 
 .. class:: Reversible(Iterable[T_co])
 
@@ -2149,7 +2171,7 @@ Corresponding to other types in :mod:`collections.abc`
 
 .. class:: Sized
 
-   An alias to :class:`collections.abc.Sized`
+   An alias to :class:`collections.abc.Sized`.
 
 Asynchronous programming
 """"""""""""""""""""""""
@@ -2370,12 +2392,12 @@ Functions and decorators
 
    .. seealso::
       `Unreachable Code and Exhaustiveness Checking
-      <https://typing.readthedocs.io/en/latest/source/unreachable.html>_` has more
+      <https://typing.readthedocs.io/en/latest/source/unreachable.html>`__ has more
       information about exhaustiveness checking with static typing.
 
    .. versionadded:: 3.11
 
-.. function:: reveal_type(obj)
+.. function:: reveal_type(obj, /)
 
    Reveal the inferred static type of an expression.
 
@@ -2447,9 +2469,9 @@ Functions and decorators
    the documentation for :func:`@overload <overload>`,
    ``get_overloads(process)`` will return a sequence of three function objects
    for the three defined overloads. If called on a function with no overloads,
-   ``get_overloads`` returns an empty sequence.
+   ``get_overloads()`` returns an empty sequence.
 
-   ``get_overloads`` can be used for introspecting an overloaded function at
+   ``get_overloads()`` can be used for introspecting an overloaded function at
    runtime.
 
    .. versionadded:: 3.11
@@ -2475,7 +2497,7 @@ Functions and decorators
               ...
       class Sub(Base):
           def done(self) -> None:  # Error reported by type checker
-                ...
+              ...
 
       @final
       class Leaf:
@@ -2614,8 +2636,8 @@ Introspection helpers
 .. class:: ForwardRef
 
    A class used for internal typing representation of string forward references.
-   For example, ``list["SomeClass"]`` is implicitly transformed into
-   ``list[ForwardRef("SomeClass")]``.  This class should not be instantiated by
+   For example, ``List["SomeClass"]`` is implicitly transformed into
+   ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
    a user, but may be used by introspection tools.
 
    .. note::
@@ -2649,7 +2671,7 @@ Constant
       If ``from __future__ import annotations`` is used in Python 3.7 or later,
       annotations are not evaluated at function definition time.
       Instead, they are stored as strings in ``__annotations__``.
-      This makes it unnecessary to use quotes around the annotation.
+      This makes it unnecessary to use quotes around the annotation
       (see :pep:`563`).
 
    .. versionadded:: 3.5.2
@@ -2669,4 +2691,6 @@ convenience. This is subject to change, and not all deprecations are listed.
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |
 |  collections                     |               |                   |                |
++----------------------------------+---------------+-------------------+----------------+
+|  ``typing.Text``                 | 3.11          | Undecided         | :gh:`92332`    |
 +----------------------------------+---------------+-------------------+----------------+

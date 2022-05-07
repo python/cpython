@@ -743,7 +743,7 @@ class CursorTests(unittest.TestCase):
         self.assertEqual(row[0], "Hu\x00go")
 
     def test_execute_non_iterable(self):
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(sqlite.ProgrammingError) as cm:
             self.cu.execute("insert into test(id) values (?)", 42)
         self.assertEqual(str(cm.exception), 'parameters are of unsupported type')
 

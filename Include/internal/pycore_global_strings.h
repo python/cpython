@@ -300,6 +300,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(n_unnamed_fields)
         STRUCT_FOR_ID(name)
         STRUCT_FOR_ID(newlines)
+        STRUCT_FOR_ID(next)
         STRUCT_FOR_ID(obj)
         STRUCT_FOR_ID(offset)
         STRUCT_FOR_ID(onceregistry)

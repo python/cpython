@@ -358,14 +358,13 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.38.1",
-              url="https://sqlite.org/2022/sqlite-autoconf-3380100.tar.gz",
-              checksum="5af57892dc0993af596bef56931db23f",
+              name="SQLite 3.38.4",
+              url="https://sqlite.org/2022/sqlite-autoconf-3380400.tar.gz",
+              checksum="34c0b92a0609ed4ce78582e8dc1ed45a",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
                             '-DSQLITE_ENABLE_FTS3_PARENTHESIS '
-                            '-DSQLITE_ENABLE_JSON1 '
                             '-DSQLITE_ENABLE_RTREE '
                             '-DSQLITE_OMIT_AUTOINIT '
                             '-DSQLITE_TCL=0 '

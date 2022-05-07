@@ -923,6 +923,7 @@ extern "C" {
                 INIT_ID(n_unnamed_fields), \
                 INIT_ID(name), \
                 INIT_ID(newlines), \
+                INIT_ID(next), \
                 INIT_ID(obj), \
                 INIT_ID(offset), \
                 INIT_ID(onceregistry), \

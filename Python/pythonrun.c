@@ -13,6 +13,7 @@
 #include "Python.h"
 
 #include "pycore_ast.h"           // PyAST_mod2obj
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall
 #include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
@@ -1268,13 +1269,13 @@ print_chained(struct exception_print_context* ctx, PyObject *value,
 {
     PyObject *f = ctx->file;
 
-    if (Py_EnterRecursiveCall(" in print_chained") < 0) {
+    if (_Py_EnterRecursiveCall(" in print_chained") < 0) {
         return -1;
     }
     bool need_close = ctx->need_close;
     int res = print_exception_recursive(ctx, value);
     ctx->need_close = need_close;
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall();
     if (res < 0) {
         return -1;
     }
@@ -1445,11 +1446,11 @@ print_exception_group(struct exception_print_context *ctx, PyObject *value)
         PyObject *exc = PyTuple_GET_ITEM(excs, i);
 
         if (!truncated) {
-            if (Py_EnterRecursiveCall(" in print_exception_group") != 0) {
+            if (_Py_EnterRecursiveCall(" in print_exception_group") != 0) {
                 return -1;
             }
             int res = print_exception_recursive(ctx, exc);
-            Py_LeaveRecursiveCall();
+            _Py_LeaveRecursiveCall();
             if (res < 0) {
                 return -1;
             }

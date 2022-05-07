@@ -328,6 +328,12 @@ static FlagRuntimeInfo win_runtime_flags[] = {
     {14393, "TCP_FASTOPEN"}
 };
 
+/*[clinic input]
+module _socket
+class _socket.socket "PySocketSockObject *" "&sock_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7a8313d9b7f51988]*/
+
 static int
 remove_unusable_flags(PyObject *m)
 {
@@ -510,6 +516,8 @@ remove_unusable_flags(PyObject *m)
 #ifndef INADDR_NONE
 #define INADDR_NONE (-1)
 #endif
+
+#include "clinic/socketmodule.c.h"
 
 /* XXX There's a problem here: *static* functions are not supposed to have
    a Py prefix (or use CapitalizedWords).  Later... */
@@ -1708,7 +1716,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         }
         addr->sun_family = s->sock_family;
         memcpy(addr->sun_path, path.buf, path.len);
-        
+
         retval = 1;
     unix_out:
         PyBuffer_Release(&path);
@@ -4947,11 +4955,11 @@ static PyMethodDef sock_methods[] = {
                       listen_doc},
     {"recv",              (PyCFunction)sock_recv, METH_VARARGS,
                       recv_doc},
-    {"recv_into",         (PyCFunction)(void(*)(void))sock_recv_into, METH_VARARGS | METH_KEYWORDS,
+    {"recv_into",         _PyCFunction_CAST(sock_recv_into), METH_VARARGS | METH_KEYWORDS,
                       recv_into_doc},
     {"recvfrom",          (PyCFunction)sock_recvfrom, METH_VARARGS,
                       recvfrom_doc},
-    {"recvfrom_into",  (PyCFunction)(void(*)(void))sock_recvfrom_into, METH_VARARGS | METH_KEYWORDS,
+    {"recvfrom_into",  _PyCFunction_CAST(sock_recvfrom_into), METH_VARARGS | METH_KEYWORDS,
                       recvfrom_into_doc},
     {"send",              (PyCFunction)sock_send, METH_VARARGS,
                       send_doc},
@@ -4982,7 +4990,7 @@ static PyMethodDef sock_methods[] = {
                       sendmsg_doc},
 #endif
 #ifdef HAVE_SOCKADDR_ALG
-    {"sendmsg_afalg",     (PyCFunction)(void(*)(void))sock_sendmsg_afalg, METH_VARARGS | METH_KEYWORDS,
+    {"sendmsg_afalg",     _PyCFunction_CAST(sock_sendmsg_afalg), METH_VARARGS | METH_KEYWORDS,
                       sendmsg_afalg_doc},
 #endif
     {NULL,                      NULL}           /* sentinel */
@@ -5103,14 +5111,23 @@ static int sock_cloexec_works = -1;
 #endif
 
 /*ARGSUSED*/
+
+/*[clinic input]
+_socket.socket.__init__ as sock_initobj
+    family: int = -1
+    type: int = -1
+    proto: int = -1
+    fileno as fdobj: object = NULL
+[clinic start generated code]*/
+
 static int
-sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
+sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
+                  PyObject *fdobj)
+/*[clinic end generated code: output=d114d026b9a9a810 input=04cfc32953f5cc25]*/
 {
-    PySocketSockObject *s = (PySocketSockObject *)self;
-    PyObject *fdobj = NULL;
+
     SOCKET_T fd = INVALID_SOCKET;
-    int family = -1, type = -1, proto = -1;
-    static char *keywords[] = {"family", "type", "proto", "fileno", 0};
+
 #ifndef MS_WINDOWS
 #ifdef SOCK_CLOEXEC
     int *atomic_flag_works = &sock_cloexec_works;
@@ -5119,18 +5136,13 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
 #endif
 #endif
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "|iiiO:socket", keywords,
-                                     &family, &type, &proto, &fdobj))
-        return -1;
-
 #ifdef MS_WINDOWS
     /* In this case, we don't use the family, type and proto args */
     if (fdobj == NULL || fdobj == Py_None)
 #endif
     {
         if (PySys_Audit("socket.__new__", "Oiii",
-                        s, family, type, proto) < 0) {
+                        self, family, type, proto) < 0) {
             return -1;
         }
     }
@@ -5148,7 +5160,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
             }
             memcpy(&info, PyBytes_AS_STRING(fdobj), sizeof(info));
 
-            if (PySys_Audit("socket.__new__", "Oiii", s,
+            if (PySys_Audit("socket.__new__", "Oiii", self,
                             info.iAddressFamily, info.iSocketType,
                             info.iProtocol) < 0) {
                 return -1;
@@ -5318,7 +5330,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
         }
 #endif
     }
-    if (init_sockobject(s, fd, family, type, proto) == -1) {
+    if (init_sockobject(self, fd, family, type, proto) == -1) {
         SOCKETCLOSE(fd);
         return -1;
     }
@@ -6970,7 +6982,7 @@ static PyMethodDef socket_methods[] = {
     {"inet_ntop",               socket_inet_ntop,
      METH_VARARGS, inet_ntop_doc},
 #endif
-    {"getaddrinfo",             (PyCFunction)(void(*)(void))socket_getaddrinfo,
+    {"getaddrinfo",             _PyCFunction_CAST(socket_getaddrinfo),
      METH_VARARGS | METH_KEYWORDS, getaddrinfo_doc},
     {"getnameinfo",             socket_getnameinfo,
      METH_VARARGS, getnameinfo_doc},
@@ -7504,6 +7516,9 @@ PyInit__socket(void)
 #endif
 #ifdef SO_EXCLUSIVEADDRUSE
     PyModule_AddIntMacro(m, SO_EXCLUSIVEADDRUSE);
+#endif
+#ifdef SO_INCOMING_CPU
+    PyModule_AddIntMacro(m, SO_INCOMING_CPU);
 #endif
 
 #ifdef  SO_KEEPALIVE
