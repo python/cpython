@@ -1046,7 +1046,7 @@ These are compatibility aliases to :c:data:`PyExc_OSError`:
 +-------------------------------------+----------+
 | :c:data:`PyExc_IOError`             |          |
 +-------------------------------------+----------+
-| :c:data:`PyExc_WindowsError`        | \(3)     |
+| :c:data:`PyExc_WindowsError`        | (2)      |
 +-------------------------------------+----------+
 
 .. versionchanged:: 3.3
