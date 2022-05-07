@@ -1491,6 +1491,9 @@ class UnionTests(BaseTestCase):
             for _ in Union:
                 pass
 
+    def test_is_not_instance_of_iterable(self):
+        self.assertNotIsInstance(Union, collections.abc.Iterable)
+
     def test_union_generalization(self):
         self.assertFalse(Union[str, typing.Iterable[int]] == str)
         self.assertFalse(Union[str, typing.Iterable[int]] == typing.Iterable[int])
