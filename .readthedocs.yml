@@ -1,0 +1,5 @@
+version: 2
+
+python:
+  install:
+    - requirements: Doc/requirements.txt
