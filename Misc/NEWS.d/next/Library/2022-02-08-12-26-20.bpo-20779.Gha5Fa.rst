@@ -1,1 +1,2 @@
-Add :func:`pathlib.Path.chown` to :class:`pathlib.Path`. Patch by Jaspar Stach.
+Add :meth:`pathlib.Path.chown` method that changes file ownership.
+Patch by Jaspar Stach.

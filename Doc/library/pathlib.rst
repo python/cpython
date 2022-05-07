@@ -778,6 +778,8 @@ call fails (for example because the path doesn't exist).
 
    .. availability:: Unix.
 
+   .. versionadded:: 3.12
+
 
 .. method:: Path.exists()
 
