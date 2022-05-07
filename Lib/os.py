@@ -985,13 +985,13 @@ if sys.platform != 'vxworks':
         encoding = io.text_encoding(encoding)
         if mode == "r":
             proc = subprocess.Popen(cmd,
-                                    shell=True, text=True,
+                                    shell=True, encoding=encoding,
                                     stdout=subprocess.PIPE,
                                     bufsize=buffering)
             return _wrap_close(proc.stdout, proc)
         else:
             proc = subprocess.Popen(cmd,
-                                    shell=True, text=True,
+                                    shell=True, encoding=encoding,
                                     stdin=subprocess.PIPE,
                                     bufsize=buffering)
             return _wrap_close(proc.stdin, proc)
