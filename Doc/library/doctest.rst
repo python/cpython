@@ -811,10 +811,10 @@ Another bad idea is to print things that embed an object address, like
 
 .. doctest::
 
-   >>> id(1.0) # certain to fail some of the time  # doctest: +SKIP
+   >>> id(1.0)  # certain to fail some of the time  # doctest: +SKIP
    7948648
    >>> class C: pass
-   >>> C()   # the default repr() for instances embeds an address  # doctest: +SKIP
+   >>> C()  # the default repr() for instances embeds an address   # doctest: +SKIP
    <C object at 0x00AC18F0>
 
 The :const:`ELLIPSIS` directive gives a nice approach for the last example:
