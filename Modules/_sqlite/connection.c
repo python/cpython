@@ -289,7 +289,7 @@ error:
     // There are no statements or other SQLite objects attached to the
     // database, so sqlite3_close() should always return SQLITE_OK.
     rc = sqlite3_close(db);
-    assert(rc == SQLITE_OK), rc;
+    assert(rc == SQLITE_OK);
     return -1;
 }
 

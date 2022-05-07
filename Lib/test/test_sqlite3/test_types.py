@@ -255,9 +255,9 @@ class DeclTypesTests(unittest.TestCase):
 
     def test_error_in_conform(self):
         val = DeclTypesTests.BadConform(TypeError)
-        with self.assertRaises(sqlite.InterfaceError):
+        with self.assertRaises(sqlite.ProgrammingError):
             self.cur.execute("insert into test(bad) values (?)", (val,))
-        with self.assertRaises(sqlite.InterfaceError):
+        with self.assertRaises(sqlite.ProgrammingError):
             self.cur.execute("insert into test(bad) values (:val)", {"val": val})
 
         val = DeclTypesTests.BadConform(KeyboardInterrupt)
@@ -269,13 +269,13 @@ class DeclTypesTests(unittest.TestCase):
     def test_unsupported_seq(self):
         class Bar: pass
         val = Bar()
-        with self.assertRaises(sqlite.InterfaceError):
+        with self.assertRaises(sqlite.ProgrammingError):
             self.cur.execute("insert into test(f) values (?)", (val,))
 
     def test_unsupported_dict(self):
         class Bar: pass
         val = Bar()
-        with self.assertRaises(sqlite.InterfaceError):
+        with self.assertRaises(sqlite.ProgrammingError):
             self.cur.execute("insert into test(f) values (:val)", {"val": val})
 
     def test_blob(self):
