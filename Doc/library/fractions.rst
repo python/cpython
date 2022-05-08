@@ -117,7 +117,7 @@ another rational number, or from a string.
    .. classmethod:: from_float(flt)
 
       Alternative constructor which only accepts instances of
-      :class:~numbers.Integral` or :class:`float`.
+      :class:`~numbers.Integral` or :class:`float`.
 
    .. classmethod:: from_decimal(dec)
 

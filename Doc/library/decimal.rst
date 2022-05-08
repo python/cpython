@@ -375,10 +375,10 @@ Decimal objects
 
    If *value* is a :class:`float`, the binary floating point value is losslessly
    converted to its exact decimal equivalent.  This means, for example, that
-   `Decimal(0.1)` is not the same as `Decimal('0.1')`.
+   ``Decimal(0.1)`` is not the same as ``Decimal('0.1')``.
    Since 0.1 is not exactly representable in binary floating point, the
    value is stored as the nearest representable value which is
-   `0x1.999999999999ap-4`.
+   ``0x1.999999999999ap-4``.
 
    .. doctest::
 
