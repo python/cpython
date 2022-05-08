@@ -90,13 +90,9 @@ class BaseTestCase(unittest.TestCase):
     b_check = re.compile(br"^[a-z0-9_-]{8}$")
 
     def setUp(self):
-        self._warnings_manager = warnings_helper.check_warnings()
-        self._warnings_manager.__enter__()
+        self.enterContext(warnings_helper.check_warnings())
         warnings.filterwarnings("ignore", category=RuntimeWarning,
                                 message="mktemp", module=__name__)
-
-    def tearDown(self):
-        self._warnings_manager.__exit__(None, None, None)
 
     def nameCheck(self, name, dir, pre, suf):
         (ndir, nbase) = os.path.split(name)

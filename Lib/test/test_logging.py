@@ -5650,9 +5650,7 @@ class MiscTestCase(unittest.TestCase):
 # why the test does this, but in any case we save the current locale
 # first and restore it at the end.
 def setUpModule():
-    cm = support.run_with_locale('LC_ALL', '')
-    cm.__enter__()
-    unittest.addModuleCleanup(cm.__exit__, None, None, None)
+    unittest.enterModuleContext(support.run_with_locale('LC_ALL', ''))
 
 
 if __name__ == "__main__":

@@ -102,11 +102,30 @@ def _id(obj):
     return obj
 
 
+def _enter_context(cm, addcleanup):
+    # We look up the special methods on the type to match the with
+    # statement.
+    cls = type(cm)
+    try:
+        enter = cls.__enter__
+        exit = cls.__exit__
+    except AttributeError:
+        raise TypeError(f"'{cls.__module__}.{cls.__qualname__}' object does "
+                        f"not support the context manager protocol") from None
+    result = enter(cm)
+    addcleanup(exit, cm, None, None, None)
+    return result
+
+
 _module_cleanups = []
 def addModuleCleanup(function, /, *args, **kwargs):
     """Same as addCleanup, except the cleanup items are called even if
     setUpModule fails (unlike tearDownModule)."""
     _module_cleanups.append((function, args, kwargs))
+
+def enterModuleContext(cm):
+    """Same as enterContext, but module-wide."""
+    return _enter_context(cm, addModuleCleanup)
 
 
 def doModuleCleanups():
@@ -426,11 +445,24 @@ class TestCase(object):
         Cleanup items are called even if setUp fails (unlike tearDown)."""
         self._cleanups.append((function, args, kwargs))
 
+    def enterContext(self, cm):
+        """Enters the supplied context manager.
+
+        If successful, also adds its __exit__ method as a cleanup
+        function and returns the result of the __enter__ method.
+        """
+        return _enter_context(cm, self.addCleanup)
+
     @classmethod
     def addClassCleanup(cls, function, /, *args, **kwargs):
         """Same as addCleanup, except the cleanup items are called even if
         setUpClass fails (unlike tearDownClass)."""
         cls._class_cleanups.append((function, args, kwargs))
+
+    @classmethod
+    def enterClassContext(cls, cm):
+        """Same as enterContext, but class-wide."""
+        return _enter_context(cm, cls.addClassCleanup)
 
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
