@@ -792,7 +792,7 @@ compatible with the Python codec registry.
    :func:`register_error`.
 
 
-   .. method:: read([size=-1[, chars=-1, [firstline=False]]])
+   .. method:: read(size=-1, chars=-1, firstline=False)
 
       Decodes data from the stream and returns the resulting object.
 
