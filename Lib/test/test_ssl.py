@@ -1286,11 +1286,10 @@ class BasicSocketTests(unittest.TestCase):
     def test_read_write_zero(self):
         # empty reads and writes now work, bpo-42854, bpo-31711
         client_context, server_context, hostname = testing_context()
-        server = ThreadedEchoServer(context=server_context)
-        with server:
+        with Server(context=server_context) as address:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+                s.connect(address)
                 self.assertEqual(s.recv(0), b"")
                 self.assertEqual(s.send(b""), 0)
 
@@ -3298,11 +3297,10 @@ class ThreadedTests(unittest.TestCase):
         server_context.load_cert_chain(SIGNED_CERTFILE)
 
         # correct hostname should verify
-        server = ThreadedEchoServer(context=server_context, chatty=True)
-        with server:
+        with Server(context=server_context) as address:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+                s.connect(address)
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
                 cipher = s.cipher()[0].split('-')
