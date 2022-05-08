@@ -516,7 +516,7 @@ The base :class:`Codec` class defines these methods which also define the
 function interfaces of the stateless encoder and decoder:
 
 
-.. method:: Codec.encode(input[, errors='strict'])
+.. method:: Codec.encode(input, errors='strict')
 
    Encodes the object *input* and returns a tuple (output object, length consumed).
    For instance, :term:`text encoding` converts
