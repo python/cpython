@@ -117,12 +117,12 @@ another rational number, or from a string.
    .. classmethod:: from_float(flt)
 
       Alternative constructor which only accepts instances of
-      :class:`~numbers.Integral` or :class:`float`.
+      :class:`float` or :class:`numbers.Integral`.
 
    .. classmethod:: from_decimal(dec)
 
       Alternative constructor which only accepts instances of
-      :class:`decimal.Decimal`.
+      :class:`decimal.Decimal` or :class:`numbers.Integral`.
 
    .. method:: limit_denominator(max_denominator=1000000)
 

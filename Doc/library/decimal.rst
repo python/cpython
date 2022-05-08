@@ -585,7 +585,8 @@ Decimal objects
 
    .. classmethod:: from_float(f)
 
-      Alternative constructor that only accepts instances of :class:`float`.
+      Alternative constructor that only accepts instances of :class:`float` or
+      :class:`int`.
 
       .. versionadded:: 3.1
 
