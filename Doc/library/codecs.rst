@@ -389,10 +389,10 @@ In addition, the following error handler is specific to the given codecs:
 +-------------------+------------------------+-------------------------------------------+
 | Value             | Codecs                 | Meaning                                   |
 +===================+========================+===========================================+
-|``'surrogatepass'``| utf-8, utf-16, utf-32, | Allow encoding and decoding Surrogate code|
+|``'surrogatepass'``| utf-8, utf-16, utf-32, | Allow encoding and decoding surrogate code|
 |                   | utf-16-be, utf-16-le,  | point (``U+D800`` - ``U+DFFF``) as normal |
 |                   | utf-32-be, utf-32-le   | code point. Otherwise these codecs treat  |
-|                   |                        | the presence of Surrogate code point in   |
+|                   |                        | the presence of surrogate code point in   |
 |                   |                        | :class:`str` as an error.                 |
 +-------------------+------------------------+-------------------------------------------+
 
