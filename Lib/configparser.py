@@ -312,26 +312,6 @@ class ParsingError(Error):
         self.errors = []
         self.args = (source, )
 
-    @property
-    def filename(self):
-        """Deprecated, use `source'."""
-        warnings.warn(
-            "The 'filename' attribute will be removed in Python 3.12. "
-            "Use 'source' instead.",
-            DeprecationWarning, stacklevel=2
-        )
-        return self.source
-
-    @filename.setter
-    def filename(self, value):
-        """Deprecated, user `source'."""
-        warnings.warn(
-            "The 'filename' attribute will be removed in Python 3.12. "
-            "Use 'source' instead.",
-            DeprecationWarning, stacklevel=2
-        )
-        self.source = value
-
     def append(self, lineno, line):
         self.errors.append((lineno, line))
         self.message += '\n\t[line %2d]: %s' % (lineno, line)
@@ -767,15 +747,6 @@ class RawConfigParser(MutableMapping):
                     raise DuplicateOptionError(section, key, source)
                 elements_added.add((section, key))
                 self.set(section, key, value)
-
-    def readfp(self, fp, filename=None):
-        """Deprecated, use read_file instead."""
-        warnings.warn(
-            "This method will be removed in Python 3.12. "
-            "Use 'parser.read_file()' instead.",
-            DeprecationWarning, stacklevel=2
-        )
-        self.read_file(fp, source=filename)
 
     def get(self, section, option, *, raw=False, vars=None, fallback=_UNSET):
         """Get an option value for a given section.
@@ -1237,19 +1208,6 @@ class ConfigParser(RawConfigParser):
             self.read_dict({self.default_section: defaults})
         finally:
             self._interpolation = hold_interpolation
-
-
-class SafeConfigParser(ConfigParser):
-    """ConfigParser alias for backwards compatibility purposes."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        warnings.warn(
-            "The SafeConfigParser class has been renamed to ConfigParser "
-            "in Python 3.2. This alias will be removed in Python 3.12."
-            " Use ConfigParser directly instead.",
-            DeprecationWarning, stacklevel=2
-        )
 
 
 class SectionProxy(MutableMapping):
