@@ -2,7 +2,7 @@
 
 This module is an implementation of PEP 205:
 
-http://www.python.org/dev/peps/pep-0205/
+https://peps.python.org/pep-0205/
 """
 
 # Naming convention: Variables named "wr" are weak reference objects;
@@ -33,7 +33,6 @@ __all__ = ["ref", "proxy", "getweakrefcount", "getweakrefs",
            "WeakSet", "WeakMethod", "finalize"]
 
 
-_collections_abc.Set.register(WeakSet)
 _collections_abc.MutableSet.register(WeakSet)
 
 class WeakMethod(ref):
@@ -119,14 +118,17 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         self.data = {}
         self.update(other, **kw)
 
-    def _commit_removals(self):
-        l = self._pending_removals
+    def _commit_removals(self, _atomic_removal=_remove_dead_weakref):
+        pop = self._pending_removals.pop
         d = self.data
         # We shouldn't encounter any KeyError, because this method should
         # always be called *before* mutating the dict.
-        while l:
-            key = l.pop()
-            _remove_dead_weakref(d, key)
+        while True:
+            try:
+                key = pop()
+            except IndexError:
+                return
+            _atomic_removal(d, key)
 
     def __getitem__(self, key):
         if self._pending_removals:
@@ -310,6 +312,25 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
             self._commit_removals()
         return list(self.data.values())
 
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
+    def __or__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            c = self.copy()
+            c.update(other)
+            return c
+        return NotImplemented
+
+    def __ror__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            c = self.__class__()
+            c.update(other)
+            c.update(self)
+            return c
+        return NotImplemented
+
 
 class KeyedRef(ref):
     """Specialized reference that includes a key corresponding to the value.
@@ -351,7 +372,10 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
                 if self._iterating:
                     self._pending_removals.append(k)
                 else:
-                    del self.data[k]
+                    try:
+                        del self.data[k]
+                    except KeyError:
+                        pass
         self._remove = remove
         # A list of dead weakrefs (keys to be removed)
         self._pending_removals = []
@@ -365,11 +389,16 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
         # because a dead weakref never compares equal to a live weakref,
         # even if they happened to refer to equal objects.
         # However, it means keys may already have been removed.
-        l = self._pending_removals
+        pop = self._pending_removals.pop
         d = self.data
-        while l:
+        while True:
             try:
-                del d[l.pop()]
+                key = pop()
+            except IndexError:
+                return
+
+            try:
+                del d[key]
             except KeyError:
                 pass
 
@@ -487,6 +516,25 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
                 d[ref(key, self._remove)] = value
         if len(kwargs):
             self.update(kwargs)
+
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
+    def __or__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            c = self.copy()
+            c.update(other)
+            return c
+        return NotImplemented
+
+    def __ror__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            c = self.__class__()
+            c.update(other)
+            c.update(self)
+            return c
+        return NotImplemented
 
 
 class finalize:

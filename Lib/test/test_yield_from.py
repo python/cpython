@@ -938,6 +938,9 @@ class TestPEP380Operation(unittest.TestCase):
                 res.append(g1.throw(MyErr))
         except StopIteration:
             pass
+        except:
+            self.assertEqual(res, [0, 1, 2, 3])
+            raise
         # Check with close
         class MyIt(object):
             def __iter__(self):

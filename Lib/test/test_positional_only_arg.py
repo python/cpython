@@ -434,11 +434,11 @@ class PositionalOnlyTestCase(unittest.TestCase):
             def f(x: not (int is int), /): ...
 
         # without constant folding we end up with
-        # COMPARE_OP(is), UNARY_NOT
-        # with constant folding we should expect a COMPARE_OP(is not)
+        # COMPARE_OP(is), IS_OP (0)
+        # with constant folding we should expect a IS_OP (1)
         codes = [(i.opname, i.argval) for i in dis.get_instructions(g)]
         self.assertNotIn(('UNARY_NOT', None), codes)
-        self.assertIn(('COMPARE_OP', 'is not'), codes)
+        self.assertIn(('IS_OP', 1), codes)
 
 
 if __name__ == "__main__":

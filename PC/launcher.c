@@ -344,7 +344,7 @@ _locate_pythons_for_key(HKEY root, LPCWSTR subkey, REGSAM flags, int bits,
                     }
                     else if (attrs & FILE_ATTRIBUTE_DIRECTORY) {
                         debug(L"locate_pythons_for_key: '%ls' is a directory\n",
-                              ip->executable, attrs);
+                              ip->executable);
                     }
                     else if (find_existing_python(ip->executable)) {
                         debug(L"locate_pythons_for_key: %ls: already found\n",
@@ -425,11 +425,21 @@ compare_pythons(const void * p1, const void * p2)
     INSTALLED_PYTHON * ip1 = (INSTALLED_PYTHON *) p1;
     INSTALLED_PYTHON * ip2 = (INSTALLED_PYTHON *) p2;
     /* note reverse sorting on version */
-    int result = wcscmp(ip2->version, ip1->version);
-
-    if (result == 0)
-        result = ip2->bits - ip1->bits; /* 64 before 32 */
-    return result;
+    int result = CompareStringW(LOCALE_INVARIANT, SORT_DIGITSASNUMBERS,
+                                ip2->version, -1, ip1->version, -1);
+    switch (result) {
+    case 0:
+        error(0, L"CompareStringW failed");
+        return 0;
+    case CSTR_LESS_THAN:
+        return -1;
+    case CSTR_EQUAL:
+        return ip2->bits - ip1->bits; /* 64 before 32 */
+    case CSTR_GREATER_THAN:
+        return 1;
+    default:
+        return 0; // This should never be reached.
+    }
 }
 
 static void
@@ -532,8 +542,17 @@ find_python_by_version(wchar_t const * wanted_ver)
     }
     for (i = 0; i < num_installed_pythons; i++, ip++) {
         n = wcslen(ip->version);
-        if (n > wlen)
+        /*
+         * If wlen is greater than 1, we're probably trying to find a specific
+         * version and thus want an exact match: 3.1 != 3.10.  Otherwise, we
+         * just want a prefix match.
+         */
+        if ((wlen > 1) && (n != wlen)) {
+            continue;
+        }
+        if (n > wlen) {
             n = wlen;
+        }
         if ((wcsncmp(ip->version, wanted_ver, n) == 0) &&
             /* bits == 0 => don't care */
             ((bits == 0) || (ip->bits == bits))) {
@@ -1247,6 +1266,11 @@ static PYC_MAGIC magic_values[] = {
     { 3360, 3379, L"3.6" },
     { 3390, 3399, L"3.7" },
     { 3400, 3419, L"3.8" },
+    { 3420, 3429, L"3.9" },
+    { 3430, 3449, L"3.10" },
+    /* Allow 50 magic numbers per version from here on */
+    { 3450, 3499, L"3.11" },
+    { 3500, 3549, L"3.12" },
     { 0 }
 };
 
@@ -1519,7 +1543,7 @@ show_help_text(wchar_t ** argv)
 Python Launcher for Windows Version %ls\n\n", version_text);
     fwprintf(stdout, L"\
 usage:\n\
-%ls [launcher-args] [python-args] script [script-args]\n\n", argv[0]);
+%ls [launcher-args] [python-args] [script [script-args]]\n\n", argv[0]);
     fputws(L"\
 Launcher arguments:\n\n\
 -2     : Launch the latest Python 2.x version\n\
@@ -1535,6 +1559,15 @@ Launcher arguments:\n\n\
     }
     fputws(L"\n-0  --list       : List the available pythons", stdout);
     fputws(L"\n-0p --list-paths : List with paths", stdout);
+    fputws(L"\n\n If no script is specified the specified interpreter is opened.", stdout);
+    fputws(L"\nIf an exact version is not given, using the latest version can be overridden by", stdout);
+    fputws(L"\nany of the following, (in priority order):", stdout);
+    fputws(L"\n An active virtual environment", stdout);
+    fputws(L"\n A shebang line in the script (if present)", stdout);
+    fputws(L"\n With -2 or -3 flag a matching PY_PYTHON2 or PY_PYTHON3 Environment variable", stdout);
+    fputws(L"\n A PY_PYTHON Environment variable", stdout);
+    fputws(L"\n From [defaults] in py.ini in your %LOCALAPPDATA%\\py.ini", stdout);
+    fputws(L"\n From [defaults] in py.ini beside py.exe (use `where py` to locate)", stdout);
     fputws(L"\n\nThe following help text is from Python:\n\n", stdout);
     fflush(stdout);
 }
@@ -1830,7 +1863,7 @@ process(int argc, wchar_t ** argv)
 
 #if !defined(VENV_REDIRECT)
     /* bpo-35811: The __PYVENV_LAUNCHER__ variable is used to
-     * override sys.executable and locate the original prefix path. 
+     * override sys.executable and locate the original prefix path.
      * However, if it is silently inherited by a non-venv Python
      * process, that process will believe it is running in the venv
      * still. This is the only place where *we* can clear it (that is,

@@ -5,13 +5,6 @@
 
 #include "Python.h"
 
-#if defined(__CHAR_UNSIGNED__)
-#if defined(signed)
-/* This module currently does not work on systems where only unsigned
-   characters are available.  Take it out of Setup.  Sorry. */
-#endif
-#endif
-
 static const int maxvals[] = {0, 0x7F, 0x7FFF, 0x7FFFFF, 0x7FFFFFFF};
 /* -1 trick is needed on Windows to support -0x80000000 without a warning */
 static const int minvals[] = {0, -0x80, -0x8000, -0x800000, -0x7FFFFFFF-1};
@@ -304,7 +297,7 @@ static const int stepsizeTable[89] = {
 #define GETINT16(cp, i)         GETINTX(int16_t, (cp), (i))
 #define GETINT32(cp, i)         GETINTX(int32_t, (cp), (i))
 
-#if WORDS_BIGENDIAN
+#ifdef WORDS_BIGENDIAN
 #define GETINT24(cp, i)  (                              \
         ((unsigned char *)(cp) + (i))[2] +              \
         (((unsigned char *)(cp) + (i))[1] << 8) +       \
@@ -321,7 +314,7 @@ static const int stepsizeTable[89] = {
 #define SETINT16(cp, i, val)    SETINTX(int16_t, (cp), (i), (val))
 #define SETINT32(cp, i, val)    SETINTX(int32_t, (cp), (i), (val))
 
-#if WORDS_BIGENDIAN
+#ifdef WORDS_BIGENDIAN
 #define SETINT24(cp, i, val)  do {                              \
         ((unsigned char *)(cp) + (i))[2] = (int)(val);          \
         ((unsigned char *)(cp) + (i))[1] = (int)(val) >> 8;     \
@@ -375,15 +368,22 @@ static PyModuleDef audioopmodule;
 
 typedef struct {
     PyObject *AudioopError;
-} _audioopstate;
+} audioop_state;
 
-#define _audioopstate(o) ((_audioopstate *)PyModule_GetState(o))
+static inline audioop_state *
+get_audioop_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (audioop_state *)state;
+}
 
 static int
 audioop_check_size(PyObject *module, int size)
 {
     if (size < 1 || size > 4) {
-        PyErr_SetString(_audioopstate(module)->AudioopError, "Size should be 1, 2, 3 or 4");
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
+                        "Size should be 1, 2, 3 or 4");
         return 0;
     }
     else
@@ -396,7 +396,8 @@ audioop_check_parameters(PyObject *module, Py_ssize_t len, int size)
     if (!audioop_check_size(module, size))
         return 0;
     if (len % size != 0) {
-        PyErr_SetString(_audioopstate(module)->AudioopError, "not a whole number of frames");
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
+                        "not a whole number of frames");
         return 0;
     }
     return 1;
@@ -428,7 +429,8 @@ audioop_getsample_impl(PyObject *module, Py_buffer *fragment, int width,
     if (!audioop_check_parameters(module, fragment->len, width))
         return NULL;
     if (index < 0 || index >= fragment->len/width) {
-        PyErr_SetString(_audioopstate(module)->AudioopError, "Index out of range");
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
+                        "Index out of range");
         return NULL;
     }
     val = GETRAWSAMPLE(width, fragment->buf, index*width);
@@ -619,7 +621,8 @@ audioop_findfit_impl(PyObject *module, Py_buffer *fragment,
     double sum_ri_2, sum_aij_2, sum_aij_ri, result, best_result, factor;
 
     if (fragment->len & 1 || reference->len & 1) {
-        PyErr_SetString(_audioopstate(module)->AudioopError, "Strings should be even-sized");
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
+                        "Strings should be even-sized");
         return NULL;
     }
     cp1 = (const int16_t *)fragment->buf;
@@ -628,7 +631,8 @@ audioop_findfit_impl(PyObject *module, Py_buffer *fragment,
     len2 = reference->len >> 1;
 
     if (len1 < len2) {
-        PyErr_SetString(_audioopstate(module)->AudioopError, "First sample should be longer");
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
+                        "First sample should be longer");
         return NULL;
     }
     sum_ri_2 = _sum2(cp2, cp2, len2);
@@ -686,11 +690,13 @@ audioop_findfactor_impl(PyObject *module, Py_buffer *fragment,
     double sum_ri_2, sum_aij_ri, result;
 
     if (fragment->len & 1 || reference->len & 1) {
-        PyErr_SetString(_audioopstate(module)->AudioopError, "Strings should be even-sized");
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
+                        "Strings should be even-sized");
         return NULL;
     }
     if (fragment->len != reference->len) {
-        PyErr_SetString(_audioopstate(module)->AudioopError, "Samples should be same size");
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
+                        "Samples should be same size");
         return NULL;
     }
     cp1 = (const int16_t *)fragment->buf;
@@ -730,14 +736,16 @@ audioop_findmax_impl(PyObject *module, Py_buffer *fragment,
     double result, best_result;
 
     if (fragment->len & 1) {
-        PyErr_SetString(_audioopstate(module)->AudioopError, "Strings should be even-sized");
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
+                        "Strings should be even-sized");
         return NULL;
     }
     cp1 = (const int16_t *)fragment->buf;
     len1 = fragment->len >> 1;
 
     if (length < 0 || len1 < length) {
-        PyErr_SetString(_audioopstate(module)->AudioopError, "Input sample should be longer");
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
+                        "Input sample should be longer");
         return NULL;
     }
 
@@ -969,7 +977,8 @@ audioop_tomono_impl(PyObject *module, Py_buffer *fragment, int width,
     if (!audioop_check_parameters(module, len, width))
         return NULL;
     if (((len / width) & 1) != 0) {
-        PyErr_SetString(_audioopstate(module)->AudioopError, "not a whole number of frames");
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
+                        "not a whole number of frames");
         return NULL;
     }
 
@@ -1064,7 +1073,8 @@ audioop_add_impl(PyObject *module, Py_buffer *fragment1,
     if (!audioop_check_parameters(module, fragment1->len, width))
         return NULL;
     if (fragment1->len != fragment2->len) {
-        PyErr_SetString(_audioopstate(module)->AudioopError, "Lengths should be the same");
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
+                        "Lengths should be the same");
         return NULL;
     }
 
@@ -1310,7 +1320,8 @@ audioop_ratecv_impl(PyObject *module, Py_buffer *fragment, int width,
     if (!audioop_check_size(module, width))
         return NULL;
     if (nchannels < 1) {
-        PyErr_SetString(_audioopstate(module)->AudioopError, "# of channels should be >= 1");
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
+                        "# of channels should be >= 1");
         return NULL;
     }
     if (width > INT_MAX / nchannels) {
@@ -1323,17 +1334,19 @@ audioop_ratecv_impl(PyObject *module, Py_buffer *fragment, int width,
     }
     bytes_per_frame = width * nchannels;
     if (weightA < 1 || weightB < 0) {
-        PyErr_SetString(_audioopstate(module)->AudioopError,
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
             "weightA should be >= 1, weightB should be >= 0");
         return NULL;
     }
     assert(fragment->len >= 0);
     if (fragment->len % bytes_per_frame != 0) {
-        PyErr_SetString(_audioopstate(module)->AudioopError, "not a whole number of frames");
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
+                        "not a whole number of frames");
         return NULL;
     }
     if (inrate <= 0 || outrate <= 0) {
-        PyErr_SetString(_audioopstate(module)->AudioopError, "sampling rate not > 0");
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
+                        "sampling rate not > 0");
         return NULL;
     }
     /* divide inrate and outrate by their greatest common divisor */
@@ -1374,7 +1387,7 @@ audioop_ratecv_impl(PyObject *module, Py_buffer *fragment, int width,
                         &d, &PyTuple_Type, &samps))
             goto exit;
         if (PyTuple_Size(samps) != nchannels) {
-            PyErr_SetString(_audioopstate(module)->AudioopError,
+            PyErr_SetString(get_audioop_state(module)->AudioopError,
                             "illegal state argument");
             goto exit;
         }
@@ -1903,31 +1916,57 @@ static PyMethodDef audioop_methods[] = {
 };
 
 static int
-audioop_traverse(PyObject *m, visitproc visit, void *arg) {
-    _audioopstate *state = _audioopstate(m);
-    if (state != NULL)
-        Py_VISIT(state->AudioopError);
+audioop_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    audioop_state *state = get_audioop_state(module);
+    Py_VISIT(state->AudioopError);
     return 0;
 }
+
 static int
-audioop_clear(PyObject *m) {
-    _audioopstate *state = _audioopstate(m);
-    if (state != NULL)
-        Py_CLEAR(state->AudioopError);
+audioop_clear(PyObject *module)
+{
+    audioop_state *state = get_audioop_state(module);
+    Py_CLEAR(state->AudioopError);
     return 0;
 }
+
 static void
-audioop_free(void *m) {
-    audioop_clear((PyObject *)m);
+audioop_free(void *module) {
+    audioop_clear((PyObject *)module);
 }
+
+static int
+audioop_exec(PyObject* module)
+{
+    audioop_state *state = get_audioop_state(module);
+
+    state->AudioopError = PyErr_NewException("audioop.error", NULL, NULL);
+    if (state->AudioopError == NULL) {
+        return -1;
+    }
+
+    Py_INCREF(state->AudioopError);
+    if (PyModule_AddObject(module, "error", state->AudioopError) < 0) {
+        Py_DECREF(state->AudioopError);
+        return -1;
+    }
+
+    return 0;
+}
+
+static PyModuleDef_Slot audioop_slots[] = {
+    {Py_mod_exec, audioop_exec},
+    {0, NULL}
+};
 
 static struct PyModuleDef audioopmodule = {
     PyModuleDef_HEAD_INIT,
     "audioop",
     NULL,
-    sizeof(_audioopstate),
+    sizeof(audioop_state),
     audioop_methods,
-    NULL,
+    audioop_slots,
     audioop_traverse,
     audioop_clear,
     audioop_free
@@ -1936,14 +1975,12 @@ static struct PyModuleDef audioopmodule = {
 PyMODINIT_FUNC
 PyInit_audioop(void)
 {
-    PyObject *m = PyModule_Create(&audioopmodule);
-    if (m == NULL)
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "'audioop' is deprecated and slated for removal in "
+                     "Python 3.13",
+                     7)) {
         return NULL;
-    PyObject *AudioopError = PyErr_NewException("audioop.error", NULL, NULL);
-    if (AudioopError == NULL)
-        return NULL;
-    Py_INCREF(AudioopError);
-    PyModule_AddObject(m, "error", AudioopError);
-    _audioopstate(m)->AudioopError = AudioopError;
-    return m;
+    }
+
+    return PyModuleDef_Init(&audioopmodule);
 }

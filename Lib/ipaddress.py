@@ -16,6 +16,7 @@ import functools
 IPV4LENGTH = 32
 IPV6LENGTH = 128
 
+
 class AddressValueError(ValueError):
     """A Value Error related to the address."""
 
@@ -50,8 +51,7 @@ def ip_address(address):
     except (AddressValueError, NetmaskValueError):
         pass
 
-    raise ValueError('%r does not appear to be an IPv4 or IPv6 address' %
-                     address)
+    raise ValueError(f'{address!r} does not appear to be an IPv4 or IPv6 address')
 
 
 def ip_network(address, strict=True):
@@ -80,8 +80,7 @@ def ip_network(address, strict=True):
     except (AddressValueError, NetmaskValueError):
         pass
 
-    raise ValueError('%r does not appear to be an IPv4 or IPv6 network' %
-                     address)
+    raise ValueError(f'{address!r} does not appear to be an IPv4 or IPv6 network')
 
 
 def ip_interface(address):
@@ -115,8 +114,7 @@ def ip_interface(address):
     except (AddressValueError, NetmaskValueError):
         pass
 
-    raise ValueError('%r does not appear to be an IPv4 or IPv6 interface' %
-                     address)
+    raise ValueError(f'{address!r} does not appear to be an IPv4 or IPv6 interface')
 
 
 def v4_int_to_packed(address):
@@ -134,7 +132,7 @@ def v4_int_to_packed(address):
 
     """
     try:
-        return address.to_bytes(4, 'big')
+        return address.to_bytes(4)  # big endian
     except OverflowError:
         raise ValueError("Address negative or too large for IPv4")
 
@@ -150,7 +148,7 @@ def v6_int_to_packed(address):
 
     """
     try:
-        return address.to_bytes(16, 'big')
+        return address.to_bytes(16)  # big endian
     except OverflowError:
         raise ValueError("Address negative or too large for IPv6")
 
@@ -159,7 +157,7 @@ def _split_optional_netmask(address):
     """Helper to split the netmask and raise AddressValueError if needed"""
     addr = str(address).split('/')
     if len(addr) > 2:
-        raise AddressValueError("Only one '/' permitted in %r" % address)
+        raise AddressValueError(f"Only one '/' permitted in {address!r}")
     return addr
 
 
@@ -1124,7 +1122,6 @@ class _BaseNetwork(_IPAddressBase):
         return (self.network_address.is_loopback and
                 self.broadcast_address.is_loopback)
 
-
 class _BaseV4:
 
     """Base IPv4 object.
@@ -1215,7 +1212,7 @@ class _BaseV4:
         """
         if not octet_str:
             raise ValueError("Empty octet not permitted")
-        # Whitelist the characters, since int() allows a lot of bizarre stuff.
+        # Reject non-ASCII digits.
         if not (octet_str.isascii() and octet_str.isdigit()):
             msg = "Only decimal digits permitted in %r"
             raise ValueError(msg % octet_str)
@@ -1223,6 +1220,11 @@ class _BaseV4:
         # is likely to be more informative for the user
         if len(octet_str) > 3:
             msg = "At most 3 characters permitted in %r"
+            raise ValueError(msg % octet_str)
+        # Handle leading zeros as strict as glibc's inet_pton()
+        # See security bug bpo-36384
+        if octet_str != '0' and octet_str[0] == '0':
+            msg = "Leading zeros are not permitted in %r"
             raise ValueError(msg % octet_str)
         # Convert to integer (we know digits are legal)
         octet_int = int(octet_str, 10)
@@ -1292,14 +1294,14 @@ class IPv4Address(_BaseV4, _BaseAddress):
         # Constructing from a packed address
         if isinstance(address, bytes):
             self._check_packed_address(address, 4)
-            self._ip = int.from_bytes(address, 'big')
+            self._ip = int.from_bytes(address)  # big endian
             return
 
         # Assume input argument to be string or any object representation
         # which converts into a formatted IP string.
         addr_str = str(address)
         if '/' in addr_str:
-            raise AddressValueError("Unexpected '/' in %r" % address)
+            raise AddressValueError(f"Unexpected '/' in {address!r}")
         self._ip = self._ip_int_from_string(addr_str)
 
     @property
@@ -1398,7 +1400,7 @@ class IPv4Interface(IPv4Address):
 
     def __eq__(self, other):
         address_equal = IPv4Address.__eq__(self, other)
-        if not address_equal or address_equal is NotImplemented:
+        if address_equal is NotImplemented or not address_equal:
             return address_equal
         try:
             return self.network == other.network
@@ -1421,7 +1423,7 @@ class IPv4Interface(IPv4Address):
             return False
 
     def __hash__(self):
-        return self._ip ^ self._prefixlen ^ int(self.network.network_address)
+        return hash((self._ip, self._prefixlen, int(self.network.network_address)))
 
     __reduce__ = _IPAddressBase.__reduce__
 
@@ -1467,7 +1469,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
             address: A string or integer representing the IP [& network].
               '192.0.2.0/24'
               '192.0.2.0/255.255.255.0'
-              '192.0.0.2/0.0.0.255'
+              '192.0.2.0/0.0.0.255'
               are all functionally the same in IPv4. Similarly,
               '192.0.2.1'
               '192.0.2.1/255.255.255.255'
@@ -1509,6 +1511,8 @@ class IPv4Network(_BaseV4, _BaseNetwork):
 
         if self._prefixlen == (self._max_prefixlen - 1):
             self.hosts = self.__iter__
+        elif self._prefixlen == (self._max_prefixlen):
+            self.hosts = lambda: [IPv4Address(addr)]
 
     @property
     @functools.lru_cache()
@@ -1718,7 +1722,7 @@ class _BaseV6:
               [0..FFFF].
 
         """
-        # Whitelist the characters, since int() allows a lot of bizarre stuff.
+        # Reject non-ASCII digits.
         if not cls._HEX_DIGITS.issuperset(hextet_str):
             raise ValueError("Only hex digits permitted in %r" % hextet_str)
         # We do the length check second, since the invalid character error
@@ -1836,6 +1840,26 @@ class _BaseV6:
         reverse_chars = self.exploded[::-1].replace(':', '')
         return '.'.join(reverse_chars) + '.ip6.arpa'
 
+    @staticmethod
+    def _split_scope_id(ip_str):
+        """Helper function to parse IPv6 string address with scope id.
+
+        See RFC 4007 for details.
+
+        Args:
+            ip_str: A string, the IPv6 address.
+
+        Returns:
+            (addr, scope_id) tuple.
+
+        """
+        addr, sep, scope_id = ip_str.partition('%')
+        if not sep:
+            scope_id = None
+        elif not scope_id or '%' in scope_id:
+            raise AddressValueError('Invalid IPv6 address: "%r"' % ip_str)
+        return addr, scope_id
+
     @property
     def max_prefixlen(self):
         return self._max_prefixlen
@@ -1849,7 +1873,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
 
     """Represent and manipulate single IPv6 Addresses."""
 
-    __slots__ = ('_ip', '__weakref__')
+    __slots__ = ('_ip', '_scope_id', '__weakref__')
 
     def __init__(self, address):
         """Instantiate a new IPv6 address object.
@@ -1872,20 +1896,51 @@ class IPv6Address(_BaseV6, _BaseAddress):
         if isinstance(address, int):
             self._check_int_address(address)
             self._ip = address
+            self._scope_id = None
             return
 
         # Constructing from a packed address
         if isinstance(address, bytes):
             self._check_packed_address(address, 16)
             self._ip = int.from_bytes(address, 'big')
+            self._scope_id = None
             return
 
         # Assume input argument to be string or any object representation
         # which converts into a formatted IP string.
         addr_str = str(address)
         if '/' in addr_str:
-            raise AddressValueError("Unexpected '/' in %r" % address)
+            raise AddressValueError(f"Unexpected '/' in {address!r}")
+        addr_str, self._scope_id = self._split_scope_id(addr_str)
+
         self._ip = self._ip_int_from_string(addr_str)
+
+    def __str__(self):
+        ip_str = super().__str__()
+        return ip_str + '%' + self._scope_id if self._scope_id else ip_str
+
+    def __hash__(self):
+        return hash((self._ip, self._scope_id))
+
+    def __eq__(self, other):
+        address_equal = super().__eq__(other)
+        if address_equal is NotImplemented:
+            return NotImplemented
+        if not address_equal:
+            return False
+        return self._scope_id == getattr(other, '_scope_id', None)
+
+    @property
+    def scope_id(self):
+        """Identifier of a particular zone of the address's scope.
+
+        See RFC 4007 for details.
+
+        Returns:
+            A string identifying the zone of the address if specified, else None.
+
+        """
+        return self._scope_id
 
     @property
     def packed(self):
@@ -1945,9 +2000,13 @@ class IPv6Address(_BaseV6, _BaseAddress):
 
         Returns:
             A boolean, True if the address is reserved per
-            iana-ipv6-special-registry.
+            iana-ipv6-special-registry, or is ipv4_mapped and is
+            reserved in the iana-ipv4-special-registry.
 
         """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is not None:
+            return ipv4_mapped.is_private
         return any(self in net for net in self._constants._private_networks)
 
     @property
@@ -2040,12 +2099,12 @@ class IPv6Interface(IPv6Address):
         return self.network.hostmask
 
     def __str__(self):
-        return '%s/%d' % (self._string_from_ip_int(self._ip),
+        return '%s/%d' % (super().__str__(),
                           self._prefixlen)
 
     def __eq__(self, other):
         address_equal = IPv6Address.__eq__(self, other)
-        if not address_equal or address_equal is NotImplemented:
+        if address_equal is NotImplemented or not address_equal:
             return address_equal
         try:
             return self.network == other.network
@@ -2058,7 +2117,7 @@ class IPv6Interface(IPv6Address):
     def __lt__(self, other):
         address_less = IPv6Address.__lt__(self, other)
         if address_less is NotImplemented:
-            return NotImplemented
+            return address_less
         try:
             return (self.network < other.network or
                     self.network == other.network and address_less)
@@ -2068,7 +2127,7 @@ class IPv6Interface(IPv6Address):
             return False
 
     def __hash__(self):
-        return self._ip ^ self._prefixlen ^ int(self.network.network_address)
+        return hash((self._ip, self._prefixlen, int(self.network.network_address)))
 
     __reduce__ = _IPAddressBase.__reduce__
 
@@ -2161,6 +2220,8 @@ class IPv6Network(_BaseV6, _BaseNetwork):
 
         if self._prefixlen == (self._max_prefixlen - 1):
             self.hosts = self.__iter__
+        elif self._prefixlen == self._max_prefixlen:
+            self.hosts = lambda: [IPv6Address(addr)]
 
     def hosts(self):
         """Generate Iterator over usable hosts in a network.
