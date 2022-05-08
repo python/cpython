@@ -22,7 +22,7 @@ if not support.has_subprocess_support:
 
 MS_WINDOWS = (os.name == 'nt')
 MACOS = (sys.platform == 'darwin')
-
+Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 PYMEM_ALLOCATOR_NOT_SET = 0
 PYMEM_ALLOCATOR_DEBUG = 2
 PYMEM_ALLOCATOR_MALLOC = 3
@@ -343,6 +343,20 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, 'Tests passed\n' * INIT_LOOPS)
 
+    @support.skip_if_pgo_task
+    def test_quickened_static_code_gets_unquickened_at_Py_FINALIZE(self):
+        # https://github.com/python/cpython/issues/92031
+        code = """if 1:
+            from importlib._bootstrap import _handle_fromlist
+            import dis
+            for name in dis.opmap:
+                # quicken this frozen code object.
+                _handle_fromlist(dis, [name], lambda *args: None)
+        """
+        run = self.run_embedded_interpreter
+        for i in range(50):
+            out, err = run("test_repeated_init_exec", code, timeout=60)
+
     def test_ucnhash_capi_reset(self):
         # bpo-47182: unicodeobject.c:ucnhash_capi was not reset on shutdown.
         code = "print('\\N{digit nine}')"
@@ -464,7 +478,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'pathconfig_warnings': 1,
         '_init_main': 1,
         '_isolated_interpreter': 0,
-        'use_frozen_modules': 1,
+        'use_frozen_modules': not Py_DEBUG,
+        'safe_path': 0,
         '_is_python_build': IGNORE_CONFIG,
     }
     if MS_WINDOWS:
@@ -482,6 +497,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         isolated=1,
         use_environment=0,
         user_site_directory=0,
+        safe_path=1,
         dev_mode=0,
         install_signal_handlers=0,
         use_hash_seed=0,
@@ -841,6 +857,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'faulthandler': 1,
             'platlibdir': 'my_platlibdir',
             'module_search_paths': self.IGNORE_CONFIG,
+            'safe_path': 1,
 
             'check_hash_pycs_mode': 'always',
             'pathconfig_warnings': 0,
@@ -875,6 +892,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'warnoptions': ['EnvVar'],
             'platlibdir': 'env_platlibdir',
             'module_search_paths': self.IGNORE_CONFIG,
+            'safe_path': 1,
         }
         self.check_all_configs("test_init_compat_env", config, preconfig,
                                api=API_COMPAT)
@@ -905,6 +923,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'warnoptions': ['EnvVar'],
             'platlibdir': 'env_platlibdir',
             'module_search_paths': self.IGNORE_CONFIG,
+            'safe_path': 1,
         }
         self.check_all_configs("test_init_python_env", config, preconfig,
                                api=API_PYTHON)
@@ -945,12 +964,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         config = {
             'argv': ['script.py'],
-            'orig_argv': ['python3', '-X', 'dev', 'script.py'],
+            'orig_argv': ['python3', '-X', 'dev', '-P', 'script.py'],
             'run_filename': os.path.abspath('script.py'),
             'dev_mode': 1,
             'faulthandler': 1,
             'warnoptions': ['default'],
             'xoptions': ['dev'],
+            'safe_path': 1,
         }
         self.check_all_configs("test_preinit_parse_argv", config, preconfig,
                                api=API_PYTHON)
@@ -961,7 +981,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'isolated': 0,
         }
         argv = ["python3",
-               "-E", "-I",
+               "-E", "-I", "-P",
                "-X", "dev",
                "-X", "utf8",
                "script.py"]
@@ -976,6 +996,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_init_isolated_flag(self):
         config = {
             'isolated': 1,
+            'safe_path': 1,
             'use_environment': 0,
             'user_site_directory': 0,
         }
@@ -985,6 +1006,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # _PyPreConfig.isolated=1, _PyCoreConfig.isolated not set
         config = {
             'isolated': 1,
+            'safe_path': 1,
             'use_environment': 0,
             'user_site_directory': 0,
         }
@@ -994,6 +1016,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # _PyPreConfig.isolated=0, _PyCoreConfig.isolated=1
         config = {
             'isolated': 1,
+            'safe_path': 1,
             'use_environment': 0,
             'user_site_directory': 0,
         }
@@ -1163,7 +1186,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
              # The current getpath.c doesn't determine the stdlib dir
              # in this case.
             'stdlib_dir': '',
-            'use_frozen_modules': 1,
+            'use_frozen_modules': not Py_DEBUG,
             # overridden by PyConfig
             'program_name': 'conf_program_name',
             'base_executable': 'conf_executable',
@@ -1402,12 +1425,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 config['base_prefix'] = pyvenv_home
                 config['prefix'] = pyvenv_home
                 config['stdlib_dir'] = os.path.join(pyvenv_home, 'Lib')
-                config['use_frozen_modules'] = 1
+                config['use_frozen_modules'] = not Py_DEBUG
             else:
                 # cannot reliably assume stdlib_dir here because it
                 # depends too much on our build. But it ought to be found
                 config['stdlib_dir'] = self.IGNORE_CONFIG
-                config['use_frozen_modules'] = 1
+                config['use_frozen_modules'] = not Py_DEBUG
 
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,

@@ -11,7 +11,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_Parse__doc__,
 "`isfinal\' should be true at end of input.");
 
 #define PYEXPAT_XMLPARSER_PARSE_METHODDEF    \
-    {"Parse", (PyCFunction)(void(*)(void))pyexpat_xmlparser_Parse, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_Parse__doc__},
+    {"Parse", _PyCFunction_CAST(pyexpat_xmlparser_Parse), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_Parse__doc__},
 
 static PyObject *
 pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyTypeObject *cls,
@@ -53,7 +53,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_ParseFile__doc__,
 "Parse XML data from file-like object.");
 
 #define PYEXPAT_XMLPARSER_PARSEFILE_METHODDEF    \
-    {"ParseFile", (PyCFunction)(void(*)(void))pyexpat_xmlparser_ParseFile, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_ParseFile__doc__},
+    {"ParseFile", _PyCFunction_CAST(pyexpat_xmlparser_ParseFile), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_ParseFile__doc__},
 
 static PyObject *
 pyexpat_xmlparser_ParseFile_impl(xmlparseobject *self, PyTypeObject *cls,
@@ -163,7 +163,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_ExternalEntityParserCreate__doc__,
 "Create a parser for parsing an external entity based on the information passed to the ExternalEntityRefHandler.");
 
 #define PYEXPAT_XMLPARSER_EXTERNALENTITYPARSERCREATE_METHODDEF    \
-    {"ExternalEntityParserCreate", (PyCFunction)(void(*)(void))pyexpat_xmlparser_ExternalEntityParserCreate, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_ExternalEntityParserCreate__doc__},
+    {"ExternalEntityParserCreate", _PyCFunction_CAST(pyexpat_xmlparser_ExternalEntityParserCreate), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_ExternalEntityParserCreate__doc__},
 
 static PyObject *
 pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
@@ -272,7 +272,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_UseForeignDTD__doc__,
 "information to the parser. \'flag\' defaults to True if not provided.");
 
 #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF    \
-    {"UseForeignDTD", (PyCFunction)(void(*)(void))pyexpat_xmlparser_UseForeignDTD, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_UseForeignDTD__doc__},
+    {"UseForeignDTD", _PyCFunction_CAST(pyexpat_xmlparser_UseForeignDTD), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_UseForeignDTD__doc__},
 
 static PyObject *
 pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, PyTypeObject *cls,
@@ -315,7 +315,7 @@ PyDoc_STRVAR(pyexpat_ParserCreate__doc__,
 "Return a new XML parser object.");
 
 #define PYEXPAT_PARSERCREATE_METHODDEF    \
-    {"ParserCreate", (PyCFunction)(void(*)(void))pyexpat_ParserCreate, METH_FASTCALL|METH_KEYWORDS, pyexpat_ParserCreate__doc__},
+    {"ParserCreate", _PyCFunction_CAST(pyexpat_ParserCreate), METH_FASTCALL|METH_KEYWORDS, pyexpat_ParserCreate__doc__},
 
 static PyObject *
 pyexpat_ParserCreate_impl(PyObject *module, const char *encoding,
@@ -425,4 +425,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=5d60049d385d5d56 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3e333b89da3aa58c input=a9049054013a1b77]*/

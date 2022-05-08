@@ -206,6 +206,8 @@ def _create_parser():
     group.add_argument('-S', '--start', metavar='START',
                        help='the name of the test at which to start.' +
                             more_details)
+    group.add_argument('-p', '--python', metavar='PYTHON',
+                       help='Command to run Python test subprocesses with.')
 
     group = parser.add_argument_group('Verbosity')
     group.add_argument('-v', '--verbose', action='count',
@@ -370,6 +372,8 @@ def _parse_args(args, **kwargs):
         parser.error("-s and -f don't go together!")
     if ns.use_mp is not None and ns.trace:
         parser.error("-T and -j don't go together!")
+    if ns.python is not None and ns.use_mp is None:
+        parser.error("-p requires -j!")
     if ns.failfast and not (ns.verbose or ns.verbose3):
         parser.error("-G/--failfast needs either -v or -W")
     if ns.pgo and (ns.verbose or ns.verbose2 or ns.verbose3):

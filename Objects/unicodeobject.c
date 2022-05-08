@@ -5868,7 +5868,7 @@ _PyUnicode_EncodeUTF32(PyObject *str,
 
     pos = 0;
     while (pos < len) {
-        Py_ssize_t repsize, moreunits;
+        Py_ssize_t newpos, repsize, moreunits;
 
         if (kind == PyUnicode_2BYTE_KIND) {
             pos += ucs2lib_utf32_encode((const Py_UCS2 *)data + pos, len - pos,
@@ -5885,7 +5885,7 @@ _PyUnicode_EncodeUTF32(PyObject *str,
         rep = unicode_encode_call_errorhandler(
                 errors, &errorHandler,
                 encoding, "surrogates not allowed",
-                str, &exc, pos, pos + 1, &pos);
+                str, &exc, pos, pos + 1, &newpos);
         if (!rep)
             goto error;
 
@@ -5893,7 +5893,7 @@ _PyUnicode_EncodeUTF32(PyObject *str,
             repsize = PyBytes_GET_SIZE(rep);
             if (repsize & 3) {
                 raise_encode_exception(&exc, encoding,
-                                       str, pos - 1, pos,
+                                       str, pos, pos + 1,
                                        "surrogates not allowed");
                 goto error;
             }
@@ -5906,28 +5906,30 @@ _PyUnicode_EncodeUTF32(PyObject *str,
             moreunits = repsize = PyUnicode_GET_LENGTH(rep);
             if (!PyUnicode_IS_ASCII(rep)) {
                 raise_encode_exception(&exc, encoding,
-                                       str, pos - 1, pos,
+                                       str, pos, pos + 1,
                                        "surrogates not allowed");
                 goto error;
             }
         }
+        moreunits += pos - newpos;
+        pos = newpos;
 
         /* four bytes are reserved for each surrogate */
-        if (moreunits > 1) {
+        if (moreunits > 0) {
             Py_ssize_t outpos = out - (uint32_t*) PyBytes_AS_STRING(v);
             if (moreunits >= (PY_SSIZE_T_MAX - PyBytes_GET_SIZE(v)) / 4) {
                 /* integer overflow */
                 PyErr_NoMemory();
                 goto error;
             }
-            if (_PyBytes_Resize(&v, PyBytes_GET_SIZE(v) + 4 * (moreunits - 1)) < 0)
+            if (_PyBytes_Resize(&v, PyBytes_GET_SIZE(v) + 4 * moreunits) < 0)
                 goto error;
             out = (uint32_t*) PyBytes_AS_STRING(v) + outpos;
         }
 
         if (PyBytes_Check(rep)) {
             memcpy(out, PyBytes_AS_STRING(rep), repsize);
-            out += moreunits;
+            out += repsize / 4;
         } else /* rep is unicode */ {
             assert(PyUnicode_KIND(rep) == PyUnicode_1BYTE_KIND);
             ucs1lib_utf32_encode(PyUnicode_1BYTE_DATA(rep), repsize,
@@ -6205,7 +6207,7 @@ _PyUnicode_EncodeUTF16(PyObject *str,
 
     pos = 0;
     while (pos < len) {
-        Py_ssize_t repsize, moreunits;
+        Py_ssize_t newpos, repsize, moreunits;
 
         if (kind == PyUnicode_2BYTE_KIND) {
             pos += ucs2lib_utf16_encode((const Py_UCS2 *)data + pos, len - pos,
@@ -6222,7 +6224,7 @@ _PyUnicode_EncodeUTF16(PyObject *str,
         rep = unicode_encode_call_errorhandler(
                 errors, &errorHandler,
                 encoding, "surrogates not allowed",
-                str, &exc, pos, pos + 1, &pos);
+                str, &exc, pos, pos + 1, &newpos);
         if (!rep)
             goto error;
 
@@ -6230,7 +6232,7 @@ _PyUnicode_EncodeUTF16(PyObject *str,
             repsize = PyBytes_GET_SIZE(rep);
             if (repsize & 1) {
                 raise_encode_exception(&exc, encoding,
-                                       str, pos - 1, pos,
+                                       str, pos, pos + 1,
                                        "surrogates not allowed");
                 goto error;
             }
@@ -6243,28 +6245,30 @@ _PyUnicode_EncodeUTF16(PyObject *str,
             moreunits = repsize = PyUnicode_GET_LENGTH(rep);
             if (!PyUnicode_IS_ASCII(rep)) {
                 raise_encode_exception(&exc, encoding,
-                                       str, pos - 1, pos,
+                                       str, pos, pos + 1,
                                        "surrogates not allowed");
                 goto error;
             }
         }
+        moreunits += pos - newpos;
+        pos = newpos;
 
         /* two bytes are reserved for each surrogate */
-        if (moreunits > 1) {
+        if (moreunits > 0) {
             Py_ssize_t outpos = out - (unsigned short*) PyBytes_AS_STRING(v);
             if (moreunits >= (PY_SSIZE_T_MAX - PyBytes_GET_SIZE(v)) / 2) {
                 /* integer overflow */
                 PyErr_NoMemory();
                 goto error;
             }
-            if (_PyBytes_Resize(&v, PyBytes_GET_SIZE(v) + 2 * (moreunits - 1)) < 0)
+            if (_PyBytes_Resize(&v, PyBytes_GET_SIZE(v) + 2 * moreunits) < 0)
                 goto error;
             out = (unsigned short*) PyBytes_AS_STRING(v) + outpos;
         }
 
         if (PyBytes_Check(rep)) {
             memcpy(out, PyBytes_AS_STRING(rep), repsize);
-            out += moreunits;
+            out += repsize / 2;
         } else /* rep is unicode */ {
             assert(PyUnicode_KIND(rep) == PyUnicode_1BYTE_KIND);
             ucs1lib_utf16_encode(PyUnicode_1BYTE_DATA(rep), repsize,
@@ -7167,8 +7171,19 @@ unicode_encode_ucs1(PyObject *unicode,
                 if (rep == NULL)
                     goto onError;
 
-                /* subtract preallocated bytes */
-                writer.min_size -= newpos - collstart;
+                if (newpos < collstart) {
+                    writer.overallocate = 1;
+                    str = _PyBytesWriter_Prepare(&writer, str,
+                                                 collstart - newpos);
+                    if (str == NULL)
+                        goto onError;
+                }
+                else {
+                    /* subtract preallocated bytes */
+                    writer.min_size -= newpos - collstart;
+                    /* Only overallocate the buffer if it's not the last write */
+                    writer.overallocate = (newpos < size);
+                }
 
                 if (PyBytes_Check(rep)) {
                     /* Directly copy bytes result to output. */
@@ -7944,13 +7959,14 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
                   pos, pos + 1, &newpos);
         if (rep == NULL)
             goto error;
-        pos = newpos;
 
+        Py_ssize_t morebytes = pos - newpos;
         if (PyBytes_Check(rep)) {
             outsize = PyBytes_GET_SIZE(rep);
-            if (outsize != 1) {
+            morebytes += outsize;
+            if (morebytes > 0) {
                 Py_ssize_t offset = out - PyBytes_AS_STRING(*outbytes);
-                newoutsize = PyBytes_GET_SIZE(*outbytes) + (outsize - 1);
+                newoutsize = PyBytes_GET_SIZE(*outbytes) + morebytes;
                 if (_PyBytes_Resize(outbytes, newoutsize) < 0) {
                     Py_DECREF(rep);
                     goto error;
@@ -7971,9 +7987,10 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
             }
 
             outsize = PyUnicode_GET_LENGTH(rep);
-            if (outsize != 1) {
+            morebytes += outsize;
+            if (morebytes > 0) {
                 Py_ssize_t offset = out - PyBytes_AS_STRING(*outbytes);
-                newoutsize = PyBytes_GET_SIZE(*outbytes) + (outsize - 1);
+                newoutsize = PyBytes_GET_SIZE(*outbytes) + morebytes;
                 if (_PyBytes_Resize(outbytes, newoutsize) < 0) {
                     Py_DECREF(rep);
                     goto error;
@@ -7996,6 +8013,7 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
                 out++;
             }
         }
+        pos = newpos;
         Py_DECREF(rep);
     }
     /* write a NUL byte */
@@ -14196,7 +14214,7 @@ static PyMethodDef unicode_methods[] = {
     UNICODE_ISIDENTIFIER_METHODDEF
     UNICODE_ISPRINTABLE_METHODDEF
     UNICODE_ZFILL_METHODDEF
-    {"format", (PyCFunction)(void(*)(void)) do_string_format, METH_VARARGS | METH_KEYWORDS, format__doc__},
+    {"format", _PyCFunction_CAST(do_string_format), METH_VARARGS | METH_KEYWORDS, format__doc__},
     {"format_map", (PyCFunction) do_string_format_map, METH_O, format_map__doc__},
     UNICODE___FORMAT___METHODDEF
     UNICODE_MAKETRANS_METHODDEF

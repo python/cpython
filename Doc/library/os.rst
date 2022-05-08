@@ -177,8 +177,8 @@ process and user.
 
    This mapping is captured the first time the :mod:`os` module is imported,
    typically during Python startup as part of processing :file:`site.py`.  Changes
-   to the environment made after this time are not reflected in ``os.environ``,
-   except for changes made by modifying ``os.environ`` directly.
+   to the environment made after this time are not reflected in :data:`os.environ`,
+   except for changes made by modifying :data:`os.environ` directly.
 
    This mapping may be used to modify the environment as well as query the
    environment.  :func:`putenv` will be called automatically when the mapping
@@ -190,8 +190,8 @@ process and user.
 
    .. note::
 
-      Calling :func:`putenv` directly does not change ``os.environ``, so it's better
-      to modify ``os.environ``.
+      Calling :func:`putenv` directly does not change :data:`os.environ`, so it's better
+      to modify :data:`os.environ`.
 
    .. note::
 
@@ -201,7 +201,7 @@ process and user.
 
    You can delete items in this mapping to unset environment variables.
    :func:`unsetenv` will be called automatically when an item is deleted from
-   ``os.environ``, and when one of the :meth:`pop` or :meth:`clear` methods is
+   :data:`os.environ`, and when one of the :meth:`pop` or :meth:`clear` methods is
    called.
 
    .. versionchanged:: 3.9
@@ -292,7 +292,10 @@ process and user.
 .. function:: getenv(key, default=None)
 
    Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't. *key*, *default* and the result are str.
+   *default* if it doesn't. *key*, *default* and the result are str. Note that
+   since :func:`getenv` uses :data:`os.environ`, the mapping of :func:`getenv` is
+   similarly also captured on import, and the function may not reflect
+   future environment changes.
 
    On Unix, keys and values are decoded with :func:`sys.getfilesystemencoding`
    and ``'surrogateescape'`` error handler. Use :func:`os.getenvb` if you
@@ -304,7 +307,11 @@ process and user.
 .. function:: getenvb(key, default=None)
 
    Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't. *key*, *default* and the result are bytes.
+   *default* if it doesn't. *key*, *default* and the result are bytes. Note that
+   since :func:`getenvb` uses :data:`os.environb`, the mapping of :func:`getenvb` is
+   similarly also captured on import, and the function may not reflect
+   future environment changes.
+
 
    :func:`getenvb` is only available if :data:`supports_bytes_environ`
    is ``True``.
@@ -511,10 +518,11 @@ process and user.
    changes to the environment affect subprocesses started with :func:`os.system`,
    :func:`popen` or :func:`fork` and :func:`execv`.
 
-   Assignments to items in ``os.environ`` are automatically translated into
+   Assignments to items in :data:`os.environ` are automatically translated into
    corresponding calls to :func:`putenv`; however, calls to :func:`putenv`
-   don't update ``os.environ``, so it is actually preferable to assign to items
-   of ``os.environ``.
+   don't update :data:`os.environ`, so it is actually preferable to assign to items
+   of :data:`os.environ`. This also applies to :func:`getenv` and :func:`getenvb`, which
+   respectively use :data:`os.environ` and :data:`os.environb` in their implementations.
 
    .. note::
 
@@ -713,10 +721,10 @@ process and user.
    environment affect subprocesses started with :func:`os.system`, :func:`popen` or
    :func:`fork` and :func:`execv`.
 
-   Deletion of items in ``os.environ`` is automatically translated into a
+   Deletion of items in :data:`os.environ` is automatically translated into a
    corresponding call to :func:`unsetenv`; however, calls to :func:`unsetenv`
-   don't update ``os.environ``, so it is actually preferable to delete items of
-   ``os.environ``.
+   don't update :data:`os.environ`, so it is actually preferable to delete items of
+   :data:`os.environ`.
 
    .. audit-event:: os.unsetenv key os.unsetenv
 
@@ -990,6 +998,17 @@ as internal buffering of data.
    .. availability:: Unix.
 
    .. versionadded:: 3.3
+
+
+.. function:: login_tty(fd)
+
+   Prepare the tty of which fd is a file descriptor for a new login session.
+   Make the calling process a session leader; make the tty the controlling tty,
+   the stdin, the stdout, and the stderr of the calling process; close fd.
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.11
 
 
 .. function:: lseek(fd, pos, how)
@@ -3897,12 +3916,13 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Unix.
 
 
-.. function:: popen(cmd, mode='r', buffering=-1)
+.. function:: popen(cmd, mode='r', buffering=-1, encoding=None)
 
    Open a pipe to or from command *cmd*.
    The return value is an open file object
    connected to the pipe, which can be read or written depending on whether *mode*
-   is ``'r'`` (default) or ``'w'``. The *buffering* argument has the same meaning as
+   is ``'r'`` (default) or ``'w'``.
+   The *buffering* and *encoding* arguments have the same meaning as
    the corresponding argument to the built-in :func:`open` function. The
    returned file object reads or writes text strings rather than bytes.
 
@@ -3924,6 +3944,9 @@ written in Python, such as a mail server's external command delivery program.
    This is implemented using :class:`subprocess.Popen`; see that class's
    documentation for more powerful ways to manage and communicate with
    subprocesses.
+
+   .. versionchanged:: 3.11
+      Added the *encoding* parameter.
 
 
 .. function:: posix_spawn(path, argv, env, *, file_actions=None, \
