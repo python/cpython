@@ -29,8 +29,8 @@ class BaseTransport:
 
         Buffered data will be flushed asynchronously.  No more data
         will be received.  After all buffered data is flushed, the
-        protocol's connection_lost() method will (eventually) called
-        with None as its argument.
+        protocol's connection_lost() method will (eventually) be
+        called with None as its argument.
         """
         raise NotImplementedError
 
@@ -97,6 +97,12 @@ class WriteTransport(BaseTransport):
 
     def get_write_buffer_size(self):
         """Return the current size of the write buffer."""
+        raise NotImplementedError
+
+    def get_write_buffer_limits(self):
+        """Get the high and low watermarks for write flow control.
+        Return a tuple (low, high) where low and high are
+        positive number of bytes."""
         raise NotImplementedError
 
     def write(self, data):

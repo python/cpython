@@ -1,2 +1,0 @@
-:class:`_pyio.IOBase` destructor now does nothing if getting the ``closed``
-attribute fails to better mimick :class:`_io.IOBase` finalizer.

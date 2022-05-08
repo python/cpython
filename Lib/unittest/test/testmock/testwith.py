@@ -130,8 +130,8 @@ class WithTest(unittest.TestCase):
 
         c = C()
 
-        with patch.object(c, 'f', autospec=True) as patch1:
-            with patch.object(c, 'f', autospec=True) as patch2:
+        with patch.object(c, 'f') as patch1:
+            with patch.object(c, 'f') as patch2:
                 c.f()
             self.assertEqual(patch2.call_count, 1)
             self.assertEqual(patch1.call_count, 0)

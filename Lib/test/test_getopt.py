@@ -1,7 +1,8 @@
 # test_getopt.py
 # David Goodger <dgoodger@bigfoot.com> 2000-08-19
 
-from test.support import verbose, run_doctest, EnvironmentVarGuard
+from test.support import verbose, run_doctest
+from test.support.os_helper import EnvironmentVarGuard
 import unittest
 
 import getopt
@@ -10,13 +11,9 @@ sentinel = object()
 
 class GetoptTests(unittest.TestCase):
     def setUp(self):
-        self.env = EnvironmentVarGuard()
+        self.env = self.enterContext(EnvironmentVarGuard())
         if "POSIXLY_CORRECT" in self.env:
             del self.env["POSIXLY_CORRECT"]
-
-    def tearDown(self):
-        self.env.__exit__()
-        del self.env
 
     def assertError(self, *args, **kwargs):
         self.assertRaises(getopt.GetoptError, *args, **kwargs)

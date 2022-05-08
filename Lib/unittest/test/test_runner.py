@@ -3,6 +3,7 @@ import os
 import sys
 import pickle
 import subprocess
+from test import support
 
 import unittest
 from unittest.case import _Outcome
@@ -45,6 +46,29 @@ def cleanup(ordering, blowUp=False):
         raise Exception('CleanUpExc')
 
 
+class TestCM:
+    def __init__(self, ordering, enter_result=None):
+        self.ordering = ordering
+        self.enter_result = enter_result
+
+    def __enter__(self):
+        self.ordering.append('enter')
+        return self.enter_result
+
+    def __exit__(self, *exc_info):
+        self.ordering.append('exit')
+
+
+class LacksEnterAndExit:
+    pass
+class LacksEnter:
+    def __exit__(self, *exc_info):
+        pass
+class LacksExit:
+    def __enter__(self):
+        pass
+
+
 class TestCleanUp(unittest.TestCase):
     def testCleanUp(self):
         class TestableTest(unittest.TestCase):
@@ -78,7 +102,8 @@ class TestCleanUp(unittest.TestCase):
                 pass
 
         test = TestableTest('testNothing')
-        outcome = test._outcome = _Outcome()
+        result = unittest.TestResult()
+        outcome = test._outcome = _Outcome(result=result)
 
         CleanUpExc = Exception('foo')
         exc2 = Exception('bar')
@@ -94,10 +119,13 @@ class TestCleanUp(unittest.TestCase):
         self.assertFalse(test.doCleanups())
         self.assertFalse(outcome.success)
 
-        ((_, (Type1, instance1, _)),
-         (_, (Type2, instance2, _))) = reversed(outcome.errors)
-        self.assertEqual((Type1, instance1), (Exception, CleanUpExc))
-        self.assertEqual((Type2, instance2), (Exception, exc2))
+        (_, msg2), (_, msg1) = result.errors
+        self.assertIn('in cleanup1', msg1)
+        self.assertIn('raise CleanUpExc', msg1)
+        self.assertIn('Exception: foo', msg1)
+        self.assertIn('in cleanup2', msg2)
+        self.assertIn('raise exc2', msg2)
+        self.assertIn('Exception: bar', msg2)
 
     def testCleanupInRun(self):
         blowUp = False
@@ -168,6 +196,39 @@ class TestCleanUp(unittest.TestCase):
         self.assertEqual(ordering, ['setUp', 'test', 'tearDown', 'cleanup1', 'cleanup2'])
 
 
+    def test_enterContext(self):
+        class TestableTest(unittest.TestCase):
+            def testNothing(self):
+                pass
+
+        test = TestableTest('testNothing')
+        cleanups = []
+
+        test.addCleanup(cleanups.append, 'cleanup1')
+        cm = TestCM(cleanups, 42)
+        self.assertEqual(test.enterContext(cm), 42)
+        test.addCleanup(cleanups.append, 'cleanup2')
+
+        self.assertTrue(test.doCleanups())
+        self.assertEqual(cleanups, ['enter', 'cleanup2', 'exit', 'cleanup1'])
+
+    def test_enterContext_arg_errors(self):
+        class TestableTest(unittest.TestCase):
+            def testNothing(self):
+                pass
+
+        test = TestableTest('testNothing')
+
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            test.enterContext(LacksEnterAndExit())
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            test.enterContext(LacksEnter())
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            test.enterContext(LacksExit())
+
+        self.assertEqual(test._cleanups, [])
+
+
 class TestClassCleanup(unittest.TestCase):
     def test_addClassCleanUp(self):
         class TestableTest(unittest.TestCase):
@@ -222,14 +283,42 @@ class TestClassCleanup(unittest.TestCase):
         self.assertEqual(ordering,
                          ['setUpClass', 'test', 'tearDownClass', 'cleanup_good'])
 
-    def test_debug_executes_classCleanUp(self):
+    def test_run_class_cleanUp_without_tearDownClass(self):
         ordering = []
+        blowUp = True
 
         class TestableTest(unittest.TestCase):
             @classmethod
             def setUpClass(cls):
                 ordering.append('setUpClass')
                 cls.addClassCleanup(cleanup, ordering)
+                if blowUp:
+                    raise Exception()
+            def testNothing(self):
+                ordering.append('test')
+            @classmethod
+            @property
+            def tearDownClass(cls):
+                raise AttributeError
+
+        runTests(TestableTest)
+        self.assertEqual(ordering, ['setUpClass', 'cleanup_good'])
+
+        ordering = []
+        blowUp = False
+        runTests(TestableTest)
+        self.assertEqual(ordering,
+                         ['setUpClass', 'test', 'cleanup_good'])
+
+    def test_debug_executes_classCleanUp(self):
+        ordering = []
+        blowUp = False
+
+        class TestableTest(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                ordering.append('setUpClass')
+                cls.addClassCleanup(cleanup, ordering, blowUp=blowUp)
             def testNothing(self):
                 ordering.append('test')
             @classmethod
@@ -240,6 +329,48 @@ class TestClassCleanup(unittest.TestCase):
         suite.debug()
         self.assertEqual(ordering,
                          ['setUpClass', 'test', 'tearDownClass', 'cleanup_good'])
+
+        ordering = []
+        blowUp = True
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestableTest)
+        with self.assertRaises(Exception) as cm:
+            suite.debug()
+        self.assertEqual(str(cm.exception), 'CleanUpExc')
+        self.assertEqual(ordering,
+                         ['setUpClass', 'test', 'tearDownClass', 'cleanup_exc'])
+
+    def test_debug_executes_classCleanUp_when_teardown_exception(self):
+        ordering = []
+        blowUp = False
+
+        class TestableTest(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                ordering.append('setUpClass')
+                cls.addClassCleanup(cleanup, ordering, blowUp=blowUp)
+            def testNothing(self):
+                ordering.append('test')
+            @classmethod
+            def tearDownClass(cls):
+                raise Exception('TearDownClassExc')
+
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestableTest)
+        with self.assertRaises(Exception) as cm:
+            suite.debug()
+        self.assertEqual(str(cm.exception), 'TearDownClassExc')
+        self.assertEqual(ordering, ['setUpClass', 'test'])
+        self.assertTrue(TestableTest._class_cleanups)
+        TestableTest._class_cleanups.clear()
+
+        ordering = []
+        blowUp = True
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestableTest)
+        with self.assertRaises(Exception) as cm:
+            suite.debug()
+        self.assertEqual(str(cm.exception), 'TearDownClassExc')
+        self.assertEqual(ordering, ['setUpClass', 'test'])
+        self.assertTrue(TestableTest._class_cleanups)
+        TestableTest._class_cleanups.clear()
 
     def test_doClassCleanups_with_errors_addClassCleanUp(self):
         class TestableTest(unittest.TestCase):
@@ -332,6 +463,7 @@ class TestClassCleanup(unittest.TestCase):
         self.assertEqual(ordering,
                          ['setUpClass', 'setUp', 'test',
                           'tearDownClass', 'cleanup_exc'])
+
         ordering = []
         class_blow_up = True
         method_blow_up = False
@@ -354,6 +486,55 @@ class TestClassCleanup(unittest.TestCase):
         self.assertEqual(ordering,
                          ['setUpClass', 'setUp', 'tearDownClass',
                           'cleanup_exc'])
+
+    def test_with_errors_in_tearDownClass(self):
+        ordering = []
+        class TestableTest(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                ordering.append('setUpClass')
+                cls.addClassCleanup(cleanup, ordering)
+            def testNothing(self):
+                ordering.append('test')
+            @classmethod
+            def tearDownClass(cls):
+                ordering.append('tearDownClass')
+                raise Exception('TearDownExc')
+
+        result = runTests(TestableTest)
+        self.assertEqual(result.errors[0][1].splitlines()[-1],
+                         'Exception: TearDownExc')
+        self.assertEqual(ordering,
+                         ['setUpClass', 'test', 'tearDownClass', 'cleanup_good'])
+
+    def test_enterClassContext(self):
+        class TestableTest(unittest.TestCase):
+            def testNothing(self):
+                pass
+
+        cleanups = []
+
+        TestableTest.addClassCleanup(cleanups.append, 'cleanup1')
+        cm = TestCM(cleanups, 42)
+        self.assertEqual(TestableTest.enterClassContext(cm), 42)
+        TestableTest.addClassCleanup(cleanups.append, 'cleanup2')
+
+        TestableTest.doClassCleanups()
+        self.assertEqual(cleanups, ['enter', 'cleanup2', 'exit', 'cleanup1'])
+
+    def test_enterClassContext_arg_errors(self):
+        class TestableTest(unittest.TestCase):
+            def testNothing(self):
+                pass
+
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            TestableTest.enterClassContext(LacksEnterAndExit())
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            TestableTest.enterClassContext(LacksEnter())
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            TestableTest.enterClassContext(LacksExit())
+
+        self.assertEqual(TestableTest._class_cleanups, [])
 
 
 class TestModuleCleanUp(unittest.TestCase):
@@ -532,13 +713,69 @@ class TestModuleCleanUp(unittest.TestCase):
                           'tearDownModule2', 'cleanup_good'])
         self.assertEqual(unittest.case._module_cleanups, [])
 
-    def test_debug_module_executes_cleanUp(self):
+    def test_run_module_cleanUp_without_teardown(self):
         ordering = []
         class Module(object):
             @staticmethod
             def setUpModule():
                 ordering.append('setUpModule')
                 unittest.addModuleCleanup(cleanup, ordering)
+
+        class TestableTest(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                ordering.append('setUpClass')
+            def testNothing(self):
+                ordering.append('test')
+            @classmethod
+            def tearDownClass(cls):
+                ordering.append('tearDownClass')
+
+        TestableTest.__module__ = 'Module'
+        sys.modules['Module'] = Module
+        runTests(TestableTest)
+        self.assertEqual(ordering, ['setUpModule', 'setUpClass', 'test',
+                                    'tearDownClass', 'cleanup_good'])
+        self.assertEqual(unittest.case._module_cleanups, [])
+
+    def test_run_module_cleanUp_when_teardown_exception(self):
+        ordering = []
+        class Module(object):
+            @staticmethod
+            def setUpModule():
+                ordering.append('setUpModule')
+                unittest.addModuleCleanup(cleanup, ordering)
+            @staticmethod
+            def tearDownModule():
+                raise Exception('CleanUpExc')
+
+        class TestableTest(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                ordering.append('setUpClass')
+            def testNothing(self):
+                ordering.append('test')
+            @classmethod
+            def tearDownClass(cls):
+                ordering.append('tearDownClass')
+
+        TestableTest.__module__ = 'Module'
+        sys.modules['Module'] = Module
+        result = runTests(TestableTest)
+        self.assertEqual(result.errors[0][1].splitlines()[-1],
+                         'Exception: CleanUpExc')
+        self.assertEqual(ordering, ['setUpModule', 'setUpClass', 'test',
+                                    'tearDownClass', 'cleanup_good'])
+        self.assertEqual(unittest.case._module_cleanups, [])
+
+    def test_debug_module_executes_cleanUp(self):
+        ordering = []
+        blowUp = False
+        class Module(object):
+            @staticmethod
+            def setUpModule():
+                ordering.append('setUpModule')
+                unittest.addModuleCleanup(cleanup, ordering, blowUp=blowUp)
             @staticmethod
             def tearDownModule():
                 ordering.append('tearDownModule')
@@ -561,6 +798,60 @@ class TestModuleCleanUp(unittest.TestCase):
                          ['setUpModule', 'setUpClass', 'test', 'tearDownClass',
                           'tearDownModule', 'cleanup_good'])
         self.assertEqual(unittest.case._module_cleanups, [])
+
+        ordering = []
+        blowUp = True
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestableTest)
+        with self.assertRaises(Exception) as cm:
+            suite.debug()
+        self.assertEqual(str(cm.exception), 'CleanUpExc')
+        self.assertEqual(ordering, ['setUpModule', 'setUpClass', 'test',
+                                    'tearDownClass', 'tearDownModule', 'cleanup_exc'])
+        self.assertEqual(unittest.case._module_cleanups, [])
+
+    def test_debug_module_cleanUp_when_teardown_exception(self):
+        ordering = []
+        blowUp = False
+        class Module(object):
+            @staticmethod
+            def setUpModule():
+                ordering.append('setUpModule')
+                unittest.addModuleCleanup(cleanup, ordering, blowUp=blowUp)
+            @staticmethod
+            def tearDownModule():
+                raise Exception('TearDownModuleExc')
+
+        class TestableTest(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                ordering.append('setUpClass')
+            def testNothing(self):
+                ordering.append('test')
+            @classmethod
+            def tearDownClass(cls):
+                ordering.append('tearDownClass')
+
+        TestableTest.__module__ = 'Module'
+        sys.modules['Module'] = Module
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestableTest)
+        with self.assertRaises(Exception) as cm:
+            suite.debug()
+        self.assertEqual(str(cm.exception), 'TearDownModuleExc')
+        self.assertEqual(ordering, ['setUpModule', 'setUpClass', 'test',
+                                    'tearDownClass'])
+        self.assertTrue(unittest.case._module_cleanups)
+        unittest.case._module_cleanups.clear()
+
+        ordering = []
+        blowUp = True
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestableTest)
+        with self.assertRaises(Exception) as cm:
+            suite.debug()
+        self.assertEqual(str(cm.exception), 'TearDownModuleExc')
+        self.assertEqual(ordering, ['setUpModule', 'setUpClass', 'test',
+                                    'tearDownClass'])
+        self.assertTrue(unittest.case._module_cleanups)
+        unittest.case._module_cleanups.clear()
 
     def test_addClassCleanup_arg_errors(self):
         cleanups = []
@@ -717,9 +1008,9 @@ class TestModuleCleanUp(unittest.TestCase):
         method_blow_up = False
         result = runTests(TestableTest)
         self.assertEqual(result.errors[0][1].splitlines()[-1],
-                         'Exception: CleanUpExc')
-        self.assertEqual(result.errors[1][1].splitlines()[-1],
                          'Exception: ModuleExc')
+        self.assertEqual(result.errors[1][1].splitlines()[-1],
+                         'Exception: CleanUpExc')
         self.assertEqual(ordering, ['setUpModule', 'cleanup_exc'])
 
         ordering = []
@@ -793,6 +1084,31 @@ class TestModuleCleanUp(unittest.TestCase):
                          ['setUpModule', 'setUp', 'test', 'tearDown',
                           'cleanup2',  'setUp2', 'test2', 'tearDown2',
                           'cleanup3', 'tearDownModule', 'cleanup1'])
+
+    def test_enterModuleContext(self):
+        cleanups = []
+
+        unittest.addModuleCleanup(cleanups.append, 'cleanup1')
+        cm = TestCM(cleanups, 42)
+        self.assertEqual(unittest.enterModuleContext(cm), 42)
+        unittest.addModuleCleanup(cleanups.append, 'cleanup2')
+
+        unittest.case.doModuleCleanups()
+        self.assertEqual(cleanups, ['enter', 'cleanup2', 'exit', 'cleanup1'])
+
+    def test_enterModuleContext_arg_errors(self):
+        class TestableTest(unittest.TestCase):
+            def testNothing(self):
+                pass
+
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            unittest.enterModuleContext(LacksEnterAndExit())
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            unittest.enterModuleContext(LacksEnter())
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            unittest.enterModuleContext(LacksExit())
+
+        self.assertEqual(unittest.case._module_cleanups, [])
 
 
 class Test_TextTestRunner(unittest.TestCase):
@@ -934,6 +1250,7 @@ class Test_TextTestRunner(unittest.TestCase):
         expectedresult = (runner.stream, DESCRIPTIONS, VERBOSITY)
         self.assertEqual(runner._makeResult(), expectedresult)
 
+    @support.requires_subprocess()
     def test_warnings(self):
         """
         Check that warnings argument of TextTestRunner correctly affects the

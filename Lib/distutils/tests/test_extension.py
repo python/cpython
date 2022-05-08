@@ -3,7 +3,8 @@ import unittest
 import os
 import warnings
 
-from test.support import check_warnings, run_unittest
+from test.support import run_unittest
+from test.support.warnings_helper import check_warnings
 from distutils.extension import read_setup_file, Extension
 
 class ExtensionTestCase(unittest.TestCase):
@@ -63,7 +64,7 @@ class ExtensionTestCase(unittest.TestCase):
                           "Unknown Extension options: 'chic'")
 
 def test_suite():
-    return unittest.makeSuite(ExtensionTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(ExtensionTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

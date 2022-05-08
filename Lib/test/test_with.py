@@ -7,7 +7,7 @@ __email__ = "mbland at acm dot org"
 import sys
 import unittest
 from collections import deque
-from contextlib import _GeneratorContextManager, contextmanager
+from contextlib import _GeneratorContextManager, contextmanager, nullcontext
 
 
 class MockContextManager(_GeneratorContextManager):
@@ -117,7 +117,7 @@ class FailureTestCase(unittest.TestCase):
         def fooLacksEnter():
             foo = LacksEnter()
             with foo: pass
-        self.assertRaisesRegex(AttributeError, '__enter__', fooLacksEnter)
+        self.assertRaisesRegex(TypeError, 'the context manager', fooLacksEnter)
 
     def testEnterAttributeError2(self):
         class LacksEnterAndExit(object):
@@ -126,7 +126,7 @@ class FailureTestCase(unittest.TestCase):
         def fooLacksEnterAndExit():
             foo = LacksEnterAndExit()
             with foo: pass
-        self.assertRaisesRegex(AttributeError, '__enter__', fooLacksEnterAndExit)
+        self.assertRaisesRegex(TypeError, 'the context manager', fooLacksEnterAndExit)
 
     def testExitAttributeError(self):
         class LacksExit(object):
@@ -136,7 +136,7 @@ class FailureTestCase(unittest.TestCase):
         def fooLacksExit():
             foo = LacksExit()
             with foo: pass
-        self.assertRaisesRegex(AttributeError, '__exit__', fooLacksExit)
+        self.assertRaisesRegex(TypeError, 'the context manager.*__exit__', fooLacksExit)
 
     def assertRaisesSyntaxError(self, codestr):
         def shouldRaiseSyntaxError(s):
@@ -640,6 +640,12 @@ class AssignmentTargetTestCase(unittest.TestCase):
             self.assertEqual(blah.one, 1)
             self.assertEqual(blah.two, 2)
             self.assertEqual(blah.three, 3)
+
+    def testWithExtendedTargets(self):
+        with nullcontext(range(1, 5)) as (a, *b, c):
+            self.assertEqual(a, 1)
+            self.assertEqual(b, [2, 3])
+            self.assertEqual(c, 4)
 
 
 class ExitSwallowsExceptionTestCase(unittest.TestCase):
