@@ -51,7 +51,8 @@ and work with streams:
 .. coroutinefunction:: open_connection(host=None, port=None, *, \
                           limit=None, ssl=None, family=0, proto=0, \
                           flags=0, sock=None, local_addr=None, \
-                          server_hostname=None, ssl_handshake_timeout=None)
+                          server_hostname=None, ssl_handshake_timeout=None, \
+                          happy_eyeballs_delay=None, interleave=None)
 
    Establish a network connection and return a pair of
    ``(reader, writer)`` objects.
@@ -68,6 +69,9 @@ and work with streams:
 
    .. versionchanged:: 3.7
       Added the *ssl_handshake_timeout* parameter.
+
+   .. versionadded:: 3.8
+      Added *happy_eyeballs_delay* and *interleave* parameters.
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
@@ -290,6 +294,24 @@ StreamWriter
       buffer is drained down to the low watermark and writing can
       be resumed.  When there is nothing to wait for, the :meth:`drain`
       returns immediately.
+
+   .. coroutinemethod:: start_tls(sslcontext, \*, server_hostname=None, \
+                          ssl_handshake_timeout=None)
+
+      Upgrade an existing stream-based connection to TLS.
+
+      Parameters:
+
+      * *sslcontext*: a configured instance of :class:`~ssl.SSLContext`.
+
+      * *server_hostname*: sets or overrides the host name that the target
+        server's certificate will be matched against.
+
+      * *ssl_handshake_timeout* is the time in seconds to wait for the TLS
+        handshake to complete before aborting the connection.  ``60.0`` seconds
+        if ``None`` (default).
+
+      .. versionadded:: 3.11
 
    .. method:: is_closing()
 

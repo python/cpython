@@ -9,10 +9,15 @@
 //// STRING HANDLING FUNCTIONS ////
 
 static int
-warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char, Token *t)
+warn_invalid_escape_sequence(Parser *p, const char *first_invalid_escape, Token *t)
 {
+    unsigned char c = *first_invalid_escape;
+    int octal = ('4' <= c && c <= '7');
     PyObject *msg =
-        PyUnicode_FromFormat("invalid escape sequence '\\%c'", first_invalid_escape_char);
+        octal
+        ? PyUnicode_FromFormat("invalid octal escape sequence '\\%.3s'",
+                               first_invalid_escape)
+        : PyUnicode_FromFormat("invalid escape sequence '\\%c'", c);
     if (msg == NULL) {
         return -1;
     }
@@ -27,7 +32,13 @@ warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char,
                since _PyPegen_raise_error uses p->tokens[p->fill - 1] for the
                error location, if p->known_err_token is not set. */
             p->known_err_token = t;
-            RAISE_SYNTAX_ERROR("invalid escape sequence '\\%c'", first_invalid_escape_char);
+            if (octal) {
+                RAISE_SYNTAX_ERROR("invalid octal escape sequence '\\%.3s'",
+                                   first_invalid_escape);
+            }
+            else {
+                RAISE_SYNTAX_ERROR("invalid escape sequence '\\%c'", c);
+            }
         }
         Py_DECREF(msg);
         return -1;
@@ -118,7 +129,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
     v = _PyUnicode_DecodeUnicodeEscapeInternal(s, len, NULL, NULL, &first_invalid_escape);
 
     if (v != NULL && first_invalid_escape != NULL) {
-        if (warn_invalid_escape_sequence(parser, *first_invalid_escape, t) < 0) {
+        if (warn_invalid_escape_sequence(parser, first_invalid_escape, t) < 0) {
             /* We have not decref u before because first_invalid_escape points
                inside u. */
             Py_XDECREF(u);
@@ -140,7 +151,7 @@ decode_bytes_with_escapes(Parser *p, const char *s, Py_ssize_t len, Token *t)
     }
 
     if (first_invalid_escape != NULL) {
-        if (warn_invalid_escape_sequence(p, *first_invalid_escape, t) < 0) {
+        if (warn_invalid_escape_sequence(p, first_invalid_escape, t) < 0) {
             Py_DECREF(result);
             return NULL;
         }
@@ -357,7 +368,12 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
             break;
         }
     }
+
     if (s == expr_end) {
+        if (*expr_end == '!' || *expr_end == ':' || *expr_end == '=') {
+            RAISE_SYNTAX_ERROR("f-string: expression required before '%c'", *expr_end);
+            return NULL;
+        }
         RAISE_SYNTAX_ERROR("f-string: empty expression not allowed");
         return NULL;
     }
@@ -460,7 +476,7 @@ fstring_find_literal(Parser *p, const char **str, const char *end, int raw,
                    decode_unicode_with_escapes(). */
                 continue;
             }
-            if (ch == '{' && warn_invalid_escape_sequence(p, ch, t) < 0) {
+            if (ch == '{' && warn_invalid_escape_sequence(p, s-1, t) < 0) {
                 return -1;
             }
         }

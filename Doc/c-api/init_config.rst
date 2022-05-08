@@ -16,12 +16,12 @@ There are two kinds of configuration:
 
 * The :ref:`Python Configuration <init-python-config>` can be used to build a
   customized Python which behaves as the regular Python. For example,
-  environments variables and command line arguments are used to configure
+  environment variables and command line arguments are used to configure
   Python.
 
 * The :ref:`Isolated Configuration <init-isolated-conf>` can be used to embed
   Python into an application. It isolates Python from the system. For example,
-  environments variables are ignored, the LC_CTYPE locale is left unchanged and
+  environment variables are ignored, the LC_CTYPE locale is left unchanged and
   no signal handler is registered.
 
 The :c:func:`Py_RunMain` function can be used to write a customized Python
@@ -543,6 +543,25 @@ PyConfig
 
       See also the :c:member:`~PyConfig.orig_argv` member.
 
+   .. c:member:: int safe_path
+
+      If equals to zero, ``Py_RunMain()`` prepends a potentially unsafe path to
+      :data:`sys.path` at startup:
+
+      * If :c:member:`argv[0] <PyConfig.argv>` is equal to ``L"-m"``
+        (``python -m module``), prepend the current working directory.
+      * If running a script (``python script.py``), prepend the script's
+        directory.  If it's a symbolic link, resolve symbolic links.
+      * Otherwise (``python -c code`` and ``python``), prepend an empty string,
+        which means the current working directory.
+
+      Set to 1 by the :option:`-P` command line option and the
+      :envvar:`PYTHONSAFEPATH` environment variable.
+
+      Default: ``0`` in Python config, ``1`` in isolated config.
+
+      .. versionadded:: 3.11
+
    .. c:member:: wchar_t* base_exec_prefix
 
       :data:`sys.base_exec_prefix`.
@@ -809,13 +828,14 @@ PyConfig
 
       If greater than 0, enable isolated mode:
 
-      * :data:`sys.path` contains neither the script's directory (computed from
-        ``argv[0]`` or the current directory) nor the user's site-packages
-        directory.
+      * Set :c:member:`~PyConfig.safe_path` to 1:
+        don't prepend a potentially unsafe path to :data:`sys.path` at Python
+        startup.
+      * Set :c:member:`~PyConfig.use_environment` to 0.
+      * Set :c:member:`~PyConfig.user_site_directory` to 0: don't add the user
+        site directory to :data:`sys.path`.
       * Python REPL doesn't import :mod:`readline` nor enable default readline
         configuration on interactive prompts.
-      * Set :c:member:`~PyConfig.use_environment` and
-        :c:member:`~PyConfig.user_site_directory` to 0.
 
       Default: ``0`` in Python mode, ``1`` in isolated mode.
 
@@ -1029,12 +1049,13 @@ PyConfig
    .. c:member:: wchar_t* run_filename
 
       Filename passed on the command line: trailing command line argument
-      without :option:`-c` or :option:`-m`.
+      without :option:`-c` or :option:`-m`. It is used by the
+      :c:func:`Py_RunMain` function.
 
       For example, it is set to ``script.py`` by the ``python3 script.py arg``
-      command.
+      command line.
 
-      Used by :c:func:`Py_RunMain`.
+      See also the :c:member:`PyConfig.skip_source_first_line` option.
 
       Default: ``NULL``.
 
@@ -1316,7 +1337,7 @@ Isolated Configuration
 isolate Python from the system. For example, to embed Python into an
 application.
 
-This configuration ignores global configuration variables, environments
+This configuration ignores global configuration variables, environment
 variables, command line arguments (:c:member:`PyConfig.argv` is not parsed)
 and user site directory. The C standard streams (ex: ``stdout``) and the
 LC_CTYPE locale are left unchanged. Signal handlers are not installed.
@@ -1419,8 +1440,15 @@ site-package directory to :data:`sys.path`.
 The following configuration files are used by the path configuration:
 
 * ``pyvenv.cfg``
-* ``python._pth`` (Windows only)
+* ``._pth`` file (ex: ``python._pth``)
 * ``pybuilddir.txt`` (Unix only)
+
+If a ``._pth`` file is present:
+
+* Set :c:member:`~PyConfig.isolated` to 1.
+* Set :c:member:`~PyConfig.use_environment` to 0.
+* Set :c:member:`~PyConfig.site_import` to 0.
+* Set :c:member:`~PyConfig.safe_path` to 1.
 
 The ``__PYVENV_LAUNCHER__`` environment variable is used to set
 :c:member:`PyConfig.base_executable`
@@ -1460,7 +1488,7 @@ Multi-Phase Initialization Private Provisional API
 ==================================================
 
 This section is a private provisional API introducing multi-phase
-initialization, the core feature of the :pep:`432`:
+initialization, the core feature of :pep:`432`:
 
 * "Core" initialization phase, "bare minimum Python":
 

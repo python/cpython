@@ -19,6 +19,8 @@ from test.support.import_helper import forget
 from test.support.os_helper import (TESTFN, unlink, rmtree)
 from test.support import script_helper, threading_helper
 
+threading_helper.requires_working_threading(module=True)
+
 def task(N, done, done_tasks, errors):
     try:
         # We don't use modulefinder but still import it in order to stress

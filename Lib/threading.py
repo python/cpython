@@ -481,8 +481,7 @@ class Semaphore:
             raise ValueError('n must be one or more')
         with self._cond:
             self._value += n
-            for i in range(n):
-                self._cond.notify()
+            self._cond.notify(n)
 
     def __exit__(self, t, v, tb):
         self.release()
@@ -506,7 +505,7 @@ class BoundedSemaphore(Semaphore):
     """
 
     def __init__(self, value=1):
-        Semaphore.__init__(self, value)
+        super().__init__(value)
         self._initial_value = value
 
     def __repr__(self):
@@ -530,8 +529,7 @@ class BoundedSemaphore(Semaphore):
             if self._value + n > self._initial_value:
                 raise ValueError("Semaphore released too many times")
             self._value += n
-            for i in range(n):
-                self._cond.notify()
+            self._cond.notify(n)
 
 
 class Event:
@@ -852,7 +850,7 @@ class Thread:
         *name* is the thread name. By default, a unique name is constructed of
         the form "Thread-N" where N is a small decimal number.
 
-        *args* is the argument tuple for the target invocation. Defaults to ().
+        *args* is a list or tuple of arguments for the target invocation. Defaults to ().
 
         *kwargs* is a dictionary of keyword arguments for the target
         invocation. Defaults to {}.

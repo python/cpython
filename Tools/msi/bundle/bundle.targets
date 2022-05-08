@@ -69,7 +69,7 @@
         <Package Include="..\path\path*.wixproj" />
         <Package Include="..\appendpath\appendpath*.wixproj" />
         <Package Include="..\pip\pip*.wixproj" />
-        <Package Include="..\tcltk\tcltk*.wixproj" Condition="$(Platform) != 'ARM64'" />
+        <Package Include="..\tcltk\tcltk*.wixproj" />
         <Package Include="..\test\test*.wixproj" />
         <Package Include="..\tools\tools*.wixproj" />
         <Package Include="..\ucrt\ucrt*.wixproj" Condition="$(Platform) != 'ARM64'" />
