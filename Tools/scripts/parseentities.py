@@ -11,6 +11,8 @@
     Marc-Andre Lemburg, mal@lemburg.com, 1999.
     Use as you like. NO WARRANTIES.
 
+    See parse_html5_entities.py for HTML5 entity definitions.
+
 """
 import re,sys
 
