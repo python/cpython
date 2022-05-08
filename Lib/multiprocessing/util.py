@@ -102,6 +102,29 @@ def log_to_stderr(level=None):
     _log_to_stderr = True
     return _logger
 
+
+# Abstract socket support
+
+def _platform_supports_abstract_sockets():
+    if sys.platform == "linux":
+        return True
+    if hasattr(sys, 'getandroidapilevel'):
+        return True
+    return False
+
+
+def is_abstract_socket_namespace(address):
+    if not address:
+        return False
+    if isinstance(address, bytes):
+        return address[0] == 0
+    elif isinstance(address, str):
+        return address[0] == "\0"
+    raise TypeError(f'address type of {address!r} unrecognized')
+
+
+abstract_sockets_supported = _platform_supports_abstract_sockets()
+
 #
 # Function returning a temp directory which will be removed on exit
 #
@@ -344,13 +367,13 @@ atexit.register(_exit_function)
 
 class ForkAwareThreadLock(object):
     def __init__(self):
-        self._reset()
-        register_after_fork(self, ForkAwareThreadLock._reset)
-
-    def _reset(self):
         self._lock = threading.Lock()
         self.acquire = self._lock.acquire
         self.release = self._lock.release
+        register_after_fork(self, ForkAwareThreadLock._at_fork_reinit)
+
+    def _at_fork_reinit(self):
+        self._lock._at_fork_reinit()
 
     def __enter__(self):
         return self._lock.__enter__()
@@ -396,7 +419,7 @@ def _close_stdin():
     try:
         fd = os.open(os.devnull, os.O_RDONLY)
         try:
-            sys.stdin = open(fd, closefd=False)
+            sys.stdin = open(fd, encoding="utf-8", closefd=False)
         except:
             os.close(fd)
             raise
@@ -423,13 +446,15 @@ def _flush_std_streams():
 
 def spawnv_passfds(path, args, passfds):
     import _posixsubprocess
+    import subprocess
     passfds = tuple(sorted(map(int, passfds)))
     errpipe_read, errpipe_write = os.pipe()
     try:
         return _posixsubprocess.fork_exec(
-            args, [os.fsencode(path)], True, passfds, None, None,
+            args, [path], True, passfds, None, None,
             -1, -1, -1, -1, -1, -1, errpipe_read, errpipe_write,
-            False, False, None, None, None, -1, None)
+            False, False, -1, None, None, None, -1, None,
+            subprocess._USE_VFORK)
     finally:
         os.close(errpipe_read)
         os.close(errpipe_write)
@@ -439,3 +464,28 @@ def close_fds(*fds):
     """Close each file descriptor given as an argument"""
     for fd in fds:
         os.close(fd)
+
+
+def _cleanup_tests():
+    """Cleanup multiprocessing resources when multiprocessing tests
+    completed."""
+
+    from test import support
+
+    # cleanup multiprocessing
+    process._cleanup()
+
+    # Stop the ForkServer process if it's running
+    from multiprocessing import forkserver
+    forkserver._forkserver._stop()
+
+    # Stop the ResourceTracker process if it's running
+    from multiprocessing import resource_tracker
+    resource_tracker._resource_tracker._stop()
+
+    # bpo-37421: Explicitly call _run_finalizers() to remove immediately
+    # temporary directories created by multiprocessing.util.get_temp_dir().
+    _run_finalizers()
+    support.gc_collect()
+
+    support.reap_children()

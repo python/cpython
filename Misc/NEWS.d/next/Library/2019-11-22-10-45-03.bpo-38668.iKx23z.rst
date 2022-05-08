@@ -1,5 +1,0 @@
-Calling func:`shutil.copytree` to copy a directory tree from one directory
-to another subdirectory resulted in an endless loop and a RecursionError. A
-fix was added to consume an iterator and create the list of the entries to
-be copied, avoiding the recursion for newly created directories. Patch by
-Bruno P. Kinoshita.

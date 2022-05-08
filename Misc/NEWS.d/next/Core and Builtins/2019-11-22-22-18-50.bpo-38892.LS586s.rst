@@ -1,1 +1,0 @@
-Improve documentation for audit events table and functions.

@@ -1,1 +1,0 @@
-Change :class:`zipfile.ZipExtFile` to raise ``ValueError`` when trying to access the underlying file object after it has been closed. This new behavior is consistent with how accessing closed files is handled in other parts of Python.

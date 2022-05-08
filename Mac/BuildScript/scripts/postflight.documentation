@@ -12,7 +12,9 @@ SHARE_DOCDIR_TO_FWK="../../.."
 # make link in /Applications/Python m.n/ for Finder users
 if [ -d "${APPDIR}" ]; then
     ln -fhs "${FWK_DOCDIR}/index.html" "${APPDIR}/Python Documentation.html"
-    open "${APPDIR}" || true  # open the applications folder
+    if [ "${COMMAND_LINE_INSTALL}" != 1 ]; then
+        open "${APPDIR}" || true  # open the applications folder
+    fi
 fi
 
 # make share/doc link in framework for command line users

@@ -1,1 +1,0 @@
-Added support for multiple ``qop`` values in :class:`urllib.request.AbstractDigestAuthHandler`.

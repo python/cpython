@@ -35,7 +35,7 @@
 
 #---------------------------------------------------------------------
 # Licensed to PSF under a Contributor Agreement.
-# See http://www.python.org/psf/license for licensing details.
+# See https://www.python.org/psf/license for licensing details.
 #
 # ElementTree
 # Copyright (c) 1999-2008 by Fredrik Lundh.  All rights reserved.
@@ -252,7 +252,7 @@ class Element:
         """
         for element in elements:
             self._assert_is_element(element)
-        self._children.extend(elements)
+            self._children.append(element)
 
     def insert(self, index, subelement):
         """Insert *subelement* at position *index*."""
@@ -918,13 +918,9 @@ def _serialize_xml(write, elem, qnames, namespaces,
     if elem.tail:
         write(_escape_cdata(elem.tail))
 
-HTML_EMPTY = ("area", "base", "basefont", "br", "col", "frame", "hr",
-              "img", "input", "isindex", "link", "meta", "param")
-
-try:
-    HTML_EMPTY = set(HTML_EMPTY)
-except NameError:
-    pass
+HTML_EMPTY = {"area", "base", "basefont", "br", "col", "embed", "frame", "hr",
+              "img", "input", "isindex", "link", "meta", "param", "source",
+              "track", "wbr"}
 
 def _serialize_html(write, elem, qnames, namespaces, **kwargs):
     tag = elem.tag
@@ -1057,15 +1053,15 @@ def _escape_attrib(text):
             text = text.replace(">", "&gt;")
         if "\"" in text:
             text = text.replace("\"", "&quot;")
-        # The following business with carriage returns is to satisfy
-        # Section 2.11 of the XML specification, stating that
-        # CR or CR LN should be replaced with just LN
+        # Although section 2.11 of the XML specification states that CR or
+        # CR LN should be replaced with just LN, it applies only to EOLNs
+        # which take part of organizing file into lines. Within attributes,
+        # we are replacing these with entity numbers, so they do not count.
         # http://www.w3.org/TR/REC-xml/#sec-line-ends
-        if "\r\n" in text:
-            text = text.replace("\r\n", "\n")
+        # The current solution, contained in following six lines, was
+        # discussed in issue 17582 and 39011.
         if "\r" in text:
-            text = text.replace("\r", "\n")
-        #The following four lines are issue 17582
+            text = text.replace("\r", "&#13;")
         if "\n" in text:
             text = text.replace("\n", "&#10;")
         if "\t" in text:
@@ -1248,8 +1244,14 @@ def iterparse(source, events=None, parser=None):
     # Use the internal, undocumented _parser argument for now; When the
     # parser argument of iterparse is removed, this can be killed.
     pullparser = XMLPullParser(events=events, _parser=parser)
-    def iterator():
+
+    def iterator(source):
+        close_source = False
         try:
+            if not hasattr(source, "read"):
+                source = open(source, "rb")
+                close_source = True
+            yield None
             while True:
                 yield from pullparser.read_events()
                 # load event buffer
@@ -1265,16 +1267,12 @@ def iterparse(source, events=None, parser=None):
                 source.close()
 
     class IterParseIterator(collections.abc.Iterator):
-        __next__ = iterator().__next__
+        __next__ = iterator(source).__next__
     it = IterParseIterator()
     it.root = None
     del iterator, IterParseIterator
 
-    close_source = False
-    if not hasattr(source, "read"):
-        source = open(source, "rb")
-        close_source = True
-
+    next(it)
     return it
 
 
@@ -1283,7 +1281,7 @@ class XMLPullParser:
     def __init__(self, events=None, *, _parser=None):
         # The _parser argument is for internal use only and must not be relied
         # upon in user code. It will be removed in a future release.
-        # See http://bugs.python.org/issue17741 for more details.
+        # See https://bugs.python.org/issue17741 for more details.
 
         self._events_queue = collections.deque()
         self._parser = _parser or XMLParser(target=TreeBuilder())
@@ -1560,7 +1558,6 @@ class XMLParser:
         # Configure pyexpat: buffering, new-style attribute handling.
         parser.buffer_text = 1
         parser.ordered_attributes = 1
-        parser.specified_attributes = 1
         self._doctype = None
         self.entity = {}
         try:
@@ -1580,7 +1577,6 @@ class XMLParser:
         for event_name in events_to_report:
             if event_name == "start":
                 parser.ordered_attributes = 1
-                parser.specified_attributes = 1
                 def handler(tag, attrib_in, event=event_name, append=append,
                             start=self._start):
                     append((event, start(tag, attrib_in)))
@@ -1875,6 +1871,11 @@ class C14NWriterTarget:
             if u == uri:
                 self._declared_ns_stack[-1].append((uri, prefix))
                 return f'{prefix}:{tag}' if prefix else tag, tag, uri
+
+        if not uri:
+            # As soon as a default namespace is defined,
+            # anything that has no namespace (and thus, no prefix) goes there.
+            return tag, tag, uri
 
         raise ValueError(f'Namespace "{uri}" is not declared in scope')
 

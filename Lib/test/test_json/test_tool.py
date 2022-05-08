@@ -1,12 +1,16 @@
+import errno
 import os
 import sys
 import textwrap
 import unittest
-from subprocess import Popen, PIPE
+import subprocess
+
 from test import support
+from test.support import os_helper
 from test.support.script_helper import assert_python_ok
 
 
+@support.requires_subprocess()
 class TestTool(unittest.TestCase):
     data = """
 
@@ -84,13 +88,12 @@ class TestTool(unittest.TestCase):
 
     def test_stdin_stdout(self):
         args = sys.executable, '-m', 'json.tool'
-        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
-            out, err = proc.communicate(self.data.encode())
-        self.assertEqual(out.splitlines(), self.expect.encode().splitlines())
-        self.assertEqual(err, b'')
+        process = subprocess.run(args, input=self.data, capture_output=True, text=True, check=True)
+        self.assertEqual(process.stdout, self.expect)
+        self.assertEqual(process.stderr, '')
 
     def _create_infile(self, data=None):
-        infile = support.TESTFN
+        infile = os_helper.TESTFN
         with open(infile, "w", encoding="utf-8") as fp:
             self.addCleanup(os.remove, infile)
             fp.write(data or self.data)
@@ -120,10 +123,19 @@ class TestTool(unittest.TestCase):
 
     def test_infile_outfile(self):
         infile = self._create_infile()
-        outfile = support.TESTFN + '.out'
+        outfile = os_helper.TESTFN + '.out'
         rc, out, err = assert_python_ok('-m', 'json.tool', infile, outfile)
         self.addCleanup(os.remove, outfile)
-        with open(outfile, "r") as fp:
+        with open(outfile, "r", encoding="utf-8") as fp:
+            self.assertEqual(fp.read(), self.expect)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+    def test_writing_in_place(self):
+        infile = self._create_infile()
+        rc, out, err = assert_python_ok('-m', 'json.tool', infile, infile)
+        with open(infile, "r", encoding="utf-8") as fp:
             self.assertEqual(fp.read(), self.expect)
         self.assertEqual(rc, 0)
         self.assertEqual(out, b'')
@@ -131,10 +143,9 @@ class TestTool(unittest.TestCase):
 
     def test_jsonlines(self):
         args = sys.executable, '-m', 'json.tool', '--json-lines'
-        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
-            out, err = proc.communicate(self.jsonlines_raw.encode())
-        self.assertEqual(out.splitlines(), self.jsonlines_expect.encode().splitlines())
-        self.assertEqual(err, b'')
+        process = subprocess.run(args, input=self.jsonlines_raw, capture_output=True, text=True, check=True)
+        self.assertEqual(process.stdout, self.jsonlines_expect)
+        self.assertEqual(process.stderr, '')
 
     def test_help_flag(self):
         rc, out, err = assert_python_ok('-m', 'json.tool', '-h')
@@ -151,42 +162,71 @@ class TestTool(unittest.TestCase):
         self.assertEqual(err, b'')
 
     def test_indent(self):
-        json_stdin = b'[1, 2]'
+        input_ = '[1, 2]'
         expect = textwrap.dedent('''\
         [
           1,
           2
         ]
-        ''').encode()
+        ''')
         args = sys.executable, '-m', 'json.tool', '--indent', '2'
-        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
-            json_stdout, err = proc.communicate(json_stdin)
-        self.assertEqual(expect.splitlines(), json_stdout.splitlines())
-        self.assertEqual(err, b'')
+        process = subprocess.run(args, input=input_, capture_output=True, text=True, check=True)
+        self.assertEqual(process.stdout, expect)
+        self.assertEqual(process.stderr, '')
 
     def test_no_indent(self):
-        json_stdin = b'[1,\n2]'
-        expect = b'[1, 2]'
+        input_ = '[1,\n2]'
+        expect = '[1, 2]\n'
         args = sys.executable, '-m', 'json.tool', '--no-indent'
-        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
-            json_stdout, err = proc.communicate(json_stdin)
-        self.assertEqual(expect.splitlines(), json_stdout.splitlines())
-        self.assertEqual(err, b'')
+        process = subprocess.run(args, input=input_, capture_output=True, text=True, check=True)
+        self.assertEqual(process.stdout, expect)
+        self.assertEqual(process.stderr, '')
 
     def test_tab(self):
-        json_stdin = b'[1, 2]'
-        expect = b'[\n\t1,\n\t2\n]\n'
+        input_ = '[1, 2]'
+        expect = '[\n\t1,\n\t2\n]\n'
         args = sys.executable, '-m', 'json.tool', '--tab'
-        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
-            json_stdout, err = proc.communicate(json_stdin)
-        self.assertEqual(expect.splitlines(), json_stdout.splitlines())
-        self.assertEqual(err, b'')
+        process = subprocess.run(args, input=input_, capture_output=True, text=True, check=True)
+        self.assertEqual(process.stdout, expect)
+        self.assertEqual(process.stderr, '')
 
     def test_compact(self):
-        json_stdin = b'[ 1 ,\n 2]'
-        expect = b'[1,2]'
+        input_ = '[ 1 ,\n 2]'
+        expect = '[1,2]\n'
         args = sys.executable, '-m', 'json.tool', '--compact'
-        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
-            json_stdout, err = proc.communicate(json_stdin)
-        self.assertEqual(expect.splitlines(), json_stdout.splitlines())
-        self.assertEqual(err, b'')
+        process = subprocess.run(args, input=input_, capture_output=True, text=True, check=True)
+        self.assertEqual(process.stdout, expect)
+        self.assertEqual(process.stderr, '')
+
+    def test_no_ensure_ascii_flag(self):
+        infile = self._create_infile('{"key":"💩"}')
+        outfile = os_helper.TESTFN + '.out'
+        self.addCleanup(os.remove, outfile)
+        assert_python_ok('-m', 'json.tool', '--no-ensure-ascii', infile, outfile)
+        with open(outfile, "rb") as f:
+            lines = f.read().splitlines()
+        # asserting utf-8 encoded output file
+        expected = [b'{', b'    "key": "\xf0\x9f\x92\xa9"', b"}"]
+        self.assertEqual(lines, expected)
+
+    def test_ensure_ascii_default(self):
+        infile = self._create_infile('{"key":"💩"}')
+        outfile = os_helper.TESTFN + '.out'
+        self.addCleanup(os.remove, outfile)
+        assert_python_ok('-m', 'json.tool', infile, outfile)
+        with open(outfile, "rb") as f:
+            lines = f.read().splitlines()
+        # asserting an ascii encoded output file
+        expected = [b'{', rb'    "key": "\ud83d\udca9"', b"}"]
+        self.assertEqual(lines, expected)
+
+    @unittest.skipIf(sys.platform =="win32", "The test is failed with ValueError on Windows")
+    def test_broken_pipe_error(self):
+        cmd = [sys.executable, '-m', 'json.tool']
+        proc = subprocess.Popen(cmd,
+                                stdout=subprocess.PIPE,
+                                stdin=subprocess.PIPE)
+        # bpo-39828: Closing before json.tool attempts to write into stdout.
+        proc.stdout.close()
+        proc.communicate(b'"{}"')
+        self.assertEqual(proc.returncode, errno.EPIPE)
