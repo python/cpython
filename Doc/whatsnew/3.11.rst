@@ -63,7 +63,7 @@ Summary -- Release highlights
    Brevity is key.
 
 - Python 3.11 is up to 10-60% faster than Python 3.10. On average, we measured a
-  1.22x speedup on the standard benchmark suite. See `Faster CPython`_ for details.
+  1.25x speedup on the standard benchmark suite. See `Faster CPython`_ for details.
 
 .. PEP-sized items next.
 
@@ -840,7 +840,7 @@ Optimizations
 Faster CPython
 ==============
 
-CPython 3.11 is on average `1.22x faster <https://github.com/faster-cpython/ideas/blob/main/main-vs-310.rst>`_
+CPython 3.11 is on average `1.25x faster <https://github.com/faster-cpython/ideas/blob/main/main-vs-310.rst>`_
 than CPython 3.10 when measured with the
 `pyperformance <https://github.com/python/pyperformance>`_ benchmark suite,
 and compiled with GCC on Ubuntu Linux. Depending on your workload, the speedup
@@ -942,7 +942,8 @@ and specialization attempts are not too expensive. This allows specialization
 to adapt to new circumstances.
 
 (PEP written by Mark Shannon, with ideas inspired by Stefan Brunthaler.
-See :pep:`659` for more information.)
+See :pep:`659` for more information. Implementation by Mark Shannon and Brandt
+Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
 
 ..
    If I missed out anyone, please add them.
