@@ -460,7 +460,7 @@ class MiscNews(Directive):
         content = issue_re.sub(r'`bpo-\1 <https://bugs.python.org/'
                                r'issue?@action=redirect&bpo=\1>`__',
                                content)
-        # fallback handling for the Github issue.
+        # Fallback handling for the GitHub issue
         content = gh_issue_re.sub(r'`gh-issue-\1 <https://github.com/'
                                   r'python/cpython/issues/\1>`__',
                                   content)
