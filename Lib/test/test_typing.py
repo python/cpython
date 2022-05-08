@@ -769,7 +769,10 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[T, *Ts]',                        '[int, str]',                                     'generic[int, str]'),
             ('generic[T, *Ts]',                        '[int, str, bool]',                               'generic[int, str, bool]'),
 
-            ('generic[T, *Ts]',                        '[*tuple[int, ...]]',                             'TypeError'),  # Should be generic[int, *tuple[int, ...]]
+            ('C[T, *Ts]',                              '[*tuple_type[int, ...]]',                        'C[int, *tuple_type[int, ...]]'),
+            ('Tuple[T, *Ts]',                          '[*tuple_type[int, ...]]',                        'Tuple[int, *tuple_type[int, ...]]'),
+            # Should be tuple[int, *tuple[int, ...]]
+            ('tuple[T, *Ts]',                          '[*tuple_type[int, ...]]',                        'TypeError'),
 
             ('generic[*Ts, T]',                        '[int]',                                          'generic[int]'),
             ('generic[*Ts, T]',                        '[int, str]',                                     'generic[int, str]'),
@@ -4901,6 +4904,14 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(list | str), (list, str))
         self.assertEqual(get_args(Required[int]), (int,))
         self.assertEqual(get_args(NotRequired[int]), (int,))
+        self.assertEqual(get_args(Unpack[Tuple[int]]), (int,))
+        self.assertEqual(get_args(Unpack[tuple[int]]), (int,))
+        self.assertEqual(get_args(Unpack[Tuple[int, ...]]), (int, ...))
+        self.assertEqual(get_args(Unpack[tuple[int, ...]]), (int, ...))
+        self.assertEqual(get_args((*Tuple[int],)[0]), (int,))
+        self.assertEqual(get_args((*tuple[int],)[0]), (int,))
+        self.assertEqual(get_args((*Tuple[int, ...],)[0]), (int, ...))
+        self.assertEqual(get_args((*tuple[int, ...],)[0]), (int, ...))
 
 
 class CollectionsAbcTests(BaseTestCase):
