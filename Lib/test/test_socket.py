@@ -338,9 +338,7 @@ class ThreadableTest:
         self.server_ready.set()
 
     def _setUp(self):
-        self.wait_threads = threading_helper.wait_threads_exit()
-        self.wait_threads.__enter__()
-        self.addCleanup(self.wait_threads.__exit__, None, None, None)
+        self.enterContext(threading_helper.wait_threads_exit())
 
         self.server_ready = threading.Event()
         self.client_ready = threading.Event()
