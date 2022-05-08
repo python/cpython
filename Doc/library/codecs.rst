@@ -658,7 +658,7 @@ define in order to be compatible with the Python codec registry.
    object.
 
 
-   .. method:: decode(object[, final=False])
+   .. method:: decode(object, final=False)
 
       Decodes *object* (taking the current state of the decoder into account)
       and returns the resulting decoded object. If this is the last call to
