@@ -3171,12 +3171,6 @@ unicode_get_widechar_size(PyObject *unicode)
 
     assert(unicode != NULL);
     assert(_PyUnicode_CHECK(unicode));
-
-#if USE_UNICODE_WCHAR_CACHE
-    if (_PyUnicode_WSTR(unicode) != NULL) {
-        return PyUnicode_WSTR_LENGTH(unicode);
-    }
-#endif /* USE_UNICODE_WCHAR_CACHE */
     assert(PyUnicode_IS_READY(unicode));
 
     res = _PyUnicode_LENGTH(unicode);
@@ -3200,18 +3194,10 @@ unicode_copy_as_widechar(PyObject *unicode, wchar_t *w, Py_ssize_t size)
     assert(unicode != NULL);
     assert(_PyUnicode_CHECK(unicode));
 
-#if USE_UNICODE_WCHAR_CACHE
-    const wchar_t *wstr = _PyUnicode_WSTR(unicode);
-    if (wstr != NULL) {
-        memcpy(w, wstr, size * sizeof(wchar_t));
-        return;
-    }
-#else /* USE_UNICODE_WCHAR_CACHE */
     if (PyUnicode_KIND(unicode) == sizeof(wchar_t)) {
         memcpy(w, PyUnicode_DATA(unicode), size * sizeof(wchar_t));
         return;
     }
-#endif /* USE_UNICODE_WCHAR_CACHE */
     assert(PyUnicode_IS_READY(unicode));
 
     if (PyUnicode_KIND(unicode) == PyUnicode_1BYTE_KIND) {
@@ -3353,26 +3339,16 @@ _PyUnicode_WideCharString_Converter(PyObject *obj, void *ptr)
 {
     wchar_t **p = (wchar_t **)ptr;
     if (obj == NULL) {
-#if !USE_UNICODE_WCHAR_CACHE
         PyMem_Free(*p);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         *p = NULL;
         return 1;
     }
     if (PyUnicode_Check(obj)) {
-#if USE_UNICODE_WCHAR_CACHE
-        *p = (wchar_t *)_PyUnicode_AsUnicode(obj);
-        if (*p == NULL) {
-            return 0;
-        }
-        return 1;
-#else /* USE_UNICODE_WCHAR_CACHE */
         *p = PyUnicode_AsWideCharString(obj, NULL);
         if (*p == NULL) {
             return 0;
         }
         return Py_CLEANUP_SUPPORTED;
-#endif /* USE_UNICODE_WCHAR_CACHE */
     }
     PyErr_Format(PyExc_TypeError,
                  "argument must be str, not %.50s",
@@ -3385,9 +3361,7 @@ _PyUnicode_WideCharString_Opt_Converter(PyObject *obj, void *ptr)
 {
     wchar_t **p = (wchar_t **)ptr;
     if (obj == NULL) {
-#if !USE_UNICODE_WCHAR_CACHE
         PyMem_Free(*p);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         *p = NULL;
         return 1;
     }
@@ -3396,19 +3370,11 @@ _PyUnicode_WideCharString_Opt_Converter(PyObject *obj, void *ptr)
         return 1;
     }
     if (PyUnicode_Check(obj)) {
-#if USE_UNICODE_WCHAR_CACHE
-        *p = (wchar_t *)_PyUnicode_AsUnicode(obj);
-        if (*p == NULL) {
-            return 0;
-        }
-        return 1;
-#else /* USE_UNICODE_WCHAR_CACHE */
         *p = PyUnicode_AsWideCharString(obj, NULL);
         if (*p == NULL) {
             return 0;
         }
         return Py_CLEANUP_SUPPORTED;
-#endif /* USE_UNICODE_WCHAR_CACHE */
     }
     PyErr_Format(PyExc_TypeError,
                  "argument must be str or None, not %.50s",
@@ -4458,19 +4424,10 @@ unicode_decode_call_errorhandler_wchar(
         goto onError;
     }
 
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    repwlen = PyUnicode_GetSize(repunicode);
-    if (repwlen < 0)
-        goto onError;
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
     repwlen = PyUnicode_AsWideChar(repunicode, NULL, 0);
     if (repwlen < 0)
         goto onError;
     repwlen--;
-#endif /* USE_UNICODE_WCHAR_CACHE */
     /* need more space? (at least enough for what we
        have+the replacement+the rest of the string (starting
        at the new input position), so we won't have to check space
@@ -7758,22 +7715,11 @@ encode_code_page_strict(UINT code_page, PyObject **outbytes,
     substring = PyUnicode_Substring(unicode, offset, offset+len);
     if (substring == NULL)
         return -1;
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    p = PyUnicode_AsUnicodeAndSize(substring, &size);
-    if (p == NULL) {
-        Py_DECREF(substring);
-        return -1;
-    }
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
     p = PyUnicode_AsWideCharString(substring, &size);
     Py_CLEAR(substring);
     if (p == NULL) {
         return -1;
     }
-#endif /* USE_UNICODE_WCHAR_CACHE */
     assert(size <= INT_MAX);
 
     /* First get the size of the result */
@@ -7824,11 +7770,7 @@ _Py_COMP_DIAG_POP
     ret = 0;
 
 done:
-#if USE_UNICODE_WCHAR_CACHE
-    Py_DECREF(substring);
-#else /* USE_UNICODE_WCHAR_CACHE */
     PyMem_Free(p);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     return ret;
 
 error:

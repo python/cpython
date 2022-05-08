@@ -1255,14 +1255,6 @@ class Test_testcapi(unittest.TestCase):
                     for name in dir(_testcapi)
                     if name.startswith('test_') and name.endswith('_code'))
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test_u_code(self):
-        _testcapi.test_u_code()
-
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test_Z_code(self):
-        _testcapi.test_Z_code()
-
 
 if __name__ == "__main__":
     unittest.main()

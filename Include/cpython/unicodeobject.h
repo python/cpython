@@ -11,10 +11,6 @@
 
 /* --- Internal Unicode Operations ---------------------------------------- */
 
-#ifndef USE_UNICODE_WCHAR_CACHE
-#  define USE_UNICODE_WCHAR_CACHE 1
-#endif /* USE_UNICODE_WCHAR_CACHE */
-
 /* Since splitting on whitespace is an important use case, and
    whitespace in most situations is solely ASCII whitespace, we
    optimize for the common case by using a quick look-up table
