@@ -430,7 +430,7 @@ class DeprecatedRemoved(Directive):
 # Support for including Misc/NEWS
 
 issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)')
-gh_issue_re = re.compile('(?:gh-issue-)([0-9]+)')
+gh_issue_re = re.compile('(?:gh-issue-|gh-)([0-9]+)')
 whatsnew_re = re.compile(r"(?im)^what's new in (.*?)\??$")
 
 
@@ -461,7 +461,7 @@ class MiscNews(Directive):
                                r'issue?@action=redirect&bpo=\1>`__',
                                content)
         # Fallback handling for the GitHub issue
-        content = gh_issue_re.sub(r'`gh-issue-\1 <https://github.com/'
+        content = gh_issue_re.sub(r'`gh-\1 <https://github.com/'
                                   r'python/cpython/issues/\1>`__',
                                   content)
         content = whatsnew_re.sub(r'\1', content)
