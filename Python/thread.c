@@ -42,9 +42,6 @@
 
 #endif /* _POSIX_THREADS */
 
-// #define dprintf(args)   (void)(printf args)
-#define dprintf(args)
-
 static int initialized;
 
 static void PyThread__init_thread(void); /* Forward */
