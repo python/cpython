@@ -1054,7 +1054,7 @@ always available.
    Return :const:`True` if the given string is "interned", :const:`False`
    otherwise.
 
-   .. versionadded:: 3.11
+   .. versionadded:: 3.12
 
    .. impl-detail::
 
