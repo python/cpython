@@ -9,6 +9,11 @@
 
 --------------
 
+:mod:`distutils` is deprecated with removal planned for Python 3.12.
+See the :ref:`What's New <distutils-deprecated>` entry for more information.
+
+--------------
+
 The :mod:`distutils` package provides support for building and installing
 additional modules into a Python installation.  The new modules may be either
 100%-pure Python, or may be extension modules written in C, or may be

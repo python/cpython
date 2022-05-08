@@ -18,12 +18,13 @@
 --------------
 
 This module provides classes and functions for comparing sequences. It
-can be used for example, for comparing files, and can produce difference
-information in various formats, including HTML and context and unified
+can be used for example, for comparing files, and can produce information
+about file differences in various formats, including HTML and context and unified
 diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
 
 .. class:: SequenceMatcher
+   :noindex:
 
    This is a flexible class for comparing pairs of sequences of any type, so long
    as the sequence elements are :term:`hashable`.  The basic algorithm predates, and is a
@@ -338,14 +339,14 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
 .. function:: IS_LINE_JUNK(line)
 
-   Return true for ignorable lines.  The line *line* is ignorable if *line* is
+   Return ``True`` for ignorable lines.  The line *line* is ignorable if *line* is
    blank or contains a single ``'#'``, otherwise it is not ignorable.  Used as a
    default for parameter *linejunk* in :func:`ndiff` in older versions.
 
 
 .. function:: IS_CHARACTER_JUNK(ch)
 
-   Return true for ignorable characters.  The character *ch* is ignorable if *ch*
+   Return ``True`` for ignorable characters.  The character *ch* is ignorable if *ch*
    is a space or tab, otherwise it is not ignorable.  Used as a default for
    parameter *charjunk* in :func:`ndiff`.
 
@@ -370,7 +371,7 @@ The :class:`SequenceMatcher` class has this constructor:
    Optional argument *isjunk* must be ``None`` (the default) or a one-argument
    function that takes a sequence element and returns true if and only if the
    element is "junk" and should be ignored. Passing ``None`` for *isjunk* is
-   equivalent to passing ``lambda x: 0``; in other words, no elements are ignored.
+   equivalent to passing ``lambda x: False``; in other words, no elements are ignored.
    For example, pass::
 
       lambda x: x in " \t"
@@ -421,7 +422,7 @@ The :class:`SequenceMatcher` class has this constructor:
       is not changed.
 
 
-   .. method:: find_longest_match(alo, ahi, blo, bhi)
+   .. method:: find_longest_match(alo=0, ahi=None, blo=0, bhi=None)
 
       Find longest matching block in ``a[alo:ahi]`` and ``b[blo:bhi]``.
 
@@ -457,6 +458,9 @@ The :class:`SequenceMatcher` class has this constructor:
       If no blocks match, this returns ``(alo, blo, 0)``.
 
       This method returns a :term:`named tuple` ``Match(a, b, size)``.
+
+      .. versionchanged:: 3.9
+         Added default arguments.
 
 
    .. method:: get_matching_blocks()
@@ -648,6 +652,7 @@ The :class:`Differ` class has this constructor:
 
 
 .. class:: Differ(linejunk=None, charjunk=None)
+   :noindex:
 
    Optional keyword parameters *linejunk* and *charjunk* are for filter functions
    (or ``None``):

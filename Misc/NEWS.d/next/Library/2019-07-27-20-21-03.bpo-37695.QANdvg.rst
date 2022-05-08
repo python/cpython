@@ -1,1 +1,0 @@
-Correct :func:`curses.unget_wch` error message.  Patch by Anthony Sottile.

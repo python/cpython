@@ -33,6 +33,15 @@
                     <Class Id="{BEA218D2-6950-497B-9434-61683EC065FE}" Advertise="no" Context="InprocServer32" ThreadingModel="apartment" />
                 </File>
             </Component>
+            <!--
+            Currently unclear how to detect ARM64 device at this point.
+            In any case, the shell extension doesn't appear to work, so installing a non-functional
+            pyshellext_amd64.dll for a different platform isn't any worse.
+            <Component Id="pyshellext_arm64.dll" Directory="LauncherInstallDirectory" Guid="{C591963D-7FC6-4FCE-8642-5E01E6B8848F}">
+                <File Id="pyshellext_arm64.dll" Name="pyshellext.arm64.dll" Source="!(bindpath.BuildARM64)\pyshellext.dll">
+                    <Class Id="{BEA218D2-6950-497B-9434-61683EC065FE}" Advertise="no" Context="InprocServer32" ThreadingModel="apartment" />
+                </File>
+            </Component>-->
         </ComponentGroup>
     </Fragment>
 </Wix>

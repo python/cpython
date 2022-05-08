@@ -1,2 +1,0 @@
-:mod:`pprint` now has support for :class:`types.SimpleNamespace`. Patch by Carl
-Bordum Hansen.

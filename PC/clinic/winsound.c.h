@@ -14,7 +14,7 @@ PyDoc_STRVAR(winsound_PlaySound__doc__,
 "    Flag values, ored together.  See module documentation.");
 
 #define WINSOUND_PLAYSOUND_METHODDEF    \
-    {"PlaySound", (PyCFunction)(void(*)(void))winsound_PlaySound, METH_FASTCALL|METH_KEYWORDS, winsound_PlaySound__doc__},
+    {"PlaySound", _PyCFunction_CAST(winsound_PlaySound), METH_FASTCALL|METH_KEYWORDS, winsound_PlaySound__doc__},
 
 static PyObject *
 winsound_PlaySound_impl(PyObject *module, PyObject *sound, int flags);
@@ -34,11 +34,6 @@ winsound_PlaySound(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         goto exit;
     }
     sound = args[0];
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     flags = _PyLong_AsInt(args[1]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
@@ -62,7 +57,7 @@ PyDoc_STRVAR(winsound_Beep__doc__,
 "    How long the sound should play, in milliseconds.");
 
 #define WINSOUND_BEEP_METHODDEF    \
-    {"Beep", (PyCFunction)(void(*)(void))winsound_Beep, METH_FASTCALL|METH_KEYWORDS, winsound_Beep__doc__},
+    {"Beep", _PyCFunction_CAST(winsound_Beep), METH_FASTCALL|METH_KEYWORDS, winsound_Beep__doc__},
 
 static PyObject *
 winsound_Beep_impl(PyObject *module, int frequency, int duration);
@@ -81,18 +76,8 @@ winsound_Beep(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     if (!args) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     frequency = _PyLong_AsInt(args[0]);
     if (frequency == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     duration = _PyLong_AsInt(args[1]);
@@ -114,7 +99,7 @@ PyDoc_STRVAR(winsound_MessageBeep__doc__,
 "x defaults to MB_OK.");
 
 #define WINSOUND_MESSAGEBEEP_METHODDEF    \
-    {"MessageBeep", (PyCFunction)(void(*)(void))winsound_MessageBeep, METH_FASTCALL|METH_KEYWORDS, winsound_MessageBeep__doc__},
+    {"MessageBeep", _PyCFunction_CAST(winsound_MessageBeep), METH_FASTCALL|METH_KEYWORDS, winsound_MessageBeep__doc__},
 
 static PyObject *
 winsound_MessageBeep_impl(PyObject *module, int type);
@@ -136,11 +121,6 @@ winsound_MessageBeep(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     type = _PyLong_AsInt(args[0]);
     if (type == -1 && PyErr_Occurred()) {
         goto exit;
@@ -151,4 +131,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=28d1cd033282723d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b7e53fab4f26aeaf input=a9049054013a1b77]*/

@@ -48,6 +48,9 @@ await on multiple things with timeouts.
     * - :class:`Task`
       - Task object.
 
+    * - :func:`to_thread`
+      - Asynchronously run a function in a separate OS thread.
+
     * - :func:`run_coroutine_threadsafe`
       - Schedule a coroutine from another OS thread.
 
@@ -132,47 +135,23 @@ High-level APIs to work with network IO.
     :widths: 50 50
     :class: full-width-table
 
-    * - ``await`` :func:`connect`
-      -  Establish a TCP connection to send and receive data.
-
     * - ``await`` :func:`open_connection`
-      -  Establish a TCP connection. (Deprecated in favor of :func:`connect`)
-
-    * - ``await`` :func:`connect_unix`
-      -  Establish a Unix socket connection to send and receive data.
+      -  Establish a TCP connection.
 
     * - ``await`` :func:`open_unix_connection`
-      -  Establish a Unix socket connection. (Deprecated in favor of :func:`connect_unix`)
-
-    * - :class:`StreamServer`
-      - Start a TCP server.
+      -  Establish a Unix socket connection.
 
     * - ``await`` :func:`start_server`
-      - Start a TCP server. (Deprecated in favor of :class:`StreamServer`)
-
-    * - :class:`UnixStreamServer`
-      - Start a Unix socket server.
+      - Start a TCP server.
 
     * - ``await`` :func:`start_unix_server`
-      - Start a Unix socket server. (Deprecated in favor of :class:`UnixStreamServer`)
-
-    * - :func:`connect_read_pipe`
-      - Establish a connection to :term:`file-like object <file object>` *pipe*
-        to receive data.
-
-    * - :func:`connect_write_pipe`
-      - Establish a connection to :term:`file-like object <file object>` *pipe*
-        to send data.
-
-    * - :class:`Stream`
-      - Stream is a single object combining APIs of :class:`StreamReader` and
-        :class:`StreamWriter`.
+      - Start a Unix socket server.
 
     * - :class:`StreamReader`
-      - High-level async/await object to receive network data. (Deprecated in favor of :class:`Stream`)
+      - High-level async/await object to receive network data.
 
     * - :class:`StreamWriter`
-      - High-level async/await object to send network data. (Deprecated in favor of :class:`Stream`)
+      - High-level async/await object to send network data.
 
 
 .. rubric:: Examples
@@ -207,10 +186,15 @@ Threading-like synchronization primitives that can be used in Tasks.
     * - :class:`BoundedSemaphore`
       - A bounded semaphore.
 
+    * - :class:`Barrier`
+      - A barrier object.
+
 
 .. rubric:: Examples
 
 * :ref:`Using asyncio.Event <asyncio_example_sync_event>`.
+
+* :ref:`Using asyncio.Barrier <asyncio_example_barrier>`.
 
 * See also the documentation of asyncio
   :ref:`synchronization primitives <asyncio-sync>`.
@@ -224,13 +208,11 @@ Exceptions
     :class: full-width-table
 
 
-    * - :exc:`asyncio.TimeoutError`
-      - Raised on timeout by functions like :func:`wait_for`.
-        Keep in mind that ``asyncio.TimeoutError`` is **unrelated**
-        to the built-in :exc:`TimeoutError` exception.
-
     * - :exc:`asyncio.CancelledError`
       - Raised when a Task is cancelled. See also :meth:`Task.cancel`.
+
+    * - :exc:`asyncio.BrokenBarrierError`
+      - Raised when a Barrier is broken. See also :meth:`Barrier.wait`.
 
 
 .. rubric:: Examples

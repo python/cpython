@@ -29,7 +29,7 @@ from .log import logger
 __all__ = (
     'SelectorEventLoop',
     'AbstractChildWatcher', 'SafeChildWatcher',
-    'FastChildWatcher',
+    'FastChildWatcher', 'PidfdChildWatcher',
     'MultiLoopChildWatcher', 'ThreadedChildWatcher',
     'DefaultEventLoopPolicy',
 )
@@ -42,6 +42,16 @@ if sys.platform == 'win32':  # pragma: no cover
 def _sighandler_noop(signum, frame):
     """Dummy signal handler."""
     pass
+
+
+def waitstatus_to_exitcode(status):
+    try:
+        return os.waitstatus_to_exitcode(status)
+    except ValueError:
+        # The child exited, but we don't understand its status.
+        # This shouldn't happen, but if it does, let's just
+        # return that status; perhaps that helps debug it.
+        return status
 
 
 class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
@@ -101,7 +111,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
         try:
             # Register a dummy signal handler to ask Python to write the signal
-            # number in the wakup file descriptor. _process_self_data() will
+            # number in the wakeup file descriptor. _process_self_data() will
             # read signal numbers from this file descriptor to handle signals.
             signal.signal(sig, _sighandler_noop)
 
@@ -219,7 +229,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             self, protocol_factory, path=None, *,
             ssl=None, sock=None,
             server_hostname=None,
-            ssl_handshake_timeout=None):
+            ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None):
         assert server_hostname is None or isinstance(server_hostname, str)
         if ssl:
             if server_hostname is None:
@@ -231,6 +242,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             if ssl_handshake_timeout is not None:
                 raise ValueError(
                     'ssl_handshake_timeout is only meaningful with ssl')
+            if ssl_shutdown_timeout is not None:
+                raise ValueError(
+                    'ssl_shutdown_timeout is only meaningful with ssl')
 
         if path is not None:
             if sock is not None:
@@ -257,13 +271,15 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
         transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname,
-            ssl_handshake_timeout=ssl_handshake_timeout)
+            ssl_handshake_timeout=ssl_handshake_timeout,
+            ssl_shutdown_timeout=ssl_shutdown_timeout)
         return transport, protocol
 
     async def create_unix_server(
             self, protocol_factory, path=None, *,
             sock=None, backlog=100, ssl=None,
             ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None,
             start_serving=True):
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
@@ -271,6 +287,10 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         if ssl_handshake_timeout is not None and not ssl:
             raise ValueError(
                 'ssl_handshake_timeout is only meaningful with ssl')
+
+        if ssl_shutdown_timeout is not None and not ssl:
+            raise ValueError(
+                'ssl_shutdown_timeout is only meaningful with ssl')
 
         if path is not None:
             if sock is not None:
@@ -318,19 +338,20 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
         sock.setblocking(False)
         server = base_events.Server(self, [sock], protocol_factory,
-                                    ssl, backlog, ssl_handshake_timeout)
+                                    ssl, backlog, ssl_handshake_timeout,
+                                    ssl_shutdown_timeout)
         if start_serving:
             server._start_serving()
             # Skip one loop iteration so that all 'loop.add_reader'
             # go through.
-            await tasks.sleep(0, loop=self)
+            await tasks.sleep(0)
 
         return server
 
     async def _sock_sendfile_native(self, sock, file, offset, count):
         try:
             os.sendfile
-        except AttributeError as exc:
+        except AttributeError:
             raise exceptions.SendfileNotAvailableError(
                 "os.sendfile() is not available")
         try:
@@ -339,7 +360,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             raise exceptions.SendfileNotAvailableError("not a regular file")
         try:
             fsize = os.fstat(fileno).st_size
-        except OSError as err:
+        except OSError:
             raise exceptions.SendfileNotAvailableError("not a regular file")
         blocksize = count if count else fsize
         if not blocksize:
@@ -445,6 +466,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         self._fileno = pipe.fileno()
         self._protocol = protocol
         self._closing = False
+        self._paused = False
 
         mode = os.fstat(self._fileno).st_mode
         if not (stat.S_ISFIFO(mode) or
@@ -506,10 +528,20 @@ class _UnixReadPipeTransport(transports.ReadTransport):
                 self._loop.call_soon(self._call_connection_lost, None)
 
     def pause_reading(self):
+        if self._closing or self._paused:
+            return
+        self._paused = True
         self._loop._remove_reader(self._fileno)
+        if self._loop.get_debug():
+            logger.debug("%r pauses reading", self)
 
     def resume_reading(self):
+        if self._closing or not self._paused:
+            return
+        self._paused = False
         self._loop._add_reader(self._fileno, self._read_ready)
+        if self._loop.get_debug():
+            logger.debug("%r resumes reading", self)
 
     def set_protocol(self, protocol):
         self._protocol = protocol
@@ -867,18 +899,82 @@ class AbstractChildWatcher:
         raise NotImplementedError()
 
 
-def _compute_returncode(status):
-    if os.WIFSIGNALED(status):
-        # The child process died because of a signal.
-        return -os.WTERMSIG(status)
-    elif os.WIFEXITED(status):
-        # The child process exited (e.g sys.exit()).
-        return os.WEXITSTATUS(status)
-    else:
-        # The child exited, but we don't understand its status.
-        # This shouldn't happen, but if it does, let's just
-        # return that status; perhaps that helps debug it.
-        return status
+class PidfdChildWatcher(AbstractChildWatcher):
+    """Child watcher implementation using Linux's pid file descriptors.
+
+    This child watcher polls process file descriptors (pidfds) to await child
+    process termination. In some respects, PidfdChildWatcher is a "Goldilocks"
+    child watcher implementation. It doesn't require signals or threads, doesn't
+    interfere with any processes launched outside the event loop, and scales
+    linearly with the number of subprocesses launched by the event loop. The
+    main disadvantage is that pidfds are specific to Linux, and only work on
+    recent (5.3+) kernels.
+    """
+
+    def __init__(self):
+        self._loop = None
+        self._callbacks = {}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        pass
+
+    def is_active(self):
+        return self._loop is not None and self._loop.is_running()
+
+    def close(self):
+        self.attach_loop(None)
+
+    def attach_loop(self, loop):
+        if self._loop is not None and loop is None and self._callbacks:
+            warnings.warn(
+                'A loop is being detached '
+                'from a child watcher with pending handlers',
+                RuntimeWarning)
+        for pidfd, _, _ in self._callbacks.values():
+            self._loop._remove_reader(pidfd)
+            os.close(pidfd)
+        self._callbacks.clear()
+        self._loop = loop
+
+    def add_child_handler(self, pid, callback, *args):
+        existing = self._callbacks.get(pid)
+        if existing is not None:
+            self._callbacks[pid] = existing[0], callback, args
+        else:
+            pidfd = os.pidfd_open(pid)
+            self._loop._add_reader(pidfd, self._do_wait, pid)
+            self._callbacks[pid] = pidfd, callback, args
+
+    def _do_wait(self, pid):
+        pidfd, callback, args = self._callbacks.pop(pid)
+        self._loop._remove_reader(pidfd)
+        try:
+            _, status = os.waitpid(pid, 0)
+        except ChildProcessError:
+            # The child process is already reaped
+            # (may happen if waitpid() is called elsewhere).
+            returncode = 255
+            logger.warning(
+                "child process pid %d exit status already read: "
+                " will report returncode 255",
+                pid)
+        else:
+            returncode = waitstatus_to_exitcode(status)
+
+        os.close(pidfd)
+        callback(pid, returncode, *args)
+
+    def remove_child_handler(self, pid):
+        try:
+            pidfd, _, _ = self._callbacks.pop(pid)
+        except KeyError:
+            return False
+        self._loop._remove_reader(pidfd)
+        os.close(pidfd)
+        return True
 
 
 class BaseChildWatcher(AbstractChildWatcher):
@@ -991,7 +1087,7 @@ class SafeChildWatcher(BaseChildWatcher):
                 # The child process is still alive.
                 return
 
-            returncode = _compute_returncode(status)
+            returncode = waitstatus_to_exitcode(status)
             if self._loop.get_debug():
                 logger.debug('process %s exited with returncode %s',
                              expected_pid, returncode)
@@ -1084,7 +1180,7 @@ class FastChildWatcher(BaseChildWatcher):
                     # A child process is still alive.
                     return
 
-                returncode = _compute_returncode(status)
+                returncode = waitstatus_to_exitcode(status)
 
             with self._lock:
                 try:
@@ -1141,13 +1237,15 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
 
     def close(self):
         self._callbacks.clear()
-        if self._saved_sighandler is not None:
-            handler = signal.getsignal(signal.SIGCHLD)
-            if handler != self._sig_chld:
-                logger.warning("SIGCHLD handler was changed by outside code")
-            else:
-                signal.signal(signal.SIGCHLD, self._saved_sighandler)
-            self._saved_sighandler = None
+        if self._saved_sighandler is None:
+            return
+
+        handler = signal.getsignal(signal.SIGCHLD)
+        if handler != self._sig_chld:
+            logger.warning("SIGCHLD handler was changed by outside code")
+        else:
+            signal.signal(signal.SIGCHLD, self._saved_sighandler)
+        self._saved_sighandler = None
 
     def __enter__(self):
         return self
@@ -1174,15 +1272,17 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
         # The reason to do it here is that attach_loop() is called from
         # unix policy only for the main thread.
         # Main thread is required for subscription on SIGCHLD signal
-        if self._saved_sighandler is None:
-            self._saved_sighandler = signal.signal(signal.SIGCHLD, self._sig_chld)
-            if self._saved_sighandler is None:
-                logger.warning("Previous SIGCHLD handler was set by non-Python code, "
-                               "restore to default handler on watcher close.")
-                self._saved_sighandler = signal.SIG_DFL
+        if self._saved_sighandler is not None:
+            return
 
-            # Set SA_RESTART to limit EINTR occurrences.
-            signal.siginterrupt(signal.SIGCHLD, False)
+        self._saved_sighandler = signal.signal(signal.SIGCHLD, self._sig_chld)
+        if self._saved_sighandler is None:
+            logger.warning("Previous SIGCHLD handler was set by non-Python code, "
+                           "restore to default handler on watcher close.")
+            self._saved_sighandler = signal.SIG_DFL
+
+        # Set SA_RESTART to limit EINTR occurrences.
+        signal.siginterrupt(signal.SIGCHLD, False)
 
     def _do_waitpid_all(self):
         for pid in list(self._callbacks):
@@ -1207,7 +1307,7 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
                 # The child process is still alive.
                 return
 
-            returncode = _compute_returncode(status)
+            returncode = waitstatus_to_exitcode(status)
             debug_log = True
         try:
             loop, callback, args = self._callbacks.pop(pid)
@@ -1255,7 +1355,14 @@ class ThreadedChildWatcher(AbstractChildWatcher):
         return True
 
     def close(self):
-        pass
+        self._join_threads()
+
+    def _join_threads(self):
+        """Internal: Join all non-daemon threads"""
+        threads = [thread for thread in list(self._threads.values())
+                   if thread.is_alive() and not thread.daemon]
+        for thread in threads:
+            thread.join()
 
     def __enter__(self):
         return self
@@ -1283,7 +1390,7 @@ class ThreadedChildWatcher(AbstractChildWatcher):
     def remove_child_handler(self, pid):
         # asyncio never calls remove_child_handler() !!!
         # The method is no-op but is implemented because
-        # abstract base classe requires it
+        # abstract base classes require it.
         return True
 
     def attach_loop(self, loop):
@@ -1303,7 +1410,7 @@ class ThreadedChildWatcher(AbstractChildWatcher):
                 "Unknown child process pid %d, will report returncode 255",
                 pid)
         else:
-            returncode = _compute_returncode(status)
+            returncode = waitstatus_to_exitcode(status)
             if loop.get_debug():
                 logger.debug('process %s exited with returncode %s',
                              expected_pid, returncode)
@@ -1328,8 +1435,7 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
         with events._lock:
             if self._watcher is None:  # pragma: no branch
                 self._watcher = ThreadedChildWatcher()
-                if isinstance(threading.current_thread(),
-                              threading._MainThread):
+                if threading.current_thread() is threading.main_thread():
                     self._watcher.attach_loop(self._local._loop)
 
     def set_event_loop(self, loop):
@@ -1343,7 +1449,7 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
         super().set_event_loop(loop)
 
         if (self._watcher is not None and
-                isinstance(threading.current_thread(), threading._MainThread)):
+                threading.current_thread() is threading.main_thread()):
             self._watcher.attach_loop(loop)
 
     def get_child_watcher(self):
