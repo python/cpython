@@ -9,7 +9,7 @@ functionality over this module.
 from _imp import (lock_held, acquire_lock, release_lock,
                   get_frozen_object, is_frozen_package,
                   init_frozen, is_builtin, is_frozen,
-                  _fix_co_filename)
+                  _fix_co_filename, _frozen_module_names)
 try:
     from _imp import create_dynamic
 except ImportError:
@@ -28,7 +28,8 @@ import tokenize
 import types
 import warnings
 
-warnings.warn("the imp module is deprecated in favour of importlib; "
+warnings.warn("the imp module is deprecated in favour of importlib and slated "
+              "for removal in Python 3.12; "
               "see the module's documentation for alternative uses",
               DeprecationWarning, stacklevel=2)
 
@@ -142,17 +143,16 @@ class _HackedGetData:
     def get_data(self, path):
         """Gross hack to contort loader to deal w/ load_*()'s bad API."""
         if self.file and path == self.path:
+            # The contract of get_data() requires us to return bytes. Reopen the
+            # file in binary mode if needed.
             if not self.file.closed:
                 file = self.file
-            else:
-                self.file = file = open(self.path, 'r')
+                if 'b' not in file.mode:
+                    file.close()
+            if self.file.closed:
+                self.file = file = open(self.path, 'rb')
 
             with file:
-                # Technically should be returning bytes, but
-                # SourceLoader.get_code() just passed what is returned to
-                # compile() which can handle str. And converting to bytes would
-                # require figuring out the encoding to decode to and
-                # tokenize.detect_encoding() only accepts bytes.
                 return file.read()
         else:
             return super().get_data(path)
@@ -226,7 +226,7 @@ def load_module(name, file, filename, details):
 
     """
     suffix, mode, type_ = details
-    if mode and (not mode.startswith(('r', 'U')) or '+' in mode):
+    if mode and (not mode.startswith('r') or '+' in mode):
         raise ValueError('invalid file open mode {!r}'.format(mode))
     elif file is None and type_ in {PY_SOURCE, PY_COMPILED}:
         msg = 'file object required for import (type code {})'.format(type_)

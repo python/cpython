@@ -4,6 +4,7 @@ csv.py - read/write/investigate CSV files
 """
 
 import re
+import types
 from _csv import Error, __version__, writer, reader, register_dialect, \
                  unregister_dialect, get_dialect, list_dialects, \
                  field_size_limit, \
@@ -11,7 +12,6 @@ from _csv import Error, __version__, writer, reader, register_dialect, \
                  __doc__
 from _csv import Dialect as _Dialect
 
-from collections import OrderedDict
 from io import StringIO
 
 __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
@@ -117,7 +117,7 @@ class DictReader:
         # values
         while row == []:
             row = next(self.reader)
-        d = OrderedDict(zip(self.fieldnames, row))
+        d = dict(zip(self.fieldnames, row))
         lf = len(self.fieldnames)
         lr = len(row)
         if lf < lr:
@@ -126,6 +126,8 @@ class DictReader:
             for key in self.fieldnames[lr:]:
                 d[key] = self.restval
         return d
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 class DictWriter:
@@ -141,7 +143,7 @@ class DictWriter:
 
     def writeheader(self):
         header = dict(zip(self.fieldnames, self.fieldnames))
-        self.writerow(header)
+        return self.writerow(header)
 
     def _dict_to_list(self, rowdict):
         if self.extrasaction == "raise":
@@ -156,6 +158,8 @@ class DictWriter:
 
     def writerows(self, rowdicts):
         return self.writer.writerows(map(self._dict_to_list, rowdicts))
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 # Guard Sniffer's type checking against builds that exclude complex()
 try:
@@ -217,7 +221,7 @@ class Sniffer:
         matches = []
         for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?P=delim)', # ,".*?",
                       r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?P<delim>[^\w\n"\'])(?P<space> ?)',   #  ".*?",
-                      r'(?P<delim>>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?:$|\n)',  # ,".*?"
+                      r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?:$|\n)',   # ,".*?"
                       r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'):                            #  ".*?" (no delim, no space)
             regexp = re.compile(restr, re.DOTALL | re.MULTILINE)
             matches = regexp.findall(data)
@@ -410,14 +414,10 @@ class Sniffer:
                 continue # skip rows that have irregular number of columns
 
             for col in list(columnTypes.keys()):
-
-                for thisType in [int, float, complex]:
-                    try:
-                        thisType(row[col])
-                        break
-                    except (ValueError, OverflowError):
-                        pass
-                else:
+                thisType = complex
+                try:
+                    thisType(row[col])
+                except (ValueError, OverflowError):
                     # fallback to length of string
                     thisType = len(row[col])
 
@@ -433,7 +433,7 @@ class Sniffer:
         # on whether it's a header
         hasHeader = 0
         for col, colType in columnTypes.items():
-            if type(colType) == type(0): # it's a length
+            if isinstance(colType, int): # it's a length
                 if len(header[col]) != colType:
                     hasHeader += 1
                 else:

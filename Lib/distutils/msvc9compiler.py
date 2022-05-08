@@ -19,8 +19,7 @@ import re
 
 from distutils.errors import DistutilsExecError, DistutilsPlatformError, \
                              CompileError, LibError, LinkError
-from distutils.ccompiler import CCompiler, gen_preprocess_options, \
-                                gen_lib_options
+from distutils.ccompiler import CCompiler, gen_lib_options
 from distutils import log
 from distutils.util import get_platform
 
@@ -674,7 +673,7 @@ class MSVCCompiler(CCompiler) :
         # If a manifest should be embedded, return a tuple of
         # (manifest_filename, resource_id).  Returns None if no manifest
         # should be embedded.  See http://bugs.python.org/issue7833 for why
-        # we want to avoid any manifest for extension modules if we can)
+        # we want to avoid any manifest for extension modules if we can.
         for arg in ld_args:
             if arg.startswith("/MANIFESTFILE:"):
                 temp_manifest = arg.split(":", 1)[1]

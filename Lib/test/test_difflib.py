@@ -1,5 +1,5 @@
 import difflib
-from test.support import run_unittest, findfile
+from test.support import findfile
 import unittest
 import doctest
 import sys
@@ -89,9 +89,23 @@ class TestSFbugs(unittest.TestCase):
         # Check fix for bug #1488943
         diff = list(difflib.Differ().compare(["\tI am a buggy"],["\t\tI am a bug"]))
         self.assertEqual("- \tI am a buggy", diff[0])
-        self.assertEqual("?            --\n", diff[1])
+        self.assertEqual("? \t          --\n", diff[1])
         self.assertEqual("+ \t\tI am a bug", diff[2])
         self.assertEqual("? +\n", diff[3])
+
+    def test_hint_indented_properly_with_tabs(self):
+        diff = list(difflib.Differ().compare(["\t \t \t^"], ["\t \t \t^\n"]))
+        self.assertEqual("- \t \t \t^", diff[0])
+        self.assertEqual("+ \t \t \t^\n", diff[1])
+        self.assertEqual("? \t \t \t +\n", diff[2])
+
+    def test_mdiff_catch_stop_iteration(self):
+        # Issue #33224
+        self.assertEqual(
+            list(difflib._mdiff(["2"], ["3"], 1)),
+            [((1, '\x00-2\x01'), (1, '\x00+3\x01'), True)],
+        )
+
 
 patch914575_from1 = """
    1. Beautiful is beTTer than ugly.
@@ -227,7 +241,7 @@ class TestSFpatches(unittest.TestCase):
         #with open('test_difflib_expect.html','w') as fp:
         #    fp.write(actual)
 
-        with open(findfile('test_difflib_expect.html')) as fp:
+        with open(findfile('test_difflib_expect.html'), encoding="utf-8") as fp:
             self.assertEqual(actual, fp.read())
 
     def test_recursion_limit(self):
@@ -466,13 +480,81 @@ class TestBytes(unittest.TestCase):
             list(generator(*args))
         self.assertEqual(msg, str(ctx.exception))
 
+class TestJunkAPIs(unittest.TestCase):
+    def test_is_line_junk_true(self):
+        for line in ['#', '  ', ' #', '# ', ' # ', '']:
+            self.assertTrue(difflib.IS_LINE_JUNK(line), repr(line))
 
-def test_main():
+    def test_is_line_junk_false(self):
+        for line in ['##', ' ##', '## ', 'abc ', 'abc #', 'Mr. Moose is up!']:
+            self.assertFalse(difflib.IS_LINE_JUNK(line), repr(line))
+
+    def test_is_line_junk_REDOS(self):
+        evil_input = ('\t' * 1000000) + '##'
+        self.assertFalse(difflib.IS_LINE_JUNK(evil_input))
+
+    def test_is_character_junk_true(self):
+        for char in [' ', '\t']:
+            self.assertTrue(difflib.IS_CHARACTER_JUNK(char), repr(char))
+
+    def test_is_character_junk_false(self):
+        for char in ['a', '#', '\n', '\f', '\r', '\v']:
+            self.assertFalse(difflib.IS_CHARACTER_JUNK(char), repr(char))
+
+class TestFindLongest(unittest.TestCase):
+    def longer_match_exists(self, a, b, n):
+        return any(b_part in a for b_part in
+                   [b[i:i + n + 1] for i in range(0, len(b) - n - 1)])
+
+    def test_default_args(self):
+        a = 'foo bar'
+        b = 'foo baz bar'
+        sm = difflib.SequenceMatcher(a=a, b=b)
+        match = sm.find_longest_match()
+        self.assertEqual(match.a, 0)
+        self.assertEqual(match.b, 0)
+        self.assertEqual(match.size, 6)
+        self.assertEqual(a[match.a: match.a + match.size],
+                         b[match.b: match.b + match.size])
+        self.assertFalse(self.longer_match_exists(a, b, match.size))
+
+        match = sm.find_longest_match(alo=2, blo=4)
+        self.assertEqual(match.a, 3)
+        self.assertEqual(match.b, 7)
+        self.assertEqual(match.size, 4)
+        self.assertEqual(a[match.a: match.a + match.size],
+                         b[match.b: match.b + match.size])
+        self.assertFalse(self.longer_match_exists(a[2:], b[4:], match.size))
+
+        match = sm.find_longest_match(bhi=5, blo=1)
+        self.assertEqual(match.a, 1)
+        self.assertEqual(match.b, 1)
+        self.assertEqual(match.size, 4)
+        self.assertEqual(a[match.a: match.a + match.size],
+                         b[match.b: match.b + match.size])
+        self.assertFalse(self.longer_match_exists(a, b[1:5], match.size))
+
+    def test_longest_match_with_popular_chars(self):
+        a = 'dabcd'
+        b = 'd'*100 + 'abc' + 'd'*100  # length over 200 so popular used
+        sm = difflib.SequenceMatcher(a=a, b=b)
+        match = sm.find_longest_match(0, len(a), 0, len(b))
+        self.assertEqual(match.a, 0)
+        self.assertEqual(match.b, 99)
+        self.assertEqual(match.size, 5)
+        self.assertEqual(a[match.a: match.a + match.size],
+                         b[match.b: match.b + match.size])
+        self.assertFalse(self.longer_match_exists(a, b, match.size))
+
+
+def setUpModule():
     difflib.HtmlDiff._default_prefix = 0
-    Doctests = doctest.DocTestSuite(difflib)
-    run_unittest(
-        TestWithAscii, TestAutojunk, TestSFpatches, TestSFbugs,
-        TestOutputFormat, TestBytes, Doctests)
+
+
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite(difflib))
+    return tests
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

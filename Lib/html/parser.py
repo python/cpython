@@ -9,7 +9,6 @@
 
 
 import re
-import warnings
 import _markupbase
 
 from html import unescape
@@ -47,7 +46,7 @@ locatestarttagend_tolerant = re.compile(r"""
           |"[^"]*"                   # LIT-enclosed value
           |(?!['"])[^>\s]*           # bare value
          )
-         (?:\s*,)*                   # possibly followed by a comma
+        \s*                          # possibly followed by a space
        )?(?:\s|/(?!>))*
      )*
    )?
@@ -329,13 +328,6 @@ class HTMLParser(_markupbase.ParserBase):
 
         end = rawdata[k:endpos].strip()
         if end not in (">", "/>"):
-            lineno, offset = self.getpos()
-            if "\n" in self.__starttag_text:
-                lineno = lineno + self.__starttag_text.count("\n")
-                offset = len(self.__starttag_text) \
-                         - self.__starttag_text.rfind("\n")
-            else:
-                offset = offset + len(self.__starttag_text)
             self.handle_data(rawdata[i:endpos])
             return endpos
         if end.endswith('/>'):
@@ -406,7 +398,7 @@ class HTMLParser(_markupbase.ParserBase):
             tagname = namematch.group(1).lower()
             # consume and ignore other stuff between the name and the >
             # Note: this is not 100% correct, since we might have things like
-            # </tag attr=">">, but looking for > after tha name should cover
+            # </tag attr=">">, but looking for > after the name should cover
             # most of the cases and is much simpler
             gtpos = rawdata.find('>', namematch.end())
             self.handle_endtag(tagname)
@@ -461,10 +453,3 @@ class HTMLParser(_markupbase.ParserBase):
 
     def unknown_decl(self, data):
         pass
-
-    # Internal -- helper to remove special character quoting
-    def unescape(self, s):
-        warnings.warn('The unescape method is deprecated and will be removed '
-                      'in 3.5, use html.unescape() instead.',
-                      DeprecationWarning, stacklevel=2)
-        return unescape(s)

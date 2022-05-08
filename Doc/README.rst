@@ -20,36 +20,39 @@ tree but are maintained separately and are available from
 
 * `Sphinx <https://pypi.org/project/Sphinx/>`_
 * `blurb <https://pypi.org/project/blurb/>`_
+* `python-docs-theme <https://pypi.org/project/python-docs-theme/>`_
 
 The easiest way to install these tools is to create a virtual environment and
 install the tools into there.
 
-
 Using make
 ----------
 
-To get started on UNIX, you can create a virtual environment with the command ::
+To get started on UNIX, you can create a virtual environment and build
+documentation with the commands::
 
   make venv
-
-That will install all the tools necessary to build the documentation. Assuming
-the virtual environment was created in the ``env`` directory (the default;
-configurable with the VENVDIR variable), you can run the following command to
-build the HTML output files::
-
   make html
 
-By default, if the virtual environment is not created, the Makefile will
-look for instances of sphinxbuild and blurb installed on your process PATH
-(configurable with the SPHINXBUILD and BLURB variables).
+The virtual environment in the ``venv`` directory will contain all the tools
+necessary to build the documentation downloaded and installed from PyPI.
+If you'd like to create the virtual environment in a different location,
+you can specify it using the ``VENVDIR`` variable.
+
+You can also skip creating the virtual environment altogether, in which case
+the Makefile will look for instances of ``sphinxbuild`` and ``blurb``
+installed on your process ``PATH`` (configurable with the ``SPHINXBUILD`` and
+``BLURB`` variables).
 
 On Windows, we try to emulate the Makefile as closely as possible with a
 ``make.bat`` file. If you need to specify the Python interpreter to use,
-set the PYTHON environment variable instead.
+set the PYTHON environment variable.
 
 Available make targets are:
 
-* "clean", which removes all build files.
+* "clean", which removes all build files and the virtual environment.
+
+* "clean-venv", which removes the virtual environment directory.
 
 * "venv", which creates a virtual environment with all necessary tools
   installed.
@@ -88,7 +91,7 @@ Available make targets are:
 
 * "pydoc-topics", which builds a Python module containing a dictionary with
   plain text documentation for the labels defined in
-  `tools/pyspecific.py` -- pydoc needs these to show topic and keyword help.
+  ``tools/pyspecific.py`` -- pydoc needs these to show topic and keyword help.
 
 * "suspicious", which checks the parsed markup for text that looks like
   malformed and thus unconverted reST.
@@ -113,12 +116,21 @@ Then, from the ``Doc`` directory, run ::
 where ``<builder>`` is one of html, text, latex, or htmlhelp (for explanations
 see the make targets above).
 
+Deprecation header
+==================
+
+You can define the ``outdated`` variable in ``html_context`` to show a
+red banner on each page redirecting to the "latest" version.
+
+The link points to the same page on ``/3/``, sadly for the moment the
+language is lost during the process.
+
 
 Contributing
 ============
 
 Bugs in the content should be reported to the
-`Python bug tracker <https://bugs.python.org>`_.
+`Python bug tracker <https://github.com/python/cpython/issues>`_.
 
 Bugs in the toolset should be reported to the tools themselves.
 

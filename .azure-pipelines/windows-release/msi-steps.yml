@@ -1,0 +1,181 @@
+parameters:
+  ARM64TclTk: true
+
+steps:
+  - template: ./checkout.yml
+
+  - powershell: |
+      $d = (.\PCbuild\build.bat -V) | %{ if($_ -match '\s+(\w+):\s*(.+)\s*$') { @{$Matches[1] = $Matches[2];} }};
+      Write-Host "##vso[task.setvariable variable=SigningDescription]Python $($d.PythonVersion)"
+    displayName: 'Update signing description'
+    condition: and(succeeded(), not(variables['SigningDescription']))
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: doc'
+    inputs:
+      artifactName: doc
+      targetPath: $(Build.BinariesDirectory)\doc
+
+  - task: CopyFiles@2
+    displayName: 'Merge documentation files'
+    inputs:
+      sourceFolder: $(Build.BinariesDirectory)\doc
+      targetFolder: $(Build.SourcesDirectory)\Doc\build
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: bin_win32'
+    inputs:
+      artifactName: bin_win32
+      targetPath: $(Build.BinariesDirectory)\win32
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: bin_win32_d'
+    inputs:
+      artifactName: bin_win32_d
+      targetPath: $(Build.BinariesDirectory)\win32
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: bin_amd64'
+    inputs:
+      artifactName: bin_amd64
+      targetPath: $(Build.BinariesDirectory)\amd64
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: bin_amd64_d'
+    inputs:
+      artifactName: bin_amd64_d
+      targetPath: $(Build.BinariesDirectory)\amd64
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: bin_arm64'
+    condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
+    inputs:
+      artifactName: bin_arm64
+      targetPath: $(Build.BinariesDirectory)\arm64
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: bin_arm64_d'
+    condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
+    inputs:
+      artifactName: bin_arm64_d
+      targetPath: $(Build.BinariesDirectory)\arm64
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: tcltk_lib_win32'
+    inputs:
+      artifactName: tcltk_lib_win32
+      targetPath: $(Build.BinariesDirectory)\tcltk_lib_win32
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: tcltk_lib_amd64'
+    inputs:
+      artifactName: tcltk_lib_amd64
+      targetPath: $(Build.BinariesDirectory)\tcltk_lib_amd64
+
+  - ${{ if eq(parameters.ARM64TclTk, true) }}:
+    - task: DownloadPipelineArtifact@1
+      displayName: 'Download artifact: tcltk_lib_arm64'
+      condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
+      inputs:
+        artifactName: tcltk_lib_arm64
+        targetPath: $(Build.BinariesDirectory)\tcltk_lib_arm64
+
+  - powershell: |
+      copy $(Build.BinariesDirectory)\amd64\Activate.ps1 Lib\venv\scripts\common\Activate.ps1 -Force
+    displayName: 'Copy signed files into sources'
+    condition: and(succeeded(), variables['SigningCertificate'])
+
+  - script: |
+      call Tools\msi\get_externals.bat
+      call PCbuild\find_python.bat
+      echo ##vso[task.setvariable variable=PYTHON]%PYTHON%
+      call PCbuild/find_msbuild.bat
+      echo ##vso[task.setvariable variable=MSBUILD]%MSBUILD%
+    displayName: 'Get external dependencies'
+
+  - script: |
+      %PYTHON% -m pip install blurb
+      %PYTHON% -m blurb merge -f Misc\NEWS
+    displayName: 'Merge NEWS file'
+
+  - script: |
+      %MSBUILD% Tools\msi\launcher\launcher.wixproj
+    displayName: 'Build launcher installer'
+    env:
+      Platform: x86
+      Py_OutDir: $(Build.BinariesDirectory)
+
+  - script: |
+      %MSBUILD% Tools\msi\bundle\releaselocal.wixproj /t:Rebuild /p:RebuildAll=true
+    displayName: 'Build win32 installer'
+    env:
+      Platform: x86
+      Py_OutDir: $(Build.BinariesDirectory)
+      PYTHON: $(Build.BinariesDirectory)\win32\python.exe
+      PythonForBuild: $(Build.BinariesDirectory)\win32\python.exe
+      PYTHONHOME: $(Build.SourcesDirectory)
+      TclTkLibraryDir: $(Build.BinariesDirectory)\tcltk_lib_win32
+      BuildForRelease: true
+
+  - script: |
+      %MSBUILD% Tools\msi\bundle\releaselocal.wixproj /t:Rebuild /p:RebuildAll=true
+    displayName: 'Build amd64 installer'
+    env:
+      Platform: x64
+      Py_OutDir: $(Build.BinariesDirectory)
+      PYTHON: $(Build.BinariesDirectory)\amd64\python.exe
+      PythonForBuild: $(Build.BinariesDirectory)\amd64\python.exe
+      PYTHONHOME: $(Build.SourcesDirectory)
+      TclTkLibraryDir: $(Build.BinariesDirectory)\tcltk_lib_amd64
+      BuildForRelease: true
+
+  - script: |
+      %MSBUILD% Tools\msi\bundle\releaselocal.wixproj /t:Rebuild /p:RebuildAll=true
+    displayName: 'Build arm64 installer'
+    condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
+    env:
+      Platform: ARM64
+      Py_OutDir: $(Build.BinariesDirectory)
+      PYTHON: $(Build.BinariesDirectory)\win32\python.exe
+      PythonForBuild: $(Build.BinariesDirectory)\win32\python.exe
+      PYTHONHOME: $(Build.SourcesDirectory)
+      BuildForRelease: true
+      ${{ if eq(parameters.ARM64TclTk, true) }}:
+        TclTkLibraryDir: $(Build.BinariesDirectory)\tcltk_lib_arm64
+
+  - task: CopyFiles@2
+    displayName: 'Assemble artifact: msi (win32)'
+    inputs:
+      sourceFolder: $(Build.BinariesDirectory)\win32\en-us
+      targetFolder: $(Build.ArtifactStagingDirectory)\msi\win32
+      contents: |
+        *.msi
+        *.cab
+        *.exe
+
+  - task: CopyFiles@2
+    displayName: 'Assemble artifact: msi (amd64)'
+    inputs:
+      sourceFolder: $(Build.BinariesDirectory)\amd64\en-us
+      targetFolder: $(Build.ArtifactStagingDirectory)\msi\amd64
+      contents: |
+        *.msi
+        *.cab
+        *.exe
+
+  - task: CopyFiles@2
+    displayName: 'Assemble artifact: msi (arm64)'
+    condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
+    inputs:
+      sourceFolder: $(Build.BinariesDirectory)\arm64\en-us
+      targetFolder: $(Build.ArtifactStagingDirectory)\msi\arm64
+      contents: |
+        *.msi
+        *.cab
+        *.exe
+
+  - task: PublishPipelineArtifact@0
+    displayName: 'Publish MSI'
+    inputs:
+      targetPath: '$(Build.ArtifactStagingDirectory)\msi'
+      artifactName: msi

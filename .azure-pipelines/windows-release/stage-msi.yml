@@ -1,0 +1,43 @@
+parameters:
+  ARM64TclTk: true
+
+jobs:
+- job: Make_MSI
+  displayName: Make MSI
+  condition: and(succeeded(), not(variables['SigningCertificate']))
+
+  pool:
+    vmImage: windows-2022
+
+  variables:
+    ReleaseUri: http://www.python.org/{arch}
+    DownloadUrl: https://www.python.org/ftp/python/{version}/{arch}{releasename}/{msi}
+    Py_OutDir: $(Build.BinariesDirectory)
+
+  workspace:
+    clean: all
+
+  steps:
+  - template: msi-steps.yml
+    parameters:
+      ARM64TclTk: ${{ parameters.ARM64TclTk }}
+
+- job: Make_Signed_MSI
+  displayName: Make signed MSI
+  condition: and(succeeded(), variables['SigningCertificate'])
+
+  pool:
+    name: 'Windows Release'
+
+  variables:
+    ReleaseUri: http://www.python.org/{arch}
+    DownloadUrl: https://www.python.org/ftp/python/{version}/{arch}{releasename}/{msi}
+    Py_OutDir: $(Build.BinariesDirectory)
+
+  workspace:
+    clean: all
+
+  steps:
+  - template: msi-steps.yml
+    parameters:
+      ARM64TclTk: ${{ parameters.ARM64TclTk }}

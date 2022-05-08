@@ -77,15 +77,6 @@ class LocaleTime(object):
         if time.tzname != self.tzname or time.daylight != self.daylight:
             raise ValueError("timezone changed during initialization")
 
-    def __pad(self, seq, front):
-        # Add '' to seq to either the front (is True), else the back.
-        seq = list(seq)
-        if front:
-            seq.insert(0, '')
-        else:
-            seq.append('')
-        return seq
-
     def __calc_weekday(self):
         # Set self.a_weekday and self.f_weekday using the calendar
         # module.
@@ -191,7 +182,7 @@ class TimeRE(dict):
             self.locale_time = LocaleTime()
         base = super()
         base.__init__({
-            # The " \d" part of the regex is to make %c from ANSI C work
+            # The " [1-9]" part of the regex is to make %c from ANSI C work
             'd': r"(?P<d>3[0-1]|[1-2]\d|0[1-9]|[1-9]| [1-9])",
             'f': r"(?P<f>[0-9]{1,6})",
             'H': r"(?P<H>2[0-3]|[0-1]\d|\d)",
@@ -210,7 +201,7 @@ class TimeRE(dict):
             #XXX: Does 'Y' need to worry about having less or more than
             #     4 digits?
             'Y': r"(?P<Y>\d\d\d\d)",
-            'z': r"(?P<z>[+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?|Z)",
+            'z': r"(?P<z>[+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?|(?-i:Z))",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
             'B': self.__seqToRE(self.locale_time.f_month[1:], 'B'),
@@ -463,14 +454,17 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                     z = z[:3] + z[4:]
                     if len(z) > 5:
                         if z[5] != ':':
-                            msg = f"Unconsistent use of : in {found_dict['z']}"
+                            msg = f"Inconsistent use of : in {found_dict['z']}"
                             raise ValueError(msg)
                         z = z[:5] + z[6:]
                 hours = int(z[1:3])
                 minutes = int(z[3:5])
                 seconds = int(z[5:7] or 0)
                 gmtoff = (hours * 60 * 60) + (minutes * 60) + seconds
-                gmtoff_fraction = int(z[8:] or 0)
+                gmtoff_remainder = z[8:]
+                # Pad to always return microseconds.
+                gmtoff_remainder_padding = "0" * (6 - len(gmtoff_remainder))
+                gmtoff_fraction = int(gmtoff_remainder + gmtoff_remainder_padding)
                 if z.startswith("-"):
                     gmtoff = -gmtoff
                     gmtoff_fraction = -gmtoff_fraction

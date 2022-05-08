@@ -112,6 +112,10 @@ The mathematical and bitwise operations are the most numerous:
 
    Return *a* converted to an integer.  Equivalent to ``a.__index__()``.
 
+   .. versionchanged:: 3.10
+      The result always has exact type :class:`int`.  Previously, the result
+      could have been an instance of a subclass of ``int``.
+
 
 .. function:: inv(obj)
               invert(obj)
@@ -246,6 +250,17 @@ Operations which work with sequences (some of them with mappings too) include:
 
    .. versionadded:: 3.4
 
+
+The following operation works with callables:
+
+.. function:: call(obj, /, *args, **kwargs)
+              __call__(obj, /, *args, **kwargs)
+
+   Return ``obj(*args, **kwargs)``.
+
+   .. versionadded:: 3.11
+
+
 The :mod:`operator` module also defines tools for generalized attribute and item
 lookups.  These are useful for making fast field extractors as arguments for
 :func:`map`, :func:`sorted`, :meth:`itertools.groupby`, or other functions that
@@ -317,11 +332,10 @@ expect a function argument.
 
       >>> itemgetter(1)('ABCDEFG')
       'B'
-      >>> itemgetter(1,3,5)('ABCDEFG')
+      >>> itemgetter(1, 3, 5)('ABCDEFG')
       ('B', 'D', 'F')
-      >>> itemgetter(slice(2,None))('ABCDEFG')
+      >>> itemgetter(slice(2, None))('ABCDEFG')
       'CDEFG'
-
       >>> soldier = dict(rank='captain', name='dotterbart')
       >>> itemgetter('rank')(soldier)
       'captain'
@@ -337,7 +351,7 @@ expect a function argument.
       [('orange', 1), ('banana', 2), ('apple', 3), ('pear', 5)]
 
 
-.. function:: methodcaller(name[, args...])
+.. function:: methodcaller(name, /, *args, **kwargs)
 
    Return a callable object that calls the method *name* on its operand.  If
    additional arguments and/or keyword arguments are given, they will be given
@@ -350,7 +364,7 @@ expect a function argument.
 
    Equivalent to::
 
-      def methodcaller(name, *args, **kwargs):
+      def methodcaller(name, /, *args, **kwargs):
           def caller(obj):
               return getattr(obj, name)(*args, **kwargs)
           return caller
@@ -438,8 +452,8 @@ Python syntax and the functions in the :mod:`operator` module.
 | Ordering              | ``a > b``               | ``gt(a, b)``                          |
 +-----------------------+-------------------------+---------------------------------------+
 
-Inplace Operators
------------------
+In-place Operators
+------------------
 
 Many operations have an "in-place" version.  Listed below are functions
 providing a more primitive access to in-place operators than the usual syntax
@@ -462,7 +476,7 @@ value is computed, but not assigned back to the input variable:
 >>> a
 'hello'
 
-For mutable targets such as lists and dictionaries, the inplace method
+For mutable targets such as lists and dictionaries, the in-place method
 will perform the update, so no subsequent assignment is necessary:
 
 >>> s = ['h', 'e', 'l', 'l', 'o']
