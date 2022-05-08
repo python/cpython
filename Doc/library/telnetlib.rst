@@ -3,12 +3,16 @@
 
 .. module:: telnetlib
    :synopsis: Telnet client class.
+   :deprecated:
 
 .. sectionauthor:: Skip Montanaro <skip@pobox.com>
 
 **Source code:** :source:`Lib/telnetlib.py`
 
 .. index:: single: protocol; Telnet
+
+.. deprecated:: 3.11
+   The :mod:`telnetlib` module is deprecated (see :pep:`594` for details).
 
 --------------
 

@@ -12,8 +12,8 @@ import webbrowser
 from tkinter import *
 from tkinter.font import Font
 from tkinter.ttk import Scrollbar
-import tkinter.simpledialog as tkSimpleDialog
-import tkinter.messagebox as tkMessageBox
+from tkinter import simpledialog
+from tkinter import messagebox
 
 from idlelib.config import idleConf
 from idlelib import configdialog
@@ -27,6 +27,7 @@ from idlelib import query
 from idlelib import replace
 from idlelib import search
 from idlelib.tree import wheel_event
+from idlelib.util import py_extensions
 from idlelib import window
 
 # The default tab setting for a Text widget, in average-width characters.
@@ -46,7 +47,7 @@ def _sphinx_version():
     return release
 
 
-class EditorWindow(object):
+class EditorWindow:
     from idlelib.percolator import Percolator
     from idlelib.colorizer import ColorDelegator, color_config
     from idlelib.undo import UndoDelegator
@@ -60,7 +61,6 @@ class EditorWindow(object):
     from idlelib.sidebar import LineNumbers
     from idlelib.format import FormatParagraph, FormatRegion, Indents, Rstrip
     from idlelib.parenmatch import ParenMatch
-    from idlelib.squeezer import Squeezer
     from idlelib.zoomheight import ZoomHeight
 
     filesystemencoding = sys.getfilesystemencoding()  # for file names
@@ -68,6 +68,7 @@ class EditorWindow(object):
 
     allow_code_context = True
     allow_line_numbers = True
+    user_input_insert_tags = None
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
         # Delay import: runscript imports pyshell imports EditorWindow.
@@ -295,9 +296,9 @@ class EditorWindow(object):
             window.register_callback(self.postwindowsmenu)
 
         # Some abstractions so IDLE extensions are cross-IDE
-        self.askyesno = tkMessageBox.askyesno
-        self.askinteger = tkSimpleDialog.askinteger
-        self.showerror = tkMessageBox.showerror
+        self.askinteger = simpledialog.askinteger
+        self.askyesno = messagebox.askyesno
+        self.showerror = messagebox.showerror
 
         # Add pseudoevents for former extension fixed keys.
         # (This probably needs to be done once in the process.)
@@ -311,7 +312,7 @@ class EditorWindow(object):
 
         # Former extension bindings depends on frame.text being packed
         # (called from self.ResetColorizer()).
-        autocomplete = self.AutoComplete(self)
+        autocomplete = self.AutoComplete(self, self.user_input_insert_tags)
         text.bind("<<autocomplete>>", autocomplete.autocomplete_event)
         text.bind("<<try-open-completions>>",
                   autocomplete.try_open_completions_event)
@@ -328,7 +329,7 @@ class EditorWindow(object):
         text.bind("<<run-module>>", scriptbinding.run_module_event)
         text.bind("<<run-custom>>", scriptbinding.run_custom_event)
         text.bind("<<do-rstrip>>", self.Rstrip(self).do_rstrip)
-        ctip = self.Calltip(self)
+        self.ctip = ctip = self.Calltip(self)
         text.bind("<<try-open-calltip>>", ctip.try_open_calltip_event)
         #refresh-calltip must come after paren-closed to work right
         text.bind("<<refresh-calltip>>", ctip.refresh_calltip_event)
@@ -339,7 +340,7 @@ class EditorWindow(object):
             text.bind("<<toggle-code-context>>",
                       self.code_context.toggle_code_context_event)
         else:
-            self.update_menu_state('options', '*Code Context', 'disabled')
+            self.update_menu_state('options', '*ode*ontext', 'disabled')
         if self.allow_line_numbers:
             self.line_numbers = self.LineNumbers(self)
             if idleConf.GetOption('main', 'EditorWindow',
@@ -347,7 +348,7 @@ class EditorWindow(object):
                 self.toggle_line_numbers_event()
             text.bind("<<toggle-line-numbers>>", self.toggle_line_numbers_event)
         else:
-            self.update_menu_state('options', '*Line Numbers', 'disabled')
+            self.update_menu_state('options', '*ine*umbers', 'disabled')
 
     def handle_winconfig(self, event=None):
         self.set_width()
@@ -450,7 +451,9 @@ class EditorWindow(object):
         self.menudict = menudict = {}
         for name, label in self.menu_specs:
             underline, label = prepstr(label)
-            menudict[name] = menu = Menu(mbar, name=name, tearoff=0)
+            postcommand = getattr(self, f'{name}_menu_postcommand', None)
+            menudict[name] = menu = Menu(mbar, name=name, tearoff=0,
+                                         postcommand=postcommand)
             mbar.add_cascade(label=label, menu=menu, underline=underline)
         if macosx.isCarbonTk():
             # Insert the application menu
@@ -499,14 +502,23 @@ class EditorWindow(object):
     rmenu = None
 
     def right_menu_event(self, event):
-        self.text.mark_set("insert", "@%d,%d" % (event.x, event.y))
+        text = self.text
+        newdex = text.index(f'@{event.x},{event.y}')
+        try:
+            in_selection = (text.compare('sel.first', '<=', newdex) and
+                           text.compare(newdex, '<=',  'sel.last'))
+        except TclError:
+            in_selection = False
+        if not in_selection:
+            text.tag_remove("sel", "1.0", "end")
+            text.mark_set("insert", newdex)
         if not self.rmenu:
             self.make_rmenu()
         rmenu = self.rmenu
         self.event = event
         iswin = sys.platform[:3] == 'win'
         if iswin:
-            self.text.config(cursor="arrow")
+            text.config(cursor="arrow")
 
         for item in self.rmenu_specs:
             try:
@@ -518,7 +530,6 @@ class EditorWindow(object):
                 continue
             state = getattr(self, verify_state)()
             rmenu.entryconfigure(label, state=state)
-
 
         rmenu.tk_popup(event.x_root, event.y_root)
         if iswin:
@@ -588,7 +599,7 @@ class EditorWindow(object):
             try:
                 os.startfile(self.help_url)
             except OSError as why:
-                tkMessageBox.showerror(title='Document Start Failure',
+                messagebox.showerror(title='Document Start Failure',
                     message=str(why), parent=self.text)
         else:
             webbrowser.open(self.help_url)
@@ -671,15 +682,16 @@ class EditorWindow(object):
 
     def goto_line_event(self, event):
         text = self.text
-        lineno = tkSimpleDialog.askinteger("Goto",
-                "Go to line number:",parent=text)
-        if lineno is None:
-            return "break"
-        if lineno <= 0:
-            text.bell()
-            return "break"
-        text.mark_set("insert", "%d.0" % lineno)
-        text.see("insert")
+        lineno = query.Goto(
+                text, "Go To Line",
+                "Enter a positive integer\n"
+                "('big' = end of file):"
+                ).result
+        if lineno is not None:
+            text.tag_remove("sel", "1.0", "end")
+            text.mark_set("insert", f'{lineno}.0')
+            text.see("insert")
+            self.set_line_and_column()
         return "break"
 
     def open_module(self):
@@ -746,7 +758,7 @@ class EditorWindow(object):
         if not filename or os.path.isdir(filename):
             return True
         base, ext = os.path.splitext(os.path.basename(filename))
-        if os.path.normcase(ext) in (".py", ".pyw"):
+        if os.path.normcase(ext) in py_extensions:
             return True
         line = self.text.get('1.0', '1.0 lineend')
         return line.startswith('#!') and 'python' in line
@@ -773,9 +785,7 @@ class EditorWindow(object):
             self.color = self.ColorDelegator()
         # can add more colorizers here...
         if self.color:
-            self.per.removefilter(self.undo)
-            self.per.insertfilter(self.color)
-            self.per.insertfilter(self.undo)
+            self.per.insertfilterafter(filter=self.color, after=self.undo)
 
     def _rmcolorizer(self):
         if not self.color:
@@ -918,7 +928,7 @@ class EditorWindow(object):
                 try:
                     os.startfile(helpfile)
                 except OSError as why:
-                    tkMessageBox.showerror(title='Document Start Failure',
+                    messagebox.showerror(title='Document Start Failure',
                         message=str(why), parent=self.text)
             else:
                 webbrowser.open(helpfile)
@@ -954,7 +964,7 @@ class EditorWindow(object):
             except OSError as err:
                 if not getattr(self.root, "recentfiles_message", False):
                     self.root.recentfiles_message = True
-                    tkMessageBox.showwarning(title='IDLE Warning',
+                    messagebox.showwarning(title='IDLE Warning',
                         message="Cannot save Recent Files list to disk.\n"
                                 f"  {err}\n"
                                 "Select OK to continue.",
@@ -1292,8 +1302,6 @@ class EditorWindow(object):
         # Debug prompt is multilined....
         ncharsdeleted = 0
         while 1:
-            if chars == self.prompt_last_line:  # '' unless PyShell
-                break
             chars = chars[:-1]
             ncharsdeleted = ncharsdeleted + 1
             have = len(chars.expandtabs(tabwidth))
@@ -1302,7 +1310,8 @@ class EditorWindow(object):
         text.undo_block_start()
         text.delete("insert-%dc" % ncharsdeleted, "insert")
         if have < want:
-            text.insert("insert", ' ' * (want - have))
+            text.insert("insert", ' ' * (want - have),
+                        self.user_input_insert_tags)
         text.undo_block_stop()
         return "break"
 
@@ -1335,45 +1344,59 @@ class EditorWindow(object):
                     effective = len(prefix.expandtabs(self.tabwidth))
                     n = self.indentwidth
                     pad = ' ' * (n - effective % n)
-                text.insert("insert", pad)
+                text.insert("insert", pad, self.user_input_insert_tags)
             text.see("insert")
             return "break"
         finally:
             text.undo_block_stop()
 
     def newline_and_indent_event(self, event):
+        """Insert a newline and indentation after Enter keypress event.
+
+        Properly position the cursor on the new line based on information
+        from the current line.  This takes into account if the current line
+        is a shell prompt, is empty, has selected text, contains a block
+        opener, contains a block closer, is a continuation line, or
+        is inside a string.
+        """
         text = self.text
         first, last = self.get_selection_indices()
         text.undo_block_start()
-        try:
+        try:  # Close undo block and expose new line in finally clause.
             if first and last:
                 text.delete(first, last)
                 text.mark_set("insert", first)
             line = text.get("insert linestart", "insert")
+
+            # Count leading whitespace for indent size.
             i, n = 0, len(line)
             while i < n and line[i] in " \t":
-                i = i+1
+                i += 1
             if i == n:
-                # the cursor is in or at leading indentation in a continuation
-                # line; just inject an empty line at the start
-                text.insert("insert linestart", '\n')
+                # The cursor is in or at leading indentation in a continuation
+                # line; just inject an empty line at the start.
+                text.insert("insert linestart", '\n',
+                            self.user_input_insert_tags)
                 return "break"
             indent = line[:i]
-            # strip whitespace before insert point unless it's in the prompt
+
+            # Strip whitespace before insert point unless it's in the prompt.
             i = 0
-            while line and line[-1] in " \t" and line != self.prompt_last_line:
+            while line and line[-1] in " \t":
                 line = line[:-1]
-                i = i+1
+                i += 1
             if i:
                 text.delete("insert - %d chars" % i, "insert")
-            # strip whitespace after insert point
+
+            # Strip whitespace after insert point.
             while text.get("insert") in " \t":
                 text.delete("insert")
-            # start new line
-            text.insert("insert", '\n')
 
-            # adjust indentation for continuations and block
-            # open/close first need to find the last stmt
+            # Insert new line.
+            text.insert("insert", '\n', self.user_input_insert_tags)
+
+            # Adjust indentation for continuations and block open/close.
+            # First need to find the last statement.
             lno = index2line(text.index('insert'))
             y = pyparse.Parser(self.indentwidth, self.tabwidth)
             if not self.prompt_last_line:
@@ -1383,7 +1406,7 @@ class EditorWindow(object):
                     rawtext = text.get(startatindex, "insert")
                     y.set_code(rawtext)
                     bod = y.find_good_parse_start(
-                              self._build_char_in_string_func(startatindex))
+                            self._build_char_in_string_func(startatindex))
                     if bod is not None or startat == 1:
                         break
                 y.set_lo(bod or 0)
@@ -1399,39 +1422,40 @@ class EditorWindow(object):
 
             c = y.get_continuation_type()
             if c != pyparse.C_NONE:
-                # The current stmt hasn't ended yet.
+                # The current statement hasn't ended yet.
                 if c == pyparse.C_STRING_FIRST_LINE:
-                    # after the first line of a string; do not indent at all
+                    # After the first line of a string do not indent at all.
                     pass
                 elif c == pyparse.C_STRING_NEXT_LINES:
-                    # inside a string which started before this line;
-                    # just mimic the current indent
-                    text.insert("insert", indent)
+                    # Inside a string which started before this line;
+                    # just mimic the current indent.
+                    text.insert("insert", indent, self.user_input_insert_tags)
                 elif c == pyparse.C_BRACKET:
-                    # line up with the first (if any) element of the
+                    # Line up with the first (if any) element of the
                     # last open bracket structure; else indent one
                     # level beyond the indent of the line with the
-                    # last open bracket
+                    # last open bracket.
                     self.reindent_to(y.compute_bracket_indent())
                 elif c == pyparse.C_BACKSLASH:
-                    # if more than one line in this stmt already, just
+                    # If more than one line in this statement already, just
                     # mimic the current indent; else if initial line
                     # has a start on an assignment stmt, indent to
                     # beyond leftmost =; else to beyond first chunk of
-                    # non-whitespace on initial line
+                    # non-whitespace on initial line.
                     if y.get_num_lines_in_stmt() > 1:
-                        text.insert("insert", indent)
+                        text.insert("insert", indent,
+                                    self.user_input_insert_tags)
                     else:
                         self.reindent_to(y.compute_backslash_indent())
                 else:
                     assert 0, "bogus continuation type %r" % (c,)
                 return "break"
 
-            # This line starts a brand new stmt; indent relative to
+            # This line starts a brand new statement; indent relative to
             # indentation of initial line of closest preceding
-            # interesting stmt.
+            # interesting statement.
             indent = y.get_base_indent_string()
-            text.insert("insert", indent)
+            text.insert("insert", indent, self.user_input_insert_tags)
             if y.is_block_opener():
                 self.smart_indent_event(event)
             elif indent and y.is_block_closer():
@@ -1478,7 +1502,8 @@ class EditorWindow(object):
         if text.compare("insert linestart", "!=", "insert"):
             text.delete("insert linestart", "insert")
         if column:
-            text.insert("insert", self._make_blanks(column))
+            text.insert("insert", self._make_blanks(column),
+                        self.user_input_insert_tags)
         text.undo_block_stop()
 
     # Guess indentwidth from text content.
@@ -1505,7 +1530,7 @@ class EditorWindow(object):
         else:
             self.line_numbers.show_sidebar()
             menu_label = "Hide"
-        self.update_menu_label(menu='options', index='*Line Numbers',
+        self.update_menu_label(menu='options', index='*ine*umbers',
                                label=f'{menu_label} Line Numbers')
 
 # "line.col" -> line, as an int
@@ -1524,7 +1549,7 @@ def get_line_indent(line, tabwidth):
     return m.end(), len(m.group().expandtabs(tabwidth))
 
 
-class IndentSearcher(object):
+class IndentSearcher:
 
     # .run() chews over the Text widget, looking for a block opener
     # and the stmt following it.  Returns a pair,

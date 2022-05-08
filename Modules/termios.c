@@ -1,4 +1,4 @@
-/* termiosmodule.c -- POSIX terminal I/O module implementation.  */
+/* termios.c -- POSIX terminal I/O module implementation.  */
 
 #include "Python.h"
 
@@ -29,6 +29,13 @@
 #include <sys/bsdtty.h>
 #endif
 
+/*[clinic input]
+module termios
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=01105c85d0ca7252]*/
+
+#include "clinic/termios.c.h"
+
 PyDoc_STRVAR(termios__doc__,
 "This module provides an interface to the Posix calls for tty I/O control.\n\
 For a complete description of these calls, see the Posix or Unix manual\n\
@@ -42,60 +49,55 @@ sys.stdin.fileno(), or a file object, such as sys.stdin itself.");
 typedef struct {
   PyObject *TermiosError;
 } termiosmodulestate;
-#define modulestate(o) ((termiosmodulestate *)PyModule_GetState(o))
-#define modulestate_global modulestate(PyState_FindModule(&termiosmodule))
 
-static int fdconv(PyObject* obj, void* p)
+static inline termiosmodulestate*
+get_termios_state(PyObject *module)
 {
-    int fd;
-
-    fd = PyObject_AsFileDescriptor(obj);
-    if (fd >= 0) {
-        *(int*)p = fd;
-        return 1;
-    }
-    return 0;
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (termiosmodulestate *)state;
 }
 
 static struct PyModuleDef termiosmodule;
 
-PyDoc_STRVAR(termios_tcgetattr__doc__,
-"tcgetattr(fd) -> list_of_attrs\n\
-\n\
-Get the tty attributes for file descriptor fd, as follows:\n\
-[iflag, oflag, cflag, lflag, ispeed, ospeed, cc] where cc is a list\n\
-of the tty special characters (each a string of length 1, except the items\n\
-with indices VMIN and VTIME, which are integers when these fields are\n\
-defined).  The interpretation of the flags and the speeds as well as the\n\
-indexing in the cc array must be done using the symbolic constants defined\n\
-in this module.");
+/*[clinic input]
+termios.tcgetattr
+
+    fd: fildes
+    /
+
+Get the tty attributes for file descriptor fd.
+
+Returns a list [iflag, oflag, cflag, lflag, ispeed, ospeed, cc]
+where cc is a list of the tty special characters (each a string of
+length 1, except the items with indices VMIN and VTIME, which are
+integers when these fields are defined).  The interpretation of the
+flags and the speeds as well as the indexing in the cc array must be
+done using the symbolic constants defined in this module.
+[clinic start generated code]*/
 
 static PyObject *
-termios_tcgetattr(PyObject *self, PyObject *args)
+termios_tcgetattr_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=2b3da39db870e629 input=54dad9779ebe74b1]*/
 {
-    int fd;
+    termiosmodulestate *state = PyModule_GetState(module);
     struct termios mode;
-    PyObject *cc;
-    speed_t ispeed, ospeed;
+    if (tcgetattr(fd, &mode) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    speed_t ispeed = cfgetispeed(&mode);
+    speed_t ospeed = cfgetospeed(&mode);
+
+    PyObject *cc = PyList_New(NCCS);
+    if (cc == NULL) {
+        return NULL;
+    }
+
     PyObject *v;
     int i;
-    char ch;
-
-    if (!PyArg_ParseTuple(args, "O&:tcgetattr",
-                          fdconv, (void*)&fd))
-        return NULL;
-
-    if (tcgetattr(fd, &mode) == -1)
-        return PyErr_SetFromErrno(modulestate_global->TermiosError);
-
-    ispeed = cfgetispeed(&mode);
-    ospeed = cfgetospeed(&mode);
-
-    cc = PyList_New(NCCS);
-    if (cc == NULL)
-        return NULL;
     for (i = 0; i < NCCS; i++) {
-        ch = (char)mode.c_cc[i];
+        char ch = (char)mode.c_cc[i];
         v = PyBytes_FromStringAndSize(&ch, 1);
         if (v == NULL)
             goto err;
@@ -136,29 +138,28 @@ termios_tcgetattr(PyObject *self, PyObject *args)
     return NULL;
 }
 
-PyDoc_STRVAR(termios_tcsetattr__doc__,
-"tcsetattr(fd, when, attributes) -> None\n\
-\n\
-Set the tty attributes for file descriptor fd.\n\
-The attributes to be set are taken from the attributes argument, which\n\
-is a list like the one returned by tcgetattr(). The when argument\n\
-determines when the attributes are changed: termios.TCSANOW to\n\
-change immediately, termios.TCSADRAIN to change after transmitting all\n\
-queued output, or termios.TCSAFLUSH to change after transmitting all\n\
-queued output and discarding all queued input. ");
+/*[clinic input]
+termios.tcsetattr
+
+    fd: fildes
+    when: int
+    attributes as term: object
+    /
+
+Set the tty attributes for file descriptor fd.
+
+The attributes to be set are taken from the attributes argument, which
+is a list like the one returned by tcgetattr(). The when argument
+determines when the attributes are changed: termios.TCSANOW to
+change immediately, termios.TCSADRAIN to change after transmitting all
+queued output, or termios.TCSAFLUSH to change after transmitting all
+queued output and discarding all queued input.
+[clinic start generated code]*/
 
 static PyObject *
-termios_tcsetattr(PyObject *self, PyObject *args)
+termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
+/*[clinic end generated code: output=bcd2b0a7b98a4bf5 input=5dafabdd5a08f018]*/
 {
-    int fd, when;
-    struct termios mode;
-    speed_t ispeed, ospeed;
-    PyObject *term, *cc, *v;
-    int i;
-
-    if (!PyArg_ParseTuple(args, "O&iO:tcsetattr",
-                          fdconv, &fd, &when, &term))
-        return NULL;
     if (!PyList_Check(term) || PyList_Size(term) != 7) {
         PyErr_SetString(PyExc_TypeError,
                      "tcsetattr, arg 3: must be 7 element list");
@@ -166,18 +167,22 @@ termios_tcsetattr(PyObject *self, PyObject *args)
     }
 
     /* Get the old mode, in case there are any hidden fields... */
-    termiosmodulestate *state = modulestate_global;
-    if (tcgetattr(fd, &mode) == -1)
+    termiosmodulestate *state = PyModule_GetState(module);
+    struct termios mode;
+    if (tcgetattr(fd, &mode) == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
+    }
+
     mode.c_iflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 0));
     mode.c_oflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 1));
     mode.c_cflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 2));
     mode.c_lflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 3));
-    ispeed = (speed_t) PyLong_AsLong(PyList_GetItem(term, 4));
-    ospeed = (speed_t) PyLong_AsLong(PyList_GetItem(term, 5));
-    cc = PyList_GetItem(term, 6);
-    if (PyErr_Occurred())
+    speed_t ispeed = (speed_t) PyLong_AsLong(PyList_GetItem(term, 4));
+    speed_t ospeed = (speed_t) PyLong_AsLong(PyList_GetItem(term, 5));
+    PyObject *cc = PyList_GetItem(term, 6);
+    if (PyErr_Occurred()) {
         return NULL;
+    }
 
     if (!PyList_Check(cc) || PyList_Size(cc) != NCCS) {
         PyErr_Format(PyExc_TypeError,
@@ -186,6 +191,8 @@ termios_tcsetattr(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    int i;
+    PyObject *v;
     for (i = 0; i < NCCS; i++) {
         v = PyList_GetItem(cc, i);
 
@@ -210,104 +217,264 @@ termios_tcsetattr(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(termios_tcsendbreak__doc__,
-"tcsendbreak(fd, duration) -> None\n\
-\n\
-Send a break on file descriptor fd.\n\
-A zero duration sends a break for 0.25-0.5 seconds; a nonzero duration\n\
-has a system dependent meaning.");
+/*[clinic input]
+termios.tcsendbreak
+
+    fd: fildes
+    duration: int
+    /
+
+Send a break on file descriptor fd.
+
+A zero duration sends a break for 0.25-0.5 seconds; a nonzero duration
+has a system dependent meaning.
+[clinic start generated code]*/
 
 static PyObject *
-termios_tcsendbreak(PyObject *self, PyObject *args)
+termios_tcsendbreak_impl(PyObject *module, int fd, int duration)
+/*[clinic end generated code: output=5945f589b5d3ac66 input=dc2f32417691f8ed]*/
 {
-    int fd, duration;
-
-    if (!PyArg_ParseTuple(args, "O&i:tcsendbreak",
-                          fdconv, &fd, &duration))
-        return NULL;
-    if (tcsendbreak(fd, duration) == -1)
-        return PyErr_SetFromErrno(modulestate_global->TermiosError);
+    termiosmodulestate *state = PyModule_GetState(module);
+    if (tcsendbreak(fd, duration) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
 
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(termios_tcdrain__doc__,
-"tcdrain(fd) -> None\n\
-\n\
-Wait until all output written to file descriptor fd has been transmitted.");
+/*[clinic input]
+termios.tcdrain
+
+    fd: fildes
+    /
+
+Wait until all output written to file descriptor fd has been transmitted.
+[clinic start generated code]*/
 
 static PyObject *
-termios_tcdrain(PyObject *self, PyObject *args)
+termios_tcdrain_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=5fd86944c6255955 input=c99241b140b32447]*/
 {
-    int fd;
-
-    if (!PyArg_ParseTuple(args, "O&:tcdrain",
-                          fdconv, &fd))
-        return NULL;
-    if (tcdrain(fd) == -1)
-        return PyErr_SetFromErrno(modulestate_global->TermiosError);
+    termiosmodulestate *state = PyModule_GetState(module);
+    if (tcdrain(fd) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
 
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(termios_tcflush__doc__,
-"tcflush(fd, queue) -> None\n\
-\n\
-Discard queued data on file descriptor fd.\n\
-The queue selector specifies which queue: termios.TCIFLUSH for the input\n\
-queue, termios.TCOFLUSH for the output queue, or termios.TCIOFLUSH for\n\
-both queues. ");
+/*[clinic input]
+termios.tcflush
+
+    fd: fildes
+    queue: int
+    /
+
+Discard queued data on file descriptor fd.
+
+The queue selector specifies which queue: termios.TCIFLUSH for the input
+queue, termios.TCOFLUSH for the output queue, or termios.TCIOFLUSH for
+both queues.
+[clinic start generated code]*/
 
 static PyObject *
-termios_tcflush(PyObject *self, PyObject *args)
+termios_tcflush_impl(PyObject *module, int fd, int queue)
+/*[clinic end generated code: output=2424f80312ec2f21 input=0f7d08122ddc07b5]*/
 {
-    int fd, queue;
-
-    if (!PyArg_ParseTuple(args, "O&i:tcflush",
-                          fdconv, &fd, &queue))
-        return NULL;
-    if (tcflush(fd, queue) == -1)
-        return PyErr_SetFromErrno(modulestate_global->TermiosError);
+    termiosmodulestate *state = PyModule_GetState(module);
+    if (tcflush(fd, queue) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
 
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(termios_tcflow__doc__,
-"tcflow(fd, action) -> None\n\
-\n\
-Suspend or resume input or output on file descriptor fd.\n\
-The action argument can be termios.TCOOFF to suspend output,\n\
-termios.TCOON to restart output, termios.TCIOFF to suspend input,\n\
-or termios.TCION to restart input.");
+/*[clinic input]
+termios.tcflow
+
+    fd: fildes
+    action: int
+    /
+
+Suspend or resume input or output on file descriptor fd.
+
+The action argument can be termios.TCOOFF to suspend output,
+termios.TCOON to restart output, termios.TCIOFF to suspend input,
+or termios.TCION to restart input.
+[clinic start generated code]*/
 
 static PyObject *
-termios_tcflow(PyObject *self, PyObject *args)
+termios_tcflow_impl(PyObject *module, int fd, int action)
+/*[clinic end generated code: output=afd10928e6ea66eb input=c6aff0640b6efd9c]*/
 {
-    int fd, action;
-
-    if (!PyArg_ParseTuple(args, "O&i:tcflow",
-                          fdconv, &fd, &action))
-        return NULL;
-    if (tcflow(fd, action) == -1)
-        return PyErr_SetFromErrno(modulestate_global->TermiosError);
+    termiosmodulestate *state = PyModule_GetState(module);
+    if (tcflow(fd, action) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
 
     Py_RETURN_NONE;
+}
+
+/*[clinic input]
+termios.tcgetwinsize
+
+    fd: fildes
+    /
+
+Get the tty winsize for file descriptor fd.
+
+Returns a tuple (ws_row, ws_col).
+[clinic start generated code]*/
+
+static PyObject *
+termios_tcgetwinsize_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=31825977d5325fb6 input=5706c379d7fd984d]*/
+{
+#if defined(TIOCGWINSZ)
+    termiosmodulestate *state = PyModule_GetState(module);
+    struct winsize w;
+    if (ioctl(fd, TIOCGWINSZ, &w) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    PyObject *v;
+    if (!(v = PyTuple_New(2))) {
+        return NULL;
+    }
+
+    PyTuple_SetItem(v, 0, PyLong_FromLong((long)w.ws_row));
+    PyTuple_SetItem(v, 1, PyLong_FromLong((long)w.ws_col));
+    if (PyErr_Occurred()) {
+        Py_DECREF(v);
+        return NULL;
+    }
+    return v;
+#elif defined(TIOCGSIZE)
+    termiosmodulestate *state = PyModule_GetState(module);
+    struct ttysize s;
+    if (ioctl(fd, TIOCGSIZE, &s) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    PyObject *v;
+    if (!(v = PyTuple_New(2))) {
+        return NULL;
+    }
+
+    PyTuple_SetItem(v, 0, PyLong_FromLong((long)s.ts_lines));
+    PyTuple_SetItem(v, 1, PyLong_FromLong((long)s.ts_cols));
+    if (PyErr_Occurred()) {
+        Py_DECREF(v);
+        return NULL;
+    }
+    return v;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "requires termios.TIOCGWINSZ and/or termios.TIOCGSIZE");
+    return NULL;
+#endif /* defined(TIOCGWINSZ) */
+}
+
+/*[clinic input]
+termios.tcsetwinsize
+
+    fd: fildes
+    winsize as winsz: object
+    /
+
+Set the tty winsize for file descriptor fd.
+
+The winsize to be set is taken from the winsize argument, which
+is a two-item tuple (ws_row, ws_col) like the one returned by tcgetwinsize().
+[clinic start generated code]*/
+
+static PyObject *
+termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
+/*[clinic end generated code: output=2ac3c9bb6eda83e1 input=4a06424465b24aee]*/
+{
+    if (!PySequence_Check(winsz) || PySequence_Size(winsz) != 2) {
+        PyErr_SetString(PyExc_TypeError,
+                     "tcsetwinsize, arg 2: must be a two-item sequence");
+        return NULL;
+    }
+
+    PyObject *tmp_item;
+    long winsz_0, winsz_1;
+    tmp_item = PySequence_GetItem(winsz, 0);
+    winsz_0 = PyLong_AsLong(tmp_item);
+    if (winsz_0 == -1 && PyErr_Occurred()) {
+        Py_XDECREF(tmp_item);
+        return NULL;
+    }
+    Py_XDECREF(tmp_item);
+    tmp_item = PySequence_GetItem(winsz, 1);
+    winsz_1 = PyLong_AsLong(tmp_item);
+    if (winsz_1 == -1 && PyErr_Occurred()) {
+        Py_XDECREF(tmp_item);
+        return NULL;
+    }
+    Py_XDECREF(tmp_item);
+
+    termiosmodulestate *state = PyModule_GetState(module);
+
+#if defined(TIOCGWINSZ) && defined(TIOCSWINSZ)
+    struct winsize w;
+    /* Get the old winsize because it might have
+       more fields such as xpixel, ypixel. */
+    if (ioctl(fd, TIOCGWINSZ, &w) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    w.ws_row = (unsigned short) winsz_0;
+    w.ws_col = (unsigned short) winsz_1;
+    if ((((long)w.ws_row) != winsz_0) || (((long)w.ws_col) != winsz_1)) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "winsize value(s) out of range.");
+        return NULL;
+    }
+
+    if (ioctl(fd, TIOCSWINSZ, &w) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    Py_RETURN_NONE;
+#elif defined(TIOCGSIZE) && defined(TIOCSSIZE)
+    struct ttysize s;
+    /* Get the old ttysize because it might have more fields. */
+    if (ioctl(fd, TIOCGSIZE, &s) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    s.ts_lines = (int) winsz_0;
+    s.ts_cols = (int) winsz_1;
+    if ((((long)s.ts_lines) != winsz_0) || (((long)s.ts_cols) != winsz_1)) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "winsize value(s) out of range.");
+        return NULL;
+    }
+
+    if (ioctl(fd, TIOCSSIZE, &s) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    Py_RETURN_NONE;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "requires termios.TIOCGWINSZ, termios.TIOCSWINSZ and/or termios.TIOCGSIZE, termios.TIOCSSIZE");
+    return NULL;
+#endif /* defined(TIOCGWINSZ) && defined(TIOCSWINSZ) */
 }
 
 static PyMethodDef termios_methods[] =
 {
-    {"tcgetattr", termios_tcgetattr,
-     METH_VARARGS, termios_tcgetattr__doc__},
-    {"tcsetattr", termios_tcsetattr,
-     METH_VARARGS, termios_tcsetattr__doc__},
-    {"tcsendbreak", termios_tcsendbreak,
-     METH_VARARGS, termios_tcsendbreak__doc__},
-    {"tcdrain", termios_tcdrain,
-     METH_VARARGS, termios_tcdrain__doc__},
-    {"tcflush", termios_tcflush,
-     METH_VARARGS, termios_tcflush__doc__},
-    {"tcflow", termios_tcflow,
-     METH_VARARGS, termios_tcflow__doc__},
+    TERMIOS_TCGETATTR_METHODDEF
+    TERMIOS_TCSETATTR_METHODDEF
+    TERMIOS_TCSENDBREAK_METHODDEF
+    TERMIOS_TCDRAIN_METHODDEF
+    TERMIOS_TCFLUSH_METHODDEF
+    TERMIOS_TCFLOW_METHODDEF
+    TERMIOS_TCGETWINSIZE_METHODDEF
+    TERMIOS_TCSETWINSIZE_METHODDEF
     {NULL, NULL}
 };
 
@@ -826,6 +993,9 @@ static struct constant {
 #ifdef TIOCGSERIAL
     {"TIOCGSERIAL", TIOCGSERIAL},
 #endif
+#ifdef TIOCGSIZE
+    {"TIOCGSIZE", TIOCGSIZE},
+#endif
 #ifdef TIOCGSOFTCAR
     {"TIOCGSOFTCAR", TIOCGSOFTCAR},
 #endif
@@ -958,6 +1128,9 @@ static struct constant {
 #ifdef TIOCSSERIAL
     {"TIOCSSERIAL", TIOCSSERIAL},
 #endif
+#ifdef TIOCSSIZE
+    {"TIOCSSIZE", TIOCSSIZE},
+#endif
 #ifdef TIOCSSOFTCAR
     {"TIOCSSOFTCAR", TIOCSSOFTCAR},
 #endif
@@ -976,12 +1149,12 @@ static struct constant {
 };
 
 static int termiosmodule_traverse(PyObject *m, visitproc visit, void *arg) {
-    Py_VISIT(modulestate(m)->TermiosError);
+    Py_VISIT(get_termios_state(m)->TermiosError);
     return 0;
 }
 
 static int termiosmodule_clear(PyObject *m) {
-    Py_CLEAR(modulestate(m)->TermiosError);
+    Py_CLEAR(get_termios_state(m)->TermiosError);
     return 0;
 }
 
@@ -989,44 +1162,49 @@ static void termiosmodule_free(void *m) {
     termiosmodule_clear((PyObject *)m);
 }
 
-static struct PyModuleDef termiosmodule = {
-    PyModuleDef_HEAD_INIT,
-    "termios",
-    termios__doc__,
-    sizeof(termiosmodulestate),
-    termios_methods,
-    NULL,
-    termiosmodule_traverse,
-    termiosmodule_clear,
-    termiosmodule_free,
-};
-
-PyMODINIT_FUNC
-PyInit_termios(void)
+static int
+termios_exec(PyObject *mod)
 {
-    PyObject *m;
     struct constant *constant = termios_constants;
-
-    if ((m = PyState_FindModule(&termiosmodule)) != NULL) {
-        Py_INCREF(m);
-        return m;
-    }
-
-    if ((m = PyModule_Create(&termiosmodule)) == NULL) {
-        return NULL;
-    }
-
-    termiosmodulestate *state = PyModule_GetState(m);
+    termiosmodulestate *state = get_termios_state(mod);
     state->TermiosError = PyErr_NewException("termios.error", NULL, NULL);
     if (state->TermiosError == NULL) {
-        return NULL;
+        return -1;
     }
     Py_INCREF(state->TermiosError);
-    PyModule_AddObject(m, "error", state->TermiosError);
+    if (PyModule_AddObject(mod, "error", state->TermiosError) < 0) {
+        Py_DECREF(state->TermiosError);
+        return -1;
+    }
 
     while (constant->name != NULL) {
-        PyModule_AddIntConstant(m, constant->name, constant->value);
+        if (PyModule_AddIntConstant(
+            mod, constant->name, constant->value) < 0) {
+            return -1;
+        }
         ++constant;
     }
-    return m;
+    return 0;
+}
+
+static PyModuleDef_Slot termios_slots[] = {
+    {Py_mod_exec, termios_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef termiosmodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "termios",
+    .m_doc = termios__doc__,
+    .m_size = sizeof(termiosmodulestate),
+    .m_methods = termios_methods,
+    .m_slots = termios_slots,
+    .m_traverse = termiosmodule_traverse,
+    .m_clear = termiosmodule_clear,
+    .m_free = termiosmodule_free,
+};
+
+PyMODINIT_FUNC PyInit_termios(void)
+{
+    return PyModuleDef_Init(&termiosmodule);
 }

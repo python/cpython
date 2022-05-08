@@ -118,7 +118,7 @@ class CheckSuspiciousMarkupBuilder(Builder):
             self.logger.warning(
                 'Found %s/%s unused rules: %s' % (
                     len(unused_rules), len(self.rules),
-                    ''.join(repr(rule) for rule in unused_rules),
+                    '\n'.join(repr(rule) for rule in unused_rules),
                 )
             )
         return

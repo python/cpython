@@ -9,7 +9,7 @@ PyDoc_STRVAR(_opcode_stack_effect__doc__,
 "Compute the stack effect of the opcode.");
 
 #define _OPCODE_STACK_EFFECT_METHODDEF    \
-    {"stack_effect", (PyCFunction)(void(*)(void))_opcode_stack_effect, METH_FASTCALL|METH_KEYWORDS, _opcode_stack_effect__doc__},
+    {"stack_effect", _PyCFunction_CAST(_opcode_stack_effect), METH_FASTCALL|METH_KEYWORDS, _opcode_stack_effect__doc__},
 
 static int
 _opcode_stack_effect_impl(PyObject *module, int opcode, PyObject *oparg,
@@ -30,11 +30,6 @@ _opcode_stack_effect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     opcode = _PyLong_AsInt(args[0]);
@@ -61,4 +56,22 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7bc08f2835b2cf89 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_opcode_get_specialization_stats__doc__,
+"get_specialization_stats($module, /)\n"
+"--\n"
+"\n"
+"Return the specialization stats");
+
+#define _OPCODE_GET_SPECIALIZATION_STATS_METHODDEF    \
+    {"get_specialization_stats", (PyCFunction)_opcode_get_specialization_stats, METH_NOARGS, _opcode_get_specialization_stats__doc__},
+
+static PyObject *
+_opcode_get_specialization_stats_impl(PyObject *module);
+
+static PyObject *
+_opcode_get_specialization_stats(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _opcode_get_specialization_stats_impl(module);
+}
+/*[clinic end generated code: output=b904260bf022f953 input=a9049054013a1b77]*/
