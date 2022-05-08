@@ -114,29 +114,15 @@ another rational number, or from a string.
 
       .. versionadded:: 3.8
 
-   .. method:: from_float(flt)
+   .. classmethod:: from_float(flt)
 
-      This class method constructs a :class:`Fraction` representing the exact
-      value of *flt*, which must be a :class:`float`. Beware that
-      ``Fraction.from_float(0.3)`` is not the same value as ``Fraction(3, 10)``.
+      Alternative constructor which only accepts instances of
+      :class:~numbers.Integral` or :class:`float`.
 
-      .. note::
+   .. classmethod:: from_decimal(dec)
 
-         You can also construct a
-         :class:`Fraction` instance directly from a :class:`float`.
-
-
-   .. method:: from_decimal(dec)
-
-      This class method constructs a :class:`Fraction` representing the exact
-      value of *dec*, which must be a :class:`decimal.Decimal` instance.
-
-      .. note::
-
-         You can also construct a
-         :class:`Fraction` instance directly from a :class:`decimal.Decimal`
-         instance.
-
+      Alternative constructor which only accepts instances of
+      :class:`decimal.Decimal`.
 
    .. method:: limit_denominator(max_denominator=1000000)
 
