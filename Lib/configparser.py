@@ -148,14 +148,14 @@ import re
 import sys
 import warnings
 
-__all__ = ["NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
+__all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
            "InterpolationMissingOptionError", "InterpolationSyntaxError",
            "ParsingError", "MissingSectionHeaderError",
-           "ConfigParser", "SafeConfigParser", "RawConfigParser",
+           "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
            "LegacyInterpolation", "SectionProxy", "ConverterMapping",
-           "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH"]
+           "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH")
 
 _default_dict = dict
 DEFAULTSECT = "DEFAULT"
@@ -297,17 +297,8 @@ class InterpolationDepthError(InterpolationError):
 class ParsingError(Error):
     """Raised when a configuration file does not follow legal syntax."""
 
-    def __init__(self, source=None, filename=None):
-        # Exactly one of `source'/`filename' arguments has to be given.
-        # `filename' kept for compatibility.
-        if filename and source:
-            raise ValueError("Cannot specify both `filename' and `source'. "
-                             "Use `source'.")
-        elif not filename and not source:
-            raise ValueError("Required argument `source' not given.")
-        elif filename:
-            source = filename
-        Error.__init__(self, 'Source contains parsing errors: %r' % source)
+    def __init__(self, source):
+        super().__init__(f'Source contains parsing errors: {source!r}')
         self.source = source
         self.errors = []
         self.args = (source, )
