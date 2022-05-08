@@ -534,7 +534,7 @@ function interfaces of the stateless encoder and decoder:
    of the output object type in this situation.
 
 
-.. method:: Codec.decode(input[, errors='strict'])
+.. method:: Codec.decode(input, errors='strict')
 
    Decodes the object *input* and returns a tuple (output object, length
    consumed). For instance, for a :term:`text encoding`, decoding converts
