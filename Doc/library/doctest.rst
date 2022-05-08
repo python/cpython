@@ -288,10 +288,6 @@ strings are treated as if they were docstrings.  In output, a key ``K`` in
 Any classes found are recursively searched similarly, to test docstrings in
 their contained methods and nested classes.
 
-.. impl-detail::
-   Prior to version 3.4, extension modules written in C were not fully
-   searched by doctest.
-
 
 .. _doctest-finding-examples:
 
@@ -784,11 +780,6 @@ instead.  Another is to do ::
    >>> d = sorted(foo())
    >>> d
    ['Harry', 'Hermione']
-
-.. note::
-
-    Before Python 3.6, when printing a dict, Python did not guarantee that
-    the key-value pairs was printed in any particular order.
 
 There are others, but you get the idea.
 
