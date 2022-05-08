@@ -1353,4 +1353,49 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b5dd7cefead9a8e7 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(unicodeiter_len__doc__,
+"__length_hint__($self, /)\n"
+"--\n"
+"\n"
+"Private method returning an estimate of len(list(it)).");
+
+#define UNICODEITER_LEN_METHODDEF    \
+    {"__length_hint__", (PyCFunction)unicodeiter_len, METH_NOARGS, unicodeiter_len__doc__},
+
+static PyObject *
+unicodeiter_len_impl(struct unicodeiterobject *self);
+
+static PyObject *
+unicodeiter_len(struct unicodeiterobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return unicodeiter_len_impl(self);
+}
+
+PyDoc_STRVAR(unicodeiter_reduce__doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n"
+"Return state information for pickling.");
+
+#define UNICODEITER_REDUCE_METHODDEF    \
+    {"__reduce__", (PyCFunction)unicodeiter_reduce, METH_NOARGS, unicodeiter_reduce__doc__},
+
+static PyObject *
+unicodeiter_reduce_impl(struct unicodeiterobject *self);
+
+static PyObject *
+unicodeiter_reduce(struct unicodeiterobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return unicodeiter_reduce_impl(self);
+}
+
+PyDoc_STRVAR(unicodeiter_setstate__doc__,
+"__setstate__($self, state, /)\n"
+"--\n"
+"\n"
+"Set state information for unpickling.");
+
+#define UNICODEITER_SETSTATE_METHODDEF    \
+    {"__setstate__", (PyCFunction)unicodeiter_setstate, METH_O, unicodeiter_setstate__doc__},
+/*[clinic end generated code: output=596a5048a2740a53 input=a9049054013a1b77]*/

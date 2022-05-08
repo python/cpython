@@ -71,8 +71,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /*[clinic input]
 class str "PyObject *" "&PyUnicode_Type"
+class str_iterator "struct unicodeiterobject *" "&PyUnicodeIter_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4884c934de622cf6]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ff00f9ed5db2376d]*/
 
 /*[python input]
 class Py_UCS4_converter(CConverter):
@@ -398,6 +399,7 @@ static const unsigned char ascii_linebreak[] = {
 static int convert_uc(PyObject *obj, void *addr);
 
 struct encoding_map;
+struct unicodeiterobject;
 #include "clinic/unicodeobject.c.h"
 
 _Py_error_handler
@@ -15693,7 +15695,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
 
 /********************* Unicode Iterator **************************/
 
-typedef struct {
+typedef struct unicodeiterobject {
     PyObject_HEAD
     Py_ssize_t it_index;
     PyObject *it_seq;    /* Set to NULL when iterator is exhausted */
@@ -15761,23 +15763,35 @@ unicode_ascii_iter_next(unicodeiterobject *it)
     return NULL;
 }
 
+/*[clinic input]
+str_iterator.__length_hint__ as unicodeiter_len
+
+Private method returning an estimate of len(list(it)).
+[clinic start generated code]*/
+
 static PyObject *
-unicodeiter_len(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
+unicodeiter_len_impl(struct unicodeiterobject *self)
+/*[clinic end generated code: output=ff849d986cf14b2c input=1a68d271fa2d41cf]*/
 {
     Py_ssize_t len = 0;
-    if (it->it_seq)
-        len = PyUnicode_GET_LENGTH(it->it_seq) - it->it_index;
+    if (self->it_seq)
+        len = PyUnicode_GET_LENGTH(self->it_seq) - self->it_index;
     return PyLong_FromSsize_t(len);
 }
 
-PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
+/*[clinic input]
+str_iterator.__reduce__ as unicodeiter_reduce
+
+Return state information for pickling.
+[clinic start generated code]*/
 
 static PyObject *
-unicodeiter_reduce(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
+unicodeiter_reduce_impl(struct unicodeiterobject *self)
+/*[clinic end generated code: output=ab87e45b10e6eea3 input=93e399d7d681c8cd]*/
 {
-    if (it->it_seq != NULL) {
+    if (self->it_seq != NULL) {
         return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
-                             it->it_seq, it->it_index);
+                             self->it_seq, self->it_index);
     } else {
         PyObject *u = (PyObject *)_PyUnicode_New(0);
         if (u == NULL)
@@ -15786,67 +15800,51 @@ unicodeiter_reduce(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
     }
 }
 
-PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
+/*[clinic input]
+str_iterator.__setstate__ as unicodeiter_setstate
+
+    state: object
+    /
+
+Set state information for unpickling.
+[clinic start generated code]*/
 
 static PyObject *
-unicodeiter_setstate(unicodeiterobject *it, PyObject *state)
+unicodeiter_setstate(struct unicodeiterobject *self, PyObject *state)
+/*[clinic end generated code: output=57dff94fbef4d9c8 input=449d5a97c43735bc]*/
 {
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
-    if (it->it_seq != NULL) {
+    if (self->it_seq != NULL) {
         if (index < 0)
             index = 0;
-        else if (index > PyUnicode_GET_LENGTH(it->it_seq))
-            index = PyUnicode_GET_LENGTH(it->it_seq); /* iterator truncated */
-        it->it_index = index;
+        else if (index > PyUnicode_GET_LENGTH(self->it_seq))
+            index = PyUnicode_GET_LENGTH(self->it_seq); /* iterator truncated */
+        self->it_index = index;
     }
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
-
 static PyMethodDef unicodeiter_methods[] = {
-    {"__length_hint__", (PyCFunction)unicodeiter_len, METH_NOARGS,
-     length_hint_doc},
-    {"__reduce__",      (PyCFunction)unicodeiter_reduce, METH_NOARGS,
-     reduce_doc},
-    {"__setstate__",    (PyCFunction)unicodeiter_setstate, METH_O,
-     setstate_doc},
+    UNICODEITER_LEN_METHODDEF
+    UNICODEITER_REDUCE_METHODDEF
+    UNICODEITER_SETSTATE_METHODDEF
     {NULL,      NULL}       /* sentinel */
 };
 
 PyTypeObject PyUnicodeIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "str_iterator",         /* tp_name */
-    sizeof(unicodeiterobject),      /* tp_basicsize */
-    0,                  /* tp_itemsize */
+    .tp_name = "str_iterator",
+    .tp_basicsize = sizeof(unicodeiterobject),
     /* methods */
-    (destructor)unicodeiter_dealloc,    /* tp_dealloc */
-    0,                  /* tp_vectorcall_offset */
-    0,                  /* tp_getattr */
-    0,                  /* tp_setattr */
-    0,                  /* tp_as_async */
-    0,                  /* tp_repr */
-    0,                  /* tp_as_number */
-    0,                  /* tp_as_sequence */
-    0,                  /* tp_as_mapping */
-    0,                  /* tp_hash */
-    0,                  /* tp_call */
-    0,                  /* tp_str */
-    PyObject_GenericGetAttr,        /* tp_getattro */
-    0,                  /* tp_setattro */
-    0,                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
-    0,                  /* tp_doc */
-    (traverseproc)unicodeiter_traverse, /* tp_traverse */
-    0,                  /* tp_clear */
-    0,                  /* tp_richcompare */
-    0,                  /* tp_weaklistoffset */
-    PyObject_SelfIter,          /* tp_iter */
-    (iternextfunc)unicodeiter_next,     /* tp_iternext */
-    unicodeiter_methods,            /* tp_methods */
-    0,
+    .tp_dealloc = (destructor)unicodeiter_dealloc,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = (traverseproc)unicodeiter_traverse,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)unicodeiter_next,
+    .tp_methods = unicodeiter_methods,
 };
 
 PyTypeObject _PyUnicodeASCIIIter_Type = {
