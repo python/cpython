@@ -829,7 +829,7 @@ compatible with the Python codec registry.
       returned.
 
 
-   .. method:: readlines([sizehint=None[, keepends=True]])
+   .. method:: readlines(sizehint=None, keepends=True)
 
       Read all lines available on the input stream and return them as a list of
       lines.
