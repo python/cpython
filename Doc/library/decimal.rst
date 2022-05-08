@@ -382,6 +382,8 @@ Decimal objects
 
    .. doctest::
 
+      >>> Decimal(0.1) == Decimal('0.1')
+      False
       >>> Decimal(0.1)
       Decimal('0.1000000000000000055511151231257827021181583404541015625')
       >>> Decimal(float('nan'))
