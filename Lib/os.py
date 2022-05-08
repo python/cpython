@@ -974,7 +974,7 @@ otherwise return -SIG, where SIG is the signal that killed it. """
 # command in a shell can't be supported.
 if sys.platform != 'vxworks':
     # Supply os.popen()
-    def popen(cmd, mode="r", buffering=-1, *, encoding=None):
+    def popen(cmd, mode="r", buffering=-1, *, encoding=None, errors=None):
         if not isinstance(cmd, str):
             raise TypeError("invalid cmd type (%s, expected string)" % type(cmd))
         if mode not in ("r", "w"):
@@ -985,13 +985,13 @@ if sys.platform != 'vxworks':
         encoding = io.text_encoding(encoding)
         if mode == "r":
             proc = subprocess.Popen(cmd,
-                                    shell=True, encoding=encoding,
+                                    shell=True, encoding=encoding, errors=errors,
                                     stdout=subprocess.PIPE,
                                     bufsize=buffering)
             return _wrap_close(proc.stdout, proc)
         else:
             proc = subprocess.Popen(cmd,
-                                    shell=True, encoding=encoding,
+                                    shell=True, encoding=encoding, errors=errors,
                                     stdin=subprocess.PIPE,
                                     bufsize=buffering)
             return _wrap_close(proc.stdin, proc)
