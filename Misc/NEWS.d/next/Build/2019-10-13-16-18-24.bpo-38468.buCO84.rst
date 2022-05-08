@@ -1,2 +1,0 @@
-Misc/python-config.in now uses `getvar()` for all still existing `sysconfig.get_config_var()` calls.
-Patch by Joannah Nanjekye.

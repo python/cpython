@@ -1,1 +1,0 @@
-Syncronize ``importlib.metadata`` with `importlib_metadata 0.19 <https://gitlab.com/python-devs/importlib_metadata/-/milestones/20>`_, improving handling of EGG-INFO files and fixing a crash when entry point names contained colons.

@@ -6,7 +6,6 @@ import re
 from tkinter import messagebox
 
 from idlelib.editor import EditorWindow
-from idlelib import iomenu
 
 
 file_line_pats = [
@@ -110,8 +109,7 @@ class OutputWindow(EditorWindow):
         Return:
             Length of text inserted.
         """
-        if isinstance(s, bytes):
-            s = s.decode(iomenu.encoding, "replace")
+        assert isinstance(s, str)
         self.text.insert(mark, s, tags)
         self.text.see(mark)
         self.text.update()

@@ -1,3 +1,0 @@
-Added constants :data:`~fcntl.F_OFD_GETLK`, :data:`~fcntl.F_OFD_SETLK`
-and :data:`~fcntl.F_OFD_SETLKW` to the :mod:`fcntl` module.
-Patch by Dong-hee Na.

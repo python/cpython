@@ -443,7 +443,7 @@ class StructureTestCase(unittest.TestCase):
 
         s = Test(1, 2, 3)
         # Test the StructUnionType_paramfunc() code path which copies the
-        # structure: if the stucture is larger than sizeof(void*).
+        # structure: if the structure is larger than sizeof(void*).
         self.assertGreater(sizeof(s), sizeof(c_void_p))
 
         dll = CDLL(_ctypes_test.__file__)
@@ -451,7 +451,7 @@ class StructureTestCase(unittest.TestCase):
         func.argtypes = (Test,)
         func.restype = None
         func(s)
-        # bpo-37140: Passing the structure by refrence must not call
+        # bpo-37140: Passing the structure by reference must not call
         # its finalizer!
         self.assertEqual(finalizer_calls, [])
         self.assertEqual(s.first, 1)
@@ -576,6 +576,7 @@ class StructureTestCase(unittest.TestCase):
             self.assertEqual(f2, [0x4567, 0x0123, 0xcdef, 0x89ab,
                                   0x3210, 0x7654, 0xba98, 0xfedc])
 
+    @unittest.skipIf(True, 'Test disabled for now - see bpo-16575/bpo-16576')
     def test_union_by_value(self):
         # See bpo-16575
 
@@ -655,6 +656,87 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(test5.an_int, 0)
         self.assertEqual(test5.nested.an_int, 0)
         self.assertEqual(test5.another_int, 0)
+
+    @unittest.skipIf(True, 'Test disabled for now - see bpo-16575/bpo-16576')
+    def test_bitfield_by_value(self):
+        # See bpo-16576
+
+        # These should mirror the structures in Modules/_ctypes/_ctypes_test.c
+
+        class Test6(Structure):
+            _fields_ = [
+                ('A', c_int, 1),
+                ('B', c_int, 2),
+                ('C', c_int, 3),
+                ('D', c_int, 2),
+            ]
+
+        test6 = Test6()
+        # As these are signed int fields, all are logically -1 due to sign
+        # extension.
+        test6.A = 1
+        test6.B = 3
+        test6.C = 7
+        test6.D = 3
+        dll = CDLL(_ctypes_test.__file__)
+        with self.assertRaises(TypeError) as ctx:
+            func = dll._testfunc_bitfield_by_value1
+            func.restype = c_long
+            func.argtypes = (Test6,)
+            result = func(test6)
+        self.assertEqual(ctx.exception.args[0], 'item 1 in _argtypes_ passes '
+                         'a struct/union with a bitfield by value, which is '
+                         'unsupported.')
+        # passing by reference should be OK
+        func = dll._testfunc_bitfield_by_reference1
+        func.restype = c_long
+        func.argtypes = (POINTER(Test6),)
+        result = func(byref(test6))
+        self.assertEqual(result, -4)
+        self.assertEqual(test6.A, 0)
+        self.assertEqual(test6.B, 0)
+        self.assertEqual(test6.C, 0)
+        self.assertEqual(test6.D, 0)
+
+        class Test7(Structure):
+            _fields_ = [
+                ('A', c_uint, 1),
+                ('B', c_uint, 2),
+                ('C', c_uint, 3),
+                ('D', c_uint, 2),
+            ]
+        test7 = Test7()
+        test7.A = 1
+        test7.B = 3
+        test7.C = 7
+        test7.D = 3
+        func = dll._testfunc_bitfield_by_reference2
+        func.restype = c_long
+        func.argtypes = (POINTER(Test7),)
+        result = func(byref(test7))
+        self.assertEqual(result, 14)
+        self.assertEqual(test7.A, 0)
+        self.assertEqual(test7.B, 0)
+        self.assertEqual(test7.C, 0)
+        self.assertEqual(test7.D, 0)
+
+        # for a union with bitfields, the union check happens first
+        class Test8(Union):
+            _fields_ = [
+                ('A', c_int, 1),
+                ('B', c_int, 2),
+                ('C', c_int, 3),
+                ('D', c_int, 2),
+            ]
+
+        test8 = Test8()
+        with self.assertRaises(TypeError) as ctx:
+            func = dll._testfunc_bitfield_by_value2
+            func.restype = c_long
+            func.argtypes = (Test8,)
+            result = func(test8)
+        self.assertEqual(ctx.exception.args[0], 'item 1 in _argtypes_ passes '
+                         'a union by value, which is unsupported.')
 
 class PointerMemberTestCase(unittest.TestCase):
 

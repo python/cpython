@@ -6,6 +6,7 @@ import random
 import time
 import unittest
 import weakref
+from test.support import threading_helper
 
 try:
     from _testcapi import hamt
@@ -37,9 +38,6 @@ class ContextTest(unittest.TestCase):
             c.name = 'bbb'
 
         self.assertNotEqual(hash(c), hash('aaa'))
-
-    def test_context_var_new_2(self):
-        self.assertIsNone(contextvars.ContextVar[int])
 
     @isolated_context
     def test_context_var_repr_1(self):
@@ -344,6 +342,7 @@ class ContextTest(unittest.TestCase):
         ctx1.run(ctx1_fun)
 
     @isolated_context
+    @threading_helper.requires_working_threading()
     def test_context_threads_1(self):
         cvar = contextvars.ContextVar('cvar')
 
