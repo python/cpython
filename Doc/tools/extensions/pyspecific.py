@@ -429,8 +429,8 @@ class DeprecatedRemoved(Directive):
 
 # Support for including Misc/NEWS
 
-issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)')
-gh_issue_re = re.compile('(?:gh-issue-|gh-)([0-9]+)')
+issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)', re.I)
+gh_issue_re = re.compile('(?:gh-issue-|gh-)([0-9]+)', re.I)
 whatsnew_re = re.compile(r"(?im)^what's new in (.*?)\??$")
 
 
