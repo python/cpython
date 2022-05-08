@@ -264,9 +264,16 @@ accessible to C code.  They all work with the current interpreter thread's
 
 .. c:function:: void PySys_SetPath(const wchar_t *path)
 
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.module_search_paths` and
+   :c:member:`PyConfig.module_search_paths_set` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
+
    Set :data:`sys.path` to a list object of paths found in *path* which should
    be a list of paths separated with the platform's search path delimiter
    (``:`` on Unix, ``;`` on Windows).
+
+   .. deprecated:: 3.11
 
 .. c:function:: void PySys_WriteStdout(const char *format, ...)
 
