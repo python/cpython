@@ -1,0 +1,3 @@
+Update :meth:`threading.Semaphore.release` and
+:meth:`threading.BoundedSemaphore.release` to wake up at most n of the
+threads waiting.
