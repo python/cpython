@@ -428,7 +428,7 @@ class Sniffer:
         # on whether it's a header
         hasHeader = 0
         for col, colType in columnTypes.items():
-            if type(colType) == type(0): # it's a length
+            if isinstance(colType, int): # it's a length
                 if len(header[col]) != colType:
                     hasHeader += 1
                 else:
