@@ -1573,8 +1573,10 @@ static void
 merge_freemem(MergeState *ms)
 {
     assert(ms != NULL);
-    if (ms->a.keys != ms->temparray)
+    if (ms->a.keys != ms->temparray) {
         PyMem_Free(ms->a.keys);
+        ms->a.keys = NULL;
+    }
 }
 
 /* Ensure enough temp memory for 'need' array slots is available.

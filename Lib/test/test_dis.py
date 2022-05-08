@@ -1011,6 +1011,37 @@ class DisTests(DisTestBase):
         got = self.get_disassembly(loop_test, adaptive=True)
         self.do_disassembly_compare(got, dis_loop_test_quickened_code, True)
 
+    def get_cached_values(self, quickened, adaptive):
+        def f():
+            l = []
+            for i in range(42):
+                l.append(i)
+        if quickened:
+            self.code_quicken(f)
+        else:
+            # "copy" the code to un-quicken it:
+            f.__code__ = f.__code__.replace()
+        for instruction in dis.get_instructions(
+            f, show_caches=True, adaptive=adaptive
+        ):
+            if instruction.opname == "CACHE":
+                yield instruction.argrepr
+
+    @cpython_only
+    def test_show_caches(self):
+        for quickened in (False, True):
+            for adaptive in (False, True):
+                with self.subTest(f"{quickened=}, {adaptive=}"):
+                    if quickened and adaptive:
+                        pattern = r"^(\w+: \d+)?$"
+                    else:
+                        pattern = r"^(\w+: 0)?$"
+                    caches = list(self.get_cached_values(quickened, adaptive))
+                    for cache in caches:
+                        self.assertRegex(cache, pattern)
+                    self.assertEqual(caches.count(""), 8)
+                    self.assertEqual(len(caches), 25)
+
 
 class DisWithFileTests(DisTests):
 

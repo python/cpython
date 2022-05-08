@@ -37,6 +37,7 @@ else:
     CPPFLAGS = []
 
 
+@support.requires_subprocess()
 class TestCPPExt(unittest.TestCase):
     def build(self):
         cpp_ext = Extension(

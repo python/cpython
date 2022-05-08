@@ -426,7 +426,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             def __getitem__(self, key):
                 return self.get(key, 0)
             def __setitem__(self_local, key, value):
-                self.assertIsInstance(key, type(0))
+                self.assertIsInstance(key, int)
                 dict.__setitem__(self_local, key, value)
             def setstate(self, state):
                 self.state = state
@@ -871,7 +871,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(a.getstate(), 10)
         class D(dict, C):
             def __init__(self):
-                type({}).__init__(self)
+                dict.__init__(self)
                 C.__init__(self)
         d = D()
         self.assertEqual(list(d.keys()), [])
@@ -3288,7 +3288,7 @@ order (MRO) for bases """
         cant(True, int)
         cant(2, bool)
         o = object()
-        cant(o, type(1))
+        cant(o, int)
         cant(o, type(None))
         del o
         class G(object):
@@ -5783,6 +5783,23 @@ class MroTest(unittest.TestCase):
 
         class A(metaclass=M):
             pass
+
+    def test_disappearing_custom_mro(self):
+        """
+        gh-92112: A custom mro() returning a result conflicting with
+        __bases__ and deleting itself caused a double free.
+        """
+        class B:
+            pass
+
+        class M(DebugHelperMeta):
+            def mro(cls):
+                del M.mro
+                return (B,)
+
+        with self.assertRaises(TypeError):
+            class A(metaclass=M):
+                pass
 
 
 if __name__ == "__main__":

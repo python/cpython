@@ -721,6 +721,9 @@
 /* Define to 1 if you have the `log2' function. */
 #undef HAVE_LOG2
 
+/* Define to 1 if you have the `login_tty' function. */
+#undef HAVE_LOGIN_TTY
+
 /* Define to 1 if the system has the type `long double'. */
 #undef HAVE_LONG_DOUBLE
 
@@ -1388,6 +1391,9 @@
 
 /* Define to 1 if you have the <utime.h> header file. */
 #undef HAVE_UTIME_H
+
+/* Define to 1 if you have the <utmp.h> header file. */
+#undef HAVE_UTMP_H
 
 /* Define to 1 if you have the `uuid_create' function. */
 #undef HAVE_UUID_CREATE
