@@ -457,7 +457,7 @@ class MiscNews(Directive):
             text = 'The NEWS file is not available.'
             node = nodes.strong(text, text)
             return [node]
-        content = issue_re.sub(r':ISSUE:`\1`', content)
+        content = issue_re.sub(r':issue:`\1`', content)
         # Fallback handling for the GitHub issue
         content = gh_issue_re.sub(r':gh:`\1`', content)
         content = whatsnew_re.sub(r'\1', content)
