@@ -1,1 +1,1 @@
-I just implement callable_iterator and nothing else
+callable_itarator in Lib/_collections_abc.py was implemented.
