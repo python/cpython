@@ -457,13 +457,9 @@ class MiscNews(Directive):
             text = 'The NEWS file is not available.'
             node = nodes.strong(text, text)
             return [node]
-        content = issue_re.sub(r'`bpo-\1 <https://bugs.python.org/'
-                               r'issue?@action=redirect&bpo=\1>`__',
-                               content)
+        content = issue_re.sub(r':ISSUE:`\1`', content)
         # Fallback handling for the GitHub issue
-        content = gh_issue_re.sub(r'`gh-\1 <https://github.com/'
-                                  r'python/cpython/issues/\1>`__',
-                                  content)
+        content = gh_issue_re.sub(r':gh:`\1`', content)
         content = whatsnew_re.sub(r'\1', content)
         # remove first 3 lines as they are the main heading
         lines = ['.. default-role:: obj', ''] + content.splitlines()[3:]
