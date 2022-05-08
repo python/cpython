@@ -1385,6 +1385,132 @@ class Path(PurePath):
 
         return self
 
+    def walk(self, on_error=None, follow_links=False):
+        """Generate a top-down directory tree from this directory
+
+        For each directory in the directory tree rooted at self (including
+        self but excluding '.' and '..'), yields a 3-tuple
+
+        root_directory, child_directory_names, child_file_names
+
+        The caller can modify the child_directory_names list in-place
+        (e.g., via del or slice assignment), and walk will only recurse into
+        the subdirectories whose names remain in child_directory_names; this
+        can be used to prune the search, or to impose a specific order of
+        visiting.
+
+        By default errors from Path._scandir() call are ignored.  If
+        optional arg 'on_error' is specified, it should be a function; it
+        will be called with one argument, an OSError instance.  It can
+        report the error to continue with the walk, or raise the exception
+        to abort the walk.  Note that the filename is available as the
+        filename attribute of the exception object.
+
+        By default, Path.walk does not follow symbolic links to subdirectories
+        on systems that support them.  In order to get this functionality, set
+        the optional argument 'follow_links' to true.
+
+        Caution: if self is a relative Path, don't change the
+        current working directory between resumptions of walk. walk never
+        changes the current directory, and assumes that the client doesn't
+        either.
+
+        Example:
+
+        from pathlib import Path
+        for root, dirs, files in Path('python/Lib/email'):
+            print(root, "consumes", end="")
+            print(sum((root / file).stat().st_size for file in files), end="")
+            print("bytes in", len(files), "non-directory files")
+            if 'CVS' in dirs:
+                dirs.remove('CVS')  # don't visit CVS directories
+        """
+        sys.audit("pathlib.Path.walk", self, on_error, follow_links)
+        return self._walk(True, on_error, follow_links)
+
+    def walk_bottom_up(self, on_error=None, follow_links=False):
+        """Generate a bottom up directory tree from this directory
+
+        The return type and arguments are identical to Path.walk.
+        However, the caller cannot modify the child_directory_names to prune
+        the search or to impose a specific order of visiting because the list
+        of directories to visit is calculated before we yield it.
+        """
+        sys.audit("pathlib.Path.walk_bottom_up", self, on_error, follow_links)
+        return self._walk(False, on_error, follow_links)
+
+    def _walk(self, topdown, on_error, follow_links):
+        dirs = []
+        nondirs = []
+        walk_dirs = []
+
+        # We may not have read permission for self, in which case we can't
+        # get a list of the files the directory contains. os.walk
+        # always suppressed the exception then, rather than blow up for a
+        # minor reason when (say) a thousand readable directories are still
+        # left to visit. That logic is copied here.
+        try:
+            scandir_it = self._scandir()
+        except OSError as error:
+            if on_error is not None:
+                on_error(error)
+            return
+
+        with scandir_it:
+            while True:
+                try:
+                    entry = next(scandir_it, ...)
+                    if entry is ...:
+                        break
+                except OSError as error:
+                    if on_error is not None:
+                        on_error(error)
+                    return
+
+                try:
+                    is_dir = entry.is_dir()
+                except OSError:
+                    # If is_dir() raises an OSError, consider that the entry
+                    # is not a directory, same behavior as os.path.isdir()
+                    is_dir = False
+
+                if is_dir:
+                    dirs.append(entry.name)
+                else:
+                    nondirs.append(entry.name)
+
+                if not topdown and is_dir:
+                    # Bottom-up: recurse into sub-directory, but exclude symlinks to
+                    # directories if follow_links is False
+                    if follow_links:
+                        walk_into = True
+                    else:
+                        try:
+                            is_symlink = entry.is_symlink()
+                        except OSError:
+                            # If is_symlink() raises an OSError, consider that
+                            # the entry is not a symbolic link, same behavior
+                            # as os.path.islink()
+                            is_symlink = False
+                        walk_into = not is_symlink
+
+                    if walk_into:
+                        walk_dirs.append(entry)
+        if topdown:
+            for raw_new_path in dirs:
+                # Path.is_symlink() is used instead of caching entry.is_symlink()
+                # result during the loop on Path._scandir() because the caller
+                # can replace the directory entry during the "yield" above.
+                new_path = self._make_child_relpath(raw_new_path)
+                if follow_links or not new_path.is_symlink():
+                    yield from new_path._walk(topdown, on_error, follow_links)
+        else:
+            for raw_new_path in walk_dirs:
+                new_path = self._make_child_relpath(raw_new_path.name)
+                yield from new_path._walk(topdown, on_error, follow_links)
+            # Yield after recursion if going bottom up
+            yield self, dirs, nondirs
+
 
 class PosixPath(Path, PurePosixPath):
     """Path subclass for non-Windows systems.
