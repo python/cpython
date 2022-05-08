@@ -232,7 +232,7 @@ now result in :exc:`MemoryError`. Patch by Erlend E. Aasland.
 .. section: Library
 
 Fix segfault in :meth:`sqlite3.Connection.backup` if no argument was
-provided. The regression was introduced by GH-23838. Patch by Erlend E.
+provided. The regression was introduced by PR 23838. Patch by Erlend E.
 Aasland.
 
 ..

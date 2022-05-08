@@ -570,7 +570,7 @@ planned). Patch by Alex Waygood.
 
 ..
 
-.. bpo: 78157
+.. gh: 78157
 .. date: 2022-05-05-20-40-45
 .. nonce: IA_9na
 .. section: Library
@@ -1288,7 +1288,7 @@ Deprecate the chunk module.
 
 ..
 
-.. bpo: 91498
+.. gh: 91498
 .. date: 2022-04-10-08-39-44
 .. nonce: 8oII92
 .. section: Library
