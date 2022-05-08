@@ -1354,8 +1354,7 @@ Import itself is implemented in Python code, making it possible to
 expose most of the import machinery through importlib. The following
 helps illustrate the various APIs that importlib exposes by providing an
 approximate implementation of
-:func:`importlib.import_module`.
-::
+:func:`importlib.import_module`::
 
   import importlib.util
   import sys
