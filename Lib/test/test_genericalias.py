@@ -487,5 +487,25 @@ class BaseTest(unittest.TestCase):
         del iter_x
 
 
+class TypeIterationTests(unittest.TestCase):
+    _UNITERABLE_TYPES = (list, tuple)
+
+    def test_cannot_iterate(self):
+        for test_type in self._UNITERABLE_TYPES:
+            with self.subTest(type=test_type):
+                expected_error_regex = "object is not iterable"
+                with self.assertRaisesRegex(TypeError, expected_error_regex):
+                    iter(test_type)
+                with self.assertRaisesRegex(TypeError, expected_error_regex):
+                    list(test_type)
+                with self.assertRaisesRegex(TypeError, expected_error_regex):
+                    for _ in test_type:
+                        pass
+
+    def test_is_not_instance_of_iterable(self):
+        for type_to_test in self._UNITERABLE_TYPES:
+            self.assertNotIsInstance(type_to_test, Iterable)
+
+
 if __name__ == "__main__":
     unittest.main()

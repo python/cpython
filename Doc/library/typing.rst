@@ -2668,7 +2668,7 @@ Constant
 
    .. note::
 
-      If ``from __future__ import annotations`` is used in Python 3.7 or later,
+      If ``from __future__ import annotations`` is used,
       annotations are not evaluated at function definition time.
       Instead, they are stored as strings in ``__annotations__``.
       This makes it unnecessary to use quotes around the annotation
