@@ -818,7 +818,7 @@ compatible with the Python codec registry.
       available on the stream, these should be read too.
 
 
-   .. method:: readline([size=None[, keepends=True]])
+   .. method:: readline(size=None, keepends=True)
 
       Read one line from the input stream and return the decoded data.
 
