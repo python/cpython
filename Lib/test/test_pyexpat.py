@@ -12,7 +12,7 @@ import traceback
 from xml.parsers import expat
 from xml.parsers.expat import errors
 
-from test.support import sortdict
+from test.support import sortdict, is_emscripten
 
 
 class SetAttributeTest(unittest.TestCase):
@@ -466,7 +466,10 @@ class HandlerExceptionTest(unittest.TestCase):
                                        "pyexpat.c", "StartElement")
             self.check_traceback_entry(entries[2],
                                        "test_pyexpat.py", "StartElementHandler")
-            if sysconfig.is_python_build() and not (sys.platform == 'win32' and platform.machine() == 'ARM'):
+            if (sysconfig.is_python_build()
+                and not (sys.platform == 'win32' and platform.machine() == 'ARM')
+                and not is_emscripten
+            ):
                 self.assertIn('call_with_frame("StartElement"', entries[1][3])
 
 

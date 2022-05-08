@@ -25,5 +25,19 @@ class Test(unittest.TestCase):
 # Classes GUIProxy, IdbAdapter, FrameProxy, CodeProxy, DictProxy,
 # GUIAdapter, IdbProxy plus 7 module functions.
 
+class IdbAdapterTest(unittest.TestCase):
+
+    def test_dict_item_noattr(self):  # Issue 33065.
+
+        class BinData:
+            def __repr__(self):
+                return self.length
+
+        debugger_r.dicttable[0] = {'BinData': BinData()}
+        idb = debugger_r.IdbAdapter(None)
+        self.assertTrue(idb.dict_item(0, 'BinData'))
+        debugger_r.dicttable.clear()
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
