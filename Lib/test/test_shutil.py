@@ -405,6 +405,27 @@ class TestRmTree(BaseTest, unittest.TestCase):
             self.assertFalse(shutil._use_fd_functions)
             self.assertFalse(shutil.rmtree.avoids_symlink_attacks)
 
+    @unittest.skipUnless(shutil._use_fd_functions, "dir_fd is not supported")
+    def test_rmtree_with_dir_fd(self):
+        tmp_dir = self.mkdtemp()
+        victim = 'killme'
+        fullname = os.path.join(tmp_dir, victim)
+        dir_fd = os.open(tmp_dir, os.O_RDONLY)
+        self.addCleanup(os.close, dir_fd)
+        os.mkdir(fullname)
+        os.mkdir(os.path.join(fullname, 'subdir'))
+        write_file(os.path.join(fullname, 'subdir', 'somefile'), 'foo')
+        self.assertTrue(os.path.exists(fullname))
+        shutil.rmtree(victim, dir_fd=dir_fd)
+        self.assertFalse(os.path.exists(fullname))
+
+    @unittest.skipIf(shutil._use_fd_functions, "dir_fd is supported")
+    def test_rmtree_with_dir_fd_unsupported(self):
+        tmp_dir = self.mkdtemp()
+        with self.assertRaises(NotImplementedError):
+            shutil.rmtree(tmp_dir, dir_fd=0)
+        self.assertTrue(os.path.exists(tmp_dir))
+
     def test_rmtree_dont_delete_file(self):
         # When called on a file instead of a directory, don't delete it.
         handle, path = tempfile.mkstemp(dir=self.mkdtemp())
@@ -1151,6 +1172,28 @@ class TestCopy(BaseTest, unittest.TestCase):
             rv = fn(src, os.path.join(dst_dir, 'bar'))
             self.assertEqual(rv, os.path.join(dst_dir, 'bar'))
 
+    def test_copy_dir(self):
+        self._test_copy_dir(shutil.copy)
+
+    def test_copy2_dir(self):
+        self._test_copy_dir(shutil.copy2)
+
+    def _test_copy_dir(self, copy_func):
+        src_dir = self.mkdtemp()
+        src_file = os.path.join(src_dir, 'foo')
+        dir2 = self.mkdtemp()
+        dst = os.path.join(src_dir, 'does_not_exist/')
+        write_file(src_file, 'foo')
+        if sys.platform == "win32":
+            err = PermissionError
+        else:
+            err = IsADirectoryError
+        self.assertRaises(err, copy_func, dir2, src_dir)
+
+        # raise *err* because of src rather than FileNotFoundError because of dst
+        self.assertRaises(err, copy_func, dir2, dst)
+        copy_func(src_file, dir2)     # should not raise exceptions
+
     ### shutil.copyfile
 
     @os_helper.skip_unless_symlink
@@ -1258,6 +1301,24 @@ class TestCopy(BaseTest, unittest.TestCase):
         dst = os.path.join(src_dir, 'does_not_exist/')
         write_file(src_file, 'foo')
         self.assertRaises(FileNotFoundError, shutil.copyfile, src_file, dst)
+
+    def test_copyfile_copy_dir(self):
+        # Issue 45234
+        # test copy() and copyfile() raising proper exceptions when src and/or
+        # dst are directories
+        src_dir = self.mkdtemp()
+        src_file = os.path.join(src_dir, 'foo')
+        dir2 = self.mkdtemp()
+        dst = os.path.join(src_dir, 'does_not_exist/')
+        write_file(src_file, 'foo')
+        if sys.platform == "win32":
+            err = PermissionError
+        else:
+            err = IsADirectoryError
+
+        self.assertRaises(err, shutil.copyfile, src_dir, dst)
+        self.assertRaises(err, shutil.copyfile, src_file, src_dir)
+        self.assertRaises(err, shutil.copyfile, dir2, src_dir)
 
 
 class TestArchives(BaseTest, unittest.TestCase):

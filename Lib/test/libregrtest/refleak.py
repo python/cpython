@@ -1,5 +1,4 @@
 import os
-import re
 import sys
 import warnings
 from inspect import isabstract
@@ -114,7 +113,7 @@ def dash_R(ns, test_name, test_func):
 
     # These checkers return False on success, True on failure
     def check_rc_deltas(deltas):
-        # Checker for reference counters and memomry blocks.
+        # Checker for reference counters and memory blocks.
         #
         # bpo-30776: Try to ignore false positives:
         #
@@ -143,7 +142,7 @@ def dash_R(ns, test_name, test_func):
             msg = '%s leaked %s %s, sum=%s' % (
                 test_name, deltas, item_name, sum(deltas))
             print(msg, file=sys.stderr, flush=True)
-            with open(fname, "a") as refrep:
+            with open(fname, "a", encoding="utf-8") as refrep:
                 print(msg, file=refrep)
                 refrep.flush()
             failed = True

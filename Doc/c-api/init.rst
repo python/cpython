@@ -486,7 +486,7 @@ Process-wide parameters
    (set by :c:func:`Py_SetProgramName` above) and some environment variables.
    The returned string consists of a series of directory names separated by a
    platform dependent delimiter character.  The delimiter character is ``':'``
-   on Unix and Mac OS X, ``';'`` on Windows.  The returned string points into
+   on Unix and macOS, ``';'`` on Windows.  The returned string points into
    static storage; the caller should not modify its value.  The list
    :data:`sys.path` is initialized with this value on interpreter startup; it
    can be (and usually is) modified later to change the search path for loading
@@ -518,7 +518,7 @@ Process-wide parameters
    default search path but uses the one provided instead.  This is useful if
    Python is embedded by an application that has full knowledge of the location
    of all modules.  The path components should be separated by the platform
-   dependent delimiter character, which is ``':'`` on Unix and Mac OS X, ``';'``
+   dependent delimiter character, which is ``':'`` on Unix and macOS, ``';'``
    on Windows.
 
    This also causes :data:`sys.executable` to be set to the program
@@ -549,9 +549,11 @@ Process-wide parameters
    .. index:: single: version (in module sys)
 
    The first word (up to the first space character) is the current Python version;
-   the first three characters are the major and minor version separated by a
+   the first characters are the major and minor version separated by a
    period.  The returned string points into static storage; the caller should not
    modify its value.  The value is available to Python code as :data:`sys.version`.
+
+   See also the :c:var:`Py_Version` constant.
 
 
 .. c:function:: const char* Py_GetPlatform()
@@ -561,7 +563,7 @@ Process-wide parameters
    Return the platform identifier for the current platform.  On Unix, this is
    formed from the "official" name of the operating system, converted to lower
    case, followed by the major revision number; e.g., for Solaris 2.x, which is
-   also known as SunOS 5.x, the value is ``'sunos5'``.  On Mac OS X, it is
+   also known as SunOS 5.x, the value is ``'sunos5'``.  On macOS, it is
    ``'darwin'``.  On Windows, it is ``'win'``.  The returned string points into
    static storage; the caller should not modify its value.  The value is available
    to Python code as ``sys.platform``.
@@ -614,6 +616,11 @@ Process-wide parameters
       single: Py_FatalError()
       single: argv (in module sys)
 
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.argv`, :c:member:`PyConfig.parse_argv` and
+   :c:member:`PyConfig.safe_path` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
+
    Set :data:`sys.argv` based on *argc* and *argv*.  These parameters are
    similar to those passed to the program's :c:func:`main` function with the
    difference that the first entry should refer to the script file to be
@@ -657,8 +664,14 @@ Process-wide parameters
    .. XXX impl. doesn't seem consistent in allowing ``0``/``NULL`` for the params;
       check w/ Guido.
 
+   .. deprecated:: 3.11
+
 
 .. c:function:: void PySys_SetArgv(int argc, wchar_t **argv)
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.argv` and :c:member:`PyConfig.parse_argv` should be used
+   instead, see :ref:`Python Initialization Configuration <init-config>`.
 
    This function works like :c:func:`PySys_SetArgvEx` with *updatepath* set
    to ``1`` unless the :program:`python` interpreter was started with the
@@ -671,6 +684,8 @@ Process-wide parameters
    members of the :ref:`Python Initialization Configuration <init-config>`.
 
    .. versionchanged:: 3.4 The *updatepath* value depends on :option:`-I`.
+
+   .. deprecated:: 3.11
 
 
 .. c:function:: void Py_SetPythonHome(const wchar_t *home)
@@ -1173,6 +1188,26 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. versionadded:: 3.9
 
 
+.. c:function:: void PyThreadState_EnterTracing(PyThreadState *tstate)
+
+   Suspend tracing and profiling in the Python thread state *tstate*.
+
+   Resume them using the :c:func:`PyThreadState_LeaveTracing` function.
+
+   .. versionadded:: 3.11
+
+
+.. c:function:: void PyThreadState_LeaveTracing(PyThreadState *tstate)
+
+   Resume tracing and profiling in the Python thread state *tstate* suspended
+   by the :c:func:`PyThreadState_EnterTracing` function.
+
+   See also :c:func:`PyEval_SetTrace` and :c:func:`PyEval_SetProfile`
+   functions.
+
+   .. versionadded:: 3.11
+
+
 .. c:function:: PyInterpreterState* PyInterpreterState_Get(void)
 
    Get the current interpreter.
@@ -1206,7 +1241,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    .. versionadded:: 3.8
 
-.. c:type:: PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, PyFrameObject *frame, int throwflag)
+.. c:type:: PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 
    Type of a frame evaluation function.
 
@@ -1215,6 +1250,9 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    .. versionchanged:: 3.9
       The function now takes a *tstate* parameter.
+
+   .. versionchanged:: 3.11
+      The *frame* parameter changed from ``PyFrameObject*`` to ``_PyInterpreterFrame*``.
 
 .. c:function:: _PyFrameEvalFunction _PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
 
@@ -1623,6 +1661,8 @@ Python-level trace functions in previous versions.
    profile function is called for all monitored events except :const:`PyTrace_LINE`
    :const:`PyTrace_OPCODE` and :const:`PyTrace_EXCEPTION`.
 
+   See also the :func:`sys.setprofile` function.
+
    The caller must hold the :term:`GIL`.
 
 
@@ -1634,6 +1674,8 @@ Python-level trace functions in previous versions.
    objects being called.  Any trace function registered using :c:func:`PyEval_SetTrace`
    will not receive :const:`PyTrace_C_CALL`, :const:`PyTrace_C_EXCEPTION` or
    :const:`PyTrace_C_RETURN` as a value for the *what* parameter.
+
+   See also the :func:`sys.settrace` function.
 
    The caller must hold the :term:`GIL`.
 
@@ -1757,7 +1799,7 @@ is not possible due to its implementation being opaque at build time.
    argument is `NULL`.
 
    .. note::
-      A freed key becomes a dangling pointer, you should reset the key to
+      A freed key becomes a dangling pointer. You should reset the key to
       `NULL`.
 
 

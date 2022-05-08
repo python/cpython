@@ -346,6 +346,25 @@ a = A(destroyed)"""
 
     # frozen and namespace module reprs are tested in importlib.
 
+    def test_subclass_with_slots(self):
+        # In 3.11alpha this crashed, as the slots weren't NULLed.
+
+        class ModuleWithSlots(ModuleType):
+            __slots__ = ("a", "b")
+
+            def __init__(self, name):
+                super().__init__(name)
+
+        m = ModuleWithSlots("name")
+        with self.assertRaises(AttributeError):
+            m.a
+        with self.assertRaises(AttributeError):
+            m.b
+        m.a, m.b = 1, 2
+        self.assertEqual(m.a, 1)
+        self.assertEqual(m.b, 2)
+
+
 
 if __name__ == '__main__':
     unittest.main()

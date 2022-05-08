@@ -15,6 +15,9 @@ from test.support import os_helper
 if sys.platform != 'win32':
     from asyncio import unix_events
 
+if support.check_sanitizer(address=True):
+    raise unittest.SkipTest("Exposes ASAN flakiness in GitHub CI")
+
 # Program blocking
 PROGRAM_BLOCKED = [sys.executable, '-c', 'import time; time.sleep(3600)']
 
@@ -228,7 +231,7 @@ class SubprocessMixin:
         # buffer large enough to feed the whole pipe buffer
         large_data = b'x' * support.PIPE_MAX_SIZE
 
-        # the program ends before the stdin can be feeded
+        # the program ends before the stdin can be fed
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_exec(
                 sys.executable, '-c', 'pass',

@@ -1,2 +1,0 @@
-Fix issue when dataclasses that inherit from ``typing.Protocol`` subclasses
-have wrong ``__init__``. Patch provided by Yurii Karabas.

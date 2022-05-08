@@ -487,7 +487,7 @@ class SDistTestCase(BasePyPIRCCommandTestCase):
             archive.close()
 
 def test_suite():
-    return unittest.makeSuite(SDistTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(SDistTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

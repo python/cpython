@@ -1,9 +1,9 @@
 import asyncio
+import contextvars
 import inspect
 import warnings
 
 from .case import TestCase
-
 
 
 class IsolatedAsyncioTestCase(TestCase):
@@ -34,8 +34,8 @@ class IsolatedAsyncioTestCase(TestCase):
 
     def __init__(self, methodName='runTest'):
         super().__init__(methodName)
-        self._asyncioTestLoop = None
-        self._asyncioCallsQueue = None
+        self._asyncioRunner = None
+        self._asyncioTestContext = contextvars.copy_context()
 
     async def asyncSetUp(self):
         pass
@@ -53,13 +53,33 @@ class IsolatedAsyncioTestCase(TestCase):
         # We intentionally don't add inspect.iscoroutinefunction() check
         # for func argument because there is no way
         # to check for async function reliably:
-        # 1. It can be "async def func()" iself
+        # 1. It can be "async def func()" itself
         # 2. Class can implement "async def __call__()" method
         # 3. Regular "def func()" that returns awaitable object
         self.addCleanup(*(func, *args), **kwargs)
 
+    async def enterAsyncContext(self, cm):
+        """Enters the supplied asynchronous context manager.
+
+        If successful, also adds its __aexit__ method as a cleanup
+        function and returns the result of the __aenter__ method.
+        """
+        # We look up the special methods on the type to match the with
+        # statement.
+        cls = type(cm)
+        try:
+            enter = cls.__aenter__
+            exit = cls.__aexit__
+        except AttributeError:
+            raise TypeError(f"'{cls.__module__}.{cls.__qualname__}' object does "
+                            f"not support the asynchronous context manager protocol"
+                           ) from None
+        result = await enter(cm)
+        self.addAsyncCleanup(exit, cm, None, None, None)
+        return result
+
     def _callSetUp(self):
-        self.setUp()
+        self._asyncioTestContext.run(self.setUp)
         self._callAsync(self.asyncSetUp)
 
     def _callTestMethod(self, method):
@@ -69,95 +89,50 @@ class IsolatedAsyncioTestCase(TestCase):
 
     def _callTearDown(self):
         self._callAsync(self.asyncTearDown)
-        self.tearDown()
+        self._asyncioTestContext.run(self.tearDown)
 
     def _callCleanup(self, function, *args, **kwargs):
         self._callMaybeAsync(function, *args, **kwargs)
 
     def _callAsync(self, func, /, *args, **kwargs):
-        assert self._asyncioTestLoop is not None
-        ret = func(*args, **kwargs)
-        assert inspect.isawaitable(ret)
-        fut = self._asyncioTestLoop.create_future()
-        self._asyncioCallsQueue.put_nowait((fut, ret))
-        return self._asyncioTestLoop.run_until_complete(fut)
+        assert self._asyncioRunner is not None, 'asyncio runner is not initialized'
+        assert inspect.iscoroutinefunction(func), f'{func!r} is not an async function'
+        return self._asyncioRunner.run(
+            func(*args, **kwargs),
+            context=self._asyncioTestContext
+        )
 
     def _callMaybeAsync(self, func, /, *args, **kwargs):
-        assert self._asyncioTestLoop is not None
-        ret = func(*args, **kwargs)
-        if inspect.isawaitable(ret):
-            fut = self._asyncioTestLoop.create_future()
-            self._asyncioCallsQueue.put_nowait((fut, ret))
-            return self._asyncioTestLoop.run_until_complete(fut)
+        assert self._asyncioRunner is not None, 'asyncio runner is not initialized'
+        if inspect.iscoroutinefunction(func):
+            return self._asyncioRunner.run(
+                func(*args, **kwargs),
+                context=self._asyncioTestContext,
+            )
         else:
-            return ret
+            return self._asyncioTestContext.run(func, *args, **kwargs)
 
-    async def _asyncioLoopRunner(self, fut):
-        self._asyncioCallsQueue = queue = asyncio.Queue()
-        fut.set_result(None)
-        while True:
-            query = await queue.get()
-            queue.task_done()
-            if query is None:
-                return
-            fut, awaitable = query
-            try:
-                ret = await awaitable
-                if not fut.cancelled():
-                    fut.set_result(ret)
-            except (SystemExit, KeyboardInterrupt):
-                raise
-            except (BaseException, asyncio.CancelledError) as ex:
-                if not fut.cancelled():
-                    fut.set_exception(ex)
+    def _setupAsyncioRunner(self):
+        assert self._asyncioRunner is None, 'asyncio runner is already initialized'
+        runner = asyncio.Runner(debug=True)
+        self._asyncioRunner = runner
 
-    def _setupAsyncioLoop(self):
-        assert self._asyncioTestLoop is None
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.set_debug(True)
-        self._asyncioTestLoop = loop
-        fut = loop.create_future()
-        self._asyncioCallsTask = loop.create_task(self._asyncioLoopRunner(fut))
-        loop.run_until_complete(fut)
-
-    def _tearDownAsyncioLoop(self):
-        assert self._asyncioTestLoop is not None
-        loop = self._asyncioTestLoop
-        self._asyncioTestLoop = None
-        self._asyncioCallsQueue.put_nowait(None)
-        loop.run_until_complete(self._asyncioCallsQueue.join())
-
-        try:
-            # cancel all tasks
-            to_cancel = asyncio.all_tasks(loop)
-            if not to_cancel:
-                return
-
-            for task in to_cancel:
-                task.cancel()
-
-            loop.run_until_complete(
-                asyncio.gather(*to_cancel, return_exceptions=True))
-
-            for task in to_cancel:
-                if task.cancelled():
-                    continue
-                if task.exception() is not None:
-                    loop.call_exception_handler({
-                        'message': 'unhandled exception during test shutdown',
-                        'exception': task.exception(),
-                        'task': task,
-                    })
-            # shutdown asyncgens
-            loop.run_until_complete(loop.shutdown_asyncgens())
-        finally:
-            asyncio.set_event_loop(None)
-            loop.close()
+    def _tearDownAsyncioRunner(self):
+        runner = self._asyncioRunner
+        runner.close()
 
     def run(self, result=None):
-        self._setupAsyncioLoop()
+        self._setupAsyncioRunner()
         try:
             return super().run(result)
         finally:
-            self._tearDownAsyncioLoop()
+            self._tearDownAsyncioRunner()
+
+    def debug(self):
+        self._setupAsyncioRunner()
+        super().debug()
+        self._tearDownAsyncioRunner()
+
+    def __del__(self):
+        if self._asyncioRunner is not None:
+            self._tearDownAsyncioRunner()

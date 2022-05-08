@@ -129,18 +129,18 @@ class CodeTestCase(unittest.TestCase):
         self.assertEqual(co2.co_filename, "f2")
 
     @requires_debug_ranges()
-    def test_no_columntable_and_endlinetable_with_no_debug_ranges(self):
+    def test_minimal_linetable_with_no_debug_ranges(self):
         # Make sure when demarshalling objects with `-X no_debug_ranges`
-        # that the columntable and endlinetable are None.
+        # that the columns are None.
         co = ExceptionTestCase.test_exceptions.__code__
         code = textwrap.dedent("""
         import sys
         import marshal
         with open(sys.argv[1], 'rb') as f:
             co = marshal.load(f)
-
-            assert co.co_endlinetable is None
-            assert co.co_columntable is None
+            positions = list(co.co_positions())
+            assert positions[0][2] is None
+            assert positions[0][3] is None
         """)
 
         try:
@@ -352,17 +352,20 @@ class BugsTestCase(unittest.TestCase):
             for elements in (
                 "float('nan'), b'a', b'b', b'c', 'x', 'y', 'z'",
                 # Also test for bad interactions with backreferencing:
-                "('string', 1), ('string', 2), ('string', 3)",
+                "('Spam', 0), ('Spam', 1), ('Spam', 2)",
             ):
                 s = f"{kind}([{elements}])"
                 with self.subTest(s):
                     # First, make sure that our test case still has different
                     # orders under hash seeds 0 and 1. If this check fails, we
-                    # need to update this test with different elements:
-                    args = ["-c", f"print({s})"]
-                    _, repr_0, _ = assert_python_ok(*args, PYTHONHASHSEED="0")
-                    _, repr_1, _ = assert_python_ok(*args, PYTHONHASHSEED="1")
-                    self.assertNotEqual(repr_0, repr_1)
+                    # need to update this test with different elements. Skip
+                    # this part if we are configured to use any other hash
+                    # algorithm (for example, using Py_HASH_EXTERNAL):
+                    if sys.hash_info.algorithm in {"fnv", "siphash24"}:
+                        args = ["-c", f"print({s})"]
+                        _, repr_0, _ = assert_python_ok(*args, PYTHONHASHSEED="0")
+                        _, repr_1, _ = assert_python_ok(*args, PYTHONHASHSEED="1")
+                        self.assertNotEqual(repr_0, repr_1)
                     # Then, perform the actual test:
                     args = ["-c", f"import marshal; print(marshal.dumps({s}))"]
                     _, dump_0, _ = assert_python_ok(*args, PYTHONHASHSEED="0")

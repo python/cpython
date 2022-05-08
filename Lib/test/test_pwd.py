@@ -69,7 +69,7 @@ class PwdTest(unittest.TestCase):
 
         allnames = list(bynames.keys())
         namei = 0
-        fakename = allnames[namei]
+        fakename = allnames[namei] if allnames else "invaliduser"
         while fakename in bynames:
             chars = list(fakename)
             for i in range(len(chars)):

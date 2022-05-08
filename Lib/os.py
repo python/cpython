@@ -331,8 +331,8 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     import os
     from os.path import join, getsize
     for root, dirs, files in os.walk('python/Lib/email'):
-        print(root, "consumes", end="")
-        print(sum(getsize(join(root, name)) for name in files), end="")
+        print(root, "consumes ")
+        print(sum(getsize(join(root, name)) for name in files), end=" ")
         print("bytes in", len(files), "non-directory files")
         if 'CVS' in dirs:
             dirs.remove('CVS')  # don't visit CVS directories
@@ -974,7 +974,7 @@ otherwise return -SIG, where SIG is the signal that killed it. """
 # command in a shell can't be supported.
 if sys.platform != 'vxworks':
     # Supply os.popen()
-    def popen(cmd, mode="r", buffering=-1):
+    def popen(cmd, mode="r", buffering=-1, encoding=None):
         if not isinstance(cmd, str):
             raise TypeError("invalid cmd type (%s, expected string)" % type(cmd))
         if mode not in ("r", "w"):
@@ -982,6 +982,7 @@ if sys.platform != 'vxworks':
         if buffering == 0 or buffering is None:
             raise ValueError("popen() does not support unbuffered streams")
         import subprocess, io
+        encoding = io.text_encoding(encoding)
         if mode == "r":
             proc = subprocess.Popen(cmd,
                                     shell=True, text=True,

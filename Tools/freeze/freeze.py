@@ -367,12 +367,6 @@ def main():
         else:
             mf.load_file(mod)
 
-    # Alias "importlib._bootstrap" to "_frozen_importlib" so that the
-    # import machinery can bootstrap.  Do the same for
-    # importlib._bootstrap_external.
-    mf.modules["_frozen_importlib"] = mf.modules["importlib._bootstrap"]
-    mf.modules["_frozen_importlib_external"] = mf.modules["importlib._bootstrap_external"]
-
     # Add the main script as either __main__, or the actual module name.
     if python_entry_is_main:
         mf.run_script(scriptfile)

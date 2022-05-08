@@ -91,7 +91,7 @@ jobs:
   - powershell: |
       $m = 'CN=$(SigningCertificate)'
       $c = ((gci Cert:\CurrentUser\My), (gci Cert:\LocalMachine\My)) | %{ $_ } | `
-         ?{ $_.Subject -match $m } | `
+         ?{ $_.Subject -match $m -and $_.NotBefore -lt (Get-Date) -and $_.NotAfter -gt (Get-Date) } | `
          select -First 1
       if (-not $c) {
           Write-Host "Failed to find certificate for $(SigningCertificate)"
@@ -120,7 +120,7 @@ jobs:
   condition: and(succeeded(), not(variables['SigningCertificate']))
 
   pool:
-    vmImage: windows-2019
+    vmImage: windows-2022
 
   steps:
   - checkout: none

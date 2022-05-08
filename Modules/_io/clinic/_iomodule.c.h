@@ -22,9 +22,9 @@ PyDoc_STRVAR(_io_open__doc__,
 "\'a\' for appending (which on some Unix systems, means that all writes\n"
 "append to the end of the file regardless of the current seek position).\n"
 "In text mode, if encoding is not specified the encoding used is platform\n"
-"dependent: locale.getpreferredencoding(False) is called to get the\n"
-"current locale encoding. (For reading and writing raw bytes use binary\n"
-"mode and leave encoding unspecified.) The available modes are:\n"
+"dependent: locale.getencoding() is called to get the current locale encoding.\n"
+"(For reading and writing raw bytes use binary mode and leave encoding\n"
+"unspecified.) The available modes are:\n"
 "\n"
 "========= ===============================================================\n"
 "Character Meaning\n"
@@ -122,7 +122,7 @@ PyDoc_STRVAR(_io_open__doc__,
 "opened in a binary mode.");
 
 #define _IO_OPEN_METHODDEF    \
-    {"open", (PyCFunction)(void(*)(void))_io_open, METH_FASTCALL|METH_KEYWORDS, _io_open__doc__},
+    {"open", _PyCFunction_CAST(_io_open), METH_FASTCALL|METH_KEYWORDS, _io_open__doc__},
 
 static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
@@ -273,8 +273,9 @@ PyDoc_STRVAR(_io_text_encoding__doc__,
 "\n"
 "A helper function to choose the text encoding.\n"
 "\n"
-"When encoding is not None, just return it.\n"
-"Otherwise, return the default text encoding (i.e. \"locale\").\n"
+"When encoding is not None, this function returns it.\n"
+"Otherwise, this function returns the default text encoding\n"
+"(i.e. \"locale\" or \"utf-8\" depends on UTF-8 mode).\n"
 "\n"
 "This function emits an EncodingWarning if encoding is None and\n"
 "sys.flags.warn_default_encoding is true.\n"
@@ -283,7 +284,7 @@ PyDoc_STRVAR(_io_text_encoding__doc__,
 "However, please consider using encoding=\"utf-8\" for new APIs.");
 
 #define _IO_TEXT_ENCODING_METHODDEF    \
-    {"text_encoding", (PyCFunction)(void(*)(void))_io_text_encoding, METH_FASTCALL, _io_text_encoding__doc__},
+    {"text_encoding", _PyCFunction_CAST(_io_text_encoding), METH_FASTCALL, _io_text_encoding__doc__},
 
 static PyObject *
 _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel);
@@ -323,7 +324,7 @@ PyDoc_STRVAR(_io_open_code__doc__,
 "with calling open(path, \'rb\').");
 
 #define _IO_OPEN_CODE_METHODDEF    \
-    {"open_code", (PyCFunction)(void(*)(void))_io_open_code, METH_FASTCALL|METH_KEYWORDS, _io_open_code__doc__},
+    {"open_code", _PyCFunction_CAST(_io_open_code), METH_FASTCALL|METH_KEYWORDS, _io_open_code__doc__},
 
 static PyObject *
 _io_open_code_impl(PyObject *module, PyObject *path);
@@ -354,4 +355,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6ea315343f6a94ba input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c4d7e4ef878985f8 input=a9049054013a1b77]*/
