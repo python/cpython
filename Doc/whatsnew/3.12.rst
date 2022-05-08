@@ -107,6 +107,14 @@ Deprecated
 Removed
 =======
 
+:class:`configparser.ParsingError` no longer has a ``filename`` attribute or
+constructor argument.  Use the ``source`` attribute and argument name instead.
+
+:mod:`configparser` no longer has a ``SafeConfigParser`` class, use the shorter
+:class:`~configparser.ConfigParser` name instead.
+
+:class:`configparser.ConfigParser` no longer has a ``readfp`` method, use
+:meth:`~configparser.ConfigParser.read_file` instead.
 
 
 Porting to Python 3.12

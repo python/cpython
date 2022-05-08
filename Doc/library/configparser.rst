@@ -1339,6 +1339,9 @@ Exceptions
 
    Exception raised when errors occur attempting to parse a file.
 
+.. versionchanged:: 3.12
+   The ``filename`` attribute and :meth:`__init__` constructor argument were
+   removed.  They have been available using the name ``source`` since 3.2.
 
 .. rubric:: Footnotes
 
