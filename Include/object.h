@@ -66,7 +66,7 @@ whose size is determined when the object is allocated.
     PyObject *_ob_next;           \
     PyObject *_ob_prev;
 
-#define _PyObject_EXTRA_INIT 0, 0,
+#define _PyObject_EXTRA_INIT _Py_NULL, _Py_NULL,
 
 #else
 #  define _PyObject_HEAD_EXTRA

@@ -8,6 +8,7 @@ on:
   push:
     branches:
     - 'main'
+    - '3.11'
     - '3.10'
     - '3.9'
     - '3.8'
@@ -15,6 +16,7 @@ on:
   pull_request:
     branches:
     - 'main'
+    - '3.11'
     - '3.10'
     - '3.9'
     - '3.8'
