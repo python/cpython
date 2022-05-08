@@ -1,9 +1,10 @@
-from .. import util
+from test.test_importlib import util
 
 from importlib import machinery
 import sys
 import types
 import unittest
+import warnings
 
 PKG_NAME = 'fine'
 SUBMOD_NAME = 'fine.bogus'
@@ -82,9 +83,53 @@ class APITest:
                     self.__import__(PKG_NAME,
                                     fromlist=[SUBMOD_NAME.rpartition('.')[-1]])
 
+    def test_blocked_fromlist(self):
+        # If fromlist entry is None, let a ModuleNotFoundError propagate.
+        # issue31642
+        mod = types.ModuleType(PKG_NAME)
+        mod.__path__ = []
+        with util.import_state(meta_path=[self.bad_finder_loader]):
+            with util.uncache(PKG_NAME, SUBMOD_NAME):
+                sys.modules[PKG_NAME] = mod
+                sys.modules[SUBMOD_NAME] = None
+                with self.assertRaises(ModuleNotFoundError) as cm:
+                    self.__import__(PKG_NAME,
+                                    fromlist=[SUBMOD_NAME.rpartition('.')[-1]])
+                self.assertEqual(cm.exception.name, SUBMOD_NAME)
+
 
 class OldAPITests(APITest):
     bad_finder_loader = BadLoaderFinder
+
+    def test_raises_ModuleNotFoundError(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_raises_ModuleNotFoundError()
+
+    def test_name_requires_rparition(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_name_requires_rparition()
+
+    def test_negative_level(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_negative_level()
+
+    def test_nonexistent_fromlist_entry(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_nonexistent_fromlist_entry()
+
+    def test_fromlist_load_error_propagates(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_fromlist_load_error_propagates
+
+    def test_blocked_fromlist(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_blocked_fromlist()
 
 
 (Frozen_OldAPITests,

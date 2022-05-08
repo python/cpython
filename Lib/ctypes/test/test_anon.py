@@ -1,4 +1,5 @@
 import unittest
+import test.support
 from ctypes import *
 
 class AnonTest(unittest.TestCase):
@@ -34,6 +35,18 @@ class AnonTest(unittest.TestCase):
                                                       (Structure,),
                                                       {"_fields_": [],
                                                        "_anonymous_": ["x"]}))
+
+    @test.support.cpython_only
+    def test_issue31490(self):
+        # There shouldn't be an assertion failure in case the class has an
+        # attribute whose name is specified in _anonymous_ but not in _fields_.
+
+        # AttributeError: 'x' is specified in _anonymous_ but not in _fields_
+        with self.assertRaises(AttributeError):
+            class Name(Structure):
+                _fields_ = []
+                _anonymous_ = ["x"]
+                x = 42
 
     def test_nested(self):
         class ANON_S(Structure):

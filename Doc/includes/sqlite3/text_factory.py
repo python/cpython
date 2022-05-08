@@ -3,9 +3,9 @@ import sqlite3
 con = sqlite3.connect(":memory:")
 cur = con.cursor()
 
-AUSTRIA = "\xd6sterreich"
+AUSTRIA = "Österreich"
 
-# by default, rows are returned as Unicode
+# by default, rows are returned as str
 cur.execute("select ?", (AUSTRIA,))
 row = cur.fetchone()
 assert row[0] == AUSTRIA
@@ -25,3 +25,5 @@ con.text_factory = lambda x: x.decode("utf-8") + "foo"
 cur.execute("select ?", ("bar",))
 row = cur.fetchone()
 assert row[0] == "barfoo"
+
+con.close()

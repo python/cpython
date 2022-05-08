@@ -16,6 +16,7 @@ overview:
    builtins.rst
    __main__.rst
    warnings.rst
+   dataclasses.rst
    contextlib.rst
    abc.rst
    atexit.rst
@@ -24,4 +25,3 @@ overview:
    gc.rst
    inspect.rst
    site.rst
-   fpectl.rst

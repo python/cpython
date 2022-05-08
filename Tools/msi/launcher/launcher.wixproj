@@ -8,6 +8,7 @@
         <DefineConstants>UpgradeCode=1B68A0EC-4DD3-5134-840E-73854B0863F1;SuppressUpgradeTable=1;$(DefineConstants)</DefineConstants>
         <IgnoreCommonWxlTemplates>true</IgnoreCommonWxlTemplates>
         <SuppressICEs>ICE80</SuppressICEs>
+        <_Rebuild>Build</_Rebuild>
     </PropertyGroup>
     <Import Project="..\msi.props" />
     <ItemGroup>
@@ -18,18 +19,27 @@
     <ItemGroup>
         <EmbeddedResource Include="*.wxl" />
     </ItemGroup>
-    
-    <Target Name="_EnsurePyEx86" Condition="!Exists('$(BuildPath32)py.exe')" BeforeTargets="PrepareForBuild">
-        <MSBuild Projects="$(PySourcePath)PCBuild\pylauncher.vcxproj" Properties="Platform=Win32" />
+
+    <Target Name="_MarkAsRebuild" BeforeTargets="BeforeRebuild">
+      <PropertyGroup>
+        <_Rebuild>Rebuild</_Rebuild>
+      </PropertyGroup>
     </Target>
-    <Target Name="_EnsurePywEx86" Condition="!Exists('$(BuildPath32)pyw.exe')" BeforeTargets="PrepareForBuild">
-        <MSBuild Projects="$(PySourcePath)PCBuild\pywlauncher.vcxproj" Properties="Platform=Win32" />
+
+    <Target Name="_EnsurePyEx86" Condition="!Exists('$(BuildPath32)py.exe') or '$(_Rebuild)' == 'Rebuild'" BeforeTargets="PrepareForBuild">
+        <MSBuild Projects="$(PySourcePath)PCbuild\pylauncher.vcxproj" Properties="Platform=Win32" Targets="$(_Rebuild)" />
     </Target>
-    <Target Name="_EnsurePyShellExt86" Condition="!Exists('$(BuildPath32)pyshellext.dll')" BeforeTargets="PrepareForBuild">
-        <MSBuild Projects="$(PySourcePath)PCBuild\pyshellext.vcxproj" Properties="Platform=Win32" />
+    <Target Name="_EnsurePywEx86" Condition="!Exists('$(BuildPath32)pyw.exe') or '$(_Rebuild)' == 'Rebuild'" BeforeTargets="PrepareForBuild">
+        <MSBuild Projects="$(PySourcePath)PCbuild\pywlauncher.vcxproj" Properties="Platform=Win32" Targets="$(_Rebuild)" />
     </Target>
-    <Target Name="_EnsurePyShellExt64" Condition="!Exists('$(BuildPath64)pyshellext.dll')" BeforeTargets="PrepareForBuild">
-        <MSBuild Projects="$(PySourcePath)PCBuild\pyshellext.vcxproj" Properties="Platform=x64" />
+    <Target Name="_EnsurePyShellExt86" Condition="!Exists('$(BuildPath32)pyshellext.dll') or '$(_Rebuild)' == 'Rebuild'" BeforeTargets="PrepareForBuild">
+        <MSBuild Projects="$(PySourcePath)PCbuild\pyshellext.vcxproj" Properties="Platform=Win32" Targets="$(_Rebuild)" />
+    </Target>
+    <Target Name="_EnsurePyShellExt64" Condition="!Exists('$(BuildPath64)pyshellext.dll') or '$(_Rebuild)' == 'Rebuild'" BeforeTargets="PrepareForBuild">
+        <MSBuild Projects="$(PySourcePath)PCbuild\pyshellext.vcxproj" Properties="Platform=x64" Targets="$(_Rebuild)" />
+    </Target>
+    <Target Name="_EnsurePyShellExtARM64" Condition="!Exists('$(BuildPathARM64)pyshellext.dll') or '$(_Rebuild)' == 'Rebuild'" BeforeTargets="PrepareForBuild">
+        <MSBuild Projects="$(PySourcePath)PCbuild\pyshellext.vcxproj" Properties="Platform=ARM64" Targets="$(_Rebuild)" />
     </Target>
     
     <Import Project="..\msi.targets" />

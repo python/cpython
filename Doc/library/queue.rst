@@ -11,9 +11,7 @@
 The :mod:`queue` module implements multi-producer, multi-consumer queues.
 It is especially useful in threaded programming when information must be
 exchanged safely between multiple threads.  The :class:`Queue` class in this
-module implements all the required locking semantics.  It depends on the
-availability of thread support in Python; see the :mod:`threading`
-module.
+module implements all the required locking semantics.
 
 The module implements three types of queue, which differ only in the order in
 which the entries are retrieved.  In a :abbr:`FIFO (first-in, first-out)`
@@ -23,8 +21,14 @@ the first retrieved (operating like a stack).  With a priority queue,
 the entries are kept sorted (using the :mod:`heapq` module) and the
 lowest valued entry is retrieved first.
 
-Internally, the module uses locks to temporarily block competing threads;
-however, it is not designed to handle reentrancy within a thread.
+Internally, those three types of queues use locks to temporarily block
+competing threads; however, they are not designed to handle reentrancy
+within a thread.
+
+In addition, the module implements a "simple"
+:abbr:`FIFO (first-in, first-out)` queue type, :class:`SimpleQueue`, whose
+specific implementation provides additional guarantees
+in exchange for the smaller functionality.
 
 The :mod:`queue` module defines the following classes and exceptions:
 
@@ -55,6 +59,24 @@ The :mod:`queue` module defines the following classes and exceptions:
    The lowest valued entries are retrieved first (the lowest valued entry is the
    one returned by ``sorted(list(entries))[0]``).  A typical pattern for entries
    is a tuple in the form: ``(priority_number, data)``.
+
+   If the *data* elements are not comparable, the data can be wrapped in a class
+   that ignores the data item and only compares the priority number::
+
+        from dataclasses import dataclass, field
+        from typing import Any
+
+        @dataclass(order=True)
+        class PrioritizedItem:
+            priority: int
+            item: Any=field(compare=False)
+
+.. class:: SimpleQueue()
+
+   Constructor for an unbounded :abbr:`FIFO (first-in, first-out)` queue.
+   Simple queues lack advanced functionality such as task tracking.
+
+   .. versionadded:: 3.7
 
 
 .. exception:: Empty
@@ -116,7 +138,7 @@ provide the public methods described below.
 
 .. method:: Queue.put_nowait(item)
 
-   Equivalent to ``put(item, False)``.
+   Equivalent to ``put(item, block=False)``.
 
 
 .. method:: Queue.get(block=True, timeout=None)
@@ -127,6 +149,11 @@ provide the public methods described below.
    raises the :exc:`Empty` exception if no item was available within that time.
    Otherwise (*block* is false), return an item if one is immediately available,
    else raise the :exc:`Empty` exception (*timeout* is ignored in that case).
+
+   Prior to 3.0 on POSIX systems, and for all versions on Windows, if
+   *block* is true and *timeout* is ``None``, this operation goes into
+   an uninterruptible wait on an underlying lock. This means that no exceptions
+   can occur, and in particular a SIGINT will not trigger a :exc:`KeyboardInterrupt`.
 
 
 .. method:: Queue.get_nowait()
@@ -163,32 +190,81 @@ fully processed by daemon consumer threads.
 
 Example of how to wait for enqueued tasks to be completed::
 
+    import threading, queue
+
+    q = queue.Queue()
+
     def worker():
         while True:
             item = q.get()
-            if item is None:
-                break
-            do_work(item)
+            print(f'Working on {item}')
+            print(f'Finished {item}')
             q.task_done()
 
-    q = queue.Queue()
-    threads = []
-    for i in range(num_worker_threads):
-        t = threading.Thread(target=worker)
-        t.start()
-        threads.append(t)
+    # Turn-on the worker thread.
+    threading.Thread(target=worker, daemon=True).start()
 
-    for item in source():
+    # Send thirty task requests to the worker.
+    for item in range(30):
         q.put(item)
 
-    # block until all tasks are done
+    # Block until all tasks are done.
     q.join()
+    print('All work completed')
 
-    # stop workers
-    for i in range(num_worker_threads):
-        q.put(None)
-    for t in threads:
-        t.join()
+
+SimpleQueue Objects
+-------------------
+
+:class:`SimpleQueue` objects provide the public methods described below.
+
+.. method:: SimpleQueue.qsize()
+
+   Return the approximate size of the queue.  Note, qsize() > 0 doesn't
+   guarantee that a subsequent get() will not block.
+
+
+.. method:: SimpleQueue.empty()
+
+   Return ``True`` if the queue is empty, ``False`` otherwise. If empty()
+   returns ``False`` it doesn't guarantee that a subsequent call to get()
+   will not block.
+
+
+.. method:: SimpleQueue.put(item, block=True, timeout=None)
+
+   Put *item* into the queue.  The method never blocks and always succeeds
+   (except for potential low-level errors such as failure to allocate memory).
+   The optional args *block* and *timeout* are ignored and only provided
+   for compatibility with :meth:`Queue.put`.
+
+   .. impl-detail::
+      This method has a C implementation which is reentrant.  That is, a
+      ``put()`` or ``get()`` call can be interrupted by another ``put()``
+      call in the same thread without deadlocking or corrupting internal
+      state inside the queue.  This makes it appropriate for use in
+      destructors such as ``__del__`` methods or :mod:`weakref` callbacks.
+
+
+.. method:: SimpleQueue.put_nowait(item)
+
+   Equivalent to ``put(item, block=False)``, provided for compatibility with
+   :meth:`Queue.put_nowait`.
+
+
+.. method:: SimpleQueue.get(block=True, timeout=None)
+
+   Remove and return an item from the queue.  If optional args *block* is true and
+   *timeout* is ``None`` (the default), block if necessary until an item is available.
+   If *timeout* is a positive number, it blocks at most *timeout* seconds and
+   raises the :exc:`Empty` exception if no item was available within that time.
+   Otherwise (*block* is false), return an item if one is immediately available,
+   else raise the :exc:`Empty` exception (*timeout* is ignored in that case).
+
+
+.. method:: SimpleQueue.get_nowait()
+
+   Equivalent to ``get(False)``.
 
 
 .. seealso::
@@ -199,5 +275,5 @@ Example of how to wait for enqueued tasks to be completed::
 
    :class:`collections.deque` is an alternative implementation of unbounded
    queues with fast atomic :meth:`~collections.deque.append` and
-   :meth:`~collections.deque.popleft` operations that do not require locking.
-
+   :meth:`~collections.deque.popleft` operations that do not require locking
+   and also support indexing.

@@ -1,7 +1,12 @@
 import unittest
+from test import support
+
 import gc
+import tkinter
 from tkinter import (Variable, StringVar, IntVar, DoubleVar, BooleanVar, Tcl,
                      TclError)
+from test.support import ALWAYS_EQ
+from tkinter.test.support import AbstractDefaultRootTest
 
 
 class Var(Variable):
@@ -43,6 +48,7 @@ class TestVariable(TestBase):
         v = Variable(self.root, "sample string", "varname")
         self.assertTrue(self.info_exists("varname"))
         del v
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertFalse(self.info_exists("varname"))
 
     def test_dont_unset_not_existing(self):
@@ -50,20 +56,38 @@ class TestVariable(TestBase):
         v1 = Variable(self.root, name="name")
         v2 = Variable(self.root, name="name")
         del v1
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertFalse(self.info_exists("name"))
         # shouldn't raise exception
         del v2
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertFalse(self.info_exists("name"))
 
-    def test___eq__(self):
+    def test_equality(self):
         # values doesn't matter, only class and name are checked
         v1 = Variable(self.root, name="abc")
         v2 = Variable(self.root, name="abc")
+        self.assertIsNot(v1, v2)
         self.assertEqual(v1, v2)
 
-        v3 = Variable(self.root, name="abc")
+        v3 = Variable(self.root, name="cba")
+        self.assertNotEqual(v1, v3)
+
         v4 = StringVar(self.root, name="abc")
-        self.assertNotEqual(v3, v4)
+        self.assertEqual(str(v1), str(v4))
+        self.assertNotEqual(v1, v4)
+
+        V = type('Variable', (), {})
+        self.assertNotEqual(v1, V())
+
+        self.assertNotEqual(v1, object())
+        self.assertEqual(v1, ALWAYS_EQ)
+
+        root2 = tkinter.Tk()
+        self.addCleanup(root2.destroy)
+        v5 = Variable(root2, name="abc")
+        self.assertEqual(str(v1), str(v5))
+        self.assertNotEqual(v1, v5)
 
     def test_invalid_name(self):
         with self.assertRaises(TypeError):
@@ -301,10 +325,18 @@ class TestBooleanVar(TestBase):
             v.get()
 
 
-tests_gui = (TestVariable, TestStringVar, TestIntVar,
-             TestDoubleVar, TestBooleanVar)
+class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
+
+    def test_variable(self):
+        self.assertRaises(RuntimeError, Variable)
+        root = tkinter.Tk()
+        v = Variable()
+        v.set("value")
+        self.assertEqual(v.get(), "value")
+        root.destroy()
+        tkinter.NoDefaultRoot()
+        self.assertRaises(RuntimeError, Variable)
 
 
 if __name__ == "__main__":
-    from test.support import run_unittest
-    run_unittest(*tests_gui)
+    unittest.main()

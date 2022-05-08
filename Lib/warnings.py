@@ -33,9 +33,8 @@ def _showwarnmsg_impl(msg):
         pass
 
 def _formatwarnmsg_impl(msg):
-    s =  ("%s:%s: %s: %s\n"
-          % (msg.filename, msg.lineno, msg.category.__name__,
-             msg.message))
+    category = msg.category.__name__
+    s =  f"{msg.filename}:{msg.lineno}: {category}: {msg.message}\n"
 
     if msg.line is None:
         try:
@@ -55,14 +54,23 @@ def _formatwarnmsg_impl(msg):
     if msg.source is not None:
         try:
             import tracemalloc
-            tb = tracemalloc.get_object_traceback(msg.source)
+        # Logging a warning should not raise a new exception:
+        # catch Exception, not only ImportError and RecursionError.
         except Exception:
-            # When a warning is logged during Python shutdown, tracemalloc
-            # and the import machinery don't work anymore
+            # don't suggest to enable tracemalloc if it's not available
+            tracing = True
             tb = None
+        else:
+            tracing = tracemalloc.is_tracing()
+            try:
+                tb = tracemalloc.get_object_traceback(msg.source)
+            except Exception:
+                # When a warning is logged during Python shutdown, tracemalloc
+                # and the import machinery don't work anymore
+                tb = None
 
         if tb is not None:
-            s += 'Object allocated at (most recent call first):\n'
+            s += 'Object allocated at (most recent call last):\n'
             for frame in tb:
                 s += ('  File "%s", lineno %s\n'
                       % (frame.filename, frame.lineno))
@@ -77,6 +85,9 @@ def _formatwarnmsg_impl(msg):
                 if line:
                     line = line.strip()
                     s += '    %s\n' % line
+        elif not tracing:
+            s += (f'{category}: Enable tracemalloc to get the object '
+                  f'allocation traceback\n')
     return s
 
 # Keep a reference to check if the function was replaced
@@ -113,7 +124,7 @@ def _formatwarnmsg(msg):
         if fw is not _formatwarning_orig:
             # warnings.formatwarning() was replaced
             return fw(msg.message, msg.category,
-                      msg.filename, msg.lineno, line=msg.line)
+                      msg.filename, msg.lineno, msg.line)
     return _formatwarnmsg_impl(msg)
 
 def filterwarnings(action, message="", category=Warning, module="", lineno=0,
@@ -128,7 +139,6 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     'lineno' -- an integer line number, 0 matches all warnings
     'append' -- if true, append to the list of filters
     """
-    import re
     assert action in ("error", "ignore", "always", "default", "module",
                       "once"), "invalid action: %r" % (action,)
     assert isinstance(message, str), "message must be a string"
@@ -137,8 +147,20 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     assert isinstance(module, str), "module must be a string"
     assert isinstance(lineno, int) and lineno >= 0, \
            "lineno must be an int >= 0"
-    _add_filter(action, re.compile(message, re.I), category,
-            re.compile(module), lineno, append=append)
+
+    if message or module:
+        import re
+
+    if message:
+        message = re.compile(message, re.I)
+    else:
+        message = None
+    if module:
+        module = re.compile(module)
+    else:
+        module = None
+
+    _add_filter(action, message, category, module, lineno, append=append)
 
 def simplefilter(action, category=Warning, lineno=0, append=False):
     """Insert a simple entry into the list of warnings filters (at the front).
@@ -189,7 +211,6 @@ def _processoptions(args):
 
 # Helper for _processoptions()
 def _setoption(arg):
-    import re
     parts = arg.split(':')
     if len(parts) > 5:
         raise _OptionError("too many fields (max 5): %r" % (arg,))
@@ -198,11 +219,13 @@ def _setoption(arg):
     action, message, category, module, lineno = [s.strip()
                                                  for s in parts]
     action = _getaction(action)
-    message = re.escape(message)
     category = _getcategory(category)
-    module = re.escape(module)
+    if message or module:
+        import re
+    if message:
+        message = re.escape(message)
     if module:
-        module = module + '$'
+        module = re.escape(module) + r'\Z'
     if lineno:
         try:
             lineno = int(lineno)
@@ -226,26 +249,21 @@ def _getaction(action):
 
 # Helper for _setoption()
 def _getcategory(category):
-    import re
     if not category:
         return Warning
-    if re.match("^[a-zA-Z0-9_]+$", category):
-        try:
-            cat = eval(category)
-        except NameError:
-            raise _OptionError("unknown warning category: %r" % (category,)) from None
+    if '.' not in category:
+        import builtins as m
+        klass = category
     else:
-        i = category.rfind(".")
-        module = category[:i]
-        klass = category[i+1:]
+        module, _, klass = category.rpartition('.')
         try:
             m = __import__(module, None, None, [klass])
         except ImportError:
             raise _OptionError("invalid module name: %r" % (module,)) from None
-        try:
-            cat = getattr(m, klass)
-        except AttributeError:
-            raise _OptionError("unknown warning category: %r" % (category,)) from None
+    try:
+        cat = getattr(m, klass)
+    except AttributeError:
+        raise _OptionError("unknown warning category: %r" % (category,)) from None
     if not issubclass(cat, Warning):
         raise _OptionError("invalid warning category: %r" % (category,))
     return cat
@@ -292,28 +310,16 @@ def warn(message, category=None, stacklevel=1, source=None):
                     raise ValueError
     except ValueError:
         globals = sys.__dict__
+        filename = "sys"
         lineno = 1
     else:
         globals = frame.f_globals
+        filename = frame.f_code.co_filename
         lineno = frame.f_lineno
     if '__name__' in globals:
         module = globals['__name__']
     else:
         module = "<string>"
-    filename = globals.get('__file__')
-    if filename:
-        fnl = filename.lower()
-        if fnl.endswith(".pyc"):
-            filename = filename[:-1]
-    else:
-        if module == "__main__":
-            try:
-                filename = sys.argv[0]
-            except AttributeError:
-                # embedded interpreters don't have sys.argv, see bug #839151
-                filename = '__main__'
-        if not filename:
-            filename = module
     registry = globals.setdefault("__warningregistry__", {})
     warn_explicit(message, category, filename, lineno, module, registry,
                   globals, source)
@@ -353,7 +359,6 @@ def warn_explicit(message, category, filename, lineno,
         action = defaultaction
     # Early exit actions
     if action == "ignore":
-        registry[key] = 1
         return
 
     # Prime the linecache for formatting, in case the
@@ -397,9 +402,13 @@ class WarningMessage(object):
 
     def __init__(self, message, category, filename, lineno, file=None,
                  line=None, source=None):
-        local_values = locals()
-        for attr in self._WARNING_DETAILS:
-            setattr(self, attr, local_values[attr])
+        self.message = message
+        self.category = category
+        self.filename = filename
+        self.lineno = lineno
+        self.file = file
+        self.line = line
+        self.source = source
         self._category_name = category.__name__ if category else None
 
     def __str__(self):
@@ -423,9 +432,13 @@ class catch_warnings(object):
     named 'warnings' and imported under that name. This argument is only useful
     when testing the warnings module itself.
 
+    If the 'action' argument is not None, the remaining arguments are passed
+    to warnings.simplefilter() as if it were called immediately on entering the
+    context.
     """
 
-    def __init__(self, *, record=False, module=None):
+    def __init__(self, *, record=False, module=None,
+                 action=None, category=Warning, lineno=0, append=False):
         """Specify whether to record warnings and if an alternative module
         should be used other than sys.modules['warnings'].
 
@@ -436,6 +449,10 @@ class catch_warnings(object):
         self._record = record
         self._module = sys.modules['warnings'] if module is None else module
         self._entered = False
+        if action is None:
+            self._filter = None
+        else:
+            self._filter = (action, category, lineno, append)
 
     def __repr__(self):
         args = []
@@ -455,6 +472,8 @@ class catch_warnings(object):
         self._module._filters_mutated()
         self._showwarning = self._module.showwarning
         self._showwarnmsg_impl = self._module._showwarnmsg_impl
+        if self._filter is not None:
+            simplefilter(*self._filter)
         if self._record:
             log = []
             self._module._showwarnmsg_impl = log.append
@@ -474,6 +493,50 @@ class catch_warnings(object):
         self._module._showwarnmsg_impl = self._showwarnmsg_impl
 
 
+_DEPRECATED_MSG = "{name!r} is deprecated and slated for removal in Python {remove}"
+
+def _deprecated(name, message=_DEPRECATED_MSG, *, remove, _version=sys.version_info):
+    """Warn that *name* is deprecated or should be removed.
+
+    RuntimeError is raised if *remove* specifies a major/minor tuple older than
+    the current Python version or the same version but past the alpha.
+
+    The *message* argument is formatted with *name* and *remove* as a Python
+    version (e.g. "3.11").
+
+    """
+    remove_formatted = f"{remove[0]}.{remove[1]}"
+    if (_version[:2] > remove) or (_version[:2] == remove and _version[3] != "alpha"):
+        msg = f"{name!r} was slated for removal after Python {remove_formatted} alpha"
+        raise RuntimeError(msg)
+    else:
+        msg = message.format(name=name, remove=remove_formatted)
+        warn(msg, DeprecationWarning, stacklevel=3)
+
+
+# Private utility function called by _PyErr_WarnUnawaitedCoroutine
+def _warn_unawaited_coroutine(coro):
+    msg_lines = [
+        f"coroutine '{coro.__qualname__}' was never awaited\n"
+    ]
+    if coro.cr_origin is not None:
+        import linecache, traceback
+        def extract():
+            for filename, lineno, funcname in reversed(coro.cr_origin):
+                line = linecache.getline(filename, lineno)
+                yield (filename, lineno, funcname, line)
+        msg_lines.append("Coroutine created at (most recent call last)\n")
+        msg_lines += traceback.format_list(list(extract()))
+    msg = "".join(msg_lines).rstrip("\n")
+    # Passing source= here means that if the user happens to have tracemalloc
+    # enabled and tracking where the coroutine was created, the warning will
+    # contain that traceback. This does mean that if they have *both*
+    # coroutine origin tracking *and* tracemalloc enabled, they'll get two
+    # partially-redundant tracebacks. If we wanted to be clever we could
+    # probably detect this case and avoid it, but for now we don't bother.
+    warn(msg, category=RuntimeWarning, stacklevel=2, source=coro)
+
+
 # filters contains a sequence of filter 5-tuples
 # The components of the 5-tuple are:
 # - an action: error, ignore, always, default, module, or once
@@ -482,7 +545,6 @@ class catch_warnings(object):
 # - a compiled regex that must match the module that is being warned
 # - a line number for the line being warning, or 0 to mean any line
 # If either if the compiled regexs are None, match anything.
-_warnings_defaults = False
 try:
     from _warnings import (filters, _defaultaction, _onceregistry,
                            warn, warn_explicit, _filters_mutated)
@@ -500,27 +562,19 @@ except ImportError:
         global _filters_version
         _filters_version += 1
 
+    _warnings_defaults = False
+
 
 # Module initialization
 _processoptions(sys.warnoptions)
 if not _warnings_defaults:
-    silence = [ImportWarning, PendingDeprecationWarning]
-    silence.append(DeprecationWarning)
-    for cls in silence:
-        simplefilter("ignore", category=cls)
-    bytes_warning = sys.flags.bytes_warning
-    if bytes_warning > 1:
-        bytes_action = "error"
-    elif bytes_warning:
-        bytes_action = "default"
-    else:
-        bytes_action = "ignore"
-    simplefilter(bytes_action, category=BytesWarning, append=1)
-    # resource usage warnings are enabled by default in pydebug mode
-    if hasattr(sys, 'gettotalrefcount'):
-        resource_action = "always"
-    else:
-        resource_action = "ignore"
-    simplefilter(resource_action, category=ResourceWarning, append=1)
+    # Several warning categories are ignored by default in regular builds
+    if not hasattr(sys, 'gettotalrefcount'):
+        filterwarnings("default", category=DeprecationWarning,
+                       module="__main__", append=1)
+        simplefilter("ignore", category=DeprecationWarning, append=1)
+        simplefilter("ignore", category=PendingDeprecationWarning, append=1)
+        simplefilter("ignore", category=ImportWarning, append=1)
+        simplefilter("ignore", category=ResourceWarning, append=1)
 
 del _warnings_defaults

@@ -20,28 +20,33 @@ PyDoc_STRVAR(marshal_dump__doc__,
 "to the file. The object will not be properly read back by load().");
 
 #define MARSHAL_DUMP_METHODDEF    \
-    {"dump", (PyCFunction)marshal_dump, METH_FASTCALL, marshal_dump__doc__},
+    {"dump", _PyCFunction_CAST(marshal_dump), METH_FASTCALL, marshal_dump__doc__},
 
 static PyObject *
 marshal_dump_impl(PyObject *module, PyObject *value, PyObject *file,
                   int version);
 
 static PyObject *
-marshal_dump(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+marshal_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *value;
     PyObject *file;
     int version = Py_MARSHAL_VERSION;
 
-    if (!_PyArg_ParseStack(args, nargs, "OO|i:dump",
-        &value, &file, &version)) {
+    if (!_PyArg_CheckPositional("dump", nargs, 2, 3)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("dump", kwnames)) {
+    value = args[0];
+    file = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    version = _PyLong_AsInt(args[2]);
+    if (version == -1 && PyErr_Occurred()) {
         goto exit;
     }
+skip_optional:
     return_value = marshal_dump_impl(module, value, file, version);
 
 exit:
@@ -82,26 +87,30 @@ PyDoc_STRVAR(marshal_dumps__doc__,
 "unsupported type.");
 
 #define MARSHAL_DUMPS_METHODDEF    \
-    {"dumps", (PyCFunction)marshal_dumps, METH_FASTCALL, marshal_dumps__doc__},
+    {"dumps", _PyCFunction_CAST(marshal_dumps), METH_FASTCALL, marshal_dumps__doc__},
 
 static PyObject *
 marshal_dumps_impl(PyObject *module, PyObject *value, int version);
 
 static PyObject *
-marshal_dumps(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+marshal_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *value;
     int version = Py_MARSHAL_VERSION;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|i:dumps",
-        &value, &version)) {
+    if (!_PyArg_CheckPositional("dumps", nargs, 1, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("dumps", kwnames)) {
+    value = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    version = _PyLong_AsInt(args[1]);
+    if (version == -1 && PyErr_Occurred()) {
         goto exit;
     }
+skip_optional:
     return_value = marshal_dumps_impl(module, value, version);
 
 exit:
@@ -129,7 +138,11 @@ marshal_loads(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer bytes = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:loads", &bytes)) {
+    if (PyObject_GetBuffer(arg, &bytes, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&bytes, 'C')) {
+        _PyArg_BadArgument("loads", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = marshal_loads_impl(module, &bytes);
@@ -142,4 +155,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=9dec2158b8c5d975 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b9e838edee43fe87 input=a9049054013a1b77]*/

@@ -6,12 +6,12 @@ of using the typical __path__/__name__ test).
 """
 import unittest
 import warnings
-from .. import util
+from test.test_importlib import util
 
 
 class Using__package__:
 
-    """Use of __package__ supercedes the use of __name__/__path__ to calculate
+    """Use of __package__ supersedes the use of __name__/__path__ to calculate
     what package a module belongs to. The basic algorithm is [__package__]::
 
       def resolve_name(name, package, level):
@@ -81,7 +81,7 @@ class Using__package__:
 
     def test_bad__package__(self):
         globals = {'__package__': '<not real>'}
-        with self.assertRaises(SystemError):
+        with self.assertRaises(ModuleNotFoundError):
             self.__import__('', globals, {}, ['relimport'], 1)
 
     def test_bunk__package__(self):
@@ -97,6 +97,16 @@ class FakeSpec:
 
 class Using__package__PEP302(Using__package__):
     mock_modules = util.mock_modules
+
+    def test_using___package__(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_using___package__()
+
+    def test_spec_fallback(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_spec_fallback()
 
 
 (Frozen_UsingPackagePEP302,
@@ -154,6 +164,21 @@ class Setting__package__:
 
 class Setting__package__PEP302(Setting__package__, unittest.TestCase):
     mock_modules = util.mock_modules
+
+    def test_top_level(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_top_level()
+
+    def test_package(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_package()
+
+    def test_submodule(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_submodule()
 
 class Setting__package__PEP451(Setting__package__, unittest.TestCase):
     mock_modules = util.mock_spec

@@ -27,9 +27,9 @@ IDLEfork ChangeLog
 
 	* INSTALLATION, setup.py: INSTALLATION: Remove the coexist.patch
 	instructions
-	
+
 	**************** setup.py:
-	
+
 	Remove the idles script, add some words on IDLE Fork to the
 	long_description, and clean up some line spacing.
 
@@ -42,30 +42,30 @@ IDLEfork ChangeLog
 	* PyShell.py, idle, idles: Implement idle command interface as
 	suggested by GvR [idle-dev] 16 July **************** PyShell: Added
 	functionality:
-	
+
 	usage: idle.py [-c command] [-d] [-i] [-r script] [-s] [-t title]
 	[arg] ...
-	
+
 	idle file(s)	(without options) edit the file(s)
-	
+
 	-c cmd	   run the command in a shell -d	 enable the
 	debugger -i	    open an interactive shell -i file(s) open a
 	shell and also an editor window for each file -r script  run a file
 	as a script in a shell -s	  run $IDLESTARTUP or
 	$PYTHONSTARTUP before anything else -t title   set title of shell
 	window
-	
+
 	Remaining arguments are applied to the command (-c) or script (-r).
-	
+
 	****************** idles: Removed the idles script, not needed
-	
+
 	****************** idle:  Removed the IdleConf references, not
 	required anymore
 
 2001-07-16 17:08  kbk
 
 	* INSTALLATION, coexist.patch: Added installation instructions.
-	
+
 	Added a patch which modifies idlefork so that it can co-exist with
 	"official" IDLE in the site-packages directory. This patch is not
 	necessary if only idlefork IDLE is installed. See INSTALLATION for
@@ -74,7 +74,7 @@ IDLEfork ChangeLog
 2001-07-16 15:50  kbk
 
 	* idles: Add a script "idles" which opens a Python Shell window.
-	
+
 	The default behaviour of idlefork idle is to open an editor window
 	instead of a shell. Complex expressions may be run in a fresh
 	environment by selecting "run".  There are times, however, when a
@@ -90,7 +90,7 @@ IDLEfork ChangeLog
 
 	* PyShell.py, setup.py: Add a script "idles" which opens a Python
 	Shell window.
-	
+
 	The default behaviour of idlefork idle is to open an editor window
 	instead of a shell. Complex expressions may be run in a fresh
 	environment by selecting "run".  There are times, however, when a
@@ -110,13 +110,13 @@ IDLEfork ChangeLog
 
 	* setup.py: Installing Idle to site-packages via Distutils does not
 	copy the Idle help.txt file.
-	
+
 	Ref SF Python Patch 422471
 
 2001-07-14 15:26  kbk
 
 	* keydefs.py: py-cvs-2001_07_13 (Rev 1.3) merge
-	
+
 	"Make copy, cut and paste events case insensitive.  Reported by
 	Patrick K. O'Brien on idle-dev. (Should other bindings follow
 	suit?)" --GvR
@@ -124,7 +124,7 @@ IDLEfork ChangeLog
 2001-07-14 15:21  kbk
 
 	* idle.py: py-cvs-2001_07_13 (Rev 1.4) merge
-	
+
 	"Move the action of loading the configuration to the IdleConf
 	module rather than the idle.py script.	This has advantages and
 	disadvantages; the biggest advantage being that we can more easily
@@ -133,21 +133,21 @@ IDLEfork ChangeLog
 2001-07-14 15:18  kbk
 
 	* extend.txt: py-cvs-2001_07_13 (Rev 1.4) merge
-	
+
 	"Quick update to the extension mechanism (extend.py is gone, long
 	live config.txt)" --GvR
 
 2001-07-14 15:15  kbk
 
 	* StackViewer.py: py-cvs-2001_07_13 (Rev 1.16) merge
-	
+
 	"Refactored, with some future plans in mind. This now uses the new
 	gotofileline() method defined in FileList.py"  --GvR
 
 2001-07-14 15:10  kbk
 
 	* PyShell.py: py-cvs-2001_07_13 (Rev 1.34) merge
-	
+
 	"Amazing.  A very subtle change in policy in descr-branch actually
 	found a bug here.  Here's the deal: Class PyShell derives from
 	class OutputWindow.  Method PyShell.close() wants to invoke its
@@ -166,19 +166,19 @@ IDLEfork ChangeLog
 2001-07-14 14:59  kbk
 
 	* PyParse.py: py-cvs-2001_07_13 (Rel 1.9) merge
-	
+
 	"Taught IDLE's autoident parser that "yield" is a keyword that
 	begins a stmt.	Along w/ the preceding change to keyword.py, making
 	all this work w/ a future-stmt just looks harder and harder."
 	--tim_one
-	
+
 	(From Rel 1.8: "Hack to make this still work with Python 1.5.2.
 	;-( " --fdrake)
 
 2001-07-14 14:51  kbk
 
 	* IdleConf.py: py-cvs-2001_07_13 (Rel 1.7) merge
-	
+
 	"Move the action of loading the configuration to the IdleConf
 	module rather than the idle.py script.	This has advantages and
 	disadvantages; the biggest advantage being that we can more easily
@@ -187,11 +187,11 @@ IDLEfork ChangeLog
 2001-07-14 14:45  kbk
 
 	* FileList.py: py-cvs-2000_07_13 (Rev 1.9) merge
-	
+
 	"Delete goodname() method, which is unused. Add gotofileline(), a
 	convenience method which I intend to use in a variant. Rename
 	test() to _test()."  --GvR
-	
+
 	This was an interesting merge. The join completely missed removing
 	goodname(), which was adjacent, but outside of, a small conflict.
 	I only caught it by comparing the 1.1.3.2/1.1.3.3 diff.  CVS ain't
@@ -245,13 +245,13 @@ IDLEfork ChangeLog
 2001-07-14 10:13  kbk
 
 	* PyShell.py: cvs-py-rel2_1 (Rev 1.29 - 1.33) merge
-	
+
 	Merged the following py-cvs revs without conflict: 1.29 Reduce
 	copyright text output at startup 1.30 Delay setting sys.args until
 	Tkinter is fully initialized 1.31 Whitespace normalization 1.32
 	Turn syntax warning into error when interactive 1.33 Fix warning
 	initialization bug
-	
+
 	Note that module is extensively modified wrt py-cvs
 
 2001-07-14 06:33  kbk
@@ -317,14 +317,14 @@ IDLEfork ChangeLog
 2001-07-13 13:35  kbk
 
 	* EditorWindow.py: py-cvs-rel2_1 (Rev 1.33 - 1.37) merge
-	
+
 	VP IDLE version depended on VP's ExecBinding.py and spawn.py to get
 	the path to the Windows Doc directory (relative to python.exe).
 	Removed this conflicting code in favor of py-cvs updates which on
 	Windows use a hard coded path relative to the location of this
 	module. py-cvs updates include support for webbrowser.py.  Module
 	still has BrowserControl.py for 1.5.2 support.
-	
+
 	At this point, the differences wrt py-cvs relate to menu
 	functionality.
 
@@ -1175,7 +1175,7 @@ Wed Mar 10 05:18:02 1999  Guido van Rossum  <guido@cnri.reston.va.us>
 	    classes in selected module
 	    methods of selected class
 
-	Sinlge clicking in a directory, module or class item updates the next
+	Single clicking in a directory, module or class item updates the next
 	column with info about the selected item.  Double clicking in a
 	module, class or method item opens the file (and selects the clicked
 	item if it is a class or method).
@@ -1194,7 +1194,7 @@ Wed Mar 10 05:18:02 1999  Guido van Rossum  <guido@cnri.reston.va.us>
 ======================================================================
 	Python release 1.5.2b2, IDLE version 0.3
 ======================================================================
-	
+
 Wed Feb 17 22:47:41 1999  Guido van Rossum  <guido@cnri.reston.va.us>
 
 	* NEWS.txt: News in 0.3.
@@ -1330,7 +1330,7 @@ Sat Jan  9 22:01:33 1999  Guido van Rossum  <guido@cnri.reston.va.us>
 ======================================================================
 	Python release 1.5.2b1, IDLE version 0.2
 ======================================================================
-	
+
 Fri Jan  8 17:26:02 1999  Guido van Rossum  <guido@cnri.reston.va.us>
 
 	* README.txt, NEWS.txt: What's new in this release.

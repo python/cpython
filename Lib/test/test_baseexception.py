@@ -28,8 +28,9 @@ class ExceptionClassTests(unittest.TestCase):
             except TypeError:
                 pass
 
-        inheritance_tree = open(os.path.join(os.path.split(__file__)[0],
-                                                'exception_hierarchy.txt'))
+        inheritance_tree = open(
+                os.path.join(os.path.split(__file__)[0], 'exception_hierarchy.txt'),
+                encoding="utf-8")
         try:
             superclass_name = inheritance_tree.readline().rstrip()
             try:
@@ -43,7 +44,7 @@ class ExceptionClassTests(unittest.TestCase):
             last_depth = 0
             for exc_line in inheritance_tree:
                 exc_line = exc_line.rstrip()
-                depth = exc_line.rindex('-')
+                depth = exc_line.rindex('─')
                 exc_name = exc_line[depth+2:]  # Slice past space
                 if '(' in exc_name:
                     paren_index = exc_name.index('(')
@@ -92,7 +93,7 @@ class ExceptionClassTests(unittest.TestCase):
         exc = Exception(arg)
         results = ([len(exc.args), 1], [exc.args[0], arg],
                    [str(exc), str(arg)],
-            [repr(exc), exc.__class__.__name__ + repr(exc.args)])
+            [repr(exc), '%s(%r)' % (exc.__class__.__name__, arg)])
         self.interface_test_driver(results)
 
     def test_interface_multi_arg(self):
@@ -163,7 +164,7 @@ class UsageTests(unittest.TestCase):
         self.raise_fails("spam")
 
     def test_catch_non_BaseException(self):
-        # Tryinng to catch an object that does not inherit from BaseException
+        # Trying to catch an object that does not inherit from BaseException
         # is not allowed.
         class NonBaseException(object):
             pass

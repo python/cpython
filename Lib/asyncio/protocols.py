@@ -1,7 +1,9 @@
-"""Abstract Protocol class."""
+"""Abstract Protocol base classes."""
 
-__all__ = ['BaseProtocol', 'Protocol', 'DatagramProtocol',
-           'SubprocessProtocol']
+__all__ = (
+    'BaseProtocol', 'Protocol', 'DatagramProtocol',
+    'SubprocessProtocol', 'BufferedProtocol',
+)
 
 
 class BaseProtocol:
@@ -13,6 +15,8 @@ class BaseProtocol:
     The only case when BaseProtocol should be implemented directly is
     write-only transport like write pipe
     """
+
+    __slots__ = ()
 
     def connection_made(self, transport):
         """Called when a connection is made.
@@ -85,6 +89,8 @@ class Protocol(BaseProtocol):
     * CL: connection_lost()
     """
 
+    __slots__ = ()
+
     def data_received(self, data):
         """Called when some data is received.
 
@@ -100,8 +106,63 @@ class Protocol(BaseProtocol):
         """
 
 
+class BufferedProtocol(BaseProtocol):
+    """Interface for stream protocol with manual buffer control.
+
+    Event methods, such as `create_server` and `create_connection`,
+    accept factories that return protocols that implement this interface.
+
+    The idea of BufferedProtocol is that it allows to manually allocate
+    and control the receive buffer.  Event loops can then use the buffer
+    provided by the protocol to avoid unnecessary data copies.  This
+    can result in noticeable performance improvement for protocols that
+    receive big amounts of data.  Sophisticated protocols can allocate
+    the buffer only once at creation time.
+
+    State machine of calls:
+
+      start -> CM [-> GB [-> BU?]]* [-> ER?] -> CL -> end
+
+    * CM: connection_made()
+    * GB: get_buffer()
+    * BU: buffer_updated()
+    * ER: eof_received()
+    * CL: connection_lost()
+    """
+
+    __slots__ = ()
+
+    def get_buffer(self, sizehint):
+        """Called to allocate a new receive buffer.
+
+        *sizehint* is a recommended minimal size for the returned
+        buffer.  When set to -1, the buffer size can be arbitrary.
+
+        Must return an object that implements the
+        :ref:`buffer protocol <bufferobjects>`.
+        It is an error to return a zero-sized buffer.
+        """
+
+    def buffer_updated(self, nbytes):
+        """Called when the buffer was updated with the received data.
+
+        *nbytes* is the total number of bytes that were written to
+        the buffer.
+        """
+
+    def eof_received(self):
+        """Called when the other end calls write_eof() or equivalent.
+
+        If this returns a false value (including None), the transport
+        will close itself.  If it returns a true value, closing the
+        transport is up to the protocol.
+        """
+
+
 class DatagramProtocol(BaseProtocol):
     """Interface for datagram protocol."""
+
+    __slots__ = ()
 
     def datagram_received(self, data, addr):
         """Called when some datagram is received."""
@@ -115,6 +176,8 @@ class DatagramProtocol(BaseProtocol):
 
 class SubprocessProtocol(BaseProtocol):
     """Interface for protocol for subprocess calls."""
+
+    __slots__ = ()
 
     def pipe_data_received(self, fd, data):
         """Called when the subprocess writes data into stdout/stderr pipe.
@@ -132,3 +195,22 @@ class SubprocessProtocol(BaseProtocol):
 
     def process_exited(self):
         """Called when subprocess has exited."""
+
+
+def _feed_data_to_buffered_proto(proto, data):
+    data_len = len(data)
+    while data_len:
+        buf = proto.get_buffer(data_len)
+        buf_len = len(buf)
+        if not buf_len:
+            raise RuntimeError('get_buffer() returned an empty buffer')
+
+        if buf_len >= data_len:
+            buf[:data_len] = data
+            proto.buffer_updated(data_len)
+            return
+        else:
+            buf[:buf_len] = data[:buf_len]
+            proto.buffer_updated(buf_len)
+            data = data[buf_len:]
+            data_len = len(data)

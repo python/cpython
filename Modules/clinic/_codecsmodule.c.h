@@ -15,6 +15,17 @@ PyDoc_STRVAR(_codecs_register__doc__,
 #define _CODECS_REGISTER_METHODDEF    \
     {"register", (PyCFunction)_codecs_register, METH_O, _codecs_register__doc__},
 
+PyDoc_STRVAR(_codecs_unregister__doc__,
+"unregister($module, search_function, /)\n"
+"--\n"
+"\n"
+"Unregister a codec search function and clear the registry\'s cache.\n"
+"\n"
+"If the search function is not registered, do nothing.");
+
+#define _CODECS_UNREGISTER_METHODDEF    \
+    {"unregister", (PyCFunction)_codecs_unregister, METH_O, _codecs_unregister__doc__},
+
 PyDoc_STRVAR(_codecs_lookup__doc__,
 "lookup($module, encoding, /)\n"
 "--\n"
@@ -33,7 +44,17 @@ _codecs_lookup(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     const char *encoding;
 
-    if (!PyArg_Parse(arg, "s:lookup", &encoding)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("lookup", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t encoding_length;
+    encoding = PyUnicode_AsUTF8AndSize(arg, &encoding_length);
+    if (encoding == NULL) {
+        goto exit;
+    }
+    if (strlen(encoding) != (size_t)encoding_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _codecs_lookup_impl(module, encoding);
@@ -55,26 +76,64 @@ PyDoc_STRVAR(_codecs_encode__doc__,
 "codecs.register_error that can handle ValueErrors.");
 
 #define _CODECS_ENCODE_METHODDEF    \
-    {"encode", (PyCFunction)_codecs_encode, METH_FASTCALL, _codecs_encode__doc__},
+    {"encode", _PyCFunction_CAST(_codecs_encode), METH_FASTCALL|METH_KEYWORDS, _codecs_encode__doc__},
 
 static PyObject *
 _codecs_encode_impl(PyObject *module, PyObject *obj, const char *encoding,
                     const char *errors);
 
 static PyObject *
-_codecs_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"obj", "encoding", "errors", NULL};
-    static _PyArg_Parser _parser = {"O|ss:encode", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "encode", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *obj;
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &obj, &encoding, &errors)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    obj = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        if (!PyUnicode_Check(args[1])) {
+            _PyArg_BadArgument("encode", "argument 'encoding'", "str", args[1]);
+            goto exit;
+        }
+        Py_ssize_t encoding_length;
+        encoding = PyUnicode_AsUTF8AndSize(args[1], &encoding_length);
+        if (encoding == NULL) {
+            goto exit;
+        }
+        if (strlen(encoding) != (size_t)encoding_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (!PyUnicode_Check(args[2])) {
+        _PyArg_BadArgument("encode", "argument 'errors'", "str", args[2]);
+        goto exit;
+    }
+    Py_ssize_t errors_length;
+    errors = PyUnicode_AsUTF8AndSize(args[2], &errors_length);
+    if (errors == NULL) {
+        goto exit;
+    }
+    if (strlen(errors) != (size_t)errors_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+skip_optional_pos:
     return_value = _codecs_encode_impl(module, obj, encoding, errors);
 
 exit:
@@ -94,54 +153,65 @@ PyDoc_STRVAR(_codecs_decode__doc__,
 "codecs.register_error that can handle ValueErrors.");
 
 #define _CODECS_DECODE_METHODDEF    \
-    {"decode", (PyCFunction)_codecs_decode, METH_FASTCALL, _codecs_decode__doc__},
+    {"decode", _PyCFunction_CAST(_codecs_decode), METH_FASTCALL|METH_KEYWORDS, _codecs_decode__doc__},
 
 static PyObject *
 _codecs_decode_impl(PyObject *module, PyObject *obj, const char *encoding,
                     const char *errors);
 
 static PyObject *
-_codecs_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"obj", "encoding", "errors", NULL};
-    static _PyArg_Parser _parser = {"O|ss:decode", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "decode", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *obj;
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &obj, &encoding, &errors)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    obj = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        if (!PyUnicode_Check(args[1])) {
+            _PyArg_BadArgument("decode", "argument 'encoding'", "str", args[1]);
+            goto exit;
+        }
+        Py_ssize_t encoding_length;
+        encoding = PyUnicode_AsUTF8AndSize(args[1], &encoding_length);
+        if (encoding == NULL) {
+            goto exit;
+        }
+        if (strlen(encoding) != (size_t)encoding_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (!PyUnicode_Check(args[2])) {
+        _PyArg_BadArgument("decode", "argument 'errors'", "str", args[2]);
+        goto exit;
+    }
+    Py_ssize_t errors_length;
+    errors = PyUnicode_AsUTF8AndSize(args[2], &errors_length);
+    if (errors == NULL) {
+        goto exit;
+    }
+    if (strlen(errors) != (size_t)errors_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+skip_optional_pos:
     return_value = _codecs_decode_impl(module, obj, encoding, errors);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(_codecs__forget_codec__doc__,
-"_forget_codec($module, encoding, /)\n"
-"--\n"
-"\n"
-"Purge the named codec from the internal codec lookup cache");
-
-#define _CODECS__FORGET_CODEC_METHODDEF    \
-    {"_forget_codec", (PyCFunction)_codecs__forget_codec, METH_O, _codecs__forget_codec__doc__},
-
-static PyObject *
-_codecs__forget_codec_impl(PyObject *module, const char *encoding);
-
-static PyObject *
-_codecs__forget_codec(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    const char *encoding;
-
-    if (!PyArg_Parse(arg, "s:_forget_codec", &encoding)) {
-        goto exit;
-    }
-    return_value = _codecs__forget_codec_impl(module, encoding);
 
 exit:
     return return_value;
@@ -153,27 +223,61 @@ PyDoc_STRVAR(_codecs_escape_decode__doc__,
 "\n");
 
 #define _CODECS_ESCAPE_DECODE_METHODDEF    \
-    {"escape_decode", (PyCFunction)_codecs_escape_decode, METH_FASTCALL, _codecs_escape_decode__doc__},
+    {"escape_decode", _PyCFunction_CAST(_codecs_escape_decode), METH_FASTCALL, _codecs_escape_decode__doc__},
 
 static PyObject *
 _codecs_escape_decode_impl(PyObject *module, Py_buffer *data,
                            const char *errors);
 
 static PyObject *
-_codecs_escape_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "s*|z:escape_decode",
-        &data, &errors)) {
+    if (!_PyArg_CheckPositional("escape_decode", nargs, 1, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("escape_decode", kwnames)) {
+    if (PyUnicode_Check(args[0])) {
+        Py_ssize_t len;
+        const char *ptr = PyUnicode_AsUTF8AndSize(args[0], &len);
+        if (ptr == NULL) {
+            goto exit;
+        }
+        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+    }
+    else { /* any bytes-like object */
+        if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
+            goto exit;
+        }
+        if (!PyBuffer_IsContiguous(&data, 'C')) {
+            _PyArg_BadArgument("escape_decode", "argument 1", "contiguous buffer", args[0]);
+            goto exit;
+        }
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("escape_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
+skip_optional:
     return_value = _codecs_escape_decode_impl(module, &data, errors);
 
 exit:
@@ -191,61 +295,50 @@ PyDoc_STRVAR(_codecs_escape_encode__doc__,
 "\n");
 
 #define _CODECS_ESCAPE_ENCODE_METHODDEF    \
-    {"escape_encode", (PyCFunction)_codecs_escape_encode, METH_FASTCALL, _codecs_escape_encode__doc__},
+    {"escape_encode", _PyCFunction_CAST(_codecs_escape_encode), METH_FASTCALL, _codecs_escape_encode__doc__},
 
 static PyObject *
 _codecs_escape_encode_impl(PyObject *module, PyObject *data,
                            const char *errors);
 
 static PyObject *
-_codecs_escape_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_escape_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *data;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O!|z:escape_encode",
-        &PyBytes_Type, &data, &errors)) {
+    if (!_PyArg_CheckPositional("escape_encode", nargs, 1, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("escape_encode", kwnames)) {
+    if (!PyBytes_Check(args[0])) {
+        _PyArg_BadArgument("escape_encode", "argument 1", "bytes", args[0]);
         goto exit;
     }
+    data = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("escape_encode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_escape_encode_impl(module, data, errors);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(_codecs_unicode_internal_decode__doc__,
-"unicode_internal_decode($module, obj, errors=None, /)\n"
-"--\n"
-"\n");
-
-#define _CODECS_UNICODE_INTERNAL_DECODE_METHODDEF    \
-    {"unicode_internal_decode", (PyCFunction)_codecs_unicode_internal_decode, METH_FASTCALL, _codecs_unicode_internal_decode__doc__},
-
-static PyObject *
-_codecs_unicode_internal_decode_impl(PyObject *module, PyObject *obj,
-                                     const char *errors);
-
-static PyObject *
-_codecs_unicode_internal_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    PyObject *obj;
-    const char *errors = NULL;
-
-    if (!_PyArg_ParseStack(args, nargs, "O|z:unicode_internal_decode",
-        &obj, &errors)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("unicode_internal_decode", kwnames)) {
-        goto exit;
-    }
-    return_value = _codecs_unicode_internal_decode_impl(module, obj, errors);
 
 exit:
     return return_value;
@@ -257,28 +350,59 @@ PyDoc_STRVAR(_codecs_utf_7_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_7_DECODE_METHODDEF    \
-    {"utf_7_decode", (PyCFunction)_codecs_utf_7_decode, METH_FASTCALL, _codecs_utf_7_decode__doc__},
+    {"utf_7_decode", _PyCFunction_CAST(_codecs_utf_7_decode), METH_FASTCALL, _codecs_utf_7_decode__doc__},
 
 static PyObject *
 _codecs_utf_7_decode_impl(PyObject *module, Py_buffer *data,
                           const char *errors, int final);
 
 static PyObject *
-_codecs_utf_7_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_utf_7_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|zi:utf_7_decode",
-        &data, &errors, &final)) {
+    if (!_PyArg_CheckPositional("utf_7_decode", nargs, 1, 3)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("utf_7_decode", kwnames)) {
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("utf_7_decode", "argument 1", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("utf_7_decode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    final = _PyLong_AsInt(args[2]);
+    if (final == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_utf_7_decode_impl(module, &data, errors, final);
 
 exit:
@@ -296,28 +420,59 @@ PyDoc_STRVAR(_codecs_utf_8_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_8_DECODE_METHODDEF    \
-    {"utf_8_decode", (PyCFunction)_codecs_utf_8_decode, METH_FASTCALL, _codecs_utf_8_decode__doc__},
+    {"utf_8_decode", _PyCFunction_CAST(_codecs_utf_8_decode), METH_FASTCALL, _codecs_utf_8_decode__doc__},
 
 static PyObject *
 _codecs_utf_8_decode_impl(PyObject *module, Py_buffer *data,
                           const char *errors, int final);
 
 static PyObject *
-_codecs_utf_8_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_utf_8_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|zi:utf_8_decode",
-        &data, &errors, &final)) {
+    if (!_PyArg_CheckPositional("utf_8_decode", nargs, 1, 3)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("utf_8_decode", kwnames)) {
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("utf_8_decode", "argument 1", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("utf_8_decode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    final = _PyLong_AsInt(args[2]);
+    if (final == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_utf_8_decode_impl(module, &data, errors, final);
 
 exit:
@@ -335,28 +490,59 @@ PyDoc_STRVAR(_codecs_utf_16_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_DECODE_METHODDEF    \
-    {"utf_16_decode", (PyCFunction)_codecs_utf_16_decode, METH_FASTCALL, _codecs_utf_16_decode__doc__},
+    {"utf_16_decode", _PyCFunction_CAST(_codecs_utf_16_decode), METH_FASTCALL, _codecs_utf_16_decode__doc__},
 
 static PyObject *
 _codecs_utf_16_decode_impl(PyObject *module, Py_buffer *data,
                            const char *errors, int final);
 
 static PyObject *
-_codecs_utf_16_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_utf_16_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|zi:utf_16_decode",
-        &data, &errors, &final)) {
+    if (!_PyArg_CheckPositional("utf_16_decode", nargs, 1, 3)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("utf_16_decode", kwnames)) {
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("utf_16_decode", "argument 1", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("utf_16_decode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    final = _PyLong_AsInt(args[2]);
+    if (final == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_utf_16_decode_impl(module, &data, errors, final);
 
 exit:
@@ -374,28 +560,59 @@ PyDoc_STRVAR(_codecs_utf_16_le_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_LE_DECODE_METHODDEF    \
-    {"utf_16_le_decode", (PyCFunction)_codecs_utf_16_le_decode, METH_FASTCALL, _codecs_utf_16_le_decode__doc__},
+    {"utf_16_le_decode", _PyCFunction_CAST(_codecs_utf_16_le_decode), METH_FASTCALL, _codecs_utf_16_le_decode__doc__},
 
 static PyObject *
 _codecs_utf_16_le_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int final);
 
 static PyObject *
-_codecs_utf_16_le_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_utf_16_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|zi:utf_16_le_decode",
-        &data, &errors, &final)) {
+    if (!_PyArg_CheckPositional("utf_16_le_decode", nargs, 1, 3)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("utf_16_le_decode", kwnames)) {
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("utf_16_le_decode", "argument 1", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("utf_16_le_decode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    final = _PyLong_AsInt(args[2]);
+    if (final == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_utf_16_le_decode_impl(module, &data, errors, final);
 
 exit:
@@ -413,28 +630,59 @@ PyDoc_STRVAR(_codecs_utf_16_be_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_BE_DECODE_METHODDEF    \
-    {"utf_16_be_decode", (PyCFunction)_codecs_utf_16_be_decode, METH_FASTCALL, _codecs_utf_16_be_decode__doc__},
+    {"utf_16_be_decode", _PyCFunction_CAST(_codecs_utf_16_be_decode), METH_FASTCALL, _codecs_utf_16_be_decode__doc__},
 
 static PyObject *
 _codecs_utf_16_be_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int final);
 
 static PyObject *
-_codecs_utf_16_be_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_utf_16_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|zi:utf_16_be_decode",
-        &data, &errors, &final)) {
+    if (!_PyArg_CheckPositional("utf_16_be_decode", nargs, 1, 3)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("utf_16_be_decode", kwnames)) {
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("utf_16_be_decode", "argument 1", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("utf_16_be_decode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    final = _PyLong_AsInt(args[2]);
+    if (final == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_utf_16_be_decode_impl(module, &data, errors, final);
 
 exit:
@@ -453,14 +701,14 @@ PyDoc_STRVAR(_codecs_utf_16_ex_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_EX_DECODE_METHODDEF    \
-    {"utf_16_ex_decode", (PyCFunction)_codecs_utf_16_ex_decode, METH_FASTCALL, _codecs_utf_16_ex_decode__doc__},
+    {"utf_16_ex_decode", _PyCFunction_CAST(_codecs_utf_16_ex_decode), METH_FASTCALL, _codecs_utf_16_ex_decode__doc__},
 
 static PyObject *
 _codecs_utf_16_ex_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int byteorder, int final);
 
 static PyObject *
-_codecs_utf_16_ex_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_utf_16_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -468,14 +716,52 @@ _codecs_utf_16_ex_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, Py
     int byteorder = 0;
     int final = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|zii:utf_16_ex_decode",
-        &data, &errors, &byteorder, &final)) {
+    if (!_PyArg_CheckPositional("utf_16_ex_decode", nargs, 1, 4)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("utf_16_ex_decode", kwnames)) {
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("utf_16_ex_decode", "argument 1", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("utf_16_ex_decode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    byteorder = _PyLong_AsInt(args[2]);
+    if (byteorder == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    final = _PyLong_AsInt(args[3]);
+    if (final == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_utf_16_ex_decode_impl(module, &data, errors, byteorder, final);
 
 exit:
@@ -493,28 +779,59 @@ PyDoc_STRVAR(_codecs_utf_32_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_DECODE_METHODDEF    \
-    {"utf_32_decode", (PyCFunction)_codecs_utf_32_decode, METH_FASTCALL, _codecs_utf_32_decode__doc__},
+    {"utf_32_decode", _PyCFunction_CAST(_codecs_utf_32_decode), METH_FASTCALL, _codecs_utf_32_decode__doc__},
 
 static PyObject *
 _codecs_utf_32_decode_impl(PyObject *module, Py_buffer *data,
                            const char *errors, int final);
 
 static PyObject *
-_codecs_utf_32_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_utf_32_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|zi:utf_32_decode",
-        &data, &errors, &final)) {
+    if (!_PyArg_CheckPositional("utf_32_decode", nargs, 1, 3)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("utf_32_decode", kwnames)) {
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("utf_32_decode", "argument 1", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("utf_32_decode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    final = _PyLong_AsInt(args[2]);
+    if (final == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_utf_32_decode_impl(module, &data, errors, final);
 
 exit:
@@ -532,28 +849,59 @@ PyDoc_STRVAR(_codecs_utf_32_le_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_LE_DECODE_METHODDEF    \
-    {"utf_32_le_decode", (PyCFunction)_codecs_utf_32_le_decode, METH_FASTCALL, _codecs_utf_32_le_decode__doc__},
+    {"utf_32_le_decode", _PyCFunction_CAST(_codecs_utf_32_le_decode), METH_FASTCALL, _codecs_utf_32_le_decode__doc__},
 
 static PyObject *
 _codecs_utf_32_le_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int final);
 
 static PyObject *
-_codecs_utf_32_le_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_utf_32_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|zi:utf_32_le_decode",
-        &data, &errors, &final)) {
+    if (!_PyArg_CheckPositional("utf_32_le_decode", nargs, 1, 3)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("utf_32_le_decode", kwnames)) {
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("utf_32_le_decode", "argument 1", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("utf_32_le_decode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    final = _PyLong_AsInt(args[2]);
+    if (final == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_utf_32_le_decode_impl(module, &data, errors, final);
 
 exit:
@@ -571,28 +919,59 @@ PyDoc_STRVAR(_codecs_utf_32_be_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_BE_DECODE_METHODDEF    \
-    {"utf_32_be_decode", (PyCFunction)_codecs_utf_32_be_decode, METH_FASTCALL, _codecs_utf_32_be_decode__doc__},
+    {"utf_32_be_decode", _PyCFunction_CAST(_codecs_utf_32_be_decode), METH_FASTCALL, _codecs_utf_32_be_decode__doc__},
 
 static PyObject *
 _codecs_utf_32_be_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int final);
 
 static PyObject *
-_codecs_utf_32_be_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_utf_32_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|zi:utf_32_be_decode",
-        &data, &errors, &final)) {
+    if (!_PyArg_CheckPositional("utf_32_be_decode", nargs, 1, 3)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("utf_32_be_decode", kwnames)) {
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("utf_32_be_decode", "argument 1", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("utf_32_be_decode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    final = _PyLong_AsInt(args[2]);
+    if (final == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_utf_32_be_decode_impl(module, &data, errors, final);
 
 exit:
@@ -611,14 +990,14 @@ PyDoc_STRVAR(_codecs_utf_32_ex_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_EX_DECODE_METHODDEF    \
-    {"utf_32_ex_decode", (PyCFunction)_codecs_utf_32_ex_decode, METH_FASTCALL, _codecs_utf_32_ex_decode__doc__},
+    {"utf_32_ex_decode", _PyCFunction_CAST(_codecs_utf_32_ex_decode), METH_FASTCALL, _codecs_utf_32_ex_decode__doc__},
 
 static PyObject *
 _codecs_utf_32_ex_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int byteorder, int final);
 
 static PyObject *
-_codecs_utf_32_ex_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_utf_32_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -626,14 +1005,52 @@ _codecs_utf_32_ex_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, Py
     int byteorder = 0;
     int final = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|zii:utf_32_ex_decode",
-        &data, &errors, &byteorder, &final)) {
+    if (!_PyArg_CheckPositional("utf_32_ex_decode", nargs, 1, 4)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("utf_32_ex_decode", kwnames)) {
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("utf_32_ex_decode", "argument 1", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("utf_32_ex_decode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    byteorder = _PyLong_AsInt(args[2]);
+    if (byteorder == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    final = _PyLong_AsInt(args[3]);
+    if (final == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_utf_32_ex_decode_impl(module, &data, errors, byteorder, final);
 
 exit:
@@ -646,33 +1063,75 @@ exit:
 }
 
 PyDoc_STRVAR(_codecs_unicode_escape_decode__doc__,
-"unicode_escape_decode($module, data, errors=None, /)\n"
+"unicode_escape_decode($module, data, errors=None, final=True, /)\n"
 "--\n"
 "\n");
 
 #define _CODECS_UNICODE_ESCAPE_DECODE_METHODDEF    \
-    {"unicode_escape_decode", (PyCFunction)_codecs_unicode_escape_decode, METH_FASTCALL, _codecs_unicode_escape_decode__doc__},
+    {"unicode_escape_decode", _PyCFunction_CAST(_codecs_unicode_escape_decode), METH_FASTCALL, _codecs_unicode_escape_decode__doc__},
 
 static PyObject *
 _codecs_unicode_escape_decode_impl(PyObject *module, Py_buffer *data,
-                                   const char *errors);
+                                   const char *errors, int final);
 
 static PyObject *
-_codecs_unicode_escape_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
+    int final = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "s*|z:unicode_escape_decode",
-        &data, &errors)) {
+    if (!_PyArg_CheckPositional("unicode_escape_decode", nargs, 1, 3)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("unicode_escape_decode", kwnames)) {
+    if (PyUnicode_Check(args[0])) {
+        Py_ssize_t len;
+        const char *ptr = PyUnicode_AsUTF8AndSize(args[0], &len);
+        if (ptr == NULL) {
+            goto exit;
+        }
+        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+    }
+    else { /* any bytes-like object */
+        if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
+            goto exit;
+        }
+        if (!PyBuffer_IsContiguous(&data, 'C')) {
+            _PyArg_BadArgument("unicode_escape_decode", "argument 1", "contiguous buffer", args[0]);
+            goto exit;
+        }
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("unicode_escape_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
-    return_value = _codecs_unicode_escape_decode_impl(module, &data, errors);
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    final = _PyLong_AsInt(args[2]);
+    if (final == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _codecs_unicode_escape_decode_impl(module, &data, errors, final);
 
 exit:
     /* Cleanup for data */
@@ -684,33 +1143,75 @@ exit:
 }
 
 PyDoc_STRVAR(_codecs_raw_unicode_escape_decode__doc__,
-"raw_unicode_escape_decode($module, data, errors=None, /)\n"
+"raw_unicode_escape_decode($module, data, errors=None, final=True, /)\n"
 "--\n"
 "\n");
 
 #define _CODECS_RAW_UNICODE_ESCAPE_DECODE_METHODDEF    \
-    {"raw_unicode_escape_decode", (PyCFunction)_codecs_raw_unicode_escape_decode, METH_FASTCALL, _codecs_raw_unicode_escape_decode__doc__},
+    {"raw_unicode_escape_decode", _PyCFunction_CAST(_codecs_raw_unicode_escape_decode), METH_FASTCALL, _codecs_raw_unicode_escape_decode__doc__},
 
 static PyObject *
 _codecs_raw_unicode_escape_decode_impl(PyObject *module, Py_buffer *data,
-                                       const char *errors);
+                                       const char *errors, int final);
 
 static PyObject *
-_codecs_raw_unicode_escape_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
+    int final = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "s*|z:raw_unicode_escape_decode",
-        &data, &errors)) {
+    if (!_PyArg_CheckPositional("raw_unicode_escape_decode", nargs, 1, 3)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("raw_unicode_escape_decode", kwnames)) {
+    if (PyUnicode_Check(args[0])) {
+        Py_ssize_t len;
+        const char *ptr = PyUnicode_AsUTF8AndSize(args[0], &len);
+        if (ptr == NULL) {
+            goto exit;
+        }
+        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+    }
+    else { /* any bytes-like object */
+        if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
+            goto exit;
+        }
+        if (!PyBuffer_IsContiguous(&data, 'C')) {
+            _PyArg_BadArgument("raw_unicode_escape_decode", "argument 1", "contiguous buffer", args[0]);
+            goto exit;
+        }
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("raw_unicode_escape_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
-    return_value = _codecs_raw_unicode_escape_decode_impl(module, &data, errors);
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    final = _PyLong_AsInt(args[2]);
+    if (final == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _codecs_raw_unicode_escape_decode_impl(module, &data, errors, final);
 
 exit:
     /* Cleanup for data */
@@ -727,27 +1228,51 @@ PyDoc_STRVAR(_codecs_latin_1_decode__doc__,
 "\n");
 
 #define _CODECS_LATIN_1_DECODE_METHODDEF    \
-    {"latin_1_decode", (PyCFunction)_codecs_latin_1_decode, METH_FASTCALL, _codecs_latin_1_decode__doc__},
+    {"latin_1_decode", _PyCFunction_CAST(_codecs_latin_1_decode), METH_FASTCALL, _codecs_latin_1_decode__doc__},
 
 static PyObject *
 _codecs_latin_1_decode_impl(PyObject *module, Py_buffer *data,
                             const char *errors);
 
 static PyObject *
-_codecs_latin_1_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_latin_1_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|z:latin_1_decode",
-        &data, &errors)) {
+    if (!_PyArg_CheckPositional("latin_1_decode", nargs, 1, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("latin_1_decode", kwnames)) {
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("latin_1_decode", "argument 1", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("latin_1_decode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_latin_1_decode_impl(module, &data, errors);
 
 exit:
@@ -765,27 +1290,51 @@ PyDoc_STRVAR(_codecs_ascii_decode__doc__,
 "\n");
 
 #define _CODECS_ASCII_DECODE_METHODDEF    \
-    {"ascii_decode", (PyCFunction)_codecs_ascii_decode, METH_FASTCALL, _codecs_ascii_decode__doc__},
+    {"ascii_decode", _PyCFunction_CAST(_codecs_ascii_decode), METH_FASTCALL, _codecs_ascii_decode__doc__},
 
 static PyObject *
 _codecs_ascii_decode_impl(PyObject *module, Py_buffer *data,
                           const char *errors);
 
 static PyObject *
-_codecs_ascii_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_ascii_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|z:ascii_decode",
-        &data, &errors)) {
+    if (!_PyArg_CheckPositional("ascii_decode", nargs, 1, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("ascii_decode", kwnames)) {
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("ascii_decode", "argument 1", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("ascii_decode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_ascii_decode_impl(module, &data, errors);
 
 exit:
@@ -803,28 +1352,56 @@ PyDoc_STRVAR(_codecs_charmap_decode__doc__,
 "\n");
 
 #define _CODECS_CHARMAP_DECODE_METHODDEF    \
-    {"charmap_decode", (PyCFunction)_codecs_charmap_decode, METH_FASTCALL, _codecs_charmap_decode__doc__},
+    {"charmap_decode", _PyCFunction_CAST(_codecs_charmap_decode), METH_FASTCALL, _codecs_charmap_decode__doc__},
 
 static PyObject *
 _codecs_charmap_decode_impl(PyObject *module, Py_buffer *data,
                             const char *errors, PyObject *mapping);
 
 static PyObject *
-_codecs_charmap_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_charmap_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
-    PyObject *mapping = NULL;
+    PyObject *mapping = Py_None;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|zO:charmap_decode",
-        &data, &errors, &mapping)) {
+    if (!_PyArg_CheckPositional("charmap_decode", nargs, 1, 3)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("charmap_decode", kwnames)) {
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("charmap_decode", "argument 1", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("charmap_decode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    mapping = args[2];
+skip_optional:
     return_value = _codecs_charmap_decode_impl(module, &data, errors, mapping);
 
 exit:
@@ -844,28 +1421,59 @@ PyDoc_STRVAR(_codecs_mbcs_decode__doc__,
 "\n");
 
 #define _CODECS_MBCS_DECODE_METHODDEF    \
-    {"mbcs_decode", (PyCFunction)_codecs_mbcs_decode, METH_FASTCALL, _codecs_mbcs_decode__doc__},
+    {"mbcs_decode", _PyCFunction_CAST(_codecs_mbcs_decode), METH_FASTCALL, _codecs_mbcs_decode__doc__},
 
 static PyObject *
 _codecs_mbcs_decode_impl(PyObject *module, Py_buffer *data,
                          const char *errors, int final);
 
 static PyObject *
-_codecs_mbcs_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_mbcs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|zi:mbcs_decode",
-        &data, &errors, &final)) {
+    if (!_PyArg_CheckPositional("mbcs_decode", nargs, 1, 3)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("mbcs_decode", kwnames)) {
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("mbcs_decode", "argument 1", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("mbcs_decode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    final = _PyLong_AsInt(args[2]);
+    if (final == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_mbcs_decode_impl(module, &data, errors, final);
 
 exit:
@@ -887,28 +1495,59 @@ PyDoc_STRVAR(_codecs_oem_decode__doc__,
 "\n");
 
 #define _CODECS_OEM_DECODE_METHODDEF    \
-    {"oem_decode", (PyCFunction)_codecs_oem_decode, METH_FASTCALL, _codecs_oem_decode__doc__},
+    {"oem_decode", _PyCFunction_CAST(_codecs_oem_decode), METH_FASTCALL, _codecs_oem_decode__doc__},
 
 static PyObject *
 _codecs_oem_decode_impl(PyObject *module, Py_buffer *data,
                         const char *errors, int final);
 
 static PyObject *
-_codecs_oem_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_oem_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|zi:oem_decode",
-        &data, &errors, &final)) {
+    if (!_PyArg_CheckPositional("oem_decode", nargs, 1, 3)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("oem_decode", kwnames)) {
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("oem_decode", "argument 1", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("oem_decode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    final = _PyLong_AsInt(args[2]);
+    if (final == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_oem_decode_impl(module, &data, errors, final);
 
 exit:
@@ -930,14 +1569,14 @@ PyDoc_STRVAR(_codecs_code_page_decode__doc__,
 "\n");
 
 #define _CODECS_CODE_PAGE_DECODE_METHODDEF    \
-    {"code_page_decode", (PyCFunction)_codecs_code_page_decode, METH_FASTCALL, _codecs_code_page_decode__doc__},
+    {"code_page_decode", _PyCFunction_CAST(_codecs_code_page_decode), METH_FASTCALL, _codecs_code_page_decode__doc__},
 
 static PyObject *
 _codecs_code_page_decode_impl(PyObject *module, int codepage,
                               Py_buffer *data, const char *errors, int final);
 
 static PyObject *
-_codecs_code_page_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_code_page_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int codepage;
@@ -945,14 +1584,49 @@ _codecs_code_page_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, Py
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "iy*|zi:code_page_decode",
-        &codepage, &data, &errors, &final)) {
+    if (!_PyArg_CheckPositional("code_page_decode", nargs, 2, 4)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("code_page_decode", kwnames)) {
+    codepage = _PyLong_AsInt(args[0]);
+    if (codepage == -1 && PyErr_Occurred()) {
         goto exit;
     }
+    if (PyObject_GetBuffer(args[1], &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("code_page_decode", "argument 2", "contiguous buffer", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (args[2] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[2])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[2], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("code_page_decode", "argument 3", "str or None", args[2]);
+        goto exit;
+    }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    final = _PyLong_AsInt(args[3]);
+    if (final == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_code_page_decode_impl(module, codepage, &data, errors, final);
 
 exit:
@@ -972,27 +1646,61 @@ PyDoc_STRVAR(_codecs_readbuffer_encode__doc__,
 "\n");
 
 #define _CODECS_READBUFFER_ENCODE_METHODDEF    \
-    {"readbuffer_encode", (PyCFunction)_codecs_readbuffer_encode, METH_FASTCALL, _codecs_readbuffer_encode__doc__},
+    {"readbuffer_encode", _PyCFunction_CAST(_codecs_readbuffer_encode), METH_FASTCALL, _codecs_readbuffer_encode__doc__},
 
 static PyObject *
 _codecs_readbuffer_encode_impl(PyObject *module, Py_buffer *data,
                                const char *errors);
 
 static PyObject *
-_codecs_readbuffer_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_readbuffer_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "s*|z:readbuffer_encode",
-        &data, &errors)) {
+    if (!_PyArg_CheckPositional("readbuffer_encode", nargs, 1, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("readbuffer_encode", kwnames)) {
+    if (PyUnicode_Check(args[0])) {
+        Py_ssize_t len;
+        const char *ptr = PyUnicode_AsUTF8AndSize(args[0], &len);
+        if (ptr == NULL) {
+            goto exit;
+        }
+        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+    }
+    else { /* any bytes-like object */
+        if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
+            goto exit;
+        }
+        if (!PyBuffer_IsContiguous(&data, 'C')) {
+            _PyArg_BadArgument("readbuffer_encode", "argument 1", "contiguous buffer", args[0]);
+            goto exit;
+        }
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("readbuffer_encode", "argument 2", "str or None", args[1]);
         goto exit;
     }
+skip_optional:
     return_value = _codecs_readbuffer_encode_impl(module, &data, errors);
 
 exit:
@@ -1004,66 +1712,58 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_codecs_unicode_internal_encode__doc__,
-"unicode_internal_encode($module, obj, errors=None, /)\n"
-"--\n"
-"\n");
-
-#define _CODECS_UNICODE_INTERNAL_ENCODE_METHODDEF    \
-    {"unicode_internal_encode", (PyCFunction)_codecs_unicode_internal_encode, METH_FASTCALL, _codecs_unicode_internal_encode__doc__},
-
-static PyObject *
-_codecs_unicode_internal_encode_impl(PyObject *module, PyObject *obj,
-                                     const char *errors);
-
-static PyObject *
-_codecs_unicode_internal_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    PyObject *obj;
-    const char *errors = NULL;
-
-    if (!_PyArg_ParseStack(args, nargs, "O|z:unicode_internal_encode",
-        &obj, &errors)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("unicode_internal_encode", kwnames)) {
-        goto exit;
-    }
-    return_value = _codecs_unicode_internal_encode_impl(module, obj, errors);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(_codecs_utf_7_encode__doc__,
 "utf_7_encode($module, str, errors=None, /)\n"
 "--\n"
 "\n");
 
 #define _CODECS_UTF_7_ENCODE_METHODDEF    \
-    {"utf_7_encode", (PyCFunction)_codecs_utf_7_encode, METH_FASTCALL, _codecs_utf_7_encode__doc__},
+    {"utf_7_encode", _PyCFunction_CAST(_codecs_utf_7_encode), METH_FASTCALL, _codecs_utf_7_encode__doc__},
 
 static PyObject *
 _codecs_utf_7_encode_impl(PyObject *module, PyObject *str,
                           const char *errors);
 
 static PyObject *
-_codecs_utf_7_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_utf_7_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "U|z:utf_7_encode",
-        &str, &errors)) {
+    if (!_PyArg_CheckPositional("utf_7_encode", nargs, 1, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("utf_7_encode", kwnames)) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("utf_7_encode", "argument 1", "str", args[0]);
         goto exit;
     }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    str = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("utf_7_encode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_utf_7_encode_impl(module, str, errors);
 
 exit:
@@ -1076,27 +1776,52 @@ PyDoc_STRVAR(_codecs_utf_8_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_8_ENCODE_METHODDEF    \
-    {"utf_8_encode", (PyCFunction)_codecs_utf_8_encode, METH_FASTCALL, _codecs_utf_8_encode__doc__},
+    {"utf_8_encode", _PyCFunction_CAST(_codecs_utf_8_encode), METH_FASTCALL, _codecs_utf_8_encode__doc__},
 
 static PyObject *
 _codecs_utf_8_encode_impl(PyObject *module, PyObject *str,
                           const char *errors);
 
 static PyObject *
-_codecs_utf_8_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_utf_8_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "U|z:utf_8_encode",
-        &str, &errors)) {
+    if (!_PyArg_CheckPositional("utf_8_encode", nargs, 1, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("utf_8_encode", kwnames)) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("utf_8_encode", "argument 1", "str", args[0]);
         goto exit;
     }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    str = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("utf_8_encode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_utf_8_encode_impl(module, str, errors);
 
 exit:
@@ -1109,28 +1834,60 @@ PyDoc_STRVAR(_codecs_utf_16_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_ENCODE_METHODDEF    \
-    {"utf_16_encode", (PyCFunction)_codecs_utf_16_encode, METH_FASTCALL, _codecs_utf_16_encode__doc__},
+    {"utf_16_encode", _PyCFunction_CAST(_codecs_utf_16_encode), METH_FASTCALL, _codecs_utf_16_encode__doc__},
 
 static PyObject *
 _codecs_utf_16_encode_impl(PyObject *module, PyObject *str,
                            const char *errors, int byteorder);
 
 static PyObject *
-_codecs_utf_16_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_utf_16_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
     int byteorder = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "U|zi:utf_16_encode",
-        &str, &errors, &byteorder)) {
+    if (!_PyArg_CheckPositional("utf_16_encode", nargs, 1, 3)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("utf_16_encode", kwnames)) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("utf_16_encode", "argument 1", "str", args[0]);
         goto exit;
     }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    str = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("utf_16_encode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    byteorder = _PyLong_AsInt(args[2]);
+    if (byteorder == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_utf_16_encode_impl(module, str, errors, byteorder);
 
 exit:
@@ -1143,27 +1900,52 @@ PyDoc_STRVAR(_codecs_utf_16_le_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_LE_ENCODE_METHODDEF    \
-    {"utf_16_le_encode", (PyCFunction)_codecs_utf_16_le_encode, METH_FASTCALL, _codecs_utf_16_le_encode__doc__},
+    {"utf_16_le_encode", _PyCFunction_CAST(_codecs_utf_16_le_encode), METH_FASTCALL, _codecs_utf_16_le_encode__doc__},
 
 static PyObject *
 _codecs_utf_16_le_encode_impl(PyObject *module, PyObject *str,
                               const char *errors);
 
 static PyObject *
-_codecs_utf_16_le_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_utf_16_le_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "U|z:utf_16_le_encode",
-        &str, &errors)) {
+    if (!_PyArg_CheckPositional("utf_16_le_encode", nargs, 1, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("utf_16_le_encode", kwnames)) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("utf_16_le_encode", "argument 1", "str", args[0]);
         goto exit;
     }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    str = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("utf_16_le_encode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_utf_16_le_encode_impl(module, str, errors);
 
 exit:
@@ -1176,27 +1958,52 @@ PyDoc_STRVAR(_codecs_utf_16_be_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_BE_ENCODE_METHODDEF    \
-    {"utf_16_be_encode", (PyCFunction)_codecs_utf_16_be_encode, METH_FASTCALL, _codecs_utf_16_be_encode__doc__},
+    {"utf_16_be_encode", _PyCFunction_CAST(_codecs_utf_16_be_encode), METH_FASTCALL, _codecs_utf_16_be_encode__doc__},
 
 static PyObject *
 _codecs_utf_16_be_encode_impl(PyObject *module, PyObject *str,
                               const char *errors);
 
 static PyObject *
-_codecs_utf_16_be_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_utf_16_be_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "U|z:utf_16_be_encode",
-        &str, &errors)) {
+    if (!_PyArg_CheckPositional("utf_16_be_encode", nargs, 1, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("utf_16_be_encode", kwnames)) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("utf_16_be_encode", "argument 1", "str", args[0]);
         goto exit;
     }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    str = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("utf_16_be_encode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_utf_16_be_encode_impl(module, str, errors);
 
 exit:
@@ -1209,28 +2016,60 @@ PyDoc_STRVAR(_codecs_utf_32_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_ENCODE_METHODDEF    \
-    {"utf_32_encode", (PyCFunction)_codecs_utf_32_encode, METH_FASTCALL, _codecs_utf_32_encode__doc__},
+    {"utf_32_encode", _PyCFunction_CAST(_codecs_utf_32_encode), METH_FASTCALL, _codecs_utf_32_encode__doc__},
 
 static PyObject *
 _codecs_utf_32_encode_impl(PyObject *module, PyObject *str,
                            const char *errors, int byteorder);
 
 static PyObject *
-_codecs_utf_32_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_utf_32_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
     int byteorder = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "U|zi:utf_32_encode",
-        &str, &errors, &byteorder)) {
+    if (!_PyArg_CheckPositional("utf_32_encode", nargs, 1, 3)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("utf_32_encode", kwnames)) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("utf_32_encode", "argument 1", "str", args[0]);
         goto exit;
     }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    str = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("utf_32_encode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    byteorder = _PyLong_AsInt(args[2]);
+    if (byteorder == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_utf_32_encode_impl(module, str, errors, byteorder);
 
 exit:
@@ -1243,27 +2082,52 @@ PyDoc_STRVAR(_codecs_utf_32_le_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_LE_ENCODE_METHODDEF    \
-    {"utf_32_le_encode", (PyCFunction)_codecs_utf_32_le_encode, METH_FASTCALL, _codecs_utf_32_le_encode__doc__},
+    {"utf_32_le_encode", _PyCFunction_CAST(_codecs_utf_32_le_encode), METH_FASTCALL, _codecs_utf_32_le_encode__doc__},
 
 static PyObject *
 _codecs_utf_32_le_encode_impl(PyObject *module, PyObject *str,
                               const char *errors);
 
 static PyObject *
-_codecs_utf_32_le_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_utf_32_le_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "U|z:utf_32_le_encode",
-        &str, &errors)) {
+    if (!_PyArg_CheckPositional("utf_32_le_encode", nargs, 1, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("utf_32_le_encode", kwnames)) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("utf_32_le_encode", "argument 1", "str", args[0]);
         goto exit;
     }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    str = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("utf_32_le_encode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_utf_32_le_encode_impl(module, str, errors);
 
 exit:
@@ -1276,27 +2140,52 @@ PyDoc_STRVAR(_codecs_utf_32_be_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_BE_ENCODE_METHODDEF    \
-    {"utf_32_be_encode", (PyCFunction)_codecs_utf_32_be_encode, METH_FASTCALL, _codecs_utf_32_be_encode__doc__},
+    {"utf_32_be_encode", _PyCFunction_CAST(_codecs_utf_32_be_encode), METH_FASTCALL, _codecs_utf_32_be_encode__doc__},
 
 static PyObject *
 _codecs_utf_32_be_encode_impl(PyObject *module, PyObject *str,
                               const char *errors);
 
 static PyObject *
-_codecs_utf_32_be_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_utf_32_be_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "U|z:utf_32_be_encode",
-        &str, &errors)) {
+    if (!_PyArg_CheckPositional("utf_32_be_encode", nargs, 1, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("utf_32_be_encode", kwnames)) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("utf_32_be_encode", "argument 1", "str", args[0]);
         goto exit;
     }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    str = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("utf_32_be_encode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_utf_32_be_encode_impl(module, str, errors);
 
 exit:
@@ -1309,27 +2198,52 @@ PyDoc_STRVAR(_codecs_unicode_escape_encode__doc__,
 "\n");
 
 #define _CODECS_UNICODE_ESCAPE_ENCODE_METHODDEF    \
-    {"unicode_escape_encode", (PyCFunction)_codecs_unicode_escape_encode, METH_FASTCALL, _codecs_unicode_escape_encode__doc__},
+    {"unicode_escape_encode", _PyCFunction_CAST(_codecs_unicode_escape_encode), METH_FASTCALL, _codecs_unicode_escape_encode__doc__},
 
 static PyObject *
 _codecs_unicode_escape_encode_impl(PyObject *module, PyObject *str,
                                    const char *errors);
 
 static PyObject *
-_codecs_unicode_escape_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_unicode_escape_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "U|z:unicode_escape_encode",
-        &str, &errors)) {
+    if (!_PyArg_CheckPositional("unicode_escape_encode", nargs, 1, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("unicode_escape_encode", kwnames)) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("unicode_escape_encode", "argument 1", "str", args[0]);
         goto exit;
     }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    str = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("unicode_escape_encode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_unicode_escape_encode_impl(module, str, errors);
 
 exit:
@@ -1342,27 +2256,52 @@ PyDoc_STRVAR(_codecs_raw_unicode_escape_encode__doc__,
 "\n");
 
 #define _CODECS_RAW_UNICODE_ESCAPE_ENCODE_METHODDEF    \
-    {"raw_unicode_escape_encode", (PyCFunction)_codecs_raw_unicode_escape_encode, METH_FASTCALL, _codecs_raw_unicode_escape_encode__doc__},
+    {"raw_unicode_escape_encode", _PyCFunction_CAST(_codecs_raw_unicode_escape_encode), METH_FASTCALL, _codecs_raw_unicode_escape_encode__doc__},
 
 static PyObject *
 _codecs_raw_unicode_escape_encode_impl(PyObject *module, PyObject *str,
                                        const char *errors);
 
 static PyObject *
-_codecs_raw_unicode_escape_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_raw_unicode_escape_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "U|z:raw_unicode_escape_encode",
-        &str, &errors)) {
+    if (!_PyArg_CheckPositional("raw_unicode_escape_encode", nargs, 1, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("raw_unicode_escape_encode", kwnames)) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("raw_unicode_escape_encode", "argument 1", "str", args[0]);
         goto exit;
     }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    str = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("raw_unicode_escape_encode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_raw_unicode_escape_encode_impl(module, str, errors);
 
 exit:
@@ -1375,27 +2314,52 @@ PyDoc_STRVAR(_codecs_latin_1_encode__doc__,
 "\n");
 
 #define _CODECS_LATIN_1_ENCODE_METHODDEF    \
-    {"latin_1_encode", (PyCFunction)_codecs_latin_1_encode, METH_FASTCALL, _codecs_latin_1_encode__doc__},
+    {"latin_1_encode", _PyCFunction_CAST(_codecs_latin_1_encode), METH_FASTCALL, _codecs_latin_1_encode__doc__},
 
 static PyObject *
 _codecs_latin_1_encode_impl(PyObject *module, PyObject *str,
                             const char *errors);
 
 static PyObject *
-_codecs_latin_1_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_latin_1_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "U|z:latin_1_encode",
-        &str, &errors)) {
+    if (!_PyArg_CheckPositional("latin_1_encode", nargs, 1, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("latin_1_encode", kwnames)) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("latin_1_encode", "argument 1", "str", args[0]);
         goto exit;
     }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    str = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("latin_1_encode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_latin_1_encode_impl(module, str, errors);
 
 exit:
@@ -1408,27 +2372,52 @@ PyDoc_STRVAR(_codecs_ascii_encode__doc__,
 "\n");
 
 #define _CODECS_ASCII_ENCODE_METHODDEF    \
-    {"ascii_encode", (PyCFunction)_codecs_ascii_encode, METH_FASTCALL, _codecs_ascii_encode__doc__},
+    {"ascii_encode", _PyCFunction_CAST(_codecs_ascii_encode), METH_FASTCALL, _codecs_ascii_encode__doc__},
 
 static PyObject *
 _codecs_ascii_encode_impl(PyObject *module, PyObject *str,
                           const char *errors);
 
 static PyObject *
-_codecs_ascii_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_ascii_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "U|z:ascii_encode",
-        &str, &errors)) {
+    if (!_PyArg_CheckPositional("ascii_encode", nargs, 1, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("ascii_encode", kwnames)) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("ascii_encode", "argument 1", "str", args[0]);
         goto exit;
     }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    str = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("ascii_encode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_ascii_encode_impl(module, str, errors);
 
 exit:
@@ -1441,28 +2430,57 @@ PyDoc_STRVAR(_codecs_charmap_encode__doc__,
 "\n");
 
 #define _CODECS_CHARMAP_ENCODE_METHODDEF    \
-    {"charmap_encode", (PyCFunction)_codecs_charmap_encode, METH_FASTCALL, _codecs_charmap_encode__doc__},
+    {"charmap_encode", _PyCFunction_CAST(_codecs_charmap_encode), METH_FASTCALL, _codecs_charmap_encode__doc__},
 
 static PyObject *
 _codecs_charmap_encode_impl(PyObject *module, PyObject *str,
                             const char *errors, PyObject *mapping);
 
 static PyObject *
-_codecs_charmap_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_charmap_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
-    PyObject *mapping = NULL;
+    PyObject *mapping = Py_None;
 
-    if (!_PyArg_ParseStack(args, nargs, "U|zO:charmap_encode",
-        &str, &errors, &mapping)) {
+    if (!_PyArg_CheckPositional("charmap_encode", nargs, 1, 3)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("charmap_encode", kwnames)) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("charmap_encode", "argument 1", "str", args[0]);
         goto exit;
     }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    str = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("charmap_encode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    mapping = args[2];
+skip_optional:
     return_value = _codecs_charmap_encode_impl(module, str, errors, mapping);
 
 exit:
@@ -1486,9 +2504,14 @@ _codecs_charmap_build(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *map;
 
-    if (!PyArg_Parse(arg, "U:charmap_build", &map)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("charmap_build", "argument", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    map = arg;
     return_value = _codecs_charmap_build_impl(module, map);
 
 exit:
@@ -1503,26 +2526,51 @@ PyDoc_STRVAR(_codecs_mbcs_encode__doc__,
 "\n");
 
 #define _CODECS_MBCS_ENCODE_METHODDEF    \
-    {"mbcs_encode", (PyCFunction)_codecs_mbcs_encode, METH_FASTCALL, _codecs_mbcs_encode__doc__},
+    {"mbcs_encode", _PyCFunction_CAST(_codecs_mbcs_encode), METH_FASTCALL, _codecs_mbcs_encode__doc__},
 
 static PyObject *
 _codecs_mbcs_encode_impl(PyObject *module, PyObject *str, const char *errors);
 
 static PyObject *
-_codecs_mbcs_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_mbcs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "U|z:mbcs_encode",
-        &str, &errors)) {
+    if (!_PyArg_CheckPositional("mbcs_encode", nargs, 1, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("mbcs_encode", kwnames)) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("mbcs_encode", "argument 1", "str", args[0]);
         goto exit;
     }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    str = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("mbcs_encode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_mbcs_encode_impl(module, str, errors);
 
 exit:
@@ -1539,26 +2587,51 @@ PyDoc_STRVAR(_codecs_oem_encode__doc__,
 "\n");
 
 #define _CODECS_OEM_ENCODE_METHODDEF    \
-    {"oem_encode", (PyCFunction)_codecs_oem_encode, METH_FASTCALL, _codecs_oem_encode__doc__},
+    {"oem_encode", _PyCFunction_CAST(_codecs_oem_encode), METH_FASTCALL, _codecs_oem_encode__doc__},
 
 static PyObject *
 _codecs_oem_encode_impl(PyObject *module, PyObject *str, const char *errors);
 
 static PyObject *
-_codecs_oem_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_oem_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "U|z:oem_encode",
-        &str, &errors)) {
+    if (!_PyArg_CheckPositional("oem_encode", nargs, 1, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("oem_encode", kwnames)) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("oem_encode", "argument 1", "str", args[0]);
         goto exit;
     }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    str = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("oem_encode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_oem_encode_impl(module, str, errors);
 
 exit:
@@ -1575,28 +2648,57 @@ PyDoc_STRVAR(_codecs_code_page_encode__doc__,
 "\n");
 
 #define _CODECS_CODE_PAGE_ENCODE_METHODDEF    \
-    {"code_page_encode", (PyCFunction)_codecs_code_page_encode, METH_FASTCALL, _codecs_code_page_encode__doc__},
+    {"code_page_encode", _PyCFunction_CAST(_codecs_code_page_encode), METH_FASTCALL, _codecs_code_page_encode__doc__},
 
 static PyObject *
 _codecs_code_page_encode_impl(PyObject *module, int code_page, PyObject *str,
                               const char *errors);
 
 static PyObject *
-_codecs_code_page_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_code_page_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int code_page;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "iU|z:code_page_encode",
-        &code_page, &str, &errors)) {
+    if (!_PyArg_CheckPositional("code_page_encode", nargs, 2, 3)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("code_page_encode", kwnames)) {
+    code_page = _PyLong_AsInt(args[0]);
+    if (code_page == -1 && PyErr_Occurred()) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("code_page_encode", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[1]) == -1) {
+        goto exit;
+    }
+    str = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (args[2] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[2])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[2], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("code_page_encode", "argument 3", "str or None", args[2]);
+        goto exit;
+    }
+skip_optional:
     return_value = _codecs_code_page_encode_impl(module, code_page, str, errors);
 
 exit:
@@ -1616,27 +2718,36 @@ PyDoc_STRVAR(_codecs_register_error__doc__,
 "error and must return a (replacement, new position) tuple.");
 
 #define _CODECS_REGISTER_ERROR_METHODDEF    \
-    {"register_error", (PyCFunction)_codecs_register_error, METH_FASTCALL, _codecs_register_error__doc__},
+    {"register_error", _PyCFunction_CAST(_codecs_register_error), METH_FASTCALL, _codecs_register_error__doc__},
 
 static PyObject *
 _codecs_register_error_impl(PyObject *module, const char *errors,
                             PyObject *handler);
 
 static PyObject *
-_codecs_register_error(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_register_error(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *errors;
     PyObject *handler;
 
-    if (!_PyArg_ParseStack(args, nargs, "sO:register_error",
-        &errors, &handler)) {
+    if (!_PyArg_CheckPositional("register_error", nargs, 2, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("register_error", kwnames)) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("register_error", "argument 1", "str", args[0]);
         goto exit;
     }
+    Py_ssize_t errors_length;
+    errors = PyUnicode_AsUTF8AndSize(args[0], &errors_length);
+    if (errors == NULL) {
+        goto exit;
+    }
+    if (strlen(errors) != (size_t)errors_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    handler = args[1];
     return_value = _codecs_register_error_impl(module, errors, handler);
 
 exit:
@@ -1664,7 +2775,17 @@ _codecs_lookup_error(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     const char *name;
 
-    if (!PyArg_Parse(arg, "s:lookup_error", &name)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("lookup_error", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(arg, &name_length);
+    if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _codecs_lookup_error_impl(module, name);
@@ -1696,4 +2817,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=36fb42f450a3b4dc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=92250568c3a6f0a0 input=a9049054013a1b77]*/

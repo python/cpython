@@ -11,6 +11,7 @@ import unittest
 import inspect
 
 from test.support import captured_stderr, disable_gc, gc_collect
+from test import support
 
 class TestPEP380Operation(unittest.TestCase):
     """
@@ -418,7 +419,7 @@ class TestPEP380Operation(unittest.TestCase):
             "Yielded g2 spam",
             "Yielded g2 more spam",
             "Finishing g2",
-            "g2 returned StopIteration(3,)",
+            "g2 returned StopIteration(3)",
             "Yielded g1 eggs",
             "Finishing g1",
         ])
@@ -562,11 +563,12 @@ class TestPEP380Operation(unittest.TestCase):
             self.assertEqual(next(gi), 1)
             gi.throw(AttributeError)
 
-        with captured_stderr() as output:
+        with support.catch_unraisable_exception() as cm:
             gi = g()
             self.assertEqual(next(gi), 1)
             gi.close()
-        self.assertIn('ZeroDivisionError', output.getvalue())
+
+            self.assertEqual(ZeroDivisionError, cm.unraisable.exc_type)
 
     def test_exception_in_initial_next_call(self):
         """
@@ -696,15 +698,15 @@ class TestPEP380Operation(unittest.TestCase):
             "g starting",
             "f resuming g",
             "g returning 1",
-            "f caught StopIteration(1,)",
+            "f caught StopIteration(1)",
             "g starting",
             "f resuming g",
             "g returning (2,)",
-            "f caught StopIteration((2,),)",
+            "f caught StopIteration((2,))",
             "g starting",
             "f resuming g",
-            "g returning StopIteration(3,)",
-            "f caught StopIteration(StopIteration(3,),)",
+            "g returning StopIteration(3)",
+            "f caught StopIteration(StopIteration(3))",
         ])
 
     def test_send_and_return_with_value(self):
@@ -741,17 +743,17 @@ class TestPEP380Operation(unittest.TestCase):
             "f sending spam to g",
             "g received 'spam'",
             "g returning 1",
-            'f caught StopIteration(1,)',
+            'f caught StopIteration(1)',
             'g starting',
             'f sending spam to g',
             "g received 'spam'",
             'g returning (2,)',
-            'f caught StopIteration((2,),)',
+            'f caught StopIteration((2,))',
             'g starting',
             'f sending spam to g',
             "g received 'spam'",
-            'g returning StopIteration(3,)',
-            'f caught StopIteration(StopIteration(3,),)'
+            'g returning StopIteration(3)',
+            'f caught StopIteration(StopIteration(3))'
         ])
 
     def test_catching_exception_from_subgen_and_returning(self):
@@ -936,6 +938,9 @@ class TestPEP380Operation(unittest.TestCase):
                 res.append(g1.throw(MyErr))
         except StopIteration:
             pass
+        except:
+            self.assertEqual(res, [0, 1, 2, 3])
+            raise
         # Check with close
         class MyIt(object):
             def __iter__(self):

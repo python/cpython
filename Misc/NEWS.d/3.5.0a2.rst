@@ -1,0 +1,405 @@
+.. bpo: 23571
+.. date: 8990
+.. nonce: GTkAkq
+.. release date: 2015-03-09
+.. section: Core and Builtins
+
+PyObject_Call() and PyCFunction_Call() now raise a SystemError if a function
+returns a result and raises an exception. The SystemError is chained to the
+previous exception.
+
+..
+
+.. bpo: 22524
+.. date: 8989
+.. nonce: Ks6_2x
+.. section: Library
+
+New os.scandir() function, part of the :pep:`471`: "os.scandir() function -- a
+better and faster directory iterator". Patch written by Ben Hoyt.
+
+..
+
+.. bpo: 23103
+.. date: 8988
+.. nonce: I3RLIV
+.. section: Library
+
+Reduced the memory consumption of IPv4Address and IPv6Address.
+
+..
+
+.. bpo: 21793
+.. date: 8987
+.. nonce: GQtYMM
+.. section: Library
+
+BaseHTTPRequestHandler again logs response code as numeric, not as
+stringified enum.  Patch by Demian Brecht.
+
+..
+
+.. bpo: 23476
+.. date: 8986
+.. nonce: 82QV9I
+.. section: Library
+
+In the ssl module, enable OpenSSL's X509_V_FLAG_TRUSTED_FIRST flag on
+certificate stores when it is available.
+
+..
+
+.. bpo: 23576
+.. date: 8985
+.. nonce: 98F-PP
+.. section: Library
+
+Avoid stalling in SSL reads when EOF has been reached in the SSL layer but
+the underlying connection hasn't been closed.
+
+..
+
+.. bpo: 23504
+.. date: 8984
+.. nonce: o31h5I
+.. section: Library
+
+Added an __all__ to the types module.
+
+..
+
+.. bpo: 23563
+.. date: 8983
+.. nonce: iQB-ba
+.. section: Library
+
+Optimized utility functions in urllib.parse.
+
+..
+
+.. bpo: 7830
+.. date: 8982
+.. nonce: irvPdC
+.. section: Library
+
+Flatten nested functools.partial.
+
+..
+
+.. bpo: 20204
+.. date: 8981
+.. nonce: DorA4b
+.. section: Library
+
+Added the __module__ attribute to _tkinter classes.
+
+..
+
+.. bpo: 19980
+.. date: 8980
+.. nonce: whwzL_
+.. section: Library
+
+Improved help() for non-recognized strings.  help('') now shows the help on
+str.  help('help') now shows the help on help(). Original patch by Mark
+Lawrence.
+
+..
+
+.. bpo: 23521
+.. date: 8979
+.. nonce: HvwFfd
+.. section: Library
+
+Corrected pure python implementation of timedelta division.
+Eliminated OverflowError from ``timedelta * float`` for some floats;
+Corrected rounding in timedelta true division.
+
+..
+
+.. bpo: 21619
+.. date: 8978
+.. nonce: uL0SZh
+.. section: Library
+
+Popen objects no longer leave a zombie after exit in the with statement if
+the pipe was broken.  Patch by Martin Panter.
+
+..
+
+.. bpo: 22936
+.. date: 8977
+.. nonce: JrhGYd
+.. section: Library
+
+Make it possible to show local variables in tracebacks for both the
+traceback module and unittest.
+
+..
+
+.. bpo: 15955
+.. date: 8976
+.. nonce: _8nYPy
+.. section: Library
+
+Add an option to limit the output size in bz2.decompress(). Patch by
+Nikolaus Rath.
+
+..
+
+.. bpo: 6639
+.. date: 8975
+.. nonce: rmjUmG
+.. section: Library
+
+Module-level turtle functions no longer raise TclError after closing the
+window.
+
+..
+
+.. bpo: 814253
+.. date: 8974
+.. nonce: icZb-I
+.. section: Library
+
+Group references and conditional group references now work in lookbehind
+assertions in regular expressions. (See also: bpo-9179)
+
+..
+
+.. bpo: 23215
+.. date: 8973
+.. nonce: VHVSVX
+.. section: Library
+
+Multibyte codecs with custom error handlers that ignores errors consumed too
+much memory and raised SystemError or MemoryError. Original patch by Aleksi
+Torhamo.
+
+..
+
+.. bpo: 5700
+.. date: 8972
+.. nonce: iA5yzL
+.. section: Library
+
+io.FileIO() called flush() after closing the file. flush() was not called in
+close() if closefd=False.
+
+..
+
+.. bpo: 23374
+.. date: 8971
+.. nonce: 8A9LuZ
+.. section: Library
+
+Fixed pydoc failure with non-ASCII files when stdout encoding differs from
+file system encoding (e.g. on Mac OS).
+
+..
+
+.. bpo: 23481
+.. date: 8970
+.. nonce: ZWwliG
+.. section: Library
+
+Remove RC4 from the SSL module's default cipher list.
+
+..
+
+.. bpo: 21548
+.. date: 8969
+.. nonce: CmO_Yh
+.. section: Library
+
+Fix pydoc.synopsis() and pydoc.apropos() on modules with empty docstrings.
+
+..
+
+.. bpo: 22885
+.. date: 8968
+.. nonce: p8FnYk
+.. section: Library
+
+Fixed arbitrary code execution vulnerability in the dbm.dumb module.
+Original patch by Claudiu Popa.
+
+..
+
+.. bpo: 23239
+.. date: 8967
+.. nonce: PGUq7T
+.. section: Library
+
+ssl.match_hostname() now supports matching of IP addresses.
+
+..
+
+.. bpo: 23146
+.. date: 8966
+.. nonce: PW-O3u
+.. section: Library
+
+Fix mishandling of absolute Windows paths with forward slashes in pathlib.
+
+..
+
+.. bpo: 23096
+.. date: 8965
+.. nonce: Ftrmf3
+.. section: Library
+
+Pickle representation of floats with protocol 0 now is the same for both
+Python and C implementations.
+
+..
+
+.. bpo: 19105
+.. date: 8964
+.. nonce: ZK07Ff
+.. section: Library
+
+pprint now more efficiently uses free space at the right.
+
+..
+
+.. bpo: 14910
+.. date: 8963
+.. nonce: zueIhP
+.. section: Library
+
+Add allow_abbrev parameter to argparse.ArgumentParser. Patch by Jonathan
+Paugh, Steven Bethard, paul j3 and Daniel Eriksson.
+
+..
+
+.. bpo: 21717
+.. date: 8962
+.. nonce: Knut81
+.. section: Library
+
+tarfile.open() now supports 'x' (exclusive creation) mode.
+
+..
+
+.. bpo: 23344
+.. date: 8961
+.. nonce: ieu8C1
+.. section: Library
+
+marshal.dumps() is now 20-25% faster on average.
+
+..
+
+.. bpo: 20416
+.. date: 8960
+.. nonce: cwEgkL
+.. section: Library
+
+marshal.dumps() with protocols 3 and 4 is now 40-50% faster on average.
+
+..
+
+.. bpo: 23421
+.. date: 8959
+.. nonce: eckzoV
+.. section: Library
+
+Fixed compression in tarfile CLI.  Patch by wdv4758h.
+
+..
+
+.. bpo: 23367
+.. date: 8958
+.. nonce: kHnFiz
+.. section: Library
+
+Fix possible overflows in the unicodedata module.
+
+..
+
+.. bpo: 23361
+.. date: 8957
+.. nonce: I_w0-z
+.. section: Library
+
+Fix possible overflow in Windows subprocess creation code.
+
+..
+
+.. bpo: 0
+.. date: 8956
+.. nonce: sfmjTs
+.. section: Library
+
+logging.handlers.QueueListener now takes a respect_handler_level keyword
+argument which, if set to True, will pass messages to handlers taking
+handler levels into account.
+
+..
+
+.. bpo: 19705
+.. date: 8955
+.. nonce: WLzTRV
+.. section: Library
+
+turtledemo now has a visual sorting algorithm demo.  Original patch from
+Jason Yeo.
+
+..
+
+.. bpo: 23801
+.. date: 8954
+.. nonce: jyJK3z
+.. section: Library
+
+Fix issue where cgi.FieldStorage did not always ignore the entire preamble
+to a multipart body.
+
+..
+
+.. bpo: 23445
+.. date: 8953
+.. nonce: 7fmkYO
+.. section: Build
+
+pydebug builds now use "gcc -Og" where possible, to make the resulting
+executable faster.
+
+..
+
+.. bpo: 23686
+.. date: 8952
+.. nonce: B7jDXY
+.. section: Build
+
+Update OS X 10.5 installer build to use OpenSSL 1.0.2a.
+
+..
+
+.. bpo: 20204
+.. date: 8951
+.. nonce: M_jcNK
+.. section: C API
+
+Deprecation warning is now raised for builtin types without the __module__
+attribute.
+
+..
+
+.. bpo: 23465
+.. date: 8950
+.. nonce: qBauCy
+.. section: Windows
+
+Implement :pep:`486` - Make the Python Launcher aware of virtual environments.
+Patch by Paul Moore.
+
+..
+
+.. bpo: 23437
+.. date: 8949
+.. nonce: ro9X8r
+.. section: Windows
+
+Make user scripts directory versioned on Windows. Patch by Paul Moore.

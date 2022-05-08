@@ -22,7 +22,7 @@ def isnum(x):
     return 0
 
 def isRat(x):
-    """Test wheter an object is an instance of the Rat class."""
+    """Test whether an object is an instance of the Rat class."""
     return isinstance(x, Rat)
 
 class Rat(object):

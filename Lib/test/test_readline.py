@@ -3,19 +3,38 @@ Very minimal unittests for parts of the readline module.
 """
 from contextlib import ExitStack
 from errno import EIO
+import locale
 import os
 import selectors
 import subprocess
 import sys
 import tempfile
 import unittest
-from test.support import import_module, unlink, TESTFN
+from test.support import verbose
+from test.support.import_helper import import_module
+from test.support.os_helper import unlink, temp_dir, TESTFN
 from test.support.script_helper import assert_python_ok
 
 # Skip tests if there is no readline module
 readline = import_module('readline')
 
-is_editline = readline.__doc__ and "libedit" in readline.__doc__
+if hasattr(readline, "_READLINE_LIBRARY_VERSION"):
+    is_editline = ("EditLine wrapper" in readline._READLINE_LIBRARY_VERSION)
+else:
+    is_editline = (readline.__doc__ and "libedit" in readline.__doc__)
+
+
+def setUpModule():
+    if verbose:
+        # Python implementations other than CPython may not have
+        # these private attributes
+        if hasattr(readline, "_READLINE_VERSION"):
+            print(f"readline version: {readline._READLINE_VERSION:#x}")
+            print(f"readline runtime version: {readline._READLINE_RUNTIME_VERSION:#x}")
+        if hasattr(readline, "_READLINE_LIBRARY_VERSION"):
+            print(f"readline library version: {readline._READLINE_LIBRARY_VERSION!r}")
+        print(f"use libedit emulation? {is_editline}")
+
 
 @unittest.skipUnless(hasattr(readline, "clear_history"),
                      "The history update test cannot be run because the "
@@ -83,8 +102,15 @@ class TestHistoryManipulation (unittest.TestCase):
 
         # test 'no such file' behaviour
         os.unlink(hfilename)
-        with self.assertRaises(FileNotFoundError):
+        try:
             readline.append_history_file(1, hfilename)
+        except FileNotFoundError:
+            pass  # Some implementations return this error (libreadline).
+        else:
+            os.unlink(hfilename)  # Some create it anyways (libedit).
+            # If the file wasn't created, unlink will fail.
+        # We're just testing that one of the two expected behaviors happens
+        # instead of an incorrect error.
 
         # write_history_file can create the target
         readline.write_history_file(hfilename)
@@ -130,13 +156,24 @@ print("History length:", readline.get_current_history_length())
 
     def test_auto_history_enabled(self):
         output = run_pty(self.auto_history_script.format(True))
-        self.assertIn(b"History length: 1\r\n", output)
+        # bpo-44949: Sometimes, the newline character is not written at the
+        # end, so don't expect it in the output.
+        self.assertIn(b"History length: 1", output)
 
     def test_auto_history_disabled(self):
         output = run_pty(self.auto_history_script.format(False))
-        self.assertIn(b"History length: 0\r\n", output)
+        # bpo-44949: Sometimes, the newline character is not written at the
+        # end, so don't expect it in the output.
+        self.assertIn(b"History length: 0", output)
 
     def test_nonascii(self):
+        loc = locale.setlocale(locale.LC_CTYPE, None)
+        if loc in ('C', 'POSIX'):
+            # bpo-29240: On FreeBSD, if the LC_CTYPE locale is C or POSIX,
+            # writing and reading non-ASCII bytes into/from a TTY works, but
+            # readline or ncurses ignores non-ASCII bytes on read.
+            self.skipTest(f"the LC_CTYPE locale is {loc!r}")
+
         try:
             readline.add_history("\xEB\xEF")
         except UnicodeEncodeError as err:
@@ -202,21 +239,77 @@ print("history", ascii(readline.get_history_item(1)))
         output = run_pty(script, input)
         self.assertIn(b"text 't\\xeb'\r\n", output)
         self.assertIn(b"line '[\\xefnserted]|t\\xeb[after]'\r\n", output)
-        self.assertIn(b"indexes 11 13\r\n", output)
+        if sys.platform == "darwin" or not is_editline:
+            self.assertIn(b"indexes 11 13\r\n", output)
+            # Non-macOS libedit does not handle non-ASCII bytes
+            # the same way and generates character indices
+            # rather than byte indices via get_begidx() and
+            # get_endidx().  Ex: libedit2 3.1-20191231-2 on Debian
+            # winds up with "indexes 10 12".  Stemming from the
+            # start and end values calls back into readline.c's
+            # rl_attempted_completion_function = flex_complete with:
+            # (11, 13) instead of libreadline's (12, 15).
+
         if not is_editline and hasattr(readline, "set_pre_input_hook"):
             self.assertIn(b"substitution 't\\xeb'\r\n", output)
             self.assertIn(b"matches ['t\\xebnt', 't\\xebxt']\r\n", output)
         expected = br"'[\xefnserted]|t\xebxt[after]'"
         self.assertIn(b"result " + expected + b"\r\n", output)
-        self.assertIn(b"history " + expected + b"\r\n", output)
+        # bpo-45195: Sometimes, the newline character is not written at the
+        # end, so don't expect it in the output.
+        self.assertIn(b"history " + expected, output)
+
+    # We have 2 reasons to skip this test:
+    # - readline: history size was added in 6.0
+    #   See https://cnswww.cns.cwru.edu/php/chet/readline/CHANGES
+    # - editline: history size is broken on OS X 10.11.6.
+    #   Newer versions were not tested yet.
+    @unittest.skipIf(readline._READLINE_VERSION < 0x600,
+                     "this readline version does not support history-size")
+    @unittest.skipIf(is_editline,
+                     "editline history size configuration is broken")
+    def test_history_size(self):
+        history_size = 10
+        with temp_dir() as test_dir:
+            inputrc = os.path.join(test_dir, "inputrc")
+            with open(inputrc, "wb") as f:
+                f.write(b"set history-size %d\n" % history_size)
+
+            history_file = os.path.join(test_dir, "history")
+            with open(history_file, "wb") as f:
+                # history_size * 2 items crashes readline
+                data = b"".join(b"item %d\n" % i
+                                for i in range(history_size * 2))
+                f.write(data)
+
+            script = """
+import os
+import readline
+
+history_file = os.environ["HISTORY_FILE"]
+readline.read_history_file(history_file)
+input()
+readline.write_history_file(history_file)
+"""
+
+            env = dict(os.environ)
+            env["INPUTRC"] = inputrc
+            env["HISTORY_FILE"] = history_file
+
+            run_pty(script, input=b"last input\r", env=env)
+
+            with open(history_file, "rb") as f:
+                lines = f.readlines()
+            self.assertEqual(len(lines), history_size)
+            self.assertEqual(lines[-1].strip(), b"last input")
 
 
-def run_pty(script, input=b"dummy input\r"):
+def run_pty(script, input=b"dummy input\r", env=None):
     pty = import_module('pty')
     output = bytearray()
     [master, slave] = pty.openpty()
     args = (sys.executable, '-c', script)
-    proc = subprocess.Popen(args, stdin=slave, stdout=slave, stderr=slave)
+    proc = subprocess.Popen(args, stdin=slave, stdout=slave, stderr=slave, env=env)
     os.close(slave)
     with ExitStack() as cleanup:
         cleanup.enter_context(proc)
