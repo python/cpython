@@ -16,6 +16,7 @@ __all__ = ['dataclass',
            'field',
            'Field',
            'FrozenInstanceError',
+           'AlreadyDataclassError',
            'InitVar',
            'KW_ONLY',
            'MISSING',
@@ -171,6 +172,10 @@ __all__ = ['dataclass',
 
 # Raised when an attempt is made to modify a frozen class.
 class FrozenInstanceError(AttributeError): pass
+
+# Raised when an attempt is made to call dataclass() on a class
+# that's already a dataclass.
+class AlreadyDataclassError(TypeError): pass
 
 # A sentinel object for default values to signal that a default
 # factory will be used.  This is given a nice repr() which will appear
@@ -887,7 +892,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # If this class is already a dataclass, it's an error to process
     # it again.
     if cls.__dict__.get(_FIELDS) is not None:
-        raise TypeError(f'class {cls} is already a dataclass')
+        raise AlreadyDataclassError(f'class {cls} is already a dataclass')
 
     # Now that dicts retain insertion order, there's no reason to use
     # an ordered dict.  I am leveraging that ordering here, because

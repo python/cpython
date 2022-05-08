@@ -4106,8 +4106,11 @@ class TestKeywordArgs(unittest.TestCase):
 
 
 class TestNotUsedTwice(unittest.TestCase):
+    def test_AlreadyDataclassError_is_TypeError(self):
+        self.assertTrue(issubclass(AlreadyDataclassError, TypeError))
+
     def test_called_twice_error(self):
-        with self.assertRaisesRegex(TypeError, 'is already a dataclass'):
+        with self.assertRaisesRegex(AlreadyDataclassError, 'is already a dataclass'):
             @dataclass
             @dataclass
             class C:
