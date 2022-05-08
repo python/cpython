@@ -601,7 +601,7 @@ define in order to be compatible with the Python codec registry.
    object.
 
 
-   .. method:: encode(object[, final=False])
+   .. method:: encode(object, final=False)
 
       Encodes *object* (taking the current state of the encoder into account)
       and returns the resulting encoded object. If this is the last call to
