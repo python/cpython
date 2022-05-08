@@ -271,6 +271,16 @@ def _check_generic(cls, parameters, elen):
         raise TypeError(f"Too {'many' if alen > elen else 'few'} arguments for {cls};"
                         f" actual {alen}, expected {elen}")
 
+def _unpack_args(args):
+    newargs = []
+    for arg in args:
+        subargs = getattr(arg, '__typing_unpacked_tuple_args__', None)
+        if subargs is not None and not (subargs and subargs[-1] is ...):
+            newargs.extend(subargs)
+        else:
+            newargs.append(arg)
+    return newargs
+
 def _prepare_paramspec_params(cls, params):
     """Prepares the parameters for a Generic containing ParamSpec
     variables (internal helper).
@@ -892,12 +902,8 @@ class ForwardRef(_Final, _root=True):
 
 
 def _is_unpacked_typevartuple(x: Any) -> bool:
-    return (
-            isinstance(x, _UnpackGenericAlias)
-            # If x is Unpack[tuple[...]], __parameters__ will be empty.
-            and x.__parameters__
-            and isinstance(x.__parameters__[0], TypeVarTuple)
-    )
+    return ((not isinstance(x, type)) and
+            getattr(x, '__typing_is_unpacked_typevartuple__', False))
 
 
 def _is_typevar_like(x: Any) -> bool:
@@ -1010,7 +1016,8 @@ class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
     def __typing_subst__(self, arg):
         msg = "Parameters to generic types must be types."
         arg = _type_check(arg, msg, is_argument=True)
-        if (isinstance(arg, _GenericAlias) and arg.__origin__ is Unpack):
+        if ((isinstance(arg, _GenericAlias) and arg.__origin__ is Unpack) or
+            (isinstance(arg, GenericAlias) and getattr(arg, '__unpacked__', False))):
             raise TypeError(f"{arg} is not valid as type argument")
         return arg
 
@@ -1369,19 +1376,17 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         if self.__origin__ in (Generic, Protocol):
             # Can't subscript Generic[...] or Protocol[...].
             raise TypeError(f"Cannot subscript already-subscripted {self}")
+        if not self.__parameters__:
+            raise TypeError(f"{self} is not a generic class")
 
         # Preprocess `args`.
         if not isinstance(args, tuple):
             args = (args,)
         args = tuple(_type_convert(p) for p in args)
+        args = _unpack_args(args)
         if (self._paramspec_tvars
                 and any(isinstance(t, ParamSpec) for t in self.__parameters__)):
             args = _prepare_paramspec_params(self, args)
-        elif not any(isinstance(p, TypeVarTuple) for p in self.__parameters__):
-            # We only run this if there are no TypeVarTuples, because we
-            # don't check variadic generic arity at runtime (to reduce
-            # complexity of typing.py).
-            _check_generic(self, args, len(self.__parameters__))
 
         new_args = self._determine_new_args(args)
         r = self.copy_with(new_args)
@@ -1405,16 +1410,28 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         params = self.__parameters__
         # In the example above, this would be {T3: str}
         new_arg_by_param = {}
+        typevartuple_index = None
         for i, param in enumerate(params):
             if isinstance(param, TypeVarTuple):
-                j = len(args) - (len(params) - i - 1)
-                if j < i:
-                    raise TypeError(f"Too few arguments for {self}")
-                new_arg_by_param.update(zip(params[:i], args[:i]))
-                new_arg_by_param[param] = args[i: j]
-                new_arg_by_param.update(zip(params[i + 1:], args[j:]))
-                break
+                if typevartuple_index is not None:
+                    raise TypeError(f"More than one TypeVarTuple parameter in {self}")
+                typevartuple_index = i
+
+        alen = len(args)
+        plen = len(params)
+        if typevartuple_index is not None:
+            i = typevartuple_index
+            j = alen - (plen - i - 1)
+            if j < i:
+                raise TypeError(f"Too few arguments for {self};"
+                                f" actual {alen}, expected at least {plen-1}")
+            new_arg_by_param.update(zip(params[:i], args[:i]))
+            new_arg_by_param[params[i]] = tuple(args[i: j])
+            new_arg_by_param.update(zip(params[i + 1:], args[j:]))
         else:
+            if alen != plen:
+                raise TypeError(f"Too {'many' if alen > plen else 'few'} arguments for {self};"
+                                f" actual {alen}, expected {plen}")
             new_arg_by_param.update(zip(params, args))
 
         new_args = []
@@ -1722,14 +1739,25 @@ class _UnpackGenericAlias(_GenericAlias, _root=True):
         return '*' + repr(self.__args__[0])
 
     def __getitem__(self, args):
-        if self.__typing_unpacked__():
+        if self.__typing_is_unpacked_typevartuple__:
             return args
         return super().__getitem__(args)
 
-    def __typing_unpacked__(self):
-        # If x is Unpack[tuple[...]], __parameters__ will be empty.
-        return bool(self.__parameters__ and
-                    isinstance(self.__parameters__[0], TypeVarTuple))
+    @property
+    def __typing_unpacked_tuple_args__(self):
+        assert self.__origin__ is Unpack
+        assert len(self.__args__) == 1
+        arg, = self.__args__
+        if isinstance(arg, _GenericAlias):
+            assert arg.__origin__ is tuple
+            return arg.__args__
+        return None
+
+    @property
+    def __typing_is_unpacked_typevartuple__(self):
+        assert self.__origin__ is Unpack
+        assert len(self.__args__) == 1
+        return isinstance(self.__args__[0], TypeVarTuple)
 
 
 class Generic:
