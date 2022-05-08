@@ -21,6 +21,8 @@ from test.support import threading_helper
 
 
 test.support.requires("network")
+test.support.requires_working_socket(module=True)
+
 
 TEST_STR = b"hello world\n"
 HOST = socket_helper.HOST
