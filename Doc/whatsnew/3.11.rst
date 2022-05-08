@@ -1217,6 +1217,61 @@ Deprecated
   (Contributed by Alex Waygood in :gh:`92332`.)
 
 
+Pending Removal in Python 3.12
+==============================
+
+The following APIs have been deprecated in earlier Python releases,
+and will be removed in Python 3.12.
+
+Python API:
+
+* :class:`pkgutil.ImpImporter`
+* :class:`pkgutil.ImpLoader`
+* :envvar:`PYTHONTHREADDEBUG`
+* :func:`importlib.find_loader`
+* :func:`importlib.util.module_for_loader`
+* :func:`importlib.util.set_loader_wrapper`
+* :func:`importlib.util.set_package_wrapper`
+* :meth:`importlib.abc.Loader.module_repr`
+* :meth:`importlib.abc.Loadermodule_repr`
+* :meth:`importlib.abc.MetaPathFinder.find_module`
+* :meth:`importlib.abc.MetaPathFinder.find_module`
+* :meth:`importlib.abc.PathEntryFinder.find_loader`
+* :meth:`importlib.abc.PathEntryFinder.find_module`
+* :meth:`importlib.machinery.BuiltinImporter.find_module`
+* :meth:`importlib.machinery.BuiltinLoader.module_repr`
+* :meth:`importlib.machinery.FileFinder.find_loader`
+* :meth:`importlib.machinery.FileFinder.find_module`
+* :meth:`importlib.machinery.FrozenImporter.find_module`
+* :meth:`importlib.machinery.FrozenLoader.module_repr`
+* :meth:`importlib.machinery.PathFinder.find_module`
+* :meth:`importlib.machinery.WindowsRegistryFinder.find_module`
+* :meth:`pathlib.Path.link_to`
+* The entire :ref:`distutils namespace <distutils-deprecated>`
+* :func:`cgi.log`
+* :func:`sqlite3.OptimizedUnicode`
+* :func:`sqlite3.enable_shared_cache`
+
+C API:
+
+* :c:func:`PyUnicode_AS_DATA`
+* :c:func:`PyUnicode_AS_UNICODE`
+* :c:func:`PyUnicode_AsUnicodeAndSize`
+* :c:func:`PyUnicode_AsUnicode`
+* :c:func:`PyUnicode_FromUnicode`
+* :c:func:`PyUnicode_GET_DATA_SIZE`
+* :c:func:`PyUnicode_GET_SIZE`
+* :c:func:`PyUnicode_GetSize`
+* :c:func:`PyUnicode_IS_COMPACT`
+* :c:func:`PyUnicode_IS_READY`
+* :c:func:`PyUnicode_READY`
+* :c:func:`Py_UNICODE_WSTR_LENGTH`
+* :c:func:`_PyUnicode_AsUnicode`
+* :c:macro:`PyUnicode_WCHAR_KIND`
+* :c:type:`PyUnicodeObject`
+* :c:func:`PyUnicode_InternImmortal()`
+
+
 Removed
 =======
 

@@ -2573,16 +2573,6 @@ The representation of bytes objects uses the literal format (``b'...'``)
 since it is often more useful than e.g. ``bytes([46, 46, 46])``.  You can
 always convert a bytes object into a list of integers using ``list(b)``.
 
-.. note::
-   For Python 2.x users: In the Python 2.x series, a variety of implicit
-   conversions between 8-bit strings (the closest thing 2.x offers to a
-   built-in binary data type) and Unicode strings were permitted. This was a
-   backwards compatibility workaround to account for the fact that Python
-   originally only supported 8-bit text, and Unicode text was a later
-   addition. In Python 3.x, those implicit conversions are gone - conversions
-   between 8-bit binary data and Unicode text must be explicit, and bytes and
-   string objects will always compare unequal.
-
 
 .. _typebytearray:
 

@@ -35,23 +35,20 @@ hasnargs = [] # unused
 opmap = {}
 opname = ['<%r>' % (op,) for op in range(256)]
 
-_inline_cache_entries = [0] * 256
-
-def def_op(name, op, entries=0):
+def def_op(name, op):
     opname[op] = name
     opmap[name] = op
-    _inline_cache_entries[op] = entries
 
-def name_op(name, op, entries=0):
-    def_op(name, op, entries)
+def name_op(name, op):
+    def_op(name, op)
     hasname.append(op)
 
-def jrel_op(name, op, entries=0):
-    def_op(name, op, entries)
+def jrel_op(name, op):
+    def_op(name, op)
     hasjrel.append(op)
 
-def jabs_op(name, op, entries=0):
-    def_op(name, op, entries)
+def jabs_op(name, op):
+    def_op(name, op)
     hasjabs.append(op)
 
 # Instruction opcodes for compiled code
@@ -68,7 +65,7 @@ def_op('UNARY_NOT', 12)
 
 def_op('UNARY_INVERT', 15)
 
-def_op('BINARY_SUBSCR', 25, 4)
+def_op('BINARY_SUBSCR', 25)
 
 def_op('GET_LEN', 30)
 def_op('MATCH_MAPPING', 31)
@@ -86,7 +83,7 @@ def_op('BEFORE_ASYNC_WITH', 52)
 def_op('BEFORE_WITH', 53)
 def_op('END_ASYNC_FOR', 54)
 
-def_op('STORE_SUBSCR', 60, 1)
+def_op('STORE_SUBSCR', 60)
 def_op('DELETE_SUBSCR', 61)
 
 def_op('GET_ITER', 68)
@@ -110,10 +107,10 @@ HAVE_ARGUMENT = 90              # Opcodes from here have an argument:
 
 name_op('STORE_NAME', 90)       # Index in name list
 name_op('DELETE_NAME', 91)      # ""
-def_op('UNPACK_SEQUENCE', 92, 1)   # Number of tuple items
+def_op('UNPACK_SEQUENCE', 92)   # Number of tuple items
 jrel_op('FOR_ITER', 93)
 def_op('UNPACK_EX', 94)
-name_op('STORE_ATTR', 95, 4)       # Index in name list
+name_op('STORE_ATTR', 95)       # Index in name list
 name_op('DELETE_ATTR', 96)      # ""
 name_op('STORE_GLOBAL', 97)     # ""
 name_op('DELETE_GLOBAL', 98)    # ""
@@ -125,8 +122,8 @@ def_op('BUILD_TUPLE', 102)      # Number of tuple items
 def_op('BUILD_LIST', 103)       # Number of list items
 def_op('BUILD_SET', 104)        # Number of set items
 def_op('BUILD_MAP', 105)        # Number of dict entries
-name_op('LOAD_ATTR', 106, 4)       # Index in name list
-def_op('COMPARE_OP', 107, 2)       # Comparison operator
+name_op('LOAD_ATTR', 106)       # Index in name list
+def_op('COMPARE_OP', 107)       # Comparison operator
 hascompare.append(107)
 name_op('IMPORT_NAME', 108)     # Index in name list
 name_op('IMPORT_FROM', 109)     # Index in name list
@@ -135,12 +132,12 @@ jrel_op('JUMP_IF_FALSE_OR_POP', 111) # Number of words to skip
 jrel_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
 jrel_op('POP_JUMP_FORWARD_IF_FALSE', 114)
 jrel_op('POP_JUMP_FORWARD_IF_TRUE', 115)
-name_op('LOAD_GLOBAL', 116, 5)     # Index in name list
+name_op('LOAD_GLOBAL', 116)     # Index in name list
 def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 def_op('COPY', 120)
-def_op('BINARY_OP', 122, 1)
+def_op('BINARY_OP', 122)
 jrel_op('SEND', 123) # Number of bytes to skip
 def_op('LOAD_FAST', 124)        # Local variable number
 haslocal.append(124)
@@ -185,15 +182,15 @@ def_op('FORMAT_VALUE', 155)
 def_op('BUILD_CONST_KEY_MAP', 156)
 def_op('BUILD_STRING', 157)
 
-name_op('LOAD_METHOD', 160, 10)
+name_op('LOAD_METHOD', 160)
 
 def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
-def_op('PRECALL', 166, 1)
+def_op('PRECALL', 166)
 
-def_op('CALL', 171, 4)
+def_op('CALL', 171)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
 
@@ -351,4 +348,60 @@ _specialization_stats = [
     "deferred",
     "miss",
     "deopt",
+]
+
+_cache_format = {
+    "LOAD_GLOBAL": {
+        "counter": 1,
+        "index": 1,
+        "module_keys_version": 2,
+        "builtin_keys_version": 1,
+    },
+    "BINARY_OP": {
+        "counter": 1,
+    },
+    "UNPACK_SEQUENCE": {
+        "counter": 1,
+    },
+    "COMPARE_OP": {
+        "counter": 1,
+        "mask": 1,
+    },
+    "BINARY_SUBSCR": {
+        "counter": 1,
+        "type_version": 2,
+        "func_version": 1,
+    },
+    "LOAD_ATTR": {
+        "counter": 1,
+        "version": 2,
+        "index": 1,
+    },
+    "STORE_ATTR": {
+        "counter": 1,
+        "version": 2,
+        "index": 1,
+    },
+    "LOAD_METHOD": {
+        "counter": 1,
+        "type_version": 2,
+        "dict_offset": 1,
+        "keys_version": 2,
+        "descr": 4,
+    },
+    "CALL": {
+        "counter": 1,
+        "func_version": 2,
+        "min_args": 1,
+    },
+    "PRECALL": {
+        "counter": 1,
+    },
+    "STORE_SUBSCR": {
+        "counter": 1,
+    },
+}
+
+_inline_cache_entries = [
+    sum(_cache_format.get(opname[opcode], {}).values()) for opcode in range(256)
 ]
