@@ -4540,14 +4540,13 @@ class ThreadedTests(unittest.TestCase):
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
         client_context2.maximum_version = ssl.TLSVersion.TLSv1_2
 
-        server = ThreadedEchoServer(context=server_context, chatty=False)
-        with server:
+        with Server(context=server_context, chatty=False, client_count=4) as address:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
                 # session is None before handshake
                 self.assertEqual(s.session, None)
                 self.assertEqual(s.session_reused, None)
-                s.connect((HOST, server.port))
+                s.connect(address)
                 session = s.session
                 self.assertTrue(session)
                 with self.assertRaises(TypeError) as e:
@@ -4556,7 +4555,7 @@ class ThreadedTests(unittest.TestCase):
 
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+                s.connect(address)
                 # cannot set session after handshake
                 with self.assertRaises(ValueError) as e:
                     s.session = session
@@ -4568,7 +4567,7 @@ class ThreadedTests(unittest.TestCase):
                 # can set session before handshake and before the
                 # connection was established
                 s.session = session
-                s.connect((HOST, server.port))
+                s.connect(address)
                 self.assertEqual(s.session.id, session.id)
                 self.assertEqual(s.session, session)
                 self.assertEqual(s.session_reused, True)
@@ -4578,7 +4577,7 @@ class ThreadedTests(unittest.TestCase):
                 # cannot re-use session with a different SSLContext
                 with self.assertRaises(ValueError) as e:
                     s.session = session
-                    s.connect((HOST, server.port))
+                    s.connect(address)
                 self.assertEqual(str(e.exception),
                                  'Session refers to a different SSLContext.')
 
