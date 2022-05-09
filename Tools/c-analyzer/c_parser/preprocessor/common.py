@@ -1,5 +1,5 @@
 import contextlib
-import distutils.ccompiler
+import _distutils.ccompiler
 import logging
 import shlex
 import subprocess
@@ -72,7 +72,7 @@ def _build_argv(
     executable=None,
     compiler=None,
 ):
-    compiler = distutils.ccompiler.new_compiler(
+    compiler = _distutils.ccompiler.new_compiler(
         compiler=compiler or tool,
     )
     if executable:

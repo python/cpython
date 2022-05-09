@@ -1,5 +1,5 @@
 import contextlib
-import distutils.ccompiler
+import _distutils.ccompiler
 import logging
 import os.path
 
@@ -156,7 +156,7 @@ def handling_errors(ignore_exc=None, *, log_err=None):
 # tools
 
 _COMPILERS = {
-    # matching distutils.ccompiler.compiler_class:
+    # matching _distutils.ccompiler.compiler_class:
     'unix': _gcc.preprocess,
     'msvc': None,
     'cygwin': None,
@@ -170,7 +170,7 @@ _COMPILERS = {
 
 def _get_preprocessor(tool):
     if tool is True:
-        tool = distutils.ccompiler.get_default_compiler()
+        tool = _distutils.ccompiler.get_default_compiler()
     preprocess = _COMPILERS.get(tool)
     if preprocess is None:
         raise ValueError(f'unsupported tool {tool}')
