@@ -1761,7 +1761,7 @@ test case
         self.assertIsNone(value)
 
     def testDeprecatedFailMethods(self):
-        """Test that the deprecated fail* methods get removed in 3.11"""
+        """Test that the deprecated fail* methods get removed in 3.12"""
         deprecated_names = [
             'failIfEqual', 'failUnlessEqual', 'failUnlessAlmostEqual',
             'failIfAlmostEqual', 'failUnless', 'failUnlessRaises', 'failIf',
