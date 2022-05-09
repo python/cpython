@@ -754,8 +754,8 @@ is printed.  Now try changing the first line to be:
 
 Re-executing the command should now print the latest Python 3.x information.
 As with the above command-line examples, you can specify a more explicit
-version qualifier.  Assuming you have Python |version| installed, try changing
-the first line to "#! python|version|" and you should find the |version|
+version qualifier.  Assuming you have Python 3.7 installed, try changing
+the first line to ``#! python3.7`` and you should find the |version|
 version information printed.
 
 Note that unlike interactive use, a bare "python" will use the latest
@@ -903,19 +903,19 @@ Examples:
   ``python2`` will use the latest Python 2.x version installed and
   the command ``python3`` will use the latest Python 3.x installed.
 
-* The commands ``python3.11`` and ``python3.7`` will not consult any
+* The command ``python3.7`` will not consult any
   options at all as the versions are fully specified.
 
 * If ``PY_PYTHON=3``, the commands ``python`` and ``python3`` will both use
   the latest installed Python 3 version.
 
-* If ``PY_PYTHON=3.11-32``, the command ``python`` will use the 32-bit
-  implementation of 3.11 whereas the command ``python3`` will use the latest
+* If ``PY_PYTHON=3.7-32``, the command ``python`` will use the 32-bit
+  implementation of 3.7 whereas the command ``python3`` will use the latest
   installed Python (PY_PYTHON was not considered at all as a major
   version was specified.)
 
-* If ``PY_PYTHON=3`` and ``PY_PYTHON3=3.11``, the commands
-  ``python`` and ``python3`` will both use specifically 3.11
+* If ``PY_PYTHON=3`` and ``PY_PYTHON3=3.7``, the commands
+  ``python`` and ``python3`` will both use specifically 3.7
 
 In addition to environment variables, the same settings can be configured
 in the .INI file used by the launcher.  The section in the INI file is
@@ -926,21 +926,21 @@ an environment variable will override things specified in the INI file.
 
 For example:
 
-* Setting ``PY_PYTHON=3.11`` is equivalent to the INI file containing:
+* Setting ``PY_PYTHON=3.7`` is equivalent to the INI file containing:
 
 .. code-block:: ini
 
   [defaults]
-  python=3.11
+  python=3.7
 
-* Setting ``PY_PYTHON=3`` and ``PY_PYTHON3=3.11`` is equivalent to the INI file
+* Setting ``PY_PYTHON=3`` and ``PY_PYTHON3=3.7`` is equivalent to the INI file
   containing:
 
 .. code-block:: ini
 
   [defaults]
   python=3
-  python3=3.11
+  python3=3.7
 
 Diagnostics
 -----------
@@ -1168,7 +1168,7 @@ latest release's source or just grab a fresh `checkout
 <https://devguide.python.org/setup/#getting-the-source-code>`_.
 
 The source tree contains a build solution and project files for Microsoft
-Visual Studio 2017, which is the compiler used to build the official Python
+Visual Studio, which is the compiler used to build the official Python
 releases. These files are in the :file:`PCbuild` directory.
 
 Check :file:`PCbuild/readme.txt` for general information on the build process.

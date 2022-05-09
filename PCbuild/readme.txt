@@ -13,12 +13,10 @@ Quick Start Guide
 Building Python using Microsoft Visual C++
 ------------------------------------------
 
-This directory is used to build CPython for Microsoft Windows NT version
-6.3 or higher (Windows 8.1/Windows Server 2012 or later) on 32- and 64-
+This directory is used to build CPython for Microsoft Windows on 32- and 64-
 bit platforms.  Using this directory requires an installation of
-Microsoft Visual Studio 2017 (MSVC 14.1) with the *Python workload* and
-its optional *Python native development* component selected. (For
-command-line builds, Visual Studio 2015 may also be used.)
+Microsoft Visual Studio (MSVC) with the *Python workload* and
+its optional *Python native development* component selected.
 
 Building from the command line is recommended in order to obtain any
 external dependencies. To build, simply run the "build.bat" script without
