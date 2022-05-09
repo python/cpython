@@ -349,7 +349,7 @@ Common commands: (see '--help-commands' for more)
         check_environ()
 
         # Where to look for the system-wide Distutils config file
-        sys_dir = os.path.dirname(sys.modules['distutils'].__file__)
+        sys_dir = os.path.dirname(sys.modules['_distutils'].__file__)
 
         # Look for the system config file
         sys_file = os.path.join(sys_dir, "distutils.cfg")
@@ -799,8 +799,8 @@ Common commands: (see '--help-commands' for more)
             if pkgs is None:
                 pkgs = ''
             pkgs = [pkg.strip() for pkg in pkgs.split(',') if pkg != '']
-            if "distutils.command" not in pkgs:
-                pkgs.insert(0, "distutils.command")
+            if "_distutils.command" not in pkgs:
+                pkgs.insert(0, "_distutils.command")
             self.command_packages = pkgs
         return pkgs
 
@@ -809,7 +809,7 @@ Common commands: (see '--help-commands' for more)
         'command'.  First we check the 'cmdclass' dictionary; if the
         command is mentioned there, we fetch the class object from the
         dictionary and return it.  Otherwise we load the command module
-        ("distutils.command." + command) and fetch the command class from
+        ("_distutils.command." + command) and fetch the command class from
         the module.  The loaded class is also stored in 'cmdclass'
         to speed future calls to 'get_command_class()'.
 
