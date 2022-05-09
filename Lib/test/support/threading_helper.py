@@ -287,6 +287,7 @@ class Server:
         """
         server_socket = socket()
         self._port = bind_port(server_socket)
+        server_socket.listen(1)
         self._result = _thread_pool.submit(self._thread_func, server_socket,
                                            client_func, client_count,
                                            args, kwargs)
@@ -294,8 +295,6 @@ class Server:
 
     def _thread_func(self, server_socket, client_func, client_count, args, kwargs):
         with server_socket:
-            server_socket.settimeout(1.0)
-            server_socket.listen(1)
             results = []
             for i in range(client_count):
                 client, peer_address = server_socket.accept()
