@@ -5236,11 +5236,6 @@ class TestParseKnownArgs(TestCase):
         args = parser.parse_args([])
         self.assertEqual(NS(x=[]), args)
 
-    def test_zero_or_more_default(self):
-        parser = argparse.ArgumentParser()
-        parser.add_argument('x', nargs='*', default=['x'], choices=('x', 'y'))
-        args = parser.parse_args([])
-        self.assertEqual(NS(x=['x']), args)
 
 # ===========================
 # parse_intermixed_args tests
