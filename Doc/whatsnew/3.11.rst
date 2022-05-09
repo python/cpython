@@ -1501,37 +1501,6 @@ Build Changes
 C API Changes
 =============
 
-* :c:func:`PyErr_SetExcInfo()` no longer uses the ``type`` and ``traceback``
-  arguments, the interpreter now derives those values from the exception
-  instance (the ``value`` argument). The function still steals references
-  of all three arguments.
-  (Contributed by Irit Katriel in :issue:`45711`.)
-
-* :c:func:`PyErr_GetExcInfo()` now derives the ``type`` and ``traceback``
-  fields of the result from the exception instance (the ``value`` field).
-  (Contributed by Irit Katriel in :issue:`45711`.)
-
-* :c:type:`_frozen` has a new ``is_package`` field to indicate whether
-  or not the frozen module is a package.  Previously, a negative value
-  in the ``size`` field was the indicator.  Now only non-negative values
-  be used for ``size``.
-  (Contributed by Kumar Aditya in :issue:`46608`.)
-
-* :c:func:`_PyFrameEvalFunction` now takes ``_PyInterpreterFrame*``
-  as its second parameter, instead of ``PyFrameObject*``.
-  See :pep:`523` for more details of how to use this function pointer type.
-
-* :c:func:`PyCode_New` and :c:func:`PyCode_NewWithPosOnlyArgs` now take
-  an additional ``exception_table`` argument.
-  Using these functions should be avoided, if at all possible.
-  To get a custom code object: create a code object using the compiler,
-  then get a modified version with the ``replace`` method.
-
-* :c:type:`PyCodeObject` no longer has a ``co_code`` field.  Instead,
-  use ``PyObject_GetAttrString(code_object, "co_code")`` or
-  :c:func:`PyCode_GetCode` to get the underlying bytes object.
-  (Contributed by Brandt Bucher in :issue:`46841` and Ken Jin in :gh:`92154`.)
-
 New Features
 ------------
 
@@ -1597,6 +1566,37 @@ New Features
 
 Porting to Python 3.11
 ----------------------
+
+* :c:func:`PyErr_SetExcInfo()` no longer uses the ``type`` and ``traceback``
+  arguments, the interpreter now derives those values from the exception
+  instance (the ``value`` argument). The function still steals references
+  of all three arguments.
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
+* :c:func:`PyErr_GetExcInfo()` now derives the ``type`` and ``traceback``
+  fields of the result from the exception instance (the ``value`` field).
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
+* :c:type:`_frozen` has a new ``is_package`` field to indicate whether
+  or not the frozen module is a package.  Previously, a negative value
+  in the ``size`` field was the indicator.  Now only non-negative values
+  be used for ``size``.
+  (Contributed by Kumar Aditya in :issue:`46608`.)
+
+* :c:func:`_PyFrameEvalFunction` now takes ``_PyInterpreterFrame*``
+  as its second parameter, instead of ``PyFrameObject*``.
+  See :pep:`523` for more details of how to use this function pointer type.
+
+* :c:func:`PyCode_New` and :c:func:`PyCode_NewWithPosOnlyArgs` now take
+  an additional ``exception_table`` argument.
+  Using these functions should be avoided, if at all possible.
+  To get a custom code object: create a code object using the compiler,
+  then get a modified version with the ``replace`` method.
+
+* :c:type:`PyCodeObject` no longer has a ``co_code`` field.  Instead,
+  use ``PyObject_GetAttrString(code_object, "co_code")`` or
+  :c:func:`PyCode_GetCode` to get the underlying bytes object.
+  (Contributed by Brandt Bucher in :issue:`46841` and Ken Jin in :gh:`92154`.)
 
 * The old trashcan macros (``Py_TRASHCAN_SAFE_BEGIN``/``Py_TRASHCAN_SAFE_END``)
   are now deprecated. They should be replaced by the new macros
