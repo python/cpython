@@ -118,7 +118,6 @@ Removed
    * :c:func:`PyUnicode_GET_SIZE`
    * :c:func:`PyUnicode_GetSize`
    * :c:func:`PyUnicode_GET_DATA_SIZE`
-   * :c:func:`PyUnicode_READY`
 
 
 Porting to Python 3.12

@@ -85,6 +85,16 @@ access to internal read-only data of Unicode objects:
    subtype.  This function always succeeds.
 
 
+.. c:function:: int PyUnicode_READY(PyObject *o)
+
+   Returns ``0``. This API is kept only for backward compatibility.
+
+   .. versionadded:: 3.3
+
+   .. deprecated:: 3.10
+      This API do nothing since Python 3.12. Please remove code using this function.
+
+
 .. c:function:: Py_ssize_t PyUnicode_GET_LENGTH(PyObject *o)
 
    Return the length of the Unicode string, in code points.  *o* has to be a
@@ -100,8 +110,7 @@ access to internal read-only data of Unicode objects:
    Return a pointer to the canonical representation cast to UCS1, UCS2 or UCS4
    integer types for direct character access.  No checks are performed if the
    canonical representation has the correct character size; use
-   :c:func:`PyUnicode_KIND` to select the right macro.  Make sure
-   :c:func:`PyUnicode_READY` has been called before accessing this.
+   :c:func:`PyUnicode_KIND` to select the right macro.
 
    .. versionadded:: 3.3
 
