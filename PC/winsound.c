@@ -96,7 +96,7 @@ winsound_PlaySound_impl(PyObject *module, PyObject *sound, int flags)
         wsound = (wchar_t *)view.buf;
     } else if (PyBytes_Check(sound)) {
         PyErr_Format(PyExc_TypeError,
-                     "'sound' must be str, os.PathLike, or None; not '%s'",
+                     "'sound' must be str, os.PathLike, or None, not '%s'",
                      Py_TYPE(sound)->tp_name);
         return NULL;
     } else {
