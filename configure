@@ -654,10 +654,10 @@ MODULE_BINASCII_FALSE
 MODULE_BINASCII_TRUE
 MODULE_ZLIB_FALSE
 MODULE_ZLIB_TRUE
-MODULE__TKINTER_FALSE
-MODULE__TKINTER_TRUE
 MODULE__UUID_FALSE
 MODULE__UUID_TRUE
+MODULE__TKINTER_FALSE
+MODULE__TKINTER_TRUE
 MODULE__SQLITE3_FALSE
 MODULE__SQLITE3_TRUE
 MODULE_NIS_FALSE
@@ -24197,40 +24197,6 @@ fi
 $as_echo "$py_cv_module__sqlite3" >&6; }
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _uuid" >&5
-$as_echo_n "checking for stdlib extension module _uuid... " >&6; }
-        if test "$py_cv_module__uuid" != "n/a"; then :
-
-    if true; then :
-  if test "$have_uuid" = "yes"; then :
-  py_cv_module__uuid=yes
-else
-  py_cv_module__uuid=missing
-fi
-else
-  py_cv_module__uuid=disabled
-fi
-
-fi
-  as_fn_append MODULE_BLOCK "MODULE__UUID=$py_cv_module__uuid$as_nl"
-  if test "x$py_cv_module__uuid" = xyes; then :
-
-    as_fn_append MODULE_BLOCK "MODULE__UUID_CFLAGS=$LIBUUID_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__UUID_LDFLAGS=$LIBUUID_LIBS$as_nl"
-
-fi
-   if test "$py_cv_module__uuid" = yes; then
-  MODULE__UUID_TRUE=
-  MODULE__UUID_FALSE='#'
-else
-  MODULE__UUID_TRUE='#'
-  MODULE__UUID_FALSE=
-fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__uuid" >&5
-$as_echo "$py_cv_module__uuid" >&6; }
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _tkinter" >&5
 $as_echo_n "checking for stdlib extension module _tkinter... " >&6; }
         if test "$py_cv_module__tkinter" != "n/a"; then :
@@ -24263,6 +24229,40 @@ fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__tkinter" >&5
 $as_echo "$py_cv_module__tkinter" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _uuid" >&5
+$as_echo_n "checking for stdlib extension module _uuid... " >&6; }
+        if test "$py_cv_module__uuid" != "n/a"; then :
+
+    if true; then :
+  if test "$have_uuid" = "yes"; then :
+  py_cv_module__uuid=yes
+else
+  py_cv_module__uuid=missing
+fi
+else
+  py_cv_module__uuid=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__UUID=$py_cv_module__uuid$as_nl"
+  if test "x$py_cv_module__uuid" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__UUID_CFLAGS=$LIBUUID_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__UUID_LDFLAGS=$LIBUUID_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module__uuid" = yes; then
+  MODULE__UUID_TRUE=
+  MODULE__UUID_FALSE='#'
+else
+  MODULE__UUID_TRUE='#'
+  MODULE__UUID_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__uuid" >&5
+$as_echo "$py_cv_module__uuid" >&6; }
 
 
 
@@ -25121,12 +25121,12 @@ if test -z "${MODULE__SQLITE3_TRUE}" && test -z "${MODULE__SQLITE3_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__SQLITE3\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${MODULE__UUID_TRUE}" && test -z "${MODULE__UUID_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__UUID\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
 if test -z "${MODULE__TKINTER_TRUE}" && test -z "${MODULE__TKINTER_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TKINTER\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__UUID_TRUE}" && test -z "${MODULE__UUID_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__UUID\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_ZLIB_TRUE}" && test -z "${MODULE_ZLIB_FALSE}"; then
