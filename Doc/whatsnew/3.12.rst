@@ -107,6 +107,18 @@ Deprecated
 Removed
 =======
 
+* Leagcy Unicode APIs has been removed. See :pep:`623` for detail.
+
+   * :c:macro:`PyUnicode_WCHAR_KIND`
+   * :c:func:`PyUnicode_AS_UNICODE`
+   * :c:func:`PyUnicode_AsUnicode`
+   * :c:func:`PyUnicode_AsUnicodeAndSize`
+   * :c:func:`PyUnicode_AS_DATA`
+   * :c:func:`PyUnicode_FromUnicode`
+   * :c:func:`PyUnicode_GET_SIZE`
+   * :c:func:`PyUnicode_GetSize`
+   * :c:func:`PyUnicode_GET_DATA_SIZE`
+   * :c:func:`PyUnicode_READY`
 
 
 Porting to Python 3.12
@@ -124,3 +136,10 @@ Changes in the Python API
   The group name in bytes patterns and replacement strings can now only
   contain ASCII letters and digits and underscore.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
+
+
+Changes in the Python/C API
+---------------------------
+
+* Legacy Unicode APIs based on ``Py_UNICODE*`` representation has been removed.
+  Please migrate to APIs based on UTF-8 or ``wchar_t*``.
