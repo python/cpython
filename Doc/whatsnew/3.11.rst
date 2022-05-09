@@ -434,6 +434,8 @@ asyncio
 datetime
 --------
 
+* Add :attr:`datetime.UTC`, a convenience alias for
+  :attr:`datetime.timezone.utc`. (Contributed by Kabir Kwatra in :gh:`91973`.)
 * :meth:`datetime.date.fromisoformat`, :meth:`datetime.time.fromisoformat` and
   :meth:`datetime.datetime.fromisoformat` can now be used to parse most ISO 8601
   formats (barring only those that support fractional hours and minutes).
