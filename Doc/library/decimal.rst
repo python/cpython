@@ -378,7 +378,7 @@ Decimal objects
    ``Decimal(0.1)`` is not the same as ``Decimal('0.1')``.
    Since 0.1 is not exactly representable in binary floating point, the
    value is stored as the nearest representable value which is
-   ``0x1.999999999999ap-4``.
+   ``0.1000000000000000055511151231257827021181583404541015625``.
 
    .. doctest::
 
