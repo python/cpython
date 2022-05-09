@@ -41,7 +41,7 @@ __name__ = "collections.abc"
 # are not included on this list.
 bytes_iterator = type(iter(b''))
 bytearray_iterator = type(iter(bytearray()))
-callable_iterator = type(iter(lambda: None, None))
+callable_iterator = type(iter(len, None))
 dict_keyiterator = type(iter({}.keys()))
 dict_valueiterator = type(iter({}.values()))
 dict_itemiterator = type(iter({}.items()))
