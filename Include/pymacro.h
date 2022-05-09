@@ -10,6 +10,13 @@
 #  define static_assert _Static_assert
 #endif
 
+// static_assert isd efined in GLIB from version 2.16. Before it requires
+// compiler support (gcc >= 4.6) and is called _Static_assert.
+#if defined(__GLIBC__) && __GLIBC__ <= 2 && __GLIBC_MINOR__ <= 16
+#  define static_assert _Static_assert
+#endif
++
+
 /* Minimum value between x and y */
 #define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))
 
