@@ -143,11 +143,10 @@ although there is currently no date scheduled for their removal.
   for example ``0in x``, ``1or x``, ``0if 1else 2``.  It allows confusing
   and ambiguous expressions like ``[0x1for x in y]`` (which can be
   interpreted as ``[0x1 for x in y]`` or ``[0x1f or x in y]``).
-  A deprecation warning is raised if the numeric literal is
+  A syntax warning is raised if the numeric literal is
   immediately followed by one of keywords :keyword:`and`, :keyword:`else`,
   :keyword:`for`, :keyword:`if`, :keyword:`in`, :keyword:`is` and :keyword:`or`.
-  In future releases it will be changed to syntax warning, and finally to
-  syntax error. (:issue:`43833`)
+  In a future release it will be changed to a syntax error. (:issue:`43833`)
 
 
 Removed
