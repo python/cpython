@@ -650,7 +650,7 @@ def median_grouped(data, interval=1.0):
     by exact multiples of *interval*.  This is essential for getting a
     correct result.  The function does not check this precondition.
 
-    Inputs may be any numeric type but will be coerced to a float during
+    Inputs may be any numeric type that can be coerced to a float during
     the interpolation step.
 
     """
