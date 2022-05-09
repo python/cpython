@@ -147,7 +147,10 @@ class WasmTerminal {
             }
         // When input isn't active, add to line buffer
         } else if (!this.activeInput) {
-            this.inputBuffer.addData(data);
+            // Skip non-printable characters
+            if (!(ord === 0x1b || ord == 0x7f || ord < 32)) {
+                this.inputBuffer.addData(data);
+            }
         // TODO: Handle ANSI escape sequences
         } else if (ord === 0x1b) {
         // Handle special characters
