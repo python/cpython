@@ -179,7 +179,7 @@ functions.
 - The interactive shell does not handle copy 'n paste and unicode support
   well.
 - The bundled stdlib is limited. Network-related modules,
-  distutils, multiprocessing, dbm, tests and similar modules
+  multiprocessing, dbm, tests and similar modules
   are not shipped. All other modules are bundled as pre-compiled
   ``pyc`` files.
 - In-memory file system (MEMFS) is not persistent and limited.
