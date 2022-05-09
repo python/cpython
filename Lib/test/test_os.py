@@ -2715,10 +2715,6 @@ class Win32NtTests(unittest.TestCase):
 
         self.assertEqual(0, handle_delta)
 
-<<<<<<< HEAD
-@support.skip_unless_symlink
-=======
-    @support.requires_subprocess()
     def test_stat_unlink_race(self):
         # bpo-46785: the implementation of os.stat() falls back to reading
         # the parent directory if CreateFileW() fails with a permission
@@ -2726,8 +2722,8 @@ class Win32NtTests(unittest.TestCase):
         # directory are subsequently unlinked, or because the volume or
         # share are no longer available, then the original permission error
         # should not be restored.
-        filename =  os_helper.TESTFN
-        self.addCleanup(os_helper.unlink, filename)
+        filename =  support.TESTFN
+        self.addCleanup(support.unlink, filename)
         deadline = time.time() + 5
         command = textwrap.dedent("""\
             import os
@@ -2761,8 +2757,7 @@ class Win32NtTests(unittest.TestCase):
                 proc.terminate()
 
 
-@os_helper.skip_unless_symlink
->>>>>>> 39e6b8ae6a (bpo-46785: Fix race condition between os.stat() and unlink on Windows (GH-31858))
+@support.skip_unless_symlink
 class NonLocalSymlinkTests(unittest.TestCase):
 
     def setUp(self):
