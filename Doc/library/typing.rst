@@ -1978,7 +1978,8 @@ Other concrete types
 
    .. deprecated:: 3.11
       Python 2 is no longer supported, and most type checkers also no longer
-      support type checking Python 2 code. Users should now use
+      support type checking Python 2 code. Removal of the alias is not
+      currently planned, but users are encouraged to use
       :class:`str` instead of ``Text`` wherever possible.
 
 Abstract Base Classes

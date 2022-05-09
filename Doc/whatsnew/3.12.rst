@@ -46,7 +46,7 @@
    This saves the maintainer the effort of going through the Mercurial log
    when researching a change.
 
-This article explains the new features in Python 3.12, compared to 3.10.
+This article explains the new features in Python 3.12, compared to 3.11.
 
 For full details, see the :ref:`changelog <changelog>`.
 
@@ -94,11 +94,6 @@ Optimizations
 
 
 
-Build and C API Changes
-=======================
-
-* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been removed.
-
 Deprecated
 ==========
 
@@ -114,3 +109,35 @@ Porting to Python 3.12
 
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
+
+Changes in the Python API
+-------------------------
+
+* More strict rules are now applied for numerical group references and
+  group names in regular expressions.
+  Only sequence of ASCII digits is now accepted as a numerical reference.
+  The group name in bytes patterns and replacement strings can now only
+  contain ASCII letters and digits and underscore.
+  (Contributed by Serhiy Storchaka in :gh:`91760`.)
+
+
+Build Changes
+=============
+
+
+C API Changes
+=============
+
+New Features
+------------
+
+Porting to Python 3.12
+----------------------
+
+Deprecated
+----------
+
+Removed
+-------
+
+* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been removed.

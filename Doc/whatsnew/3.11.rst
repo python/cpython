@@ -63,7 +63,7 @@ Summary -- Release highlights
    Brevity is key.
 
 - Python 3.11 is up to 10-60% faster than Python 3.10. On average, we measured a
-  1.22x speedup on the standard benchmark suite. See `Faster CPython`_ for details.
+  1.25x speedup on the standard benchmark suite. See `Faster CPython`_ for details.
 
 .. PEP-sized items next.
 
@@ -758,6 +758,18 @@ unicodedata
 * The Unicode database has been updated to version 14.0.0. (:issue:`45190`).
 
 
+unittest
+--------
+
+* Added methods :meth:`~unittest.TestCase.enterContext` and
+  :meth:`~unittest.TestCase.enterClassContext` of class
+  :class:`~unittest.TestCase`, method
+  :meth:`~unittest.IsolatedAsyncioTestCase.enterAsyncContext` of
+  class :class:`~unittest.IsolatedAsyncioTestCase` and function
+  :func:`unittest.enterModuleContext`.
+  (Contributed by Serhiy Storchaka in :issue:`45046`.)
+
+
 venv
 ----
 
@@ -828,7 +840,7 @@ Optimizations
 Faster CPython
 ==============
 
-CPython 3.11 is on average `1.22x faster <https://github.com/faster-cpython/ideas/blob/main/main-vs-310.rst>`_
+CPython 3.11 is on average `25% faster <https://github.com/faster-cpython/ideas/blob/main/main-vs-310.rst>`_
 than CPython 3.10 when measured with the
 `pyperformance <https://github.com/python/pyperformance>`_ benchmark suite,
 and compiled with GCC on Ubuntu Linux. Depending on your workload, the speedup
@@ -930,7 +942,8 @@ and specialization attempts are not too expensive. This allows specialization
 to adapt to new circumstances.
 
 (PEP written by Mark Shannon, with ideas inspired by Stefan Brunthaler.
-See :pep:`659` for more information.)
+See :pep:`659` for more information. Implementation by Mark Shannon and Brandt
+Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
 
 ..
    If I missed out anyone, please add them.
@@ -1488,37 +1501,6 @@ Build Changes
 C API Changes
 =============
 
-* :c:func:`PyErr_SetExcInfo()` no longer uses the ``type`` and ``traceback``
-  arguments, the interpreter now derives those values from the exception
-  instance (the ``value`` argument). The function still steals references
-  of all three arguments.
-  (Contributed by Irit Katriel in :issue:`45711`.)
-
-* :c:func:`PyErr_GetExcInfo()` now derives the ``type`` and ``traceback``
-  fields of the result from the exception instance (the ``value`` field).
-  (Contributed by Irit Katriel in :issue:`45711`.)
-
-* :c:type:`_frozen` has a new ``is_package`` field to indicate whether
-  or not the frozen module is a package.  Previously, a negative value
-  in the ``size`` field was the indicator.  Now only non-negative values
-  be used for ``size``.
-  (Contributed by Kumar Aditya in :issue:`46608`.)
-
-* :c:func:`_PyFrameEvalFunction` now takes ``_PyInterpreterFrame*``
-  as its second parameter, instead of ``PyFrameObject*``.
-  See :pep:`523` for more details of how to use this function pointer type.
-
-* :c:func:`PyCode_New` and :c:func:`PyCode_NewWithPosOnlyArgs` now take
-  an additional ``exception_table`` argument.
-  Using these functions should be avoided, if at all possible.
-  To get a custom code object: create a code object using the compiler,
-  then get a modified version with the ``replace`` method.
-
-* :c:type:`PyCodeObject` no longer has a ``co_code`` field.  Instead,
-  use ``PyObject_GetAttrString(code_object, "co_code")`` or
-  :c:func:`PyCode_GetCode` to get the underlying bytes object.
-  (Contributed by Brandt Bucher in :issue:`46841` and Ken Jin in :gh:`92154`.)
-
 New Features
 ------------
 
@@ -1584,6 +1566,37 @@ New Features
 
 Porting to Python 3.11
 ----------------------
+
+* :c:func:`PyErr_SetExcInfo()` no longer uses the ``type`` and ``traceback``
+  arguments, the interpreter now derives those values from the exception
+  instance (the ``value`` argument). The function still steals references
+  of all three arguments.
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
+* :c:func:`PyErr_GetExcInfo()` now derives the ``type`` and ``traceback``
+  fields of the result from the exception instance (the ``value`` field).
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
+* :c:type:`_frozen` has a new ``is_package`` field to indicate whether
+  or not the frozen module is a package.  Previously, a negative value
+  in the ``size`` field was the indicator.  Now only non-negative values
+  be used for ``size``.
+  (Contributed by Kumar Aditya in :issue:`46608`.)
+
+* :c:func:`_PyFrameEvalFunction` now takes ``_PyInterpreterFrame*``
+  as its second parameter, instead of ``PyFrameObject*``.
+  See :pep:`523` for more details of how to use this function pointer type.
+
+* :c:func:`PyCode_New` and :c:func:`PyCode_NewWithPosOnlyArgs` now take
+  an additional ``exception_table`` argument.
+  Using these functions should be avoided, if at all possible.
+  To get a custom code object: create a code object using the compiler,
+  then get a modified version with the ``replace`` method.
+
+* :c:type:`PyCodeObject` no longer has a ``co_code`` field.  Instead,
+  use ``PyObject_GetAttrString(code_object, "co_code")`` or
+  :c:func:`PyCode_GetCode` to get the underlying bytes object.
+  (Contributed by Brandt Bucher in :issue:`46841` and Ken Jin in :gh:`92154`.)
 
 * The old trashcan macros (``Py_TRASHCAN_SAFE_BEGIN``/``Py_TRASHCAN_SAFE_END``)
   are now deprecated. They should be replaced by the new macros
