@@ -425,7 +425,7 @@ dependants, such as Idle), pip and the Python documentation are not included.
 .. note::
 
     The embedded distribution does not include the `Microsoft C Runtime
-    <https://www.microsoft.com/en-us/download/details.aspx?id=48145>`_ and it is
+    <https://docs.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist#visual-studio-2015-2017-2019-and-2022>`_ and it is
     the responsibility of the application installer to provide this. The
     runtime may have already been installed on a user's system previously or
     automatically via Windows Update, and can be detected by finding
@@ -569,11 +569,11 @@ System variables, you need non-restricted access to your machine
     https://docs.microsoft.com/en-us/windows/win32/procthread/environment-variables
       Overview of environment variables on Windows
 
-    https://technet.microsoft.com/en-us/library/cc754250.aspx
-      The SET command, for temporarily modifying environment variables
+    https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/set_1
+      The ``set`` command, for temporarily modifying environment variables
 
-    https://technet.microsoft.com/en-us/library/cc755104.aspx
-      The SETX command, for permanently modifying environment variables
+    https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/setx
+      The ``setx`` command, for permanently modifying environment variables
 
 
 .. _windows-path-mod:
@@ -1127,13 +1127,14 @@ is a collection of modules for advanced Windows-specific support.  This includes
 utilities for:
 
 * `Component Object Model
-  <https://docs.microsoft.com/en-us/windows/desktop/com/component-object-model--com--portal>`_
+  <https://docs.microsoft.com/en-us/windows/win32/com/component-object-model--com--portal>`_
   (COM)
 * Win32 API calls
 * Registry
 * Event log
-* `Microsoft Foundation Classes <https://msdn.microsoft.com/en-us/library/fe1cf721%28VS.80%29.aspx>`_ (MFC)
-  user interfaces
+* `Microsoft Foundation Classes
+  <https://docs.microsoft.com/en-us/cpp/mfc/mfc-desktop-applications>`_
+  (MFC) user interfaces
 
 `PythonWin <https://web.archive.org/web/20060524042422/
 https://www.python.org/windows/pythonwin/>`_ is a sample MFC application
@@ -1144,7 +1145,7 @@ shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
    `Win32 How Do I...? <http://timgolden.me.uk/python/win32_how_do_i.html>`_
       by Tim Golden
 
-   `Python and COM <http://www.boddie.org.uk/python/COM.html>`_
+   `Python and COM <https://www.boddie.org.uk/python/COM.html>`_
       by David and Paul Boddie
 
 
