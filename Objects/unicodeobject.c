@@ -961,15 +961,6 @@ ensure_unicode(PyObject *obj)
 #include "stringlib/find_max_char.h"
 #include "stringlib/undef.h"
 
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-#include "stringlib/unicodedefs.h"
-#include "stringlib/fastsearch.h"
-#include "stringlib/count.h"
-#include "stringlib/find.h"
-#include "stringlib/undef.h"
-_Py_COMP_DIAG_POP
-
 #undef STRINGLIB_GET_EMPTY
 
 /* --- Unicode Object ----------------------------------------------------- */
@@ -2147,28 +2138,6 @@ unicode_char(Py_UCS4 ch)
     }
     assert(_PyUnicode_CheckConsistency(unicode, 1));
     return unicode;
-}
-
-PyObject *
-PyUnicode_FromUnicode(const Py_UNICODE *u, Py_ssize_t size)
-{
-    if (u == NULL) {
-        if (size > 0) {
-            if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                    "PyUnicode_FromUnicode(NULL, size) is deprecated; "
-                    "use PyUnicode_New() instead", 1) < 0) {
-                return NULL;
-            }
-        }
-        return (PyObject*)_PyUnicode_New(size);
-    }
-
-    if (size < 0) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-
-    return PyUnicode_FromWideChar(u, size);
 }
 
 PyObject *
@@ -4171,84 +4140,21 @@ PyUnicode_AsUTF8(PyObject *unicode)
     return PyUnicode_AsUTF8AndSize(unicode, NULL);
 }
 
-Py_UNICODE *
-PyUnicode_AsUnicodeAndSize(PyObject *unicode, Py_ssize_t *size)
-{
-    if (!PyUnicode_Check(unicode)) {
-        PyErr_BadArgument();
-        return NULL;
-    }
-    Py_UNICODE *w = _PyUnicode_WSTR(unicode);
-    if (w == NULL) {
-        /* Non-ASCII compact unicode object */
-        assert(_PyUnicode_KIND(unicode) != PyUnicode_WCHAR_KIND);
-        assert(PyUnicode_IS_READY(unicode));
+/*
+PyUnicode_GetSize() has been deprecated since Python 3.3
+because it returned length of Py_UNICODE.
 
-        Py_ssize_t wlen = unicode_get_widechar_size(unicode);
-        if ((size_t)wlen > PY_SSIZE_T_MAX / sizeof(wchar_t) - 1) {
-            PyErr_NoMemory();
-            return NULL;
-        }
-        w = (wchar_t *) PyObject_Malloc(sizeof(wchar_t) * (wlen + 1));
-        if (w == NULL) {
-            PyErr_NoMemory();
-            return NULL;
-        }
-        unicode_copy_as_widechar(unicode, w, wlen + 1);
-        _PyUnicode_WSTR(unicode) = w;
-        if (!PyUnicode_IS_COMPACT_ASCII(unicode)) {
-            _PyUnicode_WSTR_LENGTH(unicode) = wlen;
-        }
-    }
-    if (size != NULL)
-        *size = PyUnicode_WSTR_LENGTH(unicode);
-    return w;
-}
-
-/* Deprecated APIs */
-
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-
-Py_UNICODE *
-PyUnicode_AsUnicode(PyObject *unicode)
-{
-    return PyUnicode_AsUnicodeAndSize(unicode, NULL);
-}
-
-const Py_UNICODE *
-_PyUnicode_AsUnicode(PyObject *unicode)
-{
-    Py_ssize_t size;
-    const Py_UNICODE *wstr;
-
-    wstr = PyUnicode_AsUnicodeAndSize(unicode, &size);
-    if (wstr && wcslen(wstr) != (size_t)size) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        return NULL;
-    }
-    return wstr;
-}
-
-
-Py_ssize_t
+But this function is part of stable abi, because it don't
+include Py_UNICODE in signature and it was not excluded from
+stable abi in PEP 384.
+*/
+PyAPI_FUNC(Py_ssize_t)
 PyUnicode_GetSize(PyObject *unicode)
 {
-    if (!PyUnicode_Check(unicode)) {
-        PyErr_BadArgument();
-        goto onError;
-    }
-    if (_PyUnicode_WSTR(unicode) == NULL) {
-        if (PyUnicode_AsUnicode(unicode) == NULL)
-            goto onError;
-    }
-    return PyUnicode_WSTR_LENGTH(unicode);
-
-  onError:
+    PyErr_SetString(PyExc_RuntimeError,
+                    "PyUnicode_GetSize has been removed.");
     return -1;
 }
-
-_Py_COMP_DIAG_POP
 
 Py_ssize_t
 PyUnicode_GetLength(PyObject *unicode)
@@ -11517,7 +11423,7 @@ PyUnicode_AppendAndDel(PyObject **pleft, PyObject *right)
 }
 
 /*
-Wraps stringlib_parse_args_finds() and additionally ensures that the
+Wraps asciilib_parse_args_finds() and additionally ensures that the
 first argument is a unicode object.
 */
 
@@ -11526,8 +11432,7 @@ parse_args_finds_unicode(const char * function_name, PyObject *args,
                          PyObject **substring,
                          Py_ssize_t *start, Py_ssize_t *end)
 {
-    if(stringlib_parse_args_finds(function_name, args, substring,
-                                  start, end)) {
+    if (asciilib_parse_args_finds(function_name, args, substring, start, end)) {
         if (ensure_unicode(*substring) < 0)
             return 0;
         return 1;
@@ -12277,54 +12182,10 @@ _PyUnicode_ScanIdentifier(PyObject *self)
 int
 PyUnicode_IsIdentifier(PyObject *self)
 {
-    if (PyUnicode_IS_READY(self)) {
-        Py_ssize_t i = _PyUnicode_ScanIdentifier(self);
-        Py_ssize_t len = PyUnicode_GET_LENGTH(self);
-        /* an empty string is not a valid identifier */
-        return len && i == len;
-    }
-    else {
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-        Py_ssize_t i = 0, len = PyUnicode_GET_SIZE(self);
-        if (len == 0) {
-            /* an empty string is not a valid identifier */
-            return 0;
-        }
-
-        const wchar_t *wstr = _PyUnicode_WSTR(self);
-        Py_UCS4 ch = wstr[i++];
-#if SIZEOF_WCHAR_T == 2
-        if (Py_UNICODE_IS_HIGH_SURROGATE(ch)
-            && i < len
-            && Py_UNICODE_IS_LOW_SURROGATE(wstr[i]))
-        {
-            ch = Py_UNICODE_JOIN_SURROGATES(ch, wstr[i]);
-            i++;
-        }
-#endif
-        if (!_PyUnicode_IsXidStart(ch) && ch != 0x5F /* LOW LINE */) {
-            return 0;
-        }
-
-        while (i < len) {
-            ch = wstr[i++];
-#if SIZEOF_WCHAR_T == 2
-            if (Py_UNICODE_IS_HIGH_SURROGATE(ch)
-                && i < len
-                && Py_UNICODE_IS_LOW_SURROGATE(wstr[i]))
-            {
-                ch = Py_UNICODE_JOIN_SURROGATES(ch, wstr[i]);
-                i++;
-            }
-#endif
-            if (!_PyUnicode_IsXidContinue(ch)) {
-                return 0;
-            }
-        }
-        return 1;
-_Py_COMP_DIAG_POP
-    }
+    Py_ssize_t i = _PyUnicode_ScanIdentifier(self);
+    Py_ssize_t len = PyUnicode_GET_LENGTH(self);
+    /* an empty string is not a valid identifier */
+    return len && i == len;
 }
 
 /*[clinic input]
@@ -13594,7 +13455,7 @@ unicode_startswith(PyObject *self,
     Py_ssize_t end = PY_SSIZE_T_MAX;
     int result;
 
-    if (!stringlib_parse_args_finds("startswith", args, &subobj, &start, &end))
+    if (!asciilib_parse_args_finds("startswith", args, &subobj, &start, &end))
         return NULL;
     if (PyTuple_Check(subobj)) {
         Py_ssize_t i;
@@ -13648,7 +13509,7 @@ unicode_endswith(PyObject *self,
     Py_ssize_t end = PY_SSIZE_T_MAX;
     int result;
 
-    if (!stringlib_parse_args_finds("endswith", args, &subobj, &start, &end))
+    if (!asciilib_parse_args_finds("endswith", args, &subobj, &start, &end))
         return NULL;
     if (PyTuple_Check(subobj)) {
         Py_ssize_t i;
