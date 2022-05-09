@@ -127,13 +127,6 @@ def clear_caches():
     # Clear assorted module caches.
     # Don't worry about resetting the cache if the module is not loaded
     try:
-        distutils_dir_util = sys.modules['distutils.dir_util']
-    except KeyError:
-        pass
-    else:
-        distutils_dir_util._path_created.clear()
-
-    try:
         re = sys.modules['re']
     except KeyError:
         pass

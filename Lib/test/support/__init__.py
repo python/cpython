@@ -1815,7 +1815,7 @@ def missing_compiler_executable(cmd_names=[]):
 
     """
     # TODO (PEP 632): alternate check without using distutils
-    from distutils import ccompiler, sysconfig, spawn, errors
+    from _distutils import ccompiler, sysconfig, spawn, errors
     compiler = ccompiler.new_compiler()
     sysconfig.customize_compiler(compiler)
     if compiler.compiler_type == "msvc":
