@@ -650,7 +650,8 @@ def median_grouped(data, interval=1.0):
     by exact multiples of *interval*.  This is essential for getting a
     correct result.  The function does not check this precondition.
 
-    Inputs may be any numeric type but will be coerced to floats.
+    Inputs may be any numeric type but will be coerced to a float during
+    the interpolation step.
 
     """
     data = sorted(data)
@@ -667,12 +668,12 @@ def median_grouped(data, interval=1.0):
     i = bisect_left(data, x)
     j = bisect_right(data, x, lo=i)
 
-    # Coerce to floats, raising TypeError if not possible
+    # Coerce to floats, raising a TypeError if not possible
     try:
         interval = float(interval)
         x = float(x)
     except ValueError:
-        raise TypeError(f'Expected expressable as a float')
+        raise TypeError(f'Value cannot be converted to a float')
 
     # Interpolate the median using the formula found at:
     # https://www.cuemath.com/data/median-of-grouped-data/
