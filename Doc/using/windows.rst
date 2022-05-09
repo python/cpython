@@ -566,8 +566,8 @@ System variables, you need non-restricted access to your machine
 
 .. seealso::
 
-    https://www.microsoft.com/en-us/wdsi/help/folder-variables
-      Environment variables in Windows NT
+    https://docs.microsoft.com/en-us/windows/win32/procthread/environment-variables
+      Overview of environment variables on Windows
 
     https://technet.microsoft.com/en-us/library/cc754250.aspx
       The SET command, for temporarily modifying environment variables
@@ -575,11 +575,6 @@ System variables, you need non-restricted access to your machine
     https://technet.microsoft.com/en-us/library/cc755104.aspx
       The SETX command, for permanently modifying environment variables
 
-    https://support.microsoft.com/en-us/help/310519/how-to-manage-environment-variables-in-windows-xp
-      How To Manage Environment Variables in Windows XP
-
-    https://www.chem.gla.ac.uk/~louis/software/faq/q1.html
-      Setting Environment variables, Louis J. Farrugia
 
 .. _windows-path-mod:
 
@@ -1163,18 +1158,6 @@ you can distribute your application without requiring your users to install
 Python.
 
 
-WConio
-------
-
-Since Python's advanced terminal handling layer, :mod:`curses`, is restricted to
-Unix-like systems, there is a library exclusive to Windows as well: Windows
-Console I/O for Python.
-
-`WConio <http://newcenturycomputers.net/projects/wconio.html>`_ is a wrapper for
-Turbo-C's :file:`CONIO.H`, used to create text user interfaces.
-
-
-
 Compiling Python on Windows
 ===========================
 
@@ -1184,20 +1167,12 @@ latest release's source or just grab a fresh `checkout
 <https://devguide.python.org/setup/#getting-the-source-code>`_.
 
 The source tree contains a build solution and project files for Microsoft
-Visual Studio 2015, which is the compiler used to build the official Python
+Visual Studio 2017, which is the compiler used to build the official Python
 releases. These files are in the :file:`PCbuild` directory.
 
 Check :file:`PCbuild/readme.txt` for general information on the build process.
 
-
 For extension modules, consult :ref:`building-on-windows`.
-
-.. seealso::
-
-   `Python + Windows + distutils + SWIG + gcc MinGW <http://sebsauvage.net/python/mingw.html>`_
-      or "Creating Python extensions in C/C++ with SWIG and compiling them with
-      MinGW gcc under Windows" or "Installing Python extension with distutils
-      and without Microsoft Visual C++" by Sébastien Sauvage, 2003
 
 
 Other Platforms
@@ -1207,12 +1182,12 @@ With ongoing development of Python, some platforms that used to be supported
 earlier are no longer supported (due to the lack of users or developers).
 Check :pep:`11` for details on all unsupported platforms.
 
-* `Windows CE <http://pythonce.sourceforge.net/>`_ is still supported.
-* The `Cygwin <https://cygwin.com/>`_ installer offers to install the Python
-  interpreter as well (cf. `Cygwin package source
-  <ftp://ftp.uni-erlangen.de/pub/pc/gnuwin32/cygwin/mirrors/cygnus/
-  release/python>`_, `Maintainer releases
-  <http://www.tishler.net/jason/software/python/>`_)
+* `Windows CE <http://pythonce.sourceforge.net/>`_ is
+  `no longer supported <https://github.com/python/cpython/issues/71542>`__
+  since Python 3 (if it ever was).
+* The `Cygwin <https://cygwin.com/>`_ installer offers to install the
+  `Python interpreter <https://cygwin.com/packages/summary/python3.html>`__
+  as well
 
 See `Python for Windows <https://www.python.org/downloads/windows/>`_
 for detailed information about platforms with pre-compiled installers.
