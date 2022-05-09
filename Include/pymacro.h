@@ -12,7 +12,9 @@
 
 // static_assert is defined in GLIB from version 2.16. Before it requires
 // compiler support (gcc >= 4.6) and is called _Static_assert.
-#if defined(__GLIBC__) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ <= 16)) && !defined(static_assert)
+#if (defined(__GLIBC__) \
+     && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ <= 16)) \
+     && !defined(static_assert))
 #  define static_assert _Static_assert
 #endif
 
