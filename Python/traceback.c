@@ -1085,13 +1085,7 @@ _Py_DumpASCII(int fd, PyObject *text)
 
     size = ascii->length;
     kind = ascii->state.kind;
-    if (kind == PyUnicode_WCHAR_KIND) {
-        wstr = ascii->wstr;
-        if (wstr == NULL)
-            return;
-        size = _PyCompactUnicodeObject_CAST(text)->wstr_length;
-    }
-    else if (ascii->state.compact) {
+    if (ascii->state.compact) {
         if (ascii->state.ascii)
             data = ascii + 1;
         else

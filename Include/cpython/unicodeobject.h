@@ -63,7 +63,7 @@
 
 /* ASCII-only strings created through PyUnicode_New use the PyASCIIObject
    structure. state.ascii and state.compact are set, and the data
-   immediately follow the structure. utf8_length and wstr_length can be found
+   immediately follow the structure. utf8_length can be found
    in the length field; the utf8 pointer is equal to the data pointer. */
 typedef struct {
     /* There are 4 forms of Unicode strings:
@@ -76,7 +76,7 @@ typedef struct {
          * compact = 1
          * ascii = 1
          * ready = 1
-         * (length is the length of the utf8 and wstr strings)
+         * (length is the length of the utf8)
          * (data starts just after the structure)
          * (since ASCII is decoded from UTF-8, the utf8 string are the data)
 
@@ -91,32 +91,12 @@ typedef struct {
          * ascii = 0
          * utf8 is not shared with data
          * utf8_length = 0 if utf8 is NULL
-         * wstr is shared with data and wstr_length=length
-           if kind=PyUnicode_2BYTE_KIND and sizeof(wchar_t)=2
-           or if kind=PyUnicode_4BYTE_KIND and sizeof(wchar_t)=4
-         * wstr_length = 0 if wstr is NULL
          * (data starts just after the structure)
-
-       - legacy string, not ready:
-
-         * structure = PyUnicodeObject
-         * test: kind == PyUnicode_WCHAR_KIND
-         * length = 0 (use wstr_length)
-         * hash = -1
-         * kind = PyUnicode_WCHAR_KIND
-         * compact = 0
-         * ascii = 0
-         * ready = 0
-         * interned = SSTATE_NOT_INTERNED
-         * wstr is not NULL
-         * data.any is NULL
-         * utf8 is NULL
-         * utf8_length = 0
 
        - legacy string, ready:
 
          * structure = PyUnicodeObject structure
-         * test: !PyUnicode_IS_COMPACT(op) && kind != PyUnicode_WCHAR_KIND
+         * test: !PyUnicode_IS_COMPACT(op)
          * kind = PyUnicode_1BYTE_KIND, PyUnicode_2BYTE_KIND or
            PyUnicode_4BYTE_KIND
          * compact = 0
@@ -124,18 +104,12 @@ typedef struct {
          * data.any is not NULL
          * utf8 is shared and utf8_length = length with data.any if ascii = 1
          * utf8_length = 0 if utf8 is NULL
-         * wstr is shared with data.any and wstr_length = length
-           if kind=PyUnicode_2BYTE_KIND and sizeof(wchar_t)=2
-           or if kind=PyUnicode_4BYTE_KIND and sizeof(wchar_4)=4
-         * wstr_length = 0 if wstr is NULL
 
        Compact strings use only one memory block (structure + characters),
        whereas legacy strings use one block for the structure and one block
        for characters.
 
-       Legacy strings are created by PyUnicode_FromUnicode() and
-       PyUnicode_FromStringAndSize(NULL, size) functions. They become ready
-       when PyUnicode_READY() is called.
+       Legacy strings are created by subclasses of Unicode.
 
        See also _PyUnicode_CheckConsistency().
     */
@@ -153,11 +127,6 @@ typedef struct {
          */
         unsigned int interned:2;
         /* Character size:
-
-           - PyUnicode_WCHAR_KIND (0):
-
-             * character type = wchar_t (16 or 32 bits, depending on the
-               platform)
 
            - PyUnicode_1BYTE_KIND (1):
 
@@ -198,7 +167,6 @@ typedef struct {
            4 bytes (see issue #19537 on m68k). */
         unsigned int :24;
     } state;
-    wchar_t *wstr;              /* wchar_t representation (null-terminated) */
 } PyASCIIObject;
 
 /* Non-ASCII strings allocated through PyUnicode_New use the
@@ -209,13 +177,9 @@ typedef struct {
     Py_ssize_t utf8_length;     /* Number of bytes in utf8, excluding the
                                  * terminating \0. */
     char *utf8;                 /* UTF-8 representation (null-terminated) */
-    Py_ssize_t wstr_length;     /* Number of code points in wstr, possible
-                                 * surrogates count as two code points. */
 } PyCompactUnicodeObject;
 
-/* Strings allocated through PyUnicode_FromUnicode(NULL, len) use the
-   PyUnicodeObject structure. The actual string data is initially in the wstr
-   block, and copied into the data block using _PyUnicode_Ready. */
+/* Object format for Unicode subclasses. */
 typedef struct {
     PyCompactUnicodeObject _base;
     union {
@@ -298,10 +262,6 @@ static inline int PyUnicode_IS_COMPACT_ASCII(PyObject *op) {
 #endif
 
 enum PyUnicode_Kind {
-/* String contains only wstr byte characters.  This is only possible
-   when the string was created with a legacy API and _PyUnicode_Ready()
-   has not been called yet.  */
-    PyUnicode_WCHAR_KIND = 0,
 /* Return values of the PyUnicode_KIND() function: */
     PyUnicode_1BYTE_KIND = 1,
     PyUnicode_2BYTE_KIND = 2,
@@ -459,27 +419,14 @@ PyAPI_FUNC(PyObject*) PyUnicode_New(
     Py_UCS4 maxchar             /* maximum code point value in the string */
     );
 
-/* Initializes the canonical string representation from the deprecated
-   wstr/Py_UNICODE representation. This function is used to convert Unicode
-   objects which were created using the old API to the new flexible format
-   introduced with PEP 393.
-
-   Don't call this function directly, use the public PyUnicode_READY() function
-   instead. */
-PyAPI_FUNC(int) _PyUnicode_Ready(
-    PyObject *unicode           /* Unicode object */
-    );
-
 /* PyUnicode_READY() does less work than _PyUnicode_Ready() in the best
    case.  If the canonical representation is not yet set, it will still call
    _PyUnicode_Ready().
    Returns 0 on success and -1 on errors. */
 static inline int PyUnicode_READY(PyObject *op)
 {
-    if (PyUnicode_IS_READY(op)) {
-        return 0;
-    }
-    return _PyUnicode_Ready(op);
+    assert(PyUnicode_IS_READY(op));
+    return 0;
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define PyUnicode_READY(op) PyUnicode_READY(_PyObject_CAST(op))

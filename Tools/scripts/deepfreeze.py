@@ -218,16 +218,6 @@ class Printer:
                     for i in range(0, len(s), 16):
                         data = s[i:i+16]
                         self.write(", ".join(map(str, map(ord, data))) + ",")
-                if kind == PyUnicode_2BYTE_KIND:
-                    self.patchups.append("if (sizeof(wchar_t) == 2) {")
-                    self.patchups.append(f"    {name}._compact._base.wstr = (wchar_t *) {name}._data;")
-                    self.patchups.append(f"    {name}._compact.wstr_length = {len(s)};")
-                    self.patchups.append("}")
-                if kind == PyUnicode_4BYTE_KIND:
-                    self.patchups.append("if (sizeof(wchar_t) == 4) {")
-                    self.patchups.append(f"    {name}._compact._base.wstr = (wchar_t *) {name}._data;")
-                    self.patchups.append(f"    {name}._compact.wstr_length = {len(s)};")
-                    self.patchups.append("}")
                 return f"& {name}._compact._base.ob_base"
 
 
