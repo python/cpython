@@ -89,9 +89,10 @@ def get_host_platform():
         if m:
             release = m.group()
     elif osname[:6] == "darwin":
-        import _osx_support, distutils.sysconfig
+        import _osx_support
+        import _distutils.sysconfig
         osname, release, machine = _osx_support.get_platform_osx(
-                                        distutils.sysconfig.get_config_vars(),
+                                        _distutils.sysconfig.get_config_vars(),
                                         osname, release, machine)
 
     return "%s-%s-%s" % (osname, release, machine)
