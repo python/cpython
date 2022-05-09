@@ -13,7 +13,6 @@ import _imp
 import os
 import re
 import sys
-import warnings
 
 from functools import partial
 
@@ -54,13 +53,6 @@ _config_vars = get_config_vars()
 
 if os.name == "nt":
     from sysconfig import _fix_pcbuild
-
-warnings.warn(
-    'The distutils.sysconfig module is deprecated, use sysconfig instead',
-    DeprecationWarning,
-    stacklevel=2
-)
-
 
 # Following functions are the same as in sysconfig but with different API
 def parse_config_h(fp, g=None):
