@@ -373,7 +373,14 @@ class Condition:
         if not waiters_to_notify:
             return
         for waiter in waiters_to_notify:
-            waiter.release()
+            try:
+                waiter.release()
+            except RuntimeError:
+                # gh-92530: The previous call of notify() released the lock,
+                # but was interrupted before removing it from the queue.
+                # It can happen if a signal handler raises an exception,
+                # like CTRL+C which raises KeyboardInterrupt.
+                pass
             try:
                 all_waiters.remove(waiter)
             except ValueError:
