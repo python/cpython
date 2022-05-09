@@ -1385,22 +1385,22 @@ class Path(PurePath):
 
         return self
 
-    def walk(self, on_error=None, follow_links=False):
+    def walk(self, on_error=None, follow_symlinks=False):
         """Generate a top-down directory tree from this directory
 
         For each directory in the directory tree rooted at self (including
         self but excluding '.' and '..'), yields a 3-tuple
 
-        root_directory, child_directory_names, child_file_names
+        dirpath, dirnames, filenames
 
-        The caller can modify the child_directory_names list in-place
-        (e.g., via del or slice assignment), and walk will only recurse into
-        the subdirectories whose names remain in child_directory_names; this
+        The caller can modify the dirnames list in-place
+        (e.g., via del or slice assignment), and walk will only recurse
+        into the subdirectories whose names remain in dirnames; this
         can be used to prune the search, or to impose a specific order of
         visiting.
 
         By default errors from Path._scandir() call are ignored.  If
-        optional arg 'on_error' is specified, it should be a function; it
+        optional arg 'on_error' is specified, it should be a callable; it
         will be called with one argument, an OSError instance.  It can
         report the error to continue with the walk, or raise the exception
         to abort the walk.  Note that the filename is available as the
@@ -1408,41 +1408,56 @@ class Path(PurePath):
 
         By default, Path.walk does not follow symbolic links to subdirectories
         on systems that support them.  In order to get this functionality, set
-        the optional argument 'follow_links' to true.
+        the optional argument 'follow_symlinks' to true.
 
         Caution: if self is a relative Path, don't change the
         current working directory between resumptions of walk. walk never
         changes the current directory, and assumes that the client doesn't
         either.
+        
+        Caution: walk assumes the directories have not been modified between
+        its resumptions. I.e. If a directory from dirnames has been replaced
+        with a symlink and follow_symlinks=False, walk will still try to
+        descend into it. To prevent such behavior, remove directories from
+        dirnames if they have been modified and you do not want walk to 
+        descend into them anymore.
 
         Example:
 
         from pathlib import Path
-        for root, dirs, files in Path('python/Lib/email'):
-            print(root, "consumes", end="")
-            print(sum((root / file).stat().st_size for file in files), end="")
-            print("bytes in", len(files), "non-directory files")
-            if 'CVS' in dirs:
-                dirs.remove('CVS')  # don't visit CVS directories
+        for root, dirs, files in Path('Lib/concurrent').walk(on_error=print):
+            print(
+                root,
+                "consumes",
+                sum((root / file).stat().st_size for file in files),
+                "bytes in",
+                len(files),
+                "non-directory files"
+            )
+            # don't visit __pycache__ directories
+            if '__pycache__' in dirs:
+                dirs.remove('__pycache__')
         """
-        sys.audit("pathlib.Path.walk", self, on_error, follow_links)
-        return self._walk(True, on_error, follow_links)
+        sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
+        return self._walk(True, on_error, follow_symlinks)
 
-    def walk_bottom_up(self, on_error=None, follow_links=False):
+    def walk_bottom_up(self, on_error=None, follow_symlinks=False):
         """Generate a bottom up directory tree from this directory
 
         The return type and arguments are identical to Path.walk.
-        However, the caller cannot modify the child_directory_names to prune
-        the search or to impose a specific order of visiting because the list
-        of directories to visit is calculated before we yield it.
+        
+        Unline walk, the caller cannot modify the dirnames to prune the
+        search or to impose a specific order of visiting because the
+        list of directories to visit is calculated before yielding it.
         """
-        sys.audit("pathlib.Path.walk_bottom_up", self, on_error, follow_links)
-        return self._walk(False, on_error, follow_links)
+        sys.audit("pathlib.Path.walk_bottom_up", self, on_error, follow_symlinks)
+        return self._walk(False, on_error, follow_symlinks)
 
     def _walk(self, topdown, on_error, follow_links):
         dirs = []
         nondirs = []
         walk_dirs = []
+        walk_dirs_map = {}
 
         # We may not have read permission for self, in which case we can't
         # get a list of the files the directory contains. os.walk
@@ -1476,6 +1491,8 @@ class Path(PurePath):
 
                 if is_dir:
                     dirs.append(entry.name)
+                    walk_dirs_map[entry.name] = entry
+                    
                 else:
                     nondirs.append(entry.name)
 
@@ -1497,16 +1514,16 @@ class Path(PurePath):
                     if walk_into:
                         walk_dirs.append(entry)
         if topdown:
-            for raw_new_path in dirs:
-                # Path.is_symlink() is used instead of caching entry.is_symlink()
-                # result during the loop on Path._scandir() because the caller
-                # can replace the directory entry during the "yield" above.
-                new_path = self._make_child_relpath(raw_new_path)
-                if follow_links or not new_path.is_symlink():
+            yield self, dirs, nondirs
+
+            for dir_name in dirs:
+                new_path = self._make_child_relpath(dir_name)
+                
+                if follow_links or not walk_dirs_map[dir_name].is_symlink():
                     yield from new_path._walk(topdown, on_error, follow_links)
         else:
-            for raw_new_path in walk_dirs:
-                new_path = self._make_child_relpath(raw_new_path.name)
+            for dir_entry in walk_dirs:
+                new_path = self._make_child_relpath(dir_entry.name)
                 yield from new_path._walk(topdown, on_error, follow_links)
             # Yield after recursion if going bottom up
             yield self, dirs, nondirs
