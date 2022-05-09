@@ -5,7 +5,7 @@ and groups of files; also, function based entirely on such
 timestamp dependency analysis."""
 
 import os
-from distutils.errors import DistutilsFileError
+from _distutils.errors import DistutilsFileError
 
 
 def newer (source, target):

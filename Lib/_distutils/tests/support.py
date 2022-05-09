@@ -8,9 +8,9 @@ import sysconfig
 from copy import deepcopy
 from test.support import os_helper
 
-from distutils import log
-from distutils.log import DEBUG, INFO, WARN, ERROR, FATAL
-from distutils.core import Distribution
+from _distutils import log
+from _distutils.log import DEBUG, INFO, WARN, ERROR, FATAL
+from _distutils.core import Distribution
 
 
 class LoggingSilencer(object):

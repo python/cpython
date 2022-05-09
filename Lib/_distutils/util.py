@@ -9,12 +9,12 @@ import re
 import importlib.util
 import string
 import sys
-import distutils
-from distutils.errors import DistutilsPlatformError
-from distutils.dep_util import newer
-from distutils.spawn import spawn
-from distutils import log
-from distutils.errors import DistutilsByteCompileError
+import _distutils
+from _distutils.errors import DistutilsPlatformError
+from _distutils.dep_util import newer
+from _distutils.spawn import spawn
+from _distutils import log
+from _distutils.errors import DistutilsByteCompileError
 
 def get_host_platform():
     """Return a string that identifies the current platform.  This is used mainly to
@@ -394,7 +394,7 @@ def byte_compile (py_files,
 
             with script:
                 script.write("""\
-from distutils.util import byte_compile
+from _distutils.util import byte_compile
 files = [
 """)
 
@@ -516,9 +516,9 @@ def copydir_run_2to3(src, dest, template=None, fixer_names=None,
 
     If you give a template string, it's parsed like a MANIFEST.in.
     """
-    from distutils.dir_util import mkpath
-    from distutils.file_util import copy_file
-    from distutils.filelist import FileList
+    from _distutils.dir_util import mkpath
+    from _distutils.file_util import copy_file
+    from _distutils.filelist import FileList
     filelist = FileList()
     curdir = os.getcwd()
     os.chdir(src)

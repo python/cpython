@@ -14,11 +14,11 @@ try:
 except ImportError:
     warnings = None
 
-from distutils.errors import *
-from distutils.fancy_getopt import FancyGetopt, translate_longopt
-from distutils.util import check_environ, strtobool, rfc822_escape
-from distutils import log
-from distutils.debug import DEBUG
+from _distutils.errors import *
+from _distutils.fancy_getopt import FancyGetopt, translate_longopt
+from _distutils.util import check_environ, strtobool, rfc822_escape
+from _distutils import log
+from _distutils.debug import DEBUG
 
 # Regex to define acceptable Distutils command names.  This is not *quite*
 # the same as a Python NAME -- I don't allow leading underscores.  The fact
@@ -524,7 +524,7 @@ Common commands: (see '--help-commands' for more)
         None if the user asked for help on this command.
         """
         # late import because of mutual dependence between these modules
-        from distutils.cmd import Command
+        from _distutils.cmd import Command
 
         # Pull the current command from the head of the command line
         command = args[0]
@@ -633,8 +633,8 @@ Common commands: (see '--help-commands' for more)
         in 'commands'.
         """
         # late import because of mutual dependence between these modules
-        from distutils.core import gen_usage
-        from distutils.cmd import Command
+        from _distutils.core import gen_usage
+        from _distutils.cmd import Command
 
         if global_options:
             if display_options:
@@ -674,7 +674,7 @@ Common commands: (see '--help-commands' for more)
         line, display the requested info and return true; else return
         false.
         """
-        from distutils.core import gen_usage
+        from _distutils.core import gen_usage
 
         # User just wants a list of commands -- we'll print it out and stop
         # processing now (ie. if they ran "setup --help-commands foo bar",
@@ -733,8 +733,8 @@ Common commands: (see '--help-commands' for more)
         descriptions come from the command class attribute
         'description'.
         """
-        import distutils.command
-        std_commands = distutils.command.__all__
+        import _distutils.command
+        std_commands = _distutils.command.__all__
         is_std = {}
         for cmd in std_commands:
             is_std[cmd] = 1
@@ -767,8 +767,8 @@ Common commands: (see '--help-commands' for more)
         """
         # Currently this is only used on Mac OS, for the Mac-only GUI
         # Distutils interface (by Jack Jansen)
-        import distutils.command
-        std_commands = distutils.command.__all__
+        import _distutils.command
+        std_commands = _distutils.command.__all__
         is_std = {}
         for cmd in std_commands:
             is_std[cmd] = 1
@@ -932,7 +932,7 @@ Common commands: (see '--help-commands' for more)
 
         Returns the reinitialized command object.
         """
-        from distutils.cmd import Command
+        from _distutils.cmd import Command
         if not isinstance(command, Command):
             command_name = command
             command = self.get_command_obj(command_name)
@@ -1222,9 +1222,9 @@ class DistributionMetadata:
         return self.requires or []
 
     def set_requires(self, value):
-        import distutils.versionpredicate
+        import _distutils.versionpredicate
         for v in value:
-            distutils.versionpredicate.VersionPredicate(v)
+            _distutils.versionpredicate.VersionPredicate(v)
         self.requires = list(value)
 
     def get_provides(self):
@@ -1233,17 +1233,17 @@ class DistributionMetadata:
     def set_provides(self, value):
         value = [v.strip() for v in value]
         for v in value:
-            import distutils.versionpredicate
-            distutils.versionpredicate.split_provision(v)
+            import _distutils.versionpredicate
+            _distutils.versionpredicate.split_provision(v)
         self.provides = value
 
     def get_obsoletes(self):
         return self.obsoletes or []
 
     def set_obsoletes(self, value):
-        import distutils.versionpredicate
+        import _distutils.versionpredicate
         for v in value:
-            distutils.versionpredicate.VersionPredicate(v)
+            _distutils.versionpredicate.VersionPredicate(v)
         self.obsoletes = list(value)
 
 def fix_help_options(options):

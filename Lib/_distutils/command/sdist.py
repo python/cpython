@@ -7,23 +7,23 @@ import sys
 from glob import glob
 from warnings import warn
 
-from distutils.core import Command
-from distutils import dir_util
-from distutils import file_util
-from distutils import archive_util
-from distutils.text_file import TextFile
-from distutils.filelist import FileList
-from distutils import log
-from distutils.util import convert_path
-from distutils.errors import DistutilsTemplateError, DistutilsOptionError
+from _distutils.core import Command
+from _distutils import dir_util
+from _distutils import file_util
+from _distutils import archive_util
+from _distutils.text_file import TextFile
+from _distutils.filelist import FileList
+from _distutils import log
+from _distutils.util import convert_path
+from _distutils.errors import DistutilsTemplateError, DistutilsOptionError
 
 
 def show_formats():
     """Print all possible values for the 'formats' option (used by
     the "--help-formats" command-line option).
     """
-    from distutils.fancy_getopt import FancyGetopt
-    from distutils.archive_util import ARCHIVE_FORMATS
+    from _distutils.fancy_getopt import FancyGetopt
+    from _distutils.archive_util import ARCHIVE_FORMATS
     formats = []
     for format in ARCHIVE_FORMATS.keys():
         formats.append(("formats=" + format, None,

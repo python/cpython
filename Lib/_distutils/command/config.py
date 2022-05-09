@@ -11,10 +11,10 @@ this header file lives".
 
 import os, re
 
-from distutils.core import Command
-from distutils.errors import DistutilsExecError
-from distutils.sysconfig import customize_compiler
-from distutils import log
+from _distutils.core import Command
+from _distutils.errors import DistutilsExecError
+from _distutils.sysconfig import customize_compiler
+from _distutils import log
 
 LANG_EXT = {"c": ".c", "c++": ".cxx"}
 
@@ -92,7 +92,7 @@ class config(Command):
         """
         # We do this late, and only on-demand, because this is an expensive
         # import.
-        from distutils.ccompiler import CCompiler, new_compiler
+        from _distutils.ccompiler import CCompiler, new_compiler
         if not isinstance(self.compiler, CCompiler):
             self.compiler = new_compiler(compiler=self.compiler,
                                          dry_run=self.dry_run, force=1)
@@ -176,7 +176,7 @@ class config(Command):
         preprocessor succeeded, false if there were any errors.
         ('body' probably isn't of much use, but what the heck.)
         """
-        from distutils.ccompiler import CompileError
+        from _distutils.ccompiler import CompileError
         self._check_compiler()
         ok = True
         try:
@@ -219,7 +219,7 @@ class config(Command):
         """Try to compile a source file built from 'body' and 'headers'.
         Return true on success, false otherwise.
         """
-        from distutils.ccompiler import CompileError
+        from _distutils.ccompiler import CompileError
         self._check_compiler()
         try:
             self._compile(body, headers, include_dirs, lang)
@@ -237,7 +237,7 @@ class config(Command):
         'headers', to executable form.  Return true on success, false
         otherwise.
         """
-        from distutils.ccompiler import CompileError, LinkError
+        from _distutils.ccompiler import CompileError, LinkError
         self._check_compiler()
         try:
             self._link(body, headers, include_dirs,
@@ -256,7 +256,7 @@ class config(Command):
         built from 'body' and 'headers'.  Return true on success, false
         otherwise.
         """
-        from distutils.ccompiler import CompileError, LinkError
+        from _distutils.ccompiler import CompileError, LinkError
         self._check_compiler()
         try:
             src, obj, exe = self._link(body, headers, include_dirs,

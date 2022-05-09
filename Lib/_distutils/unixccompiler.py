@@ -15,13 +15,13 @@ the "typical" Unix-style command-line C compiler:
 
 import os, sys, re
 
-from distutils import sysconfig
-from distutils.dep_util import newer
-from distutils.ccompiler import \
+from _distutils import sysconfig
+from _distutils.dep_util import newer
+from _distutils.ccompiler import \
      CCompiler, gen_preprocess_options, gen_lib_options
-from distutils.errors import \
+from _distutils.errors import \
      DistutilsExecError, CompileError, LibError, LinkError
-from distutils import log
+from _distutils import log
 
 if sys.platform == 'darwin':
     import _osx_support

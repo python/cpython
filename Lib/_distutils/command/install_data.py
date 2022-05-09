@@ -6,8 +6,8 @@ platform-independent data files."""
 # contributed by Bastian Kleineidam
 
 import os
-from distutils.core import Command
-from distutils.util import change_root, convert_path
+from _distutils.core import Command
+from _distutils.util import change_root, convert_path
 
 class install_data(Command):
 

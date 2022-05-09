@@ -7,9 +7,9 @@ and building lists of files.
 import os, re
 import fnmatch
 import functools
-from distutils.util import convert_path
-from distutils.errors import DistutilsTemplateError, DistutilsInternalError
-from distutils import log
+from _distutils.util import convert_path
+from _distutils.errors import DistutilsTemplateError, DistutilsInternalError
+from _distutils import log
 
 class FileList:
     """A list of files built by on exploring the filesystem and filtered by
@@ -42,7 +42,7 @@ class FileList:
         """Print 'msg' to stdout if the global DEBUG (taken from the
         DISTUTILS_DEBUG environment variable) flag is true.
         """
-        from distutils.debug import DEBUG
+        from _distutils.debug import DEBUG
         if DEBUG:
             print(msg)
 

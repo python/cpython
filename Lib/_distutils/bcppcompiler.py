@@ -13,14 +13,14 @@ for the Borland C++ compiler.
 
 
 import os
-from distutils.errors import \
+from _distutils.errors import \
      DistutilsExecError, \
      CompileError, LibError, LinkError, UnknownFileError
-from distutils.ccompiler import \
+from _distutils.ccompiler import \
      CCompiler, gen_preprocess_options
-from distutils.file_util import write_file
-from distutils.dep_util import newer
-from distutils import log
+from _distutils.file_util import write_file
+from _distutils.dep_util import newer
+from _distutils import log
 
 class BCPPCompiler(CCompiler) :
     """Concrete class that implements an interface to the Borland C/C++

@@ -4,11 +4,11 @@ Implements the Distutils 'build_scripts' command."""
 
 import os, re
 from stat import ST_MODE
-from distutils import sysconfig
-from distutils.core import Command
-from distutils.dep_util import newer
-from distutils.util import convert_path, Mixin2to3
-from distutils import log
+from _distutils import sysconfig
+from _distutils.core import Command
+from _distutils.dep_util import newer
+from _distutils.util import convert_path, Mixin2to3
+from _distutils import log
 import tokenize
 
 # check if Python is called on the first line with this expression

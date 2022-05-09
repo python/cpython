@@ -4,12 +4,12 @@ Implements the Distutils 'bdist_rpm' command (create RPM source and binary
 distributions)."""
 
 import subprocess, sys, os
-from distutils.core import Command
-from distutils.debug import DEBUG
-from distutils.file_util import write_file
-from distutils.errors import *
-from distutils.sysconfig import get_python_version
-from distutils import log
+from _distutils.core import Command
+from _distutils.debug import DEBUG
+from _distutils.file_util import write_file
+from _distutils.errors import *
+from _distutils.sysconfig import get_python_version
+from _distutils import log
 
 class bdist_rpm(Command):
 

@@ -141,11 +141,11 @@ class Extension:
 
 def read_setup_file(filename):
     """Reads a Setup file and returns Extension instances."""
-    from distutils.sysconfig import (parse_makefile, expand_makefile_vars,
-                                     _variable_rx)
+    from _distutils.sysconfig import (parse_makefile, expand_makefile_vars,
+                                      _variable_rx)
 
-    from distutils.text_file import TextFile
-    from distutils.util import split_quoted
+    from _distutils.text_file import TextFile
+    from _distutils.util import split_quoted
 
     # First pass over the file to gather "VAR = VALUE" assignments.
     vars = parse_makefile(filename)

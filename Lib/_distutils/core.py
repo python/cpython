@@ -9,14 +9,14 @@ really defined in distutils.dist and distutils.cmd.
 import os
 import sys
 
-from distutils.debug import DEBUG
-from distutils.errors import *
+from _distutils.debug import DEBUG
+from _distutils.errors import *
 
-# Mainly import these so setup scripts can "from distutils.core import" them.
-from distutils.dist import Distribution
-from distutils.cmd import Command
-from distutils.config import PyPIRCCommand
-from distutils.extension import Extension
+# Mainly import these so setup scripts can "from _distutils.core import" them.
+from _distutils.dist import Distribution
+from _distutils.cmd import Command
+from _distutils.config import PyPIRCCommand
+from _distutils.extension import Extension
 
 # This is a barebones help message generated displayed when the user
 # runs the setup script with no arguments at all.  More useful help

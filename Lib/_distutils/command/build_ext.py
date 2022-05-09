@@ -8,14 +8,14 @@ import contextlib
 import os
 import re
 import sys
-from distutils.core import Command
-from distutils.errors import *
-from distutils.sysconfig import customize_compiler, get_python_version
-from distutils.sysconfig import get_config_h_filename
-from distutils.dep_util import newer_group
-from distutils.extension import Extension
-from distutils.util import get_platform
-from distutils import log
+from _distutils.core import Command
+from _distutils.errors import *
+from _distutils.sysconfig import customize_compiler, get_python_version
+from _distutils.sysconfig import get_config_h_filename
+from _distutils.dep_util import newer_group
+from _distutils.extension import Extension
+from _distutils.util import get_platform
+from _distutils import log
 
 from site import USER_BASE
 
@@ -26,7 +26,7 @@ extension_name_re = re.compile \
 
 
 def show_compilers ():
-    from distutils.ccompiler import show_compilers
+    from _distutils.ccompiler import show_compilers
     show_compilers()
 
 
@@ -128,7 +128,7 @@ class build_ext(Command):
         self.parallel = None
 
     def finalize_options(self):
-        from distutils import sysconfig
+        from _distutils import sysconfig
 
         self.set_undefined_options('build',
                                    ('build_lib', 'build_lib'),
@@ -276,7 +276,7 @@ class build_ext(Command):
                 raise DistutilsOptionError("parallel should be an integer")
 
     def run(self):
-        from distutils.ccompiler import new_compiler
+        from _distutils.ccompiler import new_compiler
 
         # 'self.extensions', as supplied by setup.py, is a list of
         # Extension instances.  See the documentation for Extension (in
@@ -678,7 +678,7 @@ class build_ext(Command):
         of the file from which it will be loaded (eg. "foo/bar.so", or
         "foo\bar.pyd").
         """
-        from distutils.sysconfig import get_config_var
+        from _distutils.sysconfig import get_config_var
         ext_path = ext_name.split('.')
         ext_suffix = get_config_var('EXT_SUFFIX')
         return os.path.join(*ext_path) + ext_suffix
@@ -713,7 +713,7 @@ class build_ext(Command):
         # to need it mentioned explicitly, though, so that's what we do.
         # Append '_d' to the python import library on debug builds.
         if sys.platform == "win32":
-            from distutils._msvccompiler import MSVCCompiler
+            from _distutils._msvccompiler import MSVCCompiler
             if not isinstance(self.compiler, MSVCCompiler):
                 template = "python%d%d"
                 if self.debug:
@@ -732,7 +732,7 @@ class build_ext(Command):
             # On Cygwin (and if required, other POSIX-like platforms based on
             # Windows like MinGW) it is simply necessary that all symbols in
             # shared libraries are resolved at link time.
-            from distutils.sysconfig import get_config_var
+            from _distutils.sysconfig import get_config_var
             link_libpython = False
             if get_config_var('Py_ENABLE_SHARED'):
                 # A native build on an Android device or on Cygwin

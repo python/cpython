@@ -7,8 +7,8 @@ import os
 import importlib.util
 import sys
 
-from distutils.core import Command
-from distutils.errors import DistutilsOptionError
+from _distutils.core import Command
+from _distutils.errors import DistutilsOptionError
 
 
 # Extension for Python source files.
@@ -120,7 +120,7 @@ class install_lib(Command):
             self.warn('byte-compiling is disabled, skipping.')
             return
 
-        from distutils.util import byte_compile
+        from _distutils.util import byte_compile
 
         # Get the "--root" directory supplied to the "install" command,
         # and use it as a prefix to strip off the purported filename

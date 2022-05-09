@@ -4,8 +4,8 @@ Utility functions for operating on single files.
 """
 
 import os
-from distutils.errors import DistutilsFileError
-from distutils import log
+from _distutils.errors import DistutilsFileError
+from _distutils import log
 
 # for generating verbose output in 'copy_file()'
 _copy_action = { None:   'copying',
@@ -97,7 +97,7 @@ def copy_file(src, dst, preserve_mode=1, preserve_times=1, update=0,
     # changing it (ie. it's not already a hard/soft link to src OR
     # (not update) and (src newer than dst).
 
-    from distutils.dep_util import newer
+    from _distutils.dep_util import newer
     from stat import ST_ATIME, ST_MTIME, ST_MODE, S_IMODE
 
     if not os.path.isfile(src):

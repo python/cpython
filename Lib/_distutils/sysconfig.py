@@ -72,7 +72,7 @@ def parse_makefile(fn, g=None):
     optional dictionary is passed in as the second argument, it is
     used instead of a new dictionary.
     """
-    from distutils.text_file import TextFile
+    from _distutils.text_file import TextFile
     fp = TextFile(fn, strip_comments=1, skip_blanks=1, join_lines=1, errors="surrogateescape")
 
     if g is None:

@@ -9,12 +9,12 @@ for the Microsoft Visual Studio.
 #   finding DevStudio (through the registry)
 
 import sys, os
-from distutils.errors import \
+from _distutils.errors import \
      DistutilsExecError, DistutilsPlatformError, \
      CompileError, LibError, LinkError
-from distutils.ccompiler import \
+from _distutils.ccompiler import \
      CCompiler, gen_lib_options
-from distutils import log
+from _distutils import log
 
 _can_read_reg = False
 try:
@@ -635,8 +635,8 @@ class MSVCCompiler(CCompiler) :
 
 
 if get_build_version() >= 8.0:
-    log.debug("Importing new compiler from distutils.msvc9compiler")
+    log.debug("Importing new compiler from _distutils.msvc9compiler")
     OldMSVCCompiler = MSVCCompiler
-    from distutils.msvc9compiler import MSVCCompiler
+    from _distutils.msvc9compiler import MSVCCompiler
     # get_build_architecture not really relevant now we support cross-compile
-    from distutils.msvc9compiler import MacroExpander
+    from _distutils.msvc9compiler import MacroExpander

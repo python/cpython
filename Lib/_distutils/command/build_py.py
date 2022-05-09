@@ -7,10 +7,10 @@ import importlib.util
 import sys
 import glob
 
-from distutils.core import Command
-from distutils.errors import *
-from distutils.util import convert_path, Mixin2to3
-from distutils import log
+from _distutils.core import Command
+from _distutils.errors import *
+from _distutils.util import convert_path, Mixin2to3
+from _distutils import log
 
 class build_py (Command):
 
@@ -376,7 +376,7 @@ class build_py (Command):
             self.warn('byte-compiling is disabled, skipping.')
             return
 
-        from distutils.util import byte_compile
+        from _distutils.util import byte_compile
         prefix = self.build_lib
         if prefix[-1] != os.sep:
             prefix = prefix + os.sep

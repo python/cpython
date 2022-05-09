@@ -7,15 +7,15 @@ import sysconfig
 import os
 import re
 
-from distutils import log
-from distutils.core import Command
-from distutils.debug import DEBUG
-from distutils.sysconfig import get_config_vars
-from distutils.errors import DistutilsPlatformError
-from distutils.file_util import write_file
-from distutils.util import convert_path, subst_vars, change_root
-from distutils.util import get_platform
-from distutils.errors import DistutilsOptionError
+from _distutils import log
+from _distutils.core import Command
+from _distutils.debug import DEBUG
+from _distutils.sysconfig import get_config_vars
+from _distutils.errors import DistutilsPlatformError
+from _distutils.file_util import write_file
+from _distutils.util import convert_path, subst_vars, change_root
+from _distutils.util import get_platform
+from _distutils.errors import DistutilsOptionError
 
 from site import USER_BASE
 from site import USER_SITE
@@ -397,7 +397,7 @@ class install(Command):
         """Dumps the list of user options."""
         if not DEBUG:
             return
-        from distutils.fancy_getopt import longopt_xlate
+        from _distutils.fancy_getopt import longopt_xlate
         log.debug(msg + ":")
         for opt in self.user_options:
             opt_name = opt[0]

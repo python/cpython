@@ -2,8 +2,8 @@
 
 Implements the Distutils 'check' command.
 """
-from distutils.core import Command
-from distutils.errors import DistutilsSetupError
+from _distutils.core import Command
+from _distutils.errors import DistutilsSetupError
 
 try:
     # docutils is installed

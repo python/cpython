@@ -51,12 +51,12 @@ import copy
 from subprocess import Popen, PIPE, check_output
 import re
 
-from distutils.unixccompiler import UnixCCompiler
-from distutils.file_util import write_file
-from distutils.errors import (DistutilsExecError, CCompilerError,
+from _distutils.unixccompiler import UnixCCompiler
+from _distutils.file_util import write_file
+from _distutils.errors import (DistutilsExecError, CCompilerError,
         CompileError, UnknownFileError)
-from distutils.version import LooseVersion
-from distutils.spawn import find_executable
+from _distutils.version import LooseVersion
+from _distutils.spawn import find_executable
 
 def get_msvcr():
     """Include the appropriate MSVC runtime library if Python was built
@@ -344,7 +344,7 @@ def check_config_h():
     # XXX since this function also checks sys.version, it's not strictly a
     # "pyconfig.h" check -- should probably be renamed...
 
-    from distutils import sysconfig
+    from _distutils import sysconfig
 
     # if sys.version contains GCC then python was compiled with GCC, and the
     # pyconfig.h file should be OK

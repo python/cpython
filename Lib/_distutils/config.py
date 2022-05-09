@@ -7,7 +7,7 @@ import os
 from configparser import RawConfigParser
 import warnings
 
-from distutils.cmd import Command
+from _distutils.cmd import Command
 
 DEFAULT_PYPIRC = """\
 [distutils]

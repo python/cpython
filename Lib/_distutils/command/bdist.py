@@ -4,15 +4,15 @@ Implements the Distutils 'bdist' command (create a built [binary]
 distribution)."""
 
 import os
-from distutils.core import Command
-from distutils.errors import *
-from distutils.util import get_platform
+from _distutils.core import Command
+from _distutils.errors import *
+from _distutils.util import get_platform
 
 
 def show_formats():
     """Print list of available formats (arguments to "--format" option).
     """
-    from distutils.fancy_getopt import FancyGetopt
+    from _distutils.fancy_getopt import FancyGetopt
     formats = []
     for format in bdist.format_commands:
         formats.append(("formats=" + format, None,

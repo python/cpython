@@ -10,9 +10,9 @@ import sys
 import os
 import subprocess
 
-from distutils.errors import DistutilsPlatformError, DistutilsExecError
-from distutils.debug import DEBUG
-from distutils import log
+from _distutils.errors import DistutilsPlatformError, DistutilsExecError
+from _distutils.debug import DEBUG
+from _distutils import log
 
 
 if sys.platform == 'darwin':
@@ -53,7 +53,7 @@ def spawn(cmd, search_path=1, verbose=0, dry_run=0):
     if sys.platform == 'darwin':
         global _cfg_target, _cfg_target_split
         if _cfg_target is None:
-            from distutils import sysconfig
+            from _distutils import sysconfig
             _cfg_target = sysconfig.get_config_var(
                                   'MACOSX_DEPLOYMENT_TARGET') or ''
             if _cfg_target:

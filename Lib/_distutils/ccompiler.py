@@ -4,13 +4,13 @@ Contains CCompiler, an abstract base class that defines the interface
 for the Distutils compiler abstraction model."""
 
 import sys, os, re
-from distutils.errors import *
-from distutils.spawn import spawn
-from distutils.file_util import move_file
-from distutils.dir_util import mkpath
-from distutils.dep_util import newer_group
-from distutils.util import split_quoted, execute
-from distutils import log
+from _distutils.errors import *
+from _distutils.spawn import spawn
+from _distutils.file_util import move_file
+from _distutils.dir_util import mkpath
+from _distutils.dep_util import newer_group
+from _distutils.util import split_quoted, execute
+from _distutils import log
 
 class CCompiler:
     """Abstract base class to define the interface that must be implemented
@@ -896,7 +896,7 @@ int main (int argc, char **argv) {
         log.debug(msg)
 
     def debug_print(self, msg):
-        from distutils.debug import DEBUG
+        from _distutils.debug import DEBUG
         if DEBUG:
             print(msg)
 
@@ -977,7 +977,7 @@ def show_compilers():
     # XXX this "knows" that the compiler option it's describing is
     # "--compiler", which just happens to be the case for the three
     # commands that use it.
-    from distutils.fancy_getopt import FancyGetopt
+    from _distutils.fancy_getopt import FancyGetopt
     compilers = []
     for compiler in compiler_class.keys():
         compilers.append(("compiler="+compiler, None,

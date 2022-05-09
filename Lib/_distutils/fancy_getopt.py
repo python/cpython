@@ -10,7 +10,7 @@ additional features:
 
 import sys, string, re
 import getopt
-from distutils.errors import *
+from _distutils.errors import *
 
 # Much like command_re in distutils.core, this is close to but not quite
 # the same as a Python NAME -- except, in the spirit of most GNU

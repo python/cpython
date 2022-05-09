@@ -12,10 +12,10 @@ from base64 import standard_b64encode
 from urllib.error import HTTPError
 from urllib.request import urlopen, Request
 from urllib.parse import urlparse
-from distutils.errors import DistutilsError, DistutilsOptionError
-from distutils.core import PyPIRCCommand
-from distutils.spawn import spawn
-from distutils import log
+from _distutils.errors import DistutilsError, DistutilsOptionError
+from _distutils.core import PyPIRCCommand
+from _distutils.spawn import spawn
+from _distutils import log
 
 
 # PyPI Warehouse supports MD5, SHA256, and Blake2 (blake2-256)
