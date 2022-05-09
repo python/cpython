@@ -105,7 +105,7 @@ pythonw
     Prompt window
 pylauncher
     py.exe, the Python Launcher for Windows, see
-        http://docs.python.org/3/using/windows.html#launcher
+        https://docs.python.org/3/using/windows.html#launcher
 pywlauncher
     pyw.exe, a variant of py.exe that doesn't open a Command Prompt
     window
@@ -168,14 +168,14 @@ _bz2
 _lzma
     Python wrapper for version 5.2.2 of the liblzma compression library
     Homepage:
-        http://tukaani.org/xz/
+        https://tukaani.org/xz/
 _ssl
     Python wrapper for version 1.1.1k of the OpenSSL secure sockets
     library, which is downloaded from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
     Homepage:
-        http://www.openssl.org/
+        https://www.openssl.org/
 
     Building OpenSSL requires Perl on your path, and can be performed by
     running PCbuild\prepare_ssl.bat. This will retrieve the version of
@@ -191,14 +191,14 @@ _ssl
 _sqlite3
     Wraps SQLite 3.38.3, which is itself built by sqlite3.vcxproj
     Homepage:
-        http://www.sqlite.org/
+        https://www.sqlite.org/
 _tkinter
     Wraps version 8.6.6 of the Tk windowing system, which is downloaded
     from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
     Homepage:
-        http://www.tcl.tk/
+        https://www.tcl.tk/
 
     Building Tcl and Tk can be performed by running
     PCbuild\prepare_tcltk.bat. This will retrieve the version of the
@@ -257,7 +257,7 @@ It creates the PGI files, runs the unit test suite or PyBench with the
 PGI python, and finally creates the optimized files.
 
 See
-    http://msdn.microsoft.com/en-us/library/e7k32f4k(VS.140).aspx
+    https://docs.microsoft.com/en-us/cpp/build/profile-guided-optimizations
 for more on this topic.
 
 
