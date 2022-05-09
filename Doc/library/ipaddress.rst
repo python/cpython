@@ -222,6 +222,13 @@ write code that handles both IP versions correctly.  Address objects are
 .. _iana-ipv4-special-registry: https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
 .. _iana-ipv6-special-registry: https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
 
+   .. attribute:: ipv6_mapped
+
+      This property gives the IPv4-mapped IPv6 address corresponding to this IPv4
+      address. The resulting :class:`IPv6Address` is in the range
+      ``::ffff:0:0/96`` as defined by :RFC:`4291`. See also
+      :attr:`~IPv6Address.ipv4_mapped`.
+
 .. method:: IPv4Address.__format__(fmt)
 
    Returns a string representation of the IP address, controlled by
@@ -321,7 +328,8 @@ write code that handles both IP versions correctly.  Address objects are
 
       For addresses that appear to be IPv4 mapped addresses (starting with
       ``::FFFF/96``), this property will report the embedded IPv4 address.
-      For any other address, this property will be ``None``.
+      For any other address, this property will be ``None``. See also
+      :attr:`~IPv4Address.ipv6_mapped`.
 
    .. attribute:: scope_id
 

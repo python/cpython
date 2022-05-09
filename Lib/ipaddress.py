@@ -1379,6 +1379,15 @@ class IPv4Address(_BaseV4, _BaseAddress):
         """
         return self in self._constants._linklocal_network
 
+    @property
+    def ipv6_mapped(self):
+        """Return the IPv4-mapped IPv6 address corresponding to this IPv4 address.
+
+        Returns:
+            The corresponding IPv4-mapped IPv6 address.
+        """
+        return IPv6Address(0xffff_0000_0000 | self._ip)
+
 
 class IPv4Interface(IPv4Address):
 

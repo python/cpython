@@ -2368,6 +2368,14 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(
                 False, ipaddress.ip_address('::ffff:172.32.0.0').is_private)
 
+    def testIpv6Mapped(self):
+        self.assertEqual(
+                ipaddress.ip_address('1.2.3.4').ipv6_mapped,
+                ipaddress.ip_address('::ffff:102:304'))
+        self.assertEqual(
+                ipaddress.ip_address('1.2.3.4').ipv6_mapped,
+                ipaddress.ip_address('::ffff:1.2.3.4'))
+
     def testAddrExclude(self):
         addr1 = ipaddress.ip_network('10.1.1.0/24')
         addr2 = ipaddress.ip_network('10.1.1.0/26')
