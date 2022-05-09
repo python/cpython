@@ -674,11 +674,7 @@ def median_grouped(data, interval=1):
 
     # Interpolate the median using the formula found at:
     # https://www.cuemath.com/data/median-of-grouped-data/
-    try:
-        L = x - interval / 2  # The lower limit of the median interval.
-    except TypeError:
-        # Coerce mixed types to float.
-        L = float(x) - float(interval) / 2
+    L = float(x) - float(interval) / 2
     cf = i                    # Cumulative frequency of the preceding interval
     f = j - i                 # Number of elements in the median internal
     return L + interval * (n / 2 - cf) / f
