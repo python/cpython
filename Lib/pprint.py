@@ -643,7 +643,7 @@ def _perfcheck(object=None):
         object = [("string", (1, 2), [3, 4], {5: 6, 7: 8})] * 100000
     p = PrettyPrinter()
     t1 = time.perf_counter()
-    p._safe_repr(object, {}, None, 0, True)
+    p._safe_repr(object, {}, None, 0)
     t2 = time.perf_counter()
     p.pformat(object)
     t3 = time.perf_counter()

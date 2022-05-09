@@ -1,0 +1,2 @@
+Fix invalid :meth:`PrettyPrinter._safe_repr` call when :module:`pprint` is
+runned as a script.
