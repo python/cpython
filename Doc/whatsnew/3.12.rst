@@ -131,6 +131,25 @@ and will be removed in Python 3.13.
 * :class:`webbrowser.MacOSX` (:issue:`42255`)
 * :mod:`xdrlib` (:pep:`594`)
 
+Pending Removal in Future Versions
+==================================
+
+The following APIs were deprecated in earlier Python versions and will be removed,
+although there is currently no date scheduled for their removal.
+
+* :class:`typing.Text` (:gh:`92332`)
+
+* Currently Python accepts numeric literals immediately followed by keywords,
+  for example ``0in x``, ``1or x``, ``0if 1else 2``.  It allows confusing
+  and ambiguous expressions like ``[0x1for x in y]`` (which can be
+  interpreted as ``[0x1 for x in y]`` or ``[0x1f or x in y]``).
+  A deprecation warning is raised if the numeric literal is
+  immediately followed by one of keywords :keyword:`and`, :keyword:`else`,
+  :keyword:`for`, :keyword:`if`, :keyword:`in`, :keyword:`is` and :keyword:`or`.
+  In future releases it will be changed to syntax warning, and finally to
+  syntax error. (:issue:`43833`)
+
+
 Removed
 =======
 
