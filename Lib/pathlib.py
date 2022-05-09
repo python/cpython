@@ -1,3 +1,4 @@
+from collections import deque
 import fnmatch
 import functools
 import io
@@ -1453,11 +1454,10 @@ class Path(PurePath):
         sys.audit("pathlib.Path.walk_bottom_up", self, on_error, follow_symlinks)
         return self._walk(False, on_error, follow_symlinks)
 
-    def _walk(self, topdown, on_error, follow_links):
+    def _walk(self, top_down, on_error, follow_symlinks):
         dirs = []
         nondirs = []
-        walk_dirs = []
-        walk_dirs_map = {}
+        dir_entry_cache = {}
 
         # We may not have read permission for self, in which case we can't
         # get a list of the files the directory contains. os.walk
@@ -1472,18 +1472,9 @@ class Path(PurePath):
             return
 
         with scandir_it:
-            while True:
+            for entry in scandir_it:
                 try:
-                    entry = next(scandir_it, ...)
-                    if entry is ...:
-                        break
-                except OSError as error:
-                    if on_error is not None:
-                        on_error(error)
-                    return
-
-                try:
-                    is_dir = entry.is_dir()
+                    is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
                 except OSError:
                     # If is_dir() raises an OSError, consider that the entry
                     # is not a directory, same behavior as os.path.isdir()
@@ -1491,41 +1482,18 @@ class Path(PurePath):
 
                 if is_dir:
                     dirs.append(entry.name)
-                    walk_dirs_map[entry.name] = entry
-                    
+                    dir_entry_cache[entry.name] = entry
                 else:
                     nondirs.append(entry.name)
 
-                if not topdown and is_dir:
-                    # Bottom-up: recurse into sub-directory, but exclude symlinks to
-                    # directories if follow_links is False
-                    if follow_links:
-                        walk_into = True
-                    else:
-                        try:
-                            is_symlink = entry.is_symlink()
-                        except OSError:
-                            # If is_symlink() raises an OSError, consider that
-                            # the entry is not a symbolic link, same behavior
-                            # as os.path.islink()
-                            is_symlink = False
-                        walk_into = not is_symlink
-
-                    if walk_into:
-                        walk_dirs.append(entry)
-        if topdown:
+        if top_down:
             yield self, dirs, nondirs
 
-            for dir_name in dirs:
-                new_path = self._make_child_relpath(dir_name)
-                
-                if follow_links or not walk_dirs_map[dir_name].is_symlink():
-                    yield from new_path._walk(topdown, on_error, follow_links)
-        else:
-            for dir_entry in walk_dirs:
-                new_path = self._make_child_relpath(dir_entry.name)
-                yield from new_path._walk(topdown, on_error, follow_links)
-            # Yield after recursion if going bottom up
+        for dir_name in dirs:
+            new_path = self._make_child_relpath(dir_name)
+            yield from new_path._walk(top_down, on_error, follow_symlinks)
+
+        if not top_down:
             yield self, dirs, nondirs
 
 
