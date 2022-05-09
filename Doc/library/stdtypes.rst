@@ -4181,6 +4181,12 @@ another set.  The :class:`frozenset` type is immutable and :term:`hashable` ---
 its contents cannot be altered after it is created; it can therefore be used as
 a dictionary key or as an element of another set.
 
+Note that as long as the objects have the same hash values, they are seen as
+equivalent by sets::
+
+   >>> {0, True, False, 1}
+   {0, True}
+
 Non-empty sets (not frozensets) can be created by placing a comma-separated list
 of elements within braces, for example: ``{'jack', 'sjoerd'}``, in addition to the
 :class:`set` constructor.
@@ -4382,6 +4388,20 @@ numeric comparison: if two numbers compare equal (such as ``1`` and ``1.0``)
 then they can be used interchangeably to index the same dictionary entry.  (Note
 however, that since computers store floating-point numbers as approximations it
 is usually unwise to use them as dictionary keys.)
+
+This also means if two keys have the same hash values, they will map to the same
+entry in the dictionary::
+
+   >>> {0: 0, False: 0}
+   {0: 0}
+
+However, note that when a key with the same hash as an existing key is inserted
+into a dictionary, it replaces the value but not the key::
+
+   >>> d = {False: 'false'}
+   >>> d[0] = 0
+   >>> d
+   {False: 0}
 
 .. class:: dict(**kwargs)
            dict(mapping, **kwargs)
