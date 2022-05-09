@@ -891,10 +891,16 @@ holds execution information. The following are new frame optimizations:
 - Streamlined the internal frame struct to contain only essential information.
   Frames previously held extra debugging and memory management information.
 
-Old-style frame objects are now created only when required by debuggers. For
-most user code, no frame objects are created at all. As a result, nearly all
+Old-style frame objects are now created only when required by debuggers.
+For most user code, no frame objects are created at all. As a result, nearly all
 Python functions calls have sped up significantly. We measured a 3-7% speedup
 in pyperformance.
+
+.. note::
+   Python frame introspection functions like ``inspect.currentframe``
+   or ``sys._getframe`` still work. However, they will not enjoy the
+   performance improvements. This change is backwards compatible.
+
 
 (Contributed by Mark Shannon in :issue:`44590`.)
 
