@@ -198,9 +198,7 @@ PyAPI_FUNC(int) PyUnicode_WriteChar(
     );
 #endif
 
-/* Resize a Unicode object. The length is the number of characters, except
-   if the kind of the string is PyUnicode_WCHAR_KIND: in this case, the length
-   is the number of Py_UNICODE characters.
+/* Resize a Unicode object. The length is the number of codepoints.
 
    *unicode is modified to point to the new (resized) object and 0
    returned on success.
