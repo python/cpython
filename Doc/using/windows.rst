@@ -559,9 +559,9 @@ System variables, you need non-restricted access to your machine
     Windows will concatenate User variables *after* System variables, which may
     cause unexpected results when modifying :envvar:`PATH`.
 
-    The :envvar:`PYTHONPATH` variable is used by all versions of Python 2 and
-    Python 3, so you should not permanently configure this variable unless it
-    only includes code that is compatible with all of your installed Python
+    The :envvar:`PYTHONPATH` variable is used by all versions of Python,
+    so you should not permanently configure it unless the listed paths
+    only include code that is compatible with all of your installed Python
     versions.
 
 .. seealso::
@@ -682,22 +682,22 @@ You should find that the latest version of Python you have installed is
 started - it can be exited as normal, and any additional command-line
 arguments specified will be sent directly to Python.
 
-If you have multiple versions of Python installed (e.g., 2.7 and |version|) you
-will have noticed that Python |version| was started - to launch Python 2.7, try
+If you have multiple versions of Python installed (e.g., 3.7 and |version|) you
+will have noticed that Python |version| was started - to launch Python 3.7, try
 the command:
 
 ::
 
-  py -2.7
+  py -3.7
 
-If you want the latest version of Python 2.x you have installed, try the
+If you want the latest version of Python 3 you have installed, try the
 command:
 
 ::
 
-  py -2
+  py -3
 
-You should find the latest version of Python 2.x starts.
+You should find the latest version of Python 3.x starts.
 
 If you see the following error, you do not have the launcher installed:
 
@@ -754,9 +754,9 @@ is printed.  Now try changing the first line to be:
 
 Re-executing the command should now print the latest Python 3.x information.
 As with the above command-line examples, you can specify a more explicit
-version qualifier.  Assuming you have Python 2.6 installed, try changing the
-first line to ``#! python2.6`` and you should find the 2.6 version
-information printed.
+version qualifier.  Assuming you have Python |version| installed, try changing
+the first line to "#! python|version|" and you should find the |version|
+version information printed.
 
 Note that unlike interactive use, a bare "python" will use the latest
 version of Python 2.x that you have installed.  This is for backward
@@ -809,8 +809,8 @@ shebang lines starting with ``/usr``.
 Any of the above virtual commands can be suffixed with an explicit version
 (either just the major version, or the major and minor version).
 Furthermore the 32-bit version can be requested by adding "-32" after the
-minor version. I.e. ``/usr/bin/python2.7-32`` will request usage of the
-32-bit python 2.7.
+minor version. I.e. ``/usr/bin/python3.7-32`` will request usage of the
+32-bit python 3.7.
 
 .. versionadded:: 3.7
 
@@ -903,19 +903,19 @@ Examples:
   ``python2`` will use the latest Python 2.x version installed and
   the command ``python3`` will use the latest Python 3.x installed.
 
-* The commands ``python3.1`` and ``python2.7`` will not consult any
+* The commands ``python3.11`` and ``python3.7`` will not consult any
   options at all as the versions are fully specified.
 
 * If ``PY_PYTHON=3``, the commands ``python`` and ``python3`` will both use
   the latest installed Python 3 version.
 
-* If ``PY_PYTHON=3.1-32``, the command ``python`` will use the 32-bit
-  implementation of 3.1 whereas the command ``python3`` will use the latest
+* If ``PY_PYTHON=3.11-32``, the command ``python`` will use the 32-bit
+  implementation of 3.11 whereas the command ``python3`` will use the latest
   installed Python (PY_PYTHON was not considered at all as a major
   version was specified.)
 
-* If ``PY_PYTHON=3`` and ``PY_PYTHON3=3.1``, the commands
-  ``python`` and ``python3`` will both use specifically 3.1
+* If ``PY_PYTHON=3`` and ``PY_PYTHON3=3.11``, the commands
+  ``python`` and ``python3`` will both use specifically 3.11
 
 In addition to environment variables, the same settings can be configured
 in the .INI file used by the launcher.  The section in the INI file is
@@ -926,21 +926,21 @@ an environment variable will override things specified in the INI file.
 
 For example:
 
-* Setting ``PY_PYTHON=3.1`` is equivalent to the INI file containing:
+* Setting ``PY_PYTHON=3.11`` is equivalent to the INI file containing:
 
 .. code-block:: ini
 
   [defaults]
-  python=3.1
+  python=3.11
 
-* Setting ``PY_PYTHON=3`` and ``PY_PYTHON3=3.1`` is equivalent to the INI file
+* Setting ``PY_PYTHON=3`` and ``PY_PYTHON3=3.11`` is equivalent to the INI file
   containing:
 
 .. code-block:: ini
 
   [defaults]
   python=3
-  python3=3.1
+  python3=3.11
 
 Diagnostics
 -----------
