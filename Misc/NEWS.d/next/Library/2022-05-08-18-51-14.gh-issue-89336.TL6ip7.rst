@@ -1,3 +1,3 @@
-Removed ``configparser`` module APIs: 
+Removed ``configparser`` module APIs:
 the ``SafeConfigParser`` class alias, the ``ParsingError.filename``
 property, and the ``ConfigParser.readfp`` method, deprecated since Python 3.2.
