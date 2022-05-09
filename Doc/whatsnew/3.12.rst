@@ -104,27 +104,27 @@ Pending Removal in Python 3.13
 The following APIs have been deprecated in earlier Python releases,
 and will be removed in Python 3.13.
 
-Removed modules:
+Removed :pep:`594` modules:
 
-* :mod:`aifc` (:pep:`594`)
-* :mod:`audioop` (:pep:`594`)
-* :mod:`cgi` (:pep:`594`)
-* :mod:`cgitb` (:pep:`594`)
-* :mod:`chunk` (:pep:`594`)
-* :mod:`crypt` (:pep:`594`)
-* :mod:`imghdr` (:pep:`594`)
-* :mod:`mailcap` (:pep:`594`)
-* :mod:`msilib` (:pep:`594`)
-* :mod:`nis` (:pep:`594`)
-* :mod:`nntplib` (:pep:`594`)
-* :mod:`ossaudiodev` (:pep:`594`)
-* :mod:`pipes` (:pep:`594`)
-* :mod:`sndhdr` (:pep:`594`)
-* :mod:`spwd` (:pep:`594`)
-* :mod:`sunau` (:pep:`594`)
-* :mod:`telnetlib` (:pep:`594`)
-* :mod:`uu` (:pep:`594`)
-* :mod:`xdrlib` (:pep:`594`)
+* :mod:`aifc`
+* :mod:`audioop`
+* :mod:`cgi`
+* :mod:`cgitb`
+* :mod:`chunk`
+* :mod:`crypt`
+* :mod:`imghdr`
+* :mod:`mailcap`
+* :mod:`msilib`
+* :mod:`nis`
+* :mod:`nntplib`
+* :mod:`ossaudiodev`
+* :mod:`pipes`
+* :mod:`sndhdr`
+* :mod:`spwd`
+* :mod:`sunau`
+* :mod:`telnetlib`
+* :mod:`uu`
+* :mod:`xdrlib`
 
 Other removed APIs:
 
