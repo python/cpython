@@ -588,7 +588,7 @@ Decimal objects
    .. classmethod:: from_float(f)
 
       Alternative constructor that only accepts instances of :class:`float` or
-      :class:`int`. A legacy method which largely exists for backwards
+      :class:`int`. This is a legacy method which largely exists for backwards
       compatibility.
 
       .. versionadded:: 3.1
