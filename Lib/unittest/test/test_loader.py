@@ -176,7 +176,7 @@ class Test_TestLoader(unittest.TestCase):
         self.assertIsInstance(suite, unittest.TestSuite)
         self.assertEqual(load_tests_args, [loader, suite, None])
 
-        # In Python 3.11, the undocumented and unofficial use_load_tests has
+        # In Python 3.12, the undocumented and unofficial use_load_tests has
         # been removed.
         with self.assertRaises(TypeError):
             loader.loadTestsFromModule(m, False)
