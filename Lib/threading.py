@@ -368,11 +368,9 @@ class Condition:
         """
         if not self._is_owned():
             raise RuntimeError("cannot notify on un-acquired lock")
-        all_waiters = self._waiters
-        waiters_to_notify = _deque(_islice(all_waiters, n))
-        if not waiters_to_notify:
-            return
-        for waiter in waiters_to_notify:
+        waiters = self._waiters
+        while waiters and n > 0:
+            waiter = waiters[0]
             try:
                 waiter.release()
             except RuntimeError:
@@ -381,8 +379,10 @@ class Condition:
                 # It can happen if a signal handler raises an exception,
                 # like CTRL+C which raises KeyboardInterrupt.
                 pass
+            else:
+                n -= 1
             try:
-                all_waiters.remove(waiter)
+                waiters.remove(waiter)
             except ValueError:
                 pass
 
