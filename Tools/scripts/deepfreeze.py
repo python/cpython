@@ -200,7 +200,6 @@ class Printer:
                         self.write(".kind = 1,")
                         self.write(".compact = 1,")
                         self.write(".ascii = 1,")
-                        self.write(".ready = 1,")
                 self.write(f"._data = {make_string_literal(s.encode('ascii'))},")
                 return f"& {name}._ascii.ob_base"
             else:
@@ -213,7 +212,6 @@ class Printer:
                             self.write(f".kind = {kind},")
                             self.write(".compact = 1,")
                             self.write(".ascii = 0,")
-                            self.write(".ready = 1,")
                 with self.block(f"._data =", ","):
                     for i in range(0, len(s), 16):
                         data = s[i:i+16]
