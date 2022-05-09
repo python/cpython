@@ -98,6 +98,31 @@ Deprecated
 ==========
 
 
+Pending Removal in Python 3.13
+==============================
+
+The following APIs have been deprecated in earlier Python releases,
+and will be removed in Python 3.13.
+
+* :mod:`aifc` (:pep:`594`)
+* :mod:`audioop` (:pep:`594`)
+* :mod:`cgi` (:pep:`594`)
+* :mod:`cgitb` (:pep:`594`)
+* :mod:`chunk` (:pep:`594`)
+* :mod:`crypt` (:pep:`594`)
+* :mod:`imghdr` (:pep:`594`)
+* :mod:`mailcap` (:pep:`594`)
+* :mod:`msilib` (:pep:`594`)
+* :mod:`nis` (:pep:`594`)
+* :mod:`nntplib` (:pep:`594`)
+* :mod:`ossaudiodev` (:pep:`594`)
+* :mod:`pipes` (:pep:`594`)
+* :mod:`sndhdr` (:pep:`594`)
+* :mod:`spwd` (:pep:`594`)
+* :mod:`sunau` (:pep:`594`)
+* :mod:`telnetlib` (:pep:`594`)
+* :mod:`uu` (:pep:`594`)
+* :mod:`xdrlib` (:pep:`594`)
 
 Removed
 =======
