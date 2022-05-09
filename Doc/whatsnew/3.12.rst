@@ -109,8 +109,10 @@ and will be removed in Python 3.13.
 * :mod:`cgi` (:pep:`594`)
 * :mod:`cgitb` (:pep:`594`)
 * :mod:`chunk` (:pep:`594`)
+* :class:`configparser.LegacyInterpolation` (:issue:`46607`)
 * :mod:`crypt` (:pep:`594`)
 * :mod:`imghdr` (:pep:`594`)
+* :func:`locale.getdefaultlocale` (:issue:`46659`)
 * :mod:`mailcap` (:pep:`594`)
 * :mod:`msilib` (:pep:`594`)
 * :mod:`nis` (:pep:`594`)
@@ -121,7 +123,12 @@ and will be removed in Python 3.13.
 * :mod:`spwd` (:pep:`594`)
 * :mod:`sunau` (:pep:`594`)
 * :mod:`telnetlib` (:pep:`594`)
+* :meth:`turtle.RawTurtle.settiltangle` (:issue:`45837`)
+* :func:`unittest.findTestCases` (:issue:`5846`)
+* :func:`unittest.makeSuite` (:issue:`5846`)
+* :func:`unittest.getTestCaseNames` (:issue:`5846`)
 * :mod:`uu` (:pep:`594`)
+* :class:`webbrowser.MacOSX` (:issue:`42255`)
 * :mod:`xdrlib` (:pep:`594`)
 
 Removed
