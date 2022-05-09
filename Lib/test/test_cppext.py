@@ -10,8 +10,8 @@ from test.support import os_helper
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore', DeprecationWarning)
-    from distutils.core import setup, Extension
-    import distutils.sysconfig
+    from _distutils.core import setup, Extension
+    import _distutils.sysconfig
 
 
 MS_WINDOWS = (sys.platform == 'win32')
@@ -78,10 +78,10 @@ class TestCPPExt(unittest.TestCase):
         self.addCleanup(restore_env, dict(os.environ))
 
         def restore_sysconfig_vars(old_config_vars):
-            distutils.sysconfig._config_vars.clear()
-            distutils.sysconfig._config_vars.update(old_config_vars)
+            _distutils.sysconfig._config_vars.clear()
+            _distutils.sysconfig._config_vars.update(old_config_vars)
         self.addCleanup(restore_sysconfig_vars,
-                        dict(distutils.sysconfig._config_vars))
+                        dict(_distutils.sysconfig._config_vars))
 
         # Build in a temporary directory
         with os_helper.temp_cwd():
