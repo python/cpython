@@ -1,0 +1,2 @@
+:meth:`pathlib.Path.rglob` raised :exc:`IndexError` when called with an
+empty string. This regression was introduced in 3.11b1.
