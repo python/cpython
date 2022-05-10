@@ -1040,7 +1040,7 @@ class DisTests(DisTestBase):
                     for cache in caches:
                         self.assertRegex(cache, pattern)
                     self.assertEqual(caches.count(""), 8)
-                    self.assertEqual(len(caches), 25)
+                    self.assertEqual(len(caches), 26)
 
 
 class DisWithFileTests(DisTests):
