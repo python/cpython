@@ -7877,6 +7877,7 @@ mark_known_variables(struct assembler *a, struct compiler *c)
         return -1;
     }
 
+    // Which locals are function parameters?
     uint64_t param_mask = 0;
     PyObject *param_names = c->u->u_ste->ste_varnames;
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(param_names); i++) {

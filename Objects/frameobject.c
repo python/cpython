@@ -455,6 +455,16 @@ _PyFrame_GetState(PyFrameObject *frame)
     Py_UNREACHABLE();
 }
 
+void
+replace_LOAD_FAST_KNOWNs(PyCodeObject *co)
+{
+    _Py_CODEUNIT *instructions = _PyCode_CODE(co);
+    for (Py_ssize_t i = 0; i < Py_SIZE(co); i++) {
+        if (_Py_OPCODE(instructions[i]) == LOAD_FAST_KNOWN) {
+            _Py_SET_OPCODE(instructions[i], LOAD_FAST);
+        }
+    }
+}
 
 /* Setter for f_lineno - you can set f_lineno from within a trace function in
  * order to jump to a given line of code, subject to some restrictions.  Most
@@ -544,6 +554,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
                     new_lineno);
         return -1;
     }
+
+    replace_LOAD_FAST_KNOWNs(f->f_frame->f_code);
 
     /* PyCode_NewWithPosOnlyArgs limits co_code to be under INT_MAX so this
      * should never overflow. */
@@ -1047,6 +1059,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
     }
     fast = _PyFrame_GetLocalsArray(frame);
     co = frame->f_code;
+    bool replaced_code = false;
 
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
     for (int i = 0; i < co->co_nlocalsplus; i++) {
@@ -1064,6 +1077,10 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
             if (!clear) {
                 continue;
             }
+        }
+        if (!replaced_code) {
+            replace_LOAD_FAST_KNOWNs(co);
+            replaced_code = true;
         }
         PyObject *oldvalue = fast[i];
         PyObject *cell = NULL;
