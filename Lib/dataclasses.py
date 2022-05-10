@@ -398,7 +398,7 @@ def _tuple_str(obj_name, fields):
     if not fields:
         return '()'
     # Note the trailing comma, needed if this turns out to be a 1-tuple.
-    return f'({"".join([f"{obj_name}.{symbol(i)}," for i in range(len(fields))])})'
+    return f'({",".join([f"{obj_name}.{symbol(i)}" for i in range(len(fields))])},)'
 
 
 # This function's logic is copied from "recursive_repr" function in
@@ -619,10 +619,10 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
     f = _create_fn('__init__',
                    [self_name] + _init_params,
                    body_lines,
-                   locals=locals,
-                   globals=globals,
                    fields=fields,
-                   extra_keys=extra_keys)
+                   extra_keys=extra_keys,
+                   locals=locals,
+                   globals=globals)
     annotations = {"return": None}
     defaults = []
     kwdefaults = {}
@@ -651,8 +651,8 @@ def _repr_fn(fields, globals):
                      ', '.join([f"{symbol(i)}={{self.{symbol(i)}!r}}"
                                 for i in range(len(fields))]) +
                      ')"'],
-                     globals=globals,
-                     fields=fields)
+                     fields=fields,
+                     globals=globals)
     return _recursive_repr(fn)
 
 
@@ -665,17 +665,17 @@ def _frozen_get_del_attr(cls, fields, globals):
                       (f'if type(self) is cls or name in {fields_str}:',
                         ' raise FrozenInstanceError(f"cannot assign to field {name!r}")',
                        f'super(cls, self).__setattr__(name, value)'),
+                       fields=fields,
                        locals=locals,
-                       globals=globals,
-                       fields=fields),
+                       globals=globals),
             _create_fn('__delattr__',
                       ('self', 'name'),
                       (f'if type(self) is cls or name in {fields_str}:',
                         ' raise FrozenInstanceError(f"cannot delete field {name!r}")',
                        f'super(cls, self).__delattr__(name)'),
+                       fields=fields,
                        locals=locals,
-                       globals=globals,
-                       fields=fields),
+                       globals=globals),
             )
 
 
@@ -690,8 +690,8 @@ def _cmp_fn(name, op, self_tuple, other_tuple, globals, fields):
                       [ 'if other.__class__ is self.__class__:',
                        f' return {self_tuple}{op}{other_tuple}',
                         'return NotImplemented'],
-                      globals=globals,
-                      fields=fields)
+                      fields=fields,
+                      globals=globals)
 
 
 def _hash_fn(fields, globals):
@@ -699,8 +699,8 @@ def _hash_fn(fields, globals):
     return _create_fn('__hash__',
                       ('self',),
                       [f'return hash({self_tuple})'],
-                      globals=globals,
-                      fields=fields)
+                      fields=fields,
+                      globals=globals)
 
 
 def _is_classvar(a_type, typing):
@@ -1115,7 +1115,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         _set_new_attribute(cls, '__eq__',
                            _cmp_fn('__eq__', '==',
                                    self_tuple, other_tuple,
-                                   globals=globals, fields=flds))
+                                   fields=flds, globals=globals))
 
     if order:
         # Create and set the ordering methods.
@@ -1129,7 +1129,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                          ]:
             if _set_new_attribute(cls, name,
                                   _cmp_fn(name, op, self_tuple, other_tuple,
-                                          globals=globals, fields=flds)):
+                                          fields=flds, globals=globals)):
                 raise TypeError(f'Cannot overwrite attribute {name} '
                                 f'in class {cls.__name__}. Consider using '
                                 'functools.total_ordering')
