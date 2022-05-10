@@ -359,9 +359,6 @@ class LogRecord(object):
         return '<LogRecord: %s, %s, %s, %s, "%s">'%(self.name, self.levelno,
             self.pathname, self.lineno, self.msg)
 
-    def __bool__(self):
-        return True
-
     def getMessage(self):
         """
         Return the message for this LogRecord.
