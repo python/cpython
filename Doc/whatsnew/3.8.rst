@@ -1087,6 +1087,9 @@ contain characters unrepresentable at the OS level.
 Added :meth:`pathlib.Path.link_to()` which creates a hard link pointing
 to a path.
 (Contributed by Joannah Nanjekye in :issue:`26978`)
+Note that ``link_to`` was deprecated in 3.10 and removed in 3.12 in
+favor of a ``hardlink_to`` method added in 3.10 which matches the
+semantics of the existing ``symlink_to`` method.
 
 
 pickle
