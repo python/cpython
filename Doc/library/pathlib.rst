@@ -914,7 +914,7 @@ call fails (for example because the path doesn't exist).
 
    The children are yielded in arbitrary order, and the special entries
    ``'.'`` and ``'..'`` are not included.  If a file is removed from or added
-   to the directory after creating the iterator, whether an path object for
+   to the directory after creating the iterator, whether a path object for
    that file be included is unspecified.
 
 .. method:: Path.lchmod(mode)
@@ -1042,7 +1042,7 @@ call fails (for example because the path doesn't exist).
 
    Rename this file or directory to the given *target*, and return a new Path
    instance pointing to *target*.  If *target* points to an existing file or
-   directory, it will be unconditionally replaced.
+   empty directory, it will be unconditionally replaced.
 
    The target path may be absolute or relative. Relative paths are interpreted
    relative to the current working directory, *not* the directory of the Path

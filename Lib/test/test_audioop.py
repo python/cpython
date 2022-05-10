@@ -1,6 +1,9 @@
-import audioop
 import sys
+from test.support import warnings_helper
 import unittest
+
+audioop = warnings_helper.import_deprecated("audioop")
+
 
 def pack(width, data):
     return b''.join(v.to_bytes(width, sys.byteorder, signed=True) for v in data)

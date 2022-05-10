@@ -1,3 +1,6 @@
+parameters:
+  ARM64TclTk: true
+
 jobs:
 - job: Make_Layouts
   displayName: Make layouts
@@ -26,7 +29,8 @@ jobs:
         HostArch: amd64
         Python: $(Build.BinariesDirectory)\bin_amd64\python.exe
         PYTHONHOME: $(Build.SourcesDirectory)
-        TclLibrary: $(Build.BinariesDirectory)\tcltk_lib\tcl8
+        ${{ if eq(parameters.ARM64TclTk, true) }}:
+          TclLibrary: $(Build.BinariesDirectory)\tcltk_lib\tcl8
 
   steps:
   - template: ./checkout.yml

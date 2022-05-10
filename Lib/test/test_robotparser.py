@@ -308,6 +308,9 @@ class RobotHandler(BaseHTTPRequestHandler):
         pass
 
 
+@unittest.skipIf(
+    support.is_emscripten, "Socket server not available on Emscripten."
+)
 class PasswordProtectedSiteTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -342,6 +345,7 @@ class PasswordProtectedSiteTestCase(unittest.TestCase):
         self.assertFalse(parser.can_fetch("*", robots_url))
 
 
+@support.requires_working_socket()
 class NetworkTestCase(unittest.TestCase):
 
     base_url = 'http://www.pythontest.net/'

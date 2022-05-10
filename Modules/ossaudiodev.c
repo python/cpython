@@ -1117,6 +1117,13 @@ PyInit_ossaudiodev(void)
 {
     PyObject *m;
 
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "'ossaudiodev' is deprecated and slated for removal in "
+                     "Python 3.13",
+                     7)) {
+        return NULL;
+    }
+
     if (PyType_Ready(&OSSAudioType) < 0)
         return NULL;
 
@@ -1219,16 +1226,36 @@ PyInit_ossaudiodev(void)
 
     /* Expose all the ioctl numbers for masochists who like to do this
        stuff directly. */
+#ifdef SNDCTL_COPR_HALT
     _EXPORT_INT(m, SNDCTL_COPR_HALT);
+#endif
+#ifdef SNDCTL_COPR_LOAD
     _EXPORT_INT(m, SNDCTL_COPR_LOAD);
+#endif
+#ifdef SNDCTL_COPR_RCODE
     _EXPORT_INT(m, SNDCTL_COPR_RCODE);
+#endif
+#ifdef SNDCTL_COPR_RCVMSG
     _EXPORT_INT(m, SNDCTL_COPR_RCVMSG);
+#endif
+#ifdef SNDCTL_COPR_RDATA
     _EXPORT_INT(m, SNDCTL_COPR_RDATA);
+#endif
+#ifdef SNDCTL_COPR_RESET
     _EXPORT_INT(m, SNDCTL_COPR_RESET);
+#endif
+#ifdef SNDCTL_COPR_RUN
     _EXPORT_INT(m, SNDCTL_COPR_RUN);
+#endif
+#ifdef SNDCTL_COPR_SENDMSG
     _EXPORT_INT(m, SNDCTL_COPR_SENDMSG);
+#endif
+#ifdef SNDCTL_COPR_WCODE
     _EXPORT_INT(m, SNDCTL_COPR_WCODE);
+#endif
+#ifdef SNDCTL_COPR_WDATA
     _EXPORT_INT(m, SNDCTL_COPR_WDATA);
+#endif
 #ifdef SNDCTL_DSP_BIND_CHANNEL
     _EXPORT_INT(m, SNDCTL_DSP_BIND_CHANNEL);
 #endif
@@ -1250,8 +1277,12 @@ PyInit_ossaudiodev(void)
     _EXPORT_INT(m, SNDCTL_DSP_GETSPDIF);
 #endif
     _EXPORT_INT(m, SNDCTL_DSP_GETTRIGGER);
+#ifdef SNDCTL_DSP_MAPINBUF
     _EXPORT_INT(m, SNDCTL_DSP_MAPINBUF);
+#endif
+#ifdef SNDCTL_DSP_MAPOUTBUF
     _EXPORT_INT(m, SNDCTL_DSP_MAPOUTBUF);
+#endif
     _EXPORT_INT(m, SNDCTL_DSP_NONBLOCK);
     _EXPORT_INT(m, SNDCTL_DSP_POST);
 #ifdef SNDCTL_DSP_PROFILE
@@ -1271,46 +1302,104 @@ PyInit_ossaudiodev(void)
     _EXPORT_INT(m, SNDCTL_DSP_STEREO);
     _EXPORT_INT(m, SNDCTL_DSP_SUBDIVIDE);
     _EXPORT_INT(m, SNDCTL_DSP_SYNC);
+#ifdef SNDCTL_FM_4OP_ENABLE
     _EXPORT_INT(m, SNDCTL_FM_4OP_ENABLE);
+#endif
+#ifdef SNDCTL_FM_LOAD_INSTR
     _EXPORT_INT(m, SNDCTL_FM_LOAD_INSTR);
+#endif
+#ifdef SNDCTL_MIDI_INFO
     _EXPORT_INT(m, SNDCTL_MIDI_INFO);
+#endif
+#ifdef SNDCTL_MIDI_MPUCMD
     _EXPORT_INT(m, SNDCTL_MIDI_MPUCMD);
+#endif
+#ifdef SNDCTL_MIDI_MPUMODE
     _EXPORT_INT(m, SNDCTL_MIDI_MPUMODE);
+#endif
+#ifdef SNDCTL_MIDI_PRETIME
     _EXPORT_INT(m, SNDCTL_MIDI_PRETIME);
+#endif
+#ifdef SNDCTL_SEQ_CTRLRATE
     _EXPORT_INT(m, SNDCTL_SEQ_CTRLRATE);
+#endif
+#ifdef SNDCTL_SEQ_GETINCOUNT
     _EXPORT_INT(m, SNDCTL_SEQ_GETINCOUNT);
+#endif
+#ifdef SNDCTL_SEQ_GETOUTCOUNT
     _EXPORT_INT(m, SNDCTL_SEQ_GETOUTCOUNT);
+#endif
 #ifdef SNDCTL_SEQ_GETTIME
     _EXPORT_INT(m, SNDCTL_SEQ_GETTIME);
 #endif
+#ifdef SNDCTL_SEQ_NRMIDIS
     _EXPORT_INT(m, SNDCTL_SEQ_NRMIDIS);
+#endif
+#ifdef SNDCTL_SEQ_NRSYNTHS
     _EXPORT_INT(m, SNDCTL_SEQ_NRSYNTHS);
+#endif
+#ifdef SNDCTL_SEQ_OUTOFBAND
     _EXPORT_INT(m, SNDCTL_SEQ_OUTOFBAND);
+#endif
+#ifdef SNDCTL_SEQ_PANIC
     _EXPORT_INT(m, SNDCTL_SEQ_PANIC);
+#endif
+#ifdef SNDCTL_SEQ_PERCMODE
     _EXPORT_INT(m, SNDCTL_SEQ_PERCMODE);
+#endif
+#ifdef SNDCTL_SEQ_RESET
     _EXPORT_INT(m, SNDCTL_SEQ_RESET);
+#endif
+#ifdef SNDCTL_SEQ_RESETSAMPLES
     _EXPORT_INT(m, SNDCTL_SEQ_RESETSAMPLES);
+#endif
+#ifdef SNDCTL_SEQ_SYNC
     _EXPORT_INT(m, SNDCTL_SEQ_SYNC);
+#endif
+#ifdef SNDCTL_SEQ_TESTMIDI
     _EXPORT_INT(m, SNDCTL_SEQ_TESTMIDI);
+#endif
+#ifdef SNDCTL_SEQ_THRESHOLD
     _EXPORT_INT(m, SNDCTL_SEQ_THRESHOLD);
+#endif
 #ifdef SNDCTL_SYNTH_CONTROL
     _EXPORT_INT(m, SNDCTL_SYNTH_CONTROL);
 #endif
 #ifdef SNDCTL_SYNTH_ID
     _EXPORT_INT(m, SNDCTL_SYNTH_ID);
 #endif
+#ifdef SNDCTL_SYNTH_INFO
     _EXPORT_INT(m, SNDCTL_SYNTH_INFO);
+#endif
+#ifdef SNDCTL_SYNTH_MEMAVL
     _EXPORT_INT(m, SNDCTL_SYNTH_MEMAVL);
+#endif
 #ifdef SNDCTL_SYNTH_REMOVESAMPLE
     _EXPORT_INT(m, SNDCTL_SYNTH_REMOVESAMPLE);
 #endif
+#ifdef SNDCTL_TMR_CONTINUE
     _EXPORT_INT(m, SNDCTL_TMR_CONTINUE);
+#endif
+#ifdef SNDCTL_TMR_METRONOME
     _EXPORT_INT(m, SNDCTL_TMR_METRONOME);
+#endif
+#ifdef SNDCTL_TMR_SELECT
     _EXPORT_INT(m, SNDCTL_TMR_SELECT);
+#endif
+#ifdef SNDCTL_TMR_SOURCE
     _EXPORT_INT(m, SNDCTL_TMR_SOURCE);
+#endif
+#ifdef SNDCTL_TMR_START
     _EXPORT_INT(m, SNDCTL_TMR_START);
+#endif
+#ifdef SNDCTL_TMR_STOP
     _EXPORT_INT(m, SNDCTL_TMR_STOP);
+#endif
+#ifdef SNDCTL_TMR_TEMPO
     _EXPORT_INT(m, SNDCTL_TMR_TEMPO);
+#endif
+#ifdef SNDCTL_TMR_TIMEBASE
     _EXPORT_INT(m, SNDCTL_TMR_TIMEBASE);
+#endif
     return m;
 }
