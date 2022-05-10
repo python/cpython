@@ -1025,17 +1025,6 @@ call fails (for example because the path doesn't exist).
               (root / name).rmdir()
    
    .. versionadded:: 3.12
-   
-.. method:: Path.walk_bottom_up(on_error=None, follow_symlinks=False)
-
-   Generate a bottom up directory tree from this directory
-
-   The return type and arguments are identical to :meth:`Path.walk`.
-   
-   Unline :meth:`Path.walk`, the caller cannot modify the dirnames to prune the
-   search or to impose a specific order of visiting because the
-   list of directories to visit is calculated before yielding it.
-
 
 .. method:: Path.lchmod(mode)
 
