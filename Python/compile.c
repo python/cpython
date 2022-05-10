@@ -7801,17 +7801,28 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
 }
 
 
-bool
-scan_block_for_local(int target, basicblock *b, bool unsafe_to_start)
+// Ensure each basicblock is only put onto the stack once.
+#define MAYBE_PUSH(B) do {                          \
+        if ((B)->b_visited == 0) {                  \
+            *(*stack_top)++ = (B);                  \
+            (B)->b_visited = 1;                     \
+        }                                           \
+    } while (0)
+
+void
+scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
+                     basicblock **stack, basicblock ***stack_top)
 {
     bool unsafe = unsafe_to_start;
     for (int i = 0; i < b->b_iused; i++) {
-        int opcode = b->b_instr[i].i_opcode;
-        int oparg = b->b_instr[i].i_oparg;
-        if (oparg != target) {
+        struct instr *instr = &b->b_instr[i];
+        if (instr->i_oparg != target) {
             continue;
         }
-        switch (opcode) {
+        if (unsafe && instr->i_except != NULL) {
+            MAYBE_PUSH(instr->i_except);
+        }
+        switch (instr->i_opcode) {
             case LOAD_FAST:
                 // if this doesn't raise, then var is defined
                 unsafe = false;
@@ -7830,9 +7841,20 @@ scan_block_for_local(int target, basicblock *b, bool unsafe_to_start)
                 break;
         }
     }
-    return unsafe;
+    if (unsafe) {
+        // unsafe at end of this block,
+        // so unsafe at start of next blocks
+        if (b->b_next && !b->b_nofallthrough) {
+            MAYBE_PUSH(b->b_next);
+        }
+        struct instr *last = &b->b_instr[b->b_iused-1];
+        if (is_jump(last)) {
+            assert(last->i_target != NULL);
+            MAYBE_PUSH(last->i_target);
+        }
+    }
 }
-
+#undef MAYBE_PUSH
 
 int
 mark_known_variables(struct assembler *a, struct compiler *c)
@@ -7862,71 +7884,29 @@ mark_known_variables(struct assembler *a, struct compiler *c)
         return -1;
     }
 
-    // Ensure each basicblock is only put onto the stack once.
-    #define MAYBE_PUSH(B) do {                          \
-            if ((B)->b_visited == 0) {                  \
-                /*fprintf(stderr, "Pushing ");*/        \
-                dump_basicblock(B);                     \
-                assert(stack_top - stack < num_blocks); \
-                *stack_top++ = (B);                     \
-                (B)->b_visited = 1;                     \
-            }                                           \
-        } while (0)
-
     for (int target = 0; target < num_locals; target++) {
-        // fprintf(stderr, "target=%d\n", target);
-
+        for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+            b->b_visited = 0;
+        }
         basicblock **stack_top = stack;
-
-        // First pass: find the relevant DFS starting points:
-        // the places where "being uninitialized" originates,
-        // which are the entry block and any DELETE_FAST statements.
 
         // XXX: if (not_a_parameter)
         *(stack_top++) = a->a_entry;
         a->a_entry->b_visited = 1;
 
-        // fprintf(stderr, "--- first pass ---\n");
+        // First pass: find the relevant DFS starting points:
+        // the places where "being uninitialized" originates,
+        // which are the entry block and any DELETE_FAST statements.
         for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
-            b->b_visited = 0;
-            bool unsafe = scan_block_for_local(target, b, false);
-            if (unsafe) {
-                if (b->b_next) {
-                    MAYBE_PUSH(b->b_next);
-                }
-                struct instr *last = &b->b_instr[b->b_iused-1];
-                if (is_jump(last)) {
-                    assert(last->i_target != NULL);
-                    MAYBE_PUSH(last->i_target);
-                }
-            }
+            scan_block_for_local(target, b, false, stack, &stack_top);
         }
 
-        // fprintf(stderr, "--- second pass ---\n");
-        // Second pass: Depth-first search
+        // Second pass: Depth-first search to propagate uncertainty
         while (stack_top > stack) {
             basicblock *b = *--stack_top;
-            // fprintf(stderr, "popped ");
-            // dump_basicblock(b);
-            bool unsafe = scan_block_for_local(target, b, true);
-            // fprintf(stderr, "after: ");
-            // dump_basicblock(b);
-            if (unsafe) {
-                if (!b->b_nofallthrough) {
-                    assert(b->b_next);
-                    MAYBE_PUSH(b->b_next);
-                }
-                struct instr *last = &b->b_instr[b->b_iused-1];
-                if (is_jump(last)) {
-                    assert(last->i_target != NULL);
-                    MAYBE_PUSH(last->i_target);
-                }
-            }
+            scan_block_for_local(target, b, true, stack, &stack_top);
         }
     }
-    // fprintf(stderr, "big loop ended\n");
-
-    #undef MAYBE_PUSH
     PyMem_Free(stack);
     return 0;
 }

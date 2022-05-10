@@ -127,7 +127,7 @@ class TestTranforms(BytecodeTestCase):
             except ZeroDivisionError:
                 pass
             return res
-        self.assertNotInBytecode(f, 'LOAD_FAST_KNOWN')
+        self.assertInBytecode(f, 'LOAD_FAST')
 
     def test_while_one(self):
         # Skip over:  LOAD_CONST trueconst  POP_JUMP_IF_FALSE xx
