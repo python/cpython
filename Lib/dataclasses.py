@@ -450,7 +450,7 @@ _code_cache_miss = 0
 
 
 def _create_fn(
-    name, args, body, fields, extra_keys=(), globals=None, locals=None
+    name, args, body, fields, *, extra_keys=(), globals=None, locals=None
 ):
     global _code_cache_total, _code_cache_miss
     key = (name, len(fields), locals and frozenset(locals), *extra_keys)
@@ -508,7 +508,7 @@ def _field_init(f, frozen, globals, self_name, slots, i):
     # initialize this field.
 
     field_name = _symbol(i)
-    default_name = f'__default_{i}__'
+    default_name = f'_dflt_{i}'
     if f.default_factory is not MISSING:
         if f.init:
             # This field has a default factory.  If a parameter is
