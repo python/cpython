@@ -738,6 +738,8 @@ class ElementTree:
                     # Retrieve the default encoding for the xml declaration
                     import locale
                     declared_encoding = locale.getpreferredencoding()
+                elif enc_lower == "utf-8-sig":
+                    declared_encoding = "utf-8"
                 write("<?xml version='1.0' encoding='%s'?>\n" % (
                     declared_encoding,))
             if method == "text":
