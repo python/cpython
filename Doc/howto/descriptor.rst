@@ -940,8 +940,6 @@ here is a pure Python equivalent:
             self._name = name
 
         def __get__(self, obj, objtype=None):
-            if obj is None and objtype is None:
-                raise TypeError('__get__(None, None) is invalid')
             if obj is None:
                 return self
             if self.fget is None:
@@ -1089,8 +1087,6 @@ during dotted lookup from an instance.  Here's how it works:
 
         def __get__(self, obj, objtype=None):
             "Simulate func_descr_get() in Objects/funcobject.c"
-            if obj is None and objtype is None:
-                raise TypeError('__get__(None, None) is invalid')
             if obj is None:
                 return self
             return MethodType(self, obj)
@@ -1283,11 +1279,9 @@ Using the non-data descriptor protocol, a pure Python version of
             self.f = f
 
         def __get__(self, obj, cls=None):
-            if obj is None and cls is None:
-                raise TypeError('__get__(None, None) is invalid')
             if cls is None:
                 cls = type(obj)
-            if hasattr(self.f, '__get__'):
+            if hasattr(type(self.f), '__get__'):
                 return self.f.__get__(cls)
             return MethodType(self.f, cls)
 
@@ -1311,7 +1305,7 @@ Using the non-data descriptor protocol, a pure Python version of
     >>> t.cm(11, 22)
     (<class 'T'>, 11, 22)
 
-The code path for ``hasattr(self.f, '__get__')`` was added in Python 3.9 and
+The code path for ``hasattr(type(self.f), '__get__')`` was added in Python 3.9 and
 makes it possible for :func:`classmethod` to support chained decorators.
 For example, a classmethod and property could be chained together:
 
@@ -1381,7 +1375,7 @@ attributes stored in ``__slots__``:
     >>> mark.dept = 'Space Pirate'
     Traceback (most recent call last):
         ...
-    AttributeError: can't set attribute
+    AttributeError: property 'dept' of 'Immutable' object has no setter
     >>> mark.location = 'Mars'
     Traceback (most recent call last):
         ...
@@ -1421,7 +1415,7 @@ It is not possible to create an exact drop-in pure Python version of
 ``__slots__`` because it requires direct access to C structures and control
 over object memory allocation.  However, we can build a mostly faithful
 simulation where the actual C structure for slots is emulated by a private
-``_slot_values`` list.  Reads and writes to that private structure are managed
+``_slotvalues`` list.  Reads and writes to that private structure are managed
 by member descriptors:
 
 .. testcode::
@@ -1440,29 +1434,25 @@ by member descriptors:
         def __get__(self, obj, objtype=None):
             'Emulate member_get() in Objects/descrobject.c'
             # Also see PyMember_GetOne() in Python/structmember.c
-            if obj is None and objtype is None:
-                raise TypeError('__get__(None, None) is invalid')
-            if obj is None:
-                return self
-            value = obj._slot_values[self.offset]
+            value = obj._slotvalues[self.offset]
             if value is null:
                 raise AttributeError(self.name)
             return value
 
         def __set__(self, obj, value):
             'Emulate member_set() in Objects/descrobject.c'
-            obj._slot_values[self.offset] = value
+            obj._slotvalues[self.offset] = value
 
         def __delete__(self, obj):
             'Emulate member_delete() in Objects/descrobject.c'
-            value = obj._slot_values[self.offset]
+            value = obj._slotvalues[self.offset]
             if value is null:
                 raise AttributeError(self.name)
-            obj._slot_values[self.offset] = null
+            obj._slotvalues[self.offset] = null
 
         def __repr__(self):
             'Emulate member_repr() in Objects/descrobject.c'
-            return f'<Member {self.name!r} of {self.clsname!r} objects>'
+            return f'<Member {self.name!r} of {self.clsname!r}>'
 
 The :meth:`type.__new__` method takes care of adding member objects to class
 variables:
@@ -1472,25 +1462,13 @@ variables:
     class Type(type):
         'Simulate how the type metaclass adds member objects for slots'
 
-        def __new__(mcls, clsname, bases, mapping, **kwargs):
-            'Emuluate type_new() in Objects/typeobject.c'
+        def __new__(mcls, clsname, bases, mapping):
+            'Emulate type_new() in Objects/typeobject.c'
             # type_new() calls PyTypeReady() which calls add_methods()
             slot_names = mapping.get('slot_names', [])
-            if slot_names:
-                for base in bases:
-                    for cls in base.__mro__:
-                        if cls.__itemsize__:
-                            raise TypeError(
-                                f'nonempty __slots__ not supported for '
-                                f'subtype of {cls.__name__!r}'
-                            )
-            for offset, name in enumerate(dict.fromkeys(slot_names)):
-                if name in mapping:
-                    raise ValueError(
-                        f'{name!r} in __slots__ conflicts with class variable'
-                    )
+            for offset, name in enumerate(slot_names):
                 mapping[name] = Member(name, clsname, offset)
-            return super().__new__(mcls, clsname, bases, mapping)
+            return type.__new__(mcls, clsname, bases, mapping)
 
 The :meth:`object.__new__` method takes care of creating instances that have
 slots instead of an instance dictionary.  Here is a rough simulation in pure
@@ -1501,23 +1479,13 @@ Python:
     class Object:
         'Simulate how object.__new__() allocates memory for __slots__'
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(cls, *args):
             'Emulate object_new() in Objects/typeobject.c'
             inst = super().__new__(cls)
             if hasattr(cls, 'slot_names'):
                 empty_slots = [null] * len(cls.slot_names)
-                super().__setattr__(inst, '_slot_values', empty_slots)
+                object.__setattr__(inst, '_slotvalues', empty_slots)
             return inst
-
-        def __getattribute__(self, name):
-            'Emulate _PyObject_GenericGetAttrWithDict() Objects/object.c'
-            cls = type(self)
-            if (hasattr(cls, 'slot_names') and name not in cls.slot_names
-                    and name != '_slot_values'):
-                raise AttributeError(
-                    f'{cls.__name__!r} object has no attribute {name!r}'
-                )
-            return super().__getattribute__(name)
 
         def __setattr__(self, name, value):
             'Emulate _PyObject_GenericSetAttrWithDict() Objects/object.c'
@@ -1567,44 +1535,31 @@ At this point, the metaclass has loaded member objects for *x* and *y*::
 
     # We test this separately because the preceding section is not
     # doctestable due to the hex memory address for the __init__ function
-    >>> isinstance(H.x, Member)
+    >>> isinstance(vars(H)['x'], Member)
     True
-    >>> isinstance(H.y, Member)
+    >>> isinstance(vars(H)['y'], Member)
     True
 
-When instances are created, they have a ``_slot_values`` list where the
+When instances are created, they have a ``slot_values`` list where the
 attributes are stored:
 
 .. doctest::
 
     >>> h = H(10, 20)
-    >>> h._slot_values
-    [10, 20]
+    >>> vars(h)
+    {'_slotvalues': [10, 20]}
     >>> h.x = 55
-    >>> h._slot_values
-    [55, 20]
+    >>> vars(h)
+    {'_slotvalues': [55, 20]}
 
 Misspelled or unassigned attributes will raise an exception:
 
 .. doctest::
 
-    >>> vars(h)
+    >>> h.xz
     Traceback (most recent call last):
         ...
-    TypeError: vars() argument must have __dict__ attribute
-    >>> h.__dict__
-    Traceback (most recent call last):
-        ...
-    AttributeError: 'H' object has no attribute '__dict__'
-    >>> h.z
-    Traceback (most recent call last):
-        ...
-    AttributeError: 'H' object has no attribute 'z'
-    >>> del h.y
-    >>> h.y
-    Traceback (most recent call last):
-        ...
-    AttributeError: 'y'
+    AttributeError: 'H' object has no attribute 'xz'
 
 .. doctest::
    :hide:
