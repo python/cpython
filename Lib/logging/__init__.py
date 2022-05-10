@@ -78,6 +78,12 @@ logMultiprocessing = True
 #
 logProcesses = True
 
+#
+# If you don't want asyncio.Task information in the log, set this to zero
+#
+logAsyncioTasks = True
+
+
 #---------------------------------------------------------------------------
 #   Level related stuff
 #---------------------------------------------------------------------------
@@ -360,6 +366,9 @@ class LogRecord(object):
             self.process = os.getpid()
         else:
             self.process = None
+        if logAsyncioTasks:
+            aio = sys.modules.get('asyncio')
+            self.taskname = aio.current_task().get_name()
 
     def __repr__(self):
         return '<LogRecord: %s, %s, %s, %s, "%s">'%(self.name, self.levelno,

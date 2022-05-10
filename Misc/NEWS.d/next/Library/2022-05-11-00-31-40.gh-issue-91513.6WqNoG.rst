@@ -1,0 +1,1 @@
+Add ``taskname`` to ``logging.LogRecord`` attributes.
