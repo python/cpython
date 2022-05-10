@@ -500,6 +500,31 @@ class CustomLevelsAndFiltersTest(BaseTest):
         handler_2.flush()
         self.assertEqual(stream_1.getvalue(), "original message\n")
         self.assertEqual(stream_2.getvalue(), "new message!\n")
+    
+    def test_logging_filter_replaces_record(self):
+        records = set()
+
+        class RecordingFilter(logging.Filter):
+            def filter(self, record: logging.LogRecord):
+                records.add(id(record))
+                return logging.LogRecord(
+                    name=record.name,
+                    level=record.levelno,
+                    pathname=record.pathname,
+                    lineno=record.lineno,
+                    msg=record.msg,
+                    exc_info=record.exc_info,
+                    args=(),
+                )
+
+        logger = logging.getLogger("logger")
+        logger.setLevel(logging.INFO)
+        logger.addFilter(RecordingFilter())
+        logger.addFilter(RecordingFilter())
+
+        logger.info("msg")
+
+        self.assertEqual(3, len(records))
 
     def test_logger_filter(self):
         # Filter at logger level.
