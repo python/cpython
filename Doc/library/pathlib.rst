@@ -1384,6 +1384,7 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :func:`os.path.expanduser`             :meth:`Path.expanduser` and
                                        :meth:`Path.home`
 :func:`os.listdir`                     :meth:`Path.iterdir`
+:func:`os.walk`                        :meth:`Path.walk`
 :func:`os.path.isdir`                  :meth:`Path.is_dir`
 :func:`os.path.isfile`                 :meth:`Path.is_file`
 :func:`os.path.islink`                 :meth:`Path.is_symlink`

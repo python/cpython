@@ -2572,10 +2572,6 @@ class WalkTests(unittest.TestCase):
             del self.sub2_tree[1][:1]
 
     def test_walk_topdown(self):
-        if 'unittest.util' in __import__('sys').modules:
-            # Show full diff in self.assertEqual.
-            __import__('sys').modules['unittest.util']._MAX_LENGTH = 999999999
-
         # Walk top-down.
         P = pathlib.Path
         all = list(self.walk(self.walk_path))
