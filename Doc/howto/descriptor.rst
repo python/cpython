@@ -1260,8 +1260,6 @@ Using the non-data descriptor protocol, a pure Python version of
             self.f = f
 
         def __get__(self, obj, objtype=None):
-            if obj is None and objtype is None:
-                raise TypeError('__get__(None, None) is invalid')
             return self.f
 
         def __call__(self, *args, **kwds):
