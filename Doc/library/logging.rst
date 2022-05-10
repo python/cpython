@@ -664,8 +664,8 @@ empty string, all events are passed.
 
       Is the specified record to be logged? Returns zero for no, nonzero for
       yes. Filters can also modify log records in-place or return a completely
-      different log-record which will replace the original log record without
-      modifying it.
+      different record instance which will replace the original
+      log record without modifying it.
 
 Note that filters attached to handlers are consulted before an event is
 emitted by the handler, whereas filters attached to loggers are consulted
