@@ -9,7 +9,7 @@ import functools
 import itertools
 import abc
 import _thread
-from types import FunctionType, GenericAlias
+from types import FunctionType, GenericAlias, CellType
 
 
 __all__ = ['dataclass',
@@ -279,6 +279,15 @@ class Field:
                          types.MappingProxyType(metadata))
         self.kw_only = kw_only
         self._field_type = None
+    
+    def _getcompare(self):
+        return (    
+            self.default is MISSING,
+            self.default_factory is MISSING,
+            self.init,
+            self.kw_only,
+            self._field_type,
+        )
 
     def __repr__(self):
         return ('Field('
@@ -386,7 +395,7 @@ def _tuple_str(obj_name, fields):
     if not fields:
         return '()'
     # Note the trailing comma, needed if this turns out to be a 1-tuple.
-    return f'({",".join([f"{obj_name}.{f.name}" for f in fields])},)'
+    return f'({",".join([f"{obj_name}.__dataclass_field_name_{i}__" for i in range(len(fields))])},)'
 
 
 # This function's logic is copied from "recursive_repr" function in
@@ -433,34 +442,114 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
     txt = f"def __create_fn__({local_vars}):\n{txt}\n return {name}"
     ns = {}
     exec(txt, globals, ns)
-    return ns['__create_fn__'](**locals)
+    return ns['__create_fn__'](**locals), txt
+
+_CODE_CACHE = {}
+_CODE_CACHE_TOTAL = 0
+_CODE_CACHE_MISS = 0
+
+def _cached_create_fn(
+    name,
+    args,
+    body,
+    fields,
+    globals=None,
+    locals=None,
+    return_type=MISSING,
+    salt=None,
+):
+    global _CODE_CACHE_TOTAL, _CODE_CACHE_MISS
+    key = (name, len(fields), locals and tuple(sorted(locals.keys())), salt)
+    x = _CODE_CACHE.get(key)
+    if x is None:
+        _CODE_CACHE_MISS += 1
+        func, txt = _create_fn(
+            name, args, body, globals=globals, locals=locals
+        )
+        cached, txt = _CODE_CACHE[key] = func.__code__, txt
+    else:
+        cached, txt = x
+        # t = _create_fn(
+        #     name, args, body, globals=globals, locals=locals
+        # )[1]
+        # if t != txt:
+        #     raise RuntimeError(f'\n\n{t}\n\n{txt}\n\ncode cache is out of sync')
+    _CODE_CACHE_TOTAL += 1
+    print(f'{_CODE_CACHE_TOTAL} total, {_CODE_CACHE_MISS} miss ({1 - _CODE_CACHE_MISS/_CODE_CACHE_TOTAL:.0%} hit rate)')
+    if locals is not None:
+        closure = tuple(CellType(locals[name]) for name in cached.co_freevars)
+    else:
+        closure = None
+    f = FunctionType(cached, globals or {}, closure=closure)
+    varnames = list(cached.co_varnames)
+    for i, varname in enumerate(cached.co_varnames):
+        if varname.startswith('__dataclass_field_name_'):
+            j = int(varname.removeprefix('__dataclass_field_name_').removesuffix('__'))
+            varnames[i] = fields[j].name
+    varnames = tuple(varnames)
+    names = list(cached.co_names)
+    for i, name in enumerate(cached.co_names):
+        if name.startswith('__dataclass_field_name_'):
+            j = int(name.removeprefix('__dataclass_field_name_').removesuffix('__'))
+            names[i] = fields[j].name
+    names = tuple(names)
+    consts = list(cached.co_consts)
+    for i, const in enumerate(cached.co_consts):
+        if isinstance(const, str) and '__dataclass_field_xxx_' in const:
+            split = const.split('__dataclass_field_xxx_')
+            for j, s in enumerate(split[1:], 1):
+                stop = s.index('__')
+                k = int(s[:stop])
+                split[j] = f"{fields[k].name}{s[stop + 2:]}"
+            consts[i] = ''.join(split)
+        elif isinstance(const, tuple):
+            consts_i = list(consts[i])
+            for j, const_j in enumerate(consts_i):
+                if isinstance(const_j, str) and '__dataclass_field_xxx_' in const_j:
+                    split = const_j.split('__dataclass_field_xxx_')
+                    for k, s in enumerate(split[1:], 1):
+                        stop = s.index('__')
+                        l = int(s[:stop])
+                        split[k] = f"{fields[l].name}{s[stop + 2:]}"
+                    consts_i[j] = ''.join(split)
+            consts[i] = tuple(consts_i)
+    consts = tuple(consts)
+    
+    f.__code__ = cached.replace(
+        co_varnames=varnames,
+        co_names=names,
+        co_consts=consts,
+    )
+    if return_type is not MISSING:
+        f.__annotations__['return'] = return_type
+    return f
 
 
-def _field_assign(frozen, name, value, self_name):
+def _field_assign(frozen, name, value, self_name, i):
     # If we're a frozen class, then assign to our fields in __init__
     # via object.__setattr__.  Otherwise, just use a simple
     # assignment.
     #
     # self_name is what "self" is called in this function: don't
     # hard-code "self", since that might be a field name.
-    if frozen:
-        return f'BUILTINS.object.__setattr__({self_name},{name!r},{value})'
-    return f'{self_name}.{name}={value}'
+    if frozen:  # XXX
+        return f'BUILTINS.object.__setattr__({self_name},"__dataclass_field_xxx_{i}__",{value})'
+    return f'{self_name}.__dataclass_field_name_{i}__={value}'
 
 
-def _field_init(f, frozen, globals, self_name, slots):
+def _field_init(f, frozen, globals, self_name, slots, i):
     # Return the text of the line in the body of __init__ that will
     # initialize this field.
 
-    default_name = f'_dflt_{f.name}'
+    default_name = f'__dataclass_field_default_{i}__'
     if f.default_factory is not MISSING:
         if f.init:
             # This field has a default factory.  If a parameter is
             # given, use it.  If not, call the factory.
             globals[default_name] = f.default_factory
             value = (f'{default_name}() '
-                     f'if {f.name} is _HAS_DEFAULT_FACTORY '
-                     f'else {f.name}')
+                     f'if __dataclass_field_name_{i}__ is _HAS_DEFAULT_FACTORY '
+                     f'else __dataclass_field_name_{i}__')
         else:
             # This is a field that's not in the __init__ params, but
             # has a default factory function.  It needs to be
@@ -483,10 +572,10 @@ def _field_init(f, frozen, globals, self_name, slots):
         if f.init:
             if f.default is MISSING:
                 # There's no default, just do an assignment.
-                value = f.name
+                value = f"__dataclass_field_name_{i}__"
             elif f.default is not MISSING:
                 globals[default_name] = f.default
-                value = f.name
+                value = f"__dataclass_field_name_{i}__"
         else:
             # If the class has slots, then initialize this field.
             if slots and f.default is not MISSING:
@@ -505,10 +594,10 @@ def _field_init(f, frozen, globals, self_name, slots):
         return None
 
     # Now, actually generate the field assignment.
-    return _field_assign(frozen, f.name, value, self_name)
+    return _field_assign(frozen, f.name, value, self_name, i)
 
 
-def _init_param(f):
+def _init_param(f, i):
     # Return the __init__ parameter string for this field.  For
     # example, the equivalent of 'x:int=3' (except instead of 'int',
     # reference a variable set to int, and instead of '3', reference a
@@ -520,11 +609,11 @@ def _init_param(f):
     elif f.default is not MISSING:
         # There's a default, this will be the name that's used to look
         # it up.
-        default = f'=_dflt_{f.name}'
+        default = f'=__dataclass_field_default_{i}__'
     elif f.default_factory is not MISSING:
         # There's a factory function.  Set a marker.
         default = '=_HAS_DEFAULT_FACTORY'
-    return f'{f.name}:_type_{f.name}{default}'
+    return f'__dataclass_field_name_{i}__{default}'
 
 
 def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
@@ -547,15 +636,16 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
                 raise TypeError(f'non-default argument {f.name!r} '
                                 'follows default argument')
 
-    locals = {f'_type_{f.name}': f.type for f in fields}
+    locals = {}
     locals.update({
         'MISSING': MISSING,
         '_HAS_DEFAULT_FACTORY': _HAS_DEFAULT_FACTORY,
+        'BUILTINS': builtins,
     })
 
     body_lines = []
-    for f in fields:
-        line = _field_init(f, frozen, locals, self_name, slots)
+    for i, f in enumerate(fields):
+        line = _field_init(f, frozen, locals, self_name, slots, i)
         # line is None means that this field doesn't require
         # initialization (it's a pseudo-field).  Just skip it.
         if line:
@@ -563,7 +653,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
 
     # Does this class have a post-init function?
     if has_post_init:
-        params_str = ','.join(f.name for f in fields
+        params_str = ','.join(f"__dataclass_field_name_{i}__" for i, f in enumerate(fields)
                               if f._field_type is _FIELD_INITVAR)
         body_lines.append(f'{self_name}.{_POST_INIT_NAME}({params_str})')
 
@@ -571,77 +661,105 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
     if not body_lines:
         body_lines = ['pass']
 
-    _init_params = [_init_param(f) for f in std_fields]
+    _init_params = [_init_param(f, fields.index(f)) for f in std_fields]
     if kw_only_fields:
         # Add the keyword-only args.  Because the * can only be added if
         # there's at least one keyword-only arg, there needs to be a test here
         # (instead of just concatenting the lists together).
         _init_params += ['*']
-        _init_params += [_init_param(f) for f in kw_only_fields]
-    return _create_fn('__init__',
+        _init_params += [_init_param(f, fields.index(f)) for f in kw_only_fields]
+    f = _cached_create_fn('__init__',
                       [self_name] + _init_params,
                       body_lines,
                       locals=locals,
                       globals=globals,
-                      return_type=None)
+                      return_type=None,
+                      fields=fields, salt=(frozen, tuple(f._getcompare() for f in fields), has_post_init, self_name))
+    defaults = []
+    kwdefaults = {}
+    for field in std_fields:
+        f.__annotations__[field.name] = field.type
+        if field.default is MISSING and field.default_factory is MISSING:
+            # There's no default, and no default_factory, just output the
+            # variable name and type.
+            pass
+        elif field.default is not MISSING:
+            # There's a default, this will be the name that's used to look
+            # it up.
+            defaults.append(field.default)
+        elif field.default_factory is not MISSING:
+            # There's a factory function.  Set a marker.
+            defaults.append(_HAS_DEFAULT_FACTORY)
+    for field in kw_only_fields:
+        f.__annotations__[field.name] = field.type
+        if field.default is not MISSING:
+            kwdefaults[field.name] = field.default
+    f.__kwdefaults__ = kwdefaults or None
+    f.__defaults__ = tuple(defaults) or None
+    return f
 
 
 def _repr_fn(fields, globals):
-    fn = _create_fn('__repr__',
+    fn = _cached_create_fn('__repr__',
                     ('self',),
-                    ['return self.__class__.__qualname__ + f"(' +
-                     ', '.join([f"{f.name}={{self.{f.name}!r}}"
-                                for f in fields]) +
+                    ['return self.__class__.__qualname__ + f"(' + # XXX
+                     ', '.join([f"__dataclass_field_xxx_{i}__={{self.__dataclass_field_name_{i}__!r}}"
+                                for i in range(len(fields))]) +
                      ')"'],
-                     globals=globals)
+                     globals=globals,
+                     fields=fields)
     return _recursive_repr(fn)
 
 
 def _frozen_get_del_attr(cls, fields, globals):
     locals = {'cls': cls,
               'FrozenInstanceError': FrozenInstanceError}
-    if fields:
-        fields_str = '(' + ','.join(repr(f.name) for f in fields) + ',)'
+    if fields:  # XXX
+        fields_str = '(' + ','.join(repr(f"__dataclass_field_xxx_{i}__") for i in range(len(fields))) + ',)'
     else:
         # Special case for the zero-length tuple.
         fields_str = '()'
-    return (_create_fn('__setattr__',
+    return (_cached_create_fn('__setattr__',
                       ('self', 'name', 'value'),
                       (f'if type(self) is cls or name in {fields_str}:',
                         ' raise FrozenInstanceError(f"cannot assign to field {name!r}")',
                        f'super(cls, self).__setattr__(name, value)'),
                        locals=locals,
-                       globals=globals),
-            _create_fn('__delattr__',
+                       globals=globals,
+                       fields=fields),
+            _cached_create_fn('__delattr__',
                       ('self', 'name'),
                       (f'if type(self) is cls or name in {fields_str}:',
                         ' raise FrozenInstanceError(f"cannot delete field {name!r}")',
                        f'super(cls, self).__delattr__(name)'),
                        locals=locals,
-                       globals=globals),
+                       globals=globals,
+                       fields=fields),
             )
 
 
-def _cmp_fn(name, op, self_tuple, other_tuple, globals):
+def _cmp_fn(name, op, self_tuple, other_tuple, globals, fields):
     # Create a comparison function.  If the fields in the object are
     # named 'x' and 'y', then self_tuple is the string
     # '(self.x,self.y)' and other_tuple is the string
     # '(other.x,other.y)'.
 
-    return _create_fn(name,
+    return _cached_create_fn(name,
                       ('self', 'other'),
                       [ 'if other.__class__ is self.__class__:',
                        f' return {self_tuple}{op}{other_tuple}',
                         'return NotImplemented'],
-                      globals=globals)
+                      globals=globals,
+                      fields=fields)
 
 
 def _hash_fn(fields, globals):
     self_tuple = _tuple_str('self', fields)
-    return _create_fn('__hash__',
+    return _cached_create_fn('__hash__',
                       ('self',),
                       [f'return hash({self_tuple})'],
-                      globals=globals)
+                      globals=globals,
+                      fields=fields)
 
 
 def _is_classvar(a_type, typing):
@@ -1056,7 +1174,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         _set_new_attribute(cls, '__eq__',
                            _cmp_fn('__eq__', '==',
                                    self_tuple, other_tuple,
-                                   globals=globals))
+                                   globals=globals, fields=flds))
 
     if order:
         # Create and set the ordering methods.
@@ -1070,7 +1188,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                          ]:
             if _set_new_attribute(cls, name,
                                   _cmp_fn(name, op, self_tuple, other_tuple,
-                                          globals=globals)):
+                                          globals=globals, fields=flds)):
                 raise TypeError(f'Cannot overwrite attribute {name} '
                                 f'in class {cls.__name__}. Consider using '
                                 'functools.total_ordering')
