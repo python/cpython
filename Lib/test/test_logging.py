@@ -494,7 +494,7 @@ class CustomLevelsAndFiltersTest(BaseTest):
         handler_2.flush()
         self.assertEqual(stream_1.getvalue(), "original message\n")
         self.assertEqual(stream_2.getvalue(), "new message!\n")
-    
+
     def test_logging_filter_replaces_record(self):
         records = set()
 

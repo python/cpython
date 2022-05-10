@@ -832,7 +832,7 @@ class Filterer(object):
         .. versionchanged:: 3.2
 
            Allow filters to be just callables.
-        
+
         .. versionchanged:: 3.12
            Allow filters to return a LogRecord instead of
            modifying it in place.
@@ -982,7 +982,7 @@ class Handler(Filterer):
         Emission depends on filters which may have been added to the handler.
         Wrap the actual emission of the record with acquisition/release of
         the I/O thread lock.
-        
+
         Returns an instance of the log record that was emitted
         if it passed all filters, otherwise a falsy value is returned.
         """
