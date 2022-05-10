@@ -374,24 +374,10 @@ Decimal objects
    returns ``Decimal('1.414')``.
 
    If *value* is a :class:`float`, the binary floating point value is losslessly
-   converted to its exact decimal equivalent.  This means, for example, that
-   ``Decimal(0.1)`` is not the same as ``Decimal('0.1')``.
-   Since 0.1 is not exactly representable in binary floating point, the
-   value is stored as the nearest representable value which is
-   ``0.1000000000000000055511151231257827021181583404541015625``.
-
-   .. doctest::
-
-      >>> Decimal(0.1) == Decimal('0.1')
-      False
-      >>> Decimal(0.1)
-      Decimal('0.1000000000000000055511151231257827021181583404541015625')
-      >>> Decimal(float('nan'))
-      Decimal('NaN')
-      >>> Decimal(float('inf'))
-      Decimal('Infinity')
-      >>> Decimal(float('-inf'))
-      Decimal('-Infinity')
+   converted to its exact decimal equivalent.  This conversion can often require
+   53 or more digits of precision.  For example, ``Decimal(float('1.1'))``
+   converts to
+   ``Decimal('1.100000000000000088817841970012523233890533447265625')``.
 
    The *context* precision does not affect how many digits are stored. That is
    determined exclusively by the number of digits in *value*. For example,
@@ -589,6 +575,26 @@ Decimal objects
 
       Alternative constructor that only accepts instances of :class:`float` or
       :class:`int`.
+
+      Note `Decimal.from_float(0.1)` is not the same as `Decimal('0.1')`.
+      Since 0.1 is not exactly representable in binary floating point, the
+      value is stored as the nearest representable value which is
+      `0x1.999999999999ap-4`.  That equivalent value in decimal is
+      `0.1000000000000000055511151231257827021181583404541015625`.
+
+      .. note:: From Python 3.2 onwards, a :class:`Decimal` instance
+         can also be constructed directly from a :class:`float`.
+
+      .. doctest::
+
+          >>> Decimal.from_float(0.1)
+          Decimal('0.1000000000000000055511151231257827021181583404541015625')
+          >>> Decimal.from_float(float('nan'))
+          Decimal('NaN')
+          >>> Decimal.from_float(float('inf'))
+          Decimal('Infinity')
+          >>> Decimal.from_float(float('-inf'))
+          Decimal('-Infinity')
 
       .. versionadded:: 3.1
 

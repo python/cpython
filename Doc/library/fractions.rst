@@ -117,12 +117,26 @@ another rational number, or from a string.
    .. classmethod:: from_float(flt)
 
       Alternative constructor which only accepts instances of
-      :class:`float` or :class:`numbers.Integral`.
+      :class:`float` or :class:`numbers.Integral`. Beware that
+      ``Fraction.from_float(0.3)`` is not the same value as ``Fraction(3, 10)``.
+
+      .. note::
+
+         From Python 3.2 onwards, you can also construct a
+         :class:`Fraction` instance directly from a :class:`float`.
+
 
    .. classmethod:: from_decimal(dec)
 
       Alternative constructor which only accepts instances of
       :class:`decimal.Decimal` or :class:`numbers.Integral`.
+
+      .. note::
+
+         From Python 3.2 onwards, you can also construct a
+         :class:`Fraction` instance directly from a :class:`decimal.Decimal`
+         instance.
+
 
    .. method:: limit_denominator(max_denominator=1000000)
 
