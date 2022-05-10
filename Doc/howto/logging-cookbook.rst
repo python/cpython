@@ -713,6 +713,41 @@ which, when run, produces something like:
     2010-09-06 22:38:15,301 d.e.f DEBUG    IP: 123.231.231.123 User: fred     A message at DEBUG level with 2 parameters
     2010-09-06 22:38:15,301 d.e.f INFO     IP: 123.231.231.123 User: fred     A message at INFO level with 2 parameters
 
+Imparting contextual information for specific Handlers
+------------------------------------------------------
+
+Each :class:`~Handler` has it's own chain of Filters.
+If you want to add contextual information to a :class:`LogRecord` without leaking
+this contextual information to other handlers, you can use a filter that returns
+a new :class:`~LogRecord` instead of modifying it in-place:
+
+script::
+
+    import logging
+
+    def filter(record: logging.LogRecord):
+        record = logging.LogRecord(
+            name=record.name,
+            level=record.levelno,
+            pathname=record.pathname,
+            lineno=record.lineno,
+            msg=record.msg,
+            exc_info=record.exc_info,
+            args=(),
+        )
+        record.user = 'jim'
+        return record
+
+    if __name__ == '__main__':
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(message)s from %(user)-8s')
+        handler.setFormatter(formatter)
+        handler.addFilter(filter)
+        logger.addHandler(handler)
+
+        logger.info('A log message')
 
 .. _multiple-processes:
 

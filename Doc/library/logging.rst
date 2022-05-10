@@ -663,8 +663,9 @@ empty string, all events are passed.
    .. method:: filter(record)
 
       Is the specified record to be logged? Returns zero for no, nonzero for
-      yes. If deemed appropriate, the record may be modified in-place by this
-      method.
+      yes. Filters can also modify log records in-place or return a completely
+      different log-record which will replace the original log record without
+      modifying it.
 
 Note that filters attached to handlers are consulted before an event is
 emitted by the handler, whereas filters attached to loggers are consulted
@@ -685,6 +686,12 @@ which has a ``filter`` method with the same semantics.
    assumed to be a callable and called with the record as the single
    parameter. The returned value should conform to that returned by
    :meth:`~Filter.filter`.
+
+.. versionchanged:: 3.12
+   You can now return a :class:`LogRecord` instance from filters to replace
+   the log record without modifying it in place. This allows filters installed
+   on a :class:`Handler` to modify the log record before it is emitted without
+   having side effects on other handlers.
 
 Although filters are used primarily to filter records based on more
 sophisticated criteria than levels, they get to see every record which is
