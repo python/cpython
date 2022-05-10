@@ -1873,10 +1873,7 @@ handle_eval_breaker:
 
         TARGET(LOAD_FAST_KNOWN) {
             PyObject *value = GETLOCAL(oparg);
-            if (value == NULL) {
-                Py_FatalError("oops");
-                goto unbound_local_error;
-            }
+            assert(value != NULL);
             Py_INCREF(value);
             PUSH(value);
             DISPATCH();
@@ -1899,17 +1896,13 @@ handle_eval_breaker:
 
         TARGET(LOAD_FAST__LOAD_FAST) {
             PyObject *value = GETLOCAL(oparg);
-            if (value == NULL) {
-                goto unbound_local_error;
-            }
+            assert(value != NULL);
             NEXTOPARG();
             next_instr++;
             Py_INCREF(value);
             PUSH(value);
             value = GETLOCAL(oparg);
-            if (value == NULL) {
-                goto unbound_local_error;
-            }
+            assert(value != NULL);
             Py_INCREF(value);
             PUSH(value);
             NOTRACE_DISPATCH();
@@ -1917,9 +1910,7 @@ handle_eval_breaker:
 
         TARGET(LOAD_FAST__LOAD_CONST) {
             PyObject *value = GETLOCAL(oparg);
-            if (value == NULL) {
-                goto unbound_local_error;
-            }
+            assert(value != NULL);
             NEXTOPARG();
             next_instr++;
             Py_INCREF(value);
@@ -1936,9 +1927,7 @@ handle_eval_breaker:
             NEXTOPARG();
             next_instr++;
             value = GETLOCAL(oparg);
-            if (value == NULL) {
-                goto unbound_local_error;
-            }
+            assert(value != NULL);
             Py_INCREF(value);
             PUSH(value);
             NOTRACE_DISPATCH();
@@ -1961,9 +1950,7 @@ handle_eval_breaker:
             Py_INCREF(value);
             PUSH(value);
             value = GETLOCAL(oparg);
-            if (value == NULL) {
-                goto unbound_local_error;
-            }
+            assert(value != NULL);
             Py_INCREF(value);
             PUSH(value);
             NOTRACE_DISPATCH();
