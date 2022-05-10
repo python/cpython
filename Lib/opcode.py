@@ -145,6 +145,8 @@ def_op('STORE_FAST', 125)       # Local variable number
 haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
+def_op('LOAD_FAST_KNOWN', 127)  # Local variable number
+haslocal.append(127)
 jrel_op('POP_JUMP_FORWARD_IF_NOT_NONE', 128)
 jrel_op('POP_JUMP_FORWARD_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)

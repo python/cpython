@@ -1871,6 +1871,17 @@ handle_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(LOAD_FAST_KNOWN) {
+            PyObject *value = GETLOCAL(oparg);
+            if (value == NULL) {
+                Py_FatalError("oops");
+                goto unbound_local_error;
+            }
+            Py_INCREF(value);
+            PUSH(value);
+            DISPATCH();
+        }
+
         TARGET(LOAD_CONST) {
             PREDICTED(LOAD_CONST);
             PyObject *value = GETITEM(consts, oparg);

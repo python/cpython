@@ -450,6 +450,51 @@ static PyCodeObject *assemble(struct compiler *, int addNone);
 
 #define CAPSULE_NAME "compile.c compiler unit"
 
+/* For debugging purposes only */
+#if 1
+static void
+dump_instr(struct instr *i)
+{
+    const char *jrel = (is_relative_jump(i)) ? "jrel " : "";
+    const char *jabs = (is_jump(i) && !is_relative_jump(i))? "jabs " : "";
+
+    char arg[128];
+
+    *arg = '\0';
+    if (HAS_ARG(i->i_opcode)) {
+        sprintf(arg, "arg: %d ", i->i_oparg);
+    }
+    char *name;
+    char unknown[8];
+    if (0 <= i->i_opcode && i->i_opcode <= 255) {
+        name = _PyOpcode_OpName[i->i_opcode];
+    }
+    else {
+        sprintf(unknown, "<%d>", i->i_opcode);
+        name = unknown;
+    }
+    fprintf(stderr, "line: %d, opcode: %s %s%s%s\n",
+                    i->i_lineno, name, arg, jabs, jrel);
+}
+
+static void
+dump_basicblock(const basicblock *b)
+{
+    return;
+    const char *b_return = b->b_return ? "return " : "";
+    fprintf(stderr, "basicblock %d\n", ((unsigned int)(uintptr_t)(void *)b) % 997u);
+    fprintf(stderr, "used: %d, depth: %d, offset: %d %s\n",
+        b->b_iused, b->b_startdepth, b->b_offset, b_return);
+    if (b->b_instr) {
+        int i;
+        for (i = 0; i < b->b_iused; i++) {
+            fprintf(stderr, "  [%02d] ", i);
+            dump_instr(b->b_instr + i);
+        }
+    }
+}
+#endif
+
 PyObject *
 _Py_Mangle(PyObject *privateobj, PyObject *ident)
 {
@@ -7754,6 +7799,136 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
     } while (extended_arg_recompile);
 }
 
+
+bool
+scan_block_for_local(int target, basicblock *b, bool unsafe_to_start)
+{
+    bool unsafe = unsafe_to_start;
+    for (int i = 0; i < b->b_iused; i++) {
+        int opcode = b->b_instr[i].i_opcode;
+        int oparg = b->b_instr[i].i_oparg;
+        if (oparg != target) {
+            continue;
+        }
+        switch (opcode) {
+            case LOAD_FAST:
+                // if this doesn't raise, then var is defined
+                unsafe = false;
+                break;
+            case LOAD_FAST_KNOWN:
+                if (unsafe) {
+                    b->b_instr[i].i_opcode = LOAD_FAST;
+                }
+                unsafe = false;
+                break;
+            case STORE_FAST:
+                unsafe = false;
+                break;
+            case DELETE_FAST:
+                unsafe = true;
+                break;
+        }
+    }
+    return unsafe;
+}
+
+
+int
+mark_known_variables(struct assembler *a, struct compiler *c)
+{
+    Py_ssize_t num_blocks = 0;
+    int num_locals = 0;
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        dump_basicblock(b);
+        num_blocks++;
+        for (Py_ssize_t i = 0; i < b->b_iused; i++) {
+            int opcode = b->b_instr[i].i_opcode;
+            int oparg = b->b_instr[i].i_oparg;
+            if (opcode == LOAD_FAST ||
+                opcode == STORE_FAST ||
+                opcode == DELETE_FAST)
+            {
+                num_locals = Py_MAX(num_locals, oparg + 1);
+            }
+            if (opcode == LOAD_FAST) {
+                b->b_instr[i].i_opcode = LOAD_FAST_KNOWN;
+            }
+        }
+    }
+    // fprintf(stderr, "num blocks: %d\nnum_locals: %d\n", (int)num_blocks, num_locals);
+    basicblock **stack = PyMem_New(basicblock *, num_blocks);
+    if (stack == NULL) {
+        return -1;
+    }
+
+    // Ensure each basicblock is only put onto the stack once.
+    #define MAYBE_PUSH(B) do {                          \
+            if ((B)->b_visited == 0) {                  \
+                /*fprintf(stderr, "Pushing ");*/        \
+                dump_basicblock(B);                     \
+                assert(stack_top - stack < num_blocks); \
+                *stack_top++ = (B);                     \
+                (B)->b_visited = 1;                     \
+            }                                           \
+        } while (0)
+
+    for (int target = 0; target < num_locals; target++) {
+        // fprintf(stderr, "target=%d\n", target);
+
+        basicblock **stack_top = stack;
+
+        // First pass: find the relevant DFS starting points:
+        // the places where "being uninitialized" originates,
+        // which are the entry block and any DELETE_FAST statements.
+
+        // XXX: if (not_a_parameter)
+        *(stack_top++) = a->a_entry;
+        a->a_entry->b_visited = 1;
+
+        // fprintf(stderr, "--- first pass ---\n");
+        for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+            b->b_visited = 0;
+            bool unsafe = scan_block_for_local(target, b, false);
+            if (unsafe) {
+                if (b->b_next) {
+                    MAYBE_PUSH(b->b_next);
+                }
+                struct instr *last = &b->b_instr[b->b_iused-1];
+                if (is_jump(last)) {
+                    assert(last->i_target != NULL);
+                    MAYBE_PUSH(last->i_target);
+                }
+            }
+        }
+
+        // fprintf(stderr, "--- second pass ---\n");
+        // Second pass: Depth-first search
+        while (stack_top > stack) {
+            basicblock *b = *--stack_top;
+            // fprintf(stderr, "popped ");
+            // dump_basicblock(b);
+            bool unsafe = scan_block_for_local(target, b, true);
+            // fprintf(stderr, "after: ");
+            // dump_basicblock(b);
+            if (unsafe) {
+                if (!b->b_nofallthrough) {
+                    assert(b->b_next);
+                    MAYBE_PUSH(b->b_next);
+                }
+                struct instr *last = &b->b_instr[b->b_iused-1];
+                if (is_jump(last)) {
+                    assert(last->i_target != NULL);
+                    MAYBE_PUSH(last->i_target);
+                }
+            }
+        }
+    }
+    // fprintf(stderr, "big loop ended\n");
+
+    #undef MAYBE_PUSH
+    return 0;
+}
+
 static PyObject *
 dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
 {
@@ -8007,42 +8182,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     return co;
 }
 
-
-/* For debugging purposes only */
-#if 0
-static void
-dump_instr(struct instr *i)
-{
-    const char *jrel = (is_relative_jump(i)) ? "jrel " : "";
-    const char *jabs = (is_jump(i) && !is_relative_jump(i))? "jabs " : "";
-
-    char arg[128];
-
-    *arg = '\0';
-    if (HAS_ARG(i->i_opcode)) {
-        sprintf(arg, "arg: %d ", i->i_oparg);
-    }
-    fprintf(stderr, "line: %d, opcode: %d %s%s%s\n",
-                    i->i_lineno, i->i_opcode, arg, jabs, jrel);
-}
-
-static void
-dump_basicblock(const basicblock *b)
-{
-    const char *b_return = b->b_return ? "return " : "";
-    fprintf(stderr, "used: %d, depth: %d, offset: %d %s\n",
-        b->b_iused, b->b_startdepth, b->b_offset, b_return);
-    if (b->b_instr) {
-        int i;
-        for (i = 0; i < b->b_iused; i++) {
-            fprintf(stderr, "  [%02d] ", i);
-            dump_instr(b->b_instr + i);
-        }
-    }
-}
-#endif
-
-
 static int
 normalize_basic_block(basicblock *bb);
 
@@ -8286,6 +8425,10 @@ assemble(struct compiler *c, int addNone)
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
 
+    // fprintf(stderr, "assembling ");
+    // PyObject_Print(c->u->u_qualname, stderr, Py_PRINT_RAW);
+    // fprintf(stderr, "\n");
+
     /* Make sure every block that falls off the end returns None. */
     if (!c->u->u_curblock->b_return) {
         UNSET_LOC(c);
@@ -8393,6 +8536,11 @@ assemble(struct compiler *c, int addNone)
 
     /* Order of basic blocks must have been determined by now */
     normalize_jumps(&a);
+
+    if (mark_known_variables(&a, c) < 0) {
+        goto error;
+    }
+    // fprintf(stderr, "Success???\n");
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
