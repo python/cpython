@@ -139,5 +139,3 @@ Deprecated
 
 Removed
 -------
-
-* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been removed.
