@@ -1543,7 +1543,7 @@ variables:
     class Type(type):
         'Simulate how the type metaclass adds member objects for slots'
 
-        def __new__(mcls, clsname, bases, mapping):
+        def __new__(mcls, clsname, bases, mapping, **kwargs):
             'Emulate type_new() in Objects/typeobject.c'
             # type_new() calls PyTypeReady() which calls add_methods()
             slot_names = mapping.get('slot_names', [])
@@ -1560,7 +1560,7 @@ Python:
     class Object:
         'Simulate how object.__new__() allocates memory for __slots__'
 
-        def __new__(cls, *args):
+        def __new__(cls, *args, **kwargs):
             'Emulate object_new() in Objects/typeobject.c'
             inst = super().__new__(cls)
             if hasattr(cls, 'slot_names'):
