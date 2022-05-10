@@ -7811,7 +7811,7 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
 
 void
 scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
-                     basicblock **stack, basicblock ***stack_top)
+                     basicblock ***stack_top)
 {
     bool unsafe = unsafe_to_start;
     for (int i = 0; i < b->b_iused; i++) {
@@ -7860,21 +7860,14 @@ int
 mark_known_variables(struct assembler *a, struct compiler *c)
 {
     Py_ssize_t num_blocks = 0;
-    int num_locals = 0;
+    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         dump_basicblock(b);
         num_blocks++;
         for (Py_ssize_t i = 0; i < b->b_iused; i++) {
-            int opcode = b->b_instr[i].i_opcode;
-            int oparg = b->b_instr[i].i_oparg;
-            if (opcode == LOAD_FAST ||
-                opcode == STORE_FAST ||
-                opcode == DELETE_FAST)
-            {
-                num_locals = Py_MAX(num_locals, oparg + 1);
-            }
-            if (opcode == LOAD_FAST) {
-                b->b_instr[i].i_opcode = LOAD_FAST_KNOWN;
+            struct instr *instr = &b->b_instr[i];
+            if (instr->i_opcode == LOAD_FAST) {
+                instr->i_opcode = LOAD_FAST_KNOWN;
             }
         }
     }
@@ -7884,27 +7877,45 @@ mark_known_variables(struct assembler *a, struct compiler *c)
         return -1;
     }
 
-    for (int target = 0; target < num_locals; target++) {
+    uint64_t param_mask = 0;
+    PyObject *param_names = c->u->u_ste->ste_varnames;
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(param_names); i++) {
+        PyObject *param = PyList_GET_ITEM(param_names, i);
+        PyObject *index = PyDict_GetItem(c->u->u_varnames, param);
+        assert(index != NULL);
+        assert(PyLong_CheckExact(index));
+        long l_index = PyLong_AsLong(index);
+        if (l_index < 64) {
+            param_mask |= ((uint64_t)1 << (uint64_t)l_index);
+        }
+    }
+
+    for (int target = 0; target < nlocals; target++) {
         for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
             b->b_visited = 0;
         }
         basicblock **stack_top = stack;
-
-        // XXX: if (not_a_parameter)
-        *(stack_top++) = a->a_entry;
-        a->a_entry->b_visited = 1;
-
+        bool param = false;
+        if (target < 64) {
+            uint64_t bit = ((uint64_t)1 << (uint64_t)target);
+            param = (bit & param_mask) != 0;
+        }
+        if (!param) {
+            // non-parameter local variables start out uninitialized.
+            *(stack_top++) = a->a_entry;
+            a->a_entry->b_visited = 1;
+        }
         // First pass: find the relevant DFS starting points:
         // the places where "being uninitialized" originates,
         // which are the entry block and any DELETE_FAST statements.
         for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
-            scan_block_for_local(target, b, false, stack, &stack_top);
+            scan_block_for_local(target, b, false, &stack_top);
         }
 
         // Second pass: Depth-first search to propagate uncertainty
         while (stack_top > stack) {
             basicblock *b = *--stack_top;
-            scan_block_for_local(target, b, true, stack, &stack_top);
+            scan_block_for_local(target, b, true, &stack_top);
         }
     }
     PyMem_Free(stack);
