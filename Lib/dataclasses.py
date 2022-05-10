@@ -377,7 +377,8 @@ def field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
                  metadata, kw_only)
 
 
-symbol = "__field_{}__".format
+def _symbol(i):
+    return f"__field_{i}__"
 
 
 def _fields_in_init_order(fields):
@@ -398,7 +399,7 @@ def _tuple_str(obj_name, fields):
     if not fields:
         return '()'
     # Note the trailing comma, needed if this turns out to be a 1-tuple.
-    return f'({",".join([f"{obj_name}.{symbol(i)}" for i in range(len(fields))])},)'
+    return f'({",".join([f"{obj_name}.{_symbol(i)}" for i in range(len(fields))])},)'
 
 
 # This function's logic is copied from "recursive_repr" function in
@@ -460,7 +461,7 @@ def _create_fn(
         code = _code_cache[key] = _create_code(
              name, args, body, globals=globals, locals=locals
         )
-    patched = {symbol(i): f.name for i, f in enumerate(fields)}
+    patched = {_symbol(i): f.name for i, f in enumerate(fields)}
     varnames = tuple(patched.get(name, name) for name in code.co_varnames)
     names = tuple(patched.get(name, name) for name in code.co_names)
     consts = list(code.co_consts)
@@ -506,7 +507,7 @@ def _field_init(f, frozen, globals, self_name, slots, i):
     # Return the text of the line in the body of __init__ that will
     # initialize this field.
 
-    field_name = symbol(i)
+    field_name = _symbol(i)
     default_name = f'__default_{i}__'
     if f.default_factory is not MISSING:
         if f.init:
@@ -598,7 +599,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
 
     # Does this class have a post-init function?
     if has_post_init:
-        params_str = ','.join(symbol(i) for i, f in enumerate(fields)
+        params_str = ','.join(_symbol(i) for i, f in enumerate(fields)
                               if f._field_type is _FIELD_INITVAR)
         body_lines.append(f'{self_name}.{_POST_INIT_NAME}({params_str})')
 
@@ -606,13 +607,13 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
     if not body_lines:
         body_lines = ['pass']
 
-    _init_params = [symbol(fields.index(f)) for f in std_fields]
+    _init_params = [_symbol(fields.index(f)) for f in std_fields]
     if kw_only_fields:
         # Add the keyword-only args.  Because the * can only be added if
         # there's at least one keyword-only arg, there needs to be a test here
         # (instead of just concatenting the lists together).
         _init_params += ['*']
-        _init_params += [symbol(fields.index(f)) for f in kw_only_fields]
+        _init_params += [_symbol(fields.index(f)) for f in kw_only_fields]
     extra_keys = (
         frozen, *(f._extra_keys() for f in fields), has_post_init, self_name
     )
@@ -648,7 +649,7 @@ def _repr_fn(fields, globals):
     fn = _create_fn('__repr__',
                     ('self',),
                     ['return self.__class__.__qualname__ + f"(' +
-                     ', '.join([f"{symbol(i)}={{self.{symbol(i)}!r}}"
+                     ', '.join([f"{_symbol(i)}={{self.{_symbol(i)}!r}}"
                                 for i in range(len(fields))]) +
                      ')"'],
                      fields=fields,
@@ -659,7 +660,11 @@ def _repr_fn(fields, globals):
 def _frozen_get_del_attr(cls, fields, globals):
     locals = {'cls': cls,
               'FrozenInstanceError': FrozenInstanceError}
-    fields_str = '(' + ''.join(f"{symbol(i)!r}," for i in range(len(fields))) + ')'
+    if fields:
+        fields_str = '(' + ','.join(repr(_symbol(i)) for i in range(len(fields))) + ',)'
+    else:
+        # Special case for the zero-length tuple.
+        fields_str = '()'
     return (_create_fn('__setattr__',
                       ('self', 'name', 'value'),
                       (f'if type(self) is cls or name in {fields_str}:',
