@@ -451,7 +451,7 @@ static PyCodeObject *assemble(struct compiler *, int addNone);
 #define CAPSULE_NAME "compile.c compiler unit"
 
 /* For debugging purposes only */
-#if 1
+#if 0
 static void
 dump_instr(struct instr *i)
 {
@@ -7862,7 +7862,6 @@ mark_known_variables(struct assembler *a, struct compiler *c)
     Py_ssize_t num_blocks = 0;
     int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
-        dump_basicblock(b);
         num_blocks++;
         for (Py_ssize_t i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
