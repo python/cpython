@@ -2552,10 +2552,9 @@ class WalkTests(unittest.TestCase):
             os.symlink('broken', broken_link_path, True)
             os.symlink(join('tmp3', 'broken'), broken_link2_path, True)
             os.symlink(join('SUB21', 'tmp5'), broken_link3_path, True)
-            self.sub2_tree = (sub2_path, ["SUB21"], # FIXME
+            self.sub2_tree = (sub2_path, ["SUB21"],
                               ["broken_link", "broken_link2", "broken_link3",
-                               "link",
-                               "tmp3"])
+                               "link", "tmp3"])
         else:
             self.sub2_tree = (sub2_path, ["SUB21"], ["tmp3"])
 
