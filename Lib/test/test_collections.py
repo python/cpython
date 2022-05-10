@@ -71,6 +71,14 @@ class TestUserObjects(unittest.TestCase):
         obj[123] = "abc"
         self._copy_test(obj)
 
+    def test_dict_missing(self):
+        class A(UserDict):
+            def __missing__(self, key):
+                return 456
+        self.assertEqual(A()[123], 456)
+        # get() ignores __missing__ on dict
+        self.assertIs(A().get(123), None)
+
 
 ################################################################################
 ### ChainMap (helper class for configparser and the string module)
