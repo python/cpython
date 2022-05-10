@@ -524,7 +524,7 @@ class CustomLevelsAndFiltersTest(BaseTest):
 
         logger.info("msg")
 
-        self.assertEqual(3, len(records))
+        self.assertEqual(2, len(records))
 
     def test_logger_filter(self):
         # Filter at logger level.
