@@ -698,6 +698,18 @@ class TestNamedTuple(unittest.TestCase):
         Point = namedtuple('Point', 'x y')
         self.assertEqual(Point.__match_args__, ('x', 'y'))
 
+    def test_non_generic_subscript(self):
+        # For backward compatibility, subscription works
+        # on arbitrary named tuple types.
+        Group = collections.namedtuple('Group', 'key group')
+        A = Group[int, list[int]]
+        self.assertEqual(A.__origin__, Group)
+        self.assertEqual(A.__parameters__, ())
+        self.assertEqual(A.__args__, (int, list[int]))
+        a = A(1, [2])
+        self.assertIs(type(a), Group)
+        self.assertEqual(a, (1, [2]))
+
 
 ################################################################################
 ### Abstract Base Classes

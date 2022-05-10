@@ -388,6 +388,15 @@ Constants
        Added ``TCP_KEEPALIVE``. On MacOS this constant can be used in the same
        way that ``TCP_KEEPIDLE`` is used on Linux.
 
+   .. versionchanged:: 3.11
+      Added ``TCP_CONNECTION_INFO``. On MacOS this constant can be used in the
+      same way that ``TCP_INFO`` is used on Linux and BSD.
+
+   .. versionchanged:: 3.12
+      Added ``SO_RTABLE`` and ``SO_USER_COOKIE``. On OpenBSD
+      and FreeBSD respectively those constants can be used in the same way that
+      ``SO_MARK`` is used on Linux.
+
 .. data:: AF_CAN
           PF_CAN
           SOL_CAN_*
@@ -571,6 +580,15 @@ Constants
 
    .. availability:: FreeBSD.
 
+.. data:: SO_INCOMING_CPU
+
+   Constant to optimize CPU locality, to be used in conjunction with
+   :data:`SO_REUSEPORT`.
+
+  .. versionadded:: 3.11
+
+  .. availability:: Linux >= 3.9
+
 Functions
 ^^^^^^^^^
 
@@ -660,7 +678,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
       Windows support added.
 
 
-.. function:: create_connection(address[, timeout[, source_address[, all_errors]]])
+.. function:: create_connection(address, timeout=GLOBAL_DEFAULT, source_address=None, *, all_errors=False)
 
    Connect to a TCP service listening on the internet *address* (a 2-tuple
    ``(host, port)``), and return the socket object.  This is a higher-level

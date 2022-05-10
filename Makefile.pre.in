@@ -285,6 +285,8 @@ LIBOBJS=	@LIBOBJS@
 PYTHON=		python$(EXE)
 BUILDPYTHON=	python$(BUILDEXE)
 
+HOSTRUNNER= @HOSTRUNNER@
+
 PYTHON_FOR_REGEN?=@PYTHON_FOR_REGEN@
 UPDATE_FILE=$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/update_file.py
 PYTHON_FOR_BUILD=@PYTHON_FOR_BUILD@
@@ -948,6 +950,12 @@ regen-test-frozenmain: $(BUILDPYTHON)
 	# using Programs/freeze_test_frozenmain.py
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Programs/freeze_test_frozenmain.py Programs/test_frozenmain.h
 
+.PHONY: regen-re
+regen-re: $(BUILDPYTHON)
+	# Regenerate Lib/re/_casefix.py
+	# using Tools/scripts/generate_re_casefix.py
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/generate_re_casefix.py $(srcdir)/Lib/re/_casefix.py
+
 Programs/_testembed: Programs/_testembed.o $(LINK_PYTHON_DEPS)
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
@@ -1191,7 +1199,7 @@ regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
 # ABI
 
 regen-limited-abi: all
-	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.txt
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.toml
 
 ############################################################################
 # Regenerate all generated files
@@ -1305,8 +1313,10 @@ regen-opcode:
 	# using Tools/scripts/generate_opcode_h.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_opcode_h.py \
 		$(srcdir)/Lib/opcode.py \
-		$(srcdir)/Include/opcode.h.new
+		$(srcdir)/Include/opcode.h.new \
+		$(srcdir)/Include/internal/pycore_opcode.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
+	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode.h $(srcdir)/Include/internal/pycore_opcode.h.new
 
 .PHONY: regen-token
 regen-token:
@@ -1342,7 +1352,7 @@ regen-keyword:
 	$(UPDATE_FILE) $(srcdir)/Lib/keyword.py $(srcdir)/Lib/keyword.py.new
 
 .PHONY: regen-stdlib-module-names
-regen-stdlib-module-names: build_all Programs/_testembed
+regen-stdlib-module-names: all Programs/_testembed
 	# Regenerate Python/stdlib_module_names.h
 	# using Tools/scripts/generate_stdlib_module_names.py
 	$(RUNSHARED) ./$(BUILDPYTHON) \
@@ -1546,6 +1556,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/longintrepr.h \
 		$(srcdir)/Include/cpython/longobject.h \
 		$(srcdir)/Include/cpython/methodobject.h \
+		$(srcdir)/Include/cpython/modsupport.h \
 		$(srcdir)/Include/cpython/object.h \
 		$(srcdir)/Include/cpython/objimpl.h \
 		$(srcdir)/Include/cpython/odictobject.h \
@@ -1558,6 +1569,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
 		$(srcdir)/Include/cpython/pythonrun.h \
+		$(srcdir)/Include/cpython/pythread.h \
 		$(srcdir)/Include/cpython/pytime.h \
 		$(srcdir)/Include/cpython/setobject.h \
 		$(srcdir)/Include/cpython/sysmodule.h \
@@ -1614,6 +1626,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_pystate.h \
 		$(srcdir)/Include/internal/pycore_runtime.h \
 		$(srcdir)/Include/internal/pycore_runtime_init.h \
+		$(srcdir)/Include/internal/pycore_signal.h \
 		$(srcdir)/Include/internal/pycore_sliceobject.h \
 		$(srcdir)/Include/internal/pycore_strhex.h \
 		$(srcdir)/Include/internal/pycore_structseq.h \
@@ -1637,7 +1650,7 @@ $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
 ######################################################################
 
 TESTOPTS=	$(EXTRATESTOPTS)
-TESTPYTHON=	$(RUNSHARED) ./$(BUILDPYTHON) $(TESTPYTHONOPTS)
+TESTPYTHON=	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(TESTPYTHONOPTS)
 TESTRUNNER=	$(TESTPYTHON) $(srcdir)/Tools/scripts/run_tests.py
 TESTTIMEOUT=	1200
 
@@ -1645,7 +1658,7 @@ TESTTIMEOUT=	1200
 
 # Remove "test_python_*" directories of previous failed test jobs.
 # Pass TESTOPTS options because it can contain --tempdir option.
-cleantest: build_all
+cleantest: all
 	$(TESTRUNNER) $(TESTOPTS) --cleanup
 
 # Run a basic set of regression tests.
@@ -1680,14 +1693,14 @@ testuniversal:	@DEF_MAKE_RULE@ platform
 
 # Like testall, but with only one pass and without multiple processes.
 # Run an optional script to include information about the build environment.
-buildbottest:	build_all platform
+buildbottest:	all platform
 		-@if which pybuildbot.identify >/dev/null 2>&1; then \
 			pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
 		fi
 		$(TESTRUNNER) -j 1 -u all -W --slowest --fail-env-changed --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
-pythoninfo: build_all
-		$(RUNSHARED) ./$(BUILDPYTHON) -m test.pythoninfo
+pythoninfo: all
+		$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test.pythoninfo
 
 QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io test_lib2to3 \
 		test_multibytecodec test_urllib2_localnet test_itertools \
@@ -1700,10 +1713,10 @@ quicktest:	@DEF_MAKE_RULE@ platform
 
 # SSL tests
 .PHONY: multisslcompile multissltest
-multisslcompile: build_all
+multisslcompile: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/ssl/multissltests.py --steps=modules
 
-multissltest: build_all
+multissltest: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/ssl/multissltests.py
 
 install: @FRAMEWORKINSTALLFIRST@ commoninstall bininstall maninstall @FRAMEWORKINSTALLLAST@
@@ -1975,7 +1988,7 @@ TESTSUBDIRS=	ctypes/test \
 		unittest/test unittest/test/testmock
 
 TEST_MODULES=@TEST_MODULES@
-libinstall:	build_all $(srcdir)/Modules/xxmodule.c
+libinstall:	all $(srcdir)/Modules/xxmodule.c
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -2463,7 +2476,7 @@ patchcheck: @DEF_MAKE_RULE@
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/patchcheck.py
 
 check-limited-abi: all
-	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --all $(srcdir)/Misc/stable_abi.txt
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --all $(srcdir)/Misc/stable_abi.toml
 
 .PHONY: update-config
 update-config:

@@ -124,16 +124,72 @@ the modern themed widget set and API::
    from tkinter import ttk
 
 
-.. class:: Tk(screenName=None, baseName=None, className='Tk', useTk=1)
+.. class:: Tk(screenName=None, baseName=None, className='Tk', useTk=True, sync=False, use=None)
 
-   The :class:`Tk` class is instantiated without arguments. This creates a toplevel
-   widget of Tk which usually is the main window of an application. Each instance
-   has its own associated Tcl interpreter.
+   Construct a toplevel Tk widget, which is usually the main window of an
+   application, and initialize a Tcl interpreter for this widget.  Each
+   instance has its own associated Tcl interpreter.
 
-   .. FIXME: The following keyword arguments are currently recognized:
+   The :class:`Tk` class is typically instantiated using all default values.
+   However, the following keyword arguments are currently recognized:
+
+   *screenName*
+      When given (as a string), sets the :envvar:`DISPLAY` environment
+      variable. (X11 only)
+   *baseName*
+      Name of the profile file.  By default, *baseName* is derived from the
+      program name (``sys.argv[0]``).
+   *className*
+      Name of the widget class.  Used as a profile file and also as the name
+      with which Tcl is invoked (*argv0* in *interp*).
+   *useTk*
+      If ``True``, initialize the Tk subsystem.  The :func:`tkinter.Tcl() <Tcl>`
+      function sets this to ``False``.
+   *sync*
+      If ``True``, execute all X server commands synchronously, so that errors
+      are reported immediately.  Can be used for debugging. (X11 only)
+   *use*
+      Specifies the *id* of the window in which to embed the application,
+      instead of it being created as an independent toplevel window. *id* must
+      be specified in the same way as the value for the -use option for
+      toplevel widgets (that is, it has a form like that returned by
+      :meth:`winfo_id`).
+
+      Note that on some platforms this will only work correctly if *id* refers
+      to a Tk frame or toplevel that has its -container option enabled.
+
+   :class:`Tk` reads and interprets profile files, named
+   :file:`.{className}.tcl` and :file:`.{baseName}.tcl`, into the Tcl
+   interpreter and calls :func:`exec` on the contents of
+   :file:`.{className}.py` and :file:`.{baseName}.py`.  The path for the
+   profile files is the :envvar:`HOME` environment variable or, if that
+   isn't defined, then :attr:`os.curdir`.
+
+   .. attribute:: tk
+
+      The Tk application object created by instantiating :class:`Tk`.  This
+      provides access to the Tcl interpreter.  Each widget that is attached
+      the same instance of :class:`Tk` has the same value for its :attr:`tk`
+      attribute.
+
+   .. attribute:: master
+
+      The widget object that contains this widget.  For :class:`Tk`, the
+      *master* is :const:`None` because it is the main window.  The terms
+      *master* and *parent* are similar and sometimes used interchangeably
+      as argument names; however, calling :meth:`winfo_parent` returns a
+      string of the widget name whereas :attr:`master` returns the object.
+      *parent*/*child* reflects the tree-like relationship while
+      *master*/*slave* reflects the container structure.
+
+   .. attribute:: children
+
+      The immediate descendants of this widget as a :class:`dict` with the
+      child widget names as the keys and the child instance objects as the
+      values.
 
 
-.. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=0)
+.. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=False)
 
    The :func:`Tcl` function is a factory function which creates an object much like
    that created by the :class:`Tk` class, except that it does not initialize the Tk

@@ -79,6 +79,7 @@ def call_func(info_add, name, mod, func_name, *, formatter=None):
 
 def collect_sys(info_add):
     attributes = (
+        '_emscripten_info',
         '_framework',
         'abiflags',
         'api_version',
@@ -155,7 +156,7 @@ def collect_platform(info_add):
 def collect_locale(info_add):
     import locale
 
-    info_add('locale.encoding', locale.getpreferredencoding(False))
+    info_add('locale.getencoding', locale.getencoding())
 
 
 def collect_builtins(info_add):

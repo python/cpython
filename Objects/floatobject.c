@@ -141,6 +141,7 @@ PyFloat_FromDouble(double fval)
 #endif
         state->free_list = (PyFloatObject *) Py_TYPE(op);
         state->numfree--;
+        OBJECT_STAT_INC(from_freelist);
     }
     else
 #endif
@@ -238,28 +239,42 @@ PyFloat_FromString(PyObject *v)
     return result;
 }
 
-static void
-float_dealloc(PyFloatObject *op)
+void
+_PyFloat_ExactDealloc(PyObject *obj)
 {
+    assert(PyFloat_CheckExact(obj));
+    PyFloatObject *op = (PyFloatObject *)obj;
+#if PyFloat_MAXFREELIST > 0
+    struct _Py_float_state *state = get_float_state();
+#ifdef Py_DEBUG
+    // float_dealloc() must not be called after _PyFloat_Fini()
+    assert(state->numfree != -1);
+#endif
+    if (state->numfree >= PyFloat_MAXFREELIST)  {
+        PyObject_Free(op);
+        return;
+    }
+    state->numfree++;
+    Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
+    state->free_list = op;
+    OBJECT_STAT_INC(to_freelist);
+#else
+    PyObject_Free(op);
+#endif
+}
+
+static void
+float_dealloc(PyObject *op)
+{
+    assert(PyFloat_Check(op));
 #if PyFloat_MAXFREELIST > 0
     if (PyFloat_CheckExact(op)) {
-        struct _Py_float_state *state = get_float_state();
-#ifdef Py_DEBUG
-        // float_dealloc() must not be called after _PyFloat_Fini()
-        assert(state->numfree != -1);
-#endif
-        if (state->numfree >= PyFloat_MAXFREELIST)  {
-            PyObject_Free(op);
-            return;
-        }
-        state->numfree++;
-        Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
-        state->free_list = op;
+        _PyFloat_ExactDealloc(op);
     }
     else
 #endif
     {
-        Py_TYPE(op)->tp_free((PyObject *)op);
+        Py_TYPE(op)->tp_free(op);
     }
 }
 
