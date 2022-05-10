@@ -348,7 +348,8 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         from dis import _all_opmap
         resume = _all_opmap["RESUME"]
         resume_quick = _all_opmap["RESUME_QUICK"]
-        code = f"""if 1:
+        from test.test_dis import QUICKENING_WARMUP_DELAY
+        code = textwrap.dedent(f"""\
             import importlib._bootstrap
             func = importlib._bootstrap._handle_fromlist
             code = func.__code__
@@ -358,8 +359,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             if set(code._co_code_adaptive[:2]) != set([{resume}, 0]):
                 raise AssertionError()
 
-            # Warmup
-            for i in range(30):
+            for i in range({QUICKENING_WARMUP_DELAY}):
                 func(importlib._bootstrap, ["x"], lambda *args: None)
 
             # Assert quickening worked
@@ -367,7 +367,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                 raise AssertionError()
 
             print("Tests passed")
-        """
+        """)
         run = self.run_embedded_interpreter
         out, err = run("test_repeated_init_exec", code)
         self.assertEqual(out, 'Tests passed\n' * INIT_LOOPS)
