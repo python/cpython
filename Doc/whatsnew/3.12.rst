@@ -94,11 +94,6 @@ Optimizations
 
 
 
-Build and C API Changes
-=======================
-
-* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been removed.
-
 Deprecated
 ==========
 
@@ -124,3 +119,25 @@ Changes in the Python API
   The group name in bytes patterns and replacement strings can now only
   contain ASCII letters and digits and underscore.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
+
+
+Build Changes
+=============
+
+
+C API Changes
+=============
+
+New Features
+------------
+
+Porting to Python 3.12
+----------------------
+
+Deprecated
+----------
+
+Removed
+-------
+
+* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been removed.
