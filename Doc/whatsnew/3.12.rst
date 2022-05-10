@@ -92,7 +92,7 @@ Optimizations
 =============
 
 * Removed ``wstr`` and ``wstr_length`` members from Unicode objects.
-  It reduces object size 8 or 16 bytes on 64bit platform.
+  It reduces object size by 8 or 16 bytes on 64bit platform.
   (Contributed by Inada Naoki in :gh:`92536`.)
 
 
