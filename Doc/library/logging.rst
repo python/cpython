@@ -662,8 +662,8 @@ empty string, all events are passed.
 
    .. method:: filter(record)
 
-      Is the specified record to be logged? Returns zero for no, nonzero for
-      yes. Filters can also modify log records in-place or return a completely
+      Is the specified record to be logged? Returns falsy for no, truthy for
+      yes. Filters can either modify log records in-place or return a completely
       different record instance which will replace the original
       log record without modifying it.
 
@@ -689,7 +689,7 @@ which has a ``filter`` method with the same semantics.
 
 .. versionchanged:: 3.12
    You can now return a :class:`LogRecord` instance from filters to replace
-   the log record without modifying it in place. This allows filters installed
+   the log record without modifying it in place. This allows filters attached to
    on a :class:`Handler` to modify the log record before it is emitted without
    having side effects on other handlers.
 

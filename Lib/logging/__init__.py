@@ -817,15 +817,17 @@ class Filterer(object):
         Determine if a record is loggable by consulting all the filters.
 
         The default is to allow the record to be logged; any filter can veto
-        this by returning a falsy value  and the record is then dropped and
-        this method returns a falsy value.
-        Filters can return a log record, which case that log record
-        is used to call the next filter.
-        If filters return a truthy value that is not a log record the
-        next filter is called with the existing log record.
+        this by returning a falsy value.
+        If a filter attached to a handler returns a log record instance,
+        then that instance is used in place of the original log record in
+        any further processing of the event by that handler.
+        If a filter returns any other truthy value, the original log record
+        is used in any further processing of the event by that handler.
 
         If none of the filters return falsy values, this method returns
         a log record.
+        If any of the filters return a falsy value, this method returns
+        a falsy value.
 
         .. versionchanged:: 3.2
 

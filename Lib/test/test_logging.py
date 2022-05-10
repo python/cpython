@@ -469,15 +469,9 @@ class CustomLevelsAndFiltersTest(BaseTest):
 
     def test_handler_filter_replaces_record(self):
         def replace_message(record: logging.LogRecord):
-            return logging.LogRecord(
-                name=record.name,
-                level=record.levelno,
-                pathname=record.pathname,
-                lineno=record.lineno,
-                msg="new message!",
-                exc_info=record.exc_info,
-                args=(),
-            )
+            record = copy.copy(record)
+            record.msg = "new message!"
+            return record
 
         # Set up a logging hierarchy such that "child" and it's handler
         # (and thus `replace_message()`) always get called before
@@ -507,15 +501,7 @@ class CustomLevelsAndFiltersTest(BaseTest):
         class RecordingFilter(logging.Filter):
             def filter(self, record: logging.LogRecord):
                 records.add(id(record))
-                return logging.LogRecord(
-                    name=record.name,
-                    level=record.levelno,
-                    pathname=record.pathname,
-                    lineno=record.lineno,
-                    msg=record.msg,
-                    exc_info=record.exc_info,
-                    args=(),
-                )
+                return copy.copy(record)
 
         logger = logging.getLogger("logger")
         logger.setLevel(logging.INFO)
