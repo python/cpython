@@ -1,4 +1,3 @@
-from collections import deque
 import fnmatch
 import functools
 import io
@@ -1462,8 +1461,8 @@ class Path(PurePath):
         return self._walk(top_down, on_error, follow_symlinks)
 
     def _walk(self, top_down, on_error, follow_symlinks):
-        dirs = []
-        nondirs = []
+        dirnames = []
+        filenames = []
 
         # We may not have read permission for self, in which case we can't
         # get a list of the files the directory contains. os.walk
@@ -1482,24 +1481,23 @@ class Path(PurePath):
                 try:
                     is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
                 except OSError:
-                    # If is_dir() raises an OSError, consider that the entry
-                    # is not a directory, same behavior as os.path.isdir()
+                    # same behavior as os.path.isdir()
                     is_dir = False
 
                 if is_dir:
-                    dirs.append(entry.name)
+                    dirnames.append(entry.name)
                 else:
-                    nondirs.append(entry.name)
+                    filenames.append(entry.name)
 
         if top_down:
-            yield self, dirs, nondirs
+            yield self, dirnames, filenames
 
-        for dir_name in dirs:
+        for dir_name in dirnames:
             new_path = self._make_child_relpath(dir_name)
             yield from new_path._walk(top_down, on_error, follow_symlinks)
 
         if not top_down:
-            yield self, dirs, nondirs
+            yield self, dirnames, filenames
 
 
 class PosixPath(Path, PurePosixPath):
