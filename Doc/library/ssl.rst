@@ -728,7 +728,7 @@ Constants
 
    Selects SSL version 3 as the channel encryption protocol.
 
-   This protocol is not be available if OpenSSL is compiled with the
+   This protocol is not available if OpenSSL is compiled with the
    ``OPENSSL_NO_SSLv3`` flag.
 
    .. warning::
