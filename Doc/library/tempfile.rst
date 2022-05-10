@@ -84,7 +84,7 @@ The module defines the following user-callable items:
    file-like object.  Whether the name can be
    used to open the file a second time, while the named temporary file is
    still open, varies across platforms (it can be so used on Unix; it cannot
-   on Windows NT or later).  If *delete* is true (the default), the file is
+   on Windows).  If *delete* is true (the default), the file is
    deleted as soon as it is closed.
    The returned object is always a file-like object whose :attr:`!file`
    attribute is the underlying true file object. This file-like object can
