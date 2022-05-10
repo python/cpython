@@ -359,6 +359,9 @@ class LogRecord(object):
         return '<LogRecord: %s, %s, %s, %s, "%s">'%(self.name, self.levelno,
             self.pathname, self.lineno, self.msg)
 
+    def __bool__(self):
+        return True
+
     def getMessage(self):
         """
         Return the message for this LogRecord.
@@ -811,23 +814,34 @@ class Filterer(object):
         Determine if a record is loggable by consulting all the filters.
 
         The default is to allow the record to be logged; any filter can veto
-        this and the record is then dropped. Returns a zero value if a record
-        is to be dropped, else non-zero.
+        this by returning a falsy value  and the record is then dropped and
+        this method returns a falsy value.
+        Filters can return a log record, which case that log record
+        is used to call the next filter.
+        If filters return a truthy value that is not a log record the
+        next filter is called with the existing log record.
+
+        If none of the filters return falsy values, this method returns
+        a log record.
 
         .. versionchanged:: 3.2
 
            Allow filters to be just callables.
+        
+        .. versionchanged:: 3.12
+           Allow filters to return a LogRecord instead of
+           modifying it in place.
         """
-        rv = True
         for f in self.filters:
             if hasattr(f, 'filter'):
                 result = f.filter(record)
             else:
                 result = f(record) # assume callable - will raise if not
             if not result:
-                rv = False
-                break
-        return rv
+                return False
+            if isinstance(result, LogRecord):
+                record = result
+        return record
 
 #---------------------------------------------------------------------------
 #   Handler classes and functions
@@ -966,6 +980,8 @@ class Handler(Filterer):
         emission.
         """
         rv = self.filter(record)
+        if isinstance(rv, LogRecord):
+            record = rv
         if rv:
             self.acquire()
             try:
@@ -1634,8 +1650,14 @@ class Logger(Filterer):
         This method is used for unpickled records received from a socket, as
         well as those created locally. Logger-level filtering is applied.
         """
-        if (not self.disabled) and self.filter(record):
-            self.callHandlers(record)
+        if self.disabled:
+            return
+        maybe_record = self.filter(record)
+        if not maybe_record:
+            return
+        if isinstance(maybe_record, LogRecord):
+            record = maybe_record
+        self.callHandlers(record)
 
     def addHandler(self, hdlr):
         """

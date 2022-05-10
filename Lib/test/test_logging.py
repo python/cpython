@@ -466,6 +466,40 @@ class CustomLevelsAndFiltersTest(BaseTest):
         for lvl in LEVEL_RANGE:
             logger.log(lvl, self.next_message())
 
+    def test_handler_filter_replaces_record(self):
+        def replace_message(record: logging.LogRecord):
+            return logging.LogRecord(
+                name=record.name,
+                level=record.levelno,
+                pathname=record.pathname,
+                lineno=record.lineno,
+                msg="new message!",
+                exc_info=record.exc_info,
+                args=(),
+            )
+
+        # Set up a logging hierarchy such that "child" and it's handler
+        # (and thus `replace_message()`) always get called before
+        # propagating up to "parent".
+        # Then we can confirm that `replace_message()` was able to
+        # replace the log record without having a side effect on
+        # other loggers or handlers.
+        parent = logging.getLogger("parent")
+        child = logging.getLogger("parent.child")
+        stream_1 = io.StringIO()
+        stream_2 = io.StringIO()
+        handler_1 = logging.StreamHandler(stream_1)
+        handler_2 = logging.StreamHandler(stream_2)
+        handler_2.addFilter(replace_message)
+        parent.addHandler(handler_1)
+        child.addHandler(handler_2)
+
+        child.info("original message")
+        handler_1.flush()
+        handler_2.flush()
+        self.assertEqual(stream_1.getvalue(), "original message\n")
+        self.assertEqual(stream_2.getvalue(), "new message!\n")
+
     def test_logger_filter(self):
         # Filter at logger level.
         self.root_logger.setLevel(VERBOSE)
