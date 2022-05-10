@@ -665,7 +665,7 @@ empty string, all events are passed.
       Is the specified record to be logged? Returns falsy for no, truthy for
       yes. Filters can either modify log records in-place or return a completely
       different record instance which will replace the original
-      log record without modifying it.
+      log record in any future processing of the event.
 
 Note that filters attached to handlers are consulted before an event is
 emitted by the handler, whereas filters attached to loggers are consulted
@@ -689,8 +689,8 @@ which has a ``filter`` method with the same semantics.
 
 .. versionchanged:: 3.12
    You can now return a :class:`LogRecord` instance from filters to replace
-   the log record without modifying it in place. This allows filters attached to
-   on a :class:`Handler` to modify the log record before it is emitted without
+   the log record rather than modifying it in place. This allows filters attached to
+   a :class:`Handler` to modify the log record before it is emitted without
    having side effects on other handlers.
 
 Although filters are used primarily to filter records based on more
