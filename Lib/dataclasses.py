@@ -280,7 +280,7 @@ class Field:
         self.kw_only = kw_only
         self._field_type = None
     
-    def _getcompare(self):
+    def _extra_keys(self):
         return (    
             self.default is MISSING,
             self.default_factory is MISSING,
@@ -377,6 +377,9 @@ def field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
                  metadata, kw_only)
 
 
+symbol = "__field_{}__".format
+
+
 def _fields_in_init_order(fields):
     # Returns the fields as __init__ will output them.  It returns 2 tuples:
     # the first for normal args, and the second for keyword args.
@@ -395,7 +398,7 @@ def _tuple_str(obj_name, fields):
     if not fields:
         return '()'
     # Note the trailing comma, needed if this turns out to be a 1-tuple.
-    return f'({",".join([f"{obj_name}.__field_{i}__" for i in range(len(fields))])},)'
+    return f'({"".join([f"{obj_name}.{symbol(i)}," for i in range(len(fields))])})'
 
 
 # This function's logic is copied from "recursive_repr" function in
@@ -446,18 +449,18 @@ _code_cache_miss = 0
 
 
 def _create_fn(
-    name, args, body, fields, globals=None, locals=None, salt=None,
+    name, args, body, fields, extra_keys=(), globals=None, locals=None
 ):
-    key = (name, len(fields), locals and frozenset(locals), salt)
-    code = _code_cache.get(key)
     global _code_cache_total, _code_cache_miss
+    key = (name, len(fields), locals and frozenset(locals), *extra_keys)
+    code = _code_cache.get(key)
     _code_cache_total += 1
     if code is None:
         _code_cache_miss += 1
         code = _code_cache[key] = _create_code(
              name, args, body, globals=globals, locals=locals
         )
-    patched = {f"__field_{i}__": f.name for i, f in enumerate(fields)}
+    patched = {symbol(i): f.name for i, f in enumerate(fields)}
     varnames = tuple(patched.get(name, name) for name in code.co_varnames)
     names = tuple(patched.get(name, name) for name in code.co_names)
     consts = list(code.co_consts)
@@ -487,7 +490,7 @@ def _create_fn(
     )
 
 
-def _field_assign(frozen, name, value, self_name, i):
+def _field_assign(frozen, name, value, self_name):
     # If we're a frozen class, then assign to our fields in __init__
     # via object.__setattr__.  Otherwise, just use a simple
     # assignment.
@@ -495,23 +498,24 @@ def _field_assign(frozen, name, value, self_name, i):
     # self_name is what "self" is called in this function: don't
     # hard-code "self", since that might be a field name.
     if frozen:
-        return f'BUILTINS.object.__setattr__({self_name},"__field_{i}__",{value})'
-    return f'{self_name}.__field_{i}__={value}'
+        return f'BUILTINS.object.__setattr__({self_name},{name!r},{value})'
+    return f'{self_name}.{name}={value}'
 
 
 def _field_init(f, frozen, globals, self_name, slots, i):
     # Return the text of the line in the body of __init__ that will
     # initialize this field.
 
-    default_name = f'__field_default_{i}__'
+    field_name = symbol(i)
+    default_name = f'__default_{i}__'
     if f.default_factory is not MISSING:
         if f.init:
             # This field has a default factory.  If a parameter is
             # given, use it.  If not, call the factory.
             globals[default_name] = f.default_factory
             value = (f'{default_name}() '
-                     f'if __field_{i}__ is _HAS_DEFAULT_FACTORY '
-                     f'else __field_{i}__')
+                     f'if {field_name} is _HAS_DEFAULT_FACTORY '
+                     f'else {field_name}')
         else:
             # This is a field that's not in the __init__ params, but
             # has a default factory function.  It needs to be
@@ -534,10 +538,10 @@ def _field_init(f, frozen, globals, self_name, slots, i):
         if f.init:
             if f.default is MISSING:
                 # There's no default, just do an assignment.
-                value = f"__field_{i}__"
+                value = field_name
             elif f.default is not MISSING:
                 globals[default_name] = f.default
-                value = f"__field_{i}__"
+                value = field_name
         else:
             # If the class has slots, then initialize this field.
             if slots and f.default is not MISSING:
@@ -556,27 +560,7 @@ def _field_init(f, frozen, globals, self_name, slots, i):
         return None
 
     # Now, actually generate the field assignment.
-    return _field_assign(frozen, f.name, value, self_name, i)
-
-
-def _init_param(f, i):
-    # Return the __init__ parameter string for this field.  For
-    # example, the equivalent of 'x:int=3' (except instead of 'int',
-    # reference a variable set to int, and instead of '3', reference a
-    # variable set to 3).
-    if f.default is MISSING and f.default_factory is MISSING:
-        # There's no default, and no default_factory, just output the
-        # variable name and type.
-        default = ''
-    elif f.default is not MISSING:
-        # There's a default, this will be the name that's used to look
-        # it up.
-        default = f'=__field_default_{i}__'
-    elif f.default_factory is not MISSING:
-        # There's a factory function.  Set a marker.
-        default = '=_HAS_DEFAULT_FACTORY'
-    return f'__field_{i}__{default}'
-
+    return _field_assign(frozen, field_name, value, self_name)
 
 def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
              self_name, globals, slots):
@@ -614,7 +598,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
 
     # Does this class have a post-init function?
     if has_post_init:
-        params_str = ','.join(f"__field_{i}__" for i, f in enumerate(fields)
+        params_str = ','.join(symbol(i) for i, f in enumerate(fields)
                               if f._field_type is _FIELD_INITVAR)
         body_lines.append(f'{self_name}.{_POST_INIT_NAME}({params_str})')
 
@@ -622,23 +606,23 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
     if not body_lines:
         body_lines = ['pass']
 
-    _init_params = [_init_param(f, fields.index(f)) for f in std_fields]
+    _init_params = [symbol(fields.index(f)) for f in std_fields]
     if kw_only_fields:
         # Add the keyword-only args.  Because the * can only be added if
         # there's at least one keyword-only arg, there needs to be a test here
         # (instead of just concatenting the lists together).
         _init_params += ['*']
-        _init_params += [_init_param(f, fields.index(f)) for f in kw_only_fields]
-    salt = (frozen, tuple(f._getcompare() for f in fields), has_post_init, self_name)
-    f = _create_fn(
-        '__init__',
-        [self_name] + _init_params,
-        body_lines,
-        locals=locals,
-        globals=globals,
-        fields=fields,
-        salt=salt,
+        _init_params += [symbol(fields.index(f)) for f in kw_only_fields]
+    extra_keys = (
+        frozen, *(f._extra_keys() for f in fields), has_post_init, self_name
     )
+    f = _create_fn('__init__',
+                   [self_name] + _init_params,
+                   body_lines,
+                   locals=locals,
+                   globals=globals,
+                   fields=fields,
+                   extra_keys=extra_keys)
     annotations = {"return": None}
     defaults = []
     kwdefaults = {}
@@ -653,7 +637,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
         if field.default is not MISSING:
             kwdefaults[field.name] = field.default
         elif field.default_factory is not MISSING:
-            defaults.append(_HAS_DEFAULT_FACTORY)
+            kwdefaults[field.name] = _HAS_DEFAULT_FACTORY
     f.__annotations__ = annotations
     f.__defaults__ = tuple(defaults) or None
     f.__kwdefaults__ = kwdefaults or None
@@ -663,8 +647,8 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
 def _repr_fn(fields, globals):
     fn = _create_fn('__repr__',
                     ('self',),
-                    ['return self.__class__.__qualname__ + f"(' + # XXX
-                     ', '.join([f"__field_{i}__={{self.__field_{i}__!r}}"
+                    ['return self.__class__.__qualname__ + f"(' +
+                     ', '.join([f"{symbol(i)}={{self.{symbol(i)}!r}}"
                                 for i in range(len(fields))]) +
                      ')"'],
                      globals=globals,
@@ -675,11 +659,7 @@ def _repr_fn(fields, globals):
 def _frozen_get_del_attr(cls, fields, globals):
     locals = {'cls': cls,
               'FrozenInstanceError': FrozenInstanceError}
-    if fields:  # XXX
-        fields_str = '(' + ','.join(repr(f"__field_{i}__") for i in range(len(fields))) + ',)'
-    else:
-        # Special case for the zero-length tuple.
-        fields_str = '()'
+    fields_str = '(' + ''.join(f"{symbol(i)!r}," for i in range(len(fields))) + ')'
     return (_create_fn('__setattr__',
                       ('self', 'name', 'value'),
                       (f'if type(self) is cls or name in {fields_str}:',
@@ -898,7 +878,7 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     return f
 
 def _set_qualname(cls, value):
-    # Ensure that the functions returned from _create_code uses the proper
+    # Ensure that the functions returned from _create_fn uses the proper
     # __qualname__ (the class they belong to).
     if isinstance(value, FunctionType):
         value.__qualname__ = f"{cls.__qualname__}.{value.__name__}"
