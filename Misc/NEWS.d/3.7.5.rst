@@ -13,7 +13,7 @@ Prevent ctypes crash when handling arrays in structs/unions.
 .. nonce: 9TWMlz
 .. section: Library
 
-Revert GH-15522, which introduces a regression in
+Revert PR 15522, which introduces a regression in
 :meth:`mimetypes.guess_type` due to improper handling of filenames as urls.
 
 ..
