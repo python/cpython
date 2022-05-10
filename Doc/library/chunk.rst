@@ -94,7 +94,8 @@ instance will fail with an :exc:`EOFError` exception.
       underlying file.
 
    The remaining methods will raise :exc:`OSError` if called after the
-   :meth:`close` method has been called.
+   :meth:`close` method has been called.  Before Python 3.3, they used to
+   raise :exc:`IOError`, now an alias of :exc:`OSError`.
 
 
    .. method:: isatty()
