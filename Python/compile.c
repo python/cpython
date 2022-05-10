@@ -1148,6 +1148,7 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
 
         case LOAD_FAST:
+        case LOAD_FAST_KNOWN:
             return 1;
         case STORE_FAST:
             return -1;
@@ -7926,6 +7927,7 @@ mark_known_variables(struct assembler *a, struct compiler *c)
     // fprintf(stderr, "big loop ended\n");
 
     #undef MAYBE_PUSH
+    PyMem_Free(stack);
     return 0;
 }
 
