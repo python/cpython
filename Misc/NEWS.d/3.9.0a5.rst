@@ -175,7 +175,7 @@ convention. Patch by Dong-hee Na.
 .. nonce: FE9S21
 .. section: Core and Builtins
 
-Chaged list overallocation strategy. It no longer overallocates if the new
+Changed list overallocation strategy. It no longer overallocates if the new
 size is closer to overallocated size than to the old size and adds padding.
 
 ..

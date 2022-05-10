@@ -1,5 +1,7 @@
+import functools
 import unittest
 import tkinter
+import enum
 from test import support
 from tkinter.test.support import AbstractTkTest, AbstractDefaultRootTest
 
@@ -97,6 +99,12 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         with self.assertRaises(tkinter.TclError):
             root.tk.call(script)
 
+        # Call with a callable class
+        count = 0
+        timer1 = root.after(0, functools.partial(callback, 42, 11))
+        root.update()  # Process all pending events.
+        self.assertEqual(count, 53)
+
     def test_after_idle(self):
         root = self.root
 
@@ -193,6 +201,13 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
             root.clipboard_get()
 
     def test_winfo_rgb(self):
+
+        def assertApprox(col1, col2):
+            # A small amount of flexibility is required (bpo-45496)
+            # 33 is ~0.05% of 65535, which is a reasonable margin
+            for col1_channel, col2_channel in zip(col1, col2):
+                self.assertAlmostEqual(col1_channel, col2_channel, delta=33)
+
         root = self.root
         rgb = root.winfo_rgb
 
@@ -202,9 +217,9 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         # #RGB - extends each 4-bit hex value to be 16-bit.
         self.assertEqual(rgb('#F0F'), (0xFFFF, 0x0000, 0xFFFF))
         # #RRGGBB - extends each 8-bit hex value to be 16-bit.
-        self.assertEqual(rgb('#4a3c8c'), (0x4a4a, 0x3c3c, 0x8c8c))
+        assertApprox(rgb('#4a3c8c'), (0x4a4a, 0x3c3c, 0x8c8c))
         # #RRRRGGGGBBBB
-        self.assertEqual(rgb('#dede14143939'), (0xdede, 0x1414, 0x3939))
+        assertApprox(rgb('#dede14143939'), (0xdede, 0x1414, 0x3939))
         # Invalid string.
         with self.assertRaises(tkinter.TclError):
             rgb('#123456789a')
@@ -261,6 +276,49 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
                          " num=3 delta=-1 focus=True"
                          " x=10 y=20 width=300 height=200>")
 
+    def test_eventtype_enum(self):
+        class CheckedEventType(enum.StrEnum):
+            KeyPress = '2'
+            Key = KeyPress
+            KeyRelease = '3'
+            ButtonPress = '4'
+            Button = ButtonPress
+            ButtonRelease = '5'
+            Motion = '6'
+            Enter = '7'
+            Leave = '8'
+            FocusIn = '9'
+            FocusOut = '10'
+            Keymap = '11'           # undocumented
+            Expose = '12'
+            GraphicsExpose = '13'   # undocumented
+            NoExpose = '14'         # undocumented
+            Visibility = '15'
+            Create = '16'
+            Destroy = '17'
+            Unmap = '18'
+            Map = '19'
+            MapRequest = '20'
+            Reparent = '21'
+            Configure = '22'
+            ConfigureRequest = '23'
+            Gravity = '24'
+            ResizeRequest = '25'
+            Circulate = '26'
+            CirculateRequest = '27'
+            Property = '28'
+            SelectionClear = '29'   # undocumented
+            SelectionRequest = '30' # undocumented
+            Selection = '31'        # undocumented
+            Colormap = '32'
+            ClientMessage = '33'    # undocumented
+            Mapping = '34'          # undocumented
+            VirtualEvent = '35'     # undocumented
+            Activate = '36'
+            Deactivate = '37'
+            MouseWheel = '38'
+        enum._test_simple_enum(CheckedEventType, tkinter.EventType)
+
     def test_getboolean(self):
         for v in 'true', 'yes', 'on', '1', 't', 'y', 1, True:
             self.assertIs(self.root.getboolean(v), True)
@@ -282,6 +340,35 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.root.mainloop(0)
         self.assertEqual(log, [1])
         self.assertTrue(self.root.winfo_exists())
+
+    def test_info_patchlevel(self):
+        vi = self.root.info_patchlevel()
+        f = tkinter.Frame(self.root)
+        self.assertEqual(f.info_patchlevel(), vi)
+        # The following is almost a copy of tests for sys.version_info.
+        self.assertIsInstance(vi[:], tuple)
+        self.assertEqual(len(vi), 5)
+        self.assertIsInstance(vi[0], int)
+        self.assertIsInstance(vi[1], int)
+        self.assertIsInstance(vi[2], int)
+        self.assertIn(vi[3], ("alpha", "beta", "candidate", "final"))
+        self.assertIsInstance(vi[4], int)
+        self.assertIsInstance(vi.major, int)
+        self.assertIsInstance(vi.minor, int)
+        self.assertIsInstance(vi.micro, int)
+        self.assertIn(vi.releaselevel, ("alpha", "beta", "final"))
+        self.assertIsInstance(vi.serial, int)
+        self.assertEqual(vi[0], vi.major)
+        self.assertEqual(vi[1], vi.minor)
+        self.assertEqual(vi[2], vi.micro)
+        self.assertEqual(vi[3], vi.releaselevel)
+        self.assertEqual(vi[4], vi.serial)
+        self.assertTrue(vi > (1,0,0))
+        if vi.releaselevel == 'final':
+            self.assertEqual(vi.serial, 0)
+        else:
+            self.assertEqual(vi.micro, 0)
+        self.assertTrue(str(vi).startswith(f'{vi.major}.{vi.minor}'))
 
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
@@ -339,7 +426,5 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
         self.assertRaises(RuntimeError, tkinter.mainloop)
 
 
-tests_gui = (MiscTest, DefaultRootTest)
-
 if __name__ == "__main__":
-    support.run_unittest(*tests_gui)
+    unittest.main()

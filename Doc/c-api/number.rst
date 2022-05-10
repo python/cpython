@@ -44,7 +44,7 @@ Number Protocol
 .. c:function:: PyObject* PyNumber_FloorDivide(PyObject *o1, PyObject *o2)
 
    Return the floor of *o1* divided by *o2*, or ``NULL`` on failure.  This is
-   equivalent to the "classic" division of integers.
+   the equivalent of the Python expression ``o1 // o2``.
 
 
 .. c:function:: PyObject* PyNumber_TrueDivide(PyObject *o1, PyObject *o2)
@@ -53,7 +53,7 @@ Number Protocol
    *o2*, or ``NULL`` on failure.  The return value is "approximate" because binary
    floating point numbers are approximate; it is not possible to represent all real
    numbers in base two.  This function can return a floating point value when
-   passed two integers.
+   passed two integers.  This is the equivalent of the Python expression ``o1 / o2``.
 
 
 .. c:function:: PyObject* PyNumber_Remainder(PyObject *o1, PyObject *o2)
@@ -180,6 +180,7 @@ Number Protocol
    floating point numbers are approximate; it is not possible to represent all real
    numbers in base two.  This function can return a floating point value when
    passed two integers.  The operation is done *in-place* when *o1* supports it.
+   This is the equivalent of the Python statement ``o1 /= o2``.
 
 
 .. c:function:: PyObject* PyNumber_InPlaceRemainder(PyObject *o1, PyObject *o2)
@@ -285,6 +286,6 @@ Number Protocol
 
 .. c:function:: int PyIndex_Check(PyObject *o)
 
-   Returns ``1`` if *o* is an index integer (has the nb_index slot of  the
-   tp_as_number structure filled in), and ``0`` otherwise.
+   Returns ``1`` if *o* is an index integer (has the ``nb_index`` slot of the
+   ``tp_as_number`` structure filled in), and ``0`` otherwise.
    This function always succeeds.

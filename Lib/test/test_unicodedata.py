@@ -11,13 +11,14 @@ from http.client import HTTPException
 import sys
 import unicodedata
 import unittest
-from test.support import open_urlresource, requires_resource, script_helper
+from test.support import (open_urlresource, requires_resource, script_helper,
+                          cpython_only, check_disallow_instantiation)
 
 
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = 'fbdf8106a3c7c242086b0a9efa03ad4d30d5b85d'
+    expectedchecksum = '4739770dd4d0e5f1b1677accfc3552ed3c8ef326'
 
     @requires_resource('cpu')
     def test_method_checksum(self):
@@ -70,7 +71,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = 'd1e37a2854df60ac607b47b51189b9bf1b54bfdb'
+    expectedchecksum = '98d602e1f69d5c5bb8a5910c40bbbad4e18e8370'
 
     @requires_resource('cpu')
     def test_function_checksum(self):
@@ -224,6 +225,11 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.east_asian_width('\u231a'), 'W')
 
 class UnicodeMiscTest(UnicodeDatabaseTest):
+
+    @cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        check_disallow_instantiation(self, unicodedata.UCD)
 
     def test_failed_import_during_compiling(self):
         # Issue 4367

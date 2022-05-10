@@ -1029,7 +1029,7 @@ class Function(Declaration):
 
     @classmethod
     def _raw_data(self, data):
-        # XXX finsh!
+        # XXX finish!
         return data
 
     @classmethod
@@ -1161,7 +1161,9 @@ class Member(namedtuple('Member', 'name vartype size')):
             vartype = dict(raw.data)
             del vartype['storage']
             if 'size' in vartype:
-                size = int(vartype.pop('size'))
+                size = vartype.pop('size')
+                if isinstance(size, str) and size.isdigit():
+                    size = int(size)
             vartype = VarType(**vartype)
         return cls(name, vartype, size)
 
@@ -1255,7 +1257,7 @@ class Enum(TypeDeclaration):
 
     @classmethod
     def _raw_data(self, data):
-        # XXX finsih!
+        # XXX finish!
         return data
 
     @classmethod
@@ -1296,12 +1298,12 @@ class Statement(HighlevelParsedItem):
 
     @classmethod
     def _resolve_data(cls, data):
-        # XXX finsih!
+        # XXX finish!
         return data, None
 
     @classmethod
     def _raw_data(self, data):
-        # XXX finsih!
+        # XXX finish!
         return data
 
     @classmethod
@@ -1513,7 +1515,7 @@ class Declarations:
 
     def get(self, key, default=None):
         try:
-           return self[key]
+            return self[key]
         except KeyError:
             return default
 

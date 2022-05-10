@@ -37,6 +37,7 @@ TESTFN2 = TESTFN + "2"
 TESTFN_SRC = TESTFN + "_SRC"
 TESTFN_DST = TESTFN + "_DST"
 MACOS = sys.platform.startswith("darwin")
+SOLARIS = sys.platform.startswith("sunos")
 AIX = sys.platform[:3] == 'aix'
 try:
     import grp
@@ -74,7 +75,9 @@ def write_file(path, content, binary=False):
     """
     if isinstance(path, tuple):
         path = os.path.join(*path)
-    with open(path, 'wb' if binary else 'w') as fp:
+    mode = 'wb' if binary else 'w'
+    encoding = None if binary else "utf-8"
+    with open(path, mode, encoding=encoding) as fp:
         fp.write(content)
 
 def write_test_file(path, size):
@@ -104,7 +107,9 @@ def read_file(path, binary=False):
     """
     if isinstance(path, tuple):
         path = os.path.join(*path)
-    with open(path, 'rb' if binary else 'r') as fp:
+    mode = 'rb' if binary else 'r'
+    encoding = None if binary else "utf-8"
+    with open(path, mode, encoding=encoding) as fp:
         return fp.read()
 
 def rlistdir(path):
@@ -400,6 +405,27 @@ class TestRmTree(BaseTest, unittest.TestCase):
             self.assertFalse(shutil._use_fd_functions)
             self.assertFalse(shutil.rmtree.avoids_symlink_attacks)
 
+    @unittest.skipUnless(shutil._use_fd_functions, "dir_fd is not supported")
+    def test_rmtree_with_dir_fd(self):
+        tmp_dir = self.mkdtemp()
+        victim = 'killme'
+        fullname = os.path.join(tmp_dir, victim)
+        dir_fd = os.open(tmp_dir, os.O_RDONLY)
+        self.addCleanup(os.close, dir_fd)
+        os.mkdir(fullname)
+        os.mkdir(os.path.join(fullname, 'subdir'))
+        write_file(os.path.join(fullname, 'subdir', 'somefile'), 'foo')
+        self.assertTrue(os.path.exists(fullname))
+        shutil.rmtree(victim, dir_fd=dir_fd)
+        self.assertFalse(os.path.exists(fullname))
+
+    @unittest.skipIf(shutil._use_fd_functions, "dir_fd is supported")
+    def test_rmtree_with_dir_fd_unsupported(self):
+        tmp_dir = self.mkdtemp()
+        with self.assertRaises(NotImplementedError):
+            shutil.rmtree(tmp_dir, dir_fd=0)
+        self.assertTrue(os.path.exists(tmp_dir))
+
     def test_rmtree_dont_delete_file(self):
         # When called on a file instead of a directory, don't delete it.
         handle, path = tempfile.mkstemp(dir=self.mkdtemp())
@@ -674,7 +700,7 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         flag = []
         src = self.mkdtemp()
         dst = tempfile.mktemp(dir=self.mkdtemp())
-        with open(os.path.join(src, 'foo'), 'w') as f:
+        with open(os.path.join(src, 'foo'), 'w', encoding='utf-8') as f:
             f.close()
         shutil.copytree(src, dst, copy_function=custom_cpfun)
         self.assertEqual(len(flag), 1)
@@ -746,7 +772,7 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         src_dir = self.mkdtemp()
         dst_dir = os.path.join(self.mkdtemp(), 'destination')
         os.mkdir(os.path.join(src_dir, 'real_dir'))
-        with open(os.path.join(src_dir, 'real_dir', 'test.txt'), 'w'):
+        with open(os.path.join(src_dir, 'real_dir', 'test.txt'), 'wb'):
             pass
         os.symlink(os.path.join(src_dir, 'real_dir'),
                    os.path.join(src_dir, 'link_to_dir'),
@@ -1146,6 +1172,28 @@ class TestCopy(BaseTest, unittest.TestCase):
             rv = fn(src, os.path.join(dst_dir, 'bar'))
             self.assertEqual(rv, os.path.join(dst_dir, 'bar'))
 
+    def test_copy_dir(self):
+        self._test_copy_dir(shutil.copy)
+
+    def test_copy2_dir(self):
+        self._test_copy_dir(shutil.copy2)
+
+    def _test_copy_dir(self, copy_func):
+        src_dir = self.mkdtemp()
+        src_file = os.path.join(src_dir, 'foo')
+        dir2 = self.mkdtemp()
+        dst = os.path.join(src_dir, 'does_not_exist/')
+        write_file(src_file, 'foo')
+        if sys.platform == "win32":
+            err = PermissionError
+        else:
+            err = IsADirectoryError
+        self.assertRaises(err, copy_func, dir2, src_dir)
+
+        # raise *err* because of src rather than FileNotFoundError because of dst
+        self.assertRaises(err, copy_func, dir2, dst)
+        copy_func(src_file, dir2)     # should not raise exceptions
+
     ### shutil.copyfile
 
     @os_helper.skip_unless_symlink
@@ -1172,14 +1220,14 @@ class TestCopy(BaseTest, unittest.TestCase):
         src = os.path.join(TESTFN, 'cheese')
         dst = os.path.join(TESTFN, 'shop')
         try:
-            with open(src, 'w') as f:
+            with open(src, 'w', encoding='utf-8') as f:
                 f.write('cheddar')
             try:
                 os.link(src, dst)
             except PermissionError as e:
                 self.skipTest('os.link(): %s' % e)
             self.assertRaises(shutil.SameFileError, shutil.copyfile, src, dst)
-            with open(src, 'r') as f:
+            with open(src, 'r', encoding='utf-8') as f:
                 self.assertEqual(f.read(), 'cheddar')
             os.remove(dst)
         finally:
@@ -1192,14 +1240,14 @@ class TestCopy(BaseTest, unittest.TestCase):
         src = os.path.join(TESTFN, 'cheese')
         dst = os.path.join(TESTFN, 'shop')
         try:
-            with open(src, 'w') as f:
+            with open(src, 'w', encoding='utf-8') as f:
                 f.write('cheddar')
             # Using `src` here would mean we end up with a symlink pointing
             # to TESTFN/TESTFN/cheese, while it should point at
             # TESTFN/cheese.
             os.symlink('cheese', dst)
             self.assertRaises(shutil.SameFileError, shutil.copyfile, src, dst)
-            with open(src, 'r') as f:
+            with open(src, 'r', encoding='utf-8') as f:
                 self.assertEqual(f.read(), 'cheddar')
             os.remove(dst)
         finally:
@@ -1244,6 +1292,33 @@ class TestCopy(BaseTest, unittest.TestCase):
         self.assertRaises(Error, shutil.copyfile, src_file, src_file)
         # Make sure file is not corrupted.
         self.assertEqual(read_file(src_file), 'foo')
+
+    @unittest.skipIf(MACOS or SOLARIS or _winapi, 'On MACOS, Solaris and Windows the errors are not confusing (though different)')
+    def test_copyfile_nonexistent_dir(self):
+        # Issue 43219
+        src_dir = self.mkdtemp()
+        src_file = os.path.join(src_dir, 'foo')
+        dst = os.path.join(src_dir, 'does_not_exist/')
+        write_file(src_file, 'foo')
+        self.assertRaises(FileNotFoundError, shutil.copyfile, src_file, dst)
+
+    def test_copyfile_copy_dir(self):
+        # Issue 45234
+        # test copy() and copyfile() raising proper exceptions when src and/or
+        # dst are directories
+        src_dir = self.mkdtemp()
+        src_file = os.path.join(src_dir, 'foo')
+        dir2 = self.mkdtemp()
+        dst = os.path.join(src_dir, 'does_not_exist/')
+        write_file(src_file, 'foo')
+        if sys.platform == "win32":
+            err = PermissionError
+        else:
+            err = IsADirectoryError
+
+        self.assertRaises(err, shutil.copyfile, src_dir, dst)
+        self.assertRaises(err, shutil.copyfile, src_file, src_dir)
+        self.assertRaises(err, shutil.copyfile, dir2, src_dir)
 
 
 class TestArchives(BaseTest, unittest.TestCase):
@@ -2586,7 +2661,7 @@ class TestGetTerminalSize(unittest.TestCase):
 
             # sys.__stdout__ is not a terminal on Unix
             # or fileno() not in (0, 1, 2) on Windows
-            with open(os.devnull, 'w') as f, \
+            with open(os.devnull, 'w', encoding='utf-8') as f, \
                  support.swap_attr(sys, '__stdout__', f):
                 size = shutil.get_terminal_size(fallback=(30, 40))
             self.assertEqual(size.columns, 30)

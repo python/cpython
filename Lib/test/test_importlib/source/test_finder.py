@@ -1,5 +1,4 @@
-from .. import abc
-from .. import util
+from test.test_importlib import abc, util
 
 machinery = util.import_importlib('importlib.machinery')
 
@@ -127,7 +126,7 @@ class FinderTests(abc.FinderTests):
         # The empty string from sys.path means to search in the cwd.
         finder = self.machinery.FileFinder('', (self.machinery.SourceFileLoader,
             self.machinery.SOURCE_SUFFIXES))
-        with open('mod.py', 'w') as file:
+        with open('mod.py', 'w', encoding='utf-8') as file:
             file.write("# test file for importlib")
         try:
             loader = self._find(finder, 'mod', loader_only=True)
@@ -158,21 +157,12 @@ class FinderTests(abc.FinderTests):
     def test_no_read_directory(self):
         # Issue #16730
         tempdir = tempfile.TemporaryDirectory()
+        self.enterContext(tempdir)
+        # Since we muck with the permissions, we want to set them back to
+        # their original values to make sure the directory can be properly
+        # cleaned up.
         original_mode = os.stat(tempdir.name).st_mode
-        def cleanup(tempdir):
-            """Cleanup function for the temporary directory.
-
-            Since we muck with the permissions, we want to set them back to
-            their original values to make sure the directory can be properly
-            cleaned up.
-
-            """
-            os.chmod(tempdir.name, original_mode)
-            # If this is not explicitly called then the __del__ method is used,
-            # but since already mucking around might as well explicitly clean
-            # up.
-            tempdir.__exit__(None, None, None)
-        self.addCleanup(cleanup, tempdir)
+        self.addCleanup(os.chmod, tempdir.name, original_mode)
         os.chmod(tempdir.name, stat.S_IWUSR | stat.S_IXUSR)
         finder = self.get_finder(tempdir.name)
         found = self._find(finder, 'doesnotexist')
