@@ -1,2 +1,1 @@
-The constructors for :class:`~csv.DictWriter` and :class:`~csv.DictReader` raise :exc:`TypeError` when
-the ``fieldnames`` argument is not a sequence.
+The constructors for :class:`~csv.DictWriter` and :class:`~csv.DictReader` now coerce the ``fieldnames`` argument to a `list`.
