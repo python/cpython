@@ -1515,6 +1515,8 @@ by member descriptors:
         def __get__(self, obj, objtype=None):
             'Emulate member_get() in Objects/descrobject.c'
             # Also see PyMember_GetOne() in Python/structmember.c
+            if obj is None:
+                return self
             value = obj._slotvalues[self.offset]
             if value is null:
                 raise AttributeError(self.name)
