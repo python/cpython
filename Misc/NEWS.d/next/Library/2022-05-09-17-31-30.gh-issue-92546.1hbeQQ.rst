@@ -1,2 +1,2 @@
 Fix invalid :meth:`PrettyPrinter._safe_repr` call when :mod:`pprint` is
-runned as a script.
+executed as a script.
