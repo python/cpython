@@ -417,6 +417,7 @@ class _NotIterable:
     is treated specially.
     """
 
+    __slots__ = ()
     __iter__ = None
 
 
