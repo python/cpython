@@ -378,7 +378,9 @@ may be changed from ``.``, and the package will be installed into a
 subdirectory. By default, the subdirectory is named the same as the package,
 and without the ``-ExcludeVersion`` option this name will include the specific
 version installed. Inside the subdirectory is a ``tools`` directory that
-contains the Python installation::
+contains the Python installation:
+
+.. code-block:: doscon
 
    # Without -ExcludeVersion
    > .\python.3.5.2\tools\python.exe -V
@@ -672,9 +674,7 @@ From the command-line
 System-wide installations of Python 3.3 and later will put the launcher on your
 :envvar:`PATH`. The launcher is compatible with all available versions of
 Python, so it does not matter which version is installed. To check that the
-launcher is available, execute the following command in Command Prompt:
-
-::
+launcher is available, execute the following command in Command Prompt::
 
   py
 
@@ -684,24 +684,18 @@ arguments specified will be sent directly to Python.
 
 If you have multiple versions of Python installed (e.g., 3.7 and |version|) you
 will have noticed that Python |version| was started - to launch Python 3.7, try
-the command:
-
-::
+the command::
 
   py -3.7
 
-If you want the latest version of Python 3 you have installed, try the
-command:
+If you want the latest version of Python 2 you have installed, try the
+command::
 
-::
-
-  py -3
+  py -2
 
 You should find the latest version of Python 3.x starts.
 
-If you see the following error, you do not have the launcher installed:
-
-::
+If you see the following error, you do not have the launcher installed::
 
   'py' is not recognized as an internal or external command,
   operable program or batch file.
@@ -709,11 +703,11 @@ If you see the following error, you do not have the launcher installed:
 Per-user installations of Python do not add the launcher to :envvar:`PATH`
 unless the option was selected on installation.
 
-::
+The command::
 
   py --list
 
-You should see the currently installed versions of Python.
+displays the currently installed version(s) of Python.
 
 Virtual environments
 ^^^^^^^^^^^^^^^^^^^^
@@ -739,9 +733,7 @@ following contents
     import sys
     sys.stdout.write("hello from Python %s\n" % (sys.version,))
 
-From the directory in which hello.py lives, execute the command:
-
-::
+From the directory in which hello.py lives, execute the command::
 
    py hello.py
 
