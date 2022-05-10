@@ -1,0 +1,2 @@
+Clearer error message when instantiating ABC without implementation for all
+abstract methods
