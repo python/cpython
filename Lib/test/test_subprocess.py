@@ -1736,16 +1736,15 @@ class RunFuncTestCase(BaseTestCase):
     def test_encoding_warning(self):
         code = textwrap.dedent("""\
             from subprocess import *
-            args = ["echo", "hello"]
-            run(args, text=True)
-            check_output(args, text=True)
+            run("echo hello", shell=True, text=True)
+            check_output("echo hello", shell=True, text=True)
             """)
         cp = subprocess.run([sys.executable, "-Xwarn_default_encoding", "-c", code],
                             capture_output=True)
         lines = cp.stderr.splitlines()
-        self.assertEqual(len(lines), 2)
-        self.assertTrue(lines[0].startswith(b"<string>:3: EncodingWarning: "))
-        self.assertTrue(lines[1].startswith(b"<string>:4: EncodingWarning: "))
+        self.assertEqual(len(lines), 2, lines)
+        self.assertTrue(lines[0].startswith(b"<string>:2: EncodingWarning: "))
+        self.assertTrue(lines[1].startswith(b"<string>:3: EncodingWarning: "))
 
 
 def _get_test_grp_name():
@@ -1906,13 +1905,31 @@ class POSIXProcessTestCase(BaseTestCase):
             output = subprocess.check_output(
                     [sys.executable, "-c", "import os; print(os.getsid(0))"],
                     start_new_session=True)
-        except OSError as e:
+        except PermissionError as e:
             if e.errno != errno.EPERM:
-                raise
+                raise  # EACCES?
         else:
             parent_sid = os.getsid(0)
             child_sid = int(output)
             self.assertNotEqual(parent_sid, child_sid)
+
+    @unittest.skipUnless(hasattr(os, 'setpgid') and hasattr(os, 'getpgid'),
+                         'no setpgid or getpgid on platform')
+    def test_process_group_0(self):
+        # For code coverage of calling setpgid().  We don't care if we get an
+        # EPERM error from it depending on the test execution environment, that
+        # still indicates that it was called.
+        try:
+            output = subprocess.check_output(
+                    [sys.executable, "-c", "import os; print(os.getpgid(0))"],
+                    process_group=0)
+        except PermissionError as e:
+            if e.errno != errno.EPERM:
+                raise  # EACCES?
+        else:
+            parent_pgid = os.getpgid(0)
+            child_pgid = int(output)
+            self.assertNotEqual(parent_pgid, child_pgid)
 
     @unittest.skipUnless(hasattr(os, 'setreuid'), 'no setreuid on platform')
     def test_user(self):
@@ -3135,7 +3152,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         True, (), cwd, env_list,
                         -1, -1, -1, -1,
                         1, 2, 3, 4,
-                        True, True,
+                        True, True, 0,
                         False, [], 0, -1,
                         func, False)
                 # Attempt to prevent
@@ -3184,7 +3201,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         True, fds_to_keep, None, [b"env"],
                         -1, -1, -1, -1,
                         1, 2, 3, 4,
-                        True, True,
+                        True, True, 0,
                         None, None, None, -1,
                         None, "no vfork")
                 self.assertIn('fds_to_keep', str(c.exception))

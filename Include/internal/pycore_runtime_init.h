@@ -824,8 +824,9 @@ extern "C" {
                 INIT_ID(__subclasshook__), \
                 INIT_ID(__truediv__), \
                 INIT_ID(__trunc__), \
+                INIT_ID(__typing_is_unpacked_typevartuple__), \
                 INIT_ID(__typing_subst__), \
-                INIT_ID(__typing_unpacked__), \
+                INIT_ID(__typing_unpacked_tuple_args__), \
                 INIT_ID(__warningregistry__), \
                 INIT_ID(__weakref__), \
                 INIT_ID(__xor__), \
@@ -923,6 +924,7 @@ extern "C" {
                 INIT_ID(n_unnamed_fields), \
                 INIT_ID(name), \
                 INIT_ID(newlines), \
+                INIT_ID(next), \
                 INIT_ID(obj), \
                 INIT_ID(offset), \
                 INIT_ID(onceregistry), \

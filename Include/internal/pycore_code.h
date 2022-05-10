@@ -292,7 +292,12 @@ typedef struct _call_stats {
 
 typedef struct _object_stats {
     uint64_t allocations;
+    uint64_t allocations512;
+    uint64_t allocations4k;
+    uint64_t allocations_big;
     uint64_t frees;
+    uint64_t to_freelist;
+    uint64_t from_freelist;
     uint64_t new_values;
     uint64_t dict_materialized_on_request;
     uint64_t dict_materialized_new_key;
@@ -313,6 +318,8 @@ extern PyStats _py_stats;
 #define OPCODE_EXE_INC(opname) _py_stats.opcode_stats[opname].execution_count++
 #define CALL_STAT_INC(name) _py_stats.call_stats.name++
 #define OBJECT_STAT_INC(name) _py_stats.object_stats.name++
+#define OBJECT_STAT_INC_COND(name, cond) \
+    do { if (cond) _py_stats.object_stats.name++; } while (0)
 
 extern void _Py_PrintSpecializationStats(int to_file);
 
@@ -325,6 +332,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define OPCODE_EXE_INC(opname) ((void)0)
 #define CALL_STAT_INC(name) ((void)0)
 #define OBJECT_STAT_INC(name) ((void)0)
+#define OBJECT_STAT_INC_COND(name, cond) ((void)0)
 #endif  // !Py_STATS
 
 // Cache values are only valid in memory, so use native endianness.
