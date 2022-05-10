@@ -713,8 +713,8 @@ which, when run, produces something like:
     2010-09-06 22:38:15,301 d.e.f DEBUG    IP: 123.231.231.123 User: fred     A message at DEBUG level with 2 parameters
     2010-09-06 22:38:15,301 d.e.f INFO     IP: 123.231.231.123 User: fred     A message at INFO level with 2 parameters
 
-Imparting contextual information for specific Handlers
-------------------------------------------------------
+Imparting contextual in Handlers
+---------------------------------
 
 Each :class:`~Handler` has it's own chain of Filters.
 If you want to add contextual information to a :class:`LogRecord` without leaking
