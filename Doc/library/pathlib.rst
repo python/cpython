@@ -815,9 +815,6 @@ call fails (for example because the path doesn't exist).
 
    .. audit-event:: pathlib.Path.glob self,pattern pathlib.Path.glob
 
-   .. versionchanged:: 3.11
-      Return only directories if *pattern* ends with a pathname components
-      separator (:data:`~os.sep` or :data:`~os.altsep`).
 
 .. method:: Path.group()
 
@@ -1107,9 +1104,6 @@ call fails (for example because the path doesn't exist).
 
    .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
 
-   .. versionchanged:: 3.11
-      Return only directories if *pattern* ends with a pathname components
-      separator (:data:`~os.sep` or :data:`~os.altsep`).
 
 .. method:: Path.rmdir()
 
