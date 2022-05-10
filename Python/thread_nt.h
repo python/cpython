@@ -264,14 +264,17 @@ PyThread_exit_thread(void)
 PyThread_type_lock
 PyThread_allocate_lock(void)
 {
-    PNRMUTEX aLock;
+    PNRMUTEX mutex;
 
     if (!initialized)
         PyThread_init_thread();
 
-    aLock = AllocNonRecursiveMutex() ;
+    mutex = AllocNonRecursiveMutex() ;
 
-    return (PyThread_type_lock) aLock;
+    PyThread_type_lock aLock = (PyThread_type_lock) mutex;
+    assert(aLock);
+
+    return aLock;
 }
 
 void
@@ -295,6 +298,8 @@ PyLockStatus
 PyThread_acquire_lock_timed(PyThread_type_lock aLock,
                             PY_TIMEOUT_T microseconds, int intr_flag)
 {
+    assert(aLock);
+
     /* Fow now, intr_flag does nothing on Windows, and lock acquires are
      * uninterruptible.  */
     PyLockStatus success;
@@ -321,8 +326,8 @@ PyThread_acquire_lock_timed(PyThread_type_lock aLock,
         milliseconds = INFINITE;
     }
 
-    if (aLock && EnterNonRecursiveMutex((PNRMUTEX)aLock,
-                                        (DWORD)milliseconds) == WAIT_OBJECT_0) {
+    if (EnterNonRecursiveMutex((PNRMUTEX)aLock,
+                               (DWORD)milliseconds) == WAIT_OBJECT_0) {
         success = PY_LOCK_ACQUIRED;
     }
     else {
@@ -340,9 +345,8 @@ PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
 void
 PyThread_release_lock(PyThread_type_lock aLock)
 {
-    if (aLock) {
-        (void)LeaveNonRecursiveMutex((PNRMUTEX) aLock);
-    }
+    assert(aLock);
+    (void)LeaveNonRecursiveMutex((PNRMUTEX) aLock);
 }
 
 /* minimum/maximum thread stack sizes supported */
