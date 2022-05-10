@@ -1,0 +1,1 @@
+Correct JavaScript MIME types + extensions per RFC 9239
