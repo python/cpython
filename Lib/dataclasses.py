@@ -393,7 +393,7 @@ def _fields_in_init_order(fields):
 def _tuple_str(obj_name, fields):
     # Return a string representing each field of obj_name as a tuple
     # member.  So, if fields is ['x', 'y'] and obj_name is "self",
-    # return "(self.x,self.y)".
+    # return "(self.__fields_0__,self.__fields_1__)".
 
     # Special case for the 0-tuple.
     if not fields:
@@ -429,8 +429,6 @@ def _create_code(name, args, body, *, globals=None, locals=None):
     # worries about external callers.
     if locals is None:
         locals = {}
-    if 'BUILTINS' not in locals:
-        locals['BUILTINS'] = builtins
     args = ','.join(args)
     body = '\n'.join(f'  {b}' for b in body)
 
