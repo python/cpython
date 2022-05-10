@@ -9280,7 +9280,15 @@ trim_unused_consts(struct compiler *c, struct assembler *a, PyObject *consts)
 
 static inline int
 is_exit_without_lineno(basicblock *b) {
-    return b->b_exit && b->b_instr[0].i_lineno < 0;
+    if (!b->b_exit) {
+        return 0;
+    }
+    for (int i = 0; i < b->b_iused; i++) {
+        if (b->b_instr[i].i_lineno >= 0) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 /* PEP 626 mandates that the f_lineno of a frame is correct
