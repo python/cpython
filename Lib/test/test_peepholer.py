@@ -120,6 +120,15 @@ class TestTranforms(BytecodeTestCase):
         self.assertInBytecode(f, 'LOAD_CONST', None)
         self.check_lnotab(f)
 
+    def test_load_fast_unknown_after_error(self):
+        def f():
+            try:
+                res = 1 / 0
+            except ZeroDivisionError:
+                pass
+            return res
+        self.assertNotInBytecode(f, 'LOAD_FAST_KNOWN')
+
     def test_while_one(self):
         # Skip over:  LOAD_CONST trueconst  POP_JUMP_IF_FALSE xx
         def f():
