@@ -697,6 +697,7 @@ module_exec(PyObject *module)
     }
 
     pysqlite_state *state = pysqlite_get_state(module);
+    ADD_TYPE(module, state->BlobType);
     ADD_TYPE(module, state->ConnectionType);
     ADD_TYPE(module, state->CursorType);
     ADD_TYPE(module, state->PrepareProtocolType);

@@ -1,10 +1,15 @@
-import mailcap
-import os
 import copy
-import test.support
-from test.support import os_helper
-import unittest
+import os
 import sys
+import test.support
+import unittest
+import warnings
+from test.support import os_helper
+from test.support import warnings_helper
+
+
+mailcap = warnings_helper.import_deprecated('mailcap')
+
 
 # Location of mailcap file
 MAILCAPFILE = test.support.findfile("mailcap.txt")

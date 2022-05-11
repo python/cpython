@@ -158,6 +158,7 @@ PyList_New(Py_ssize_t size)
     if (PyList_MAXFREELIST && state->numfree) {
         state->numfree--;
         op = state->free_list[state->numfree];
+        OBJECT_STAT_INC(from_freelist);
         _Py_NewReference((PyObject *)op);
     }
     else
@@ -353,6 +354,7 @@ list_dealloc(PyListObject *op)
 #endif
     if (state->numfree < PyList_MAXFREELIST && PyList_CheckExact(op)) {
         state->free_list[state->numfree++] = op;
+        OBJECT_STAT_INC(to_freelist);
     }
     else
 #endif
@@ -1571,8 +1573,10 @@ static void
 merge_freemem(MergeState *ms)
 {
     assert(ms != NULL);
-    if (ms->a.keys != ms->temparray)
+    if (ms->a.keys != ms->temparray) {
         PyMem_Free(ms->a.keys);
+        ms->a.keys = NULL;
+    }
 }
 
 /* Ensure enough temp memory for 'need' array slots is available.

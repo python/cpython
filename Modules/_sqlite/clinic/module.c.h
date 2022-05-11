@@ -14,7 +14,7 @@ PyDoc_STRVAR(pysqlite_connect__doc__,
 "in RAM instead of on disk.");
 
 #define PYSQLITE_CONNECT_METHODDEF    \
-    {"connect", (PyCFunction)(void(*)(void))pysqlite_connect, METH_FASTCALL|METH_KEYWORDS, pysqlite_connect__doc__},
+    {"connect", _PyCFunction_CAST(pysqlite_connect), METH_FASTCALL|METH_KEYWORDS, pysqlite_connect__doc__},
 
 static PyObject *
 pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
@@ -121,7 +121,7 @@ PyDoc_STRVAR(pysqlite_complete_statement__doc__,
 "Checks if a string contains a complete SQL statement.");
 
 #define PYSQLITE_COMPLETE_STATEMENT_METHODDEF    \
-    {"complete_statement", (PyCFunction)(void(*)(void))pysqlite_complete_statement, METH_FASTCALL|METH_KEYWORDS, pysqlite_complete_statement__doc__},
+    {"complete_statement", _PyCFunction_CAST(pysqlite_complete_statement), METH_FASTCALL|METH_KEYWORDS, pysqlite_complete_statement__doc__},
 
 static PyObject *
 pysqlite_complete_statement_impl(PyObject *module, const char *statement);
@@ -170,7 +170,7 @@ PyDoc_STRVAR(pysqlite_enable_shared_cache__doc__,
 "the cache=shared query parameter.");
 
 #define PYSQLITE_ENABLE_SHARED_CACHE_METHODDEF    \
-    {"enable_shared_cache", (PyCFunction)(void(*)(void))pysqlite_enable_shared_cache, METH_FASTCALL|METH_KEYWORDS, pysqlite_enable_shared_cache__doc__},
+    {"enable_shared_cache", _PyCFunction_CAST(pysqlite_enable_shared_cache), METH_FASTCALL|METH_KEYWORDS, pysqlite_enable_shared_cache__doc__},
 
 static PyObject *
 pysqlite_enable_shared_cache_impl(PyObject *module, int do_enable);
@@ -205,7 +205,7 @@ PyDoc_STRVAR(pysqlite_register_adapter__doc__,
 "Registers an adapter with sqlite3\'s adapter registry.");
 
 #define PYSQLITE_REGISTER_ADAPTER_METHODDEF    \
-    {"register_adapter", (PyCFunction)(void(*)(void))pysqlite_register_adapter, METH_FASTCALL, pysqlite_register_adapter__doc__},
+    {"register_adapter", _PyCFunction_CAST(pysqlite_register_adapter), METH_FASTCALL, pysqlite_register_adapter__doc__},
 
 static PyObject *
 pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
@@ -236,7 +236,7 @@ PyDoc_STRVAR(pysqlite_register_converter__doc__,
 "Registers a converter with sqlite3.");
 
 #define PYSQLITE_REGISTER_CONVERTER_METHODDEF    \
-    {"register_converter", (PyCFunction)(void(*)(void))pysqlite_register_converter, METH_FASTCALL, pysqlite_register_converter__doc__},
+    {"register_converter", _PyCFunction_CAST(pysqlite_register_converter), METH_FASTCALL, pysqlite_register_converter__doc__},
 
 static PyObject *
 pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
@@ -302,7 +302,7 @@ PyDoc_STRVAR(pysqlite_adapt__doc__,
 "Adapt given object to given protocol.");
 
 #define PYSQLITE_ADAPT_METHODDEF    \
-    {"adapt", (PyCFunction)(void(*)(void))pysqlite_adapt, METH_FASTCALL, pysqlite_adapt__doc__},
+    {"adapt", _PyCFunction_CAST(pysqlite_adapt), METH_FASTCALL, pysqlite_adapt__doc__},
 
 static PyObject *
 pysqlite_adapt_impl(PyObject *module, PyObject *obj, PyObject *proto,
@@ -334,4 +334,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2cf05d1b089c7be4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d846459943008a9c input=a9049054013a1b77]*/

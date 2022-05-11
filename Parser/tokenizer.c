@@ -1139,7 +1139,7 @@ indenterror(struct tok_state *tok)
 }
 
 static int
-parser_warn(struct tok_state *tok, const char *format, ...)
+parser_warn(struct tok_state *tok, PyObject *category, const char *format, ...)
 {
     PyObject *errmsg;
     va_list vargs;
@@ -1154,9 +1154,9 @@ parser_warn(struct tok_state *tok, const char *format, ...)
         goto error;
     }
 
-    if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, errmsg, tok->filename,
+    if (PyErr_WarnExplicitObject(category, errmsg, tok->filename,
                                  tok->lineno, NULL, NULL) < 0) {
-        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+        if (PyErr_ExceptionMatches(category)) {
             /* Replace the DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
@@ -1234,7 +1234,9 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind)
     }
     if (r) {
         tok_backup(tok, c);
-        if (parser_warn(tok, "invalid %s literal", kind)) {
+        if (parser_warn(tok, PyExc_SyntaxWarning,
+                "invalid %s literal", kind))
+        {
             return 0;
         }
         tok_nextc(tok);

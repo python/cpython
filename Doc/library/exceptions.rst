@@ -126,13 +126,20 @@ The following exceptions are used mostly as base classes for other exceptions.
              tb = sys.exc_info()[2]
              raise OtherException(...).with_traceback(tb)
 
-   .. attribute:: __note__
+   .. method:: add_note(note)
 
-      A mutable field which is :const:`None` by default and can be set to a string.
-      If it is not :const:`None`, it is included in the traceback. This field can
-      be used to enrich exceptions after they have been caught.
+      Add the string ``note`` to the exception's notes which appear in the standard
+      traceback after the exception string. A :exc:`TypeError` is raised if ``note``
+      is not a string.
 
-   .. versionadded:: 3.11
+      .. versionadded:: 3.11
+
+   .. attribute:: __notes__
+
+      A list of the notes of this exception, which were added with :meth:`add_note`.
+      This attribute is created when :meth:`add_note` is called.
+
+      .. versionadded:: 3.11
 
 
 .. exception:: Exception
@@ -907,7 +914,7 @@ their subgroups based on the types of the contained exceptions.
 
       The nesting structure of the current exception is preserved in the result,
       as are the values of its :attr:`message`, :attr:`__traceback__`,
-      :attr:`__cause__`, :attr:`__context__` and :attr:`__note__` fields.
+      :attr:`__cause__`, :attr:`__context__` and :attr:`__notes__` fields.
       Empty nested groups are omitted from the result.
 
       The condition is checked for all exceptions in the nested exception group,
@@ -924,7 +931,7 @@ their subgroups based on the types of the contained exceptions.
 
       Returns an exception group with the same :attr:`message`,
       :attr:`__traceback__`, :attr:`__cause__`, :attr:`__context__`
-      and :attr:`__note__` but which wraps the exceptions in ``excs``.
+      and :attr:`__notes__` but which wraps the exceptions in ``excs``.
 
       This method is used by :meth:`subgroup` and :meth:`split`. A
       subclass needs to override it in order to make :meth:`subgroup`

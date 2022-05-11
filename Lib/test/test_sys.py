@@ -629,6 +629,14 @@ class SysModuleTest(unittest.TestCase):
         self.assertIn(info.name, ('nt', 'pthread', 'solaris', None))
         self.assertIn(info.lock, ('semaphore', 'mutex+cond', None))
 
+    @unittest.skipUnless(support.is_emscripten, "only available on Emscripten")
+    def test_emscripten_info(self):
+        self.assertEqual(len(sys._emscripten_info), 4)
+        self.assertIsInstance(sys._emscripten_info.emscripten_version, tuple)
+        self.assertIsInstance(sys._emscripten_info.runtime, (str, type(None)))
+        self.assertIsInstance(sys._emscripten_info.pthreads, bool)
+        self.assertIsInstance(sys._emscripten_info.shared_memory, bool)
+
     def test_43581(self):
         # Can't use sys.stdout, as this is a StringIO object when
         # the test runs under regrtest.
@@ -661,10 +669,10 @@ class SysModuleTest(unittest.TestCase):
                  "dont_write_bytecode", "no_user_site", "no_site",
                  "ignore_environment", "verbose", "bytes_warning", "quiet",
                  "hash_randomization", "isolated", "dev_mode", "utf8_mode",
-                 "warn_default_encoding")
+                 "warn_default_encoding", "safe_path")
         for attr in attrs:
             self.assertTrue(hasattr(sys.flags, attr), attr)
-            attr_type = bool if attr == "dev_mode" else int
+            attr_type = bool if attr in ("dev_mode", "safe_path") else int
             self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
         self.assertTrue(repr(sys.flags))
         self.assertEqual(len(sys.flags), len(attrs))

@@ -62,7 +62,7 @@ class MyBaseProto(asyncio.Protocol):
 class TestSSL(test_utils.TestCase):
 
     PAYLOAD_SIZE = 1024 * 100
-    TIMEOUT = 60
+    TIMEOUT = support.LONG_TIMEOUT
 
     def setUp(self):
         super().setUp()
@@ -179,7 +179,7 @@ class TestSSL(test_utils.TestCase):
     def test_create_server_ssl_1(self):
         CNT = 0           # number of clients that were successful
         TOTAL_CNT = 25    # total number of clients that test will create
-        TIMEOUT = 60.0    # timeout for this test
+        TIMEOUT = support.LONG_TIMEOUT  # timeout for this test
 
         A_DATA = b'A' * 1024 * 1024
         B_DATA = b'B' * 1024 * 1024
@@ -1019,7 +1019,7 @@ class TestSSL(test_utils.TestCase):
     def test_create_server_ssl_over_ssl(self):
         CNT = 0           # number of clients that were successful
         TOTAL_CNT = 25    # total number of clients that test will create
-        TIMEOUT = 30.0    # timeout for this test
+        TIMEOUT = support.LONG_TIMEOUT  # timeout for this test
 
         A_DATA = b'A' * 1024 * 1024
         B_DATA = b'B' * 1024 * 1024
