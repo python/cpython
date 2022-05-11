@@ -434,6 +434,8 @@ asyncio
 datetime
 --------
 
+* Add :attr:`datetime.UTC`, a convenience alias for
+  :attr:`datetime.timezone.utc`. (Contributed by Kabir Kwatra in :gh:`91973`.)
 * :meth:`datetime.date.fromisoformat`, :meth:`datetime.time.fromisoformat` and
   :meth:`datetime.datetime.fromisoformat` can now be used to parse most ISO 8601
   formats (barring only those that support fractional hours and minutes).
@@ -891,10 +893,11 @@ holds execution information. The following are new frame optimizations:
 - Streamlined the internal frame struct to contain only essential information.
   Frames previously held extra debugging and memory management information.
 
-Old-style frame objects are now created only when required by debuggers. For
-most user code, no frame objects are created at all. As a result, nearly all
-Python functions calls have sped up significantly. We measured a 3-7% speedup
-in pyperformance.
+Old-style frame objects are now created only when requested by debuggers or
+by Python introspection functions such as ``sys._getframe`` or
+``inspect.currentframe``. For most user code, no frame objects are
+created at all. As a result, nearly all Python functions calls have sped
+up significantly. We measured a 3-7% speedup in pyperformance.
 
 (Contributed by Mark Shannon in :issue:`44590`.)
 
@@ -1167,7 +1170,7 @@ Deprecated
 
   * the :class:`configparser.SafeConfigParser` class
   * the :attr:`configparser.ParsingError.filename` property
-  * the :meth:`configparser.ParsingError.readfp` method
+  * the :meth:`configparser.RawConfigParser.readfp` method
 
   (Contributed by Hugo van Kemenade in :issue:`45173`.)
 
@@ -1501,37 +1504,6 @@ Build Changes
 C API Changes
 =============
 
-* :c:func:`PyErr_SetExcInfo()` no longer uses the ``type`` and ``traceback``
-  arguments, the interpreter now derives those values from the exception
-  instance (the ``value`` argument). The function still steals references
-  of all three arguments.
-  (Contributed by Irit Katriel in :issue:`45711`.)
-
-* :c:func:`PyErr_GetExcInfo()` now derives the ``type`` and ``traceback``
-  fields of the result from the exception instance (the ``value`` field).
-  (Contributed by Irit Katriel in :issue:`45711`.)
-
-* :c:type:`_frozen` has a new ``is_package`` field to indicate whether
-  or not the frozen module is a package.  Previously, a negative value
-  in the ``size`` field was the indicator.  Now only non-negative values
-  be used for ``size``.
-  (Contributed by Kumar Aditya in :issue:`46608`.)
-
-* :c:func:`_PyFrameEvalFunction` now takes ``_PyInterpreterFrame*``
-  as its second parameter, instead of ``PyFrameObject*``.
-  See :pep:`523` for more details of how to use this function pointer type.
-
-* :c:func:`PyCode_New` and :c:func:`PyCode_NewWithPosOnlyArgs` now take
-  an additional ``exception_table`` argument.
-  Using these functions should be avoided, if at all possible.
-  To get a custom code object: create a code object using the compiler,
-  then get a modified version with the ``replace`` method.
-
-* :c:type:`PyCodeObject` no longer has a ``co_code`` field.  Instead,
-  use ``PyObject_GetAttrString(code_object, "co_code")`` or
-  :c:func:`PyCode_GetCode` to get the underlying bytes object.
-  (Contributed by Brandt Bucher in :issue:`46841` and Ken Jin in :gh:`92154`.)
-
 New Features
 ------------
 
@@ -1597,6 +1569,37 @@ New Features
 
 Porting to Python 3.11
 ----------------------
+
+* :c:func:`PyErr_SetExcInfo()` no longer uses the ``type`` and ``traceback``
+  arguments, the interpreter now derives those values from the exception
+  instance (the ``value`` argument). The function still steals references
+  of all three arguments.
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
+* :c:func:`PyErr_GetExcInfo()` now derives the ``type`` and ``traceback``
+  fields of the result from the exception instance (the ``value`` field).
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
+* :c:type:`_frozen` has a new ``is_package`` field to indicate whether
+  or not the frozen module is a package.  Previously, a negative value
+  in the ``size`` field was the indicator.  Now only non-negative values
+  be used for ``size``.
+  (Contributed by Kumar Aditya in :issue:`46608`.)
+
+* :c:func:`_PyFrameEvalFunction` now takes ``_PyInterpreterFrame*``
+  as its second parameter, instead of ``PyFrameObject*``.
+  See :pep:`523` for more details of how to use this function pointer type.
+
+* :c:func:`PyCode_New` and :c:func:`PyCode_NewWithPosOnlyArgs` now take
+  an additional ``exception_table`` argument.
+  Using these functions should be avoided, if at all possible.
+  To get a custom code object: create a code object using the compiler,
+  then get a modified version with the ``replace`` method.
+
+* :c:type:`PyCodeObject` no longer has a ``co_code`` field.  Instead,
+  use ``PyObject_GetAttrString(code_object, "co_code")`` or
+  :c:func:`PyCode_GetCode` to get the underlying bytes object.
+  (Contributed by Brandt Bucher in :issue:`46841` and Ken Jin in :gh:`92154`.)
 
 * The old trashcan macros (``Py_TRASHCAN_SAFE_BEGIN``/``Py_TRASHCAN_SAFE_END``)
   are now deprecated. They should be replaced by the new macros
