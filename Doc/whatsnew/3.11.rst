@@ -1170,7 +1170,7 @@ Deprecated
 
   * the :class:`configparser.SafeConfigParser` class
   * the :attr:`configparser.ParsingError.filename` property
-  * the :meth:`configparser.ParsingError.readfp` method
+  * the :meth:`configparser.RawConfigParser.readfp` method
 
   (Contributed by Hugo van Kemenade in :issue:`45173`.)
 
