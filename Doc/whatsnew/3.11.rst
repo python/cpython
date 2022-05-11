@@ -434,6 +434,8 @@ asyncio
 datetime
 --------
 
+* Add :attr:`datetime.UTC`, a convenience alias for
+  :attr:`datetime.timezone.utc`. (Contributed by Kabir Kwatra in :gh:`91973`.)
 * :meth:`datetime.date.fromisoformat`, :meth:`datetime.time.fromisoformat` and
   :meth:`datetime.datetime.fromisoformat` can now be used to parse most ISO 8601
   formats (barring only those that support fractional hours and minutes).
@@ -556,6 +558,15 @@ os
 * On Windows, :func:`os.urandom` now uses ``BCryptGenRandom()``,
   instead of ``CryptGenRandom()`` which is deprecated.
   (Contributed by Dong-hee Na in :issue:`44611`.)
+
+
+pathlib
+-------
+
+* :meth:`~pathlib.Path.glob` and :meth:`~pathlib.Path.rglob` return only
+  directories if *pattern* ends with a pathname components separator:
+  :data:`~os.sep` or :data:`~os.altsep`.
+  (Contributed by Eisuke Kawasima in :issue:`22276` and :issue:`33392`.)
 
 re
 --
