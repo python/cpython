@@ -4375,6 +4375,7 @@ starunpack_helper(struct compiler *c, asdl_expr_seq *elts, int pushed,
         expr_ty elt = asdl_seq_GET(elts, i);
         if (elt->kind == Starred_kind) {
             seen_star = 1;
+            break;
         }
     }
     if (!seen_star && !big) {
