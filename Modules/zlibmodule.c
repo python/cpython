@@ -1399,6 +1399,15 @@ zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 {
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
+#if ZLIB_VERNUM >= 0x1290
+    if (data->len > 1024*5) {
+        Py_BEGIN_ALLOW_THREADS
+        value = adler32_z(value, data->buf, data->len);
+        Py_END_ALLOW_THREADS
+    } else {
+        value = adler32_z(value, data->buf, data->len);
+    }
+#else
     if (data->len > 1024*5) {
         unsigned char *buf = data->buf;
         Py_ssize_t len = data->len;
@@ -1416,11 +1425,12 @@ zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value)
     } else {
         value = adler32(value, data->buf, (unsigned int)data->len);
     }
+#endif
     return PyLong_FromUnsignedLong(value & 0xffffffffU);
 }
 
 /*[clinic input]
-zlib.crc32 -> unsigned_int
+zlib.crc32
 
     data: Py_buffer
     value: unsigned_int(bitwise=True) = 0
@@ -1432,12 +1442,21 @@ Compute a CRC-32 checksum of data.
 The returned checksum is an integer.
 [clinic start generated code]*/
 
-static unsigned int
+static PyObject *
 zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
-/*[clinic end generated code: output=b217562e4fe6d6a6 input=1229cb2fb5ea948a]*/
+/*[clinic end generated code: output=63499fa20af7ea25 input=26c3ed430fa00b4c]*/
 {
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
+#if ZLIB_VERNUM >= 0x1290
+    if (data->len > 1024*5) {
+        Py_BEGIN_ALLOW_THREADS
+        value = crc32_z(value, data->buf, data->len);
+        Py_END_ALLOW_THREADS
+    } else {
+        value = crc32_z(value, data->buf, data->len);
+    }
+#else
     if (data->len > 1024*5) {
         unsigned char *buf = data->buf;
         Py_ssize_t len = data->len;
@@ -1455,7 +1474,8 @@ zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
     } else {
         value = crc32(value, data->buf, (unsigned int)data->len);
     }
-    return value;
+#endif
+    return PyLong_FromUnsignedLong(value & 0xffffffffU);
 }
 
 

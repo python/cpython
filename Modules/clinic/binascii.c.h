@@ -244,7 +244,7 @@ PyDoc_STRVAR(binascii_crc32__doc__,
 #define BINASCII_CRC32_METHODDEF    \
     {"crc32", _PyCFunction_CAST(binascii_crc32), METH_FASTCALL, binascii_crc32__doc__},
 
-static unsigned int
+static PyObject *
 binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc);
 
 static PyObject *
@@ -253,7 +253,6 @@ binascii_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     unsigned int crc = 0;
-    unsigned int _return_value;
 
     if (!_PyArg_CheckPositional("crc32", nargs, 1, 2)) {
         goto exit;
@@ -273,11 +272,7 @@ binascii_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    _return_value = binascii_crc32_impl(module, &data, crc);
-    if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
+    return_value = binascii_crc32_impl(module, &data, crc);
 
 exit:
     /* Cleanup for data */
@@ -628,4 +623,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ba9ed7b810b8762d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2d0e3108e2f4980e input=a9049054013a1b77]*/
