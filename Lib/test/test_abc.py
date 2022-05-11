@@ -668,6 +668,19 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             class Receiver(ReceivesClassKwargs, abc_ABC, x=1, y=2, z=3):
                 pass
             self.assertEqual(saved_kwargs, dict(x=1, y=2, z=3))
+
+        def test_positional_only_and_kwonlyargs_with_init_subclass(self):
+            saved_kwargs = {}
+
+            class A:
+                def __init_subclass__(cls, **kwargs):
+                    super().__init_subclass__()
+                    saved_kwargs.update(kwargs)
+
+            class B(A, metaclass=abc_ABCMeta, name="test"):
+                pass
+            self.assertEqual(saved_kwargs, dict(name="test"))
+
     return TestLegacyAPI, TestABC, TestABCWithInitSubclass
 
 TestLegacyAPI_Py, TestABC_Py, TestABCWithInitSubclass_Py = test_factory(abc.ABCMeta,

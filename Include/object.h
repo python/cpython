@@ -66,7 +66,7 @@ whose size is determined when the object is allocated.
     PyObject *_ob_next;           \
     PyObject *_ob_prev;
 
-#define _PyObject_EXTRA_INIT 0, 0,
+#define _PyObject_EXTRA_INIT _Py_NULL, _Py_NULL,
 
 #else
 #  define _PyObject_HEAD_EXTRA
@@ -104,7 +104,7 @@ struct _object {
 };
 
 /* Cast argument to PyObject* type. */
-#define _PyObject_CAST(op) _Py_reinterpret_cast(PyObject*, (op))
+#define _PyObject_CAST(op) _Py_CAST(PyObject*, (op))
 
 typedef struct {
     PyObject ob_base;
@@ -112,7 +112,7 @@ typedef struct {
 } PyVarObject;
 
 /* Cast argument to PyVarObject* type. */
-#define _PyVarObject_CAST(op) _Py_reinterpret_cast(PyVarObject*, (op))
+#define _PyVarObject_CAST(op) _Py_CAST(PyVarObject*, (op))
 
 
 // Test if the 'x' object is the 'y' object, the same as "x is y" in Python.
@@ -587,7 +587,7 @@ static inline void Py_DECREF(PyObject *op)
 /* Function to use in case the object pointer can be NULL: */
 static inline void Py_XINCREF(PyObject *op)
 {
-    if (op != NULL) {
+    if (op != _Py_NULL) {
         Py_INCREF(op);
     }
 }
@@ -597,7 +597,7 @@ static inline void Py_XINCREF(PyObject *op)
 
 static inline void Py_XDECREF(PyObject *op)
 {
-    if (op != NULL) {
+    if (op != _Py_NULL) {
         Py_DECREF(op);
     }
 }
@@ -781,7 +781,7 @@ static inline int PyType_Check(PyObject *op) {
 #endif
 
 #define _PyType_CAST(op) \
-    (assert(PyType_Check(op)), _Py_reinterpret_cast(PyTypeObject*, (op)))
+    (assert(PyType_Check(op)), _Py_CAST(PyTypeObject*, (op)))
 
 static inline int PyType_CheckExact(PyObject *op) {
     return Py_IS_TYPE(op, &PyType_Type);
