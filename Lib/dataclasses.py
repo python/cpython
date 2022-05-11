@@ -279,15 +279,6 @@ class Field:
                          types.MappingProxyType(metadata))
         self.kw_only = kw_only
         self._field_type = None
-    
-    def _extra_keys(self):
-        return (    
-            self.default is MISSING,
-            self.default_factory is MISSING,
-            self.init,
-            self.kw_only,
-            self._field_type,
-        )
 
     def __repr__(self):
         return ('Field('
@@ -447,11 +438,9 @@ _code_cache_total = 0
 _code_cache_miss = 0
 
 
-def _create_fn(
-    name, args, body, fields, *, extra_keys=(), globals=None, locals=None
-):
+def _create_fn(name, args, body, fields, *, globals=None, locals=None):
     global _code_cache_total, _code_cache_miss
-    key = (name, len(fields), locals and frozenset(locals), *extra_keys)
+    key = (name, args, body)
     code = _code_cache.get(key)
     _code_cache_total += 1
     if code is None:
@@ -606,14 +595,10 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
         # (instead of just concatenting the lists together).
         _init_params += ['*']
         _init_params += [_symbol(fields.index(f)) for f in kw_only_fields]
-    extra_keys = (
-        frozen, *(f._extra_keys() for f in fields), has_post_init, self_name
-    )
     f = _create_fn('__init__',
-                   [self_name] + _init_params,
-                   body_lines,
+                   (self_name, *_init_params),
+                   tuple(body_lines),
                    fields=fields,
-                   extra_keys=extra_keys,
                    locals=locals,
                    globals=globals)
     annotations = {"return": None}
@@ -640,10 +625,10 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
 def _repr_fn(fields, globals):
     fn = _create_fn('__repr__',
                     ('self',),
-                    ['return self.__class__.__qualname__ + f"(' +
+                    ('return self.__class__.__qualname__ + f"(' +
                      ', '.join([f"{_symbol(i)}={{self.{_symbol(i)}!r}}"
                                 for i in range(len(fields))]) +
-                     ')"'],
+                     ')"',),
                      fields=fields,
                      globals=globals)
     return _recursive_repr(fn)
@@ -684,9 +669,9 @@ def _cmp_fn(name, op, self_tuple, other_tuple, globals, fields):
 
     return _create_fn(name,
                       ('self', 'other'),
-                      [ 'if other.__class__ is self.__class__:',
+                      ( 'if other.__class__ is self.__class__:',
                        f' return {self_tuple}{op}{other_tuple}',
-                        'return NotImplemented'],
+                        'return NotImplemented'),
                       fields=fields,
                       globals=globals)
 
@@ -695,7 +680,7 @@ def _hash_fn(fields, globals):
     self_tuple = _tuple_str('self', fields)
     return _create_fn('__hash__',
                       ('self',),
-                      [f'return hash({self_tuple})'],
+                      (f'return hash({self_tuple})',),
                       fields=fields,
                       globals=globals)
 
