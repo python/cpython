@@ -23,8 +23,8 @@ This documentation page covers both `Transports`_ and `Protocols`_.
 
 .. rubric:: Introduction
 
-The transport is an interface for an asynchronous source of raw bytes,
-while the protocol represents an object that feeds and consumes these bytes.
+The transport is an interface for a closable source of raw bytes,
+while the protocol represents a consumer of these bytes that may answer back.
 
 The protocol object may either generate and consume data by its own (like a
 fallback background sender behind :func:`~asyncio.loop.sendfile`), be an
@@ -34,7 +34,7 @@ or play a role of a converter middle man between other transport and protocol
 (like the one created by :func:`~asyncio.loop.start_tls`).
 
 While the transport is actively puppeteered by an asyncio event loop, the
-protocol .
+protocol is passively triggered by events from the transport.
 
 There is always a 1:1 relationship between immediately communicating transport
 and protocol objects: the protocol calls transport methods to send data,
