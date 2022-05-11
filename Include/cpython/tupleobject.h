@@ -22,7 +22,9 @@ PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
 static inline Py_ssize_t PyTuple_GET_SIZE(PyTupleObject *op) {
     return Py_SIZE(op);
 }
-#define PyTuple_GET_SIZE(op) PyTuple_GET_SIZE(_PyTuple_CAST(op))
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#  define PyTuple_GET_SIZE(op) PyTuple_GET_SIZE(_PyTuple_CAST(op))
+#endif
 
 #define PyTuple_GET_ITEM(op, index) (_PyTuple_CAST(op)->ob_item[index])
 
@@ -31,7 +33,9 @@ static inline void
 PyTuple_SET_ITEM(PyTupleObject *op, Py_ssize_t index, PyObject *value) {
     op->ob_item[index] = value;
 }
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #define PyTuple_SET_ITEM(op, index, value) \
     PyTuple_SET_ITEM(_PyTuple_CAST(op), index, _PyObject_CAST(value))
+#endif
 
 PyAPI_FUNC(void) _PyTuple_DebugMallocStats(FILE *out);
