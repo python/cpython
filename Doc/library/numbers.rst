@@ -202,9 +202,9 @@ forward and reverse instances of any given operator. For example,
             if isinstance(a, Rational):
                 # Includes ints.
                 return monomorphic_operator(a, b)
-            elif isinstance(a, numbers.Real):
+            elif isinstance(a, Real):
                 return fallback_operator(float(a), float(b))
-            elif isinstance(a, numbers.Complex):
+            elif isinstance(a, Complex):
                 return fallback_operator(complex(a), complex(b))
             else:
                 return NotImplemented
