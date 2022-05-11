@@ -296,7 +296,7 @@ class Random(_random.Random):
             # We don't check for "step != 1" because it hasn't been
             # type checked and converted to an integer yet.
             if step is not _ONE:
-                raise TypeError('Missing a non-None stop argument')
+                raise TypeError("Missing a non-None stop argument")
             if istart > 0:
                 return self._randbelow(istart)
             raise ValueError("empty range for randrange()")
