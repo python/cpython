@@ -23,21 +23,21 @@ This documentation page covers both `Transports`_ and `Protocols`_.
 
 .. rubric:: Introduction
 
-At the highest level, the transport is concerned with *how* bytes
-are transmitted, while the protocol determines *which* bytes to
-transmit (and to some extent when).
+The transport is an interface for an asynchronous source of raw bytes,
+while the protocol represents an object that feeds and consumes these bytes.
 
-A different way of saying the same thing: a transport is an
-abstraction for a socket (or similar I/O endpoint) while a protocol
-is an abstraction for an application, from the transport's point
-of view.
+The protocol object may either generate and consume data by its own (like a
+fallback background sender behind :func:`~asyncio.loop.sendfile`), be an
+adapter for another I/O interface (like the
+:func:`~asyncio.StreamReader`/:func:`~asyncio.StreamWriter` backend),
+or play a role of a converter middle man between other transport and protocol
+(like the one created by :func:`~asyncio.loop.start_tls`).
 
-Yet another view is the transport and protocol interfaces
-together define an abstract interface for using network I/O and
-interprocess I/O.
+While the transport is actively puppeteered by an asyncio event loop, the
+protocol .
 
-There is always a 1:1 relationship between transport and protocol
-objects: the protocol calls transport methods to send data,
+There is always a 1:1 relationship between immediately communicating transport
+and protocol objects: the protocol calls transport methods to send data,
 while the transport calls protocol methods to pass it data that
 has been received.
 
