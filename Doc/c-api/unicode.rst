@@ -130,7 +130,7 @@ access to internal read-only data of Unicode objects:
    Return a pointer to the canonical representation cast to UCS1, UCS2 or UCS4
    integer types for direct character access.  No checks are performed if the
    canonical representation has the correct character size; use
-   :c:func:`PyUnicode_KIND` to select the right macro.  Make sure
+   :c:func:`PyUnicode_KIND` to select the right function.  Make sure
    :c:func:`PyUnicode_READY` has been called before accessing this.
 
    .. versionadded:: 3.3
@@ -360,40 +360,41 @@ These APIs can be used for fast direct character conversions:
 .. c:function:: int Py_UNICODE_TODECIMAL(Py_UCS4 ch)
 
    Return the character *ch* converted to a decimal positive integer.  Return
-   ``-1`` if this is not possible.  This macro does not raise exceptions.
+   ``-1`` if this is not possible.  This function does not raise exceptions.
 
 
 .. c:function:: int Py_UNICODE_TODIGIT(Py_UCS4 ch)
 
    Return the character *ch* converted to a single digit integer. Return ``-1`` if
-   this is not possible.  This macro does not raise exceptions.
+   this is not possible.  This function does not raise exceptions.
 
 
 .. c:function:: double Py_UNICODE_TONUMERIC(Py_UCS4 ch)
 
    Return the character *ch* converted to a double. Return ``-1.0`` if this is not
-   possible.  This macro does not raise exceptions.
+   possible.  This function does not raise exceptions.
 
 
 These APIs can be used to work with surrogates:
 
-.. c:macro:: Py_UNICODE_IS_SURROGATE(ch)
+.. c:func:: int Py_UNICODE_IS_SURROGATE(Py_UCS4 ch)
 
    Check if *ch* is a surrogate (``0xD800 <= ch <= 0xDFFF``).
 
-.. c:macro:: Py_UNICODE_IS_HIGH_SURROGATE(ch)
+.. c:func:: int Py_UNICODE_IS_HIGH_SURROGATE(Py_UCS4 ch)
 
    Check if *ch* is a high surrogate (``0xD800 <= ch <= 0xDBFF``).
 
-.. c:macro:: Py_UNICODE_IS_LOW_SURROGATE(ch)
+.. c:func:: int Py_UNICODE_IS_LOW_SURROGATE(Py_UCS4 ch)
 
    Check if *ch* is a low surrogate (``0xDC00 <= ch <= 0xDFFF``).
 
-.. c:macro:: Py_UNICODE_JOIN_SURROGATES(high, low)
+.. c:func:: Py_UCS4 Py_UNICODE_JOIN_SURROGATES(Py_UCS4 high, Py_UCS4 low)
 
-   Join two surrogate characters and return a single Py_UCS4 value.
+   Join two surrogate characters and return a single :c:type:`Py_UCS4` value.
    *high* and *low* are respectively the leading and trailing surrogates in a
-   surrogate pair.
+   surrogate pair. *high* must be in the range [0xD800; 0xDBFF] and *low* must
+   be in the range [0xDC00; 0xDFFF].
 
 
 Creating and accessing Unicode strings
