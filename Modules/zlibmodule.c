@@ -1399,20 +1399,14 @@ zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 {
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
-#if ZLIB_VERNUM >= 0x1290
-    if (data->len > 1024*5) {
-        Py_BEGIN_ALLOW_THREADS
-        value = adler32_z(value, data->buf, data->len);
-        Py_END_ALLOW_THREADS
-    } else {
-        value = adler32_z(value, data->buf, data->len);
-    }
-#else
     if (data->len > 1024*5) {
         unsigned char *buf = data->buf;
         Py_ssize_t len = data->len;
 
         Py_BEGIN_ALLOW_THREADS
+#if ZLIB_VERNUM >= 0x1290
+        value = adler32_z(value, buf, len);
+#else
         /* Avoid truncation of length for very large buffers. adler32() takes
            length as an unsigned int, which may be narrower than Py_ssize_t. */
         while ((size_t)len > UINT_MAX) {
@@ -1421,11 +1415,15 @@ zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value)
             len -= (size_t) UINT_MAX;
         }
         value = adler32(value, buf, (unsigned int)len);
+#endif
         Py_END_ALLOW_THREADS
     } else {
+#if ZLIB_VERNUM >= 0x1290
+        value = adler32_z(value, data->buf, data->len);
+#else
         value = adler32(value, data->buf, (unsigned int)data->len);
-    }
 #endif
+    }
     return PyLong_FromUnsignedLong(value & 0xffffffffU);
 }
 
@@ -1448,20 +1446,14 @@ zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 {
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
-#if ZLIB_VERNUM >= 0x1290
-    if (data->len > 1024*5) {
-        Py_BEGIN_ALLOW_THREADS
-        value = crc32_z(value, data->buf, data->len);
-        Py_END_ALLOW_THREADS
-    } else {
-        value = crc32_z(value, data->buf, data->len);
-    }
-#else
     if (data->len > 1024*5) {
         unsigned char *buf = data->buf;
         Py_ssize_t len = data->len;
 
         Py_BEGIN_ALLOW_THREADS
+#if ZLIB_VERNUM >= 0x1290
+        value = crc32_z(value, buf, len);
+#else
         /* Avoid truncation of length for very large buffers. crc32() takes
            length as an unsigned int, which may be narrower than Py_ssize_t. */
         while ((size_t)len > UINT_MAX) {
@@ -1470,11 +1462,15 @@ zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
             len -= (size_t) UINT_MAX;
         }
         value = crc32(value, buf, (unsigned int)len);
+#endif
         Py_END_ALLOW_THREADS
     } else {
+#if ZLIB_VERNUM >= 0x1290
+        value = crc32_z(value, data->buf, data->len);
+#else
         value = crc32(value, data->buf, (unsigned int)data->len);
-    }
 #endif
+    }
     return PyLong_FromUnsignedLong(value & 0xffffffffU);
 }
 

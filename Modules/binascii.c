@@ -774,20 +774,14 @@ binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc)
 {
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
-#if ZLIB_VERNUM >= 0x1290
-    if (data->len > 1024*5) {
-        Py_BEGIN_ALLOW_THREADS
-        crc = crc32_z(crc, data->buf, data->len);
-        Py_END_ALLOW_THREADS
-    } else {
-        crc = crc32_z(crc, data->buf, data->len);
-    }
-#else
     if (data->len > 1024*5) {
         unsigned char *buf = data->buf;
         Py_ssize_t len = data->len;
 
         Py_BEGIN_ALLOW_THREADS
+#if ZLIB_VERNUM >= 0x1290
+        crc = crc32_z(crc, buf, len);
+#else
         /* Avoid truncation of length for very large buffers. crc32() takes
            length as an unsigned int, which may be narrower than Py_ssize_t. */
         while ((size_t)len > UINT_MAX) {
@@ -796,11 +790,15 @@ binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc)
             len -= (size_t) UINT_MAX;
         }
         crc = crc32(crc, buf, (unsigned int)len);
+#endif
         Py_END_ALLOW_THREADS
     } else {
+#if ZLIB_VERNUM >= 0x1290
+        crc = crc32_z(crc, data->buf, data->len);
+#else
         crc = crc32(crc, data->buf, (unsigned int)data->len);
-    }
 #endif
+    }
     return PyLong_FromUnsignedLong(crc & 0xffffffffU);
 }
 #else  /* USE_ZLIB_CRC32 */
