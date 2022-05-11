@@ -123,12 +123,16 @@ Functions for integers
 .. function:: randrange(stop)
               randrange(start, stop[, step])
 
-   Return a randomly selected element from ``range(start, stop, step)``.  This is
-   equivalent to ``choice(range(start, stop, step))``, but doesn't actually build a
-   range object.
+   Return a randomly selected element from ``range(start, stop, step)``.
 
-   The positional argument pattern matches that of :func:`range`.  Keyword arguments
-   should not be used because the function may use them in unexpected ways.
+   This is roughly equivalent to ``choice(range(start, stop, step))`` but
+   supports arbitrarily large ranges and is optimized for common cases.
+
+   The positional argument pattern matches the :func:`range` function.
+
+   Keyword arguments should not be used because they can interpreted
+   in unexpected ways. For example ``range(start=100)`` is interpreted
+   as ``range(0, 100, 1)``.
 
    .. versionchanged:: 3.2
       :meth:`randrange` is more sophisticated about producing equally distributed
