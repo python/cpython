@@ -469,10 +469,7 @@ def _create_fn(
                 const = const.replace(*pair)
             consts[i] = const
         elif isinstance(const, tuple):
-            consts_i = list(const)
-            for j, const in enumerate(consts_i):
-                consts_i[j] = patched.get(const, const)
-            consts[i] = tuple(consts_i)
+            consts[i] = tuple(patched.get(c, c) for c in const)
     consts = tuple(consts)
     closure = tuple(CellType(locals[freevar]) for freevar in code.co_freevars)
     return FunctionType(
