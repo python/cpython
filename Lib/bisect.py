@@ -65,6 +65,7 @@ def insort_left(a, x, lo=0, hi=None, *, key=None):
         lo = bisect_left(a, key(x), lo, hi, key=key)
     a.insert(lo, x)
 
+
 def bisect_left(a, x, lo=0, hi=None, *, key=None):
     """Return the index where to insert item x in list a, assuming a is sorted.
 
