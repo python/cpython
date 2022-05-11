@@ -960,7 +960,7 @@ class Path(PurePath):
         drv, root, pattern_parts = self._flavour.parse_parts((pattern,))
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        if pattern[-1] in (self._flavour.sep, self._flavour.altsep):
+        if pattern and pattern[-1] in (self._flavour.sep, self._flavour.altsep):
             pattern_parts.append('')
         selector = _make_selector(("**",) + tuple(pattern_parts), self._flavour)
         for p in selector.select_from(self):
