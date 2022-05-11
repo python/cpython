@@ -90,7 +90,7 @@ PyAPI_FUNC(int) _PyToken_ThreeChars(int, int, int);
 #endif  // !Py_INTERNAL_TOKEN_H
 """
 
-def make_h(infile, outfile='Include/token.h'):
+def make_h(infile, outfile='Include/internal/pycore_token.h'):
     tok_names, ERRORTOKEN, string_to_tok = load_tokens(infile)
 
     defines = []
