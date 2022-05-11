@@ -207,7 +207,7 @@ which disallows mutable objects such as :class:`bytearray`.
 
 
 .. versionchanged:: 3.12
-   ``u``, ``u#``, `Z``, and ``Z#`` are removed because they used legacy ``Py_UNICODE*``
+   ``u``, ``u#``, ``Z``, and ``Z#`` are removed because they used legacy ``Py_UNICODE*``
    representation.
 
 
