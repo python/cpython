@@ -28,16 +28,22 @@ static inline int Py_UNICODE_IS_LOW_SURROGATE(Py_UCS4 ch) {
 
 // Join two surrogate characters and return a single Py_UCS4 value.
 static inline Py_UCS4 Py_UNICODE_JOIN_SURROGATES(Py_UCS4 high, Py_UCS4 low)  {
+    assert(Py_UNICODE_IS_HIGH_SURROGATE(high));
+    assert(Py_UNICODE_IS_LOW_SURROGATE(low));
     return 0x10000 + (((high & 0x03FF) << 10) | (low & 0x03FF));
 }
 
-// High surrogate = top 10 bits added to D800
+// High surrogate = top 10 bits added to 0xD800.
+// The character must be in the range [U+10000; U+10ffff].
 static inline Py_UCS4 Py_UNICODE_HIGH_SURROGATE(Py_UCS4 ch) {
+    assert(0x10000 <= ch && ch <= 0x10ffff);
     return (0xD800 - (0x10000 >> 10) + (ch >> 10));
 }
 
-// Low surrogate = bottom 10 bits added to DC00
+// Low surrogate = bottom 10 bits added to 0xDC00.
+// The character must be in the range [U+10000; U+10ffff].
 static inline Py_UCS4 Py_UNICODE_LOW_SURROGATE(Py_UCS4 ch) {
+    assert(0x10000 <= ch && ch <= 0x10ffff);
     return (0xDC00 + (ch & 0x3FF));
 }
 
