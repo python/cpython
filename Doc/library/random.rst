@@ -135,7 +135,7 @@ Functions for integers
       values.  Formerly it used a style like ``int(random()*n)`` which could produce
       slightly uneven distributions.
 
-   .. versionchanged:: 3.11
+   .. versionchanged:: 3.12
       Automatic conversion of non-integer types is no longer supported.
       Calls such as ``randrange(10.0)`` and ``randrange(Fraction(10, 1))``
       now raise a :exc:`TypeError`.
