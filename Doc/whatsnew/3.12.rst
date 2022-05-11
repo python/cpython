@@ -139,6 +139,10 @@ Porting to Python 3.12
 * Legacy Unicode APIs based on ``Py_UNICODE*`` representation has been removed.
   Please migrate to APIs based on UTF-8 or ``wchar_t*``.
 
+* Argument parsing functions like :c:func:`PyArg_ParseTuple` doesn't support
+  ``Py_UNICODE*`` based format (e.g. ``u``, ``Z``) anymore. Please migrate
+  to other formats for Unicode like ``s``, ``z``, ``es``, and ``U``.
+
 Deprecated
 ----------
 
