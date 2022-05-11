@@ -283,6 +283,9 @@ _specializations = {
         "LOAD_FAST__LOAD_CONST",
         "LOAD_FAST__LOAD_FAST",
     ],
+    "LOAD_FAST_KNOWN": [
+        "LOAD_FAST_KNOWN_QUICK",
+    ],
     "LOAD_GLOBAL": [
         "LOAD_GLOBAL_ADAPTIVE",
         "LOAD_GLOBAL_BUILTIN",

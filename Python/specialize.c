@@ -282,6 +282,7 @@ _PyCode_Quicken(PyCodeObject *code)
                     _Py_SET_OPCODE(instructions[i], RESUME_QUICK);
                     break;
                 case LOAD_FAST_KNOWN:
+                    _Py_SET_OPCODE(instructions[i], LOAD_FAST_KNOWN_QUICK);
                     switch(previous_opcode) {
                         case LOAD_FAST_KNOWN:
                             _Py_SET_OPCODE(instructions[i - 1],

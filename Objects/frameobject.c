@@ -461,6 +461,7 @@ replace_LOAD_FAST_KNOWNs(PyCodeObject *co)
     _Py_CODEUNIT *instructions = _PyCode_CODE(co);
     for (Py_ssize_t i = 0; i < Py_SIZE(co); i++) {
         switch (_Py_OPCODE(instructions[i])) {
+            case LOAD_FAST_KNOWN_QUICK:
             case LOAD_FAST_KNOWN:
                 _Py_SET_OPCODE(instructions[i], LOAD_FAST);
                 break;

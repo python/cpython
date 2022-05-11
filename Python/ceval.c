@@ -1357,22 +1357,35 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #endif
 
 #ifdef Py_STATS
-#define INSTRUCTION_START(op) \
+#define RECORD_STATS(op) \
     do { \
-        frame->prev_instr = next_instr++; \
         OPCODE_EXE_INC(op); \
         _py_stats.opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
-#define INSTRUCTION_START(op) (frame->prev_instr = next_instr++)
+#define RECORD_STATS(op) ((void)0)
 #endif
+
+#define INSTRUCTION_START(op) \
+    do { \
+        frame->prev_instr = next_instr++; \
+        RECORD_STATS(op); \
+    } while (0)
+
+#define SAFE_INSTRUCTION_START(op) \
+    do { \
+        next_instr++;\
+        RECORD_STATS(op); \
+    } while (0)
 
 #if USE_COMPUTED_GOTOS
 #define TARGET(op) TARGET_##op: INSTRUCTION_START(op);
+#define TARGET_SAFE(op) TARGET_##op: SAFE_INSTRUCTION_START(op);
 #define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
 #define TARGET(op) case op: INSTRUCTION_START(op);
+#define TARGET_SAFE(op) case op: SAFE_INSTRUCTION_START(op);
 #define DISPATCH_GOTO() goto dispatch_opcode
 #endif
 
@@ -1831,7 +1844,7 @@ handle_eval_breaker:
            It is essential that any operation that fails must goto error
            and that all operation that succeed call DISPATCH() ! */
 
-        TARGET(NOP) {
+        TARGET_SAFE(NOP) {
             DISPATCH();
         }
 
@@ -1871,7 +1884,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(LOAD_FAST_KNOWN) {
+        TARGET_SAFE(LOAD_FAST_KNOWN) {
             PyObject *value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
@@ -1879,7 +1892,16 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(LOAD_CONST) {
+        TARGET_SAFE(LOAD_FAST_KNOWN_QUICK) {
+            // micro-optimization to use NOTRACE_DISPATCH()
+            PyObject *value = GETLOCAL(oparg);
+            assert(value != NULL);
+            Py_INCREF(value);
+            PUSH(value);
+            NOTRACE_DISPATCH();
+        }
+
+        TARGET_SAFE(LOAD_CONST) {
             PREDICTED(LOAD_CONST);
             PyObject *value = GETITEM(consts, oparg);
             Py_INCREF(value);
@@ -1894,7 +1916,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(LOAD_FAST__LOAD_FAST) {
+        TARGET_SAFE(LOAD_FAST__LOAD_FAST) {
             PyObject *value = GETLOCAL(oparg);
             assert(value != NULL);
             NEXTOPARG();
@@ -1908,7 +1930,7 @@ handle_eval_breaker:
             NOTRACE_DISPATCH();
         }
 
-        TARGET(LOAD_FAST__LOAD_CONST) {
+        TARGET_SAFE(LOAD_FAST__LOAD_CONST) {
             PyObject *value = GETLOCAL(oparg);
             assert(value != NULL);
             NEXTOPARG();
