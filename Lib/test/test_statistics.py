@@ -1742,6 +1742,12 @@ class TestMedianGrouped(TestMedian):
                 data = [x]*count
                 self.assertEqual(self.func(data), float(x))
 
+    def test_single_value(self):
+        # Override method from AverageMixin.
+        # Average of a single value is the value as a float.
+        for x in (23, 42.5, 1.3e15, Fraction(15, 19), Decimal('0.28')):
+            self.assertEqual(self.func([x]), float(x))
+
     def test_odd_fractions(self):
         # Test median_grouped works with an odd number of Fractions.
         F = Fraction

@@ -999,15 +999,6 @@ conflict.
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 
-.. envvar:: PYTHONTHREADDEBUG
-
-   If set, Python will print threading debug info into stdout.
-
-   Need a :ref:`debug build of Python <debug-build>`.
-
-   .. deprecated-removed:: 3.10 3.12
-
-
 .. envvar:: PYTHONDUMPREFS
 
    If set, Python will dump objects and reference counts still alive after

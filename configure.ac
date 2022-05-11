@@ -6,7 +6,7 @@ dnl Python's configure script requires autoconf 2.69 and autoconf-archive.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define(PYTHON_VERSION, 3.11)
+m4_define(PYTHON_VERSION, 3.12)
 
 AC_PREREQ([2.69])
 
@@ -6869,12 +6869,12 @@ PY_STDLIB_MOD([_sqlite3],
   [test "$have_sqlite3" = "yes"],
   [test "$have_supported_sqlite3" = "yes"],
   [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
-dnl PY_STDLIB_MOD([_tkinter], [], [], [], [])
+PY_STDLIB_MOD([_tkinter],
+  [], [test "$have_tcltk" = "yes"],
+  [$TCLTK_CFLAGS], [$TCLTK_LIBS])
 PY_STDLIB_MOD([_uuid],
   [], [test "$have_uuid" = "yes"],
   [$LIBUUID_CFLAGS], [$LIBUUID_LIBS])
-PY_STDLIB_MOD([_tkinter], [],
-  [test "$have_tcltk" = "yes"], [$TCLTK_CFLAGS], [$TCLTK_LIBS])
 
 dnl compression libs
 PY_STDLIB_MOD([zlib], [], [test "$have_zlib" = yes],

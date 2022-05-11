@@ -7595,6 +7595,12 @@ PyInit__socket(void)
 #ifdef  SO_MARK
     PyModule_AddIntMacro(m, SO_MARK);
 #endif
+#ifdef  SO_USER_COOKIE
+    PyModule_AddIntMacro(m, SO_USER_COOKIE);
+#endif
+#ifdef  SO_RTABLE
+    PyModule_AddIntMacro(m, SO_RTABLE);
+#endif
 #ifdef SO_DOMAIN
     PyModule_AddIntMacro(m, SO_DOMAIN);
 #endif
