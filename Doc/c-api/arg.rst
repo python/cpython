@@ -205,7 +205,6 @@ which disallows mutable objects such as :class:`bytearray`.
    them. Instead, the implementation assumes that the byte string object uses the
    encoding passed in as parameter.
 
-
 .. versionchanged:: 3.12
    ``u``, ``u#``, ``Z``, and ``Z#`` are removed because they used legacy ``Py_UNICODE*``
    representation.
