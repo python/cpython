@@ -2126,13 +2126,13 @@ output.append(4)
         x = [i async for i in asynciter(range(10))]
         output.append(3)
 
-    @jump_test(3, 1, [])
+    @async_jump_test(3, 1, [])
     async def test_jump_backward_over_async_listcomp(output):
         a = 1
         x = [i async for i in asynciter(range(10))]
         c = 3
 
-    @jump_test(8, 2, [2, 6, 2])
+    @async_jump_test(8, 2, [2, 6, 2])
     async def test_jump_backward_over_async_listcomp_v2(output):
         flag = False
         output.append(2)
