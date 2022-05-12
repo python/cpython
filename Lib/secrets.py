@@ -70,3 +70,6 @@ def token_urlsafe(nbytes=None):
     """
     tok = token_bytes(nbytes)
     return base64.urlsafe_b64encode(tok).rstrip(b'=').decode('ascii')
+
+def double_hash_hex(nbytes=None):
+    return token_hex(token_hex(nbytes))
