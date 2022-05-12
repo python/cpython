@@ -136,48 +136,6 @@ which disallows mutable objects such as :class:`bytearray`.
    attempting any conversion.  Raises :exc:`TypeError` if the object is not
    a :class:`bytearray` object. The C variable may also be declared as :c:type:`PyObject*`.
 
-``u`` (:class:`str`) [const Py_UNICODE \*]
-   Convert a Python Unicode object to a C pointer to a NUL-terminated buffer of
-   Unicode characters.  You must pass the address of a :c:type:`Py_UNICODE`
-   pointer variable, which will be filled with the pointer to an existing
-   Unicode buffer.  Please note that the width of a :c:type:`Py_UNICODE`
-   character depends on compilation options (it is either 16 or 32 bits).
-   The Python string must not contain embedded null code points; if it does,
-   a :exc:`ValueError` exception is raised.
-
-   .. versionchanged:: 3.5
-      Previously, :exc:`TypeError` was raised when embedded null code points
-      were encountered in the Python string.
-
-   .. deprecated-removed:: 3.3 3.12
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsWideCharString`.
-
-``u#`` (:class:`str`) [const Py_UNICODE \*, :c:type:`Py_ssize_t`]
-   This variant on ``u`` stores into two C variables, the first one a pointer to a
-   Unicode data buffer, the second one its length.  This variant allows
-   null code points.
-
-   .. deprecated-removed:: 3.3 3.12
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsWideCharString`.
-
-``Z`` (:class:`str` or ``None``) [const Py_UNICODE \*]
-   Like ``u``, but the Python object may also be ``None``, in which case the
-   :c:type:`Py_UNICODE` pointer is set to ``NULL``.
-
-   .. deprecated-removed:: 3.3 3.12
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsWideCharString`.
-
-``Z#`` (:class:`str` or ``None``) [const Py_UNICODE \*, :c:type:`Py_ssize_t`]
-   Like ``u#``, but the Python object may also be ``None``, in which case the
-   :c:type:`Py_UNICODE` pointer is set to ``NULL``.
-
-   .. deprecated-removed:: 3.3 3.12
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsWideCharString`.
-
 ``U`` (:class:`str`) [PyObject \*]
    Requires that the Python object is a Unicode object, without attempting
    any conversion.  Raises :exc:`TypeError` if the object is not a Unicode
@@ -246,6 +204,11 @@ which disallows mutable objects such as :class:`bytearray`.
    Same as ``es#`` except that byte string objects are passed through without recoding
    them. Instead, the implementation assumes that the byte string object uses the
    encoding passed in as parameter.
+
+.. versionchanged:: 3.12
+   ``u``, ``u#``, ``Z``, and ``Z#`` are removed because they used legacy ``Py_UNICODE*``
+   representation.
+
 
 Numbers
 -------

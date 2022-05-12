@@ -66,6 +66,9 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+Important deprecations, removals or restrictions:
+
+* :pep:`623`, Remove wstr from Unicode
 
 
 New Features
@@ -91,7 +94,9 @@ Improved Modules
 Optimizations
 =============
 
-
+* Removed ``wstr`` and ``wstr_length`` members from Unicode objects.
+  It reduces object size by 8 or 16 bytes on 64bit platform. (:pep:`623`)
+  (Contributed by Inada Naoki in :gh:`92536`.)
 
 
 Deprecated
@@ -140,6 +145,13 @@ New Features
 Porting to Python 3.12
 ----------------------
 
+* Legacy Unicode APIs based on ``Py_UNICODE*`` representation has been removed.
+  Please migrate to APIs based on UTF-8 or ``wchar_t*``.
+
+* Argument parsing functions like :c:func:`PyArg_ParseTuple` doesn't support
+  ``Py_UNICODE*`` based format (e.g. ``u``, ``Z``) anymore. Please migrate
+  to other formats for Unicode like ``s``, ``z``, ``es``, and ``U``.
+
 Deprecated
 ----------
 
@@ -150,3 +162,15 @@ Removed
   API. The ``token.h`` header file was only designed to be used by Python
   internals.
   (Contributed by Victor Stinner in :gh:`92651`.)
+
+* Leagcy Unicode APIs has been removed. See :pep:`623` for detail.
+
+   * :c:macro:`PyUnicode_WCHAR_KIND`
+   * :c:func:`PyUnicode_AS_UNICODE`
+   * :c:func:`PyUnicode_AsUnicode`
+   * :c:func:`PyUnicode_AsUnicodeAndSize`
+   * :c:func:`PyUnicode_AS_DATA`
+   * :c:func:`PyUnicode_FromUnicode`
+   * :c:func:`PyUnicode_GET_SIZE`
+   * :c:func:`PyUnicode_GetSize`
+   * :c:func:`PyUnicode_GET_DATA_SIZE`
