@@ -39,6 +39,7 @@ from email import quoprimime
 from email import utils
 
 from test.support import threading_helper
+from test.support.warnings_helper import check_warnings
 from test.support.os_helper import unlink
 from test.test_email import openfile, TestEmailBase
 
@@ -49,6 +50,8 @@ from email.parser import FeedParser
 NL = '\n'
 EMPTYSTRING = ''
 SPACE = ' '
+
+UU_WARNING_FILTER = ('.*uu.*', DeprecationWarning)
 
 
 # Test various aspects of the Message class's API
@@ -263,10 +266,12 @@ class TestMessageAPI(TestEmailBase):
         msg.set_payload('begin 666 -\n+:&5L;&\\@=V]R;&0 \n \nend\n')
         for cte in ('x-uuencode', 'uuencode', 'uue', 'x-uue'):
             msg['content-transfer-encoding'] = cte
-            eq(msg.get_payload(decode=True), b'hello world')
+            with check_warnings(UU_WARNING_FILTER):
+                eq(msg.get_payload(decode=True), b'hello world')
         # Now try some bogus data
         msg.set_payload('foo')
-        eq(msg.get_payload(decode=True), b'foo')
+        with check_warnings(UU_WARNING_FILTER):
+            eq(msg.get_payload(decode=True), b'foo')
 
     def test_get_payload_n_raises_on_non_multipart(self):
         msg = Message()
@@ -740,12 +745,13 @@ class TestMessageAPI(TestEmailBase):
                 msg['content-type'] = 'text/plain; charset=%s' % charset
                 msg['content-transfer-encoding'] = encoding
                 msg.set_payload(b"begin 666 -\n)9F]OYI:'8F%R\n \nend\n")
-                self.assertEqual(
-                    msg.get_payload(decode=True),
-                    b'foo\xe6\x96\x87bar',
-                    str(('get_payload returns wrong result ',
-                         'with charset {0} and encoding {1}.')).\
-                        format(charset, encoding))
+                with check_warnings(UU_WARNING_FILTER):
+                    self.assertEqual(
+                        msg.get_payload(decode=True),
+                        b'foo\xe6\x96\x87bar',
+                        str(('get_payload returns wrong result ',
+                             'with charset {0} and encoding {1}.')).\
+                            format(charset, encoding))
 
     def test_add_header_with_name_only_param(self):
         msg = Message()
@@ -3963,8 +3969,9 @@ class Test8BitBytesHandling(TestEmailBase):
                                      cte='uuencode',
                                      bodyline='<,.V<W1A; á ').encode('utf-8')
         msg = email.message_from_bytes(m)
-        self.assertEqual(msg.get_payload(decode=True),
-                         '<,.V<W1A; á \n'.encode('utf-8'))
+        with check_warnings(UU_WARNING_FILTER):
+            self.assertEqual(msg.get_payload(decode=True),
+                            '<,.V<W1A; á \n'.encode('utf-8'))
 
 
     headertest_headers = (
