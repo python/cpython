@@ -376,14 +376,14 @@ class CodeTest(unittest.TestCase):
             ],
             [
                 ('RESUME', 0),
-                ("COPY", 3),
-                ("POP_EXCEPT", None),
-                ("RERAISE", 1),
                 ("PUSH_EXC_INFO", None),
                 ("LOAD_CONST", None), # artificial 'None'
                 ("STORE_NAME", "e"),  # XX: we know the location for this
                 ("DELETE_NAME", "e"),
-                ("RERAISE", 1)
+                ("RERAISE", 1),
+                ("COPY", 3),
+                ("POP_EXCEPT", None),
+                ("RERAISE", 1),
             ]
         )
 

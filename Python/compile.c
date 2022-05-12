@@ -7437,6 +7437,22 @@ mark_cold(struct compiler *c, struct assembler *a) {
         }
     }
     PyObject_Free(stack);
+
+    /* If we have a cold block with fallthrough to a warm block, abort */
+    /* TODO: handle this better */
+    int abort = 0;
+    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        if (b->b_cold && !b->b_nofallthrough && b->b_next && b->b_next->b_warm) {
+            abort = 1;
+            break;
+        }
+    }
+    if (abort) {
+        for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+            b->b_cold = 0;
+        }
+    }
+
     return 0;
 }
 
