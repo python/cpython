@@ -191,6 +191,9 @@ is_jump(struct instr *i)
            is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
 }
 
+static void
+dump_instr(struct instr *i);
+
 static int
 instr_size(struct instr *instruction)
 {
@@ -248,6 +251,8 @@ typedef struct basicblock_ {
     int b_ialloc;
     /* Number of predecssors that a block has. */
     int b_predecessors;
+    /* Number of predecssors that a block has as an exception handler. */
+    int b_except_predecessors;
     /* depth of stack upon entry of block, computed by stackdepth() */
     int b_startdepth;
     /* instruction offset for block, computed by assemble_jump_offsets() */
@@ -264,6 +269,8 @@ typedef struct basicblock_ {
     unsigned b_return : 1;
     /* b_cold is true if this block is not perf critical (like an exception handler) */
     unsigned b_cold : 1;
+    /* b_warm is used by the cold-detection algorithm to mark blocks which are definitely not cold */
+    unsigned b_warm : 1;
 } basicblock;
 
 /* fblockinfo tracks the current frame block.
@@ -336,8 +343,6 @@ struct compiler_unit {
 
     /* true if we need to create an implicit basicblock before the next instr */
     int u_need_new_implicit_block;
-    /* >0 if we are generating cold code */
-    int u_cold;
 };
 
 /* This struct captures the global state of a compilation.
@@ -832,7 +837,6 @@ static basicblock *
 compiler_use_next_block(struct compiler *c, basicblock *block)
 {
     assert(block != NULL);
-    block->b_cold = c->u->u_cold > 0;
     c->u->u_curblock->b_next = block;
     c->u->u_curblock = block;
     c->u->u_need_new_implicit_block = 0;
@@ -907,10 +911,6 @@ compiler_next_instr(basicblock *b)
     }
     return b->b_iused++;
 }
-
-#define COLD_VALUE(c) (c)->u->u_cold
-#define ENTER_COLD(c) (c)->u->u_cold++;
-#define EXIT_COLD(c)  (c)->u->u_cold--; assert((c)->u->u_cold >= 0);
 
 /* Set the line number and column offset for the following instructions.
 
@@ -3476,7 +3476,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     }
     ADDOP_JUMP_NOLINE(c, JUMP, end);
     n = asdl_seq_LEN(s->v.Try.handlers);
-    ENTER_COLD(c);
     compiler_use_next_block(c, except);
 
     UNSET_LOC(c);
@@ -3579,7 +3578,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, cleanup);
     POP_EXCEPT_AND_RERAISE(c);
-    EXIT_COLD(c);
     compiler_use_next_block(c, end);
     return 1;
 }
@@ -5663,6 +5661,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP_LOAD_CONST(c, Py_None);
     ADD_YIELD_FROM(c, 1);
     compiler_with_except_finish(c, cleanup);
+    ADDOP_JUMP(c, JUMP, exit);
 
     compiler_use_next_block(c, exit);
     return 1;
@@ -5756,6 +5755,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, PUSH_EXC_INFO);
     ADDOP(c, WITH_EXCEPT_START);
     compiler_with_except_finish(c, cleanup);
+    ADDOP_JUMP(c, JUMP, exit);
 
     compiler_use_next_block(c, exit);
     return 1;
@@ -7371,25 +7371,98 @@ error:
 }
 
 static void
-push_cold_blocks_to_end(basicblock *entry) {
+mark_warm(struct compiler *c, struct assembler *a, basicblock **stack) {
+    basicblock **sp = stack;
+
+    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        b->b_visited = 0;
+    }
+    *sp++ = a->a_entry;
+    while (sp > stack) {
+        basicblock *b = *(--sp);
+        b->b_visited = 1;
+        assert(!b->b_except_predecessors);
+        b->b_warm = 1;
+        basicblock *next = b->b_next;
+        if (next && !b->b_nofallthrough && !next->b_visited) {
+            *sp++ = next;
+        }
+        for (int i=0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            if (is_jump(instr) && !instr->i_target->b_visited) {
+                *sp++ = instr->i_target;
+            }
+        }
+    }
+}
+
+static int
+mark_cold(struct compiler *c, struct assembler *a) {
+    basicblock **stack = (basicblock **)PyObject_Malloc(sizeof(basicblock *) * a->a_nblocks * 2 /* TODO: remove *2, count again? */);
+    basicblock **sp = stack;
+    if (stack == NULL) {
+        return -1;
+    }
+    mark_warm(c, a, stack);
+
+    sp = stack;
+    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        b->b_visited = 0;
+        if (b->b_except_predecessors) {
+            assert(b->b_except_predecessors == b->b_predecessors);
+            assert(!b->b_warm);
+            *sp++ = b;
+        }
+    }
+
+    while (sp > stack) {
+        basicblock *b = *(--sp);
+        b->b_cold = 1;
+        b->b_visited = 1;
+        basicblock *next = b->b_next;
+        if (next && !b->b_nofallthrough) {
+            if (!next->b_warm && !next->b_visited) {
+                *sp++ = next;
+            }
+        }
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            if (is_jump(instr)) {
+                assert(i == b->b_iused-1);
+                basicblock *target = b->b_instr[i].i_target;
+                if (!target->b_warm && !target->b_visited) {
+                    *sp++ = target;
+                }
+            }
+        }
+    }
+    PyObject_Free(stack);
+    return 0;
+}
+
+static int
+push_cold_blocks_to_end(struct compiler *c, struct assembler *a, basicblock *entry) {
     if (entry->b_next == NULL) {
         /* single basicblock, no need to reorder */
-        return;
+        return 0;
+    }
+    if (mark_cold(c, a) < 0) {
+        return -1;
     }
     assert(!entry->b_cold);  /* First block can't be cold */
     basicblock *tail = entry;
     while (tail->b_next) {
-        assert(tail->b_nofallthrough || (tail->b_cold == tail->b_next->b_cold));
         tail = tail->b_next;
     }
     basicblock *origtail = tail;
     basicblock *b = entry;
     while(b) {
         basicblock *next = b->b_next;
-        if (next == NULL || next == origtail) {
+        if (next == NULL) {
             break;
         }
         if (next->b_cold) {
+            //assert(next->b_nofallthrough || (!next->b_next || next->b_next->b_cold));
             b->b_next = next->b_next;
             next->b_next = NULL;
             tail->b_next = next;
@@ -7397,8 +7470,11 @@ push_cold_blocks_to_end(basicblock *entry) {
         } else {
             b = next;
         }
+        if(next == origtail) {
+            break;
+        }
     }
-    return;
+    return 0;
 }
 
 static void
@@ -8050,7 +8126,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
 
 
 /* For debugging purposes only */
-#if 0
+#if 1
 static void
 dump_instr(struct instr *i)
 {
@@ -8063,6 +8139,12 @@ dump_instr(struct instr *i)
     if (HAS_ARG(i->i_opcode)) {
         sprintf(arg, "arg: %d ", i->i_oparg);
     }
+    if (is_jump(i)) {
+        sprintf(arg, "target: %p ", i->i_target);
+    }
+    if (is_block_push(i)) {
+        sprintf(arg, "except_target: %p ", i->i_target);
+    }
     fprintf(stderr, "line: %d, opcode: %d %s%s%s\n",
                     i->i_lineno, i->i_opcode, arg, jabs, jrel);
 }
@@ -8071,8 +8153,8 @@ static void
 dump_basicblock(const basicblock *b)
 {
     const char *b_return = b->b_return ? "return " : "";
-    fprintf(stderr, "[%d %p] used: %d, depth: %d, offset: %d %s\n",
-        b->b_cold, b, b->b_iused, b->b_startdepth, b->b_offset, b_return);
+    fprintf(stderr, "[%d %d %d %p] used: %d, depth: %d, offset: %d %s\n",
+        b->b_cold, b->b_warm, b->b_nofallthrough, b, b->b_iused, b->b_startdepth, b->b_offset, b_return);
     if (b->b_instr) {
         int i;
         for (i = 0; i < b->b_iused; i++) {
@@ -8359,9 +8441,6 @@ assemble(struct compiler *c, int addNone)
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
 
-    /* Check that ENTER_COLD/EXIT_COLD calls are balanced */
-    assert(COLD_VALUE(c) == 0);
-
     /* Make sure every block that falls off the end returns None. */
     if (!c->u->u_curblock->b_return) {
         UNSET_LOC(c);
@@ -8387,6 +8466,7 @@ assemble(struct compiler *c, int addNone)
     for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
         nblocks++;
         entryblock = b;
+        assert(b->b_warm == 0 && b->b_cold == 0);
     }
     assert(entryblock != NULL);
 
@@ -8464,7 +8544,7 @@ assemble(struct compiler *c, int addNone)
     }
     convert_exception_handlers_to_nops(entryblock);
 
-    push_cold_blocks_to_end(entryblock);
+    push_cold_blocks_to_end(c, &a, entryblock);
 
     remove_redundant_jumps(entryblock);
 
@@ -9160,7 +9240,7 @@ normalize_basic_block(basicblock *bb) {
 }
 
 static int
-mark_reachable(struct assembler *a) {
+mark_reachable(struct compiler *c, struct assembler *a) {
     basicblock **stack, **sp;
     sp = stack = (basicblock **)PyObject_Malloc(sizeof(basicblock *) * a->a_nblocks);
     if (stack == NULL) {
@@ -9185,6 +9265,11 @@ mark_reachable(struct assembler *a) {
                     *sp++ = target;
                 }
                 target->b_predecessors++;
+                if (is_block_push(instr)) {
+                    target->b_except_predecessors++;
+                }
+                assert(target->b_except_predecessors == 0 ||
+                       target->b_except_predecessors == target->b_predecessors);
             }
         }
     }
@@ -9290,7 +9375,7 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
             return -1;
         }
     }
-    if (mark_reachable(a)) {
+    if (mark_reachable(c, a)) {
         return -1;
     }
     /* Delete unreachable instructions */
@@ -9304,8 +9389,6 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         clean_basic_block(b);
     }
-    /* Delete jump instructions made redundant by previous step. */
-    remove_redundant_jumps(a->a_entry);
     return 0;
 }
 
