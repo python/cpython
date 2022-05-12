@@ -123,8 +123,8 @@ Changes in the Python API
   TypeError. Also, the exception raised for non-integral values such as
   randrange(10.5) or randrange('10') has been changed from ValueError to
   TypeError.  This also prevents bugs where ``randrange(1e25)`` would silently
-  select from a larger range than ``randrange(10**25)``.  (gh-86388)
-
+  select from a larger range than ``randrange(10**25)``.
+  (Originally suggested by Serhiy Storchaka gh-86388.)
 
 
 Build Changes
