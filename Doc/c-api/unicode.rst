@@ -149,7 +149,7 @@ access to internal read-only data of Unicode objects:
       ``PyUnicode_WCHAR_KIND`` is deprecated.
 
 
-.. c:function:: unsigned int PyUnicode_KIND(PyObject *o)
+.. c:function:: int PyUnicode_KIND(PyObject *o)
 
    Return one of the PyUnicode kind constants (see above) that indicate how many
    bytes per character this Unicode object uses to store its data.  *o* has to
@@ -168,7 +168,7 @@ access to internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
 
-.. c:function:: void PyUnicode_WRITE(unsigned int kind, void *data, \
+.. c:function:: void PyUnicode_WRITE(int kind, void *data, \
                                      Py_ssize_t index, Py_UCS4 value)
 
    Write into a canonical representation *data* (as obtained with
@@ -181,7 +181,7 @@ access to internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
 
-.. c:function:: Py_UCS4 PyUnicode_READ(unsigned int kind, void *data, \
+.. c:function:: Py_UCS4 PyUnicode_READ(int kind, void *data, \
                                        Py_ssize_t index)
 
    Read a code point from a canonical representation *data* (as obtained with
