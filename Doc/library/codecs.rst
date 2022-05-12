@@ -1414,7 +1414,7 @@ to :class:`bytes` mappings. They are not supported by :meth:`bytes.decode`
 |                      | quoted_printable |                              | :meth:`quopri.decode`        |
 +----------------------+------------------+------------------------------+------------------------------+
 | uu_codec             | uu               | Convert the operand using    | :meth:`uu.encode` /          |
-|                      |                  | uuencode.                    | :meth:`uu.decode`            |
+|                      |                  | uuencode (deprecated).       | :meth:`uu.decode`            |
 +----------------------+------------------+------------------------------+------------------------------+
 | zlib_codec           | zip, zlib        | Compress the operand using   | :meth:`zlib.compress` /      |
 |                      |                  | gzip.                        | :meth:`zlib.decompress`      |
@@ -1429,6 +1429,10 @@ to :class:`bytes` mappings. They are not supported by :meth:`bytes.decode`
 
 .. versionchanged:: 3.4
    Restoration of the aliases for the binary transforms.
+
+.. deprecated-removed:: 3.11 3.13
+   The uuencode codec (``uu_codec``) is deprecated
+   (see :pep:`PEP 594 <594#uu-and-the-uu-encoding>` for details).
 
 
 .. _text-transforms:
