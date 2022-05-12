@@ -4375,6 +4375,7 @@ starunpack_helper(struct compiler *c, asdl_expr_seq *elts, int pushed,
         expr_ty elt = asdl_seq_GET(elts, i);
         if (elt->kind == Starred_kind) {
             seen_star = 1;
+            break;
         }
     }
     if (!seen_star && !big) {
@@ -9280,7 +9281,15 @@ trim_unused_consts(struct compiler *c, struct assembler *a, PyObject *consts)
 
 static inline int
 is_exit_without_lineno(basicblock *b) {
-    return b->b_exit && b->b_instr[0].i_lineno < 0;
+    if (!b->b_exit) {
+        return 0;
+    }
+    for (int i = 0; i < b->b_iused; i++) {
+        if (b->b_instr[i].i_lineno >= 0) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 /* PEP 626 mandates that the f_lineno of a frame is correct
