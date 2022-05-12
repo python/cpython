@@ -224,6 +224,62 @@ class ReprTests(unittest.TestCase):
         r(y)
         r(z)
 
+    def test_indent(self):
+        # Initialize two Repr instances: r1 without indentation, r2 with
+        # 4 space characters of indentation
+        r1 = Repr()
+        r2 = Repr()
+        r2.indent = 4
+        # Explicit example
+        x = [[[1]]]
+        self.assertEqual(
+            r2.repr(x),
+            "\n".join(
+                (
+                    "[",
+                    "    [",
+                    "        [",
+                    "            1,",
+                    "        ],",
+                    "    ],",
+                    "]",
+                )
+            )
+        )
+        # Explicit example using a custom indentation string
+        r2.indent = "...."
+        self.assertEqual(
+            r2.repr(x),
+            "\n".join(
+                (
+                    "[",
+                    "....[",
+                    "........[",
+                    "............1,",
+                    "........],",
+                    "....],",
+                    "]",
+                )
+            )
+        )
+        # Reset r2 to use space characters
+        r2.indent = 4
+        # Results are the same after removing whitespace and commas
+        y = [1, [2, "foo", b"bar", {"a": 1, "b": "abc def ghi", "c": {1: 2, 3: 4, 5: [], 6: {}}}], 3]
+        self.assertNotEqual(r1.repr(y), r2.repr(y))
+        self.assertEqual(
+            "".join(r1.repr(y).replace(",", "").split()),
+            "".join(r2.repr(y).replace(",", "").split())
+        )
+        # Same as above but with reduced levels
+        r1.maxlevel = 2
+        r2.maxlevel = 2
+        self.assertNotEqual(r1.repr(y), r2.repr(y))
+        self.assertEqual(
+            "".join(r1.repr(y).replace(",", "").split()),
+            "".join(r2.repr(y).replace(",", "").split())
+        )
+
 def write_file(path, text):
     with open(path, 'w', encoding='ASCII') as fp:
         fp.write(text)

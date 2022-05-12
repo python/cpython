@@ -123,6 +123,16 @@ which format specific object types.
    similar manner as :attr:`maxstring`.  The default is ``20``.
 
 
+.. attribute:: Repr.indent
+
+   If this attribute is set to ``None`` (default), no indentation of the output
+   takes place. If it is set to either a string or an integer value, each
+   recursive representation will be on a new line, indented according to the
+   recursion depth. In that case, the attribute defines the string used for each
+   level of indentation. An integer value is equivalent to a string of space
+   characters of the same length.
+
+
 .. method:: Repr.repr(obj)
 
    The equivalent to the built-in :func:`repr` that uses the formatting imposed by

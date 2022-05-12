@@ -48,6 +48,7 @@ class Repr:
         self.maxstring = 30
         self.maxlong = 40
         self.maxother = 30
+        self.indent = None
 
     def repr(self, x):
         return self.repr1(x, self.maxlevel)
@@ -62,6 +63,17 @@ class Repr:
         else:
             return self.repr_instance(x, level)
 
+    def _join(self, pieces, level):
+        if self.indent is None:
+            return ', '.join(pieces)
+        if not pieces:
+            return ''
+        indent = self.indent
+        if isinstance(indent, int):
+            indent *= ' '
+        sep = ',\n' + (self.maxlevel - level + 1) * indent
+        return sep.join(('', *pieces, ''))[1:-len(indent)]
+
     def _repr_iterable(self, x, level, left, right, maxiter, trail=''):
         n = len(x)
         if level <= 0 and n:
@@ -72,8 +84,8 @@ class Repr:
             pieces = [repr1(elem, newlevel) for elem in islice(x, maxiter)]
             if n > maxiter:
                 pieces.append(self.fillvalue)
-            s = ', '.join(pieces)
-            if n == 1 and trail:
+            s = self._join(pieces, level)
+            if n == 1 and trail and self.indent is None:
                 right = trail + right
         return '%s%s%s' % (left, s, right)
 
@@ -120,7 +132,7 @@ class Repr:
             pieces.append('%s: %s' % (keyrepr, valrepr))
         if n > self.maxdict:
             pieces.append(self.fillvalue)
-        s = ', '.join(pieces)
+        s = self._join(pieces, level)
         return '{%s}' % (s,)
 
     def repr_str(self, x, level):
