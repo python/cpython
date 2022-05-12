@@ -139,7 +139,7 @@ To mitigate this issue, :mod:`asyncio` handles :const:`signal.SIGINT` as follows
    execution.
 3. When :const:`signal.SIGINT` is raised by :kbd:`Ctrl-C`, the custom signal handler
    cancels the main task by calling :meth:`asyncio.Task.cancel` which raises
-   :exc:`asyncio.CancelledError` inside the the main task.  This causes the Python stack
+   :exc:`asyncio.CancelledError` inside the main task.  This causes the Python stack
    to unwind, ``try/except`` and ``try/finally`` blocks can be used for resource
    cleanup.  After the main task is cancelled, :meth:`asyncio.Runner.run` raises
    :exc:`KeyboardInterrupt`.

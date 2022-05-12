@@ -116,7 +116,9 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(printed_file.encode('utf-8'), data)
         self.assertIn(printed_package.encode('utf-8'), data)
         self.assertIn(printed_argv0.encode('utf-8'), data)
-        self.assertIn(printed_path0.encode('utf-8'), data)
+        # PYTHONSAFEPATH=1 changes the default sys.path[0]
+        if not sys.flags.safe_path:
+            self.assertIn(printed_path0.encode('utf-8'), data)
         self.assertIn(printed_cwd.encode('utf-8'), data)
 
     def _check_script(self, script_exec_args, expected_file,

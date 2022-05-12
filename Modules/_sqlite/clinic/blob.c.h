@@ -34,7 +34,7 @@ PyDoc_STRVAR(blob_read__doc__,
 "end of the blob.");
 
 #define BLOB_READ_METHODDEF    \
-    {"read", (PyCFunction)(void(*)(void))blob_read, METH_FASTCALL, blob_read__doc__},
+    {"read", _PyCFunction_CAST(blob_read), METH_FASTCALL, blob_read__doc__},
 
 static PyObject *
 blob_read_impl(pysqlite_Blob *self, int length);
@@ -112,7 +112,7 @@ PyDoc_STRVAR(blob_seek__doc__,
 "and os.SEEK_END (seek relative to the blob\'s end).");
 
 #define BLOB_SEEK_METHODDEF    \
-    {"seek", (PyCFunction)(void(*)(void))blob_seek, METH_FASTCALL, blob_seek__doc__},
+    {"seek", _PyCFunction_CAST(blob_seek), METH_FASTCALL, blob_seek__doc__},
 
 static PyObject *
 blob_seek_impl(pysqlite_Blob *self, int offset, int origin);
@@ -162,4 +162,55 @@ blob_tell(pysqlite_Blob *self, PyObject *Py_UNUSED(ignored))
 {
     return blob_tell_impl(self);
 }
-/*[clinic end generated code: output=d3a02b127f2cfa58 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(blob_enter__doc__,
+"__enter__($self, /)\n"
+"--\n"
+"\n"
+"Blob context manager enter.");
+
+#define BLOB_ENTER_METHODDEF    \
+    {"__enter__", (PyCFunction)blob_enter, METH_NOARGS, blob_enter__doc__},
+
+static PyObject *
+blob_enter_impl(pysqlite_Blob *self);
+
+static PyObject *
+blob_enter(pysqlite_Blob *self, PyObject *Py_UNUSED(ignored))
+{
+    return blob_enter_impl(self);
+}
+
+PyDoc_STRVAR(blob_exit__doc__,
+"__exit__($self, type, val, tb, /)\n"
+"--\n"
+"\n"
+"Blob context manager exit.");
+
+#define BLOB_EXIT_METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(blob_exit), METH_FASTCALL, blob_exit__doc__},
+
+static PyObject *
+blob_exit_impl(pysqlite_Blob *self, PyObject *type, PyObject *val,
+               PyObject *tb);
+
+static PyObject *
+blob_exit(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *type;
+    PyObject *val;
+    PyObject *tb;
+
+    if (!_PyArg_CheckPositional("__exit__", nargs, 3, 3)) {
+        goto exit;
+    }
+    type = args[0];
+    val = args[1];
+    tb = args[2];
+    return_value = blob_exit_impl(self, type, val, tb);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=382cbf0977bb158a input=a9049054013a1b77]*/

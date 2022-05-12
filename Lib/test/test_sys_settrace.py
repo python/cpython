@@ -2432,5 +2432,47 @@ output.append(4)
         output.append(5)
 
 
+class TestExtendedArgs(unittest.TestCase):
+
+    def setUp(self):
+        self.addCleanup(sys.settrace, sys.gettrace())
+        sys.settrace(None)
+
+    def count_traces(self, func):
+        # warmup
+        for _ in range(20):
+            func()
+
+        counts = {"call": 0, "line": 0, "return": 0}
+        def trace(frame, event, arg):
+            counts[event] += 1
+            return trace
+
+        sys.settrace(trace)
+        func()
+        sys.settrace(None)
+
+        return counts
+
+    def test_trace_unpack_long_sequence(self):
+        ns = {}
+        code = "def f():\n  (" + "y,\n   "*300 + ") = range(300)"
+        exec(code, ns)
+        counts = self.count_traces(ns["f"])
+        self.assertEqual(counts, {'call': 1, 'line': 301, 'return': 1})
+
+    def test_trace_lots_of_globals(self):
+        code = """if 1:
+            def f():
+                return (
+                    {}
+                )
+        """.format("\n+\n".join(f"var{i}\n" for i in range(1000)))
+        ns = {f"var{i}": i for i in range(1000)}
+        exec(code, ns)
+        counts = self.count_traces(ns["f"])
+        self.assertEqual(counts, {'call': 1, 'line': 2000, 'return': 1})
+
+
 if __name__ == "__main__":
     unittest.main()

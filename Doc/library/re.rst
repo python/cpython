@@ -395,7 +395,8 @@ The special characters are:
 ``(?P<name>...)``
    Similar to regular parentheses, but the substring matched by the group is
    accessible via the symbolic group name *name*.  Group names must be valid
-   Python identifiers, and each group name must be defined only once within a
+   Python identifiers, and in bytes patterns they must contain only characters
+   in the ASCII range.  Each group name must be defined only once within a
    regular expression.  A symbolic group is also a numbered group, just as if
    the group were not named.
 
@@ -416,6 +417,10 @@ The special characters are:
    | argument of ``re.sub()``              | * ``\g<1>``                      |
    |                                       | * ``\1``                         |
    +---------------------------------------+----------------------------------+
+
+   .. versionchanged:: 3.12
+      In bytes patterns group names must contain only characters in
+      the ASCII range.
 
 .. index:: single: (?P=; in regular expressions
 
@@ -485,6 +490,9 @@ The special characters are:
    ``(<)?(\w+@\w+(?:\.\w+)+)(?(1)>|$)`` is a poor email matching pattern, which
    will match with ``'<user@host.com>'`` as well as ``'user@host.com'``, but
    not with ``'<user@host.com'`` nor ``'user@host.com>'``.
+
+   .. versionchanged:: 3.12
+      Group *id* can only contain ASCII digits.
 
 
 The special sequences consist of ``'\'`` and a character from the list below.
@@ -994,6 +1002,11 @@ form.
    .. versionchanged:: 3.7
       Empty matches for the pattern are replaced when adjacent to a previous
       non-empty match.
+
+   .. versionchanged:: 3.12
+      Group *id* can only contain ASCII digits.
+      In bytes replacement strings group names must contain only characters
+      in the ASCII range.
 
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)
