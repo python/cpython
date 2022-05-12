@@ -377,19 +377,19 @@ These APIs can be used for fast direct character conversions:
 
 These APIs can be used to work with surrogates:
 
-.. c:func:: int Py_UNICODE_IS_SURROGATE(Py_UCS4 ch)
+.. c:function:: int Py_UNICODE_IS_SURROGATE(Py_UCS4 ch)
 
    Check if *ch* is a surrogate (``0xD800 <= ch <= 0xDFFF``).
 
-.. c:func:: int Py_UNICODE_IS_HIGH_SURROGATE(Py_UCS4 ch)
+.. c:function:: int Py_UNICODE_IS_HIGH_SURROGATE(Py_UCS4 ch)
 
    Check if *ch* is a high surrogate (``0xD800 <= ch <= 0xDBFF``).
 
-.. c:func:: int Py_UNICODE_IS_LOW_SURROGATE(Py_UCS4 ch)
+.. c:function:: int Py_UNICODE_IS_LOW_SURROGATE(Py_UCS4 ch)
 
    Check if *ch* is a low surrogate (``0xDC00 <= ch <= 0xDFFF``).
 
-.. c:func:: Py_UCS4 Py_UNICODE_JOIN_SURROGATES(Py_UCS4 high, Py_UCS4 low)
+.. c:function:: Py_UCS4 Py_UNICODE_JOIN_SURROGATES(Py_UCS4 high, Py_UCS4 low)
 
    Join two surrogate characters and return a single :c:type:`Py_UCS4` value.
    *high* and *low* are respectively the leading and trailing surrogates in a
