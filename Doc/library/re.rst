@@ -1315,6 +1315,14 @@ Match objects support the following methods and attributes:
       >>> m[2]       # The second parenthesized subgroup.
       'Newton'
 
+   Named groups are supported too::
+
+      >>> m = re.match(r"(?P<first_name>\w+) (?P<last_name>\w+)", "Isaac Newton")
+      >>> m['first_name']
+      'Isaac'
+      >>> m['last_name']
+      'Newton'
+
    .. versionadded:: 3.6
 
 
