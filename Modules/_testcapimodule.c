@@ -1991,116 +1991,6 @@ exit:
     return return_value;
 }
 
-static volatile int x;
-
-#if USE_UNICODE_WCHAR_CACHE
-/* Ignore use of deprecated APIs */
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-
-/* Test the u and u# codes for PyArg_ParseTuple. May leak memory in case
-   of an error.
-*/
-static PyObject *
-test_u_code(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *tuple, *obj;
-    Py_UNICODE *value;
-    Py_ssize_t len;
-
-    /* issue4122: Undefined reference to _Py_ascii_whitespace on Windows */
-    /* Just use the macro and check that it compiles */
-    x = Py_UNICODE_ISSPACE(25);
-
-    tuple = PyTuple_New(1);
-    if (tuple == NULL)
-        return NULL;
-
-    obj = PyUnicode_Decode("test", strlen("test"),
-                           "ascii", NULL);
-    if (obj == NULL)
-        return NULL;
-
-    PyTuple_SET_ITEM(tuple, 0, obj);
-
-    value = 0;
-    if (!PyArg_ParseTuple(tuple, "u:test_u_code", &value)) {
-        return NULL;
-    }
-    if (value != PyUnicode_AS_UNICODE(obj))
-        return raiseTestError("test_u_code",
-            "u code returned wrong value for u'test'");
-    value = 0;
-    if (!PyArg_ParseTuple(tuple, "u#:test_u_code", &value, &len)) {
-        return NULL;
-    }
-    if (value != PyUnicode_AS_UNICODE(obj) ||
-        len != PyUnicode_GET_SIZE(obj))
-        return raiseTestError("test_u_code",
-            "u# code returned wrong values for u'test'");
-
-    Py_DECREF(tuple);
-    Py_RETURN_NONE;
-}
-
-/* Test Z and Z# codes for PyArg_ParseTuple */
-static PyObject *
-test_Z_code(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *tuple, *obj;
-    const Py_UNICODE *value1, *value2;
-    Py_ssize_t len1, len2;
-
-    tuple = PyTuple_New(2);
-    if (tuple == NULL)
-        return NULL;
-
-    obj = PyUnicode_FromString("test");
-    PyTuple_SET_ITEM(tuple, 0, obj);
-    Py_INCREF(Py_None);
-    PyTuple_SET_ITEM(tuple, 1, Py_None);
-
-    /* swap values on purpose */
-    value1 = NULL;
-    value2 = PyUnicode_AS_UNICODE(obj);
-
-    /* Test Z for both values */
-    if (!PyArg_ParseTuple(tuple, "ZZ:test_Z_code", &value1, &value2)) {
-        return NULL;
-    }
-    if (value1 != PyUnicode_AS_UNICODE(obj))
-        return raiseTestError("test_Z_code",
-            "Z code returned wrong value for 'test'");
-    if (value2 != NULL)
-        return raiseTestError("test_Z_code",
-            "Z code returned wrong value for None");
-
-    value1 = NULL;
-    value2 = PyUnicode_AS_UNICODE(obj);
-    len1 = -1;
-    len2 = -1;
-
-    /* Test Z# for both values */
-    if (!PyArg_ParseTuple(tuple, "Z#Z#:test_Z_code", &value1, &len1,
-                          &value2, &len2))
-    {
-        return NULL;
-    }
-    if (value1 != PyUnicode_AS_UNICODE(obj) ||
-        len1 != PyUnicode_GET_SIZE(obj))
-        return raiseTestError("test_Z_code",
-            "Z# code returned wrong values for 'test'");
-    if (value2 != NULL ||
-        len2 != 0)
-        return raiseTestError("test_Z_code",
-            "Z# code returned wrong values for None'");
-
-    Py_DECREF(tuple);
-    Py_RETURN_NONE;
-}
-_Py_COMP_DIAG_POP
-#endif /* USE_UNICODE_WCHAR_CACHE */
-
 static PyObject *
 test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
@@ -2151,35 +2041,7 @@ test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
     else
         return raiseTestError("test_widechar",
                               "PyUnicode_FromWideChar(L\"\\U00110000\", 1) didn't fail");
-
-#if USE_UNICODE_WCHAR_CACHE
-/* Ignore use of deprecated APIs */
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    wide = PyUnicode_FromUnicode(invalid, 1);
-    if (wide == NULL)
-        PyErr_Clear();
-    else
-        return raiseTestError("test_widechar",
-                              "PyUnicode_FromUnicode(L\"\\U00110000\", 1) didn't fail");
-
-    wide = PyUnicode_FromUnicode(NULL, 1);
-    if (wide == NULL)
-        return NULL;
-    PyUnicode_AS_UNICODE(wide)[0] = invalid[0];
-    if (_PyUnicode_Ready(wide) < 0) {
-        Py_DECREF(wide);
-        PyErr_Clear();
-    }
-    else {
-        Py_DECREF(wide);
-        return raiseTestError("test_widechar",
-                              "PyUnicode_Ready() didn't fail");
-    }
-_Py_COMP_DIAG_POP
-#endif /* USE_UNICODE_WCHAR_CACHE */
 #endif
-
     Py_RETURN_NONE;
 }
 
@@ -2356,36 +2218,6 @@ unicode_copycharacters(PyObject *self, PyObject *args)
 
     return Py_BuildValue("(Nn)", to_copy, copied);
 }
-
-#if USE_UNICODE_WCHAR_CACHE
-/* Ignore use of deprecated APIs */
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-
-static PyObject *
-unicode_legacy_string(PyObject *self, PyObject *args)
-{
-    Py_UNICODE *data;
-    Py_ssize_t len;
-    PyObject *u;
-
-    if (!PyArg_ParseTuple(args, "u#", &data, &len))
-        return NULL;
-
-    u = PyUnicode_FromUnicode(NULL, len);
-    if (u == NULL)
-        return NULL;
-
-    memcpy(PyUnicode_AS_UNICODE(u), data, len * sizeof(Py_UNICODE));
-
-    if (len > 0) { /* The empty string is always ready. */
-        assert(!PyUnicode_IS_READY(u));
-    }
-
-    return u;
-}
-_Py_COMP_DIAG_POP
-#endif /* USE_UNICODE_WCHAR_CACHE */
 
 static PyObject *
 getargs_w_star(PyObject *self, PyObject *args)
@@ -6092,10 +5924,6 @@ static PyMethodDef TestMethods[] = {
     {"codec_incrementaldecoder",
      (PyCFunction)codec_incrementaldecoder,                      METH_VARARGS},
     {"test_s_code",             test_s_code,                     METH_NOARGS},
-#if USE_UNICODE_WCHAR_CACHE
-    {"test_u_code",             test_u_code,                     METH_NOARGS},
-    {"test_Z_code",             test_Z_code,                     METH_NOARGS},
-#endif /* USE_UNICODE_WCHAR_CACHE */
     {"test_widechar",           test_widechar,                   METH_NOARGS},
     {"unicode_aswidechar",      unicode_aswidechar,              METH_VARARGS},
     {"unicode_aswidecharstring",unicode_aswidecharstring,        METH_VARARGS},
@@ -6104,9 +5932,6 @@ static PyMethodDef TestMethods[] = {
     {"unicode_asutf8andsize",   unicode_asutf8andsize,           METH_VARARGS},
     {"unicode_findchar",        unicode_findchar,                METH_VARARGS},
     {"unicode_copycharacters",  unicode_copycharacters,          METH_VARARGS},
-#if USE_UNICODE_WCHAR_CACHE
-    {"unicode_legacy_string",   unicode_legacy_string,           METH_VARARGS},
-#endif /* USE_UNICODE_WCHAR_CACHE */
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
     {"_pending_threadfunc",     pending_threadfunc,              METH_VARARGS},
 #ifdef HAVE_GETTIMEOFDAY
