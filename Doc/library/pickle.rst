@@ -517,9 +517,9 @@ structure may exceed the maximum recursion depth, a :exc:`RecursionError` will b
 raised in this case.  You can carefully raise this limit with
 :func:`sys.setrecursionlimit`.
 
-Note that functions (built-in and user-defined) are pickled by fully qualified
-name, not by value. [#]_  This means that only the function name is
-pickled, along with the name of the module the function is defined in.  Neither
+Note that functions (built-in and user-defined) are pickled by fully
+:term:`qualified name`, not by value. [#]_  This means that only the function name is
+pickled, along with the name of the containing module and classes.  Neither
 the function's code, nor any of its function attributes are pickled.  Thus the
 defining module must be importable in the unpickling environment, and the module
 must contain the named object, otherwise an exception will be raised. [#]_
