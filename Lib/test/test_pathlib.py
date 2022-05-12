@@ -1693,10 +1693,15 @@ class _BasePathTest(object):
                 "dirA", "dirA/linkC", "dirB", "dirB/linkD", "dirC",
                 "dirC/dirD", "dirE", "linkB",
             ])
+        _check(p.rglob(""), ["", "dirA", "dirB", "dirC", "dirE", "dirC/dirD"])
 
         p = P(BASE, "dirC")
+        _check(p.rglob("*"), ["dirC/fileC", "dirC/novel.txt",
+                              "dirC/dirD", "dirC/dirD/fileD"])
         _check(p.rglob("file*"), ["dirC/fileC", "dirC/dirD/fileD"])
         _check(p.rglob("*/*"), ["dirC/dirD/fileD"])
+        _check(p.rglob("*/"), ["dirC/dirD"])
+        _check(p.rglob(""), ["dirC", "dirC/dirD"])
         # gh-91616, a re module regression
         _check(p.rglob("*.txt"), ["dirC/novel.txt"])
         _check(p.rglob("*.*"), ["dirC/novel.txt"])

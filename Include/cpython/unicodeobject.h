@@ -11,53 +11,37 @@
 
 /* --- Internal Unicode Operations ---------------------------------------- */
 
-/* Since splitting on whitespace is an important use case, and
-   whitespace in most situations is solely ASCII whitespace, we
-   optimize for the common case by using a quick look-up table
-   _Py_ascii_whitespace (see below) with an inlined check.
+// Static inline functions to work with surrogates
+static inline int Py_UNICODE_IS_SURROGATE(Py_UCS4 ch) {
+    return (0xD800 <= ch && ch <= 0xDFFF);
+}
+static inline int Py_UNICODE_IS_HIGH_SURROGATE(Py_UCS4 ch) {
+    return (0xD800 <= ch && ch <= 0xDBFF);
+}
+static inline int Py_UNICODE_IS_LOW_SURROGATE(Py_UCS4 ch) {
+    return (0xDC00 <= ch && ch <= 0xDFFF);
+}
 
- */
-#define Py_UNICODE_ISSPACE(ch) \
-    ((Py_UCS4)(ch) < 128U ? _Py_ascii_whitespace[(ch)] : _PyUnicode_IsWhitespace(ch))
+// Join two surrogate characters and return a single Py_UCS4 value.
+static inline Py_UCS4 Py_UNICODE_JOIN_SURROGATES(Py_UCS4 high, Py_UCS4 low)  {
+    assert(Py_UNICODE_IS_HIGH_SURROGATE(high));
+    assert(Py_UNICODE_IS_LOW_SURROGATE(low));
+    return 0x10000 + (((high & 0x03FF) << 10) | (low & 0x03FF));
+}
 
-#define Py_UNICODE_ISLOWER(ch) _PyUnicode_IsLowercase(ch)
-#define Py_UNICODE_ISUPPER(ch) _PyUnicode_IsUppercase(ch)
-#define Py_UNICODE_ISTITLE(ch) _PyUnicode_IsTitlecase(ch)
-#define Py_UNICODE_ISLINEBREAK(ch) _PyUnicode_IsLinebreak(ch)
+// High surrogate = top 10 bits added to 0xD800.
+// The character must be in the range [U+10000; U+10ffff].
+static inline Py_UCS4 Py_UNICODE_HIGH_SURROGATE(Py_UCS4 ch) {
+    assert(0x10000 <= ch && ch <= 0x10ffff);
+    return (0xD800 - (0x10000 >> 10) + (ch >> 10));
+}
 
-#define Py_UNICODE_TOLOWER(ch) _PyUnicode_ToLowercase(ch)
-#define Py_UNICODE_TOUPPER(ch) _PyUnicode_ToUppercase(ch)
-#define Py_UNICODE_TOTITLE(ch) _PyUnicode_ToTitlecase(ch)
-
-#define Py_UNICODE_ISDECIMAL(ch) _PyUnicode_IsDecimalDigit(ch)
-#define Py_UNICODE_ISDIGIT(ch) _PyUnicode_IsDigit(ch)
-#define Py_UNICODE_ISNUMERIC(ch) _PyUnicode_IsNumeric(ch)
-#define Py_UNICODE_ISPRINTABLE(ch) _PyUnicode_IsPrintable(ch)
-
-#define Py_UNICODE_TODECIMAL(ch) _PyUnicode_ToDecimalDigit(ch)
-#define Py_UNICODE_TODIGIT(ch) _PyUnicode_ToDigit(ch)
-#define Py_UNICODE_TONUMERIC(ch) _PyUnicode_ToNumeric(ch)
-
-#define Py_UNICODE_ISALPHA(ch) _PyUnicode_IsAlpha(ch)
-
-#define Py_UNICODE_ISALNUM(ch) \
-   (Py_UNICODE_ISALPHA(ch) || \
-    Py_UNICODE_ISDECIMAL(ch) || \
-    Py_UNICODE_ISDIGIT(ch) || \
-    Py_UNICODE_ISNUMERIC(ch))
-
-/* macros to work with surrogates */
-#define Py_UNICODE_IS_SURROGATE(ch) (0xD800 <= (ch) && (ch) <= 0xDFFF)
-#define Py_UNICODE_IS_HIGH_SURROGATE(ch) (0xD800 <= (ch) && (ch) <= 0xDBFF)
-#define Py_UNICODE_IS_LOW_SURROGATE(ch) (0xDC00 <= (ch) && (ch) <= 0xDFFF)
-/* Join two surrogate characters and return a single Py_UCS4 value. */
-#define Py_UNICODE_JOIN_SURROGATES(high, low)  \
-    (((((Py_UCS4)(high) & 0x03FF) << 10) |      \
-      ((Py_UCS4)(low) & 0x03FF)) + 0x10000)
-/* high surrogate = top 10 bits added to D800 */
-#define Py_UNICODE_HIGH_SURROGATE(ch) (0xD800 - (0x10000 >> 10) + ((ch) >> 10))
-/* low surrogate = bottom 10 bits added to DC00 */
-#define Py_UNICODE_LOW_SURROGATE(ch) (0xDC00 + ((ch) & 0x3FF))
+// Low surrogate = bottom 10 bits added to 0xDC00.
+// The character must be in the range [U+10000; U+10ffff].
+static inline Py_UCS4 Py_UNICODE_LOW_SURROGATE(Py_UCS4 ch) {
+    assert(0x10000 <= ch && ch <= 0x10ffff);
+    return (0xDC00 + (ch & 0x3FF));
+}
 
 /* --- Unicode Type ------------------------------------------------------- */
 
@@ -309,7 +293,7 @@ static inline Py_ssize_t PyUnicode_GET_LENGTH(PyObject *op) {
    kind and data pointers obtained from other function calls.
    index is the index in the string (starts at 0) and value is the new
    code point value which should be written to that location. */
-static inline void PyUnicode_WRITE(unsigned int kind, void *data,
+static inline void PyUnicode_WRITE(int kind, void *data,
                                    Py_ssize_t index, Py_UCS4 value)
 {
     if (kind == PyUnicode_1BYTE_KIND) {
@@ -326,12 +310,15 @@ static inline void PyUnicode_WRITE(unsigned int kind, void *data,
         _Py_STATIC_CAST(Py_UCS4*, data)[index] = value;
     }
 }
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #define PyUnicode_WRITE(kind, data, index, value) \
-    PyUnicode_WRITE((unsigned int)(kind), (void*)(data), (index), (Py_UCS4)(value))
+    PyUnicode_WRITE(_Py_STATIC_CAST(int, kind), _Py_CAST(void*, data), \
+                    (index), _Py_STATIC_CAST(Py_UCS4, value))
+#endif
 
 /* Read a code point from the string's canonical representation.  No checks
    or ready calls are performed. */
-static inline Py_UCS4 PyUnicode_READ(unsigned int kind,
+static inline Py_UCS4 PyUnicode_READ(int kind,
                                      const void *data, Py_ssize_t index)
 {
     if (kind == PyUnicode_1BYTE_KIND) {
@@ -343,8 +330,11 @@ static inline Py_UCS4 PyUnicode_READ(unsigned int kind,
     assert(kind == PyUnicode_4BYTE_KIND);
     return _Py_STATIC_CAST(const Py_UCS4*, data)[index];
 }
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #define PyUnicode_READ(kind, data, index) \
-    PyUnicode_READ((unsigned int)(kind), (const void*)(data), (index))
+    PyUnicode_READ(_Py_STATIC_CAST(int, kind), _Py_CAST(const void*, data), \
+                   (index))
+#endif
 
 /* PyUnicode_READ_CHAR() is less efficient than PyUnicode_READ() because it
    calls PyUnicode_KIND() and might call it twice.  For single reads, use
@@ -352,7 +342,7 @@ static inline Py_UCS4 PyUnicode_READ(unsigned int kind,
    cache kind and use PyUnicode_READ instead. */
 static inline Py_UCS4 PyUnicode_READ_CHAR(PyObject *unicode, Py_ssize_t index)
 {
-    unsigned int kind = PyUnicode_KIND(unicode);
+    int kind = PyUnicode_KIND(unicode);
     if (kind == PyUnicode_1BYTE_KIND) {
         return PyUnicode_1BYTE_DATA(unicode)[index];
     }
@@ -376,7 +366,7 @@ static inline Py_UCS4 PyUnicode_MAX_CHAR_VALUE(PyObject *op)
         return 0x7fU;
     }
 
-    unsigned int kind = PyUnicode_KIND(op);
+    int kind = PyUnicode_KIND(op);
     if (kind == PyUnicode_1BYTE_KIND) {
        return 0xffU;
     }
@@ -808,10 +798,6 @@ PyAPI_FUNC(Py_ssize_t) _PyUnicode_InsertThousandsGrouping(
 
 /* === Characters Type APIs =============================================== */
 
-/* Helper array used by Py_UNICODE_ISSPACE(). */
-
-PyAPI_DATA(const unsigned char) _Py_ascii_whitespace[];
-
 /* These should not be used directly. Use the Py_UNICODE_IS* and
    Py_UNICODE_TO* macros instead.
 
@@ -918,6 +904,50 @@ PyAPI_FUNC(int) _PyUnicode_IsPrintable(
 PyAPI_FUNC(int) _PyUnicode_IsAlpha(
     Py_UCS4 ch       /* Unicode character */
     );
+
+// Helper array used by Py_UNICODE_ISSPACE().
+PyAPI_DATA(const unsigned char) _Py_ascii_whitespace[];
+
+// Since splitting on whitespace is an important use case, and
+// whitespace in most situations is solely ASCII whitespace, we
+// optimize for the common case by using a quick look-up table
+// _Py_ascii_whitespace (see below) with an inlined check.
+static inline int Py_UNICODE_ISSPACE(Py_UCS4 ch) {
+    if (ch < 128) {
+        return _Py_ascii_whitespace[ch];
+    }
+    return _PyUnicode_IsWhitespace(ch);
+}
+
+#define Py_UNICODE_ISLOWER(ch) _PyUnicode_IsLowercase(ch)
+#define Py_UNICODE_ISUPPER(ch) _PyUnicode_IsUppercase(ch)
+#define Py_UNICODE_ISTITLE(ch) _PyUnicode_IsTitlecase(ch)
+#define Py_UNICODE_ISLINEBREAK(ch) _PyUnicode_IsLinebreak(ch)
+
+#define Py_UNICODE_TOLOWER(ch) _PyUnicode_ToLowercase(ch)
+#define Py_UNICODE_TOUPPER(ch) _PyUnicode_ToUppercase(ch)
+#define Py_UNICODE_TOTITLE(ch) _PyUnicode_ToTitlecase(ch)
+
+#define Py_UNICODE_ISDECIMAL(ch) _PyUnicode_IsDecimalDigit(ch)
+#define Py_UNICODE_ISDIGIT(ch) _PyUnicode_IsDigit(ch)
+#define Py_UNICODE_ISNUMERIC(ch) _PyUnicode_IsNumeric(ch)
+#define Py_UNICODE_ISPRINTABLE(ch) _PyUnicode_IsPrintable(ch)
+
+#define Py_UNICODE_TODECIMAL(ch) _PyUnicode_ToDecimalDigit(ch)
+#define Py_UNICODE_TODIGIT(ch) _PyUnicode_ToDigit(ch)
+#define Py_UNICODE_TONUMERIC(ch) _PyUnicode_ToNumeric(ch)
+
+#define Py_UNICODE_ISALPHA(ch) _PyUnicode_IsAlpha(ch)
+
+static inline int Py_UNICODE_ISALNUM(Py_UCS4 ch) {
+   return (Py_UNICODE_ISALPHA(ch)
+           || Py_UNICODE_ISDECIMAL(ch)
+           || Py_UNICODE_ISDIGIT(ch)
+           || Py_UNICODE_ISNUMERIC(ch));
+}
+
+
+/* === Misc functions ===================================================== */
 
 PyAPI_FUNC(PyObject*) _PyUnicode_FormatLong(PyObject *, int, int, int);
 
