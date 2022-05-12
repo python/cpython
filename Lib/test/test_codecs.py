@@ -8,7 +8,7 @@ import encodings
 from unittest import mock
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, warnings_helper
 
 try:
     import _testcapi
@@ -2711,6 +2711,11 @@ transform_aliases = {
     "rot_13": ["rot13"],
 }
 
+deprecated_transforms = {
+    "uu_codec",
+}
+
+
 try:
     import zlib
 except ImportError:
@@ -2727,6 +2732,14 @@ else:
     transform_aliases["bz2_codec"] = ["bz2"]
 
 
+def _check_transform_warning(encoding):
+    """Helper to check that deprecated transforms warn and silence them."""
+    if encoding not in deprecated_transforms:
+        return contextlib.nullcontext()
+    return warnings_helper.check_warnings(
+        (f".*({encoding}).*", DeprecationWarning))
+
+
 class TransformCodecTest(unittest.TestCase):
 
     def test_basics(self):
@@ -2734,26 +2747,30 @@ class TransformCodecTest(unittest.TestCase):
         for encoding in bytes_transform_encodings:
             with self.subTest(encoding=encoding):
                 # generic codecs interface
-                (o, size) = codecs.getencoder(encoding)(binput)
+                with _check_transform_warning(encoding):
+                    (o, size) = codecs.getencoder(encoding)(binput)
                 self.assertEqual(size, len(binput))
-                (i, size) = codecs.getdecoder(encoding)(o)
+                with _check_transform_warning(encoding):
+                    (i, size) = codecs.getdecoder(encoding)(o)
                 self.assertEqual(size, len(o))
                 self.assertEqual(i, binput)
 
     def test_read(self):
         for encoding in bytes_transform_encodings:
             with self.subTest(encoding=encoding):
-                sin = codecs.encode(b"\x80", encoding)
-                reader = codecs.getreader(encoding)(io.BytesIO(sin))
-                sout = reader.read()
+                with _check_transform_warning(encoding):
+                    sin = codecs.encode(b"\x80", encoding)
+                    reader = codecs.getreader(encoding)(io.BytesIO(sin))
+                    sout = reader.read()
                 self.assertEqual(sout, b"\x80")
 
     def test_readline(self):
         for encoding in bytes_transform_encodings:
             with self.subTest(encoding=encoding):
-                sin = codecs.encode(b"\x80", encoding)
-                reader = codecs.getreader(encoding)(io.BytesIO(sin))
-                sout = reader.readline()
+                with _check_transform_warning(encoding):
+                    sin = codecs.encode(b"\x80", encoding)
+                    reader = codecs.getreader(encoding)(io.BytesIO(sin))
+                    sout = reader.readline()
                 self.assertEqual(sout, b"\x80")
 
     def test_buffer_api_usage(self):
@@ -2765,13 +2782,16 @@ class TransformCodecTest(unittest.TestCase):
             with self.subTest(encoding=encoding):
                 data = original
                 view = memoryview(data)
-                data = codecs.encode(data, encoding)
-                view_encoded = codecs.encode(view, encoding)
+                with _check_transform_warning(encoding):
+                    data = codecs.encode(data, encoding)
+                    view_encoded = codecs.encode(view, encoding)
                 self.assertEqual(view_encoded, data)
                 view = memoryview(data)
-                data = codecs.decode(data, encoding)
+                with _check_transform_warning(encoding):
+                    data = codecs.decode(data, encoding)
                 self.assertEqual(data, original)
-                view_decoded = codecs.decode(view, encoding)
+                with _check_transform_warning(encoding):
+                    view_decoded = codecs.decode(view, encoding)
                 self.assertEqual(view_decoded, data)
 
     def test_text_to_binary_denylists_binary_transforms(self):
@@ -2799,7 +2819,8 @@ class TransformCodecTest(unittest.TestCase):
         data = b"encode first to ensure we meet any format restrictions"
         for encoding in bytes_transform_encodings:
             with self.subTest(encoding=encoding):
-                encoded_data = codecs.encode(data, encoding)
+                with _check_transform_warning(encoding):
+                    encoded_data = codecs.encode(data, encoding)
                 fmt = (r"{!r} is not a text encoding; "
                        r"use codecs.decode\(\) to handle arbitrary codecs")
                 msg = fmt.format(encoding)
@@ -2857,7 +2878,8 @@ class TransformCodecTest(unittest.TestCase):
 
     def test_uu_invalid(self):
         # Missing "begin" line
-        self.assertRaises(ValueError, codecs.decode, b"", "uu-codec")
+        with _check_transform_warning("uu_codec"):
+            self.assertRaises(ValueError, codecs.decode, b"", "uu-codec")
 
 
 # The codec system tries to wrap exceptions in order to ensure the error
