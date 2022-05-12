@@ -1,0 +1,1 @@
+Added double hex hash function for increased security
