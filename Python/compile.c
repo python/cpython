@@ -3061,8 +3061,7 @@ warn_constant_true_or_false(struct compiler *c, PyObject *constant)
     }
     const char *msg = istrue ? "%R is always true"
                              : "%R is always false";
-    compiler_warn(c, msg, constant);
-    return 1;
+    return compiler_warn(c, msg, constant);
 }
 
 // Warn on `if condition == 1 or 2`.
