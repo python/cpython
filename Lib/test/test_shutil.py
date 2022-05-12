@@ -1294,6 +1294,7 @@ class TestCopy(BaseTest, unittest.TestCase):
         self.assertEqual(read_file(src_file), 'foo')
 
     @unittest.skipIf(MACOS or SOLARIS or _winapi, 'On MACOS, Solaris and Windows the errors are not confusing (though different)')
+    @unittest.skipIf(AIX, 'Not valid on AIX, see issue #92670')
     def test_copyfile_nonexistent_dir(self):
         # Issue 43219
         src_dir = self.mkdtemp()
