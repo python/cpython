@@ -485,50 +485,44 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertEqual(rint, 0)
 
     def test_randrange_errors(self):
-        raises = partial(self.assertRaises, ValueError, self.gen.randrange)
-        # Empty range
-        raises(3, 3)
-        raises(-721)
-        raises(0, 100, -12)
-        # Non-integer start/stop
-        self.assertWarns(DeprecationWarning, raises, 3.14159)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 3.0)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, Fraction(3, 1))
-        self.assertWarns(DeprecationWarning, raises, '3')
-        self.assertWarns(DeprecationWarning, raises, 0, 2.71828)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 2.0)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, Fraction(2, 1))
-        self.assertWarns(DeprecationWarning, raises, 0, '2')
-        # Zero and non-integer step
-        raises(0, 42, 0)
-        self.assertWarns(DeprecationWarning, raises, 0, 42, 0.0)
-        self.assertWarns(DeprecationWarning, raises, 0, 0, 0.0)
-        self.assertWarns(DeprecationWarning, raises, 0, 42, 3.14159)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, 3.0)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, Fraction(3, 1))
-        self.assertWarns(DeprecationWarning, raises, 0, 42, '3')
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, 1.0)
-        self.assertWarns(DeprecationWarning, raises, 0, 0, 1.0)
+        raises_value_error = partial(self.assertRaises, ValueError, self.gen.randrange)
+        raises_type_error = partial(self.assertRaises, TypeError, self.gen.randrange)
 
-    def test_randrange_argument_handling(self):
-        randrange = self.gen.randrange
-        with self.assertWarns(DeprecationWarning):
-            randrange(10.0, 20, 2)
-        with self.assertWarns(DeprecationWarning):
-            randrange(10, 20.0, 2)
-        with self.assertWarns(DeprecationWarning):
-            randrange(10, 20, 1.0)
-        with self.assertWarns(DeprecationWarning):
-            randrange(10, 20, 2.0)
-        with self.assertWarns(DeprecationWarning):
-            with self.assertRaises(ValueError):
-                randrange(10.5)
-        with self.assertWarns(DeprecationWarning):
-            with self.assertRaises(ValueError):
-                randrange(10, 20.5)
-        with self.assertWarns(DeprecationWarning):
-            with self.assertRaises(ValueError):
-                randrange(10, 20, 1.5)
+        # Empty range
+        raises_value_error(3, 3)
+        raises_value_error(-721)
+        raises_value_error(0, 100, -12)
+
+        # Zero step
+        raises_value_error(0, 42, 0)
+        raises_type_error(0, 42, 0.0)
+        raises_type_error(0, 0, 0.0)
+
+        # Non-integer stop
+        raises_type_error(3.14159)
+        raises_type_error(3.0)
+        raises_type_error(Fraction(3, 1))
+        raises_type_error('3')
+        raises_type_error(0, 2.71827)
+        raises_type_error(0, 2.0)
+        raises_type_error(0, Fraction(2, 1))
+        raises_type_error(0, '2')
+        raises_type_error(0, 2.71827, 2)
+
+        # Non-integer start
+        raises_type_error(2.71827, 5)
+        raises_type_error(2.0, 5)
+        raises_type_error(Fraction(2, 1), 5)
+        raises_type_error('2', 5)
+        raises_type_error(2.71827, 5, 2)
+
+        # Non-integer step
+        raises_type_error(0, 42, 3.14159)
+        raises_type_error(0, 42, 3.0)
+        raises_type_error(0, 42, Fraction(3, 1))
+        raises_type_error(0, 42, '3')
+        raises_type_error(0, 42, 1.0)
+        raises_type_error(0, 0, 1.0)
 
     def test_randrange_step(self):
         # bpo-42772: When stop is None, the step argument was being ignored.
