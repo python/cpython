@@ -227,6 +227,10 @@ Here are the methods of the :class:`Message` class:
       replaced by :meth:`~email.message.EmailMessage.get_content` and
       :meth:`~email.message.EmailMessage.iter_parts`.
 
+      .. deprecated-removed:: 3.11 3.13
+         Decoding legacy uuencode payloads (with ``decode=True``) is deprecated
+         (see :pep:`PEP 594 <594#uu-and-the-uu-encoding>` for details).
+
 
    .. method:: set_payload(payload, charset=None)
 
