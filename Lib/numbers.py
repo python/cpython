@@ -15,7 +15,7 @@ TODO: Fill out more detailed documentation on the operators."""
 # new mixin method, registered classes would become non-compliant and
 # violate the contract promised by ``isinstance(someobj, SomeABC)``.
 #
-# Though irritating, the correct procedure for adding a new abstract or
+# Though irritating, the correct procedure for adding new abstract or
 # mixin methods is to create a new class as a subclass of the previous
 # class.
 #
