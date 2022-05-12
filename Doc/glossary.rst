@@ -1199,8 +1199,9 @@ Glossary
       A manner of interpreting text streams in which all of the following are
       recognized as ending a line: the Unix end-of-line convention ``'\n'``,
       the Windows convention ``'\r\n'``, and the old Macintosh convention
-      ``'\r'``.  See :pep:`278` and :pep:`3116`, as well as
-      :func:`bytes.splitlines` for an additional use.
+      ``'\r'``.  See :pep:`278` and :pep:`3116`,
+      :func:`bytes.splitlines` for an additional use, and
+      :func:`str.splitlines` for a list of line boundaries.
 
    variable annotation
       An :term:`annotation` of a variable or a class attribute.
