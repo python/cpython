@@ -7,13 +7,15 @@ adapted from uu.py which was written by Lance Ellinghouse and
 modified by Jack Jansen and Fredrik Lundh.
 """
 
-import codecs
 import binascii
+import codecs
+import warnings
 from io import BytesIO
 
 ### Codec APIs
 
 def uu_encode(input, errors='strict', filename='<data>', mode=0o666):
+    warnings._deprecated(__name__, remove=(3, 13))
     assert errors == 'strict'
     infile = BytesIO(input)
     outfile = BytesIO()
@@ -35,6 +37,7 @@ def uu_encode(input, errors='strict', filename='<data>', mode=0o666):
     return (outfile.getvalue(), len(input))
 
 def uu_decode(input, errors='strict'):
+    warnings._deprecated(__name__, remove=(3, 13))
     assert errors == 'strict'
     infile = BytesIO(input)
     outfile = BytesIO()
