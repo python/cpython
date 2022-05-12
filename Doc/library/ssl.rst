@@ -714,7 +714,7 @@ Constants
    Selects SSL version 2 as the channel encryption protocol.
 
    This protocol is not available if OpenSSL is compiled with the
-   ``OPENSSL_NO_SSL2`` flag.
+   ``OPENSSL_NO_SSLv2`` flag.
 
    .. warning::
 
