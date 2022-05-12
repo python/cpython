@@ -2387,7 +2387,7 @@ clean-retain-profile: pycremoval
 	-rm -f Python/deepfreeze/*.[co]
 	-rm -f Python/frozen_modules/*.h
 	-rm -f Python/frozen_modules/MANIFEST
-	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
+	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';' || true
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp
 
