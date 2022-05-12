@@ -242,9 +242,23 @@ enum PyUnicode_Kind {
     PyUnicode_4BYTE_KIND = 4
 };
 
-/* Return one of the PyUnicode_*_KIND values defined above. */
+// PyUnicode_KIND(): Return one of the PyUnicode_*_KIND values defined above.
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+// gh-89653: Converting this macro to a static inline function would introduce
+// new compiler warnings on "kind < PyUnicode_KIND(str)" (compare signed and
+// unsigned numbers) where kind type is an int or on
+// "unsigned int kind = PyUnicode_KIND(str)" (cast signed to unsigned).
+// Only declare the function as static inline function in the limited C API
+// version 3.12 which is stricter.
 #define PyUnicode_KIND(op) \
     (_PyASCIIObject_CAST(op)->state.kind)
+#else
+// Limited C API 3.12 and newer
+static inline int PyUnicode_KIND(PyObject *op) {
+    assert(PyUnicode_IS_READY(op));
+    return _PyASCIIObject_CAST(op)->state.kind;
+}
+#endif
 
 /* Return a void pointer to the raw unicode buffer. */
 static inline void* _PyUnicode_COMPACT_DATA(PyObject *op) {
