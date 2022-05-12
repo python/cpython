@@ -16,8 +16,8 @@ TODO: Fill out more detailed documentation on the operators."""
 # violate the contract promised by ``isinstance(someobj, SomeABC)``.
 #
 # Though irritating, the correct procedure for adding new abstract or
-# mixin methods is to create a new class as a subclass of the previous
-# class.
+# mixin methods is to create a new ABC as a subclass of the previous
+# ABC.
 #
 # Because they are so hard to change, new ABCs should have their APIs
 # carefully thought through prior to publication.

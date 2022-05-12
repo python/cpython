@@ -17,8 +17,8 @@ Unit tests are in test_collections.
 # violate the contract promised by ``isinstance(someobj, SomeABC)``.
 #
 # Though irritating, the correct procedure for adding new abstract or
-# mixin methods is to create a new class as a subclass of the previous
-# class.  For example, union(), intersection(), and difference() cannot
+# mixin methods is to create a new ABC as a subclass of the previous
+# ABC.  For example, union(), intersection(), and difference() cannot
 # be added to Set but could go into a new ABC that extends Set.
 #
 # Because they are so hard to change, new ABCs should have their APIs
