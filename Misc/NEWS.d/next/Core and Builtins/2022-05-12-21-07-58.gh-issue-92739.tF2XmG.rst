@@ -1,0 +1,1 @@
+Emit ``SyntaxWarning`` on if-statements containing boolean and/or expressions in which one sub-expression is always true or always false.
