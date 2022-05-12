@@ -1024,9 +1024,6 @@ class EnumType(type):
         """
         if not bases:
             return object, Enum
-
-        mcls._check_for_existing_members_(class_name, bases)
-
         # ensure final parent class is an Enum derivative, find any concrete
         # data type, and check that Enum has no members
         first_enum = bases[-1]
