@@ -173,7 +173,10 @@ markblocks(PyCodeObject *code_obj, int len)
                     break;
                 case GET_ITER:
                 case GET_AITER:
-                    block_stack = push_block(block_stack, Loop);
+                    // For-loops get a Loop block, but comprehensions do not.
+                    if (_Py_OPCODE(code[i + 1]) != CALL_FUNCTION) {
+                        block_stack = push_block(block_stack, Loop);
+                    }
                     blocks[i+1] = block_stack;
                     break;
                 case FOR_ITER:
