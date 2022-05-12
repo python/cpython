@@ -2109,16 +2109,16 @@ output.append(4)
         x = [i for i in range(10)]
         c = 3
 
-    @jump_test(8, 2, [2, 6, 2])
+    @jump_test(8, 2, [2, 7, 2])
     def test_jump_backward_over_listcomp_v2(output):
-        flag = False                # 1
-        output.append(2)            # 2
-        if flag:                    # 3
-            return                  # 4
-        x = [i for i in range(10)]  # 5
-        flag = True                 # 6
-        output.append(6)            # 7
-        output.append(7)            # 8
+        flag = False
+        output.append(2)
+        if flag:
+            return
+        x = [i for i in range(5)]
+        flag = 6
+        output.append(7)
+        output.append(8)
 
     @async_jump_test(2, 3, [1, 3])
     async def test_jump_forward_over_async_listcomp(output):
@@ -2132,16 +2132,16 @@ output.append(4)
         x = [i async for i in asynciter(range(10))]
         c = 3
 
-    @async_jump_test(8, 2, [2, 6, 2])
+    @async_jump_test(8, 2, [2, 7, 2])
     async def test_jump_backward_over_async_listcomp_v2(output):
         flag = False
         output.append(2)
         if flag:
             return
-        x = [i async for i in asynciter(range(10))]
-        flag = True
-        output.append(6)
+        x = [i async for i in asynciter(range(5))]
+        flag = 6
         output.append(7)
+        output.append(8)
 
 
 if __name__ == "__main__":
