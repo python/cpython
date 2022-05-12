@@ -102,8 +102,6 @@ Deprecated
 Removed
 =======
 
-
-
 Porting to Python 3.12
 ======================
 
@@ -119,6 +117,14 @@ Changes in the Python API
   The group name in bytes patterns and replacement strings can now only
   contain ASCII letters and digits and underscore.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
+
+* Removed randrange() functionality deprecated since Python 3.10.  Formerly,
+  randrange(10.0) losslessly converted to randrange(10). Now, it raises a
+  TypeError. Also, the exception raised for non-integral values such as
+  randrange(10.5) or randrange('10') has been changed from ValueError to
+  TypeError.  This also prevents bugs where ``randrange(1e25)`` would silently
+  select from a larger range than ``randrange(10**25)``.
+  (Originally suggested by Serhiy Storchaka gh-86388.)
 
 
 Build Changes
