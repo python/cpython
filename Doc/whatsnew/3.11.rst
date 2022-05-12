@@ -749,7 +749,7 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   is now preserved. (Contributed by Adrian Garcia Badarasco in :gh:`88970`.)
 
 * The representation of empty tuple types (``Tuple[()]``) is simplified.
-  (Contributed by Serhyi Storchaka in :gh:`91137`.)
+  (Contributed by Serhiy Storchaka in :gh:`91137`.)
 
 * Loosen runtime requirements for type annotations by removing the callable
   check in the private ``typing._type_check`` function. (Contributed by
