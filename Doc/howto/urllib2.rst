@@ -17,15 +17,6 @@
 Introduction
 ============
 
-.. sidebar:: Related Articles
-
-    You may also find useful the following article on fetching web resources
-    with Python:
-
-    * `Basic Authentication <http://www.voidspace.org.uk/python/articles/authentication.shtml>`_
-
-        A tutorial on *Basic Authentication*, with examples in Python.
-
 **urllib.request** is a Python module for fetching URLs
 (Uniform Resource Locators). It offers a very simple interface, in the form of
 the *urlopen* function. This is capable of fetching URLs using a variety of
