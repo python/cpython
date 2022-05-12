@@ -1995,8 +1995,9 @@ AS_CASE([$ac_sys_system],
     LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
 
-    dnl increase initial memory and stack size
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=262144 -Wl,--initial-memory=10485760"])
+    dnl increase initial memory and stack size, move stack first
+    dnl https://github.com/WebAssembly/wasi-libc/issues/233
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=524288 -Wl,--stack-first -Wl,--initial-memory=10485760"])
   ]
 )
 
