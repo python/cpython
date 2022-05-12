@@ -1994,6 +1994,9 @@ AS_CASE([$ac_sys_system],
     AC_DEFINE([_WASI_EMULATED_PROCESS_CLOCKS], [1], [Define to 1 if you want to emulate process clocks on WASI])
     LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
+
+    dnl increase initial memory and stack size
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=262144 -Wl,--initial-memory=10485760"])
   ]
 )
 
@@ -4046,12 +4049,16 @@ dnl the check does not work on cross compilation case...
 #include <sys/types.h>
 #include <sys/socket.h>]],
 [[int domain = AF_INET6;]])],[
-  AC_MSG_RESULT(yes)
   ipv6=yes
 ],[
-  AC_MSG_RESULT(no)
   ipv6=no
 ])
+
+AS_CASE([$ac_sys_system],
+  [WASI], [ipv6=no]
+)
+
+AC_MSG_RESULT([$ipv6])
 
 if test "$ipv6" = "yes"; then
 	AC_MSG_CHECKING(if RFC2553 API is available)
@@ -4232,9 +4239,10 @@ AC_ARG_WITH(pymalloc,
 
 if test -z "$with_pymalloc"
 then
-  dnl default to yes except for wasm32-emscripten
+  dnl default to yes except for wasm32-emscripten and wasm32-wasi.
   AS_CASE([$ac_sys_system],
     [Emscripten], [with_pymalloc="no"],
+    [WASI], [with_pymalloc="no"],
     [with_pymalloc="yes"]
   )
 fi
@@ -6680,7 +6688,11 @@ AS_CASE([$ac_sys_system],
         )
       ],
       [Emscripten/node*], [],
-      [WASI/*], []
+      [WASI/*], [
+        PY_STDLIB_MOD_SET_NA(
+          [_ctypes_test],
+        )
+      ]
     )
   ],
   [PY_STDLIB_MOD_SET_NA([_scproxy])]
