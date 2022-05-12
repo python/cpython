@@ -3053,10 +3053,72 @@ compiler_lambda(struct compiler *c, expr_ty e)
 }
 
 static int
+warn_constant_true_or_false(struct compiler *c, PyObject *constant)
+{
+    int istrue = PyObject_IsTrue(constant);
+    if (istrue < 0) {
+        return 0;
+    }
+    const char *msg = istrue ? "'%R' is always true"
+                        : "'%R' is always false";
+    compiler_warn(c, msg, constant);
+    return 1;
+}
+
+// Warn on `if condition == 1 or 2`.
+static int
+warn_on_if_boolop_compare_and_literal(struct compiler *c, stmt_ty s)
+{
+    assert(s->kind == If_kind);
+    if (s->v.If.test->kind != BoolOp_kind) {
+        return 1;
+    }
+    boolop_ty op = s->v.If.test->v.BoolOp.op;
+    asdl_expr_seq *seq = s->v.If.test->v.BoolOp.values;
+    Py_ssize_t n = asdl_seq_LEN(seq);
+    if (n < 2) {
+        return 1;
+    }
+    bool has_compare = false;
+    for (Py_ssize_t i = 0; i < n; ++i) {
+        if (asdl_seq_GET(seq, i)->kind == Compare_kind) {
+            has_compare = true;
+            break;
+        }
+    }
+    if (!has_compare) {
+        return 1;
+    }
+    // Don't warn on `if False or x == y`.
+    {
+        expr_ty val0 = asdl_seq_GET(seq, 0);
+        if (val0->kind == Constant_kind) {
+            PyObject *constant = val0->v.Constant.value;
+            if (!PyBool_Check(constant) &&
+                constant != _PyLong_GetZero() &&
+                constant != _PyLong_GetOne())
+            {
+                RETURN_IF_FALSE(warn_constant_true_or_false(c, constant));
+            }
+        }
+    }
+    for (Py_ssize_t i = 1; i < n; ++i) {
+        expr_ty val = asdl_seq_GET(seq, i);
+        if (val->kind != Constant_kind) {
+            continue;
+        }
+        PyObject *constant = val->v.Constant.value;
+        RETURN_IF_FALSE(warn_constant_true_or_false(c, constant));
+    }
+    return 1;
+}
+
+static int
 compiler_if(struct compiler *c, stmt_ty s)
 {
     basicblock *end, *next;
     assert(s->kind == If_kind);
+    RETURN_IF_FALSE(warn_on_if_boolop_compare_and_literal(c, s));
     end = compiler_new_block(c);
     if (end == NULL) {
         return 0;
