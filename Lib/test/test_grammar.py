@@ -1272,6 +1272,25 @@ class GrammarTests(unittest.TestCase):
             compile('assert x, "msg"', '<testcase>', 'exec')
             compile('assert False, "msg"', '<testcase>', 'exec')
 
+    def test_syntax_warnings_if_x_equals_1_or_2(self):
+        self.check_syntax_warning("""if x == 1 or 2: pass""",
+                                  """2 is always true""")
+        self.check_syntax_warning("""if x in "abc" and "bcd": pass""",
+                                  """'bcd' is always true""")
+        self.check_syntax_warning("""if sqrt(x) < 3 and 4: pass""",
+                                  """4 is always true""")
+        self.check_syntax_warning("""if sqrt(x) < 3 or 0: pass""",
+                                  """0 is always false""")
+        self.check_syntax_warning("""if 'a' or 'b' in my_set: pass""",
+                                  """'a' is always true""")
+        self.check_syntax_warning("""if x == 1 or True: print(True)""",
+                                  """True is always true""")
+        with self.check_no_warnings(category=SyntaxWarning):
+            compile("""if 0 and 3 in x: pass""", '<testcase>', 'exec')
+            compile("""if 1 or 3 in x: pass""", '<testcase>', 'exec')
+            compile("""if True and 3 == x: pass""", '<testcase>', 'exec')
+            compile("""if False or 3 == x: pass""", '<testcase>', 'exec')
+
     def test_assert_warning_promotes_to_syntax_error(self):
         # If SyntaxWarning is configured to be an error, it actually raises a
         # SyntaxError.
