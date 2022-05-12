@@ -24,7 +24,7 @@ TODO: Fill out more detailed documentation on the operators."""
 #
 # Since ABCMeta only checks for the presence of methods, it is possible
 # to alter the signature of a method by adding optional arguments
-# or changing parameters names.  This is still a bit dubious but at
+# or changing parameter names.  This is still a bit dubious but at
 # least it won't cause isinstance() to return an incorrect result.
 #
 #
