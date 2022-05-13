@@ -270,6 +270,9 @@ typedef struct basicblock_ {
     unsigned b_warm : 1;
 } basicblock;
 
+#define DEBUG_COLD_BLOCK_STUFF
+#undef DEBUG_COLD_BLOCK_STUFF
+
 #ifdef DEBUG_COLD_BLOCK_STUFF
 static void dump_basicblock(const basicblock *b);
 #endif
@@ -7395,9 +7398,9 @@ mark_warm(basicblock *entry, basicblock **stack) {
 }
 
 static int
-mark_cold(struct compiler *c, struct assembler *a) {
+mark_cold(basicblock *entry) {
     int nblocks = 0;
-    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+    for (basicblock *b = entry; b != NULL; b = b->b_next) {
         b->b_visited = 0;
         assert(!b->b_cold && !b->b_warm);
         nblocks++;
@@ -7408,10 +7411,10 @@ mark_cold(struct compiler *c, struct assembler *a) {
     if (stack == NULL) {
         return -1;
     }
-    mark_warm(a->a_entry, stack);
+    mark_warm(entry, stack);
 
     sp = stack;
-    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+    for (basicblock *b = entry; b != NULL; b = b->b_next) {
         b->b_visited = 0;
         if (b->b_except_predecessors) {
             assert(b->b_except_predecessors == b->b_predecessors);
@@ -7443,24 +7446,17 @@ mark_cold(struct compiler *c, struct assembler *a) {
     }
     PyObject_Free(stack);
 
-#ifdef DEBUG_COLD_BLOCK_STUFF
-    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
-        if (b->b_iused > 0 && !b->b_cold && !b->b_warm) {
-            dump_basicblock(b);
-        }
-    }
-#endif
     /* If we have a cold block with fallthrough to a warm block, abort */
     /* TODO: handle this better */
     int abort = 0;
-    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+    for (basicblock *b = entry; b != NULL; b = b->b_next) {
         if (b->b_cold && !b->b_nofallthrough && b->b_next && b->b_next->b_warm) {
             abort = 1;
             break;
         }
     }
     if (abort) {
-        for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        for (basicblock *b = entry; b != NULL; b = b->b_next) {
             b->b_cold = 0;
         }
     }
@@ -7468,23 +7464,17 @@ mark_cold(struct compiler *c, struct assembler *a) {
     return 0;
 }
 
-static int compute_code_flags(struct compiler *c);
-
 static int
-push_cold_blocks_to_end(struct compiler *c, struct assembler *a, basicblock *entry) {
+push_cold_blocks_to_end(basicblock *entry, int code_flags) {
     if (entry->b_next == NULL) {
         /* single basicblock, no need to reorder */
         return 0;
     }
-    int flags = compute_code_flags(c);
-    if (flags < 0) {
-        return -1;
-    }
-    if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
+    if (code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
         /* skip generators */
         return 0;
     }
-    if (mark_cold(c, a) < 0) {
+    if (mark_cold(entry) < 0) {
         return -1;
     }
     assert(!entry->b_cold);  /* First block can't be cold */
@@ -8082,7 +8072,7 @@ compute_localsplus_info(struct compiler *c, int nlocalsplus,
 
 static PyCodeObject *
 makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
-         int maxdepth, int nlocalsplus)
+         int maxdepth, int nlocalsplus, int code_flags)
 {
     PyCodeObject *co = NULL;
     PyObject *names = NULL;
@@ -8095,11 +8085,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         goto error;
     }
     if (!merge_const_one(c, &names)) {
-        goto error;
-    }
-
-    int flags = compute_code_flags(c);
-    if (flags < 0) {
         goto error;
     }
 
@@ -8133,7 +8118,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         .filename = c->c_filename,
         .name = c->u->u_name,
         .qualname = c->u->u_qualname ? c->u->u_qualname : c->u->u_name,
-        .flags = flags,
+        .flags = code_flags,
 
         .code = a->a_bytecode,
         .firstlineno = c->u->u_firstlineno,
@@ -8281,17 +8266,13 @@ insert_instruction(basicblock *block, int pos, struct instr *instr) {
 
 static int
 insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
-                           int *fixed, int nfreevars)
+                           int *fixed, int nfreevars, int code_flags)
 {
 
-    int flags = compute_code_flags(c);
-    if (flags < 0) {
-        return -1;
-    }
     assert(c->u->u_firstlineno > 0);
 
     /* Add the generator prefix instructions. */
-    if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
+    if (code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
         struct instr make_gen = {
             .i_opcode = RETURN_GENERATOR,
             .i_oparg = 0,
@@ -8493,6 +8474,11 @@ assemble(struct compiler *c, int addNone)
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
 
+    int code_flags = compute_code_flags(c);
+    if (code_flags < 0) {
+        return NULL;
+    }
+
     /* Make sure every block that falls off the end returns None. */
     if (!c->u->u_curblock->b_return) {
         UNSET_LOC(c);
@@ -8547,7 +8533,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     // This must be called before fix_cell_offsets().
-    if (insert_prefix_instructions(c, entryblock, cellfixedoffsets, nfreevars)) {
+    if (insert_prefix_instructions(c, entryblock, cellfixedoffsets, nfreevars, code_flags)) {
         goto error;
     }
 
@@ -8596,11 +8582,11 @@ assemble(struct compiler *c, int addNone)
     }
     convert_exception_handlers_to_nops(entryblock);
 
-    push_cold_blocks_to_end(c, &a, entryblock);
+    push_cold_blocks_to_end(entryblock, code_flags);
 
     remove_redundant_jumps(entryblock);
-
-    for (basicblock *b = a.a_entry; b != NULL; b = b->b_next) {
+    assert(a.a_entry == entryblock);
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         clean_basic_block(b);
     }
 
@@ -8649,7 +8635,7 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    co = makecode(c, &a, consts, maxdepth, nlocalsplus);
+    co = makecode(c, &a, consts, maxdepth, nlocalsplus, code_flags);
  error:
     Py_XDECREF(consts);
     assemble_free(&a);
@@ -9292,7 +9278,7 @@ normalize_basic_block(basicblock *bb) {
 }
 
 static int
-mark_reachable(struct compiler *c, struct assembler *a) {
+mark_reachable(struct assembler *a) {
     basicblock **stack, **sp;
     sp = stack = (basicblock **)PyObject_Malloc(sizeof(basicblock *) * a->a_nblocks);
     if (stack == NULL) {
@@ -9427,7 +9413,7 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
             return -1;
         }
     }
-    if (mark_reachable(c, a)) {
+    if (mark_reachable(a)) {
         return -1;
     }
     /* Delete unreachable instructions */
