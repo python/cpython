@@ -223,6 +223,13 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
     Py_ssize_t ascii_len, bin_len;
     binascii_state *state;
 
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "'binascii.a2b_uu' is deprecated and scheduled for "
+                     "removal in Python 3.13",
+                     1)) {
+        return NULL;
+    }
+
     ascii_data = data->buf;
     ascii_len = data->len;
 
@@ -320,6 +327,13 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
     binascii_state *state;
     Py_ssize_t bin_len, out_len;
     _PyBytesWriter writer;
+
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "'binascii.b2a_uu' is deprecated and scheduled for "
+                     "removal in Python 3.13",
+                     1)) {
+        return NULL;
+    }
 
     _PyBytesWriter_Init(&writer);
     bin_data = data->buf;
