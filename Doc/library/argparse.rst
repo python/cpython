@@ -1602,7 +1602,6 @@ there are no options in the parser that look like negative numbers::
    usage: PROG [-h] [-1 ONE] [foo]
    PROG: error: argument -1: expected one argument
 
-
 If you have positional arguments that must begin with ``-`` and don't look
 like negative numbers, you can insert the pseudo-argument ``'--'`` which tells
 :meth:`~ArgumentParser.parse_args` that everything after that is a positional
