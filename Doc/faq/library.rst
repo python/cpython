@@ -483,8 +483,7 @@ including :func:`~shutil.copyfile`, :func:`~shutil.copytree`, and
 How do I copy a file?
 ---------------------
 
-The :mod:`shutil` module contains a :func:`~shutil.copyfile` function.  Note
-that on MacOS 9 it doesn't copy the resource fork and Finder info.
+The :mod:`shutil` module contains a :func:`~shutil.copyfile` function.
 
 
 How do I read (or write) binary data?
