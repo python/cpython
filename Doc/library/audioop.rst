@@ -6,7 +6,8 @@
    :deprecated:
 
 .. deprecated:: 3.11
-   The :mod:`audioop` module is deprecated (see :pep:`594` for details).
+   The :mod:`audioop` module is deprecated
+   (see :pep:`PEP 594 <594#audioop>` for details).
 
 --------------
 
