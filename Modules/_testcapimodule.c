@@ -5955,6 +5955,51 @@ test_code_api(PyObject *self, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+static int
+record_func(PyObject *obj, PyFrameObject *f, int what, PyObject *arg)
+{
+    assert(PyList_Check(obj));
+    PyObject *what_obj = NULL;
+    PyObject *line_obj = NULL;
+    PyObject *tuple = NULL;
+    int res = -1;
+    what_obj = PyLong_FromLong(what);
+    if (what_obj == NULL) {
+        goto error;
+    }
+    int line = PyFrame_GetLineNumber(f);
+    line_obj = PyLong_FromLong(line);
+    if (line_obj == NULL) {
+        goto error;
+    }
+    tuple = PyTuple_Pack(3, what_obj, line_obj, arg);
+    if (tuple == NULL) {
+        goto error;
+    }
+    PyTuple_SET_ITEM(tuple, 0, what_obj);
+    if (PyList_Append(obj, tuple)) {
+        goto error;
+    }
+    res = 0;
+error:
+    Py_XDECREF(what_obj);
+    Py_XDECREF(line_obj);
+    Py_XDECREF(tuple);
+    return res;
+}
+
+static PyObject *
+settrace_to_record(PyObject *self, PyObject *list)
+{
+
+   if (!PyList_Check(list)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a list");
+        return NULL;
+    }
+    PyEval_SetTrace(record_func, list);
+    Py_RETURN_NONE;
+}
+
 static PyObject *negative_dictoffset(PyObject *, PyObject *);
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
@@ -6251,6 +6296,7 @@ static PyMethodDef TestMethods[] = {
     {"frame_getlasti", frame_getlasti, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
+    {"settrace_to_record", settrace_to_record, METH_O, NULL},
     {NULL, NULL} /* sentinel */
 };
 
