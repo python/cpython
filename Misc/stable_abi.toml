@@ -1524,6 +1524,7 @@
     added = '3.2'
 [function.PyUnicode_GetSize]
     added = '3.2'
+    abi_only = true
 [function.PyUnicode_IsIdentifier]
     added = '3.2'
 [function.PyUnicode_Join]
