@@ -14,7 +14,8 @@
 .. index:: single: msi
 
 .. deprecated:: 3.11
-   The :mod:`msilib` module is deprecated (see :pep:`594` for details).
+   The :mod:`msilib` module is deprecated
+   (see :pep:`PEP 594 <594#msilib>` for details).
 
 --------------
 
