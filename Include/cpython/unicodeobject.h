@@ -507,7 +507,7 @@ PyAPI_FUNC(Py_UCS4) _PyUnicode_FindMaxChar (
 typedef struct {
     PyObject *buffer;
     void *data;
-    enum PyUnicode_Kind kind;
+    int kind;
     Py_UCS4 maxchar;
     Py_ssize_t size;
     Py_ssize_t pos;
@@ -566,7 +566,7 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
    macro instead. */
 PyAPI_FUNC(int)
 _PyUnicodeWriter_PrepareKindInternal(_PyUnicodeWriter *writer,
-                                     enum PyUnicode_Kind kind);
+                                     int kind);
 
 /* Append a Unicode character.
    Return 0 on success, raise an exception and return -1 on error. */

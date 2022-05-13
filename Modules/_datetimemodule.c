@@ -5284,7 +5284,7 @@ _sanitize_isoformat_str(PyObject *dtstr)
     //
     // The result of this, if not NULL, returns a new reference
     const void* const unicode_data = PyUnicode_DATA(dtstr);
-    const unsigned int kind = PyUnicode_KIND(dtstr);
+    const int kind = PyUnicode_KIND(dtstr);
 
     // Depending on the format of the string, the separator can only ever be
     // in positions 7, 8 or 10. We'll check each of these for a surrogate and
