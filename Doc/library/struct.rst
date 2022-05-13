@@ -146,9 +146,10 @@ If the first character is not one of these, ``'@'`` is assumed.
 
 Native byte order is big-endian or little-endian, depending on the host
 system. For example, Intel x86 and AMD64 (x86-64) are little-endian;
-Motorola 68000 and PowerPC G5 are big-endian; ARM and Intel Itanium feature
-switchable endianness (bi-endian). Use ``sys.byteorder`` to check the
-endianness of your system.
+IBM z and most legacy architectures are big-endian;
+and ARM, RISC-V and IBM Power feature switchable endianness
+(bi-endian, though the former two are nearly always little-endian in practice).
+Use ``sys.byteorder`` to check the endianness of your system.
 
 Native size and alignment are determined using the C compiler's
 ``sizeof`` expression.  This is always combined with native byte order.
