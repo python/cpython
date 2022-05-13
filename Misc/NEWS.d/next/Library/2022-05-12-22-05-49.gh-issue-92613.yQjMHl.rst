@@ -1,0 +1,8 @@
+Per :pep:`PEP 594 <594#uu-and-the-uu-encoding>`, deprecate other
+uuencode-related functionality with appropriate warnings, and document them.
+This includes :func:`binascii.a2b_uu`/:func:`binascii.b2a_uu`,
+the ``uu_codec`` :ref:`binary transform <binary-transforms>`
+in the :mod:`codecs` module, and support for decoding uuencode payloads
+with the :meth:`email.message.Message.get_payload` method of the legacy
+:ref:`email.message.Message <compat32_message>` (``Compat32``) API.
+Contributed by C.A.M. Gerlach.
