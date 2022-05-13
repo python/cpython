@@ -1011,6 +1011,8 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             _Py_SET_OPCODE(*instr, LOAD_METHOD_WITH_DICT);
             break;
         case LAZY_DICT:
+            assert(owner_cls->tp_dictoffset > 0 && owner_cls->tp_dictoffset <= INT16_MAX);
+            cache->dict_offset = (uint16_t)owner_cls->tp_dictoffset;
             _Py_SET_OPCODE(*instr, LOAD_METHOD_LAZY_DICT);
             break;
     }

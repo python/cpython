@@ -4679,13 +4679,13 @@ handle_eval_breaker:
             DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_METHOD);
             /* Treat index as a signed 16 bit value */
             int dictoffset = *(int16_t *)&cache->dict_offset;
-            PyDictObject **dictptr = (PyDictObject**)(((char *)self)+dictoffset);
+            PyObject *dict = *(PyObject **)((char *)self + dictoffset);
             assert(
                 dictoffset == MANAGED_DICT_OFFSET ||
                 (dictoffset == self_cls->tp_dictoffset && dictoffset > 0)
             );
             /* This object has a __dict__, just not yet created */
-            DEOPT_IF(*dictptr != NULL, LOAD_METHOD);
+            DEOPT_IF(dict != NULL, LOAD_METHOD);
             STAT_INC(LOAD_METHOD, hit);
             PyObject *res = read_obj(cache->descr);
             assert(res != NULL);
