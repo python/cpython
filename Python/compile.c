@@ -7088,11 +7088,6 @@ make_cfg_traversal_stack(basicblock *entry) {
     return stack;
 }
 
-static void
-free_cfg_traversal_stack(basicblock **stack) {
-    PyMem_Free(stack);
-}
-
 Py_LOCAL_INLINE(void)
 stackdepth_push(basicblock ***sp, basicblock *b, int depth)
 {
@@ -7173,7 +7168,7 @@ stackdepth(struct compiler *c, basicblock *entry)
             stackdepth_push(&sp, next, depth);
         }
     }
-    free_cfg_traversal_stack(stack);
+    PyMem_Free(stack);
     return maxdepth;
 }
 
@@ -7363,7 +7358,7 @@ label_exception_targets(basicblock *entry) {
     PyMem_Free(todo_stack);
     return 0;
 error:
-    free_cfg_traversal_stack(todo_stack);
+    PyMem_Free(todo_stack);
     PyMem_Free(except_stack);
     return -1;
 }
@@ -9119,7 +9114,7 @@ mark_reachable(struct assembler *a) {
             }
         }
     }
-    free_cfg_traversal_stack(stack);
+    PyMem_Free(stack);
     return 0;
 }
 
