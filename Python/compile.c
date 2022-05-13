@@ -7061,7 +7061,6 @@ struct assembler {
     PyObject *a_except_table;  /* bytes containing exception table */
     basicblock *a_entry;
     int a_offset;              /* offset into bytecode */
-    int a_nblocks;             /* number of reachable blocks */
     int a_except_table_off;    /* offset into exception table */
     int a_prevlineno;     /* lineno of last emitted line in line table */
     int a_prev_end_lineno; /* end_lineno of last emitted line in line table */
@@ -8350,7 +8349,6 @@ assemble(struct compiler *c, int addNone)
     if (!assemble_init(&a, nblocks, c->u->u_firstlineno))
         goto error;
     a.a_entry = entryblock;
-    a.a_nblocks = nblocks;
 
     int numdropped = fix_cell_offsets(c, entryblock, cellfixedoffsets);
     PyMem_Free(cellfixedoffsets);  // At this point we're done with it.
