@@ -5680,6 +5680,12 @@ handle_eval_breaker:
                     TRACE_FUNCTION_ENTRY();
                     DTRACE_FUNCTION_ENTRY();
                     break;
+                case POP_TOP:
+                    if (_Py_OPCODE(next_instr[-1]) == RETURN_GENERATOR) {
+                        /* Frame not fully initialized */
+                        break;
+                    }
+                    /* fall through */
                 default:
                     /* line-by-line tracing support */
                     if (PyDTrace_LINE_ENABLED()) {
