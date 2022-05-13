@@ -1,0 +1,2 @@
+Fix ``encoding`` argument of :func:`os.popen` and added ``errors`` argument
+too.
