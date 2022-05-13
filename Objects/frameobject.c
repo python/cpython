@@ -455,7 +455,7 @@ _PyFrame_GetState(PyFrameObject *frame)
     Py_UNREACHABLE();
 }
 
-void
+static void
 replace_LOAD_FAST_KNOWNs(PyCodeObject *co)
 {
     _Py_CODEUNIT *instructions = _PyCode_CODE(co);

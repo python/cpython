@@ -7808,7 +7808,7 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
         }                                           \
     } while (0)
 
-void
+static void
 scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
                      basicblock ***stack_top)
 {
@@ -7846,16 +7846,18 @@ scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
         if (b->b_next && !b->b_nofallthrough) {
             MAYBE_PUSH(b->b_next);
         }
-        struct instr *last = &b->b_instr[b->b_iused-1];
-        if (is_jump(last)) {
-            assert(last->i_target != NULL);
-            MAYBE_PUSH(last->i_target);
+        if (b->b_iused > 0) {
+            struct instr *last = &b->b_instr[b->b_iused-1];
+            if (is_jump(last)) {
+                assert(last->i_target != NULL);
+                MAYBE_PUSH(last->i_target);
+            }
         }
     }
 }
 #undef MAYBE_PUSH
 
-int
+static int
 mark_known_variables(struct assembler *a, struct compiler *c)
 {
     Py_ssize_t num_blocks = 0;
