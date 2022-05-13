@@ -7922,6 +7922,8 @@ $as_echo "#define _WASI_EMULATED_PROCESS_CLOCKS 1" >>confdefs.h
     LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
 
+            as_fn_append LDFLAGS_NODIST " -z stack-size=524288 -Wl,--stack-first -Wl,--initial-memory=10485760"
+
  ;; #(
   *) :
      ;;
@@ -14231,18 +14233,25 @@ int domain = AF_INET6;
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
   ipv6=yes
 
 else
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
   ipv6=no
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+case $ac_sys_system in #(
+  WASI) :
+    ipv6=no
+ ;; #(
+  *) :
+     ;;
+esac
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ipv6" >&5
+$as_echo "$ipv6" >&6; }
 
 if test "$ipv6" = "yes"; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if RFC2553 API is available" >&5
@@ -14556,6 +14565,8 @@ if test -z "$with_pymalloc"
 then
     case $ac_sys_system in #(
   Emscripten) :
+    with_pymalloc="no" ;; #(
+  WASI) :
     with_pymalloc="no" ;; #(
   *) :
     with_pymalloc="yes"
@@ -22596,6 +22607,12 @@ case $ac_sys_system in #(
   Emscripten/node*) :
      ;; #(
   WASI/*) :
+
+
+
+    py_cv_module__ctypes_test=n/a
+    py_cv_module_=n/a
+
 
      ;; #(
   *) :
