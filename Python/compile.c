@@ -7074,6 +7074,25 @@ struct assembler {
     int a_location_off;    /* offset of last written location info frame */
 };
 
+static basicblock**
+make_cfg_traversal_stack(basicblock *entry) {
+    int nblocks = 0;
+    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+        b->b_visited = 0;
+        nblocks++;
+    }
+    basicblock **stack = (basicblock **)PyMem_Malloc(sizeof(basicblock *) * nblocks);
+    if (!stack) {
+        PyErr_NoMemory();
+    }
+    return stack;
+}
+
+static void
+free_cfg_traversal_stack(basicblock **stack) {
+    PyMem_Free(stack);
+}
+
 Py_LOCAL_INLINE(void)
 stackdepth_push(basicblock ***sp, basicblock *b, int depth)
 {
@@ -7089,31 +7108,26 @@ stackdepth_push(basicblock ***sp, basicblock *b, int depth)
  * cycles in the flow graph have no net effect on the stack depth.
  */
 static int
-stackdepth(struct compiler *c)
+stackdepth(struct compiler *c, basicblock *entry)
 {
-    basicblock *b, *entryblock = NULL;
-    basicblock **stack, **sp;
-    int nblocks = 0, maxdepth = 0;
-    for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
+    for (basicblock *b = entry; b != NULL; b = b->b_next) {
         b->b_startdepth = INT_MIN;
-        entryblock = b;
-        nblocks++;
     }
-    assert(entryblock!= NULL);
-    stack = (basicblock **)PyObject_Malloc(sizeof(basicblock *) * nblocks);
+    basicblock **stack = make_cfg_traversal_stack(entry);
     if (!stack) {
-        PyErr_NoMemory();
         return -1;
     }
 
-    sp = stack;
+    int maxdepth = 0;
+    basicblock **sp = stack;
     if (c->u->u_ste->ste_generator || c->u->u_ste->ste_coroutine) {
-        stackdepth_push(&sp, entryblock, 1);
+        stackdepth_push(&sp, entry, 1);
     } else {
-        stackdepth_push(&sp, entryblock, 0);
+        stackdepth_push(&sp, entry, 0);
     }
+
     while (sp != stack) {
-        b = *--sp;
+        basicblock *b = *--sp;
         int depth = b->b_startdepth;
         assert(depth >= 0);
         basicblock *next = b->b_next;
@@ -7159,7 +7173,7 @@ stackdepth(struct compiler *c)
             stackdepth_push(&sp, next, depth);
         }
     }
-    PyObject_Free(stack);
+    free_cfg_traversal_stack(stack);
     return maxdepth;
 }
 
@@ -7264,14 +7278,8 @@ copy_except_stack(ExceptStack *stack) {
 
 static int
 label_exception_targets(basicblock *entry) {
-    int nblocks = 0;
-    for (basicblock *b = entry; b != NULL; b = b->b_next) {
-        b->b_visited = 0;
-        nblocks++;
-    }
-    basicblock **todo_stack = PyMem_Malloc(sizeof(basicblock *)*nblocks);
+    basicblock **todo_stack = make_cfg_traversal_stack(entry);
     if (todo_stack == NULL) {
-        PyErr_NoMemory();
         return -1;
     }
     ExceptStack *except_stack = make_except_stack();
@@ -7355,7 +7363,7 @@ label_exception_targets(basicblock *entry) {
     PyMem_Free(todo_stack);
     return 0;
 error:
-    PyMem_Free(todo_stack);
+    free_cfg_traversal_stack(todo_stack);
     PyMem_Free(except_stack);
     return -1;
 }
@@ -8373,7 +8381,7 @@ assemble(struct compiler *c, int addNone)
     }
     propagate_line_numbers(&a);
     guarantee_lineno_for_exits(&a, c->u->u_firstlineno);
-    int maxdepth = stackdepth(c);
+    int maxdepth = stackdepth(c, entryblock);
     if (maxdepth < 0) {
         goto error;
     }
@@ -9081,17 +9089,19 @@ normalize_basic_block(basicblock *bb) {
 
 static int
 mark_reachable(struct assembler *a) {
-    basicblock **stack, **sp;
-    sp = stack = (basicblock **)PyObject_Malloc(sizeof(basicblock *) * a->a_nblocks);
+    basicblock **stack = make_cfg_traversal_stack(a->a_entry);
     if (stack == NULL) {
         return -1;
     }
+    basicblock **sp = stack;
     a->a_entry->b_predecessors = 1;
     *sp++ = a->a_entry;
     while (sp > stack) {
         basicblock *b = *(--sp);
+        b->b_visited = 1;
         if (b->b_next && !b->b_nofallthrough) {
-            if (b->b_next->b_predecessors == 0) {
+            if (!b->b_next->b_visited) {
+                assert(b->b_next->b_predecessors == 0);
                 *sp++ = b->b_next;
             }
             b->b_next->b_predecessors++;
@@ -9101,14 +9111,15 @@ mark_reachable(struct assembler *a) {
             struct instr *instr = &b->b_instr[i];
             if (is_jump(instr) || is_block_push(instr)) {
                 target = instr->i_target;
-                if (target->b_predecessors == 0) {
+                if (!target->b_visited) {
+                    assert(target->b_predecessors == 0);
                     *sp++ = target;
                 }
                 target->b_predecessors++;
             }
         }
     }
-    PyObject_Free(stack);
+    free_cfg_traversal_stack(stack);
     return 0;
 }
 
