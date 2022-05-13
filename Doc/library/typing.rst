@@ -2429,6 +2429,71 @@ Functions and decorators
 
    .. versionadded:: 3.11
 
+.. decorator:: dataclass_transform
+
+   The :data:`~typing.dataclass_transform` annotation may be used to
+   decorate a function that is itself a decorator, a class, or a metaclass.
+   The presence of ``@dataclass_transform()`` tells a static type checker that the
+   decorated function, class, or metaclass performs runtime "magic" that
+   transforms a class, endowing it with dataclass-like behaviors.
+
+   Example usage with a decorator function:
+
+      _T = TypeVar("_T")
+
+      @dataclass_transform()
+      def create_model(cls: type[_T]) -> type[_T]:
+          ...
+          return cls
+
+      @create_model
+      class CustomerModel:
+          id: int
+          name: str
+
+   On a base class:
+
+      @dataclass_transform()
+      class ModelBase: ...
+
+      class CustomerModel(ModelBase):
+          id: int
+          name: str
+
+   On a metaclass:
+
+      @dataclass_transform()
+      class ModelMeta(type): ...
+
+      class ModelBase(metaclass=ModelMeta): ...
+
+      class CustomerModel(ModelBase):
+          id: int
+          name: str
+
+   Each of the ``CustomerModel`` classes defined in this example will now
+   behave similarly to a dataclass created with the ``@dataclasses.dataclass``
+   decorator. For example, the type checker will synthesize an ``__init__``
+   method.
+
+   The arguments to this decorator can be used to customize this behavior:
+   - ``eq_default`` indicates whether the ``eq`` parameter is assumed to be
+       True or False if it is omitted by the caller.
+   - ``order_default`` indicates whether the ``order`` parameter is
+       assumed to be True or False if it is omitted by the caller.
+   - ``kw_only_default`` indicates whether the ``kw_only`` parameter is
+       assumed to be True or False if it is omitted by the caller.
+   - ``field_specifiers`` specifies a static list of supported classes
+       or functions that describe fields, similar to ``dataclasses.field()``.
+
+   At runtime, this decorator records its arguments in the
+   ``__dataclass_transform__`` attribute on the decorated object.
+   It has no other runtime effect.
+
+   See :pep:`681` for more details.
+
+   .. versionadded:: 3.11
+
 .. decorator:: overload
 
    The ``@overload`` decorator allows describing functions and methods
