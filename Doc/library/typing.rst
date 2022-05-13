@@ -2437,7 +2437,7 @@ Functions and decorators
    decorated function, class, or metaclass performs runtime "magic" that
    transforms a class, endowing it with dataclass-like behaviors.
 
-   Example usage with a decorator function:
+   Example usage with a decorator function::
 
       _T = TypeVar("_T")
 
@@ -2451,7 +2451,7 @@ Functions and decorators
           id: int
           name: str
 
-   On a base class:
+   On a base class::
 
       @dataclass_transform()
       class ModelBase: ...
@@ -2460,7 +2460,7 @@ Functions and decorators
           id: int
           name: str
 
-   On a metaclass:
+   On a metaclass::
 
       @dataclass_transform()
       class ModelMeta(type): ...
