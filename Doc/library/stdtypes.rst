@@ -1235,6 +1235,9 @@ application).
    ``list( (1, 2, 3) )`` returns ``[1, 2, 3]``.
    If no argument is given, the constructor creates a new empty list, ``[]``.
 
+   An iteration of a list is terminated when its index matches its length. However,
+   its length is calculated on each iteration of the loop, which allows the list to
+   be mutated while being iterated over (see :ref:`tut-loopidioms` for an example).
 
    Many other operations also produce lists, including the :func:`sorted`
    built-in.

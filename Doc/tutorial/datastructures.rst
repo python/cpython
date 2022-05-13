@@ -650,6 +650,21 @@ however, it is often simpler and safer to create a new list instead. ::
    >>> filtered_data
    [56.2, 51.7, 55.3, 52.5, 47.8]
 
+Nonetheless, mutating a list while it's being iterated can be done, as
+the list length is calculated on each iteration. This can be useful, for
+example, when doing a breadth-first search. ::
+
+   >>> L = [1, 2, 3]
+   >>> for l in L:
+   ...     print(l)
+   ...     if l == 1:
+   ...         L.append("New node")
+   ...
+   1
+   2
+   3
+   New node
+
 
 .. _tut-conditions:
 
