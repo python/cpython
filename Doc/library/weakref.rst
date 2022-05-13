@@ -533,7 +533,7 @@ However, handling of :meth:`__del__` methods is notoriously implementation
 specific, since it depends on internal details of the interpreter's garbage
 collector implementation.
 
-A more robust alternative can be used to define a finalizer which only references
+A more robust alternative can be to define a finalizer which only references
 the specific functions and objects that it needs, rather than having access
 to the full state of the object::
 
