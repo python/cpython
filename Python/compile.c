@@ -7372,13 +7372,10 @@ error:
 }
 
 static void
-mark_warm(struct compiler *c, struct assembler *a, basicblock **stack) {
+mark_warm(basicblock *entry, basicblock **stack) {
     basicblock **sp = stack;
 
-    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
-        b->b_visited = 0;
-    }
-    *sp++ = a->a_entry;
+    *sp++ = entry;
     while (sp > stack) {
         basicblock *b = *(--sp);
         b->b_visited = 1;
@@ -7399,12 +7396,19 @@ mark_warm(struct compiler *c, struct assembler *a, basicblock **stack) {
 
 static int
 mark_cold(struct compiler *c, struct assembler *a) {
-    basicblock **stack = (basicblock **)PyObject_Malloc(sizeof(basicblock *) * a->a_nblocks * 2 /* TODO: remove *2, count again? */);
+    int nblocks = 0;
+    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        b->b_visited = 0;
+        assert(!b->b_cold && !b->b_warm);
+        nblocks++;
+    }
+
+    basicblock **stack = (basicblock **)PyObject_Malloc(sizeof(basicblock *) * nblocks);
     basicblock **sp = stack;
     if (stack == NULL) {
         return -1;
     }
-    mark_warm(c, a, stack);
+    mark_warm(a->a_entry, stack);
 
     sp = stack;
     for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
