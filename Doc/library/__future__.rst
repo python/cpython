@@ -1,5 +1,5 @@
-:mod:`__future__` --- Future statement definitions
-==================================================
+:mod:`__future__` --- Early access to language features created for future versions of Python
+=============================================================================================
 
 .. module:: __future__
    :synopsis: Future statement definitions
