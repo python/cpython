@@ -191,9 +191,6 @@ is_jump(struct instr *i)
            is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
 }
 
-static void
-dump_instr(struct instr *i);
-
 static int
 instr_size(struct instr *instruction)
 {
@@ -272,6 +269,10 @@ typedef struct basicblock_ {
     /* b_warm is used by the cold-detection algorithm to mark blocks which are definitely not cold */
     unsigned b_warm : 1;
 } basicblock;
+
+#ifdef DEBUG_COLD_BLOCK_STUFF
+static void dump_basicblock(const basicblock *b);
+#endif
 
 /* fblockinfo tracks the current frame block.
 
@@ -7438,6 +7439,13 @@ mark_cold(struct compiler *c, struct assembler *a) {
     }
     PyObject_Free(stack);
 
+#ifdef DEBUG_COLD_BLOCK_STUFF
+    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        if (b->b_iused > 0 && !b->b_cold && !b->b_warm) {
+            dump_basicblock(b);
+        }
+    }
+#endif
     /* If we have a cold block with fallthrough to a warm block, abort */
     /* TODO: handle this better */
     int abort = 0;
@@ -7456,10 +7464,20 @@ mark_cold(struct compiler *c, struct assembler *a) {
     return 0;
 }
 
+static int compute_code_flags(struct compiler *c);
+
 static int
 push_cold_blocks_to_end(struct compiler *c, struct assembler *a, basicblock *entry) {
     if (entry->b_next == NULL) {
         /* single basicblock, no need to reorder */
+        return 0;
+    }
+    int flags = compute_code_flags(c);
+    if (flags < 0) {
+        return -1;
+    }
+    if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
+        /* skip generators */
         return 0;
     }
     if (mark_cold(c, a) < 0) {
@@ -7472,12 +7490,20 @@ push_cold_blocks_to_end(struct compiler *c, struct assembler *a, basicblock *ent
     }
     basicblock *origtail = tail;
     basicblock *b = entry;
+#ifdef DEBUG_COLD_BLOCK_STUFF
+    fprintf(stderr, "<<<<<<<<<<<<<\n");
+    dump_basicblock(b);
+#endif
     while(b) {
         basicblock *next = b->b_next;
         if (next == NULL) {
             break;
         }
         if (next->b_cold) {
+#ifdef DEBUG_COLD_BLOCK_STUFF
+            dump_basicblock(next);
+            fprintf(stderr, "*******************************************************************\n");
+#endif
             //assert(next->b_nofallthrough || (!next->b_next || next->b_next->b_cold));
             b->b_next = next->b_next;
             next->b_next = NULL;
@@ -7485,11 +7511,17 @@ push_cold_blocks_to_end(struct compiler *c, struct assembler *a, basicblock *ent
             tail = next;
         } else {
             b = next;
+#ifdef DEBUG_COLD_BLOCK_STUFF
+            dump_basicblock(b);
+#endif
         }
         if(next == origtail) {
             break;
         }
     }
+#ifdef DEBUG_COLD_BLOCK_STUFF
+    fprintf(stderr, ">>>>>>>>>>>>>\n");
+#endif
     return 0;
 }
 
@@ -8142,7 +8174,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
 
 
 /* For debugging purposes only */
-#if 1
+#ifdef DEBUG_COLD_BLOCK_STUFF
 static void
 dump_instr(struct instr *i)
 {
