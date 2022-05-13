@@ -464,26 +464,24 @@ dump_instr(struct instr *i)
     if (HAS_ARG(i->i_opcode)) {
         sprintf(arg, "arg: %d ", i->i_oparg);
     }
-    char *name;
-    char unknown[8];
+    char opname[128];
     if (0 <= i->i_opcode && i->i_opcode <= 255) {
-        name = _PyOpcode_OpName[i->i_opcode];
+        sprintf(opname, "%s", _PyOpcode_OpName[i->i_opcode]);
     }
     else {
-        sprintf(unknown, "<%d>", i->i_opcode);
-        name = unknown;
+        sprintf(opname, "<%d>", i->i_opcode);
     }
     fprintf(stderr, "line: %d, opcode: %s %s%s%s\n",
-                    i->i_lineno, name, arg, jabs, jrel);
+                    i->i_lineno, opname, arg, jabs, jrel);
 }
 
 static void
-dump_basicblock(const basicblock *b)
+dump_basicblock(struct compiler *c, const basicblock *b)
 {
-    return;
     const char *b_return = b->b_return ? "return " : "";
-    fprintf(stderr, "basicblock %d\n", ((unsigned int)(uintptr_t)(void *)b) % 997u);
-    fprintf(stderr, "used: %d, depth: %d, offset: %d %s\n",
+    fprintf(stderr, "basicblock at %p for ", (void *)b);
+    PyObject_Print(c->u->u_qualname, stderr, 0);
+    fprintf(stderr, "\nused: %d, depth: %d, offset: %d %s\n",
         b->b_iused, b->b_startdepth, b->b_offset, b_return);
     if (b->b_instr) {
         int i;
@@ -7870,7 +7868,6 @@ mark_known_variables(struct assembler *a, struct compiler *c)
             }
         }
     }
-    // fprintf(stderr, "num blocks: %d\nnum_locals: %d\n", (int)num_blocks, num_locals);
     basicblock **stack = PyMem_New(basicblock *, num_blocks);
     if (stack == NULL) {
         return -1;
@@ -8418,10 +8415,6 @@ assemble(struct compiler *c, int addNone)
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
 
-    // fprintf(stderr, "assembling ");
-    // PyObject_Print(c->u->u_qualname, stderr, Py_PRINT_RAW);
-    // fprintf(stderr, "\n");
-
     /* Make sure every block that falls off the end returns None. */
     if (!c->u->u_curblock->b_return) {
         UNSET_LOC(c);
@@ -8533,7 +8526,6 @@ assemble(struct compiler *c, int addNone)
     if (mark_known_variables(&a, c) < 0) {
         goto error;
     }
-    // fprintf(stderr, "Success???\n");
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
