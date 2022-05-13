@@ -574,16 +574,15 @@ doctest decides whether actual output matches an example's expected output:
 
       >>> raise CustomError('message')
       Traceback (most recent call last):
-      CustomError: message
+      my_module.CustomError: message
 
       >>> raise CustomError('message')
       Traceback (most recent call last):
-      my_module.CustomError: message
+      my_other_module.CustomError: message
 
    Note that :const:`ELLIPSIS` can also be used to ignore the
    details of the exception message, but such a test may still fail based
-   on whether or not the module details are printed as part of the
-   exception name.
+   on whether the module matches exactly in the exception name.
 
    .. versionchanged:: 3.2
       :const:`IGNORE_EXCEPTION_DETAIL` now also ignores any information relating
