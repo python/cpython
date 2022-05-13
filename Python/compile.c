@@ -9091,10 +9091,8 @@ mark_reachable(struct assembler *a) {
     *sp++ = a->a_entry;
     while (sp > stack) {
         basicblock *b = *(--sp);
-        b->b_visited = 1;
         if (b->b_next && !b->b_nofallthrough) {
-            if (!b->b_next->b_visited) {
-                assert(b->b_next->b_predecessors == 0);
+            if (b->b_next->b_predecessors == 0) {
                 *sp++ = b->b_next;
             }
             b->b_next->b_predecessors++;
@@ -9104,8 +9102,7 @@ mark_reachable(struct assembler *a) {
             struct instr *instr = &b->b_instr[i];
             if (is_jump(instr) || is_block_push(instr)) {
                 target = instr->i_target;
-                if (!target->b_visited) {
-                    assert(target->b_predecessors == 0);
+                if (target->b_predecessors == 0) {
                     *sp++ = target;
                 }
                 target->b_predecessors++;
