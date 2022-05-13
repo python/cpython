@@ -1918,7 +1918,7 @@ dec_dealloc(PyObject *dec)
 /******************************************************************************/
 
 Py_LOCAL_INLINE(int)
-is_space(enum PyUnicode_Kind kind, const void *data, Py_ssize_t pos)
+is_space(int kind, const void *data, Py_ssize_t pos)
 {
     Py_UCS4 ch = PyUnicode_READ(kind, data, pos);
     return Py_UNICODE_ISSPACE(ch);
@@ -1935,7 +1935,7 @@ is_space(enum PyUnicode_Kind kind, const void *data, Py_ssize_t pos)
 static char *
 numeric_as_ascii(PyObject *u, int strip_ws, int ignore_underscores)
 {
-    enum PyUnicode_Kind kind;
+    int kind;
     const void *data;
     Py_UCS4 ch;
     char *res, *cp;
