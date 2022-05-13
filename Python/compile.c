@@ -8053,7 +8053,7 @@ static int
 optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts);
 
 static int
-trim_unused_consts(struct compiler *c, struct assembler *a, PyObject *consts);
+trim_unused_consts(struct assembler *a, PyObject *consts);
 
 /* Duplicates exit BBs, so that line numbers can be propagated to them */
 static int
@@ -8369,7 +8369,7 @@ assemble(struct compiler *c, int addNone)
     if (duplicate_exits_without_lineno(c)) {
         return NULL;
     }
-    if (trim_unused_consts(c, &a, consts)) {
+    if (trim_unused_consts(&a, consts)) {
         goto error;
     }
     propagate_line_numbers(&a);
@@ -9257,7 +9257,7 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
 
 // Remove trailing unused constants.
 static int
-trim_unused_consts(struct compiler *c, struct assembler *a, PyObject *consts)
+trim_unused_consts(struct assembler *a, PyObject *consts)
 {
     assert(PyList_CheckExact(consts));
 
