@@ -324,7 +324,11 @@ class Message:
                 'is deprecated and scheduled for removal in Python {remove}',
                 remove=(3, 13))
             try:
-                return _decode_uu(bpayload)
+                # We already issue our own warning here
+                with warnings.catch_warnings():
+                    warnings.filterwarnings(
+                        'ignore', message='.*uu.*', category=DeprecationWarning)
+                    return _decode_uu(bpayload)
             except ValueError:
                 # Some decoding problem.
                 return bpayload
