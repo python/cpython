@@ -951,8 +951,8 @@ nargs
 
 ArgumentParser objects usually associate a single command-line argument with a
 single action to be taken.  The ``nargs`` keyword argument associates a
-different number of command-line arguments with a single action.  The supported
-values are:
+different number of command-line arguments with a single action.
+See also :ref:`specifying-ambiguous-arguments`. The supported values are:
 
 * ``N`` (an integer).  ``N`` arguments from the command line will be gathered
   together into a list.  For example::
@@ -1602,6 +1602,7 @@ there are no options in the parser that look like negative numbers::
    usage: PROG [-h] [-1 ONE] [foo]
    PROG: error: argument -1: expected one argument
 
+
 If you have positional arguments that must begin with ``-`` and don't look
 like negative numbers, you can insert the pseudo-argument ``'--'`` which tells
 :meth:`~ArgumentParser.parse_args` that everything after that is a positional
@@ -1609,6 +1610,9 @@ argument::
 
    >>> parser.parse_args(['--', '-f'])
    Namespace(foo='-f', one=None)
+
+See also :ref:`the argparse howto on ambiguous arguments <specifying-ambiguous-arguments>`
+for more details.
 
 .. _prefix-matching:
 
