@@ -981,7 +981,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             }
         }
     }
-    if (dictkind != NO_DICT && dictkind != LAZY_DICT) {
+    if (dictkind == MANAGED_VALUES || dictkind == MANAGED_DICT || dictkind == OFFSET_DICT) {
         Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
         if (index != DKIX_EMPTY) {
             SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_LOAD_METHOD_IS_ATTR);

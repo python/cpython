@@ -4677,13 +4677,9 @@ handle_eval_breaker:
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
             uint32_t type_version = read_u32(cache->type_version);
             DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_METHOD);
-            /* Treat index as a signed 16 bit value */
-            int dictoffset = *(int16_t *)&cache->dict_offset;
+            int dictoffset = cache->dict_offset;
             PyObject *dict = *(PyObject **)((char *)self + dictoffset);
-            assert(
-                dictoffset == MANAGED_DICT_OFFSET ||
-                (dictoffset == self_cls->tp_dictoffset && dictoffset > 0)
-            );
+            assert(dictoffset == self_cls->tp_dictoffset && dictoffset > 0);
             /* This object has a __dict__, just not yet created */
             DEOPT_IF(dict != NULL, LOAD_METHOD);
             STAT_INC(LOAD_METHOD, hit);
