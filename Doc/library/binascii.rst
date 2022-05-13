@@ -38,6 +38,10 @@ The :mod:`binascii` module defines the following functions:
    data. Lines normally contain 45 (binary) bytes, except for the last line. Line
    data may be followed by whitespace.
 
+   .. deprecated-removed:: 3.11 3.13
+      This function and the legacy uuencode format it implements are deprecated
+      (see :pep:`PEP 594 <594#uu-and-the-uu-encoding>` for details).
+
 
 .. function:: b2a_uu(data, *, backtick=False)
 
@@ -47,6 +51,10 @@ The :mod:`binascii` module defines the following functions:
 
    .. versionchanged:: 3.7
       Added the *backtick* parameter.
+
+   .. deprecated-removed:: 3.11 3.13
+      This function and the legacy uuencode format it implements are deprecated
+      (see :pep:`PEP 594 <594#uu-and-the-uu-encoding>` for details).
 
 
 .. function:: a2b_base64(string, /, *, strict_mode=False)
