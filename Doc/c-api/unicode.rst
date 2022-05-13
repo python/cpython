@@ -92,7 +92,7 @@ access to internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
    .. deprecated:: 3.10
-      This API do nothing since Python 3.12. Please remove code using this function.
+      This API does nothing since Python 3.12.
 
 
 .. c:function:: Py_ssize_t PyUnicode_GET_LENGTH(PyObject *o)
