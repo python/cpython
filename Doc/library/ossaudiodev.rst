@@ -7,7 +7,8 @@
    :deprecated:
 
 .. deprecated:: 3.11
-   The :mod:`ossaudiodev` module is deprecated (see :pep:`594` for details).
+   The :mod:`ossaudiodev` module is deprecated
+   (see :pep:`PEP 594 <594#ossaudiodev>` for details).
 
 --------------
 
