@@ -174,3 +174,7 @@ Removed
    * :c:func:`PyUnicode_GET_SIZE`
    * :c:func:`PyUnicode_GetSize`
    * :c:func:`PyUnicode_GET_DATA_SIZE`
+
+* Remove the ``PyUnicode_InternImmortal()`` function and the
+  ``SSTATE_INTERNED_IMMORTAL`` macro.
+  (Contributed by Victor Stinner in :gh:`85858`.)

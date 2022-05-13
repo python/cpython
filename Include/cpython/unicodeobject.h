@@ -98,15 +98,9 @@ typedef struct {
     Py_ssize_t length;          /* Number of code points in the string */
     Py_hash_t hash;             /* Hash value; -1 if not set */
     struct {
-        /*
-           SSTATE_NOT_INTERNED (0)
-           SSTATE_INTERNED_MORTAL (1)
-           SSTATE_INTERNED_IMMORTAL (2)
-
-           If interned != SSTATE_NOT_INTERNED, the two references from the
-           dictionary to this object are *not* counted in ob_refcnt.
-         */
-        unsigned int interned:2;
+        /* If interned is set, the two references from the
+           dictionary to this object are *not* counted in ob_refcnt. */
+        unsigned int interned:1;
         /* Character size:
 
            - PyUnicode_1BYTE_KIND (1):
@@ -189,7 +183,6 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
 /* Interning state. */
 #define SSTATE_NOT_INTERNED 0
 #define SSTATE_INTERNED_MORTAL 1
-#define SSTATE_INTERNED_IMMORTAL 2
 
 /* Use only if you know it's a string */
 static inline unsigned int PyUnicode_CHECK_INTERNED(PyObject *op) {
