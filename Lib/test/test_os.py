@@ -167,6 +167,13 @@ class MiscTests(unittest.TestCase):
         self.assertIsInstance(cwd, bytes)
         self.assertEqual(os.fsdecode(cwd), os.getcwd())
 
+    @unittest.skipUnless(hasattr(os, 'popen'), "needs os.popen()")
+    @support.requires_subprocess()
+    def test_popen_encoding(self):
+        cmd = f"""{sys.executable} -c "import sys; sys.stdout.buffer.write(b'\\xc0')" """
+        with os.popen(cmd, encoding="latin1") as p:
+            self.assertEqual(p.read(), "\xc0")
+
 
 # Tests creating TESTFN
 class FileTests(unittest.TestCase):
@@ -1014,13 +1021,6 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
             self.assertEqual(next(it), "line2\n")
             self.assertEqual(next(it), "line3\n")
             self.assertRaises(StopIteration, next, it)
-
-    @unittest.skipUnless(hasattr(os, 'popen'), "needs os.popen()")
-    @support.requires_subprocess()
-    def test_os_popen_encoding(self):
-        cmd = f"""{sys.executable} -c 'import sys; sys.stdout.buffer.write(b"\\xc0\\n")'"""
-        with os.popen(cmd, encoding="latin1") as p:
-            self.assertEqual(p.read(), "\xc0\n")
 
     # Verify environ keys and values from the OS are of the
     # correct str type.
