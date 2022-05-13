@@ -1976,6 +1976,12 @@ Other concrete types
 
    .. versionadded:: 3.5.2
 
+   .. deprecated:: 3.11
+      Python 2 is no longer supported, and most type checkers also no longer
+      support type checking Python 2 code. Removal of the alias is not
+      currently planned, but users are encouraged to use
+      :class:`str` instead of ``Text`` wherever possible.
+
 Abstract Base Classes
 ---------------------
 
@@ -2663,7 +2669,7 @@ Constant
 
    .. note::
 
-      If ``from __future__ import annotations`` is used in Python 3.7 or later,
+      If ``from __future__ import annotations`` is used,
       annotations are not evaluated at function definition time.
       Instead, they are stored as strings in ``__annotations__``.
       This makes it unnecessary to use quotes around the annotation
@@ -2686,4 +2692,6 @@ convenience. This is subject to change, and not all deprecations are listed.
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |
 |  collections                     |               |                   |                |
++----------------------------------+---------------+-------------------+----------------+
+|  ``typing.Text``                 | 3.11          | Undecided         | :gh:`92332`    |
 +----------------------------------+---------------+-------------------+----------------+

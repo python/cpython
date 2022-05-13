@@ -53,18 +53,12 @@ class PosixTester(unittest.TestCase):
 
     def setUp(self):
         # create empty file
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         with open(os_helper.TESTFN, "wb"):
             pass
-        self.teardown_files = [ os_helper.TESTFN ]
-        self._warnings_manager = warnings_helper.check_warnings()
-        self._warnings_manager.__enter__()
+        self.enterContext(warnings_helper.check_warnings())
         warnings.filterwarnings('ignore', '.* potential security risk .*',
                                 RuntimeWarning)
-
-    def tearDown(self):
-        for teardown_file in self.teardown_files:
-            os_helper.unlink(teardown_file)
-        self._warnings_manager.__exit__(None, None, None)
 
     def testNoArgFunctions(self):
         # test posix functions which take no arguments and have
@@ -973,8 +967,8 @@ class PosixTester(unittest.TestCase):
 
         self.assertTrue(hasattr(testfn_st, 'st_flags'))
 
+        self.addCleanup(os_helper.unlink, _DUMMY_SYMLINK)
         os.symlink(os_helper.TESTFN, _DUMMY_SYMLINK)
-        self.teardown_files.append(_DUMMY_SYMLINK)
         dummy_symlink_st = os.lstat(_DUMMY_SYMLINK)
 
         def chflags_nofollow(path, flags):

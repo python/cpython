@@ -1346,7 +1346,7 @@ static int
 parse_address(PyObject *obj, SOCKADDR *Address, int Length)
 {
     PyObject *Host_obj;
-    Py_UNICODE *Host;
+    wchar_t *Host;
     unsigned short Port;
     unsigned long FlowInfo;
     unsigned long ScopeId;
@@ -1358,11 +1358,7 @@ parse_address(PyObject *obj, SOCKADDR *Address, int Length)
         if (!PyArg_ParseTuple(obj, "UH", &Host_obj, &Port)) {
             return -1;
         }
-#if USE_UNICODE_WCHAR_CACHE
-        Host = (wchar_t *)_PyUnicode_AsUnicode(Host_obj);
-#else /* USE_UNICODE_WCHAR_CACHE */
         Host = PyUnicode_AsWideCharString(Host_obj, NULL);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         if (Host == NULL) {
             return -1;
         }
@@ -1374,9 +1370,7 @@ parse_address(PyObject *obj, SOCKADDR *Address, int Length)
         else {
             ((SOCKADDR_IN*)Address)->sin_port = htons(Port);
         }
-#if !USE_UNICODE_WCHAR_CACHE
         PyMem_Free(Host);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         return Length;
     }
     case 4: {
@@ -1386,11 +1380,7 @@ parse_address(PyObject *obj, SOCKADDR *Address, int Length)
         {
             return -1;
         }
-#if USE_UNICODE_WCHAR_CACHE
-        Host = (wchar_t *)_PyUnicode_AsUnicode(Host_obj);
-#else /* USE_UNICODE_WCHAR_CACHE */
         Host = PyUnicode_AsWideCharString(Host_obj, NULL);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         if (Host == NULL) {
             return -1;
         }
@@ -1404,9 +1394,7 @@ parse_address(PyObject *obj, SOCKADDR *Address, int Length)
             ((SOCKADDR_IN6*)Address)->sin6_flowinfo = FlowInfo;
             ((SOCKADDR_IN6*)Address)->sin6_scope_id = ScopeId;
         }
-#if !USE_UNICODE_WCHAR_CACHE
         PyMem_Free(Host);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         return Length;
     }
     default:

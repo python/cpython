@@ -121,6 +121,9 @@ class PosixTests(unittest.TestCase):
         for name in dir(signal):
             if not name.startswith("SIG"):
                 continue
+            if name in {"SIG_IGN", "SIG_DFL"}:
+                # SIG_IGN and SIG_DFL are pointers
+                continue
             with self.subTest(name=name):
                 signum = getattr(signal, name)
                 self.assertGreaterEqual(signum, 0)
