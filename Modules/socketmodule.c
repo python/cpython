@@ -1579,6 +1579,18 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
     }
 #endif /* HAVE_SOCKADDR_ALG */
 
+#ifdef AF_HYPERV
+       case AF_HYPERV:
+       {
+           SOCKADDR_HV *a = (SOCKADDR_HV *) addr;
+           return Py_BuildValue("y#y#",
+                a->VmId,
+                sizeof(GUID),
+                a->ServiceId,
+                sizeof(GUID));
+       }
+#endif /* AF_HYPERV */
+
     /* More cases here... */
 
     default:
@@ -2375,6 +2387,66 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         return 1;
     }
 #endif /* HAVE_SOCKADDR_ALG */
+#ifdef AF_HYPERV
+    case AF_HYPERV:
+    {
+        switch (s->sock_proto) {
+        case HV_PROTOCOL_RAW:
+        {
+            GUID *vm_id;
+            Py_ssize_t vm_id_len = 0;
+
+            GUID *service_id;
+            Py_ssize_t service_id_len = 0;
+
+            SOCKADDR_HV *addr = &addrbuf->hv;
+
+            memset(addr, 0, sizeof(*addr));
+            addr->Family = AF_HYPERV;
+
+            if (!PyTuple_Check(args)) {
+                PyErr_Format(PyExc_TypeError,
+                             "%s(): AF_HYPERV address must be tuple, "
+                             "not %.500s",
+                             caller, Py_TYPE(args)->tp_name);
+                return 0;
+            }
+            if (!PyArg_ParseTuple(args,
+                                  "y#y#;AF_HYPERV address must be a tuple "
+                                  "(vm_id, service_id)",
+                                  &vm_id, &vm_id_len, &service_id,
+                                  &service_id_len))
+            {
+                return 0;
+            }
+            if (vm_id_len != sizeof(GUID)) {
+                PyErr_Format(PyExc_TypeError,
+                             "%s(): AF_HYPERV address vm_id must have a "
+                             "length of %d",
+                             caller, sizeof(GUID));
+                return 0;
+            }
+            if (service_id_len != sizeof(GUID)) {
+                PyErr_Format(PyExc_TypeError,
+                             "%s(): AF_HYPERV address service_id must have a "
+                             "length of %d",
+                             caller, sizeof(GUID));
+                return 0;
+            }
+
+            addr->VmId = *vm_id;
+            addr->ServiceId = *service_id;
+
+            *len_ret = sizeof(*addr);
+            return 1;
+        }
+        default:
+            PyErr_Format(PyExc_OSError,
+                         "%s(): unsupported AF_HYPERV protocol", caller);
+            return 0;
+        }
+    }
+#endif /* AF_HYPERV */
 
     /* More cases here... */
 
@@ -2524,6 +2596,13 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
         return 1;
     }
 #endif /* HAVE_SOCKADDR_ALG */
+#ifdef AF_HYPERV
+    case AF_HYPERV:
+    {
+        *len_ret = sizeof (SOCKADDR_HV);
+        return 1;
+    }
+#endif /* AF_HYPERV
 
     /* More cases here... */
 
@@ -7351,6 +7430,20 @@ PyInit__socket(void)
     /* Linux LLC */
     PyModule_AddIntMacro(m, AF_LLC);
 #endif
+#ifdef AF_HYPERV
+    /* Hyper-V sockets */
+    PyModule_AddIntMacro(m, AF_HYPERV);
+
+    /* for proto */
+    PyModule_AddIntMacro(m, HV_PROTOCOL_RAW);
+
+    /* for setsockopt() */
+    PyModule_AddIntMacro(m, HVSOCKET_CONNECT_TIMEOUT);
+    PyModule_AddIntMacro(m, HVSOCKET_CONNECT_TIMEOUT_MAX);
+    PyModule_AddIntMacro(m, HVSOCKET_CONTAINER_PASSTHRU);
+    PyModule_AddIntMacro(m, HVSOCKET_CONNECTED_SUSPEND);
+    PyModule_AddIntMacro(m, HVSOCKET_ADDRESS_FLAG_PASSTHRU);
+#endif /* AF_HYPERV */
 
 #ifdef USE_BLUETOOTH
     PyModule_AddIntMacro(m, AF_BLUETOOTH);

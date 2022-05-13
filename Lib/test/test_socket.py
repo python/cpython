@@ -143,6 +143,17 @@ def _have_socket_bluetooth():
     return True
 
 
+def _have_socket_hyperv():
+    """Check whether AF_HYPERV sockets are supported on this host."""
+    try:
+        s = socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW)
+    except (AttributeError, OSError):
+        return False
+    else:
+        s.close()
+    return True
+
+
 @contextlib.contextmanager
 def socket_setdefaulttimeout(timeout):
     old_timeout = socket.getdefaulttimeout()
@@ -170,6 +181,8 @@ HAVE_SOCKET_VSOCK = _have_socket_vsock()
 HAVE_SOCKET_UDPLITE = hasattr(socket, "IPPROTO_UDPLITE")
 
 HAVE_SOCKET_BLUETOOTH = _have_socket_bluetooth()
+
+HAVE_SOCKET_HYPERV = _have_socket_hyperv()
 
 # Size in bytes of the int type
 SIZEOF_INT = array.array("i").itemsize
@@ -2457,6 +2470,41 @@ class BasicBluetoothTest(unittest.TestCase):
     def testCreateScoSocket(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_SCO) as s:
             pass
+
+
+@unittest.skipUnless(HAVE_SOCKET_HYPERV,
+                     'Hyper-V sockets required for this test.')
+class BasicHyperVTest(unittest.TestCase):
+
+    def testHyperVConstants(self):
+        socket.HVSOCKET_CONNECT_TIMEOUT
+        socket.HVSOCKET_CONNECT_TIMEOUT_MAX
+        socket.HVSOCKET_CONTAINER_PASSTHRU
+        socket.HVSOCKET_CONNECTED_SUSPEND
+        socket.HVSOCKET_ADDRESS_FLAG_PASSTHRU
+
+    def testCreateHyperVSocketWithUnknownProtoFailure(self):
+        self.assertRaises(OSError, socket.socket, socket.AF_HYPERV, socket.SOCK_STREAM)
+
+    def testCreateHyperVSocketAddrNotTupleFailure(self):
+        with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
+            self.assertRaises(TypeError, s.connect, b"\x00" * 16)
+
+    def testCreateHyperVSocketAddrNotTupleOf2BytesFailure(self):
+        with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
+            self.assertRaises(TypeError, s.connect, (b"\x00" * 16,))
+
+    def testCreateHyperVSocketAddrNotTupleOfBytesFailure(self):
+        with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
+            self.assertRaises(TypeError, s.connect, (1, 2))
+
+    def testCreateHyperVSocketAddrVmIdNotCorrectLengthFailure(self):
+        with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
+            self.assertRaises(TypeError, s.connect, (b"\x00", b"\x00" * 16))
+
+    def testCreateHyperVSocketAddrServiceIdNotCorrectLengthFailure(self):
+        with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
+            self.assertRaises(TypeError, s.connect, (b"\x00" * 16, b"\x00"))
 
 
 class BasicTCPTest(SocketConnectedTest):

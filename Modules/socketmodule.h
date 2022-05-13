@@ -76,6 +76,14 @@ struct SOCKADDR_BTH_REDEF {
 # else
 typedef int socklen_t;
 # endif /* IPPROTO_IPV6 */
+
+/* Future remove once Py_WINVER has been bumped to >=0x0604 */
+# ifndef AF_HYPERV
+#  define AF_HYPERV 34
+# endif
+
+/* FIXME: Should this have some sort of safe guard? */
+# include <hvsocket.h>
 #endif /* MS_WINDOWS */
 
 #ifdef HAVE_SYS_UN_H
@@ -287,6 +295,9 @@ typedef union sock_addr {
 #endif
 #ifdef HAVE_LINUX_TIPC_H
     struct sockaddr_tipc tipc;
+#endif
+#ifdef AF_HYPERV
+    SOCKADDR_HV hv;
 #endif
 } sock_addr_t;
 
