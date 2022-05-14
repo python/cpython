@@ -104,13 +104,30 @@ Removed
 
 * Removed many old deprecated :mod:`unittest` features:
 
-  - :class:`~unittest.TestCase` method aliases ``failUnlessEqual``,
-    ``failIfEqual``, ``failUnless``, ``failIf``, ``failUnlessRaises``,
-    ``failUnlessAlmostEqual``, ``failIfAlmostEqual`` (deprecated in Python 3.1),
-    ``assertEquals``, ``assertNotEquals``, ``assert_``, ``assertAlmostEquals``,
-    ``assertNotAlmostEquals``, ``assertRegexpMatches``, ``assertRaisesRegexp``
-    (deprecated in Python 3.2), and ``assertNotRegexpMatches`` (deprecated in
-    Python 3.5).
+  - A number of :class:`~unittest.TestCase` method aliases:
+  
+    ======================== =============================== ===============
+     Deprecated alias         Method Name                     Deprecated in
+    ======================== =============================== ===============
+     failUnlessEqual          :meth:`.assertEqual`            3.1
+     failIfEqual              :meth:`.assertNotEqual`         3.1
+     failUnless               :meth:`.assertTrue`             3.1
+     failIf                   :meth:`.assertFalse`            3.1
+     failUnlessRaises         :meth:`.assertRaises`           3.1
+     failUnlessAlmostEqual    :meth:`.assertAlmostEqual`      3.1
+     failIfAlmostEqual        :meth:`.assertNotAlmostEqual`   3.1
+     assertEquals             :meth:`.assertEqual`            3.2
+     assertNotEquals          :meth:`.assertNotEqual`         3.2
+     assert\_                 :meth:`.assertTrue`             3.2
+     assertAlmostEquals       :meth:`.assertAlmostEqual`      3.2
+     assertNotAlmostEquals    :meth:`.assertNotAlmostEqual`   3.2
+     assertRegexpMatches      :meth:`.assertRegex`            3.2
+     assertRaisesRegexp       :meth:`.assertRaisesRegex`      3.2
+     assertNotRegexpMatches   :meth:`.assertNotRegex`         3.5
+    ======================== =============================== ===============
+
+    You can use https://github.com/isidentical/teyit to automatically modernise
+    your unit tests.
 
   - Undocumented and broken :class:`~unittest.TestCase` method
     ``assertDictContainsSubset`` (deprecated in Python 3.2).
