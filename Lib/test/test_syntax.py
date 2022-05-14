@@ -2117,6 +2117,7 @@ while 1:
         self._check_error(source, "too many statically nested blocks")
 
     @support.cpython_only
+    @unittest.skipIf(support.is_wasi, "Exhausts WASI call stack")
     def test_error_on_parser_stack_overflow(self):
         source = "-" * 100000 + "4"
         for mode in ["exec", "eval", "single"]:
