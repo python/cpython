@@ -299,8 +299,7 @@ The :meth:`~curses.window.addstr` method takes a Python string or
 bytestring as the value to be displayed.  The contents of bytestrings
 are sent to the terminal as-is.  Strings are encoded to bytes using
 the value of the window's :attr:`encoding` attribute; this defaults to
-the default system encoding as returned by
-:func:`locale.getpreferredencoding`.
+the default system encoding as returned by :func:`locale.getencoding`.
 
 The :meth:`~curses.window.addch` methods take a character, which can be
 either a string of length 1, a bytestring of length 1, or an integer.

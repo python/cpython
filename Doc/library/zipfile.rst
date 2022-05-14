@@ -311,7 +311,7 @@ ZipFile Objects
       compressed text files in :term:`universal newlines` mode.
 
    .. versionchanged:: 3.6
-      :meth:`open` can now be used to write files into the archive with the
+      :meth:`ZipFile.open` can now be used to write files into the archive with the
       ``mode='w'`` option.
 
    .. versionchanged:: 3.6

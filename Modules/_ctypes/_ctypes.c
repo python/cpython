@@ -112,6 +112,7 @@ bytes(cdata)
 #endif
 
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "structmember.h"         // PyMemberDef
 
 #include <ffi.h>
@@ -2270,12 +2271,12 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
-        if (Py_EnterRecursiveCall("while processing _as_parameter_")) {
+        if (_Py_EnterRecursiveCall("while processing _as_parameter_")) {
             Py_DECREF(as_parameter);
             return NULL;
         }
         value = PyCSimpleType_from_param(type, as_parameter);
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCall();
         Py_DECREF(as_parameter);
         return value;
     }

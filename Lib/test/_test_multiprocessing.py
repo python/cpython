@@ -20,6 +20,7 @@ import logging
 import subprocess
 import struct
 import operator
+import pathlib
 import pickle
 import weakref
 import warnings
@@ -255,6 +256,21 @@ class _TestProcess(BaseTestCase):
         self.assertTrue(len(authkey) > 0)
         self.assertEqual(current.ident, os.getpid())
         self.assertEqual(current.exitcode, None)
+
+    def test_set_executable(self):
+        if self.TYPE == 'threads':
+            self.skipTest(f'test not appropriate for {self.TYPE}')
+        paths = [
+            sys.executable,               # str
+            sys.executable.encode(),      # bytes
+            pathlib.Path(sys.executable)  # os.PathLike
+        ]
+        for path in paths:
+            self.set_executable(path)
+            p = self.Process()
+            p.start()
+            p.join()
+            self.assertEqual(p.exitcode, 0)
 
     def test_args_argument(self):
         # bpo-45735: Using list or tuple as *args* in constructor could
@@ -5787,6 +5803,7 @@ class ProcessesMixin(BaseMixin):
     current_process = staticmethod(multiprocessing.current_process)
     parent_process = staticmethod(multiprocessing.parent_process)
     active_children = staticmethod(multiprocessing.active_children)
+    set_executable = staticmethod(multiprocessing.set_executable)
     Pool = staticmethod(multiprocessing.Pool)
     Pipe = staticmethod(multiprocessing.Pipe)
     Queue = staticmethod(multiprocessing.Queue)

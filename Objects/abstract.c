@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_object.h"        // _Py_CheckSlotResult()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -185,11 +185,12 @@ PyObject_GetItem(PyObject *o, PyObject *key)
         if (_PyObject_LookupAttr(o, &_Py_ID(__class_getitem__), &meth) < 0) {
             return NULL;
         }
-        if (meth) {
+        if (meth && meth != Py_None) {
             result = PyObject_CallOneArg(meth, key);
             Py_DECREF(meth);
             return result;
         }
+        Py_XDECREF(meth);
         PyErr_Format(PyExc_TypeError, "type '%.200s' is not subscriptable",
                      ((PyTypeObject *)o)->tp_name);
         return NULL;
@@ -2545,7 +2546,7 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
         break;
     }
     assert(n >= 2);
-    if (Py_EnterRecursiveCall(" in __issubclass__")) {
+    if (_Py_EnterRecursiveCall(" in __issubclass__")) {
         Py_DECREF(bases);
         return -1;
     }
@@ -2555,7 +2556,7 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
             break;
         }
     }
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall();
     Py_DECREF(bases);
     return r;
 }
@@ -2625,10 +2626,14 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
         return object_isinstance(inst, cls);
     }
 
+    if (_PyUnion_Check(cls)) {
+        cls = _Py_union_args(cls);
+    }
+
     if (PyTuple_Check(cls)) {
         /* Not a general sequence -- that opens up the road to
            recursion and stack overflow. */
-        if (_Py_EnterRecursiveCall(tstate, " in __instancecheck__")) {
+        if (_Py_EnterRecursiveCallTstate(tstate, " in __instancecheck__")) {
             return -1;
         }
         Py_ssize_t n = PyTuple_GET_SIZE(cls);
@@ -2641,19 +2646,19 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
                 break;
             }
         }
-        _Py_LeaveRecursiveCall(tstate);
+        _Py_LeaveRecursiveCallTstate(tstate);
         return r;
     }
 
     PyObject *checker = _PyObject_LookupSpecial(cls, &_Py_ID(__instancecheck__));
     if (checker != NULL) {
-        if (_Py_EnterRecursiveCall(tstate, " in __instancecheck__")) {
+        if (_Py_EnterRecursiveCallTstate(tstate, " in __instancecheck__")) {
             Py_DECREF(checker);
             return -1;
         }
 
         PyObject *res = PyObject_CallOneArg(checker, inst);
-        _Py_LeaveRecursiveCall(tstate);
+        _Py_LeaveRecursiveCallTstate(tstate);
         Py_DECREF(checker);
 
         if (res == NULL) {
@@ -2714,9 +2719,13 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
         return recursive_issubclass(derived, cls);
     }
 
+    if (_PyUnion_Check(cls)) {
+        cls = _Py_union_args(cls);
+    }
+
     if (PyTuple_Check(cls)) {
 
-        if (_Py_EnterRecursiveCall(tstate, " in __subclasscheck__")) {
+        if (_Py_EnterRecursiveCallTstate(tstate, " in __subclasscheck__")) {
             return -1;
         }
         Py_ssize_t n = PyTuple_GET_SIZE(cls);
@@ -2728,19 +2737,19 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
                 /* either found it, or got an error */
                 break;
         }
-        _Py_LeaveRecursiveCall(tstate);
+        _Py_LeaveRecursiveCallTstate(tstate);
         return r;
     }
 
     checker = _PyObject_LookupSpecial(cls, &_Py_ID(__subclasscheck__));
     if (checker != NULL) {
         int ok = -1;
-        if (_Py_EnterRecursiveCall(tstate, " in __subclasscheck__")) {
+        if (_Py_EnterRecursiveCallTstate(tstate, " in __subclasscheck__")) {
             Py_DECREF(checker);
             return ok;
         }
         PyObject *res = PyObject_CallOneArg(checker, derived);
-        _Py_LeaveRecursiveCall(tstate);
+        _Py_LeaveRecursiveCallTstate(tstate);
         Py_DECREF(checker);
         if (res != NULL) {
             ok = PyObject_IsTrue(res);

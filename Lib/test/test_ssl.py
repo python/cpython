@@ -12,7 +12,6 @@ from test.support import warnings_helper
 import socket
 import select
 import time
-import datetime
 import enum
 import gc
 import os
@@ -30,10 +29,9 @@ try:
 except ImportError:
     ctypes = None
 
-import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import asyncore
+
+asyncore = warnings_helper.import_deprecated('asyncore')
+
 
 ssl = import_helper.import_module("ssl")
 import _ssl
@@ -2001,9 +1999,8 @@ class SimpleBackgroundTests(unittest.TestCase):
         self.server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         self.server_context.load_cert_chain(SIGNED_CERTFILE)
         server = ThreadedEchoServer(context=self.server_context)
+        self.enterContext(server)
         self.server_addr = (HOST, server.port)
-        server.__enter__()
-        self.addCleanup(server.__exit__, None, None, None)
 
     def test_connect(self):
         with test_wrap_socket(socket.socket(socket.AF_INET),
@@ -3715,8 +3712,7 @@ class ThreadedTests(unittest.TestCase):
 
     def test_recv_zero(self):
         server = ThreadedEchoServer(CERTFILE)
-        server.__enter__()
-        self.addCleanup(server.__exit__, None, None)
+        self.enterContext(server)
         s = socket.create_connection((HOST, server.port))
         self.addCleanup(s.close)
         s = test_wrap_socket(s, suppress_ragged_eofs=False)
