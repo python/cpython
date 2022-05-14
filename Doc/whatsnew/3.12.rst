@@ -110,26 +110,26 @@ Removed
 * Removed many old deprecated :mod:`unittest` features:
 
   - A number of :class:`~unittest.TestCase` method aliases:
-  
-    ======================== =============================== ===============
-     Deprecated alias         Method Name                     Deprecated in
-    ======================== =============================== ===============
-     failUnlessEqual          :meth:`.assertEqual`            3.1
-     failIfEqual              :meth:`.assertNotEqual`         3.1
-     failUnless               :meth:`.assertTrue`             3.1
-     failIf                   :meth:`.assertFalse`            3.1
-     failUnlessRaises         :meth:`.assertRaises`           3.1
-     failUnlessAlmostEqual    :meth:`.assertAlmostEqual`      3.1
-     failIfAlmostEqual        :meth:`.assertNotAlmostEqual`   3.1
-     assertEquals             :meth:`.assertEqual`            3.2
-     assertNotEquals          :meth:`.assertNotEqual`         3.2
-     assert\_                 :meth:`.assertTrue`             3.2
-     assertAlmostEquals       :meth:`.assertAlmostEqual`      3.2
-     assertNotAlmostEquals    :meth:`.assertNotAlmostEqual`   3.2
-     assertRegexpMatches      :meth:`.assertRegex`            3.2
-     assertRaisesRegexp       :meth:`.assertRaisesRegex`      3.2
-     assertNotRegexpMatches   :meth:`.assertNotRegex`         3.5
-    ======================== =============================== ===============
+
+    ============================ =============================== ===============
+       Deprecated alias           Method Name                     Deprecated in
+    ============================ =============================== ===============
+     ``failUnlessEqual``          :meth:`.assertEqual`            3.1
+     ``failIfEqual``              :meth:`.assertNotEqual`         3.1
+     ``failUnless``               :meth:`.assertTrue`             3.1
+     ``failIf``                   :meth:`.assertFalse`            3.1
+     ``failUnlessRaises``         :meth:`.assertRaises`           3.1
+     ``failUnlessAlmostEqual``    :meth:`.assertAlmostEqual`      3.1
+     ``failIfAlmostEqual``        :meth:`.assertNotAlmostEqual`   3.1
+     ``assertEquals``             :meth:`.assertEqual`            3.2
+     ``assertNotEquals``          :meth:`.assertNotEqual`         3.2
+     ``assert_``                  :meth:`.assertTrue`             3.2
+     ``assertAlmostEquals``       :meth:`.assertAlmostEqual`      3.2
+     ``assertNotAlmostEquals``    :meth:`.assertNotAlmostEqual`   3.2
+     ``assertRegexpMatches``      :meth:`.assertRegex`            3.2
+     ``assertRaisesRegexp``       :meth:`.assertRaisesRegex`      3.2
+     ``assertNotRegexpMatches``   :meth:`.assertNotRegex`         3.5
+    ============================ =============================== ===============
 
     You can use https://github.com/isidentical/teyit to automatically modernise
     your unit tests.
@@ -137,9 +137,9 @@ Removed
   - Undocumented and broken :class:`~unittest.TestCase` method
     ``assertDictContainsSubset`` (deprecated in Python 3.2).
 
-  - Undocumented :meth:`<unittest.TestLoader.loadTestsFromModule>
-    TestLoader.loadTestsFromModule` parameter *use_load_tests* (deprecated
-    and ignored since Python 3.2).
+  - Undocumented :meth:`TestLoader.loadTestsFromModule
+    <unittest.TestLoader.loadTestsFromModule>` parameter *use_load_tests*
+    (deprecated and ignored since Python 3.2).
 
   - An alias of the :class:`~unittest.TextTestResult` class:
     ``_TextTestResult`` (deprecated in Python 3.2).
