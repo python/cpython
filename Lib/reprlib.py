@@ -72,7 +72,7 @@ class Repr:
         if isinstance(indent, int):
             indent *= ' '
         sep = ',\n' + (self.maxlevel - level + 1) * indent
-        return sep.join(('', *pieces, ''))[1:-len(indent)]
+        return sep.join(('', *pieces, ''))[1:-len(indent) or None]
 
     def _repr_iterable(self, x, level, left, right, maxiter, trail=''):
         n = len(x)
