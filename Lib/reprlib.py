@@ -69,6 +69,12 @@ class Repr:
         if not pieces:
             return ''
         indent = self.indent
+        if not isinstance(indent, str):
+            if not isinstance(indent, int) or indent < 0:
+                raise ValueError(
+                    "Repr.indent must be None, str or non-negative int, not "
+                    + repr(indent)
+                )
         if isinstance(indent, int):
             indent *= ' '
         sep = ',\n' + (self.maxlevel - level + 1) * indent
