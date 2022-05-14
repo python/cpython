@@ -4537,7 +4537,7 @@ handle_eval_breaker:
 
         TARGET(LOAD_METHOD) {
             PREDICTED(LOAD_METHOD);
-            /* Designed to work in tandem with CALL_METHOD. */
+            /* Designed to work in tandem with PRECALL. */
             PyObject *name = GETITEM(names, oparg);
             PyObject *obj = TOP();
             PyObject *meth = NULL;
@@ -4562,7 +4562,7 @@ handle_eval_breaker:
                 /* meth is not an unbound method (but a regular attr, or
                    something was returned by a descriptor protocol).  Set
                    the second element of the stack to NULL, to signal
-                   CALL_METHOD that it's not a method call.
+                   PRECALL that it's not a method call.
 
                    NULL | meth | arg1 | ... | argN
                 */
@@ -5680,6 +5680,12 @@ handle_eval_breaker:
                     TRACE_FUNCTION_ENTRY();
                     DTRACE_FUNCTION_ENTRY();
                     break;
+                case POP_TOP:
+                    if (_Py_OPCODE(next_instr[-1]) == RETURN_GENERATOR) {
+                        /* Frame not fully initialized */
+                        break;
+                    }
+                    /* fall through */
                 default:
                     /* line-by-line tracing support */
                     if (PyDTrace_LINE_ENABLED()) {
