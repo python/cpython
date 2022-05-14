@@ -874,7 +874,7 @@ Linker flags
 
    * the compiler flag `-L` (for setting the search path for libraries);
      the `-L` flags are processed from left to right, and any flags in
-     :envvar:`CFLAGS` would take precedence over user- and package-supplied `-L`
+     :envvar:`LDFLAGS` would take precedence over user- and package-supplied `-L`
      flags.
 
 .. envvar:: CONFIGURE_LDFLAGS_NODIST
