@@ -214,7 +214,7 @@ dist:
 
 check:
 	# --severity=0 enables all checks, but we don't want to check for long lines
-	$(SPHINXLINT) -i tools -i $(VENVDIR) --severity=0 --disable='line too long'
+	$(SPHINXLINT) -i tools -i $(VENVDIR) --enable default-role
 	$(SPHINXLINT) --severity=0 --disable='line too long' ../Misc/NEWS.d/next/
 
 serve:
