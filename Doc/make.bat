@@ -180,9 +180,10 @@ if EXIST "%BUILDDIR%\html\index.html" (
 goto end
 
 :check
-rem --severity=0 enables all checks, but we don't want to check for long lines
-cmd /S /C "%SPHINXLINT% -i tools --severity=0 --disable='line too long'"
-cmd /S /C "%SPHINXLINT% --severity=0 --disable='line too long' ..\Misc\NEWS.d\next\ "
+rem Check the docs and NEWS files with sphinx-lint.
+rem Ignore the tools and venv dirs and check that the default role is not used.
+cmd /S /C "%SPHINXLINT% -i tools --enable default-role"
+cmd /S /C "%SPHINXLINT% --enable default-role ..\Misc\NEWS.d\next\ "
 goto end
 
 :serve
