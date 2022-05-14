@@ -31,7 +31,9 @@ direction it is facing, drawing a line as it moves.  Give it the command
 .. sidebar:: Turtle star
 
    Turtle can draw intricate shapes using programs that repeat simple
-   moves.
+   moves. Note that the image was drawn on Linux - on Windows, the star will be
+   filled in solid.
+
 
    .. image:: turtle-star.*
       :align: center
@@ -1026,6 +1028,9 @@ Filling
    :hide:
 
    >>> turtle.home()
+
+Since :mod:`tkinter` is being used for the underlying graphics, fill behaviors
+may differ depending on the platform used.
 
 .. function:: filling()
 
