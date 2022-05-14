@@ -1739,16 +1739,9 @@ set_issubset(PySetObject *so, PyObject *other)
         if (tmp == NULL) {
             return NULL;
         }
-        PyObject *result = NULL;
-        if (PySet_GET_SIZE(tmp) == PySet_GET_SIZE(so)) {
-            result = Py_True;
-        }
-        else {
-            result = Py_False;
-        }
+        int result = PySet_GET_SIZE(tmp) == PySet_GET_SIZE(so);
         Py_DECREF(tmp);
-        Py_INCREF(result);
-        return result;
+        return PyBool_FromLong(result);
     }
     if (PySet_GET_SIZE(so) > PySet_GET_SIZE(other))
         Py_RETURN_FALSE;
