@@ -125,12 +125,58 @@ which format specific object types.
 
 .. attribute:: Repr.indent
 
-   If this attribute is set to ``None`` (default), no indentation of the output
-   takes place. If it is set to either a string or an integer value, each
-   recursive representation will be on a new line, indented according to the
-   recursion depth. In that case, the attribute defines the string used for each
-   level of indentation. An integer value is equivalent to a string of space
-   characters of the same length.
+   If this attribute is set to ``None`` (the default), the output is formatted
+   with no line breaks or indentation, like the standard :func:`repr`.
+   For example:
+
+   .. code-block:: pycon
+
+      >>> example = [
+              1, 'spam', {'a': 2, 'b': 'spam eggs', 'c': {3: 4.5, 6: []}}, 'ham']
+      >>> print(reprlib.repr(example))
+      [1, 'spam', {'a': 2, 'b': 'spam eggs', 'c': {3: 4.5, 6: []}}, 'ham']
+
+   If :attr:`~Repr.indent` is set to a string, each recursion level
+   is placed on its own line, indented by that string:
+
+   .. code-block:: pycon
+
+      >>> reprlib.aRepr.indent = '-->'
+      >>> print(reprlib.repr(example))
+      [
+      -->1,
+      -->'spam',
+      -->{
+      -->-->'a': 2,
+      -->-->'b': 'spam eggs',
+      -->-->'c': {
+      -->-->-->3: 4.5,
+      -->-->-->6: [],
+      -->-->},
+      -->},
+      -->'ham',
+      ]
+
+   Setting :attr:`~Repr.indent` to a positive integer value behaves as if it
+   was set to a string with that number of spaces:
+
+   .. code-block:: pycon
+
+      >>> reprlib.aRepr.indent = 4
+      >>> print(reprlib.repr(example))
+      [
+          1,
+          'spam',
+          {
+              'a': 2,
+              'b': 'spam eggs',
+              'c': {
+                  3: 4.5,
+                  6: [],
+              },
+          },
+          'ham',
+      ]
 
 
 .. method:: Repr.repr(obj)
