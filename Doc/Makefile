@@ -213,9 +213,9 @@ dist:
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
 
 check:
-	# --severity=0 enables all checks, but we don't want to check for long lines
+	# enable the default-role to make sure it's not used
 	$(SPHINXLINT) -i tools -i $(VENVDIR) --enable default-role
-	$(SPHINXLINT) --severity=0 --disable='line too long' ../Misc/NEWS.d/next/
+	$(SPHINXLINT) --enable default-role ../Misc/NEWS.d/next/
 
 serve:
 	@echo "The serve target was removed, use htmlview instead (see bpo-36329)"
