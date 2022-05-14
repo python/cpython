@@ -114,16 +114,16 @@ Removed
     ============================ =============================== ===============
        Deprecated alias           Method Name                     Deprecated in
     ============================ =============================== ===============
-     ``failUnlessEqual``          :meth:`.assertEqual`            3.1
-     ``failIfEqual``              :meth:`.assertNotEqual`         3.1
      ``failUnless``               :meth:`.assertTrue`             3.1
      ``failIf``                   :meth:`.assertFalse`            3.1
-     ``failUnlessRaises``         :meth:`.assertRaises`           3.1
+     ``failUnlessEqual``          :meth:`.assertEqual`            3.1
+     ``failIfEqual``              :meth:`.assertNotEqual`         3.1
      ``failUnlessAlmostEqual``    :meth:`.assertAlmostEqual`      3.1
      ``failIfAlmostEqual``        :meth:`.assertNotAlmostEqual`   3.1
+     ``failUnlessRaises``         :meth:`.assertRaises`           3.1
+     ``assert_``                  :meth:`.assertTrue`             3.2
      ``assertEquals``             :meth:`.assertEqual`            3.2
      ``assertNotEquals``          :meth:`.assertNotEqual`         3.2
-     ``assert_``                  :meth:`.assertTrue`             3.2
      ``assertAlmostEquals``       :meth:`.assertAlmostEqual`      3.2
      ``assertNotAlmostEquals``    :meth:`.assertNotAlmostEqual`   3.2
      ``assertRegexpMatches``      :meth:`.assertRegex`            3.2
