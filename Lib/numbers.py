@@ -5,6 +5,31 @@
 
 TODO: Fill out more detailed documentation on the operators."""
 
+############ Maintenance notes #########################################
+#
+# ABCs are different from other standard library modules in that they
+# specify compliance tests.  In general, once an ABC has been published,
+# new methods (either abstract or concrete) cannot be added.
+#
+# Though classes that inherit from an ABC would automatically receive a
+# new mixin method, registered classes would become non-compliant and
+# violate the contract promised by ``isinstance(someobj, SomeABC)``.
+#
+# Though irritating, the correct procedure for adding new abstract or
+# mixin methods is to create a new ABC as a subclass of the previous
+# ABC.
+#
+# Because they are so hard to change, new ABCs should have their APIs
+# carefully thought through prior to publication.
+#
+# Since ABCMeta only checks for the presence of methods, it is possible
+# to alter the signature of a method by adding optional arguments
+# or changing parameter names.  This is still a bit dubious but at
+# least it won't cause isinstance() to return an incorrect result.
+#
+#
+#######################################################################
+
 from abc import ABCMeta, abstractmethod
 
 __all__ = ["Number", "Complex", "Real", "Rational", "Integral"]
@@ -118,7 +143,7 @@ class Complex(Number):
 
     @abstractmethod
     def __pow__(self, exponent):
-        """self**exponent; should promote to float or complex when necessary."""
+        """self ** exponent; should promote to float or complex when necessary."""
         raise NotImplementedError
 
     @abstractmethod
@@ -167,7 +192,7 @@ class Real(Complex):
         """trunc(self): Truncates self to an Integral.
 
         Returns an Integral i such that:
-          * i>0 iff self>0;
+          * i > 0 iff self > 0;
           * abs(i) <= abs(self);
           * for any Integral j satisfying the first two conditions,
             abs(i) >= abs(j) [i.e. i has "maximal" abs among those].
@@ -203,7 +228,7 @@ class Real(Complex):
         return (self // other, self % other)
 
     def __rdivmod__(self, other):
-        """divmod(other, self): The pair (self // other, self % other).
+        """divmod(other, self): The pair (other // self, other % self).
 
         Sometimes this can be computed faster than the pair of
         operations.
