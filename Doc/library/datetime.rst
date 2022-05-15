@@ -1364,7 +1364,8 @@ Instance methods:
 
    Return POSIX timestamp corresponding to the :class:`.datetime`
    instance. The return value is a :class:`float` similar to that
-   returned by :func:`time.time`.
+   returned by :func:`time.time`. Raises :exc:`OSError` for times far in the
+   past or far in the future.
 
    For aware :class:`.datetime` instances, the return value is computed
    as::
