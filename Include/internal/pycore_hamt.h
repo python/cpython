@@ -23,7 +23,7 @@ void _PyHamt_Fini(PyInterpreterState *);
 
 /* other API */
 
-#define PyHamt_Check(o) Py_IS_TYPE(o, &_PyHamt_Type)
+#define PyHamt_Check(o) Py_IS_TYPE((o), &_PyHamt_Type)
 
 
 /* Abstract tree node. */
