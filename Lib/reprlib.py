@@ -79,7 +79,8 @@ class Repr:
             sep = ',\n' + (self.maxlevel - level + 1) * indent
         except TypeError as error:
             raise TypeError(
-                f'Repr.indent must be of type None, str or int, not {type(indent)}'
+                'Repr.indent must be of type NoneType, str or int, '
+                f'not {type(indent)}'
             ) from error
         return sep.join(('', *pieces, ''))[1:-len(indent) or None]
 
