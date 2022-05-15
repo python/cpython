@@ -520,9 +520,11 @@ Connection Objects
 
       Create a collation named *name* using the collating function *callable*.
       *callable* is passed two :class:`string <str>` arguments,
-      and it should return 1 if the first is ordered higher than the second,
-      -1 if the first is ordered lower than the second,
-      and 0 if they are ordered equal.
+      and it should return an :class:`int <integer>`:
+
+      * ``1`` if the first is ordered higher than the second
+      * ``-1`` if the first is ordered lower than the second
+      * ``0`` if they are ordered equal
 
       The following example shows a reverse sorting collation:
 
