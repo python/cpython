@@ -262,8 +262,9 @@ static inline void* _PyUnicode_COMPACT_DATA(PyObject *op) {
 }
 
 static inline void* _PyUnicode_NONCOMPACT_DATA(PyObject *op) {
+    void *data;
     assert(!PyUnicode_IS_COMPACT(op));
-    void *data = _PyUnicodeObject_CAST(op)->data.any;
+    data = _PyUnicodeObject_CAST(op)->data.any;
     assert(data != NULL);
     return data;
 }
@@ -369,11 +370,13 @@ static inline Py_UCS4 PyUnicode_READ_CHAR(PyObject *unicode, Py_ssize_t index)
    than iterating over the string. */
 static inline Py_UCS4 PyUnicode_MAX_CHAR_VALUE(PyObject *op)
 {
+    int kind;
+
     if (PyUnicode_IS_ASCII(op)) {
         return 0x7fU;
     }
 
-    int kind = PyUnicode_KIND(op);
+    kind = PyUnicode_KIND(op);
     if (kind == PyUnicode_1BYTE_KIND) {
        return 0xffU;
     }
