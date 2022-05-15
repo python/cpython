@@ -21,13 +21,16 @@
 // non constant type using const_cast<type>. For example,
 // _Py_CAST(PyObject*, op) can convert a "const PyObject*" to
 // "PyObject*".
-//
-// The type argument must not be constant. For example, in C++,
-// _Py_CAST(const PyObject*, expr) fails with a compiler error.
 #ifdef __cplusplus
 #  define _Py_STATIC_CAST(type, expr) static_cast<type>(expr)
-#  define _Py_CAST(type, expr) \
-       const_cast<type>(reinterpret_cast<const type>(expr))
+// _Py_add_const is purely for the implementation of the C++ cast
+// It isn't intended as public interface
+template <typename T>
+struct _Py_add_const {
+    typedef const T type;
+};
+#  define _Py_CAST(tp, expr) \
+       const_cast<tp>(reinterpret_cast<_Py_add_const<tp>::type>(expr))
 #else
 #  define _Py_STATIC_CAST(type, expr) ((type)(expr))
 #  define _Py_CAST(type, expr) ((type)(expr))
