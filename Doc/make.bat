@@ -181,7 +181,7 @@ goto end
 
 :check
 rem Check the docs and NEWS files with sphinx-lint.
-rem Ignore the tools and venv dirs and check that the default role is not used.
+rem Ignore the tools dir and check that the default role is not used.
 cmd /S /C "%SPHINXLINT% -i tools --enable default-role"
 cmd /S /C "%SPHINXLINT% --enable default-role ..\Misc\NEWS.d\next\ "
 goto end
