@@ -3,12 +3,12 @@
 
 
 PyObject *
-_build_return_object(mod_ty module, int mode, PyObject *filename_ob, PyArena *arena)
+_build_return_object(mod_ty module, PyObject *src, int mode, PyObject *filename_ob, PyArena *arena)
 {
     PyObject *result = NULL;
 
     if (mode == 2) {
-        result = (PyObject *)_PyAST_Compile(module, filename_ob, NULL, -1, arena);
+        result = (PyObject *)_PyAST_Compile(module, src, filename_ob, NULL, -1, arena);
     } else if (mode == 1) {
         result = PyAST_mod2obj(module);
     } else {
@@ -54,14 +54,29 @@ parse_file(PyObject *self, PyObject *args, PyObject *kwds)
     mod_ty res = _PyPegen_run_parser_from_file_pointer(
                         fp, Py_file_input, filename_ob,
                         NULL, NULL, NULL, &flags, NULL, arena);
-    fclose(fp);
     if (res == NULL) {
         goto error;
     }
 
-    result = _build_return_object(res, mode, filename_ob, arena);
+    /* XX: better way to get the source/not provide
+       the source at all? */
+    rewind(fp);
+    fseek(fp, 0, SEEK_END);
+    Py_ssize_t size = ftell(fp);
+    PyObject *src = PyUnicode_New(size, 0x10ffff);
+    if (src == NULL) {
+        goto error;
+    }
+    Py_ssize_t read_size = fread(PyUnicode_DATA(src), sizeof(char), size, fp);
+    if (size != read_size) {
+        goto error;
+    }
+
+    result = _build_return_object(res, src, mode, filename_ob, arena);
 
 error:
+    fclose(fp);
+    Py_XDECREF(src);
     Py_XDECREF(filename_ob);
     _PyArena_Free(arena);
     return result;
@@ -98,9 +113,14 @@ parse_string(PyObject *self, PyObject *args, PyObject *kwds)
     if (res == NULL) {
         goto error;
     }
-    result = _build_return_object(res, mode, filename_ob, arena);
+    PyObject *string = PyUnicode_FromString(the_string);
+    if (string == NULL) {
+        goto error;
+    }
+    result = _build_return_object(res, string, mode, filename_ob, arena);
 
 error:
+    Py_XDECREF(string);
     Py_XDECREF(filename_ob);
     _PyArena_Free(arena);
     return result;
