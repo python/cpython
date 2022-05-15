@@ -362,6 +362,7 @@ struct compiler {
     struct compiler_unit *u; /* compiler state for current block */
     PyObject *c_stack;           /* Python list holding compiler_unit ptrs */
     PyArena *c_arena;            /* pointer to memory allocation arena */
+    PyObject *c_source;          /* source code of a file/interactive line */
 };
 
 typedef struct {
@@ -538,8 +539,8 @@ compiler_init(struct compiler *c)
 }
 
 PyCodeObject *
-_PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
-               int optimize, PyArena *arena)
+_PyAST_Compile(mod_ty mod, PyObject *source, PyObject *filename,
+               PyCompilerFlags *flags, int optimize, PyArena *arena)
 {
     struct compiler c;
     PyCodeObject *co = NULL;
@@ -562,6 +563,7 @@ _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_flags = flags;
     c.c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c.c_nestlevel = 0;
+    c.c_source = source;
 
     _PyASTOptimizeState state;
     state.optimize = c.c_optimize;
@@ -596,6 +598,7 @@ compiler_free(struct compiler *c)
     Py_XDECREF(c->c_filename);
     Py_DECREF(c->c_const_cache);
     Py_DECREF(c->c_stack);
+    Py_XDECREF(c->c_source);
 }
 
 static PyObject *
@@ -8438,6 +8441,9 @@ assemble(struct compiler *c, int addNone)
     }
 
     co = makecode(c, &a, consts, maxdepth, nlocalsplus);
+    if (co) {
+        co->co_source = c->c_source;
+    }
  error:
     Py_XDECREF(consts);
     assemble_free(&a);
