@@ -416,14 +416,15 @@ _Py_WriteIndentedMargin(int indent, const char *margin, PyObject *f)
 }
 
 static int
-display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int indent,
-                                int margin_indent, const char *margin,
-                                int *truncation, PyObject **line)
+display_source_line_with_margin(PyObject *f, PyFrameObject *frame, PyObject *filename,
+                                int lineno, int indent, int margin_indent,
+                                const char *margin, int *truncation, PyObject **line)
 {
     int fd;
     int i;
-    char *found_encoding;
-    const char *encoding;
+    int is_stdin = 0;
+    char *found_encoding = NULL;
+    const char *encoding = "utf-8";
     PyObject *io;
     PyObject *binary;
     PyObject *fob = NULL;
@@ -437,48 +438,68 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
     if (filename == NULL)
         return 0;
 
-    /* Do not attempt to open things like <string> or <stdin> */
+    io = PyImport_ImportModule("io");
+    if (io == NULL) {
+        return -1;
+    }
+
+    /* Do not attempt to open things like <string> but
+       handle the case of <stdin> */
     assert(PyUnicode_Check(filename));
-    if (PyUnicode_READ_CHAR(filename, 0) == '<') {
+    if (strcmp(PyUnicode_DATA(filename), "<stdin>") == 0 && frame != NULL) {
+        PyObject *source = frame->f_frame->f_code->co_source;
+        if (source == NULL) {
+            return 0;
+        }
+        PyObject *bytes = PyUnicode_AsEncodedString(source, "utf-8", "strict");
+        if (bytes == NULL) {
+            return -1;
+        }
+        _Py_DECLARE_STR(bytesio, "BytesIO");
+        binary = _PyObject_CallMethod(io, &_Py_STR(bytesio),
+                                      "O", bytes);
+        if (binary == NULL) {
+            return -1;
+        }
+        is_stdin = 1;
+    }
+    else if (PyUnicode_READ_CHAR(filename, 0) == '<') {
         Py_ssize_t len = PyUnicode_GET_LENGTH(filename);
         if (len > 0 && PyUnicode_READ_CHAR(filename, len - 1) == '>') {
             return 0;
         }
     }
 
-    io = PyImport_ImportModule("io");
-    if (io == NULL) {
-        return -1;
-    }
-
-    binary = _PyObject_CallMethod(io, &_Py_ID(open), "Os", filename, "rb");
-    if (binary == NULL) {
-        PyErr_Clear();
-
-        binary = _Py_FindSourceFile(filename, buf, sizeof(buf), io);
+    if (!is_stdin) {
+        binary = _PyObject_CallMethod(io, &_Py_ID(open), "Os", filename, "rb");
         if (binary == NULL) {
-            Py_DECREF(io);
-            return -1;
-        }
-    }
+            PyErr_Clear();
 
-    /* use the right encoding to decode the file as unicode */
-    fd = PyObject_AsFileDescriptor(binary);
-    if (fd < 0) {
-        Py_DECREF(io);
-        Py_DECREF(binary);
-        return 0;
-    }
-    found_encoding = _PyTokenizer_FindEncodingFilename(fd, filename);
-    if (found_encoding == NULL)
-        PyErr_Clear();
-    encoding = (found_encoding != NULL) ? found_encoding : "utf-8";
-    /* Reset position */
-    if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
-        Py_DECREF(io);
-        Py_DECREF(binary);
-        PyMem_Free(found_encoding);
-        return 0;
+            binary = _Py_FindSourceFile(filename, buf, sizeof(buf), io);
+            if (binary == NULL) {
+                Py_DECREF(io);
+                return -1;
+            }
+        }
+
+        /* use the right encoding to decode the file as unicode */
+        fd = PyObject_AsFileDescriptor(binary);
+        if (fd < 0) {
+            Py_DECREF(io);
+            Py_DECREF(binary);
+            return 0;
+        }
+        found_encoding = _PyTokenizer_FindEncodingFilename(fd, filename);
+        if (found_encoding == NULL)
+            PyErr_Clear();
+        encoding = (found_encoding != NULL) ? found_encoding : "utf-8";
+        /* Reset position */
+        if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
+            Py_DECREF(io);
+            Py_DECREF(binary);
+            PyMem_Free(found_encoding);
+            return 0;
+        }
     }
     fob = _PyObject_CallMethod(io, &_Py_ID(TextIOWrapper),
                                "Os", binary, encoding);
@@ -577,7 +598,7 @@ int
 _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent,
                       int *truncation, PyObject **line)
 {
-    return display_source_line_with_margin(f, filename, lineno, indent, 0,
+    return display_source_line_with_margin(f, NULL, filename, lineno, indent, 0,
                                            NULL, truncation, line);
 }
 
@@ -781,7 +802,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     int truncation = _TRACEBACK_SOURCE_LINE_INDENT;
     PyObject* source_line = NULL;
     int rc = display_source_line_with_margin(
-            f, filename, lineno, _TRACEBACK_SOURCE_LINE_INDENT,
+            f, frame, filename, lineno, _TRACEBACK_SOURCE_LINE_INDENT,
             margin_indent, margin, &truncation, &source_line);
     if (rc != 0 || !source_line) {
         /* ignore errors since we can't report them, can we? */
