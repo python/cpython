@@ -72,7 +72,8 @@ class Repr:
         if isinstance(indent, int):
             if indent < 0:
                 raise ValueError(
-                    'Repr.indent cannot be negative int (was {indent!r})')
+                    f'Repr.indent cannot be negative int (was {indent!r})'
+                )
             indent *= ' '
         try:
             sep = ',\n' + (self.maxlevel - level + 1) * indent
