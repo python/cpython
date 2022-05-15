@@ -69,15 +69,17 @@ class Repr:
         if not pieces:
             return ''
         indent = self.indent
-        if not isinstance(indent, str):
-            if not isinstance(indent, int) or indent < 0:
-                raise ValueError(
-                    "Repr.indent must be None, str or non-negative int, not "
-                    + repr(indent)
-                )
         if isinstance(indent, int):
+            if indent < 0:
+                raise ValueError(
+                    'Repr.indent cannot be negative int (was {indent!r})')
             indent *= ' '
-        sep = ',\n' + (self.maxlevel - level + 1) * indent
+        try:
+            sep = ',\n' + (self.maxlevel - level + 1) * indent
+        except TypeError as error:
+            raise TypeError(
+                f'Repr.indent must be of type None, str or int, not {type(indent)}'
+            ) from error
         return sep.join(('', *pieces, ''))[1:-len(indent) or None]
 
     def _repr_iterable(self, x, level, left, right, maxiter, trail=''):
