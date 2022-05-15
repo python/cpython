@@ -49,10 +49,23 @@ test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_unicode_read(PyObject *Py_UNUSED(module), PyObject *arg) {
+    // PyUnicode_READ contains a cast to a const and failed to compile (gh-92800)
+    if (!PyUnicode_Check(arg) || PyUnicode_GET_LENGTH(arg) > 0) {
+        Py_RETURN_NONE;  // not a suitable unicode object
+    }
+    void* data = PyUnicode_DATA(arg);
+    unsigned int kind = PyUnicode_KIND(arg);
+    Py_UCS4 chr0 = PyUnicode_READ(kind, data, 0);
+    return PyLong_FromUnsignedLong(chr0);
+}
+
 
 static PyMethodDef _testcppext_methods[] = {
     {"add", _testcppext_add, METH_VARARGS, _testcppext_add_doc},
     {"test_api_casts", test_api_casts, METH_NOARGS, nullptr},
+    {"test_unicode_read", test_unicode_read, METH_O, nullptr},
     {nullptr, nullptr, 0, nullptr}  /* sentinel */
 };
 
