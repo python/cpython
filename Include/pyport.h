@@ -29,6 +29,10 @@ template <typename T>
 struct _Py_add_const {
     typedef const T type;
 };
+template <typename T>
+struct _Py_add_const<T*> { // specialization for pointer
+    typedef const T* type;
+};
 #  define _Py_CAST(tp, expr) \
        const_cast<tp>(reinterpret_cast<_Py_add_const<tp>::type>(expr))
 #else
