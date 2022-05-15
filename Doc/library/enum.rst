@@ -126,11 +126,11 @@ Module Contents
 
    :func:`member`
 
-      Make `obj` a member.  Can be used as a decorator.
+      Make ``obj`` a member.  Can be used as a decorator.
 
    :func:`nonmember`
 
-      Do not make `obj` a member.  Can be used as a decorator.
+      Do not make ``obj`` a member.  Can be used as a decorator.
 
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
