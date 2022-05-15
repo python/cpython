@@ -1531,6 +1531,7 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_qualname);
     Py_XDECREF(co->co_linetable);
     Py_XDECREF(co->co_exceptiontable);
+    Py_XDECREF(co->co_source);
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)co);
     }
@@ -1680,6 +1681,7 @@ static PyMemberDef code_memberlist[] = {
     {"co_firstlineno",     T_INT,    OFF(co_firstlineno),     READONLY},
     {"co_linetable",       T_OBJECT, OFF(co_linetable),       READONLY},
     {"co_exceptiontable",  T_OBJECT, OFF(co_exceptiontable),  READONLY},
+    {"co_source",          T_OBJECT, OFF(co_source),          READONLY},
     {NULL}      /* Sentinel */
 };
 
