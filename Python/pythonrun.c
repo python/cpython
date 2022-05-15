@@ -44,7 +44,7 @@ extern "C" {
 /* Forward */
 static void flush_io(void);
 static PyObject *run_mod(mod_ty, PyObject *, PyObject *, PyObject *,
-                          PyCompilerFlags *, PyArena *);
+                          PyCompilerFlags *, PyObject *, PyArena *);
 static PyObject *run_pyc_file(FILE *, PyObject *, PyObject *,
                               PyCompilerFlags *);
 static int PyRun_InteractiveOneObjectEx(FILE *, PyObject *, PyCompilerFlags *);
@@ -237,8 +237,9 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
         return -1;
     }
 
-    mod = _PyParser_ASTFromFile(fp, filename, enc, Py_single_input,
-                                ps1, ps2, flags, &errcode, arena);
+    PyObject *interactive_src = NULL;
+    mod = _PyParser_InteractiveASTFromFile(fp, filename, enc, Py_single_input,
+                                           ps1, ps2, flags, &errcode, &interactive_src, arena);
 
     Py_XDECREF(v);
     Py_XDECREF(w);
@@ -257,7 +258,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
         return -1;
     }
     d = PyModule_GetDict(m);
-    v = run_mod(mod, filename, d, d, flags, arena);
+    v = run_mod(mod, filename, d, d, flags, interactive_src, arena);
     _PyArena_Free(arena);
     if (v == NULL) {
         return -1;
@@ -1600,8 +1601,14 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     mod = _PyParser_ASTFromString(
             str, &_Py_STR(anon_string), start, flags, arena);
 
-    if (mod != NULL)
-        ret = run_mod(mod, &_Py_STR(anon_string), globals, locals, flags, arena);
+    if (mod != NULL) {
+        PyObject *string = PyUnicode_FromString(str);
+        if (string == NULL) {
+            _PyArena_Free(arena);
+            return NULL;
+        }
+        ret = run_mod(mod, &_Py_STR(anon_string), globals, locals, flags, string, arena);
+    }
     _PyArena_Free(arena);
     return ret;
 }
@@ -1626,7 +1633,23 @@ pyrun_file(FILE *fp, PyObject *filename, int start, PyObject *globals,
 
     PyObject *ret;
     if (mod != NULL) {
-        ret = run_mod(mod, filename, globals, locals, flags, arena);
+        /* TODO: either a better way to get the source or
+           do not provide a source at all */
+        rewind(fp);
+        fseek(fp, 0, SEEK_END);
+        Py_ssize_t size = ftell(fp);
+        PyObject *src = PyUnicode_New(size, 0x10ffff);
+        if (src == NULL) {
+            _PyArena_Free(arena);
+            return NULL;
+        }
+        Py_ssize_t read_size = fread(PyUnicode_DATA(src), sizeof(char), size, fp);
+        if (size != read_size) {
+            Py_DECREF(src);
+            _PyArena_Free(arena);
+            return NULL;
+        }
+        ret = run_mod(mod, filename, globals, locals, flags, src, arena);
     }
     else {
         ret = NULL;
@@ -1719,10 +1742,10 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
 
 static PyObject *
 run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
-            PyCompilerFlags *flags, PyArena *arena)
+            PyCompilerFlags *flags, PyObject *src, PyArena *arena)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyCodeObject *co = _PyAST_Compile(mod, filename, flags, -1, arena);
+    PyCodeObject *co = _PyAST_Compile(mod, src, filename, flags, -1, arena);
     if (co == NULL)
         return NULL;
 
@@ -1799,7 +1822,12 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
         _PyArena_Free(arena);
         return result;
     }
-    co = _PyAST_Compile(mod, filename, flags, optimize, arena);
+    PyObject *string = PyUnicode_FromString(str);
+    if (string == NULL) {
+        _PyArena_Free(arena);
+        return NULL;
+    }
+    co = _PyAST_Compile(mod, string, filename, flags, optimize, arena);
     _PyArena_Free(arena);
     return (PyObject *)co;
 }
