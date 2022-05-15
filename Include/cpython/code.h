@@ -92,6 +92,8 @@ typedef uint16_t _Py_CODEUNIT;
        Type is a void* to keep the format private in codeobject.c to force     \
        people to go through the proper APIs. */                                \
     void *co_extra;                                                            \
+    PyObject *co_source;          /* unicode (source code of the code, used    \
+                                     for tracebacks) */                        \
     char co_code_adaptive[(SIZE)];                                             \
 }
 
