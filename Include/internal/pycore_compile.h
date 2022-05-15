@@ -14,6 +14,7 @@ struct _mod;     // Type defined in pycore_ast.h
 // Export the symbol for test_peg_generator (built as a library)
 PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     struct _mod *mod,
+    PyObject *src,
     PyObject *filename,
     PyCompilerFlags *flags,
     int optimize,
