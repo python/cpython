@@ -213,8 +213,10 @@ dist:
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
 
 check:
-	$(SPHINXLINT) -i tools -i $(VENVDIR) -i README.rst
-	$(SPHINXLINT) ../Misc/NEWS.d/next/
+	# Check the docs and NEWS files with sphinx-lint.
+	# Ignore the tools and venv dirs and check that the default role is not used.
+	$(SPHINXLINT) -i tools -i $(VENVDIR) --enable default-role
+	$(SPHINXLINT) --enable default-role ../Misc/NEWS.d/next/
 
 serve:
 	@echo "The serve target was removed, use htmlview instead (see bpo-36329)"
