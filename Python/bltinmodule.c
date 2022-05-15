@@ -815,7 +815,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                 _PyArena_Free(arena);
                 goto error;
             }
-            result = (PyObject*)_PyAST_Compile(mod, filename,
+            result = (PyObject*)_PyAST_Compile(mod, source, filename,
                                                &cf, optimize, arena);
             _PyArena_Free(arena);
         }
