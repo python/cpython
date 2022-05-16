@@ -37,6 +37,7 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
     if (_Py_IsImmortal(op)) {
         return;
     }
+    _Py_DECREF_STAT_INC();
 #ifdef Py_REF_DEBUG
     _Py_RefTotal--;
 #endif
@@ -57,6 +58,7 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
     if (_Py_IsImmortal(op)) {
         return;
     }
+    _Py_DECREF_STAT_INC();
 #ifdef Py_REF_DEBUG
     _Py_RefTotal--;
 #endif
