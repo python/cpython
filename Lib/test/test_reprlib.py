@@ -528,15 +528,15 @@ class ReprTests(unittest.TestCase):
             },
         ]
         for test_case in test_cases:
-            for repr_settings, expected_repr in test_case['tests']:
-                with self.subTest(
-                    test_object=test_case['object'], repr_settings=repr_settings
-                ):
-                    r = Repr()
-                    for attribute, value in repr_settings.items():
-                        setattr(r, attribute, value)
-                    expected_repr = textwrap.dedent(expected_repr)
-                    self.assertEqual(r.repr(test_case['object']), expected_repr)
+            with self.subTest(test_object=test_case['object']):
+                for repr_settings, expected_repr in test_case['tests']:
+                    with self.subTest(repr_settings=repr_settings):
+                        r = Repr()
+                        for attribute, value in repr_settings.items():
+                            setattr(r, attribute, value)
+                        resulting_repr = r.repr(test_case['object'])
+                        expected_repr = textwrap.dedent(expected_repr)
+                        self.assertEqual(resulting_repr, expected_repr)
 
     def test_invalid_indent(self):
         test_object = [1, 'spam', {'eggs': True, 'ham': []}]
