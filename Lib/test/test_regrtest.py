@@ -888,12 +888,12 @@ class ArgsTestCase(BaseTestCase):
 
         filename = 'reflog.txt'
         self.addCleanup(os_helper.unlink, filename)
-        output = self.run_tests('--huntrleaks', '9:3', test,
+        output = self.run_tests('--huntrleaks', '3:3:', test,
                                 exitcode=2,
                                 stderr=subprocess.STDOUT)
         self.check_executed_tests(output, [test], failed=test)
 
-        line = 'beginning 12 repetitions'
+        line = 'beginning 6 repetitions\n123456\n......\n'
         self.check_line(output, re.escape(line))
 
         line2 = '%s leaked [1, 1, 1] %s, sum=3\n' % (test, what)
@@ -915,7 +915,7 @@ class ArgsTestCase(BaseTestCase):
                 def test_leak(self):
                     GLOBAL_LIST.append(object())
         """)
-        self.check_leak(code, 'memory blocks')
+        self.check_leak(code, 'references')
 
     @unittest.skipUnless(Py_DEBUG, 'need a debug build')
     def test_huntrleaks_fd_leak(self):
@@ -1339,7 +1339,7 @@ class ArgsTestCase(BaseTestCase):
     def test_unicode_guard_env(self):
         guard = os.environ.get(setup.UNICODE_GUARD_ENV)
         self.assertIsNotNone(guard, f"{setup.UNICODE_GUARD_ENV} not set")
-        if guard != "\N{SMILING FACE WITH SUNGLASSES}":
+        if guard.isascii():
             # Skip to signify that the env var value was changed by the user;
             # possibly to something ASCII to work around Unicode issues.
             self.skipTest("Modified guard")

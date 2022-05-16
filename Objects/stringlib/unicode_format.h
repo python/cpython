@@ -1043,6 +1043,7 @@ formatteriter_next(formatteriterobject *it)
            character */
         if (conversion == '\0') {
             conversion_str = Py_None;
+            Py_INCREF(conversion_str);
         }
         else
             conversion_str = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,

@@ -2916,6 +2916,7 @@ result:
     unpacker_free(unpack_v);
     unpacker_free(unpack_w);
 
+    Py_XINCREF(res);
     return res;
 }
 
@@ -3155,7 +3156,7 @@ static PyMethodDef memory_methods[] = {
 /*                          Memoryview Iterator                           */
 /**************************************************************************/
 
-static PyTypeObject PyMemoryIter_Type;
+PyTypeObject _PyMemoryIter_Type;
 
 typedef struct {
     PyObject_HEAD
@@ -3232,7 +3233,7 @@ memory_iter(PyObject *seq)
     }
 
     memoryiterobject *it;
-    it = PyObject_GC_New(memoryiterobject, &PyMemoryIter_Type);
+    it = PyObject_GC_New(memoryiterobject, &_PyMemoryIter_Type);
     if (it == NULL) {
         return NULL;
     }
@@ -3245,7 +3246,7 @@ memory_iter(PyObject *seq)
     return (PyObject *)it;
 }
 
-static PyTypeObject PyMemoryIter_Type = {
+PyTypeObject _PyMemoryIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "memory_iterator",
     .tp_basicsize = sizeof(memoryiterobject),

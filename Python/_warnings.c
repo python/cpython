@@ -78,7 +78,7 @@ create_filter(PyObject *category, PyObject *action_str, const char *modname)
             return NULL;
         }
     } else {
-        modname_obj = Py_None;
+        modname_obj = Py_NewRef(Py_None);
     }
 
     /* This assumes the line number is zero for now. */
@@ -383,6 +383,7 @@ get_filter(PyInterpreterState *interp, PyObject *category,
 
     action = get_default_action(interp);
     if (action != NULL) {
+        Py_INCREF(Py_None);
         *item = Py_None;
         return action;
     }
@@ -752,6 +753,7 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
 
  return_none:
     result = Py_None;
+    Py_INCREF(result);
 
  cleanup:
     Py_XDECREF(item);
@@ -1011,6 +1013,7 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
         return NULL;
     }
     if (source == Py_None) {
+        Py_DECREF(source);
         return NULL;
     }
 

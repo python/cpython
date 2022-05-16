@@ -7,6 +7,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdbool.h>
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
@@ -568,12 +569,11 @@ StopIteration_init(PyStopIterationObject *self, PyObject *args, PyObject *kwds)
     if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
         return -1;
     Py_CLEAR(self->value);
-    if (size > 0) {
+    if (size > 0)
         value = PyTuple_GET_ITEM(args, 0);
-        Py_INCREF(value);
-    } else {
+    else
         value = Py_None;
-    }
+    Py_INCREF(value);
     self->value = value;
     return 0;
 }
@@ -1098,7 +1098,7 @@ exceptiongroup_split_recursive(PyObject *exc,
     for (Py_ssize_t i = 0; i < num_excs; i++) {
         PyObject *e = PyTuple_GET_ITEM(eg->excs, i);
         _exceptiongroup_split_result rec_result;
-        if (Py_EnterRecursiveCall(" in exceptiongroup_split_recursive")) {
+        if (_Py_EnterRecursiveCall(" in exceptiongroup_split_recursive")) {
             goto done;
         }
         if (exceptiongroup_split_recursive(
@@ -1106,10 +1106,10 @@ exceptiongroup_split_recursive(PyObject *exc,
                 construct_rest, &rec_result) < 0) {
             assert(!rec_result.match);
             assert(!rec_result.rest);
-            Py_LeaveRecursiveCall();
+            _Py_LeaveRecursiveCall();
             goto done;
         }
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCall();
         if (rec_result.match) {
             assert(PyList_CheckExact(match_list));
             if (PyList_Append(match_list, rec_result.match) < 0) {
@@ -1235,11 +1235,11 @@ collect_exception_group_leaves(PyObject *exc, PyObject *leaves)
     /* recursive calls */
     for (Py_ssize_t i = 0; i < num_excs; i++) {
         PyObject *e = PyTuple_GET_ITEM(eg->excs, i);
-        if (Py_EnterRecursiveCall(" in collect_exception_group_leaves")) {
+        if (_Py_EnterRecursiveCall(" in collect_exception_group_leaves")) {
             return -1;
         }
         int res = collect_exception_group_leaves(e, leaves);
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCall();
         if (res < 0) {
             return -1;
         }
@@ -1286,7 +1286,7 @@ exception_group_projection(PyObject *eg, PyObject *keep)
     }
 
     PyObject *result = split_result.match ?
-        split_result.match : Py_None;
+        split_result.match : Py_NewRef(Py_None);
     assert(split_result.rest == NULL);
     return result;
 }
@@ -1331,7 +1331,7 @@ _PyExc_PrepReraiseStar(PyObject *orig, PyObject *excs)
     Py_ssize_t numexcs = PyList_GET_SIZE(excs);
 
     if (numexcs == 0) {
-        return Py_None;
+        return Py_NewRef(Py_None);
     }
 
     if (!_PyBaseExceptionGroup_Check(orig)) {
@@ -1574,12 +1574,11 @@ ImportError_reduce(PyImportErrorObject *self, PyObject *Py_UNUSED(ignored))
     if (state == NULL)
         return NULL;
     args = ((PyBaseExceptionObject *)self)->args;
-    if (state == Py_None) {
+    if (state == Py_None)
         res = PyTuple_Pack(2, Py_TYPE(self), args);
-    } else {
+    else
         res = PyTuple_Pack(3, Py_TYPE(self), args, state);
-        Py_DECREF(state);
-    }
+    Py_DECREF(state);
     return res;
 }
 
@@ -2000,6 +1999,7 @@ OSError_reduce(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
              * So, to recreate filename2, we need to pass in
              * winerror as well.
              */
+            Py_INCREF(Py_None);
             PyTuple_SET_ITEM(args, 3, Py_None);
 
             /* filename2 */

@@ -141,6 +141,7 @@ PyFloat_FromDouble(double fval)
 #endif
         state->free_list = (PyFloatObject *) Py_TYPE(op);
         state->numfree--;
+        OBJECT_STAT_INC(from_freelist);
     }
     else
 #endif
@@ -256,6 +257,7 @@ _PyFloat_ExactDealloc(PyObject *obj)
     state->numfree++;
     Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
     state->free_list = op;
+    OBJECT_STAT_INC(to_freelist);
 #else
     PyObject_Free(op);
 #endif
@@ -362,6 +364,7 @@ convert_to_double(PyObject **v, double *dbl)
         }
     }
     else {
+        Py_INCREF(Py_NotImplemented);
         *v = Py_NotImplemented;
         return -1;
     }
@@ -894,6 +897,7 @@ float_is_integer_impl(PyObject *self)
                              PyExc_ValueError);
         return NULL;
     }
+    Py_INCREF(o);
     return o;
 }
 

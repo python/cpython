@@ -178,6 +178,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
         if (result == NULL)
             goto onError;
         if (result == Py_None) {
+            Py_DECREF(result);
             continue;
         }
         if (!PyTuple_Check(result) || PyTuple_GET_SIZE(result) != 4) {

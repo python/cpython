@@ -1091,8 +1091,6 @@ pyinit_main_reconfigure(PyThreadState *tstate)
 static PyStatus
 init_interp_main(PyThreadState *tstate)
 {
-    extern void _PyThread_debug_deprecation(void);
-
     assert(!_PyErr_Occurred(tstate));
 
     PyStatus status;
@@ -1193,9 +1191,6 @@ init_interp_main(PyThreadState *tstate)
         emit_stderr_warning_for_legacy_locale(interp->runtime);
 #endif
     }
-
-    // Warn about PYTHONTHREADDEBUG deprecation
-    _PyThread_debug_deprecation();
 
     assert(!_PyErr_Occurred(tstate));
 
@@ -1721,7 +1716,6 @@ finalize_interp_clear(PyThreadState *tstate)
         _PyArg_Fini();
         _Py_ClearFileSystemEncoding();
         _Py_Deepfreeze_Fini();
-        _PyCode_ClearList();
     }
 
     finalize_interp_types(tstate->interp);
@@ -2524,6 +2518,7 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
     _PyErr_NormalizeException(tstate, &exception, &v, &tb);
     if (tb == NULL) {
         tb = Py_None;
+        Py_INCREF(tb);
     }
     PyException_SetTraceback(v, tb);
     if (exception == NULL) {

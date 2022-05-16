@@ -26,6 +26,7 @@ ellipsis_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_TypeError, "EllipsisType takes no arguments");
         return NULL;
     }
+    Py_INCREF(Py_Ellipsis);
     return Py_Ellipsis;
 }
 
@@ -591,6 +592,7 @@ slice_richcompare(PyObject *v, PyObject *w, int op)
             res = Py_False;
             break;
         }
+        Py_INCREF(res);
         return res;
     }
 

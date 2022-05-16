@@ -97,17 +97,19 @@ _PyFrame_Clear(_PyInterpreterFrame *frame)
         frame->frame_obj = NULL;
         if (Py_REFCNT(f) > 1) {
             take_ownership(f, frame);
-            _Py_DECREF_SKIP_IMMORTAL_CHECK(f);
+            Py_DECREF(f);
             return;
         }
-        _Py_DECREF_SKIP_IMMORTAL_CHECK(f);
+        Py_DECREF(f);
     }
     assert(frame->stacktop >= 0);
     for (int i = 0; i < frame->stacktop; i++) {
         Py_XDECREF(frame->localsplus[i]);
     }
-    _Py_XDECREF_SKIP_IMMORTAL_CHECK(frame->f_locals);
-    _Py_DECREF_SKIP_IMMORTAL_CHECK(frame->f_func);
+    Py_XDECREF(frame->frame_obj);
+    Py_XDECREF(frame->f_locals);
+    Py_DECREF(frame->f_func);
+    Py_DECREF(frame->f_code);
 }
 
 /* Consumes reference to func */
