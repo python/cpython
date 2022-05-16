@@ -1,0 +1,1 @@
+Fix highlight location for f-string field errors. Patch by Yassir Karroum
