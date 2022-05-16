@@ -585,6 +585,7 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
         _Py_Dealloc(op);
     }
 }
+#define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
 
 #else
 static inline void Py_DECREF(PyObject *op)
@@ -599,12 +600,6 @@ static inline void Py_DECREF(PyObject *op)
     }
 }
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
-#endif
-
-#if defined(Py_REF_DEBUG) && !(defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000)
-#  define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
-#else
-#  define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
 #endif
 
 
@@ -668,8 +663,9 @@ static inline void Py_XDECREF(PyObject *op)
         Py_DECREF(op);
     }
 }
-
-#define Py_XDECREF(op) Py_XDECREF(_PyObject_CAST(op))
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#  define Py_XDECREF(op) Py_XDECREF(_PyObject_CAST(op))
+#endif
 
 // Create a new strong reference to an object:
 // increment the reference count of the object and return the object.

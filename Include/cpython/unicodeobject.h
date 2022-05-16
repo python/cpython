@@ -98,9 +98,13 @@ typedef struct {
     Py_ssize_t length;          /* Number of code points in the string */
     Py_hash_t hash;             /* Hash value; -1 if not set */
     struct {
-        /* If interned is set, the two references from the
-           dictionary to this object are *not* counted in ob_refcnt. */
-        unsigned int interned:1;
+        /*
+           SSTATE_NOT_INTERNED (0)
+           SSTATE_INTERNED_MORTAL (1)
+           SSTATE_INTERNED_IMMORTAL (2)
+           SSTATE_INTERNED_IMMORTAL_STATIC (3)
+        */
+        unsigned int interned:2;
         /* Character size:
 
            - PyUnicode_1BYTE_KIND (1):
