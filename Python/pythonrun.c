@@ -1627,33 +1627,18 @@ pyrun_file(FILE *fp, PyObject *filename, int start, PyObject *globals,
     mod = _PyParser_ASTFromFile(fp, filename, NULL, start, NULL, NULL,
                                 flags, NULL, arena);
 
+    if (closeit) {
+        fclose(fp);
+    }
+
     PyObject *ret;
     if (mod != NULL) {
-        /* TODO: either a better way to get the source or
-           do not provide a source at all */
-        fseek(fp, 0, SEEK_END);
-        Py_ssize_t size = ftell(fp);
-        PyObject *src = PyUnicode_New(size, 0x10ffff);
-        if (src == NULL) {
-            _PyArena_Free(arena);
-            return NULL;
-        }
-        rewind(fp);
-        Py_ssize_t read_size = fread(PyUnicode_DATA(src), sizeof(char), size, fp);
-        if (size != read_size) {
-            Py_DECREF(src);
-            _PyArena_Free(arena);
-            return NULL;
-        }
-        ret = run_mod(mod, filename, globals, locals, flags, src, arena);
+        ret = run_mod(mod, filename, globals, locals, flags, NULL, arena);
     }
     else {
         ret = NULL;
     }
 
-    if (closeit) {
-        fclose(fp);
-    }
     _PyArena_Free(arena);
 
     return ret;
