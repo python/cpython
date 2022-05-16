@@ -8442,6 +8442,7 @@ assemble(struct compiler *c, int addNone)
 
     co = makecode(c, &a, consts, maxdepth, nlocalsplus);
     if (co) {
+        Py_INCREF(c->c_source);
         co->co_source = c->c_source;
     }
  error:
