@@ -315,7 +315,7 @@ def emit_pair_counts(opcode_stats, total):
         emit_table(("Pair", "Count:", "Self:", "Cumulative:"),
             rows
         )
-    with Section("Predecessor/Successor Pairs", summary="Top 3 predecessors and successors of each opcode"):
+    with Section("Predecessor/Successor Pairs", summary="Top 5 predecessors and successors of each opcode"):
         predecessors = collections.defaultdict(collections.Counter)
         successors = collections.defaultdict(collections.Counter)
         total_predecessors = collections.Counter()
@@ -334,10 +334,10 @@ def emit_pair_counts(opcode_stats, total):
             pred_rows = succ_rows = ()
             if total1:
                 pred_rows = [(opname[pred], count, f"{count/total1:.1%}")
-                             for (pred, count) in predecessors[i].most_common(3)]
+                             for (pred, count) in predecessors[i].most_common(5)]
             if total2:
                 succ_rows = [(opname[succ], count, f"{count/total2:.1%}")
-                             for (succ, count) in successors[i].most_common(3)]
+                             for (succ, count) in successors[i].most_common(5)]
             with Section(name, 3, f"Successors and predecessors for {name}"):
                 emit_table(("Predecessors", "Count:", "Percentage:"),
                     pred_rows
