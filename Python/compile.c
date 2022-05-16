@@ -9129,12 +9129,15 @@ eliminate_empty_basic_blocks(basicblock *entry) {
         if (b->b_iused == 0) {
             continue;
         }
-        if (is_jump(&b->b_instr[b->b_iused-1])) {
-            basicblock *target = b->b_instr[b->b_iused-1].i_target;
-            while (target->b_iused == 0) {
-                target = target->b_next;
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            if (is_jump(instr) || is_block_push(instr)) {
+                basicblock *target = instr->i_target;
+                while (target->b_iused == 0) {
+                    target = target->b_next;
+                }
+                instr->i_target = target;
             }
-            b->b_instr[b->b_iused-1].i_target = target;
         }
     }
 }
