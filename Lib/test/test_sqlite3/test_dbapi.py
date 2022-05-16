@@ -344,15 +344,6 @@ class ModuleTests(unittest.TestCase):
                              sqlite.SQLITE_CONSTRAINT_CHECK)
             self.assertEqual(exc.sqlite_errorname, "SQLITE_CONSTRAINT_CHECK")
 
-    # sqlite3_enable_shared_cache() is deprecated on macOS and calling it may raise
-    # OperationalError on some buildbots.
-    @unittest.skipIf(sys.platform == "darwin", "shared cache is deprecated on macOS")
-    def test_shared_cache_deprecated(self):
-        for enable in (True, False):
-            with self.assertWarns(DeprecationWarning) as cm:
-                sqlite.enable_shared_cache(enable)
-            self.assertIn("dbapi.py", cm.filename)
-
     def test_disallow_instantiation(self):
         cx = sqlite.connect(":memory:")
         check_disallow_instantiation(self, type(cx("select 1")))
