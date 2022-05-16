@@ -37,7 +37,7 @@ jobs:
     - name: 'Install build dependencies'
       run: make -C Doc/ PYTHON=../python venv
     - name: 'Build documentation'
-      run: xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W --keep-going -j4" doctest html suspicious
+      run: xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W --keep-going" doctest html suspicious
     - name: 'Upload'
       uses: actions/upload-artifact@v3
       with:
