@@ -3916,13 +3916,13 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Unix.
 
 
-.. function:: popen(cmd, mode='r', buffering=-1, encoding=None)
+.. function:: popen(cmd, mode='r', buffering=-1)
 
    Open a pipe to or from command *cmd*.
    The return value is an open file object
    connected to the pipe, which can be read or written depending on whether *mode*
    is ``'r'`` (default) or ``'w'``.
-   The *buffering* and *encoding* arguments have the same meaning as
+   The *buffering* argument have the same meaning as
    the corresponding argument to the built-in :func:`open` function. The
    returned file object reads or writes text strings rather than bytes.
 
@@ -3945,8 +3945,14 @@ written in Python, such as a mail server's external command delivery program.
    documentation for more powerful ways to manage and communicate with
    subprocesses.
 
-   .. versionchanged:: 3.11
-      Added the *encoding* parameter.
+   .. note::
+      On Unix, the *cmd* argument is encoded with
+      :term:`file system encoding <filesystem encoding and error handler>`.
+      The returned file object connected to the pipe uses
+      :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`_.
+      The :ref:`Python UTF-8 Mode <utf8-mode>` affects both encodings.
+
+      Use :class:`subprocess.Popen` to control encoding and many other options.
 
 
 .. function:: posix_spawn(path, argv, env, *, file_actions=None, \
