@@ -1808,7 +1808,6 @@ class ZipFile:
             else:
                 zinfo._preset = self.preset
 
-
             with open(filename, "rb") as src, self.open(zinfo, 'w') as dest:
                 shutil.copyfileobj(src, dest, 1024*8)
 
