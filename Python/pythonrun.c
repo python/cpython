@@ -1627,10 +1627,6 @@ pyrun_file(FILE *fp, PyObject *filename, int start, PyObject *globals,
     mod = _PyParser_ASTFromFile(fp, filename, NULL, start, NULL, NULL,
                                 flags, NULL, arena);
 
-    if (closeit) {
-        fclose(fp);
-    }
-
     PyObject *ret;
     if (mod != NULL) {
         /* TODO: either a better way to get the source or
@@ -1653,6 +1649,10 @@ pyrun_file(FILE *fp, PyObject *filename, int start, PyObject *globals,
     }
     else {
         ret = NULL;
+    }
+
+    if (closeit) {
+        fclose(fp);
     }
     _PyArena_Free(arena);
 
