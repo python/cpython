@@ -128,7 +128,7 @@ _bisect_insort_right_impl(PyObject *module, PyObject *a, PyObject *x,
         index = internal_bisect_right(a, x, lo, hi, key);
     } else {
         key_x = PyObject_CallOneArg(key, x);
-        if (x == NULL) {
+        if (key_x == NULL) {
             return NULL;
         }
         index = internal_bisect_right(a, key_x, lo, hi, key);
