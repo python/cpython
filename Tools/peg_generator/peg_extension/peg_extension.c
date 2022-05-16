@@ -54,28 +54,14 @@ parse_file(PyObject *self, PyObject *args, PyObject *kwds)
     mod_ty res = _PyPegen_run_parser_from_file_pointer(
                         fp, Py_file_input, filename_ob,
                         NULL, NULL, NULL, &flags, NULL, NULL, arena);
+    fclose(fp);
     if (res == NULL) {
         goto error;
     }
 
-    /* XX: better way to get the source/not provide
-       the source at all? */
-    fseek(fp, 0, SEEK_END);
-    Py_ssize_t size = ftell(fp);
-    PyObject *src = PyUnicode_New(size, 0x10ffff);
-    if (src == NULL) {
-        goto error;
-    }
-    rewind(fp);
-    Py_ssize_t read_size = fread(PyUnicode_DATA(src), sizeof(char), size, fp);
-    if (size != read_size) {
-        goto error;
-    }
-
-    result = _build_return_object(res, src, mode, filename_ob, arena);
+    result = _build_return_object(res, NULL, mode, filename_ob, arena);
 
 error:
-    fclose(fp);
     Py_XDECREF(filename_ob);
     _PyArena_Free(arena);
     return result;
