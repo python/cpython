@@ -520,7 +520,7 @@ Connection Objects
 
       Create a collation named *name* using the collating function *callable*.
       *callable* is passed two :class:`string <str>` arguments,
-      and it should return an :class:`int <integer>`:
+      and it should return an :class:`integer <int>`:
 
       * ``1`` if the first is ordered higher than the second
       * ``-1`` if the first is ordered lower than the second
