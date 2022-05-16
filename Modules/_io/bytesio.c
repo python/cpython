@@ -176,7 +176,7 @@ resize_buffer(bytesio *self, size_t size)
    object. Returns the number of bytes written, or -1 on error.
    Inlining is disabled because it's significantly decreases performance
    of writelines() in PGO build. */
-_Py_NO_INLINE static Py_ssize_t
+Py_NO_INLINE static Py_ssize_t
 write_bytes(bytesio *self, PyObject *b)
 {
     if (check_closed(self)) {

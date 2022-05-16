@@ -38,7 +38,7 @@ pictures can easily be drawn.
 ----- turtle.py
 
 This module is an extended reimplementation of turtle.py from the
-Python standard distribution up to Python 2.5. (See: http://www.python.org)
+Python standard distribution up to Python 2.5. (See: https://www.python.org)
 
 It tries to keep the merits of turtle.py and to be (nearly) 100%
 compatible with it. This means in the first place to enable the
@@ -110,6 +110,7 @@ import math
 import time
 import inspect
 import sys
+import warnings
 
 from os.path import isfile, split, join
 from copy import deepcopy
@@ -464,20 +465,18 @@ class TurtleScreenBase(object):
        a corresponding TurtleScreenBase class has to be implemented.
     """
 
-    @staticmethod
-    def _blankimage():
+    def _blankimage(self):
         """return a blank image object
         """
-        img = TK.PhotoImage(width=1, height=1)
+        img = TK.PhotoImage(width=1, height=1, master=self.cv)
         img.blank()
         return img
 
-    @staticmethod
-    def _image(filename):
+    def _image(self, filename):
         """return an image object containing the
         imagedata from a gif-file named filename.
         """
-        return TK.PhotoImage(file=filename)
+        return TK.PhotoImage(file=filename, master=self.cv)
 
     def __init__(self, cv):
         self.cv = cv
@@ -811,7 +810,7 @@ class TurtleScreenBase(object):
         >>> screen.mainloop()
 
         """
-        TK.mainloop()
+        self.cv.tk.mainloop()
 
     def textinput(self, title, prompt):
         """Pop up a dialog window for input of a string.
@@ -826,7 +825,7 @@ class TurtleScreenBase(object):
         >>> screen.textinput("NIM", "Name of first player:")
 
         """
-        return simpledialog.askstring(title, prompt)
+        return simpledialog.askstring(title, prompt, parent=self.cv)
 
     def numinput(self, title, prompt, default=None, minval=None, maxval=None):
         """Pop up a dialog window for input of a number.
@@ -847,7 +846,8 @@ class TurtleScreenBase(object):
 
         """
         return simpledialog.askfloat(title, prompt, initialvalue=default,
-                                     minvalue=minval, maxvalue=maxval)
+                                     minvalue=minval, maxvalue=maxval,
+                                     parent=self.cv)
 
 
 ##############################################################################
@@ -965,6 +965,8 @@ class TurtleScreen(TurtleScreenBase):
 
     def __init__(self, cv, mode=_CFG["mode"],
                  colormode=_CFG["colormode"], delay=_CFG["delay"]):
+        TurtleScreenBase.__init__(self, cv)
+
         self._shapes = {
                    "arrow" : Shape("polygon", ((-10,0), (10,0), (0,10))),
                   "turtle" : Shape("polygon", ((0,16), (-2,14), (-1,10), (-4,7),
@@ -988,7 +990,6 @@ class TurtleScreen(TurtleScreenBase):
 
         self._bgpics = {"nopic" : ""}
 
-        TurtleScreenBase.__init__(self, cv)
         self._mode = mode
         self._delayvalue = delay
         self._colormode = _CFG["colormode"]
@@ -1645,7 +1646,7 @@ class TNavigator(object):
         Argument:
         distance -- a number
 
-        Move the turtle backward by distance ,opposite to the direction the
+        Move the turtle backward by distance, opposite to the direction the
         turtle is headed. Do not change the turtle's heading.
 
         Example (for a Turtle instance named turtle):
@@ -2850,20 +2851,23 @@ class RawTurtle(TPen, TNavigator):
         regardless of its current tilt-angle. DO NOT change the turtle's
         heading (direction of movement).
 
+        Deprecated since Python 3.1
 
         Examples (for a Turtle instance named turtle):
         >>> turtle.shape("circle")
         >>> turtle.shapesize(5,2)
         >>> turtle.settiltangle(45)
-        >>> stamp()
+        >>> turtle.stamp()
         >>> turtle.fd(50)
         >>> turtle.settiltangle(-45)
-        >>> stamp()
+        >>> turtle.stamp()
         >>> turtle.fd(50)
         """
-        tilt = -angle * self._degreesPerAU * self._angleOrient
-        tilt = math.radians(tilt) % math.tau
-        self.pen(resizemode="user", tilt=tilt)
+        warnings._deprecated("turtle.RawTurtle.settiltangle()",
+                             "{name!r} is deprecated since Python 3.1 and scheduled "
+                             "for removal in Python {remove}. Use tiltangle() instead.",
+                             remove=(3, 13))
+        self.tiltangle(angle)
 
     def tiltangle(self, angle=None):
         """Set or return the current tilt-angle.
@@ -2877,19 +2881,32 @@ class RawTurtle(TPen, TNavigator):
         between the orientation of the turtleshape and the heading of the
         turtle (its direction of movement).
 
-        Deprecated since Python 3.1
+        (Incorrectly marked as deprecated since Python 3.1, it is really
+        settiltangle that is deprecated.)
 
         Examples (for a Turtle instance named turtle):
         >>> turtle.shape("circle")
-        >>> turtle.shapesize(5,2)
-        >>> turtle.tilt(45)
+        >>> turtle.shapesize(5, 2)
         >>> turtle.tiltangle()
+        0.0
+        >>> turtle.tiltangle(45)
+        >>> turtle.tiltangle()
+        45.0
+        >>> turtle.stamp()
+        >>> turtle.fd(50)
+        >>> turtle.tiltangle(-45)
+        >>> turtle.tiltangle()
+        315.0
+        >>> turtle.stamp()
+        >>> turtle.fd(50)
         """
         if angle is None:
             tilt = -math.degrees(self._tilt) * self._angleOrient
             return (tilt / self._degreesPerAU) % self._fullcircle
         else:
-            self.settiltangle(angle)
+            tilt = -angle * self._degreesPerAU * self._angleOrient
+            tilt = math.radians(tilt) % math.tau
+            self.pen(resizemode="user", tilt=tilt)
 
     def tilt(self, angle):
         """Rotate the turtleshape by angle.
@@ -2908,7 +2925,7 @@ class RawTurtle(TPen, TNavigator):
         >>> turtle.tilt(30)
         >>> turtle.fd(50)
         """
-        self.settiltangle(angle + self.tiltangle())
+        self.tiltangle(angle + self.tiltangle())
 
     def shapetransform(self, t11=None, t12=None, t21=None, t22=None):
         """Set or return the current transformation matrix of the turtle shape.
@@ -3826,7 +3843,7 @@ def write_docstringdict(filename="turtle_docstringdict"):
                 default value is turtle_docstringdict
 
     Has to be called explicitly, (not used by the turtle-graphics classes)
-    The docstring dictionary will be written to the Python script <filname>.py
+    The docstring dictionary will be written to the Python script <filename>.py
     It is intended to serve as a template for translation of the docstrings
     into different languages.
     """

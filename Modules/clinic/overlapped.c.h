@@ -9,7 +9,7 @@ PyDoc_STRVAR(_overlapped_CreateIoCompletionPort__doc__,
 "Create a completion port or register a handle with a port.");
 
 #define _OVERLAPPED_CREATEIOCOMPLETIONPORT_METHODDEF    \
-    {"CreateIoCompletionPort", (PyCFunction)(void(*)(void))_overlapped_CreateIoCompletionPort, METH_FASTCALL, _overlapped_CreateIoCompletionPort__doc__},
+    {"CreateIoCompletionPort", _PyCFunction_CAST(_overlapped_CreateIoCompletionPort), METH_FASTCALL, _overlapped_CreateIoCompletionPort__doc__},
 
 static PyObject *
 _overlapped_CreateIoCompletionPort_impl(PyObject *module, HANDLE FileHandle,
@@ -45,7 +45,7 @@ PyDoc_STRVAR(_overlapped_GetQueuedCompletionStatus__doc__,
 "Wait for up to msecs milliseconds.");
 
 #define _OVERLAPPED_GETQUEUEDCOMPLETIONSTATUS_METHODDEF    \
-    {"GetQueuedCompletionStatus", (PyCFunction)(void(*)(void))_overlapped_GetQueuedCompletionStatus, METH_FASTCALL, _overlapped_GetQueuedCompletionStatus__doc__},
+    {"GetQueuedCompletionStatus", _PyCFunction_CAST(_overlapped_GetQueuedCompletionStatus), METH_FASTCALL, _overlapped_GetQueuedCompletionStatus__doc__},
 
 static PyObject *
 _overlapped_GetQueuedCompletionStatus_impl(PyObject *module,
@@ -76,7 +76,7 @@ PyDoc_STRVAR(_overlapped_PostQueuedCompletionStatus__doc__,
 "Post a message to completion port.");
 
 #define _OVERLAPPED_POSTQUEUEDCOMPLETIONSTATUS_METHODDEF    \
-    {"PostQueuedCompletionStatus", (PyCFunction)(void(*)(void))_overlapped_PostQueuedCompletionStatus, METH_FASTCALL, _overlapped_PostQueuedCompletionStatus__doc__},
+    {"PostQueuedCompletionStatus", _PyCFunction_CAST(_overlapped_PostQueuedCompletionStatus), METH_FASTCALL, _overlapped_PostQueuedCompletionStatus__doc__},
 
 static PyObject *
 _overlapped_PostQueuedCompletionStatus_impl(PyObject *module,
@@ -112,7 +112,7 @@ PyDoc_STRVAR(_overlapped_RegisterWaitWithQueue__doc__,
 "Register wait for Object; when complete CompletionPort is notified.");
 
 #define _OVERLAPPED_REGISTERWAITWITHQUEUE_METHODDEF    \
-    {"RegisterWaitWithQueue", (PyCFunction)(void(*)(void))_overlapped_RegisterWaitWithQueue, METH_FASTCALL, _overlapped_RegisterWaitWithQueue__doc__},
+    {"RegisterWaitWithQueue", _PyCFunction_CAST(_overlapped_RegisterWaitWithQueue), METH_FASTCALL, _overlapped_RegisterWaitWithQueue__doc__},
 
 static PyObject *
 _overlapped_RegisterWaitWithQueue_impl(PyObject *module, HANDLE Object,
@@ -173,7 +173,7 @@ PyDoc_STRVAR(_overlapped_UnregisterWaitEx__doc__,
 "Unregister wait handle.");
 
 #define _OVERLAPPED_UNREGISTERWAITEX_METHODDEF    \
-    {"UnregisterWaitEx", (PyCFunction)(void(*)(void))_overlapped_UnregisterWaitEx, METH_FASTCALL, _overlapped_UnregisterWaitEx__doc__},
+    {"UnregisterWaitEx", _PyCFunction_CAST(_overlapped_UnregisterWaitEx), METH_FASTCALL, _overlapped_UnregisterWaitEx__doc__},
 
 static PyObject *
 _overlapped_UnregisterWaitEx_impl(PyObject *module, HANDLE WaitHandle,
@@ -206,7 +206,7 @@ PyDoc_STRVAR(_overlapped_CreateEvent__doc__,
 "EventAttributes must be None.");
 
 #define _OVERLAPPED_CREATEEVENT_METHODDEF    \
-    {"CreateEvent", (PyCFunction)(void(*)(void))_overlapped_CreateEvent, METH_FASTCALL, _overlapped_CreateEvent__doc__},
+    {"CreateEvent", _PyCFunction_CAST(_overlapped_CreateEvent), METH_FASTCALL, _overlapped_CreateEvent__doc__},
 
 static PyObject *
 _overlapped_CreateEvent_impl(PyObject *module, PyObject *EventAttributes,
@@ -230,9 +230,7 @@ _overlapped_CreateEvent(PyObject *module, PyObject *const *args, Py_ssize_t narg
 
 exit:
     /* Cleanup for Name */
-    #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)Name);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
 
     return return_value;
 }
@@ -300,7 +298,7 @@ PyDoc_STRVAR(_overlapped_BindLocal__doc__,
 "family should be AF_INET or AF_INET6.");
 
 #define _OVERLAPPED_BINDLOCAL_METHODDEF    \
-    {"BindLocal", (PyCFunction)(void(*)(void))_overlapped_BindLocal, METH_FASTCALL, _overlapped_BindLocal__doc__},
+    {"BindLocal", _PyCFunction_CAST(_overlapped_BindLocal), METH_FASTCALL, _overlapped_BindLocal__doc__},
 
 static PyObject *
 _overlapped_BindLocal_impl(PyObject *module, HANDLE Socket, int Family);
@@ -404,7 +402,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_getresult__doc__,
 "is false and the operation is still pending then an error is raised.");
 
 #define _OVERLAPPED_OVERLAPPED_GETRESULT_METHODDEF    \
-    {"getresult", (PyCFunction)(void(*)(void))_overlapped_Overlapped_getresult, METH_FASTCALL, _overlapped_Overlapped_getresult__doc__},
+    {"getresult", _PyCFunction_CAST(_overlapped_Overlapped_getresult), METH_FASTCALL, _overlapped_Overlapped_getresult__doc__},
 
 static PyObject *
 _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait);
@@ -432,7 +430,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_ReadFile__doc__,
 "Start overlapped read.");
 
 #define _OVERLAPPED_OVERLAPPED_READFILE_METHODDEF    \
-    {"ReadFile", (PyCFunction)(void(*)(void))_overlapped_Overlapped_ReadFile, METH_FASTCALL, _overlapped_Overlapped_ReadFile__doc__},
+    {"ReadFile", _PyCFunction_CAST(_overlapped_Overlapped_ReadFile), METH_FASTCALL, _overlapped_Overlapped_ReadFile__doc__},
 
 static PyObject *
 _overlapped_Overlapped_ReadFile_impl(OverlappedObject *self, HANDLE handle,
@@ -462,26 +460,31 @@ PyDoc_STRVAR(_overlapped_Overlapped_ReadFileInto__doc__,
 "Start overlapped receive.");
 
 #define _OVERLAPPED_OVERLAPPED_READFILEINTO_METHODDEF    \
-    {"ReadFileInto", (PyCFunction)(void(*)(void))_overlapped_Overlapped_ReadFileInto, METH_FASTCALL, _overlapped_Overlapped_ReadFileInto__doc__},
+    {"ReadFileInto", _PyCFunction_CAST(_overlapped_Overlapped_ReadFileInto), METH_FASTCALL, _overlapped_Overlapped_ReadFileInto__doc__},
 
 static PyObject *
 _overlapped_Overlapped_ReadFileInto_impl(OverlappedObject *self,
-                                         HANDLE handle, PyObject *bufobj);
+                                         HANDLE handle, Py_buffer *bufobj);
 
 static PyObject *
 _overlapped_Overlapped_ReadFileInto(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
-    PyObject *bufobj;
+    Py_buffer bufobj = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"O:ReadFileInto",
+    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"y*:ReadFileInto",
         &handle, &bufobj)) {
         goto exit;
     }
-    return_value = _overlapped_Overlapped_ReadFileInto_impl(self, handle, bufobj);
+    return_value = _overlapped_Overlapped_ReadFileInto_impl(self, handle, &bufobj);
 
 exit:
+    /* Cleanup for bufobj */
+    if (bufobj.obj) {
+       PyBuffer_Release(&bufobj);
+    }
+
     return return_value;
 }
 
@@ -492,7 +495,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_WSARecv__doc__,
 "Start overlapped receive.");
 
 #define _OVERLAPPED_OVERLAPPED_WSARECV_METHODDEF    \
-    {"WSARecv", (PyCFunction)(void(*)(void))_overlapped_Overlapped_WSARecv, METH_FASTCALL, _overlapped_Overlapped_WSARecv__doc__},
+    {"WSARecv", _PyCFunction_CAST(_overlapped_Overlapped_WSARecv), METH_FASTCALL, _overlapped_Overlapped_WSARecv__doc__},
 
 static PyObject *
 _overlapped_Overlapped_WSARecv_impl(OverlappedObject *self, HANDLE handle,
@@ -523,11 +526,11 @@ PyDoc_STRVAR(_overlapped_Overlapped_WSARecvInto__doc__,
 "Start overlapped receive.");
 
 #define _OVERLAPPED_OVERLAPPED_WSARECVINTO_METHODDEF    \
-    {"WSARecvInto", (PyCFunction)(void(*)(void))_overlapped_Overlapped_WSARecvInto, METH_FASTCALL, _overlapped_Overlapped_WSARecvInto__doc__},
+    {"WSARecvInto", _PyCFunction_CAST(_overlapped_Overlapped_WSARecvInto), METH_FASTCALL, _overlapped_Overlapped_WSARecvInto__doc__},
 
 static PyObject *
 _overlapped_Overlapped_WSARecvInto_impl(OverlappedObject *self,
-                                        HANDLE handle, PyObject *bufobj,
+                                        HANDLE handle, Py_buffer *bufobj,
                                         DWORD flags);
 
 static PyObject *
@@ -535,16 +538,21 @@ _overlapped_Overlapped_WSARecvInto(OverlappedObject *self, PyObject *const *args
 {
     PyObject *return_value = NULL;
     HANDLE handle;
-    PyObject *bufobj;
+    Py_buffer bufobj = {NULL, NULL};
     DWORD flags;
 
-    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"Ok:WSARecvInto",
+    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"y*k:WSARecvInto",
         &handle, &bufobj, &flags)) {
         goto exit;
     }
-    return_value = _overlapped_Overlapped_WSARecvInto_impl(self, handle, bufobj, flags);
+    return_value = _overlapped_Overlapped_WSARecvInto_impl(self, handle, &bufobj, flags);
 
 exit:
+    /* Cleanup for bufobj */
+    if (bufobj.obj) {
+       PyBuffer_Release(&bufobj);
+    }
+
     return return_value;
 }
 
@@ -555,26 +563,31 @@ PyDoc_STRVAR(_overlapped_Overlapped_WriteFile__doc__,
 "Start overlapped write.");
 
 #define _OVERLAPPED_OVERLAPPED_WRITEFILE_METHODDEF    \
-    {"WriteFile", (PyCFunction)(void(*)(void))_overlapped_Overlapped_WriteFile, METH_FASTCALL, _overlapped_Overlapped_WriteFile__doc__},
+    {"WriteFile", _PyCFunction_CAST(_overlapped_Overlapped_WriteFile), METH_FASTCALL, _overlapped_Overlapped_WriteFile__doc__},
 
 static PyObject *
 _overlapped_Overlapped_WriteFile_impl(OverlappedObject *self, HANDLE handle,
-                                      PyObject *bufobj);
+                                      Py_buffer *bufobj);
 
 static PyObject *
 _overlapped_Overlapped_WriteFile(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
-    PyObject *bufobj;
+    Py_buffer bufobj = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"O:WriteFile",
+    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"y*:WriteFile",
         &handle, &bufobj)) {
         goto exit;
     }
-    return_value = _overlapped_Overlapped_WriteFile_impl(self, handle, bufobj);
+    return_value = _overlapped_Overlapped_WriteFile_impl(self, handle, &bufobj);
 
 exit:
+    /* Cleanup for bufobj */
+    if (bufobj.obj) {
+       PyBuffer_Release(&bufobj);
+    }
+
     return return_value;
 }
 
@@ -585,27 +598,32 @@ PyDoc_STRVAR(_overlapped_Overlapped_WSASend__doc__,
 "Start overlapped send.");
 
 #define _OVERLAPPED_OVERLAPPED_WSASEND_METHODDEF    \
-    {"WSASend", (PyCFunction)(void(*)(void))_overlapped_Overlapped_WSASend, METH_FASTCALL, _overlapped_Overlapped_WSASend__doc__},
+    {"WSASend", _PyCFunction_CAST(_overlapped_Overlapped_WSASend), METH_FASTCALL, _overlapped_Overlapped_WSASend__doc__},
 
 static PyObject *
 _overlapped_Overlapped_WSASend_impl(OverlappedObject *self, HANDLE handle,
-                                    PyObject *bufobj, DWORD flags);
+                                    Py_buffer *bufobj, DWORD flags);
 
 static PyObject *
 _overlapped_Overlapped_WSASend(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
-    PyObject *bufobj;
+    Py_buffer bufobj = {NULL, NULL};
     DWORD flags;
 
-    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"Ok:WSASend",
+    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"y*k:WSASend",
         &handle, &bufobj, &flags)) {
         goto exit;
     }
-    return_value = _overlapped_Overlapped_WSASend_impl(self, handle, bufobj, flags);
+    return_value = _overlapped_Overlapped_WSASend_impl(self, handle, &bufobj, flags);
 
 exit:
+    /* Cleanup for bufobj */
+    if (bufobj.obj) {
+       PyBuffer_Release(&bufobj);
+    }
+
     return return_value;
 }
 
@@ -616,7 +634,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_AcceptEx__doc__,
 "Start overlapped wait for client to connect.");
 
 #define _OVERLAPPED_OVERLAPPED_ACCEPTEX_METHODDEF    \
-    {"AcceptEx", (PyCFunction)(void(*)(void))_overlapped_Overlapped_AcceptEx, METH_FASTCALL, _overlapped_Overlapped_AcceptEx__doc__},
+    {"AcceptEx", _PyCFunction_CAST(_overlapped_Overlapped_AcceptEx), METH_FASTCALL, _overlapped_Overlapped_AcceptEx__doc__},
 
 static PyObject *
 _overlapped_Overlapped_AcceptEx_impl(OverlappedObject *self,
@@ -649,7 +667,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_ConnectEx__doc__,
 "client_handle should be unbound.");
 
 #define _OVERLAPPED_OVERLAPPED_CONNECTEX_METHODDEF    \
-    {"ConnectEx", (PyCFunction)(void(*)(void))_overlapped_Overlapped_ConnectEx, METH_FASTCALL, _overlapped_Overlapped_ConnectEx__doc__},
+    {"ConnectEx", _PyCFunction_CAST(_overlapped_Overlapped_ConnectEx), METH_FASTCALL, _overlapped_Overlapped_ConnectEx__doc__},
 
 static PyObject *
 _overlapped_Overlapped_ConnectEx_impl(OverlappedObject *self,
@@ -679,7 +697,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_DisconnectEx__doc__,
 "\n");
 
 #define _OVERLAPPED_OVERLAPPED_DISCONNECTEX_METHODDEF    \
-    {"DisconnectEx", (PyCFunction)(void(*)(void))_overlapped_Overlapped_DisconnectEx, METH_FASTCALL, _overlapped_Overlapped_DisconnectEx__doc__},
+    {"DisconnectEx", _PyCFunction_CAST(_overlapped_Overlapped_DisconnectEx), METH_FASTCALL, _overlapped_Overlapped_DisconnectEx__doc__},
 
 static PyObject *
 _overlapped_Overlapped_DisconnectEx_impl(OverlappedObject *self,
@@ -710,7 +728,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_TransmitFile__doc__,
 "Transmit file data over a connected socket.");
 
 #define _OVERLAPPED_OVERLAPPED_TRANSMITFILE_METHODDEF    \
-    {"TransmitFile", (PyCFunction)(void(*)(void))_overlapped_Overlapped_TransmitFile, METH_FASTCALL, _overlapped_Overlapped_TransmitFile__doc__},
+    {"TransmitFile", _PyCFunction_CAST(_overlapped_Overlapped_TransmitFile), METH_FASTCALL, _overlapped_Overlapped_TransmitFile__doc__},
 
 static PyObject *
 _overlapped_Overlapped_TransmitFile_impl(OverlappedObject *self,
@@ -792,11 +810,7 @@ _overlapped_Overlapped_ConnectPipe(OverlappedObject *self, PyObject *arg)
         _PyArg_BadArgument("ConnectPipe", "argument", "str", arg);
         goto exit;
     }
-    #if USE_UNICODE_WCHAR_CACHE
-    Address = _PyUnicode_AsUnicode(arg);
-    #else /* USE_UNICODE_WCHAR_CACHE */
     Address = PyUnicode_AsWideCharString(arg, NULL);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
     if (Address == NULL) {
         goto exit;
     }
@@ -804,9 +818,7 @@ _overlapped_Overlapped_ConnectPipe(OverlappedObject *self, PyObject *arg)
 
 exit:
     /* Cleanup for Address */
-    #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)Address);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
 
     return return_value;
 }
@@ -818,7 +830,7 @@ PyDoc_STRVAR(_overlapped_WSAConnect__doc__,
 "Bind a remote address to a connectionless (UDP) socket.");
 
 #define _OVERLAPPED_WSACONNECT_METHODDEF    \
-    {"WSAConnect", (PyCFunction)(void(*)(void))_overlapped_WSAConnect, METH_FASTCALL, _overlapped_WSAConnect__doc__},
+    {"WSAConnect", _PyCFunction_CAST(_overlapped_WSAConnect), METH_FASTCALL, _overlapped_WSAConnect__doc__},
 
 static PyObject *
 _overlapped_WSAConnect_impl(PyObject *module, HANDLE ConnectSocket,
@@ -848,11 +860,11 @@ PyDoc_STRVAR(_overlapped_Overlapped_WSASendTo__doc__,
 "Start overlapped sendto over a connectionless (UDP) socket.");
 
 #define _OVERLAPPED_OVERLAPPED_WSASENDTO_METHODDEF    \
-    {"WSASendTo", (PyCFunction)(void(*)(void))_overlapped_Overlapped_WSASendTo, METH_FASTCALL, _overlapped_Overlapped_WSASendTo__doc__},
+    {"WSASendTo", _PyCFunction_CAST(_overlapped_Overlapped_WSASendTo), METH_FASTCALL, _overlapped_Overlapped_WSASendTo__doc__},
 
 static PyObject *
 _overlapped_Overlapped_WSASendTo_impl(OverlappedObject *self, HANDLE handle,
-                                      PyObject *bufobj, DWORD flags,
+                                      Py_buffer *bufobj, DWORD flags,
                                       PyObject *AddressObj);
 
 static PyObject *
@@ -860,17 +872,22 @@ _overlapped_Overlapped_WSASendTo(OverlappedObject *self, PyObject *const *args, 
 {
     PyObject *return_value = NULL;
     HANDLE handle;
-    PyObject *bufobj;
+    Py_buffer bufobj = {NULL, NULL};
     DWORD flags;
     PyObject *AddressObj;
 
-    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"OkO:WSASendTo",
+    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"y*kO:WSASendTo",
         &handle, &bufobj, &flags, &AddressObj)) {
         goto exit;
     }
-    return_value = _overlapped_Overlapped_WSASendTo_impl(self, handle, bufobj, flags, AddressObj);
+    return_value = _overlapped_Overlapped_WSASendTo_impl(self, handle, &bufobj, flags, AddressObj);
 
 exit:
+    /* Cleanup for bufobj */
+    if (bufobj.obj) {
+       PyBuffer_Release(&bufobj);
+    }
+
     return return_value;
 }
 
@@ -881,7 +898,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_WSARecvFrom__doc__,
 "Start overlapped receive.");
 
 #define _OVERLAPPED_OVERLAPPED_WSARECVFROM_METHODDEF    \
-    {"WSARecvFrom", (PyCFunction)(void(*)(void))_overlapped_Overlapped_WSARecvFrom, METH_FASTCALL, _overlapped_Overlapped_WSARecvFrom__doc__},
+    {"WSARecvFrom", _PyCFunction_CAST(_overlapped_Overlapped_WSARecvFrom), METH_FASTCALL, _overlapped_Overlapped_WSARecvFrom__doc__},
 
 static PyObject *
 _overlapped_Overlapped_WSARecvFrom_impl(OverlappedObject *self,
@@ -905,4 +922,42 @@ _overlapped_Overlapped_WSARecvFrom(OverlappedObject *self, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ee2ec2f93c8d334b input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_overlapped_Overlapped_WSARecvFromInto__doc__,
+"WSARecvFromInto($self, handle, buf, size, flags=0, /)\n"
+"--\n"
+"\n"
+"Start overlapped receive.");
+
+#define _OVERLAPPED_OVERLAPPED_WSARECVFROMINTO_METHODDEF    \
+    {"WSARecvFromInto", _PyCFunction_CAST(_overlapped_Overlapped_WSARecvFromInto), METH_FASTCALL, _overlapped_Overlapped_WSARecvFromInto__doc__},
+
+static PyObject *
+_overlapped_Overlapped_WSARecvFromInto_impl(OverlappedObject *self,
+                                            HANDLE handle, Py_buffer *bufobj,
+                                            DWORD size, DWORD flags);
+
+static PyObject *
+_overlapped_Overlapped_WSARecvFromInto(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    HANDLE handle;
+    Py_buffer bufobj = {NULL, NULL};
+    DWORD size;
+    DWORD flags = 0;
+
+    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"y*k|k:WSARecvFromInto",
+        &handle, &bufobj, &size, &flags)) {
+        goto exit;
+    }
+    return_value = _overlapped_Overlapped_WSARecvFromInto_impl(self, handle, &bufobj, size, flags);
+
+exit:
+    /* Cleanup for bufobj */
+    if (bufobj.obj) {
+       PyBuffer_Release(&bufobj);
+    }
+
+    return return_value;
+}
+/*[clinic end generated code: output=9078d9f9984864a2 input=a9049054013a1b77]*/

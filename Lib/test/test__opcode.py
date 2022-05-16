@@ -1,6 +1,7 @@
 import dis
 from test.support.import_helper import import_module
 import unittest
+import opcode
 
 _opcode = import_module("_opcode")
 from _opcode import stack_effect
@@ -10,7 +11,6 @@ class OpcodeTests(unittest.TestCase):
 
     def test_stack_effect(self):
         self.assertEqual(stack_effect(dis.opmap['POP_TOP']), -1)
-        self.assertEqual(stack_effect(dis.opmap['DUP_TOP_TWO']), 2)
         self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 0), -1)
         self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 1), -1)
         self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 3), -2)
@@ -18,7 +18,7 @@ class OpcodeTests(unittest.TestCase):
         self.assertRaises(ValueError, stack_effect, dis.opmap['BUILD_SLICE'])
         self.assertRaises(ValueError, stack_effect, dis.opmap['POP_TOP'], 0)
         # All defined opcodes
-        for name, code in dis.opmap.items():
+        for name, code in filter(lambda item: item[0] not in dis.deoptmap, dis.opmap.items()):
             with self.subTest(opname=name):
                 if code < dis.HAVE_ARGUMENT:
                     stack_effect(code)
@@ -47,7 +47,7 @@ class OpcodeTests(unittest.TestCase):
         self.assertEqual(stack_effect(JUMP_FORWARD, 0, jump=False), 0)
         # All defined opcodes
         has_jump = dis.hasjabs + dis.hasjrel
-        for name, code in dis.opmap.items():
+        for name, code in filter(lambda item: item[0] not in dis.deoptmap, dis.opmap.items()):
             with self.subTest(opname=name):
                 if code < dis.HAVE_ARGUMENT:
                     common = stack_effect(code)
@@ -62,6 +62,33 @@ class OpcodeTests(unittest.TestCase):
                 else:
                     self.assertEqual(jump, common)
                     self.assertEqual(nojump, common)
+
+
+class SpecializationStatsTests(unittest.TestCase):
+    def test_specialization_stats(self):
+        stat_names = opcode._specialization_stats
+
+        specialized_opcodes = [
+            op[:-len("_ADAPTIVE")].lower() for
+            op in opcode._specialized_instructions
+            if op.endswith("_ADAPTIVE")]
+        self.assertIn('load_attr', specialized_opcodes)
+        self.assertIn('binary_subscr', specialized_opcodes)
+
+        stats = _opcode.get_specialization_stats()
+        if stats is not None:
+            self.assertIsInstance(stats, dict)
+            self.assertCountEqual(stats.keys(), specialized_opcodes)
+            self.assertCountEqual(
+                stats['load_attr'].keys(),
+                stat_names + ['failure_kinds'])
+            for sn in stat_names:
+                self.assertIsInstance(stats['load_attr'][sn], int)
+            self.assertIsInstance(
+                stats['load_attr']['failure_kinds'],
+                tuple)
+            for v in stats['load_attr']['failure_kinds']:
+                self.assertIsInstance(v, int)
 
 
 if __name__ == "__main__":

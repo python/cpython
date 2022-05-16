@@ -1,4 +1,3 @@
-import asyncore
 import unittest
 import select
 import os
@@ -18,6 +17,10 @@ from io import BytesIO
 
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
+
+support.requires_working_socket(module=True)
+
+asyncore = warnings_helper.import_deprecated('asyncore')
 
 
 HAS_UNIX_SOCKETS = hasattr(socket, 'AF_UNIX')
@@ -69,7 +72,7 @@ def capture_server(evt, buf, serv):
     try:
         serv.listen()
         conn, addr = serv.accept()
-    except socket.timeout:
+    except TimeoutError:
         pass
     else:
         n = 200

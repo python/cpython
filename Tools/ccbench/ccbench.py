@@ -221,7 +221,7 @@ def run_throughput_test(func, args, nthreads):
     for i in range(nthreads):
         threads.append(threading.Thread(target=run))
     for t in threads:
-        t.setDaemon(True)
+        t.daemon = True
         t.start()
     # We don't want measurements to include thread startup overhead,
     # so we arrange for timing to start after all threads are ready.
@@ -328,7 +328,7 @@ def run_latency_test(func, args, nthreads):
         for i in range(nthreads):
             threads.append(threading.Thread(target=run))
         for t in threads:
-            t.setDaemon(True)
+            t.daemon = True
             t.start()
         # Wait for threads to be ready
         with ready_cond:
@@ -460,7 +460,7 @@ def run_bandwidth_test(func, args, nthreads):
             for i in range(nthreads):
                 threads.append(threading.Thread(target=run))
             for t in threads:
-                t.setDaemon(True)
+                t.daemon = True
                 t.start()
             # Wait for threads to be ready
             with ready_cond:

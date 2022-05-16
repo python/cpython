@@ -96,11 +96,13 @@ Save Copy As...
 Print Window
    Print the current window to the default printer.
 
-Close
-   Close the current window (ask to save if unsaved).
+Close Window
+   Close the current window (if an unsaved editor, ask to save; if an unsaved
+   Shell, ask to quit execution).  Calling ``exit()`` or ``close()`` in the Shell
+   window also closes Shell.  If this is the only window, also exit IDLE.
 
-Exit
-   Close all windows and quit IDLE (ask to save unsaved windows).
+Exit IDLE
+   Close all windows and quit IDLE (ask to save unsaved edit windows).
 
 Edit menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -250,7 +252,7 @@ View Last Restart
   Scroll the shell window to the last Shell restart.
 
 Restart Shell
-  Restart the shell to clean the environment.
+  Restart the shell to clean the environment and reset display and exception handling.
 
 Previous History
   Cycle through earlier commands in history which match the current entry.
@@ -518,7 +520,7 @@ and not restarting the Shell thereafter.  This is especially useful
 after adding imports at the top of a file.  This also increases
 possible attribute completions.
 
-Completion boxes intially exclude names beginning with '_' or, for
+Completion boxes initially exclude names beginning with '_' or, for
 modules, not included in '__all__'.  The hidden names can be accessed
 by typing '_' after '.', either before or after the box is opened.
 
@@ -613,6 +615,12 @@ keywords, builtin class and function names, names following ``class`` and
 ``def``, strings, and comments. For any text window, these are the cursor (when
 present), found text (when possible), and selected text.
 
+IDLE also highlights the :ref:`soft keywords <soft-keywords>` :keyword:`match`,
+:keyword:`case <match>`, and :keyword:`_ <wildcard-patterns>` in
+pattern-matching statements. However, this highlighting is not perfect and
+will be incorrect in some rare cases, including some ``_``-s in ``case``
+patterns.
+
 Text coloring is done in the background, so uncolorized text is occasionally
 visible.  To change the color scheme, use the Configure IDLE dialog
 Highlighting tab.  The marking of debugger breakpoint lines in the editor and
@@ -670,8 +678,16 @@ IDLE uses a socket to communicate between the IDLE GUI process and the user
 code execution process.  A connection must be established whenever the Shell
 starts or restarts.  (The latter is indicated by a divider line that says
 'RESTART'). If the user process fails to connect to the GUI process, it
-displays a ``Tk`` error box with a 'cannot connect' message that directs the
-user here.  It then exits.
+usually displays a ``Tk`` error box with a 'cannot connect' message
+that directs the user here.  It then exits.
+
+One specific connection failure on Unix systems results from
+misconfigured masquerading rules somewhere in a system's network setup.
+When IDLE is started from a terminal, one will see a message starting
+with ``** Invalid host:``.
+The valid value is ``127.0.0.1 (idlelib.rpc.LOCALHOST)``.
+One can diagnose with ``tcpconnect -irv 127.0.0.1 6543`` in one
+terminal window and ``tcplisten <same args>`` in another.
 
 A common cause of failure is a user-written file with the same name as a
 standard library module, such as *random.py* and *tkinter.py*. When such a
@@ -709,6 +725,13 @@ If IDLE quits with no message, and it was not started from a console, try
 starting it from a console or terminal (``python -m idlelib``) and see if
 this results in an error message.
 
+On Unix-based systems with tcl/tk older than ``8.6.11`` (see
+``About IDLE``) certain characters of certain fonts can cause
+a tk failure with a message to the terminal.  This can happen either
+if one starts IDLE to edit a file with such a character or later
+when entering such a character.  If one cannot upgrade tcl/tk,
+then re-configure IDLE to use a font that works better.
+
 Running user code
 ^^^^^^^^^^^^^^^^^
 
@@ -717,7 +740,7 @@ intended to be the same as executing the same code by the default method,
 directly with Python in a text-mode system console or terminal window.
 However, the different interface and operation occasionally affect
 visible results.  For instance, ``sys.modules`` starts with more entries,
-and ``threading.activeCount()`` returns 2 instead of 1.
+and ``threading.active_count()`` returns 2 instead of 1.
 
 By default, IDLE runs user code in a separate OS process rather than in
 the user interface process that runs the shell and editor.  In the execution
@@ -726,28 +749,38 @@ with objects that get input from and send output to the Shell window.
 The original values stored in ``sys.__stdin__``, ``sys.__stdout__``, and
 ``sys.__stderr__`` are not touched, but may be ``None``.
 
-When Shell has the focus, it controls the keyboard and screen.  This is
-normally transparent, but functions that directly access the keyboard
-and screen will not work.  These include system-specific functions that
-determine whether a key has been pressed and if so, which.
+Sending print output from one process to a text widget in another is
+slower than printing to a system terminal in the same process.
+This has the most effect when printing multiple arguments, as the string
+for each argument, each separator, the newline are sent separately.
+For development, this is usually not a problem, but if one wants to
+print faster in IDLE, format and join together everything one wants
+displayed together and then print a single string.  Both format strings
+and :meth:`str.join` can help combine fields and lines.
 
 IDLE's standard stream replacements are not inherited by subprocesses
-created in the execution process, whether directly by user code or by modules
-such as multiprocessing.  If such subprocess use ``input`` from sys.stdin
-or ``print`` or ``write`` to sys.stdout or sys.stderr,
+created in the execution process, whether directly by user code or by
+modules such as multiprocessing.  If such subprocess use ``input`` from
+sys.stdin or ``print`` or ``write`` to sys.stdout or sys.stderr,
 IDLE should be started in a command line window.  The secondary subprocess
 will then be attached to that window for input and output.
-
-The IDLE code running in the execution process adds frames to the call stack
-that would not be there otherwise.  IDLE wraps ``sys.getrecursionlimit`` and
-``sys.setrecursionlimit`` to reduce the effect of the additional stack frames.
 
 If ``sys`` is reset by user code, such as with ``importlib.reload(sys)``,
 IDLE's changes are lost and input from the keyboard and output to the screen
 will not work correctly.
 
-When user code raises SystemExit either directly or by calling sys.exit, IDLE
-returns to a Shell prompt instead of exiting.
+When Shell has the focus, it controls the keyboard and screen.  This is
+normally transparent, but functions that directly access the keyboard
+and screen will not work.  These include system-specific functions that
+determine whether a key has been pressed and if so, which.
+
+The IDLE code running in the execution process adds frames to the call stack
+that would not be there otherwise.  IDLE wraps ``sys.getrecursionlimit`` and
+``sys.setrecursionlimit`` to reduce the effect of the additional stack
+frames.
+
+When user code raises SystemExit either directly or by calling sys.exit,
+IDLE returns to a Shell prompt instead of exiting.
 
 User output in Shell
 ^^^^^^^^^^^^^^^^^^^^
@@ -838,7 +871,7 @@ Running without a subprocess
 
 By default, IDLE executes user code in a separate subprocess via a socket,
 which uses the internal loopback interface.  This connection is not
-externally visible and no data is sent to or received from the Internet.
+externally visible and no data is sent to or received from the internet.
 If firewall software complains anyway, you can ignore it.
 
 If the attempt to make the socket connection fails, Idle will notify you.

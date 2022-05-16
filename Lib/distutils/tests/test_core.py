@@ -134,7 +134,7 @@ class CoreTestCase(support.EnvironGuard, unittest.TestCase):
         self.assertEqual(stdout.readlines()[0], wanted)
 
 def test_suite():
-    return unittest.makeSuite(CoreTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(CoreTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

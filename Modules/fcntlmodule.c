@@ -565,12 +565,28 @@ all_ins(PyObject* m)
     if (PyModule_AddIntMacro(m, F_SHLCK)) return -1;
 #endif
 
+/* Linux specifics */
+#ifdef F_SETPIPE_SZ
+    if (PyModule_AddIntMacro(m, F_SETPIPE_SZ)) return -1;
+#endif
+#ifdef F_GETPIPE_SZ
+    if (PyModule_AddIntMacro(m, F_GETPIPE_SZ)) return -1;
+#endif
+
 /* OS X specifics */
 #ifdef F_FULLFSYNC
     if (PyModule_AddIntMacro(m, F_FULLFSYNC)) return -1;
 #endif
 #ifdef F_NOCACHE
     if (PyModule_AddIntMacro(m, F_NOCACHE)) return -1;
+#endif
+
+/* FreeBSD specifics */
+#ifdef F_DUP2FD
+    if (PyModule_AddIntMacro(m, F_DUP2FD)) return -1;
+#endif
+#ifdef F_DUP2FD_CLOEXEC
+    if (PyModule_AddIntMacro(m, F_DUP2FD_CLOEXEC)) return -1;
 #endif
 
 /* For F_{GET|SET}FL */

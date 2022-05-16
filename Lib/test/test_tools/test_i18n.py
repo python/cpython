@@ -57,10 +57,10 @@ class Test_pygettext(unittest.TestCase):
         """ utility: return all msgids extracted from module_content """
         filename = 'test_docstrings.py'
         with temp_cwd(None) as cwd:
-            with open(filename, 'w') as fp:
+            with open(filename, 'w', encoding='utf-8') as fp:
                 fp.write(module_content)
             assert_python_ok(self.script, '-D', filename)
-            with open('messages.pot') as fp:
+            with open('messages.pot', encoding='utf-8') as fp:
                 data = fp.read()
         return self.get_msgids(data)
 
@@ -70,7 +70,7 @@ class Test_pygettext(unittest.TestCase):
         """
         with temp_cwd(None) as cwd:
             assert_python_ok(self.script)
-            with open('messages.pot') as fp:
+            with open('messages.pot', encoding='utf-8') as fp:
                 data = fp.read()
             header = self.get_header(data)
 
@@ -97,7 +97,7 @@ class Test_pygettext(unittest.TestCase):
         from datetime import datetime
         with temp_cwd(None) as cwd:
             assert_python_ok(self.script)
-            with open('messages.pot') as fp:
+            with open('messages.pot', encoding='utf-8') as fp:
                 data = fp.read()
             header = self.get_header(data)
             creationDate = header['POT-Creation-Date']
@@ -220,6 +220,76 @@ class Test_pygettext(unittest.TestCase):
         '''))
         self.assertIn('doc', msgids)
 
+    def test_calls_in_fstrings(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_('foo bar')}"
+        '''))
+        self.assertIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_raw(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        rf"{_('foo bar')}"
+        '''))
+        self.assertIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_nested(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"""{f'{_("foo bar")}'}"""
+        '''))
+        self.assertIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_attribute(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{obj._('foo bar')}"
+        '''))
+        self.assertIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_with_call_on_call(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{type(str)('foo bar')}"
+        '''))
+        self.assertNotIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_with_format(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_('foo {bar}').format(bar='baz')}"
+        '''))
+        self.assertIn('foo {bar}', msgids)
+
+    def test_calls_in_fstrings_with_wrong_input_1(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_(f'foo {bar}')}"
+        '''))
+        self.assertFalse([msgid for msgid in msgids if 'foo {bar}' in msgid])
+
+    def test_calls_in_fstrings_with_wrong_input_2(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_(1)}"
+        '''))
+        self.assertNotIn(1, msgids)
+
+    def test_calls_in_fstring_with_multiple_args(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_('foo', 'bar')}"
+        '''))
+        self.assertNotIn('foo', msgids)
+        self.assertNotIn('bar', msgids)
+
+    def test_calls_in_fstring_with_keyword_args(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_('foo', bar='baz')}"
+        '''))
+        self.assertNotIn('foo', msgids)
+        self.assertNotIn('bar', msgids)
+        self.assertNotIn('baz', msgids)
+
+    def test_calls_in_fstring_with_partially_wrong_expression(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_(f'foo') + _('bar')}"
+        '''))
+        self.assertNotIn('foo', msgids)
+        self.assertIn('bar', msgids)
+
     def test_files_list(self):
         """Make sure the directories are inspected for source files
            bpo-31920
@@ -229,16 +299,19 @@ class Test_pygettext(unittest.TestCase):
         text3 = 'Text to ignore'
         with temp_cwd(None), temp_dir(None) as sdir:
             os.mkdir(os.path.join(sdir, 'pypkg'))
-            with open(os.path.join(sdir, 'pypkg', 'pymod.py'), 'w') as sfile:
+            with open(os.path.join(sdir, 'pypkg', 'pymod.py'), 'w',
+                      encoding='utf-8') as sfile:
                 sfile.write(f'_({text1!r})')
             os.mkdir(os.path.join(sdir, 'pkg.py'))
-            with open(os.path.join(sdir, 'pkg.py', 'pymod2.py'), 'w') as sfile:
+            with open(os.path.join(sdir, 'pkg.py', 'pymod2.py'), 'w',
+                      encoding='utf-8') as sfile:
                 sfile.write(f'_({text2!r})')
             os.mkdir(os.path.join(sdir, 'CVS'))
-            with open(os.path.join(sdir, 'CVS', 'pymod3.py'), 'w') as sfile:
+            with open(os.path.join(sdir, 'CVS', 'pymod3.py'), 'w',
+                      encoding='utf-8') as sfile:
                 sfile.write(f'_({text3!r})')
             assert_python_ok(self.script, sdir)
-            with open('messages.pot') as fp:
+            with open('messages.pot', encoding='utf-8') as fp:
                 data = fp.read()
             self.assertIn(f'msgid "{text1}"', data)
             self.assertIn(f'msgid "{text2}"', data)

@@ -33,10 +33,7 @@ from .support.pip import *
 from .support.props import *
 from .support.nuspec import *
 
-BDIST_WININST_FILES_ONLY = FileNameSet("wininst-*", "bdist_wininst.py")
-BDIST_WININST_STUB = "PC/layout/support/distutils.command.bdist_wininst.py"
-
-TEST_PYDS_ONLY = FileStemSet("xxlimited", "_ctypes_test", "_test*")
+TEST_PYDS_ONLY = FileStemSet("xxlimited", "xxlimited_35", "_ctypes_test", "_test*")
 TEST_DIRS_ONLY = FileNameSet("test", "tests")
 
 IDLE_DIRS_ONLY = FileNameSet("idlelib")
@@ -64,7 +61,7 @@ CDF_FILES = FileSuffixSet(".cdf")
 
 DATA_DIRS = FileNameSet("data")
 
-TOOLS_DIRS = FileNameSet("scripts", "i18n", "pynche", "demo", "parser")
+TOOLS_DIRS = FileNameSet("scripts", "i18n", "demo", "parser")
 TOOLS_FILES = FileSuffixSet(".py", ".pyw", ".txt")
 
 
@@ -100,16 +97,10 @@ def get_lib_layout(ns):
         else:
             if f in TCLTK_FILES_ONLY:
                 return ns.include_tcltk
-            if f in BDIST_WININST_FILES_ONLY:
-                return ns.include_bdist_wininst
         return True
 
     for dest, src in rglob(ns.source / "Lib", "**/*", _c):
         yield dest, src
-
-    if not ns.include_bdist_wininst:
-        src = ns.source / BDIST_WININST_STUB
-        yield Path("distutils/command/bdist_wininst.py"), src
 
 
 def get_tcltk_lib(ns):
