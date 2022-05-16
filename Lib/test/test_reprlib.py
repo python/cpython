@@ -231,6 +231,8 @@ class ReprTests(unittest.TestCase):
                 'object': (),
                 'tests': (
                     (dict(indent=None), '()'),
+                    (dict(indent=False), '()'),
+                    (dict(indent=True), '()'),
                     (dict(indent=0), '()'),
                     (dict(indent=1), '()'),
                     (dict(indent=4), '()'),
@@ -244,6 +246,8 @@ class ReprTests(unittest.TestCase):
                 'object': '',
                 'tests': (
                     (dict(indent=None), "''"),
+                    (dict(indent=False), "''"),
+                    (dict(indent=True), "''"),
                     (dict(indent=0), "''"),
                     (dict(indent=1), "''"),
                     (dict(indent=4), "''"),
@@ -258,6 +262,24 @@ class ReprTests(unittest.TestCase):
                 'tests': (
                     (dict(indent=None), '''\
                         [1, 'spam', {'eggs': True, 'ham': []}]'''),
+                    (dict(indent=False), '''\
+                        [
+                        1,
+                        'spam',
+                        {
+                        'eggs': True,
+                        'ham': [],
+                        },
+                        ]'''),
+                    (dict(indent=True), '''\
+                        [
+                         1,
+                         'spam',
+                         {
+                          'eggs': True,
+                          'ham': [],
+                         },
+                        ]'''),
                     (dict(indent=0), '''\
                         [
                         1,
@@ -334,6 +356,46 @@ class ReprTests(unittest.TestCase):
                 'tests': (
                     (dict(indent=None), '''\
                         {1: 'two', b'three': [(4.5, 6.7), [{8, 9}, frozenset({10, 11})]]}'''),
+                    (dict(indent=False), '''\
+                        {
+                        1: 'two',
+                        b'three': [
+                        (
+                        4.5,
+                        6.7,
+                        ),
+                        [
+                        {
+                        8,
+                        9,
+                        },
+                        frozenset({
+                        10,
+                        11,
+                        }),
+                        ],
+                        ],
+                        }'''),
+                    (dict(indent=True), '''\
+                        {
+                         1: 'two',
+                         b'three': [
+                          (
+                           4.5,
+                           6.7,
+                          ),
+                          [
+                           {
+                            8,
+                            9,
+                           },
+                           frozenset({
+                            10,
+                            11,
+                           }),
+                          ],
+                         ],
+                        }'''),
                     (dict(indent=0), '''\
                         {
                         1: 'two',
