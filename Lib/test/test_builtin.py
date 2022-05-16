@@ -2317,7 +2317,6 @@ class ImmortalTests(unittest.TestCase):
         self.assertEqual(sys.getrefcount(100), smallint_refcount)
 
 
-
 class TestType(unittest.TestCase):
     def test_new_type(self):
         A = type('A', (), {})
