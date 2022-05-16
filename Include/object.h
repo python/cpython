@@ -51,6 +51,8 @@ A standard interface exists for objects that contain an array of items
 whose size is determined when the object is allocated.
 */
 
+#include "pystats.h"
+
 /* Py_DEBUG implies Py_REF_DEBUG. */
 #if defined(Py_DEBUG) && !defined(Py_REF_DEBUG)
 #  define Py_REF_DEBUG
@@ -488,16 +490,9 @@ PyAPI_FUNC(void) Py_DecRef(PyObject *);
 PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
-#ifdef Py_STATS
-PyAPI_DATA(uint64_t) _Py_IncrefTotal;
-PyAPI_DATA(uint64_t) _Py_DecrefTotal;
-#endif
-
 static inline void Py_INCREF(PyObject *op)
 {
-#ifdef Py_STATS
-    _Py_IncrefTotal++;
-#endif
+    _Py_INCREF_STAT_INC();
 #if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
     // Stable ABI for Python 3.10 built in debug mode.
     _Py_IncRef(op);
@@ -514,10 +509,6 @@ static inline void Py_INCREF(PyObject *op)
 #  define Py_INCREF(op) Py_INCREF(_PyObject_CAST(op))
 #endif
 
-
-#ifdef Py_STATS
-    _Py_DecrefTotal++;
-#endif
 #if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
 // Stable ABI for limited C API version 3.10 of Python debug build
 static inline void Py_DECREF(PyObject *op) {
@@ -528,6 +519,7 @@ static inline void Py_DECREF(PyObject *op) {
 #elif defined(Py_REF_DEBUG)
 static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
+    _Py_DECREF_STAT_INC();
     _Py_RefTotal--;
     if (--op->ob_refcnt != 0) {
         if (op->ob_refcnt < 0) {
@@ -543,6 +535,7 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 #else
 static inline void Py_DECREF(PyObject *op)
 {
+    _Py_DECREF_STAT_INC();
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
     if (--op->ob_refcnt == 0) {
