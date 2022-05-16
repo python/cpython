@@ -563,6 +563,7 @@ _PyAST_Compile(mod_ty mod, PyObject *source, PyObject *filename,
     c.c_flags = flags;
     c.c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c.c_nestlevel = 0;
+    Py_INCREF(source);
     c.c_source = source;
 
     _PyASTOptimizeState state;
