@@ -27,7 +27,8 @@ from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
 from test.support import (reap_children, captured_output, captured_stdout,
-                          captured_stderr, is_emscripten, requires_docstrings)
+                          captured_stderr, is_emscripten, is_wasi,
+                          requires_docstrings)
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test import pydoc_mod
 
@@ -1356,7 +1357,10 @@ foo
         )
 
 
-@unittest.skipIf(is_emscripten, "Socket server not available on Emscripten.")
+@unittest.skipIf(
+    is_emscripten or is_wasi,
+    "Socket server not available on Emscripten/WASI."
+)
 class PydocServerTest(unittest.TestCase):
     """Tests for pydoc._start_server"""
 
