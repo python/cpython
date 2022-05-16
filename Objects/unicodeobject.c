@@ -225,9 +225,25 @@ static int unicode_is_singleton(PyObject *unicode);
 #endif
 
 
+// Return a borrowed reference to the empty string singleton.
+static inline PyObject* unicode_get_empty(void)
+{
+    _Py_DECLARE_STR(empty, "");
+    return &_Py_STR(empty);
+}
+
+
+// Return a strong reference to the empty string singleton.
+static inline PyObject* unicode_new_empty(void)
+{
+    PyObject *empty = unicode_get_empty();
+    Py_INCREF(empty);
+    return empty;
+}
+
 #define _Py_RETURN_UNICODE_EMPTY()   \
     do {                             \
-        return &_Py_STR(empty);  \
+        return unicode_new_empty();  \
     } while (0)
 
 static inline void
@@ -550,7 +566,7 @@ unicode_result(PyObject *unicode)
 
     Py_ssize_t length = PyUnicode_GET_LENGTH(unicode);
     if (length == 0) {
-        PyObject *empty = &_Py_STR(empty);
+        PyObject *empty = unicode_get_empty();
         if (unicode != empty) {
             Py_DECREF(unicode);
             Py_INCREF(empty);
@@ -793,7 +809,7 @@ ensure_unicode(PyObject *obj)
 
 /* Compilation of templated routines */
 
-#define STRINGLIB_GET_EMPTY() &_Py_STR(empty)
+#define STRINGLIB_GET_EMPTY() unicode_get_empty()
 
 #include "stringlib/asciilib.h"
 #include "stringlib/fastsearch.h"
@@ -1106,7 +1122,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
 {
     /* Optimization for empty strings */
     if (size == 0) {
-        return &_Py_STR(empty);
+        return unicode_new_empty();
     }
 
     PyObject *obj;
@@ -1500,24 +1516,6 @@ unicode_dealloc(PyObject *unicode)
     }
 #endif
 
-#ifdef INTERNED_STRINGS
-    if (PyUnicode_CHECK_INTERNED(unicode)) {
-        /* Revive the dead object temporarily. PyDict_DelItem() removes two
-           references (key and value) which were ignored by
-           PyUnicode_InternInPlace(). Use refcnt=3 rather than refcnt=2
-           to prevent calling unicode_dealloc() again. Adjust refcnt after
-           PyDict_DelItem(). */
-        assert(Py_REFCNT(unicode) == 0);
-        Py_SET_REFCNT(unicode, 3);
-        if (PyDict_DelItem(interned, unicode) != 0) {
-            _PyErr_WriteUnraisableMsg("deletion of interned string failed",
-                                      NULL);
-        }
-        assert(Py_REFCNT(unicode) == 1);
-        Py_SET_REFCNT(unicode, 0);
-    }
-#endif
-
     if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
         PyObject_Free(_PyUnicode_UTF8(unicode));
     }
@@ -1584,7 +1582,7 @@ unicode_resize(PyObject **p_unicode, Py_ssize_t length)
         return 0;
 
     if (length == 0) {
-        PyObject *empty = &_Py_STR(empty);
+        PyObject *empty = unicode_new_empty();
         Py_SETREF(*p_unicode, empty);
         return 0;
     }
@@ -7988,6 +7986,7 @@ charmapencode_output(Py_UCS4 c, PyObject *mapping,
     if (rep==NULL)
         return enc_EXCEPTION;
     else if (rep==Py_None) {
+        Py_DECREF(rep);
         return enc_FAILED;
     } else {
         if (PyLong_Check(rep)) {
@@ -8064,6 +8063,7 @@ charmap_encoding_error(
             Py_DECREF(rep);
             break;
         }
+        Py_DECREF(rep);
         ++collendpos;
     }
     /* cache callback name lookup
@@ -8391,6 +8391,7 @@ charmaptranslate_output(Py_UCS4 ch, PyObject *mapping,
     }
 
     if (item == Py_None) {
+        Py_DECREF(item);
         return 0;
     }
 
@@ -10068,7 +10069,7 @@ replace(PyObject *self, PyObject *str1,
         }
         new_size = slen + n * (len2 - len1);
         if (new_size == 0) {
-            u = &_Py_STR(empty);
+            u = unicode_new_empty();
             goto done;
         }
         if (new_size > (PY_SSIZE_T_MAX / rkind)) {
@@ -10670,7 +10671,7 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
     }
 
     /* Shortcuts */
-    PyObject *empty = &_Py_STR(empty);
+    PyObject *empty = unicode_get_empty();  // Borrowed reference
     if (left == empty) {
         return PyUnicode_FromObject(right);
     }
@@ -10722,7 +10723,7 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
     }
 
     /* Shortcuts */
-    PyObject *empty = &_Py_STR(empty);
+    PyObject *empty = unicode_get_empty();  // Borrowed reference
     if (left == empty) {
         Py_DECREF(left);
         Py_INCREF(right);
@@ -12309,7 +12310,7 @@ PyUnicode_Partition(PyObject *str_obj, PyObject *sep_obj)
     len1 = PyUnicode_GET_LENGTH(str_obj);
     len2 = PyUnicode_GET_LENGTH(sep_obj);
     if (kind1 < kind2 || len1 < len2) {
-        PyObject *empty = &_Py_STR(empty);
+        PyObject *empty = unicode_get_empty();  // Borrowed reference
         return PyTuple_Pack(3, str_obj, empty, empty);
     }
     buf1 = PyUnicode_DATA(str_obj);
@@ -12361,7 +12362,7 @@ PyUnicode_RPartition(PyObject *str_obj, PyObject *sep_obj)
     len1 = PyUnicode_GET_LENGTH(str_obj);
     len2 = PyUnicode_GET_LENGTH(sep_obj);
     if (kind1 < kind2 || len1 < len2) {
-        PyObject *empty = &_Py_STR(empty);
+        PyObject *empty = unicode_get_empty();  // Borrowed reference
         return PyTuple_Pack(3, empty, empty, str_obj);
     }
     buf1 = PyUnicode_DATA(str_obj);
@@ -14368,7 +14369,7 @@ unicode_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
 {
     PyObject *unicode;
     if (x == NULL) {
-        unicode = &_Py_STR(empty);
+        unicode = unicode_new_empty();
     }
     else if (encoding == NULL && errors == NULL) {
         unicode = PyObject_Str(x);
@@ -14632,6 +14633,7 @@ PyUnicode_InternInPlace(PyObject **p)
     }
 
     if (t != s) {
+        Py_INCREF(t);
         Py_SETREF(*p, t);
         return;
     }

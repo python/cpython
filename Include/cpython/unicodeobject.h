@@ -183,6 +183,7 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
 /* Interning state. */
 #define SSTATE_NOT_INTERNED 0
 #define SSTATE_INTERNED_MORTAL 1
+#define SSTATE_INTERNED_IMMORTAL 2
 #define SSTATE_INTERNED_IMMORTAL_STATIC 3
 
 /* Use only if you know it's a string */

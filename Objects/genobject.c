@@ -193,6 +193,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
             /* `gen` is an exhausted generator:
                only return value if called from send(). */
             *presult = Py_None;
+            Py_INCREF(*presult);
             return PYGEN_RETURN;
         }
         return PYGEN_ERROR;

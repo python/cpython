@@ -15,8 +15,6 @@
  * generic helpers
  ******************/
 
-static PyObject *codeobjects = NULL;
-
 /* all_name_chars(s): true iff s matches [a-zA-Z0-9_]* */
 static int
 all_name_chars(PyObject *o)
@@ -480,37 +478,6 @@ _PyCode_New(struct _PyCodeConstructor *con)
     init_code(co, con);
     Py_XDECREF(replacement_locations);
     return co;
-}
-
-void
-_PyCode_ClearList()
-{
-    PyCodeObject *code;
-    Py_ssize_t listsz, tuplesz, i, j;
-
-    if (codeobjects == NULL) {
-        return;
-    }
-    assert(PyList_CheckExact(codeobjects));
-
-    // Clear all existing references to code objects in the consts tuple
-    listsz = PyList_Size(codeobjects);
-    for (i = 0; i < listsz; i++) {
-        code = (PyCodeObject *)PyList_GET_ITEM(codeobjects, i);
-        tuplesz = PyTuple_Size(code->co_consts);
-        for (j = 0; j < tuplesz; j++) {
-            if (PyCode_Check(PyTuple_GET_ITEM(code->co_consts, j))) {
-                PyTuple_SET_ITEM(code->co_consts, j, Py_None);
-            }
-        }
-    }
-
-    // Then, reset all the immortal refcounts and clear the list
-    for (i = 0; i < listsz; i++) {
-        code = (PyCodeObject *)PyList_GET_ITEM(codeobjects, i);
-        ((PyObject *)code)->ob_refcnt = 1;
-    }
-    Py_CLEAR(codeobjects);
 }
 
 
@@ -1108,6 +1075,7 @@ lineiter_next(lineiterator *li)
     start = PyLong_FromLong(bounds->ar_start);
     end = PyLong_FromLong(bounds->ar_end);
     if (bounds->ar_line < 0) {
+        Py_INCREF(Py_None);
         line = Py_None;
     }
     else {
@@ -1671,6 +1639,7 @@ code_richcompare(PyObject *self, PyObject *other, int op)
         res = Py_False;
 
   done:
+    Py_INCREF(res);
     return res;
 }
 

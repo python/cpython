@@ -563,58 +563,48 @@ static inline void Py_INCREF(PyObject *op)
 // Stable ABI for limited C API version 3.10 of Python debug build
 static inline void Py_DECREF(PyObject *op) {
     _Py_DecRef(op);
-#else
+}
+#define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
+
+#elif defined(Py_REF_DEBUG)
+
+static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
+{
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
     if (_Py_IsImmortal(op)) {
         return;
     }
-#ifdef Py_REF_DEBUG
     _Py_RefTotal--;
-#endif
     if (--op->ob_refcnt != 0) {
-#ifdef Py_REF_DEBUG
         if (op->ob_refcnt < 0) {
             _Py_NegativeRefcount(filename, lineno, op);
         }
-#endif
     }
     else {
         _Py_Dealloc(op);
     }
-#endif
 }
 
-static inline void _Py_DECREF_SKIP_IMMORTAL_CHECK(
-#if defined(Py_REF_DEBUG) && !(defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000)
-    const char *filename, int lineno,
-#endif
-    PyObject *op)
-{
-#if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
-    // Stable ABI for Python 3.10 built in debug mode.
-    _Py_DecRef(op);
 #else
+static inline void Py_DECREF(PyObject *op)
+{
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-    if (--op->ob_refcnt != 0) {
-        if (op->ob_refcnt < 0) {
-            _Py_NegativeRefcount(filename, lineno, op);
-        }
+    if (_Py_IsImmortal(op)) {
+        return;
     }
-    else {
+    if (--op->ob_refcnt == 0) {
         _Py_Dealloc(op);
     }
 }
+#define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
+#endif
 
 #if defined(Py_REF_DEBUG) && !(defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000)
 #  define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
-#  define _Py_DECREF_SKIP_IMMORTAL_CHECK(op) _Py_DECREF_SKIP_IMMORTAL_CHECK(__FILE__, __LINE__, _PyObject_CAST(op))
 #else
 #  define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
-#  define _Py_DECREF_SKIP_IMMORTAL_CHECK(op) _Py_DECREF_SKIP_IMMORTAL_CHECK(_PyObject_CAST(op))
 #endif
 
 
@@ -679,15 +669,7 @@ static inline void Py_XDECREF(PyObject *op)
     }
 }
 
-static inline void _Py_XDECREF_SKIP_IMMORTAL_CHECK(PyObject *op)
-{
-    if (op != NULL) {
-        _Py_DECREF_SKIP_IMMORTAL_CHECK(op);
-    }
-}
-
 #define Py_XDECREF(op) Py_XDECREF(_PyObject_CAST(op))
-#define _Py_XDECREF_SKIP_IMMORTAL_CHECK(op) _Py_XDECREF_SKIP_IMMORTAL_CHECK(_PyObject_CAST(op))
 
 // Create a new strong reference to an object:
 // increment the reference count of the object and return the object.
