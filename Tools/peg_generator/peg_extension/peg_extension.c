@@ -60,13 +60,13 @@ parse_file(PyObject *self, PyObject *args, PyObject *kwds)
 
     /* XX: better way to get the source/not provide
        the source at all? */
-    rewind(fp);
     fseek(fp, 0, SEEK_END);
     Py_ssize_t size = ftell(fp);
     PyObject *src = PyUnicode_New(size, 0x10ffff);
     if (src == NULL) {
         goto error;
     }
+    rewind(fp);
     Py_ssize_t read_size = fread(PyUnicode_DATA(src), sizeof(char), size, fp);
     if (size != read_size) {
         goto error;
