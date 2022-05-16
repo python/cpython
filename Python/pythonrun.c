@@ -1631,7 +1631,6 @@ pyrun_file(FILE *fp, PyObject *filename, int start, PyObject *globals,
     if (mod != NULL) {
         /* TODO: either a better way to get the source or
            do not provide a source at all */
-        rewind(fp);
         fseek(fp, 0, SEEK_END);
         Py_ssize_t size = ftell(fp);
         PyObject *src = PyUnicode_New(size, 0x10ffff);
@@ -1639,6 +1638,7 @@ pyrun_file(FILE *fp, PyObject *filename, int start, PyObject *globals,
             _PyArena_Free(arena);
             return NULL;
         }
+        rewind(fp);
         Py_ssize_t read_size = fread(PyUnicode_DATA(src), sizeof(char), size, fp);
         if (size != read_size) {
             Py_DECREF(src);
