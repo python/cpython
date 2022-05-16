@@ -76,7 +76,6 @@ parse_file(PyObject *self, PyObject *args, PyObject *kwds)
 
 error:
     fclose(fp);
-    Py_XDECREF(src);
     Py_XDECREF(filename_ob);
     _PyArena_Free(arena);
     return result;
@@ -120,7 +119,6 @@ parse_string(PyObject *self, PyObject *args, PyObject *kwds)
     result = _build_return_object(res, string, mode, filename_ob, arena);
 
 error:
-    Py_XDECREF(string);
     Py_XDECREF(filename_ob);
     _PyArena_Free(arena);
     return result;
