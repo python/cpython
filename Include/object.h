@@ -526,16 +526,10 @@ PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
 static inline int
-_Py_sadd(Py_ssize_t a, Py_ssize_t b, Py_ssize_t *result)
+_Py_sadd(PY_UINT32_T a, PY_UINT32_T b, PY_UINT32_T *result)
 {
-#if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__))
-    return __builtin_saddll_overflow(a, b, _Py_CAST(long long *, result));
-#elif (defined(__clang__) || defined(__GNUC__))
-    return __builtin_saddl_overflow(a, b, _Py_CAST((long *, result));
-#else
     *result = a + b;
     return *result < a;
-#endif
 }
 
 static inline void Py_INCREF(PyObject *op)
@@ -547,7 +541,7 @@ static inline void Py_INCREF(PyObject *op)
 #else
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
-    Py_ssize_t new_refcount;
+    PY_UINT32_T new_refcount;
     if (_Py_sadd(op->ob_refcnt, 1, &new_refcount)) {
         return;
     }
