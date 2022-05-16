@@ -8,6 +8,7 @@ import opcode
 from datetime import date
 import itertools
 import argparse
+import sys
 
 if os.name == "nt":
     DEFAULT_DIR = "c:\\temp\\py_stats\\"
@@ -88,7 +89,11 @@ def gather_stats():
     for filename in os.listdir(DEFAULT_DIR):
         with open(os.path.join(DEFAULT_DIR, filename)) as fd:
             for line in fd:
-                key, value = line.split(":")
+                try:
+                    key, value = line.split(":")
+                except ValueError:
+                    print (f"Unparsable line: '{line.strip()}' in  {filename}", file=sys.stderr)
+                    continue
                 key = key.strip()
                 value = int(value)
                 stats[key] += value
@@ -265,17 +270,20 @@ def emit_call_stats(stats):
 
 def emit_object_stats(stats):
     with Section("Object stats", summary="allocations, frees and dict materializatons"):
-        total = stats.get("Object new values")
+        total_materializations = stats.get("Object new values")
+        total_allocations = stats.get("Object allocations")
         rows = []
         for key, value in stats.items():
             if key.startswith("Object"):
                 if "materialize" in key:
-                    materialize = f"{100*value/total:0.1f}%"
+                    ratio = f"{100*value/total_materializations:0.1f}%"
+                elif "allocations" in key:
+                    ratio = f"{100*value/total_allocations:0.1f}%"
                 else:
-                    materialize = ""
+                    ratio = ""
                 label = key[6:].strip()
                 label = label[0].upper() + label[1:]
-                rows.append((label, value, materialize))
+                rows.append((label, value, ratio))
         emit_table(("",  "Count:", "Ratio:"), rows)
 
 def get_total(opcode_stats):
