@@ -171,13 +171,6 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_GetLength(
 );
 #endif
 
-/* Get the number of Py_UNICODE units in the
-   string representation. */
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(Py_ssize_t) PyUnicode_GetSize(
-    PyObject *unicode           /* Unicode object */
-    );
-
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 /* Read a character from the string. */
 
@@ -198,9 +191,7 @@ PyAPI_FUNC(int) PyUnicode_WriteChar(
     );
 #endif
 
-/* Resize a Unicode object. The length is the number of characters, except
-   if the kind of the string is PyUnicode_WCHAR_KIND: in this case, the length
-   is the number of Py_UNICODE characters.
+/* Resize a Unicode object. The length is the number of codepoints.
 
    *unicode is modified to point to the new (resized) object and 0
    returned on success.
@@ -264,10 +255,6 @@ PyAPI_FUNC(void) PyUnicode_InternInPlace(PyObject **);
 PyAPI_FUNC(PyObject *) PyUnicode_InternFromString(
     const char *u              /* UTF-8 encoded string */
     );
-
-// PyUnicode_InternImmortal() is deprecated since Python 3.10
-// and will be removed in Python 3.12. Use PyUnicode_InternInPlace() instead.
-Py_DEPRECATED(3.10) PyAPI_FUNC(void) PyUnicode_InternImmortal(PyObject **);
 
 /* --- wchar_t support for platforms which support it --------------------- */
 

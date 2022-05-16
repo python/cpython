@@ -977,6 +977,8 @@ exec as builtin_exec
     globals: object = None
     locals: object = None
     /
+    *
+    closure: object(c_default="NULL") = None
 
 Execute the given source in the context of globals and locals.
 
@@ -985,12 +987,14 @@ or a code object as returned by compile().
 The globals must be a dictionary and locals can be any mapping,
 defaulting to the current globals and locals.
 If only globals is given, locals defaults to it.
+The closure must be a tuple of cellvars, and can only be used
+when source is a code object requiring exactly that many cellvars.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
-                  PyObject *locals)
-/*[clinic end generated code: output=3c90efc6ab68ef5d input=01ca3e1c01692829]*/
+                  PyObject *locals, PyObject *closure)
+/*[clinic end generated code: output=7579eb4e7646743d input=f13a7e2b503d1d9a]*/
 {
     PyObject *v;
 
@@ -1029,20 +1033,60 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         return NULL;
     }
 
+    if (closure == Py_None) {
+        closure = NULL;
+    }
+
     if (PyCode_Check(source)) {
+        Py_ssize_t num_free = PyCode_GetNumFree((PyCodeObject *)source);
+        if (num_free == 0) {
+            if (closure) {
+                PyErr_SetString(PyExc_TypeError,
+                    "cannot use a closure with this code object");
+                return NULL;
+            }
+        } else {
+            int closure_is_ok =
+                closure
+                && PyTuple_CheckExact(closure)
+                && (PyTuple_GET_SIZE(closure) == num_free);
+            if (closure_is_ok) {
+                for (Py_ssize_t i = 0; i < num_free; i++) {
+                    PyObject *cell = PyTuple_GET_ITEM(closure, i);
+                    if (!PyCell_Check(cell)) {
+                        closure_is_ok = 0;
+                        break;
+                    }
+                }
+            }
+            if (!closure_is_ok) {
+                PyErr_Format(PyExc_TypeError,
+                    "code object requires a closure of exactly length %zd",
+                    num_free);
+                return NULL;
+            }
+        }
+
         if (PySys_Audit("exec", "O", source) < 0) {
             return NULL;
         }
 
-        if (PyCode_GetNumFree((PyCodeObject *)source) > 0) {
-            PyErr_SetString(PyExc_TypeError,
-                "code object passed to exec() may not "
-                "contain free variables");
-            return NULL;
+        if (!closure) {
+            v = PyEval_EvalCode(source, globals, locals);
+        } else {
+            v = PyEval_EvalCodeEx(source, globals, locals,
+                NULL, 0,
+                NULL, 0,
+                NULL, 0,
+                NULL,
+                closure);
         }
-        v = PyEval_EvalCode(source, globals, locals);
     }
     else {
+        if (closure != NULL) {
+            PyErr_SetString(PyExc_TypeError,
+                "closure can only be used when source is a code object");
+        }
         PyObject *source_copy;
         const char *str;
         PyCompilerFlags cf = _PyCompilerFlags_INIT;

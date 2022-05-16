@@ -15,6 +15,7 @@
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
 #include "pycore_fileutils.h"    // _Py_normpath
+#include "pycore_frame.h"        // _PyInterpreterFrame
 #include "pycore_gc.h"           // PyGC_Head
 #include "pycore_hashtable.h"    // _Py_hashtable_new()
 #include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
@@ -22,7 +23,7 @@
 #include "pycore_interp.h"       // _PyInterpreterState_GetConfigCopy()
 #include "pycore_pyerrors.h"     // _Py_UTF8_Edit_Cost()
 #include "pycore_pystate.h"      // _PyThreadState_GET()
-#include "osdefs.h"               // MAXPATHLEN
+#include "osdefs.h"              // MAXPATHLEN
 
 
 static PyObject *
@@ -491,6 +492,38 @@ decode_locale_ex(PyObject *self, PyObject *args)
     return res;
 }
 
+static PyObject *record_list = NULL;
+
+static PyObject *
+set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState_Get(), _PyEval_EvalFrameDefault);
+    Py_CLEAR(record_list);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
+{
+    PyList_Append(record_list, f->f_func->func_name);
+    return _PyEval_EvalFrameDefault(tstate, f, exc);
+}
+
+
+static PyObject *
+set_eval_frame_record(PyObject *self, PyObject *list)
+{
+    if (!PyList_Check(list)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a list");
+        return NULL;
+    }
+    Py_CLEAR(record_list);
+    Py_INCREF(list);
+    record_list = list;
+    _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState_Get(), record_eval);
+    Py_RETURN_NONE;
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -508,6 +541,8 @@ static PyMethodDef TestMethods[] = {
     {"get_getpath_codeobject", get_getpath_codeobject, METH_NOARGS, NULL},
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
+    {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
+    {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
     {NULL, NULL} /* sentinel */
 };
 

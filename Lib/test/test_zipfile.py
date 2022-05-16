@@ -3391,8 +3391,19 @@ class EncodedMetadataTests(unittest.TestCase):
         for name in self.file_names:
             self.assertIn(name, listing)
 
+    def test_cli_with_metadata_encoding_extract(self):
         os.mkdir(TESTFN2)
         self.addCleanup(rmtree, TESTFN2)
+        # Depending on locale, extracted file names can be not encodable
+        # with the filesystem encoding.
+        for fn in self.file_names:
+            try:
+                os.stat(os.path.join(TESTFN2, fn))
+            except OSError:
+                pass
+            except UnicodeEncodeError:
+                self.skipTest(f'cannot encode file name {fn!r}')
+
         zipfile.main(["--metadata-encoding=shift_jis", "-e", TESTFN, TESTFN2])
         listing = os.listdir(TESTFN2)
         for name in self.file_names:

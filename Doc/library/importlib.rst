@@ -248,8 +248,8 @@ ABC hierarchy::
 
     object
      +-- Finder (deprecated)
-     |    +-- MetaPathFinder
-     |    +-- PathEntryFinder
+     +-- MetaPathFinder
+     +-- PathEntryFinder
      +-- Loader
           +-- ResourceLoader --------+
           +-- InspectLoader          |
@@ -282,8 +282,7 @@ ABC hierarchy::
 
 .. class:: MetaPathFinder
 
-   An abstract base class representing a :term:`meta path finder`. For
-   compatibility, this is a subclass of :class:`Finder`.
+   An abstract base class representing a :term:`meta path finder`.
 
    .. versionadded:: 3.3
 

@@ -96,9 +96,7 @@ class TestCParser(unittest.TestCase):
             self.skipTest("The %r command is not found" % cmd)
         self.old_cwd = os.getcwd()
         self.tmp_path = tempfile.mkdtemp(dir=self.tmp_base)
-        change_cwd = os_helper.change_cwd(self.tmp_path)
-        change_cwd.__enter__()
-        self.addCleanup(change_cwd.__exit__, None, None, None)
+        self.enterContext(os_helper.change_cwd(self.tmp_path))
 
     def tearDown(self):
         os.chdir(self.old_cwd)
