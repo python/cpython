@@ -527,9 +527,9 @@ static inline int
 _Py_sadd(Py_ssize_t a, Py_ssize_t b, Py_ssize_t *result)
 {
 #if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__))
-    return __builtin_saddll_overflow(a, b, _Py_STATIC_CAST(long long *, result));
+    return __builtin_saddll_overflow(a, b, _Py_CAST(long long *, result));
 #elif (defined(__clang__) || defined(__GNUC__))
-    return __builtin_saddl_overflow(a, b, _Py_STATIC_CAST((long *, result));
+    return __builtin_saddl_overflow(a, b, _Py_CAST((long *, result));
 #else
     *result = a + b;
     return *result < a;
