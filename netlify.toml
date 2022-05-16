@@ -2,3 +2,4 @@
     base = "Doc/"
     command = "make html"
     publish = "Doc/build/html"
+    environment = { PYTHON_VERSION = "3.8" }
