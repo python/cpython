@@ -484,6 +484,13 @@ How do I copy a file?
 ---------------------
 
 The :mod:`shutil` module contains a :func:`~shutil.copyfile` function.
+Note that on Windows NTFS volumes, it does not copy
+`alternate data streams
+<https://en.wikipedia.org/wiki/NTFS#Alternate_data_stream_(ADS)>`_
+nor `resource forks <https://en.wikipedia.org/wiki/Resource_fork>`__
+on macOS HFS+ volumes, though both are now rarely used.
+It also doesn't copy file permissions and metadata, though using
+:func:`shutil.copy2` instead will preserve most (though not all) of it.
 
 
 How do I read (or write) binary data?
