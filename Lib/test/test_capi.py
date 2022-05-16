@@ -788,6 +788,7 @@ class TestPendingCalls(unittest.TestCase):
 
 class SubinterpreterTest(unittest.TestCase):
 
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_subinterps(self):
         import builtins
         r, w = os.pipe()
@@ -803,6 +804,7 @@ class SubinterpreterTest(unittest.TestCase):
             self.assertNotEqual(pickle.load(f), id(sys.modules))
             self.assertNotEqual(pickle.load(f), id(builtins))
 
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_subinterps_recent_language_features(self):
         r, w = os.pipe()
         code = """if 1:
