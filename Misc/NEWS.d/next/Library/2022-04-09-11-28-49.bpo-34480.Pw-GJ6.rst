@@ -1,0 +1,3 @@
+Fix a bug where :mod:`_markupbase` raised an :exc:`UnboundLocalError`
+when an invalid keyword was found in marked section. Patch by Marek
+Suscak.
