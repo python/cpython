@@ -54,7 +54,6 @@
 
 #undef Py_DECREF
 #define Py_DECREF(arg) \
-    _Py_DECREF_STAT_INC(); \
     do { \
         _Py_DECREF_STAT_INC(); \
         PyObject *op = _PyObject_CAST(arg); \
