@@ -5013,6 +5013,10 @@ datetime_from_timet_and_us(PyObject *cls, TM_FUNC f, time_t timet, int us,
 
         result_seconds = utc_to_seconds(year, month, day,
                                         hour, minute, second);
+        if (result_seconds == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+
         /* Probe max_fold_seconds to detect a fold. */
         probe_seconds = local(epoch + timet - max_fold_seconds);
         if (probe_seconds == -1)
