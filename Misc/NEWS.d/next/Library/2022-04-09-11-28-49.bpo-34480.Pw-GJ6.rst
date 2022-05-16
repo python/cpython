@@ -1,1 +1,3 @@
-Fix a bug where `match` variable is used prior to being defined when an invalid markup is encountered and :meth:`ParserBase.error` is implemented as a NOP in a child class of :class:`ParserBase`.
+Fix a bug where :mod:`_markupbase` raised an :exc:`UnboundLocalError`
+when an invalid keyword was found in marked section. Patch by Marek
+Suscak.
