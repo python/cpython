@@ -744,7 +744,8 @@ Two methods have been deprecated:
 * :meth:`xml.etree.ElementTree.getiterator` use ``Element.iter`` instead.
 
 For details of the update, see `Introducing ElementTree
-<http://effbot.org/zone/elementtree-13-intro.htm>`_ on Fredrik Lundh's website.
+<https://web.archive.org/web/20200703234532/http://effbot.org/zone/elementtree-13-intro.htm>`_
+on Fredrik Lundh's website.
 
 (Contributed by Florent Xicluna and Fredrik Lundh, :issue:`6472`.)
 
