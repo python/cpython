@@ -1247,8 +1247,8 @@ class ZipFile:
                    When using ZIP_BZIP2 integers 1 through 9 are accepted.
     preset: None (default for the given compression type) or an integer
             specifying the level to pass to the compressor.
-            When using ZIP_STORED, ZIP_DEFLATED, or ZIP_BZIP2 this keyword has no effect.
             When using ZIP_LZMA integers 0 through 9 are accepted.
+            When using ZIP_STORED, ZIP_DEFLATED, or ZIP_BZIP2 this keyword has no effect.
 
 
     """
