@@ -2381,7 +2381,7 @@ FILTER_DIR
 .. data:: FILTER_DIR
 
 :data:`FILTER_DIR` is a module level variable that controls the way mock objects
-respond to :func:`dir` (only for Python 2.6 or more recent). The default is ``True``,
+respond to :func:`dir`. The default is ``True``,
 which uses the filtering described below, to only show useful members. If you
 dislike this filtering, or need to switch it off for diagnostic purposes, then
 set ``mock.FILTER_DIR = False``.

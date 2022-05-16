@@ -15,7 +15,8 @@
    single: u-LAW
 
 .. deprecated:: 3.11
-   The :mod:`sndhdr` module is deprecated (see :pep:`594` for details).
+   The :mod:`sndhdr` module is deprecated
+   (see :pep:`PEP 594 <594#sndhdr>` for details and alternatives).
 
 --------------
 

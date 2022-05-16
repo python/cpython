@@ -102,7 +102,6 @@ extern "C" {
             .kind = 1, \
             .compact = 1, \
             .ascii = ASCII, \
-            .ready = 1, \
         }, \
     }
 #define _PyASCIIObject_INIT(LITERAL) \

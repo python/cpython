@@ -16,7 +16,8 @@ import sys
 import tempfile
 from test.support import (captured_stdout, captured_stderr, requires_zlib,
                           skip_if_broken_multiprocessing_synchronize, verbose,
-                          requires_subprocess, is_emscripten)
+                          requires_subprocess, is_emscripten,
+                          requires_venv_with_pip)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
@@ -605,9 +606,7 @@ class EnsurePipTest(BaseTest):
         if not system_site_packages:
             self.assert_pip_not_installed()
 
-    # Issue #26610: pip/pep425tags.py requires ctypes
-    @unittest.skipUnless(ctypes, 'pip requires ctypes')
-    @requires_zlib()
+    @requires_venv_with_pip()
     def test_with_pip(self):
         self.do_test_with_pip(False)
         self.do_test_with_pip(True)
