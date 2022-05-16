@@ -334,6 +334,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     /* not set */
     co->co_weakreflist = NULL;
     co->co_extra = NULL;
+    co->co_source = NULL;
 
     co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
