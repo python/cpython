@@ -806,7 +806,7 @@ def getfqdn(name=''):
 _GLOBAL_DEFAULT_TIMEOUT = object()
 
 def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
-                      source_address=None, all_errors=False):
+                      source_address=None, *, all_errors=False):
     """Connect to *address* and return the socket object.
 
     Convenience function.  Connect to *address* (a 2-tuple ``(host,
@@ -851,7 +851,7 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
             raise ExceptionGroup("create_connection failed", exceptions)
         finally:
             # Break explicitly a reference cycle
-            exceptions = None
+            exceptions.clear()
     else:
         raise error("getaddrinfo returns an empty list")
 

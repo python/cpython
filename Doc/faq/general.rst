@@ -230,14 +230,8 @@ You can also access the development version of Python through Git.  See
 How do I submit bug reports and patches for Python?
 ---------------------------------------------------
 
-To report a bug or submit a patch, please use the Roundup installation at
-https://bugs.python.org/.
-
-You must have a Roundup account to report bugs; this makes it possible for us to
-contact you if we have follow-up questions.  It will also enable Roundup to send
-you updates as we act on your bug. If you had previously used SourceForge to
-report bugs to Python, you can obtain your Roundup password through Roundup's
-`password reset procedure <https://bugs.python.org/user?@template=forgotten>`_.
+To report a bug or submit a patch, use the issue tracker at
+https://github.com/python/cpython/issues.
 
 For more information on how Python is developed, consult `the Python Developer's
 Guide <https://devguide.python.org/>`_.

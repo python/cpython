@@ -945,16 +945,6 @@ class ThreadTests(BaseTestCase):
             threading.Thread(target=noop).start()
             # Thread.join() is not called
 
-    @unittest.skipUnless(Py_DEBUG, 'need debug build (Py_DEBUG)')
-    def test_debug_deprecation(self):
-        # bpo-44584: The PYTHONTHREADDEBUG environment variable is deprecated
-        rc, out, err = assert_python_ok("-Wdefault", "-c", "pass",
-                                        PYTHONTHREADDEBUG="1")
-        msg = (b'DeprecationWarning: The threading debug '
-               b'(PYTHONTHREADDEBUG environment variable) '
-               b'is deprecated and will be removed in Python 3.12')
-        self.assertIn(msg, err)
-
     def test_import_from_another_thread(self):
         # bpo-1596321: If the threading module is first import from a thread
         # different than the main thread, threading._shutdown() must handle
