@@ -1,0 +1,3 @@
+Fix :meth:`asyncio.loop.sock_connect` to only resolve names for :const:`socket.AF_INET` or
+:const:`socket.AF_INET6` families. Resolution may not make sense for other families,
+like :const:`socket.AF_BLUETOOTH` and :const:`socket.AF_UNIX`.

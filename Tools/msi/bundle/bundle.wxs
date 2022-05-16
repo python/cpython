@@ -95,8 +95,8 @@
     <Chain ParallelCache="yes">
       <PackageGroupRef Id="crt" />
       <PackageGroupRef Id="core" />
-      <PackageGroupRef Id="dev" />
       <PackageGroupRef Id="exe" />
+      <PackageGroupRef Id="dev" />
       <PackageGroupRef Id="lib" />
       <PackageGroupRef Id="test" />
       <PackageGroupRef Id="doc" />

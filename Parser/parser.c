@@ -3843,9 +3843,7 @@ dotted_name_rule(Parser *p)
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = dotted_name_raw(p);
-        p->in_raw_rule--;
         if (p->error_indicator) {
             p->level--;
             return NULL;
@@ -7134,9 +7132,7 @@ attr_rule(Parser *p)
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = attr_raw(p);
-        p->in_raw_rule--;
         if (p->error_indicator) {
             p->level--;
             return NULL;
@@ -13025,9 +13021,7 @@ bitwise_or_rule(Parser *p)
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = bitwise_or_raw(p);
-        p->in_raw_rule--;
         if (p->error_indicator) {
             p->level--;
             return NULL;
@@ -13151,9 +13145,7 @@ bitwise_xor_rule(Parser *p)
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = bitwise_xor_raw(p);
-        p->in_raw_rule--;
         if (p->error_indicator) {
             p->level--;
             return NULL;
@@ -13277,9 +13269,7 @@ bitwise_and_rule(Parser *p)
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = bitwise_and_raw(p);
-        p->in_raw_rule--;
         if (p->error_indicator) {
             p->level--;
             return NULL;
@@ -13403,9 +13393,7 @@ shift_expr_rule(Parser *p)
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = shift_expr_raw(p);
-        p->in_raw_rule--;
         if (p->error_indicator) {
             p->level--;
             return NULL;
@@ -13568,9 +13556,7 @@ sum_rule(Parser *p)
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = sum_raw(p);
-        p->in_raw_rule--;
         if (p->error_indicator) {
             p->level--;
             return NULL;
@@ -13739,9 +13725,7 @@ term_rule(Parser *p)
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = term_raw(p);
-        p->in_raw_rule--;
         if (p->error_indicator) {
             p->level--;
             return NULL;
@@ -14363,9 +14347,7 @@ primary_rule(Parser *p)
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = primary_raw(p);
-        p->in_raw_rule--;
         if (p->error_indicator) {
             p->level--;
             return NULL;
@@ -18053,9 +18035,7 @@ t_primary_rule(Parser *p)
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = t_primary_raw(p);
-        p->in_raw_rule--;
         if (p->error_indicator) {
             p->level--;
             return NULL;
@@ -18439,7 +18419,7 @@ invalid_arguments_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_arguments[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression for_if_clauses ',' [args | expression for_if_clauses]"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , PyPegen_last_item ( b , comprehension_ty ) -> target , "Generator expression must be parenthesized" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , _PyPegen_get_last_comprehension_item ( PyPegen_last_item ( b , comprehension_ty ) ) , "Generator expression must be parenthesized" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -18532,7 +18512,7 @@ invalid_arguments_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_arguments[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "args ',' expression for_if_clauses"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , asdl_seq_GET ( b , b -> size - 1 ) -> target , "Generator expression must be parenthesized" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , _PyPegen_get_last_comprehension_item ( PyPegen_last_item ( b , comprehension_ty ) ) , "Generator expression must be parenthesized" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -18699,11 +18679,14 @@ invalid_kwarg_rule(Parser *p)
 static expr_ty
 expression_without_invalid_rule(Parser *p)
 {
+    int _prev_call_invalid = p->call_invalid_rules;
+    p->call_invalid_rules = 0;
     if (p->level++ == MAXSTACK) {
         p->error_indicator = 1;
         PyErr_NoMemory();
     }
     if (p->error_indicator) {
+        p->call_invalid_rules = _prev_call_invalid;
         p->level--;
         return NULL;
     }
@@ -18711,6 +18694,7 @@ expression_without_invalid_rule(Parser *p)
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
+        p->call_invalid_rules = _prev_call_invalid;
         p->level--;
         return NULL;
     }
@@ -18720,6 +18704,7 @@ expression_without_invalid_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // disjunction 'if' disjunction 'else' expression
         if (p->error_indicator) {
+            p->call_invalid_rules = _prev_call_invalid;
             p->level--;
             return NULL;
         }
@@ -18744,6 +18729,7 @@ expression_without_invalid_rule(Parser *p)
             D(fprintf(stderr, "%*c+ expression_without_invalid[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "disjunction 'if' disjunction 'else' expression"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
+                p->call_invalid_rules = _prev_call_invalid;
                 p->level--;
                 return NULL;
             }
@@ -18754,6 +18740,7 @@ expression_without_invalid_rule(Parser *p)
             _res = _PyAST_IfExp ( b , a , c , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
+                p->call_invalid_rules = _prev_call_invalid;
                 p->level--;
                 return NULL;
             }
@@ -18765,6 +18752,7 @@ expression_without_invalid_rule(Parser *p)
     }
     { // disjunction
         if (p->error_indicator) {
+            p->call_invalid_rules = _prev_call_invalid;
             p->level--;
             return NULL;
         }
@@ -18784,6 +18772,7 @@ expression_without_invalid_rule(Parser *p)
     }
     { // lambdef
         if (p->error_indicator) {
+            p->call_invalid_rules = _prev_call_invalid;
             p->level--;
             return NULL;
         }
@@ -18803,6 +18792,7 @@ expression_without_invalid_rule(Parser *p)
     }
     _res = NULL;
   done:
+    p->call_invalid_rules = _prev_call_invalid;
     p->level--;
     return _res;
 }
@@ -18955,6 +18945,10 @@ invalid_named_expression_rule(Parser *p)
         return NULL;
     }
     void * _res = NULL;
+    if (_PyPegen_is_memoized(p, invalid_named_expression_type, &_res)) {
+        p->level--;
+        return _res;
+    }
     int _mark = p->mark;
     { // expression ':=' expression
         if (p->error_indicator) {
@@ -19006,7 +19000,7 @@ invalid_named_expression_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_named_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME '=' bitwise_or !('=' | ':=')"));
-            _res = p -> in_raw_rule ? NULL : RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax. Maybe you meant '==' or ':=' instead of '='?" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax. Maybe you meant '==' or ':=' instead of '='?" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -19040,7 +19034,7 @@ invalid_named_expression_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_named_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "!(list | tuple | genexp | 'True' | 'None' | 'False') bitwise_or '=' bitwise_or !('=' | ':=')"));
-            _res = p -> in_raw_rule ? NULL : RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot assign to %s here. Maybe you meant '==' instead of '='?" , _PyPegen_get_expr_name ( a ) );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot assign to %s here. Maybe you meant '==' instead of '='?" , _PyPegen_get_expr_name ( a ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -19054,6 +19048,7 @@ invalid_named_expression_rule(Parser *p)
     }
     _res = NULL;
   done:
+    _PyPegen_insert_memo(p, _mark, invalid_named_expression_type, _res);
     p->level--;
     return _res;
 }
@@ -20809,7 +20804,7 @@ invalid_except_stmt_indent_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_except_stmt_indent[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' ':' NEWLINE !INDENT"));
-            _res = RAISE_SYNTAX_ERROR ( "expected an indented block after except statement on line %d" , a -> lineno );
+            _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'except' statement on line %d" , a -> lineno );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

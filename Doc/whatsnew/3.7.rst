@@ -538,7 +538,7 @@ Other Language Changes
 * The new :option:`-X` ``importtime`` option or the
   :envvar:`PYTHONPROFILEIMPORTTIME` environment variable can be used to show
   the timing of each module import.
-  (Contributed by Victor Stinner in :issue:`31415`.)
+  (Contributed by Inada Naoki in :issue:`31415`.)
 
 
 New Modules

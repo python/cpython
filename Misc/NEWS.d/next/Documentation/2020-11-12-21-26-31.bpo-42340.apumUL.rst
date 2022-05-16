@@ -1,0 +1,3 @@
+Document that in some circumstances :exc:`KeyboardInterrupt` may cause the
+code to enter an inconsistent state. Provided a sample workaround to avoid
+it if needed.

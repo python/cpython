@@ -1,5 +1,0 @@
-Restore behavior from 3.9 and earlier when sending non-None to newly started
-generator. In 3.9 this did not affect the state of the generator. In 3.10.0
-and 3.10.1 ``gen_func().send(0)`` is equivalent to
-``gen_func().throw(TypeError(...)`` which exhausts the generator. In 3.10.2
-onward, the behavior has been reverted to that of 3.9.

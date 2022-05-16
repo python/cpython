@@ -75,6 +75,8 @@ the same library that the Python runtime is using.
    :c:func:`PyRun_SimpleFile`.  *filename* is decoded from the filesystem
    encoding (:func:`sys.getfilesystemencoding`).  If *filename* is ``NULL``, this
    function uses ``"???"`` as the filename.
+   If *closeit* is true, the file is closed before
+   ``PyRun_SimpleFileExFlags()`` returns.
 
 
 .. c:function:: int PyRun_SimpleString(const char *command)

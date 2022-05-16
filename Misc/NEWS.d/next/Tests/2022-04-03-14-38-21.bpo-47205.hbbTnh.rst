@@ -1,0 +1,2 @@
+Skip test for :func:`~os.sched_getaffinity` and
+:func:`~os.sched_setaffinity` error case on FreeBSD.

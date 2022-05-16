@@ -1,0 +1,2 @@
+Document security issues concerning the use of the function
+:meth:`shutil.unpack_archive`

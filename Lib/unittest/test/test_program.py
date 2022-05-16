@@ -6,7 +6,7 @@ import subprocess
 from test import support
 import unittest
 import unittest.test
-from .test_result import BufferedWriter
+from unittest.test.test_result import BufferedWriter
 
 
 class Test_TestProgram(unittest.TestCase):

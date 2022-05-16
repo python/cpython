@@ -194,7 +194,7 @@ Future Object
       schedule the callbacks, and return ``True``.
 
       .. versionchanged:: 3.9
-         Added the ``msg`` parameter.
+         Added the *msg* parameter.
 
    .. method:: exception()
 

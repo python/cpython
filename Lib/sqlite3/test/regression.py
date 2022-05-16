@@ -27,6 +27,9 @@ import weakref
 import functools
 from test import support
 
+from unittest.mock import patch
+
+
 class RegressionTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:")
@@ -415,9 +418,46 @@ class RegressionTests(unittest.TestCase):
         self.assertEqual(val, b'')
 
 
+class RecursiveUseOfCursors(unittest.TestCase):
+    # GH-80254: sqlite3 should not segfault for recursive use of cursors.
+    msg = "Recursive use of cursors not allowed"
+
+    def setUp(self):
+        self.con = sqlite.connect(":memory:",
+                                  detect_types=sqlite.PARSE_COLNAMES)
+        self.cur = self.con.cursor()
+        self.cur.execute("create table test(x foo)")
+        self.cur.executemany("insert into test(x) values (?)",
+                             [("foo",), ("bar",)])
+
+    def tearDown(self):
+        self.cur.close()
+        self.con.close()
+
+    def test_recursive_cursor_init(self):
+        conv = lambda x: self.cur.__init__(self.con)
+        with patch.dict(sqlite.converters, {"INIT": conv}):
+            with self.assertRaisesRegex(sqlite.ProgrammingError, self.msg):
+                self.cur.execute(f'select x as "x [INIT]", x from test')
+
+    def test_recursive_cursor_close(self):
+        conv = lambda x: self.cur.close()
+        with patch.dict(sqlite.converters, {"CLOSE": conv}):
+            with self.assertRaisesRegex(sqlite.ProgrammingError, self.msg):
+                self.cur.execute(f'select x as "x [CLOSE]", x from test')
+
+    def test_recursive_cursor_fetch(self):
+        conv = lambda x, l=[]: self.cur.fetchone() if l else l.append(None)
+        with patch.dict(sqlite.converters, {"ITER": conv}):
+            self.cur.execute(f'select x as "x [ITER]", x from test')
+            with self.assertRaisesRegex(sqlite.ProgrammingError, self.msg):
+                self.cur.fetchall()
+
+
 def suite():
     tests = [
-        RegressionTests
+        RegressionTests,
+        RecursiveUseOfCursors,
     ]
     return unittest.TestSuite(
         [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]

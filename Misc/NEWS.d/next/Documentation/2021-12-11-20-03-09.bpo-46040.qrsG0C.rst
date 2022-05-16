@@ -1,2 +1,0 @@
-Fix removal Python version for ``@asyncio.coroutine``, the correct value is
-3.11.

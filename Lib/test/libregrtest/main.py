@@ -533,7 +533,24 @@ class Regrtest:
 
         if self.ns.use_mp:
             from test.libregrtest.runtest_mp import run_tests_multiprocess
-            run_tests_multiprocess(self)
+            # If we're on windows and this is the parent runner (not a worker),
+            # track the load average.
+            if sys.platform == 'win32' and self.worker_test_name is None:
+                from test.libregrtest.win_utils import WindowsLoadTracker
+
+                try:
+                    self.win_load_tracker = WindowsLoadTracker()
+                except PermissionError as error:
+                    # Standard accounts may not have access to the performance
+                    # counters.
+                    print(f'Failed to create WindowsLoadTracker: {error}')
+
+            try:
+                run_tests_multiprocess(self)
+            finally:
+                if self.win_load_tracker is not None:
+                    self.win_load_tracker.close()
+                    self.win_load_tracker = None
         else:
             self.run_tests_sequential()
 
@@ -695,28 +712,11 @@ class Regrtest:
             self.list_cases()
             sys.exit(0)
 
-        # If we're on windows and this is the parent runner (not a worker),
-        # track the load average.
-        if sys.platform == 'win32' and self.worker_test_name is None:
-            from test.libregrtest.win_utils import WindowsLoadTracker
+        self.run_tests()
+        self.display_result()
 
-            try:
-                self.win_load_tracker = WindowsLoadTracker()
-            except FileNotFoundError as error:
-                # Windows IoT Core and Windows Nano Server do not provide
-                # typeperf.exe for x64, x86 or ARM
-                print(f'Failed to create WindowsLoadTracker: {error}')
-
-        try:
-            self.run_tests()
-            self.display_result()
-
-            if self.ns.verbose2 and self.bad:
-                self.rerun_failed_tests()
-        finally:
-            if self.win_load_tracker is not None:
-                self.win_load_tracker.close()
-                self.win_load_tracker = None
+        if self.ns.verbose2 and self.bad:
+            self.rerun_failed_tests()
 
         self.finalize()
 

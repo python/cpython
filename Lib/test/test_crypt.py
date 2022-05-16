@@ -1,8 +1,11 @@
 import sys
 import unittest
+from test.support import check_sanitizer
 
 
 try:
+    if check_sanitizer(address=True, memory=True):
+        raise unittest.SkipTest("The crypt module SEGFAULTs on ASAN/MSAN builds")
     import crypt
     IMPORT_ERROR = None
 except ImportError as ex:

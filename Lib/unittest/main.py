@@ -39,7 +39,7 @@ def _convert_name(name):
             name = rel_path
         # on Windows both '\' and '/' are used as path
         # separators. Better to replace both than rely on os.path.sep
-        return name[:-3].replace('\\', '.').replace('/', '.')
+        return os.path.normpath(name)[:-3].replace('\\', '.').replace('/', '.')
     return name
 
 def _convert_names(names):

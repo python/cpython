@@ -435,10 +435,23 @@ get_error_line(Parser *p, Py_ssize_t lineno)
     assert((p->tok->fp == NULL && p->tok->str != NULL) || p->tok->fp == stdin);
 
     char *cur_line = p->tok->fp_interactive ? p->tok->interactive_src_start : p->tok->str;
-    assert(cur_line != NULL);
+    if (cur_line == NULL) {
+        assert(p->tok->fp_interactive);
+        // We can reach this point if the tokenizer buffers for interactive source have not been
+        // initialized because we failed to decode the original source with the given locale.
+        return PyUnicode_FromStringAndSize("", 0);
+    }
+    const char* buf_end = p->tok->fp_interactive ? p->tok->interactive_src_end : p->tok->inp;
 
-    for (int i = 0; i < lineno - 1; i++) {
-        cur_line = strchr(cur_line, '\n') + 1;
+    Py_ssize_t relative_lineno = p->starting_lineno ? lineno - p->starting_lineno + 1 : lineno;
+
+    for (int i = 0; i < relative_lineno - 1; i++) {
+        char *new_line = strchr(cur_line, '\n') + 1;
+        assert(new_line != NULL && new_line <= buf_end);
+        if (new_line == NULL || new_line > buf_end) {
+            break;
+        }
+        cur_line = new_line;
     }
 
     char *next_newline;
@@ -487,7 +500,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         goto error;
     }
 
-    if (p->tok->fp_interactive) {
+    if (p->tok->fp_interactive && p->tok->interactive_src_start != NULL) {
         error_line = get_error_line(p, lineno);
     }
     else if (p->start_rule == Py_file_input) {
@@ -701,10 +714,10 @@ initialize_token(Parser *p, Token *token, const char *start, const char *end, in
     int col_offset = (start != NULL && start >= line_start) ? (int)(start - line_start) : -1;
     int end_col_offset = (end != NULL && end >= p->tok->line_start) ? (int)(end - p->tok->line_start) : -1;
 
-    token->lineno = p->starting_lineno + lineno;
-    token->col_offset = p->tok->lineno == 1 ? p->starting_col_offset + col_offset : col_offset;
-    token->end_lineno = p->starting_lineno + end_lineno;
-    token->end_col_offset = p->tok->lineno == 1 ? p->starting_col_offset + end_col_offset : end_col_offset;
+    token->lineno = lineno;
+    token->col_offset = p->tok->lineno == p->starting_lineno ? p->starting_col_offset + col_offset : col_offset;
+    token->end_lineno = end_lineno;
+    token->end_col_offset = p->tok->lineno == p->starting_lineno ? p->starting_col_offset + end_col_offset : end_col_offset;
 
     p->fill += 1;
 
@@ -1194,6 +1207,9 @@ compute_parser_flags(PyCompilerFlags *flags)
     if ((flags->cf_flags & PyCF_ONLY_AST) && flags->cf_feature_version < 7) {
         parser_flags |= PyPARSE_ASYNC_HACKS;
     }
+    if (flags->cf_flags & PyCF_ALLOW_INCOMPLETE_INPUT) {
+        parser_flags |= PyPARSE_ALLOW_INCOMPLETE_INPUT;
+    }
     return parser_flags;
 }
 
@@ -1248,7 +1264,6 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->known_err_token = NULL;
     p->level = 0;
     p->call_invalid_rules = 0;
-    p->in_raw_rule = 0;
     return p;
 }
 
@@ -1319,22 +1334,37 @@ exit:
     return ret;
 }
 
+
+static inline int
+_is_end_of_source(Parser *p) {
+    int err = p->tok->done;
+    return err == E_EOF || err == E_EOFS || err == E_EOLS;
+}
+
 void *
 _PyPegen_run_parser(Parser *p)
 {
     void *res = _PyPegen_parse(p);
     assert(p->level == 0);
     if (res == NULL) {
+        if ((p->flags & PyPARSE_ALLOW_INCOMPLETE_INPUT) &&  _is_end_of_source(p)) {
+            PyErr_Clear();
+            return RAISE_SYNTAX_ERROR("incomplete input");
+        }
         if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_SyntaxError)) {
             return NULL;
         }
+        // Make a second parser pass. In this pass we activate heavier and slower checks
+        // to produce better error messages and more complete diagnostics. Extra "invalid_*"
+        // rules will be active during parsing.
         Token *last_token = p->tokens[p->fill - 1];
         reset_parser_state(p);
         _PyPegen_parse(p);
         if (PyErr_Occurred()) {
             // Prioritize tokenizer errors to custom syntax errors raised
             // on the second phase only if the errors come from the parser.
-            if (p->tok->done == E_DONE && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+            int is_tok_ok = (p->tok->done == E_DONE || p->tok->done == E_OK);
+            if (is_tok_ok && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
                 _PyPegen_check_tokenizer_errors(p);
             }
             return NULL;
@@ -2538,7 +2568,7 @@ void *_PyPegen_arguments_parsing_error(Parser *p, expr_ty e) {
 }
 
 
-static inline expr_ty
+expr_ty
 _PyPegen_get_last_comprehension_item(comprehension_ty comprehension) {
     if (comprehension->ifs == NULL || asdl_seq_LEN(comprehension->ifs) == 0) {
         return comprehension->iter;

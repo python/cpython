@@ -286,7 +286,7 @@ Numbers
    Convert a Python integer to a C :c:type:`unsigned long long`
    without overflow checking.
 
-``n`` (:class:`int`) [Py_ssize_t]
+``n`` (:class:`int`) [:c:type:`Py_ssize_t`]
    Convert a Python integer to a C :c:type:`Py_ssize_t`.
 
 ``c`` (:class:`bytes` or :class:`bytearray` of length 1) [char]
@@ -613,7 +613,7 @@ Building values
    ``K`` (:class:`int`) [unsigned long long]
       Convert a C :c:type:`unsigned long long` to a Python integer object.
 
-   ``n`` (:class:`int`) [Py_ssize_t]
+   ``n`` (:class:`int`) [:c:type:`Py_ssize_t`]
       Convert a C :c:type:`Py_ssize_t` to a Python integer.
 
    ``c`` (:class:`bytes` of length 1) [char]

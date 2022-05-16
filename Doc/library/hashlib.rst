@@ -120,10 +120,10 @@ More condensed:
 
 Using :func:`new` with an algorithm provided by OpenSSL:
 
-   >>> h = hashlib.new('sha512_256')
+   >>> h = hashlib.new('sha256')
    >>> h.update(b"Nobody inspects the spammish repetition")
    >>> h.hexdigest()
-   '19197dc4d03829df858011c6c87600f994a858103bbc19005f20987aa19a97e2'
+   '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
 Hashlib provides the following constant attributes:
 
@@ -249,16 +249,19 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    a proper source, e.g. :func:`os.urandom`.
 
    The number of *iterations* should be chosen based on the hash algorithm and
-   computing power. As of 2013, at least 100,000 iterations of SHA-256 are
-   suggested.
+   computing power. As of 2022, hundreds of thousands of iterations of SHA-256
+   are suggested. For rationale as to why and how to choose what is best for
+   your application, read *Appendix A.2.2* of NIST-SP-800-132_. The answers
+   on the `stackexchange pbkdf2 iterations question`_ explain in detail.
 
    *dklen* is the length of the derived key. If *dklen* is ``None`` then the
    digest size of the hash algorithm *hash_name* is used, e.g. 64 for SHA-512.
 
-   >>> import hashlib
-   >>> dk = hashlib.pbkdf2_hmac('sha256', b'password', b'salt', 100000)
+   >>> from hashlib import pbkdf2_hmac
+   >>> our_app_iters = 500_000  # Application specific, read above.
+   >>> dk = pbkdf2_hmac('sha256', b'password', b'bad salt'*2, our_app_iters)
    >>> dk.hex()
-   '0394a2ede332c9a13eb82e9b24631604c31df978b4e2f0fbd2c549944f9d79a5'
+   '15530bba69924174860db778f2c6f8104d3aaf9d26241840c8c4a641c8d000a9'
 
    .. versionadded:: 3.4
 
@@ -731,7 +734,8 @@ Domain Dedication 1.0 Universal:
 .. _SHA-3: https://en.wikipedia.org/wiki/NIST_hash_function_competition
 .. _ChaCha: https://cr.yp.to/chacha.html
 .. _pyblake2: https://pythonhosted.org/pyblake2/
-
+.. _NIST-SP-800-132: https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
+.. _stackexchange pbkdf2 iterations question: https://security.stackexchange.com/questions/3959/recommended-of-iterations-when-using-pbkdf2-sha256/
 
 
 .. seealso::
@@ -754,3 +758,6 @@ Domain Dedication 1.0 Universal:
 
    https://www.ietf.org/rfc/rfc8018.txt
       PKCS #5: Password-Based Cryptography Specification Version 2.1
+
+   https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
+      NIST Recommendation for Password-Based Key Derivation.

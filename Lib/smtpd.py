@@ -93,7 +93,8 @@ __all__ = [
 ]
 
 warn(
-    'The smtpd module is deprecated and unmaintained.  Please see aiosmtpd '
+    'The smtpd module is deprecated and unmaintained and will be removed '
+    'in Python 3.12.  Please see aiosmtpd '
     '(https://aiosmtpd.readthedocs.io/) for the recommended replacement.',
     DeprecationWarning,
     stacklevel=2)

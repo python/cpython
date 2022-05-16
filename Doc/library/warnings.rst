@@ -105,7 +105,7 @@ The following warnings category classes are currently defined:
 |                                  | :class:`bytes` and :class:`bytearray`.        |
 +----------------------------------+-----------------------------------------------+
 | :exc:`ResourceWarning`           | Base category for warnings related to         |
-|                                  | resource usage.                               |
+|                                  | resource usage (ignored by default).          |
 +----------------------------------+-----------------------------------------------+
 
 .. versionchanged:: 3.7

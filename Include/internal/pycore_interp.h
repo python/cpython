@@ -71,15 +71,9 @@ struct _Py_unicode_state {
     PyObject *latin1[256];
     struct _Py_unicode_fs_codec fs_codec;
 
-    /* This dictionary holds all interned unicode strings.  Note that references
-       to strings in this dictionary are *not* counted in the string's ob_refcnt.
-       When the interned string reaches a refcnt of 0 the string deallocation
-       function will delete the reference from this dictionary.
-
-       Another way to look at this is that to say that the actual reference
-       count of a string is:  s->ob_refcnt + (s->state ? 2 : 0)
-    */
-    PyObject *interned;
+    // Unused member kept for ABI backward compatibility with Python 3.10.0:
+    // see bpo-46006.
+    PyObject *unused_interned;
 
     // Unicode identifiers (_Py_Identifier): see _PyUnicode_FromId()
     struct _Py_unicode_ids ids;

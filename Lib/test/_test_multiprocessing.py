@@ -73,6 +73,12 @@ except ImportError:
     msvcrt = None
 
 
+if support.check_sanitizer(address=True):
+    # bpo-45200: Skip multiprocessing tests if Python is built with ASAN to
+    # work around a libasan race condition: dead lock in pthread_create().
+    raise unittest.SkipTest("libasan has a pthread_create() dead lock")
+
+
 def latin(s):
     return s.encode('latin')
 

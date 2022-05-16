@@ -1135,11 +1135,11 @@ static PyMethodDef mappingproxy_methods[] = {
      PyDoc_STR("D.get(k[,d]) -> D[k] if k in D, else d."
                "  d defaults to None.")},
     {"keys",      (PyCFunction)mappingproxy_keys,       METH_NOARGS,
-     PyDoc_STR("D.keys() -> list of D's keys")},
+     PyDoc_STR("D.keys() -> a set-like object providing a view on D's keys")},
     {"values",    (PyCFunction)mappingproxy_values,     METH_NOARGS,
-     PyDoc_STR("D.values() -> list of D's values")},
+     PyDoc_STR("D.values() -> an object providing a view on D's values")},
     {"items",     (PyCFunction)mappingproxy_items,      METH_NOARGS,
-     PyDoc_STR("D.items() -> list of D's (key, value) pairs, as 2-tuples")},
+     PyDoc_STR("D.items() -> a set-like object providing a view on D's items")},
     {"copy",      (PyCFunction)mappingproxy_copy,       METH_NOARGS,
      PyDoc_STR("D.copy() -> a shallow copy of D")},
     {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS,
@@ -1510,7 +1510,7 @@ static PyMemberDef property_members[] = {
 
 
 PyDoc_STRVAR(getter_doc,
-             "Descriptor to change the getter on a property.");
+             "Descriptor to obtain a copy of the property with a different getter.");
 
 static PyObject *
 property_getter(PyObject *self, PyObject *getter)
@@ -1520,7 +1520,7 @@ property_getter(PyObject *self, PyObject *getter)
 
 
 PyDoc_STRVAR(setter_doc,
-             "Descriptor to change the setter on a property.");
+             "Descriptor to obtain a copy of the property with a different setter.");
 
 static PyObject *
 property_setter(PyObject *self, PyObject *setter)
@@ -1530,7 +1530,7 @@ property_setter(PyObject *self, PyObject *setter)
 
 
 PyDoc_STRVAR(deleter_doc,
-             "Descriptor to change the deleter on a property.");
+             "Descriptor to obtain a copy of the property with a different deleter.");
 
 static PyObject *
 property_deleter(PyObject *self, PyObject *deleter)

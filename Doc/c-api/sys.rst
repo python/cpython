@@ -177,7 +177,7 @@ Operating System Utilities
 
    Return a pointer to a newly allocated byte string, use :c:func:`PyMem_Free`
    to free the memory. Return ``NULL`` on encoding error or memory allocation
-   error
+   error.
 
    If error_pos is not ``NULL``, ``*error_pos`` is set to ``(size_t)-1`` on
    success,  or set to the index of the invalid character on encoding error.
@@ -207,7 +207,7 @@ Operating System Utilities
 
    .. versionchanged:: 3.8
       The function now uses the UTF-8 encoding on Windows if
-      :c:data:`Py_LegacyWindowsFSEncodingFlag` is zero;
+      :c:data:`Py_LegacyWindowsFSEncodingFlag` is zero.
 
 
 .. _systemfunctions:
@@ -323,7 +323,7 @@ accessible to C code.  They all work with the current interpreter thread's
    leaks.)
 
    Note that ``#`` format characters should always be treated as
-   ``Py_ssize_t``, regardless of whether ``PY_SSIZE_T_CLEAN`` was defined.
+   :c:type:`Py_ssize_t`, regardless of whether ``PY_SSIZE_T_CLEAN`` was defined.
 
    :func:`sys.audit` performs the same function from Python code.
 
@@ -331,14 +331,14 @@ accessible to C code.  They all work with the current interpreter thread's
 
    .. versionchanged:: 3.8.2
 
-      Require ``Py_ssize_t`` for ``#`` format characters. Previously, an
+      Require :c:type:`Py_ssize_t` for ``#`` format characters. Previously, an
       unavoidable deprecation warning was raised.
 
 
 .. c:function:: int PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
 
    Append the callable *hook* to the list of active auditing hooks.
-   Return zero for success
+   Return zero on success
    and non-zero on failure. If the runtime has been initialized, also set an
    error on failure. Hooks added through this API are called for all
    interpreters created by the runtime.
