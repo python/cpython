@@ -145,6 +145,17 @@ class TestInteractiveModeSyntaxErrors(unittest.TestCase):
         ]
         self.assertEqual(traceback_lines, expected_lines)
 
+    def test_interactive_traceback_reporting(self):
+        output = run_on_interactive_mode("1 / 0 / 3 / 4")
+        traceback_lines = output.splitlines()[-6:-1]
+        expected_lines = [
+            "Traceback (most recent call last):",
+            "  File \"<stdin>\", line 1, in <module>",
+            "    1 / 0 / 3 / 4",
+            "    ~~^~~",
+            "ZeroDivisionError: division by zero",
+        ]
+        self.assertEqual(traceback_lines, expected_lines)
 
 if __name__ == "__main__":
     unittest.main()
