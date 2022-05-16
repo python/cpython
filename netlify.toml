@@ -1,5 +1,5 @@
 [build]
     base = "Doc/"
     command = "make html"
-    publish = "Doc/build/html"
+    publish = "build/html"
     environment = { PYTHON_VERSION = "3.8" }
