@@ -455,8 +455,7 @@ display_source_line_with_margin(PyObject *f, PyFrameObject *frame, PyObject *fil
         if (bytes == NULL) {
             return -1;
         }
-        _Py_DECLARE_STR(bytesio, "BytesIO");
-        binary = _PyObject_CallMethod(io, &_Py_STR(bytesio),
+        binary = PyObject_CallMethod(io, "BytesIO",
                                       "O", bytes);
         if (binary == NULL) {
             return -1;
