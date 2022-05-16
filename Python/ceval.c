@@ -1016,6 +1016,7 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
             Py_DECREF(value);
             Py_DECREF(values);
             // Return None:
+            Py_INCREF(Py_None);
             values = Py_None;
             goto done;
         }
@@ -1994,10 +1995,12 @@ handle_eval_breaker:
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
             if (err == 0) {
+                Py_INCREF(Py_True);
                 SET_TOP(Py_True);
                 DISPATCH();
             }
             else if (err > 0) {
+                Py_INCREF(Py_False);
                 SET_TOP(Py_False);
                 DISPATCH();
             }
@@ -3915,6 +3918,7 @@ handle_eval_breaker:
             PyObject *left = TOP();
             int res = Py_Is(left, right) ^ oparg;
             PyObject *b = res ? Py_True : Py_False;
+            Py_INCREF(b);
             SET_TOP(b);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -3931,6 +3935,7 @@ handle_eval_breaker:
                 goto error;
             }
             PyObject *b = (res^oparg) ? Py_True : Py_False;
+            Py_INCREF(b);
             PUSH(b);
             DISPATCH();
         }
@@ -4053,9 +4058,11 @@ handle_eval_breaker:
             PREDICTED(POP_JUMP_BACKWARD_IF_FALSE);
             PyObject *cond = POP();
             if (Py_IsTrue(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
                 DISPATCH();
             }
             if (Py_IsFalse(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
                 JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
@@ -4077,8 +4084,10 @@ handle_eval_breaker:
             PREDICTED(POP_JUMP_FORWARD_IF_FALSE);
             PyObject *cond = POP();
             if (Py_IsTrue(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
             }
             else if (Py_IsFalse(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
                 JUMPBY(oparg);
             }
             else {
@@ -4098,9 +4107,11 @@ handle_eval_breaker:
         TARGET(POP_JUMP_BACKWARD_IF_TRUE) {
             PyObject *cond = POP();
             if (Py_IsFalse(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
                 DISPATCH();
             }
             if (Py_IsTrue(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
                 JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
@@ -4121,8 +4132,10 @@ handle_eval_breaker:
         TARGET(POP_JUMP_FORWARD_IF_TRUE) {
             PyObject *cond = POP();
             if (Py_IsFalse(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
             }
             else if (Py_IsTrue(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
                 JUMPBY(oparg);
             }
             else {
@@ -4147,6 +4160,7 @@ handle_eval_breaker:
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
             }
+            _Py_DECREF_NO_DEALLOC(value);
             DISPATCH();
         }
 
@@ -4162,6 +4176,7 @@ handle_eval_breaker:
         TARGET(POP_JUMP_BACKWARD_IF_NONE) {
             PyObject *value = POP();
             if (Py_IsNone(value)) {
+                _Py_DECREF_NO_DEALLOC(value);
                 JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
             }
@@ -4174,6 +4189,7 @@ handle_eval_breaker:
         TARGET(POP_JUMP_FORWARD_IF_NONE) {
             PyObject *value = POP();
             if (Py_IsNone(value)) {
+                _Py_DECREF_NO_DEALLOC(value);
                 JUMPBY(oparg);
             }
             else {
@@ -4187,6 +4203,7 @@ handle_eval_breaker:
             int err;
             if (Py_IsTrue(cond)) {
                 STACK_SHRINK(1);
+                _Py_DECREF_NO_DEALLOC(cond);
                 DISPATCH();
             }
             if (Py_IsFalse(cond)) {
@@ -4210,6 +4227,7 @@ handle_eval_breaker:
             int err;
             if (Py_IsFalse(cond)) {
                 STACK_SHRINK(1);
+                _Py_DECREF_NO_DEALLOC(cond);
                 DISPATCH();
             }
             if (Py_IsTrue(cond)) {
@@ -4282,6 +4300,7 @@ handle_eval_breaker:
             }
             else {
                 // Failure!
+                Py_INCREF(Py_None);
                 SET_TOP(Py_None);
             }
             Py_DECREF(subject);
@@ -4292,6 +4311,7 @@ handle_eval_breaker:
             PyObject *subject = TOP();
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
             PyObject *res = match ? Py_True : Py_False;
+            Py_INCREF(res);
             PUSH(res);
             PREDICT(POP_JUMP_FORWARD_IF_FALSE);
             PREDICT(POP_JUMP_BACKWARD_IF_FALSE);
@@ -4302,6 +4322,7 @@ handle_eval_breaker:
             PyObject *subject = TOP();
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
             PyObject *res = match ? Py_True : Py_False;
+            Py_INCREF(res);
             PUSH(res);
             PREDICT(POP_JUMP_FORWARD_IF_FALSE);
             PREDICT(POP_JUMP_BACKWARD_IF_FALSE);
@@ -4502,6 +4523,7 @@ handle_eval_breaker:
                 SET_TOP(exc_info->exc_value);
             }
             else {
+                Py_INCREF(Py_None);
                 SET_TOP(Py_None);
             }
 
@@ -6608,6 +6630,7 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
             fixed_cause = cause;
         }
         else if (Py_IsNone(cause)) {
+            Py_DECREF(cause);
             fixed_cause = NULL;
         }
         else {
@@ -6641,8 +6664,8 @@ exception_group_match(PyObject* exc_value, PyObject *match_type,
                       PyObject **match, PyObject **rest)
 {
     if (Py_IsNone(exc_value)) {
-        *match = Py_None;
-        *rest = Py_None;
+        *match = Py_NewRef(Py_None);
+        *rest = Py_NewRef(Py_None);
         return 0;
     }
     assert(PyExceptionInstance_Check(exc_value));
@@ -6666,7 +6689,7 @@ exception_group_match(PyObject* exc_value, PyObject *match_type,
             }
             *match = wrapped;
         }
-        *rest = Py_None;
+        *rest = Py_NewRef(Py_None);
         return 0;
     }
 
@@ -6687,8 +6710,8 @@ exception_group_match(PyObject* exc_value, PyObject *match_type,
         return 0;
     }
     /* no match */
-    *match = Py_None;
-    *rest = Py_None;
+    *match = Py_NewRef(Py_None);
+    *rest = Py_NewRef(Py_None);
     return 0;
 }
 
@@ -6802,6 +6825,7 @@ call_exc_trace(Py_tracefunc func, PyObject *self,
     _PyErr_Fetch(tstate, &type, &value, &orig_traceback);
     if (value == NULL) {
         value = Py_None;
+        Py_INCREF(value);
     }
     _PyErr_NormalizeException(tstate, &type, &value, &orig_traceback);
     traceback = (orig_traceback != NULL) ? orig_traceback : Py_None;

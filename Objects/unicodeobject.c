@@ -1516,6 +1516,24 @@ unicode_dealloc(PyObject *unicode)
     }
 #endif
 
+#ifdef INTERNED_STRINGS
+    if (PyUnicode_CHECK_INTERNED(unicode)) {
+        /* Revive the dead object temporarily. PyDict_DelItem() removes two
+           references (key and value) which were ignored by
+           PyUnicode_InternInPlace(). Use refcnt=3 rather than refcnt=2
+           to prevent calling unicode_dealloc() again. Adjust refcnt after
+           PyDict_DelItem(). */
+        assert(Py_REFCNT(unicode) == 0);
+        Py_SET_REFCNT(unicode, 3);
+        if (PyDict_DelItem(interned, unicode) != 0) {
+            _PyErr_WriteUnraisableMsg("deletion of interned string failed",
+                                      NULL);
+        }
+        assert(Py_REFCNT(unicode) == 1);
+        Py_SET_REFCNT(unicode, 0);
+    }
+#endif
+
     if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
         PyObject_Free(_PyUnicode_UTF8(unicode));
     }
@@ -14638,12 +14656,11 @@ PyUnicode_InternInPlace(PyObject **p)
         return;
     }
 
-    if (_Py_IsImmortal(s)) {
-        _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
-       return;
-    }
-     _Py_SetImmortal(s);
-     _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
+    /* The two references in interned dict (key and value) are not counted by
+       refcnt. unicode_dealloc() and _PyUnicode_ClearInterned() take care of
+       this. */
+    Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
+    _PyUnicode_STATE(s).interned = 1;
 #else
     // PyDict expects that interned strings have their hash
     // (PyASCIIObject.hash) already computed.
@@ -14685,49 +14702,33 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     }
     assert(PyDict_CheckExact(interned));
 
-    // TODO: Currently, the runtime is not able to guarantee that it can exit
-    //       without allocations that carry over to a future initialization of
-    //       Python within the same process.
-    //           i.e: ./python -X showrefcount -c 'import itertools'
-    //                [298 refs, 298 blocks]
-    //       Therefore, this should remain disabled until there is a strict
-    //       guarantee that no memory will be leftover after `Py_Finalize`
-#ifdef Py_DEBUG
-    /* For all non-singleton interned strings, restore the two valid references
-       to that instance from within the intern string dictionary and let the
-       normal reference counting process clean up these instances. */
+    /* Interned unicode strings are not forcibly deallocated; rather, we give
+       them their stolen references back, and then clear and DECREF the
+       interned dict. */
+
+#ifdef INTERNED_STATS
+    fprintf(stderr, "releasing %zd interned strings\n",
+            PyDict_GET_SIZE(interned));
+
+    Py_ssize_t total_length = 0;
+#endif
     Py_ssize_t pos = 0;
     PyObject *s, *ignored_value;
     while (PyDict_Next(interned, &pos, &s, &ignored_value)) {
-        assert(PyUnicode_IS_READY(s));
-        switch (PyUnicode_CHECK_INTERNED(s)) {
-        case SSTATE_INTERNED_IMMORTAL:
-            // Skip the Immortal Instance check and directly set the refcnt.
-            s->ob_refcnt = 2;
-#ifdef Py_REF_DEBUG
-            // Update the total ref counts to account for the original
-            // reference to this string that no longer exists.
-            _Py_RefTotal--;
+        assert(PyUnicode_CHECK_INTERNED(s));
+        // Restore the two references (key and value) ignored
+        // by PyUnicode_InternInPlace().
+        Py_SET_REFCNT(s, Py_REFCNT(s) + 2);
+#ifdef INTERNED_STATS
+        total_length += PyUnicode_GET_LENGTH(s);
 #endif
-            break;
-        case SSTATE_INTERNED_IMMORTAL_STATIC:
-            break;
-        case SSTATE_INTERNED_MORTAL:
-            /* fall through */
-        case SSTATE_NOT_INTERNED:
-            /* fall through */
-        default:
-            Py_UNREACHABLE();
-        }
-        _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
-    }
 
-    /* Get indentifiers ready to be deleted in _PyUnicode_Fini */
-    struct _Py_unicode_state *state = &interp->unicode;
-    struct _Py_unicode_ids *ids = &state->ids;
-    for (Py_ssize_t i=0; i < ids->size; i++) {
-        Py_XINCREF(ids->array[i]);
+        _PyUnicode_STATE(s).interned = 0;
     }
+#ifdef INTERNED_STATS
+    fprintf(stderr,
+            "total length of all interned strings: %zd characters\n",
+            total_length);
 #endif
 
     PyDict_Clear(interned);
