@@ -815,6 +815,9 @@ call fails (for example because the path doesn't exist).
 
    .. audit-event:: pathlib.Path.glob self,pattern pathlib.Path.glob
 
+   .. versionchanged:: 3.11
+      Return only directories if *pattern* ends with a pathname components
+      separator (:data:`~os.sep` or :data:`~os.altsep`).
 
 .. method:: Path.group()
 
@@ -1104,6 +1107,9 @@ call fails (for example because the path doesn't exist).
 
    .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
 
+   .. versionchanged:: 3.11
+      Return only directories if *pattern* ends with a pathname components
+      separator (:data:`~os.sep` or :data:`~os.altsep`).
 
 .. method:: Path.rmdir()
 
@@ -1161,25 +1167,6 @@ call fails (for example because the path doesn't exist).
       of :func:`os.link`'s.
 
    .. versionadded:: 3.10
-
-.. method:: Path.link_to(target)
-
-   Make *target* a hard link to this path.
-
-   .. warning::
-
-      This function does not make this path a hard link to *target*, despite
-      the implication of the function and argument names. The argument order
-      (target, link) is the reverse of :func:`Path.symlink_to` and
-      :func:`Path.hardlink_to`, but matches that of :func:`os.link`.
-
-   .. versionadded:: 3.8
-
-   .. deprecated:: 3.10
-
-      This method is deprecated in favor of :meth:`Path.hardlink_to`, as the
-      argument order of :meth:`Path.link_to`  does not match that of
-      :meth:`Path.symlink_to`.
 
 
 .. method:: Path.touch(mode=0o666, exist_ok=True)
