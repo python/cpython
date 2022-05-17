@@ -247,6 +247,8 @@ Fundamental data types
 | :class:`c_ssize_t`   | :c:type:`ssize_t` or                     | int                        |
 |                      | :c:type:`Py_ssize_t`                     |                            |
 +----------------------+------------------------------------------+----------------------------+
+| :class:`c_time_t`    | :c:type:`time_t`                         | int                        |
++----------------------+------------------------------------------+----------------------------+
 | :class:`c_float`     | :c:type:`float`                          | float                      |
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_double`    | :c:type:`double`                         | float                      |
@@ -2273,6 +2275,13 @@ These are the fundamental ctypes data types:
    Represents the C :c:type:`ssize_t` datatype.
 
    .. versionadded:: 3.2
+
+
+.. class:: c_time_t
+
+   Represents the C :c:type:`time_t` datatype.
+
+   .. versionadded:: 3.X
 
 
 .. class:: c_ubyte
