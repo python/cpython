@@ -7862,20 +7862,18 @@ scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
 static int
 mark_known_variables(struct assembler *a, struct compiler *c)
 {
-    Py_ssize_t num_blocks = 0;
-    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
+    basicblock **stack = make_cfg_traversal_stack(a->a_entry);
+    if (stack == NULL) {
+        return -1;
+    }
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
-        num_blocks++;
         for (Py_ssize_t i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             if (instr->i_opcode == LOAD_FAST) {
+                // innocent until proven guilty
                 instr->i_opcode = LOAD_FAST_KNOWN;
             }
         }
-    }
-    basicblock **stack = PyMem_New(basicblock *, num_blocks);
-    if (stack == NULL) {
-        return -1;
     }
 
     // Which locals are function parameters?
@@ -7892,6 +7890,7 @@ mark_known_variables(struct assembler *a, struct compiler *c)
         }
     }
 
+    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
     for (int target = 0; target < nlocals; target++) {
         for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
             b->b_visited = 0;
