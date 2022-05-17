@@ -2431,18 +2431,18 @@ Functions and decorators
 
 .. decorator:: dataclass_transform
 
-   The :data:`~typing.dataclass_transform` annotation may be used to
-   decorate a function that is itself a decorator, a class, or a metaclass.
+   :data:`~typing.dataclass_transform` may be used to
+   decorate a class, metaclass, or a function that is itself a decorator.
    The presence of ``@dataclass_transform()`` tells a static type checker that the
-   decorated function, class, or metaclass performs runtime "magic" that
-   transforms a class, endowing it with dataclass-like behaviors.
+   decorated object performs runtime "magic" that
+   transforms a class, giving it :func:`dataclasses.dataclass`-like behaviors.
 
    Example usage with a decorator function::
 
-      _T = TypeVar("_T")
+      T = TypeVar("T")
 
       @dataclass_transform()
-      def create_model(cls: type[_T]) -> type[_T]:
+      def create_model(cls: type[T]) -> type[T]:
           ...
           return cls
 
@@ -2471,21 +2471,24 @@ Functions and decorators
           id: int
           name: str
 
-   Each of the ``CustomerModel`` classes defined in this example will now
-   behave similarly to a dataclass created with the ``@dataclasses.dataclass``
-   decorator. For example, the type checker will synthesize an ``__init__``
-   method.
+   The ``CustomerModel`` classes defined above will
+   be treated by type checkers similarly to classes created with
+   :func:`@dataclasses.dataclass <dataclasses.dataclass>`.
+   For example, type checkers will assume these classes have an
+   ``__init__`` method analogous to that of a dataclass.
 
    The arguments to this decorator can be used to customize this behavior:
 
    * ``eq_default`` indicates whether the ``eq`` parameter is assumed to be
-     True or False if it is omitted by the caller.
+     ``True`` or ``False`` if it is omitted by the caller.
    * ``order_default`` indicates whether the ``order`` parameter is
      assumed to be True or False if it is omitted by the caller.
    * ``kw_only_default`` indicates whether the ``kw_only`` parameter is
      assumed to be True or False if it is omitted by the caller.
    * ``field_specifiers`` specifies a static list of supported classes
      or functions that describe fields, similar to ``dataclasses.field()``.
+   * Arbitrary other keyword arguments are accepted in order to allow for
+     possible future extensions.
 
    At runtime, this decorator records its arguments in the
    ``__dataclass_transform__`` attribute on the decorated object.

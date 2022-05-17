@@ -306,17 +306,17 @@ Kumar Srinivasan and Graham Bleaney.)
 PEP 681: Data Class Transforms
 ------------------------------
 
-The new :data:`~typing.dataclass_transform` annotation may be used to
-decorate a function that is itself a decorator, a class, or a metaclass.
+:data:`~typing.dataclass_transform` may be used to
+decorate a class, metaclass, or a function that is itself a decorator.
 The presence of ``@dataclass_transform()`` tells a static type checker that the
-decorated function, class, or metaclass performs runtime "magic" that
-transforms a class, endowing it with dataclass-like behaviors.
+decorated object performs runtime "magic" that
+transforms a class, giving it :func:`dataclasses.dataclass`-like behaviors.
 
 For example::
 
     # The ``create_model`` decorator is defined by a library.
     @typing.dataclass_transform()
-    def create_model(cls: Type[_T]) -> Type[_T]:
+    def create_model(cls: Type[T]) -> Type[T]:
         cls.__init__ = ...
         cls.__eq__ = ...
         cls.__ne__ = ...
