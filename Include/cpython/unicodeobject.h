@@ -407,7 +407,8 @@ static inline Py_UCS4 PyUnicode_READ(int kind,
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #define PyUnicode_READ(kind, data, index) \
-    PyUnicode_READ(_Py_STATIC_CAST(int, kind), _Py_CAST(const void*, data), \
+    PyUnicode_READ(_Py_STATIC_CAST(int, kind), \
+                   _Py_STATIC_CAST(const void*, data), \
                    (index))
 #endif
 
