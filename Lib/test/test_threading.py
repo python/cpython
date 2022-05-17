@@ -25,6 +25,7 @@ from unittest import mock
 from test import lock_tests
 from test import support
 
+threading_helper.requires_working_threading(module=True)
 
 # Between fork() and exec(), only async-safe functions are allowed (issues
 # #12316 and #11870), and fork() from a worker thread is known to trigger
@@ -943,16 +944,6 @@ class ThreadTests(BaseTestCase):
         with threading_helper.wait_threads_exit():
             threading.Thread(target=noop).start()
             # Thread.join() is not called
-
-    @unittest.skipUnless(Py_DEBUG, 'need debug build (Py_DEBUG)')
-    def test_debug_deprecation(self):
-        # bpo-44584: The PYTHONTHREADDEBUG environment variable is deprecated
-        rc, out, err = assert_python_ok("-Wdefault", "-c", "pass",
-                                        PYTHONTHREADDEBUG="1")
-        msg = (b'DeprecationWarning: The threading debug '
-               b'(PYTHONTHREADDEBUG environment variable) '
-               b'is deprecated and will be removed in Python 3.12')
-        self.assertIn(msg, err)
 
     def test_import_from_another_thread(self):
         # bpo-1596321: If the threading module is first import from a thread

@@ -227,14 +227,17 @@ class TestJointOps:
 
     def test_pickling(self):
         for i in range(pickle.HIGHEST_PROTOCOL + 1):
+            if type(self.s) not in (set, frozenset):
+                self.s.x = ['x']
+                self.s.z = ['z']
             p = pickle.dumps(self.s, i)
             dup = pickle.loads(p)
             self.assertEqual(self.s, dup, "%s != %s" % (self.s, dup))
             if type(self.s) not in (set, frozenset):
-                self.s.x = 10
-                p = pickle.dumps(self.s, i)
-                dup = pickle.loads(p)
                 self.assertEqual(self.s.x, dup.x)
+                self.assertEqual(self.s.z, dup.z)
+                self.assertFalse(hasattr(self.s, 'y'))
+                del self.s.x, self.s.z
 
     def test_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -808,6 +811,21 @@ class TestFrozenSetSubclass(TestFrozenSet):
         # All empty frozenset subclass instances should have different ids
         self.assertEqual(len(set(map(id, efs))), len(efs))
 
+
+class SetSubclassWithSlots(set):
+    __slots__ = ('x', 'y', '__dict__')
+
+class TestSetSubclassWithSlots(unittest.TestCase):
+    thetype = SetSubclassWithSlots
+    setUp = TestJointOps.setUp
+    test_pickling = TestJointOps.test_pickling
+
+class FrozenSetSubclassWithSlots(frozenset):
+    __slots__ = ('x', 'y', '__dict__')
+
+class TestFrozenSetSubclassWithSlots(TestSetSubclassWithSlots):
+    thetype = FrozenSetSubclassWithSlots
+
 # Tests taken from test_sets.py =============================================
 
 empty_set = set()
@@ -1004,17 +1022,13 @@ class TestBasicOpsBytes(TestBasicOps, unittest.TestCase):
 
 class TestBasicOpsMixedStringBytes(TestBasicOps, unittest.TestCase):
     def setUp(self):
-        self._warning_filters = warnings_helper.check_warnings()
-        self._warning_filters.__enter__()
+        self.enterContext(warnings_helper.check_warnings())
         warnings.simplefilter('ignore', BytesWarning)
         self.case   = "string and bytes set"
         self.values = ["a", "b", b"a", b"b"]
         self.set    = set(self.values)
         self.dup    = set(self.values)
         self.length = 4
-
-    def tearDown(self):
-        self._warning_filters.__exit__(None, None, None)
 
     def test_repr(self):
         self.check_repr_against_values()

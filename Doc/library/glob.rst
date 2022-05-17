@@ -23,8 +23,11 @@ according to the rules used by the Unix shell, although results are returned in
 arbitrary order.  No tilde expansion is done, but ``*``, ``?``, and character
 ranges expressed with ``[]`` will be correctly matched.  This is done by using
 the :func:`os.scandir` and :func:`fnmatch.fnmatch` functions in concert, and
-not by actually invoking a subshell.  Note that unlike :func:`fnmatch.fnmatch`,
-:mod:`glob` treats filenames beginning with a dot (``.``) as special cases.
+not by actually invoking a subshell.
+
+Note that files beginning with a dot (``.``) can only be matched by
+patterns that also start with a dot,
+unlike :func:`fnmatch.fnmatch` or :func:`pathlib.Path.glob`.
 (For tilde and shell variable expansion, use :func:`os.path.expanduser` and
 :func:`os.path.expandvars`.)
 
@@ -46,7 +49,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
    symlinks are included in the results (as in the shell). Whether or not the
    results are sorted depends on the file system.  If a file that satisfies
    conditions is removed or added during the call of this function, whether
-   a path name for that file be included is unspecified.
+   a path name for that file will be included is unspecified.
 
    If *root_dir* is not ``None``, it should be a :term:`path-like object`
    specifying the root directory for searching.  It has the same effect on

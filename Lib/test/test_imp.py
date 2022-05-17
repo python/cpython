@@ -8,11 +8,10 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import script_helper
+from test.support import warnings_helper
 import unittest
 import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import imp
+imp = warnings_helper.import_deprecated('imp')
 import _imp
 
 

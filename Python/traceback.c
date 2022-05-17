@@ -3,7 +3,6 @@
 
 #include "Python.h"
 
-#include "code.h"                 // PyCode_Addr2Line etc
 #include "frameobject.h"          // PyFrame_GetBack()
 #include "pycore_ast.h"           // asdl_seq_*
 #include "pycore_call.h"          // _PyObject_CallMethodFormat()
@@ -239,8 +238,8 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
 {
     assert(tb_next == NULL || PyTraceBack_Check(tb_next));
     assert(frame != NULL);
-
-    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_frame->f_lasti*sizeof(_Py_CODEUNIT),
+    int addr = _PyInterpreterFrame_LASTI(frame->f_frame) * sizeof(_Py_CODEUNIT);
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, addr,
                          PyFrame_GetLineNumber(frame));
 }
 
@@ -1078,7 +1077,6 @@ _Py_DumpASCII(int fd, PyObject *text)
     int truncated;
     int kind;
     void *data = NULL;
-    wchar_t *wstr = NULL;
     Py_UCS4 ch;
 
     if (!PyUnicode_Check(text))
@@ -1086,13 +1084,7 @@ _Py_DumpASCII(int fd, PyObject *text)
 
     size = ascii->length;
     kind = ascii->state.kind;
-    if (kind == PyUnicode_WCHAR_KIND) {
-        wstr = ascii->wstr;
-        if (wstr == NULL)
-            return;
-        size = _PyCompactUnicodeObject_CAST(text)->wstr_length;
-    }
-    else if (ascii->state.compact) {
+    if (ascii->state.compact) {
         if (ascii->state.ascii)
             data = ascii + 1;
         else
@@ -1133,10 +1125,7 @@ _Py_DumpASCII(int fd, PyObject *text)
     }
 
     for (i=0; i < size; i++) {
-        if (kind != PyUnicode_WCHAR_KIND)
-            ch = PyUnicode_READ(kind, data, i);
-        else
-            ch = wstr[i];
+        ch = PyUnicode_READ(kind, data, i);
         if (' ' <= ch && ch <= 126) {
             /* printable ASCII character */
             char c = (char)ch;
@@ -1181,7 +1170,7 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
         PUTS(fd, "???");
     }
 
-    int lineno = PyCode_Addr2Line(code, frame->f_lasti*sizeof(_Py_CODEUNIT));
+    int lineno = _PyInterpreterFrame_GetLine(frame);
     PUTS(fd, ", line ");
     if (lineno >= 0) {
         _Py_DumpDecimal(fd, (size_t)lineno);

@@ -217,7 +217,6 @@ class PyclbrTest(TestCase):
         cm = self.checkModule
 
         # These were once some of the longest modules.
-        cm('aifc', ignore=('_aifc_params',))  # set with = in module
         cm('random', ignore=('Random',))  # from _random import Random as CoreGenerator
         cm('cgi', ignore=('log',))      # set with = in module
         cm('pickle', ignore=('partial', 'PickleBuffer'))
