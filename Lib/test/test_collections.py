@@ -71,6 +71,14 @@ class TestUserObjects(unittest.TestCase):
         obj[123] = "abc"
         self._copy_test(obj)
 
+    def test_dict_missing(self):
+        class A(UserDict):
+            def __missing__(self, key):
+                return 456
+        self.assertEqual(A()[123], 456)
+        # get() ignores __missing__ on dict
+        self.assertIs(A().get(123), None)
+
 
 ################################################################################
 ### ChainMap (helper class for configparser and the string module)
@@ -677,14 +685,16 @@ class TestNamedTuple(unittest.TestCase):
         self.assertRaises(AttributeError, Point.x.__set__, p, 33)
         self.assertRaises(AttributeError, Point.x.__delete__, p)
 
-        class NewPoint(tuple):
-            x = pickle.loads(pickle.dumps(Point.x))
-            y = pickle.loads(pickle.dumps(Point.y))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                class NewPoint(tuple):
+                    x = pickle.loads(pickle.dumps(Point.x, proto))
+                    y = pickle.loads(pickle.dumps(Point.y, proto))
 
-        np = NewPoint([1, 2])
+                np = NewPoint([1, 2])
 
-        self.assertEqual(np.x, 1)
-        self.assertEqual(np.y, 2)
+                self.assertEqual(np.x, 1)
+                self.assertEqual(np.y, 2)
 
     def test_new_builtins_issue_43102(self):
         obj = namedtuple('C', ())
@@ -695,6 +705,18 @@ class TestNamedTuple(unittest.TestCase):
     def test_match_args(self):
         Point = namedtuple('Point', 'x y')
         self.assertEqual(Point.__match_args__, ('x', 'y'))
+
+    def test_non_generic_subscript(self):
+        # For backward compatibility, subscription works
+        # on arbitrary named tuple types.
+        Group = collections.namedtuple('Group', 'key group')
+        A = Group[int, list[int]]
+        self.assertEqual(A.__origin__, Group)
+        self.assertEqual(A.__parameters__, ())
+        self.assertEqual(A.__args__, (int, list[int]))
+        a = A(1, [2])
+        self.assertIs(type(a), Group)
+        self.assertEqual(a, (1, [2]))
 
 
 ################################################################################

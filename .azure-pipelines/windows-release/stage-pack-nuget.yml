@@ -32,8 +32,23 @@ jobs:
     inputs:
       versionSpec: '>=5.0'
 
-  - powershell: |
-      nuget pack "$(Build.BinariesDirectory)\layout\python.nuspec" -OutputDirectory $(Build.ArtifactStagingDirectory) -NoPackageAnalysis -NonInteractive
+  - powershell: >
+      nuget pack
+      "$(Build.BinariesDirectory)\layout\python.nuspec"
+      -OutputDirectory $(Build.ArtifactStagingDirectory)
+      -NoPackageAnalysis
+      -NonInteractive
+    condition: and(succeeded(), not(variables['OverrideNugetVersion']))
+    displayName: 'Create nuget package'
+
+  - powershell: >
+      nuget pack
+      "$(Build.BinariesDirectory)\layout\python.nuspec"
+      -OutputDirectory $(Build.ArtifactStagingDirectory)
+      -NoPackageAnalysis
+      -NonInteractive
+      -Version "$(OverrideNugetVersion)"
+    condition: and(succeeded(), variables['OverrideNugetVersion'])
     displayName: 'Create nuget package'
 
   - powershell: |

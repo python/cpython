@@ -284,9 +284,8 @@ class Random(_random.Random):
     def randrange(self, start, stop=None, step=_ONE):
         """Choose a random item from range(stop) or range(start, stop[, step]).
 
-        Roughly equivalent to ``choice(range(start, stop, step))``
-        but supports arbitrarily large ranges and is optimized
-        for common cases.
+        Roughly equivalent to ``choice(range(start, stop, step))`` but
+        supports arbitrarily large ranges and is optimized for common cases.
 
         """
 
@@ -297,7 +296,7 @@ class Random(_random.Random):
             # We don't check for "step != 1" because it hasn't been
             # type checked and converted to an integer yet.
             if step is not _ONE:
-                raise TypeError('Missing a non-None stop argument')
+                raise TypeError("Missing a non-None stop argument")
             if istart > 0:
                 return self._randbelow(istart)
             raise ValueError("empty range for randrange()")
@@ -310,7 +309,7 @@ class Random(_random.Random):
         if istep == 1:
             if width > 0:
                 return istart + self._randbelow(width)
-            raise ValueError(f"empty range in randrange({start}, {stop}, {step})")
+            raise ValueError(f"empty range in randrange({start}, {stop})")
 
         # Non-unit step argument supplied.
         if istep > 0:
@@ -506,7 +505,7 @@ class Random(_random.Random):
             low, high = high, low
         return low + (high - low) * _sqrt(u * c)
 
-    def normalvariate(self, mu, sigma):
+    def normalvariate(self, mu=0.0, sigma=1.0):
         """Normal distribution.
 
         mu is the mean, and sigma is the standard deviation.
@@ -527,7 +526,7 @@ class Random(_random.Random):
                 break
         return mu + z * sigma
 
-    def gauss(self, mu, sigma):
+    def gauss(self, mu=0.0, sigma=1.0):
         """Gaussian distribution.
 
         mu is the mean, and sigma is the standard deviation.  This is

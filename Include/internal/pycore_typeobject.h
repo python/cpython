@@ -13,6 +13,7 @@ extern "C" {
 
 extern PyStatus _PyTypes_InitState(PyInterpreterState *);
 extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
+extern void _PyTypes_FiniTypes(PyInterpreterState *);
 extern void _PyTypes_Fini(PyInterpreterState *);
 
 
@@ -39,6 +40,8 @@ struct type_cache {
 };
 
 extern PyStatus _PyTypes_InitSlotDefs(void);
+
+extern void _PyStaticType_Dealloc(PyTypeObject *type);
 
 
 #ifdef __cplusplus

@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_pymem.h"         // _PyTraceMalloc_Config
+#include "pycore_code.h"         // stats
 
 #include <stdbool.h>
 #include <stdlib.h>               // malloc()
@@ -615,6 +616,10 @@ PyMem_Malloc(size_t size)
     /* see PyMem_RawMalloc() */
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
+    OBJECT_STAT_INC_COND(allocations512, size < 512);
+    OBJECT_STAT_INC_COND(allocations4k, size >= 512 && size < 4094);
+    OBJECT_STAT_INC_COND(allocations_big, size >= 4094);
+    OBJECT_STAT_INC(allocations);
     return _PyMem.malloc(_PyMem.ctx, size);
 }
 
@@ -624,6 +629,10 @@ PyMem_Calloc(size_t nelem, size_t elsize)
     /* see PyMem_RawMalloc() */
     if (elsize != 0 && nelem > (size_t)PY_SSIZE_T_MAX / elsize)
         return NULL;
+    OBJECT_STAT_INC_COND(allocations512, elsize < 512);
+    OBJECT_STAT_INC_COND(allocations4k, elsize >= 512 && elsize < 4094);
+    OBJECT_STAT_INC_COND(allocations_big, elsize >= 4094);
+    OBJECT_STAT_INC(allocations);
     return _PyMem.calloc(_PyMem.ctx, nelem, elsize);
 }
 
@@ -639,6 +648,7 @@ PyMem_Realloc(void *ptr, size_t new_size)
 void
 PyMem_Free(void *ptr)
 {
+    OBJECT_STAT_INC(frees);
     _PyMem.free(_PyMem.ctx, ptr);
 }
 
@@ -695,6 +705,10 @@ PyObject_Malloc(size_t size)
     /* see PyMem_RawMalloc() */
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
+    OBJECT_STAT_INC_COND(allocations512, size < 512);
+    OBJECT_STAT_INC_COND(allocations4k, size >= 512 && size < 4094);
+    OBJECT_STAT_INC_COND(allocations_big, size >= 4094);
+    OBJECT_STAT_INC(allocations);
     return _PyObject.malloc(_PyObject.ctx, size);
 }
 
@@ -704,6 +718,10 @@ PyObject_Calloc(size_t nelem, size_t elsize)
     /* see PyMem_RawMalloc() */
     if (elsize != 0 && nelem > (size_t)PY_SSIZE_T_MAX / elsize)
         return NULL;
+    OBJECT_STAT_INC_COND(allocations512, elsize < 512);
+    OBJECT_STAT_INC_COND(allocations4k, elsize >= 512 && elsize < 4094);
+    OBJECT_STAT_INC_COND(allocations_big, elsize >= 4094);
+    OBJECT_STAT_INC(allocations);
     return _PyObject.calloc(_PyObject.ctx, nelem, elsize);
 }
 
@@ -719,6 +737,7 @@ PyObject_Realloc(void *ptr, size_t new_size)
 void
 PyObject_Free(void *ptr)
 {
+    OBJECT_STAT_INC(frees);
     _PyObject.free(_PyObject.ctx, ptr);
 }
 
@@ -896,7 +915,6 @@ static int running_on_valgrind = -1;
  * currently targets.
  */
 #define SYSTEM_PAGE_SIZE        (4 * 1024)
-#define SYSTEM_PAGE_SIZE_MASK   (SYSTEM_PAGE_SIZE - 1)
 
 /*
  * Maximum amount of memory managed by the allocator for small requests.
@@ -1569,8 +1587,9 @@ new_arena(void)
         const char *opt = Py_GETENV("PYTHONMALLOCSTATS");
         debug_stats = (opt != NULL && *opt != '\0');
     }
-    if (debug_stats)
+    if (debug_stats) {
         _PyObject_DebugMallocStats(stderr);
+    }
 
     if (unused_arena_objects == NULL) {
         uint i;

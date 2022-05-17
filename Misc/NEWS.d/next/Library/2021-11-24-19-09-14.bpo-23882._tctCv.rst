@@ -1,2 +1,0 @@
-Remove namespace package (PEP 420) support from unittest discovery. It was
-introduced in Python 3.4 but has been broken since Python 3.7.

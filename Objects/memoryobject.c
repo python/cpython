@@ -67,14 +67,6 @@ class memoryview "PyMemoryViewObject *" "&PyMemoryView_Type"
 */
 
 
-#define CHECK_MBUF_RELEASED(mbuf) \
-    if (((_PyManagedBufferObject *)mbuf)->flags&_Py_MANAGED_BUFFER_RELEASED) { \
-        PyErr_SetString(PyExc_ValueError,                                      \
-            "operation forbidden on released memoryview object");              \
-        return NULL;                                                           \
-    }
-
-
 static inline _PyManagedBufferObject *
 mbuf_alloc(void)
 {
@@ -3164,7 +3156,7 @@ static PyMethodDef memory_methods[] = {
 /*                          Memoryview Iterator                           */
 /**************************************************************************/
 
-static PyTypeObject PyMemoryIter_Type;
+PyTypeObject _PyMemoryIter_Type;
 
 typedef struct {
     PyObject_HEAD
@@ -3241,7 +3233,7 @@ memory_iter(PyObject *seq)
     }
 
     memoryiterobject *it;
-    it = PyObject_GC_New(memoryiterobject, &PyMemoryIter_Type);
+    it = PyObject_GC_New(memoryiterobject, &_PyMemoryIter_Type);
     if (it == NULL) {
         return NULL;
     }
@@ -3254,7 +3246,7 @@ memory_iter(PyObject *seq)
     return (PyObject *)it;
 }
 
-static PyTypeObject PyMemoryIter_Type = {
+PyTypeObject _PyMemoryIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "memory_iterator",
     .tp_basicsize = sizeof(memoryiterobject),

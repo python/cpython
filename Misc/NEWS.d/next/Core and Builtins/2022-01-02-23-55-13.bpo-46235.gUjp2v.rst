@@ -1,1 +1,0 @@
-Certain sequence multiplication operations like ``[0] * 1_000`` are now faster due to reference-counting optimizations. Patch by Dennis Sweeney.

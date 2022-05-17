@@ -1,5 +1,0 @@
-Fix a regression when a type method like ``__init__()`` is modified in a
-subinterpreter. Fix a regression in ``_PyUnicode_EqualToASCIIId()`` and type
-``update_slot()``. Revert the change which made the Unicode dictionary of
-interned strings compatible with subinterpreters: the internal interned
-dictionary is shared again by all interpreters. Patch by Victor Stinner.
