@@ -1241,32 +1241,36 @@ and will be removed in Python 3.12.
 
 Python API:
 
-* :class:`pkgutil.ImpImporter`
-* :class:`pkgutil.ImpLoader`
 * :envvar:`PYTHONTHREADDEBUG`
+* :meth:`pathlib.Path.link_to`
 * :func:`importlib.find_loader`
+* :class:`importlib.abc.Finder`
+* :meth:`importlib.abc.Finder.find_module`
+* :meth:`importlib.abc.Loader.load_module`
+* :meth:`importlib.abc.Loader.module_repr`
+* :meth:`importlib.abc.MetaPathFinder.find_module`
+* :meth:`importlib.abc.PathEntryFinder.find_loader`
+* :meth:`importlib.machinery.PathFinder.find_module`
+* :meth:`importlib.machinery.FileFinder.find_loader`
+* :meth:`importlib.machinery.WindowsRegistryFinder.find_module`
+* :meth:`importlib.machinery.BuiltinLoader.module_repr`
+* :meth:`importlib.machinery.FrozenLoader.module_repr`
+* :meth:`importlib.machinery.NamespaceLoader.module_repr`
+* :meth:`importlib.machinery.BuiltinImporter.module_repr`
+* :meth:`importlib.machinery.BuiltinImporter.find_module`
+* :meth:`importlib.machinery.BuiltinImporter.load_module`
+* :meth:`importlib.machinery.FrozenImporter.module_repr`
+* :meth:`importlib.machinery.FrozenImporter.find_module`
+* :meth:`importlib.machinery.FrozenImporter.load_module`
 * :func:`importlib.util.module_for_loader`
 * :func:`importlib.util.set_loader_wrapper`
 * :func:`importlib.util.set_package_wrapper`
-* :meth:`importlib.abc.Loader.module_repr`
-* :meth:`importlib.abc.Loadermodule_repr`
-* :meth:`importlib.abc.MetaPathFinder.find_module`
-* :meth:`importlib.abc.MetaPathFinder.find_module`
-* :meth:`importlib.abc.PathEntryFinder.find_loader`
-* :meth:`importlib.abc.PathEntryFinder.find_module`
-* :meth:`importlib.machinery.BuiltinImporter.find_module`
-* :meth:`importlib.machinery.BuiltinLoader.module_repr`
-* :meth:`importlib.machinery.FileFinder.find_loader`
-* :meth:`importlib.machinery.FileFinder.find_module`
-* :meth:`importlib.machinery.FrozenImporter.find_module`
-* :meth:`importlib.machinery.FrozenLoader.module_repr`
-* :meth:`importlib.machinery.PathFinder.find_module`
-* :meth:`importlib.machinery.WindowsRegistryFinder.find_module`
-* :meth:`pathlib.Path.link_to`
-* The entire :ref:`distutils namespace <distutils-deprecated>`
-* :func:`cgi.log`
+* :class:`pkgutil.ImpLoader`
+* :class:`pkgutil.ImpImporter`
 * :func:`sqlite3.OptimizedUnicode`
 * :func:`sqlite3.enable_shared_cache`
+* :func:`cgi.log`
+* The entire :ref:`distutils namespace <distutils-deprecated>`
 
 C API:
 
@@ -1490,12 +1494,12 @@ Build Changes
 
 * CPython will now use 30-bit digits by default for the Python :class:`int`
   implementation. Previously, the default was to use 30-bit digits on platforms
-  with ``SIZEOF_VOID_P >= 8``, and 15-bit digits otherwise. It's still possible
-  to explicitly request use of 15-bit digits via either the
-  ``--enable-big-digits`` option to the configure script or (for Windows) the
-  ``PYLONG_BITS_IN_DIGIT`` variable in ``PC/pyconfig.h``, but this option may
-  be removed at some point in the future. (Contributed by Mark Dickinson in
-  :issue:`45569`.)
+  with ``SIZEOF_VOID_P >= 8``, and 15-bit digits otherwise. It is, however,
+  still possible to explicitly request the use of 15-bit digits, by either;
+  supplying the ``--enable-big-digits=15`` option in the configure script;
+  or, redefining the ``PYLONG_BITS_IN_DIGIT`` variable in ``PC/pyconfig.h``.
+  This option may be removed at some point in the future.
+  (Contributed by Mark Dickinson in :issue:`45569`.)
 
 * The :mod:`tkinter` package now requires Tcl/Tk version 8.5.12 or newer.
   (Contributed by Serhiy Storchaka in :issue:`46996`.)
@@ -1582,8 +1586,8 @@ Porting to Python 3.11
 
 * :c:type:`_frozen` has a new ``is_package`` field to indicate whether
   or not the frozen module is a package.  Previously, a negative value
-  in the ``size`` field was the indicator.  Now only non-negative values
-  be used for ``size``.
+  in the ``size`` field was the indicator.  Now, only non-negative values
+  may be supplied for ``size``.
   (Contributed by Kumar Aditya in :issue:`46608`.)
 
 * :c:func:`_PyFrameEvalFunction` now takes ``_PyInterpreterFrame*``
