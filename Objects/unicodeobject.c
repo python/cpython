@@ -1516,13 +1516,8 @@ unicode_dealloc(PyObject *unicode)
     }
 #endif
 
-    switch (PyUnicode_CHECK_INTERNED(unicode)) {
-    case SSTATE_NOT_INTERNED:
-        break;
-
-    case SSTATE_INTERNED_MORTAL:
-    {
 #ifdef INTERNED_STRINGS
+    if (PyUnicode_CHECK_INTERNED(unicode)) {
         /* Revive the dead object temporarily. PyDict_DelItem() removes two
            references (key and value) which were ignored by
            PyUnicode_InternInPlace(). Use refcnt=3 rather than refcnt=2
@@ -1536,17 +1531,8 @@ unicode_dealloc(PyObject *unicode)
         }
         assert(Py_REFCNT(unicode) == 1);
         Py_SET_REFCNT(unicode, 0);
+    }
 #endif
-        break;
-    }
-
-    case SSTATE_INTERNED_IMMORTAL:
-        _PyObject_ASSERT_FAILED_MSG(unicode, "Immortal interned string died");
-        break;
-
-    default:
-        Py_UNREACHABLE();
-    }
 
     if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
         PyObject_Free(_PyUnicode_UTF8(unicode));
@@ -14674,7 +14660,7 @@ PyUnicode_InternInPlace(PyObject **p)
        refcnt. unicode_dealloc() and _PyUnicode_ClearInterned() take care of
        this. */
     Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
-    _PyUnicode_STATE(s).interned = SSTATE_INTERNED_MORTAL;
+    _PyUnicode_STATE(s).interned = 1;
 #else
     // PyDict expects that interned strings have their hash
     // (PyASCIIObject.hash) already computed.
@@ -14682,23 +14668,14 @@ PyUnicode_InternInPlace(PyObject **p)
 #endif
 }
 
+// Function kept for the stable ABI.
+PyAPI_FUNC(void) PyUnicode_InternImmortal(PyObject **);
 void
 PyUnicode_InternImmortal(PyObject **p)
 {
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "PyUnicode_InternImmortal() is deprecated; "
-            "use PyUnicode_InternInPlace() instead", 1) < 0)
-    {
-        // The function has no return value, the exception cannot
-        // be reported to the caller, so just log it.
-        PyErr_WriteUnraisable(NULL);
-    }
-
     PyUnicode_InternInPlace(p);
-    if (PyUnicode_CHECK_INTERNED(*p) != SSTATE_INTERNED_IMMORTAL) {
-        _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
-        Py_INCREF(*p);
-    }
+    // Leak a reference on purpose
+    Py_INCREF(*p);
 }
 
 PyObject *
@@ -14733,37 +14710,25 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     fprintf(stderr, "releasing %zd interned strings\n",
             PyDict_GET_SIZE(interned));
 
-    Py_ssize_t immortal_size = 0, mortal_size = 0;
+    Py_ssize_t total_length = 0;
 #endif
     Py_ssize_t pos = 0;
     PyObject *s, *ignored_value;
     while (PyDict_Next(interned, &pos, &s, &ignored_value)) {
-        switch (PyUnicode_CHECK_INTERNED(s)) {
-        case SSTATE_INTERNED_IMMORTAL:
-            Py_SET_REFCNT(s, Py_REFCNT(s) + 1);
+        assert(PyUnicode_CHECK_INTERNED(s));
+        // Restore the two references (key and value) ignored
+        // by PyUnicode_InternInPlace().
+        Py_SET_REFCNT(s, Py_REFCNT(s) + 2);
 #ifdef INTERNED_STATS
-            immortal_size += PyUnicode_GET_LENGTH(s);
+        total_length += PyUnicode_GET_LENGTH(s);
 #endif
-            break;
-        case SSTATE_INTERNED_MORTAL:
-            // Restore the two references (key and value) ignored
-            // by PyUnicode_InternInPlace().
-            Py_SET_REFCNT(s, Py_REFCNT(s) + 2);
-#ifdef INTERNED_STATS
-            mortal_size += PyUnicode_GET_LENGTH(s);
-#endif
-            break;
-        case SSTATE_NOT_INTERNED:
-            /* fall through */
-        default:
-            Py_UNREACHABLE();
-        }
-        _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
+
+        _PyUnicode_STATE(s).interned = 0;
     }
 #ifdef INTERNED_STATS
     fprintf(stderr,
-            "total size of all interned strings: %zd/%zd mortal/immortal\n",
-            mortal_size, immortal_size);
+            "total length of all interned strings: %zd characters\n",
+            total_length);
 #endif
 
     PyDict_Clear(interned);

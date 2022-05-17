@@ -1563,6 +1563,7 @@
     added = '3.2'
 [function.PyUnicode_InternImmortal]
     added = '3.2'
+    abi_only = true
 [function.PyUnicode_InternInPlace]
     added = '3.2'
 [data.PyUnicode_Type]
