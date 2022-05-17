@@ -25,7 +25,7 @@ import collections.abc
 import contextlib
 import functools
 import operator
-import re as stdlib_re  # Avoid confusion with the former re re-export.
+import re as stdlib_re  # Avoid confusion with the typing.re namespace on <=3.11
 import sys
 import types
 import warnings
