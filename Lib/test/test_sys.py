@@ -1538,8 +1538,8 @@ class SizeofTest(unittest.TestCase):
         samples = ['1'*100, '\xff'*50,
                    '\u0100'*40, '\uffff'*100,
                    '\U00010000'*30, '\U0010ffff'*100]
-        asciifields = "nnbP"
-        compactfields = asciifields + "nPn"
+        asciifields = "nnb"
+        compactfields = asciifields + "nP"
         unicodefields = compactfields + "P"
         for s in samples:
             maxchar = ord(max(s))

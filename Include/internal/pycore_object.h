@@ -44,6 +44,7 @@ static inline void Py_INCREF_n(PyObject* op, Py_ssize_t n)
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
+    _Py_DECREF_STAT_INC();
 #ifdef Py_REF_DEBUG
     _Py_RefTotal--;
 #endif
@@ -61,6 +62,7 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 static inline void
 _Py_DECREF_NO_DEALLOC(PyObject *op)
 {
+    _Py_DECREF_STAT_INC();
 #ifdef Py_REF_DEBUG
     _Py_RefTotal--;
 #endif
