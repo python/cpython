@@ -422,7 +422,6 @@ display_source_line_with_margin(PyObject *f, PyFrameObject *frame, PyObject *fil
 {
     int fd;
     int i;
-    int is_stdin = 0;
     char *found_encoding = NULL;
     const char *encoding = "utf-8";
     PyObject *io;
@@ -448,20 +447,10 @@ display_source_line_with_margin(PyObject *f, PyFrameObject *frame, PyObject *fil
     if ((strcmp(PyUnicode_DATA(filename), "<stdin>") == 0 ||
             strcmp(PyUnicode_DATA(filename), "<string>") == 0) && frame != NULL)
     {
-        PyObject *source = frame->f_frame->f_code->co_source;
-        if (source == NULL) {
+        lineobj = frame->f_frame->f_code->co_source;
+        if (lineobj == NULL) {
             return 0;
         }
-        PyObject *bytes = PyUnicode_AsEncodedString(source, "utf-8", "strict");
-        if (bytes == NULL) {
-            return -1;
-        }
-        binary = PyObject_CallMethod(io, "BytesIO",
-                                      "O", bytes);
-        if (binary == NULL) {
-            return -1;
-        }
-        is_stdin = 1;
     }
     else if (PyUnicode_READ_CHAR(filename, 0) == '<') {
         Py_ssize_t len = PyUnicode_GET_LENGTH(filename);
@@ -469,8 +458,7 @@ display_source_line_with_margin(PyObject *f, PyFrameObject *frame, PyObject *fil
             return 0;
         }
     }
-
-    if (!is_stdin) {
+    else {
         binary = _PyObject_CallMethod(io, &_Py_ID(open), "Os", filename, "rb");
         if (binary == NULL) {
             PyErr_Clear();
@@ -500,42 +488,42 @@ display_source_line_with_margin(PyObject *f, PyFrameObject *frame, PyObject *fil
             PyMem_Free(found_encoding);
             return 0;
         }
-    }
-    fob = _PyObject_CallMethod(io, &_Py_ID(TextIOWrapper),
-                               "Os", binary, encoding);
-    Py_DECREF(io);
-    PyMem_Free(found_encoding);
+        fob = _PyObject_CallMethod(io, &_Py_ID(TextIOWrapper),
+                                   "Os", binary, encoding);
+        Py_DECREF(io);
+        PyMem_Free(found_encoding);
 
-    if (fob == NULL) {
-        PyErr_Clear();
-
-        res = PyObject_CallMethodNoArgs(binary, &_Py_ID(close));
-        Py_DECREF(binary);
-        if (res)
-            Py_DECREF(res);
-        else
+        if (fob == NULL) {
             PyErr_Clear();
-        return 0;
-    }
-    Py_DECREF(binary);
 
-    /* get the line number lineno */
-    for (i = 0; i < lineno; i++) {
-        Py_XDECREF(lineobj);
-        lineobj = PyFile_GetLine(fob, -1);
-        if (!lineobj) {
-            PyErr_Clear();
-            break;
+            res = PyObject_CallMethodNoArgs(binary, &_Py_ID(close));
+            Py_DECREF(binary);
+            if (res)
+                Py_DECREF(res);
+            else
+                PyErr_Clear();
+            return 0;
         }
+        Py_DECREF(binary);
+
+        /* get the line number lineno */
+        for (i = 0; i < lineno; i++) {
+            Py_XDECREF(lineobj);
+            lineobj = PyFile_GetLine(fob, -1);
+            if (!lineobj) {
+                PyErr_Clear();
+                break;
+            }
+        }
+        res = PyObject_CallMethodNoArgs(fob, &_Py_ID(close));
+        if (res) {
+            Py_DECREF(res);
+        }
+        else {
+            PyErr_Clear();
+        }
+        Py_DECREF(fob);
     }
-    res = PyObject_CallMethodNoArgs(fob, &_Py_ID(close));
-    if (res) {
-        Py_DECREF(res);
-    }
-    else {
-        PyErr_Clear();
-    }
-    Py_DECREF(fob);
     if (!lineobj || !PyUnicode_Check(lineobj)) {
         Py_XDECREF(lineobj);
         return -1;
