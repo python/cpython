@@ -249,7 +249,7 @@ class_def[stmt_ty]:
 
 class_def_raw[stmt_ty]:
     | invalid_class_def_raw
-    | 'class' a=NAME b=['(' z=[arguments] ')' { z }] &&':' c=block {
+    | 'class' a=NAME b=['(' z=[arguments] ')' { z }] ':' c=block {
         _PyAST_ClassDef(a->v.Name.id,
                      (b) ? ((expr_ty) b)->v.Call.args : NULL,
                      (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
@@ -379,9 +379,9 @@ while_stmt[stmt_ty]:
 
 for_stmt[stmt_ty]:
     | invalid_for_stmt
-    | 'for' t=star_targets 'in' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
+    | 'for' t=star_targets 'in' ~ ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
         _PyAST_For(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA) }
-    | ASYNC 'for' t=star_targets 'in' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
+    | ASYNC 'for' t=star_targets 'in' ~ ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
         CHECK_VERSION(stmt_ty, 5, "Async for loops are", _PyAST_AsyncFor(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
     | invalid_for_target
 
@@ -1231,8 +1231,8 @@ invalid_import_from_targets:
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }
 
 invalid_with_stmt:
-    | [ASYNC] 'with' ','.(expression ['as' star_target])+ &&':'
-    | [ASYNC] 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' &&':'
+    | [ASYNC] 'with' ','.(expression ['as' star_target])+ NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | [ASYNC] 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
 invalid_with_stmt_indent:
     | [ASYNC] a='with' ','.(expression ['as' star_target])+ ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'with' statement on line %d", a->lineno) }
@@ -1262,11 +1262,11 @@ invalid_except_star_stmt_indent:
     | a='except' '*' expression ['as' NAME ] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'except*' statement on line %d", a->lineno) }
 invalid_match_stmt:
-    | "match" subject_expr !':' { CHECK_VERSION(void*, 10, "Pattern matching is", RAISE_SYNTAX_ERROR("expected ':'") ) }
+    | "match" subject_expr NEWLINE { CHECK_VERSION(void*, 10, "Pattern matching is", RAISE_SYNTAX_ERROR("expected ':'") ) }
     | a="match" subject=subject_expr ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'match' statement on line %d", a->lineno) }
 invalid_case_block:
-    | "case" patterns guard? !':' { RAISE_SYNTAX_ERROR("expected ':'") }
+    | "case" patterns guard? NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a="case" patterns guard? ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'case' statement on line %d", a->lineno) }
 invalid_as_pattern:
@@ -1295,13 +1295,15 @@ invalid_while_stmt:
     | a='while' named_expression ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'while' statement on line %d", a->lineno) }
 invalid_for_stmt:
+    | [ASYNC] 'for' star_targets 'in' star_expressions NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | [ASYNC] a='for' star_targets 'in' star_expressions ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'for' statement on line %d", a->lineno) }
 invalid_def_raw:
     | [ASYNC] a='def' NAME '(' [params] ')' ['->' expression] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after function definition on line %d", a->lineno) }
 invalid_class_def_raw:
-    | a='class' NAME ['('[arguments] ')'] ':' NEWLINE !INDENT {
+    | 'class' NAME ['(' [arguments] ')'] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a='class' NAME ['(' [arguments] ')'] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after class definition on line %d", a->lineno) }
 
 invalid_double_starred_kvpairs:
