@@ -1940,10 +1940,6 @@ Other concrete types
    represent the types of I/O streams such as returned by
    :func:`open`.
 
-   .. deprecated-removed:: 3.8 3.12
-      The ``typing.io`` namespace is deprecated and will be removed.
-      These types should be directly imported from ``typing`` instead.
-
 .. class:: Pattern
            Match
 
@@ -1953,10 +1949,6 @@ Other concrete types
    are generic in ``AnyStr`` and can be made specific by writing
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
    ``Match[bytes]``.
-
-   .. deprecated-removed:: 3.8 3.12
-      The ``typing.re`` namespace is deprecated and will be removed.
-      These types should be directly imported from ``typing`` instead.
 
    .. deprecated:: 3.9
       Classes ``Pattern`` and ``Match`` from :mod:`re` now support ``[]``.
@@ -2687,9 +2679,6 @@ convenience. This is subject to change, and not all deprecations are listed.
 +----------------------------------+---------------+-------------------+----------------+
 |  Feature                         | Deprecated in | Projected removal | PEP/issue      |
 +==================================+===============+===================+================+
-|  ``typing.io`` and ``typing.re`` | 3.8           | 3.12              | :issue:`38291` |
-|  submodules                      |               |                   |                |
-+----------------------------------+---------------+-------------------+----------------+
 |  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |
 |  collections                     |               |                   |                |
 +----------------------------------+---------------+-------------------+----------------+

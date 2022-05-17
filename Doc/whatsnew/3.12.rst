@@ -115,6 +115,9 @@ Removed
 
   (Contributed by Erlend E. Aasland in :gh:`92548`)
 
+* Namespaces ``typing.io`` and ``typing.re``, deprecated in Python 3.8,
+  are now removed. The items in those namespaces can be imported directly
+  from ``typing``.
 
 Porting to Python 3.12
 ======================
