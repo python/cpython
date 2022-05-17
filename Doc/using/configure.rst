@@ -872,8 +872,8 @@ Linker flags
 
    In particular, :envvar:`LDFLAGS` should not contain:
 
-   * the compiler flag `-L` (for setting the search path for libraries);
-     the `-L` flags are processed from left to right, and any flags in
+   * the compiler flag `-L` (for setting the search path for libraries).
+     The `-L` flags are processed from left to right, and any flags in
      :envvar:`LDFLAGS` would take precedence over user- and package-supplied `-L`
      flags.
 
