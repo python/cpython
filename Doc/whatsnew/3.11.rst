@@ -726,10 +726,10 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   the given type. At runtime it simply returns the received value.
   (Contributed by Jelle Zijlstra in :gh:`90638`.)
 
-* :data:`typing.TypedDict` subclasses can now be generic. (Contributed by
+* :data:`typing.TypedDict` types can now be generic. (Contributed by
   Samodya Abey in :gh:`89026`.)
 
-* :class:`~typing.NamedTuple` subclasses can now be generic.
+* :class:`~typing.NamedTuple` types can now be generic.
   (Contributed by Serhiy Storchaka in :issue:`43923`.)
 
 * Allow subclassing of :class:`typing.Any`. This is useful for avoiding
@@ -749,6 +749,8 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   is now preserved. (Contributed by Adrian Garcia Badarasco in :gh:`88970`.)
 
 * The representation of empty tuple types (``Tuple[()]``) is simplified.
+  This affects introspection, e.g. ``get_args(Tuple[()])`` now evaluates
+  to ``()`` instead of ``((),)``.
   (Contributed by Serhiy Storchaka in :gh:`91137`.)
 
 * Loosen runtime requirements for type annotations by removing the callable
@@ -770,9 +772,6 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
 * :func:`typing.no_type_check` no longer modifies external classes and functions.
   It also now correctly marks classmethods as not to be type checked. (Contributed
   by Nikita Sobolev in :gh:`90729`.)
-
-* The keyword argument syntax for constructing :data:`~typing.TypedDict` types
-  is now deprecated. (Contributed by Jingchen Ye in :gh:`90224`.)
 
 
 tkinter
@@ -1260,6 +1259,9 @@ Deprecated
   currently unplanned, but users are encouraged to use :class:`str` instead
   wherever possible.
   (Contributed by Alex Waygood in :gh:`92332`.)
+
+* The keyword argument syntax for constructing :data:`~typing.TypedDict` types
+  is now deprecated. (Contributed by Jingchen Ye in :gh:`90224`.)
 
 
 Pending Removal in Python 3.12
