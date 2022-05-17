@@ -54,8 +54,8 @@ static PyObject *
 test_unicode(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
     PyObject *str = PyUnicode_FromString("abc");
-    if (str == NULL) {
-        return NULL;
+    if (str == nullptr) {
+        return nullptr;
     }
 
     assert(PyUnicode_Check(str));
@@ -63,7 +63,7 @@ test_unicode(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 
     // gh-92800: test PyUnicode_READ()
     const void* data = PyUnicode_DATA(str);
-    assert(data != NULL);
+    assert(data != nullptr);
     int kind = PyUnicode_KIND(str);
     assert(kind == PyUnicode_1BYTE_KIND);
     assert(PyUnicode_READ(kind, data, 0) == 'a');
