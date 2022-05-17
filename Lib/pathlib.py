@@ -5,6 +5,7 @@ import ntpath
 import os
 import posixpath
 import re
+import shutil
 import sys
 import warnings
 from _collections_abc import Sequence
@@ -44,6 +45,10 @@ def _is_wildcard_pattern(pat):
     # Whether this pattern needs actual matching using fnmatch, or can
     # be looked up directly as a file.
     return "*" in pat or "?" in pat or "[" in pat
+
+
+def _raise_error(*args):
+    raise
 
 
 class _Flavour(object):
@@ -1152,6 +1157,19 @@ class Path(PurePath):
         Remove this directory.  The directory must be empty.
         """
         os.rmdir(self)
+    
+    def rmtree(self, on_error=_raise_error):
+        """Recursively delete a directory tree.
+
+        if on_error is not None, it is called to handle the error with arguments
+        (func, path, exc_info) where func is platform and implementation
+        dependent; path is the argument to that function that caused it to
+        fail; and exc_info is a tuple returned by sys.exc_info().
+        
+        Unlike shutil.rmtree, on_error=None means ignore all errors.
+        """
+        sys.audit("pathlib.Path.rmtree", self, on_error)
+        return shutil.rmtree(self, ignore_errors=on_error is None, onerror=on_error)
 
     def lstat(self):
         """

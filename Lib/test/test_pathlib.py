@@ -1988,6 +1988,17 @@ class _BasePathTest(object):
         p = self.cls(BASE) / 'fileAAA'
         self.assertFileNotFound(p.unlink)
         p.unlink(missing_ok=True)
+    
+    def test_rmtree(self):
+        p = self.cls(BASE) / "dirC"
+        p.rmtree()
+        self.assertFileNotFound(p.stat)
+        self.assertFileNotFound(p.rmdir)
+    
+    def test_rmtree_error_handling(self):
+        p = self.cls(BASE) / 'dirCCC'
+        self.assertFileNotFound(p.rmtree)
+        p.rmtree(on_error=None)
 
     def test_rmdir(self):
         p = self.cls(BASE) / 'dirA'
