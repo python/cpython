@@ -111,9 +111,9 @@ static inline PyObject *
 PyObject_CallMethodOneArg(PyObject *self, PyObject *name, PyObject *arg)
 {
     PyObject *args[2] = {self, arg};
+    size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
 
     assert(arg != NULL);
-    size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
     return PyObject_VectorcallMethod(name, args, nargsf, _Py_NULL);
 }
 
@@ -160,9 +160,9 @@ static inline PyObject *
 _PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg)
 {
     PyObject *args[2] = {self, arg};
+    size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
 
     assert(arg != NULL);
-    size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
     return _PyObject_VectorcallMethodId(name, args, nargsf, _Py_NULL);
 }
 
