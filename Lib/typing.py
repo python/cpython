@@ -3402,7 +3402,7 @@ def dataclass_transform(
 
     The ``CustomerModel`` classes defined above will
     be treated by type checkers similarly to classes created with
-    ``dataclasses.dataclass``.
+    ``@dataclasses.dataclass``.
     For example, type checkers will assume these classes have an
     ``__init__`` method analogous to that of a dataclass.
 
