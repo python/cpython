@@ -2170,7 +2170,8 @@ class TestInvalidFD(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'fpathconf'), 'test needs os.fpathconf()')
     @unittest.skipIf(
-        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+        support.is_emscripten or support.is_wasi,
+        "musl libc issue on Emscripten/WASI, bpo-46390"
     )
     def test_fpathconf(self):
         self.check(os.pathconf, "PC_NAME_MAX")
