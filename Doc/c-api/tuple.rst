@@ -21,14 +21,14 @@ Tuple Objects
 
 .. c:function:: int PyTuple_Check(PyObject *p)
 
-   Return true if *p* is a tuple object or an instance of a subtype of the tuple
-   type.
+   Return true if *p* is a tuple object or an instance of a subtype of the
+   tuple type.  This function always succeeds.
 
 
 .. c:function:: int PyTuple_CheckExact(PyObject *p)
 
    Return true if *p* is a tuple object, but not an instance of a subtype of the
-   tuple type.
+   tuple type.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyTuple_New(Py_ssize_t len)
@@ -57,7 +57,7 @@ Tuple Objects
 .. c:function:: PyObject* PyTuple_GetItem(PyObject *p, Py_ssize_t pos)
 
    Return the object at position *pos* in the tuple pointed to by *p*.  If *pos* is
-   out of bounds, return ``NULL`` and set an :exc:`IndexError` exception.
+   negative or out of bounds, return ``NULL`` and set an :exc:`IndexError` exception.
 
 
 .. c:function:: PyObject* PyTuple_GET_ITEM(PyObject *p, Py_ssize_t pos)
@@ -91,7 +91,7 @@ Tuple Objects
 
    .. note::
 
-      This macro "steals" a reference to *o*, and, unlike
+      This function "steals" a reference to *o*, and, unlike
       :c:func:`PyTuple_SetItem`, does *not* discard a reference to any item that
       is being replaced; any reference in the tuple at position *pos* will be
       leaked.
@@ -161,7 +161,7 @@ type.
 .. c:type:: PyStructSequence_Field
 
    Describes a field of a struct sequence. As a struct sequence is modeled as a
-   tuple, all fields are typed as :c:type:`PyObject\*`.  The index in the
+   tuple, all fields are typed as :c:type:`PyObject*`.  The index in the
    :attr:`fields` array of the :c:type:`PyStructSequence_Desc` determines which
    field of the struct sequence is described.
 
@@ -215,7 +215,8 @@ type.
 
 .. c:function:: void PyStructSequence_SET_ITEM(PyObject *p, Py_ssize_t *pos, PyObject *o)
 
-   Macro equivalent of :c:func:`PyStructSequence_SetItem`.
+   Similar to :c:func:`PyStructSequence_SetItem`, but implemented as a static
+   inlined function.
 
    .. note::
 

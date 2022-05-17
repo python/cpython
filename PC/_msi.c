@@ -193,7 +193,7 @@ static FNFCIGETNEXTCABINET(cb_getnextcabinet)
         if (!PyBytes_Check(result)) {
             PyErr_Format(PyExc_TypeError,
                 "Incorrect return type %s from getnextcabinet",
-                result->ob_type->tp_name);
+                Py_TYPE(result)->tp_name);
             Py_DECREF(result);
             return FALSE;
         }
@@ -351,7 +351,7 @@ msiobj_dealloc(msiobj* msidb)
 {
     MsiCloseHandle(msidb->h);
     msidb->h = 0;
-    PyObject_Del(msidb);
+    PyObject_Free(msidb);
 }
 
 static PyObject*
@@ -757,22 +757,13 @@ _msi_SummaryInformation_SetProperty_impl(msiobj *self, int field,
     int status;
 
     if (PyUnicode_Check(data)) {
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-        const WCHAR *value = _PyUnicode_AsUnicode(data);
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
         WCHAR *value = PyUnicode_AsWideCharString(data, NULL);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         if (value == NULL) {
             return NULL;
         }
         status = MsiSummaryInfoSetPropertyW(self->h, field, VT_LPSTR,
             0, NULL, value);
-#if !USE_UNICODE_WCHAR_CACHE
         PyMem_Free(value);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     } else if (PyLong_CheckExact(data)) {
         long value = PyLong_AsLong(data);
         if (value == -1 && PyErr_Occurred()) {
@@ -882,7 +873,7 @@ _msi_View_Execute(msiobj *self, PyObject *oparams)
     MSIHANDLE params = 0;
 
     if (oparams != Py_None) {
-        if (oparams->ob_type != &record_Type) {
+        if (!Py_IS_TYPE(oparams, &record_Type)) {
             PyErr_SetString(PyExc_TypeError, "Execute argument must be a record");
             return NULL;
         }
@@ -958,7 +949,7 @@ _msi_View_Modify_impl(msiobj *self, int kind, PyObject *data)
 {
     int status;
 
-    if (data->ob_type != &record_Type) {
+    if (!Py_IS_TYPE(data, &record_Type)) {
         PyErr_SetString(PyExc_TypeError, "Modify expects a record object");
         return NULL;
     }

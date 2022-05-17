@@ -93,6 +93,19 @@ finally:
     suite5
 """
 
+try_except_star_finally = """\
+try:
+    suite1
+except* ex1:
+    suite2
+except* ex2:
+    suite3
+else:
+    suite4
+finally:
+    suite5
+"""
+
 with_simple = """\
 with f():
     suite1
@@ -117,7 +130,43 @@ docstring_prefixes = (
 
 class ASTTestCase(unittest.TestCase):
     def assertASTEqual(self, ast1, ast2):
-        self.assertEqual(ast.dump(ast1), ast.dump(ast2))
+        # Ensure the comparisons start at an AST node
+        self.assertIsInstance(ast1, ast.AST)
+        self.assertIsInstance(ast2, ast.AST)
+
+        # An AST comparison routine modeled after ast.dump(), but
+        # instead of string building, it traverses the two trees
+        # in lock-step.
+        def traverse_compare(a, b, missing=object()):
+            if type(a) is not type(b):
+                self.fail(f"{type(a)!r} is not {type(b)!r}")
+            if isinstance(a, ast.AST):
+                for field in a._fields:
+                    value1 = getattr(a, field, missing)
+                    value2 = getattr(b, field, missing)
+                    # Singletons are equal by definition, so further
+                    # testing can be skipped.
+                    if value1 is not value2:
+                        traverse_compare(value1, value2)
+            elif isinstance(a, list):
+                try:
+                    for node1, node2 in zip(a, b, strict=True):
+                        traverse_compare(node1, node2)
+                except ValueError:
+                    # Attempt a "pretty" error ala assertSequenceEqual()
+                    len1 = len(a)
+                    len2 = len(b)
+                    if len1 > len2:
+                        what = "First"
+                        diff = len1 - len2
+                    else:
+                        what = "Second"
+                        diff = len2 - len1
+                    msg = f"{what} list contains {diff} additional elements."
+                    raise self.failureException(msg) from None
+            elif a != b:
+                self.fail(f"{a!r} != {b!r}")
+        traverse_compare(ast1, ast2)
 
     def check_ast_roundtrip(self, code1, **kwargs):
         with self.subTest(code1=code1, ast_parse_kwargs=kwargs):
@@ -149,9 +198,42 @@ class UnparseTestCase(ASTTestCase):
     # Tests for specific bugs found in earlier versions of unparse
 
     def test_fstrings(self):
+        self.check_ast_roundtrip("f'a'")
+        self.check_ast_roundtrip("f'{{}}'")
+        self.check_ast_roundtrip("f'{{5}}'")
+        self.check_ast_roundtrip("f'{{5}}5'")
+        self.check_ast_roundtrip("f'X{{}}X'")
+        self.check_ast_roundtrip("f'{a}'")
+        self.check_ast_roundtrip("f'{ {1:2}}'")
+        self.check_ast_roundtrip("f'a{a}a'")
+        self.check_ast_roundtrip("f'a{a}{a}a'")
+        self.check_ast_roundtrip("f'a{a}a{a}a'")
+        self.check_ast_roundtrip("f'{a!r}x{a!s}12{{}}{a!a}'")
+        self.check_ast_roundtrip("f'{a:10}'")
+        self.check_ast_roundtrip("f'{a:100_000{10}}'")
+        self.check_ast_roundtrip("f'{a!r:10}'")
+        self.check_ast_roundtrip("f'{a:a{b}10}'")
+        self.check_ast_roundtrip(
+                "f'a{b}{c!s}{d!r}{e!a}{f:a}{g:a{b}}{h!s:a}"
+                "{j!s:{a}b}{k!s:a{b}c}{l!a:{b}c{d}}{x+y=}'"
+        )
+
+    def test_fstrings_special_chars(self):
         # See issue 25180
         self.check_ast_roundtrip(r"""f'{f"{0}"*3}'""")
         self.check_ast_roundtrip(r"""f'{f"{y}"*3}'""")
+        self.check_ast_roundtrip("""f''""")
+        self.check_ast_roundtrip('''f"""'end' "quote\\""""''')
+
+    def test_fstrings_complicated(self):
+        # See issue 28002
+        self.check_ast_roundtrip("""f'''{"'"}'''""")
+        self.check_ast_roundtrip('''f\'\'\'-{f"""*{f"+{f'.{x}.'}+"}*"""}-\'\'\'''')
+        self.check_ast_roundtrip('''f\'\'\'-{f"""*{f"+{f'.{x}.'}+"}*"""}-'single quote\\'\'\'\'''')
+        self.check_ast_roundtrip('f"""{\'\'\'\n\'\'\'}"""')
+        self.check_ast_roundtrip('f"""{g(\'\'\'\n\'\'\')}"""')
+        self.check_ast_roundtrip('''f"a\\r\\nb"''')
+        self.check_ast_roundtrip('''f"\\u2028{'x'}"''')
 
     def test_strings(self):
         self.check_ast_roundtrip("u'foo'")
@@ -186,6 +268,12 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip("-1e1000")
         self.check_ast_roundtrip("1e1000j")
         self.check_ast_roundtrip("-1e1000j")
+
+    def test_nan(self):
+        self.assertASTEqual(
+            ast.parse(ast.unparse(ast.Constant(value=float('nan')))),
+            ast.parse('1e1000 - 1e1000')
+        )
 
     def test_min_int(self):
         self.check_ast_roundtrip(str(-(2 ** 31)))
@@ -240,6 +328,12 @@ class UnparseTestCase(ASTTestCase):
     def test_set_literal(self):
         self.check_ast_roundtrip("{'a', 'b', 'c'}")
 
+    def test_empty_set(self):
+        self.assertASTEqual(
+            ast.parse(ast.unparse(ast.Set(elts=[]))),
+            ast.parse('{*()}')
+        )
+
     def test_set_comprehension(self):
         self.check_ast_roundtrip("{x for x in range(5)}")
 
@@ -258,6 +352,9 @@ class UnparseTestCase(ASTTestCase):
 
     def test_try_except_finally(self):
         self.check_ast_roundtrip(try_except_finally)
+
+    def test_try_except_star_finally(self):
+        self.check_ast_roundtrip(try_except_star_finally)
 
     def test_starred_assignment(self):
         self.check_ast_roundtrip("a, *b, c = seq")
@@ -283,7 +380,17 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip("a[i]")
         self.check_ast_roundtrip("a[i,]")
         self.check_ast_roundtrip("a[i, j]")
+        # The AST for these next two both look like `a[(*a,)]`
         self.check_ast_roundtrip("a[(*a,)]")
+        self.check_ast_roundtrip("a[*a]")
+        self.check_ast_roundtrip("a[b, *a]")
+        self.check_ast_roundtrip("a[*a, c]")
+        self.check_ast_roundtrip("a[b, *a, c]")
+        self.check_ast_roundtrip("a[*a, *a]")
+        self.check_ast_roundtrip("a[b, *a, *a]")
+        self.check_ast_roundtrip("a[*a, b, *a]")
+        self.check_ast_roundtrip("a[*a, *a, b]")
+        self.check_ast_roundtrip("a[b, *a, *a, c]")
         self.check_ast_roundtrip("a[(a:=b)]")
         self.check_ast_roundtrip("a[(a:=b,c)]")
         self.check_ast_roundtrip("a[()]")
@@ -299,20 +406,18 @@ class UnparseTestCase(ASTTestCase):
     def test_invalid_raise(self):
         self.check_invalid(ast.Raise(exc=None, cause=ast.Name(id="X")))
 
-    def test_invalid_fstring_constant(self):
-        self.check_invalid(ast.JoinedStr(values=[ast.Constant(value=100)]))
-
-    def test_invalid_fstring_conversion(self):
+    def test_invalid_fstring_value(self):
         self.check_invalid(
-            ast.FormattedValue(
-                value=ast.Constant(value="a", kind=None),
-                conversion=ord("Y"),  # random character
-                format_spec=None,
+            ast.JoinedStr(
+                values=[
+                    ast.Name(id="test"),
+                    ast.Constant(value="test")
+                ]
             )
         )
 
-    def test_invalid_set(self):
-        self.check_invalid(ast.Set(elts=[]))
+    def test_invalid_fstring_backslash(self):
+        self.check_invalid(ast.FormattedValue(value=ast.Constant(value="\\\\")))
 
     def test_invalid_yield_from(self):
         self.check_invalid(ast.YieldFrom(value=None))
@@ -330,8 +435,8 @@ class UnparseTestCase(ASTTestCase):
             '\r\\r\t\\t\n\\n',
             '""">>> content = \"\"\"blabla\"\"\" <<<"""',
             r'foo\n\x00',
-            '🐍⛎𩸽üéş^\N{LONG RIGHTWARDS SQUIGGLE ARROW}'
-
+            "' \\'\\'\\'\"\"\" \"\"\\'\\' \\'",
+            '🐍⛎𩸽üéş^\\\\X\\\\BB\N{LONG RIGHTWARDS SQUIGGLE ARROW}'
         )
         for docstring in docstrings:
             # check as Module docstrings for easy testing
@@ -384,7 +489,7 @@ class UnparseTestCase(ASTTestCase):
 
 
 class CosmeticTestCase(ASTTestCase):
-    """Test if there are cosmetic issues caused by unnecesary additions"""
+    """Test if there are cosmetic issues caused by unnecessary additions"""
 
     def test_simple_expressions_parens(self):
         self.check_src_roundtrip("(a := b)")
@@ -416,7 +521,6 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("call((yield x))")
         self.check_src_roundtrip("return x + (yield x)")
 
-
     def test_class_bases_and_keywords(self):
         self.check_src_roundtrip("class X:\n    pass")
         self.check_src_roundtrip("class X(A):\n    pass")
@@ -428,6 +532,13 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("class X(A, **kw):\n    pass")
         self.check_src_roundtrip("class X(*args):\n    pass")
         self.check_src_roundtrip("class X(*args, **kwargs):\n    pass")
+
+    def test_fstrings(self):
+        self.check_src_roundtrip('''f\'\'\'-{f"""*{f"+{f'.{x}.'}+"}*"""}-\'\'\'''')
+        self.check_src_roundtrip('''f"\\u2028{'x'}"''')
+        self.check_src_roundtrip(r"f'{x}\n'")
+        self.check_src_roundtrip('''f''\'{"""\n"""}\\n''\'''')
+        self.check_src_roundtrip('''f''\'{f"""{x}\n"""}\\n''\'''')
 
     def test_docstrings(self):
         docstrings = (
@@ -443,6 +554,10 @@ class CosmeticTestCase(ASTTestCase):
             '""""""',
             '"""\'\'\'"""',
             '"""\'\'\'\'\'\'"""',
+            '"""🐍⛎𩸽üéş^\\\\X\\\\BB⟿"""',
+            '"""end in single \'quote\'"""',
+            "'''end in double \"quote\"'''",
+            '"""almost end in double "quote"."""',
         )
 
         for prefix in docstring_prefixes:
@@ -474,18 +589,83 @@ class CosmeticTestCase(ASTTestCase):
             self.check_src_roundtrip(f"{prefix} 1")
 
     def test_slices(self):
+        self.check_src_roundtrip("a[()]")
         self.check_src_roundtrip("a[1]")
         self.check_src_roundtrip("a[1, 2]")
-        self.check_src_roundtrip("a[(1, *a)]")
+        # Note that `a[*a]`, `a[*a,]`, and `a[(*a,)]` all evaluate to the same
+        # thing at runtime and have the same AST, but only `a[*a,]` passes
+        # this test, because that's what `ast.unparse` produces.
+        self.check_src_roundtrip("a[*a,]")
+        self.check_src_roundtrip("a[1, *a]")
+        self.check_src_roundtrip("a[*a, 2]")
+        self.check_src_roundtrip("a[1, *a, 2]")
+        self.check_src_roundtrip("a[*a, *a]")
+        self.check_src_roundtrip("a[1, *a, *a]")
+        self.check_src_roundtrip("a[*a, 1, *a]")
+        self.check_src_roundtrip("a[*a, *a, 1]")
+        self.check_src_roundtrip("a[1, *a, *a, 2]")
+        self.check_src_roundtrip("a[1:2, *a]")
+        self.check_src_roundtrip("a[*a, 1:2]")
+
+    def test_lambda_parameters(self):
+        self.check_src_roundtrip("lambda: something")
+        self.check_src_roundtrip("four = lambda: 2 + 2")
+        self.check_src_roundtrip("lambda x: x * 2")
+        self.check_src_roundtrip("square = lambda n: n ** 2")
+        self.check_src_roundtrip("lambda x, y: x + y")
+        self.check_src_roundtrip("add = lambda x, y: x + y")
+        self.check_src_roundtrip("lambda x, y, /, z, q, *, u: None")
+        self.check_src_roundtrip("lambda x, *y, **z: None")
+
+    def test_star_expr_assign_target(self):
+        for source_type, source in [
+            ("single assignment", "{target} = foo"),
+            ("multiple assignment", "{target} = {target} = bar"),
+            ("for loop", "for {target} in foo:\n    pass"),
+            ("async for loop", "async for {target} in foo:\n    pass")
+        ]:
+            for target in [
+                "a",
+                "a,",
+                "a, b",
+                "a, *b, c",
+                "a, (b, c), d",
+                "a, (b, c, d), *e",
+                "a, (b, *c, d), e",
+                "a, (b, *c, (d, e), f), g",
+                "[a]",
+                "[a, b]",
+                "[a, *b, c]",
+                "[a, [b, c], d]",
+                "[a, [b, c, d], *e]",
+                "[a, [b, *c, d], e]",
+                "[a, [b, *c, [d, e], f], g]",
+                "a, [b, c], d",
+                "[a, b, (c, d), (e, f)]",
+                "a, b, [*c], d, e"
+            ]:
+                with self.subTest(source_type=source_type, target=target):
+                    self.check_src_roundtrip(source.format(target=target))
+
+    def test_star_expr_assign_target_multiple(self):
+        self.check_src_roundtrip("() = []")
+        self.check_src_roundtrip("[] = ()")
+        self.check_src_roundtrip("() = [a] = c, = [d] = e, f = () = g = h")
+        self.check_src_roundtrip("a = b = c = d")
+        self.check_src_roundtrip("a, b = c, d = e, f = g")
+        self.check_src_roundtrip("[a, b] = [c, d] = [e, f] = g")
+        self.check_src_roundtrip("a, b = [c, d] = e, f = g")
+
+
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
 
     lib_dir = pathlib.Path(__file__).parent / ".."
     test_directories = (lib_dir, lib_dir / "test")
-    skip_files = {"test_fstring.py"}
     run_always_files = {"test_grammar.py", "test_syntax.py", "test_compile.py",
-                        "test_ast.py", "test_asdl_parser.py"}
+                        "test_ast.py", "test_asdl_parser.py", "test_fstring.py",
+                        "test_patma.py"}
 
     _files_to_test = None
 
@@ -524,14 +704,6 @@ class DirectoryTestCase(ASTTestCase):
         for item in self.files_to_test():
             if test.support.verbose:
                 print(f"Testing {item.absolute()}")
-
-            # Some f-strings are not correctly round-tripped by
-            # Tools/parser/unparse.py.  See issue 28002 for details.
-            # We need to skip files that contain such f-strings.
-            if item.name in self.skip_files:
-                if test.support.verbose:
-                    print(f"Skipping {item.absolute()}: see issue 28002")
-                continue
 
             with self.subTest(filename=item):
                 source = read_pyfile(item)

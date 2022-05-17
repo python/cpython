@@ -2,6 +2,24 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(bytes___bytes____doc__,
+"__bytes__($self, /)\n"
+"--\n"
+"\n"
+"Convert this value to exact type bytes.");
+
+#define BYTES___BYTES___METHODDEF    \
+    {"__bytes__", (PyCFunction)bytes___bytes__, METH_NOARGS, bytes___bytes____doc__},
+
+static PyObject *
+bytes___bytes___impl(PyBytesObject *self);
+
+static PyObject *
+bytes___bytes__(PyBytesObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return bytes___bytes___impl(self);
+}
+
 PyDoc_STRVAR(bytes_split__doc__,
 "split($self, /, sep=None, maxsplit=-1)\n"
 "--\n"
@@ -17,7 +35,7 @@ PyDoc_STRVAR(bytes_split__doc__,
 "    -1 (the default value) means no limit.");
 
 #define BYTES_SPLIT_METHODDEF    \
-    {"split", (PyCFunction)(void(*)(void))bytes_split, METH_FASTCALL|METH_KEYWORDS, bytes_split__doc__},
+    {"split", _PyCFunction_CAST(bytes_split), METH_FASTCALL|METH_KEYWORDS, bytes_split__doc__},
 
 static PyObject *
 bytes_split_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit);
@@ -168,7 +186,7 @@ PyDoc_STRVAR(bytes_rsplit__doc__,
 "Splitting is done starting at the end of the bytes and working to the front.");
 
 #define BYTES_RSPLIT_METHODDEF    \
-    {"rsplit", (PyCFunction)(void(*)(void))bytes_rsplit, METH_FASTCALL|METH_KEYWORDS, bytes_rsplit__doc__},
+    {"rsplit", _PyCFunction_CAST(bytes_rsplit), METH_FASTCALL|METH_KEYWORDS, bytes_rsplit__doc__},
 
 static PyObject *
 bytes_rsplit_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit);
@@ -240,7 +258,7 @@ PyDoc_STRVAR(bytes_strip__doc__,
 "If the argument is omitted or None, strip leading and trailing ASCII whitespace.");
 
 #define BYTES_STRIP_METHODDEF    \
-    {"strip", (PyCFunction)(void(*)(void))bytes_strip, METH_FASTCALL, bytes_strip__doc__},
+    {"strip", _PyCFunction_CAST(bytes_strip), METH_FASTCALL, bytes_strip__doc__},
 
 static PyObject *
 bytes_strip_impl(PyBytesObject *self, PyObject *bytes);
@@ -274,7 +292,7 @@ PyDoc_STRVAR(bytes_lstrip__doc__,
 "If the argument is omitted or None, strip leading  ASCII whitespace.");
 
 #define BYTES_LSTRIP_METHODDEF    \
-    {"lstrip", (PyCFunction)(void(*)(void))bytes_lstrip, METH_FASTCALL, bytes_lstrip__doc__},
+    {"lstrip", _PyCFunction_CAST(bytes_lstrip), METH_FASTCALL, bytes_lstrip__doc__},
 
 static PyObject *
 bytes_lstrip_impl(PyBytesObject *self, PyObject *bytes);
@@ -308,7 +326,7 @@ PyDoc_STRVAR(bytes_rstrip__doc__,
 "If the argument is omitted or None, strip trailing ASCII whitespace.");
 
 #define BYTES_RSTRIP_METHODDEF    \
-    {"rstrip", (PyCFunction)(void(*)(void))bytes_rstrip, METH_FASTCALL, bytes_rstrip__doc__},
+    {"rstrip", _PyCFunction_CAST(bytes_rstrip), METH_FASTCALL, bytes_rstrip__doc__},
 
 static PyObject *
 bytes_rstrip_impl(PyBytesObject *self, PyObject *bytes);
@@ -346,7 +364,7 @@ PyDoc_STRVAR(bytes_translate__doc__,
 "The remaining characters are mapped through the given translation table.");
 
 #define BYTES_TRANSLATE_METHODDEF    \
-    {"translate", (PyCFunction)(void(*)(void))bytes_translate, METH_FASTCALL|METH_KEYWORDS, bytes_translate__doc__},
+    {"translate", _PyCFunction_CAST(bytes_translate), METH_FASTCALL|METH_KEYWORDS, bytes_translate__doc__},
 
 static PyObject *
 bytes_translate_impl(PyBytesObject *self, PyObject *table,
@@ -391,7 +409,7 @@ PyDoc_STRVAR(bytes_maketrans__doc__,
 "The bytes objects frm and to must be of the same length.");
 
 #define BYTES_MAKETRANS_METHODDEF    \
-    {"maketrans", (PyCFunction)(void(*)(void))bytes_maketrans, METH_FASTCALL|METH_STATIC, bytes_maketrans__doc__},
+    {"maketrans", _PyCFunction_CAST(bytes_maketrans), METH_FASTCALL|METH_STATIC, bytes_maketrans__doc__},
 
 static PyObject *
 bytes_maketrans_impl(Py_buffer *frm, Py_buffer *to);
@@ -449,7 +467,7 @@ PyDoc_STRVAR(bytes_replace__doc__,
 "replaced.");
 
 #define BYTES_REPLACE_METHODDEF    \
-    {"replace", (PyCFunction)(void(*)(void))bytes_replace, METH_FASTCALL, bytes_replace__doc__},
+    {"replace", _PyCFunction_CAST(bytes_replace), METH_FASTCALL, bytes_replace__doc__},
 
 static PyObject *
 bytes_replace_impl(PyBytesObject *self, Py_buffer *old, Py_buffer *new,
@@ -606,7 +624,7 @@ PyDoc_STRVAR(bytes_decode__doc__,
 "    can handle UnicodeDecodeErrors.");
 
 #define BYTES_DECODE_METHODDEF    \
-    {"decode", (PyCFunction)(void(*)(void))bytes_decode, METH_FASTCALL|METH_KEYWORDS, bytes_decode__doc__},
+    {"decode", _PyCFunction_CAST(bytes_decode), METH_FASTCALL|METH_KEYWORDS, bytes_decode__doc__},
 
 static PyObject *
 bytes_decode_impl(PyBytesObject *self, const char *encoding,
@@ -678,7 +696,7 @@ PyDoc_STRVAR(bytes_splitlines__doc__,
 "true.");
 
 #define BYTES_SPLITLINES_METHODDEF    \
-    {"splitlines", (PyCFunction)(void(*)(void))bytes_splitlines, METH_FASTCALL|METH_KEYWORDS, bytes_splitlines__doc__},
+    {"splitlines", _PyCFunction_CAST(bytes_splitlines), METH_FASTCALL|METH_KEYWORDS, bytes_splitlines__doc__},
 
 static PyObject *
 bytes_splitlines_impl(PyBytesObject *self, int keepends);
@@ -750,7 +768,7 @@ PyDoc_STRVAR(bytes_hex__doc__,
 "hex($self, /, sep=<unrepresentable>, bytes_per_sep=1)\n"
 "--\n"
 "\n"
-"Create a str of hexadecimal numbers from a bytes object.\n"
+"Create a string of hexadecimal numbers from a bytes object.\n"
 "\n"
 "  sep\n"
 "    An optional single character or byte to separate hex bytes.\n"
@@ -770,7 +788,7 @@ PyDoc_STRVAR(bytes_hex__doc__,
 "\'b901:ef\'");
 
 #define BYTES_HEX_METHODDEF    \
-    {"hex", (PyCFunction)(void(*)(void))bytes_hex, METH_FASTCALL|METH_KEYWORDS, bytes_hex__doc__},
+    {"hex", _PyCFunction_CAST(bytes_hex), METH_FASTCALL|METH_KEYWORDS, bytes_hex__doc__},
 
 static PyObject *
 bytes_hex_impl(PyBytesObject *self, PyObject *sep, int bytes_per_sep);
@@ -809,4 +827,73 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dc1bc13e6990e452 input=a9049054013a1b77]*/
+
+static PyObject *
+bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
+               const char *errors);
+
+static PyObject *
+bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"source", "encoding", "errors", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "bytes", 0};
+    PyObject *argsbuf[3];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    PyObject *x = NULL;
+    const char *encoding = NULL;
+    const char *errors = NULL;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 3, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[0]) {
+        x = fastargs[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[1]) {
+        if (!PyUnicode_Check(fastargs[1])) {
+            _PyArg_BadArgument("bytes", "argument 'encoding'", "str", fastargs[1]);
+            goto exit;
+        }
+        Py_ssize_t encoding_length;
+        encoding = PyUnicode_AsUTF8AndSize(fastargs[1], &encoding_length);
+        if (encoding == NULL) {
+            goto exit;
+        }
+        if (strlen(encoding) != (size_t)encoding_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (!PyUnicode_Check(fastargs[2])) {
+        _PyArg_BadArgument("bytes", "argument 'errors'", "str", fastargs[2]);
+        goto exit;
+    }
+    Py_ssize_t errors_length;
+    errors = PyUnicode_AsUTF8AndSize(fastargs[2], &errors_length);
+    if (errors == NULL) {
+        goto exit;
+    }
+    if (strlen(errors) != (size_t)errors_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = bytes_new_impl(type, x, encoding, errors);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=5727702e63a0a8b7 input=a9049054013a1b77]*/

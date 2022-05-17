@@ -1,2 +1,0 @@
-Fixed the :mod:`trace` module CLI for Python source files with non-UTF-8
-encoding.

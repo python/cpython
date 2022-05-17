@@ -1,2 +1,0 @@
-Make context menu Cut and Copy work again when right-clicking within a
-selection.

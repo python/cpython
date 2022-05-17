@@ -1,1 +1,0 @@
-Manually define IO_REPARSE_TAG_APPEXECLINK in case some old Windows SDK doesn't have it.
