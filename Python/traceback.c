@@ -443,10 +443,11 @@ display_source_line_with_margin(PyObject *f, PyFrameObject *frame, PyObject *fil
         return -1;
     }
 
-    /* Do not attempt to open things like <string> but
-       handle the case of <stdin> */
+    /* Handle the case of <stdin> and <string> */
     assert(PyUnicode_Check(filename));
-    if (strcmp(PyUnicode_DATA(filename), "<stdin>") == 0 && frame != NULL) {
+    if ((strcmp(PyUnicode_DATA(filename), "<stdin>") == 0 ||
+            strcmp(PyUnicode_DATA(filename), "<string>") == 0) && frame != NULL)
+    {
         PyObject *source = frame->f_frame->f_code->co_source;
         if (source == NULL) {
             return 0;
