@@ -1,3 +1,0 @@
-Added :func:`threading.gettrace` and :func:`threading.getprofile` to
-retrieve the functions set by :func:`threading.settrace` and
-:func:`threading.setprofile` respectively. Patch by Mario Corchero.

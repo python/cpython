@@ -8,6 +8,7 @@ import sys
 import unittest
 import weakref
 from test import support
+from test.support import import_helper
 
 
 class DictTest(unittest.TestCase):
@@ -891,6 +892,14 @@ class DictTest(unittest.TestCase):
         gc.collect()
         self.assertTrue(gc.is_tracked(t), t)
 
+    def test_string_keys_can_track_values(self):
+        # Test that this doesn't leak.
+        for i in range(10):
+            d = {}
+            for j in range(10):
+                d[str(j)] = j
+            d["foo"] = d
+
     @support.cpython_only
     def test_track_literals(self):
         # Test GC-optimization of dict literals
@@ -994,8 +1003,8 @@ class DictTest(unittest.TestCase):
 
     @support.cpython_only
     def test_splittable_setdefault(self):
-        """split table must be combined when setdefault()
-        breaks insertion order"""
+        """split table must keep correct insertion
+        order when attributes are adding using setdefault()"""
         a, b = self.make_shared_key_dict(2)
 
         a['a'] = 1
@@ -1005,7 +1014,6 @@ class DictTest(unittest.TestCase):
         size_b = sys.getsizeof(b)
         b['a'] = 1
 
-        self.assertGreater(size_b, size_a)
         self.assertEqual(list(a), ['x', 'y', 'z', 'a', 'b'])
         self.assertEqual(list(b), ['x', 'y', 'z', 'b', 'a'])
 
@@ -1020,7 +1028,6 @@ class DictTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             del a['y']
 
-        self.assertGreater(sys.getsizeof(a), orig_size)
         self.assertEqual(list(a), ['x', 'z'])
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
@@ -1031,16 +1038,12 @@ class DictTest(unittest.TestCase):
 
     @support.cpython_only
     def test_splittable_pop(self):
-        """split table must be combined when d.pop(k)"""
         a, b = self.make_shared_key_dict(2)
 
-        orig_size = sys.getsizeof(a)
-
-        a.pop('y')  # split table is combined
+        a.pop('y')
         with self.assertRaises(KeyError):
             a.pop('y')
 
-        self.assertGreater(sys.getsizeof(a), orig_size)
         self.assertEqual(list(a), ['x', 'z'])
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
@@ -1051,7 +1054,7 @@ class DictTest(unittest.TestCase):
 
     @support.cpython_only
     def test_splittable_pop_pending(self):
-        """pop a pending key in a splitted table should not crash"""
+        """pop a pending key in a split table should not crash"""
         a, b = self.make_shared_key_dict(2)
 
         a['a'] = 4
@@ -1075,34 +1078,21 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
     @support.cpython_only
-    def test_splittable_setattr_after_pop(self):
-        """setattr() must not convert combined table into split table."""
-        # Issue 28147
-        import _testcapi
-
+    def test_splittable_update(self):
+        """dict.update(other) must preserve order in other."""
         class C:
-            pass
-        a = C()
+            def __init__(self, order):
+                if order:
+                    self.a, self.b, self.c = 1, 2, 3
+                else:
+                    self.c, self.b, self.a = 1, 2, 3
+        o = C(True)
+        o = C(False)  # o.__dict__ has reversed order.
+        self.assertEqual(list(o.__dict__), ["c", "b", "a"])
 
-        a.a = 1
-        self.assertTrue(_testcapi.dict_hassplittable(a.__dict__))
-
-        # dict.pop() convert it to combined table
-        a.__dict__.pop('a')
-        self.assertFalse(_testcapi.dict_hassplittable(a.__dict__))
-
-        # But C should not convert a.__dict__ to split table again.
-        a.a = 1
-        self.assertFalse(_testcapi.dict_hassplittable(a.__dict__))
-
-        # Same for popitem()
-        a = C()
-        a.a = 2
-        self.assertTrue(_testcapi.dict_hassplittable(a.__dict__))
-        a.__dict__.popitem()
-        self.assertFalse(_testcapi.dict_hassplittable(a.__dict__))
-        a.a = 3
-        self.assertFalse(_testcapi.dict_hassplittable(a.__dict__))
+        d = {}
+        d.update(o.__dict__)
+        self.assertEqual(list(d), ["c", "b", "a"])
 
     def test_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -1398,7 +1388,7 @@ class DictTest(unittest.TestCase):
         self.assertRaises(StopIteration, next, r)
 
     def test_reverse_iterator_for_empty_dict(self):
-        # bpo-38525: revered iterator should work properly
+        # bpo-38525: reversed iterator should work properly
 
         # empty dict is directly used for reference count test
         self.assertEqual(list(reversed({})), [])
@@ -1452,13 +1442,133 @@ class DictTest(unittest.TestCase):
         d = CustomReversedDict(pairs)
         self.assertEqual(pairs[::-1], list(dict(d).items()))
 
+    @support.cpython_only
+    def test_dict_items_result_gc(self):
+        # bpo-42536: dict.items's tuple-reuse speed trick breaks the GC's
+        # assumptions about what can be untracked. Make sure we re-track result
+        # tuples whenever we reuse them.
+        it = iter({None: []}.items())
+        gc.collect()
+        # That GC collection probably untracked the recycled internal result
+        # tuple, which is initialized to (None, None). Make sure it's re-tracked
+        # when it's mutated and returned from __next__:
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_dict_items_result_gc_reversed(self):
+        # Same as test_dict_items_result_gc above, but reversed.
+        it = reversed({None: []}.items())
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    def test_str_nonstr(self):
+        # cpython uses a different lookup function if the dict only contains
+        # `str` keys. Make sure the unoptimized path is used when a non-`str`
+        # key appears.
+
+        class StrSub(str):
+            pass
+
+        eq_count = 0
+        # This class compares equal to the string 'key3'
+        class Key3:
+            def __hash__(self):
+                return hash('key3')
+
+            def __eq__(self, other):
+                nonlocal eq_count
+                if isinstance(other, Key3) or isinstance(other, str) and other == 'key3':
+                    eq_count += 1
+                    return True
+                return False
+
+        key3_1 = StrSub('key3')
+        key3_2 = Key3()
+        key3_3 = Key3()
+
+        dicts = []
+
+        # Create dicts of the form `{'key1': 42, 'key2': 43, key3: 44}` in a
+        # bunch of different ways. In all cases, `key3` is not of type `str`.
+        # `key3_1` is a `str` subclass and `key3_2` is a completely unrelated
+        # type.
+        for key3 in (key3_1, key3_2):
+            # A literal
+            dicts.append({'key1': 42, 'key2': 43, key3: 44})
+
+            # key3 inserted via `dict.__setitem__`
+            d = {'key1': 42, 'key2': 43}
+            d[key3] = 44
+            dicts.append(d)
+
+            # key3 inserted via `dict.setdefault`
+            d = {'key1': 42, 'key2': 43}
+            self.assertEqual(d.setdefault(key3, 44), 44)
+            dicts.append(d)
+
+            # key3 inserted via `dict.update`
+            d = {'key1': 42, 'key2': 43}
+            d.update({key3: 44})
+            dicts.append(d)
+
+            # key3 inserted via `dict.__ior__`
+            d = {'key1': 42, 'key2': 43}
+            d |= {key3: 44}
+            dicts.append(d)
+
+            # `dict(iterable)`
+            def make_pairs():
+                yield ('key1', 42)
+                yield ('key2', 43)
+                yield (key3, 44)
+            d = dict(make_pairs())
+            dicts.append(d)
+
+            # `dict.copy`
+            d = d.copy()
+            dicts.append(d)
+
+            # dict comprehension
+            d = {key: 42 + i for i,key in enumerate(['key1', 'key2', key3])}
+            dicts.append(d)
+
+        for d in dicts:
+            with self.subTest(d=d):
+                self.assertEqual(d.get('key1'), 42)
+
+                # Try to make an object that is of type `str` and is equal to
+                # `'key1'`, but (at least on cpython) is a different object.
+                noninterned_key1 = 'ke'
+                noninterned_key1 += 'y1'
+                if support.check_impl_detail(cpython=True):
+                    # suppress a SyntaxWarning
+                    interned_key1 = 'key1'
+                    self.assertFalse(noninterned_key1 is interned_key1)
+                self.assertEqual(d.get(noninterned_key1), 42)
+
+                self.assertEqual(d.get('key3'), 44)
+                self.assertEqual(d.get(key3_1), 44)
+                self.assertEqual(d.get(key3_2), 44)
+
+                # `key3_3` itself is definitely not a dict key, so make sure
+                # that `__eq__` gets called.
+                #
+                # Note that this might not hold for `key3_1` and `key3_2`
+                # because they might be the same object as one of the dict keys,
+                # in which case implementations are allowed to skip the call to
+                # `__eq__`.
+                eq_count = 0
+                self.assertEqual(d.get(key3_3), 44)
+                self.assertGreaterEqual(eq_count, 1)
+
 
 class CAPITest(unittest.TestCase):
 
     # Test _PyDict_GetItem_KnownHash()
     @support.cpython_only
     def test_getitem_knownhash(self):
-        from _testcapi import dict_getitem_knownhash
+        _testcapi = import_helper.import_module('_testcapi')
+        dict_getitem_knownhash = _testcapi.dict_getitem_knownhash
 
         d = {'x': 1, 'y': 2, 'z': 3}
         self.assertEqual(dict_getitem_knownhash(d, 'x', hash('x')), 1)

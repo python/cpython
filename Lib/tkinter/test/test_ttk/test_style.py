@@ -1,9 +1,10 @@
 import unittest
+import sys
 import tkinter
 from tkinter import ttk
 from test import support
-from test.support import requires, run_unittest
-from tkinter.test.support import AbstractTkTest
+from test.support import requires
+from tkinter.test.support import AbstractTkTest, get_tk_patchlevel
 
 requires('gui')
 
@@ -136,6 +137,10 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
                 with self.subTest(theme=theme, name=name):
                     if support.verbose >= 2:
                         print('configure', theme, name, default)
+                    if (theme in ('vista', 'xpnative')
+                            and sys.getwindowsversion()[:2] == (6, 1)):
+                        # Fails on the Windows 7 buildbot
+                        continue
                     newname = f'C.{name}'
                     self.assertEqual(style.configure(newname), None)
                     style.configure(newname, **default)
@@ -158,15 +163,19 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
                 with self.subTest(theme=theme, name=name):
                     if support.verbose >= 2:
                         print('map', theme, name, default)
+                    if (theme in ('vista', 'xpnative')
+                            and sys.getwindowsversion()[:2] == (6, 1)):
+                        # Fails on the Windows 7 buildbot
+                        continue
                     newname = f'C.{name}'
                     self.assertEqual(style.map(newname), {})
                     style.map(newname, **default)
+                    if theme == 'alt' and name == '.' and get_tk_patchlevel() < (8, 6, 1):
+                        default['embossed'] = [('disabled', '1')]
                     self.assertEqual(style.map(newname), default)
                     for key, value in default.items():
                         self.assertEqual(style.map(newname, key), value)
 
 
-tests_gui = (StyleTest, )
-
 if __name__ == "__main__":
-    run_unittest(*tests_gui)
+    unittest.main()

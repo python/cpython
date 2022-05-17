@@ -1,3 +1,0 @@
-Optimise constant subexpressions that appear as part of named expressions
-(previously the AST optimiser did not descend into named expressions).
-Patch by Nick Coghlan.

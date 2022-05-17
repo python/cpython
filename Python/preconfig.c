@@ -1,15 +1,12 @@
 #include "Python.h"
+#include "pycore_fileutils.h"     // DECODE_LOCALE_ERR
 #include "pycore_getopt.h"        // _PyOS_GetOpt()
 #include "pycore_initconfig.h"    // _PyArgv
 #include "pycore_pymem.h"         // _PyMem_GetAllocatorName()
 #include "pycore_runtime.h"       // _PyRuntime_Initialize()
+
 #include <locale.h>               // setlocale()
-
-
-#define DECODE_LOCALE_ERR(NAME, LEN) \
-    (((LEN) == -2) \
-     ? _PyStatus_ERR("cannot decode " NAME) \
-     : _PyStatus_NO_MEMORY())
+#include <stdlib.h>               // getenv()
 
 
 /* Forward declarations */
@@ -87,8 +84,7 @@ _PyArgv_AsWstrList(const _PyArgv *args, PyWideStringList *list)
             wchar_t *arg = Py_DecodeLocale(args->bytes_argv[i], &len);
             if (arg == NULL) {
                 _PyWideStringList_Clear(&wargv);
-                return DECODE_LOCALE_ERR("command line arguments",
-                                         (Py_ssize_t)len);
+                return DECODE_LOCALE_ERR("command line arguments", len);
             }
             wargv.items[i] = arg;
             wargv.length++;
@@ -169,6 +165,7 @@ _PyPreCmdline_SetConfig(const _PyPreCmdline *cmdline, PyConfig *config)
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
     COPY_ATTR(dev_mode);
+    COPY_ATTR(warn_default_encoding);
     return _PyStatus_OK();
 
 #undef COPY_ATTR
@@ -257,9 +254,17 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline, const PyPreConfig *preconfig)
         cmdline->dev_mode = 0;
     }
 
+    // warn_default_encoding
+    if (_Py_get_xoption(&cmdline->xoptions, L"warn_default_encoding")
+            || _Py_GetEnv(cmdline->use_environment, "PYTHONWARNDEFAULTENCODING"))
+    {
+        cmdline->warn_default_encoding = 1;
+    }
+
     assert(cmdline->use_environment >= 0);
     assert(cmdline->isolated >= 0);
     assert(cmdline->dev_mode >= 0);
+    assert(cmdline->warn_default_encoding >= 0);
 
     return _PyStatus_OK();
 }

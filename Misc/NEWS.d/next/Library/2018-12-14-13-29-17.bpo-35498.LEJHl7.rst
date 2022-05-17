@@ -1,1 +1,0 @@
-Add slice support to :attr:`pathlib.PurePath.parents`.

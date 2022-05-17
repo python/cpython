@@ -1,28 +1,20 @@
-This is Python version 3.10.0 alpha 2
+This is Python version 3.12.0 alpha 0
 =====================================
-
-.. image:: https://travis-ci.com/python/cpython.svg?branch=master
-   :alt: CPython build status on Travis CI
-   :target: https://travis-ci.com/python/cpython
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
    :alt: CPython build status on GitHub Actions
    :target: https://github.com/python/cpython/actions
 
-.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=master
+.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=main
    :alt: CPython build status on Azure DevOps
-   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=master
+   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=main
 
-.. image:: https://codecov.io/gh/python/cpython/branch/master/graph/badge.svg
-   :alt: CPython code coverage on Codecov
-   :target: https://codecov.io/gh/python/cpython
-
-.. image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
-   :alt: Python Zulip chat
-   :target: https://python.zulipchat.com
+.. image:: https://img.shields.io/badge/discourse-join_chat-brightgreen.svg
+   :alt: Python Discourse chat
+   :target: https://discuss.python.org/
 
 
-Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
+Copyright © 2001-2022 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -33,7 +25,7 @@ General Information
 
 - Website: https://www.python.org
 - Source code: https://github.com/python/cpython
-- Issue tracker: https://bugs.python.org
+- Issue tracker: https://github.com/python/cpython/issues
 - Documentation: https://docs.python.org
 - Developer's Guide: https://devguide.python.org/
 
@@ -79,10 +71,10 @@ dependencies for various Linux distributions and macOS.
 
 On macOS, there are additional configure and build options related
 to macOS framework and universal builds.  Refer to `Mac/README.rst
-<https://github.com/python/cpython/blob/master/Mac/README.rst>`_.
+<https://github.com/python/cpython/blob/main/Mac/README.rst>`_.
 
 On Windows, see `PCbuild/readme.txt
-<https://github.com/python/cpython/blob/master/PCbuild/readme.txt>`_.
+<https://github.com/python/cpython/blob/main/PCbuild/readme.txt>`_.
 
 If you wish, you can create a subdirectory and invoke configure from there.
 For example::
@@ -114,12 +106,12 @@ The entire Python directory is cleaned of temporary files that may have
 resulted from a previous compilation.
 
 An instrumented version of the interpreter is built, using suitable compiler
-flags for each flavour. Note that this is just an intermediary step.  The
-binary resulting from this step is not good for real life workloads as it has
+flags for each flavor. Note that this is just an intermediary step.  The
+binary resulting from this step is not good for real-life workloads as it has
 profiling instructions embedded inside.
 
 After the instrumented interpreter is built, the Makefile will run a training
-workload.  This is necessary in order to profile the interpreter execution.
+workload.  This is necessary in order to profile the interpreter's execution.
 Note also that any output, both stdout and stderr, that may appear at this step
 is suppressed.
 
@@ -141,11 +133,11 @@ What's New
 ----------
 
 We have a comprehensive overview of the changes in the `What's New in Python
-3.10 <https://docs.python.org/3.10/whatsnew/3.10.html>`_ document.  For a more
+3.12 <https://docs.python.org/3.12/whatsnew/3.12.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
-<https://github.com/python/cpython/blob/master/Misc/NEWS.d>`_, but a full
+<https://github.com/python/cpython/blob/main/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
-<https://github.com/python/cpython/commits/master>`_.
+<https://github.com/python/cpython/commits/main>`_.
 
 If you want to install multiple versions of Python, see the section below
 entitled "Installing multiple versions".
@@ -154,7 +146,7 @@ entitled "Installing multiple versions".
 Documentation
 -------------
 
-`Documentation for Python 3.10 <https://docs.python.org/3.10/>`_ is online,
+`Documentation for Python 3.12 <https://docs.python.org/3.12/>`_ is online,
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
@@ -163,7 +155,7 @@ is primarily for documentation authors, translators, and people with special
 formatting requirements.
 
 For information about building Python's documentation, refer to `Doc/README.rst
-<https://github.com/python/cpython/blob/master/Doc/README.rst>`_.
+<https://github.com/python/cpython/blob/main/Doc/README.rst>`_.
 
 
 Converting From Python 2.x to 3.x
@@ -193,8 +185,9 @@ example, if ``test_os`` and ``test_gdb`` failed, you can run::
     make test TESTOPTS="-v test_os test_gdb"
 
 If the failure persists and appears to be a problem with Python rather than
-your environment, you can `file a bug report <https://bugs.python.org>`_ and
-include relevant output from that command to show the issue.
+your environment, you can `file a bug report
+<https://github.com/python/cpython/issues>`_ and include relevant output from
+that command to show the issue.
 
 See `Running & Writing Tests <https://devguide.python.org/runtests/>`_
 for more on running tests.
@@ -213,17 +206,17 @@ intend to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using ``make
 install``.  Install all other versions using ``make altinstall``.
 
-For example, if you want to install Python 2.7, 3.6, and 3.10 with 3.10 being the
-primary version, you would execute ``make install`` in your 3.10 build directory
+For example, if you want to install Python 2.7, 3.6, and 3.12 with 3.12 being the
+primary version, you would execute ``make install`` in your 3.12 build directory
 and ``make altinstall`` in the others.
 
 
 Issue Tracker and Mailing List
 ------------------------------
 
-Bug reports are welcome!  You can use the `issue tracker
-<https://bugs.python.org>`_ to report bugs, and/or submit pull requests `on
-GitHub <https://github.com/python/cpython>`_.
+Bug reports are welcome!  You can use Github to `report bugs
+<https://github.com/python/cpython/issues>`_, and/or `submit pull requests
+<https://github.com/python/cpython/pulls>`_.
 
 You can also follow development discussion on the `python-dev mailing list
 <https://mail.python.org/mailman/listinfo/python-dev/>`_.
@@ -233,33 +226,35 @@ Proposals for enhancement
 -------------------------
 
 If you have a proposal to change Python, you may want to send an email to the
-comp.lang.python or `python-ideas`_ mailing lists for initial feedback.  A
+`comp.lang.python`_ or `python-ideas`_ mailing lists for initial feedback.  A
 Python Enhancement Proposal (PEP) may be submitted if your idea gains ground.
 All current PEPs, as well as guidelines for submitting a new PEP, are listed at
-`python.org/dev/peps/ <https://www.python.org/dev/peps/>`_.
+`peps.python.org <https://peps.python.org/>`_.
 
 .. _python-ideas: https://mail.python.org/mailman/listinfo/python-ideas/
+.. _comp.lang.python: https://mail.python.org/mailman/listinfo/python-list
 
 
 Release Schedule
 ----------------
 
-See :pep:`619` for Python 3.10 release details.
+See :pep:`664` for Python 3.12 release details.
 
 
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
 
-Copyright (c) 2000 BeOpen.com.  All rights reserved.
+Copyright © 2001-2022 Python Software Foundation.  All rights reserved.
 
-Copyright (c) 1995-2001 Corporation for National Research Initiatives.  All
+Copyright © 2000 BeOpen.com.  All rights reserved.
+
+Copyright © 1995-2001 Corporation for National Research Initiatives.  All
 rights reserved.
 
-Copyright (c) 1991-1995 Stichting Mathematisch Centrum.  All rights reserved.
+Copyright © 1991-1995 Stichting Mathematisch Centrum.  All rights reserved.
 
-See the `LICENSE <https://github.com/python/cpython/blob/master/LICENSE>`_ for
+See the `LICENSE <https://github.com/python/cpython/blob/main/LICENSE>`_ for
 information on the history of this software, terms & conditions for usage, and a
 DISCLAIMER OF ALL WARRANTIES.
 

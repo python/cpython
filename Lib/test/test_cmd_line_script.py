@@ -116,7 +116,9 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(printed_file.encode('utf-8'), data)
         self.assertIn(printed_package.encode('utf-8'), data)
         self.assertIn(printed_argv0.encode('utf-8'), data)
-        self.assertIn(printed_path0.encode('utf-8'), data)
+        # PYTHONSAFEPATH=1 changes the default sys.path[0]
+        if not sys.flags.safe_path:
+            self.assertIn(printed_path0.encode('utf-8'), data)
         self.assertIn(printed_cwd.encode('utf-8'), data)
 
     def _check_script(self, script_exec_args, expected_file,
@@ -400,7 +402,7 @@ class CmdLineTest(unittest.TestCase):
         # does not alter the value of sys.path[0]
         with os_helper.temp_dir() as script_dir:
             with os_helper.change_cwd(path=script_dir):
-                with open("-c", "w") as f:
+                with open("-c", "w", encoding="utf-8") as f:
                     f.write("data")
                     rc, out, err = assert_python_ok('-c',
                         'import sys; print("sys.path[0]==%r" % sys.path[0])',
@@ -416,7 +418,7 @@ class CmdLineTest(unittest.TestCase):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, 'other')
             with os_helper.change_cwd(path=script_dir):
-                with open("-m", "w") as f:
+                with open("-m", "w", encoding="utf-8") as f:
                     f.write("data")
                     rc, out, err = assert_python_ok('-m', 'other', *example_args,
                                                     __isolated=False)
@@ -429,7 +431,7 @@ class CmdLineTest(unittest.TestCase):
         # will be failed.
         with os_helper.temp_dir() as script_dir:
             script_name = os.path.join(script_dir, "issue20884.py")
-            with open(script_name, "w", newline='\n') as f:
+            with open(script_name, "w", encoding="latin1", newline='\n') as f:
                 f.write("#coding: iso-8859-1\n")
                 f.write('"""\n')
                 for _ in range(30):
@@ -474,7 +476,6 @@ class CmdLineTest(unittest.TestCase):
                 br'ModuleNotFoundError'),
             ('builtins.x.y', br'Error while finding module specification.*'
                 br'ModuleNotFoundError.*No module named.*not a package'),
-            ('os.path', br'loader.*cannot handle'),
             ('importlib', br'No module named.*'
                 br'is a package and cannot be directly executed'),
             ('importlib.nonexistent', br'No module named'),
@@ -548,17 +549,18 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = stderr.decode('ascii').split('\n')
-            self.assertEqual(len(text), 5)
+            self.assertEqual(len(text), 6)
             self.assertTrue(text[0].startswith('Traceback'))
             self.assertTrue(text[1].startswith('  File '))
-            self.assertTrue(text[3].startswith('NameError'))
+            self.assertTrue(text[4].startswith('NameError'))
 
     def test_non_ascii(self):
         # Mac OS X denies the creation of a file with an invalid UTF-8 name.
         # Windows allows creating a name with an arbitrary bytes name, but
         # Python cannot a undecodable bytes argument to a subprocess.
+        # WASI does not permit invalid UTF-8 names.
         if (os_helper.TESTFN_UNDECODABLE
-        and sys.platform not in ('win32', 'darwin')):
+        and sys.platform not in ('win32', 'darwin', 'emscripten', 'wasi')):
             name = os.fsdecode(os_helper.TESTFN_UNDECODABLE)
         elif os_helper.TESTFN_NONASCII:
             name = os_helper.TESTFN_NONASCII
@@ -600,8 +602,8 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = io.TextIOWrapper(io.BytesIO(stderr), 'ascii').read()
-            # Confirm that the caret is located under the first 1 character
-            self.assertIn("\n    1 + 1 = 2\n    ^", text)
+            # Confirm that the caret is located under the '=' sign
+            self.assertIn("\n    ^^^^^\n", text)
 
     def test_syntaxerror_indented_caret_position(self):
         script = textwrap.dedent("""\
@@ -612,8 +614,8 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = io.TextIOWrapper(io.BytesIO(stderr), 'ascii').read()
-            # Confirm that the caret is located under the first 1 character
-            self.assertIn("\n    1 + 1 = 2\n    ^", text)
+            # Confirm that the caret starts under the first 1 character
+            self.assertIn("\n    1 + 1 = 2\n    ^^^^^\n", text)
 
             # Try the same with a form feed at the start of the indented line
             script = (
@@ -624,7 +626,7 @@ class CmdLineTest(unittest.TestCase):
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = io.TextIOWrapper(io.BytesIO(stderr), "ascii").read()
             self.assertNotIn("\f", text)
-            self.assertIn("\n    1 + 1 = 2\n    ^", text)
+            self.assertIn("\n    1 + 1 = 2\n    ^^^^^\n", text)
 
     def test_syntaxerror_multi_line_fstring(self):
         script = 'foo = f"""{}\nfoo"""\n'
@@ -650,8 +652,8 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(
                 stderr.splitlines()[-3:],
                 [   b'    foo = """\\q"""',
-                    b'          ^',
-                    b'SyntaxError: invalid escape sequence \\q'
+                    b'          ^^^^^^^^',
+                    b'SyntaxError: invalid escape sequence \'\\q\''
                 ],
             )
 
@@ -739,9 +741,9 @@ class CmdLineTest(unittest.TestCase):
         self.assertNotEqual(proc.returncode, 0)
 
 
-def test_main():
-    support.run_unittest(CmdLineTest)
+def tearDownModule():
     support.reap_children()
 
+
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
