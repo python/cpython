@@ -1940,6 +1940,25 @@ Other concrete types
    represent the types of I/O streams such as returned by
    :func:`open`.
 
+   These types should be used sparingly. For argument types, a tight
+   :class:`Protocol` that documents the actual needs of the implementation
+   is often a better alternative. Return values should be annotated with
+   the actual concrete type returned. For example::
+
+       from io import StringIO
+
+       class Reader(Protocol):
+           def read(self, __size: int) -> bytes: ...
+           def close(self) -> object: ...
+
+       def to_text_stream(stream: Reader) -> StringIO:
+           s_io = StringIO()
+           while b := stream.read(1000):
+               s_io.write(b.decode("ascii"))
+           stream.close()
+           s_io.seek(0)
+           return s_io
+
    .. deprecated-removed:: 3.8 3.12
       The ``typing.io`` namespace is deprecated and will be removed.
       These types should be directly imported from ``typing`` instead.
