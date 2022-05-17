@@ -16,14 +16,16 @@ SETUP_TESTCPPEXT = support.findfile('setup_testcppext.py')
 
 @support.requires_subprocess()
 class TestCPPExt(unittest.TestCase):
-    # With MSVC, the linker fails with: cannot open file 'python311.lib'
-    # https://github.com/python/cpython/pull/32175#issuecomment-1111175897
-    @unittest.skipIf(MS_WINDOWS, 'test fails on Windows')
     # the test uses venv+pip: skip if it's not available
     @support.requires_venv_with_pip()
     def test_build(self):
         # Build in a temporary directory
-        with os_helper.temp_cwd():
+        with os_helper.temp_cwd(), os_helper.EnvironmentVarGuard() as env:
+            # Recent setuptools versions have a bug that prevents being
+            # used to compile from a source build virtual environment.
+            # [BUG](https://github.com/pypa/setuptools/issues/3325)
+            # The stdlib distutils does not have this problem.
+            env['SETUPTOOLS_USE_DISTUTILS'] = 'stdlib'
             self._test_build()
 
     def _test_build(self):
@@ -37,9 +39,7 @@ class TestCPPExt(unittest.TestCase):
         subprocess.run(cmd, check=True)
 
         # Get the Python executable of the venv
-        python_exe = 'python'
-        if sys.executable.endswith('.exe'):
-            python_exe += '.exe'
+        python_exe = os.path.basename(sys.executable)
         if MS_WINDOWS:
             python = os.path.join(venv_dir, 'Scripts', python_exe)
         else:
@@ -56,7 +56,8 @@ class TestCPPExt(unittest.TestCase):
         if proc.returncode:
             print(proc.stdout, end='')
             self.fail(f"Build failed with exit code {proc.returncode}")
-
+        elif support.verbose:
+            print(proc.stdout, end='')
 
 if __name__ == "__main__":
     unittest.main()
