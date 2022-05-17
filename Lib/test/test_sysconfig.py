@@ -451,10 +451,8 @@ class TestSysConfig(unittest.TestCase):
             # <srcdir>/PC/pyconfig.h always exists even if unused on POSIX.
             pyconfig_h = os.path.join(srcdir, 'PC', 'pyconfig.h')
             self.assertTrue(os.path.exists(pyconfig_h), pyconfig_h)
-            # <srcdir>/pyconfig.h is generated but must exist by virtue
-            # of running the built executable.
-            pyconfig_h = os.path.join(srcdir, 'pyconfig.h')
-            self.assertTrue(os.path.exists(pyconfig_h), pyconfig_h)
+            pyconfig_h_in = os.path.join(srcdir, 'pyconfig.h.in')
+            self.assertTrue(os.path.exists(pyconfig_h_in), pyconfig_h_in)
         elif os.name == 'posix':
             makefile_dir = os.path.dirname(sysconfig.get_makefile_filename())
             # Issue #19340: srcdir has been realpath'ed already
