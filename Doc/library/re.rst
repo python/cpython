@@ -7,7 +7,7 @@
 .. moduleauthor:: Fredrik Lundh <fredrik@pythonware.com>
 .. sectionauthor:: Andrew M. Kuchling <amk@amk.ca>
 
-**Source code:** :source:`Lib/re.py`
+**Source code:** :source:`Lib/re/`
 
 --------------
 
