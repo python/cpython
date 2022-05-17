@@ -1,1 +1,1 @@
-Adds CAN protocol constants for NetBSD to :mod:`socket`.
+Adds ``CAN_RAW_ERR_FILTER`` protocol constant for NetBSD to :mod:`socket`.
