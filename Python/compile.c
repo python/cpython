@@ -563,7 +563,7 @@ _PyAST_Compile(mod_ty mod, PyObject *source, PyObject *filename,
     c.c_flags = flags;
     c.c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c.c_nestlevel = 0;
-    Py_INCREF(source);
+    Py_XINCREF(source);
     c.c_source = source;
 
     _PyASTOptimizeState state;
@@ -8443,7 +8443,7 @@ assemble(struct compiler *c, int addNone)
 
     co = makecode(c, &a, consts, maxdepth, nlocalsplus);
     if (co) {
-        Py_INCREF(c->c_source);
+        Py_XINCREF(c->c_source);
         co->co_source = c->c_source;
     }
  error:
