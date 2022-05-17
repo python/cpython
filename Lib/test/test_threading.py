@@ -149,6 +149,7 @@ class ThreadTests(BaseTestCase):
             with self.subTest(target=target, args=args):
                 t = threading.Thread(target=target, args=args)
                 t.start()
+                t.join()
 
     @cpython_only
     def test_disallow_instantiation(self):
