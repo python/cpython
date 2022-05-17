@@ -537,6 +537,13 @@ data attributes of a new object type, and another is used to describe the value
 of a complex number.  These will  be discussed together with the functions that
 use them.
 
+.. c:type:: Py_ssize_t
+
+   A signed integral type such that ``sizeof(Py_ssize_t) == sizeof(size_t)``.
+   C99 doesn't define such a thing directly (size_t is an unsigned integral type).
+   See :pep:`353` for details. ``PY_SSIZE_T_MAX`` is the largest positive value
+   of type :c:type:`Py_ssize_t`.
+
 
 .. _api-exceptions:
 

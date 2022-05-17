@@ -55,6 +55,7 @@
 #undef Py_DECREF
 #define Py_DECREF(arg) \
     do { \
+        _Py_DECREF_STAT_INC(); \
         PyObject *op = _PyObject_CAST(arg); \
         if (--op->ob_refcnt == 0) { \
             destructor dealloc = Py_TYPE(op)->tp_dealloc; \
@@ -78,6 +79,7 @@
 #undef _Py_DECREF_SPECIALIZED
 #define _Py_DECREF_SPECIALIZED(arg, dealloc) \
     do { \
+        _Py_DECREF_STAT_INC(); \
         PyObject *op = _PyObject_CAST(arg); \
         if (--op->ob_refcnt == 0) { \
             destructor d = (destructor)(dealloc); \
@@ -5700,6 +5702,12 @@ handle_eval_breaker:
                     TRACE_FUNCTION_ENTRY();
                     DTRACE_FUNCTION_ENTRY();
                     break;
+                case POP_TOP:
+                    if (_Py_OPCODE(next_instr[-1]) == RETURN_GENERATOR) {
+                        /* Frame not fully initialized */
+                        break;
+                    }
+                    /* fall through */
                 default:
                     /* line-by-line tracing support */
                     if (PyDTrace_LINE_ENABLED()) {
