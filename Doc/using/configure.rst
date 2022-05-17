@@ -749,8 +749,8 @@ Compiler flags
 
    In particular, :envvar:`CFLAGS` should not contain:
 
-   * the compiler flag `-I` (for setting the search path for include files);
-     the `-I` flags are processed from left to right, and any flags in
+   * the compiler flag `-I` (for setting the search path for include files).
+     The `-I` flags are processed from left to right, and any flags in
      :envvar:`CFLAGS` would take precedence over user- and package-supplied `-I`
      flags.
 
