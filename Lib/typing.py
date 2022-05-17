@@ -3404,7 +3404,7 @@ def dataclass_transform(
     be treated by type checkers similarly to classes created with
     ``@dataclasses.dataclass``.
     For example, type checkers will assume these classes have an
-    ``__init__`` method analogous to that of a dataclass.
+    ``__init__`` method that accepts ``id`` and ``name``.
 
     The arguments to this decorator can be used to customize this behavior:
     - ``eq_default`` indicates whether the ``eq`` parameter is assumed to be
