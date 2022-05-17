@@ -1,4 +1,4 @@
-:mod:`__future__` --- Early access to language features created for future versions of Python
+:mod:`__future__` --- Early access to language features for future versions of Python
 =============================================================================================
 
 .. module:: __future__
