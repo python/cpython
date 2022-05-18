@@ -7476,10 +7476,6 @@ push_cold_blocks_to_end(basicblock *entry, int code_flags) {
         /* single basicblock, no need to reorder */
         return 0;
     }
-    if (code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
-        /* skip generators */
-        return 0;
-    }
     if (mark_cold(entry) < 0) {
         return -1;
     }
@@ -7494,21 +7490,20 @@ push_cold_blocks_to_end(basicblock *entry, int code_flags) {
     fprintf(stderr, "<<<<<<<<<<<<<\n");
     dump_basicblock(b);
 #endif
-    while(b) {
+    while(b && b->b_next) {
         basicblock *next = b->b_next;
-        if (next == NULL) {
-            break;
-        }
         if (next->b_cold) {
 #ifdef DEBUG_COLD_BLOCK_STUFF
             dump_basicblock(next);
             fprintf(stderr, "*******************************************************************\n");
 #endif
             //assert(next->b_nofallthrough || (!next->b_next || next->b_next->b_cold));
-            b->b_next = next->b_next;
-            next->b_next = NULL;
-            tail->b_next = next;
-            tail = next;
+            if (next->b_next) {
+                b->b_next = next->b_next;
+                next->b_next = NULL;
+                tail->b_next = next;
+                tail = next;
+            }
         } else {
             b = next;
 #ifdef DEBUG_COLD_BLOCK_STUFF
