@@ -3210,31 +3210,27 @@ class ThreadedTests(unittest.TestCase):
         client_context, server_context, hostname = testing_context()
 
         # correct hostname should verify
-        server = ThreadedEchoServer(context=server_context, chatty=True)
-        with server:
+        with Server(context=server_context) as address:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+                s.connect(address)
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
 
         # incorrect hostname should raise an exception
-        server = ThreadedEchoServer(context=server_context, chatty=True)
-        with server:
+        with Server(context=server_context) as address:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname="invalid") as s:
                 with self.assertRaisesRegex(
                         ssl.CertificateError,
                         "Hostname mismatch, certificate is not valid for 'invalid'."):
-                    s.connect((HOST, server.port))
+                    s.connect(address)
 
         # missing server_hostname arg should cause an exception, too
-        server = ThreadedEchoServer(context=server_context, chatty=True)
-        with server:
-            with socket.socket() as s:
-                with self.assertRaisesRegex(ValueError,
-                                            "check_hostname requires server_hostname"):
-                    client_context.wrap_socket(s)
+        with socket.socket() as s:
+            with self.assertRaisesRegex(ValueError,
+                                        "check_hostname requires server_hostname"):
+                client_context.wrap_socket(s)
 
     @unittest.skipUnless(
         ssl.HAS_NEVER_CHECK_COMMON_NAME, "test requires hostname_checks_common_name"
