@@ -272,6 +272,8 @@ def emit_object_stats(stats):
     with Section("Object stats", summary="allocations, frees and dict materializatons"):
         total_materializations = stats.get("Object new values")
         total_allocations = stats.get("Object allocations")
+        total_increfs = stats.get("Object interpreter increfs") + stats.get("Object increfs")
+        total_decrefs = stats.get("Object interpreter decrefs") + stats.get("Object decrefs")
         rows = []
         for key, value in stats.items():
             if key.startswith("Object"):
@@ -279,6 +281,10 @@ def emit_object_stats(stats):
                     ratio = f"{100*value/total_materializations:0.1f}%"
                 elif "allocations" in key:
                     ratio = f"{100*value/total_allocations:0.1f}%"
+                elif "increfs"     in key:
+                    ratio = f"{100*value/total_increfs:0.1f}%"
+                elif "decrefs"     in key:
+                    ratio = f"{100*value/total_decrefs:0.1f}%"
                 else:
                     ratio = ""
                 label = key[6:].strip()
