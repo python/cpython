@@ -1,1 +1,1 @@
-Added thread native id support for DragonflyBSD.
+Add :func:`threading.get_native_id` support for DragonFly BSD.
