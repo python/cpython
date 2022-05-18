@@ -7377,8 +7377,12 @@ error:
     return -1;
 }
 
-static void
-mark_warm(basicblock *entry, basicblock **stack) {
+static int
+mark_warm(basicblock *entry) {
+    basicblock **stack = make_cfg_traversal_stack(entry);
+    if (stack == NULL) {
+        return -1;
+    }
     basicblock **sp = stack;
 
     *sp++ = entry;
@@ -7398,27 +7402,26 @@ mark_warm(basicblock *entry, basicblock **stack) {
             }
         }
     }
+    PyMem_Free(stack);
+    return 0;
 }
 
 static int
 mark_cold(basicblock *entry) {
-    int nblocks = 0;
     for (basicblock *b = entry; b != NULL; b = b->b_next) {
-        b->b_visited = 0;
         assert(!b->b_cold && !b->b_warm);
-        nblocks++;
+    }
+    if (mark_warm(entry) < 0) {
+        return -1;
     }
 
-    basicblock **stack = (basicblock **)PyObject_Malloc(sizeof(basicblock *) * nblocks);
-    basicblock **sp = stack;
+    basicblock **stack = make_cfg_traversal_stack(entry);
     if (stack == NULL) {
         return -1;
     }
-    mark_warm(entry, stack);
 
-    sp = stack;
+    basicblock **sp = stack;
     for (basicblock *b = entry; b != NULL; b = b->b_next) {
-        b->b_visited = 0;
         if (b->b_except_predecessors) {
             assert(b->b_except_predecessors == b->b_predecessors);
             assert(!b->b_warm);
@@ -7447,7 +7450,7 @@ mark_cold(basicblock *entry) {
             }
         }
     }
-    PyObject_Free(stack);
+    PyMem_Free(stack);
 
     /* If we have a cold block with fallthrough to a warm block, abort */
     /* TODO: handle this better */
