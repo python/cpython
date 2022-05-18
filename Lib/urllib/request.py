@@ -2501,13 +2501,16 @@ def getproxies_environment():
     # two passes: first matches any, second pass matches lowercase only
 
     # select only environment variables which end in (after making lowercase) _proxy
-    candidate_names = [name for name in os.environ.keys() if len(name)>5 and name[-6]=='_'] # fast selection of candidates
-    environment = [(name, os.environ[name], name.lower()) for name in candidate_names if name[-6:].lower()=='_proxy']
-
     proxies = {}
-    for name, value, name_lower in environment:
-        if value and name_lower[-6:] == '_proxy':
-            proxies[name_lower[:-6]] = value
+    environment = []
+    for name in os.environ.keys():
+        # fast screen underscore position before more expensive case-folding
+        if len(name) > 5 and name[-6] == "_" and name[-5:].lower() == "proxy":
+            value = os.environ[name]
+            proxy_name = name[:-6].lower()
+            environment.append((name, value, proxy_name))
+            if value:
+                proxies[proxy_name] = value
     # CVE-2016-1000110 - If we are running as CGI script, forget HTTP_PROXY
     # (non-all-lowercase) as it may be set from the web server by a "Proxy:"
     # header from the client
