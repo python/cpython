@@ -3041,35 +3041,25 @@ class AbstractPickleTests:
         global Bad
         class Bad:
             def __eq__(self, other):
-                if not ENABLED:
-                    return False
-                return getrandbits(4) == 0
+                return ENABLED
             def __hash__(self):
-                return getrandbits(1)
+                return 42
             def __reduce__(self):
-                break_things()
-                return (Bad, (), ())
-            def __setstate__(self, *args):
-                break_things()
-            def __del__(self):
-                break_things()
-            def __getattr__(self):
-                break_things()
-
-        def break_things():
-            if ENABLED and getrandbits(6) == 0:
-                collection.clear()
+                if getrandbits(6) == 0:
+                    collection.clear()
+                return (Bad, ())
 
         for proto in protocols:
             for _ in range(20):
                 ENABLED = False
-                collection = {Bad(): Bad() for _ in range(50)}
+                collection = {Bad(): Bad() for _ in range(20)}
                 for bad in collection:
                     bad.bad = bad
                     bad.collection = collection
                 ENABLED = True
                 try:
-                    self.loads(self.dumps(collection, proto))
+                    data = self.dumps(collection, proto)
+                    self.loads(data)
                 except RuntimeError as e:
                     expected = "changed size during iteration"
                     self.assertIn(expected, str(e))
