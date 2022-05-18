@@ -2522,7 +2522,7 @@ def getproxies_environment():
             if value:
                 proxies[proxy_name] = value
             else:
-                proxies.pop(name_lower[:-6], None)
+                proxies.pop(proxy_name, None)
     return proxies
 
 def proxy_bypass_environment(host, proxies=None):
