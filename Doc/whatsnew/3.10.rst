@@ -46,8 +46,7 @@
    This saves the maintainer the effort of going through the git log
    when researching a change.
 
-This article explains the new features in Python 3.10, compared to 3.9.
-
+This article explains the new features in Python 3.10, compared to 3.9. Python 3.10 was released on  04 Oct 2021.
 For full details, see the :ref:`changelog <changelog>`.
 
 Summary -- Release highlights

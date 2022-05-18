@@ -46,7 +46,7 @@
    This saves the maintainer the effort of going through the SVN log
    when researching a change.
 
-This article explains the new features in Python 3.1, compared to 3.0.
+This article explains the new features in Python 3.1, compared to 3.0. Python 3.1 was released on June 27th, 2009
 
 
 PEP 372: Ordered Dictionaries
