@@ -2520,7 +2520,7 @@ def getproxies_environment():
     for name, value, proxy_name in environment:
         if name[-6:] == '_proxy':
             if value:
-                proxies[name_lower[:-6]] = value
+                proxies[proxy_name] = value
             else:
                 proxies.pop(name_lower[:-6], None)
     return proxies
