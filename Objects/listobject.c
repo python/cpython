@@ -94,6 +94,16 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
     assert(self->ob_item == NULL);
     assert(size > 0);
 
+    /* Since the Python memory allocator has granularity of 16 bytes,
+     * there is no benefit of allocating space for the odd number of items,
+     * and there is no drawback of rounding it up.
+     */
+    if (sizeof(PyObject*) > 4) {
+        size = (size + 1) & ~(size_t)1;
+    }
+    else {
+        size = (size + 3) & ~(size_t)3;
+    }
     PyObject **items = PyMem_New(PyObject*, size);
     if (items == NULL) {
         PyErr_NoMemory();
