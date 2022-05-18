@@ -2517,7 +2517,7 @@ def getproxies_environment():
     # If "proxy" is lowercase, it will still be used thanks to the next block
     if 'REQUEST_METHOD' in os.environ:
         proxies.pop('http', None)
-    for name, value, name_lower in environment:
+    for name, value, proxy_name in environment:
         if name[-6:] == '_proxy':
             if value:
                 proxies[name_lower[:-6]] = value
