@@ -2519,6 +2519,7 @@ def getproxies_environment():
     if 'REQUEST_METHOD' in os.environ:
         proxies.pop('http', None)
     for name, value, proxy_name in environment:
+        # not case-folded, checking here for lower-case env vars only
         if name[-6:] == '_proxy':
             if value:
                 proxies[proxy_name] = value
