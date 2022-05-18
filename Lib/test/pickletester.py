@@ -3035,6 +3035,45 @@ class AbstractPickleTests:
         # 2-D, non-contiguous
         check_array(arr[::2])
 
+    def test_evil_class_mutating_dict(self):
+        from random import getrandbits
+
+        global Bad
+        class Bad:
+            def __eq__(self, other):
+                if not ENABLED:
+                    return False
+                return getrandbits(4) == 0
+            def __hash__(self):
+                return getrandbits(1)
+            def __reduce__(self):
+                break_things()
+                return (Bad, (), ())
+            def __setstate__(self, *args):
+                break_things()
+            def __del__(self):
+                break_things()
+            def __getattr__(self):
+                break_things()
+
+        def break_things():
+            if ENABLED and getrandbits(6) == 0:
+                collection.clear()
+
+        for proto in protocols:
+            for _ in range(20):
+                ENABLED = False
+                collection = {Bad(): Bad() for _ in range(50)}
+                for bad in collection:
+                    bad.bad = bad
+                    bad.collection = collection
+                ENABLED = True
+                try:
+                    self.loads(self.dumps(collection, proto))
+                except RuntimeError as e:
+                    expected = "changed size during iteration"
+                    self.assertIn(expected, str(e))
+
 
 class BigmemPickleTests:
 
