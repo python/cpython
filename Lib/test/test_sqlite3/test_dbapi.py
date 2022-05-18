@@ -657,6 +657,8 @@ class OpenTests(unittest.TestCase):
             self.assertTrue(os.path.exists(path))
             cx.execute(self._sql)
 
+    @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
+    @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
     @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
     def test_open_with_undecodable_path(self):
         self.addCleanup(unlink, TESTFN_UNDECODABLE)
@@ -686,6 +688,8 @@ class OpenTests(unittest.TestCase):
             with self.assertRaises(sqlite.OperationalError):
                 cx.execute(self._sql)
 
+    @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
+    @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
     @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
     def test_open_undecodable_uri(self):
         uri = "file:" + pathname2url(TESTFN_UNDECODABLE)
