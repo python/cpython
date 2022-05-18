@@ -117,8 +117,8 @@ objects.
 
 .. c:function:: void Py_DecRef(PyObject *o)
 
-   :c:func:`Py_DecRef` is a simply exported function version of :c:func:`Py_XDECREF`,
-   which provides conveniences for runtime dynamic embedding of Python.
+   Decrement the reference count for object *o*. A function version of :c:func:`Py_XDECREF`.
+   It can be used for runtime dynamic embedding of Python.
 
 
 The following functions or macros are only for use within the interpreter core:
