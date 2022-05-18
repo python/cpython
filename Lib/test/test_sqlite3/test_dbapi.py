@@ -27,12 +27,12 @@ import subprocess
 import sys
 import threading
 import unittest
+import urllib.parse
 
 from test.support import SHORT_TIMEOUT, bigmemtest, check_disallow_instantiation
 from test.support import threading_helper
 from _testcapi import INT_MAX, ULLONG_MAX
 from os import SEEK_SET, SEEK_CUR, SEEK_END
-from urllib.request import pathname2url
 from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE, unlink, temp_dir, FakePath
 
 
@@ -668,13 +668,19 @@ class OpenTests(unittest.TestCase):
             cx.execute(self._sql)
 
     def test_open_uri(self):
-        uri = "file:" + pathname2url(os.fsencode(TESTFN))
+        uri = "file:" + urllib.parse.quote(os.fsencode(TESTFN))
+        with managed_connect(uri, uri=True) as cx:
+            self.assertTrue(os.path.exists(TESTFN))
+            cx.execute(self._sql)
+
+    def test_open_unquoted_uri(self):
+        uri = "file:" + TESTFN
         with managed_connect(uri, uri=True) as cx:
             self.assertTrue(os.path.exists(TESTFN))
             cx.execute(self._sql)
 
     def test_open_uri_readonly(self):
-        uri = "file:" + pathname2url(os.fsencode(TESTFN)) + "?mode=ro"
+        uri = "file:" + urllib.parse.quote(os.fsencode(TESTFN)) + "?mode=ro"
         self.addCleanup(unlink, TESTFN)
         # Cannot create new DB
         with self.assertRaises(sqlite.OperationalError):
@@ -692,7 +698,7 @@ class OpenTests(unittest.TestCase):
     @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
     @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
     def test_open_undecodable_uri(self):
-        uri = "file:" + pathname2url(TESTFN_UNDECODABLE)
+        uri = "file:" + urllib.parse.quote(TESTFN_UNDECODABLE)
         self.addCleanup(unlink, TESTFN_UNDECODABLE)
         with managed_connect(uri, uri=True) as cx:
             self.assertTrue(os.path.exists(TESTFN_UNDECODABLE))
