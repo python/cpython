@@ -106,7 +106,7 @@ class BasicTest(BaseTest):
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
         self._check_output_of_default_create()
-    
+
     def test_defaults_with_pathlib_path(self):
         """
         Test the create function with default arguments and a pathlib.Path path.
@@ -114,7 +114,7 @@ class BasicTest(BaseTest):
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, pathlib.Path(self.env_dir))
         self._check_output_of_default_create()
-    
+
     def _check_output_of_default_create(self):
         self.isdir(self.bindir)
         self.isdir(self.include)
