@@ -3946,13 +3946,12 @@ written in Python, such as a mail server's external command delivery program.
    subprocesses.
 
    .. note::
-      On Unix, the *cmd* argument is encoded with
-      :term:`file system encoding <filesystem encoding and error handler>`.
-      The returned file object connected to the pipe uses
-      :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`_.
-      The :ref:`Python UTF-8 Mode <utf8-mode>` affects both encodings.
+      The :ref:`Python UTF-8 Mode <utf8-mode>` affects encodings used
+      for *cmd* and pipe contents.
 
-      Use :class:`subprocess.Popen` to control encoding and many other options.
+      :func:`popen` is a simple wrapper around :class:`subprocess.Popen`.
+      Use :class:`subprocess.Popen` or :func:`subprocess.run` to
+      control options like encodings.
 
 
 .. function:: posix_spawn(path, argv, env, *, file_actions=None, \
