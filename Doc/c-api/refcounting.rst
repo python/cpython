@@ -111,8 +111,8 @@ objects.
 
 .. c:function:: void Py_IncRef(PyObject *o)
 
-   :c:func:`Py_IncRef` is a simply exported function version of :c:func:`Py_XINCREF`,
-   which provides conveniences for runtime dynamic embedding of Python.
+   Increment the reference count for object *o*. A function version of :c:func:`Py_XINCREF`.
+   It can be used for runtime dynamic embedding of Python.
 
 
 .. c:function:: void Py_DecRef(PyObject *o)
