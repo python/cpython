@@ -1,1 +1,1 @@
-Always round up the size allocated for lists up to 16 bytes.
+Always round up the allocated size for lists to the nearest even number.
