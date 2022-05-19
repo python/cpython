@@ -6845,18 +6845,22 @@ static PyObject *
 socket_if_indextoname(PyObject *self, PyObject *arg)
 {
 #ifdef MS_WINDOWS
+    NET_IFINDEX index_long;
     NET_IFINDEX index;
 #else
-    unsigned long index;
+    unsigned long index_long;
+    unsigned int index;
 #endif
     char name[IF_NAMESIZE + 1];
 
-    index = PyLong_AsUnsignedLong(arg);
-    if (index == (unsigned long) -1 && PyErr_Occurred()) {
+    index_long = PyLong_AsUnsignedLong(arg);
+    if (index_long == (unsigned long) -1 && PyErr_Occurred()) {
         return NULL;
     }
 
-    if ((unsigned long)(unsigned int)index != index) {
+    index = (unsigned int)index_long;
+
+    if ((unsigned long)index != index_long) {
         PyErr_SetString(PyExc_OverflowError, "index is too large");
         return NULL;
     }
