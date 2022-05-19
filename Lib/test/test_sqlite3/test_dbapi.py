@@ -668,19 +668,13 @@ class OpenTests(unittest.TestCase):
             cx.execute(self._sql)
 
     def test_open_uri(self):
-        uri = "file:" + urllib.parse.quote(os.fsencode(TESTFN))
-        with managed_connect(uri, uri=True) as cx:
-            self.assertTrue(os.path.exists(TESTFN))
-            cx.execute(self._sql)
-
-    def test_open_unquoted_uri(self):
         uri = "file:" + TESTFN
         with managed_connect(uri, uri=True) as cx:
             self.assertTrue(os.path.exists(TESTFN))
             cx.execute(self._sql)
 
     def test_open_uri_readonly(self):
-        uri = "file:" + urllib.parse.quote(os.fsencode(TESTFN)) + "?mode=ro"
+        uri = "file:" + TESTFN + "?mode=ro"
         self.addCleanup(unlink, TESTFN)
         # Cannot create new DB
         with self.assertRaises(sqlite.OperationalError):
