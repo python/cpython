@@ -483,10 +483,14 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
 
     def test_virtualenv_with_env(self):
         with self.test_venv() as (venv_exe, env):
-            data = self.run_py([], env={**env, "PY_PYTHON": "-3"})
+            data1 = self.run_py([], env={**env, "PY_PYTHON": "-3"})
+            data2 = self.run_py(["-3"], env={**env, "PY_PYTHON": "-3"})
         # Compare stdout, because stderr goes via ascii
-        self.assertEqual(data["stdout"].strip(), str(venv_exe))
-        self.assertEqual(data["SearchInfo.lowPriorityTag"], "True")
+        self.assertEqual(data1["stdout"].strip(), str(venv_exe))
+        self.assertEqual(data1["SearchInfo.lowPriorityTag"], "True")
+        # Ensure passing the argument doesn't trigger the same behaviour
+        self.assertNotEqual(data2["stdout"].strip(), str(venv_exe))
+        self.assertNotEqual(data2["SearchInfo.lowPriorityTag"], "True")
 
     def test_py_shebang(self):
         with self.py_ini(TEST_PY_COMMANDS):
