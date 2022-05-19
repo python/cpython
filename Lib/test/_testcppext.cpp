@@ -40,6 +40,15 @@ test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     PyTypeObject *type = Py_TYPE(const_obj);
     assert(Py_REFCNT(const_obj) >= 1);
 
+    struct PyObjectProxy {
+      PyObject* obj;
+      operator PyObject *() { return obj; }
+    } proxy_obj = { obj };
+    Py_INCREF(proxy_obj);
+    Py_DECREF(proxy_obj);
+    assert(Py_REFCNT(proxy_obj) >= 1);
+
+
     assert(type == &PyTuple_Type);
     assert(PyTuple_GET_SIZE(const_obj) == 2);
     PyObject *one = PyTuple_GET_ITEM(const_obj, 0);
