@@ -393,7 +393,10 @@ class BuiltinTest(unittest.TestCase):
                                 msg=f"source={source} mode={mode}")
 
 
-    @unittest.skipIf(support.is_emscripten, "socket.accept is broken")
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "socket.accept is broken"
+    )
     def test_compile_top_level_await(self):
         """Test whether code some top level await can be compiled.
 

@@ -1845,6 +1845,7 @@ _PyTypes_InitState(PyInterpreterState *interp)
 extern PyTypeObject PyHKEY_Type;
 #endif
 extern PyTypeObject _Py_GenericAliasIterType;
+extern PyTypeObject _PyMemoryIter_Type;
 
 static PyTypeObject* static_types[] = {
     // The two most important base types: must be initialized first and
@@ -1944,6 +1945,7 @@ static PyTypeObject* static_types[] = {
     &_PyHamt_Type,
     &_PyInterpreterID_Type,
     &_PyManagedBuffer_Type,
+    &_PyMemoryIter_Type,
     &_PyMethodWrapper_Type,
     &_PyNamespace_Type,
     &_PyNone_Type,

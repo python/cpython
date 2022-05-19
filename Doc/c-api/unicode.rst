@@ -92,7 +92,7 @@ access to internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
    .. deprecated:: 3.10
-      This API do nothing since Python 3.12. Please remove code using this function.
+      This API does nothing since Python 3.12.
 
 
 .. c:function:: Py_ssize_t PyUnicode_GET_LENGTH(PyObject *o)
@@ -436,11 +436,11 @@ APIs:
    | :attr:`%llu`      | unsigned long long  | Equivalent to                    |
    |                   |                     | ``printf("%llu")``. [1]_         |
    +-------------------+---------------------+----------------------------------+
-   | :attr:`%zd`       | Py_ssize_t          | Equivalent to                    |
-   |                   |                     | ``printf("%zd")``. [1]_          |
+   | :attr:`%zd`       | :c:type:`\          | Equivalent to                    |
+   |                   | Py_ssize_t`         | ``printf("%zd")``. [1]_          |
    +-------------------+---------------------+----------------------------------+
-   | :attr:`%zi`       | Py_ssize_t          | Equivalent to                    |
-   |                   |                     | ``printf("%zi")``. [1]_          |
+   | :attr:`%zi`       | :c:type:`\          | Equivalent to                    |
+   |                   | Py_ssize_t`         | ``printf("%zi")``. [1]_          |
    +-------------------+---------------------+----------------------------------+
    | :attr:`%zu`       | size_t              | Equivalent to                    |
    |                   |                     | ``printf("%zu")``. [1]_          |
