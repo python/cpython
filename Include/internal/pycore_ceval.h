@@ -12,8 +12,14 @@ extern "C" {
 struct pyruntimestate;
 struct _ceval_runtime_state;
 
+/* WASI has limited call stack. wasmtime 0.36 can handle sufficient amount of
+   C stack frames for little more than 750 recursions. */
 #ifndef Py_DEFAULT_RECURSION_LIMIT
-#  define Py_DEFAULT_RECURSION_LIMIT 1000
+#  ifdef __wasi__
+#    define Py_DEFAULT_RECURSION_LIMIT 750
+#  else
+#    define Py_DEFAULT_RECURSION_LIMIT 1000
+#  endif
 #endif
 
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
