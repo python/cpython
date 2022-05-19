@@ -36,6 +36,8 @@ typedef struct _call_stats {
 typedef struct _object_stats {
     uint64_t increfs;
     uint64_t decrefs;
+    uint64_t interpreter_increfs;
+    uint64_t interpreter_decrefs;
     uint64_t allocations;
     uint64_t allocations512;
     uint64_t allocations4k;
@@ -60,9 +62,17 @@ PyAPI_DATA(PyStats) _py_stats;
 
 extern void _Py_PrintSpecializationStats(int to_file);
 
+#ifdef _PY_INTERPRETER
+
+#define _Py_INCREF_STAT_INC() _py_stats.object_stats.interpreter_increfs++
+#define _Py_DECREF_STAT_INC()  _py_stats.object_stats.interpreter_decrefs++
+
+#else
 
 #define _Py_INCREF_STAT_INC() _py_stats.object_stats.increfs++
 #define _Py_DECREF_STAT_INC()  _py_stats.object_stats.decrefs++
+
+#endif
 
 #else
 

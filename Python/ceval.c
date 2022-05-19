@@ -5,6 +5,8 @@
    XXX document it!
    */
 
+#define _PY_INTERPRETER
+
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_call.h"          // _PyObject_FastCallDictTstate()
