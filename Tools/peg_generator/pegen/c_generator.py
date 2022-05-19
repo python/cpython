@@ -37,7 +37,11 @@ EXTENSION_PREFIX = """\
 #  define D(x)
 #endif
 
-# define MAXSTACK 6000
+#ifdef __wasi__
+#  define MAXSTACK 4000
+#else
+#  define MAXSTACK 6000
+#endif
 
 """
 

@@ -5,6 +5,7 @@ from textwrap import dedent
 import unittest
 import time
 
+from test import support
 from test.support import import_helper
 _interpreters = import_helper.import_module('_xxsubinterpreters')
 from test.support import interpreters
@@ -408,7 +409,7 @@ class TestInterpreterRun(TestBase):
 
         self.assertEqual(out, 'it worked!')
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @support.requires_fork()
     def test_fork(self):
         interp = interpreters.create()
         import tempfile

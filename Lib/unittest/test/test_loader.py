@@ -1609,7 +1609,7 @@ class TestObsoleteFunctions(unittest.TestCase):
             tests = unittest.getTestCaseNames(self.MyTestCase,
                 prefix='check', sortUsing=self.reverse_three_way_cmp,
                 testNamePatterns=None)
-        self.assertEqual(w.warnings[0].filename, __file__)
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(tests, ['check_2', 'check_1'])
 
     def test_makeSuite(self):
@@ -1617,7 +1617,7 @@ class TestObsoleteFunctions(unittest.TestCase):
             suite = unittest.makeSuite(self.MyTestCase,
                     prefix='check', sortUsing=self.reverse_three_way_cmp,
                     suiteClass=self.MyTestSuite)
-        self.assertEqual(w.warnings[0].filename, __file__)
+        self.assertEqual(w.filename, __file__)
         self.assertIsInstance(suite, self.MyTestSuite)
         expected = self.MyTestSuite([self.MyTestCase('check_2'),
                                      self.MyTestCase('check_1')])
@@ -1631,7 +1631,7 @@ class TestObsoleteFunctions(unittest.TestCase):
             suite = unittest.findTestCases(m,
                 prefix='check', sortUsing=self.reverse_three_way_cmp,
                 suiteClass=self.MyTestSuite)
-        self.assertEqual(w.warnings[0].filename, __file__)
+        self.assertEqual(w.filename, __file__)
         self.assertIsInstance(suite, self.MyTestSuite)
         expected = [self.MyTestSuite([self.MyTestCase('check_2'),
                                       self.MyTestCase('check_1')])]

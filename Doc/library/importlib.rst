@@ -51,6 +51,9 @@ managing aspects of Python packages:
     The :func:`.__import__` function
         The :keyword:`import` statement is syntactic sugar for this function.
 
+    :ref:`sys-path-init`
+        The initialization of :data:`sys.path`.
+
     :pep:`235`
         Import on Case-Insensitive Platforms
 
@@ -245,8 +248,8 @@ ABC hierarchy::
 
     object
      +-- Finder (deprecated)
-     |    +-- MetaPathFinder
-     |    +-- PathEntryFinder
+     +-- MetaPathFinder
+     +-- PathEntryFinder
      +-- Loader
           +-- ResourceLoader --------+
           +-- InspectLoader          |
@@ -279,8 +282,7 @@ ABC hierarchy::
 
 .. class:: MetaPathFinder
 
-   An abstract base class representing a :term:`meta path finder`. For
-   compatibility, this is a subclass of :class:`Finder`.
+   An abstract base class representing a :term:`meta path finder`.
 
    .. versionadded:: 3.3
 

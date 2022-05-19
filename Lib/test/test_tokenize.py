@@ -2511,8 +2511,8 @@ async def f():
 
         self.assertRaises(SyntaxError, get_tokens, "("*1000+"a"+")"*1000)
         self.assertRaises(SyntaxError, get_tokens, "]")
-    
-    def test_continuation_lines_indentation(self): 
+
+    def test_continuation_lines_indentation(self):
         def get_tokens(string):
             return [(kind, string) for (kind, string, *_) in _generate_tokens_from_c_tokenizer(string)]
 
@@ -2551,7 +2551,7 @@ async def f():
                 '''Print a Fibonacci series up to n.'''
                 a, b = 0, 1
         """)
-        
+
         self.assertEqual(get_tokens(code), get_tokens(code_no_cont))
 
         code = dedent("""
@@ -2572,7 +2572,7 @@ async def f():
             pass
             pass
         """)
-        
+
         self.assertEqual(get_tokens(code), get_tokens(code_no_cont))
 
         code = dedent("""
@@ -2609,7 +2609,7 @@ async def f():
         """)
 
         self.assertEqual(get_tokens(code), get_tokens(code_no_cont))
- 
+
 
 if __name__ == "__main__":
     unittest.main()

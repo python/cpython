@@ -229,6 +229,13 @@ struct _typeobject {
     vectorcallfunc tp_vectorcall;
 };
 
+/* This struct is used by the specializer
+ * It should should be treated as an opaque blob
+ * by code other than the specializer and interpreter. */
+struct _specialization_cache {
+    PyObject *getitem;
+};
+
 /* The *real* layout of a type object when allocated on the heap */
 typedef struct _heaptypeobject {
     /* Note: there's a dependency on the order of these members
@@ -247,6 +254,7 @@ typedef struct _heaptypeobject {
     struct _dictkeysobject *ht_cached_keys;
     PyObject *ht_module;
     char *_ht_tpname;  // Storage for "tp_name"; see PyType_FromModuleAndSpec
+    struct _specialization_cache _spec_cache; // For use by the specializer.
     /* here are optional user slots, followed by the members. */
 } PyHeapTypeObject;
 
