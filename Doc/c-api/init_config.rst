@@ -1289,7 +1289,11 @@ Example setting the program name::
     }
 
 More complete example modifying the default configuration, read the
-configuration, and then override some parameters::
+configuration, and then override some parameters. Note that since
+3.11, many parameters are not calculated until initialization, and
+so values cannot be read from the configuration structure. Any values
+set before initialize is called will be left unchanged by
+initialization::
 
     PyStatus init_python(const char *program_name)
     {
@@ -1314,7 +1318,15 @@ configuration, and then override some parameters::
             goto done;
         }
 
-        /* Append our custom search path to sys.path */
+        /* Specify sys.path explicitly */
+        /* To calculate the default and then modify, finish initialization and
+           then use PySys_GetObject("path") to get the list. */
+        condig.module_search_paths_set = 1
+        status = PyWideStringList_Append(&config.module_search_paths,
+                                         L"/path/to/stdlib");
+        if (PyStatus_Exception(status)) {
+            goto done;
+        }
         status = PyWideStringList_Append(&config.module_search_paths,
                                          L"/path/to/more/modules");
         if (PyStatus_Exception(status)) {
@@ -1417,8 +1429,8 @@ It is possible to completely ignore the function calculating the default
 path configuration by setting explicitly all path configuration output
 fields listed above. A string is considered as set even if it is non-empty.
 ``module_search_paths`` is considered as set if
-``module_search_paths_set`` is set to ``1``. In this case, path
-configuration input fields are ignored as well.
+``module_search_paths_set`` is set to ``1``. In this case,
+``module_search_paths`` will be used without modification.
 
 Set :c:member:`~PyConfig.pathconfig_warnings` to ``0`` to suppress warnings when
 calculating the path configuration (Unix only, Windows does not log any warning).
