@@ -225,7 +225,7 @@ The :mod:`bdb` module also defines two classes:
 
       Return True if there is an effective breakpoint for this line.
 
-      Check for line or function breakpoint and if in effect.  Delete temporary
+      Check whether a line or function breakpoint exists and is in effect.  Delete temporary
       breakpoints based on information from :func:`effective`.
 
    .. method:: break_anywhere(frame)
@@ -243,16 +243,16 @@ The :mod:`bdb` module also defines two classes:
    .. method:: user_line(frame)
 
       Called from :meth:`dispatch_line` when either :meth:`stop_here` or
-      :meth:`break_here` at a line.
+      :meth:`break_here` returns ``True``.
 
    .. method:: user_return(frame, return_value)
 
-      Called from :meth:`dispatch_return` when return trap is set here.
+      Called from :meth:`dispatch_return` when :meth:`stop_here` returns ``True``.
 
    .. method:: user_exception(frame, exc_info)
 
       Called from :meth:`dispatch_exception` when :meth:`stop_here`
-      on an exception.
+      returns ``True``.
 
    .. method:: do_clear(arg)
 
@@ -276,7 +276,7 @@ The :mod:`bdb` module also defines two classes:
 
       Stop when returning from the given frame.
 
-   .. method:: set_until(frame[, lineno=None])
+   .. method:: set_until(frame, lineno=None)
 
       Stop when the line with the *lineno* greater than the current one is
       reached or when returning from current frame.
@@ -362,8 +362,8 @@ The :mod:`bdb` module also defines two classes:
 
       Return a list of (frame, lineno) tuples in a stack trace, and a size.
 
-      List starts with the original calling frame, if there is one.  Size may
-      be the number of frames above or below *f*.
+      The most recently called frame is last in the list. The size is the number
+      of frames below the frame where the debugger was invoked.
 
    .. method:: format_stack_entry(frame_lineno, lprefix=': ')
 
@@ -415,7 +415,7 @@ Finally, the module defines the following functions:
 
 .. function:: effective(file, line, frame)
 
-   Return `(active breakpoint, delete temporary flag)` or `(None, None)` as the
+   Return ``(active breakpoint, delete temporary flag)`` or ``(None, None)`` as the
    breakpoint to act upon.
 
    The *active breakpoint* is the first entry in
