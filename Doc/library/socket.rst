@@ -231,7 +231,7 @@ created.  Socket addresses are represented as follows:
   UUID strings.
 
   The ``vm_id`` is the virtual machine identifier or a set of known VMID values
-  if the target is not a specific virtual machine. Known VMID constants are
+  if the target is not a specific virtual machine. Known VMID constants
   defined on ``socket`` are:
 
   - ``HV_GUID_ZERO``
