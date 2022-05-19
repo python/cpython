@@ -220,9 +220,26 @@ AddType application/wasm wasm
 
 # WASI (wasm32-wasi)
 
-WASI builds require [WASI SDK](https://github.com/WebAssembly/wasi-sdk) and
-currently [wasix](https://github.com/singlestore-labs/wasix) for POSIX
+WASI builds require [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 15.0+
+and currently [wasix](https://github.com/singlestore-labs/wasix) for POSIX
 compatibility stubs.
+
+## WASI limitations and issues (WASI SDK 15.0)
+
+A lot of Emscripten limitations also apply to WASI. Noticable restrictions
+are:
+
+- Call stack size is limited. Default recursion limit and parser stack size
+  are smaller than in regular Python builds.
+- ``socket(2)`` cannot create new socket file descriptors. WASI programs can
+  call read/write/accept on a file descriptor that is passed into the process.
+- ``socket.gethostname()`` and host name resolution APIs like
+  ``socket.gethostbyname()`` are not implemented and always fail.
+- ``chmod(2)`` is not available. It's not possible to modify file permissions,
+  yet. A future version of WASI may provide a limited ``set_permissions`` API.
+- File locking (``fcntl``) is not available.
+- ``os.pipe()``, ``os.mkfifo()``, and ``os.mknod()`` are not supported.
+
 
 # Detect WebAssembly builds
 
