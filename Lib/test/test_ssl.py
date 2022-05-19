@@ -1292,6 +1292,13 @@ class BasicSocketTests(unittest.TestCase):
                 s.connect(address)
                 self.assertEqual(s.recv(0), b"")
                 self.assertEqual(s.send(b""), 0)
+                # A temporary workaround for delayed tlsv1.3 session ticket
+                # eachange; the proper fix will be merges after this PR because
+                # it hangs test_session_handling.
+                #
+                # This problem manufested before as well but was just logged
+                # andsilenced by a server thread.
+                s.unwrap().close()
 
 
 class ContextTests(unittest.TestCase):
