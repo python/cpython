@@ -5,6 +5,8 @@
    XXX document it!
    */
 
+#define _PY_INTERPRETER
+
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_call.h"          // _PyObject_FastCallDictTstate()
@@ -55,6 +57,7 @@
 #undef Py_DECREF
 #define Py_DECREF(arg) \
     do { \
+        _Py_DECREF_STAT_INC(); \
         PyObject *op = _PyObject_CAST(arg); \
         if (--op->ob_refcnt == 0) { \
             destructor dealloc = Py_TYPE(op)->tp_dealloc; \
@@ -78,6 +81,7 @@
 #undef _Py_DECREF_SPECIALIZED
 #define _Py_DECREF_SPECIALIZED(arg, dealloc) \
     do { \
+        _Py_DECREF_STAT_INC(); \
         PyObject *op = _PyObject_CAST(arg); \
         if (--op->ob_refcnt == 0) { \
             destructor d = (destructor)(dealloc); \

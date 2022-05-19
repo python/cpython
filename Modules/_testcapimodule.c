@@ -1221,7 +1221,7 @@ test_type_from_ephemeral_spec(PyObject *self, PyObject *Py_UNUSED(ignored))
     memcpy(name, NAME, sizeof(NAME));
 
     doc = PyMem_New(char, sizeof(DOC));
-    if (name == NULL) {
+    if (doc == NULL) {
         PyErr_NoMemory();
         goto finally;
     }
