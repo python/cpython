@@ -575,6 +575,8 @@ iterations of the loop.
 
    Pops TOS and yields it from a :term:`generator`.
 
+    .. versionchanged:: 3.11
+       oparg set to be the stack depth, for efficient handling on frames.
 
 .. opcode:: YIELD_FROM
 

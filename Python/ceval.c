@@ -2698,6 +2698,7 @@ handle_eval_breaker:
         }
 
         TARGET(YIELD_VALUE) {
+            assert(oparg == STACK_LEVEL());
             assert(frame->is_entry);
             PyObject *retval = POP();
             _PyFrame_GetGenerator(frame)->gi_frame_state = FRAME_SUSPENDED;
