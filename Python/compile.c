@@ -7451,27 +7451,11 @@ mark_cold(basicblock *entry) {
         }
     }
     PyMem_Free(stack);
-
-    /* If we have a cold block with fallthrough to a warm block, abort */
-    /* TODO: handle this better */
-    int abort = 0;
-    for (basicblock *b = entry; b != NULL; b = b->b_next) {
-        if (b->b_cold && !b->b_nofallthrough && b->b_next && b->b_next->b_warm) {
-            abort = 1;
-            break;
-        }
-    }
-    if (abort) {
-        for (basicblock *b = entry; b != NULL; b = b->b_next) {
-            b->b_cold = 0;
-        }
-    }
-
     return 0;
 }
 
 static int
-push_cold_blocks_to_end(basicblock *entry, int code_flags) {
+push_cold_blocks_to_end(struct compiler *c, basicblock *entry, int code_flags) {
     if (entry->b_next == NULL) {
         /* single basicblock, no need to reorder */
         return 0;
@@ -7479,6 +7463,28 @@ push_cold_blocks_to_end(basicblock *entry, int code_flags) {
     if (mark_cold(entry) < 0) {
         return -1;
     }
+
+    /* If we have a cold block with fallthrough to a warm block, add */
+    /* and explicit jump instead of fallthrough */
+    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+        if (b->b_cold && !b->b_nofallthrough && b->b_next && b->b_next->b_warm) {
+            basicblock *explicit_jump = compiler_new_block(c);
+            int off = compiler_next_instr(explicit_jump);
+            struct instr *i = &explicit_jump->b_instr[off];
+            i->i_opcode = JUMP;
+            i->i_target = b->b_next;
+            i->i_lineno = -1;
+            i->i_end_lineno = 0;
+            i->i_col_offset = 0;
+            i->i_end_col_offset = 0;
+
+            explicit_jump->b_cold = 1;
+            explicit_jump->b_nofallthrough = 1;
+            explicit_jump->b_next = b->b_next;
+            b->b_next = explicit_jump;
+        }
+    }
+
     assert(!entry->b_cold);  /* First block can't be cold */
     basicblock *tail = entry;
     while (tail->b_next) {
@@ -8582,7 +8588,9 @@ assemble(struct compiler *c, int addNone)
     }
     convert_exception_handlers_to_nops(entryblock);
 
-    push_cold_blocks_to_end(entryblock, code_flags);
+    if (push_cold_blocks_to_end(c, entryblock, code_flags) < 0) {
+        goto error;
+    }
 
     remove_redundant_jumps(entryblock);
     assert(a.a_entry == entryblock);
