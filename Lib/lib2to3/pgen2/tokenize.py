@@ -93,7 +93,7 @@ Operator = group(r"\*\*=?", r">>=?", r"<<=?", r"<>", r"!=",
                  r"~")
 
 Bracket = '[][(){}]'
-Special = group(r'\r?\n', r'[:;.,`@]')
+Special = group(r'\r?\n', r':=', r'[:;.,`@]')
 Funny = group(Operator, Bracket, Special)
 
 PlainToken = group(Number, Funny, String, Name)
@@ -346,7 +346,7 @@ def generate_tokens(readline):
     column where the token begins in the source; a 2-tuple (erow, ecol) of
     ints specifying the row and column where the token ends in the source;
     and the line on which the token was found. The line passed is the
-    logical line; continuation lines are included.
+    physical line.
     """
     lnum = parenlev = continued = 0
     contstr, needcont = '', 0
@@ -512,13 +512,14 @@ def generate_tokens(readline):
                         stashed = tok
                         continue
 
-                    if token == 'def':
+                    if token in ('def', 'for'):
                         if (stashed
                                 and stashed[0] == NAME
                                 and stashed[1] == 'async'):
 
-                            async_def = True
-                            async_def_indent = indents[-1]
+                            if token == 'def':
+                                async_def = True
+                                async_def_indent = indents[-1]
 
                             yield (ASYNC, stashed[1],
                                    stashed[2], stashed[3],

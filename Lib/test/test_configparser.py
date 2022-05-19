@@ -8,6 +8,7 @@ import unittest
 import warnings
 
 from test import support
+from test.support import os_helper
 
 
 class SortedDict(collections.UserDict):
@@ -78,6 +79,7 @@ class BasicTestCase(CfgParserTestCaseClass):
              'Spacey Bar',
              'Spacey Bar From The Beginning',
              'Types',
+             'This One Has A ] In It',
              ]
 
         if self.allow_no_value:
@@ -129,6 +131,7 @@ class BasicTestCase(CfgParserTestCaseClass):
         eq(cf.get('Types', 'float'), "0.44")
         eq(cf.getboolean('Types', 'boolean'), False)
         eq(cf.get('Types', '123'), 'strange but acceptable')
+        eq(cf.get('This One Has A ] In It', 'forks'), 'spoons')
         if self.allow_no_value:
             eq(cf.get('NoValue', 'option-without-value'), None)
 
@@ -319,6 +322,8 @@ int {0[1]} 42
 float {0[0]} 0.44
 boolean {0[0]} NO
 123 {0[1]} strange but acceptable
+[This One Has A ] In It]
+  forks {0[0]} spoons
 """.format(self.delimiters, self.comment_prefixes)
         if self.allow_no_value:
             config_string += (
@@ -392,6 +397,9 @@ boolean {0[0]} NO
                 "float": 0.44,
                 "boolean": False,
                 123: "strange but acceptable",
+            },
+            "This One Has A ] In It": {
+                "forks": "spoons"
             },
         }
         if self.allow_no_value:
@@ -713,31 +721,31 @@ boolean {0[0]} NO
         file1 = support.findfile("cfgparser.1")
         # check when we pass a mix of readable and non-readable files:
         cf = self.newconfig()
-        parsed_files = cf.read([file1, "nonexistent-file"])
+        parsed_files = cf.read([file1, "nonexistent-file"], encoding="utf-8")
         self.assertEqual(parsed_files, [file1])
         self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
         # check when we pass only a filename:
         cf = self.newconfig()
-        parsed_files = cf.read(file1)
+        parsed_files = cf.read(file1, encoding="utf-8")
         self.assertEqual(parsed_files, [file1])
         self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
         # check when we pass only a Path object:
         cf = self.newconfig()
-        parsed_files = cf.read(pathlib.Path(file1))
+        parsed_files = cf.read(pathlib.Path(file1), encoding="utf-8")
         self.assertEqual(parsed_files, [file1])
         self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
         # check when we passed both a filename and a Path object:
         cf = self.newconfig()
-        parsed_files = cf.read([pathlib.Path(file1), file1])
+        parsed_files = cf.read([pathlib.Path(file1), file1], encoding="utf-8")
         self.assertEqual(parsed_files, [file1, file1])
         self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
         # check when we pass only missing files:
         cf = self.newconfig()
-        parsed_files = cf.read(["nonexistent-file"])
+        parsed_files = cf.read(["nonexistent-file"], encoding="utf-8")
         self.assertEqual(parsed_files, [])
         # check when we pass no files:
         cf = self.newconfig()
-        parsed_files = cf.read([])
+        parsed_files = cf.read([], encoding="utf-8")
         self.assertEqual(parsed_files, [])
 
     def test_read_returns_file_list_with_bytestring_path(self):
@@ -746,15 +754,15 @@ boolean {0[0]} NO
         file1_bytestring = support.findfile("cfgparser.1").encode()
         # check when passing an existing bytestring path
         cf = self.newconfig()
-        parsed_files = cf.read(file1_bytestring)
+        parsed_files = cf.read(file1_bytestring, encoding="utf-8")
         self.assertEqual(parsed_files, [file1_bytestring])
         # check when passing an non-existing bytestring path
         cf = self.newconfig()
-        parsed_files = cf.read(b'nonexistent-file')
+        parsed_files = cf.read(b'nonexistent-file', encoding="utf-8")
         self.assertEqual(parsed_files, [])
         # check when passing both an existing and non-existing bytestring path
         cf = self.newconfig()
-        parsed_files = cf.read([file1_bytestring, b'nonexistent-file'])
+        parsed_files = cf.read([file1_bytestring, b'nonexistent-file'], encoding="utf-8")
         self.assertEqual(parsed_files, [file1_bytestring])
 
     # shared by subclasses
@@ -1020,7 +1028,9 @@ class ConfigParserTestCaseNoInterpolation(BasicTestCase, unittest.TestCase):
 
 class ConfigParserTestCaseLegacyInterpolation(ConfigParserTestCase):
     config_class = configparser.ConfigParser
-    interpolation = configparser.LegacyInterpolation()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        interpolation = configparser.LegacyInterpolation()
 
     def test_set_malformatted_interpolation(self):
         cf = self.fromstring("[sect]\n"
@@ -1038,6 +1048,14 @@ class ConfigParserTestCaseLegacyInterpolation(ConfigParserTestCase):
         # bug #5741: double percents are *not* malformed
         cf.set("sect", "option2", "foo%%bar")
         self.assertEqual(cf.get("sect", "option2"), "foo%%bar")
+
+
+class ConfigParserTestCaseInvalidInterpolationType(unittest.TestCase):
+    def test_error_on_wrong_type_for_interpolation(self):
+        for value in [configparser.ExtendedInterpolation,  42,  "a string"]:
+            with self.subTest(value=value):
+                with self.assertRaises(TypeError):
+                    configparser.ConfigParser(interpolation=value)
 
 
 class ConfigParserTestCaseNonStandardDelimiters(ConfigParserTestCase):
@@ -1063,17 +1081,17 @@ class MultilineValuesTestCase(BasicTestCase, unittest.TestCase):
             cf.add_section(s)
             for j in range(10):
                 cf.set(s, 'lovely_spam{}'.format(j), self.wonderful_spam)
-        with open(support.TESTFN, 'w') as f:
+        with open(os_helper.TESTFN, 'w', encoding="utf-8") as f:
             cf.write(f)
 
     def tearDown(self):
-        os.unlink(support.TESTFN)
+        os.unlink(os_helper.TESTFN)
 
     def test_dominating_multiline_values(self):
         # We're reading from file because this is where the code changed
         # during performance updates in Python 3.2
         cf_from_file = self.newconfig()
-        with open(support.TESTFN) as f:
+        with open(os_helper.TESTFN, encoding="utf-8") as f:
             cf_from_file.read_file(f)
         self.assertEqual(cf_from_file.get('section8', 'lovely_spam4'),
                          self.wonderful_spam.replace('\t\n', '\n'))
@@ -1472,7 +1490,7 @@ class CopyTestCase(BasicTestCase, unittest.TestCase):
 class FakeFile:
     def __init__(self):
         file_path = support.findfile("cfgparser.1")
-        with open(file_path) as f:
+        with open(file_path, encoding="utf-8") as f:
             self.lines = f.readlines()
             self.lines.reverse()
 
@@ -1499,7 +1517,7 @@ class ReadFileTestCase(unittest.TestCase):
             pass   # unfortunately we can't test bytes on this path
         for file_path in file_paths:
             parser = configparser.ConfigParser()
-            with open(file_path) as f:
+            with open(file_path, encoding="utf-8") as f:
                 parser.read_file(f)
             self.assertIn("Foo Bar", parser)
             self.assertIn("foo", parser["Foo Bar"])
@@ -1649,6 +1667,14 @@ class CoverageOneHundredTestCase(unittest.TestCase):
             parser = configparser.SafeConfigParser()
         for warning in w:
             self.assertTrue(warning.category is DeprecationWarning)
+
+    def test_legacyinterpolation_deprecation(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", DeprecationWarning)
+            configparser.LegacyInterpolation()
+        self.assertGreaterEqual(len(w), 1)
+        for warning in w:
+            self.assertIs(warning.category, DeprecationWarning)
 
     def test_sectionproxy_repr(self):
         parser = configparser.ConfigParser()
@@ -2127,8 +2153,7 @@ class BlatantOverrideConvertersTestCase(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {"Error"}
-        support.check__all__(self, configparser, blacklist=blacklist)
+        support.check__all__(self, configparser, not_exported={"Error"})
 
 
 if __name__ == '__main__':

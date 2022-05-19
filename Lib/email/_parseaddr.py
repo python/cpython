@@ -65,8 +65,10 @@ def _parsedate_tz(data):
 
     """
     if not data:
-        return
+        return None
     data = data.split()
+    if not data:  # This happens for whitespace-only input.
+        return None
     # The FWS after the comma after the day-of-week is optional, so search and
     # adjust for this.
     if data[0].endswith(',') or data[0].lower() in _daynames:
@@ -126,6 +128,8 @@ def _parsedate_tz(data):
             tss = 0
         elif len(tm) == 3:
             [thh, tmm, tss] = tm
+        else:
+            return None
     else:
         return None
     try:
@@ -379,7 +383,12 @@ class AddrlistClass:
         aslist.append('@')
         self.pos += 1
         self.gotonext()
-        return EMPTYSTRING.join(aslist) + self.getdomain()
+        domain = self.getdomain()
+        if not domain:
+            # Invalid domain, return an empty address instead of returning a
+            # local part to denote failed parsing.
+            return EMPTYSTRING
+        return EMPTYSTRING.join(aslist) + domain
 
     def getdomain(self):
         """Get the complete domain name from an address."""
@@ -394,6 +403,10 @@ class AddrlistClass:
             elif self.field[self.pos] == '.':
                 self.pos += 1
                 sdlist.append('.')
+            elif self.field[self.pos] == '@':
+                # bpo-34155: Don't parse domains with two `@` like
+                # `a@malicious.org@important.com`.
+                return EMPTYSTRING
             elif self.field[self.pos] in self.atomends:
                 break
             else:

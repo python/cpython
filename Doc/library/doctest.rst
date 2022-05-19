@@ -1,5 +1,3 @@
-:keepdoctest:
-
 :mod:`doctest` --- Test interactive Python examples
 ===================================================
 
@@ -290,10 +288,6 @@ strings are treated as if they were docstrings.  In output, a key ``K`` in
 Any classes found are recursively searched similarly, to test docstrings in
 their contained methods and nested classes.
 
-.. impl-detail::
-   Prior to version 3.4, extension modules written in C were not fully
-   searched by doctest.
-
 
 .. _doctest-finding-examples:
 
@@ -487,25 +481,24 @@ Some details you should read once, but won't need to remember:
 
 .. index:: single: ^ (caret); marker
 
-* For some :exc:`SyntaxError`\ s, Python displays the character position of the
-  syntax error, using a ``^`` marker::
+* For some exceptions, Python displays the position of the error using ``^``
+  markers and tildes::
 
-     >>> 1 1
+     >>> 1 + None
        File "<stdin>", line 1
-         1 1
-           ^
-     SyntaxError: invalid syntax
+         1 + None
+         ~~^~~~~~
+     TypeError: unsupported operand type(s) for +: 'int' and 'NoneType'
 
   Since the lines showing the position of the error come before the exception type
   and detail, they are not checked by doctest.  For example, the following test
   would pass, even though it puts the ``^`` marker in the wrong location::
 
-     >>> 1 1
-     Traceback (most recent call last):
+     >>> 1 + None
        File "<stdin>", line 1
-         1 1
-         ^
-     SyntaxError: invalid syntax
+         1 + None
+         ^~~~~~~~
+     TypeError: unsupported operand type(s) for +: 'int' and 'NoneType'
 
 
 .. _option-flags-and-directives:
@@ -721,36 +714,51 @@ above.
 An example's doctest directives modify doctest's behavior for that single
 example.  Use ``+`` to enable the named behavior, or ``-`` to disable it.
 
-For example, this test passes::
+For example, this test passes:
 
-   >>> print(list(range(20))) # doctest: +NORMALIZE_WHITESPACE
+.. doctest::
+   :no-trim-doctest-flags:
+
+   >>> print(list(range(20)))  # doctest: +NORMALIZE_WHITESPACE
    [0,   1,  2,  3,  4,  5,  6,  7,  8,  9,
    10,  11, 12, 13, 14, 15, 16, 17, 18, 19]
 
 Without the directive it would fail, both because the actual output doesn't have
 two blanks before the single-digit list elements, and because the actual output
 is on a single line.  This test also passes, and also requires a directive to do
-so::
+so:
 
-   >>> print(list(range(20))) # doctest: +ELLIPSIS
+.. doctest::
+   :no-trim-doctest-flags:
+
+   >>> print(list(range(20)))  # doctest: +ELLIPSIS
    [0, 1, ..., 18, 19]
 
 Multiple directives can be used on a single physical line, separated by
-commas::
+commas:
 
-   >>> print(list(range(20))) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+.. doctest::
+   :no-trim-doctest-flags:
+
+   >>> print(list(range(20)))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
    [0,    1, ...,   18,    19]
 
 If multiple directive comments are used for a single example, then they are
-combined::
+combined:
 
-   >>> print(list(range(20))) # doctest: +ELLIPSIS
-   ...                        # doctest: +NORMALIZE_WHITESPACE
+.. doctest::
+   :no-trim-doctest-flags:
+
+   >>> print(list(range(20)))  # doctest: +ELLIPSIS
+   ...                         # doctest: +NORMALIZE_WHITESPACE
    [0,    1, ...,   18,    19]
 
 As the previous example shows, you can add ``...`` lines to your example
 containing only directives.  This can be useful when an example is too long for
-a directive to comfortably fit on the same line::
+a directive to comfortably fit on the same line:
+
+.. doctest::
+   :no-trim-doctest-flags:
 
    >>> print(list(range(5)) + list(range(10, 20)) + list(range(30, 40)))
    ... # doctest: +ELLIPSIS
@@ -788,25 +796,25 @@ instead.  Another is to do ::
    >>> d
    ['Harry', 'Hermione']
 
-.. note::
-
-    Before Python 3.6, when printing a dict, Python did not guarantee that
-    the key-value pairs was printed in any particular order.
-
 There are others, but you get the idea.
 
-Another bad idea is to print things that embed an object address, like ::
+Another bad idea is to print things that embed an object address, like
 
-   >>> id(1.0) # certain to fail some of the time
+.. doctest::
+
+   >>> id(1.0)  # certain to fail some of the time  # doctest: +SKIP
    7948648
    >>> class C: pass
-   >>> C()   # the default repr() for instances embeds an address
-   <__main__.C instance at 0x00AC18F0>
+   >>> C()  # the default repr() for instances embeds an address   # doctest: +SKIP
+   <C object at 0x00AC18F0>
 
-The :const:`ELLIPSIS` directive gives a nice approach for the last example::
+The :const:`ELLIPSIS` directive gives a nice approach for the last example:
 
-   >>> C() #doctest: +ELLIPSIS
-   <__main__.C instance at 0x...>
+.. doctest::
+   :no-trim-doctest-flags:
+
+   >>> C()  # doctest: +ELLIPSIS
+   <C object at 0x...>
 
 Floating-point numbers are also subject to small output variations across
 platforms, because Python defers to the platform C library for float formatting,
@@ -1531,7 +1539,7 @@ OutputChecker objects
 
    A class used to check the whether the actual output from a doctest example
    matches the expected output.  :class:`OutputChecker` defines two methods:
-   :meth:`check_output`, which compares a given pair of outputs, and returns true
+   :meth:`check_output`, which compares a given pair of outputs, and returns ``True``
    if they match; and :meth:`output_difference`, which returns a string describing
    the differences between two outputs.
 

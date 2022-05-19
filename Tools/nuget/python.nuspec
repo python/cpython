@@ -13,6 +13,6 @@
   </metadata>
   <files>
     <file src="**\*" exclude="python.props" target="tools" />
-    <file src="python.props" target="build\native" />
+    <file src="python.props" target="build\native\python.props" />
   </files>
 </package>

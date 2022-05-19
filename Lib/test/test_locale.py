@@ -1,9 +1,11 @@
-from test.support import verbose, is_android, check_warnings
+from decimal import Decimal
+from test.support import verbose, is_android, is_emscripten, is_wasi
+from test.support.warnings_helper import check_warnings
 import unittest
 import locale
 import sys
 import codecs
-import warnings
+
 
 class BaseLocalizedTest(unittest.TestCase):
     #
@@ -334,8 +336,7 @@ class TestFrFRNumberFormatting(FrFRCookedTest, BaseFormattingTest):
         euro = '\u20ac'
         self._test_currency(50000, "50000,00 " + euro)
         self._test_currency(50000, "50 000,00 " + euro, grouping=True)
-        # XXX is the trailing space a bug?
-        self._test_currency(50000, "50 000,00 EUR ",
+        self._test_currency(50000, "50 000,00 EUR",
             grouping=True, international=True)
 
 
@@ -362,7 +363,7 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
     locale_type = locale.LC_ALL
 
     def setUp(self):
-        enc = codecs.lookup(locale.getpreferredencoding(False) or 'ascii').name
+        enc = codecs.lookup(locale.getencoding() or 'ascii').name
         if enc not in ('utf-8', 'iso8859-1', 'cp1252'):
             raise unittest.SkipTest('encoding not suitable')
         if enc != 'iso8859-1' and (sys.platform == 'darwin' or is_android or
@@ -372,11 +373,19 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "musl libc issue on Emscripten/WASI, bpo-46390"
+    )
     def test_strcoll_with_diacritic(self):
         self.assertLess(locale.strcoll('à', 'b'), 0)
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "musl libc issue on Emscripten/WASI, bpo-46390"
+    )
     def test_strxfrm_with_diacritic(self):
         self.assertLess(locale.strxfrm('à'), locale.strxfrm('b'))
 
@@ -493,6 +502,51 @@ class NormalizeTest(unittest.TestCase):
 
 
 class TestMiscellaneous(unittest.TestCase):
+    def test_defaults_UTF8(self):
+        # Issue #18378: on (at least) macOS setting LC_CTYPE to "UTF-8" is
+        # valid. Furthermore LC_CTYPE=UTF is used by the UTF-8 locale coercing
+        # during interpreter startup (on macOS).
+        import _locale
+        import os
+
+        self.assertEqual(locale._parse_localename('UTF-8'), (None, 'UTF-8'))
+
+        if hasattr(_locale, '_getdefaultlocale'):
+            orig_getlocale = _locale._getdefaultlocale
+            del _locale._getdefaultlocale
+        else:
+            orig_getlocale = None
+
+        orig_env = {}
+        try:
+            for key in ('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE'):
+                if key in os.environ:
+                    orig_env[key] = os.environ[key]
+                    del os.environ[key]
+
+            os.environ['LC_CTYPE'] = 'UTF-8'
+
+            with check_warnings(('', DeprecationWarning)):
+                self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
+
+        finally:
+            for k in orig_env:
+                os.environ[k] = orig_env[k]
+
+            if 'LC_CTYPE' not in orig_env:
+                del os.environ['LC_CTYPE']
+
+            if orig_getlocale is not None:
+                _locale._getdefaultlocale = orig_getlocale
+
+    def test_getencoding(self):
+        # Invoke getencoding to make sure it does not cause exceptions.
+        enc = locale.getencoding()
+        self.assertIsInstance(enc, str)
+        self.assertNotEqual(enc, "")
+        # make sure it is valid
+        codecs.lookup(enc)
+
     def test_getpreferredencoding(self):
         # Invoke getpreferredencoding to make sure it does not cause exceptions.
         enc = locale.getpreferredencoding()
@@ -528,7 +582,13 @@ class TestMiscellaneous(unittest.TestCase):
         loc = locale.getlocale(locale.LC_CTYPE)
         if verbose:
             print('testing with %a' % (loc,), end=' ', flush=True)
-        locale.setlocale(locale.LC_CTYPE, loc)
+        try:
+            locale.setlocale(locale.LC_CTYPE, loc)
+        except locale.Error as exc:
+            # bpo-37945: setlocale(LC_CTYPE) fails with getlocale(LC_CTYPE)
+            # and the tr_TR locale on Windows. getlocale() builds a locale
+            # which is not recognize by setlocale().
+            self.skipTest(f"setlocale(LC_CTYPE, {loc!r}) failed: {exc!r}")
         self.assertEqual(loc, locale.getlocale(locale.LC_CTYPE))
 
     def test_invalid_locale_format_in_localetuple(self):
@@ -592,6 +652,33 @@ class TestfrFRDelocalizeTest(FrFRCookedTest, BaseDelocalizeTest):
     def test_atoi(self):
         self._test_atoi('50000', 50000)
         self._test_atoi('50 000', 50000)
+
+
+class BaseLocalizeTest(BaseLocalizedTest):
+
+    def _test_localize(self, value, out, grouping=False):
+        self.assertEqual(locale.localize(value, grouping=grouping), out)
+
+
+class TestEnUSLocalize(EnUSCookedTest, BaseLocalizeTest):
+
+    def test_localize(self):
+        self._test_localize('50000.00', '50000.00')
+        self._test_localize(
+            '{0:.16f}'.format(Decimal('1.15')), '1.1500000000000000')
+
+
+class TestCLocalize(CCookedTest, BaseLocalizeTest):
+
+    def test_localize(self):
+        self._test_localize('50000.00', '50000.00')
+
+
+class TestfrFRLocalize(FrFRCookedTest, BaseLocalizeTest):
+
+    def test_localize(self):
+        self._test_localize('50000.00', '50000,00')
+        self._test_localize('50000.00', '50 000,00', grouping=True)
 
 
 if __name__ == '__main__':

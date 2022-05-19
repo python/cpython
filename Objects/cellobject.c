@@ -2,8 +2,6 @@
 
 #include "Python.h"
 #include "pycore_object.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
 
 PyObject *
 PyCell_New(PyObject *obj)
@@ -58,22 +56,21 @@ PyCell_Get(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    Py_XINCREF(((PyCellObject*)op)->ob_ref);
-    return PyCell_GET(op);
+    PyObject *value = PyCell_GET(op);
+    return Py_XNewRef(value);
 }
 
 int
-PyCell_Set(PyObject *op, PyObject *obj)
+PyCell_Set(PyObject *op, PyObject *value)
 {
-    PyObject* oldobj;
     if (!PyCell_Check(op)) {
         PyErr_BadInternalCall();
         return -1;
     }
-    oldobj = PyCell_GET(op);
-    Py_XINCREF(obj);
-    PyCell_SET(op, obj);
-    Py_XDECREF(oldobj);
+    PyObject *old_value = PyCell_GET(op);
+    Py_XINCREF(value);
+    PyCell_SET(op, value);
+    Py_XDECREF(old_value);
     return 0;
 }
 
@@ -112,7 +109,7 @@ cell_repr(PyCellObject *op)
         return PyUnicode_FromFormat("<cell at %p: empty>", op);
 
     return PyUnicode_FromFormat("<cell at %p: %.80s object at %p>",
-                               op, op->ob_ref->ob_type->tp_name,
+                               op, Py_TYPE(op->ob_ref)->tp_name,
                                op->ob_ref);
 }
 
@@ -162,10 +159,10 @@ PyTypeObject PyCell_Type = {
     sizeof(PyCellObject),
     0,
     (destructor)cell_dealloc,                   /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)cell_repr,                        /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

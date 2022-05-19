@@ -27,7 +27,6 @@ for typ in [c_short, c_int, c_long, c_longlong,
 class TestStructures(unittest.TestCase):
     def test_native(self):
         for typ in structures:
-##            print typ.value
             self.assertEqual(typ.value.offset, 1)
             o = typ()
             o.value = 4
@@ -35,7 +34,6 @@ class TestStructures(unittest.TestCase):
 
     def test_swapped(self):
         for typ in byteswapped_structures:
-##            print >> sys.stderr, typ.value
             self.assertEqual(typ.value.offset, 1)
             o = typ()
             o.value = 4
