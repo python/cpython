@@ -236,7 +236,7 @@ created.  Socket addresses are represented as follows:
 
   - ``HV_GUID_ZERO``
   - ``HV_GUID_BROADCAST``
-  - ``HV_GUID_WILDCARD `` - Used to bind on itself and accept connections from
+  - ``HV_GUID_WILDCARD`` - Used to bind on itself and accept connections from
     all partitions.
   - ``HV_GUID_CHILDREN`` - Used to bind on itself and accept connection from
     child partitions.
