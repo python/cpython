@@ -25,6 +25,7 @@ if not support.has_subprocess_support:
 
 # NOTE: There are some additional tests relating to interaction with
 #       zipimport in the test_zipimport_support test module.
+# There are also related tests in `test_doctest2` module.
 
 ######################################################################
 ## Sample Objects (used by test cases)
@@ -460,7 +461,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from test_doctest.py:33 (1 example)>]
+    [<DocTest sample_func from test_doctest.py:34 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -641,6 +642,26 @@ displays.
      1  SampleClass.a_staticmethod
      1  SampleClass.double
      1  SampleClass.get
+
+When used with `exclude_empty=False` we are also interested in line numbers
+of doctests that are empty.
+It used to be broken for quite some time until `bpo-28249`.
+
+    >>> from test import doctest_lineno
+    >>> tests = doctest.DocTestFinder(exclude_empty=False).find(doctest_lineno)
+    >>> for t in tests:
+    ...     print('%5s  %s' % (t.lineno, t.name))
+     None  test.doctest_lineno
+       22  test.doctest_lineno.ClassWithDocstring
+       30  test.doctest_lineno.ClassWithDoctest
+     None  test.doctest_lineno.ClassWithoutDocstring
+     None  test.doctest_lineno.MethodWrapper
+       39  test.doctest_lineno.MethodWrapper.method_with_docstring
+       45  test.doctest_lineno.MethodWrapper.method_with_doctest
+     None  test.doctest_lineno.MethodWrapper.method_without_docstring
+        4  test.doctest_lineno.func_with_docstring
+       12  test.doctest_lineno.func_with_doctest
+     None  test.doctest_lineno.func_without_docstring
 
 Turning off Recursion
 ~~~~~~~~~~~~~~~~~~~~~
