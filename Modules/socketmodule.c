@@ -1588,24 +1588,20 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
         SOCKADDR_HV *a = (SOCKADDR_HV *) addr;
 
         wchar_t *guidStr;
-        PyObject *vmId;
-        PyObject *serviceId;
-
         if (UuidToStringW(&a->VmId, &guidStr) == RPC_S_OUT_OF_MEMORY) {
-            PyErr_SetString(PyExc_MemoryError,
-                "out of memory in makesockaddr");
-            return NULL;
+            return PyErr_NoMemory();
         }
-        vmId = PyUnicode_FromWideChar(guidStr, -1);
-        RpcStringFreeW(&guidStr);
+        PyObject *vmId = PyUnicode_FromWideChar(guidStr, -1);
+        RPC_STATUS res = RpcStringFreeW(&guidStr);
+        assert(res == RPC_S_OK);
 
         if (UuidToStringW(&a->ServiceId, &guidStr) == RPC_S_OUT_OF_MEMORY) {
-            PyErr_SetString(PyExc_MemoryError,
-                "out of memory in makesockaddr");
-            return NULL;
+            Py_DECREF(vmId);
+            return PyErr_NoMemory();
         }
-        serviceId = PyUnicode_FromWideChar(guidStr, -1);
-        RpcStringFreeW(&guidStr);
+        PyObject *serviceId = PyUnicode_FromWideChar(guidStr, -1);
+        res = RpcStringFreeW(&guidStr);
+        assert(res == RPC_S_OK);
 
         return Py_BuildValue("NN", vmId, serviceId);
     }
@@ -2415,7 +2411,6 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         {
             PyObject *vm_id_obj = NULL;
             PyObject *service_id_obj = NULL;
-            wchar_t *guid_str;
 
             SOCKADDR_HV *addr = &addrbuf->hv;
 
@@ -2435,20 +2430,21 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 return 0;
             }
 
-            guid_str = PyUnicode_AsWideCharString(vm_id_obj, NULL);
+            wchar_t *guid_str = PyUnicode_AsWideCharString(vm_id_obj, NULL);
             if (guid_str == NULL) {
                 PyErr_Format(PyExc_ValueError,
                     "%s(): AF_HYPERV address vm_id is not a valid UUID string",
                     caller);
                 return 0;
             }
-            if (UuidFromStringW(guid_str, &addr->VmId) != RPC_S_OK) {
+            RPC_STATUS rc = UuidFromStringW(guid_str, &addr->VmId);
+            PyMem_Free(guid_str);
+            if (rc != RPC_S_OK) {
                 PyErr_Format(PyExc_ValueError,
                     "%s(): AF_HYPERV address vm_id is not a valid UUID string",
                     caller);
                 return 0;
             }
-            PyMem_Free(guid_str);
 
             guid_str = PyUnicode_AsWideCharString(service_id_obj, NULL);
             if (guid_str == NULL) {
@@ -2457,20 +2453,22 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                     caller);
                 return 0;
             }
-            if (UuidFromStringW(guid_str, &addr->ServiceId) != RPC_S_OK) {
+            rc = UuidFromStringW(guid_str, &addr->ServiceId);
+            PyMem_Free(guid_str);
+            if (rc != RPC_S_OK) {
                 PyErr_Format(PyExc_ValueError,
                     "%s(): AF_HYPERV address service_id is not a valid UUID string",
                     caller);
                 return 0;
             }
-            PyMem_Free(guid_str);
 
             *len_ret = sizeof(*addr);
             return 1;
         }
         default:
             PyErr_Format(PyExc_OSError,
-                "%s(): unsupported AF_HYPERV protocol", caller);
+                "%s(): unsupported AF_HYPERV protocol: %d",
+                caller, s->sock_proto);
             return 0;
         }
     }
@@ -7478,7 +7476,7 @@ PyInit__socket(void)
     PyModule_AddStringConstant(m, "HV_GUID_BROADCAST", "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF");
     PyModule_AddStringConstant(m, "HV_GUID_CHILDREN", "90DB8B89-0D35-4F79-8CE9-49EA0AC8B7CD");
     PyModule_AddStringConstant(m, "HV_GUID_LOOPBACK", "E0E16197-DD56-4A10-9195-5EE7A155A838");
-    PyModule_AddStringConstant(m, "HV_GUID_PARENT", "E0E16197-DD56-4A10-9195-5EE7A155A838");
+    PyModule_AddStringConstant(m, "HV_GUID_PARENT", "A42E7CDA-D03F-480C-9CC2-A4DE20ABB878");
 #endif /* AF_HYPERV */
 
 #ifdef USE_BLUETOOTH

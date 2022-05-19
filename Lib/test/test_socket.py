@@ -22,6 +22,7 @@ from weakref import proxy
 import signal
 import math
 import pickle
+import re
 import struct
 import random
 import shutil
@@ -2490,32 +2491,39 @@ class BasicHyperVTest(unittest.TestCase):
         socket.HV_GUID_LOOPBACK
 
     def testCreateHyperVSocketWithUnknownProtoFailure(self):
-        with self.assertRaises(OSError):
+        expected = "A protocol was specified in the socket function call " \
+            "that does not support the semantics of the socket type requested"
+        with self.assertRaisesRegex(OSError, expected):
             socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM)
 
     def testCreateHyperVSocketAddrNotTupleFailure(self):
+        expected = "connect(): AF_HYPERV address must be tuple, not str"
         with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
-            with self.assertRaises(TypeError):
+            with self.assertRaisesRegex(TypeError, re.escape(expected)):
                 s.connect(socket.HV_GUID_ZERO)
 
     def testCreateHyperVSocketAddrNotTupleOf2StrsFailure(self):
+        expected = "AF_HYPERV address must be a str tuple (vm_id, service_id)"
         with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
-            with self.assertRaises(TypeError):
+            with self.assertRaisesRegex(TypeError, re.escape(expected)):
                 s.connect((socket.HV_GUID_ZERO,))
 
     def testCreateHyperVSocketAddrNotTupleOfStrsFailure(self):
+        expected = "AF_HYPERV address must be a str tuple (vm_id, service_id)"
         with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
-            with self.assertRaises(TypeError):
+            with self.assertRaisesRegex(TypeError, re.escape(expected)):
                 s.connect((1, 2))
 
     def testCreateHyperVSocketAddrVmIdNotValidUUIDFailure(self):
+        expected = "connect(): AF_HYPERV address vm_id is not a valid UUID string"
         with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
-            with self.assertRaises(ValueError):
+            with self.assertRaisesRegex(ValueError, re.escape(expected)):
                 s.connect(("00", socket.HV_GUID_ZERO))
 
     def testCreateHyperVSocketAddrServiceIdNotValidUUIDFailure(self):
+        expected = "connect(): AF_HYPERV address service_id is not a valid UUID string"
         with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
-            with self.assertRaises(ValueError):
+            with self.assertRaisesRegex(ValueError, re.escape(expected)):
                 s.connect((socket.HV_GUID_ZERO, "00"))
 
 

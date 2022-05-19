@@ -614,8 +614,17 @@ Constants
 
 .. data:: AF_HYPERV
           HV_PROTOCOL_RAW
-          HVSOCKET_*
-          HV_GUID_*
+          HVSOCKET_CONNECT_TIMEOUT
+          HVSOCKET_CONNECT_TIMEOUT_MAX
+          HVSOCKET_CONTAINER_PASSTHRU
+          HVSOCKET_CONNECTED_SUSPEND
+          HVSOCKET_ADDRESS_FLAG_PASSTHRU
+          HV_GUID_ZERO
+          HV_GUID_WILDCARD
+          HV_GUID_BROADCAST
+          HV_GUID_CHILDREN
+          HV_GUID_LOOPBACK
+          HV_GUID_LOOPBACK
 
    Constants for Windows Hyper-V sockets for host/guest communications.
 
