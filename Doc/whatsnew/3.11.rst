@@ -403,6 +403,11 @@ Other CPython Implementation Changes
   instead of prepending them.
   (Contributed by Bastian Neuburger in :issue:`44934`.)
 
+* The :c:member:`PyConfig.module_search_paths_set` field must now be set to 1 for
+  initialization to use :c:member:`PyConfig.module_search_paths` to initialize
+  :data:`sys.path`. Otherwise, initialization will recalculate the path and replace
+  any values added to ``module_search_paths``.
+
 
 New Modules
 ===========
@@ -1860,6 +1865,16 @@ Porting to Python 3.11
 
 * Distributors are encouraged to build Python with the optimized Blake2
   library `libb2`_.
+
+* The :c:member:`PyConfig.module_search_paths_set` field must now be set to 1 for
+  initialization to use :c:member:`PyConfig.module_search_paths` to initialize
+  :data:`sys.path`. Otherwise, initialization will recalculate the path and replace
+  any values added to ``module_search_paths``.
+
+* :c:func:`PyConfig_Read` no longer calculates the initial search path, and will not
+  fill any values into :c:member:`PyConfig.module_search_paths`. To calculate default
+  paths and then modify them, finish initialization and use :c:func:`PySys_GetObject`
+  to retrieve :data:`sys.path` as a Python list object and modify it directly.
 
 
 Deprecated
