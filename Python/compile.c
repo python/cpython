@@ -270,12 +270,6 @@ typedef struct basicblock_ {
     unsigned b_warm : 1;
 } basicblock;
 
-#define DEBUG_COLD_BLOCK_STUFF
-#undef DEBUG_COLD_BLOCK_STUFF
-
-#ifdef DEBUG_COLD_BLOCK_STUFF
-static void dump_basicblock(const basicblock *b);
-#endif
 
 /* fblockinfo tracks the current frame block.
 
@@ -7492,18 +7486,9 @@ push_cold_blocks_to_end(struct compiler *c, basicblock *entry, int code_flags) {
     }
     basicblock *origtail = tail;
     basicblock *b = entry;
-#ifdef DEBUG_COLD_BLOCK_STUFF
-    fprintf(stderr, "<<<<<<<<<<<<<\n");
-    dump_basicblock(b);
-#endif
     while(b && b->b_next) {
         basicblock *next = b->b_next;
         if (next->b_cold) {
-#ifdef DEBUG_COLD_BLOCK_STUFF
-            dump_basicblock(next);
-            fprintf(stderr, "*******************************************************************\n");
-#endif
-            //assert(next->b_nofallthrough || (!next->b_next || next->b_next->b_cold));
             if (next->b_next) {
                 b->b_next = next->b_next;
                 next->b_next = NULL;
@@ -7512,17 +7497,11 @@ push_cold_blocks_to_end(struct compiler *c, basicblock *entry, int code_flags) {
             }
         } else {
             b = next;
-#ifdef DEBUG_COLD_BLOCK_STUFF
-            dump_basicblock(b);
-#endif
         }
         if(next == origtail) {
             break;
         }
     }
-#ifdef DEBUG_COLD_BLOCK_STUFF
-    fprintf(stderr, ">>>>>>>>>>>>>\n");
-#endif
     return 0;
 }
 
@@ -8170,7 +8149,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
 
 
 /* For debugging purposes only */
-#ifdef DEBUG_COLD_BLOCK_STUFF
+#if 0
 static void
 dump_instr(struct instr *i)
 {
