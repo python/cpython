@@ -8,7 +8,7 @@
 
 .. $Id: whatsnew23.tex 54631 2007-03-31 11:58:36Z georg.brandl $
 
-This article explains the new features in Python 2.3.  Python 2.3 was released
+This article explains the new features in Python 2.3. Python 2.3 was released
 on July 29, 2003.
 
 The main themes for Python 2.3 are polishing some of the features added in 2.2,
