@@ -545,6 +545,27 @@ class OtherTest(unittest.TestCase):
             with self.assertRaises(TypeError):
                 pickle.dumps(m, proto)
 
+    def test_memoryview_bad_index_uaf(self):
+        # memoryview Use After Free (memory_ass_sub) see gh-92888
+        uaf_backing = bytearray(bytearray.__basicsize__)
+        uaf_view = memoryview(uaf_backing).cast('n') # ssize_t format
+
+        class weird_index:
+            def __index__(self):
+                global memory_backing
+                uaf_view.release() # release memoryview (UAF)
+                # free `uaf_backing` memory and allocate a new bytearray into it
+                memory_backing = uaf_backing.clear() or bytearray()
+                return 2 # `ob_size` idx
+
+        # by the time this line finishes executing, it writes the max ptr size
+        # into the `ob_size` slot of `memory_backing`
+        with self.assertRaisesRegex(ValueError, "operation forbidden on released memoryview object"):
+            uaf_view[weird_index()] = (2 ** (tuple.__itemsize__ * 8) - 1) // 2
+        memory = memoryview(memory_backing)
+        with self.assertRaisesRegex(IndexError, "index out of bounds"):
+            memory[id(250) + int.__basicsize__] = 100
+        self.assertEqual(250, eval("250"))
 
 if __name__ == "__main__":
     unittest.main()
