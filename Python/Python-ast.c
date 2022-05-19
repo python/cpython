@@ -1150,7 +1150,7 @@ init_types(struct ast_state *state)
         "     | TryStar(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)\n"
         "     | Assert(expr test, expr? msg)\n"
         "     | Import(alias* names)\n"
-        "     | ImportFrom(identifier? module, alias* names, int? level)\n"
+        "     | ImportFrom(identifier? module, alias* names, int level)\n"
         "     | Global(identifier* names)\n"
         "     | Nonlocal(identifier* names)\n"
         "     | Expr(expr value)\n"
@@ -1279,11 +1279,9 @@ init_types(struct ast_state *state)
     if (!state->Import_type) return 0;
     state->ImportFrom_type = make_type(state, "ImportFrom", state->stmt_type,
                                        ImportFrom_fields, 3,
-        "ImportFrom(identifier? module, alias* names, int? level)");
+        "ImportFrom(identifier? module, alias* names, int level)");
     if (!state->ImportFrom_type) return 0;
     if (PyObject_SetAttr(state->ImportFrom_type, state->module, Py_None) == -1)
-        return 0;
-    if (PyObject_SetAttr(state->ImportFrom_type, state->level, Py_None) == -1)
         return 0;
     state->Global_type = make_type(state, "Global", state->stmt_type,
                                    Global_fields, 1,
@@ -7866,9 +7864,9 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         if (_PyObject_LookupAttr(obj, state->level, &tmp) < 0) {
             return 1;
         }
-        if (tmp == NULL || tmp == Py_None) {
-            Py_CLEAR(tmp);
-            level = 0;
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"level\" missing from ImportFrom");
+            return 1;
         }
         else {
             int res;
