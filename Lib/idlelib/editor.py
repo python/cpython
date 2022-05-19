@@ -437,8 +437,8 @@ class EditorWindow:
         self.status_bar.set_label('line', 'Ln: %s' % line)
         
         selected = len(self.text.get(SEL_FIRST, SEL_LAST))
-        self.status_bar.set_label('selected', 
-                                f"({selected} selected)" if selected else '', 
+        self.status_bar.set_label('selected',
+                                f"({selected} selected)" if selected else '',
                                 side=RIGHT)
 
     menu_specs = [
