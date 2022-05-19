@@ -721,6 +721,11 @@ class PyCodeObjectPtr(PyObjectPtr):
         assert False, "Unreachable"
 
 
+class PyFunctionObjectPtr(PyObjectPtr):
+
+    _typename = 'PyFunctionObject'
+
+
 def items_from_keys_and_values(keys, values):
     entries, nentries = PyDictObjectPtr._get_entries(keys)
     for i in safe_range(nentries):
@@ -1050,11 +1055,14 @@ class PyFramePtr:
     def _f_special(self, name, convert=PyObjectPtr.from_pyobject_ptr):
         return convert(self._gdbval[name])
 
+    def _f_func(self):
+        return self._f_special("f_func", PyFunctionObjectPtr.from_pyobject_ptr)
+
     def _f_globals(self):
-        return self._f_special("f_globals")
+        return self._f_func().pyop_field("func_globals")
 
     def _f_builtins(self):
-        return self._f_special("f_builtins")
+        return self._f_func().pyop_field("func_builtins")
 
     def _f_code(self):
         return self._f_special("f_code", PyCodeObjectPtr.from_pyobject_ptr)

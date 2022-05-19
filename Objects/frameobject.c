@@ -69,7 +69,7 @@ frame_getlasti(PyFrameObject *f, void *closure)
 static PyObject *
 frame_getglobals(PyFrameObject *f, void *closure)
 {
-    PyObject *globals = f->f_frame->f_globals;
+    PyObject *globals = f->f_frame->f_func->func_globals;
     if (globals == NULL) {
         globals = Py_None;
     }
@@ -80,7 +80,7 @@ frame_getglobals(PyFrameObject *f, void *closure)
 static PyObject *
 frame_getbuiltins(PyFrameObject *f, void *closure)
 {
-    PyObject *builtins = f->f_frame->f_builtins;
+    PyObject *builtins = f->f_frame->f_func->func_builtins;
     if (builtins == NULL) {
         builtins = Py_None;
     }

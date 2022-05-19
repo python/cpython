@@ -1551,8 +1551,8 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define DEOPT_IF(cond, instname) if (cond) { goto miss; }
 
 
-#define GLOBALS() frame->f_globals
-#define BUILTINS() frame->f_builtins
+#define GLOBALS() frame->f_func->func_globals
+#define BUILTINS() frame->f_func->func_builtins
 #define LOCALS() frame->f_locals
 
 /* Shared opcode macros */
@@ -7090,7 +7090,7 @@ _PyEval_GetBuiltins(PyThreadState *tstate)
 {
     _PyInterpreterFrame *frame = tstate->cframe->current_frame;
     if (frame != NULL) {
-        return frame->f_builtins;
+        return frame->f_func->func_builtins;
     }
     return tstate->interp->builtins;
 }
@@ -7150,7 +7150,7 @@ PyEval_GetGlobals(void)
     if (current_frame == NULL) {
         return NULL;
     }
-    return current_frame->f_globals;
+    return current_frame->f_func->func_globals;
 }
 
 int
@@ -7361,7 +7361,7 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
     PyObject *import_func, *res;
     PyObject* stack[5];
 
-    import_func = _PyDict_GetItemWithError(frame->f_builtins, &_Py_ID(__import__));
+    import_func = _PyDict_GetItemWithError(frame->f_func->func_builtins, &_Py_ID(__import__));
     if (import_func == NULL) {
         if (!_PyErr_Occurred(tstate)) {
             _PyErr_SetString(tstate, PyExc_ImportError, "__import__ not found");
@@ -7377,7 +7377,7 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
         }
         res = PyImport_ImportModuleLevelObject(
                         name,
-                        frame->f_globals,
+                        frame->f_func->func_globals,
                         locals == NULL ? Py_None :locals,
                         fromlist,
                         ilevel);
@@ -7387,7 +7387,7 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
     Py_INCREF(import_func);
 
     stack[0] = name;
-    stack[1] = frame->f_globals;
+    stack[1] = frame->f_func->func_globals;
     stack[2] = locals == NULL ? Py_None : locals;
     stack[3] = fromlist;
     stack[4] = level;
