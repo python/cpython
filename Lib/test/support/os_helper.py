@@ -50,7 +50,7 @@ if os.name == 'nt':
                   % (TESTFN_UNENCODABLE, sys.getfilesystemencoding()))
             TESTFN_UNENCODABLE = None
 # macOS and Emscripten deny unencodable filenames (invalid utf-8)
-elif sys.platform not in {'darwin', 'emscripten'}:
+elif sys.platform not in {'darwin', 'emscripten', 'wasi'}:
     try:
         # ascii and utf-8 cannot encode the byte 0xff
         b'\xff'.decode(sys.getfilesystemencoding())

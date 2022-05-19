@@ -186,6 +186,10 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
 
         executable = sys.executable
 
+        if not executable:
+            # sys.executable is not set.
+            return lib, version
+
     V = _comparable_version
     # We use os.path.realpath()
     # here to work around problems with Cygwin not being

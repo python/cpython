@@ -49,6 +49,7 @@ static const char usage_2[] = "\
          .pyc extension; also PYTHONOPTIMIZE=x\n\
 -OO    : do -O changes and also discard docstrings; add .opt-2 before\n\
          .pyc extension\n\
+-P     : don't prepend a potentially unsafe path to sys.path\n\
 -q     : don't print version and copyright messages on interactive startup\n\
 -s     : don't add user site directory to sys.path; also PYTHONNOUSERSITE\n\
 -S     : don't imply 'import site' on initialization\n\
@@ -113,6 +114,7 @@ PYTHONPATH   : '%lc'-separated list of directories prefixed to the\n\
                default module search path.  The result is sys.path.\n\
 ";
 static const char usage_5[] =
+"PYTHONSAFEPATH: don't prepend a potentially unsafe path to sys.path.\n"
 "PYTHONHOME   : alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
 "               The default module search path uses %s.\n"
 "PYTHONPLATLIBDIR : override sys.platlibdir.\n"
@@ -647,6 +649,10 @@ config_check_consistency(const PyConfig *config)
     assert(config->check_hash_pycs_mode != NULL);
     assert(config->_install_importlib >= 0);
     assert(config->pathconfig_warnings >= 0);
+    assert(config->_is_python_build >= 0);
+    assert(config->safe_path >= 0);
+    // config->use_frozen_modules is initialized later
+    // by _PyConfig_InitImportConfig().
     return 1;
 }
 #endif
@@ -732,7 +738,12 @@ _PyConfig_InitCompatConfig(PyConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
 #endif
-    config->use_frozen_modules = -1;
+#ifdef Py_DEBUG
+    config->use_frozen_modules = 0;
+#else
+    config->use_frozen_modules = 1;
+#endif
+    config->safe_path = 0;
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
 }
@@ -788,6 +799,7 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->use_hash_seed = 0;
     config->faulthandler = 0;
     config->tracemalloc = 0;
+    config->safe_path = 1;
     config->pathconfig_warnings = 0;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
@@ -955,6 +967,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(_init_main);
     COPY_ATTR(_isolated_interpreter);
     COPY_ATTR(use_frozen_modules);
+    COPY_ATTR(safe_path);
     COPY_WSTRLIST(orig_argv);
     COPY_ATTR(_is_python_build);
 
@@ -1061,6 +1074,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(_isolated_interpreter);
     SET_ITEM_WSTRLIST(orig_argv);
     SET_ITEM_INT(use_frozen_modules);
+    SET_ITEM_INT(safe_path);
     SET_ITEM_INT(_is_python_build);
 
     return dict;
@@ -1346,6 +1360,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(_init_main);
     GET_UINT(_isolated_interpreter);
     GET_UINT(use_frozen_modules);
+    GET_UINT(safe_path);
     GET_UINT(_is_python_build);
 
 #undef CHECK_VALUE
@@ -1627,6 +1642,10 @@ config_read_env_vars(PyConfig *config)
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
+    }
+
+    if (config_get_env(config, "PYTHONSAFEPATH")) {
+        config->safe_path = 1;
     }
 
     return _PyStatus_OK();
@@ -1978,27 +1997,25 @@ config_init_import(PyConfig *config, int compute_path_config)
     }
 
     /* -X frozen_modules=[on|off] */
-    if (config->use_frozen_modules < 0) {
-        const wchar_t *value = config_get_xoption_value(config, L"frozen_modules");
-        if (value == NULL) {
-            config->use_frozen_modules = !config->_is_python_build;
-        }
-        else if (wcscmp(value, L"on") == 0) {
-            config->use_frozen_modules = 1;
-        }
-        else if (wcscmp(value, L"off") == 0) {
-            config->use_frozen_modules = 0;
-        }
-        else if (wcslen(value) == 0) {
-            // "-X frozen_modules" and "-X frozen_modules=" both imply "on".
-            config->use_frozen_modules = 1;
-        }
-        else {
-            return PyStatus_Error("bad value for option -X frozen_modules "
-                                  "(expected \"on\" or \"off\")");
-        }
+    const wchar_t *value = config_get_xoption_value(config, L"frozen_modules");
+    if (value == NULL) {
+    }
+    else if (wcscmp(value, L"on") == 0) {
+        config->use_frozen_modules = 1;
+    }
+    else if (wcscmp(value, L"off") == 0) {
+        config->use_frozen_modules = 0;
+    }
+    else if (wcslen(value) == 0) {
+        // "-X frozen_modules" and "-X frozen_modules=" both imply "on".
+        config->use_frozen_modules = 1;
+    }
+    else {
+        return PyStatus_Error("bad value for option -X frozen_modules "
+                              "(expected \"on\" or \"off\")");
     }
 
+    assert(config->use_frozen_modules >= 0);
     return _PyStatus_OK();
 }
 
@@ -2324,6 +2341,10 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         case 'O':
             config->optimization_level++;
+            break;
+
+        case 'P':
+            config->safe_path = 1;
             break;
 
         case 'B':
@@ -2848,6 +2869,7 @@ _PyConfig_Read(PyConfig *config, int compute_path_config)
 
     assert(config->isolated >= 0);
     if (config->isolated) {
+        config->safe_path = 1;
         config->use_environment = 0;
         config->user_site_directory = 0;
     }
@@ -2993,6 +3015,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     PySys_WriteStderr("  isolated = %i\n", config->isolated);
     PySys_WriteStderr("  environment = %i\n", config->use_environment);
     PySys_WriteStderr("  user site = %i\n", config->user_site_directory);
+    PySys_WriteStderr("  safe_path = %i\n", config->safe_path);
     PySys_WriteStderr("  import site = %i\n", config->site_import);
     PySys_WriteStderr("  is in build tree = %i\n", config->_is_python_build);
     DUMP_CONFIG("stdlib dir", stdlib_dir);

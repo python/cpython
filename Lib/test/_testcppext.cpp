@@ -50,9 +50,40 @@ test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+test_unicode(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    PyObject *str = PyUnicode_FromString("abc");
+    if (str == nullptr) {
+        return nullptr;
+    }
+
+    assert(PyUnicode_Check(str));
+    assert(PyUnicode_GET_LENGTH(str) == 3);
+
+    // gh-92800: test PyUnicode_READ()
+    const void* data = PyUnicode_DATA(str);
+    assert(data != nullptr);
+    int kind = PyUnicode_KIND(str);
+    assert(kind == PyUnicode_1BYTE_KIND);
+    assert(PyUnicode_READ(kind, data, 0) == 'a');
+
+    // gh-92800: test PyUnicode_READ() casts
+    const void* const_data = PyUnicode_DATA(str);
+    unsigned int ukind = static_cast<unsigned int>(kind);
+    assert(PyUnicode_READ(ukind, const_data, 2) == 'c');
+
+    assert(PyUnicode_READ_CHAR(str, 1) == 'b');
+
+    Py_DECREF(str);
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef _testcppext_methods[] = {
     {"add", _testcppext_add, METH_VARARGS, _testcppext_add_doc},
-    {"test_api_casts", test_api_casts, METH_NOARGS, NULL},
+    {"test_api_casts", test_api_casts, METH_NOARGS, nullptr},
+    {"test_unicode", test_unicode, METH_NOARGS, nullptr},
     {nullptr, nullptr, 0, nullptr}  /* sentinel */
 };
 
@@ -68,7 +99,7 @@ _testcppext_exec(PyObject *module)
 
 static PyModuleDef_Slot _testcppext_slots[] = {
     {Py_mod_exec, reinterpret_cast<void*>(_testcppext_exec)},
-    {0, NULL}
+    {0, nullptr}
 };
 
 
@@ -81,8 +112,8 @@ static struct PyModuleDef _testcppext_module = {
     0,  // m_size
     _testcppext_methods,  // m_methods
     _testcppext_slots,  // m_slots
-    NULL,  // m_traverse
-    NULL,  // m_clear
+    nullptr,  // m_traverse
+    nullptr,  // m_clear
     nullptr,  // m_free
 };
 
