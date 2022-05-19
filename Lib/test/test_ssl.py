@@ -4152,21 +4152,16 @@ class ThreadedTests(unittest.TestCase):
     @unittest.skipUnless("tls-unique" in ssl.CHANNEL_BINDING_TYPES,
                          "'tls-unique' channel binding not available")
     def test_tls_unique_channel_binding(self):
-        """Test tls-unique channel binding."""
         if support.verbose:
             sys.stdout.write("\n")
 
         client_context, server_context, hostname = testing_context()
 
-        server = ThreadedEchoServer(context=server_context,
-                                    chatty=True,
-                                    connectionchatty=False)
-
-        with server:
+        with Server(context=server_context, client_count=2) as address:
             with client_context.wrap_socket(
                     socket.socket(),
                     server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+                s.connect(address)
                 # get the data
                 cb_data = s.get_channel_binding("tls-unique")
                 if support.verbose:
@@ -4190,7 +4185,7 @@ class ThreadedTests(unittest.TestCase):
             with client_context.wrap_socket(
                     socket.socket(),
                     server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+                s.connect(address)
                 new_cb_data = s.get_channel_binding("tls-unique")
                 if support.verbose:
                     sys.stdout.write(

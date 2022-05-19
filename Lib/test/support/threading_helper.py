@@ -253,7 +253,7 @@ class Server:
 
     The server is designed:
 
-    - for testing purposes so it serves a single client for its lifetime
+    - for testing purposes so it serves a fixed count of clients, one by one
     - to be one-pass, short-lived, and terminated by in-protocol means so no
       stopper flag is used
     - to be used where asyncio has no application
@@ -261,7 +261,7 @@ class Server:
     The server listens on an address returned from the ``with`` statement.
     """
 
-    def __init__(self, client_func, *args, results=[], **kwargs):
+    def __init__(self, client_func, *args, client_count=1, results=[], **kwargs):
         """Create and run the server.
 
         The method blocks until a server is ready to accept clients.
@@ -272,8 +272,10 @@ class Server:
         Args:
             client_func: a function called in a dedicated thread for each new
                 connected client. The function receives all argument passed to
-                the __init__ method excluding client_func.
+                the __init__ method excluding client_func and client_count.
             args: positional arguments passed to client_func.
+            client_count: count of clients the server processes one by one
+                before stopping.
             results: a reference to a list for collecting client_func
                 return values. Populated after execution leaves a ``with``
                 blocks associated with the Server context manager.
@@ -286,16 +288,21 @@ class Server:
         server_socket = socket()
         self._port = bind_port(server_socket)
         self._result = _thread_pool.submit(self._thread_func, server_socket,
-                                           client_func, args, kwargs)
+                                           client_func, client_count,
+                                           args, kwargs)
         self._result_out = results
 
-    def _thread_func(self, server_socket, client_func, args, kwargs):
+    def _thread_func(self, server_socket, client_func, client_count, args, kwargs):
         with server_socket:
             server_socket.settimeout(1.0)
             server_socket.listen(1)
-            client, peer_address = server_socket.accept()
-            with client:
-                return client_func(client, peer_address, *args, **kwargs)
+            results = []
+            for i in range(client_count):
+                client, peer_address = server_socket.accept()
+                with client:
+                    results.append(client_func(client, peer_address,
+                                               *args, **kwargs))
+            return results
 
     def __enter__(self):
         return HOST, self._port
