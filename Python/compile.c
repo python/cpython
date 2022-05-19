@@ -1962,7 +1962,7 @@ compiler_add_yield_from(struct compiler *c, int await)
     compiler_use_next_block(c, start);
     ADDOP_JUMP(c, SEND, exit);
     compiler_use_next_block(c, resume);
-    ADDOP(c, YIELD_VALUE);
+    ADDOP_I(c, YIELD_VALUE, 0);
     ADDOP_I(c, RESUME, await ? 3 : 2);
     ADDOP_JUMP(c, JUMP_NO_INTERRUPT, start);
     compiler_use_next_block(c, exit);
@@ -4193,7 +4193,7 @@ addop_yield(struct compiler *c) {
     if (c->u->u_ste->ste_generator && c->u->u_ste->ste_coroutine) {
         ADDOP(c, ASYNC_GEN_WRAP);
     }
-    ADDOP(c, YIELD_VALUE);
+    ADDOP_I(c, YIELD_VALUE, 0);
     ADDOP_I(c, RESUME, 1);
     return 1;
 }
@@ -7151,6 +7151,9 @@ stackdepth(struct compiler *c, basicblock *entry)
                 /* remaining code is dead */
                 next = NULL;
                 break;
+            }
+            if (instr->i_opcode == YIELD_VALUE) {
+                instr->i_oparg = depth;
             }
         }
         if (next != NULL) {
