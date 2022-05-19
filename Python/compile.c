@@ -1116,12 +1116,10 @@ stack_effect(int opcode, int oparg, int jump)
             return -oparg;
 
         /* Functions and calls */
-        case PRECALL:
-            return -oparg;
         case KW_NAMES:
             return 0;
         case CALL:
-            return -1;
+            return -1-oparg;
 
         case CALL_FUNCTION_EX:
             return -2 - ((oparg & 0x01) != 0);
@@ -1947,7 +1945,6 @@ compiler_call_exit_with_nones(struct compiler *c) {
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADDOP_I(c, PRECALL, 2);
     ADDOP_I(c, CALL, 2);
     return 1;
 }
@@ -2325,7 +2322,6 @@ compiler_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
     int old_end_col_offset = c->u->u_end_col_offset;
     for (Py_ssize_t i = asdl_seq_LEN(decos) - 1; i > -1; i--) {
         SET_LOC(c, (expr_ty)asdl_seq_GET(decos, i));
-        ADDOP_I(c, PRECALL, 0);
         ADDOP_I(c, CALL, 0);
     }
     c->u->u_lineno = old_lineno;
@@ -4002,7 +3998,6 @@ compiler_assert(struct compiler *c, stmt_ty s)
     ADDOP(c, LOAD_ASSERTION_ERROR);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
-        ADDOP_I(c, PRECALL, 0);
         ADDOP_I(c, CALL, 0);
     }
     ADDOP_I(c, RAISE_VARARGS, 1);
@@ -4831,7 +4826,6 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
             return 0;
         };
     }
-    ADDOP_I(c, PRECALL, argsl + kwdsl);
     ADDOP_I(c, CALL, argsl + kwdsl);
     c->u->u_lineno = old_lineno;
     return 1;
@@ -4897,7 +4891,6 @@ compiler_joined_str(struct compiler *c, expr_ty e)
             VISIT(c, expr, asdl_seq_GET(e->v.JoinedStr.values, i));
             ADDOP_I(c, LIST_APPEND, 1);
         }
-        ADDOP_I(c, PRECALL, 1);
         ADDOP_I(c, CALL, 1);
     }
     else {
@@ -5071,7 +5064,6 @@ compiler_call_helper(struct compiler *c,
             return 0;
         };
     }
-    ADDOP_I(c, PRECALL, n + nelts + nkwelts);
     ADDOP_I(c, CALL, n + nelts + nkwelts);
     return 1;
 
@@ -5462,7 +5454,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         ADDOP(c, GET_ITER);
     }
 
-    ADDOP_I(c, PRECALL, 0);
     ADDOP_I(c, CALL, 0);
 
     if (is_async_generator && type != COMP_GENEXP) {

@@ -839,7 +839,7 @@ if 1:
                 instructions = [opcode.opname for opcode in opcodes]
                 self.assertNotIn('LOAD_METHOD', instructions)
                 self.assertIn('LOAD_ATTR', instructions)
-                self.assertIn('PRECALL', instructions)
+                self.assertIn('CALL', instructions)
 
     def test_lineno_procedure_call(self):
         def call():
