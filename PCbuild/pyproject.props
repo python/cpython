@@ -18,7 +18,7 @@
     <SupportSigning Condition="'$(SupportSigning)' == ''">true</SupportSigning>
     <SupportSigning Condition="'$(Configuration)' == 'Debug'">false</SupportSigning>
     <SupportSigning Condition="'$(ConfigurationType)' == 'StaticLibrary'">false</SupportSigning>
-    <LinkIncremental Condition="$(Configuration) == 'Release' or $(Configuration) == 'PGInstrument' or $(Configuration) == 'PGUpdate'">false</LinkIncremental>
+    <LinkIncremental Condition="$(Configuration) != 'Debug'">false</LinkIncremental>
   </PropertyGroup>
 
   <PropertyGroup>
