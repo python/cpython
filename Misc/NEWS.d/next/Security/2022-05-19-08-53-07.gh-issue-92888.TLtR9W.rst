@@ -1,0 +1,1 @@
+Fix ``memoryview`` use after free when subscripting an object with bad ``__index__``. This occurs when the backing buffer is released inside ``__index__``.
