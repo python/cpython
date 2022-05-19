@@ -98,7 +98,7 @@ def_op('LIST_TO_TUPLE', 82)
 def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
 def_op('SETUP_ANNOTATIONS', 85)
-def_op('YIELD_VALUE', 86)
+
 def_op('ASYNC_GEN_WRAP', 87)
 def_op('PREP_RERAISE_STAR', 88)
 def_op('POP_EXCEPT', 89)
@@ -174,7 +174,7 @@ def_op('MAP_ADD', 147)
 def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
 def_op('COPY_FREE_VARS', 149)
-
+def_op('YIELD_VALUE', 150)
 def_op('RESUME', 151)
 def_op('MATCH_CLASS', 152)
 
