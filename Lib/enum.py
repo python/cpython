@@ -8,7 +8,7 @@ from functools import reduce
 __all__ = [
         'EnumType', 'EnumMeta',
         'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag', 'ReprEnum',
-        'auto', 'unique', 'property', 'verify',
+        'auto', 'unique', 'property', 'verify', 'member', 'nonmember',
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
         'global_flag_repr', 'global_enum_repr', 'global_str', 'global_enum',
         'EnumCheck', 'CONTINUOUS', 'NAMED_FLAGS', 'UNIQUE',
@@ -19,6 +19,20 @@ __all__ = [
 # before they have been created.
 # This is also why there are checks in EnumType like `if Enum is not None`
 Enum = Flag = EJECT = _stdlib_enums = ReprEnum = None
+
+class nonmember(object):
+    """
+    Protects item from becaming an Enum member during class creation.
+    """
+    def __init__(self, value):
+        self.value = value
+
+class member(object):
+    """
+    Forces item to became an Enum member during class creation.
+    """
+    def __init__(self, value):
+        self.value = value
 
 def _is_descriptor(obj):
     """
@@ -51,6 +65,15 @@ def _is_sunder(name):
             name[1:2] != '_' and
             name[-2:-1] != '_'
             )
+
+def _is_internal_class(cls_name, obj):
+    # do not use `re` as `re` imports `enum`
+    if not isinstance(obj, type):
+        return False
+    qualname = getattr(obj, '__qualname__', '')
+    s_pattern = cls_name + '.' + getattr(obj, '__name__', '')
+    e_pattern = '.' + s_pattern
+    return qualname == s_pattern or qualname.endswith(e_pattern)
 
 def _is_private(cls_name, name):
     # do not use `re` as `re` imports `enum`
@@ -139,13 +162,19 @@ def _dedent(text):
         lines[j] = l[i:]
     return '\n'.join(lines)
 
+class _auto_null:
+    def __repr__(self):
+        return '_auto_null'
+_auto_null = _auto_null()
 
-_auto_null = object()
 class auto:
     """
     Instances are replaced with an appropriate value in Enum class suites.
     """
     value = _auto_null
+
+    def __repr__(self):
+        return "auto(%r)" % self.value
 
 class property(DynamicClassAttribute):
     """
@@ -325,8 +354,16 @@ class _EnumDict(dict):
 
         Single underscore (sunder) names are reserved.
         """
+        if _is_internal_class(self._cls_name, value):
+            import warnings
+            warnings.warn(
+                    "In 3.13 classes created inside an enum will not become a member.  "
+                    "Use the `member` decorator to keep the current behavior.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                    )
         if _is_private(self._cls_name, key):
-            # do nothing, name will be a normal attribute
+            # also do nothing, name will be a normal attribute
             pass
         elif _is_sunder(key):
             if key not in (
@@ -364,10 +401,22 @@ class _EnumDict(dict):
             raise TypeError('%r already defined as %r' % (key, self[key]))
         elif key in self._ignore:
             pass
-        elif not _is_descriptor(value):
+        elif isinstance(value, nonmember):
+            # unwrap value here; it won't be processed by the below `else`
+            value = value.value
+        elif _is_descriptor(value):
+            pass
+        # TODO: uncomment next three lines in 3.12
+        # elif _is_internal_class(self._cls_name, value):
+        #     # do nothing, name will be a normal attribute
+        #     pass
+        else:
             if key in self:
                 # enum overwriting a descriptor?
                 raise TypeError('%r already defined as %r' % (key, self[key]))
+            elif isinstance(value, member):
+                # unwrap value here -- it will become a member
+                value = value.value
             if isinstance(value, auto):
                 if value.value == _auto_null:
                     value.value = self._generate_next_value(
@@ -617,6 +666,18 @@ class EnumType(type):
         for name in ('__repr__', '__str__', '__format__', '__reduce_ex__'):
             if name not in classdict:
                 setattr(enum_class, name, getattr(first_enum, name))
+        #
+        # for Flag, add __or__, __and__, __xor__, and __invert__
+        if Flag is not None and issubclass(enum_class, Flag):
+            for name in (
+                    '__or__', '__and__', '__xor__',
+                    '__ror__', '__rand__', '__rxor__',
+                    '__invert__'
+                ):
+                if name not in classdict:
+                    enum_method = getattr(Flag, name)
+                    setattr(enum_class, name, enum_method)
+                    classdict[name] = enum_method
         #
         # replace any other __new__ with our own (as long as Enum is not None,
         # anyway) -- again, this is to support pickle
@@ -963,9 +1024,6 @@ class EnumType(type):
         """
         if not bases:
             return object, Enum
-
-        mcls._check_for_existing_members_(class_name, bases)
-
         # ensure final parent class is an Enum derivative, find any concrete
         # data type, and check that Enum has no members
         first_enum = bases[-1]
@@ -1467,19 +1525,34 @@ class Flag(Enum, boundary=STRICT):
         return bool(self._value_)
 
     def __or__(self, other):
-        if not isinstance(other, self.__class__):
+        if isinstance(other, self.__class__):
+            other = other._value_
+        elif self._member_type_ is not object and isinstance(other, self._member_type_):
+            other = other
+        else:
             return NotImplemented
-        return self.__class__(self._value_ | other._value_)
+        value = self._value_
+        return self.__class__(value | other)
 
     def __and__(self, other):
-        if not isinstance(other, self.__class__):
+        if isinstance(other, self.__class__):
+            other = other._value_
+        elif self._member_type_ is not object and isinstance(other, self._member_type_):
+            other = other
+        else:
             return NotImplemented
-        return self.__class__(self._value_ & other._value_)
+        value = self._value_
+        return self.__class__(value & other)
 
     def __xor__(self, other):
-        if not isinstance(other, self.__class__):
+        if isinstance(other, self.__class__):
+            other = other._value_
+        elif self._member_type_ is not object and isinstance(other, self._member_type_):
+            other = other
+        else:
             return NotImplemented
-        return self.__class__(self._value_ ^ other._value_)
+        value = self._value_
+        return self.__class__(value ^ other)
 
     def __invert__(self):
         if self._inverted_ is None:
@@ -1493,47 +1566,15 @@ class Flag(Enum, boundary=STRICT):
                 self._inverted_._inverted_ = self
         return self._inverted_
 
+    __rand__ = __and__
+    __ror__ = __or__
+    __rxor__ = __xor__
+
 
 class IntFlag(int, ReprEnum, Flag, boundary=EJECT):
     """
     Support for integer-based Flags
     """
-
-
-    def __or__(self, other):
-        if isinstance(other, self.__class__):
-            other = other._value_
-        elif isinstance(other, int):
-            other = other
-        else:
-            return NotImplemented
-        value = self._value_
-        return self.__class__(value | other)
-
-    def __and__(self, other):
-        if isinstance(other, self.__class__):
-            other = other._value_
-        elif isinstance(other, int):
-            other = other
-        else:
-            return NotImplemented
-        value = self._value_
-        return self.__class__(value & other)
-
-    def __xor__(self, other):
-        if isinstance(other, self.__class__):
-            other = other._value_
-        elif isinstance(other, int):
-            other = other
-        else:
-            return NotImplemented
-        value = self._value_
-        return self.__class__(value ^ other)
-
-    __ror__ = __or__
-    __rand__ = __and__
-    __rxor__ = __xor__
-    __invert__ = Flag.__invert__
 
 
 def _high_bit(value):
@@ -1662,6 +1703,13 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
             body['_flag_mask_'] = None
             body['_all_bits_'] = None
             body['_inverted_'] = None
+            body['__or__'] = Flag.__or__
+            body['__xor__'] = Flag.__xor__
+            body['__and__'] = Flag.__and__
+            body['__ror__'] = Flag.__ror__
+            body['__rxor__'] = Flag.__rxor__
+            body['__rand__'] = Flag.__rand__
+            body['__invert__'] = Flag.__invert__
         for name, obj in cls.__dict__.items():
             if name in ('__dict__', '__weakref__'):
                 continue

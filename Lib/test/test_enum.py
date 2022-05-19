@@ -12,6 +12,7 @@ from datetime import date
 from enum import Enum, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
 from enum import STRICT, CONFORM, EJECT, KEEP, _simple_enum, _test_simple_enum
 from enum import verify, UNIQUE, CONTINUOUS, NAMED_FLAGS, ReprEnum
+from enum import member, nonmember
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
@@ -338,6 +339,7 @@ class _EnumTests:
             python_version >= (3, 12),
             '__contains__ now returns True/False for all inputs',
             )
+    @unittest.expectedFailure
     def test_contains_er(self):
         MainEnum = self.MainEnum
         self.assertIn(MainEnum.third, MainEnum)
@@ -359,6 +361,7 @@ class _EnumTests:
             python_version < (3, 12),
             '__contains__ works only with enum memmbers before 3.12',
             )
+    @unittest.expectedFailure
     def test_contains_tf(self):
         MainEnum = self.MainEnum
         self.assertIn(MainEnum.first, MainEnum)
@@ -937,6 +940,146 @@ class TestSpecial(unittest.TestCase):
         if isinstance(Theory, Exception):
             raise Theory
         self.assertEqual(Theory.__qualname__, 'spanish_inquisition')
+
+    def test_enum_of_types(self):
+        """Support using Enum to refer to types deliberately."""
+        class MyTypes(Enum):
+            i = int
+            f = float
+            s = str
+        self.assertEqual(MyTypes.i.value, int)
+        self.assertEqual(MyTypes.f.value, float)
+        self.assertEqual(MyTypes.s.value, str)
+        class Foo:
+            pass
+        class Bar:
+            pass
+        class MyTypes2(Enum):
+            a = Foo
+            b = Bar
+        self.assertEqual(MyTypes2.a.value, Foo)
+        self.assertEqual(MyTypes2.b.value, Bar)
+        class SpamEnumNotInner:
+            pass
+        class SpamEnum(Enum):
+            spam = SpamEnumNotInner
+        self.assertEqual(SpamEnum.spam.value, SpamEnumNotInner)
+
+    @unittest.skipIf(
+            python_version >= (3, 13),
+            'inner classes are not members',
+            )
+    def test_nested_classes_in_enum_are_members(self):
+        """
+        Check for warnings pre-3.13
+        """
+        with self.assertWarnsRegex(DeprecationWarning, 'will not become a member'):
+            class Outer(Enum):
+                a = 1
+                b = 2
+                class Inner(Enum):
+                    foo = 10
+                    bar = 11
+        self.assertTrue(isinstance(Outer.Inner, Outer))
+        self.assertEqual(Outer.a.value, 1)
+        self.assertEqual(Outer.Inner.value.foo.value, 10)
+        self.assertEqual(
+            list(Outer.Inner.value),
+            [Outer.Inner.value.foo, Outer.Inner.value.bar],
+            )
+        self.assertEqual(
+            list(Outer),
+            [Outer.a, Outer.b, Outer.Inner],
+            )
+
+    @unittest.skipIf(
+            python_version < (3, 13),
+            'inner classes are still members',
+            )
+    def test_nested_classes_in_enum_are_not_members(self):
+        """Support locally-defined nested classes."""
+        class Outer(Enum):
+            a = 1
+            b = 2
+            class Inner(Enum):
+                foo = 10
+                bar = 11
+        self.assertTrue(isinstance(Outer.Inner, type))
+        self.assertEqual(Outer.a.value, 1)
+        self.assertEqual(Outer.Inner.foo.value, 10)
+        self.assertEqual(
+            list(Outer.Inner),
+            [Outer.Inner.foo, Outer.Inner.bar],
+            )
+        self.assertEqual(
+            list(Outer),
+            [Outer.a, Outer.b],
+            )
+
+    def test_nested_classes_in_enum_with_nonmember(self):
+        class Outer(Enum):
+            a = 1
+            b = 2
+            @nonmember
+            class Inner(Enum):
+                foo = 10
+                bar = 11
+        self.assertTrue(isinstance(Outer.Inner, type))
+        self.assertEqual(Outer.a.value, 1)
+        self.assertEqual(Outer.Inner.foo.value, 10)
+        self.assertEqual(
+            list(Outer.Inner),
+            [Outer.Inner.foo, Outer.Inner.bar],
+            )
+        self.assertEqual(
+            list(Outer),
+            [Outer.a, Outer.b],
+            )
+
+    def test_enum_of_types_with_nonmember(self):
+        """Support using Enum to refer to types deliberately."""
+        class MyTypes(Enum):
+            i = int
+            f = nonmember(float)
+            s = str
+        self.assertEqual(MyTypes.i.value, int)
+        self.assertTrue(MyTypes.f is float)
+        self.assertEqual(MyTypes.s.value, str)
+        class Foo:
+            pass
+        class Bar:
+            pass
+        class MyTypes2(Enum):
+            a = Foo
+            b = nonmember(Bar)
+        self.assertEqual(MyTypes2.a.value, Foo)
+        self.assertTrue(MyTypes2.b is Bar)
+        class SpamEnumIsInner:
+            pass
+        class SpamEnum(Enum):
+            spam = nonmember(SpamEnumIsInner)
+        self.assertTrue(SpamEnum.spam is SpamEnumIsInner)
+
+    def test_nested_classes_in_enum_with_member(self):
+        """Support locally-defined nested classes."""
+        class Outer(Enum):
+            a = 1
+            b = 2
+            @member
+            class Inner(Enum):
+                foo = 10
+                bar = 11
+        self.assertTrue(isinstance(Outer.Inner, Outer))
+        self.assertEqual(Outer.a.value, 1)
+        self.assertEqual(Outer.Inner.value.foo.value, 10)
+        self.assertEqual(
+            list(Outer.Inner.value),
+            [Outer.Inner.value.foo, Outer.Inner.value.bar],
+            )
+        self.assertEqual(
+            list(Outer),
+            [Outer.a, Outer.b, Outer.Inner],
+            )
 
     def test_enum_with_value_name(self):
         class Huh(Enum):
@@ -2496,6 +2639,13 @@ class TestSpecial(unittest.TestCase):
         self.assertEqual(Some.x.value, 1)
         self.assertEqual(Some.y.value, 2)
 
+    def test_custom_flag_bitwise(self):
+        class MyIntFlag(int, Flag):
+            ONE = 1
+            TWO = 2
+            FOUR = 4
+        self.assertTrue(isinstance(MyIntFlag.ONE | MyIntFlag.TWO, MyIntFlag), MyIntFlag.ONE | MyIntFlag.TWO)
+        self.assertTrue(isinstance(MyIntFlag.ONE | 2, MyIntFlag))
 
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
@@ -2778,6 +2928,7 @@ class OldTestFlag(unittest.TestCase):
             python_version >= (3, 12),
             '__contains__ now returns True/False for all inputs',
             )
+    @unittest.expectedFailure
     def test_contains_er(self):
         Open = self.Open
         Color = self.Color
@@ -2800,6 +2951,7 @@ class OldTestFlag(unittest.TestCase):
             python_version < (3, 12),
             '__contains__ only works with enum memmbers before 3.12',
             )
+    @unittest.expectedFailure
     def test_contains_tf(self):
         Open = self.Open
         Color = self.Color
@@ -2942,6 +3094,7 @@ class OldTestFlag(unittest.TestCase):
         self.assertEqual(str(Color.BLUE), 'blue')
 
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_unique_composite(self):
         # override __eq__ to be identity only
         class TestFlag(Flag):
@@ -3337,6 +3490,7 @@ class OldTestIntFlag(unittest.TestCase):
             python_version >= (3, 12),
             '__contains__ now returns True/False for all inputs',
             )
+    @unittest.expectedFailure
     def test_contains_er(self):
         Open = self.Open
         Color = self.Color
@@ -3361,6 +3515,7 @@ class OldTestIntFlag(unittest.TestCase):
             python_version < (3, 12),
             '__contains__ only works with enum memmbers before 3.12',
             )
+    @unittest.expectedFailure
     def test_contains_tf(self):
         Open = self.Open
         Color = self.Color
@@ -3474,6 +3629,7 @@ class OldTestIntFlag(unittest.TestCase):
         self.assertEqual(str(Color.BLUE), 'blue')
 
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_unique_composite(self):
         # override __eq__ to be identity only
         class TestFlag(IntFlag):
@@ -3701,7 +3857,7 @@ class TestVerify(unittest.TestCase):
             triple = 3
             value = 4
 
-class TestHelpers(unittest.TestCase):
+class TestInternals(unittest.TestCase):
 
     sunder_names = '_bad_', '_good_', '_what_ho_'
     dunder_names = '__mal__', '__bien__', '__que_que__'

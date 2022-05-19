@@ -4,18 +4,12 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
+#include "pycore_object.h"        // _PyType_AllocNoTrack
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "structmember.h"         // PyMemberDef
 
 static Py_ssize_t max_module_number;
-
-_Py_IDENTIFIER(__doc__);
-_Py_IDENTIFIER(__name__);
-_Py_IDENTIFIER(__spec__);
-_Py_IDENTIFIER(__dict__);
-_Py_IDENTIFIER(__dir__);
-_Py_IDENTIFIER(__annotations__);
 
 static PyMemberDef module_members[] = {
     {"__dict__", T_OBJECT, offsetof(PyModuleObject, md_dict), READONLY},
@@ -26,7 +20,7 @@ static PyMemberDef module_members[] = {
 PyTypeObject PyModuleDef_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "moduledef",                                /* tp_name */
-    sizeof(struct PyModuleDef),                 /* tp_basicsize */
+    sizeof(PyModuleDef),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
 };
 
@@ -39,13 +33,13 @@ _PyModule_IsExtension(PyObject *obj)
     }
     PyModuleObject *module = (PyModuleObject*)obj;
 
-    struct PyModuleDef *def = module->md_def;
+    PyModuleDef *def = module->md_def;
     return (def != NULL && def->m_methods != NULL);
 }
 
 
 PyObject*
-PyModuleDef_Init(struct PyModuleDef* def)
+PyModuleDef_Init(PyModuleDef* def)
 {
     assert(PyModuleDef_Type.tp_flags & Py_TPFLAGS_READY);
     if (def->m_base.m_index == 0) {
@@ -61,22 +55,19 @@ static int
 module_init_dict(PyModuleObject *mod, PyObject *md_dict,
                  PyObject *name, PyObject *doc)
 {
-    _Py_IDENTIFIER(__package__);
-    _Py_IDENTIFIER(__loader__);
-
     assert(md_dict != NULL);
     if (doc == NULL)
         doc = Py_None;
 
-    if (_PyDict_SetItemId(md_dict, &PyId___name__, name) != 0)
+    if (PyDict_SetItem(md_dict, &_Py_ID(__name__), name) != 0)
         return -1;
-    if (_PyDict_SetItemId(md_dict, &PyId___doc__, doc) != 0)
+    if (PyDict_SetItem(md_dict, &_Py_ID(__doc__), doc) != 0)
         return -1;
-    if (_PyDict_SetItemId(md_dict, &PyId___package__, Py_None) != 0)
+    if (PyDict_SetItem(md_dict, &_Py_ID(__package__), Py_None) != 0)
         return -1;
-    if (_PyDict_SetItemId(md_dict, &PyId___loader__, Py_None) != 0)
+    if (PyDict_SetItem(md_dict, &_Py_ID(__loader__), Py_None) != 0)
         return -1;
-    if (_PyDict_SetItemId(md_dict, &PyId___spec__, Py_None) != 0)
+    if (PyDict_SetItem(md_dict, &_Py_ID(__spec__), Py_None) != 0)
         return -1;
     if (PyUnicode_CheckExact(name)) {
         Py_INCREF(name);
@@ -90,7 +81,7 @@ static PyModuleObject *
 new_module_notrack(PyTypeObject *mt)
 {
     PyModuleObject *m;
-    m = PyObject_GC_New(PyModuleObject, mt);
+    m = (PyModuleObject *)_PyType_AllocNoTrack(mt, 0);
     if (m == NULL)
         return NULL;
     m->md_def = NULL;
@@ -192,7 +183,7 @@ _add_methods_to_object(PyObject *module, PyObject *name, PyMethodDef *functions)
 }
 
 PyObject *
-PyModule_Create2(struct PyModuleDef* module, int module_api_version)
+PyModule_Create2(PyModuleDef* module, int module_api_version)
 {
     if (!_PyImport_IsInitialized(_PyInterpreterState_GET())) {
         PyErr_SetString(PyExc_SystemError,
@@ -203,7 +194,7 @@ PyModule_Create2(struct PyModuleDef* module, int module_api_version)
 }
 
 PyObject *
-_PyModule_CreateInitialized(struct PyModuleDef* module, int module_api_version)
+_PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
 {
     const char* name;
     PyModuleObject *m;
@@ -266,7 +257,7 @@ _PyModule_CreateInitialized(struct PyModuleDef* module, int module_api_version)
 }
 
 PyObject *
-PyModule_FromDefAndSpec2(struct PyModuleDef* def, PyObject *spec, int module_api_version)
+PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_version)
 {
     PyModuleDef_Slot* cur_slot;
     PyObject *(*create)(PyObject *, PyModuleDef*) = NULL;
@@ -474,7 +465,7 @@ PyModule_SetDocString(PyObject *m, const char *doc)
     PyObject *v;
 
     v = PyUnicode_FromString(doc);
-    if (v == NULL || _PyObject_SetAttrId(m, &PyId___doc__, v) != 0) {
+    if (v == NULL || PyObject_SetAttr(m, &_Py_ID(__doc__), v) != 0) {
         Py_XDECREF(v);
         return -1;
     }
@@ -503,7 +494,7 @@ PyModule_GetNameObject(PyObject *m)
     }
     d = ((PyModuleObject *)m)->md_dict;
     if (d == NULL || !PyDict_Check(d) ||
-        (name = _PyDict_GetItemIdWithError(d, &PyId___name__)) == NULL ||
+        (name = PyDict_GetItemWithError(d, &_Py_ID(__name__))) == NULL ||
         !PyUnicode_Check(name))
     {
         if (!PyErr_Occurred()) {
@@ -519,8 +510,10 @@ const char *
 PyModule_GetName(PyObject *m)
 {
     PyObject *name = PyModule_GetNameObject(m);
-    if (name == NULL)
+    if (name == NULL) {
         return NULL;
+    }
+    assert(Py_REFCNT(name) >= 2);
     Py_DECREF(name);   /* module dict has still a reference */
     return PyUnicode_AsUTF8(name);
 }
@@ -528,7 +521,6 @@ PyModule_GetName(PyObject *m)
 PyObject*
 PyModule_GetFilenameObject(PyObject *m)
 {
-    _Py_IDENTIFIER(__file__);
     PyObject *d;
     PyObject *fileobj;
     if (!PyModule_Check(m)) {
@@ -537,7 +529,7 @@ PyModule_GetFilenameObject(PyObject *m)
     }
     d = ((PyModuleObject *)m)->md_dict;
     if (d == NULL ||
-        (fileobj = _PyDict_GetItemIdWithError(d, &PyId___file__)) == NULL ||
+        (fileobj = PyDict_GetItemWithError(d, &_Py_ID(__file__))) == NULL ||
         !PyUnicode_Check(fileobj))
     {
         if (!PyErr_Occurred()) {
@@ -726,8 +718,7 @@ int
 _PyModuleSpec_IsInitializing(PyObject *spec)
 {
     if (spec != NULL) {
-        _Py_IDENTIFIER(_initializing);
-        PyObject *value = _PyObject_GetAttrId(spec, &PyId__initializing);
+        PyObject *value = PyObject_GetAttr(spec, &_Py_ID(_initializing));
         if (value != NULL) {
             int initializing = PyObject_IsTrue(value);
             Py_DECREF(value);
@@ -750,8 +741,7 @@ _PyModuleSpec_IsUninitializedSubmodule(PyObject *spec, PyObject *name)
          return 0;
     }
 
-    _Py_IDENTIFIER(_uninitialized_submodules);
-    PyObject *value = _PyObject_GetAttrId(spec, &PyId__uninitialized_submodules);
+    PyObject *value = PyObject_GetAttr(spec, &_Py_ID(_uninitialized_submodules));
     if (value == NULL) {
         return 0;
     }
@@ -774,18 +764,17 @@ module_getattro(PyModuleObject *m, PyObject *name)
     }
     PyErr_Clear();
     assert(m->md_dict != NULL);
-    _Py_IDENTIFIER(__getattr__);
-    getattr = _PyDict_GetItemIdWithError(m->md_dict, &PyId___getattr__);
+    getattr = PyDict_GetItemWithError(m->md_dict, &_Py_ID(__getattr__));
     if (getattr) {
         return PyObject_CallOneArg(getattr, name);
     }
     if (PyErr_Occurred()) {
         return NULL;
     }
-    mod_name = _PyDict_GetItemIdWithError(m->md_dict, &PyId___name__);
+    mod_name = PyDict_GetItemWithError(m->md_dict, &_Py_ID(__name__));
     if (mod_name && PyUnicode_Check(mod_name)) {
         Py_INCREF(mod_name);
-        PyObject *spec = _PyDict_GetItemIdWithError(m->md_dict, &PyId___spec__);
+        PyObject *spec = PyDict_GetItemWithError(m->md_dict, &_Py_ID(__spec__));
         if (spec == NULL && PyErr_Occurred()) {
             Py_DECREF(mod_name);
             return NULL;
@@ -861,11 +850,11 @@ static PyObject *
 module_dir(PyObject *self, PyObject *args)
 {
     PyObject *result = NULL;
-    PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
+    PyObject *dict = PyObject_GetAttr(self, &_Py_ID(__dict__));
 
     if (dict != NULL) {
         if (PyDict_Check(dict)) {
-            PyObject *dirfunc = _PyDict_GetItemIdWithError(dict, &PyId___dir__);
+            PyObject *dirfunc = PyDict_GetItemWithError(dict, &_Py_ID(__dir__));
             if (dirfunc) {
                 result = _PyObject_CallNoArgs(dirfunc);
             }
@@ -891,7 +880,7 @@ static PyMethodDef module_methods[] = {
 static PyObject *
 module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
 {
-    PyObject *dict = _PyObject_GetAttrId((PyObject *)m, &PyId___dict__);
+    PyObject *dict = PyObject_GetAttr((PyObject *)m, &_Py_ID(__dict__));
 
     if ((dict == NULL) || !PyDict_Check(dict)) {
         PyErr_Format(PyExc_TypeError, "<module>.__dict__ is not a dictionary");
@@ -901,8 +890,8 @@ module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
 
     PyObject *annotations;
     /* there's no _PyDict_GetItemId without WithError, so let's LBYL. */
-    if (_PyDict_ContainsId(dict, &PyId___annotations__)) {
-        annotations = _PyDict_GetItemIdWithError(dict, &PyId___annotations__);
+    if (PyDict_Contains(dict, &_Py_ID(__annotations__))) {
+        annotations = PyDict_GetItemWithError(dict, &_Py_ID(__annotations__));
         /*
         ** _PyDict_GetItemIdWithError could still fail,
         ** for instance with a well-timed Ctrl-C or a MemoryError.
@@ -914,7 +903,8 @@ module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
     } else {
         annotations = PyDict_New();
         if (annotations) {
-            int result = _PyDict_SetItemId(dict, &PyId___annotations__, annotations);
+            int result = PyDict_SetItem(
+                    dict, &_Py_ID(__annotations__), annotations);
             if (result) {
                 Py_CLEAR(annotations);
             }
@@ -928,7 +918,7 @@ static int
 module_set_annotations(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignored))
 {
     int ret = -1;
-    PyObject *dict = _PyObject_GetAttrId((PyObject *)m, &PyId___dict__);
+    PyObject *dict = PyObject_GetAttr((PyObject *)m, &_Py_ID(__dict__));
 
     if ((dict == NULL) || !PyDict_Check(dict)) {
         PyErr_Format(PyExc_TypeError, "<module>.__dict__ is not a dictionary");
@@ -937,17 +927,17 @@ module_set_annotations(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignor
 
     if (value != NULL) {
         /* set */
-        ret = _PyDict_SetItemId(dict, &PyId___annotations__, value);
+        ret = PyDict_SetItem(dict, &_Py_ID(__annotations__), value);
         goto exit;
     }
 
     /* delete */
-    if (!_PyDict_ContainsId(dict, &PyId___annotations__)) {
+    if (!PyDict_Contains(dict, &_Py_ID(__annotations__))) {
         PyErr_Format(PyExc_AttributeError, "__annotations__");
         goto exit;
     }
 
-    ret = _PyDict_DelItemId(dict, &PyId___annotations__);
+    ret = PyDict_DelItem(dict, &_Py_ID(__annotations__));
 
 exit:
     Py_XDECREF(dict);
