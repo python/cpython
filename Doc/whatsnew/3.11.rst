@@ -730,6 +730,12 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   the given type. At runtime it simply returns the received value.
   (Contributed by Jelle Zijlstra in :gh:`90638`.)
 
+* :data:`typing.TypedDict` types can now be generic. (Contributed by
+  Samodya Abey in :gh:`89026`.)
+
+* :class:`~typing.NamedTuple` types can now be generic.
+  (Contributed by Serhiy Storchaka in :issue:`43923`.)
+
 * Allow subclassing of :class:`typing.Any`. This is useful for avoiding
   type checker errors related to highly dynamic class, such as mocks.
   (Contributed by Shantanu Jain in :gh:`91154`.)
@@ -743,11 +749,33 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   to clear all registered overloads of a function.
   (Contributed by Jelle Zijlstra in :gh:`89263`.)
 
-* :data:`typing.TypedDict` subclasses can now be generic. (Contributed by
-  Samodya Abey in :gh:`89026`.)
+* The :meth:`__init__` method of :class:`~typing.Protocol` subclasses
+  is now preserved. (Contributed by Adrian Garcia Badarasco in :gh:`88970`.)
 
-* :class:`~typing.NamedTuple` subclasses can now be generic.
-  (Contributed by Serhiy Storchaka in :issue:`43923`.)
+* The representation of empty tuple types (``Tuple[()]``) is simplified.
+  This affects introspection, e.g. ``get_args(Tuple[()])`` now evaluates
+  to ``()`` instead of ``((),)``.
+  (Contributed by Serhiy Storchaka in :gh:`91137`.)
+
+* Loosen runtime requirements for type annotations by removing the callable
+  check in the private ``typing._type_check`` function. (Contributed by
+  Gregory Beauregard in :gh:`90802`.)
+
+* :func:`typing.get_type_hints` now supports evaluating strings as forward
+  references in :ref:`PEP 585 generic aliases <types-genericalias>`.
+  (Contributed by Niklas Rosenstein in :gh:`85542`.)
+
+* :func:`typing.get_type_hints` no longer adds :data:`~typing.Optional`
+  to parameters with ``None`` as a default. (Contributed by Nikita Sobolev
+  in :gh:`90353`.)
+
+* :func:`typing.get_type_hints` now supports evaluating bare stringified
+  :data:`~typing.ClassVar` annotations. (Contributed by Gregory Beauregard
+  in :gh:`90711`.)
+
+* :func:`typing.no_type_check` no longer modifies external classes and functions.
+  It also now correctly marks classmethods as not to be type checked. (Contributed
+  by Nikita Sobolev in :gh:`90729`.)
 
 
 tkinter
@@ -1235,6 +1263,10 @@ Deprecated
   currently unplanned, but users are encouraged to use :class:`str` instead
   wherever possible.
   (Contributed by Alex Waygood in :gh:`92332`.)
+
+* The keyword argument syntax for constructing :data:`~typing.TypedDict` types
+  is now deprecated. Support will be removed in Python 3.13. (Contributed by
+  Jingchen Ye in :gh:`90224`.)
 
 
 Pending Removal in Python 3.12
