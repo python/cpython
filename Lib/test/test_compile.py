@@ -109,7 +109,9 @@ class TestSpecifics(unittest.TestCase):
         self.assertEqual(d['z'], 12)
 
     def test_extended_arg(self):
-        longexpr = 'x = x or ' + '-x' * 2500
+        # default: 1000 * 2.5 = 2500 repetitions
+        repeat = int(sys.getrecursionlimit() * 2.5)
+        longexpr = 'x = x or ' + '-x' * repeat
         g = {}
         code = '''
 def f(x):
