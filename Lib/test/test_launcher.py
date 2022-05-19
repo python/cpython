@@ -244,6 +244,17 @@ class RunPyMixin:
         finally:
             file.unlink()
 
+    @contextlib.contextmanager
+    def test_venv(self):
+        venv = Path.cwd() / "Scripts"
+        venv.mkdir(exist_ok=True, parents=True)
+        venv_exe = (venv / Path(sys.executable).name)
+        venv_exe.touch()
+        try:
+            yield {"VIRTUAL_ENV": str(venv.parent)}
+        finally:
+            shutil.rmtree(venv)
+
 
 class TestLauncher(unittest.TestCase, RunPyMixin):
     @classmethod
@@ -451,12 +462,8 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("PythonTestSuite/3.100", default)
 
     def test_virtualenv_in_list(self):
-        venv = Path.cwd() / "Scripts"
-        venv.mkdir(exist_ok=True, parents=True)
-        venv_exe = (venv / Path(sys.executable).name)
-        venv_exe.touch()
-        try:
-            data = self.run_py(["-0p"], env={"VIRTUAL_ENV": str(venv.parent)})
+        with self.test_venv() as env:
+            data = self.run_py(["-0p"], env=env)
             for line in data["stdout"].splitlines():
                 m = re.match(r"\s*\*\s+(.+)$", line)
                 if m:
@@ -465,7 +472,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             else:
                 self.fail("did not find active venv path")
 
-            data = self.run_py(["-0"], env={"VIRTUAL_ENV": str(venv.parent)})
+            data = self.run_py(["-0"], env=env)
             for line in data["stdout"].splitlines():
                 m = re.match(r"\s*\*\s+(.+)$", line)
                 if m:
@@ -473,8 +480,23 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                     break
             else:
                 self.fail("did not find active venv entry")
-        finally:
-            shutil.rmtree(venv)
+
+    def test_virtualenv_with_env(self):
+        with self.test_venv() as env:
+            # Establish what a default venv launch looks like
+            data1 = self.run_py([], env={**env})
+            # also an overridden launch
+            data2 = self.run_py(["-3"], env={**env})
+            # The actual test scenario
+            data3 = self.run_py([], env={**env, "PY_PYTHON": "-3"})
+        # Default and overridden launches should not match
+        self.assertNotEqual(data1["LaunchCommand"], data2["LaunchCommand"])
+        # Env-overridden and default launches *should* match
+        self.assertEqual(data1["LaunchCommand"], data3["LaunchCommand"])
+        # Only the PY_PYTHON case should be a low priority tag
+        self.assertEqual(data1["SearchInfo.lowPriorityTag"], "False")
+        self.assertEqual(data2["SearchInfo.lowPriorityTag"], "False")
+        self.assertEqual(data3["SearchInfo.lowPriorityTag"], "True")
 
     def test_py_shebang(self):
         with self.py_ini(TEST_PY_COMMANDS):
