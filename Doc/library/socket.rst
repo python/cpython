@@ -227,28 +227,24 @@ created.  Socket addresses are represented as follows:
 
 - :const:`AF_HYPERV` is a Windows-only socket based interface for communicating
   with Hyper-V hosts and guests. The address family is represented as a
-  ``(vm_id, service_id)`` tuple where the ``vm_id`` and ``service_id`` are the
-  little endian byte representation of a ``uuid.UUID`` object.
+  ``(vm_id, service_id)`` tuple where the ``vm_id`` and ``service_id`` are
+  UUID strings.
 
   The ``vm_id`` is the virtual machine identifier or a set of known VMID values
-  if the target is not a specific virtual machine. Known VMID values are:
+  if the target is not a specific virtual machine. Known VMID constants are
+  defined on ``socket`` are:
 
-  - ``HV_GUID_ZERO 00000000-0000-0000-0000-000000000000`` - Used to bind on
-    itself and accept connections from all partitions.
-  - ``HV_GUID_BROADCAST FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF``
-  - ``HV_GUID_CHILDREN 90db8b89-0d35-4f79-8ce9-49ea0ac8b7cd`` - Used to bind on
-    itself and accept connection from child partitions.
-  - ``HV_GUID_LOOPBACK e0e16197-dd56-4a10-9195-5ee7a155a838`` - Used as a
-    target to itself.
-  - ``HV_GUID_PARENT a42e7cda-d03f-480c-9cc2-a4de20abb878`` - When used as a
-    bind accepts connection from the parent partition. When used as an address
-    target it will connect to the parent parition.
+  - ``HV_GUID_ZERO``
+  - ``HV_GUID_BROADCAST``
+  - ``HV_GUID_WILDCARD `` - Used to bind on itself and accept connections from
+    all partitions.
+  - ``HV_GUID_CHILDREN`` - Used to bind on itself and accept connection from
+    child partitions.
+  - ``HV_GUID_LOOPBACK`` - Used as a target to itself.
+  - ``HV_GUID_PARENT`` - When used as a bind accepts connection from the parent
+    partition. When used as an address target it will connect to the parent parition.
 
-  The ``service_id`` is the registered service identifier of the registered
-  service.
-
-  The easily get the byte value do
-  ``uuid.UUID("eee5f691-5210-47e8-bbc9-7198bed79b77").bytes_le``.
+  The ``service_id`` is the service identifier of the registered service.
 
   .. versionadded:: 3.12
 
@@ -619,6 +615,7 @@ Constants
 .. data:: AF_HYPERV
           HV_PROTOCOL_RAW
           HVSOCKET_*
+          HV_GUID_*
 
    Constants for Windows Hyper-V sockets for host/guest communications.
 

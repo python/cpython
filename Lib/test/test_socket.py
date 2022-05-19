@@ -2482,29 +2482,41 @@ class BasicHyperVTest(unittest.TestCase):
         socket.HVSOCKET_CONTAINER_PASSTHRU
         socket.HVSOCKET_CONNECTED_SUSPEND
         socket.HVSOCKET_ADDRESS_FLAG_PASSTHRU
+        socket.HV_GUID_ZERO
+        socket.HV_GUID_WILDCARD
+        socket.HV_GUID_BROADCAST
+        socket.HV_GUID_CHILDREN
+        socket.HV_GUID_LOOPBACK
+        socket.HV_GUID_LOOPBACK
 
     def testCreateHyperVSocketWithUnknownProtoFailure(self):
-        self.assertRaises(OSError, socket.socket, socket.AF_HYPERV, socket.SOCK_STREAM)
+        with self.assertRaises(OSError):
+            socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM)
 
     def testCreateHyperVSocketAddrNotTupleFailure(self):
         with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
-            self.assertRaises(TypeError, s.connect, b"\x00" * 16)
+            with self.assertRaises(TypeError):
+                s.connect(socket.HV_GUID_ZERO)
 
-    def testCreateHyperVSocketAddrNotTupleOf2BytesFailure(self):
+    def testCreateHyperVSocketAddrNotTupleOf2StrsFailure(self):
         with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
-            self.assertRaises(TypeError, s.connect, (b"\x00" * 16,))
+            with self.assertRaises(TypeError):
+                s.connect((socket.HV_GUID_ZERO,))
 
-    def testCreateHyperVSocketAddrNotTupleOfBytesFailure(self):
+    def testCreateHyperVSocketAddrNotTupleOfStrsFailure(self):
         with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
-            self.assertRaises(TypeError, s.connect, (1, 2))
+            with self.assertRaises(TypeError):
+                s.connect((1, 2))
 
-    def testCreateHyperVSocketAddrVmIdNotCorrectLengthFailure(self):
+    def testCreateHyperVSocketAddrVmIdNotValidUUIDFailure(self):
         with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
-            self.assertRaises(TypeError, s.connect, (b"\x00", b"\x00" * 16))
+            with self.assertRaises(ValueError):
+                s.connect(("00", socket.HV_GUID_ZERO))
 
-    def testCreateHyperVSocketAddrServiceIdNotCorrectLengthFailure(self):
+    def testCreateHyperVSocketAddrServiceIdNotValidUUIDFailure(self):
         with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
-            self.assertRaises(TypeError, s.connect, (b"\x00" * 16, b"\x00"))
+            with self.assertRaises(ValueError):
+                s.connect((socket.HV_GUID_ZERO, "00"))
 
 
 class BasicTCPTest(SocketConnectedTest):

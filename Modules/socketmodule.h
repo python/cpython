@@ -81,8 +81,6 @@ typedef int socklen_t;
 # ifndef AF_HYPERV
 #  define AF_HYPERV 34
 # endif
-
-/* FIXME: Should this have some sort of safe guard? */
 # include <hvsocket.h>
 #endif /* MS_WINDOWS */
 
