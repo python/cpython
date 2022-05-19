@@ -549,10 +549,11 @@ class OtherTest(unittest.TestCase):
         # memoryview Use After Free (memory_ass_sub) see gh-92888
         uaf_backing = bytearray(bytearray.__basicsize__)
         uaf_view = memoryview(uaf_backing).cast('n') # ssize_t format
-
+        memory_backing = None
+        
         class weird_index:
             def __index__(self):
-                global memory_backing
+                nonlocal memory_backing
                 uaf_view.release() # release memoryview (UAF)
                 # free `uaf_backing` memory and allocate a new bytearray into it
                 memory_backing = uaf_backing.clear() or bytearray()
