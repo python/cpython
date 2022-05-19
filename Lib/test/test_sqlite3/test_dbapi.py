@@ -668,35 +668,13 @@ class OpenTests(unittest.TestCase):
             cx.execute(self._sql)
 
     def test_open_uri(self):
-        uri = "file:" + TESTFN
-        with managed_connect(uri, uri=True) as cx:
-            self.assertTrue(os.path.exists(TESTFN))
+        with managed_connect(TESTFN) as cx:
             cx.execute(self._sql)
-
-    def test_open_uri_readonly(self):
-        uri = "file:" + TESTFN + "?mode=ro"
-        self.addCleanup(unlink, TESTFN)
-        # Cannot create new DB
+        with managed_connect(f"file:{TESTFN}", uri=True) as cx:
+            cx.execute(self._sql)
         with self.assertRaises(sqlite.OperationalError):
-            with sqlite.connect(uri, uri=True):
-                pass
-        self.assertFalse(os.path.exists(TESTFN))
-        with sqlite.connect(TESTFN) as cx:
-            self.assertTrue(os.path.exists(TESTFN))
-        # Cannot modify new DB
-        with sqlite.connect(uri, uri=True) as cx:
-            with self.assertRaises(sqlite.OperationalError):
+            with managed_connect(f"file:{TESTFN}?mode=ro", uri=True) as cx:
                 cx.execute(self._sql)
-
-    @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
-    @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
-    @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
-    def test_open_undecodable_uri(self):
-        uri = "file:" + urllib.parse.quote(TESTFN_UNDECODABLE)
-        self.addCleanup(unlink, TESTFN_UNDECODABLE)
-        with managed_connect(uri, uri=True) as cx:
-            self.assertTrue(os.path.exists(TESTFN_UNDECODABLE))
-            cx.execute(self._sql)
 
     def test_database_keyword(self):
         with sqlite.connect(database=":memory:") as cx:
