@@ -1873,7 +1873,7 @@ Porting to Python 3.11
 
 * :c:func:`PyConfig_Read` no longer calculates the initial search path, and will not
   fill any values into :c:member:`PyConfig.module_search_paths`. To calculate default
-  paths and then modify them, finish initialization and use :c:func`PySys_GetObject`
+  paths and then modify them, finish initialization and use :c:func:`PySys_GetObject`
   to retrieve :data:`sys.path` as a Python list object and modify it directly.
 
 
