@@ -1,13 +1,17 @@
 import _thread
+from concurrent.futures import ThreadPoolExecutor, wait
 import contextlib
 import functools
 import sys
+from test.support.socket_helper import bind_port, HOST
 import threading
+from socket import socket
 import time
 import unittest
 
 from test import support
 
+_thread_pool = ThreadPoolExecutor()
 
 #=======================================================================
 # Threading support to prevent reporting refleaks when running regrtest.py -R
@@ -242,3 +246,65 @@ def requires_working_threading(*, module=False):
             raise unittest.SkipTest(msg)
     else:
         return unittest.skipUnless(can_start_thread, msg)
+
+
+class Server:
+    """A context manager for a blocking server in a thread pool.
+
+    The server is designed:
+
+    - for testing purposes so it serves a single client for its lifetime
+    - to be one-pass, short-lived, and terminated by in-protocol means so no
+      stopper flag is used
+    - to be used where asyncio has no application
+
+    The server listens on an address returned from the ``with`` statement.
+    """
+
+    def __init__(self, client_func, *args, results=[], **kwargs):
+        """Create and run the server.
+
+        The method blocks until a server is ready to accept clients.
+
+        When client_func raises an exception, all server-side sockets are
+        closed.
+
+        Args:
+            client_func: a function called in a dedicated thread for each new
+                connected client. The function receives all argument passed to
+                the __init__ method excluding client_func.
+            args: positional arguments passed to client_func.
+            results: a reference to a list for collecting client_func
+                return values. Populated after execution leaves a ``with``
+                blocks associated with the Server context manager.
+            kwargs: keyword arguments passed to client_func.
+
+        Throws:
+            When client_func throws, this method catches the exception, wraps
+            it into RuntimeError("server-side error") and rethrows.
+        """
+        server_socket = socket()
+        self._port = bind_port(server_socket)
+        self._result = _thread_pool.submit(self._thread_func, server_socket,
+                                           client_func, args, kwargs)
+        self._result_out = results
+
+    def _thread_func(self, server_socket, client_func, args, kwargs):
+        with server_socket:
+            server_socket.settimeout(1.0)
+            server_socket.listen(1)
+            client, peer_address = server_socket.accept()
+            with client:
+                return client_func(client, peer_address, *args, **kwargs)
+
+    def __enter__(self):
+        return HOST, self._port
+
+    def __exit__(self, etype, evalue, traceback):
+        wait([self._result])
+        if etype is ConnectionAbortedError or etype is ConnectionResetError:
+            if self._result.exception() is not None:
+                raise RuntimeError("server-side error") from self._result.exception()
+            return False
+        self._result_out = self._result.result()
+        return False
