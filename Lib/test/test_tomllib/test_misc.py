@@ -6,6 +6,7 @@ import copy
 import datetime
 from decimal import Decimal as D
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 
@@ -91,11 +92,13 @@ class TestMiscellaneous(unittest.TestCase):
         self.assertEqual(obj_copy, expected_obj)
 
     def test_inline_array_recursion_limit(self):
-        nest_count = 470
+        # 470 with default recursion limit
+        nest_count = int(sys.getrecursionlimit() * 0.47)
         recursive_array_toml = "arr = " + nest_count * "[" + nest_count * "]"
         tomllib.loads(recursive_array_toml)
 
     def test_inline_table_recursion_limit(self):
-        nest_count = 310
+        # 310 with default recursion limit
+        nest_count = int(sys.getrecursionlimit() * 0.31)
         recursive_table_toml = nest_count * "key = {" + nest_count * "}"
         tomllib.loads(recursive_table_toml)
