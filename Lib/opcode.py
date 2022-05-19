@@ -188,7 +188,6 @@ def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
-def_op('PRECALL', 166)
 
 def_op('CALL', 171)
 def_op('KW_NAMES', 172)
@@ -254,6 +253,21 @@ _specializations = {
         "CALL_ADAPTIVE",
         "CALL_PY_EXACT_ARGS",
         "CALL_PY_WITH_DEFAULTS",
+        "CALL_BOUND_METHOD_EXACT_ARGS",
+        "CALL_BUILTIN_CLASS",
+        "CALL_BUILTIN_FAST_WITH_KEYWORDS",
+        "CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS",
+        "CALL_NO_KW_BUILTIN_FAST",
+        "CALL_NO_KW_BUILTIN_O",
+        "CALL_NO_KW_ISINSTANCE",
+        "CALL_NO_KW_LEN",
+        "CALL_NO_KW_LIST_APPEND",
+        "CALL_NO_KW_METHOD_DESCRIPTOR_FAST",
+        "CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS",
+        "CALL_NO_KW_METHOD_DESCRIPTOR_O",
+        "CALL_NO_KW_STR_1",
+        "CALL_NO_KW_TUPLE_1",
+        "CALL_NO_KW_TYPE_1",
     ],
     "COMPARE_OP": [
         "COMPARE_OP_ADAPTIVE",
@@ -293,25 +307,6 @@ _specializations = {
         "LOAD_METHOD_NO_DICT",
         "LOAD_METHOD_WITH_DICT",
         "LOAD_METHOD_WITH_VALUES",
-    ],
-    "PRECALL": [
-        "PRECALL_ADAPTIVE",
-        "PRECALL_BOUND_METHOD",
-        "PRECALL_BUILTIN_CLASS",
-        "PRECALL_BUILTIN_FAST_WITH_KEYWORDS",
-        "PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS",
-        "PRECALL_NO_KW_BUILTIN_FAST",
-        "PRECALL_NO_KW_BUILTIN_O",
-        "PRECALL_NO_KW_ISINSTANCE",
-        "PRECALL_NO_KW_LEN",
-        "PRECALL_NO_KW_LIST_APPEND",
-        "PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST",
-        "PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS",
-        "PRECALL_NO_KW_METHOD_DESCRIPTOR_O",
-        "PRECALL_NO_KW_STR_1",
-        "PRECALL_NO_KW_TUPLE_1",
-        "PRECALL_NO_KW_TYPE_1",
-        "PRECALL_PYFUNC",
     ],
     "RESUME": [
         "RESUME_QUICK",
@@ -393,9 +388,6 @@ _cache_format = {
         "counter": 1,
         "func_version": 2,
         "min_args": 1,
-    },
-    "PRECALL": {
-        "counter": 1,
     },
     "STORE_SUBSCR": {
         "counter": 1,
