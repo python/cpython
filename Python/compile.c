@@ -264,6 +264,15 @@ typedef struct basicblock_ {
     unsigned b_return : 1;
 } basicblock;
 
+
+static struct instr *
+basicblock_last_instr(basicblock *b) {
+    if (b->b_iused) {
+        return &b->b_instr[b->b_iused - 1];
+    }
+    return NULL;
+}
+
 /* fblockinfo tracks the current frame block.
 
 A frame block is used to handle loops, try/except, and try/finally.
@@ -331,9 +340,6 @@ struct compiler_unit {
     int u_col_offset;      /* the offset of the current stmt */
     int u_end_lineno;      /* the end line of the current stmt */
     int u_end_col_offset;  /* the end offset of the current stmt */
-
-    /* true if we need to create an implicit basicblock before the next instr */
-    int u_need_new_implicit_block;
 };
 
 /* This struct captures the global state of a compilation.
@@ -830,7 +836,6 @@ compiler_use_next_block(struct compiler *c, basicblock *block)
     assert(block != NULL);
     c->u->u_curblock->b_next = block;
     c->u->u_curblock = block;
-    c->u->u_need_new_implicit_block = 0;
     return block;
 }
 
@@ -1206,7 +1211,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
     return stack_effect(opcode, oparg, -1);
 }
 
-static int is_end_of_basic_block(struct instr *instr)
+static int
+is_end_of_basic_block(struct instr *instr)
 {
     int opcode = instr->i_opcode;
 
@@ -1219,7 +1225,8 @@ static int is_end_of_basic_block(struct instr *instr)
 static int
 compiler_use_new_implicit_block_if_needed(struct compiler *c)
 {
-    if (c->u->u_need_new_implicit_block) {
+    basicblock *b = c->u->u_curblock;
+    if (b->b_iused && is_end_of_basic_block(basicblock_last_instr(b))) {
         basicblock *b = compiler_new_block(c);
         if (b == NULL) {
             return -1;
@@ -1227,14 +1234,6 @@ compiler_use_new_implicit_block_if_needed(struct compiler *c)
         compiler_use_next_block(c, b);
     }
     return 0;
-}
-
-static void
-compiler_check_if_end_of_block(struct compiler *c, struct instr *instr)
-{
-    if (is_end_of_basic_block(instr)) {
-        c->u->u_need_new_implicit_block = 1;
-    }
 }
 
 /* Add an opcode with no argument.
@@ -1269,7 +1268,6 @@ compiler_addop_line(struct compiler *c, int opcode, int line,
     i->i_col_offset = col_offset;
     i->i_end_col_offset = end_col_offset;
 
-    compiler_check_if_end_of_block(c, i);
     return 1;
 }
 
@@ -1511,7 +1509,6 @@ compiler_addop_i_line(struct compiler *c, int opcode, Py_ssize_t oparg,
     i->i_col_offset = col_offset;
     i->i_end_col_offset = end_col_offset;
 
-    compiler_check_if_end_of_block(c, i);
     return 1;
 }
 
@@ -1556,7 +1553,6 @@ static int add_jump_to_block(struct compiler *c, int opcode,
     i->i_col_offset = col_offset;
     i->i_end_col_offset = end_col_offset;
 
-    compiler_check_if_end_of_block(c, i);
     return 1;
 }
 
