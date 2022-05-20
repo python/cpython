@@ -395,10 +395,11 @@ typedef struct {
     Py_ssize_t on_top;
 } pattern_context;
 
+static int basicblock_next_instr(basicblock *);
+
 static int compiler_enter_scope(struct compiler *, identifier, int, void *, int);
 static void compiler_free(struct compiler *);
 static basicblock *compiler_new_block(struct compiler *);
-static int compiler_next_instr(basicblock *);
 static int compiler_addop(struct compiler *, int);
 static int compiler_addop_i(struct compiler *, int, Py_ssize_t);
 static int compiler_addop_j(struct compiler *, int, basicblock *);
@@ -851,7 +852,7 @@ compiler_copy_block(struct compiler *c, basicblock *block)
         return NULL;
     }
     for (int i = 0; i < block->b_iused; i++) {
-        int n = compiler_next_instr(result);
+        int n = basicblock_next_instr(result);
         if (n < 0) {
             return NULL;
         }
@@ -868,7 +869,7 @@ compiler_copy_block(struct compiler *c, basicblock *block)
 */
 
 static int
-compiler_next_instr(basicblock *b)
+basicblock_next_instr(basicblock *b)
 {
     assert(b != NULL);
     if (b->b_instr == NULL) {
@@ -1248,7 +1249,7 @@ basicblock_addop_line(basicblock *b, int opcode, int line,
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     assert(!HAS_ARG(opcode) || IS_ARTIFICIAL(opcode));
 
-    int off = compiler_next_instr(b);
+    int off = basicblock_next_instr(b);
     if (off < 0) {
         return 0;
     }
@@ -1493,7 +1494,7 @@ basicblock_addop_i_line(basicblock *b, int opcode, Py_ssize_t oparg,
     assert(HAS_ARG(opcode));
     assert(0 <= oparg && oparg <= 2147483647);
 
-    int off = compiler_next_instr(b);
+    int off = basicblock_next_instr(b);
     if (off < 0) {
         return 0;
     }
@@ -1539,7 +1540,7 @@ basicblock_add_jump(basicblock *b, int opcode,
     assert(HAS_ARG(opcode) || IS_VIRTUAL_OPCODE(opcode));
     assert(target != NULL);
 
-    int off = compiler_next_instr(b);
+    int off = basicblock_next_instr(b);
     struct instr *i = &b->b_instr[off];
     if (off < 0) {
         return 0;
@@ -8091,7 +8092,7 @@ build_cellfixedoffsets(struct compiler *c)
 
 static inline int
 insert_instruction(basicblock *block, int pos, struct instr *instr) {
-    if (compiler_next_instr(block) < 0) {
+    if (basicblock_next_instr(block) < 0) {
         return -1;
     }
     for (int i = block->b_iused-1; i > pos; i--) {
@@ -8977,7 +8978,7 @@ extend_block(basicblock *bb) {
         basicblock *to_copy = last->i_target;
         last->i_opcode = NOP;
         for (int i = 0; i < to_copy->b_iused; i++) {
-            int index = compiler_next_instr(bb);
+            int index = basicblock_next_instr(bb);
             if (index < 0) {
                 return -1;
             }
