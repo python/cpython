@@ -67,7 +67,8 @@ terms of the MIT license. A copy of the license can be found in the file
   On windows initializes support for aligned allocation and
   large OS pages (if MIMALLOC_LARGE_OS_PAGES is true).
 ----------------------------------------------------------- */
-bool    _mi_os_decommit(void* addr, size_t size, mi_stats_t* stats);
+bool _mi_os_decommit(void* addr, size_t size, mi_stats_t* stats);
+bool _mi_os_commit(void* addr, size_t size, bool* is_zero, mi_stats_t* tld_stats);
 
 static void* mi_align_up_ptr(void* p, size_t alignment) {
   return (void*)_mi_align_up((uintptr_t)p, alignment);
@@ -96,7 +97,7 @@ bool _mi_os_has_overcommit(void) {
 }
 
 // OS (small) page size
-size_t _mi_os_page_size() {
+size_t _mi_os_page_size(void) {
   return os_page_size;
 }
 
@@ -129,26 +130,47 @@ size_t _mi_os_good_alloc_size(size_t size) {
 // We use VirtualAlloc2 for aligned allocation, but it is only supported on Windows 10 and Windows Server 2016.
 // So, we need to look it up dynamically to run on older systems. (use __stdcall for 32-bit compatibility)
 // NtAllocateVirtualAllocEx is used for huge OS page allocation (1GiB)
-//
-// We hide MEM_EXTENDED_PARAMETER to compile with older SDK's.
+// We define a minimal MEM_EXTENDED_PARAMETER ourselves in order to be able to compile with older SDK's.
+typedef enum MI_MEM_EXTENDED_PARAMETER_TYPE_E {
+  MiMemExtendedParameterInvalidType = 0,
+  MiMemExtendedParameterAddressRequirements,
+  MiMemExtendedParameterNumaNode,
+  MiMemExtendedParameterPartitionHandle,
+  MiMemExtendedParameterUserPhysicalHandle,
+  MiMemExtendedParameterAttributeFlags,
+  MiMemExtendedParameterMax
+} MI_MEM_EXTENDED_PARAMETER_TYPE; 
+
+typedef struct DECLSPEC_ALIGN(8) MI_MEM_EXTENDED_PARAMETER_S {
+  struct { DWORD64 Type : 8; DWORD64 Reserved : 56; } Type;
+  union  { DWORD64 ULong64; PVOID Pointer; SIZE_T Size; HANDLE Handle; DWORD ULong; } Arg;
+} MI_MEM_EXTENDED_PARAMETER;
+
+typedef struct MI_MEM_ADDRESS_REQUIREMENTS_S {
+  PVOID  LowestStartingAddress;
+  PVOID  HighestEndingAddress;
+  SIZE_T Alignment;
+} MI_MEM_ADDRESS_REQUIREMENTS;
+
+#define MI_MEM_EXTENDED_PARAMETER_NONPAGED_HUGE   0x00000010
+
 #include <winternl.h>
-typedef PVOID    (__stdcall *PVirtualAlloc2)(HANDLE, PVOID, SIZE_T, ULONG, ULONG, /* MEM_EXTENDED_PARAMETER* */ void*, ULONG);
-typedef NTSTATUS (__stdcall *PNtAllocateVirtualMemoryEx)(HANDLE, PVOID*, SIZE_T*, ULONG, ULONG, /* MEM_EXTENDED_PARAMETER* */ PVOID, ULONG);
+typedef PVOID    (__stdcall *PVirtualAlloc2)(HANDLE, PVOID, SIZE_T, ULONG, ULONG, MI_MEM_EXTENDED_PARAMETER*, ULONG);
+typedef NTSTATUS (__stdcall *PNtAllocateVirtualMemoryEx)(HANDLE, PVOID*, SIZE_T*, ULONG, ULONG, MI_MEM_EXTENDED_PARAMETER*, ULONG);
 static PVirtualAlloc2 pVirtualAlloc2 = NULL;
 static PNtAllocateVirtualMemoryEx pNtAllocateVirtualMemoryEx = NULL;
 
 // Similarly, GetNumaProcesorNodeEx is only supported since Windows 7
-#if (_WIN32_WINNT < 0x601)  // before Win7
-typedef struct _PROCESSOR_NUMBER { WORD Group; BYTE Number; BYTE Reserved; } PROCESSOR_NUMBER, *PPROCESSOR_NUMBER;
-#endif
-typedef VOID (__stdcall *PGetCurrentProcessorNumberEx)(PPROCESSOR_NUMBER ProcNumber);
-typedef BOOL (__stdcall *PGetNumaProcessorNodeEx)(PPROCESSOR_NUMBER Processor, PUSHORT NodeNumber);
+typedef struct MI_PROCESSOR_NUMBER_S { WORD Group; BYTE Number; BYTE Reserved; } MI_PROCESSOR_NUMBER;
+
+typedef VOID (__stdcall *PGetCurrentProcessorNumberEx)(MI_PROCESSOR_NUMBER* ProcNumber);
+typedef BOOL (__stdcall *PGetNumaProcessorNodeEx)(MI_PROCESSOR_NUMBER* Processor, PUSHORT NodeNumber);
 typedef BOOL (__stdcall* PGetNumaNodeProcessorMaskEx)(USHORT Node, PGROUP_AFFINITY ProcessorMask);
 static PGetCurrentProcessorNumberEx pGetCurrentProcessorNumberEx = NULL;
 static PGetNumaProcessorNodeEx      pGetNumaProcessorNodeEx = NULL;
 static PGetNumaNodeProcessorMaskEx  pGetNumaNodeProcessorMaskEx = NULL;
 
-static bool mi_win_enable_large_os_pages()
+static bool mi_win_enable_large_os_pages(void)
 {
   if (large_os_page_size > 0) return true;
 
@@ -219,7 +241,7 @@ void _mi_os_init(void)
   }
 }
 #elif defined(__wasi__)
-void _mi_os_init() {
+void _mi_os_init(void) {
   os_overcommit = false;
   os_page_size = 64*MI_KiB; // WebAssembly has a fixed page size: 64KiB
   os_alloc_granularity = 16;
@@ -250,7 +272,7 @@ static void os_detect_overcommit(void) {
 #endif
 }
 
-void _mi_os_init() {
+void _mi_os_init(void) {
   // get the page size
   long result = sysconf(_SC_PAGESIZE);
   if (result > 0) {
@@ -275,7 +297,57 @@ static int mi_madvise(void* addr, size_t length, int advice) {
 
 
 /* -----------------------------------------------------------
-  free memory
+  aligned hinting
+-------------------------------------------------------------- */
+
+// On 64-bit systems, we can do efficient aligned allocation by using
+// the 2TiB to 30TiB area to allocate those.
+#if (MI_INTPTR_SIZE >= 8)
+static mi_decl_cache_align _Atomic(uintptr_t)aligned_base;
+
+// Return a MI_SEGMENT_SIZE aligned address that is probably available.
+// If this returns NULL, the OS will determine the address but on some OS's that may not be 
+// properly aligned which can be more costly as it needs to be adjusted afterwards.
+// For a size > 1GiB this always returns NULL in order to guarantee good ASLR randomization; 
+// (otherwise an initial large allocation of say 2TiB has a 50% chance to include (known) addresses 
+//  in the middle of the 2TiB - 6TiB address range (see issue #372))
+
+#define MI_HINT_BASE ((uintptr_t)2 << 40)  // 2TiB start
+#define MI_HINT_AREA ((uintptr_t)4 << 40)  // upto 6TiB   (since before win8 there is "only" 8TiB available to processes)
+#define MI_HINT_MAX  ((uintptr_t)30 << 40) // wrap after 30TiB (area after 32TiB is used for huge OS pages)
+
+static void* mi_os_get_aligned_hint(size_t try_alignment, size_t size)
+{
+  if (try_alignment <= 1 || try_alignment > MI_SEGMENT_SIZE) return NULL;
+  size = _mi_align_up(size, MI_SEGMENT_SIZE);
+  if (size > 1*MI_GiB) return NULL;  // guarantee the chance of fixed valid address is at most 1/(MI_HINT_AREA / 1<<30) = 1/4096.
+  #if (MI_SECURE>0)
+  size += MI_SEGMENT_SIZE;        // put in `MI_SEGMENT_SIZE` virtual gaps between hinted blocks; this splits VLA's but increases guarded areas.
+  #endif
+
+  uintptr_t hint = mi_atomic_add_acq_rel(&aligned_base, size);
+  if (hint == 0 || hint > MI_HINT_MAX) {   // wrap or initialize
+    uintptr_t init = MI_HINT_BASE;
+    #if (MI_SECURE>0 || MI_DEBUG==0)       // security: randomize start of aligned allocations unless in debug mode
+    uintptr_t r = _mi_heap_random_next(mi_get_default_heap());
+    init = init + ((MI_SEGMENT_SIZE * ((r>>17) & 0xFFFFF)) % MI_HINT_AREA);  // (randomly 20 bits)*4MiB == 0 to 4TiB
+    #endif
+    uintptr_t expected = hint + size;
+    mi_atomic_cas_strong_acq_rel(&aligned_base, &expected, init);
+    hint = mi_atomic_add_acq_rel(&aligned_base, size); // this may still give 0 or > MI_HINT_MAX but that is ok, it is a hint after all
+  }
+  if (hint%try_alignment != 0) return NULL;
+  return (void*)hint;
+}
+#else
+static void* mi_os_get_aligned_hint(size_t try_alignment, size_t size) {
+  MI_UNUSED(try_alignment); MI_UNUSED(size);
+  return NULL;
+}
+#endif
+
+/* -----------------------------------------------------------
+  Free memory
 -------------------------------------------------------------- */
 
 static bool mi_os_mem_free(void* addr, size_t size, bool was_committed, mi_stats_t* stats)
@@ -283,26 +355,37 @@ static bool mi_os_mem_free(void* addr, size_t size, bool was_committed, mi_stats
   if (addr == NULL || size == 0) return true; // || _mi_os_is_huge_reserved(addr)
   bool err = false;
 #if defined(_WIN32)
+  DWORD errcode = 0;
   err = (VirtualFree(addr, 0, MEM_RELEASE) == 0);
+  if (err) { errcode = GetLastError(); }
+  if (errcode == ERROR_INVALID_ADDRESS) {
+    // In mi_os_mem_alloc_aligned the fallback path may have returned a pointer inside
+    // the memory region returned by VirtualAlloc; in that case we need to free using
+    // the start of the region.
+    MEMORY_BASIC_INFORMATION info = { 0, 0 };
+    VirtualQuery(addr, &info, sizeof(info));
+    if (info.AllocationBase < addr && ((uint8_t*)addr - (uint8_t*)info.AllocationBase) < MI_SEGMENT_SIZE) {
+      errcode = 0;
+      err = (VirtualFree(info.AllocationBase, 0, MEM_RELEASE) == 0);
+      if (err) { errcode = GetLastError(); }
+    }
+  }
+  if (errcode != 0) {
+    _mi_warning_message("unable to release OS memory: error code 0x%x, addr: %p, size: %zu\n", errcode, addr, size);
+  }
 #elif defined(MI_USE_SBRK) || defined(__wasi__)
-  err = 0; // sbrk heap cannot be shrunk
+  err = false; // sbrk heap cannot be shrunk
 #else
   err = (munmap(addr, size) == -1);
-#endif
-  if (was_committed) _mi_stat_decrease(&stats->committed, size);
-  _mi_stat_decrease(&stats->reserved, size);
   if (err) {
-    _mi_warning_message("munmap failed: %s, addr 0x%8li, size %lu\n", strerror(errno), (size_t)addr, size);
-    return false;
+    _mi_warning_message("unable to release OS memory: %s, addr: %p, size: %zu\n", strerror(errno), addr, size);
   }
-  else {
-    return true;
-  }
+#endif
+  if (was_committed) { _mi_stat_decrease(&stats->committed, size); }
+  _mi_stat_decrease(&stats->reserved, size);
+  return !err;  
 }
 
-#if !(defined(__wasi__) || defined(MI_USE_SBRK) || defined(MAP_ALIGNED))
-static void* mi_os_get_aligned_hint(size_t try_alignment, size_t size);
-#endif
 
 /* -----------------------------------------------------------
   Raw allocation on Windows (VirtualAlloc) 
@@ -320,32 +403,23 @@ static void* mi_win_virtual_allocx(void* addr, size_t size, size_t try_alignment
     if (hint != NULL) {
       void* p = VirtualAlloc(hint, size, flags, PAGE_READWRITE);
       if (p != NULL) return p;
-      // for robustness always fall through in case of an error
-      /*
-      DWORD err = GetLastError();
-      if (err != ERROR_INVALID_ADDRESS &&   // If linked with multiple instances, we may have tried to allocate at an already allocated area (#210)
-          err != ERROR_INVALID_PARAMETER) { // Windows7 instability (#230)
-        return NULL;
-      }
-      */
-      _mi_warning_message("unable to allocate hinted aligned OS memory (%zu bytes, error code: %x, address: %p, alignment: %d, flags: %x)\n", size, GetLastError(), hint, try_alignment, flags);
+      _mi_verbose_message("warning: unable to allocate hinted aligned OS memory (%zu bytes, error code: 0x%x, address: %p, alignment: %zu, flags: 0x%x)\n", size, GetLastError(), hint, try_alignment, flags);
+      // fall through on error
     }
   } 
 #endif
-#if defined(MEM_EXTENDED_PARAMETER_TYPE_BITS)
   // on modern Windows try use VirtualAlloc2 for aligned allocation
   if (try_alignment > 1 && (try_alignment % _mi_os_page_size()) == 0 && pVirtualAlloc2 != NULL) {
-    MEM_ADDRESS_REQUIREMENTS reqs = { 0, 0, 0 };
+    MI_MEM_ADDRESS_REQUIREMENTS reqs = { 0, 0, 0 };
     reqs.Alignment = try_alignment;
-    MEM_EXTENDED_PARAMETER param = { {0, 0}, {0} };
-    param.Type = MemExtendedParameterAddressRequirements;
-    param.Pointer = &reqs;
+    MI_MEM_EXTENDED_PARAMETER param = { {0, 0}, {0} };
+    param.Type.Type = MiMemExtendedParameterAddressRequirements;
+    param.Arg.Pointer = &reqs;
     void* p = (*pVirtualAlloc2)(GetCurrentProcess(), addr, size, flags, PAGE_READWRITE, &param, 1);
     if (p != NULL) return p;
-    _mi_warning_message("unable to allocate aligned OS memory (%zu bytes, error code: %x, address: %p, alignment: %d, flags: %x)\n", size, GetLastError(), addr, try_alignment, flags);
+    _mi_warning_message("unable to allocate aligned OS memory (%zu bytes, error code: 0x%x, address: %p, alignment: %zu, flags: 0x%x)\n", size, GetLastError(), addr, try_alignment, flags);
     // fall through on error
   }
-#endif
   // last resort
   return VirtualAlloc(addr, size, flags, PAGE_READWRITE);
 }
@@ -354,6 +428,7 @@ static void* mi_win_virtual_alloc(void* addr, size_t size, size_t try_alignment,
   mi_assert_internal(!(large_only && !allow_large));
   static _Atomic(size_t) large_page_try_ok; // = 0;
   void* p = NULL;
+  // Try to allocate large OS pages (2MiB) if allowed or required.
   if ((large_only || use_large_os_page(size, try_alignment))
       && allow_large && (flags&MEM_COMMIT)!=0 && (flags&MEM_RESERVE)!=0) {
     size_t try_ok = mi_atomic_load_acquire(&large_page_try_ok);
@@ -373,12 +448,13 @@ static void* mi_win_virtual_alloc(void* addr, size_t size, size_t try_alignment,
       }
     }
   }
+  // Fall back to regular page allocation
   if (p == NULL) {
     *is_large = ((flags&MEM_LARGE_PAGES) != 0);
     p = mi_win_virtual_allocx(addr, size, try_alignment, flags);
   }
   if (p == NULL) {
-    _mi_warning_message("unable to allocate OS memory (%zu bytes, error code: %i, address: %p, large only: %d, allow large: %d)\n", size, GetLastError(), addr, large_only, allow_large);
+    _mi_warning_message("unable to allocate OS memory (%zu bytes, error code: 0x%x, address: %p, alignment: %zu, flags: 0x%x, large only: %d, allow large: %d)\n", size, GetLastError(), addr, try_alignment, flags, large_only, allow_large);
   }
   return p;
 }
@@ -620,53 +696,6 @@ static void* mi_unix_mmap(void* addr, size_t size, size_t try_alignment, int pro
 }
 #endif
 
-// On 64-bit systems, we can do efficient aligned allocation by using
-// the 2TiB to 30TiB area to allocate them.
-#if (MI_INTPTR_SIZE >= 8) && (defined(_WIN32) || defined(MI_OS_USE_MMAP))
-static mi_decl_cache_align _Atomic(uintptr_t) aligned_base;
-
-// Return a 4MiB aligned address that is probably available.
-// If this returns NULL, the OS will determine the address but on some OS's that may not be 
-// properly aligned which can be more costly as it needs to be adjusted afterwards.
-// For a size > 1GiB this always returns NULL in order to guarantee good ASLR randomization; 
-// (otherwise an initial large allocation of say 2TiB has a 50% chance to include (known) addresses 
-//  in the middle of the 2TiB - 6TiB address range (see issue #372))
-
-#define MI_HINT_BASE ((uintptr_t)2 << 40)  // 2TiB start
-#define MI_HINT_AREA ((uintptr_t)4 << 40)  // upto 6TiB   (since before win8 there is "only" 8TiB available to processes)
-#define MI_HINT_MAX  ((uintptr_t)30 << 40) // wrap after 30TiB (area after 32TiB is used for huge OS pages)
-
-static void* mi_os_get_aligned_hint(size_t try_alignment, size_t size) 
-{
-  if (try_alignment <= 1 || try_alignment > MI_SEGMENT_SIZE) return NULL;
-  size = _mi_align_up(size, MI_SEGMENT_SIZE);
-  if (size > 1*MI_GiB) return NULL;  // guarantee the chance of fixed valid address is at most 1/(MI_HINT_AREA / 1<<30) = 1/4096.
-  #if (MI_SECURE>0)
-  size += MI_SEGMENT_SIZE;        // put in `MI_SEGMENT_SIZE` virtual gaps between hinted blocks; this splits VLA's but increases guarded areas.
-  #endif
-
-  uintptr_t hint = mi_atomic_add_acq_rel(&aligned_base, size);
-  if (hint == 0 || hint > MI_HINT_MAX) {   // wrap or initialize
-    uintptr_t init = MI_HINT_BASE;
-    #if (MI_SECURE>0 || MI_DEBUG==0)       // security: randomize start of aligned allocations unless in debug mode
-    uintptr_t r = _mi_heap_random_next(mi_get_default_heap());
-    init = init + ((MI_SEGMENT_SIZE * ((r>>17) & 0xFFFFF)) % MI_HINT_AREA);  // (randomly 20 bits)*4MiB == 0 to 4TiB
-    #endif
-    uintptr_t expected = hint + size;
-    mi_atomic_cas_strong_acq_rel(&aligned_base, &expected, init);
-    hint = mi_atomic_add_acq_rel(&aligned_base, size); // this may still give 0 or > MI_HINT_MAX but that is ok, it is a hint after all
-  }
-  if (hint%try_alignment != 0) return NULL;
-  return (void*)hint;
-}
-#elif defined(__wasi__) || defined(MI_USE_SBRK) || defined(MAP_ALIGNED)
-// no need for mi_os_get_aligned_hint
-#else
-static void* mi_os_get_aligned_hint(size_t try_alignment, size_t size) {
-  MI_UNUSED(try_alignment); MI_UNUSED(size);
-  return NULL;
-}
-#endif
 
 /* -----------------------------------------------------------
    Primitive allocation from the OS.
@@ -692,7 +721,7 @@ static void* mi_os_mem_alloc(size_t size, size_t try_alignment, bool commit, boo
 
   #if defined(_WIN32)
     int flags = MEM_RESERVE;
-    if (commit) flags |= MEM_COMMIT;
+    if (commit) { flags |= MEM_COMMIT; }
     p = mi_win_virtual_alloc(NULL, size, try_alignment, flags, false, allow_large, is_large);
   #elif defined(MI_USE_SBRK) || defined(__wasi__)
     MI_UNUSED(allow_large);
@@ -716,6 +745,7 @@ static void* mi_os_mem_alloc(size_t size, size_t try_alignment, bool commit, boo
 static void* mi_os_mem_alloc_aligned(size_t size, size_t alignment, bool commit, bool allow_large, bool* is_large, mi_stats_t* stats) {
   mi_assert_internal(alignment >= _mi_os_page_size() && ((alignment & (alignment - 1)) == 0));
   mi_assert_internal(size > 0 && (size % _mi_os_page_size()) == 0);
+  mi_assert_internal(is_large != NULL);
   if (!commit) allow_large = false;
   if (!(alignment >= _mi_os_page_size() && ((alignment & (alignment - 1)) == 0))) return NULL;
   size = _mi_align_up(size, _mi_os_page_size());
@@ -723,45 +753,27 @@ static void* mi_os_mem_alloc_aligned(size_t size, size_t alignment, bool commit,
   // try first with a hint (this will be aligned directly on Win 10+ or BSD)
   void* p = mi_os_mem_alloc(size, alignment, commit, allow_large, is_large, stats);
   if (p == NULL) return NULL;
-
+  
   // if not aligned, free it, overallocate, and unmap around it
   if (((uintptr_t)p % alignment != 0)) {
     mi_os_mem_free(p, size, commit, stats);
+    _mi_warning_message("unable to allocate aligned OS memory directly, fall back to over-allocation (%zu bytes, address: %p, alignment: %zu, commit: %d)\n", size, p, alignment, commit);
     if (size >= (SIZE_MAX - alignment)) return NULL; // overflow
-    size_t over_size = size + alignment;
+    const size_t over_size = size + alignment;
 
 #if _WIN32
-    // over-allocate and than re-allocate exactly at an aligned address in there.
-    // this may fail due to threads allocating at the same time so we
-    // retry this at most 3 times before giving up.
-    // (we can not decommit around the overallocation on Windows, because we can only
-    //  free the original pointer, not one pointing inside the area)
-    int flags = MEM_RESERVE;
-    if (commit) flags |= MEM_COMMIT;
-    for (int tries = 0; tries < 3; tries++) {
-      // over-allocate to determine a virtual memory range
-      p = mi_os_mem_alloc(over_size, alignment, commit, false, is_large, stats);
-      if (p == NULL) return NULL; // error
-      if (((uintptr_t)p % alignment) == 0) {
-        // if p happens to be aligned, just decommit the left-over area
-        _mi_os_decommit((uint8_t*)p + size, over_size - size, stats);
-        break;
-      }
-      else {
-        // otherwise free and allocate at an aligned address in there
-        mi_os_mem_free(p, over_size, commit, stats);
-        void* aligned_p = mi_align_up_ptr(p, alignment);
-        p = mi_win_virtual_alloc(aligned_p, size, alignment, flags, false, allow_large, is_large);
-        if (p != NULL) {
-          _mi_stat_increase(&stats->reserved, size);
-          if (commit) { _mi_stat_increase(&stats->committed, size); }
-        }
-        if (p == aligned_p) break; // success!
-        if (p != NULL) { // should not happen?
-          mi_os_mem_free(p, size, commit, stats);
-          p = NULL;
-        }
-      }
+    // over-allocate uncommitted (virtual) memory
+    p = mi_os_mem_alloc(over_size, 0 /*alignment*/, false /* commit? */, false /* allow_large */, is_large, stats);
+    if (p == NULL) return NULL;
+    
+    // set p to the aligned part in the full region
+    // note: this is dangerous on Windows as VirtualFree needs the actual region pointer
+    // but in mi_os_mem_free we handle this (hopefully exceptional) situation.
+    p = mi_align_up_ptr(p, alignment);
+
+    // explicitly commit only the aligned part
+    if (commit) {
+      _mi_os_commit(p, size, NULL, stats);
     }
 #else
     // overallocate...
@@ -783,6 +795,7 @@ static void* mi_os_mem_alloc_aligned(size_t size, size_t alignment, bool commit,
   mi_assert_internal(p == NULL || (p != NULL && ((uintptr_t)p % alignment) == 0));
   return p;
 }
+
 
 /* -----------------------------------------------------------
   OS API: alloc, free, alloc_aligned
@@ -811,6 +824,7 @@ void  _mi_os_free(void* p, size_t size, mi_stats_t* stats) {
 
 void* _mi_os_alloc_aligned(size_t size, size_t alignment, bool commit, bool* large, mi_stats_t* tld_stats)
 {
+  MI_UNUSED(&mi_os_get_aligned_hint); // suppress unused warnings
   MI_UNUSED(tld_stats);
   if (size == 0) return NULL;
   size = _mi_os_good_alloc_size(size);
@@ -990,7 +1004,7 @@ static bool mi_os_resetx(void* addr, size_t size, bool reset, mi_stats_t* stats)
   if (p != start) return false;
 #else
 #if defined(MADV_FREE)
-  static _Atomic(size_t) advice = ATOMIC_VAR_INIT(MADV_FREE);
+  static _Atomic(size_t) advice = MI_ATOMIC_VAR_INIT(MADV_FREE);
   int oadvice = (int)mi_atomic_load_relaxed(&advice);
   int err;
   while ((err = mi_madvise(start, csize, oadvice)) != 0 && errno == EAGAIN) { errno = 0;  };
@@ -1112,21 +1126,17 @@ static void* mi_os_alloc_huge_os_pagesx(void* addr, size_t size, int numa_node)
 
   mi_win_enable_large_os_pages();
 
-  #if defined(MEM_EXTENDED_PARAMETER_TYPE_BITS)
-  MEM_EXTENDED_PARAMETER params[3] = { {{0,0},{0}},{{0,0},{0}},{{0,0},{0}} };
+  MI_MEM_EXTENDED_PARAMETER params[3] = { {{0,0},{0}},{{0,0},{0}},{{0,0},{0}} };
   // on modern Windows try use NtAllocateVirtualMemoryEx for 1GiB huge pages
   static bool mi_huge_pages_available = true;
   if (pNtAllocateVirtualMemoryEx != NULL && mi_huge_pages_available) {
-    #ifndef MEM_EXTENDED_PARAMETER_NONPAGED_HUGE
-    #define MEM_EXTENDED_PARAMETER_NONPAGED_HUGE  (0x10)
-    #endif
-    params[0].Type = 5; // == MemExtendedParameterAttributeFlags;
-    params[0].ULong64 = MEM_EXTENDED_PARAMETER_NONPAGED_HUGE;
+    params[0].Type.Type = MiMemExtendedParameterAttributeFlags;
+    params[0].Arg.ULong64 = MI_MEM_EXTENDED_PARAMETER_NONPAGED_HUGE;
     ULONG param_count = 1;
     if (numa_node >= 0) {
       param_count++;
-      params[1].Type = MemExtendedParameterNumaNode;
-      params[1].ULong = (unsigned)numa_node;
+      params[1].Type.Type = MiMemExtendedParameterNumaNode;
+      params[1].Arg.ULong = (unsigned)numa_node;
     }
     SIZE_T psize = size;
     void* base = addr;
@@ -1142,13 +1152,11 @@ static void* mi_os_alloc_huge_os_pagesx(void* addr, size_t size, int numa_node)
   }
   // on modern Windows try use VirtualAlloc2 for numa aware large OS page allocation
   if (pVirtualAlloc2 != NULL && numa_node >= 0) {
-    params[0].Type = MemExtendedParameterNumaNode;
-    params[0].ULong = (unsigned)numa_node;
+    params[0].Type.Type = MiMemExtendedParameterNumaNode;
+    params[0].Arg.ULong = (unsigned)numa_node;
     return (*pVirtualAlloc2)(GetCurrentProcess(), addr, size, flags, PAGE_READWRITE, params, 1);
   }
-  #else
-    MI_UNUSED(numa_node);
-  #endif
+  
   // otherwise use regular virtual alloc on older windows
   return VirtualAlloc(addr, size, flags, PAGE_READWRITE);
 }
@@ -1298,11 +1306,11 @@ void _mi_os_free_huge_pages(void* p, size_t size, mi_stats_t* stats) {
 Support NUMA aware allocation
 -----------------------------------------------------------------------------*/
 #ifdef _WIN32  
-static size_t mi_os_numa_nodex() {
+static size_t mi_os_numa_nodex(void) {
   USHORT numa_node = 0;
   if (pGetCurrentProcessorNumberEx != NULL && pGetNumaProcessorNodeEx != NULL) {
     // Extended API is supported
-    PROCESSOR_NUMBER pnum;
+    MI_PROCESSOR_NUMBER pnum;
     (*pGetCurrentProcessorNumberEx)(&pnum);
     USHORT nnode = 0;
     BOOL ok = (*pGetNumaProcessorNodeEx)(&pnum, &nnode);

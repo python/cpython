@@ -173,6 +173,7 @@
 #define mi_new _Py_mi_new
 #define mi_new_reallocn _Py_mi_new_reallocn
 #define mi_new_realloc _Py_mi_new_realloc
+#define mi_option_get_clamp _Py_mi_option_get_clamp
 #define mi_option_disable _Py_mi_option_disable
 #define mi_option_enable _Py_mi_option_enable
 #define mi_option_get _Py_mi_option_get

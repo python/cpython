@@ -8,7 +8,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #ifndef MIMALLOC_H
 #define MIMALLOC_H
 
-#define MI_MALLOC_VERSION 205   // major + 2 digits minor
+#define MI_MALLOC_VERSION 206   // major + 2 digits minor
 
 // ------------------------------------------------------
 // Compiler specific attributes
@@ -256,6 +256,7 @@ typedef struct mi_heap_area_s {
   size_t committed;   // current available bytes for this area
   size_t used;        // number of allocated blocks
   size_t block_size;  // size in bytes of each block
+  size_t full_block_size; // size in bytes of a full block including padding and metadata.
 } mi_heap_area_t;
 
 typedef bool (mi_cdecl mi_block_visit_fun)(const mi_heap_t* heap, const mi_heap_area_t* area, void* block, size_t block_size, void* arg);
@@ -315,7 +316,7 @@ typedef enum mi_option_e {
   mi_option_reserve_huge_os_pages,    // reserve N huge OS pages (1GiB) at startup
   mi_option_reserve_huge_os_pages_at, // reserve huge OS pages at a specific NUMA node
   mi_option_reserve_os_memory,        // reserve specified amount of OS memory at startup
-  mi_option_segment_cache,
+  mi_option_deprecated_segment_cache,
   mi_option_page_reset,
   mi_option_abandoned_page_decommit,
   mi_option_deprecated_segment_reset,
@@ -326,6 +327,7 @@ typedef enum mi_option_e {
   mi_option_os_tag,
   mi_option_max_errors,
   mi_option_max_warnings,
+  mi_option_max_segment_reclaim,
   mi_option_allow_decommit,
   mi_option_segment_decommit_delay,  
   mi_option_decommit_extend_delay,
@@ -340,6 +342,7 @@ mi_decl_export void mi_option_set_enabled(mi_option_t option, bool enable);
 mi_decl_export void mi_option_set_enabled_default(mi_option_t option, bool enable);
 
 mi_decl_nodiscard mi_decl_export long mi_option_get(mi_option_t option);
+mi_decl_nodiscard mi_decl_export long mi_option_get_clamp(mi_option_t option, long min, long max);
 mi_decl_export void mi_option_set(mi_option_t option, long value);
 mi_decl_export void mi_option_set_default(mi_option_t option, long value);
 

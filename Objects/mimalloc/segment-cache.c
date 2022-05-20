@@ -21,7 +21,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #define MI_CACHE_FIELDS     (16)
 #define MI_CACHE_MAX        (MI_BITMAP_FIELD_BITS*MI_CACHE_FIELDS)       // 1024 on 64-bit
 
-#define BITS_SET()          ATOMIC_VAR_INIT(UINTPTR_MAX)
+#define BITS_SET()          MI_ATOMIC_VAR_INIT(UINTPTR_MAX)
 #define MI_CACHE_BITS_SET   MI_INIT16(BITS_SET)                          // note: update if MI_CACHE_FIELDS changes
 
 typedef struct mi_cache_slot_s {

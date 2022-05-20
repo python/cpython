@@ -148,8 +148,8 @@ mi_msecs_t  _mi_clock_start(void);
 
 // "alloc.c"
 void*       _mi_page_malloc(mi_heap_t* heap, mi_page_t* page, size_t size) mi_attr_noexcept;  // called from `_mi_malloc_generic`
-void*       _mi_heap_malloc_zero(mi_heap_t* heap, size_t size, bool zero);
-void*       _mi_heap_realloc_zero(mi_heap_t* heap, void* p, size_t newsize, bool zero);
+void*       _mi_heap_malloc_zero(mi_heap_t* heap, size_t size, bool zero) mi_attr_noexcept;
+void*       _mi_heap_realloc_zero(mi_heap_t* heap, void* p, size_t newsize, bool zero) mi_attr_noexcept;
 mi_block_t* _mi_page_ptr_unalign(const mi_segment_t* segment, const mi_page_t* page, const void* p);
 bool        _mi_free_delayed_block(mi_block_t* block);
 void        _mi_block_zero_init(const mi_page_t* page, void* p, size_t size);
@@ -1035,7 +1035,7 @@ static inline void _mi_memcpy_aligned(void* dst, const void* src, size_t n) {
   mi_assert_internal(((uintptr_t)dst % MI_INTPTR_SIZE == 0) && ((uintptr_t)src % MI_INTPTR_SIZE == 0));
   void* adst = __builtin_assume_aligned(dst, MI_INTPTR_SIZE);
   const void* asrc = __builtin_assume_aligned(src, MI_INTPTR_SIZE);
-  memcpy(adst, asrc, n);
+  _mi_memcpy(adst, asrc, n);
 }
 #else
 // Default fallback on `_mi_memcpy`

@@ -122,7 +122,7 @@ static size_t mi_good_commit_size(size_t size) {
 */
 
 // Return if a pointer points into a region reserved by us.
-bool mi_is_in_heap_region(const void* p) mi_attr_noexcept {
+mi_decl_nodiscard bool mi_is_in_heap_region(const void* p) mi_attr_noexcept {
   if (p==NULL) return false;
   size_t count = mi_atomic_load_relaxed(&regions_count);
   for (size_t i = 0; i < count; i++) {
