@@ -31,6 +31,7 @@ from email.mime.base import MIMEBase
 from email.mime.message import MIMEMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.nonmultipart import MIMENonMultipart
+from email.headerregistry import HeaderRegistry
 from email import utils
 from email import errors
 from email import encoders
@@ -5541,7 +5542,11 @@ class TestSigned(TestEmailBase):
         result = fp.getvalue()
         self._signed_parts_eq(original, result)
 
-
+class TestHeaderRegistry(TestEmailBase):
+    # See issue 93010.
+    def test_HeaderRegistry(self):
+        reg = HeaderRegistry()
+        reg('Content-Disposition', 'attachment; 0*00="foo"')
 
 if __name__ == '__main__':
     unittest.main()
