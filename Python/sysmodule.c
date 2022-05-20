@@ -2035,6 +2035,22 @@ extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
 }
 #endif
 
+#ifdef WITH_MIMALLOC
+/*[clinic input]
+sys._mi_collect
+
+    force: bool = False
+
+[clinic start generated code]*/
+
+static PyObject *
+sys__mi_collect_impl(PyObject *module, int force)
+/*[clinic end generated code: output=c674624749771706 input=f6a11d7d4e5731c8]*/
+{
+    mi_collect(force);
+    Py_RETURN_NONE;
+}
+#endif
 
 /*[clinic input]
 sys._clear_type_cache
@@ -2277,6 +2293,7 @@ static PyMethodDef sys_methods[] = {
     SYS__STATS_CLEAR_METHODDEF
     SYS__STATS_DUMP_METHODDEF
 #endif
+    SYS__MI_COLLECT_METHODDEF
     {NULL, NULL}  // sentinel
 };
 

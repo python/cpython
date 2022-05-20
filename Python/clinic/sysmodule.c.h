@@ -1005,6 +1005,72 @@ sys__debugmallocstats(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys__debugmallocstats_impl(module);
 }
 
+#if defined(WITH_MIMALLOC)
+
+PyDoc_STRVAR(sys__mi_collect__doc__,
+"_mi_collect($module, /, force=False)\n"
+"--\n"
+"\n");
+
+#define SYS__MI_COLLECT_METHODDEF    \
+    {"_mi_collect", _PyCFunction_CAST(sys__mi_collect), METH_FASTCALL|METH_KEYWORDS, sys__mi_collect__doc__},
+
+static PyObject *
+sys__mi_collect_impl(PyObject *module, int force);
+
+static PyObject *
+sys__mi_collect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(force), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"force", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_mi_collect",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    int force = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    force = PyObject_IsTrue(args[0]);
+    if (force < 0) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = sys__mi_collect_impl(module, force);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(WITH_MIMALLOC) */
+
 PyDoc_STRVAR(sys__clear_type_cache__doc__,
 "_clear_type_cache($module, /)\n"
 "--\n"
@@ -1248,6 +1314,10 @@ sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define SYS_GETTOTALREFCOUNT_METHODDEF
 #endif /* !defined(SYS_GETTOTALREFCOUNT_METHODDEF) */
 
+#ifndef SYS__MI_COLLECT_METHODDEF
+    #define SYS__MI_COLLECT_METHODDEF
+#endif /* !defined(SYS__MI_COLLECT_METHODDEF) */
+
 #ifndef SYS__STATS_ON_METHODDEF
     #define SYS__STATS_ON_METHODDEF
 #endif /* !defined(SYS__STATS_ON_METHODDEF) */
@@ -1267,4 +1337,4 @@ sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=43b44240211afe95 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0439c81427a6f8de input=a9049054013a1b77]*/
