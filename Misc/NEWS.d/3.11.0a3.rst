@@ -813,16 +813,6 @@ Add new Test for ``Lib/email/mime/nonmultipart.py::MIMENonMultipart``.
 
 ..
 
-.. bpo: 45878
-.. date: 2021-11-23-12-36-21
-.. nonce: eOs_Mp
-.. section: Tests
-
-Test ``Lib/ctypes/test/test_functions.py::test_mro`` now uses
-``self.assertRaises`` instead of ``try/except``.
-
-..
-
 .. bpo: 45835
 .. date: 2021-11-17-14-28-08
 .. nonce: Mgyhjx

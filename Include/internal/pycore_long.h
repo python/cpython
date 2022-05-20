@@ -8,18 +8,25 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_long_state.h"    // _PyLong_SMALL_INTS
-#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_global_objects.h"  // _PY_NSMALLNEGINTS
 #include "pycore_runtime.h"       // _PyRuntime
 
 
 /* runtime lifecycle */
 
-extern void _PyLong_InitGlobalObjects(PyInterpreterState *);
 extern PyStatus _PyLong_InitTypes(PyInterpreterState *);
+extern void _PyLong_FiniTypes(PyInterpreterState *interp);
 
 
 /* other API */
+
+#define _PyLong_SMALL_INTS _Py_SINGLETON(small_ints)
+
+// _PyLong_GetZero() and _PyLong_GetOne() must always be available
+// _PyLong_FromUnsignedChar must always be available
+#if _PY_NSMALLPOSINTS < 257
+#  error "_PY_NSMALLPOSINTS must be greater than or equal to 257"
+#endif
 
 // Return a borrowed reference to the zero singleton.
 // The function cannot return NULL.
@@ -30,6 +37,11 @@ static inline PyObject* _PyLong_GetZero(void)
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetOne(void)
 { return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+1]; }
+
+static inline PyObject* _PyLong_FromUnsignedChar(unsigned char i)
+{
+    return Py_NewRef((PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+i]);
+}
 
 PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
 PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);

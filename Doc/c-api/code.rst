@@ -33,24 +33,33 @@ bound into a function.
 
    Return the number of free variables in *co*.
 
-.. c:function:: PyCodeObject* PyCode_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *lnotab)
+.. c:function:: PyCodeObject* PyCode_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
    Return a new code object.  If you need a dummy code object to create a frame,
    use :c:func:`PyCode_NewEmpty` instead.  Calling :c:func:`PyCode_New` directly
-   can bind you to a precise Python version since the definition of the bytecode
-   changes often.
+   will bind you to a precise Python version since the definition of the bytecode
+   changes often. The many arguments of this function are inter-dependent in complex
+   ways, meaning that subtle changes to values are likely to result in incorrect
+   execution or VM crashes. Use this function only with extreme care.
 
-.. c:function:: PyCodeObject* PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *lnotab)
+   .. versionchanged:: 3.11
+      Added ``exceptiontable`` parameter.
+
+.. c:function:: PyCodeObject* PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
    Similar to :c:func:`PyCode_New`, but with an extra "posonlyargcount" for positional-only arguments.
+   The same caveats that apply to ``PyCode_New`` also apply to this function.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.11
+      Added ``exceptiontable`` parameter.
 
 .. c:function:: PyCodeObject* PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 
    Return a new empty code object with the specified filename,
-   function name, and first line number.  It is illegal to
-   :func:`exec` or :func:`eval` the resulting code object.
+   function name, and first line number. The resulting code
+   object will raise an ``Exception`` if executed.
 
 .. c:function:: int PyCode_Addr2Line(PyCodeObject *co, int byte_offset)
 
@@ -58,7 +67,7 @@ bound into a function.
     If you just need the line number of a frame, use :c:func:`PyFrame_GetLineNumber` instead.
 
     For efficiently iterating over the line numbers in a code object, use `the API described in PEP 626
-    <https://www.python.org/dev/peps/pep-0626/#out-of-process-debuggers-and-profilers>`_.
+    <https://peps.python.org/pep-0626/#out-of-process-debuggers-and-profilers>`_.
 
 .. c:function:: int PyCode_Addr2Location(PyObject *co, int byte_offset, int *start_line, int *start_column, int *end_line, int *end_column)
 
@@ -67,3 +76,17 @@ bound into a function.
    information is not available for any particular element.
 
    Returns ``1`` if the function succeeds and 0 otherwise.
+
+.. c:function:: PyObject* PyCode_GetCode(PyCodeObject *co)
+
+   Equivalent to the Python code ``getattr(co, 'co_code')``.
+   Returns a strong reference to a :c:type:`PyBytesObject` representing the
+   bytecode in a code object. On error, ``NULL`` is returned and an exception
+   is raised.
+
+   This ``PyBytesObject`` may be created on-demand by the interpreter and does
+   not necessarily represent the bytecode actually executed by CPython. The
+   primary use case for this function is debuggers and profilers.
+
+   .. versionadded:: 3.11
+

@@ -30,7 +30,7 @@ Executor Objects
 
     .. method:: submit(fn, /, *args, **kwargs)
 
-       Schedules the callable, *fn*, to be executed as ``fn(*args **kwargs)``
+       Schedules the callable, *fn*, to be executed as ``fn(*args, **kwargs)``
        and returns a :class:`Future` object representing the execution of the
        callable. ::
 
@@ -47,7 +47,7 @@ Executor Objects
        * *func* is executed asynchronously and several calls to
          *func* may be made concurrently.
 
-       The returned iterator raises a :exc:`concurrent.futures.TimeoutError`
+       The returned iterator raises a :exc:`TimeoutError`
        if :meth:`~iterator.__next__` is called and the result isn't available
        after *timeout* seconds from the original call to :meth:`Executor.map`.
        *timeout* can be an int or a float.  If *timeout* is not specified or
@@ -254,8 +254,11 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
 
    *max_tasks_per_child* is an optional argument that specifies the maximum
    number of tasks a single process can execute before it will exit and be
-   replaced with a fresh worker process. The default *max_tasks_per_child* is
-   ``None`` which means worker processes will live as long as the pool.
+   replaced with a fresh worker process. By default *max_tasks_per_child* is
+   ``None`` which means worker processes will live as long as the pool. When
+   a max is specified, the "spawn" multiprocessing start method will be used by
+   default in absense of a *mp_context* parameter. This feature is incompatible
+   with the "fork" start method.
 
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a
@@ -352,7 +355,7 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        Return the value returned by the call. If the call hasn't yet completed
        then this method will wait up to *timeout* seconds.  If the call hasn't
        completed in *timeout* seconds, then a
-       :exc:`concurrent.futures.TimeoutError` will be raised. *timeout* can be
+       :exc:`TimeoutError` will be raised. *timeout* can be
        an int or float.  If *timeout* is not specified or ``None``, there is no
        limit to the wait time.
 
@@ -366,7 +369,7 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        Return the exception raised by the call.  If the call hasn't yet
        completed then this method will wait up to *timeout* seconds.  If the
        call hasn't completed in *timeout* seconds, then a
-       :exc:`concurrent.futures.TimeoutError` will be raised.  *timeout* can be
+       :exc:`TimeoutError` will be raised.  *timeout* can be
        an int or float.  If *timeout* is not specified or ``None``, there is no
        limit to the wait time.
 
@@ -444,7 +447,8 @@ Module Functions
 .. function:: wait(fs, timeout=None, return_when=ALL_COMPLETED)
 
    Wait for the :class:`Future` instances (possibly created by different
-   :class:`Executor` instances) given by *fs* to complete.  Returns a named
+   :class:`Executor` instances) given by *fs* to complete. Duplicate futures
+   given to *fs* are removed and will be returned only once. Returns a named
    2-tuple of sets.  The first set, named ``done``, contains the futures that
    completed (finished or cancelled futures) before the wait completed.  The
    second set, named ``not_done``, contains the futures that did not complete
@@ -482,7 +486,7 @@ Module Functions
    they complete (finished or cancelled futures). Any futures given by *fs* that
    are duplicated will be returned once. Any futures that completed before
    :func:`as_completed` is called will be yielded first.  The returned iterator
-   raises a :exc:`concurrent.futures.TimeoutError` if :meth:`~iterator.__next__`
+   raises a :exc:`TimeoutError` if :meth:`~iterator.__next__`
    is called and the result isn't available after *timeout* seconds from the
    original call to :func:`as_completed`.  *timeout* can be an int or float. If
    *timeout* is not specified or ``None``, there is no limit to the wait time.
@@ -506,7 +510,13 @@ Exception classes
 
 .. exception:: TimeoutError
 
-   Raised when a future operation exceeds the given timeout.
+   A deprecated alias of :exc:`TimeoutError`,
+   raised when a future operation exceeds the given timeout.
+
+   .. versionchanged:: 3.11
+
+      This class was made an alias of :exc:`TimeoutError`.
+
 
 .. exception:: BrokenExecutor
 
