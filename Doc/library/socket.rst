@@ -233,9 +233,9 @@ resolution and/or the host configuration.  For deterministic behavior use a
 numeric address in *host* portion.
 
 All errors raise exceptions.  The normal exceptions for invalid argument types
-and out-of-memory conditions can be raised; starting from Python 3.3, errors
+and out-of-memory conditions can be raised. Errors
 related to socket or address semantics raise :exc:`OSError` or one of its
-subclasses (they used to raise :exc:`socket.error`).
+subclasses.
 
 Non-blocking mode is supported through :meth:`~socket.setblocking`.  A
 generalization of this based on timeouts is supported through
@@ -391,6 +391,11 @@ Constants
    .. versionchanged:: 3.11
       Added ``TCP_CONNECTION_INFO``. On MacOS this constant can be used in the
       same way that ``TCP_INFO`` is used on Linux and BSD.
+
+   .. versionchanged:: 3.12
+      Added ``SO_RTABLE`` and ``SO_USER_COOKIE``. On OpenBSD
+      and FreeBSD respectively those constants can be used in the same way that
+      ``SO_MARK`` is used on Linux.
 
 .. data:: AF_CAN
           PF_CAN

@@ -1,0 +1,2 @@
+The deprecated debug build only ``PYTHONTHREADDEBUG`` environment variable
+no longer does anything.

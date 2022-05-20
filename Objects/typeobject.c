@@ -4559,7 +4559,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
         PyErr_Format(PyExc_TypeError,
                      "Can't instantiate abstract class %s "
-                     "with abstract method%s %U",
+                     "without an implementation for abstract method%s %U",
                      type->tp_name,
                      method_count > 1 ? "s" : "",
                      joined);

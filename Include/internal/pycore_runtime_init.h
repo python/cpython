@@ -102,7 +102,6 @@ extern "C" {
             .kind = 1, \
             .compact = 1, \
             .ascii = ASCII, \
-            .ready = 1, \
         }, \
     }
 #define _PyASCIIObject_INIT(LITERAL) \
@@ -824,8 +823,9 @@ extern "C" {
                 INIT_ID(__subclasshook__), \
                 INIT_ID(__truediv__), \
                 INIT_ID(__trunc__), \
+                INIT_ID(__typing_is_unpacked_typevartuple__), \
                 INIT_ID(__typing_subst__), \
-                INIT_ID(__typing_unpacked__), \
+                INIT_ID(__typing_unpacked_tuple_args__), \
                 INIT_ID(__warningregistry__), \
                 INIT_ID(__weakref__), \
                 INIT_ID(__xor__), \
