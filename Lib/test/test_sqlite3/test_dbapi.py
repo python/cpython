@@ -21,21 +21,19 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import contextlib
+import os
 import sqlite3 as sqlite
 import subprocess
 import sys
 import threading
 import unittest
+import urllib.parse
 
-from test.support import (
-    SHORT_TIMEOUT,
-    bigmemtest,
-    check_disallow_instantiation,
-    threading_helper,
-)
+from test.support import SHORT_TIMEOUT, bigmemtest, check_disallow_instantiation
+from test.support import threading_helper
 from _testcapi import INT_MAX, ULLONG_MAX
 from os import SEEK_SET, SEEK_CUR, SEEK_END
-from test.support.os_helper import TESTFN, unlink, temp_dir
+from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE, unlink, temp_dir, FakePath
 
 
 # Helper for tests using TESTFN
@@ -654,11 +652,19 @@ class OpenTests(unittest.TestCase):
     def test_open_with_path_like_object(self):
         """ Checks that we can successfully connect to a database using an object that
             is PathLike, i.e. has __fspath__(). """
-        class Path:
-            def __fspath__(self):
-                return TESTFN
-        path = Path()
+        path = FakePath(TESTFN)
         with managed_connect(path) as cx:
+            self.assertTrue(os.path.exists(path))
+            cx.execute(self._sql)
+
+    @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
+    @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
+    @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
+    def test_open_with_undecodable_path(self):
+        self.addCleanup(unlink, TESTFN_UNDECODABLE)
+        path = TESTFN_UNDECODABLE
+        with managed_connect(path) as cx:
+            self.assertTrue(os.path.exists(path))
             cx.execute(self._sql)
 
     def test_open_uri(self):
