@@ -5543,7 +5543,7 @@ class TestSigned(TestEmailBase):
         self._signed_parts_eq(original, result)
 
 class TestHeaderRegistry(TestEmailBase):
-    # See issue 93010.
+    # See issue gh-93010.
     def test_HeaderRegistry(self):
         reg = HeaderRegistry()
         reg('Content-Disposition', 'attachment; 0*00="foo"')
