@@ -1,0 +1,1 @@
+In a very special case, the email package would raise, errors.InvalidHeaderError, which is nonexistent.  errors.InvalidHeaderError has been replaced by errors.InvalidHeaderDefect.
