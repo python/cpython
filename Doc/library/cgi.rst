@@ -15,7 +15,7 @@
    single: URL
    single: Common Gateway Interface
 
-.. deprecated:: 3.11
+.. deprecated-removed:: 3.11 3.13
    The :mod:`cgi` module is deprecated
    (see :pep:`PEP 594 <594#cgi>` for details and alternatives).
 
