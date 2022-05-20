@@ -451,7 +451,7 @@ display_source_line_with_margin(PyObject *f, PyFrameObject *frame, PyObject *fil
         if (source == NULL) {
             return 0;
         }
-        Py_ssize_t source_size = PyUnicode_GET_SIZE(source);
+        Py_ssize_t source_size = Py_SIZE(source);
         if (source_size == 0) {
             return 0;
         }
