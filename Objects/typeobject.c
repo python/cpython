@@ -3374,6 +3374,13 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 PyObject *
 PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 {
+    return PyType_FromMetaclass(&PyType_Type, module, spec, bases);
+}
+
+PyObject *
+PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
+                     PyType_Spec *spec, PyObject *bases)
+{
     PyHeapTypeObject *res;
     PyObject *modname;
     PyTypeObject *type, *base;
@@ -3383,6 +3390,12 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     Py_ssize_t nmembers, weaklistoffset, dictoffset, vectorcalloffset;
     char *res_start;
     short slot_offset, subslot_offset;
+
+    if (metaclass->tp_new != PyType_Type.tp_new) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Metaclasses with custom tp_new are not supported.");
+        return NULL;
+    }
 
     nmembers = weaklistoffset = dictoffset = vectorcalloffset = 0;
     for (slot = spec->slots; slot->slot; slot++) {
@@ -3412,7 +3425,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         }
     }
 
-    res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, nmembers);
+    res = (PyHeapTypeObject*)metaclass->tp_alloc(metaclass, nmembers);
     if (res == NULL)
         return NULL;
     res_start = (char*)res;
