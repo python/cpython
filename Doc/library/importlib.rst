@@ -1253,7 +1253,6 @@ import, then you should use :func:`importlib.util.find_spec`.
 
 Note that if ``name`` is a submodule (contains a dot),
 :func:`importlib.util.find_spec` will import the parent module.
-
 ::
 
   import importlib.util
