@@ -5546,7 +5546,8 @@ class TestHeaderRegistry(TestEmailBase):
     # See issue gh-93010.
     def test_HeaderRegistry(self):
         reg = HeaderRegistry()
-        reg('Content-Disposition', 'attachment; 0*00="foo"')
+        a = reg('Content-Disposition', 'attachment; 0*00="foo"')
+        self.assertIsInstance(a.defects[0], errors.InvalidHeaderDefect)
 
 if __name__ == '__main__':
     unittest.main()
