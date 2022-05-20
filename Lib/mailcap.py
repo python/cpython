@@ -2,6 +2,7 @@
 
 import os
 import warnings
+from shlex import quote
 
 __all__ = ["getcaps","findmatch"]
 
@@ -203,8 +204,6 @@ def subst(field, MIMEtype, filename, plist=[]):
             c = field[i]; i = i+1
             if c == '%':
                 res = res + c
-            elif c == 's':
-                res = res + filename
             elif c == 't':
                 res = res + MIMEtype
             elif c == '{':
@@ -219,6 +218,9 @@ def subst(field, MIMEtype, filename, plist=[]):
             # %F == list of alternating type and filename for parts
             else:
                 res = res + '%' + c
+    res = res.replace("'%s'"    , quote(filename))
+    res = res.replace('"%s"'    , quote(filename))
+    res = res.replace('%s'      , quote(filename))
     return res
 
 def findparam(name, plist):
