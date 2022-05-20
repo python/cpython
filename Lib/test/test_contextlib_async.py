@@ -8,6 +8,7 @@ import unittest
 
 from test.test_contextlib import TestBaseExitStack
 
+support.requires_working_socket(module=True)
 
 def _async_test(func):
     """Decorator to turn an async function into a test case."""
@@ -486,6 +487,13 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
             return self.run_coroutine(self.__aexit__(*exc_details))
 
     exit_stack = SyncAsyncExitStack
+    callback_error_internal_frames = [
+        ('__exit__', 'return self.run_coroutine(self.__aexit__(*exc_details))'),
+        ('run_coroutine', 'raise exc'),
+        ('run_coroutine', 'raise exc'),
+        ('__aexit__', 'raise exc_details[1]'),
+        ('__aexit__', 'cb_suppress = cb(*exc_details)'),
+    ]
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()

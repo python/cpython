@@ -282,7 +282,7 @@ def wait(fs, timeout=None, return_when=ALL_COMPLETED):
         A named 2-tuple of sets. The first set, named 'done', contains the
         futures that completed (is finished or cancelled) before the wait
         completed. The second set, named 'not_done', contains uncompleted
-        futures. Duplicate futures given to *fs* are removed and will be 
+        futures. Duplicate futures given to *fs* are removed and will be
         returned only once.
     """
     fs = set(fs)
@@ -379,7 +379,7 @@ class Future(object):
             return self._state == RUNNING
 
     def done(self):
-        """Return True of the future was cancelled or finished executing."""
+        """Return True if the future was cancelled or finished executing."""
         with self._condition:
             return self._state in [CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED]
 

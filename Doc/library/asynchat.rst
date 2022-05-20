@@ -3,6 +3,7 @@
 
 .. module:: asynchat
    :synopsis: Support for asynchronous command/response protocols.
+   :deprecated:
 
 .. moduleauthor:: Sam Rushing <rushing@nightmare.com>
 .. sectionauthor:: Steve Holden <sholden@holdenweb.com>
@@ -10,6 +11,8 @@
 **Source code:** :source:`Lib/asynchat.py`
 
 .. deprecated:: 3.6
+   :mod:`asynchat` will be removed in Python 3.12
+   (see :pep:`PEP 594 <594#asynchat>` for details).
    Please use :mod:`asyncio` instead.
 
 --------------

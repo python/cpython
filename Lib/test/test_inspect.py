@@ -7,6 +7,7 @@ import inspect
 import io
 import linecache
 import os
+import dis
 from os.path import normcase
 import _pickle
 import pickle
@@ -361,14 +362,23 @@ class TestInterpreterStack(IsTestBase):
 
     def test_stack(self):
         self.assertTrue(len(mod.st) >= 5)
-        self.assertEqual(revise(*mod.st[0][1:]),
+        frame1, frame2, frame3, frame4, *_ = mod.st
+        frameinfo = revise(*frame1[1:])
+        self.assertEqual(frameinfo,
              (modfile, 16, 'eggs', ['    st = inspect.stack()\n'], 0))
-        self.assertEqual(revise(*mod.st[1][1:]),
+        self.assertEqual(frame1.positions, dis.Positions(16, 16, 9, 24))
+        frameinfo = revise(*frame2[1:])
+        self.assertEqual(frameinfo,
              (modfile, 9, 'spam', ['    eggs(b + d, c + f)\n'], 0))
-        self.assertEqual(revise(*mod.st[2][1:]),
+        self.assertEqual(frame2.positions, dis.Positions(9, 9, 4, 22))
+        frameinfo = revise(*frame3[1:])
+        self.assertEqual(frameinfo,
              (modfile, 43, 'argue', ['            spam(a, b, c)\n'], 0))
-        self.assertEqual(revise(*mod.st[3][1:]),
+        self.assertEqual(frame3.positions, dis.Positions(43, 43, 12, 25))
+        frameinfo = revise(*frame4[1:])
+        self.assertEqual(frameinfo,
              (modfile, 39, 'abuse', ['        self.argue(a, b, c)\n'], 0))
+        self.assertEqual(frame4.positions, dis.Positions(39, 39, 8, 27))
         # Test named tuple fields
         record = mod.st[0]
         self.assertIs(record.frame, mod.fr)
@@ -380,12 +390,16 @@ class TestInterpreterStack(IsTestBase):
 
     def test_trace(self):
         self.assertEqual(len(git.tr), 3)
-        self.assertEqual(revise(*git.tr[0][1:]),
+        frame1, frame2, frame3, = git.tr
+        self.assertEqual(revise(*frame1[1:]),
              (modfile, 43, 'argue', ['            spam(a, b, c)\n'], 0))
-        self.assertEqual(revise(*git.tr[1][1:]),
+        self.assertEqual(frame1.positions, dis.Positions(43, 43, 12, 25))
+        self.assertEqual(revise(*frame2[1:]),
              (modfile, 9, 'spam', ['    eggs(b + d, c + f)\n'], 0))
-        self.assertEqual(revise(*git.tr[2][1:]),
+        self.assertEqual(frame2.positions, dis.Positions(9, 9, 4, 22))
+        self.assertEqual(revise(*frame3[1:]),
              (modfile, 18, 'eggs', ['    q = y / 0\n'], 0))
+        self.assertEqual(frame3.positions, dis.Positions(18, 18, 8, 13))
 
     def test_frame(self):
         args, varargs, varkw, locals = inspect.getargvalues(mod.fr)
@@ -828,7 +842,10 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls213, 218, 222)
         self.assertSourceEqual(mod2.cls213().func219(), 220, 221)
 
-    @unittest.skipIf(support.is_emscripten, "socket.accept is broken")
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "socket.accept is broken"
+    )
     def test_nested_class_definition_inside_async_function(self):
         import asyncio
         self.addCleanup(asyncio.set_event_loop_policy, None)
@@ -3589,6 +3606,9 @@ class TestParameterObject(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, 'not a valid parameter name'):
             inspect.Parameter('1', kind=inspect.Parameter.VAR_KEYWORD)
+
+        with self.assertRaisesRegex(ValueError, 'not a valid parameter name'):
+            inspect.Parameter('from', kind=inspect.Parameter.VAR_KEYWORD)
 
         with self.assertRaisesRegex(TypeError, 'name must be a str'):
             inspect.Parameter(None, kind=inspect.Parameter.VAR_KEYWORD)

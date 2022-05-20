@@ -124,9 +124,18 @@ Module Contents
       Enum class decorator that checks user-selectable constraints on an
       enumeration.
 
+   :func:`member`
+
+      Make ``obj`` a member.  Can be used as a decorator.
+
+   :func:`nonmember`
+
+      Do not make ``obj`` a member.  Can be used as a decorator.
+
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
 .. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``FlagBoundary``, ``property``
+.. versionadded:: 3.11  ``member``, ``nonmember``
 
 ---------------
 
@@ -788,6 +797,18 @@ Utilities and Decorators
    A :keyword:`class` decorator specifically for enumerations.  Members from
    :class:`EnumCheck` are used to specify which constraints should be checked
    on the decorated enumeration.
+
+   .. versionadded:: 3.11
+
+.. decorator:: member
+
+   A decorator for use in enums: its target will become a member.
+
+   .. versionadded:: 3.11
+
+.. decorator:: nonmember
+
+   A decorator for use in enums: its target will not become a member.
 
    .. versionadded:: 3.11
 

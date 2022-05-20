@@ -3,10 +3,16 @@
 
 .. module:: uu
    :synopsis: Encode and decode files in uuencode format.
+   :deprecated:
 
 .. moduleauthor:: Lance Ellinghouse
 
 **Source code:** :source:`Lib/uu.py`
+
+.. deprecated:: 3.11
+   The :mod:`uu` module is deprecated
+   (see :pep:`PEP 594 <594#uu-and-the-uu-encoding>` for details).
+   :mod:`base64` is a modern alternative.
 
 --------------
 
