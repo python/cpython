@@ -3403,8 +3403,8 @@ def dataclass_transform(
     The ``CustomerModel`` classes defined above will
     be treated by type checkers similarly to classes created with
     ``@dataclasses.dataclass``.
-    For example, type checkers will assume these classes have an
-    ``__init__`` method that accepts ``id`` and ``name``.
+    For example, type checkers will assume these classes have
+    ``__init__`` methods that accept ``id`` and ``name``.
 
     The arguments to this decorator can be used to customize this behavior:
     - ``eq_default`` indicates whether the ``eq`` parameter is assumed to be
