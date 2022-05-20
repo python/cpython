@@ -6,12 +6,11 @@ import io
 from test import support
 import unittest
 
-import pyexpat
+import xml.parsers.expat
 import xml.dom.minidom
 
 from xml.dom.minidom import parse, Node, Document, parseString
 from xml.dom.minidom import getDOMImplementation
-from xml.parsers.expat import ExpatError
 
 
 tstfile = support.findfile("test.xml", subdir="xmltestdata")
@@ -1149,10 +1148,10 @@ class MinidomTest(unittest.TestCase):
 
         # Verify that character decoding errors raise exceptions instead
         # of crashing
-        if pyexpat.version_info >= (2, 4, 5):
-            self.assertRaises(ExpatError, parseString,
+        if xml.parsers.expat.version_info >= (2, 4, 4):
+            self.assertRaises(xml.parsers.expat.ExpatError, parseString,
                     b'<fran\xe7ais></fran\xe7ais>')
-            self.assertRaises(ExpatError, parseString,
+            self.assertRaises(xml.parsers.expat.ExpatError, parseString,
                     b'<franais>Comment \xe7a va ? Tr\xe8s bien ?</franais>')
         else:
             self.assertRaises(UnicodeDecodeError, parseString,
@@ -1617,8 +1616,8 @@ class MinidomTest(unittest.TestCase):
         self.confirm(doc2.namespaceURI == xml.dom.EMPTY_NAMESPACE)
 
     def testExceptionOnSpacesInXMLNSValue(self):
-        if pyexpat.version_info >= (2, 4, 5):
-            context = self.assertRaisesRegex(ExpatError, 'syntax error')
+        if xml.parsers.expat.version_info >= (2, 4, 4):
+            context = self.assertRaisesRegex(xml.parsers.expat.ExpatError, 'syntax error')
         else:
             context = self.assertRaisesRegex(ValueError, 'Unsupported syntax')
 

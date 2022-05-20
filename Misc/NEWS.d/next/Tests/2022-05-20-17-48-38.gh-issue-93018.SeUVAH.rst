@@ -1,0 +1,1 @@
+Fix for the compatibility problems with expat started in 2.4.4, not just 2.4.5
