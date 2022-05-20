@@ -1987,9 +1987,6 @@ Examples of working with a :class:`.time` object::
       return CONSTANT                 # fixed-offset class
       return CONSTANT + self.dst(dt)  # daylight-aware class
 
-   If :meth:`utcoffset` does not return ``None``, :meth:`dst` should not return
-   ``None`` either.
-
    The default implementation of :meth:`utcoffset` raises
    :exc:`NotImplementedError`.
 
