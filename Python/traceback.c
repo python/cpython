@@ -447,11 +447,42 @@ display_source_line_with_margin(PyObject *f, PyFrameObject *frame, PyObject *fil
     if ((strcmp(PyUnicode_DATA(filename), "<stdin>") == 0 ||
             strcmp(PyUnicode_DATA(filename), "<string>") == 0) && frame != NULL)
     {
-        lineobj = frame->f_frame->f_code->co_source;
-        if (lineobj == NULL) {
+        PyObject *source = frame->f_frame->f_code->co_source;
+        if (source == NULL) {
             return 0;
         }
-        Py_INCREF(lineobj);
+        Py_ssize_t source_size = PyUnicode_GET_SIZE(source);
+        if (source_size == 0) {
+            return 0;
+        }
+        int lines_done = lineno;
+        Py_ssize_t idx = 0;
+        while (--lines_done) {
+            /* Add one to:
+             * 1. Return -1 when an error occurs in PyUnicode_FindChar (PyUnicode_FindChar returns -2).
+             * 2. Return 0 when any more newlines can't be found (PyUnicode_FindChar returns -1).
+             * 3. Skip the newline's position to avoid an infinite loop.
+             */
+            idx = PyUnicode_FindChar(source, '\n', idx, source_size, 1) + 1;
+            if (idx <= 0) {
+                return Py_SAFE_DOWNCAST(idx, Py_ssize_t, int);
+            }
+        }
+        Py_ssize_t end_idx = PyUnicode_FindChar(source, '\n', idx, source_size, 1);
+        if (end_idx == -2) {
+            return -1;
+        }
+        else if (end_idx == -1) {
+            end_idx = source_size;
+        }
+
+        if (end_idx - idx == 0) {
+            return 0;
+        }
+        lineobj = PyUnicode_Substring(source, idx, end_idx);
+        if (lineobj == NULL) {
+            return -1;
+        }
     }
     else if (PyUnicode_READ_CHAR(filename, 0) == '<') {
         Py_ssize_t len = PyUnicode_GET_LENGTH(filename);
