@@ -107,6 +107,10 @@ class PosixTests(unittest.TestCase):
         script = os.path.join(dirname, 'signalinterproctester.py')
         assert_python_ok(script)
 
+    @unittest.skipUnless(
+        hasattr(signal, "valid_signals"),
+        "requires signal.valid_signals"
+    )
     def test_valid_signals(self):
         s = signal.valid_signals()
         self.assertIsInstance(s, set)
@@ -212,6 +216,7 @@ class WakeupFDTests(unittest.TestCase):
         self.assertRaises((ValueError, OSError),
                           signal.set_wakeup_fd, fd)
 
+    @unittest.skipUnless(support.has_socket_support, "needs working sockets.")
     def test_invalid_socket(self):
         sock = socket.socket()
         fd = sock.fileno()
@@ -241,6 +246,7 @@ class WakeupFDTests(unittest.TestCase):
         self.assertEqual(signal.set_wakeup_fd(-1), -1)
 
     @unittest.skipIf(support.is_emscripten, "Emscripten cannot fstat pipes.")
+    @unittest.skipUnless(support.has_socket_support, "needs working sockets.")
     def test_set_wakeup_fd_socket_result(self):
         sock1 = socket.socket()
         self.addCleanup(sock1.close)
