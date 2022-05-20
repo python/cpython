@@ -8,6 +8,7 @@ Licensed to the PSF under a contributor agreement.
 import ensurepip
 import os
 import os.path
+import pathlib
 import re
 import shutil
 import struct
@@ -99,12 +100,23 @@ class BasicTest(BaseTest):
         fn = self.get_env_file(*args)
         self.assertTrue(os.path.isdir(fn))
 
-    def test_defaults(self):
+    def test_defaults_with_str_path(self):
         """
-        Test the create function with default arguments.
+        Test the create function with default arguments and a str path.
         """
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
+        self._check_output_of_default_create()
+
+    def test_defaults_with_pathlib_path(self):
+        """
+        Test the create function with default arguments and a pathlib.Path path.
+        """
+        rmtree(self.env_dir)
+        self.run_with_capture(venv.create, pathlib.Path(self.env_dir))
+        self._check_output_of_default_create()
+
+    def _check_output_of_default_create(self):
         self.isdir(self.bindir)
         self.isdir(self.include)
         self.isdir(*self.lib)
@@ -474,7 +486,9 @@ class BasicTest(BaseTest):
         the path separator.
         """
         rmtree(self.env_dir)
-        self.assertRaises(ValueError, venv.create, self.env_dir + os.pathsep)
+        bad_itempath = self.env_dir + os.pathsep
+        self.assertRaises(ValueError, venv.create, bad_itempath)
+        self.assertRaises(ValueError, venv.create, pathlib.Path(bad_itempath))
 
 @requireVenvCreate
 class EnsurePipTest(BaseTest):

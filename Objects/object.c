@@ -1846,6 +1846,8 @@ extern PyTypeObject PyHKEY_Type;
 #endif
 extern PyTypeObject _Py_GenericAliasIterType;
 extern PyTypeObject _PyMemoryIter_Type;
+extern PyTypeObject _PyLineIterator;
+extern PyTypeObject _PyPositionsIterator;
 
 static PyTypeObject* static_types[] = {
     // The two most important base types: must be initialized first and
@@ -1944,12 +1946,14 @@ static PyTypeObject* static_types[] = {
     &_PyHamt_CollisionNode_Type,
     &_PyHamt_Type,
     &_PyInterpreterID_Type,
+    &_PyLineIterator,
     &_PyManagedBuffer_Type,
     &_PyMemoryIter_Type,
     &_PyMethodWrapper_Type,
     &_PyNamespace_Type,
     &_PyNone_Type,
     &_PyNotImplemented_Type,
+    &_PyPositionsIterator,
     &_PyUnicodeASCIIIter_Type,
     &_PyUnion_Type,
     &_PyWeakref_CallableProxyType,

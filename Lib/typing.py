@@ -3368,10 +3368,10 @@ def dataclass_transform(
 
     Example usage with a decorator function:
 
-        _T = TypeVar("_T")
+        T = TypeVar("T")
 
         @dataclass_transform()
-        def create_model(cls: type[_T]) -> type[_T]:
+        def create_model(cls: type[T]) -> type[T]:
             ...
             return cls
 
@@ -3400,20 +3400,23 @@ def dataclass_transform(
             id: int
             name: str
 
-    Each of the ``CustomerModel`` classes defined in this example will now
-    behave similarly to a dataclass created with the ``@dataclasses.dataclass``
-    decorator. For example, the type checker will synthesize an ``__init__``
-    method.
+    The ``CustomerModel`` classes defined above will
+    be treated by type checkers similarly to classes created with
+    ``@dataclasses.dataclass``.
+    For example, type checkers will assume these classes have
+    ``__init__`` methods that accept ``id`` and ``name``.
 
     The arguments to this decorator can be used to customize this behavior:
     - ``eq_default`` indicates whether the ``eq`` parameter is assumed to be
-        True or False if it is omitted by the caller.
+        ``True`` or ``False`` if it is omitted by the caller.
     - ``order_default`` indicates whether the ``order`` parameter is
         assumed to be True or False if it is omitted by the caller.
     - ``kw_only_default`` indicates whether the ``kw_only`` parameter is
         assumed to be True or False if it is omitted by the caller.
     - ``field_specifiers`` specifies a static list of supported classes
         or functions that describe fields, similar to ``dataclasses.field()``.
+    - Arbitrary other keyword arguments are accepted in order to allow for
+        possible future extensions.
 
     At runtime, this decorator records its arguments in the
     ``__dataclass_transform__`` attribute on the decorated object.

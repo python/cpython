@@ -272,6 +272,8 @@ def emit_object_stats(stats):
     with Section("Object stats", summary="allocations, frees and dict materializatons"):
         total_materializations = stats.get("Object new values")
         total_allocations = stats.get("Object allocations")
+        total_increfs = stats.get("Object interpreter increfs") + stats.get("Object increfs")
+        total_decrefs = stats.get("Object interpreter decrefs") + stats.get("Object decrefs")
         rows = []
         for key, value in stats.items():
             if key.startswith("Object"):
@@ -279,6 +281,10 @@ def emit_object_stats(stats):
                     ratio = f"{100*value/total_materializations:0.1f}%"
                 elif "allocations" in key:
                     ratio = f"{100*value/total_allocations:0.1f}%"
+                elif "increfs"     in key:
+                    ratio = f"{100*value/total_increfs:0.1f}%"
+                elif "decrefs"     in key:
+                    ratio = f"{100*value/total_decrefs:0.1f}%"
                 else:
                     ratio = ""
                 label = key[6:].strip()
@@ -315,7 +321,7 @@ def emit_pair_counts(opcode_stats, total):
         emit_table(("Pair", "Count:", "Self:", "Cumulative:"),
             rows
         )
-    with Section("Predecessor/Successor Pairs", summary="Top 3 predecessors and successors of each opcode"):
+    with Section("Predecessor/Successor Pairs", summary="Top 5 predecessors and successors of each opcode"):
         predecessors = collections.defaultdict(collections.Counter)
         successors = collections.defaultdict(collections.Counter)
         total_predecessors = collections.Counter()
@@ -334,10 +340,10 @@ def emit_pair_counts(opcode_stats, total):
             pred_rows = succ_rows = ()
             if total1:
                 pred_rows = [(opname[pred], count, f"{count/total1:.1%}")
-                             for (pred, count) in predecessors[i].most_common(3)]
+                             for (pred, count) in predecessors[i].most_common(5)]
             if total2:
                 succ_rows = [(opname[succ], count, f"{count/total2:.1%}")
-                             for (succ, count) in successors[i].most_common(3)]
+                             for (succ, count) in successors[i].most_common(5)]
             with Section(name, 3, f"Successors and predecessors for {name}"):
                 emit_table(("Predecessors", "Count:", "Percentage:"),
                     pred_rows

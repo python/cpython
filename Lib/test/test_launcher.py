@@ -244,6 +244,17 @@ class RunPyMixin:
         finally:
             file.unlink()
 
+    @contextlib.contextmanager
+    def test_venv(self):
+        venv = Path.cwd() / "Scripts"
+        venv.mkdir(exist_ok=True, parents=True)
+        venv_exe = (venv / Path(sys.executable).name)
+        venv_exe.touch()
+        try:
+            yield venv_exe, {"VIRTUAL_ENV": str(venv.parent)}
+        finally:
+            shutil.rmtree(venv)
+
 
 class TestLauncher(unittest.TestCase, RunPyMixin):
     @classmethod
@@ -451,12 +462,8 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("PythonTestSuite/3.100", default)
 
     def test_virtualenv_in_list(self):
-        venv = Path.cwd() / "Scripts"
-        venv.mkdir(exist_ok=True, parents=True)
-        venv_exe = (venv / Path(sys.executable).name)
-        venv_exe.touch()
-        try:
-            data = self.run_py(["-0p"], env={"VIRTUAL_ENV": str(venv.parent)})
+        with self.test_venv() as (venv_exe, env):
+            data = self.run_py(["-0p"], env=env)
             for line in data["stdout"].splitlines():
                 m = re.match(r"\s*\*\s+(.+)$", line)
                 if m:
@@ -465,7 +472,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             else:
                 self.fail("did not find active venv path")
 
-            data = self.run_py(["-0"], env={"VIRTUAL_ENV": str(venv.parent)})
+            data = self.run_py(["-0"], env=env)
             for line in data["stdout"].splitlines():
                 m = re.match(r"\s*\*\s+(.+)$", line)
                 if m:
@@ -473,8 +480,17 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                     break
             else:
                 self.fail("did not find active venv entry")
-        finally:
-            shutil.rmtree(venv)
+
+    def test_virtualenv_with_env(self):
+        with self.test_venv() as (venv_exe, env):
+            data1 = self.run_py([], env={**env, "PY_PYTHON": "-3"})
+            data2 = self.run_py(["-3"], env={**env, "PY_PYTHON": "-3"})
+        # Compare stdout, because stderr goes via ascii
+        self.assertEqual(data1["stdout"].strip(), str(venv_exe))
+        self.assertEqual(data1["SearchInfo.lowPriorityTag"], "True")
+        # Ensure passing the argument doesn't trigger the same behaviour
+        self.assertNotEqual(data2["stdout"].strip(), str(venv_exe))
+        self.assertNotEqual(data2["SearchInfo.lowPriorityTag"], "True")
 
     def test_py_shebang(self):
         with self.py_ini(TEST_PY_COMMANDS):
