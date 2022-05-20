@@ -157,12 +157,13 @@ provides three different variants:
 
    .. attribute:: protocol_version
 
-      The highest HTTP version supported by the server.
-      It is the HTTP version used in responses.  If set to ``'HTTP/1.1'``,
-      the server will support HTTP persistent connections;
-      however, your server *must* then include an accurate Content-Length
-      header (using :meth:`send_header`) in all of its responses to clients.
-      For backwards compatibility, the default value is ``'HTTP/1.0'``.
+      The HTTP version to which the server is conformant. It is sent in
+      responses to let the client know the server's communication capabilities
+      for future requests. If set to ``'HTTP/1.1'``, the server will permit
+      HTTP persistent connections; however, your server *must* then include an
+      accurate Content-Length header (using :meth:`send_header`) in all of its 
+      responses to clients. For backwards compatibility, the default value is 
+      ``'HTTP/1.0'``.
 
    .. attribute:: MessageClass
 
@@ -195,12 +196,14 @@ provides three different variants:
    .. method:: handle_expect_100()
 
       Writes a 100 (Continue) informational status line to the output stream.
-      When a HTTP/1.1 compliant server receives a request with an ``Expect: 100-continue``
-      header which indicates that a request message body will follow, it must either
-      send a 100 (Continue) informational response to tell the client to continue, or send a response
-      with a final status code to tell the client to stop.
-      This method can be overridden to tell the client to stop. E.g. the server can
-      choose to write a 417 (Expectation Failed) client error status line to the output stream and ``return False``.
+      When a HTTP/1.1 conformant server receives a request with an
+      ``Expect: 100-continue`` header which indicates that a request message
+      body will follow, it must either send a 100 (Continue) informational
+      response to tell the client to continue, or send a response with a final
+      status code to tell the client to stop. This method can be overridden to
+      tell the client to stop. E.g. the server can choose to write a
+      417 (Expectation Failed) client error status line to the output stream
+      and ``return False``.
 
       .. versionadded:: 3.2
 
@@ -438,6 +441,15 @@ the following command uses a specific directory::
 
 .. versionadded:: 3.7
     ``--directory`` argument was introduced.
+
+By default, the server is conformant to HTTP/1.0. The option ``-p/--protocol``
+specifies the HTTP version to which the server is conformant. For example, the
+following command runs an HTTP/1.1 conformant server::
+
+        python -m http.server --protocol HTTP/1.1
+
+.. versionadded:: 3.11
+    ``--protocol`` argument was introduced.
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server, directory=None)
 

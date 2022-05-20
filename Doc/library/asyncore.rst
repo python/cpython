@@ -14,7 +14,8 @@
 **Source code:** :source:`Lib/asyncore.py`
 
 .. deprecated:: 3.6
-   :mod:`asyncore` will be removed in Python 3.12 (:pep:`594`).
+   :mod:`asyncore` will be removed in Python 3.12
+   (see :pep:`PEP 594 <594#asyncore>` for details).
    Please use :mod:`asyncio` instead.
 
 --------------

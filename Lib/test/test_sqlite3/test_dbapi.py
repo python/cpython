@@ -21,21 +21,19 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import contextlib
+import os
 import sqlite3 as sqlite
 import subprocess
 import sys
 import threading
 import unittest
+import urllib.parse
 
-from test.support import (
-    SHORT_TIMEOUT,
-    bigmemtest,
-    check_disallow_instantiation,
-    threading_helper,
-)
+from test.support import SHORT_TIMEOUT, bigmemtest, check_disallow_instantiation
+from test.support import threading_helper
 from _testcapi import INT_MAX, ULLONG_MAX
 from os import SEEK_SET, SEEK_CUR, SEEK_END
-from test.support.os_helper import TESTFN, unlink, temp_dir
+from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE, unlink, temp_dir, FakePath
 
 
 # Helper for tests using TESTFN
@@ -343,15 +341,6 @@ class ModuleTests(unittest.TestCase):
             self.assertEqual(exc.sqlite_errorcode,
                              sqlite.SQLITE_CONSTRAINT_CHECK)
             self.assertEqual(exc.sqlite_errorname, "SQLITE_CONSTRAINT_CHECK")
-
-    # sqlite3_enable_shared_cache() is deprecated on macOS and calling it may raise
-    # OperationalError on some buildbots.
-    @unittest.skipIf(sys.platform == "darwin", "shared cache is deprecated on macOS")
-    def test_shared_cache_deprecated(self):
-        for enable in (True, False):
-            with self.assertWarns(DeprecationWarning) as cm:
-                sqlite.enable_shared_cache(enable)
-            self.assertIn("dbapi.py", cm.filename)
 
     def test_disallow_instantiation(self):
         cx = sqlite.connect(":memory:")
@@ -663,11 +652,19 @@ class OpenTests(unittest.TestCase):
     def test_open_with_path_like_object(self):
         """ Checks that we can successfully connect to a database using an object that
             is PathLike, i.e. has __fspath__(). """
-        class Path:
-            def __fspath__(self):
-                return TESTFN
-        path = Path()
+        path = FakePath(TESTFN)
         with managed_connect(path) as cx:
+            self.assertTrue(os.path.exists(path))
+            cx.execute(self._sql)
+
+    @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
+    @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
+    @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
+    def test_open_with_undecodable_path(self):
+        self.addCleanup(unlink, TESTFN_UNDECODABLE)
+        path = TESTFN_UNDECODABLE
+        with managed_connect(path) as cx:
+            self.assertTrue(os.path.exists(path))
             cx.execute(self._sql)
 
     def test_open_uri(self):
@@ -743,7 +740,7 @@ class CursorTests(unittest.TestCase):
         self.assertEqual(row[0], "Hu\x00go")
 
     def test_execute_non_iterable(self):
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(sqlite.ProgrammingError) as cm:
             self.cu.execute("insert into test(id) values (?)", 42)
         self.assertEqual(str(cm.exception), 'parameters are of unsupported type')
 
@@ -1173,14 +1170,14 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(len(self.blob), 50)
 
     def test_blob_get_item(self):
-        self.assertEqual(self.blob[5], b"b")
-        self.assertEqual(self.blob[6], b"l")
-        self.assertEqual(self.blob[7], b"o")
-        self.assertEqual(self.blob[8], b"b")
-        self.assertEqual(self.blob[-1], b"!")
+        self.assertEqual(self.blob[5], ord("b"))
+        self.assertEqual(self.blob[6], ord("l"))
+        self.assertEqual(self.blob[7], ord("o"))
+        self.assertEqual(self.blob[8], ord("b"))
+        self.assertEqual(self.blob[-1], ord("!"))
 
     def test_blob_set_item(self):
-        self.blob[0] = b"b"
+        self.blob[0] = ord("b")
         expected = b"b" + self.data[1:]
         actual = self.cx.execute("select b from test").fetchone()[0]
         self.assertEqual(actual, expected)
@@ -1188,23 +1185,14 @@ class BlobTests(unittest.TestCase):
     def test_blob_set_item_with_offset(self):
         self.blob.seek(0, SEEK_END)
         self.assertEqual(self.blob.read(), b"")  # verify that we're at EOB
-        self.blob[0] = b"T"
-        self.blob[-1] = b"."
+        self.blob[0] = ord("T")
+        self.blob[-1] = ord(".")
         self.blob.seek(0, SEEK_SET)
         expected = b"This blob data string is exactly fifty bytes long."
         self.assertEqual(self.blob.read(), expected)
 
-    def test_blob_set_buffer_object(self):
+    def test_blob_set_slice_buffer_object(self):
         from array import array
-        self.blob[0] = memoryview(b"1")
-        self.assertEqual(self.blob[0], b"1")
-
-        self.blob[1] = bytearray(b"2")
-        self.assertEqual(self.blob[1], b"2")
-
-        self.blob[2] = array("b", [4])
-        self.assertEqual(self.blob[2], b"\x04")
-
         self.blob[0:5] = memoryview(b"12345")
         self.assertEqual(self.blob[0:5], b"12345")
 
@@ -1215,8 +1203,8 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(self.blob[0:5], b"\x01\x02\x03\x04\x05")
 
     def test_blob_set_item_negative_index(self):
-        self.blob[-1] = b"z"
-        self.assertEqual(self.blob[-1], b"z")
+        self.blob[-1] = 255
+        self.assertEqual(self.blob[-1], 255)
 
     def test_blob_get_slice(self):
         self.assertEqual(self.blob[5:14], b"blob data")
@@ -1264,13 +1252,29 @@ class BlobTests(unittest.TestCase):
         with self.assertRaisesRegex(IndexError, "cannot fit 'int'"):
             self.blob[ULLONG_MAX]
 
+        # Provoke read error
+        self.cx.execute("update test set b='aaaa' where rowid=1")
+        with self.assertRaises(sqlite.OperationalError):
+            self.blob[0]
+
     def test_blob_set_item_error(self):
-        with self.assertRaisesRegex(ValueError, "must be a single byte"):
+        with self.assertRaisesRegex(TypeError, "cannot be interpreted"):
             self.blob[0] = b"multiple"
+        with self.assertRaisesRegex(TypeError, "cannot be interpreted"):
+            self.blob[0] = b"1"
+        with self.assertRaisesRegex(TypeError, "cannot be interpreted"):
+            self.blob[0] = bytearray(b"1")
         with self.assertRaisesRegex(TypeError, "doesn't support.*deletion"):
             del self.blob[0]
         with self.assertRaisesRegex(IndexError, "Blob index out of range"):
-            self.blob[1000] = b"a"
+            self.blob[1000] = 0
+        with self.assertRaisesRegex(ValueError, "must be in range"):
+            self.blob[0] = -1
+        with self.assertRaisesRegex(ValueError, "must be in range"):
+            self.blob[0] = 256
+        # Overflow errors are overridden with ValueError
+        with self.assertRaisesRegex(ValueError, "must be in range"):
+            self.blob[0] = 2**65
 
     def test_blob_set_slice_error(self):
         with self.assertRaisesRegex(IndexError, "wrong size"):

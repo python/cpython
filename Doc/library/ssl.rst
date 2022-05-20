@@ -714,7 +714,7 @@ Constants
    Selects SSL version 2 as the channel encryption protocol.
 
    This protocol is not available if OpenSSL is compiled with the
-   ``OPENSSL_NO_SSL2`` flag.
+   ``no-ssl2`` option.
 
    .. warning::
 
@@ -728,8 +728,8 @@ Constants
 
    Selects SSL version 3 as the channel encryption protocol.
 
-   This protocol is not be available if OpenSSL is compiled with the
-   ``OPENSSL_NO_SSLv3`` flag.
+   This protocol is not available if OpenSSL is compiled with the
+   ``no-ssl3`` option.
 
    .. warning::
 
@@ -2357,7 +2357,7 @@ waiting for clients to connect::
    context.load_cert_chain(certfile="mycertfile", keyfile="mykeyfile")
 
    bindsocket = socket.socket()
-   bindsocket.bind(('myaddr.mydomain.com', 10023))
+   bindsocket.bind(('myaddr.example.com', 10023))
    bindsocket.listen(5)
 
 When a client connects, you'll call :meth:`accept` on the socket to get the

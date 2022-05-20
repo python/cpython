@@ -1121,7 +1121,7 @@ checkpath(PyObject* tag)
     if (PyUnicode_Check(tag)) {
         const Py_ssize_t len = PyUnicode_GET_LENGTH(tag);
         const void *data = PyUnicode_DATA(tag);
-        unsigned int kind = PyUnicode_KIND(tag);
+        int kind = PyUnicode_KIND(tag);
         if (len >= 3 && PyUnicode_READ(kind, data, 0) == '{' && (
                 PyUnicode_READ(kind, data, 1) == '}' || (
                 PyUnicode_READ(kind, data, 1) == '*' &&
@@ -4349,7 +4349,7 @@ static PyTypeObject XMLParser_Type = {
 /* python module interface */
 
 static PyMethodDef _functions[] = {
-    {"SubElement", (PyCFunction)(void(*)(void)) subelement, METH_VARARGS | METH_KEYWORDS},
+    {"SubElement", _PyCFunction_CAST(subelement), METH_VARARGS | METH_KEYWORDS},
     _ELEMENTTREE__SET_FACTORIES_METHODDEF
     {NULL, NULL}
 };
