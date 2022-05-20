@@ -403,9 +403,11 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a7 3492 (make POP_JUMP_IF_NONE/NOT_NONE/TRUE/FALSE relative)
 #     Python 3.11a7 3493 (Make JUMP_IF_TRUE_OR_POP/JUMP_IF_FALSE_OR_POP relative)
 #     Python 3.11a7 3494 (New location info table)
-#     Python 3.11a7 3495 (Specialization/Cache for FOR_ITER)
-#     Python 3.12 will start with magic number 3500
+#     Python 3.12a1 3500 (Remove PRECALL opcode)
+#     Python 3.12a1 3501 (YIELD_VALUE oparg == stack_depth)
+#     Python 3.12a1 3502 (Specialization/Cache for FOR_ITER)
 
+#     Python 3.13 will start with 3550
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -417,7 +419,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3495).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3502).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
