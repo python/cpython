@@ -161,8 +161,8 @@ provides three different variants:
       responses to let the client know the server's communication capabilities
       for future requests. If set to ``'HTTP/1.1'``, the server will permit
       HTTP persistent connections; however, your server *must* then include an
-      accurate Content-Length header (using :meth:`send_header`) in all of its 
-      responses to clients. For backwards compatibility, the default value is 
+      accurate Content-Length header (using :meth:`send_header`) in all of its
+      responses to clients. For backwards compatibility, the default value is
       ``'HTTP/1.0'``.
 
    .. attribute:: MessageClass
