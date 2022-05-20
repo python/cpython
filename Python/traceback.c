@@ -451,6 +451,7 @@ display_source_line_with_margin(PyObject *f, PyFrameObject *frame, PyObject *fil
         if (lineobj == NULL) {
             return 0;
         }
+        Py_INCREF(lineobj);
     }
     else if (PyUnicode_READ_CHAR(filename, 0) == '<') {
         Py_ssize_t len = PyUnicode_GET_LENGTH(filename);
