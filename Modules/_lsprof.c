@@ -1,3 +1,7 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -783,7 +787,7 @@ profiler_init(ProfilerObject *pObj, PyObject *args, PyObject *kw)
 
 static PyMethodDef profiler_methods[] = {
     _LSPROF_PROFILER_GETSTATS_METHODDEF
-    {"enable",          (PyCFunction)(void(*)(void))profiler_enable,
+    {"enable",          _PyCFunction_CAST(profiler_enable),
                     METH_VARARGS | METH_KEYWORDS,       enable_doc},
     {"disable",         (PyCFunction)profiler_disable,
                     METH_NOARGS,                        disable_doc},

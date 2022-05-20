@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <WixLocalization Culture="en-us" Language="1033" xmlns="http://schemas.microsoft.com/wix/2006/localization">
   <String Id="Caption">[WixBundleName] Setup</String>
-  <String Id="Title">[WixBundleName]</String>
   <String Id="Installing">Installing</String>
   <String Id="Installation">Setup</String>
   <String Id="Modifying">Updating</String>
@@ -68,7 +67,7 @@ Select Customize to review current options.</String>
   <String Id="CustomBackButton">&amp;Back</String>
   <String Id="CustomBrowseButton">B&amp;rowse</String>
   <String Id="Include_docLabel">&amp;Documentation</String>
-  <String Id="Include_docHelpLabel">Installs the Python documentation file.</String>
+  <String Id="Include_docHelpLabel">Installs the Python documentation files.</String>
   <String Id="Include_pipLabel">&amp;pip</String>
   <String Id="Include_pipHelpLabel">Installs pip, which can download and install other Python packages.</String>
   <String Id="Include_tcltkLabel">tcl/tk and &amp;IDLE</String>
@@ -84,6 +83,8 @@ Select Customize to review current options.</String>
   <String Id="ShortcutsLabel">Create shortcuts for installed applications</String>
   <String Id="PrependPathLabel">Add Python to &amp;environment variables</String>
   <String Id="ShortPrependPathLabel">Add &amp;Python [ShortVersion] to PATH</String>
+  <String Id="AppendPathLabel">Append Python to &amp;environment variables</String>
+  <String Id="ShortAppendPathLabel">Append &amp;Python [ShortVersion] to PATH</String>
   <String Id="InstallAllUsersLabel">Install for &amp;all users</String>
   <String Id="InstallLauncherAllUsersLabel">for &amp;all users (requires elevation)</String>
   <String Id="ShortInstallLauncherAllUsersLabel">Install &amp;launcher for all users (recommended)</String>
@@ -120,7 +121,6 @@ Feel free to email &lt;a href="mailto:python-list@python.org"&gt;python-list@pyt
   <String Id="FailureRestartText">You must restart your computer to complete the rollback of the software.</String>
   <String Id="FailureRestartButton">&amp;Restart</String>
   <String Id="FailureExistingInstall">Unable to install [WixBundleName] due to an existing install. Use Programs and Features to modify, repair or remove [WixBundleName].</String>
-  
   <String Id="FailureOldOS">At least Windows 8.1 or Windows Server 2012 are required to install [WixBundleName]
 
 Visit &lt;a href="https://www.python.org/"&gt;python.org&lt;/a&gt; to download an earlier version of Python.</String>

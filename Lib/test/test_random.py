@@ -409,6 +409,10 @@ class TestBasicOps:
         self.assertRaises(ValueError, self.gen.randbytes, -1)
         self.assertRaises(TypeError, self.gen.randbytes, 1.0)
 
+    def test_mu_sigma_default_args(self):
+        self.assertIsInstance(self.gen.normalvariate(), float)
+        self.assertIsInstance(self.gen.gauss(), float)
+
 
 try:
     random.SystemRandom().random()
@@ -491,8 +495,10 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
 
         # Zero step
         raises_value_error(0, 42, 0)
+        raises_type_error(0, 42, 0.0)
+        raises_type_error(0, 0, 0.0)
 
-        # Non-integer start/stop/step
+        # Non-integer stop
         raises_type_error(3.14159)
         raises_type_error(3.0)
         raises_type_error(Fraction(3, 1))
@@ -501,33 +507,22 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         raises_type_error(0, 2.0)
         raises_type_error(0, Fraction(2, 1))
         raises_type_error(0, '2')
+        raises_type_error(0, 2.71827, 2)
+
+        # Non-integer start
+        raises_type_error(2.71827, 5)
+        raises_type_error(2.0, 5)
+        raises_type_error(Fraction(2, 1), 5)
+        raises_type_error('2', 5)
+        raises_type_error(2.71827, 5, 2)
 
         # Non-integer step
-        raises_type_error(0, 42, 1.0)
-        raises_type_error(0, 0, 1.0)
         raises_type_error(0, 42, 3.14159)
         raises_type_error(0, 42, 3.0)
         raises_type_error(0, 42, Fraction(3, 1))
         raises_type_error(0, 42, '3')
         raises_type_error(0, 42, 1.0)
         raises_type_error(0, 0, 1.0)
-
-    def test_randrange_argument_handling(self):
-        randrange = self.gen.randrange
-        with self.assertRaises(TypeError):
-            randrange(10.0, 20, 2)
-        with self.assertRaises(TypeError):
-            randrange(10, 20.0, 2)
-        with self.assertRaises(TypeError):
-            randrange(10, 20, 1.0)
-        with self.assertRaises(TypeError):
-            randrange(10, 20, 2.0)
-        with self.assertRaises(TypeError):
-            randrange(10.5)
-        with self.assertRaises(TypeError):
-            randrange(10, 20.5)
-        with self.assertRaises(TypeError):
-            randrange(10, 20, 1.5)
 
     def test_randrange_step(self):
         # bpo-42772: When stop is None, the step argument was being ignored.
@@ -825,10 +820,6 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
                 maxsize+1, maxsize=maxsize
             )
         self.gen._randbelow_without_getrandbits(5640, maxsize=maxsize)
-        # issue 33203: test that _randbelow returns zero on
-        # n == 0 also in its getrandbits-independent branch.
-        x = self.gen._randbelow_without_getrandbits(0, maxsize=maxsize)
-        self.assertEqual(x, 0)
 
         # This might be going too far to test a single line, but because of our
         # noble aim of achieving 100% test coverage we need to write a case in
@@ -1306,7 +1297,7 @@ class TestModule(unittest.TestCase):
         # tests validity but not completeness of the __all__ list
         self.assertTrue(set(random.__all__) <= set(dir(random)))
 
-    @unittest.skipUnless(hasattr(os, "fork"), "fork() required")
+    @test.support.requires_fork()
     def test_after_fork(self):
         # Test the global Random instance gets reseeded in child
         r, w = os.pipe()

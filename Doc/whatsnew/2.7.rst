@@ -2089,7 +2089,7 @@ version 1.3.  Some of the new features are:
 
 Fredrik Lundh develops ElementTree and produced the 1.3 version;
 you can read his article describing 1.3 at
-http://effbot.org/zone/elementtree-13-intro.htm.
+https://web.archive.org/web/20200703234532/http://effbot.org/zone/elementtree-13-intro.htm.
 Florent Xicluna updated the version included with
 Python, after discussions on python-dev and in :issue:`6472`.)
 
@@ -2681,7 +2681,7 @@ these commands by default, as long as, when invoked, they provide clear and
 simple directions on how to install them on that platform (usually using
 the system package manager).
 
-__ https://www.python.org/dev/peps/pep-0477/#disabling-ensurepip-by-downstream-distributors
+__ https://peps.python.org/pep-0477/#disabling-ensurepip-by-downstream-distributors
 
 
 Documentation Changes

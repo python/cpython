@@ -3,6 +3,11 @@
 
 .. module:: audioop
    :synopsis: Manipulate raw audio data.
+   :deprecated:
+
+.. deprecated:: 3.11
+   The :mod:`audioop` module is deprecated
+   (see :pep:`PEP 594 <594#audioop>` for details).
 
 --------------
 

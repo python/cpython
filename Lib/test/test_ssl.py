@@ -12,7 +12,6 @@ from test.support import warnings_helper
 import socket
 import select
 import time
-import datetime
 import enum
 import gc
 import os
@@ -30,10 +29,9 @@ try:
 except ImportError:
     ctypes = None
 
-import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import asyncore
+
+asyncore = warnings_helper.import_deprecated('asyncore')
+
 
 ssl = import_helper.import_module("ssl")
 import _ssl
@@ -373,7 +371,8 @@ class BasicSocketTests(unittest.TestCase):
         # Make sure that the PROTOCOL_* constants have enum-like string
         # reprs.
         proto = ssl.PROTOCOL_TLS_CLIENT
-        self.assertEqual(str(proto), 'PROTOCOL_TLS_CLIENT')
+        self.assertEqual(repr(proto), '<_SSLMethod.PROTOCOL_TLS_CLIENT: %r>' % proto.value)
+        self.assertEqual(str(proto), str(proto.value))
         ctx = ssl.SSLContext(proto)
         self.assertIs(ctx.protocol, proto)
 
@@ -540,7 +539,11 @@ class BasicSocketTests(unittest.TestCase):
         self.assertLessEqual(status, 15)
 
         libressl_ver = f"LibreSSL {major:d}"
-        openssl_ver = f"OpenSSL {major:d}.{minor:d}.{fix:d}"
+        if major >= 3:
+            # 3.x uses 0xMNN00PP0L
+            openssl_ver = f"OpenSSL {major:d}.{minor:d}.{patch:d}"
+        else:
+            openssl_ver = f"OpenSSL {major:d}.{minor:d}.{fix:d}"
         self.assertTrue(
             s.startswith((openssl_ver, libressl_ver)),
             (s, t, hex(n))
@@ -618,7 +621,7 @@ class BasicSocketTests(unittest.TestCase):
                 with self.assertWarns(DeprecationWarning) as cm:
                     ssl.SSLContext(protocol)
                 self.assertEqual(
-                    f'{protocol!r} is deprecated',
+                    f'ssl.{protocol.name} is deprecated',
                     str(cm.warning)
                 )
 
@@ -627,8 +630,9 @@ class BasicSocketTests(unittest.TestCase):
                 ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
                 with self.assertWarns(DeprecationWarning) as cm:
                     ctx.minimum_version = version
+                version_text = '%s.%s' % (version.__class__.__name__, version.name)
                 self.assertEqual(
-                    f'ssl.{version!r} is deprecated',
+                    f'ssl.{version_text} is deprecated',
                     str(cm.warning)
                 )
 
@@ -1995,9 +1999,8 @@ class SimpleBackgroundTests(unittest.TestCase):
         self.server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         self.server_context.load_cert_chain(SIGNED_CERTFILE)
         server = ThreadedEchoServer(context=self.server_context)
+        self.enterContext(server)
         self.server_addr = (HOST, server.port)
-        server.__enter__()
-        self.addCleanup(server.__exit__, None, None, None)
 
     def test_connect(self):
         with test_wrap_socket(socket.socket(socket.AF_INET),
@@ -3709,8 +3712,7 @@ class ThreadedTests(unittest.TestCase):
 
     def test_recv_zero(self):
         server = ThreadedEchoServer(CERTFILE)
-        server.__enter__()
-        self.addCleanup(server.__exit__, None, None)
+        self.enterContext(server)
         s = socket.create_connection((HOST, server.port))
         self.addCleanup(s.close)
         s = test_wrap_socket(s, suppress_ragged_eofs=False)

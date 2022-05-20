@@ -1,4 +1,4 @@
-#include "pycore_interp.h"    // _PyInterpreterState.pythread_stacksize
+#include "pycore_interp.h"    // _PyInterpreterState.threads.stacksize
 
 /* Posix threads interface */
 
@@ -252,7 +252,6 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
     size_t      tss;
 #endif
 
-    dprintf(("PyThread_start_new_thread called\n"));
     if (!initialized)
         PyThread_init_thread();
 
@@ -262,7 +261,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #endif
 #if defined(THREAD_STACK_SIZE)
     PyThreadState *tstate = _PyThreadState_GET();
-    size_t stacksize = tstate ? tstate->interp->pythread_stacksize : 0;
+    size_t stacksize = tstate ? tstate->interp->threads.stacksize : 0;
     tss = (stacksize != 0) ? stacksize : THREAD_STACK_SIZE;
     if (tss != 0) {
         if (pthread_attr_setstacksize(&attrs, tss) != 0) {
@@ -358,7 +357,6 @@ PyThread_get_thread_native_id(void)
 void _Py_NO_RETURN
 PyThread_exit_thread(void)
 {
-    dprintf(("PyThread_exit_thread called\n"));
     if (!initialized)
         exit(0);
     pthread_exit(0);
@@ -376,7 +374,6 @@ PyThread_allocate_lock(void)
     sem_t *lock;
     int status, error = 0;
 
-    dprintf(("PyThread_allocate_lock called\n"));
     if (!initialized)
         PyThread_init_thread();
 
@@ -392,7 +389,6 @@ PyThread_allocate_lock(void)
         }
     }
 
-    dprintf(("PyThread_allocate_lock() -> %p\n", (void *)lock));
     return (PyThread_type_lock)lock;
 }
 
@@ -403,7 +399,6 @@ PyThread_free_lock(PyThread_type_lock lock)
     int status, error = 0;
 
     (void) error; /* silence unused-but-set-variable warning */
-    dprintf(("PyThread_free_lock(%p) called\n", lock));
 
     if (!thelock)
         return;
@@ -435,8 +430,6 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     int status, error = 0;
 
     (void) error; /* silence unused-but-set-variable warning */
-    dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
-             lock, microseconds, intr_flag));
 
     _PyTime_t timeout;  // relative timeout
     if (microseconds >= 0) {
@@ -544,8 +537,6 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
         success = PY_LOCK_FAILURE;
     }
 
-    dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) -> %d\n",
-             lock, microseconds, intr_flag, success));
     return success;
 }
 
@@ -556,7 +547,6 @@ PyThread_release_lock(PyThread_type_lock lock)
     int status, error = 0;
 
     (void) error; /* silence unused-but-set-variable warning */
-    dprintf(("PyThread_release_lock(%p) called\n", lock));
 
     status = sem_post(thelock);
     CHECK_STATUS("sem_post");
@@ -573,7 +563,6 @@ PyThread_allocate_lock(void)
     pthread_lock *lock;
     int status, error = 0;
 
-    dprintf(("PyThread_allocate_lock called\n"));
     if (!initialized)
         PyThread_init_thread();
 
@@ -599,7 +588,6 @@ PyThread_allocate_lock(void)
         }
     }
 
-    dprintf(("PyThread_allocate_lock() -> %p\n", (void *)lock));
     return (PyThread_type_lock) lock;
 }
 
@@ -610,7 +598,6 @@ PyThread_free_lock(PyThread_type_lock lock)
     int status, error = 0;
 
     (void) error; /* silence unused-but-set-variable warning */
-    dprintf(("PyThread_free_lock(%p) called\n", lock));
 
     /* some pthread-like implementations tie the mutex to the cond
      * and must have the cond destroyed first.
@@ -631,9 +618,6 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     PyLockStatus success = PY_LOCK_FAILURE;
     pthread_lock *thelock = (pthread_lock *)lock;
     int status, error = 0;
-
-    dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
-             lock, microseconds, intr_flag));
 
     if (microseconds == 0) {
         status = pthread_mutex_trylock( &thelock->mut );
@@ -694,8 +678,6 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     }
 
     if (error) success = PY_LOCK_FAILURE;
-    dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) -> %d\n",
-             lock, microseconds, intr_flag, success));
     return success;
 }
 
@@ -706,7 +688,6 @@ PyThread_release_lock(PyThread_type_lock lock)
     int status, error = 0;
 
     (void) error; /* silence unused-but-set-variable warning */
-    dprintf(("PyThread_release_lock(%p) called\n", lock));
 
     status = pthread_mutex_lock( &thelock->mut );
     CHECK_STATUS_PTHREAD("pthread_mutex_lock[3]");
@@ -764,7 +745,7 @@ _pythread_pthread_set_stacksize(size_t size)
 
     /* set to default */
     if (size == 0) {
-        _PyInterpreterState_GET()->pythread_stacksize = 0;
+        _PyInterpreterState_GET()->threads.stacksize = 0;
         return 0;
     }
 
@@ -781,7 +762,7 @@ _pythread_pthread_set_stacksize(size_t size)
             rc = pthread_attr_setstacksize(&attrs, size);
             pthread_attr_destroy(&attrs);
             if (rc == 0) {
-                _PyInterpreterState_GET()->pythread_stacksize = size;
+                _PyInterpreterState_GET()->threads.stacksize = size;
                 return 0;
             }
         }

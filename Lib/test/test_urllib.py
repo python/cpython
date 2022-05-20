@@ -232,16 +232,11 @@ class ProxyTests(unittest.TestCase):
 
     def setUp(self):
         # Records changes to env vars
-        self.env = os_helper.EnvironmentVarGuard()
+        self.env = self.enterContext(os_helper.EnvironmentVarGuard())
         # Delete all proxy related env vars
         for k in list(os.environ):
             if 'proxy' in k.lower():
                 self.env.unset(k)
-
-    def tearDown(self):
-        # Restore all proxy related env vars
-        self.env.__exit__()
-        del self.env
 
     def test_getproxies_environment_keep_no_proxies(self):
         self.env.set('NO_PROXY', 'localhost')

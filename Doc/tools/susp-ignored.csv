@@ -212,7 +212,10 @@ library/socket,,:can,"return (can_id, can_dlc, data[:can_dlc])"
 library/socket,,:len,fds.frombytes(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
 library/sqlite3,,:year,"cur.execute(""select * from lang where first_appeared=:year"", {""year"": 1972})"
 library/sqlite3,,:memory,
-library/sqlite3,,:path,"db = sqlite3.connect('file:path/to/database?mode=ro', uri=True)"
+library/sqlite3,,:template,"con = sqlite3.connect(""file:template.db?mode=ro"", uri=True)"
+library/sqlite3,,:nosuchdb,"con = sqlite3.connect(""file:nosuchdb.db?mode=rw"", uri=True)"
+library/sqlite3,,:mem1,"con1 = sqlite3.connect(""file:mem1?mode=memory&cache=shared"", uri=True)"
+library/sqlite3,,:mem1,"con2 = sqlite3.connect(""file:mem1?mode=memory&cache=shared"", uri=True)"
 library/ssl,,:My,"Organizational Unit Name (eg, section) []:My Group"
 library/ssl,,:My,"Organization Name (eg, company) [Internet Widgits Pty Ltd]:My Organization, Inc."
 library/ssl,,:myserver,"Common Name (eg, YOUR name) []:myserver.mygroup.myorganization.com"
@@ -369,7 +372,6 @@ whatsnew/changelog,,::,default::DeprecationWarning
 library/importlib.metadata,,:main,"EntryPoint(name='wheel', value='wheel.cli:main', group='console_scripts')"
 library/importlib.metadata,,`,loading the metadata for packages for the indicated ``context``.
 library/re,,`,"`"
-using/configure,84,:db2,=db1:db2:...
 library/typing,,`,# Type of ``val`` is narrowed to ``str``
 library/typing,,`,"# Else, type of ``val`` is narrowed to ``float``."
 library/typing,,`,# Type of ``val`` is narrowed to ``list[str]``.
@@ -380,3 +382,15 @@ library/tkinter,,::,"grid [ttk::button .frm.btn -text ""Quit"" -command ""destro
 library/tkinter,,::,ttk::frame
 library/tkinter,,::,ttk::button
 library/tkinter,,::,ttk::widget
+reference/compound_stmts,,:exc,subclass of :exc:`BaseExceptionGroup`. It is not possible to mix except
+reference/compound_stmts,,`,subclass of :exc:`BaseExceptionGroup`. It is not possible to mix except
+reference/compound_stmts,,:keyword,"and except* in the same :keyword:`try`. :keyword:`break`,"
+reference/compound_stmts,,`,"and except* in the same :keyword:`try`. :keyword:`break`,"
+reference/compound_stmts,,:keyword,:keyword:`continue` and :keyword:`return` cannot appear in an except*
+reference/compound_stmts,,`,:keyword:`continue` and :keyword:`return` cannot appear in an except*
+whatsnew/changelog,,:CON,": os.path.abspath(“C:CON”) is now fixed to return “\.CON”, not"
+whatsnew/changelog,,::,Lib/email/mime/nonmultipart.py::MIMENonMultipart
+library/typing,,`,"assert_type(name, str)  # OK, inferred type of `name` is `str`"
+library/typing,,`,# after which we hope the inferred type will be `int`
+whatsnew/changelog,,:company,-V:company/tag
+library/typing,,`,# are located in the `typing_extensions` backports package.

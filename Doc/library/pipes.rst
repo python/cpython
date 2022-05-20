@@ -4,10 +4,16 @@
 .. module:: pipes
    :platform: Unix
    :synopsis: A Python interface to Unix shell pipelines.
+   :deprecated:
 
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 **Source code:** :source:`Lib/pipes.py`
+
+.. deprecated:: 3.11
+   The :mod:`pipes` module is deprecated
+   (see :pep:`PEP 594 <594#pipes>` for details).
+   Please use the :mod:`subprocess` module instead.
 
 --------------
 

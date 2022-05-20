@@ -197,10 +197,14 @@ created.  Socket addresses are represented as follows:
   - *addr* - Optional bytes-like object specifying the hardware physical
     address, whose interpretation depends on the device.
 
+   .. availability:: Linux >= 2.2.
+
 - :const:`AF_QIPCRTR` is a Linux-only socket based interface for communicating
   with services running on co-processors in Qualcomm platforms. The address
   family is represented as a ``(node, port)`` tuple where the *node* and *port*
   are non-negative integers.
+
+   .. availability:: Linux >= 4.7.
 
   .. versionadded:: 3.8
 
@@ -384,6 +388,15 @@ Constants
        Added ``TCP_KEEPALIVE``. On MacOS this constant can be used in the same
        way that ``TCP_KEEPIDLE`` is used on Linux.
 
+   .. versionchanged:: 3.11
+      Added ``TCP_CONNECTION_INFO``. On MacOS this constant can be used in the
+      same way that ``TCP_INFO`` is used on Linux and BSD.
+
+   .. versionchanged:: 3.12
+      Added ``SO_RTABLE`` and ``SO_USER_COOKIE``. On OpenBSD
+      and FreeBSD respectively those constants can be used in the same way that
+      ``SO_MARK`` is used on Linux.
+
 .. data:: AF_CAN
           PF_CAN
           SOL_CAN_*
@@ -392,9 +405,12 @@ Constants
    Many constants of these forms, documented in the Linux documentation, are
    also defined in the socket module.
 
-   .. availability:: Linux >= 2.6.25.
+   .. availability:: Linux >= 2.6.25, NetBSD >= 8.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.11
+      NetBSD support was added.
 
 .. data:: CAN_BCM
           CAN_BCM_*
@@ -549,6 +565,30 @@ Constants
 
    .. availability:: Linux >= 4.7.
 
+.. data:: SCM_CREDS2
+          LOCAL_CREDS
+          LOCAL_CREDS_PERSISTENT
+
+   LOCAL_CREDS and LOCAL_CREDS_PERSISTENT can be used
+   with SOCK_DGRAM, SOCK_STREAM sockets, equivalent to
+   Linux/DragonFlyBSD SO_PASSCRED, while LOCAL_CREDS
+   sends the credentials at first read, LOCAL_CREDS_PERSISTENT
+   sends for each read, SCM_CREDS2 must be then used for
+   the latter for the message type.
+
+   .. versionadded:: 3.11
+
+   .. availability:: FreeBSD.
+
+.. data:: SO_INCOMING_CPU
+
+   Constant to optimize CPU locality, to be used in conjunction with
+   :data:`SO_REUSEPORT`.
+
+  .. versionadded:: 3.11
+
+  .. availability:: Linux >= 3.9
+
 Functions
 ^^^^^^^^^
 
@@ -558,7 +598,7 @@ Creating sockets
 The following functions all create :ref:`socket objects <socket-objects>`.
 
 
-.. function:: socket(family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None)
+.. class:: socket(family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None)
 
    Create a new socket using the given address family, socket type and protocol
    number.  The address family should be :const:`AF_INET` (the default),
@@ -638,7 +678,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
       Windows support added.
 
 
-.. function:: create_connection(address[, timeout[, source_address]])
+.. function:: create_connection(address, timeout=GLOBAL_DEFAULT, source_address=None, *, all_errors=False)
 
    Connect to a TCP service listening on the internet *address* (a 2-tuple
    ``(host, port)``), and return the socket object.  This is a higher-level
@@ -657,8 +697,17 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    socket to bind to as its source address before connecting.  If host or port
    are '' or 0 respectively the OS default behavior will be used.
 
+   When a connection cannot be created, an exception is raised. By default,
+   it is the exception from the last address in the list. If *all_errors*
+   is ``True``, it is an :exc:`ExceptionGroup` containing the errors of all
+   attempts.
+
    .. versionchanged:: 3.2
       *source_address* was added.
+
+   .. versionchanged:: 3.11
+      *all_errors* was added.
+
 
 .. function:: create_server(address, *, family=AF_INET, backlog=None, reuse_port=False, dualstack_ipv6=False)
 

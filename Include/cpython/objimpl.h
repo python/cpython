@@ -52,14 +52,6 @@
    the 1st step is performed automatically for you, so in a C++ class
    constructor you would start directly with PyObject_Init/InitVar. */
 
-/* This function returns the number of allocated memory blocks, regardless of size */
-PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
-
-/* Macros */
-#ifdef WITH_PYMALLOC
-PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE *out);
-#endif
-
 
 typedef struct {
     /* user context passed as the first argument to the 2 functions */
@@ -90,11 +82,8 @@ PyAPI_FUNC(int) PyObject_IS_GC(PyObject *obj);
 #  define _PyGC_FINALIZED(o) PyObject_GC_IsFinalized(o)
 #endif
 
-PyAPI_FUNC(PyObject *) _PyObject_GC_Malloc(size_t size);
-PyAPI_FUNC(PyObject *) _PyObject_GC_Calloc(size_t size);
 
-
-/* Test if a type supports weak references */
-#define PyType_SUPPORTS_WEAKREFS(t) ((t)->tp_weaklistoffset > 0)
+// Test if a type supports weak references
+PyAPI_FUNC(int) PyType_SUPPORTS_WEAKREFS(PyTypeObject *type);
 
 PyAPI_FUNC(PyObject **) PyObject_GET_WEAKREFS_LISTPTR(PyObject *op);

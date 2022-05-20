@@ -683,6 +683,7 @@ class _Unparser(NodeVisitor):
         self._type_ignores = {}
         self._indent = 0
         self._avoid_backslashes = _avoid_backslashes
+        self._in_try_star = False
 
     def interleave(self, inter, f, seq):
         """Call f on each item in seq, calling inter() in between."""
@@ -953,7 +954,7 @@ class _Unparser(NodeVisitor):
             self.write(" from ")
             self.traverse(node.cause)
 
-    def visit_Try(self, node):
+    def do_visit_try(self, node):
         self.fill("try")
         with self.block():
             self.traverse(node.body)
@@ -968,8 +969,24 @@ class _Unparser(NodeVisitor):
             with self.block():
                 self.traverse(node.finalbody)
 
+    def visit_Try(self, node):
+        prev_in_try_star = self._in_try_star
+        try:
+            self._in_try_star = False
+            self.do_visit_try(node)
+        finally:
+            self._in_try_star = prev_in_try_star
+
+    def visit_TryStar(self, node):
+        prev_in_try_star = self._in_try_star
+        try:
+            self._in_try_star = True
+            self.do_visit_try(node)
+        finally:
+            self._in_try_star = prev_in_try_star
+
     def visit_ExceptHandler(self, node):
-        self.fill("except")
+        self.fill("except*" if self._in_try_star else "except")
         if node.type:
             self.write(" ")
             self.traverse(node.type)
@@ -1318,7 +1335,11 @@ class _Unparser(NodeVisitor):
             )
 
     def visit_Tuple(self, node):
-        with self.require_parens(_Precedence.TUPLE, node):
+        with self.delimit_if(
+            "(",
+            ")",
+            len(node.elts) == 0 or self.get_precedence(node) > _Precedence.TUPLE
+        ):
             self.items_view(self.traverse, node.elts)
 
     unop = {"Invert": "~", "Not": "not", "UAdd": "+", "USub": "-"}
@@ -1459,20 +1480,17 @@ class _Unparser(NodeVisitor):
                 self.traverse(e)
 
     def visit_Subscript(self, node):
-        def is_simple_tuple(slice_value):
-            # when unparsing a non-empty tuple, the parentheses can be safely
-            # omitted if there aren't any elements that explicitly requires
-            # parentheses (such as starred expressions).
+        def is_non_empty_tuple(slice_value):
             return (
                 isinstance(slice_value, Tuple)
                 and slice_value.elts
-                and not any(isinstance(elt, Starred) for elt in slice_value.elts)
             )
 
         self.set_precedence(_Precedence.ATOM, node.value)
         self.traverse(node.value)
         with self.delimit("[", "]"):
-            if is_simple_tuple(node.slice):
+            if is_non_empty_tuple(node.slice):
+                # parentheses can be omitted if the tuple isn't empty
                 self.items_view(self.traverse, node.slice.elts)
             else:
                 self.traverse(node.slice)

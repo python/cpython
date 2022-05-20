@@ -15,6 +15,9 @@
 */
 
 /* SHA objects */
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bswap64()

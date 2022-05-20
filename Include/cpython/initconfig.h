@@ -1,6 +1,9 @@
 #ifndef Py_PYCORECONFIG_H
 #define Py_PYCORECONFIG_H
 #ifndef Py_LIMITED_API
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* --- PyStatus ----------------------------------------------- */
 
@@ -140,7 +143,7 @@ typedef struct PyConfig {
     int faulthandler;
     int tracemalloc;
     int import_time;
-    int no_debug_ranges;
+    int code_debug_ranges;
     int show_ref_count;
     int dump_refs;
     wchar_t *dump_refs_file;
@@ -173,6 +176,7 @@ typedef struct PyConfig {
 #endif
     wchar_t *check_hash_pycs_mode;
     int use_frozen_modules;
+    int safe_path;
 
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;
@@ -210,6 +214,9 @@ typedef struct PyConfig {
     // If non-zero, disallow threads, subprocesses, and fork.
     // Default: 0.
     int _isolated_interpreter;
+
+    // If non-zero, we believe we're running from a source tree.
+    int _is_python_build;
 } PyConfig;
 
 PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);
@@ -243,5 +250,8 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
    See also PyConfig.orig_argv. */
 PyAPI_FUNC(void) Py_GetArgcArgv(int *argc, wchar_t ***argv);
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* !Py_LIMITED_API */
 #endif /* !Py_PYCORECONFIG_H */
