@@ -161,7 +161,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
                               int cache_size, int uri)
 /*[clinic end generated code: output=839eb2fee4293bda input=b8ce63dc6f70a383]*/
 {
-    if (PySys_Audit("sqlite3.connect", "s", database) < 0) {
+    if (PySys_Audit("sqlite3.connect", "O", database) < 0) {
         return -1;
     }
 
