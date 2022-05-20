@@ -56,7 +56,7 @@ def jabs_op(name, op):
 
 def_op('CACHE', 0)
 def_op('POP_TOP', 1)
-def_op('PUSH_NULL', 2)
+def_op('PUSH_TWO_NULLS', 2)
 
 def_op('NOP', 9)
 def_op('UNARY_POSITIVE', 10)

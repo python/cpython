@@ -1964,9 +1964,10 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(PUSH_NULL) {
-            /* Use BASIC_PUSH as NULL is not a valid object pointer */
-            BASIC_PUSH(NULL);
+        TARGET(PUSH_TWO_NULLS) {
+            STACK_GROW(2);
+            SET_SECOND(NULL);
+            SET_TOP(NULL);
             DISPATCH();
         }
 
@@ -3053,8 +3054,12 @@ handle_eval_breaker:
 
         TARGET(LOAD_GLOBAL) {
             PREDICTED(LOAD_GLOBAL);
-            int push_null = oparg & 1;
-            PEEK(0) = NULL;
+            int push_nulls = oparg & 1;
+            if (push_nulls) {
+                STACK_GROW(2);
+                SET_SECOND(NULL);
+                SET_TOP(NULL);
+            }
             PyObject *name = GETITEM(names, oparg>>1);
             PyObject *v;
             if (PyDict_CheckExact(GLOBALS())
@@ -3099,7 +3104,6 @@ handle_eval_breaker:
             }
             /* Skip over inline cache */
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
-            STACK_GROW(push_null);
             PUSH(v);
             DISPATCH();
         }
@@ -3133,13 +3137,16 @@ handle_eval_breaker:
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
             PyObject *res = entries[cache->index].me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
-            int push_null = oparg & 1;
-            PEEK(0) = NULL;
+            int push_nulls = oparg & 1;
+            if (push_nulls) {
+                STACK_GROW(2);
+                SET_SECOND(NULL);
+                SET_TOP(NULL);
+            }
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
             STAT_INC(LOAD_GLOBAL, hit);
-            STACK_GROW(push_null+1);
             Py_INCREF(res);
-            SET_TOP(res);
+            PUSH(res);
             NOTRACE_DISPATCH();
         }
 
@@ -3158,13 +3165,16 @@ handle_eval_breaker:
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
             PyObject *res = entries[cache->index].me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
-            int push_null = oparg & 1;
-            PEEK(0) = NULL;
+            int push_nulls = oparg & 1;
+            if (push_nulls) {
+                STACK_GROW(2);
+                SET_SECOND(NULL);
+                SET_TOP(NULL);
+            }
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
             STAT_INC(LOAD_GLOBAL, hit);
-            STACK_GROW(push_null+1);
             Py_INCREF(res);
-            SET_TOP(res);
+            PUSH(res);
             NOTRACE_DISPATCH();
         }
 
@@ -4548,6 +4558,7 @@ handle_eval_breaker:
                 /* Most likely attribute wasn't found. */
                 goto error;
             }
+            SET_TOP(NULL);
 
             if (meth_found) {
                 /* We can bypass temporary bound method object.
@@ -4555,7 +4566,7 @@ handle_eval_breaker:
 
                    meth | self | arg1 | ... | argN
                  */
-                SET_TOP(meth);
+                PUSH(meth);
                 PUSH(obj);  // self
             }
             else {
@@ -4566,8 +4577,8 @@ handle_eval_breaker:
 
                    NULL | meth | arg1 | ... | argN
                 */
-                SET_TOP(NULL);
                 Py_DECREF(obj);
+                BASIC_PUSH(NULL);
                 PUSH(meth);
             }
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_METHOD);
@@ -4613,8 +4624,10 @@ handle_eval_breaker:
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
             Py_INCREF(res);
-            SET_TOP(res);
-            PUSH(self);
+            STACK_GROW(2);
+            PEEK(3) = NULL;
+            SET_SECOND(res);
+            SET_TOP(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_METHOD);
             NOTRACE_DISPATCH();
         }
@@ -4645,8 +4658,10 @@ handle_eval_breaker:
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
             Py_INCREF(res);
-            SET_TOP(res);
-            PUSH(self);
+            STACK_GROW(2);
+            PEEK(3) = NULL;
+            SET_SECOND(res);
+            SET_TOP(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_METHOD);
             NOTRACE_DISPATCH();
         }
@@ -4664,8 +4679,10 @@ handle_eval_breaker:
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
             Py_INCREF(res);
-            SET_TOP(res);
-            PUSH(self);
+            STACK_GROW(2);
+            PEEK(3) = NULL;
+            SET_SECOND(res);
+            SET_TOP(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_METHOD);
             NOTRACE_DISPATCH();
         }
@@ -4678,7 +4695,9 @@ handle_eval_breaker:
             LOAD_MODULE_ATTR_OR_METHOD(METHOD);
             SET_TOP(NULL);
             Py_DECREF(owner);
-            PUSH(res);
+            STACK_GROW(2);
+            SET_SECOND(NULL);
+            SET_TOP(res);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_METHOD);
             NOTRACE_DISPATCH();
         }
@@ -4701,7 +4720,9 @@ handle_eval_breaker:
             Py_INCREF(res);
             SET_TOP(NULL);
             Py_DECREF(cls);
-            PUSH(res);
+            STACK_GROW(2);
+            SET_SECOND(NULL);
+            SET_TOP(res);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_METHOD);
             NOTRACE_DISPATCH();
         }
@@ -4756,7 +4777,7 @@ handle_eval_breaker:
                     stack_pointer, positional_args, call_shape.kwnames
                 );
                 call_shape.kwnames = NULL;
-                STACK_SHRINK(2-is_meth);
+                STACK_SHRINK(3-is_meth);
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
@@ -4791,7 +4812,7 @@ handle_eval_breaker:
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF(stack_pointer[i]);
             }
-            STACK_SHRINK(2-is_meth);
+            STACK_SHRINK(3-is_meth);
             PUSH(res);
             if (res == NULL) {
                 goto error;
@@ -4848,7 +4869,7 @@ handle_eval_breaker:
             for (int i = argcount; i < code->co_nlocalsplus; i++) {
                 new_frame->localsplus[i] = NULL;
             }
-            STACK_SHRINK(2-is_meth);
+            STACK_SHRINK(3-is_meth);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             frame->prev_instr = next_instr - 1;
@@ -4890,7 +4911,7 @@ handle_eval_breaker:
             for (int i = code->co_argcount; i < code->co_nlocalsplus; i++) {
                 new_frame->localsplus[i] = NULL;
             }
-            STACK_SHRINK(2-is_meth);
+            STACK_SHRINK(3-is_meth);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             frame->prev_instr = next_instr - 1;
@@ -4912,7 +4933,7 @@ handle_eval_breaker:
             PyObject *res = Py_NewRef(Py_TYPE(obj));
             Py_DECREF(callable);
             Py_DECREF(obj);
-            STACK_SHRINK(2);
+            STACK_SHRINK(3);
             SET_TOP(res);
             NOTRACE_DISPATCH();
         }
@@ -4930,7 +4951,7 @@ handle_eval_breaker:
             PyObject *res = PyObject_Str(arg);
             Py_DECREF(arg);
             Py_DECREF(&PyUnicode_Type);
-            STACK_SHRINK(2);
+            STACK_SHRINK(3);
             SET_TOP(res);
             if (res == NULL) {
                 goto error;
@@ -4951,7 +4972,7 @@ handle_eval_breaker:
             PyObject *res = PySequence_Tuple(arg);
             Py_DECREF(arg);
             Py_DECREF(&PyTuple_Type);
-            STACK_SHRINK(2);
+            STACK_SHRINK(3);
             SET_TOP(res);
             if (res == NULL) {
                 goto error;
@@ -4979,7 +5000,7 @@ handle_eval_breaker:
                 Py_DECREF(stack_pointer[i]);
             }
             Py_DECREF(tp);
-            STACK_SHRINK(1-is_meth);
+            STACK_SHRINK(2-is_meth);
             SET_TOP(res);
             if (res == NULL) {
                 goto error;
@@ -5013,7 +5034,7 @@ handle_eval_breaker:
 
             Py_DECREF(arg);
             Py_DECREF(callable);
-            STACK_SHRINK(2-is_meth);
+            STACK_SHRINK(3-is_meth);
             SET_TOP(res);
             if (res == NULL) {
                 goto error;
@@ -5047,7 +5068,7 @@ handle_eval_breaker:
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF(stack_pointer[i]);
             }
-            STACK_SHRINK(2-is_meth);
+            STACK_SHRINK(3-is_meth);
             PUSH(res);
             Py_DECREF(callable);
             if (res == NULL) {
@@ -5091,7 +5112,7 @@ handle_eval_breaker:
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF(stack_pointer[i]);
             }
-            STACK_SHRINK(2-is_meth);
+            STACK_SHRINK(3-is_meth);
             PUSH(res);
             Py_DECREF(callable);
             if (res == NULL) {
@@ -5121,7 +5142,7 @@ handle_eval_breaker:
             PyObject *res = PyLong_FromSsize_t(len_i);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
-            STACK_SHRINK(2-is_meth);
+            STACK_SHRINK(3-is_meth);
             SET_TOP(res);
             Py_DECREF(callable);
             Py_DECREF(arg);
@@ -5153,7 +5174,7 @@ handle_eval_breaker:
             PyObject *res = PyBool_FromLong(retval);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
-            STACK_SHRINK(2-is_meth);
+            STACK_SHRINK(3-is_meth);
             SET_TOP(res);
             Py_DECREF(inst);
             Py_DECREF(cls);
@@ -5181,7 +5202,7 @@ handle_eval_breaker:
             if (_PyList_AppendTakeRef((PyListObject *)list, arg) < 0) {
                 goto error;
             }
-            STACK_SHRINK(2);
+            STACK_SHRINK(3);
             Py_DECREF(list);
             Py_DECREF(callable);
             NOTRACE_DISPATCH();
@@ -5213,7 +5234,7 @@ handle_eval_breaker:
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(self);
             Py_DECREF(arg);
-            STACK_SHRINK(oparg + 1);
+            STACK_SHRINK(oparg + 2);
             SET_TOP(res);
             Py_DECREF(callable);
             if (res == NULL) {
@@ -5250,7 +5271,7 @@ handle_eval_breaker:
                 Py_DECREF(stack_pointer[i]);
             }
             Py_DECREF(self);
-            STACK_SHRINK(2-is_meth);
+            STACK_SHRINK(3-is_meth);
             SET_TOP(res);
             Py_DECREF(callable);
             if (res == NULL) {
@@ -5284,7 +5305,7 @@ handle_eval_breaker:
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(self);
-            STACK_SHRINK(oparg + 1);
+            STACK_SHRINK(oparg + 2);
             SET_TOP(res);
             Py_DECREF(callable);
             if (res == NULL) {
@@ -5319,7 +5340,7 @@ handle_eval_breaker:
                 Py_DECREF(stack_pointer[i]);
             }
             Py_DECREF(self);
-            STACK_SHRINK(2-is_meth);
+            STACK_SHRINK(3-is_meth);
             SET_TOP(res);
             Py_DECREF(callable);
             if (res == NULL) {
@@ -5368,7 +5389,7 @@ handle_eval_breaker:
             Py_DECREF(callargs);
             Py_XDECREF(kwargs);
 
-            STACK_SHRINK(1);
+            STACK_SHRINK(2);
             assert(TOP() == NULL);
             SET_TOP(result);
             if (result == NULL) {

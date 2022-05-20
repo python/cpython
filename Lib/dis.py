@@ -462,7 +462,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 if deop == LOAD_GLOBAL:
                     argval, argrepr = _get_name_info(arg//2, get_name)
                     if (arg & 1) and argrepr:
-                        argrepr = "NULL + " + argrepr
+                        argrepr = "NULLs + " + argrepr
                 else:
                     argval, argrepr = _get_name_info(arg, get_name)
             elif deop in hasjabs:

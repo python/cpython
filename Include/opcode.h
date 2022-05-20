@@ -10,7 +10,7 @@ extern "C" {
 /* Instruction opcodes for compiled code */
 #define CACHE                                    0
 #define POP_TOP                                  1
-#define PUSH_NULL                                2
+#define PUSH_TWO_NULLS                           2
 #define NOP                                      9
 #define UNARY_POSITIVE                          10
 #define UNARY_NEGATIVE                          11

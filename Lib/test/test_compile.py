@@ -562,13 +562,17 @@ if 1:
                 with self.assertRaises(RecursionError, msg=details):
                     compile(broken, '<test>', mode)
 
-        check_limit("a", "()")
         check_limit("a", ".b")
         check_limit("a", "[0]")
         check_limit("a", "*a")
         # XXX Crashes in the parser.
         # check_limit("a", " if a else a")
         # check_limit("if a: pass", "\nelif a: pass", mode="exec")
+
+    @support.cpython_only
+    def test_excessive_stack_use(self):
+        with self.assertRaises(RecursionError):
+            compile("f" + "()"*2000, '<test>', "single")
 
     def test_null_terminated(self):
         # The source code is null-terminated internally, but bytes-like

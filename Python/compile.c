@@ -1074,7 +1074,7 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
 
         case LOAD_GLOBAL:
-            return (oparg & 1) + 1;
+            return (oparg & 1)*2 + 1;
 
         /* Exception handling pseudo-instructions */
         case SETUP_FINALLY:
@@ -1119,10 +1119,10 @@ stack_effect(int opcode, int oparg, int jump)
         case KW_NAMES:
             return 0;
         case CALL:
-            return -1-oparg;
+            return -2-oparg;
 
         case CALL_FUNCTION_EX:
-            return -2 - ((oparg & 0x01) != 0);
+            return -3 - ((oparg & 0x01) != 0);
         case MAKE_FUNCTION:
             return 0 - ((oparg & 0x01) != 0) - ((oparg & 0x02) != 0) -
                 ((oparg & 0x04) != 0) - ((oparg & 0x08) != 0);
@@ -1166,7 +1166,7 @@ stack_effect(int opcode, int oparg, int jump)
                else 1->1. */
             return (oparg & FVS_MASK) == FVS_HAVE_SPEC ? -1 : 0;
         case LOAD_METHOD:
-            return 1;
+            return 2;
         case LOAD_ASSERTION_ERROR:
             return 1;
         case LIST_TO_TUPLE:
@@ -1184,8 +1184,9 @@ stack_effect(int opcode, int oparg, int jump)
         case MATCH_KEYS:
             return 1;
         case COPY:
-        case PUSH_NULL:
             return 1;
+        case PUSH_TWO_NULLS:
+            return 2;
         case BINARY_OP:
             return -1;
         default:
@@ -1942,10 +1943,12 @@ compiler_pop_fblock(struct compiler *c, enum fblocktype t, basicblock *b)
 
 static int
 compiler_call_exit_with_nones(struct compiler *c) {
+    ADDOP(c, PUSH_TWO_NULLS);
+    ADDOP_I(c, SWAP, 3);
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADDOP_I(c, CALL, 2);
+    ADDOP_I(c, CALL, 3);
     return 1;
 }
 
@@ -2322,7 +2325,11 @@ compiler_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
     int old_end_col_offset = c->u->u_end_col_offset;
     for (Py_ssize_t i = asdl_seq_LEN(decos) - 1; i > -1; i--) {
         SET_LOC(c, (expr_ty)asdl_seq_GET(decos, i));
-        ADDOP_I(c, CALL, 0);
+        ADDOP(c, PUSH_TWO_NULLS); // deco cls NULL NULL
+        ADDOP_I(c, SWAP, 4); // NULL cls NULL deco
+        ADDOP_I(c, SWAP, 2); // NULL cls deco NULL
+        ADDOP_I(c, SWAP, 3);// NULL NULL deco cls
+        ADDOP_I(c, CALL, 1);
     }
     c->u->u_lineno = old_lineno;
     c->u->u_end_lineno = old_end_lineno;
@@ -2763,7 +2770,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         return 0;
 
     /* 2. load the 'build_class' function */
-    ADDOP(c, PUSH_NULL);
+    ADDOP(c, PUSH_TWO_NULLS);
     ADDOP(c, LOAD_BUILD_CLASS);
 
     /* 3. load a function (or closure) made from the code object */
@@ -3995,10 +4002,14 @@ compiler_assert(struct compiler *c, stmt_ty s)
         return 0;
     if (!compiler_jump_if(c, s->v.Assert.test, end, 1))
         return 0;
-    ADDOP(c, LOAD_ASSERTION_ERROR);
     if (s->v.Assert.msg) {
+        ADDOP(c, PUSH_TWO_NULLS);
+        ADDOP(c, LOAD_ASSERTION_ERROR);
         VISIT(c, expr, s->v.Assert.msg);
-        ADDOP_I(c, CALL, 0);
+        ADDOP_I(c, CALL, 1);
+    }
+    else {
+        ADDOP(c, LOAD_ASSERTION_ERROR);
     }
     ADDOP_I(c, RAISE_VARARGS, 1);
     compiler_use_next_block(c, end);
@@ -4869,7 +4880,7 @@ compiler_call(struct compiler *c, expr_ty e)
         return 0;
     }
     SET_LOC(c, e->v.Call.func);
-    ADDOP(c, PUSH_NULL);
+    ADDOP(c, PUSH_TWO_NULLS);
     SET_LOC(c, e);
     VISIT(c, expr, e->v.Call.func);
     return compiler_call_helper(c, 0,
@@ -5440,6 +5451,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     if (co == NULL)
         goto error;
 
+    ADDOP(c, PUSH_TWO_NULLS);
     if (!compiler_make_closure(c, co, 0, qualname)) {
         goto error;
     }
@@ -5454,7 +5466,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         ADDOP(c, GET_ITER);
     }
 
-    ADDOP_I(c, CALL, 0);
+    ADDOP_I(c, CALL, 1);
 
     if (is_async_generator && type != COMP_GENEXP) {
         ADDOP_I(c, GET_AWAITABLE, 0);
@@ -8370,7 +8382,7 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
     if (maxdepth > MAX_ALLOWED_STACK_USE) {
-        PyErr_Format(PyExc_SystemError,
+        PyErr_Format(PyExc_RecursionError,
                      "excessive stack use: stack is %d deep",
                      maxdepth);
         goto error;
@@ -8939,7 +8951,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 break;
             case KW_NAMES:
                 break;
-            case PUSH_NULL:
+            case PUSH_TWO_NULLS:
                 if (nextop == LOAD_GLOBAL && (inst[1].i_opcode & 1) == 0) {
                     inst->i_opcode = NOP;
                     inst->i_oparg = 0;

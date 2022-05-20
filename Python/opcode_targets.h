@@ -1,7 +1,7 @@
 static void *opcode_targets[256] = {
     &&TARGET_CACHE,
     &&TARGET_POP_TOP,
-    &&TARGET_PUSH_NULL,
+    &&TARGET_PUSH_TWO_NULLS,
     &&TARGET_BINARY_OP_ADAPTIVE,
     &&TARGET_BINARY_OP_ADD_FLOAT,
     &&TARGET_BINARY_OP_ADD_INT,
