@@ -24,7 +24,7 @@ This module defines classes for implementing HTTP servers.
 
 One class, :class:`HTTPServer`, is a :class:`socketserver.TCPServer` subclass.
 It creates and listens at the HTTP socket, dispatching the requests to a
-handler.  Code to create and run the server looks like this::
+handler. Code to create and run the server looks like this::
 
    def run(server_class=HTTPServer, handler_class=BaseHTTPRequestHandler):
        server_address = ('', 8000)
@@ -55,7 +55,7 @@ provides three different variants:
 
 .. class:: BaseHTTPRequestHandler(request, client_address, server)
 
-   This class is used to handle the HTTP requests that arrive at the server.  By
+   This class is used to handle the HTTP requests that arrive at the server. By
    itself, it cannot respond to any actual HTTP requests; it must be subclassed
    to handle each request method (e.g. GET or POST).
    :class:`BaseHTTPRequestHandler` provides a number of class and instance
@@ -65,7 +65,7 @@ provides three different variants:
    specific to the request type. The method name is constructed from the
    request. For example, for the request method SPAM, the :meth:`do_SPAM`
    method will be called with no arguments. All of the relevant information is
-   stored in instance variables of the handler.  Subclasses should not need to
+   stored in instance variables of the handler. Subclasses should not need to
    override or extend the :meth:`__init__` method.
 
    :class:`BaseHTTPRequestHandler` defines the following instance variables:
@@ -168,15 +168,15 @@ provides three different variants:
    .. attribute:: MessageClass
 
       An :class:`email.message.Message`\ -like class to parse HTTP
-      headers.  Typically, this is not overridden, and it defaults to
+      headers. Typically, this is not overridden, and it defaults to
       :class:`http.client.HTTPMessage`.
 
    .. attribute:: responses
 
       A mapping of status codes to two-element tuples
-      containing a reason phrase and long description.  For example, ``{code: (reason,
-      description)}``.  The reason phrase is usually used as the *message* key in an
-      error response, and the long description as the *explain* key.  It is used by
+      containing a reason phrase and long description. For example, ``{code: (reason,
+      description)}``. The reason phrase is usually used as the *message* key in an
+      error response, and the long description as the *explain* key. It is used by
       :meth:`send_response_only` and :meth:`send_error` methods.
 
    :class:`BaseHTTPRequestHandler` defines the following methods:
@@ -191,7 +191,7 @@ provides three different variants:
    .. method:: handle_one_request()
 
       Parses and dispatches the request to the appropriate
-      :meth:`do_\*` method.  You should never need to override it.
+      :meth:`do_\*` method. You should never need to override it.
 
    .. method:: handle_expect_100()
 
@@ -330,7 +330,7 @@ provides three different variants:
       The *directory* parameter accepts a :term:`path-like object`.
 
    A lot of the work, such as parsing the request, is done by the base class
-   :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
+   :class:`BaseHTTPRequestHandler`. This class implements the :func:`do_GET`
    and :func:`do_HEAD` functions.
 
    :class:`SimpleHTTPRequestHandler` defines the following class variables:
@@ -410,7 +410,7 @@ the current directory::
 .. _http-server-cli:
 
 :mod:`http.server` can also be invoked directly using the :option:`-m`
-switch of the interpreter.  Similar to
+switch of the interpreter. Similar to
 the previous example, this serves files relative to the current directory::
 
         python -m http.server
@@ -420,7 +420,7 @@ by passing the desired port number as an argument::
 
         python -m http.server 9000
 
-By default, the server binds itself to all interfaces.  The option ``-b/--bind``
+By default, the server binds itself to all interfaces. The option ``-b/--bind``
 specifies a specific address to which it should bind. Both IPv4 and IPv6
 addresses are supported. For example, the following command causes the server
 to bind to localhost only::
@@ -461,10 +461,10 @@ following command runs an HTTP/1.1 conformant server::
 
       CGI scripts run by the :class:`CGIHTTPRequestHandler` class cannot
       send a 302 (Found) redirection status code, because a 200 (OK) successful status code is
-      sent prior to execution of the CGI script.  This pre-empts the status code.
+      sent prior to execution of the CGI script. This pre-empts the status code.
 
    The class will however, run the CGI script, instead of serving it as a file,
-   if it guesses it to be a CGI script.  Only directory-based CGI are used ---
+   if it guesses it to be a CGI script. Only directory-based CGI are used ---
    the other common server configuration is to treat special extensions as
    denoting CGI scripts.
 
@@ -489,7 +489,7 @@ following command runs an HTTP/1.1 conformant server::
       to POST to a non-CGI URI.
 
    Note that CGI scripts will be run with UID of user nobody, for security
-   reasons.  Problems with the CGI script will be translated to a 403 (Forbidden) client error response.
+   reasons. Problems with the CGI script will be translated to a 403 (Forbidden) client error response.
 
 :class:`CGIHTTPRequestHandler` can be enabled in the command line by passing
 the ``--cgi`` option::
