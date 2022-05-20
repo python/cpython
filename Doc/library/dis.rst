@@ -42,7 +42,7 @@ the following command can be used to display the disassembly of
    >>> dis.dis(myfunc)
      1           0 RESUME                   0
 
-     2           2 PUSH_NULL
+     2           2 PUSH_TWO_NULLS
                  4 LOAD_GLOBAL              1 (NULL + len)
                  6 LOAD_FAST                0 (alist)
                  8 CALL                     1
@@ -115,7 +115,7 @@ Example::
     ...     print(instr.opname)
     ...
     RESUME
-    PUSH_NULL
+    PUSH_TWO_NULLS
     LOAD_GLOBAL
     LOAD_FAST
     CALL
@@ -1180,13 +1180,14 @@ iterations of the loop.
    .. versionadded:: 3.7
 
 
-.. opcode:: PUSH_NULL
+.. opcode:: PUSH_TWO_NULLS
 
-    Pushes a ``NULL`` to the stack.
-    Used in the call sequence to match the ``NULL`` pushed by
-    :opcode:`LOAD_METHOD` for non-method calls.
+    Pushes two ``NULL``s to the stack.
+    Used in the call sequence to match the ``NULL``s pushed by
+    :opcode:`LOAD_METHOD` for non-method calls and to align the
+    the callee's frame so that arguments do not need to be moved.
 
-   .. versionadded:: 3.11
+   .. versionadded:: 3.12
 
 
 .. opcode:: KW_NAMES (i)

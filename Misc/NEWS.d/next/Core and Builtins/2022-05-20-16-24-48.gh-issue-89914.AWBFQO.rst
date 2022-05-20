@@ -1,0 +1,3 @@
+Push an additional NULL to the evaluation stack at the start of the calling
+sequence. This allows Python frames to be pushed without having to move the
+arguments.
