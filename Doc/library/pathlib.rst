@@ -1022,7 +1022,7 @@ call fails (for example because the path doesn't exist).
    Rename this file or directory to the given *target*, and return a new Path
    instance pointing to *target*.  On Unix, if *target* exists and is a file,
    it will be replaced silently if the user has permission.
-   On Windows, if *target* exists, :data:`FileExistsError` will be raised.
+   On Windows, if *target* exists, :exc:`FileExistsError` will be raised.
    *target* can be either a string or another path object::
 
       >>> p = Path('foo')
