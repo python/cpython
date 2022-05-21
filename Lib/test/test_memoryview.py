@@ -550,7 +550,7 @@ class OtherTest(unittest.TestCase):
         uaf_backing = bytearray(bytearray.__basicsize__)
         uaf_view = memoryview(uaf_backing).cast('n') # ssize_t format
         memory_backing = None
-        
+
         class weird_index:
             def __index__(self):
                 nonlocal memory_backing
