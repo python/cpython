@@ -676,6 +676,19 @@ class OpenTests(unittest.TestCase):
             with managed_connect(f"file:{TESTFN}?mode=ro", uri=True) as cx:
                 cx.execute(self._sql)
 
+    def test_factory_database_arg(self):
+        def factory(database, *args, **kwargs):
+            nonlocal database_arg
+            database_arg = database
+            return sqlite.Connection(":memory:", *args, **kwargs)
+
+        for database in (TESTFN, os.fsencode(TESTFN),
+                         FakePath(TESTFN), FakePath(os.fsencode(TESTFN))):
+            database_arg = None
+            with sqlite.connect(database, factory=factory):
+                pass
+            self.assertEqual(database_arg, database)
+
     def test_database_keyword(self):
         with sqlite.connect(database=":memory:") as cx:
             self.assertEqual(type(cx), sqlite.Connection)
