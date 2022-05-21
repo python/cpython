@@ -25,6 +25,9 @@ on:
     - 'Misc/**'
     - '.github/workflows/doc.yml'
 
+permissions:
+  contents: read
+
 jobs:
   build_doc:
     name: 'Docs'
