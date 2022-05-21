@@ -1,0 +1,1 @@
+Use wmemchr in stringlib where applicable when the size of STRINGLIB_CHAR equals the size of wchar_t. All the places wmemchr is added where places memchr was previously used when STRINGLIB_CHAR equaled size of char.
