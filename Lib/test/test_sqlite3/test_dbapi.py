@@ -661,20 +661,57 @@ class OpenTests(unittest.TestCase):
     @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
     @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
     def test_open_with_undecodable_path(self):
-        self.addCleanup(unlink, TESTFN_UNDECODABLE)
         path = TESTFN_UNDECODABLE
-        with managed_connect(path) as cx:
+        self.addCleanup(unlink, path)
+        with managed_connect(path, in_mem=True) as cx:
             self.assertTrue(os.path.exists(path))
             cx.execute(self._sql)
 
     def test_open_uri(self):
-        with managed_connect(TESTFN) as cx:
+        path = TESTFN
+        uri = "file:" + urllib.parse.quote(os.fsencode(path))
+        self.assertFalse(os.path.exists(path))
+        with managed_connect(uri, uri=True) as cx:
+            self.assertTrue(os.path.exists(path))
             cx.execute(self._sql)
-        with managed_connect(f"file:{TESTFN}", uri=True) as cx:
+
+    def test_open_unquoted_uri(self):
+        path = TESTFN
+        uri = "file:" + path
+        self.assertFalse(os.path.exists(path))
+        with managed_connect(uri, uri=True) as cx:
+            self.assertTrue(os.path.exists(path))
             cx.execute(self._sql)
+
+    def test_open_uri_readonly(self):
+        path = TESTFN
+        self.addCleanup(unlink, path)
+        uri = "file:" + urllib.parse.quote(os.fsencode(path)) + "?mode=ro"
+        self.assertFalse(os.path.exists(path))
+        # Cannot create new DB
         with self.assertRaises(sqlite.OperationalError):
-            with managed_connect(f"file:{TESTFN}?mode=ro", uri=True) as cx:
+            sqlite.connect(uri, uri=True)
+        self.assertFalse(os.path.exists(path))
+        sqlite.connect(path).close()
+        self.assertTrue(os.path.exists(path))
+        # Cannot modify new DB
+        with managed_connect(uri, uri=True) as cx:
+            with self.assertRaises(sqlite.OperationalError):
                 cx.execute(self._sql)
+
+    @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
+    @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
+    @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
+    def test_open_undecodable_uri(self):
+        path = TESTFN_UNDECODABLE
+        uri = "file:" + urllib.parse.quote(path)
+        self.assertFalse(os.path.exists(path))
+        try:
+            with managed_connect(uri, uri=True, in_mem=True) as cx:
+                self.assertTrue(os.path.exists(path))
+                cx.execute(self._sql)
+        finally:
+            unlink(path)
 
     def test_factory_database_arg(self):
         def factory(database, *args, **kwargs):
