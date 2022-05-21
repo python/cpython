@@ -2168,19 +2168,20 @@ class SimpleBackgroundTests(unittest.TestCase):
         self.server_addr = (HOST, server.port)
 
     def test_connect(self):
-        with test_wrap_socket(socket.socket(socket.AF_INET),
-                            cert_reqs=ssl.CERT_NONE) as s:
-            s.connect(self.server_addr)
-            self.assertEqual({}, s.getpeercert())
-            self.assertFalse(s.server_side)
+        with Server(context=self.server_context, client_count=2) as address:
+            with test_wrap_socket(socket.socket(socket.AF_INET),
+                                cert_reqs=ssl.CERT_NONE) as s:
+                s.connect(address)
+                self.assertEqual({}, s.getpeercert())
+                self.assertFalse(s.server_side)
 
-        # this should succeed because we specify the root cert
-        with test_wrap_socket(socket.socket(socket.AF_INET),
-                            cert_reqs=ssl.CERT_REQUIRED,
-                            ca_certs=SIGNING_CA) as s:
-            s.connect(self.server_addr)
-            self.assertTrue(s.getpeercert())
-            self.assertFalse(s.server_side)
+            # this should succeed because we specify the root cert
+            with test_wrap_socket(socket.socket(socket.AF_INET),
+                                cert_reqs=ssl.CERT_REQUIRED,
+                                ca_certs=SIGNING_CA) as s:
+                s.connect(address)
+                self.assertTrue(s.getpeercert())
+                self.assertFalse(s.server_side)
 
     def test_connect_fail(self):
         # This should fail because we have no verification certs. Connection
@@ -3225,13 +3226,14 @@ class ThreadedTests(unittest.TestCase):
                 self.assertTrue(cert, "Can't get peer certificate.")
 
         # incorrect hostname should raise an exception
-        with Server(context=server_context) as address:
-            with client_context.wrap_socket(socket.socket(),
-                                            server_hostname="invalid") as s:
-                with self.assertRaisesRegex(
-                        ssl.CertificateError,
-                        "Hostname mismatch, certificate is not valid for 'invalid'."):
-                    s.connect(address)
+        with self.assertRaisesRegex(ssl.SSLError, 'SSL: SSLV3_ALERT_BAD_CERTIFICATE'):
+            with Server(context=server_context) as address:
+                with client_context.wrap_socket(socket.socket(),
+                                                server_hostname="invalid") as s:
+                    with self.assertRaisesRegex(
+                            ssl.CertificateError,
+                            "Hostname mismatch, certificate is not valid for 'invalid'."):
+                        s.connect(address)
 
         # missing server_hostname arg should cause an exception, too
         with socket.socket() as s:
@@ -3274,11 +3276,10 @@ class ThreadedTests(unittest.TestCase):
         server_context.load_cert_chain(SIGNED_CERTFILE_ECC)
 
         # correct hostname should verify
-        server = ThreadedEchoServer(context=server_context, chatty=True)
-        with server:
+        with Server(context=server_context) as address:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+                s.connect(address)
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
                 cipher = s.cipher()[0].split('-')
