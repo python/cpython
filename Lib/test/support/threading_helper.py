@@ -30,6 +30,8 @@ def threading_setup():
 
 
 def threading_cleanup(*original_values):
+    _thread_pool = None
+
     _MAX_COUNT = 100
 
     for count in range(_MAX_COUNT):
@@ -287,13 +289,14 @@ class Server:
         """
         server_socket = socket()
         self._port = bind_port(server_socket)
-        server_socket.listen(1)
+        server_socket.listen()
         self._result = _thread_pool.submit(self._thread_func, server_socket,
                                            client_func, client_count,
                                            args, kwargs)
         self._result_out = results
 
     def _thread_func(self, server_socket, client_func, client_count, args, kwargs):
+        server_socket.settimeout(3)
         with server_socket:
             results = []
             for i in range(client_count):

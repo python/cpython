@@ -4547,7 +4547,7 @@ class ThreadedTests(unittest.TestCase):
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
         client_context2.maximum_version = ssl.TLSVersion.TLSv1_2
 
-        with Server(context=server_context, chatty=False, client_count=4) as address:
+        with Server(context=server_context, chatty=False, client_count=3) as address:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
                 # session is None before handshake
