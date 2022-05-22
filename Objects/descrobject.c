@@ -1804,20 +1804,25 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
         self->getter_doc = 1;
     }
 
-    if (prop_doc != NULL && prop_doc != Py_None) {
-        if (Py_IS_TYPE(self, &PyProperty_Type)) {
+    if (Py_IS_TYPE(self, &PyProperty_Type)) {
+        if (prop_doc != NULL && prop_doc != Py_None) {
             Py_XSETREF(self->prop_doc, prop_doc);
-        } else {
-            /* If this is a property subclass, put __doc__
-               in dict of the subclass instance instead,
-               otherwise it gets shadowed by __doc__ in the
-               class's dict. */
-            int err = PyObject_SetAttr(
-                        (PyObject *)self, &_Py_ID(__doc__), prop_doc);
-            Py_XDECREF(prop_doc);
-            if (err < 0)
-                return -1;
         }
+    } else {
+        /* If this is a property subclass, put __doc__
+           in dict of the subclass instance instead,
+           otherwise it gets shadowed by __doc__ in the
+           class's dict. */
+
+        if (prop_doc == NULL) {
+            prop_doc = Py_None;
+            Py_INCREF(prop_doc);
+        }
+        int err = PyObject_SetAttr(
+                    (PyObject *)self, &_Py_ID(__doc__), prop_doc);
+        Py_XDECREF(prop_doc);
+        if (err < 0)
+            return -1;
     }
 
     return 0;
