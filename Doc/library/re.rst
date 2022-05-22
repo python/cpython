@@ -667,13 +667,14 @@ functions are simplified versions of the full featured methods for compiled
 regular expressions.  Most non-trivial applications always use the compiled
 form.
 
+
+Flags
+^^^^^
+
 .. versionchanged:: 3.6
    Flag constants are now instances of :class:`RegexFlag`, which is a subclass of
    :class:`enum.IntFlag`.
 
-
-Flags
-^^^^^
 
 .. class:: RegexFlag
 
