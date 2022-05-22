@@ -102,7 +102,7 @@ def translate(pat):
                 add('\\[')
             else:
                 stuff = pat[i:j]
-                if '--' not in stuff:
+                if '-' not in stuff:
                     stuff = stuff.replace('\\', r'\\')
                 else:
                     chunks = []
@@ -115,6 +115,12 @@ def translate(pat):
                         i = k+1
                         k = k+3
                     chunks.append(pat[i:j])
+                    if not chunks[-1]:
+                        del chunks[-1]
+                        chunks[-1] += '-'
+                    for k in range(len(chunks)-1, 0, -1):
+                        if chunks[k-1][-1] > chunks[k][0]:
+                            chunks[k-1:k+1] = [chunks[k-1][:-1] + chunks[k][1:]]
                     # Escape backslashes and hyphens for set difference (--).
                     # Hyphens that create ranges shouldn't be escaped.
                     stuff = '-'.join(s.replace('\\', r'\\').replace('-', r'\-')
@@ -122,11 +128,16 @@ def translate(pat):
                 # Escape set operations (&&, ~~ and ||).
                 stuff = re.sub(r'([&~|])', r'\\\1', stuff)
                 i = j+1
-                if stuff[0] == '!':
-                    stuff = '^' + stuff[1:]
-                elif stuff[0] in ('^', '['):
-                    stuff = '\\' + stuff
-                add(f'[{stuff}]')
+                if not stuff:
+                    add(f'(?!)')  # never match
+                elif stuff == '!':
+                    add(f'.')  # match any character
+                else:
+                    if stuff[0] == '!':
+                        stuff = '^' + stuff[1:]
+                    elif stuff[0] in ('^', '['):
+                        stuff = '\\' + stuff
+                    add(f'[{stuff}]')
         else:
             add(re.escape(c))
     assert i == n
