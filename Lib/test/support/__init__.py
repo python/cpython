@@ -199,6 +199,11 @@ def get_original_stdout():
 def _force_run(path, func, *args):
     try:
         return func(*args)
+    except FileNotFoundError as err:
+        # chmod() won't fix a missing file.
+        if verbose >= 2:
+            print('%s: %s' % (err.__class__.__name__, err))
+        raise
     except OSError as err:
         if verbose >= 2:
             print('%s: %s' % (err.__class__.__name__, err))
@@ -521,7 +526,7 @@ def requires_subprocess():
     """Used for subprocess, os.spawn calls, fd inheritance"""
     return unittest.skipUnless(has_subprocess_support, "requires subprocess support")
 
-# Emscripten's socket emulation has limitation. WASI doesn't have sockets yet.
+# Emscripten's socket emulation and WASI sockets have limitations.
 has_socket_support = not is_emscripten and not is_wasi
 
 def requires_working_socket(*, module=False):

@@ -107,6 +107,15 @@ Deprecated
 Removed
 =======
 
+* The following undocumented :mod:`sqlite3` features, deprecated in Python
+  3.10, are now removed:
+
+  * ``sqlite3.enable_shared_cache()``
+  * ``sqlite3.OptimizedUnicode``
+
+  (Contributed by Erlend E. Aasland in :gh:`92548`)
+
+
 Porting to Python 3.12
 ======================
 

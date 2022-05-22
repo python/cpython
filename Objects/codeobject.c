@@ -1096,7 +1096,7 @@ error:
     return result;
 }
 
-static PyTypeObject LineIterator = {
+PyTypeObject _PyLineIterator = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "line_iterator",                    /* tp_name */
     sizeof(lineiterator),               /* tp_basicsize */
@@ -1142,7 +1142,7 @@ static PyTypeObject LineIterator = {
 static lineiterator *
 new_linesiterator(PyCodeObject *code)
 {
-    lineiterator *li = (lineiterator *)PyType_GenericAlloc(&LineIterator, 0);
+    lineiterator *li = (lineiterator *)PyType_GenericAlloc(&_PyLineIterator, 0);
     if (li == NULL) {
         return NULL;
     }
@@ -1196,7 +1196,7 @@ positionsiter_next(positionsiterator* pi)
         _source_offset_converter, &pi->pi_endcolumn);
 }
 
-static PyTypeObject PositionsIterator = {
+PyTypeObject _PyPositionsIterator = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "positions_iterator",               /* tp_name */
     sizeof(positionsiterator),          /* tp_basicsize */
@@ -1242,7 +1242,7 @@ static PyTypeObject PositionsIterator = {
 static PyObject*
 code_positionsiterator(PyCodeObject* code, PyObject* Py_UNUSED(args))
 {
-    positionsiterator* pi = (positionsiterator*)PyType_GenericAlloc(&PositionsIterator, 0);
+    positionsiterator* pi = (positionsiterator*)PyType_GenericAlloc(&_PyPositionsIterator, 0);
     if (pi == NULL) {
         return NULL;
     }
