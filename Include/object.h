@@ -93,8 +93,7 @@ statically allocated immortal instances vs those promoted by the runtime to be
 immortal. The latter which should be the only instances that require proper
 cleanup during runtime finalization.
 */
-#define _Py_IMMORTAL_REFCNT PY_SSIZE_T_MAX
-#define _Py_IMMORTAL_BIT (1LL << (8 * sizeof(Py_ssize_t) - 2))
+#define _Py_IMMORTAL_REFCNT UINT_MAX
 
 #define PyObject_HEAD_INIT(type)        \
     { _PyObject_EXTRA_INIT              \
@@ -170,7 +169,7 @@ static inline Py_ssize_t Py_SIZE(PyObject *ob) {
 
 static inline int _Py_IsImmortal(PyObject *op)
 {
-    return (op->ob_refcnt & _Py_IMMORTAL_BIT) != 0;
+    return _Py_CAST(PY_INT32_T, op->ob_refcnt) < 0;
 }
 
 static inline void _Py_SetImmortal(PyObject *op)
@@ -526,9 +525,9 @@ PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
 static inline int
-_Py_sadd(PY_UINT32_T a, PY_UINT32_T b, PY_UINT32_T *result)
+_Py_sadd_one(PY_UINT32_T a, PY_UINT32_T *result)
 {
-    *result = a + b;
+    *result = a + 1;
     return *result < a;
 }
 
@@ -542,7 +541,7 @@ static inline void Py_INCREF(PyObject *op)
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
     PY_UINT32_T new_refcount;
-    if (_Py_sadd(op->ob_refcnt, 1, &new_refcount)) {
+    if (_Py_sadd_one(op->ob_refcnt, &new_refcount)) {
         return;
     }
 #ifdef Py_REF_DEBUG
