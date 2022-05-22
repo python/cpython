@@ -30,10 +30,10 @@ def _iterdump(connection):
     schema_res = cu.execute(q)
     sqlite_sequence = []
     for table_name, type, sql in schema_res.fetchall():
-        if table_name == 'sqlite_sequence':
-            sqlite_sequence = ['DELETE FROM "sqlite_sequence"']
-            rows = cu.execute('SELECT * FROM "sqlite_sequence";').fetchall()
-            sqlite_sequence.extend(['INSERT INTO "sqlite_sequence" VALUES(\'{0}\',{1})'
+        if table_name == "sqlite_sequence":
+            sqlite_sequence = ["DELETE FROM \"sqlite_sequence\""]
+            rows = cu.execute("SELECT * FROM \"sqlite_sequence\";").fetchall()
+            sqlite_sequence.extend(["INSERT INTO \"sqlite_sequence\" VALUES('{0}',{1})"
                                    .format(row[0], row[1]) for row in rows])
             continue
         elif table_name == 'sqlite_stat1':

@@ -2,6 +2,8 @@
 
 import unittest
 import sqlite3 as sqlite
+from .test_dbapi import memory_database
+
 
 class DumpTests(unittest.TestCase):
     def setUp(self):
@@ -51,17 +53,11 @@ class DumpTests(unittest.TestCase):
 
     def test_dump_autoincrement(self):
         expected_sqls = [
-            """CREATE TABLE "posts" (id int primary key);""",
-            """INSERT INTO "posts" VALUES(0);""",
-            """CREATE TABLE "tags" ( """
-            """id integer primary key autoincrement,"""
-            """tag varchar(256),"""
-            """post int references posts);""",
-            """INSERT INTO "tags" VALUES(NULL,'test',0);""",
-            """CREATE TABLE "tags2" ( """
-            """id integer primary key autoincrement,"""
-            """tag varchar(256),"""
-            """post int references posts);"""
+            "CREATE TABLE \"posts\" (id int primary key);",
+            "INSERT INTO \"posts\" VALUES(0);",
+            "CREATE TABLE \"tags\" (id integer primary key autoincrement, tag varchar(256), post int references posts);",
+            "INSERT INTO \"tags\" VALUES(NULL,'test',0);",
+            "CREATE TABLE \"tags2\" (id integer primary key autoincrement, tag varchar(256), post int references posts);"
         ]
 
         for sql_statement in expected_sqls:
@@ -71,53 +67,42 @@ class DumpTests(unittest.TestCase):
 
         # the NULL value should now be automatically be set to 1
         expected_sqls[3] = expected_sqls[3].replace("NULL", "1")
-        expected_sqls = ['BEGIN TRANSACTION;'] + expected_sqls + \
-                        ['DELETE FROM "sqlite_sequence";'] + \
-                        ["""INSERT INTO "sqlite_sequence" VALUES('tags',1);"""] + \
-                        ['COMMIT;']
+        expected_sqls.insert(0, "BEGIN TRANSACTION;")
+        expected_sqls.extend([
+            "DELETE FROM \"sqlite_sequence\";",
+            "INSERT INTO \"sqlite_sequence\" VALUES('tags',1);",
+            "COMMIT;"
+        ])
 
-        for i in range(len(expected_sqls)):
-            self.assertEqual(expected_sqls[i], actual_sqls[i])
+        self.assertEqual(expected_sqls, actual_sqls)
 
     def test_dump_autoincrement_create_new_db(self):
         old_db = [
-            """BEGIN TRANSACTION ;""",
-            """CREATE TABLE "posts" (id int primary key);""",
-            """INSERT INTO "posts" VALUES(0);""",
-            """CREATE TABLE "tags" ( """
-            """id integer primary key autoincrement,"""
-            """tag varchar(256),"""
-            """post int references posts);""",
-            """CREATE TABLE "tags2" ( """
-            """id integer primary key autoincrement,"""
-            """tag varchar(256),"""
-            """post int references posts);"""
+            "BEGIN TRANSACTION ;",
+            "CREATE TABLE \"posts\" (id int primary key);",
+            "INSERT INTO \"posts\" VALUES(0);",
+            "CREATE TABLE \"tags\" (id integer primary key autoincrement, tag varchar(256), post int references posts);",
+            "CREATE TABLE \"tags2\" (id integer primary key autoincrement, tag varchar(256), post int references posts);"
         ]
         for i in range(1, 10):
-            old_db.append("""INSERT INTO "tags"
-                                VALUES(NULL,'test{0}',0);""".format(i))
+            old_db.append("INSERT INTO \"tags\" VALUES(NULL,'test{0}',0);".format(i))
         for i in range(1, 5):
-            old_db.append("""INSERT INTO "tags2"
-                                VALUES(NULL,'test{0}',0);""".format(i))
+            old_db.append("INSERT INTO \"tags2\" VALUES(NULL,'test{0}',0);".format(i))
         old_db.append("COMMIT;")
 
-        for sql_statement in old_db:
-            self.cu.execute(sql_statement)
+        self.cu.executescript("".join(old_db))
+        query = "".join(self.cx.iterdump())
 
-        cx2 = sqlite.connect(":memory:")
-        query = "".join(line for line in self.cx.iterdump())
-        cx2.executescript(query)
-        cu2 = cx2.cursor()
+        with memory_database() as cx2:
+            cx2.executescript(query)
+            cu2 = cx2.cursor()
 
-        self.assertEqual(cu2.execute('SELECT "seq"'
-                                     'FROM "sqlite_sequence"'
-                                     'WHERE "name" == "tags"').fetchall()[0][0], 9)
-        self.assertEqual(cu2.execute('SELECT "seq" FROM'
-                                     '"sqlite_sequence"'
-                                     'WHERE "name" == "tags2"').fetchall()[0][0], 4)
-
-        cu2.close()
-        cx2.close()
+            self.assertEqual(cu2.execute("SELECT \"seq\""
+                                         "FROM \"sqlite_sequence\""
+                                         "WHERE \"name\" == \"tags\"").fetchall()[0][0], 9)
+            self.assertEqual(cu2.execute("SELECT \"seq\" FROM"
+                                         "\"sqlite_sequence\""
+                                         "WHERE \"name\" == \"tags2\"").fetchall()[0][0], 4)
 
     def test_unorderable_row(self):
         # iterdump() should be able to cope with unorderable row types (issue #15545)
