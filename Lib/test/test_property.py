@@ -257,7 +257,7 @@ class PropertySubclassTests(unittest.TestCase):
         def getter_wo_doc(x):
             pass
 
-        for ps in PropertySub, PropertySubWoDoc:
+        for ps in property, PropertySub, PropertySubWoDoc:
             doc = ps(getter, None, None, "issue 41287 is fixed").__doc__
             self.assertEqual(doc, "issue 41287 is fixed",
                              "Getter overrides explicit property docstring (%s)" % ps.__name__)
@@ -270,7 +270,7 @@ class PropertySubclassTests(unittest.TestCase):
                              "Getter overrides explicit property docstring (%s)" % ps.__name__)
 
             doc = ps(getter_wo_doc, None, None, None).__doc__
-            self.assertIsNone(doc)
+            self.assertIsNone(doc, "Property class doc appears in instance __doc__ (%s)" % ps.__name__)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
