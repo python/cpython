@@ -738,7 +738,7 @@ if pth:
 # ******************************************************************************
 
 config['program_name'] = program_name
-config['home'] = home
+config['home'] = home if home_was_set else None
 config['executable'] = executable
 config['base_executable'] = base_executable
 config['prefix'] = prefix
