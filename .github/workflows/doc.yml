@@ -24,6 +24,9 @@ on:
     - 'Doc/**'
     - 'Misc/**'
 
+permissions:
+  contents: read
+
 jobs:
   build_doc:
     name: 'Docs'

@@ -109,7 +109,9 @@ class TestSpecifics(unittest.TestCase):
         self.assertEqual(d['z'], 12)
 
     def test_extended_arg(self):
-        longexpr = 'x = x or ' + '-x' * 2500
+        # default: 1000 * 2.5 = 2500 repetitions
+        repeat = int(sys.getrecursionlimit() * 2.5)
+        longexpr = 'x = x or ' + '-x' * repeat
         g = {}
         code = '''
 def f(x):
@@ -839,7 +841,7 @@ if 1:
                 instructions = [opcode.opname for opcode in opcodes]
                 self.assertNotIn('LOAD_METHOD', instructions)
                 self.assertIn('LOAD_ATTR', instructions)
-                self.assertIn('PRECALL', instructions)
+                self.assertIn('CALL', instructions)
 
     def test_lineno_procedure_call(self):
         def call():
