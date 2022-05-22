@@ -1207,7 +1207,7 @@ class PyBuildExt(build_ext):
             if dbm_args:
                 dbm_order = [arg.split('=')[-1] for arg in dbm_args][-1].split(":")
             else:
-                dbm_order = "ndbm:gdbm:bdb".split(":")
+                dbm_order = "gdbm:ndbm:bdb".split(":")
             dbmext = None
             for cand in dbm_order:
                 if cand == "ndbm":
@@ -1407,9 +1407,6 @@ class PyBuildExt(build_ext):
             # compiler, please research a proper solution, instead of
             # finding some -z option for the Sun compiler.
             extra_link_args.append('-mimpure-text')
-
-        elif HOST_PLATFORM.startswith('hp-ux'):
-            extra_link_args.append('-fPIC')
 
         ext = Extension('_ctypes',
                         include_dirs=include_dirs,

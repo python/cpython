@@ -183,7 +183,8 @@ The Module Search Path
 .. index:: triple: module; search; path
 
 When a module named :mod:`spam` is imported, the interpreter first searches for
-a built-in module with that name. If not found, it then searches for a file
+a built-in module with that name. These module names are listed in
+:data:`sys.builtin_module_names`. If not found, it then searches for a file
 named :file:`spam.py` in a list of directories given by the variable
 :data:`sys.path`.  :data:`sys.path` is initialized from these locations:
 

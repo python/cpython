@@ -8,6 +8,7 @@ import opcode
 from datetime import date
 import itertools
 import argparse
+import sys
 
 if os.name == "nt":
     DEFAULT_DIR = "c:\\temp\\py_stats\\"
@@ -88,7 +89,11 @@ def gather_stats():
     for filename in os.listdir(DEFAULT_DIR):
         with open(os.path.join(DEFAULT_DIR, filename)) as fd:
             for line in fd:
-                key, value = line.split(":")
+                try:
+                    key, value = line.split(":")
+                except ValueError:
+                    print (f"Unparsable line: '{line.strip()}' in  {filename}", file=sys.stderr)
+                    continue
                 key = key.strip()
                 value = int(value)
                 stats[key] += value
@@ -265,17 +270,26 @@ def emit_call_stats(stats):
 
 def emit_object_stats(stats):
     with Section("Object stats", summary="allocations, frees and dict materializatons"):
-        total = stats.get("Object new values")
+        total_materializations = stats.get("Object new values")
+        total_allocations = stats.get("Object allocations")
+        total_increfs = stats.get("Object interpreter increfs") + stats.get("Object increfs")
+        total_decrefs = stats.get("Object interpreter decrefs") + stats.get("Object decrefs")
         rows = []
         for key, value in stats.items():
             if key.startswith("Object"):
                 if "materialize" in key:
-                    materialize = f"{100*value/total:0.1f}%"
+                    ratio = f"{100*value/total_materializations:0.1f}%"
+                elif "allocations" in key:
+                    ratio = f"{100*value/total_allocations:0.1f}%"
+                elif "increfs"     in key:
+                    ratio = f"{100*value/total_increfs:0.1f}%"
+                elif "decrefs"     in key:
+                    ratio = f"{100*value/total_decrefs:0.1f}%"
                 else:
-                    materialize = ""
+                    ratio = ""
                 label = key[6:].strip()
                 label = label[0].upper() + label[1:]
-                rows.append((label, value, materialize))
+                rows.append((label, value, ratio))
         emit_table(("",  "Count:", "Ratio:"), rows)
 
 def get_total(opcode_stats):
@@ -307,7 +321,7 @@ def emit_pair_counts(opcode_stats, total):
         emit_table(("Pair", "Count:", "Self:", "Cumulative:"),
             rows
         )
-    with Section("Predecessor/Successor Pairs", summary="Top 3 predecessors and successors of each opcode"):
+    with Section("Predecessor/Successor Pairs", summary="Top 5 predecessors and successors of each opcode"):
         predecessors = collections.defaultdict(collections.Counter)
         successors = collections.defaultdict(collections.Counter)
         total_predecessors = collections.Counter()
@@ -326,10 +340,10 @@ def emit_pair_counts(opcode_stats, total):
             pred_rows = succ_rows = ()
             if total1:
                 pred_rows = [(opname[pred], count, f"{count/total1:.1%}")
-                             for (pred, count) in predecessors[i].most_common(3)]
+                             for (pred, count) in predecessors[i].most_common(5)]
             if total2:
                 succ_rows = [(opname[succ], count, f"{count/total2:.1%}")
-                             for (succ, count) in successors[i].most_common(3)]
+                             for (succ, count) in successors[i].most_common(5)]
             with Section(name, 3, f"Successors and predecessors for {name}"):
                 emit_table(("Predecessors", "Count:", "Percentage:"),
                     pred_rows

@@ -522,6 +522,7 @@ class TestSupport(unittest.TestCase):
             ['-E'],
             ['-v'],
             ['-b'],
+            ['-P'],
             ['-q'],
             ['-I'],
             # same option multiple times
@@ -541,7 +542,8 @@ class TestSupport(unittest.TestCase):
             with self.subTest(opts=opts):
                 self.check_options(opts, 'args_from_interpreter_flags')
 
-        self.check_options(['-I', '-E', '-s'], 'args_from_interpreter_flags',
+        self.check_options(['-I', '-E', '-s', '-P'],
+                           'args_from_interpreter_flags',
                            ['-I'])
 
     def test_optim_args_from_interpreter_flags(self):
@@ -689,7 +691,7 @@ class TestSupport(unittest.TestCase):
                                  'Warning -- a\nWarning -- b\n')
 
     def test_has_strftime_extensions(self):
-        if support.is_emscripten or support.is_wasi or sys.platform == "win32":
+        if support.is_emscripten or sys.platform == "win32":
             self.assertFalse(support.has_strftime_extensions)
         else:
             self.assertTrue(support.has_strftime_extensions)

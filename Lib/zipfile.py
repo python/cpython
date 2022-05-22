@@ -1564,7 +1564,7 @@ class ZipFile:
 
             fname = zef_file.read(fheader[_FH_FILENAME_LENGTH])
             if fheader[_FH_EXTRA_FIELD_LENGTH]:
-                zef_file.read(fheader[_FH_EXTRA_FIELD_LENGTH])
+                zef_file.seek(fheader[_FH_EXTRA_FIELD_LENGTH], whence=1)
 
             if zinfo.flag_bits & _MASK_COMPRESSED_PATCH:
                 # Zip 2.7: compressed patched data

@@ -545,8 +545,14 @@ def collect_ssl(info_add):
 def collect_socket(info_add):
     import socket
 
-    hostname = socket.gethostname()
-    info_add('socket.hostname', hostname)
+    try:
+        hostname = socket.gethostname()
+    except OSError:
+        # WASI SDK 15.0 does not have gethostname(2).
+        if sys.platform != "wasi":
+            raise
+    else:
+        info_add('socket.hostname', hostname)
 
 
 def collect_sqlite(info_add):

@@ -17,20 +17,52 @@
 // Macro to use C++ static_cast<>, reinterpret_cast<> and const_cast<>
 // in the Python C API.
 //
-// In C++, _Py_reinterpret_cast(type, expr) converts a constant expression to a
+// In C++, _Py_CAST(type, expr) converts a constant expression to a
 // non constant type using const_cast<type>. For example,
-// _Py_reinterpret_cast(PyObject*, op) can convert a "const PyObject*" to
+// _Py_CAST(PyObject*, op) can convert a "const PyObject*" to
 // "PyObject*".
 //
 // The type argument must not be constant. For example, in C++,
-// _Py_reinterpret_cast(const PyObject*, expr) fails with a compiler error.
+// _Py_CAST(const PyObject*, expr) fails with a compiler error.
 #ifdef __cplusplus
-#  define _Py_static_cast(type, expr) static_cast<type>(expr)
-#  define _Py_reinterpret_cast(type, expr) \
-       const_cast<type>(reinterpret_cast<const type>(expr))
+#  define _Py_STATIC_CAST(type, expr) static_cast<type>(expr)
+
+extern "C++" {
+namespace {
+template <typename type, typename expr_type>
+inline type _Py_reinterpret_cast_impl(expr_type *expr) {
+  return reinterpret_cast<type>(expr);
+}
+
+template <typename type, typename expr_type>
+inline type _Py_reinterpret_cast_impl(expr_type const *expr) {
+  return reinterpret_cast<type>(const_cast<expr_type *>(expr));
+}
+
+template <typename type, typename expr_type>
+inline type _Py_reinterpret_cast_impl(expr_type &expr) {
+  return static_cast<type>(expr);
+}
+
+template <typename type, typename expr_type>
+inline type _Py_reinterpret_cast_impl(expr_type const &expr) {
+  return static_cast<type>(const_cast<expr_type &>(expr));
+}
+} // namespace
+}
+#  define _Py_CAST(type, expr) _Py_reinterpret_cast_impl<type>(expr)
+
 #else
-#  define _Py_static_cast(type, expr) ((type)(expr))
-#  define _Py_reinterpret_cast(type, expr) ((type)(expr))
+#  define _Py_STATIC_CAST(type, expr) ((type)(expr))
+#  define _Py_CAST(type, expr) ((type)(expr))
+#endif
+
+// Static inline functions should use _Py_NULL rather than using directly NULL
+// to prevent C++ compiler warnings. In C++, _Py_NULL uses nullptr.
+#ifdef __cplusplus
+#  define _Py_NULL nullptr
+#else
+#  define _Py_NULL NULL
 #endif
 
 
@@ -317,10 +349,10 @@ extern "C" {
  */
 #ifdef Py_DEBUG
 #  define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) \
-       (assert(_Py_static_cast(WIDE, _Py_static_cast(NARROW, (VALUE))) == (VALUE)), \
-        _Py_static_cast(NARROW, (VALUE)))
+       (assert(_Py_STATIC_CAST(WIDE, _Py_STATIC_CAST(NARROW, (VALUE))) == (VALUE)), \
+        _Py_STATIC_CAST(NARROW, (VALUE)))
 #else
-#  define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) _Py_static_cast(NARROW, (VALUE))
+#  define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) _Py_STATIC_CAST(NARROW, (VALUE))
 #endif
 
 

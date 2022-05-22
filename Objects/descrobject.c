@@ -1,7 +1,7 @@
 /* Descriptors -- a new, flexible way to describe attributes */
 
 #include "Python.h"
-#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
@@ -302,7 +302,7 @@ typedef void (*funcptr)(void);
 static inline funcptr
 method_enter_call(PyThreadState *tstate, PyObject *func)
 {
-    if (_Py_EnterRecursiveCall(tstate, " while calling a Python object")) {
+    if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
         return NULL;
     }
     return (funcptr)((PyMethodDescrObject *)func)->d_method->ml_meth;
@@ -330,7 +330,7 @@ method_vectorcall_VARARGS(
     PyObject *result = _PyCFunction_TrampolineCall(
         meth, args[0], argstuple);
     Py_DECREF(argstuple);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return result;
 }
 
@@ -363,7 +363,7 @@ method_vectorcall_VARARGS_KEYWORDS(
     }
     result = _PyCFunctionWithKeywords_TrampolineCall(
         meth, args[0], argstuple, kwdict);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
 exit:
     Py_DECREF(argstuple);
     Py_XDECREF(kwdict);
@@ -386,7 +386,7 @@ method_vectorcall_FASTCALL_KEYWORDS_METHOD(
     PyObject *result = meth(args[0],
                             ((PyMethodDescrObject *)func)->d_common.d_type,
                             args+1, nargs-1, kwnames);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall();
     return result;
 }
 
@@ -405,7 +405,7 @@ method_vectorcall_FASTCALL(
         return NULL;
     }
     PyObject *result = meth(args[0], args+1, nargs-1);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return result;
 }
 
@@ -424,7 +424,7 @@ method_vectorcall_FASTCALL_KEYWORDS(
         return NULL;
     }
     PyObject *result = meth(args[0], args+1, nargs-1, kwnames);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return result;
 }
 
@@ -451,7 +451,7 @@ method_vectorcall_NOARGS(
         return NULL;
     }
     PyObject *result = _PyCFunction_TrampolineCall(meth, args[0], NULL);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return result;
 }
 
@@ -479,7 +479,7 @@ method_vectorcall_O(
         return NULL;
     }
     PyObject *result = _PyCFunction_TrampolineCall(meth, args[0], args[1]);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return result;
 }
 
@@ -1145,7 +1145,7 @@ mappingproxy_reversed(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
             to the underlying mapping */
 
 static PyMethodDef mappingproxy_methods[] = {
-    {"get",       (PyCFunction)(void(*)(void))mappingproxy_get, METH_FASTCALL,
+    {"get",       _PyCFunction_CAST(mappingproxy_get), METH_FASTCALL,
      PyDoc_STR("D.get(k[,d]) -> D[k] if k in D, else d."
                "  d defaults to None.")},
     {"keys",      (PyCFunction)mappingproxy_keys,       METH_NOARGS,
