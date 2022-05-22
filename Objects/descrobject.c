@@ -1808,6 +1808,9 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
         self->getter_doc = 1;
     }
 
+    /* At this point `prop_doc` is either NULL or
+       a non-None object with incremented ref counter */
+
     if (Py_IS_TYPE(self, &PyProperty_Type)) {
         if (prop_doc != NULL && prop_doc != Py_None) {
             Py_XSETREF(self->prop_doc, prop_doc);
