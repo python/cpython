@@ -1812,9 +1812,7 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
        a non-None object with incremented ref counter */
 
     if (Py_IS_TYPE(self, &PyProperty_Type)) {
-        if (prop_doc != NULL && prop_doc != Py_None) {
-            Py_XSETREF(self->prop_doc, prop_doc);
-        }
+        Py_XSETREF(self->prop_doc, prop_doc);
     } else {
         /* If this is a property subclass, put __doc__
            in dict of the subclass instance instead,
