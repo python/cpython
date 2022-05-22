@@ -2304,10 +2304,10 @@ class ImmortalTests(unittest.TestCase):
         smallint_refcount = sys.getrefcount(100)
 
         # Assert that all of these immortal instances have large ref counts.
-        self.assertGreater(none_refcount, 1e8)
-        self.assertGreater(true_refcount, 1e8)
-        self.assertGreater(false_refcount, 1e8)
-        self.assertGreater(smallint_refcount, 1e8)
+        self.assertGreater(none_refcount, 2 ** 15)
+        self.assertGreater(true_refcount, 2 ** 15)
+        self.assertGreater(false_refcount, 2 ** 15)
+        self.assertGreater(smallint_refcount, 2 ** 15)
 
         # Confirm that the refcount doesn't change even with a new ref to them.
         l = [None, True, False, 100]

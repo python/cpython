@@ -559,7 +559,8 @@ static inline void Py_INCREF(PyObject *op)
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
     _Py_IMMORTAL_UTYPE new_refcount;
-    if (_Py_saturaed_addone(op->ob_refcnt, &new_refcount)) {
+    if (_Py_saturaed_addone(
+          _Py_CAST(_Py_IMMORTAL_TYPE, op->ob_refcnt), &new_refcount)) {
         return;
     }
 #ifdef Py_REF_DEBUG
@@ -580,11 +581,8 @@ static inline void Py_DECREF(PyObject *op) {
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
 
 #elif defined(Py_REF_DEBUG)
-
 static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
-    // Non-limited C API and limited C API for Python 3.9 and older access
-    // directly PyObject.ob_refcnt.
     if (_Py_IsImmortal(op)) {
         return;
     }
@@ -604,12 +602,12 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 #else
 static inline void Py_DECREF(PyObject *op)
 {
-    _Py_DECREF_STAT_INC();
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
     if (_Py_IsImmortal(op)) {
         return;
     }
+    _Py_DECREF_STAT_INC();
     if (--op->ob_refcnt == 0) {
         _Py_Dealloc(op);
     }
