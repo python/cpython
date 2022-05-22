@@ -4842,7 +4842,7 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     for (i = 0; i < wordshift; i++)
         z->ob_digit[i] = 0;
     accum = 0;
-    for (i = wordshift, j = 0; j < oldsize; i++, j++) {
+    for (j = 0; j < oldsize; i++, j++) {
         accum |= (twodigits)a->ob_digit[j] << remshift;
         z->ob_digit[i] = (digit)(accum & PyLong_MASK);
         accum >>= PyLong_SHIFT;
