@@ -124,7 +124,7 @@ static PyType_Slot Xxo_Type_slots[] = {
 };
 
 static PyType_Spec Xxo_Type_spec = {
-    "xxlimited.Xxo",
+    "xxlimited_35.Xxo",
     sizeof(XxoObject),
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
@@ -189,7 +189,7 @@ static PyType_Slot Str_Type_slots[] = {
 };
 
 static PyType_Spec Str_Type_spec = {
-    "xxlimited.Str",
+    "xxlimited_35.Str",
     0,
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
@@ -212,7 +212,7 @@ static PyType_Slot Null_Type_slots[] = {
 };
 
 static PyType_Spec Null_Type_spec = {
-    "xxlimited.Null",
+    "xxlimited_35.Null",
     0,               /* basicsize */
     0,               /* itemsize */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
@@ -236,11 +236,24 @@ static PyMethodDef xx_methods[] = {
 PyDoc_STRVAR(module_doc,
 "This is a module for testing limited API from Python 3.5.");
 
+static PyObject *
+create_and_add_type(PyObject *module, const char *name, PyType_Spec *spec)
+{
+    PyObject *type = PyType_FromSpec(spec);
+    if (type == NULL) {
+        return NULL;
+    }
+    int rc = PyModule_AddObject(module, name, type);
+    if (rc < 0) {
+        Py_DECREF(type);
+        return NULL;
+    }
+    return type;
+}
+
 static int
 xx_modexec(PyObject *m)
 {
-    PyObject *o;
-
     /* Due to cross platform compiler issues the slots must be filled
      * here. It's required for portability to Windows without requiring
      * C++. */
@@ -248,40 +261,33 @@ xx_modexec(PyObject *m)
     Null_Type_slots[1].pfunc = PyType_GenericNew;
     Str_Type_slots[0].pfunc = &PyUnicode_Type;
 
-    Xxo_Type = PyType_FromSpec(&Xxo_Type_spec);
-    if (Xxo_Type == NULL)
-        goto fail;
-
     /* Add some symbolic constants to the module */
     if (ErrorObject == NULL) {
-        ErrorObject = PyErr_NewException("xxlimited.error", NULL, NULL);
-        if (ErrorObject == NULL)
-            goto fail;
+        ErrorObject = PyErr_NewException("xxlimited_35.error", NULL, NULL);
+        if (ErrorObject == NULL) {
+            return -1;
+        }
     }
     Py_INCREF(ErrorObject);
-    PyModule_AddObject(m, "error", ErrorObject);
+    int rc = PyModule_AddObject(m, "error", ErrorObject);
+    if (rc < 0) {
+        Py_DECREF(ErrorObject);
+        return -1;
+    }
 
-    /* Add Xxo */
-    o = PyType_FromSpec(&Xxo_Type_spec);
-    if (o == NULL)
-        goto fail;
-    PyModule_AddObject(m, "Xxo", o);
+    /* Add Xxo, Str, and Null types */
+    Xxo_Type = create_and_add_type(m, "Xxo", &Xxo_Type_spec);
+    if (Xxo_Type == NULL) {
+        return -1;
+    }
+    if (create_and_add_type(m, "Str", &Str_Type_spec) == NULL) {
+        return -1;
+    }
+    if (create_and_add_type(m, "Null", &Null_Type_spec) == NULL) {
+        return -1;
+    }
 
-    /* Add Str */
-    o = PyType_FromSpec(&Str_Type_spec);
-    if (o == NULL)
-        goto fail;
-    PyModule_AddObject(m, "Str", o);
-
-    /* Add Null */
-    o = PyType_FromSpec(&Null_Type_spec);
-    if (o == NULL)
-        goto fail;
-    PyModule_AddObject(m, "Null", o);
     return 0;
- fail:
-    Py_XDECREF(m);
-    return -1;
 }
 
 
