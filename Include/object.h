@@ -81,20 +81,10 @@ whose size is determined when the object is allocated.
 /*
 Immortalization:
 
-An object will be marked as immortal by setting all the lower half's bits of
-the reference count field.
-
-i.e in a 32 bit system the reference could will be set to:
-    00000000 00000000 11111111 11111111
-
-Using the lower bits makes this backwards compatible by allowing extensions
-compiled without the updted checks in Py_INCREF and Py_DECREF to safely
-increase and decrease the objects reference count. The object would lose its
-immortality, but the execution would still be correct.
-
-Reference count increases will use saturated arithmetic to avoid the reference
-count to go beyond the refcount limit. Immortality checks will be done by
-checking the lower half bit's sign flag.
+The following indicates the immortalization strategy depending on the amount
+of available bits in the reference count field. All strategies are backwards
+compatible but the specific reference count value or immortalization check
+might change depending on the specializations for the underlying system.
 
 Proper deallocation of immortal instances requires distinguishing between
 statically allocated immortal instances vs those promoted by the runtime to be
@@ -103,13 +93,43 @@ cleanup during runtime finalization.
 */
 
 #if SIZEOF_VOID_P > 4
+/*
+In 64+ bit systems, an object will be marked as immortal by setting all of the
+lower 32 bits of the reference count field.
+
+i.e in a 64 bit system the reference could will be set to:
+    00000000 00000000 00000000 00000000
+    11111111 11111111 11111111 11111111
+
+Using the lower 32 bits makes the value backwards compatible by allowing
+C-Extensions without the updated checks in Py_INCREF and Py_DECREF to safely
+increase and decrease the objects reference count. The object would lose its
+immortality, but the execution would still be correct.
+
+Reference count increases will use saturated arithmetic, taking advantage of
+having all the lower 32 bits set, which will avoid the reference count to go
+beyond the refcount limit. Immortality checks for reference count decreases will
+be done by checking the bit sign flag in the lower 32 bits.
+*/
 #define _Py_IMMORTAL_REFCNT UINT_MAX
-#define _Py_IMMORTAL_UTYPE PY_UINT32_T
-#define _Py_IMMORTAL_TYPE PY_INT32_T
+
 #else
-#define _Py_IMMORTAL_REFCNT USHRT_MAX
-#define _Py_IMMORTAL_UTYPE PY_UINT16_T
-#define _Py_IMMORTAL_TYPE PY_INT16_T
+/*
+In 32 bit systems, an object will be marked as immortal by setting all of the
+lower 30 bits of the reference count field.
+
+i.e The reference count will be set to:
+    00111111 11111111 11111111 11111111
+
+Using the lower 30 bits makes the value backwards compatible by allowing
+C-Extensions without the updated checks in Py_INCREF and Py_DECREF to safely
+increase and decrease the objects reference count. The object would lose its
+immortality, but the execution would still be correct.
+
+Reference count increases and decreases will first go through an immortality
+check by comparing the reference count field to the immortality reference count.
+*/
+#define _Py_IMMORTAL_REFCNT (UINT_MAX >> 2)
 #endif
 
 #define PyObject_HEAD_INIT(type)        \
@@ -186,7 +206,11 @@ static inline Py_ssize_t Py_SIZE(PyObject *ob) {
 
 static inline int _Py_IsImmortal(PyObject *op)
 {
-    return _Py_CAST(_Py_IMMORTAL_TYPE, op->ob_refcnt) < 0;
+#if SIZEOF_VOID_P > 4
+    return _Py_CAST(PY_INT32_T, op->ob_refcnt) < 0;
+#else
+    return op->ob_refcnt == _Py_IMMORTAL_REFCNT;
+#endif
 }
 #define _Py_IsImmortal(op) _Py_IsImmortal(_PyObject_CAST(op))
 
@@ -196,6 +220,7 @@ static inline void _Py_SetImmortal(PyObject *op)
         op->ob_refcnt = _Py_IMMORTAL_REFCNT;
     }
 }
+#define _Py_SetImmortal(op) _Py_SetImmortal(_PyObject_CAST(op))
 
 static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
     return Py_TYPE(ob) == type;
@@ -543,7 +568,7 @@ PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
 static inline int
-_Py_saturaed_addone(_Py_IMMORTAL_UTYPE a, _Py_IMMORTAL_UTYPE *result)
+_Py_saturated_addone(PY_UINT32_T a, PY_UINT32_T *result)
 {
     *result = a + 1;
     return *result < a;
@@ -551,22 +576,29 @@ _Py_saturaed_addone(_Py_IMMORTAL_UTYPE a, _Py_IMMORTAL_UTYPE *result)
 
 static inline void Py_INCREF(PyObject *op)
 {
-    _Py_INCREF_STAT_INC();
 #if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
     // Stable ABI for Python 3.10 built in debug mode.
     _Py_IncRef(op);
 #else
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
-    _Py_IMMORTAL_UTYPE new_refcount;
-    if (_Py_saturaed_addone(
-          _Py_CAST(_Py_IMMORTAL_TYPE, op->ob_refcnt), &new_refcount)) {
+#if SIZEOF_VOID_P > 4
+    PY_UINT32_T new_refcount;
+    if (_Py_saturated_addone(
+          _Py_CAST(PY_UINT32_T, op->ob_refcnt), &new_refcount)) {
         return;
     }
+    op->ob_refcnt = new_refcount;
+#else
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
+    op->ob_refcnt++;
+#endif
+    _Py_INCREF_STAT_INC();
 #ifdef Py_REF_DEBUG
     _Py_RefTotal++;
 #endif
-    op->ob_refcnt = new_refcount;
 #endif
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
