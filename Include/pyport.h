@@ -130,10 +130,12 @@ Used in:  Py_SAFE_DOWNCAST
 #define PY_ULLONG_MAX ULLONG_MAX
 #endif
 
+#define PY_UINT16_T uint16_t
 #define PY_UINT32_T uint32_t
 #define PY_UINT64_T uint64_t
 
 /* Signed variants of the above */
+#define PY_INT16_T int16_t
 #define PY_INT32_T int32_t
 #define PY_INT64_T int64_t
 

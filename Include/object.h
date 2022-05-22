@@ -81,19 +81,36 @@ whose size is determined when the object is allocated.
 /*
 Immortalization:
 
-This marks the reference count bit that will be used to define immortality. For
-backwards compatibility the actual reference count of an immortal instance is
-set to higher than the immortal bit. This will ensure that the immortal bit will
-remain active, even with extensions compiled without the updated checks in
-Py_INCREF and Py_DECREF. This extra value can be safely changed to a smaller
-value if additional bits are needed in the reference count field.
+An object will be marked as immortal by setting all the lower half's bits of
+the reference count field.
+
+i.e in a 32 bit system the reference could will be set to:
+    00000000 00000000 11111111 11111111
+
+Using the lower bits makes this backwards compatible by allowing extensions
+compiled without the updted checks in Py_INCREF and Py_DECREF to safely
+increase and decrease the objects reference count. The object would lose its
+immortality, but the execution would still be correct.
+
+Reference count increases will use saturated arithmetic to avoid the reference
+count to go beyond the refcount limit. Immortality checks will be done by
+checking the lower half bit's sign flag.
 
 Proper deallocation of immortal instances requires distinguishing between
 statically allocated immortal instances vs those promoted by the runtime to be
 immortal. The latter which should be the only instances that require proper
 cleanup during runtime finalization.
 */
+
+#if SIZEOF_VOID_P > 4
 #define _Py_IMMORTAL_REFCNT UINT_MAX
+#define _Py_IMMORTAL_UTYPE PY_UINT32_T
+#define _Py_IMMORTAL_TYPE PY_INT32_T
+#else
+#define _Py_IMMORTAL_REFCNT USHRT_MAX
+#define _Py_IMMORTAL_UTYPE PY_UINT16_T
+#define _Py_IMMORTAL_TYPE PY_INT16_T
+#endif
 
 #define PyObject_HEAD_INIT(type)        \
     { _PyObject_EXTRA_INIT              \
@@ -169,8 +186,9 @@ static inline Py_ssize_t Py_SIZE(PyObject *ob) {
 
 static inline int _Py_IsImmortal(PyObject *op)
 {
-    return _Py_CAST(PY_INT32_T, op->ob_refcnt) < 0;
+    return _Py_CAST(_Py_IMMORTAL_TYPE, op->ob_refcnt) < 0;
 }
+#define _Py_IsImmortal(op) _Py_IsImmortal(_PyObject_CAST(op))
 
 static inline void _Py_SetImmortal(PyObject *op)
 {
@@ -525,7 +543,7 @@ PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
 static inline int
-_Py_sadd_one(PY_UINT32_T a, PY_UINT32_T *result)
+_Py_saturaed_addone(_Py_IMMORTAL_UTYPE a, _Py_IMMORTAL_UTYPE *result)
 {
     *result = a + 1;
     return *result < a;
@@ -540,8 +558,8 @@ static inline void Py_INCREF(PyObject *op)
 #else
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
-    PY_UINT32_T new_refcount;
-    if (_Py_sadd_one(op->ob_refcnt, &new_refcount)) {
+    _Py_IMMORTAL_UTYPE new_refcount;
+    if (_Py_saturaed_addone(op->ob_refcnt, &new_refcount)) {
         return;
     }
 #ifdef Py_REF_DEBUG
