@@ -22,11 +22,6 @@
 #  endif
 #endif
 
-#ifndef PLATLIBDIR
-#  error "PLATLIBDIR macro must be defined"
-#endif
-
-
 /* --- Command line options --------------------------------------- */
 
 /* Short usage message (with %s for argv0) */
@@ -54,6 +49,7 @@ static const char usage_2[] = "\
          .pyc extension; also PYTHONOPTIMIZE=x\n\
 -OO    : do -O changes and also discard docstrings; add .opt-2 before\n\
          .pyc extension\n\
+-P     : don't prepend a potentially unsafe path to sys.path\n\
 -q     : don't print version and copyright messages on interactive startup\n\
 -s     : don't add user site directory to sys.path; also PYTHONNOUSERSITE\n\
 -S     : don't imply 'import site' on initialization\n\
@@ -118,6 +114,7 @@ PYTHONPATH   : '%lc'-separated list of directories prefixed to the\n\
                default module search path.  The result is sys.path.\n\
 ";
 static const char usage_5[] =
+"PYTHONSAFEPATH: don't prepend a potentially unsafe path to sys.path.\n"
 "PYTHONHOME   : alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
 "               The default module search path uses %s.\n"
 "PYTHONPLATLIBDIR : override sys.platlibdir.\n"
@@ -614,7 +611,7 @@ config_check_consistency(const PyConfig *config)
     assert(config->faulthandler >= 0);
     assert(config->tracemalloc >= 0);
     assert(config->import_time >= 0);
-    assert(config->no_debug_ranges >= 0);
+    assert(config->code_debug_ranges >= 0);
     assert(config->show_ref_count >= 0);
     assert(config->dump_refs >= 0);
     assert(config->malloc_stats >= 0);
@@ -632,7 +629,6 @@ config_check_consistency(const PyConfig *config)
     assert(config->parse_argv >= 0);
     assert(config->configure_c_stdio >= 0);
     assert(config->buffered_stdio >= 0);
-    assert(config->program_name != NULL);
     assert(_PyWideStringList_CheckConsistency(&config->orig_argv));
     assert(_PyWideStringList_CheckConsistency(&config->argv));
     /* sys.argv must be non-empty: empty argv is replaced with [''] */
@@ -641,7 +637,6 @@ config_check_consistency(const PyConfig *config)
     assert(_PyWideStringList_CheckConsistency(&config->warnoptions));
     assert(_PyWideStringList_CheckConsistency(&config->module_search_paths));
     assert(config->module_search_paths_set >= 0);
-    assert(config->platlibdir != NULL);
     assert(config->filesystem_encoding != NULL);
     assert(config->filesystem_errors != NULL);
     assert(config->stdio_encoding != NULL);
@@ -654,6 +649,10 @@ config_check_consistency(const PyConfig *config)
     assert(config->check_hash_pycs_mode != NULL);
     assert(config->_install_importlib >= 0);
     assert(config->pathconfig_warnings >= 0);
+    assert(config->_is_python_build >= 0);
+    assert(config->safe_path >= 0);
+    // config->use_frozen_modules is initialized later
+    // by _PyConfig_InitImportConfig().
     return 1;
 }
 #endif
@@ -739,6 +738,14 @@ _PyConfig_InitCompatConfig(PyConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
 #endif
+#ifdef Py_DEBUG
+    config->use_frozen_modules = 0;
+#else
+    config->use_frozen_modules = 1;
+#endif
+    config->safe_path = 0;
+    config->_is_python_build = 0;
+    config->code_debug_ranges = 1;
 }
 
 
@@ -792,6 +799,7 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->use_hash_seed = 0;
     config->faulthandler = 0;
     config->tracemalloc = 0;
+    config->safe_path = 1;
     config->pathconfig_warnings = 0;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
@@ -903,7 +911,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(faulthandler);
     COPY_ATTR(tracemalloc);
     COPY_ATTR(import_time);
-    COPY_ATTR(no_debug_ranges);
+    COPY_ATTR(code_debug_ranges);
     COPY_ATTR(show_ref_count);
     COPY_ATTR(dump_refs);
     COPY_ATTR(dump_refs_file);
@@ -959,7 +967,9 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(_init_main);
     COPY_ATTR(_isolated_interpreter);
     COPY_ATTR(use_frozen_modules);
+    COPY_ATTR(safe_path);
     COPY_WSTRLIST(orig_argv);
+    COPY_ATTR(_is_python_build);
 
 #undef COPY_ATTR
 #undef COPY_WSTR_ATTR
@@ -1011,7 +1021,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(faulthandler);
     SET_ITEM_INT(tracemalloc);
     SET_ITEM_INT(import_time);
-    SET_ITEM_INT(no_debug_ranges);
+    SET_ITEM_INT(code_debug_ranges);
     SET_ITEM_INT(show_ref_count);
     SET_ITEM_INT(dump_refs);
     SET_ITEM_INT(malloc_stats);
@@ -1064,6 +1074,8 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(_isolated_interpreter);
     SET_ITEM_WSTRLIST(orig_argv);
     SET_ITEM_INT(use_frozen_modules);
+    SET_ITEM_INT(safe_path);
+    SET_ITEM_INT(_is_python_build);
 
     return dict;
 
@@ -1290,7 +1302,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(faulthandler);
     GET_UINT(tracemalloc);
     GET_UINT(import_time);
-    GET_UINT(no_debug_ranges);
+    GET_UINT(code_debug_ranges);
     GET_UINT(show_ref_count);
     GET_UINT(dump_refs);
     GET_UINT(malloc_stats);
@@ -1348,6 +1360,8 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(_init_main);
     GET_UINT(_isolated_interpreter);
     GET_UINT(use_frozen_modules);
+    GET_UINT(safe_path);
+    GET_UINT(_is_python_build);
 
 #undef CHECK_VALUE
 #undef GET_UINT
@@ -1487,117 +1501,6 @@ config_set_global_vars(const PyConfig *config)
 }
 
 
-/* Get the program name: use PYTHONEXECUTABLE and __PYVENV_LAUNCHER__
-   environment variables on macOS if available. */
-static PyStatus
-config_init_program_name(PyConfig *config)
-{
-    PyStatus status;
-
-    /* If Py_SetProgramName() was called, use its value */
-    const wchar_t *program_name = _Py_path_config.program_name;
-    if (program_name != NULL) {
-        config->program_name = _PyMem_RawWcsdup(program_name);
-        if (config->program_name == NULL) {
-            return _PyStatus_NO_MEMORY();
-        }
-        return _PyStatus_OK();
-    }
-
-#ifdef __APPLE__
-    /* On MacOS X, when the Python interpreter is embedded in an
-       application bundle, it gets executed by a bootstrapping script
-       that does os.execve() with an argv[0] that's different from the
-       actual Python executable. This is needed to keep the Finder happy,
-       or rather, to work around Apple's overly strict requirements of
-       the process name. However, we still need a usable sys.executable,
-       so the actual executable path is passed in an environment variable.
-       See Lib/plat-mac/bundlebuilder.py for details about the bootstrap
-       script. */
-    const char *p = config_get_env(config, "PYTHONEXECUTABLE");
-    if (p != NULL) {
-        status = CONFIG_SET_BYTES_STR(config, &config->program_name, p,
-                                      "PYTHONEXECUTABLE environment variable");
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-        return _PyStatus_OK();
-    }
-#ifdef WITH_NEXT_FRAMEWORK
-    else {
-        const char* pyvenv_launcher = getenv("__PYVENV_LAUNCHER__");
-        if (pyvenv_launcher && *pyvenv_launcher) {
-            /* Used by Mac/Tools/pythonw.c to forward
-             * the argv0 of the stub executable
-             */
-            status = CONFIG_SET_BYTES_STR(config,
-                                          &config->program_name,
-                                          pyvenv_launcher,
-                                          "__PYVENV_LAUNCHER__ environment variable");
-            if (_PyStatus_EXCEPTION(status)) {
-                return status;
-            }
-
-            /*
-             * This environment variable is used to communicate between
-             * the stub launcher and the real interpreter and isn't needed
-             * beyond this point.
-             *
-             * Clean up to avoid problems when launching other programs
-             * later on.
-             */
-            (void)unsetenv("__PYVENV_LAUNCHER__");
-
-            return _PyStatus_OK();
-        }
-    }
-#endif   /* WITH_NEXT_FRAMEWORK */
-#endif   /* __APPLE__ */
-
-    /* Use argv[0] if available and non-empty */
-    const PyWideStringList *argv = &config->argv;
-    if (argv->length >= 1 && argv->items[0][0] != L'\0') {
-        config->program_name = _PyMem_RawWcsdup(argv->items[0]);
-        if (config->program_name == NULL) {
-            return _PyStatus_NO_MEMORY();
-        }
-        return _PyStatus_OK();
-    }
-
-    /* Last fall back: hardcoded name */
-#ifdef MS_WINDOWS
-    const wchar_t *default_program_name = L"python";
-#else
-    const wchar_t *default_program_name = L"python3";
-#endif
-    status = PyConfig_SetString(config, &config->program_name,
-                                default_program_name);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-    return _PyStatus_OK();
-}
-
-static PyStatus
-config_init_executable(PyConfig *config)
-{
-    assert(config->executable == NULL);
-
-    /* If Py_SetProgramFullPath() was called, use its value */
-    const wchar_t *program_full_path = _Py_path_config.program_full_path;
-    if (program_full_path != NULL) {
-        PyStatus status = PyConfig_SetString(config,
-                                             &config->executable,
-                                             program_full_path);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-        return _PyStatus_OK();
-    }
-    return _PyStatus_OK();
-}
-
-
 static const wchar_t*
 config_get_xoption(const PyConfig *config, wchar_t *name)
 {
@@ -1617,30 +1520,13 @@ config_get_xoption_value(const PyConfig *config, wchar_t *name)
 
 
 static PyStatus
-config_init_home(PyConfig *config)
-{
-    assert(config->home == NULL);
-
-    /* If Py_SetPythonHome() was called, use its value */
-    wchar_t *home = _Py_path_config.home;
-    if (home) {
-        PyStatus status = PyConfig_SetString(config, &config->home, home);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-        return _PyStatus_OK();
-    }
-
-    return CONFIG_GET_ENV_DUP(config, &config->home,
-                              L"PYTHONHOME", "PYTHONHOME");
-}
-
-static PyStatus
 config_init_hash_seed(PyConfig *config)
 {
+    static_assert(sizeof(_Py_HashSecret_t) == sizeof(_Py_HashSecret.uc),
+                  "_Py_HashSecret_t has wrong size");
+
     const char *seed_text = config_get_env(config, "PYTHONHASHSEED");
 
-    Py_BUILD_ASSERT(sizeof(_Py_HashSecret_t) == sizeof(_Py_HashSecret.uc));
     /* Convert a text seed to a numeric one */
     if (seed_text && strcmp(seed_text, "random") != 0) {
         const char *endptr = seed_text;
@@ -1758,6 +1644,10 @@ config_read_env_vars(PyConfig *config)
         }
     }
 
+    if (config_get_env(config, "PYTHONSAFEPATH")) {
+        config->safe_path = 1;
+    }
+
     return _PyStatus_OK();
 }
 
@@ -1852,7 +1742,7 @@ config_read_complex_options(PyConfig *config)
 
     if (config_get_env(config, "PYTHONNODEBUGRANGES")
        || config_get_xoption(config, L"no_debug_ranges")) {
-        config->no_debug_ranges = 1;
+        config->code_debug_ranges = 0;
     }
 
     PyStatus status;
@@ -1910,7 +1800,13 @@ static PyStatus
 config_get_locale_encoding(PyConfig *config, const PyPreConfig *preconfig,
                            wchar_t **locale_encoding)
 {
-    wchar_t *encoding = _Py_GetLocaleEncoding();
+    wchar_t *encoding;
+    if (preconfig->utf8_mode) {
+        encoding = _PyMem_RawWcsdup(L"utf-8");
+    }
+    else {
+        encoding = _Py_GetLocaleEncoding();
+    }
     if (encoding == NULL) {
         return _PyStatus_NO_MEMORY();
     }
@@ -2103,9 +1999,6 @@ config_init_import(PyConfig *config, int compute_path_config)
     /* -X frozen_modules=[on|off] */
     const wchar_t *value = config_get_xoption_value(config, L"frozen_modules");
     if (value == NULL) {
-        // For now we always default to "off".
-        // In the near future we will be factoring in PGO and in-development.
-        config->use_frozen_modules = 0;
     }
     else if (wcscmp(value, L"on") == 0) {
         config->use_frozen_modules = 1;
@@ -2122,6 +2015,7 @@ config_init_import(PyConfig *config, int compute_path_config)
                               "(expected \"on\" or \"off\")");
     }
 
+    assert(config->use_frozen_modules >= 0);
     return _PyStatus_OK();
 }
 
@@ -2201,28 +2095,6 @@ config_read(PyConfig *config, int compute_path_config)
     status = config_read_complex_options(config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
-    }
-
-    if (config->home == NULL) {
-        status = config_init_home(config);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-    }
-
-    if (config->executable == NULL) {
-        status = config_init_executable(config);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-    }
-
-    if(config->platlibdir == NULL) {
-        status = CONFIG_SET_BYTES_STR(config, &config->platlibdir, PLATLIBDIR,
-                                      "PLATLIBDIR macro");
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
     }
 
     if (config->_install_importlib) {
@@ -2469,6 +2341,10 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         case 'O':
             config->optimization_level++;
+            break;
+
+        case 'P':
+            config->safe_path = 1;
             break;
 
         case 'B':
@@ -2847,13 +2723,6 @@ config_read_cmdline(PyConfig *config)
         config->parse_argv = 1;
     }
 
-    if (config->program_name == NULL) {
-        status = config_init_program_name(config);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-    }
-
     if (config->parse_argv == 1) {
         Py_ssize_t opt_index;
         status = config_parse_cmdline(config, &cmdline_warnoptions, &opt_index);
@@ -3000,6 +2869,7 @@ _PyConfig_Read(PyConfig *config, int compute_path_config)
 
     assert(config->isolated >= 0);
     if (config->isolated) {
+        config->safe_path = 1;
         config->use_environment = 0;
         config->user_site_directory = 0;
     }
@@ -3033,7 +2903,7 @@ done:
 PyStatus
 PyConfig_Read(PyConfig *config)
 {
-    return _PyConfig_Read(config, 1);
+    return _PyConfig_Read(config, 0);
 }
 
 
@@ -3077,16 +2947,6 @@ _Py_GetConfigsAsDict(void)
         goto error;
     }
     if (PyDict_SetItemString(result, "config", dict) < 0) {
-        goto error;
-    }
-    Py_CLEAR(dict);
-
-    /* path config */
-    dict = _PyPathConfig_AsDict();
-    if (dict == NULL) {
-        goto error;
-    }
-    if (PyDict_SetItemString(result, "path_config", dict) < 0) {
         goto error;
     }
     Py_CLEAR(dict);
@@ -3155,7 +3015,9 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     PySys_WriteStderr("  isolated = %i\n", config->isolated);
     PySys_WriteStderr("  environment = %i\n", config->use_environment);
     PySys_WriteStderr("  user site = %i\n", config->user_site_directory);
+    PySys_WriteStderr("  safe_path = %i\n", config->safe_path);
     PySys_WriteStderr("  import site = %i\n", config->site_import);
+    PySys_WriteStderr("  is in build tree = %i\n", config->_is_python_build);
     DUMP_CONFIG("stdlib dir", stdlib_dir);
 #undef DUMP_CONFIG
 

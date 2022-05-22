@@ -1,1 +1,0 @@
-Add extensions for files containing subtitles - .srt & .vtt - to the mimetypes.py module.

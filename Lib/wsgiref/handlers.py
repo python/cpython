@@ -228,8 +228,7 @@ class BaseHandler:
         if exc_info:
             try:
                 if self.headers_sent:
-                    # Re-raise original exception if headers sent
-                    raise exc_info[0](exc_info[1]).with_traceback(exc_info[2])
+                    raise
             finally:
                 exc_info = None        # avoid dangling circular ref
         elif self.headers is not None:

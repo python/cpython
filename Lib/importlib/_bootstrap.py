@@ -507,9 +507,9 @@ def _init_module_attrs(spec, module, *, override=False):
             if spec.submodule_search_locations is not None:
                 if _bootstrap_external is None:
                     raise NotImplementedError
-                _NamespaceLoader = _bootstrap_external._NamespaceLoader
+                NamespaceLoader = _bootstrap_external.NamespaceLoader
 
-                loader = _NamespaceLoader.__new__(_NamespaceLoader)
+                loader = NamespaceLoader.__new__(NamespaceLoader)
                 loader._path = spec.submodule_search_locations
                 spec.loader = loader
                 # While the docs say that module.__file__ is not set for

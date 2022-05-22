@@ -7,6 +7,7 @@
 PYTHON       = python3
 VENVDIR      = ./venv
 SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
+SPHINXLINT   = PATH=$(VENVDIR)/bin:$$PATH sphinx-lint
 BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
 PAPER        =
 SOURCES      =
@@ -17,7 +18,7 @@ SPHINXERRORHANDLING = -W
 PAPEROPT_a4     = -D latex_elements.papersize=a4paper
 PAPEROPT_letter = -D latex_elements.papersize=letterpaper
 
-ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees $(PAPEROPT_$(PAPER)) \
+ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees $(PAPEROPT_$(PAPER)) -j auto \
                 $(SPHINXOPTS) $(SPHINXERRORHANDLING) . build/$(BUILDER) $(SOURCES)
 
 .PHONY: help build html htmlhelp latex text texinfo changes linkcheck \
@@ -43,7 +44,6 @@ help:
 	@echo "  dist       to create a \"dist\" directory with archived docs for download"
 	@echo "  suspicious to check for suspicious markup in output text"
 	@echo "  check      to run a check for frequent markup errors"
-	@echo "  serve      to serve the documentation on the localhost (8000)"
 
 build:
 	-mkdir -p build
@@ -117,6 +117,10 @@ suspicious:
 	     "or in build/$(BUILDER)/suspicious.csv.  If all issues are false" \
 	     "positives, append that file to tools/susp-ignored.csv."; \
 	false; }
+	@echo "⚠ make suspicious is deprecated and will be removed soon."
+	@echo "⚠ Use:"
+	@echo "⚠     make check"
+	@echo "⚠ instead."
 
 coverage: BUILDER = coverage
 coverage: build
@@ -135,7 +139,7 @@ pydoc-topics: build
 	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py"
 
 htmlview: html
-	 $(PYTHON) -c "import webbrowser; webbrowser.open('build/html/index.html')"
+	$(PYTHON) -c "import os, webbrowser; webbrowser.open('file://' + os.path.realpath('build/html/index.html'))"
 
 clean: clean-venv
 	-rm -rf build/*
@@ -209,11 +213,13 @@ dist:
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
 
 check:
-	$(PYTHON) tools/rstlint.py -i tools -i $(VENVDIR) -i README.rst
-	$(PYTHON) tools/rstlint.py ../Misc/NEWS.d/next/
+	# Check the docs and NEWS files with sphinx-lint.
+	# Ignore the tools and venv dirs and check that the default role is not used.
+	$(SPHINXLINT) -i tools -i $(VENVDIR) --enable default-role
+	$(SPHINXLINT) --enable default-role ../Misc/NEWS.d/next/
 
 serve:
-	$(PYTHON) ../Tools/scripts/serve.py build/html
+	@echo "The serve target was removed, use htmlview instead (see bpo-36329)"
 
 # Targets for daily automated doc build
 # By default, Sphinx only rebuilds pages where the page content has changed.

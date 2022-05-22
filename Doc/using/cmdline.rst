@@ -257,6 +257,8 @@ Miscellaneous options
    Ignore all :envvar:`PYTHON*` environment variables, e.g.
    :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
 
+   See also the :option:`-P` and :option:`-I` (isolated) options.
+
 
 .. cmdoption:: -i
 
@@ -271,7 +273,9 @@ Miscellaneous options
 
 .. cmdoption:: -I
 
-   Run Python in isolated mode. This also implies -E and -s.
+   Run Python in isolated mode. This also implies :option:`-E`, :option:`-P`
+   and :option:`-s` options.
+
    In isolated mode :data:`sys.path` contains neither the script's directory nor
    the user's site-packages directory. All :envvar:`PYTHON*` environment
    variables are ignored, too. Further restrictions may be imposed to prevent
@@ -299,6 +303,23 @@ Miscellaneous options
 
    .. versionchanged:: 3.5
       Modify ``.pyc`` filenames according to :pep:`488`.
+
+
+.. cmdoption:: -P
+
+   Don't prepend a potentially unsafe path to :data:`sys.path`:
+
+   * ``python -m module`` command line: Don't prepend the current working
+     directory.
+   * ``python script.py`` command line: Don't prepend the script's directory.
+     If it's a symbolic link, resolve symbolic links.
+   * ``python -c code`` and ``python`` (REPL) command lines: Don't prepend an
+     empty string, which means the current working directory.
+
+   See also the :envvar:`PYTHONSAFEPATH` environment variable, and :option:`-E`
+   and :option:`-I` (isolated) options.
+
+   .. versionadded:: 3.11
 
 
 .. cmdoption:: -q
@@ -483,7 +504,8 @@ Miscellaneous options
    * ``-X frozen_modules`` determines whether or not frozen modules are
      ignored by the import machinery.  A value of "on" means they get
      imported and "off" means they are ignored.  The default is "on"
-     for non-debug builds (the normal case) and "off" for debug builds.
+     if this is an installed Python (the normal case).  If it's under
+     development (running from the source tree) then the default is "off".
      Note that the "importlib_bootstrap" and "importlib_bootstrap_external"
      frozen modules are always used, even if this flag is set to "off".
 
@@ -580,6 +602,14 @@ conflict.
    :envvar:`PYTHONPATH` as described above under
    :ref:`using-on-interface-options`. The search path can be manipulated from
    within a Python program as the variable :data:`sys.path`.
+
+
+.. envvar:: PYTHONSAFEPATH
+
+   If this is set to a non-empty string, don't prepend a potentially unsafe
+   path to :data:`sys.path`: see the :option:`-P` option for details.
+
+   .. versionadded:: 3.11
 
 
 .. envvar:: PYTHONPLATLIBDIR
@@ -968,15 +998,6 @@ conflict.
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
-
-.. envvar:: PYTHONTHREADDEBUG
-
-   If set, Python will print threading debug info into stdout.
-
-   Need a :ref:`debug build of Python <debug-build>`.
-
-   .. deprecated-removed:: 3.10 3.12
-
 
 .. envvar:: PYTHONDUMPREFS
 

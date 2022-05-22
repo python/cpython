@@ -3,6 +3,7 @@
 
 .. module:: cgi
    :synopsis: Helpers for running Python scripts via the Common Gateway Interface.
+   :deprecated:
 
 **Source code:** :source:`Lib/cgi.py`
 
@@ -14,12 +15,21 @@
    single: URL
    single: Common Gateway Interface
 
+.. deprecated-removed:: 3.11 3.13
+   The :mod:`cgi` module is deprecated
+   (see :pep:`PEP 594 <594#cgi>` for details and alternatives).
+
 --------------
 
 Support module for Common Gateway Interface (CGI) scripts.
 
 This module defines a number of utilities for use by CGI scripts written in
 Python.
+
+The global variable ``maxlen`` can be set to an integer indicating the maximum
+size of a POST request. POST requests larger than this size will result in a
+:exc:`ValueError` being raised during parsing. The default value of this
+variable is ``0``, meaning the request size is unlimited.
 
 
 Introduction
