@@ -567,12 +567,14 @@ PyAPI_FUNC(void) Py_DecRef(PyObject *);
 PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
+#if SIZEOF_VOID_P > 4
 static inline int
 _Py_saturated_addone(PY_UINT32_T a, PY_UINT32_T *result)
 {
     *result = a + 1;
     return *result < a;
 }
+#endif
 
 static inline void Py_INCREF(PyObject *op)
 {
