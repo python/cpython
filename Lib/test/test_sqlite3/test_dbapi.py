@@ -21,33 +21,19 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import contextlib
+import os
 import sqlite3 as sqlite
 import subprocess
 import sys
 import threading
 import unittest
+import urllib.parse
 
-from test.support import (
-    SHORT_TIMEOUT,
-    bigmemtest,
-    check_disallow_instantiation,
-    threading_helper,
-)
+from test.support import SHORT_TIMEOUT, bigmemtest, check_disallow_instantiation
+from test.support import threading_helper
 from _testcapi import INT_MAX, ULLONG_MAX
 from os import SEEK_SET, SEEK_CUR, SEEK_END
-from test.support.os_helper import TESTFN, unlink, temp_dir
-
-
-# Helper for tests using TESTFN
-@contextlib.contextmanager
-def managed_connect(*args, in_mem=False, **kwargs):
-    cx = sqlite.connect(*args, **kwargs)
-    try:
-        yield cx
-    finally:
-        cx.close()
-        if not in_mem:
-            unlink(TESTFN)
+from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE, unlink, temp_dir, FakePath
 
 
 # Helper for temporary memory databases
@@ -333,7 +319,7 @@ class ModuleTests(unittest.TestCase):
     @unittest.skipIf(sqlite.sqlite_version_info <= (3, 7, 16),
                      "Requires SQLite 3.7.16 or newer")
     def test_extended_error_code_on_exception(self):
-        with managed_connect(":memory:", in_mem=True) as con:
+        with memory_database() as con:
             with con:
                 con.execute("create table t(t integer check(t > 0))")
             errmsg = "constraint failed"
@@ -391,7 +377,7 @@ class ConnectionTests(unittest.TestCase):
     def test_failed_open(self):
         YOU_CANNOT_OPEN_THIS = "/foo/bar/bla/23534/mydb.db"
         with self.assertRaises(sqlite.OperationalError):
-            con = sqlite.connect(YOU_CANNOT_OPEN_THIS)
+            sqlite.connect(YOU_CANNOT_OPEN_THIS)
 
     def test_close(self):
         self.cx.close()
@@ -654,24 +640,84 @@ class OpenTests(unittest.TestCase):
     def test_open_with_path_like_object(self):
         """ Checks that we can successfully connect to a database using an object that
             is PathLike, i.e. has __fspath__(). """
-        class Path:
-            def __fspath__(self):
-                return TESTFN
-        path = Path()
-        with managed_connect(path) as cx:
+        path = FakePath(TESTFN)
+        self.addCleanup(unlink, path)
+        self.assertFalse(os.path.exists(path))
+        with contextlib.closing(sqlite.connect(path)) as cx:
+            self.assertTrue(os.path.exists(path))
+            cx.execute(self._sql)
+
+    @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
+    @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
+    @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
+    def test_open_with_undecodable_path(self):
+        path = TESTFN_UNDECODABLE
+        self.addCleanup(unlink, path)
+        self.assertFalse(os.path.exists(path))
+        with contextlib.closing(sqlite.connect(path)) as cx:
+            self.assertTrue(os.path.exists(path))
             cx.execute(self._sql)
 
     def test_open_uri(self):
-        with managed_connect(TESTFN) as cx:
+        path = TESTFN
+        self.addCleanup(unlink, path)
+        uri = "file:" + urllib.parse.quote(os.fsencode(path))
+        self.assertFalse(os.path.exists(path))
+        with contextlib.closing(sqlite.connect(uri, uri=True)) as cx:
+            self.assertTrue(os.path.exists(path))
             cx.execute(self._sql)
-        with managed_connect(f"file:{TESTFN}", uri=True) as cx:
+
+    def test_open_unquoted_uri(self):
+        path = TESTFN
+        self.addCleanup(unlink, path)
+        uri = "file:" + path
+        self.assertFalse(os.path.exists(path))
+        with contextlib.closing(sqlite.connect(uri, uri=True)) as cx:
+            self.assertTrue(os.path.exists(path))
             cx.execute(self._sql)
+
+    def test_open_uri_readonly(self):
+        path = TESTFN
+        self.addCleanup(unlink, path)
+        uri = "file:" + urllib.parse.quote(os.fsencode(path)) + "?mode=ro"
+        self.assertFalse(os.path.exists(path))
+        # Cannot create new DB
         with self.assertRaises(sqlite.OperationalError):
-            with managed_connect(f"file:{TESTFN}?mode=ro", uri=True) as cx:
+            sqlite.connect(uri, uri=True)
+        self.assertFalse(os.path.exists(path))
+        sqlite.connect(path).close()
+        self.assertTrue(os.path.exists(path))
+        # Cannot modify new DB
+        with contextlib.closing(sqlite.connect(uri, uri=True)) as cx:
+            with self.assertRaises(sqlite.OperationalError):
                 cx.execute(self._sql)
 
+    @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
+    @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
+    @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
+    def test_open_undecodable_uri(self):
+        path = TESTFN_UNDECODABLE
+        self.addCleanup(unlink, path)
+        uri = "file:" + urllib.parse.quote(path)
+        self.assertFalse(os.path.exists(path))
+        with contextlib.closing(sqlite.connect(uri, uri=True)) as cx:
+            self.assertTrue(os.path.exists(path))
+            cx.execute(self._sql)
+
+    def test_factory_database_arg(self):
+        def factory(database, *args, **kwargs):
+            nonlocal database_arg
+            database_arg = database
+            return sqlite.Connection(":memory:", *args, **kwargs)
+
+        for database in (TESTFN, os.fsencode(TESTFN),
+                         FakePath(TESTFN), FakePath(os.fsencode(TESTFN))):
+            database_arg = None
+            sqlite.connect(database, factory=factory).close()
+            self.assertEqual(database_arg, database)
+
     def test_database_keyword(self):
-        with sqlite.connect(database=":memory:") as cx:
+        with contextlib.closing(sqlite.connect(database=":memory:")) as cx:
             self.assertEqual(type(cx), sqlite.Connection)
 
 

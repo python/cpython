@@ -42,7 +42,6 @@ extern "C" {
 #define RETURN_VALUE                            83
 #define IMPORT_STAR                             84
 #define SETUP_ANNOTATIONS                       85
-#define YIELD_VALUE                             86
 #define ASYNC_GEN_WRAP                          87
 #define PREP_RERAISE_STAR                       88
 #define POP_EXCEPT                              89
@@ -102,6 +101,7 @@ extern "C" {
 #define MAP_ADD                                147
 #define LOAD_CLASSDEREF                        148
 #define COPY_FREE_VARS                         149
+#define YIELD_VALUE                            150
 #define RESUME                                 151
 #define MATCH_CLASS                            152
 #define FORMAT_VALUE                           155
@@ -170,12 +170,12 @@ extern "C" {
 #define LOAD_METHOD_ADAPTIVE                    79
 #define LOAD_METHOD_CLASS                       80
 #define LOAD_METHOD_MODULE                      81
-#define LOAD_METHOD_NO_DICT                    113
-#define LOAD_METHOD_WITH_DICT                  121
-#define LOAD_METHOD_WITH_VALUES                127
-#define RESUME_QUICK                           141
-#define STORE_ATTR_ADAPTIVE                    143
-#define STORE_ATTR_INSTANCE_VALUE              150
+#define LOAD_METHOD_NO_DICT                     86
+#define LOAD_METHOD_WITH_DICT                  113
+#define LOAD_METHOD_WITH_VALUES                121
+#define RESUME_QUICK                           127
+#define STORE_ATTR_ADAPTIVE                    141
+#define STORE_ATTR_INSTANCE_VALUE              143
 #define STORE_ATTR_SLOT                        153
 #define STORE_ATTR_WITH_HINT                   154
 #define STORE_FAST__LOAD_FAST                  158
