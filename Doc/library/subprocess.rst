@@ -839,7 +839,7 @@ Instances of the :class:`Popen` class have the following methods:
    On Windows :meth:`kill` is an alias for :meth:`terminate`.
 
 
-The following attributes are also available:
+The following read-only attributes are also available:
 
 .. attribute:: Popen.args
 
