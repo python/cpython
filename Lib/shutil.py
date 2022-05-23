@@ -103,6 +103,25 @@ def _fastcopy_fcopyfile(fsrc, fdst, flags):
         else:
             raise err from None
 
+def _determine_linux_fastcopy_blocksize(infd):
+    """Determine blocksize for fastcopying on Linux.
+
+    Hopefully the whole file will be copied in a single call.
+    The copying itself should be performed in a loop 'till EOF is
+    reached (0 return) so a blocksize smaller or bigger than the actual
+    file size should not make any difference, also in case the file
+    content changes while being copied.
+    """
+    try:
+        blocksize = max(os.fstat(infd).st_size, 2 ** 23)  # min 8MiB
+    except OSError:
+        blocksize = 2 ** 27  # 128MiB
+    # On 32-bit architectures truncate to 1GiB to avoid OverflowError,
+    # see bpo-38319.
+    if sys.maxsize < 2 ** 32:
+        blocksize = min(blocksize, 2 ** 30)
+    return blocksize
+
 def _fastcopy_sendfile(fsrc, fdst):
     """Copy data from one regular mmap-like fd to another by using
     high-performance sendfile(2) syscall.
@@ -124,20 +143,7 @@ def _fastcopy_sendfile(fsrc, fdst):
     except Exception as err:
         raise _GiveupOnFastCopy(err)  # not a regular file
 
-    # Hopefully the whole file will be copied in a single call.
-    # sendfile() is called in a loop 'till EOF is reached (0 return)
-    # so a bufsize smaller or bigger than the actual file size
-    # should not make any difference, also in case the file content
-    # changes while being copied.
-    try:
-        blocksize = max(os.fstat(infd).st_size, 2 ** 23)  # min 8MiB
-    except OSError:
-        blocksize = 2 ** 27  # 128MiB
-    # On 32-bit architectures truncate to 1GiB to avoid OverflowError,
-    # see bpo-38319.
-    if sys.maxsize < 2 ** 32:
-        blocksize = min(blocksize, 2 ** 30)
-
+    blocksize = _determine_linux_fastcopy_blocksize(infd)
     offset = 0
     while True:
         try:
