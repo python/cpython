@@ -48,7 +48,7 @@ Directory and files operations
    be copied.
 
 
-.. function:: copyfile(src, dst, *, follow_symlinks=True)
+.. function:: copyfile(src, dst, *, follow_symlinks=True, allow_reflink=True)
 
    Copy the contents (no metadata) of the file named *src* to a file named
    *dst* and return *dst* in the most efficient way possible.
@@ -67,6 +67,10 @@ Directory and files operations
    a new symbolic link will be created instead of copying the
    file *src* points to.
 
+   *allow_reflink* enables copy-on-write on supported Linux filesystems.
+   The :c:func:`copy_file_range` system call is used internally when
+   *allow_reflink* is true.
+
    .. audit-event:: shutil.copyfile src,dst shutil.copyfile
 
    .. versionchanged:: 3.3
@@ -82,6 +86,10 @@ Directory and files operations
       Platform-specific fast-copy syscalls may be used internally in order to
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+
+   .. versionchanged:: 3.12
+      Added *allow_reflink* argument. Copy-on-write is enabled by default on
+      supported Linux filesystems.
 
 .. exception:: SameFileError
 
@@ -155,7 +163,7 @@ Directory and files operations
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument and support for Linux extended attributes.
 
-.. function:: copy(src, dst, *, follow_symlinks=True)
+.. function:: copy(src, dst, *, follow_symlinks=True, allow_reflink=True)
 
    Copies the file *src* to the file or directory *dst*.  *src* and *dst*
    should be :term:`path-like objects <path-like object>` or strings.  If
@@ -167,6 +175,10 @@ Directory and files operations
    *dst* will be created as a symbolic link.  If *follow_symlinks*
    is true and *src* is a symbolic link, *dst* will be a copy of
    the file *src* refers to.
+
+   *allow_reflink* enables copy-on-write on supported Linux filesystems.
+   The :c:func:`copy_file_range` system call is used internally when
+   *allow_reflink* is true.
 
    :func:`~shutil.copy` copies the file data and the file's permission
    mode (see :func:`os.chmod`).  Other metadata, like the
@@ -187,7 +199,11 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
-.. function:: copy2(src, dst, *, follow_symlinks=True)
+   .. versionchanged:: 3.12
+      Added *allow_reflink* argument. Copy-on-write is enabled by default on
+      supported Linux filesystems.
+
+.. function:: copy2(src, dst, *, follow_symlinks=True, allow_reflink=True)
 
    Identical to :func:`~shutil.copy` except that :func:`copy2`
    also attempts to preserve file metadata.
@@ -200,6 +216,10 @@ Directory and files operations
    unavailable, :func:`copy2` will preserve all the metadata
    it can; :func:`copy2` never raises an exception because it
    cannot preserve file metadata.
+
+   *allow_reflink* enables copy-on-write on supported Linux filesystems.
+   The :c:func:`copy_file_range` system call is used internally when
+   *allow_reflink* is true.
 
    :func:`copy2` uses :func:`copystat` to copy the file metadata.
    Please see :func:`copystat` for more information
@@ -218,6 +238,10 @@ Directory and files operations
       Platform-specific fast-copy syscalls may be used internally in order to
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+
+   .. versionchanged:: 3.12
+      Added *allow_reflink* argument. Copy-on-write is enabled by default on
+      supported Linux filesystems.
 
 .. function:: ignore_patterns(*patterns)
 

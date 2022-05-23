@@ -1,0 +1,5 @@
+Use the :c:func:`copy_file_range` Linux system call in :func:`shutil.copy`,
+:func:`shutil.copy2`, and :func:`shutil.copyfile` functions by default. The
+system call gives filesystems an opportunity to implement the use of
+copy-on-write or server-side copy. The functions have a new *allow_reflink*
+argument to control the functionality. Patch by Illia Volochii.

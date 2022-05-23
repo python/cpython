@@ -43,6 +43,7 @@ COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
 # This should never be removed, see rationale in:
 # https://bugs.python.org/issue43743#msg393429
 _USE_CP_SENDFILE = hasattr(os, "sendfile") and sys.platform.startswith("linux")
+_USE_CP_COPY_FILE_RANGE = hasattr(os, "copy_file_range")
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 
 # CMD defaults in Windows 10
@@ -121,6 +122,47 @@ def _determine_linux_fastcopy_blocksize(infd):
     if sys.maxsize < 2 ** 32:
         blocksize = min(blocksize, 2 ** 30)
     return blocksize
+
+def _fastcopy_copy_file_range(fsrc, fdst):
+    """Copy data from one regular mmap-like fd to another by using
+    a high-performance copy_file_range(2) syscall that gives filesystems
+    an opportunity to implement the use of reflinks or server-side copy.
+
+    This should work on Linux >= 4.5 only.
+    """
+    try:
+        infd = fsrc.fileno()
+        outfd = fdst.fileno()
+    except Exception as err:
+        raise _GiveupOnFastCopy(err)  # not a regular file
+
+    blocksize = _determine_linux_fastcopy_blocksize(infd)
+    offset = 0
+    while True:
+        try:
+            n_copied = os.copy_file_range(infd, outfd, blocksize, offset_dst=offset)
+        except OSError as err:
+            # ...in oder to have a more informative exception.
+            err.filename = fsrc.name
+            err.filename2 = fdst.name
+
+            if err.errno == errno.ENOSPC:  # filesystem is full
+                raise err from None
+
+            # Give up on first call and if no data was copied.
+            if offset == 0 and os.lseek(outfd, 0, os.SEEK_CUR) == 0:
+                raise _GiveupOnFastCopy(err)
+
+            raise err
+        else:
+            if n_copied == 0:
+                # If no bytes have been copied yet, copy_file_range
+                # might silently fail.
+                # https://lore.kernel.org/linux-fsdevel/20210126233840.GG4626@dread.disaster.area/T/#m05753578c7f7882f6e9ffe01f981bc223edef2b0
+                if offset == 0:
+                    raise _GiveupOnFastCopy()
+                break
+            offset += n_copied
 
 def _fastcopy_sendfile(fsrc, fdst):
     """Copy data from one regular mmap-like fd to another by using
@@ -230,7 +272,7 @@ def _stat(fn):
 def _islink(fn):
     return fn.is_symlink() if isinstance(fn, os.DirEntry) else os.path.islink(fn)
 
-def copyfile(src, dst, *, follow_symlinks=True):
+def copyfile(src, dst, *, follow_symlinks=True, allow_reflink=True):
     """Copy data from src to dst in the most efficient way possible.
 
     If follow_symlinks is not set and src is a symbolic link, a new
@@ -271,12 +313,20 @@ def copyfile(src, dst, *, follow_symlinks=True):
                         except _GiveupOnFastCopy:
                             pass
                     # Linux
-                    elif _USE_CP_SENDFILE:
-                        try:
-                            _fastcopy_sendfile(fsrc, fdst)
-                            return dst
-                        except _GiveupOnFastCopy:
-                            pass
+                    elif _USE_CP_SENDFILE or _USE_CP_COPY_FILE_RANGE:
+                        # reflink may be implicit in copy_file_range.
+                        if _USE_CP_COPY_FILE_RANGE and allow_reflink:
+                            try:
+                                _fastcopy_copy_file_range(fsrc, fdst)
+                                return dst
+                            except _GiveupOnFastCopy:
+                                pass
+                        if _USE_CP_SENDFILE:
+                            try:
+                                _fastcopy_sendfile(fsrc, fdst)
+                                return dst
+                            except _GiveupOnFastCopy:
+                                pass
                     # Windows, see:
                     # https://github.com/python/cpython/pull/7160#discussion_r195405230
                     elif _WINDOWS and file_size > 0:
@@ -409,7 +459,7 @@ def copystat(src, dst, *, follow_symlinks=True):
             else:
                 raise
 
-def copy(src, dst, *, follow_symlinks=True):
+def copy(src, dst, *, follow_symlinks=True, allow_reflink=True):
     """Copy data and mode bits ("cp src dst"). Return the file's destination.
 
     The destination may be a directory.
@@ -423,11 +473,11 @@ def copy(src, dst, *, follow_symlinks=True):
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
-    copyfile(src, dst, follow_symlinks=follow_symlinks)
+    copyfile(src, dst, follow_symlinks=follow_symlinks, allow_reflink=allow_reflink)
     copymode(src, dst, follow_symlinks=follow_symlinks)
     return dst
 
-def copy2(src, dst, *, follow_symlinks=True):
+def copy2(src, dst, *, follow_symlinks=True, allow_reflink=True):
     """Copy data and metadata. Return the file's destination.
 
     Metadata is copied with copystat(). Please see the copystat function
@@ -440,7 +490,7 @@ def copy2(src, dst, *, follow_symlinks=True):
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
-    copyfile(src, dst, follow_symlinks=follow_symlinks)
+    copyfile(src, dst, follow_symlinks=follow_symlinks, allow_reflink=allow_reflink)
     copystat(src, dst, follow_symlinks=follow_symlinks)
     return dst
 
