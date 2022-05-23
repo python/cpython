@@ -627,7 +627,7 @@ class SerializeTests(unittest.TestCase):
                 cx.execute("create table fail(f)")
 
     @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
-    @bigmemtest(size=2**63, memuse=3, dry_run=False)
+    @bigmemtest(size=2**63, memuse=1, dry_run=False)
     def test_deserialize_too_much_data_64bit(self):
         with memory_database() as cx:
             with self.assertRaisesRegex(OverflowError, "'data' is too large"):
