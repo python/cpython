@@ -835,8 +835,10 @@ PyConfig
 
       * Set :c:member:`~PyConfig.safe_path` to ``1``:
         don't prepend a potentially unsafe path to :data:`sys.path` at Python
-        startup.
-      * Set :c:member:`~PyConfig.use_environment` to ``0``.
+        startup, such as the current directory, the script's directory or an
+        empty string.
+      * Set :c:member:`~PyConfig.use_environment` to ``0``: ignore ``PYTHON``
+        environment variables.
       * Set :c:member:`~PyConfig.user_site_directory` to ``0``: don't add the user
         site directory to :data:`sys.path`.
       * Python REPL doesn't import :mod:`readline` nor enable default readline
@@ -846,7 +848,8 @@ PyConfig
 
       Default: ``0`` in Python mode, ``1`` in isolated mode.
 
-      See also :c:member:`PyPreConfig.isolated`.
+      See also the :ref:`Isolated Configuration <init-isolated-conf>` and
+      :c:member:`PyPreConfig.isolated`.
 
    .. c:member:: int legacy_windows_stdio
 
@@ -1177,13 +1180,13 @@ PyConfig
       imported, showing the place (filename or built-in module) from which
       it is loaded.
 
-      If greater or equal to ``2``, print a message for each file that is checked
-      for when searching for a module. Also provides information on module
-      cleanup at exit.
+      If greater than or equal to ``2``, print a message for each file that is
+      checked for when searching for a module. Also provides information on
+      module cleanup at exit.
 
       Incremented by the :option:`-v` command line option.
 
-      Set to the :envvar:`PYTHONVERBOSE` environment variable value.
+      Set by the :envvar:`PYTHONVERBOSE` environment variable value.
 
       Default: ``0``.
 
