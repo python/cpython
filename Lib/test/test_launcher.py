@@ -245,7 +245,7 @@ class RunPyMixin:
             file.unlink()
 
     @contextlib.contextmanager
-    def test_venv(self):
+    def fake_venv(self):
         venv = Path.cwd() / "Scripts"
         venv.mkdir(exist_ok=True, parents=True)
         venv_exe = (venv / Path(sys.executable).name)
@@ -462,7 +462,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("PythonTestSuite/3.100", default)
 
     def test_virtualenv_in_list(self):
-        with self.test_venv() as (venv_exe, env):
+        with self.fake_venv() as (venv_exe, env):
             data = self.run_py(["-0p"], env=env)
             for line in data["stdout"].splitlines():
                 m = re.match(r"\s*\*\s+(.+)$", line)
@@ -482,9 +482,9 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                 self.fail("did not find active venv entry")
 
     def test_virtualenv_with_env(self):
-        with self.test_venv() as (venv_exe, env):
-            data1 = self.run_py([], env={**env, "PY_PYTHON": "-3"})
-            data2 = self.run_py(["-3"], env={**env, "PY_PYTHON": "-3"})
+        with self.fake_venv() as (venv_exe, env):
+            data1 = self.run_py([], env={**env, "PY_PYTHON": "PythonTestSuite/3"})
+            data2 = self.run_py(["-3"], env={**env, "PY_PYTHON": "PythonTestSuite/3"})
         # Compare stdout, because stderr goes via ascii
         self.assertEqual(data1["stdout"].strip(), str(venv_exe))
         self.assertEqual(data1["SearchInfo.lowPriorityTag"], "True")
