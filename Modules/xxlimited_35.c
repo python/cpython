@@ -243,8 +243,7 @@ create_and_add_type(PyObject *module, const char *name, PyType_Spec *spec)
     if (type == NULL) {
         return NULL;
     }
-    int rc = PyModule_AddObject(module, name, type);
-    if (rc < 0) {
+    if (PyModule_AddObject(module, name, type) < 0) {
         Py_DECREF(type);
         return NULL;
     }
@@ -269,8 +268,7 @@ xx_modexec(PyObject *m)
         }
     }
     Py_INCREF(ErrorObject);
-    int rc = PyModule_AddObject(m, "error", ErrorObject);
-    if (rc < 0) {
+    if (PyModule_AddObject(m, "error", ErrorObject) < 0) {
         Py_DECREF(ErrorObject);
         return -1;
     }
