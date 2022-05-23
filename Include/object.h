@@ -593,7 +593,7 @@ static inline void Py_INCREF(PyObject *op)
     // directly PyObject.ob_refcnt.
 #if defined(__x86_64__) && SIZEOF_VOID_P > 4
     // Branchless saturated add
-    uint32_t *refcnt = (uint32_t*)&op->ob_refcnt;
+    PY_UINT32_T *refcnt = (PY_UINT32_T*)&op->ob_refcnt;
     __asm__ (
          "add    %[one],     %[refcnt]  \n\t"
          "cmovc  %[carry],   %[refcnt]"
