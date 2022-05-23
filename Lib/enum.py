@@ -1640,6 +1640,7 @@ def global_str(self):
     use enum_name instead of class.enum_name
     """
     if self._name_ is None:
+        cls_name = self.__class__.__name__
         return "%s(%r)" % (cls_name, self._value_)
     else:
         return self._name_
