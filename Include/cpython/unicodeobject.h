@@ -100,7 +100,7 @@ typedef struct {
     struct {
         /* If interned is set, the two references from the
            dictionary to this object are *not* counted in ob_refcnt. */
-        unsigned int interned:1;
+        unsigned int interned:2;
         /* Character size:
 
            - PyUnicode_1BYTE_KIND (1):
@@ -183,6 +183,8 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
 /* Interning state. */
 #define SSTATE_NOT_INTERNED 0
 #define SSTATE_INTERNED_MORTAL 1
+#define SSTATE_INTERNED_IMMORTAL 2
+#define SSTATE_INTERNED_IMMORTAL_STATIC 3
 
 /* Use only if you know it's a string */
 static inline unsigned int PyUnicode_CHECK_INTERNED(PyObject *op) {
