@@ -55,6 +55,15 @@ def _is_private(cls_name, name):
     else:
         return False
 
+def _is_single_bit(num):
+    """
+    True if only one bit set in num (should be an int)
+    """
+    if num == 0:
+        return False
+    num &= num - 1
+    return num == 0
+
 def _make_class_unpicklable(cls):
     """
     Make the given class un-picklable.
