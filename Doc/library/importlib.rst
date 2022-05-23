@@ -414,8 +414,8 @@ ABC hierarchy::
 
        .. versionadded:: 3.4
 
-       .. versionchanged:: 3.5
-          Starting in Python 3.6, this method will not be optional when
+       .. versionchanged:: 3.6
+          This method is no longer optional when
           :meth:`exec_module` is defined.
 
     .. method:: exec_module(module)
@@ -1250,6 +1250,9 @@ Checking if a module can be imported
 
 If you need to find out if a module can be imported without actually doing the
 import, then you should use :func:`importlib.util.find_spec`.
+
+Note that if ``name`` is a submodule (contains a dot),
+:func:`importlib.util.find_spec` will import the parent module.
 ::
 
   import importlib.util
@@ -1273,8 +1276,7 @@ import, then you should use :func:`importlib.util.find_spec`.
 Importing a source file directly
 ''''''''''''''''''''''''''''''''
 
-To import a Python source file directly, use the following recipe
-(Python 3.5 and newer only)::
+To import a Python source file directly, use the following recipe::
 
   import importlib.util
   import sys
@@ -1355,9 +1357,7 @@ Import itself is implemented in Python code, making it possible to
 expose most of the import machinery through importlib. The following
 helps illustrate the various APIs that importlib exposes by providing an
 approximate implementation of
-:func:`importlib.import_module` (Python 3.4 and newer for the importlib usage,
-Python 3.6 and newer for other parts of the code).
-::
+:func:`importlib.import_module`::
 
   import importlib.util
   import sys

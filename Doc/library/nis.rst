@@ -10,7 +10,7 @@
 .. moduleauthor:: Fred Gansevles <Fred.Gansevles@cs.utwente.nl>
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
-.. deprecated:: 3.11
+.. deprecated-removed:: 3.11 3.13
    The :mod:`nis` module is deprecated
    (see :pep:`PEP 594 <594#nis>` for details).
 

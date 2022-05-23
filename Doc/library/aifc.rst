@@ -13,7 +13,7 @@
    single: AIFF-C
 
 
-.. deprecated:: 3.11
+.. deprecated-removed:: 3.11 3.13
    The :mod:`aifc` module is deprecated
    (see :pep:`PEP 594 <594#aifc>` for details).
 

@@ -405,6 +405,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a7 3494 (New location info table)
 
 #     Python 3.12a1 3500 (Remove PRECALL opcode)
+#     Python 3.12a1 3501 (YIELD_VALUE oparg == stack_depth)
 
 #     Python 3.13 will start with 3550
 
@@ -418,7 +419,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3500).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3501).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 

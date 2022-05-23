@@ -193,7 +193,7 @@ static inline unsigned int PyUnicode_CHECK_INTERNED(PyObject *op) {
 #endif
 
 /* For backward compatibility */
-static inline unsigned int PyUnicode_IS_READY(PyObject *op) {
+static inline unsigned int PyUnicode_IS_READY(PyObject* Py_UNUSED(op)) {
     return 1;
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
@@ -413,7 +413,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_New(
     );
 
 /* For backward compatibility */
-static inline int PyUnicode_READY(PyObject *op)
+static inline int PyUnicode_READY(PyObject* Py_UNUSED(op))
 {
     return 0;
 }
