@@ -450,51 +450,6 @@ static PyCodeObject *assemble(struct compiler *, int addNone);
 
 #define CAPSULE_NAME "compile.c compiler unit"
 
-/* For debugging purposes only */
-#if 0
-static void
-dump_instr(struct instr *i)
-{
-    const char *jrel = (is_relative_jump(i)) ? "jrel " : "";
-    const char *jabs = (is_jump(i) && !is_relative_jump(i))? "jabs " : "";
-
-    char arg[128];
-
-    *arg = '\0';
-    if (HAS_ARG(i->i_opcode)) {
-        sprintf(arg, "arg: %d ", i->i_oparg);
-    }
-    char *name;
-    char unknown[8];
-    if (0 <= i->i_opcode && i->i_opcode <= 255) {
-        name = _PyOpcode_OpName[i->i_opcode];
-    }
-    else {
-        sprintf(unknown, "<%d>", i->i_opcode);
-        name = unknown;
-    }
-    fprintf(stderr, "line: %d, opcode: %s %s%s%s\n",
-                    i->i_lineno, name, arg, jabs, jrel);
-}
-
-static void
-dump_basicblock(const basicblock *b)
-{
-    return;
-    const char *b_return = b->b_return ? "return " : "";
-    fprintf(stderr, "basicblock %d\n", ((unsigned int)(uintptr_t)(void *)b) % 997u);
-    fprintf(stderr, "used: %d, depth: %d, offset: %d %s\n",
-        b->b_iused, b->b_startdepth, b->b_offset, b_return);
-    if (b->b_instr) {
-        int i;
-        for (i = 0; i < b->b_iused; i++) {
-            fprintf(stderr, "  [%02d] ", i);
-            dump_instr(b->b_instr + i);
-        }
-    }
-}
-#endif
-
 PyObject *
 _Py_Mangle(PyObject *privateobj, PyObject *ident)
 {
@@ -8164,6 +8119,42 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     return co;
 }
 
+
+/* For debugging purposes only */
+#if 0
+static void
+dump_instr(struct instr *i)
+{
+    const char *jrel = (is_relative_jump(i)) ? "jrel " : "";
+    const char *jabs = (is_jump(i) && !is_relative_jump(i))? "jabs " : "";
+
+    char arg[128];
+
+    *arg = '\0';
+    if (HAS_ARG(i->i_opcode)) {
+        sprintf(arg, "arg: %d ", i->i_oparg);
+    }
+    fprintf(stderr, "line: %d, opcode: %d %s%s%s\n",
+                    i->i_lineno, i->i_opcode, arg, jabs, jrel);
+}
+
+static void
+dump_basicblock(const basicblock *b)
+{
+    const char *b_return = b->b_return ? "return " : "";
+    fprintf(stderr, "used: %d, depth: %d, offset: %d %s\n",
+        b->b_iused, b->b_startdepth, b->b_offset, b_return);
+    if (b->b_instr) {
+        int i;
+        for (i = 0; i < b->b_iused; i++) {
+            fprintf(stderr, "  [%02d] ", i);
+            dump_instr(b->b_instr + i);
+        }
+    }
+}
+#endif
+
+
 static int
 normalize_basic_block(basicblock *bb);
 
@@ -8407,10 +8398,6 @@ assemble(struct compiler *c, int addNone)
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
 
-    // fprintf(stderr, "assembling ");
-    // PyObject_Print(c->u->u_qualname, stderr, Py_PRINT_RAW);
-    // fprintf(stderr, "\n");
-
     /* Make sure every block that falls off the end returns None. */
     if (!c->u->u_curblock->b_return) {
         UNSET_LOC(c);
@@ -8521,7 +8508,6 @@ assemble(struct compiler *c, int addNone)
     if (mark_unknown_variables(&a, c) < 0) {
         goto error;
     }
-    // fprintf(stderr, "Success???\n");
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
