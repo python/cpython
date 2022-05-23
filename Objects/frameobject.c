@@ -455,7 +455,7 @@ _PyFrame_GetState(PyFrameObject *frame)
     Py_UNREACHABLE();
 }
 
-void
+static void
 add_load_fast_null_checks(PyCodeObject *co)
 {
     _Py_CODEUNIT *instructions = _PyCode_CODE(co);

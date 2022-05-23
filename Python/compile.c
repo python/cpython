@@ -7763,7 +7763,7 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
         }                                           \
     } while (0)
 
-void
+static void
 scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
                      basicblock ***stack_top)
 {
@@ -7812,7 +7812,7 @@ scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
 }
 #undef MAYBE_PUSH
 
-int
+static int
 mark_unknown_variables(struct assembler *a, struct compiler *c)
 {
 
