@@ -7,8 +7,8 @@
 
 **Source code:** :source:`Lib/imp.py`
 
-.. deprecated:: 3.4
-   The :mod:`imp` package is pending deprecation in favor of :mod:`importlib`.
+.. deprecated-removed:: 3.4 3.12
+   The :mod:`imp` module is deprecated in favor of :mod:`importlib`.
 
 .. index:: statement: import
 

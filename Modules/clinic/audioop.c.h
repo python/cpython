@@ -9,7 +9,7 @@ PyDoc_STRVAR(audioop_getsample__doc__,
 "Return the value of sample index from the fragment.");
 
 #define AUDIOOP_GETSAMPLE_METHODDEF    \
-    {"getsample", (PyCFunction)(void(*)(void))audioop_getsample, METH_FASTCALL, audioop_getsample__doc__},
+    {"getsample", _PyCFunction_CAST(audioop_getsample), METH_FASTCALL, audioop_getsample__doc__},
 
 static PyObject *
 audioop_getsample_impl(PyObject *module, Py_buffer *fragment, int width,
@@ -33,23 +33,13 @@ audioop_getsample(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("getsample", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[1]);
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[2]);
+        PyObject *iobj = _PyNumber_Index(args[2]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -77,7 +67,7 @@ PyDoc_STRVAR(audioop_max__doc__,
 "Return the maximum of the absolute value of all samples in a fragment.");
 
 #define AUDIOOP_MAX_METHODDEF    \
-    {"max", (PyCFunction)(void(*)(void))audioop_max, METH_FASTCALL, audioop_max__doc__},
+    {"max", _PyCFunction_CAST(audioop_max), METH_FASTCALL, audioop_max__doc__},
 
 static PyObject *
 audioop_max_impl(PyObject *module, Py_buffer *fragment, int width);
@@ -97,11 +87,6 @@ audioop_max(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("max", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -126,7 +111,7 @@ PyDoc_STRVAR(audioop_minmax__doc__,
 "Return the minimum and maximum values of all samples in the sound fragment.");
 
 #define AUDIOOP_MINMAX_METHODDEF    \
-    {"minmax", (PyCFunction)(void(*)(void))audioop_minmax, METH_FASTCALL, audioop_minmax__doc__},
+    {"minmax", _PyCFunction_CAST(audioop_minmax), METH_FASTCALL, audioop_minmax__doc__},
 
 static PyObject *
 audioop_minmax_impl(PyObject *module, Py_buffer *fragment, int width);
@@ -146,11 +131,6 @@ audioop_minmax(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("minmax", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -175,7 +155,7 @@ PyDoc_STRVAR(audioop_avg__doc__,
 "Return the average over all samples in the fragment.");
 
 #define AUDIOOP_AVG_METHODDEF    \
-    {"avg", (PyCFunction)(void(*)(void))audioop_avg, METH_FASTCALL, audioop_avg__doc__},
+    {"avg", _PyCFunction_CAST(audioop_avg), METH_FASTCALL, audioop_avg__doc__},
 
 static PyObject *
 audioop_avg_impl(PyObject *module, Py_buffer *fragment, int width);
@@ -195,11 +175,6 @@ audioop_avg(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("avg", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -224,7 +199,7 @@ PyDoc_STRVAR(audioop_rms__doc__,
 "Return the root-mean-square of the fragment, i.e. sqrt(sum(S_i^2)/n).");
 
 #define AUDIOOP_RMS_METHODDEF    \
-    {"rms", (PyCFunction)(void(*)(void))audioop_rms, METH_FASTCALL, audioop_rms__doc__},
+    {"rms", _PyCFunction_CAST(audioop_rms), METH_FASTCALL, audioop_rms__doc__},
 
 static PyObject *
 audioop_rms_impl(PyObject *module, Py_buffer *fragment, int width);
@@ -244,11 +219,6 @@ audioop_rms(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("rms", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -273,7 +243,7 @@ PyDoc_STRVAR(audioop_findfit__doc__,
 "Try to match reference as well as possible to a portion of fragment.");
 
 #define AUDIOOP_FINDFIT_METHODDEF    \
-    {"findfit", (PyCFunction)(void(*)(void))audioop_findfit, METH_FASTCALL, audioop_findfit__doc__},
+    {"findfit", _PyCFunction_CAST(audioop_findfit), METH_FASTCALL, audioop_findfit__doc__},
 
 static PyObject *
 audioop_findfit_impl(PyObject *module, Py_buffer *fragment,
@@ -325,7 +295,7 @@ PyDoc_STRVAR(audioop_findfactor__doc__,
 "Return a factor F such that rms(add(fragment, mul(reference, -F))) is minimal.");
 
 #define AUDIOOP_FINDFACTOR_METHODDEF    \
-    {"findfactor", (PyCFunction)(void(*)(void))audioop_findfactor, METH_FASTCALL, audioop_findfactor__doc__},
+    {"findfactor", _PyCFunction_CAST(audioop_findfactor), METH_FASTCALL, audioop_findfactor__doc__},
 
 static PyObject *
 audioop_findfactor_impl(PyObject *module, Py_buffer *fragment,
@@ -377,7 +347,7 @@ PyDoc_STRVAR(audioop_findmax__doc__,
 "Search fragment for a slice of specified number of samples with maximum energy.");
 
 #define AUDIOOP_FINDMAX_METHODDEF    \
-    {"findmax", (PyCFunction)(void(*)(void))audioop_findmax, METH_FASTCALL, audioop_findmax__doc__},
+    {"findmax", _PyCFunction_CAST(audioop_findmax), METH_FASTCALL, audioop_findmax__doc__},
 
 static PyObject *
 audioop_findmax_impl(PyObject *module, Py_buffer *fragment,
@@ -400,14 +370,9 @@ audioop_findmax(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("findmax", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[1]);
+        PyObject *iobj = _PyNumber_Index(args[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -435,7 +400,7 @@ PyDoc_STRVAR(audioop_avgpp__doc__,
 "Return the average peak-peak value over all samples in the fragment.");
 
 #define AUDIOOP_AVGPP_METHODDEF    \
-    {"avgpp", (PyCFunction)(void(*)(void))audioop_avgpp, METH_FASTCALL, audioop_avgpp__doc__},
+    {"avgpp", _PyCFunction_CAST(audioop_avgpp), METH_FASTCALL, audioop_avgpp__doc__},
 
 static PyObject *
 audioop_avgpp_impl(PyObject *module, Py_buffer *fragment, int width);
@@ -455,11 +420,6 @@ audioop_avgpp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("avgpp", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -484,7 +444,7 @@ PyDoc_STRVAR(audioop_maxpp__doc__,
 "Return the maximum peak-peak value in the sound fragment.");
 
 #define AUDIOOP_MAXPP_METHODDEF    \
-    {"maxpp", (PyCFunction)(void(*)(void))audioop_maxpp, METH_FASTCALL, audioop_maxpp__doc__},
+    {"maxpp", _PyCFunction_CAST(audioop_maxpp), METH_FASTCALL, audioop_maxpp__doc__},
 
 static PyObject *
 audioop_maxpp_impl(PyObject *module, Py_buffer *fragment, int width);
@@ -504,11 +464,6 @@ audioop_maxpp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("maxpp", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -533,7 +488,7 @@ PyDoc_STRVAR(audioop_cross__doc__,
 "Return the number of zero crossings in the fragment passed as an argument.");
 
 #define AUDIOOP_CROSS_METHODDEF    \
-    {"cross", (PyCFunction)(void(*)(void))audioop_cross, METH_FASTCALL, audioop_cross__doc__},
+    {"cross", _PyCFunction_CAST(audioop_cross), METH_FASTCALL, audioop_cross__doc__},
 
 static PyObject *
 audioop_cross_impl(PyObject *module, Py_buffer *fragment, int width);
@@ -553,11 +508,6 @@ audioop_cross(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("cross", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -582,7 +532,7 @@ PyDoc_STRVAR(audioop_mul__doc__,
 "Return a fragment that has all samples in the original fragment multiplied by the floating-point value factor.");
 
 #define AUDIOOP_MUL_METHODDEF    \
-    {"mul", (PyCFunction)(void(*)(void))audioop_mul, METH_FASTCALL, audioop_mul__doc__},
+    {"mul", _PyCFunction_CAST(audioop_mul), METH_FASTCALL, audioop_mul__doc__},
 
 static PyObject *
 audioop_mul_impl(PyObject *module, Py_buffer *fragment, int width,
@@ -604,11 +554,6 @@ audioop_mul(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("mul", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -643,7 +588,7 @@ PyDoc_STRVAR(audioop_tomono__doc__,
 "Convert a stereo fragment to a mono fragment.");
 
 #define AUDIOOP_TOMONO_METHODDEF    \
-    {"tomono", (PyCFunction)(void(*)(void))audioop_tomono, METH_FASTCALL, audioop_tomono__doc__},
+    {"tomono", _PyCFunction_CAST(audioop_tomono), METH_FASTCALL, audioop_tomono__doc__},
 
 static PyObject *
 audioop_tomono_impl(PyObject *module, Py_buffer *fragment, int width,
@@ -666,11 +611,6 @@ audioop_tomono(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("tomono", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -715,7 +655,7 @@ PyDoc_STRVAR(audioop_tostereo__doc__,
 "Generate a stereo fragment from a mono fragment.");
 
 #define AUDIOOP_TOSTEREO_METHODDEF    \
-    {"tostereo", (PyCFunction)(void(*)(void))audioop_tostereo, METH_FASTCALL, audioop_tostereo__doc__},
+    {"tostereo", _PyCFunction_CAST(audioop_tostereo), METH_FASTCALL, audioop_tostereo__doc__},
 
 static PyObject *
 audioop_tostereo_impl(PyObject *module, Py_buffer *fragment, int width,
@@ -738,11 +678,6 @@ audioop_tostereo(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("tostereo", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -787,7 +722,7 @@ PyDoc_STRVAR(audioop_add__doc__,
 "Return a fragment which is the addition of the two samples passed as parameters.");
 
 #define AUDIOOP_ADD_METHODDEF    \
-    {"add", (PyCFunction)(void(*)(void))audioop_add, METH_FASTCALL, audioop_add__doc__},
+    {"add", _PyCFunction_CAST(audioop_add), METH_FASTCALL, audioop_add__doc__},
 
 static PyObject *
 audioop_add_impl(PyObject *module, Py_buffer *fragment1,
@@ -818,11 +753,6 @@ audioop_add(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("add", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[2]);
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
@@ -849,7 +779,7 @@ PyDoc_STRVAR(audioop_bias__doc__,
 "Return a fragment that is the original fragment with a bias added to each sample.");
 
 #define AUDIOOP_BIAS_METHODDEF    \
-    {"bias", (PyCFunction)(void(*)(void))audioop_bias, METH_FASTCALL, audioop_bias__doc__},
+    {"bias", _PyCFunction_CAST(audioop_bias), METH_FASTCALL, audioop_bias__doc__},
 
 static PyObject *
 audioop_bias_impl(PyObject *module, Py_buffer *fragment, int width, int bias);
@@ -872,18 +802,8 @@ audioop_bias(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("bias", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[1]);
     if (width == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     bias = _PyLong_AsInt(args[2]);
@@ -908,7 +828,7 @@ PyDoc_STRVAR(audioop_reverse__doc__,
 "Reverse the samples in a fragment and returns the modified fragment.");
 
 #define AUDIOOP_REVERSE_METHODDEF    \
-    {"reverse", (PyCFunction)(void(*)(void))audioop_reverse, METH_FASTCALL, audioop_reverse__doc__},
+    {"reverse", _PyCFunction_CAST(audioop_reverse), METH_FASTCALL, audioop_reverse__doc__},
 
 static PyObject *
 audioop_reverse_impl(PyObject *module, Py_buffer *fragment, int width);
@@ -928,11 +848,6 @@ audioop_reverse(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("reverse", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -957,7 +872,7 @@ PyDoc_STRVAR(audioop_byteswap__doc__,
 "Convert big-endian samples to little-endian and vice versa.");
 
 #define AUDIOOP_BYTESWAP_METHODDEF    \
-    {"byteswap", (PyCFunction)(void(*)(void))audioop_byteswap, METH_FASTCALL, audioop_byteswap__doc__},
+    {"byteswap", _PyCFunction_CAST(audioop_byteswap), METH_FASTCALL, audioop_byteswap__doc__},
 
 static PyObject *
 audioop_byteswap_impl(PyObject *module, Py_buffer *fragment, int width);
@@ -977,11 +892,6 @@ audioop_byteswap(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("byteswap", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -1006,7 +916,7 @@ PyDoc_STRVAR(audioop_lin2lin__doc__,
 "Convert samples between 1-, 2-, 3- and 4-byte formats.");
 
 #define AUDIOOP_LIN2LIN_METHODDEF    \
-    {"lin2lin", (PyCFunction)(void(*)(void))audioop_lin2lin, METH_FASTCALL, audioop_lin2lin__doc__},
+    {"lin2lin", _PyCFunction_CAST(audioop_lin2lin), METH_FASTCALL, audioop_lin2lin__doc__},
 
 static PyObject *
 audioop_lin2lin_impl(PyObject *module, Py_buffer *fragment, int width,
@@ -1030,18 +940,8 @@ audioop_lin2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("lin2lin", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[1]);
     if (width == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     newwidth = _PyLong_AsInt(args[2]);
@@ -1067,7 +967,7 @@ PyDoc_STRVAR(audioop_ratecv__doc__,
 "Convert the frame rate of the input fragment.");
 
 #define AUDIOOP_RATECV_METHODDEF    \
-    {"ratecv", (PyCFunction)(void(*)(void))audioop_ratecv, METH_FASTCALL, audioop_ratecv__doc__},
+    {"ratecv", _PyCFunction_CAST(audioop_ratecv), METH_FASTCALL, audioop_ratecv__doc__},
 
 static PyObject *
 audioop_ratecv_impl(PyObject *module, Py_buffer *fragment, int width,
@@ -1097,36 +997,16 @@ audioop_ratecv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("ratecv", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[1]);
     if (width == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     nchannels = _PyLong_AsInt(args[2]);
     if (nchannels == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (PyFloat_Check(args[3])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     inrate = _PyLong_AsInt(args[3]);
     if (inrate == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[4])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     outrate = _PyLong_AsInt(args[4]);
@@ -1137,22 +1017,12 @@ audioop_ratecv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 7) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[6])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     weightA = _PyLong_AsInt(args[6]);
     if (weightA == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (nargs < 8) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[7])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     weightB = _PyLong_AsInt(args[7]);
     if (weightB == -1 && PyErr_Occurred()) {
@@ -1177,7 +1047,7 @@ PyDoc_STRVAR(audioop_lin2ulaw__doc__,
 "Convert samples in the audio fragment to u-LAW encoding.");
 
 #define AUDIOOP_LIN2ULAW_METHODDEF    \
-    {"lin2ulaw", (PyCFunction)(void(*)(void))audioop_lin2ulaw, METH_FASTCALL, audioop_lin2ulaw__doc__},
+    {"lin2ulaw", _PyCFunction_CAST(audioop_lin2ulaw), METH_FASTCALL, audioop_lin2ulaw__doc__},
 
 static PyObject *
 audioop_lin2ulaw_impl(PyObject *module, Py_buffer *fragment, int width);
@@ -1197,11 +1067,6 @@ audioop_lin2ulaw(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("lin2ulaw", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -1226,7 +1091,7 @@ PyDoc_STRVAR(audioop_ulaw2lin__doc__,
 "Convert sound fragments in u-LAW encoding to linearly encoded sound fragments.");
 
 #define AUDIOOP_ULAW2LIN_METHODDEF    \
-    {"ulaw2lin", (PyCFunction)(void(*)(void))audioop_ulaw2lin, METH_FASTCALL, audioop_ulaw2lin__doc__},
+    {"ulaw2lin", _PyCFunction_CAST(audioop_ulaw2lin), METH_FASTCALL, audioop_ulaw2lin__doc__},
 
 static PyObject *
 audioop_ulaw2lin_impl(PyObject *module, Py_buffer *fragment, int width);
@@ -1246,11 +1111,6 @@ audioop_ulaw2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("ulaw2lin", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -1275,7 +1135,7 @@ PyDoc_STRVAR(audioop_lin2alaw__doc__,
 "Convert samples in the audio fragment to a-LAW encoding.");
 
 #define AUDIOOP_LIN2ALAW_METHODDEF    \
-    {"lin2alaw", (PyCFunction)(void(*)(void))audioop_lin2alaw, METH_FASTCALL, audioop_lin2alaw__doc__},
+    {"lin2alaw", _PyCFunction_CAST(audioop_lin2alaw), METH_FASTCALL, audioop_lin2alaw__doc__},
 
 static PyObject *
 audioop_lin2alaw_impl(PyObject *module, Py_buffer *fragment, int width);
@@ -1295,11 +1155,6 @@ audioop_lin2alaw(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("lin2alaw", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -1324,7 +1179,7 @@ PyDoc_STRVAR(audioop_alaw2lin__doc__,
 "Convert sound fragments in a-LAW encoding to linearly encoded sound fragments.");
 
 #define AUDIOOP_ALAW2LIN_METHODDEF    \
-    {"alaw2lin", (PyCFunction)(void(*)(void))audioop_alaw2lin, METH_FASTCALL, audioop_alaw2lin__doc__},
+    {"alaw2lin", _PyCFunction_CAST(audioop_alaw2lin), METH_FASTCALL, audioop_alaw2lin__doc__},
 
 static PyObject *
 audioop_alaw2lin_impl(PyObject *module, Py_buffer *fragment, int width);
@@ -1344,11 +1199,6 @@ audioop_alaw2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("alaw2lin", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -1373,7 +1223,7 @@ PyDoc_STRVAR(audioop_lin2adpcm__doc__,
 "Convert samples to 4 bit Intel/DVI ADPCM encoding.");
 
 #define AUDIOOP_LIN2ADPCM_METHODDEF    \
-    {"lin2adpcm", (PyCFunction)(void(*)(void))audioop_lin2adpcm, METH_FASTCALL, audioop_lin2adpcm__doc__},
+    {"lin2adpcm", _PyCFunction_CAST(audioop_lin2adpcm), METH_FASTCALL, audioop_lin2adpcm__doc__},
 
 static PyObject *
 audioop_lin2adpcm_impl(PyObject *module, Py_buffer *fragment, int width,
@@ -1395,11 +1245,6 @@ audioop_lin2adpcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("lin2adpcm", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -1425,7 +1270,7 @@ PyDoc_STRVAR(audioop_adpcm2lin__doc__,
 "Decode an Intel/DVI ADPCM coded fragment to a linear fragment.");
 
 #define AUDIOOP_ADPCM2LIN_METHODDEF    \
-    {"adpcm2lin", (PyCFunction)(void(*)(void))audioop_adpcm2lin, METH_FASTCALL, audioop_adpcm2lin__doc__},
+    {"adpcm2lin", _PyCFunction_CAST(audioop_adpcm2lin), METH_FASTCALL, audioop_adpcm2lin__doc__},
 
 static PyObject *
 audioop_adpcm2lin_impl(PyObject *module, Py_buffer *fragment, int width,
@@ -1449,11 +1294,6 @@ audioop_adpcm2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("adpcm2lin", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[1]);
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
@@ -1469,4 +1309,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=6b4f2c597f295abc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a581c3893ef8ad75 input=a9049054013a1b77]*/

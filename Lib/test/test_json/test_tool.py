@@ -1,12 +1,16 @@
+import errno
 import os
 import sys
 import textwrap
 import unittest
 import subprocess
+
 from test import support
+from test.support import os_helper
 from test.support.script_helper import assert_python_ok
 
 
+@support.requires_subprocess()
 class TestTool(unittest.TestCase):
     data = """
 
@@ -89,7 +93,7 @@ class TestTool(unittest.TestCase):
         self.assertEqual(process.stderr, '')
 
     def _create_infile(self, data=None):
-        infile = support.TESTFN
+        infile = os_helper.TESTFN
         with open(infile, "w", encoding="utf-8") as fp:
             self.addCleanup(os.remove, infile)
             fp.write(data or self.data)
@@ -119,10 +123,19 @@ class TestTool(unittest.TestCase):
 
     def test_infile_outfile(self):
         infile = self._create_infile()
-        outfile = support.TESTFN + '.out'
+        outfile = os_helper.TESTFN + '.out'
         rc, out, err = assert_python_ok('-m', 'json.tool', infile, outfile)
         self.addCleanup(os.remove, outfile)
-        with open(outfile, "r") as fp:
+        with open(outfile, "r", encoding="utf-8") as fp:
+            self.assertEqual(fp.read(), self.expect)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+    def test_writing_in_place(self):
+        infile = self._create_infile()
+        rc, out, err = assert_python_ok('-m', 'json.tool', infile, infile)
+        with open(infile, "r", encoding="utf-8") as fp:
             self.assertEqual(fp.read(), self.expect)
         self.assertEqual(rc, 0)
         self.assertEqual(out, b'')
@@ -187,7 +200,7 @@ class TestTool(unittest.TestCase):
 
     def test_no_ensure_ascii_flag(self):
         infile = self._create_infile('{"key":"💩"}')
-        outfile = support.TESTFN + '.out'
+        outfile = os_helper.TESTFN + '.out'
         self.addCleanup(os.remove, outfile)
         assert_python_ok('-m', 'json.tool', '--no-ensure-ascii', infile, outfile)
         with open(outfile, "rb") as f:
@@ -198,7 +211,7 @@ class TestTool(unittest.TestCase):
 
     def test_ensure_ascii_default(self):
         infile = self._create_infile('{"key":"💩"}')
-        outfile = support.TESTFN + '.out'
+        outfile = os_helper.TESTFN + '.out'
         self.addCleanup(os.remove, outfile)
         assert_python_ok('-m', 'json.tool', infile, outfile)
         with open(outfile, "rb") as f:
@@ -206,3 +219,14 @@ class TestTool(unittest.TestCase):
         # asserting an ascii encoded output file
         expected = [b'{', rb'    "key": "\ud83d\udca9"', b"}"]
         self.assertEqual(lines, expected)
+
+    @unittest.skipIf(sys.platform =="win32", "The test is failed with ValueError on Windows")
+    def test_broken_pipe_error(self):
+        cmd = [sys.executable, '-m', 'json.tool']
+        proc = subprocess.Popen(cmd,
+                                stdout=subprocess.PIPE,
+                                stdin=subprocess.PIPE)
+        # bpo-39828: Closing before json.tool attempts to write into stdout.
+        proc.stdout.close()
+        proc.communicate(b'"{}"')
+        self.assertEqual(proc.returncode, errno.EPIPE)

@@ -112,17 +112,6 @@ the setup script.  The difference is which Distutils *commands* they use: the
 :command:`install` is more often for installers (although most developers will
 want to install their own code occasionally).
 
-If you want to make things really easy for your users, you can create one or
-more built distributions for them.  For instance, if you are running on a
-Windows machine, and want to make things easy for other Windows users, you can
-create an executable installer (the most appropriate type of built distribution
-for this platform) with the :command:`bdist_wininst` command.  For example::
-
-   python setup.py bdist_wininst
-
-will create an executable installer, :file:`foo-1.0.win32.exe`, in the current
-directory.
-
 Other useful built distribution formats are RPM, implemented by the
 :command:`bdist_rpm` command, Solaris :program:`pkgtool`
 (:command:`bdist_pkgtool`), and HP-UX :program:`swinstall`

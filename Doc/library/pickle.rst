@@ -147,7 +147,7 @@ to read the pickle produced.
   earlier versions of Python.
 
 * Protocol version 2 was introduced in Python 2.3.  It provides much more
-  efficient pickling of :term:`new-style class`\es.  Refer to :pep:`307` for
+  efficient pickling of :term:`new-style classes <new-style class>`.  Refer to :pep:`307` for
   information about improvements brought by protocol 2.
 
 * Protocol version 3 was added in Python 3.0.  It has explicit support for
@@ -213,7 +213,7 @@ The :mod:`pickle` module provides the following constants:
 The :mod:`pickle` module provides the following functions to make the pickling
 process more convenient:
 
-.. function:: dump(obj, file, protocol=None, \*, fix_imports=True, buffer_callback=None)
+.. function:: dump(obj, file, protocol=None, *, fix_imports=True, buffer_callback=None)
 
    Write the pickled representation of the object *obj* to the open
    :term:`file object` *file*.  This is equivalent to
@@ -225,7 +225,7 @@ process more convenient:
    .. versionchanged:: 3.8
       The *buffer_callback* argument was added.
 
-.. function:: dumps(obj, protocol=None, \*, fix_imports=True, buffer_callback=None)
+.. function:: dumps(obj, protocol=None, *, fix_imports=True, buffer_callback=None)
 
    Return the pickled representation of the object *obj* as a :class:`bytes` object,
    instead of writing it to a file.
@@ -236,7 +236,7 @@ process more convenient:
    .. versionchanged:: 3.8
       The *buffer_callback* argument was added.
 
-.. function:: load(file, \*, fix_imports=True, encoding="ASCII", errors="strict", buffers=None)
+.. function:: load(file, *, fix_imports=True, encoding="ASCII", errors="strict", buffers=None)
 
    Read the pickled representation of an object from the open :term:`file object`
    *file* and return the reconstituted object hierarchy specified therein.
@@ -252,16 +252,16 @@ process more convenient:
    .. versionchanged:: 3.8
       The *buffers* argument was added.
 
-.. function:: loads(bytes_object, \*, fix_imports=True, encoding="ASCII", errors="strict", buffers=None)
+.. function:: loads(data, /, *, fix_imports=True, encoding="ASCII", errors="strict", buffers=None)
 
    Return the reconstituted object hierarchy of the pickled representation
-   *bytes_object* of an object.
+   *data* of an object. *data* must be a :term:`bytes-like object`.
 
    The protocol version of the pickle is detected automatically, so no
    protocol argument is needed.  Bytes past the pickled representation
    of the object are ignored.
 
-   Arguments *file*, *fix_imports*, *encoding*, *errors*, *strict* and *buffers*
+   Arguments *fix_imports*, *encoding*, *errors*, *strict* and *buffers*
    have the same meaning as in the :class:`Unpickler` constructor.
 
    .. versionchanged:: 3.8
@@ -296,7 +296,7 @@ The :mod:`pickle` module defines three exceptions:
 The :mod:`pickle` module exports three classes, :class:`Pickler`,
 :class:`Unpickler` and :class:`PickleBuffer`:
 
-.. class:: Pickler(file, protocol=None, \*, fix_imports=True, buffer_callback=None)
+.. class:: Pickler(file, protocol=None, *, fix_imports=True, buffer_callback=None)
 
    This takes a binary file for writing a pickle data stream.
 
@@ -368,7 +368,7 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 
       .. versionadded:: 3.3
 
-   .. method:: reducer_override(self, obj)
+   .. method:: reducer_override(obj)
 
       Special reducer that can be defined in :class:`Pickler` subclasses. This
       method has priority over any reducer in the :attr:`dispatch_table`.  It
@@ -391,7 +391,7 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
       Use :func:`pickletools.optimize` if you need more compact pickles.
 
 
-.. class:: Unpickler(file, \*, fix_imports=True, encoding="ASCII", errors="strict", buffers=None)
+.. class:: Unpickler(file, *, fix_imports=True, encoding="ASCII", errors="strict", buffers=None)
 
    This takes a binary file for reading a pickle data stream.
 
@@ -494,24 +494,21 @@ What can be pickled and unpickled?
 
 The following types can be pickled:
 
-* ``None``, ``True``, and ``False``
+* ``None``, ``True``, and ``False``;
 
-* integers, floating point numbers, complex numbers
+* integers, floating-point numbers, complex numbers;
 
-* strings, bytes, bytearrays
+* strings, bytes, bytearrays;
 
-* tuples, lists, sets, and dictionaries containing only picklable objects
+* tuples, lists, sets, and dictionaries containing only picklable objects;
 
-* functions defined at the top level of a module (using :keyword:`def`, not
-  :keyword:`lambda`)
+* functions (built-in and user-defined) accessible from the top level of a
+  module (using :keyword:`def`, not :keyword:`lambda`);
 
-* built-in functions defined at the top level of a module
+* classes accessible from the top level of a module;
 
-* classes that are defined at the top level of a module
-
-* instances of such classes whose :attr:`~object.__dict__` or the result of
-  calling :meth:`__getstate__` is picklable  (see section :ref:`pickle-inst` for
-  details).
+* instances of such classes whose the result of calling :meth:`__getstate__`
+  is picklable  (see section :ref:`pickle-inst` for details).
 
 Attempts to pickle unpicklable objects will raise the :exc:`PicklingError`
 exception; when this happens, an unspecified number of bytes may have already
@@ -520,14 +517,14 @@ structure may exceed the maximum recursion depth, a :exc:`RecursionError` will b
 raised in this case.  You can carefully raise this limit with
 :func:`sys.setrecursionlimit`.
 
-Note that functions (built-in and user-defined) are pickled by "fully qualified"
-name reference, not by value. [#]_  This means that only the function name is
-pickled, along with the name of the module the function is defined in.  Neither
+Note that functions (built-in and user-defined) are pickled by fully
+:term:`qualified name`, not by value. [#]_  This means that only the function name is
+pickled, along with the name of the containing module and classes.  Neither
 the function's code, nor any of its function attributes are pickled.  Thus the
 defining module must be importable in the unpickling environment, and the module
 must contain the named object, otherwise an exception will be raised. [#]_
 
-Similarly, classes are pickled by named reference, so the same restrictions in
+Similarly, classes are pickled by fully qualified name, so the same restrictions in
 the unpickling environment apply.  Note that none of the class's code or data is
 pickled, so in the following example the class attribute ``attr`` is not
 restored in the unpickling environment::
@@ -537,7 +534,7 @@ restored in the unpickling environment::
 
    picklestring = pickle.dumps(Foo)
 
-These restrictions are why picklable functions and classes must be defined in
+These restrictions are why picklable functions and classes must be defined at
 the top level of a module.
 
 Similarly, when class instances are pickled, their class's code and data are not
@@ -569,7 +566,7 @@ implementation of this behaviour::
    def save(obj):
        return (obj.__class__, obj.__dict__)
 
-   def load(cls, attributes):
+   def restore(cls, attributes):
        obj = cls.__new__(cls)
        obj.__dict__.update(attributes)
        return obj
@@ -611,11 +608,31 @@ methods:
 
 .. method:: object.__getstate__()
 
-   Classes can further influence how their instances are pickled; if the class
-   defines the method :meth:`__getstate__`, it is called and the returned object
-   is pickled as the contents for the instance, instead of the contents of the
-   instance's dictionary.  If the :meth:`__getstate__` method is absent, the
-   instance's :attr:`~object.__dict__` is pickled as usual.
+   Classes can further influence how their instances are pickled by overriding
+   the method :meth:`__getstate__`.  It is called and the returned object
+   is pickled as the contents for the instance, instead of a default state.
+   There are several cases:
+
+   * For a class that has no instance :attr:`~object.__dict__` and no
+     :attr:`~object.__slots__`, the default state is ``None``.
+
+   * For a class that has an instance :attr:`~object.__dict__` and no
+     :attr:`~object.__slots__`, the default state is ``self.__dict__``.
+
+   * For a class that has an instance :attr:`~object.__dict__` and
+     :attr:`~object.__slots__`, the default state is a tuple consisting of two
+     dictionaries:  ``self.__dict__``, and a dictionary mapping slot
+     names to slot values.  Only slots that have a value are
+     included in the latter.
+
+   * For a class that has :attr:`~object.__slots__` and no instance
+     :attr:`~object.__dict__`, the default state is a tuple whose first item
+     is ``None`` and whose second item is a dictionary mapping slot names
+     to slot values described in the previous bullet.
+
+   .. versionchanged:: 3.11
+      Added the default implementation of the ``__getstate__()`` method in the
+      :class:`object` class.
 
 
 .. method:: object.__setstate__(state)
@@ -639,9 +656,9 @@ the methods :meth:`__getstate__` and :meth:`__setstate__`.
    At unpickling time, some methods like :meth:`__getattr__`,
    :meth:`__getattribute__`, or :meth:`__setattr__` may be called upon the
    instance.  In case those methods rely on some internal invariant being
-   true, the type should implement :meth:`__getnewargs__` or
-   :meth:`__getnewargs_ex__` to establish such an invariant; otherwise,
-   neither :meth:`__new__` nor :meth:`__init__` will be called.
+   true, the type should implement :meth:`__new__` to establish such an
+   invariant, as :meth:`__init__` is not called when unpickling an
+   instance.
 
 .. index:: pair: copy; protocol
 
@@ -788,13 +805,14 @@ the code ::
    f = io.BytesIO()
    p = MyPickler(f)
 
-does the same, but all instances of ``MyPickler`` will by default
-share the same dispatch table.  The equivalent code using the
-:mod:`copyreg` module is ::
+does the same but all instances of ``MyPickler`` will by default
+share the private dispatch table.  On the other hand, the code ::
 
    copyreg.pickle(SomeClass, reduce_SomeClass)
    f = io.BytesIO()
    p = pickle.Pickler(f)
+
+modifies the global dispatch table shared by all users of the :mod:`copyreg` module.
 
 .. _pickle-state:
 
@@ -1098,7 +1116,7 @@ Here is an example of an unpickler allowing only few safe classes from the
        """Helper function analogous to pickle.loads()."""
        return RestrictedUnpickler(io.BytesIO(s)).load()
 
-A sample usage of our unpickler working has intended::
+A sample usage of our unpickler working as intended::
 
     >>> restricted_loads(pickle.dumps([1, 2, range(15)]))
     [1, 2, range(0, 15)]
@@ -1142,7 +1160,7 @@ For the simplest code, use the :func:`dump` and :func:`load` functions. ::
 
    # An arbitrary collection of objects supported by pickle.
    data = {
-       'a': [1, 2.0, 3, 4+6j],
+       'a': [1, 2.0, 3+4j],
        'b': ("character string", b"byte string"),
        'c': {None, True, False}
    }
@@ -1198,6 +1216,6 @@ The following example reads the resulting pickled data. ::
    operations.
 
 .. [#] The limitation on alphanumeric characters is due to the fact
-   the persistent IDs, in protocol 0, are delimited by the newline
+   that persistent IDs in protocol 0 are delimited by the newline
    character.  Therefore if any kind of newline characters occurs in
-   persistent IDs, the resulting pickle will become unreadable.
+   persistent IDs, the resulting pickled data will become unreadable.

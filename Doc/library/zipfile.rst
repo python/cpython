@@ -78,7 +78,6 @@ The module defines the following items:
    of the last modification to the file; the fields are described in section
    :ref:`zipinfo-objects`.
 
-
 .. function:: is_zipfile(filename)
 
    Returns ``True`` if *filename* is a valid ZIP file based on its magic number,
@@ -140,7 +139,8 @@ ZipFile Objects
 
 
 .. class:: ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True, \
-                   compresslevel=None, *, strict_timestamps=True)
+                   compresslevel=None, *, strict_timestamps=True, \
+                   metadata_encoding=None)
 
    Open a ZIP file, where *file* can be a path to a file (a string), a
    file-like object or a :term:`path-like object`.
@@ -184,6 +184,10 @@ ZipFile Objects
    Similar behavior occurs with files newer than 2107-12-31,
    the timestamp is also set to the limit.
 
+   When mode is ``'r'``, *metadata_encoding* may be set to the name of a codec,
+   which will be used to decode metadata such as the names of members and ZIP
+   comments.
+
    If the file is created with mode ``'w'``, ``'x'`` or ``'a'`` and then
    :meth:`closed <close>` without adding any files to the archive, the appropriate
    ZIP structures for an empty archive will be written to the file.
@@ -194,6 +198,19 @@ ZipFile Objects
 
       with ZipFile('spam.zip', 'w') as myzip:
           myzip.write('eggs.txt')
+
+   .. note::
+
+      *metadata_encoding* is an instance-wide setting for the ZipFile.
+      It is not currently possible to set this on a per-member basis.
+
+      This attribute is a workaround for legacy implementations which produce
+      archives with names in the current locale encoding or code page (mostly
+      on Windows).  According to the .ZIP standard, the encoding of metadata
+      may be specified to be either IBM code page (default) or UTF-8 by a flag
+      in the archive header.
+      That flag takes precedence over *metadata_encoding*, which is
+      a Python-specific extension.
 
    .. versionadded:: 3.2
       Added the ability to use :class:`ZipFile` as a context manager.
@@ -220,6 +237,10 @@ ZipFile Objects
 
    .. versionadded:: 3.8
       The *strict_timestamps* keyword-only argument
+
+   .. versionchanged:: 3.11
+      Added support for specifying member name encoding for reading
+      metadata in the zipfile's directory and file headers.
 
 
 .. method:: ZipFile.close()
@@ -290,7 +311,7 @@ ZipFile Objects
       compressed text files in :term:`universal newlines` mode.
 
    .. versionchanged:: 3.6
-      :meth:`open` can now be used to write files into the archive with the
+      :meth:`ZipFile.open` can now be used to write files into the archive with the
       ``mode='w'`` option.
 
    .. versionchanged:: 3.6
@@ -398,6 +419,15 @@ ZipFile Objects
 
    .. note::
 
+      The ZIP file standard historically did not specify a metadata encoding,
+      but strongly recommended CP437 (the original IBM PC encoding) for
+      interoperability.  Recent versions allow use of UTF-8 (only).  In this
+      module, UTF-8 will automatically be used to write the member names if
+      they contain any non-ASCII characters.  It is not possible to write
+      member names in any encoding other than ASCII or UTF-8.
+
+   .. note::
+
       Archive names should be relative to the archive root, that is, they should not
       start with a path separator.
 
@@ -405,6 +435,11 @@ ZipFile Objects
 
       If ``arcname`` (or ``filename``, if ``arcname`` is  not given) contains a null
       byte, the name of the file in the archive will be truncated at the null byte.
+
+   .. note::
+
+      A leading slash in the filename may lead to the archive being impossible to
+      open in some zip programs on Windows systems.
 
    .. versionchanged:: 3.6
       Calling :meth:`write` on a ZipFile created with mode ``'r'`` or
@@ -442,6 +477,17 @@ ZipFile Objects
       Calling :meth:`writestr` on a ZipFile created with mode ``'r'`` or
       a closed ZipFile will raise a :exc:`ValueError`.  Previously,
       a :exc:`RuntimeError` was raised.
+
+.. method:: ZipFile.mkdir(zinfo_or_directory, mode=511)
+
+   Create a directory inside the archive.  If *zinfo_or_directory* is a string,
+   a directory is created inside the archive with the mode that is specified in
+   the *mode* argument. If, however, *zinfo_or_directory* is
+   a :class:`ZipInfo` instance then the *mode* argument is ignored.
+
+   The archive must be opened with mode ``'w'``, ``'x'`` or ``'a'``.
+
+   .. versionadded:: 3.11
 
 
 The following data attributes are also available:
@@ -483,16 +529,26 @@ Path Objects
 Path objects expose the following features of :mod:`pathlib.Path`
 objects:
 
-Path objects are traversable using the ``/`` operator.
+Path objects are traversable using the ``/`` operator or ``joinpath``.
 
 .. attribute:: Path.name
 
    The final path component.
 
-.. method:: Path.open(*, **)
+.. method:: Path.open(mode='r', *, pwd, **)
 
-   Invoke :meth:`ZipFile.open` on the current path. Accepts
-   the same arguments as :meth:`ZipFile.open`.
+   Invoke :meth:`ZipFile.open` on the current path.
+   Allows opening for read or write, text or binary
+   through supported modes: 'r', 'w', 'rb', 'wb'.
+   Positional and keyword arguments are passed through to
+   :class:`io.TextIOWrapper` when opened as text and
+   ignored otherwise.
+   ``pwd`` is the ``pwd`` parameter to
+   :meth:`ZipFile.open`.
+
+   .. versionchanged:: 3.9
+      Added support for text and binary modes for open. Default
+      mode is now text.
 
 .. method:: Path.iterdir()
 
@@ -511,6 +567,27 @@ Path objects are traversable using the ``/`` operator.
    Return ``True`` if the current context references a file or
    directory in the zip file.
 
+.. data:: Path.suffix
+
+   The file extension of the final component.
+
+   .. versionadded:: 3.11
+      Added :data:`Path.suffix` property.
+
+.. data:: Path.stem
+
+   The final path component, without its suffix.
+
+   .. versionadded:: 3.11
+      Added :data:`Path.stem` property.
+
+.. data:: Path.suffixes
+
+   A list of the path’s file extensions.
+
+   .. versionadded:: 3.11
+      Added :data:`Path.suffixes` property.
+
 .. method:: Path.read_text(*, **)
 
    Read the current file as unicode text. Positional and
@@ -522,6 +599,23 @@ Path objects are traversable using the ``/`` operator.
 
    Read the current file as bytes.
 
+.. method:: Path.joinpath(*other)
+
+   Return a new Path object with each of the *other* arguments
+   joined. The following are equivalent::
+
+   >>> Path(...).joinpath('child').joinpath('grandchild')
+   >>> Path(...).joinpath('child', 'grandchild')
+   >>> Path(...) / 'child' / 'grandchild'
+
+   .. versionchanged:: 3.10
+      Prior to 3.10, ``joinpath`` was undocumented and accepted
+      exactly one parameter.
+
+The `zipp <https://pypi.org/project/zipp>`_ project provides backports
+of the latest path object functionality to older Pythons. Use
+``zipp.Path`` in place of ``zipfile.Path`` for early access to
+changes.
 
 .. _pyzipfile-objects:
 
@@ -816,6 +910,14 @@ Command-line options
 
    Test whether the zipfile is valid or not.
 
+.. cmdoption:: --metadata-encoding <encoding>
+
+   Specify encoding of member names for :option:`-l`, :option:`-e` and
+   :option:`-t`.
+
+   .. versionadded:: 3.11
+
+
 Decompression pitfalls
 ----------------------
 
@@ -833,6 +935,8 @@ File System limitations
 Exceeding limitations on different file systems can cause decompression failed.
 Such as allowable characters in the directory entries, length of the file name,
 length of the pathname, size of a single file, and number of files, etc.
+
+.. _zipfile-resources-limitations:
 
 Resources limitations
 ~~~~~~~~~~~~~~~~~~~~~

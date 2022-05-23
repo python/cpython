@@ -11,7 +11,7 @@ PyAPI_DATA(PyTypeObject) _PyManagedBuffer_Type;
 #endif
 PyAPI_DATA(PyTypeObject) PyMemoryView_Type;
 
-#define PyMemoryView_Check(op) (Py_TYPE(op) == &PyMemoryView_Type)
+#define PyMemoryView_Check(op) Py_IS_TYPE(op, &PyMemoryView_Type)
 
 #ifndef Py_LIMITED_API
 /* Get a pointer to the memoryview's private copy of the exporter's buffer. */
@@ -25,8 +25,8 @@ PyAPI_FUNC(PyObject *) PyMemoryView_FromObject(PyObject *base);
 PyAPI_FUNC(PyObject *) PyMemoryView_FromMemory(char *mem, Py_ssize_t size,
                                                int flags);
 #endif
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) PyMemoryView_FromBuffer(Py_buffer *info);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030b0000
+PyAPI_FUNC(PyObject *) PyMemoryView_FromBuffer(const Py_buffer *info);
 #endif
 PyAPI_FUNC(PyObject *) PyMemoryView_GetContiguous(PyObject *base,
                                                   int buffertype,

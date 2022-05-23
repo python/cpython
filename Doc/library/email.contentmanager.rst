@@ -116,7 +116,7 @@ Currently the email package provides only one concrete content manager,
       decoding the payload to unicode.  The default error handler is
       ``replace``.
 
-   .. method:: set_content(msg, <'str'>, subtype="plain", charset='utf-8' \
+   .. method:: set_content(msg, <'str'>, subtype="plain", charset='utf-8', \
                            cte=None, \
                            disposition=None, filename=None, cid=None, \
                            params=None, headers=None)

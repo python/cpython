@@ -4,6 +4,7 @@
 .. module:: asyncore
    :synopsis: A base class for developing asynchronous socket handling
               services.
+   :deprecated:
 
 .. moduleauthor:: Sam Rushing <rushing@nightmare.com>
 .. sectionauthor:: Christopher Petrilli <petrilli@amber.org>
@@ -12,7 +13,9 @@
 
 **Source code:** :source:`Lib/asyncore.py`
 
-.. deprecated:: 3.6
+.. deprecated-removed:: 3.6 3.12
+   The :mod:`asyncore` module is deprecated
+   (see :pep:`PEP 594 <594#asyncore>` for details).
    Please use :mod:`asyncio` instead.
 
 --------------
