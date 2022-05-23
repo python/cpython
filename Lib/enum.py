@@ -480,8 +480,9 @@ class EnumType(type):
         # check for illegal enum names (any others?)
         invalid_names = set(member_names) & {'mro', ''}
         if invalid_names:
-            raise ValueError('invalid enum member name(s) '.format(
-                ','.join(repr(n) for n in invalid_names)))
+            raise ValueError('invalid enum member name(s) %s'  % (
+                    ','.join(repr(n) for n in invalid_names)
+                    ))
         #
         # adjust the sunders
         _order_ = classdict.pop('_order_', None)
