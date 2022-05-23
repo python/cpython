@@ -579,10 +579,13 @@ class OtherTest(unittest.TestCase):
 
         ba = None
         m = memoryview(bytearray(b'\xff'*size)).cast('B', (64, 2))
-        self.assertEqual(m[MyIndex(), 0], 0)
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+            m[MyIndex(), 0]
+        
         ba = None
         m = memoryview(bytearray(b'\xff'*size)).cast('B', (2, 64))
-        self.assertEqual(m[0, MyIndex()], 0)
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+            m[0, MyIndex()], 0
 
         ba = None
         m = memoryview(bytearray(b'\xff'*size))
@@ -592,13 +595,13 @@ class OtherTest(unittest.TestCase):
 
         ba = None
         m = memoryview(bytearray(b'\xff'*size))
-        with self.assertRaisesRegex(ValueError, "operation forbidden"):        
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):
             m[:MyIndex()] = b'spam'
         self.assertEqual(ba[:8], b'\0'*8)
 
         ba = None
         m = memoryview(bytearray(b'\xff'*size))
-        with self.assertRaisesRegex(ValueError, "operation forbidden"):        
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):
             m[MyIndex():8] = b'spam'
         self.assertEqual(ba[:8], b'\0'*8)
 

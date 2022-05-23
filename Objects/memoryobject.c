@@ -1678,7 +1678,7 @@ pylong_as_zu(PyObject *item)
    module syntax. This function is very sensitive to small changes. With this
    layout gcc automatically generates a fast jump table. */
 static inline PyObject *
-unpack_single(const char *ptr, const char *fmt)
+unpack_single(PyMemoryViewObject *self, const char *ptr, const char *fmt)
 {
     unsigned long long llu;
     unsigned long lu;
@@ -1689,6 +1689,8 @@ unpack_single(const char *ptr, const char *fmt)
     double d;
     unsigned char uc;
     void *p;
+
+    CHECK_RELEASED(self); /* See gh-92888 for why we need this here */
 
     switch (fmt[0]) {
 
@@ -1778,6 +1780,8 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
     Py_ssize_t zd;
     double d;
     void *p;
+
+    CHECK_RELEASED_INT(self); /* See gh-92888 for why we need this here */
 
     switch (fmt[0]) {
     /* signed integers */
@@ -2058,7 +2062,7 @@ adjust_fmt(const Py_buffer *view)
 
 /* Base case for multi-dimensional unpacking. Assumption: ndim == 1. */
 static PyObject *
-tolist_base(const char *ptr, const Py_ssize_t *shape,
+tolist_base(PyMemoryViewObject *self, const char *ptr, const Py_ssize_t *shape,
             const Py_ssize_t *strides, const Py_ssize_t *suboffsets,
             const char *fmt)
 {
@@ -2071,7 +2075,7 @@ tolist_base(const char *ptr, const Py_ssize_t *shape,
 
     for (i = 0; i < shape[0]; ptr+=strides[0], i++) {
         const char *xptr = ADJUST_PTR(ptr, suboffsets, 0);
-        item = unpack_single(xptr, fmt);
+        item = unpack_single(self, xptr, fmt);
         if (item == NULL) {
             Py_DECREF(lst);
             return NULL;
@@ -2085,7 +2089,7 @@ tolist_base(const char *ptr, const Py_ssize_t *shape,
 /* Unpack a multi-dimensional array into a nested list.
    Assumption: ndim >= 1. */
 static PyObject *
-tolist_rec(const char *ptr, Py_ssize_t ndim, const Py_ssize_t *shape,
+tolist_rec(PyMemoryViewObject *self, const char *ptr, Py_ssize_t ndim, const Py_ssize_t *shape,
            const Py_ssize_t *strides, const Py_ssize_t *suboffsets,
            const char *fmt)
 {
@@ -2097,7 +2101,7 @@ tolist_rec(const char *ptr, Py_ssize_t ndim, const Py_ssize_t *shape,
     assert(strides != NULL);
 
     if (ndim == 1)
-        return tolist_base(ptr, shape, strides, suboffsets, fmt);
+        return tolist_base(self, ptr, shape, strides, suboffsets, fmt);
 
     lst = PyList_New(shape[0]);
     if (lst == NULL)
@@ -2105,7 +2109,7 @@ tolist_rec(const char *ptr, Py_ssize_t ndim, const Py_ssize_t *shape,
 
     for (i = 0; i < shape[0]; ptr+=strides[0], i++) {
         const char *xptr = ADJUST_PTR(ptr, suboffsets, 0);
-        item = tolist_rec(xptr, ndim-1, shape+1,
+        item = tolist_rec(self, xptr, ndim-1, shape+1,
                           strides+1, suboffsets ? suboffsets+1 : NULL,
                           fmt);
         if (item == NULL) {
@@ -2139,15 +2143,15 @@ memoryview_tolist_impl(PyMemoryViewObject *self)
     if (fmt == NULL)
         return NULL;
     if (view->ndim == 0) {
-        return unpack_single(view->buf, fmt);
+        return unpack_single(self, view->buf, fmt);
     }
     else if (view->ndim == 1) {
-        return tolist_base(view->buf, view->shape,
+        return tolist_base(self, view->buf, view->shape,
                            view->strides, view->suboffsets,
                            fmt);
     }
     else {
-        return tolist_rec(view->buf, view->ndim, view->shape,
+        return tolist_rec(self, view->buf, view->ndim, view->shape,
                           view->strides, view->suboffsets,
                           fmt);
     }
@@ -2355,7 +2359,7 @@ memory_item(PyMemoryViewObject *self, Py_ssize_t index)
         char *ptr = ptr_from_index(view, index);
         if (ptr == NULL)
             return NULL;
-        return unpack_single(ptr, fmt);
+        return unpack_single(self, ptr, fmt);
     }
 
     PyErr_SetString(PyExc_NotImplementedError,
@@ -2386,7 +2390,7 @@ memory_item_multi(PyMemoryViewObject *self, PyObject *tup)
     ptr = ptr_from_tuple(view, tup);
     if (ptr == NULL)
         return NULL;
-    return unpack_single(ptr, fmt);
+    return unpack_single(self, ptr, fmt);
 }
 
 static inline int
@@ -2473,7 +2477,7 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
             const char *fmt = adjust_fmt(view);
             if (fmt == NULL)
                 return NULL;
-            return unpack_single(view->buf, fmt);
+            return unpack_single(self, view->buf, fmt);
         }
         else if (key == Py_Ellipsis) {
             Py_INCREF(self);
@@ -2567,7 +2571,6 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
         index = PyNumber_AsSsize_t(key, PyExc_IndexError);
         if (index == -1 && PyErr_Occurred())
             return -1;
-        CHECK_RELEASED_INT(self); /* See gh-92888 for why we need this here */
         ptr = ptr_from_index(view, index);
         if (ptr == NULL)
             return -1;
@@ -3211,7 +3214,7 @@ memoryiter_next(memoryiterobject *it)
         if (ptr == NULL) {
             return NULL;
         }
-        return unpack_single(ptr, it->it_fmt);
+        return unpack_single(seq, ptr, it->it_fmt);
     }
 
     it->it_seq = NULL;
