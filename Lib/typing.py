@@ -1359,7 +1359,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
 
     @_tp_cache
     def __getitem__(self, args):
-        # Parameterizes an already-parameterized object.
+        # Parametrizes an already-parameterized object.
         #
         # For example, we arrive here doing something like:
         #   T1 = TypeVar('T1')
