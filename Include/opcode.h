@@ -78,10 +78,10 @@ extern "C" {
 #define COPY                                   120
 #define BINARY_OP                              122
 #define SEND                                   123
-#define LOAD_FAST_CHECK                        124
+#define LOAD_FAST                              124
 #define STORE_FAST                             125
 #define DELETE_FAST                            126
-#define LOAD_FAST                              127
+#define LOAD_FAST_CHECK                        127
 #define POP_JUMP_FORWARD_IF_NOT_NONE           128
 #define POP_JUMP_FORWARD_IF_NONE               129
 #define RAISE_VARARGS                          130
