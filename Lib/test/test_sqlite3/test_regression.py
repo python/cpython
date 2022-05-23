@@ -28,7 +28,7 @@ import functools
 
 from test import support
 from unittest.mock import patch
-from test.test_sqlite3.test_dbapi import memory_database, managed_connect, cx_limit
+from test.test_sqlite3.test_dbapi import memory_database, cx_limit
 
 
 class RegressionTests(unittest.TestCase):
@@ -422,7 +422,7 @@ class RegressionTests(unittest.TestCase):
         self.assertEqual(val, b'')
 
     def test_table_lock_cursor_replace_stmt(self):
-        with managed_connect(":memory:", in_mem=True) as con:
+        with memory_database() as con:
             cur = con.cursor()
             cur.execute("create table t(t)")
             cur.executemany("insert into t values(?)",
@@ -433,7 +433,7 @@ class RegressionTests(unittest.TestCase):
             con.commit()
 
     def test_table_lock_cursor_dealloc(self):
-        with managed_connect(":memory:", in_mem=True) as con:
+        with memory_database() as con:
             con.execute("create table t(t)")
             con.executemany("insert into t values(?)",
                             ((v,) for v in range(5)))
@@ -444,7 +444,7 @@ class RegressionTests(unittest.TestCase):
             con.commit()
 
     def test_table_lock_cursor_non_readonly_select(self):
-        with managed_connect(":memory:", in_mem=True) as con:
+        with memory_database() as con:
             con.execute("create table t(t)")
             con.executemany("insert into t values(?)",
                             ((v,) for v in range(5)))
@@ -459,7 +459,7 @@ class RegressionTests(unittest.TestCase):
             con.commit()
 
     def test_executescript_step_through_select(self):
-        with managed_connect(":memory:", in_mem=True) as con:
+        with memory_database() as con:
             values = [(v,) for v in range(5)]
             with con:
                 con.execute("create table t(t)")
