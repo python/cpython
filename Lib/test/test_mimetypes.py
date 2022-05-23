@@ -297,7 +297,7 @@ class MimetypesCliTestCase(unittest.TestCase):
             with self.assertRaises(SystemExit) as cm:
                 mimetypes._main()
 
-        self.assertIn("Usage: mimetypes.py", output.getvalue())
+        self.assertIn("usage: mimetypes.py", output.getvalue())
         self.assertEqual(cm.exception.code, 0)
 
     def test_invalid_option(self):
@@ -306,7 +306,7 @@ class MimetypesCliTestCase(unittest.TestCase):
             with self.assertRaises(SystemExit) as cm:
                 mimetypes._main()
 
-        self.assertIn("Usage: mimetypes.py", output.getvalue())
+        self.assertIn("usage: mimetypes.py", output.getvalue())
         self.assertEqual(cm.exception.code, 1)
 
     def test_guess_extension(self):
