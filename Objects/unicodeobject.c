@@ -14690,15 +14690,12 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
      * allocations that carry over to a future initialization of Python within
      * the same process. i.e:
      *   ./python -X showrefcount -c 'import itertools'
-     *   [298 refs, 298 blocks]
+     *   [299 refs, 299 blocks]
      *
-     * Therefore, this should remain disabled until there is a strict guarantee
-     * that no memory will be leftover after `Py_Finalize`.
-     *
-     * To test that this has been resolved, the following test should pass:
-     *   ./python Lib/test/test_embed.py EmbeddingTests.test_finalize_structseq
+     * Therefore, this should remain disabled for production builds until there
+     * is a strict guarantee that no memory will be left after `Py_Finalize`.
      */
-#if 0
+#if Py_DEBUG
     /* For all non-singleton interned strings, restore the two valid references
        to that instance from within the intern string dictionary and let the
        normal reference counting process clean up these instances. */
