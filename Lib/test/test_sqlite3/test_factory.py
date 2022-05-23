@@ -256,18 +256,6 @@ class TextFactoryTests(unittest.TestCase):
         self.assertEqual(type(row[0]), str, "type of row[0] must be unicode")
         self.assertTrue(row[0].endswith("reich"), "column must contain original data")
 
-    def test_optimized_unicode(self):
-        # OptimizedUnicode is deprecated as of Python 3.10
-        with self.assertWarns(DeprecationWarning) as cm:
-            self.con.text_factory = sqlite.OptimizedUnicode
-        self.assertIn("factory.py", cm.filename)
-        austria = "Österreich"
-        germany = "Deutchland"
-        a_row = self.con.execute("select ?", (austria,)).fetchone()
-        d_row = self.con.execute("select ?", (germany,)).fetchone()
-        self.assertEqual(type(a_row[0]), str, "type of non-ASCII row must be str")
-        self.assertEqual(type(d_row[0]), str, "type of ASCII-only row must be str")
-
     def tearDown(self):
         self.con.close()
 

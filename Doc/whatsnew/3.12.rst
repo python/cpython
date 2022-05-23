@@ -66,6 +66,9 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+Important deprecations, removals or restrictions:
+
+* :pep:`623`, Remove wstr from Unicode
 
 
 New Features
@@ -91,7 +94,9 @@ Improved Modules
 Optimizations
 =============
 
-
+* Removed ``wstr`` and ``wstr_length`` members from Unicode objects.
+  It reduces object size by 8 or 16 bytes on 64bit platform. (:pep:`623`)
+  (Contributed by Inada Naoki in :gh:`92536`.)
 
 
 Deprecated
@@ -102,6 +107,13 @@ Deprecated
 Removed
 =======
 
+* The following undocumented :mod:`sqlite3` features, deprecated in Python
+  3.10, are now removed:
+
+  * ``sqlite3.enable_shared_cache()``
+  * ``sqlite3.OptimizedUnicode``
+
+  (Contributed by Erlend E. Aasland in :gh:`92548`)
 
 
 Porting to Python 3.12
@@ -120,6 +132,14 @@ Changes in the Python API
   contain ASCII letters and digits and underscore.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
 
+* Removed randrange() functionality deprecated since Python 3.10.  Formerly,
+  randrange(10.0) losslessly converted to randrange(10). Now, it raises a
+  TypeError. Also, the exception raised for non-integral values such as
+  randrange(10.5) or randrange('10') has been changed from ValueError to
+  TypeError.  This also prevents bugs where ``randrange(1e25)`` would silently
+  select from a larger range than ``randrange(10**25)``.
+  (Originally suggested by Serhiy Storchaka gh-86388.)
+
 
 Build Changes
 =============
@@ -134,10 +154,36 @@ New Features
 Porting to Python 3.12
 ----------------------
 
+* Legacy Unicode APIs based on ``Py_UNICODE*`` representation has been removed.
+  Please migrate to APIs based on UTF-8 or ``wchar_t*``.
+
+* Argument parsing functions like :c:func:`PyArg_ParseTuple` doesn't support
+  ``Py_UNICODE*`` based format (e.g. ``u``, ``Z``) anymore. Please migrate
+  to other formats for Unicode like ``s``, ``z``, ``es``, and ``U``.
+
 Deprecated
 ----------
 
 Removed
 -------
 
-* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been removed.
+* Remove the ``token.h`` header file. There was never any public tokenizer C
+  API. The ``token.h`` header file was only designed to be used by Python
+  internals.
+  (Contributed by Victor Stinner in :gh:`92651`.)
+
+* Leagcy Unicode APIs has been removed. See :pep:`623` for detail.
+
+   * :c:macro:`PyUnicode_WCHAR_KIND`
+   * :c:func:`PyUnicode_AS_UNICODE`
+   * :c:func:`PyUnicode_AsUnicode`
+   * :c:func:`PyUnicode_AsUnicodeAndSize`
+   * :c:func:`PyUnicode_AS_DATA`
+   * :c:func:`PyUnicode_FromUnicode`
+   * :c:func:`PyUnicode_GET_SIZE`
+   * :c:func:`PyUnicode_GetSize`
+   * :c:func:`PyUnicode_GET_DATA_SIZE`
+
+* Remove the ``PyUnicode_InternImmortal()`` function and the
+  ``SSTATE_INTERNED_IMMORTAL`` macro.
+  (Contributed by Victor Stinner in :gh:`85858`.)

@@ -992,12 +992,7 @@ which incur interpreter overhead.
        "Equivalent to list(combinations(iterable, r))[index]"
        pool = tuple(iterable)
        n = len(pool)
-       if r < 0 or r > n:
-           raise ValueError
-       c = 1
-       k = min(r, n-r)
-       for i in range(1, k+1):
-           c = c * (n - k + i) // i
+       c = math.comb(n, r)
        if index < 0:
            index += c
        if index < 0 or index >= c:
@@ -1071,6 +1066,7 @@ which incur interpreter overhead.
 
     >>> import operator
     >>> import collections
+    >>> import math
 
     >>> take(10, count())
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]

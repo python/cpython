@@ -46,7 +46,7 @@ module _sqlite3
 /*[clinic input]
 _sqlite3.connect as pysqlite_connect
 
-    database: object(converter='PyUnicode_FSConverter')
+    database: object
     timeout: double = 5.0
     detect_types: int = 0
     isolation_level: object = NULL
@@ -66,7 +66,7 @@ pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
                       int detect_types, PyObject *isolation_level,
                       int check_same_thread, PyObject *factory,
                       int cached_statements, int uri)
-/*[clinic end generated code: output=450ac9078b4868bb input=ea6355ba55a78e12]*/
+/*[clinic end generated code: output=450ac9078b4868bb input=e16914663ddf93ce]*/
 {
     if (isolation_level == NULL) {
         isolation_level = PyUnicode_FromString("");
@@ -81,7 +81,6 @@ pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
                                           timeout, detect_types,
                                           isolation_level, check_same_thread,
                                           factory, cached_statements, uri);
-    Py_DECREF(database);  // needed bco. the AC FSConverter
     Py_DECREF(isolation_level);
     return res;
 }
@@ -102,36 +101,6 @@ pysqlite_complete_statement_impl(PyObject *module, const char *statement)
         return Py_NewRef(Py_True);
     } else {
         return Py_NewRef(Py_False);
-    }
-}
-
-/*[clinic input]
-_sqlite3.enable_shared_cache as pysqlite_enable_shared_cache
-
-    do_enable: int
-
-Enable or disable shared cache mode for the calling thread.
-
-This method is deprecated and will be removed in Python 3.12.
-Shared cache is strongly discouraged by the SQLite 3 documentation.
-If shared cache must be used, open the database in URI mode using
-the cache=shared query parameter.
-[clinic start generated code]*/
-
-static PyObject *
-pysqlite_enable_shared_cache_impl(PyObject *module, int do_enable)
-/*[clinic end generated code: output=259c74eedee1516b input=26e40d5971d3487d]*/
-{
-    int rc;
-
-    rc = sqlite3_enable_shared_cache(do_enable);
-
-    if (rc != SQLITE_OK) {
-        pysqlite_state *state = pysqlite_get_state(module);
-        PyErr_SetString(state->OperationalError, "Changing the shared_cache flag failed");
-        return NULL;
-    } else {
-        Py_RETURN_NONE;
     }
 }
 
@@ -277,7 +246,6 @@ static PyMethodDef module_methods[] = {
     PYSQLITE_COMPLETE_STATEMENT_METHODDEF
     PYSQLITE_CONNECT_METHODDEF
     PYSQLITE_ENABLE_CALLBACK_TRACE_METHODDEF
-    PYSQLITE_ENABLE_SHARED_CACHE_METHODDEF
     PYSQLITE_REGISTER_ADAPTER_METHODDEF
     PYSQLITE_REGISTER_CONVERTER_METHODDEF
     {NULL, NULL}

@@ -648,6 +648,9 @@ class CosmeticTestCase(ASTTestCase):
                     self.check_src_roundtrip(source.format(target=target))
 
     def test_star_expr_assign_target_multiple(self):
+        self.check_src_roundtrip("() = []")
+        self.check_src_roundtrip("[] = ()")
+        self.check_src_roundtrip("() = [a] = c, = [d] = e, f = () = g = h")
         self.check_src_roundtrip("a = b = c = d")
         self.check_src_roundtrip("a, b = c, d = e, f = g")
         self.check_src_roundtrip("[a, b] = [c, d] = [e, f] = g")
