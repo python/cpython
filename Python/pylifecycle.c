@@ -95,11 +95,16 @@ __attribute__((
 
 #endif
 
+/* Suppress deprecation warning for PyBytesObject.ob_shash */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
 _PyRuntimeState _PyRuntime
 #if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
 __attribute__ ((section (".PyRuntime")))
 #endif
 = _PyRuntimeState_INIT;
+_Py_COMP_DIAG_POP
+
 static int runtime_initialized = 0;
 
 PyStatus
@@ -1086,8 +1091,6 @@ pyinit_main_reconfigure(PyThreadState *tstate)
 static PyStatus
 init_interp_main(PyThreadState *tstate)
 {
-    extern void _PyThread_debug_deprecation(void);
-
     assert(!_PyErr_Occurred(tstate));
 
     PyStatus status;
@@ -1188,9 +1191,6 @@ init_interp_main(PyThreadState *tstate)
         emit_stderr_warning_for_legacy_locale(interp->runtime);
 #endif
     }
-
-    // Warn about PYTHONTHREADDEBUG deprecation
-    _PyThread_debug_deprecation();
 
     assert(!_PyErr_Occurred(tstate));
 

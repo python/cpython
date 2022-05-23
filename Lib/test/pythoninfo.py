@@ -79,6 +79,7 @@ def call_func(info_add, name, mod, func_name, *, formatter=None):
 
 def collect_sys(info_add):
     attributes = (
+        '_emscripten_info',
         '_framework',
         'abiflags',
         'api_version',
@@ -155,7 +156,7 @@ def collect_platform(info_add):
 def collect_locale(info_add):
     import locale
 
-    info_add('locale.encoding', locale.getpreferredencoding(False))
+    info_add('locale.getencoding', locale.getencoding())
 
 
 def collect_builtins(info_add):
@@ -544,8 +545,14 @@ def collect_ssl(info_add):
 def collect_socket(info_add):
     import socket
 
-    hostname = socket.gethostname()
-    info_add('socket.hostname', hostname)
+    try:
+        hostname = socket.gethostname()
+    except OSError:
+        # WASI SDK 15.0 does not have gethostname(2).
+        if sys.platform != "wasi":
+            raise
+    else:
+        info_add('socket.hostname', hostname)
 
 
 def collect_sqlite(info_add):

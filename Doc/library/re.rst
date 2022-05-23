@@ -7,7 +7,7 @@
 .. moduleauthor:: Fredrik Lundh <fredrik@pythonware.com>
 .. sectionauthor:: Andrew M. Kuchling <amk@amk.ca>
 
-**Source code:** :source:`Lib/re.py`
+**Source code:** :source:`Lib/re/`
 
 --------------
 
@@ -166,15 +166,15 @@ The special characters are:
   back-tracking when the expression following it fails to match.
   These are known as :dfn:`possessive` quantifiers.
   For example, ``a*a`` will match ``'aaaa'`` because the ``a*`` will match
-  all 4 ``'a'``s, but, when the final ``'a'`` is encountered, the
+  all 4 ``'a'``\ s, but, when the final ``'a'`` is encountered, the
   expression is backtracked so that in the end the ``a*`` ends up matching
-  3 ``'a'``s total, and the fourth ``'a'`` is matched by the final ``'a'``.
+  3 ``'a'``\ s total, and the fourth ``'a'`` is matched by the final ``'a'``.
   However, when ``a*+a`` is used to match ``'aaaa'``, the ``a*+`` will
   match all 4 ``'a'``, but when the final ``'a'`` fails to find any more
   characters to match, the expression cannot be backtracked and will thus
   fail to match.
   ``x*+``, ``x++`` and ``x?+`` are equivalent to ``(?>x*)``, ``(?>x+)``
-  and ``(?>x?)`` correspondigly.
+  and ``(?>x?)`` correspondingly.
 
    .. versionadded:: 3.11
 
@@ -208,10 +208,10 @@ The special characters are:
    *without* establishing any backtracking points.
    This is the possessive version of the quantifier above.
    For example, on the 6-character string ``'aaaaaa'``, ``a{3,5}+aa``
-   attempt to match 5 ``'a'`` characters, then, requiring 2 more ``'a'``s,
+   attempt to match 5 ``'a'`` characters, then, requiring 2 more ``'a'``\ s,
    will need more characters than available and thus fail, while
-   ``a{3,5}aa`` will match with ``a{3,5}`` capturing 5, then 4 ``'a'``s
-   by backtracking and then the final 2 ``'a'``s are matched by the final
+   ``a{3,5}aa`` will match with ``a{3,5}`` capturing 5, then 4 ``'a'``\ s
+   by backtracking and then the final 2 ``'a'``\ s are matched by the final
    ``aa`` in the pattern.
    ``x{m,n}+`` is equivalent to ``(?>x{m,n})``.
 
@@ -395,7 +395,8 @@ The special characters are:
 ``(?P<name>...)``
    Similar to regular parentheses, but the substring matched by the group is
    accessible via the symbolic group name *name*.  Group names must be valid
-   Python identifiers, and each group name must be defined only once within a
+   Python identifiers, and in bytes patterns they must contain only characters
+   in the ASCII range.  Each group name must be defined only once within a
    regular expression.  A symbolic group is also a numbered group, just as if
    the group were not named.
 
@@ -416,6 +417,10 @@ The special characters are:
    | argument of ``re.sub()``              | * ``\g<1>``                      |
    |                                       | * ``\1``                         |
    +---------------------------------------+----------------------------------+
+
+   .. versionchanged:: 3.12
+      In bytes patterns group names must contain only characters in
+      the ASCII range.
 
 .. index:: single: (?P=; in regular expressions
 
@@ -485,6 +490,9 @@ The special characters are:
    ``(<)?(\w+@\w+(?:\.\w+)+)(?(1)>|$)`` is a poor email matching pattern, which
    will match with ``'<user@host.com>'`` as well as ``'user@host.com'``, but
    not with ``'<user@host.com'`` nor ``'user@host.com>'``.
+
+   .. versionchanged:: 3.12
+      Group *id* can only contain ASCII digits.
 
 
 The special sequences consist of ``'\'`` and a character from the list below.
@@ -659,40 +667,14 @@ functions are simplified versions of the full featured methods for compiled
 regular expressions.  Most non-trivial applications always use the compiled
 form.
 
+
+Flags
+^^^^^
+
 .. versionchanged:: 3.6
    Flag constants are now instances of :class:`RegexFlag`, which is a subclass of
    :class:`enum.IntFlag`.
 
-.. function:: compile(pattern, flags=0)
-
-   Compile a regular expression pattern into a :ref:`regular expression object
-   <re-objects>`, which can be used for matching using its
-   :func:`~Pattern.match`, :func:`~Pattern.search` and other methods, described
-   below.
-
-   The expression's behaviour can be modified by specifying a *flags* value.
-   Values can be any of the following variables, combined using bitwise OR (the
-   ``|`` operator).
-
-   The sequence ::
-
-      prog = re.compile(pattern)
-      result = prog.match(string)
-
-   is equivalent to ::
-
-      result = re.match(pattern, string)
-
-   but using :func:`re.compile` and saving the resulting regular expression
-   object for reuse is more efficient when the expression will be used several
-   times in a single program.
-
-   .. note::
-
-      The compiled versions of the most recent patterns passed to
-      :func:`re.compile` and the module-level matching functions are cached, so
-      programs that use only a few regular expressions at a time needn't worry
-      about compiling regular expressions.
 
 .. class:: RegexFlag
 
@@ -815,6 +797,41 @@ form.
       b = re.compile(r"\d+\.\d*")
 
    Corresponds to the inline flag ``(?x)``.
+
+
+Functions
+^^^^^^^^^
+
+.. function:: compile(pattern, flags=0)
+
+   Compile a regular expression pattern into a :ref:`regular expression object
+   <re-objects>`, which can be used for matching using its
+   :func:`~Pattern.match`, :func:`~Pattern.search` and other methods, described
+   below.
+
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the following variables, combined using bitwise OR (the
+   ``|`` operator).
+
+   The sequence ::
+
+      prog = re.compile(pattern)
+      result = prog.match(string)
+
+   is equivalent to ::
+
+      result = re.match(pattern, string)
+
+   but using :func:`re.compile` and saving the resulting regular expression
+   object for reuse is more efficient when the expression will be used several
+   times in a single program.
+
+   .. note::
+
+      The compiled versions of the most recent patterns passed to
+      :func:`re.compile` and the module-level matching functions are cached, so
+      programs that use only a few regular expressions at a time needn't worry
+      about compiling regular expressions.
 
 
 .. function:: search(pattern, string, flags=0)
@@ -995,6 +1012,11 @@ form.
       Empty matches for the pattern are replaced when adjacent to a previous
       non-empty match.
 
+   .. versionchanged:: 3.12
+      Group *id* can only contain ASCII digits.
+      In bytes replacement strings group names must contain only characters
+      in the ASCII range.
+
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)
 
@@ -1047,6 +1069,9 @@ form.
 
    Clear the regular expression cache.
 
+
+Exceptions
+^^^^^^^^^^
 
 .. exception:: error(msg, pattern=None, pos=None)
 

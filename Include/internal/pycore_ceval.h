@@ -12,8 +12,14 @@ extern "C" {
 struct pyruntimestate;
 struct _ceval_runtime_state;
 
+/* WASI has limited call stack. wasmtime 0.36 can handle sufficient amount of
+   C stack frames for little more than 750 recursions. */
 #ifndef Py_DEFAULT_RECURSION_LIMIT
-#  define Py_DEFAULT_RECURSION_LIMIT 1000
+#  ifdef __wasi__
+#    define Py_DEFAULT_RECURSION_LIMIT 750
+#  else
+#    define Py_DEFAULT_RECURSION_LIMIT 1000
+#  endif
 #endif
 
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
@@ -91,7 +97,7 @@ extern void _PyEval_DeactivateOpCache(void);
 
 #ifdef USE_STACKCHECK
 /* With USE_STACKCHECK macro defined, trigger stack checks in
-   _Py_CheckRecursiveCall() on every 64th call to Py_EnterRecursiveCall. */
+   _Py_CheckRecursiveCall() on every 64th call to _Py_EnterRecursiveCall. */
 static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
     return (tstate->recursion_remaining-- <= 0
             || (tstate->recursion_remaining & 63) == 0);
@@ -106,28 +112,24 @@ PyAPI_FUNC(int) _Py_CheckRecursiveCall(
     PyThreadState *tstate,
     const char *where);
 
-static inline int _Py_EnterRecursiveCall(PyThreadState *tstate,
-                                         const char *where) {
+static inline int _Py_EnterRecursiveCallTstate(PyThreadState *tstate,
+                                               const char *where) {
     return (_Py_MakeRecCheck(tstate) && _Py_CheckRecursiveCall(tstate, where));
 }
 
-static inline int _Py_EnterRecursiveCall_inline(const char *where) {
+static inline int _Py_EnterRecursiveCall(const char *where) {
     PyThreadState *tstate = _PyThreadState_GET();
-    return _Py_EnterRecursiveCall(tstate, where);
+    return _Py_EnterRecursiveCallTstate(tstate, where);
 }
 
-#define Py_EnterRecursiveCall(where) _Py_EnterRecursiveCall_inline(where)
-
-static inline void _Py_LeaveRecursiveCall(PyThreadState *tstate)  {
+static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate)  {
     tstate->recursion_remaining++;
 }
 
-static inline void _Py_LeaveRecursiveCall_inline(void)  {
+static inline void _Py_LeaveRecursiveCall(void)  {
     PyThreadState *tstate = _PyThreadState_GET();
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
 }
-
-#define Py_LeaveRecursiveCall() _Py_LeaveRecursiveCall_inline()
 
 extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
 

@@ -286,7 +286,7 @@ static inline Py_hash_t
 unicode_get_hash(PyObject *o)
 {
     assert(PyUnicode_CheckExact(o));
-    return ((PyASCIIObject*)o)->hash;
+    return _PyASCIIObject_CAST(o)->hash;
 }
 
 /* Print summary info about the state of the optimized allocator */
@@ -624,6 +624,7 @@ new_keys_object(uint8_t log2_size, bool unicode)
 #endif
     if (log2_size == PyDict_LOG_MINSIZE && unicode && state->keys_numfree > 0) {
         dk = state->keys_free_list[--state->keys_numfree];
+        OBJECT_STAT_INC(from_freelist);
     }
     else
 #endif
@@ -681,6 +682,7 @@ free_keys_object(PyDictKeysObject *keys)
             && state->keys_numfree < PyDict_MAXFREELIST
             && DK_IS_UNICODE(keys)) {
         state->keys_free_list[state->keys_numfree++] = keys;
+        OBJECT_STAT_INC(to_freelist);
         return;
     }
 #endif
@@ -726,6 +728,7 @@ new_dict(PyDictKeysObject *keys, PyDictValues *values, Py_ssize_t used, int free
         mp = state->free_list[--state->numfree];
         assert (mp != NULL);
         assert (Py_IS_TYPE(mp, &PyDict_Type));
+        OBJECT_STAT_INC(from_freelist);
         _Py_NewReference((PyObject *)mp);
     }
     else
@@ -1544,6 +1547,7 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize, int unicode)
                     state->keys_numfree < PyDict_MAXFREELIST)
             {
                 state->keys_free_list[state->keys_numfree++] = oldkeys;
+                OBJECT_STAT_INC(to_freelist);
             }
             else
 #endif
@@ -2381,6 +2385,7 @@ dict_dealloc(PyDictObject *mp)
 #endif
     if (state->numfree < PyDict_MAXFREELIST && Py_IS_TYPE(mp, &PyDict_Type)) {
         state->free_list[state->numfree++] = mp;
+        OBJECT_STAT_INC(to_freelist);
     }
     else
 #endif
@@ -3655,9 +3660,9 @@ PyDoc_STRVAR(values__doc__,
 
 static PyMethodDef mapp_methods[] = {
     DICT___CONTAINS___METHODDEF
-    {"__getitem__", (PyCFunction)(void(*)(void))dict_subscript,        METH_O | METH_COEXIST,
+    {"__getitem__", _PyCFunction_CAST(dict_subscript),        METH_O | METH_COEXIST,
      getitem__doc__},
-    {"__sizeof__",      (PyCFunction)(void(*)(void))dict_sizeof,       METH_NOARGS,
+    {"__sizeof__",      _PyCFunction_CAST(dict_sizeof),       METH_NOARGS,
      sizeof__doc__},
     DICT_GET_METHODDEF
     DICT_SETDEFAULT_METHODDEF
@@ -3669,7 +3674,7 @@ static PyMethodDef mapp_methods[] = {
     items__doc__},
     {"values",          dictvalues_new,                 METH_NOARGS,
     values__doc__},
-    {"update",          (PyCFunction)(void(*)(void))dict_update, METH_VARARGS | METH_KEYWORDS,
+    {"update",          _PyCFunction_CAST(dict_update), METH_VARARGS | METH_KEYWORDS,
      update__doc__},
     DICT_FROMKEYS_METHODDEF
     {"clear",           (PyCFunction)dict_clear,        METH_NOARGS,
@@ -4026,9 +4031,9 @@ dictiter_reduce(dictiterobject *di, PyObject *Py_UNUSED(ignored));
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyMethodDef dictiter_methods[] = {
-    {"__length_hint__", (PyCFunction)(void(*)(void))dictiter_len, METH_NOARGS,
+    {"__length_hint__", _PyCFunction_CAST(dictiter_len), METH_NOARGS,
      length_hint_doc},
-     {"__reduce__", (PyCFunction)(void(*)(void))dictiter_reduce, METH_NOARGS,
+     {"__reduce__", _PyCFunction_CAST(dictiter_reduce), METH_NOARGS,
      reduce_doc},
     {NULL,              NULL}           /* sentinel */
 };
@@ -5079,7 +5084,7 @@ PyDoc_STRVAR(reversed_keys_doc,
 static PyMethodDef dictkeys_methods[] = {
     {"isdisjoint",      (PyCFunction)dictviews_isdisjoint,  METH_O,
      isdisjoint_doc},
-    {"__reversed__",    (PyCFunction)(void(*)(void))dictkeys_reversed,    METH_NOARGS,
+    {"__reversed__",    _PyCFunction_CAST(dictkeys_reversed),    METH_NOARGS,
      reversed_keys_doc},
     {NULL,              NULL}           /* sentinel */
 };
@@ -5467,7 +5472,9 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
     values->values[ix] = value;
     if (old_value == NULL) {
         if (value == NULL) {
-            PyErr_SetObject(PyExc_AttributeError, name);
+            PyErr_Format(PyExc_AttributeError,
+                         "'%.100s' object has no attribute '%U'",
+                         Py_TYPE(obj)->tp_name, name);
             return -1;
         }
         _PyDictValues_AddToInsertionOrder(values, ix);

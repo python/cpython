@@ -465,26 +465,11 @@ class TestSysConfig(unittest.TestCase):
 
     @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
                      'EXT_SUFFIX required for this test')
-    def test_SO_deprecation(self):
-        self.assertWarns(DeprecationWarning,
-                         sysconfig.get_config_var, 'SO')
-
-    @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
-                     'EXT_SUFFIX required for this test')
-    def test_SO_value(self):
-        with check_warnings(('', DeprecationWarning)):
-            self.assertEqual(sysconfig.get_config_var('SO'),
-                             sysconfig.get_config_var('EXT_SUFFIX'))
-
-    @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
-                     'EXT_SUFFIX required for this test')
     def test_EXT_SUFFIX_in_vars(self):
         import _imp
         if not _imp.extension_suffixes():
             self.skipTest("stub loader has no suffixes")
         vars = sysconfig.get_config_vars()
-        self.assertIsNotNone(vars['SO'])
-        self.assertEqual(vars['SO'], vars['EXT_SUFFIX'])
         self.assertEqual(vars['EXT_SUFFIX'], _imp.extension_suffixes()[0])
 
     @unittest.skipUnless(sys.platform == 'linux' and

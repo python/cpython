@@ -2984,7 +2984,8 @@ generators, coroutines do not directly support iteration.
    :exc:`StopIteration`, or other exception) is the same as when
    iterating over the :meth:`__await__` return value, described above.
 
-.. method:: coroutine.throw(type[, value[, traceback]])
+.. method:: coroutine.throw(value)
+            coroutine.throw(type[, value[, traceback]])
 
    Raises the specified exception in the coroutine.  This method delegates
    to the :meth:`~generator.throw` method of the iterator that caused

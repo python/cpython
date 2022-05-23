@@ -54,6 +54,7 @@ Richard Chamberlain, for the first implementation of textdoc.
 #     the current directory is changed with os.chdir(), an incorrect
 #     path will be displayed.
 
+import __future__
 import builtins
 import importlib._bootstrap
 import importlib._bootstrap_external
@@ -274,6 +275,8 @@ def _split_list(s, predicate):
             no.append(x)
     return yes, no
 
+_future_feature_names = set(__future__.all_feature_names)
+
 def visiblename(name, all=None, obj=None):
     """Decide whether to show documentation on a variable."""
     # Certain special names are redundant or internal.
@@ -288,6 +291,10 @@ def visiblename(name, all=None, obj=None):
     # Namedtuples have public fields and methods with a single leading underscore
     if name.startswith('_') and hasattr(obj, '_fields'):
         return True
+    # Ignore __future__ imports.
+    if obj is not __future__ and name in _future_feature_names:
+        if isinstance(getattr(obj, name, None), __future__._Feature):
+            return False
     if all is not None:
         # only document that which the programmer exported in __all__
         return name in all
@@ -694,10 +701,10 @@ class HTMLDoc(Doc):
                 url = escape(all).replace('"', '&quot;')
                 results.append('<a href="%s">%s</a>' % (url, url))
             elif rfc:
-                url = 'http://www.rfc-editor.org/rfc/rfc%d.txt' % int(rfc)
+                url = 'https://www.rfc-editor.org/rfc/rfc%d.txt' % int(rfc)
                 results.append('<a href="%s">%s</a>' % (url, escape(all)))
             elif pep:
-                url = 'https://www.python.org/dev/peps/pep-%04d/' % int(pep)
+                url = 'https://peps.python.org/pep-%04d/' % int(pep)
                 results.append('<a href="%s">%s</a>' % (url, escape(all)))
             elif selfdot:
                 # Create a link for methods like 'self.method(...)'
@@ -720,7 +727,7 @@ class HTMLDoc(Doc):
         """Produce HTML for a class tree as given by inspect.getclasstree()."""
         result = ''
         for entry in tree:
-            if type(entry) is type(()):
+            if isinstance(entry, tuple):
                 c, bases = entry
                 result = result + '<dt class="heading-text">'
                 result = result + self.classlink(c, modname)
@@ -730,7 +737,7 @@ class HTMLDoc(Doc):
                         parents.append(self.classlink(base, modname))
                     result = result + '(' + ', '.join(parents) + ')'
                 result = result + '\n</dt>'
-            elif type(entry) is type([]):
+            elif isinstance(entry, list):
                 result = result + '<dd>\n%s</dd>\n' % self.formattree(
                     entry, modname, c)
         return '<dl>\n%s</dl>\n' % result
@@ -1183,14 +1190,14 @@ class TextDoc(Doc):
         """Render in text a class tree as returned by inspect.getclasstree()."""
         result = ''
         for entry in tree:
-            if type(entry) is type(()):
+            if isinstance(entry, tuple):
                 c, bases = entry
                 result = result + prefix + classname(c, modname)
                 if bases and bases != (parent,):
                     parents = (classname(c, modname) for c in bases)
                     result = result + '(%s)' % ', '.join(parents)
                 result = result + '\n'
-            elif type(entry) is type([]):
+            elif isinstance(entry, list):
                 result = result + self.formattree(
                     entry, modname, c, prefix + '    ')
         return result
@@ -1884,6 +1891,7 @@ class Helper:
             if topic not in topics:
                 topics = topics + ' ' + topic
             symbols[symbol] = topics
+    del topic, symbols_, symbol, topics
 
     topics = {
         'TYPES': ('types', 'STRINGS UNICODE NUMBERS SEQUENCES MAPPINGS '
@@ -2036,7 +2044,7 @@ has the same effect as typing a particular string at the help> prompt.
             return self.input.readline()
 
     def help(self, request):
-        if type(request) is type(''):
+        if isinstance(request, str):
             request = request.strip()
             if request == 'keywords': self.listkeywords()
             elif request == 'symbols': self.listsymbols()
@@ -2121,7 +2129,7 @@ module "pydoc_data.topics" could not be found.
         if not target:
             self.output.write('no documentation found for %s\n' % repr(topic))
             return
-        if type(target) is type(''):
+        if isinstance(target, str):
             return self.showtopic(target, more_xrefs)
 
         label, xrefs = target

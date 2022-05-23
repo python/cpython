@@ -7,6 +7,11 @@ extern "C" {
 #include <stdbool.h>
 #include <stddef.h>
 
+/* See Objects/frame_layout.md for an explanation of the frame stack
+ * including explanation of the PyFrameObject and _PyInterpreterFrame
+ * structs. */
+
+
 struct _frame {
     PyObject_HEAD
     PyFrameObject *f_back;      /* previous frame, or NULL */
@@ -15,6 +20,7 @@ struct _frame {
     int f_lineno;               /* Current line number. Only valid if non-zero */
     char f_trace_lines;         /* Emit per-line trace events? */
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
+    char f_fast_as_locals;      /* Have the fast locals of this frame been converted to a dict? */
     /* The frame data, if this frame object owns the frame */
     PyObject *_f_frame_data[1];
 };
@@ -38,25 +44,30 @@ enum _frameowner {
     FRAME_OWNED_BY_FRAME_OBJECT = 2
 };
 
-/*
-    frame->f_lasti refers to the index of the last instruction,
-    unless it's -1 in which case next_instr should be first_instr.
-*/
-
 typedef struct _PyInterpreterFrame {
+    /* "Specials" section */
     PyFunctionObject *f_func; /* Strong reference */
     PyObject *f_globals; /* Borrowed reference */
     PyObject *f_builtins; /* Borrowed reference */
     PyObject *f_locals; /* Strong reference, may be NULL */
     PyCodeObject *f_code; /* Strong reference */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL */
+    /* Linkage section */
     struct _PyInterpreterFrame *previous;
-    int f_lasti;       /* Last instruction if called */
+    // NOTE: This is not necessarily the last instruction started in the given
+    // frame. Rather, it is the code unit *prior to* the *next* instruction. For
+    // example, it may be an inline CACHE entry, an instruction we just jumped
+    // over, or (in the case of a newly-created frame) a totally invalid value:
+    _Py_CODEUNIT *prev_instr;
     int stacktop;     /* Offset of TOS from localsplus  */
     bool is_entry;  // Whether this is the "root" frame for the current _PyCFrame.
     char owner;
+    /* Locals and stack */
     PyObject *localsplus[1];
 } _PyInterpreterFrame;
+
+#define _PyInterpreterFrame_LASTI(IF) \
+    ((int)((IF)->prev_instr - _PyCode_CODE((IF)->f_code)))
 
 static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
     return f->localsplus + f->f_code->co_nlocalsplus;
@@ -96,7 +107,7 @@ _PyFrame_InitializeSpecials(
     frame->f_locals = Py_XNewRef(locals);
     frame->stacktop = nlocalsplus;
     frame->frame_obj = NULL;
-    frame->f_lasti = -1;
+    frame->prev_instr = _PyCode_CODE(frame->f_code) - 1;
     frame->is_entry = false;
     frame->owner = FRAME_OWNED_BY_THREAD;
 }
@@ -185,6 +196,7 @@ void _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
 _PyInterpreterFrame *
 _PyFrame_Push(PyThreadState *tstate, PyFunctionObject *func);
 
+int _PyInterpreterFrame_GetLine(_PyInterpreterFrame *frame);
 
 static inline
 PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)

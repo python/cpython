@@ -309,6 +309,8 @@ star_etc[StarEtc*]:
     | invalid_star_etc
     | '*' a=param_no_default b=param_maybe_default* c=[kwds] {
         _PyPegen_star_etc(p, a, b, c) }
+    | '*' a=param_no_default_star_annotation b=param_maybe_default* c=[kwds] {
+        _PyPegen_star_etc(p, a, b, c) }
     | '*' ',' b=param_maybe_default+ c=[kwds] {
         _PyPegen_star_etc(p, NULL, b, c) }
     | a=kwds { _PyPegen_star_etc(p, NULL, NULL, a) }
@@ -333,6 +335,9 @@ kwds[arg_ty]:
 param_no_default[arg_ty]:
     | a=param ',' tc=TYPE_COMMENT? { _PyPegen_add_type_comment_to_arg(p, a, tc) }
     | a=param tc=TYPE_COMMENT? &')' { _PyPegen_add_type_comment_to_arg(p, a, tc) }
+param_no_default_star_annotation[arg_ty]:
+    | a=param_star_annotation ',' tc=TYPE_COMMENT? { _PyPegen_add_type_comment_to_arg(p, a, tc) }
+    | a=param_star_annotation tc=TYPE_COMMENT? &')' { _PyPegen_add_type_comment_to_arg(p, a, tc) }
 param_with_default[NameDefaultPair*]:
     | a=param c=default ',' tc=TYPE_COMMENT? { _PyPegen_name_default_pair(p, a, c, tc) }
     | a=param c=default tc=TYPE_COMMENT? &')' { _PyPegen_name_default_pair(p, a, c, tc) }
@@ -340,7 +345,9 @@ param_maybe_default[NameDefaultPair*]:
     | a=param c=default? ',' tc=TYPE_COMMENT? { _PyPegen_name_default_pair(p, a, c, tc) }
     | a=param c=default? tc=TYPE_COMMENT? &')' { _PyPegen_name_default_pair(p, a, c, tc) }
 param[arg_ty]: a=NAME b=annotation? { _PyAST_arg(a->v.Name.id, b, NULL, EXTRA) }
+param_star_annotation[arg_ty]: a=NAME b=star_annotation { _PyAST_arg(a->v.Name.id, b, NULL, EXTRA) }
 annotation[expr_ty]: ':' a=expression { a }
+star_annotation[expr_ty]: ':' a=star_expression { a }
 default[expr_ty]: '=' a=expression { a } | invalid_default
 
 # If statement
@@ -782,7 +789,7 @@ primary[expr_ty]:
 
 slices[expr_ty]:
     | a=slice !',' { a }
-    | a[asdl_expr_seq*]=','.slice+ [','] { _PyAST_Tuple(a, Load, EXTRA) }
+    | a[asdl_expr_seq*]=','.(slice | starred_expression)+ [','] { _PyAST_Tuple(a, Load, EXTRA) }
 
 slice[expr_ty]:
     | a=[expression] ':' b=[expression] c=[':' d=[expression] { d }] { _PyAST_Slice(a, b, c, EXTRA) }
@@ -1066,12 +1073,12 @@ func_type_comment[Token*]:
 invalid_arguments:
     | a=args ',' '*' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "iterable argument unpacking follows keyword argument unpacking") }
     | a=expression b=for_if_clauses ',' [args | expression for_if_clauses] {
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, PyPegen_last_item(b, comprehension_ty)->target, "Generator expression must be parenthesized") }
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, _PyPegen_get_last_comprehension_item(PyPegen_last_item(b, comprehension_ty)), "Generator expression must be parenthesized") }
     | a=NAME b='=' expression for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?")}
     | a=args b=for_if_clauses { _PyPegen_nonparen_genexp_in_call(p, a, b) }
     | args ',' a=expression b=for_if_clauses {
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, asdl_seq_GET(b, b->size-1)->target, "Generator expression must be parenthesized") }
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, _PyPegen_get_last_comprehension_item(PyPegen_last_item(b, comprehension_ty)), "Generator expression must be parenthesized") }
     | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
 invalid_kwarg:
     | a[Token*]=('True'|'False'|'None') b='=' {
@@ -1250,7 +1257,7 @@ invalid_finally_stmt:
 invalid_except_stmt_indent:
     | a='except' expression ['as' NAME ] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'except' statement on line %d", a->lineno) }
-    | a='except' ':' NEWLINE !INDENT { RAISE_SYNTAX_ERROR("expected an indented block after except statement on line %d", a->lineno) }
+    | a='except' ':' NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block after 'except' statement on line %d", a->lineno) }
 invalid_except_star_stmt_indent:
     | a='except' '*' expression ['as' NAME ] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'except*' statement on line %d", a->lineno) }

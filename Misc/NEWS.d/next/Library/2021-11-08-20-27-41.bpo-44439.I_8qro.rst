@@ -1,2 +1,0 @@
-Fix ``.write()`` method of a member file in ``ZipFile``, when the input data is
-an object that supports the buffer protocol, the file length may be wrong.

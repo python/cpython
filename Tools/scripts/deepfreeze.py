@@ -18,7 +18,7 @@ import umarshal
 from generate_global_objects import get_identifiers_and_strings
 
 verbose = False
-identifiers = get_identifiers_and_strings()[0]
+identifiers, strings = get_identifiers_and_strings()
 
 def isprintable(b: bytes) -> bool:
     return all(0x20 <= c < 0x7f for c in b)
@@ -168,8 +168,12 @@ class Printer:
         return f"& {name}.ob_base.ob_base"
 
     def generate_unicode(self, name: str, s: str) -> str:
+        if s in strings:
+            return f"&_Py_STR({strings[s]})"
         if s in identifiers:
             return f"&_Py_ID({s})"
+        if re.match(r'\A[A-Za-z0-9_]+\Z', s):
+            name = f"const_str_{s}"
         kind, ascii = analyze_character_width(s)
         if kind == PyUnicode_1BYTE_KIND:
             datatype = "uint8_t"
@@ -196,7 +200,6 @@ class Printer:
                         self.write(".kind = 1,")
                         self.write(".compact = 1,")
                         self.write(".ascii = 1,")
-                        self.write(".ready = 1,")
                 self.write(f"._data = {make_string_literal(s.encode('ascii'))},")
                 return f"& {name}._ascii.ob_base"
             else:
@@ -209,21 +212,10 @@ class Printer:
                             self.write(f".kind = {kind},")
                             self.write(".compact = 1,")
                             self.write(".ascii = 0,")
-                            self.write(".ready = 1,")
                 with self.block(f"._data =", ","):
                     for i in range(0, len(s), 16):
                         data = s[i:i+16]
                         self.write(", ".join(map(str, map(ord, data))) + ",")
-                if kind == PyUnicode_2BYTE_KIND:
-                    self.patchups.append("if (sizeof(wchar_t) == 2) {")
-                    self.patchups.append(f"    {name}._compact._base.wstr = (wchar_t *) {name}._data;")
-                    self.patchups.append(f"    {name}._compact.wstr_length = {len(s)};")
-                    self.patchups.append("}")
-                if kind == PyUnicode_4BYTE_KIND:
-                    self.patchups.append("if (sizeof(wchar_t) == 4) {")
-                    self.patchups.append(f"    {name}._compact._base.wstr = (wchar_t *) {name}._data;")
-                    self.patchups.append(f"    {name}._compact.wstr_length = {len(s)};")
-                    self.patchups.append("}")
                 return f"& {name}._compact._base.ob_base"
 
 
@@ -236,8 +228,6 @@ class Printer:
         co_name = self.generate(name + "_name", code.co_name)
         co_qualname = self.generate(name + "_qualname", code.co_qualname)
         co_linetable = self.generate(name + "_linetable", code.co_linetable)
-        co_endlinetable = self.generate(name + "_endlinetable", code.co_endlinetable)
-        co_columntable = self.generate(name + "_columntable", code.co_columntable)
         co_exceptiontable = self.generate(name + "_exceptiontable", code.co_exceptiontable)
         # These fields are not directly accessible
         localsplusnames, localspluskinds = get_localsplus(code)
@@ -276,8 +266,6 @@ class Printer:
             self.write(f".co_name = {co_name},")
             self.write(f".co_qualname = {co_qualname},")
             self.write(f".co_linetable = {co_linetable},")
-            self.write(f".co_endlinetable = {co_endlinetable},")
-            self.write(f".co_columntable = {co_columntable},")
             self.write(f".co_code_adaptive = {co_code_adaptive},")
         name_as_code = f"(PyCodeObject *)&{name}"
         self.deallocs.append(f"_PyStaticCode_Dealloc({name_as_code});")
@@ -326,6 +314,10 @@ class Printer:
     def generate_int(self, name: str, i: int) -> str:
         if -5 <= i <= 256:
             return f"(PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + {i}]"
+        if i >= 0:
+            name = f"const_int_{i}"
+        else:
+            name = f"const_int_negative_{abs(i)}"
         if abs(i) < 2**15:
             self._generate_int_for_bits(name, i, 2**15)
         else:
