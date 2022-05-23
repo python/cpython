@@ -479,9 +479,9 @@ If the same attribute name occurs in both an instance and in a class,
 then attribute lookup prioritizes the instance::
 
     >>> class Warehouse:
-            purpose = 'storage'
-            region = 'west'
-
+    ...    purpose = 'storage'
+    ...    region = 'west'
+    ...
     >>> w1 = Warehouse()
     >>> print(w1.purpose, w1.region)
     storage west
