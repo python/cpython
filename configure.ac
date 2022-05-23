@@ -6,7 +6,7 @@ dnl Python's configure script requires autoconf 2.69 and autoconf-archive.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define(PYTHON_VERSION, 3.11)
+m4_define(PYTHON_VERSION, 3.12)
 
 AC_PREREQ([2.69])
 
@@ -1994,6 +1994,10 @@ AS_CASE([$ac_sys_system],
     AC_DEFINE([_WASI_EMULATED_PROCESS_CLOCKS], [1], [Define to 1 if you want to emulate process clocks on WASI])
     LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
+
+    dnl increase initial memory and stack size, move stack first
+    dnl https://github.com/WebAssembly/wasi-libc/issues/233
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=524288 -Wl,--stack-first -Wl,--initial-memory=10485760"])
   ]
 )
 
@@ -2508,7 +2512,7 @@ AC_CHECK_HEADERS([ \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
   sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h \
   sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
-  termios.h util.h utime.h \
+  termios.h util.h utime.h utmp.h \
 ])
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
@@ -4046,12 +4050,16 @@ dnl the check does not work on cross compilation case...
 #include <sys/types.h>
 #include <sys/socket.h>]],
 [[int domain = AF_INET6;]])],[
-  AC_MSG_RESULT(yes)
   ipv6=yes
 ],[
-  AC_MSG_RESULT(no)
   ipv6=no
 ])
+
+AS_CASE([$ac_sys_system],
+  [WASI], [ipv6=no]
+)
+
+AC_MSG_RESULT([$ipv6])
 
 if test "$ipv6" = "yes"; then
 	AC_MSG_CHECKING(if RFC2553 API is available)
@@ -4232,9 +4240,10 @@ AC_ARG_WITH(pymalloc,
 
 if test -z "$with_pymalloc"
 then
-  dnl default to yes except for wasm32-emscripten
+  dnl default to yes except for wasm32-emscripten and wasm32-wasi.
   AS_CASE([$ac_sys_system],
     [Emscripten], [with_pymalloc="no"],
+    [WASI], [with_pymalloc="no"],
     [with_pymalloc="yes"]
   )
 fi
@@ -4670,13 +4679,16 @@ PY_CHECK_FUNC([setgroups], [
 #endif
 ])
 
-# check for openpty and forkpty
+# check for openpty, login_tty, and forkpty
 
 AC_CHECK_FUNCS(openpty,,
    AC_CHECK_LIB(util,openpty,
      [AC_DEFINE(HAVE_OPENPTY) LIBS="$LIBS -lutil"],
      AC_CHECK_LIB(bsd,openpty, [AC_DEFINE(HAVE_OPENPTY) LIBS="$LIBS -lbsd"])
    )
+)
+AC_SEARCH_LIBS([login_tty], [util],
+ [AC_DEFINE([HAVE_LOGIN_TTY], [1], [Define to 1 if you have the `login_tty' function.])]
 )
 AC_CHECK_FUNCS(forkpty,,
    AC_CHECK_LIB(util,forkpty,
@@ -6677,7 +6689,13 @@ AS_CASE([$ac_sys_system],
         )
       ],
       [Emscripten/node*], [],
-      [WASI/*], []
+      [WASI/*], [
+        dnl WASI SDK 15.0 does not support file locking.
+        PY_STDLIB_MOD_SET_NA(
+          [_ctypes_test],
+	  [fcntl],
+        )
+      ]
     )
   ],
   [PY_STDLIB_MOD_SET_NA([_scproxy])]
@@ -6866,12 +6884,12 @@ PY_STDLIB_MOD([_sqlite3],
   [test "$have_sqlite3" = "yes"],
   [test "$have_supported_sqlite3" = "yes"],
   [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
-dnl PY_STDLIB_MOD([_tkinter], [], [], [], [])
+PY_STDLIB_MOD([_tkinter],
+  [], [test "$have_tcltk" = "yes"],
+  [$TCLTK_CFLAGS], [$TCLTK_LIBS])
 PY_STDLIB_MOD([_uuid],
   [], [test "$have_uuid" = "yes"],
   [$LIBUUID_CFLAGS], [$LIBUUID_LIBS])
-PY_STDLIB_MOD([_tkinter], [],
-  [test "$have_tcltk" = "yes"], [$TCLTK_CFLAGS], [$TCLTK_LIBS])
 
 dnl compression libs
 PY_STDLIB_MOD([zlib], [], [test "$have_zlib" = yes],

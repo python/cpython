@@ -32,3 +32,9 @@ The following modules have specific security considerations:
 * :mod:`xml`: :ref:`XML vulnerabilities <xml-vulnerabilities>`
 * :mod:`zipfile`: :ref:`maliciously prepared .zip files can cause disk volume
   exhaustion <zipfile-resources-limitations>`
+
+The :option:`-I` command line option can be used to run Python in isolated
+mode. When it cannot be used, the :option:`-P` option or the
+:envvar:`PYTHONSAFEPATH` environment variable can be used to not prepend a
+potentially unsafe path to :data:`sys.path` such as the current directory, the
+script's directory or an empty string.
