@@ -314,7 +314,7 @@ transforms a class, giving it :func:`dataclasses.dataclass`-like behaviors.
 
 For example::
 
-    # The ``create_model`` decorator is defined by a library.
+    # The create_model decorator is defined by a library.
     @typing.dataclass_transform()
     def create_model(cls: Type[T]) -> Type[T]:
         cls.__init__ = ...
@@ -322,7 +322,7 @@ For example::
         cls.__ne__ = ...
         return cls
 
-    # The ``create_model`` decorator can now be used to create new model
+    # The create_model decorator can now be used to create new model
     # classes, like this:
     @create_model
     class CustomerModel:
