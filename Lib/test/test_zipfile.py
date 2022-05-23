@@ -1733,10 +1733,10 @@ class OtherTests(unittest.TestCase):
 
         # Set the size of the central directory bytes to become 1,
         # causing the central directory offset to become negative
-        buffer[12] = 1
-
-        f = io.BytesIO(buffer)
-        self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, f)
+        for dirsize in 1, 2**32-1:
+            buffer[12:16] = struct.pack('<L', dirsize)
+            f = io.BytesIO(buffer)
+            self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, f)
 
     def test_closed_zip_raises_ValueError(self):
         """Verify that testzip() doesn't swallow inappropriate exceptions."""
