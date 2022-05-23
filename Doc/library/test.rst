@@ -325,6 +325,11 @@ The :mod:`test.support` module defines the following constants:
    to make writes blocking.
 
 
+.. data:: TEST_SUPPORT_DIR
+
+   Set to the top level directory that contains :mod:`test.support`.
+
+
 .. data:: TEST_HOME_DIR
 
    Set to the top level directory for the test package.
@@ -354,13 +359,19 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: MISSING_C_DOCSTRINGS
 
-   Set to ``True`` if running on CPython, not on Windows, and configuration
-   not set with ``WITH_DOC_STRINGS``.
+   Set to ``True`` if Python is built without docstrings (the
+   :c:macro:`WITH_DOC_STRINGS` macro is not defined).
+   See the :option:`configure --without-doc-strings <--without-doc-strings>` option.
+
+   See also the :data:`HAVE_DOCSTRINGS` variable.
 
 
 .. data:: HAVE_DOCSTRINGS
 
-   Set to ``True`` if docstrings are enabled.
+   Set to ``True`` if function docstrings are available.
+   See the :option:`python -OO <-O>` which strips docstrings of functions implemented in Python.
+
+   See also the :data:`MISSING_C_DOCSTRINGS` variable.
 
 
 .. data:: TEST_HTTP_URL
@@ -440,7 +451,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: set_match_tests(accept_patterns=None, ignore_patterns=None)
 
-   Define match patterns for filtering tests.
+   Define match patterns on test filenames and test method names for filtering tests.
 
 
 .. function:: run_unittest(*classes)
@@ -634,13 +645,13 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: calcobjsize(fmt)
 
-   Return the size of the :c:type:`PyObject` whose structure is
+   Return the size of the :c:type:`PyObject` whose structure members are
    defined by *fmt* including the Python object header and alignment.
 
 
 .. function:: calcvobjsize(fmt)
 
-   Return the size of the :c:type:`PyVarObject` whose structure is
+   Return the size of the :c:type:`PyVarObject` whose structure members are
    defined by *fmt* including the Python object header and alignment.
 
 
