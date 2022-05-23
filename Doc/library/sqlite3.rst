@@ -207,6 +207,7 @@ Module functions and constants
    The following SQL code results in the following lookups:
 
    .. code-block:: sql
+
       CREATE TABLE test(
          i integer primary key,  ! will look up a converter named "integer"
          p point,                ! will look up a converter named "point"
@@ -226,6 +227,7 @@ Module functions and constants
    dictionary key.
 
    .. code-block:: sql
+
       SELECT p as "p [point]" FROM test;  ! will look up converter "point"
 
    This flag may be paired with :const:`PARSE_DECLTYPES` using the ``|``
@@ -1333,6 +1335,8 @@ This section shows recipes for common adapters and converters.
 
 .. testcode::
 
+   import sqlite3
+
    # Timezone naive datetime adapters and converters.
    def adapt_date(val):
        return val.isoformat()
@@ -1356,10 +1360,10 @@ This section shows recipes for common adapters and converters.
        val = datetime.datetime(year, month, day, hours, minutes, seconds, microseconds)
        return val
 
-   register_adapter(datetime.date, adapt_date)
-   register_adapter(datetime.datetime, adapt_datetime)
-   register_converter("date", convert_date)
-   register_converter("timestamp", convert_timestamp)
+   sqlite3.register_adapter(datetime.date, adapt_date)
+   sqlite3.register_adapter(datetime.datetime, adapt_datetime)
+   sqlite3.register_converter("date", convert_date)
+   sqlite3.register_converter("timestamp", convert_timestamp)
 
 
 .. _sqlite3-controlling-transactions:
