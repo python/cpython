@@ -312,8 +312,10 @@ class EnumMeta(type):
                     enum_member = canonical_member
                     break
             else:
-                # Aliases don't appear in member names (only in __members__).
-                enum_class._member_names_.append(member_name)
+                # Multi-bit flags are treated as aliases and should not be added to _member_names_
+                if not isinstance(enum_member, Flag) or _is_single_bit(enum_member.value):
+                    # Aliases don't appear in member names (only in __members__).
+                    enum_class._member_names_.append(member_name)
             # performance boost for any member that would not shadow
             # a DynamicClassAttribute
             if member_name not in dynamic_attributes:
