@@ -14701,16 +14701,26 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
        normal reference counting process clean up these instances. */
     Py_ssize_t pos = 0;
     PyObject *s, *ignored_value;
+#ifdef INTERNED_STATS
+    fprintf(stderr, "releasing %zd interned strings\n",
+            PyDict_GET_SIZE(interned));
+
+    Py_ssize_t total_length = 0;
+#endif
     while (PyDict_Next(interned, &pos, &s, &ignored_value)) {
         assert(PyUnicode_IS_READY(s));
         switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_INTERNED_IMMORTAL:
-            // Skip the Immortal Instance check and directly set the refcnt.
-            s->ob_refcnt = 2;
 #ifdef Py_REF_DEBUG
             // Update the total ref counts to account for the original
             // reference to this string that no longer exists.
             _Py_RefTotal--;
+#endif
+            // Skip the Immortal Instance check and directly set the refcnt.
+            s->ob_refcnt = 2;
+            _PyUnicode_STATE(s).interned = 0;
+#ifdef INTERNED_STATS
+            total_length += PyUnicode_GET_LENGTH(s);
 #endif
             break;
         case SSTATE_INTERNED_IMMORTAL_STATIC:
@@ -14724,6 +14734,11 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
         }
         _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
     }
+#ifdef INTERNED_STATS
+    fprintf(stderr,
+            "total length of all interned strings: %zd characters\n",
+            total_length);
+#endif
 
     /* Get indentifiers ready to be deleted in _PyUnicode_Fini */
     struct _Py_unicode_state *state = &interp->unicode;
