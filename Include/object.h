@@ -567,22 +567,6 @@ PyAPI_FUNC(void) Py_DecRef(PyObject *);
 PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
-#if SIZEOF_VOID_P > 4
-static inline int
-_Py_saturated_addone(PY_UINT32_T a, PY_UINT32_T *result)
-{
-#if (defined(__clang__) || defined(__GNUC__))
-    // Option 1
-    return __builtin_add_overflow(a, 1, result);
-    // Option 2
-    // return __builtin_uadd_overflow(a, 1, (unsigned int *)result);
-#else
-    *result = a + 1;
-    return *result < a;
-#endif
-}
-#endif
-
 static inline void Py_INCREF(PyObject *op)
 {
 #if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
@@ -609,7 +593,6 @@ static inline void Py_INCREF(PyObject *op)
         return;
     }
     op->ob_refcnt = new_refcnt;
-
 #else
     // Explicitly check immortality against the immortal value
     if (_Py_IsImmortal(op)) {
