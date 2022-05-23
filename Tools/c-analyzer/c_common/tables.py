@@ -236,12 +236,12 @@ def build_table(specs, *, sep=' ', defaultwidth=None):
 _COLSPEC_RE = re.compile(textwrap.dedent(r'''
     ^
     (?:
-        [[]
+        \[
         (
             (?: [^\s\]] [^\]]* )?
             [^\s\]]
         )  # <label>
-        []]
+        ]
     )?
     ( \w+ )  # <field>
     (?:

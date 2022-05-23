@@ -346,7 +346,7 @@ class TestTracemallocEnabled(unittest.TestCase):
         # everything is fine
         return 0
 
-    @unittest.skipUnless(hasattr(os, 'fork'), 'need os.fork()')
+    @support.requires_fork()
     def test_fork(self):
         # check that tracemalloc is still working after fork
         pid = os.fork()
@@ -1082,15 +1082,5 @@ class TestCAPI(unittest.TestCase):
             self.untrack()
 
 
-def test_main():
-    support.run_unittest(
-        TestTraceback,
-        TestTracemallocEnabled,
-        TestSnapshot,
-        TestFilters,
-        TestCommandLine,
-        TestCAPI,
-    )
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

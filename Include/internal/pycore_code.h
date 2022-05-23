@@ -4,27 +4,116 @@
 extern "C" {
 #endif
 
+/* PEP 659
+ * Specialization and quickening structs and helper functions
+ */
+
+
+// Inline caches. If you change the number of cache entries for an instruction,
+// you must *also* update the number of cache entries in Lib/opcode.py and bump
+// the magic number in Lib/importlib/_bootstrap_external.py!
+
+#define CACHE_ENTRIES(cache) (sizeof(cache)/sizeof(_Py_CODEUNIT))
 
 typedef struct {
-    PyObject *ptr;  /* Cached pointer (borrowed reference) */
-    uint64_t globals_ver;  /* ma_version of global dict */
-    uint64_t builtins_ver; /* ma_version of builtin dict */
-} _PyOpcache_LoadGlobal;
+    _Py_CODEUNIT counter;
+    _Py_CODEUNIT index;
+    _Py_CODEUNIT module_keys_version[2];
+    _Py_CODEUNIT builtin_keys_version;
+} _PyLoadGlobalCache;
+
+#define INLINE_CACHE_ENTRIES_LOAD_GLOBAL CACHE_ENTRIES(_PyLoadGlobalCache)
 
 typedef struct {
-    PyTypeObject *type;
-    Py_ssize_t hint;
-    unsigned int tp_version_tag;
-} _PyOpCodeOpt_LoadAttr;
+    _Py_CODEUNIT counter;
+} _PyBinaryOpCache;
 
-struct _PyOpcache {
-    union {
-        _PyOpcache_LoadGlobal lg;
-        _PyOpCodeOpt_LoadAttr la;
-    } u;
-    char optimized;
+#define INLINE_CACHE_ENTRIES_BINARY_OP CACHE_ENTRIES(_PyBinaryOpCache)
+
+typedef struct {
+    _Py_CODEUNIT counter;
+} _PyUnpackSequenceCache;
+
+#define INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE \
+    CACHE_ENTRIES(_PyUnpackSequenceCache)
+
+typedef struct {
+    _Py_CODEUNIT counter;
+    _Py_CODEUNIT mask;
+} _PyCompareOpCache;
+
+#define INLINE_CACHE_ENTRIES_COMPARE_OP CACHE_ENTRIES(_PyCompareOpCache)
+
+typedef struct {
+    _Py_CODEUNIT counter;
+    _Py_CODEUNIT type_version[2];
+    _Py_CODEUNIT func_version;
+} _PyBinarySubscrCache;
+
+#define INLINE_CACHE_ENTRIES_BINARY_SUBSCR CACHE_ENTRIES(_PyBinarySubscrCache)
+
+typedef struct {
+    _Py_CODEUNIT counter;
+    _Py_CODEUNIT version[2];
+    _Py_CODEUNIT index;
+} _PyAttrCache;
+
+#define INLINE_CACHE_ENTRIES_LOAD_ATTR CACHE_ENTRIES(_PyAttrCache)
+
+#define INLINE_CACHE_ENTRIES_STORE_ATTR CACHE_ENTRIES(_PyAttrCache)
+
+typedef struct {
+    _Py_CODEUNIT counter;
+    _Py_CODEUNIT type_version[2];
+    _Py_CODEUNIT dict_offset;
+    _Py_CODEUNIT keys_version[2];
+    _Py_CODEUNIT descr[4];
+} _PyLoadMethodCache;
+
+#define INLINE_CACHE_ENTRIES_LOAD_METHOD CACHE_ENTRIES(_PyLoadMethodCache)
+
+typedef struct {
+    _Py_CODEUNIT counter;
+    _Py_CODEUNIT func_version[2];
+    _Py_CODEUNIT min_args;
+} _PyCallCache;
+
+#define INLINE_CACHE_ENTRIES_CALL CACHE_ENTRIES(_PyCallCache)
+
+typedef struct {
+    _Py_CODEUNIT counter;
+} _PyStoreSubscrCache;
+
+#define INLINE_CACHE_ENTRIES_STORE_SUBSCR CACHE_ENTRIES(_PyStoreSubscrCache)
+
+#define QUICKENING_WARMUP_DELAY 8
+
+/* We want to compare to zero for efficiency, so we offset values accordingly */
+#define QUICKENING_INITIAL_WARMUP_VALUE (-QUICKENING_WARMUP_DELAY)
+
+void _PyCode_Quicken(PyCodeObject *code);
+
+static inline void
+_PyCode_Warmup(PyCodeObject *code)
+{
+    if (code->co_warmup != 0) {
+        code->co_warmup++;
+        if (code->co_warmup == 0) {
+            _PyCode_Quicken(code);
+        }
+    }
+}
+
+extern uint8_t _PyOpcode_Adaptive[256];
+
+extern Py_ssize_t _Py_QuickenedCount;
+
+// Borrowed references to common callables:
+struct callable_cache {
+    PyObject *isinstance;
+    PyObject *len;
+    PyObject *list_append;
 };
-
 
 /* "Locals plus" for a code object is the set of locals + cell vars +
  * free vars.  This relates to variable names as well as offsets into
@@ -42,45 +131,39 @@ struct _PyOpcache {
  * "free" kind is mutually exclusive with both.
  */
 
-// We would use an enum if C let us specify the storage type.
-typedef unsigned char _PyLocalsPlusKind;
-/* Note that these all fit within _PyLocalsPlusKind, as do combinations. */
+// Note that these all fit within a byte, as do combinations.
 // Later, we will use the smaller numbers to differentiate the different
 // kinds of locals (e.g. pos-only arg, varkwargs, local-only).
 #define CO_FAST_LOCAL   0x20
 #define CO_FAST_CELL    0x40
 #define CO_FAST_FREE    0x80
 
-typedef _PyLocalsPlusKind *_PyLocalsPlusKinds;
+typedef unsigned char _PyLocals_Kind;
 
-static inline int
-_PyCode_InitLocalsPlusKinds(int num, _PyLocalsPlusKinds *pkinds)
+static inline _PyLocals_Kind
+_PyLocals_GetKind(PyObject *kinds, int i)
 {
-    if (num == 0) {
-        *pkinds = NULL;
-        return 0;
-    }
-    _PyLocalsPlusKinds kinds = PyMem_NEW(_PyLocalsPlusKind, num);
-    if (kinds == NULL) {
-        PyErr_NoMemory();
-        return -1;
-    }
-    *pkinds = kinds;
-    return 0;
+    assert(PyBytes_Check(kinds));
+    assert(0 <= i && i < PyBytes_GET_SIZE(kinds));
+    char *ptr = PyBytes_AS_STRING(kinds);
+    return (_PyLocals_Kind)(ptr[i]);
 }
 
 static inline void
-_PyCode_ClearLocalsPlusKinds(_PyLocalsPlusKinds kinds)
+_PyLocals_SetKind(PyObject *kinds, int i, _PyLocals_Kind kind)
 {
-    if (kinds != NULL) {
-        PyMem_Free(kinds);
-    }
+    assert(PyBytes_Check(kinds));
+    assert(0 <= i && i < PyBytes_GET_SIZE(kinds));
+    char *ptr = PyBytes_AS_STRING(kinds);
+    ptr[i] = (char) kind;
 }
+
 
 struct _PyCodeConstructor {
     /* metadata */
     PyObject *filename;
     PyObject *name;
+    PyObject *qualname;
     int flags;
 
     /* the code */
@@ -93,8 +176,8 @@ struct _PyCodeConstructor {
     PyObject *names;
 
     /* mapping frame offsets to information */
-    PyObject *localsplusnames;
-    _PyLocalsPlusKinds localspluskinds;
+    PyObject *localsplusnames;  // Tuple of strings
+    PyObject *localspluskinds;  // Bytes object, one byte per variable
 
     /* args (within varnames) */
     int argcount;
@@ -124,12 +207,215 @@ PyAPI_FUNC(PyCodeObject *) _PyCode_New(struct _PyCodeConstructor *);
 
 /* Private API */
 
-int _PyCode_InitOpcache(PyCodeObject *co);
-
 /* Getters for internal PyCodeObject data. */
-PyAPI_FUNC(PyObject *) _PyCode_GetVarnames(PyCodeObject *);
-PyAPI_FUNC(PyObject *) _PyCode_GetCellvars(PyCodeObject *);
-PyAPI_FUNC(PyObject *) _PyCode_GetFreevars(PyCodeObject *);
+extern PyObject* _PyCode_GetVarnames(PyCodeObject *);
+extern PyObject* _PyCode_GetCellvars(PyCodeObject *);
+extern PyObject* _PyCode_GetFreevars(PyCodeObject *);
+extern PyObject* _PyCode_GetCode(PyCodeObject *);
+
+/** API for initializing the line number tables. */
+extern int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
+
+/** Out of process API for initializing the location table. */
+extern void _PyLineTable_InitAddressRange(
+    const char *linetable,
+    Py_ssize_t length,
+    int firstlineno,
+    PyCodeAddressRange *range);
+
+/** API for traversing the line number table. */
+extern int _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
+extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
+
+
+#define ADAPTIVE_CACHE_BACKOFF 64
+
+/* Specialization functions */
+
+extern int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
+                                   PyObject *name);
+extern int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr,
+                                    PyObject *name);
+extern int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name);
+extern int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr,
+                                     PyObject *name);
+extern int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
+extern int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr);
+extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
+                               int nargs, PyObject *kwnames);
+extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
+                                    int oparg, PyObject **locals);
+extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
+                                     _Py_CODEUNIT *instr, int oparg);
+extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
+                                          int oparg);
+
+/* Deallocator function for static codeobjects used in deepfreeze.py */
+extern void _PyStaticCode_Dealloc(PyCodeObject *co);
+/* Function to intern strings of codeobjects */
+extern int _PyStaticCode_InternStrings(PyCodeObject *co);
+
+#ifdef Py_STATS
+
+
+#define STAT_INC(opname, name) _py_stats.opcode_stats[opname].specialization.name++
+#define STAT_DEC(opname, name) _py_stats.opcode_stats[opname].specialization.name--
+#define OPCODE_EXE_INC(opname) _py_stats.opcode_stats[opname].execution_count++
+#define CALL_STAT_INC(name) _py_stats.call_stats.name++
+#define OBJECT_STAT_INC(name) _py_stats.object_stats.name++
+#define OBJECT_STAT_INC_COND(name, cond) \
+    do { if (cond) _py_stats.object_stats.name++; } while (0)
+
+// Used by the _opcode extension which is built as a shared library
+PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
+
+#else
+#define STAT_INC(opname, name) ((void)0)
+#define STAT_DEC(opname, name) ((void)0)
+#define OPCODE_EXE_INC(opname) ((void)0)
+#define CALL_STAT_INC(name) ((void)0)
+#define OBJECT_STAT_INC(name) ((void)0)
+#define OBJECT_STAT_INC_COND(name, cond) ((void)0)
+#endif  // !Py_STATS
+
+// Cache values are only valid in memory, so use native endianness.
+#ifdef WORDS_BIGENDIAN
+
+static inline void
+write_u32(uint16_t *p, uint32_t val)
+{
+    p[0] = (uint16_t)(val >> 16);
+    p[1] = (uint16_t)(val >>  0);
+}
+
+static inline void
+write_u64(uint16_t *p, uint64_t val)
+{
+    p[0] = (uint16_t)(val >> 48);
+    p[1] = (uint16_t)(val >> 32);
+    p[2] = (uint16_t)(val >> 16);
+    p[3] = (uint16_t)(val >>  0);
+}
+
+static inline uint32_t
+read_u32(uint16_t *p)
+{
+    uint32_t val = 0;
+    val |= (uint32_t)p[0] << 16;
+    val |= (uint32_t)p[1] <<  0;
+    return val;
+}
+
+static inline uint64_t
+read_u64(uint16_t *p)
+{
+    uint64_t val = 0;
+    val |= (uint64_t)p[0] << 48;
+    val |= (uint64_t)p[1] << 32;
+    val |= (uint64_t)p[2] << 16;
+    val |= (uint64_t)p[3] <<  0;
+    return val;
+}
+
+#else
+
+static inline void
+write_u32(uint16_t *p, uint32_t val)
+{
+    p[0] = (uint16_t)(val >>  0);
+    p[1] = (uint16_t)(val >> 16);
+}
+
+static inline void
+write_u64(uint16_t *p, uint64_t val)
+{
+    p[0] = (uint16_t)(val >>  0);
+    p[1] = (uint16_t)(val >> 16);
+    p[2] = (uint16_t)(val >> 32);
+    p[3] = (uint16_t)(val >> 48);
+}
+
+static inline uint32_t
+read_u32(uint16_t *p)
+{
+    uint32_t val = 0;
+    val |= (uint32_t)p[0] <<  0;
+    val |= (uint32_t)p[1] << 16;
+    return val;
+}
+
+static inline uint64_t
+read_u64(uint16_t *p)
+{
+    uint64_t val = 0;
+    val |= (uint64_t)p[0] <<  0;
+    val |= (uint64_t)p[1] << 16;
+    val |= (uint64_t)p[2] << 32;
+    val |= (uint64_t)p[3] << 48;
+    return val;
+}
+
+#endif
+
+static inline void
+write_obj(uint16_t *p, PyObject *obj)
+{
+    uintptr_t val = (uintptr_t)obj;
+#if SIZEOF_VOID_P == 8
+    write_u64(p, val);
+#elif SIZEOF_VOID_P == 4
+    write_u32(p, val);
+#else
+    #error "SIZEOF_VOID_P must be 4 or 8"
+#endif
+}
+
+static inline PyObject *
+read_obj(uint16_t *p)
+{
+    uintptr_t val;
+#if SIZEOF_VOID_P == 8
+    val = read_u64(p);
+#elif SIZEOF_VOID_P == 4
+    val = read_u32(p);
+#else
+    #error "SIZEOF_VOID_P must be 4 or 8"
+#endif
+    return (PyObject *)val;
+}
+
+static inline int
+write_varint(uint8_t *ptr, unsigned int val)
+{
+    int written = 1;
+    while (val >= 64) {
+        *ptr++ = 64 | (val & 63);
+        val >>= 6;
+        written++;
+    }
+    *ptr = val;
+    return written;
+}
+
+static inline int
+write_signed_varint(uint8_t *ptr, int val)
+{
+    if (val < 0) {
+        val = ((-val)<<1) | 1;
+    }
+    else {
+        val = val << 1;
+    }
+    return write_varint(ptr, val);
+}
+
+static inline int
+write_location_entry_start(uint8_t *ptr, int code, int length)
+{
+    assert((code & 15) == code);
+    *ptr = 128 | (code << 3) | (length - 1);
+    return 1;
+}
 
 
 #ifdef __cplusplus

@@ -1,7 +1,10 @@
 import contextlib
 import importlib
+import importlib.abc
+import importlib.machinery
 import os
 import sys
+import tempfile
 import unittest
 import warnings
 
@@ -62,12 +65,7 @@ class NamespacePackageTest(unittest.TestCase):
         self.resolved_paths = [
             os.path.join(self.root, path) for path in self.paths
         ]
-        self.ctx = namespace_tree_context(path=self.resolved_paths)
-        self.ctx.__enter__()
-
-    def tearDown(self):
-        # TODO: will we ever want to pass exc_info to __exit__?
-        self.ctx.__exit__(None, None, None)
+        self.enterContext(namespace_tree_context(path=self.resolved_paths))
 
 
 class SingleNamespacePackage(NamespacePackageTest):
@@ -126,6 +124,40 @@ class SeparatedNamespacePackages(NamespacePackageTest):
         import foo.two
         self.assertEqual(foo.one.attr, 'portion1 foo one')
         self.assertEqual(foo.two.attr, 'portion2 foo two')
+
+
+class SeparatedNamespacePackagesCreatedWhileRunning(NamespacePackageTest):
+    paths = ['portion1']
+
+    def test_invalidate_caches(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # we manipulate sys.path before anything is imported to avoid
+            # accidental cache invalidation when changing it
+            sys.path.append(temp_dir)
+
+            import foo.one
+            self.assertEqual(foo.one.attr, 'portion1 foo one')
+
+            # the module does not exist, so it cannot be imported
+            with self.assertRaises(ImportError):
+                import foo.just_created
+
+            # util.create_modules() manipulates sys.path
+            # so we must create the modules manually instead
+            namespace_path = os.path.join(temp_dir, 'foo')
+            os.mkdir(namespace_path)
+            module_path = os.path.join(namespace_path, 'just_created.py')
+            with open(module_path, 'w', encoding='utf-8') as file:
+                file.write('attr = "just_created foo"')
+
+            # the module is not known, so it cannot be imported yet
+            with self.assertRaises(ImportError):
+                import foo.just_created
+
+            # but after explicit cache invalidation, it is importable
+            importlib.invalidate_caches()
+            import foo.just_created
+            self.assertEqual(foo.just_created.attr, 'just_created foo')
 
 
 class SeparatedOverlappingNamespacePackages(NamespacePackageTest):
@@ -341,6 +373,11 @@ class LoaderTests(NamespacePackageTest):
         import foo
         expected_path = os.path.join(self.root, 'portion1', 'foo')
         self.assertEqual(foo.__path__[0], expected_path)
+
+    def test_loader_abc(self):
+        import foo
+        self.assertTrue(isinstance(foo.__loader__, importlib.abc.Loader))
+        self.assertTrue(isinstance(foo.__loader__, importlib.machinery.NamespaceLoader))
 
 
 if __name__ == "__main__":

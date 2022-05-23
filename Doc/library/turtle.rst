@@ -193,8 +193,8 @@ Methods of TurtleScreen/Screen
 Window control
    | :func:`bgcolor`
    | :func:`bgpic`
-   | :func:`clear` | :func:`clearscreen`
-   | :func:`reset` | :func:`resetscreen`
+   | :func:`clearscreen`
+   | :func:`resetscreen`
    | :func:`screensize`
    | :func:`setworldcoordinates`
 
@@ -1069,7 +1069,6 @@ More drawing control
 ~~~~~~~~~~~~~~~~~~~~
 
 .. function:: reset()
-   :noindex:
 
    Delete the turtle's drawings from the screen, re-center the turtle and set
    variables to the default values.
@@ -1091,7 +1090,6 @@ More drawing control
 
 
 .. function:: clear()
-   :noindex:
 
    Delete the turtle's drawings from the screen.  Do not move turtle.  State and
    position of the turtle as well as drawings of other turtles are not affected.
@@ -1627,11 +1625,7 @@ Window control
 
 
 .. function:: clear()
-              clearscreen()
-
-   Delete all drawings and all turtles from the TurtleScreen.  Reset the now
-   empty TurtleScreen to its initial state: white background, no background
-   image, no event bindings and tracing on.
+   :noindex:
 
    .. note::
       This TurtleScreen method is available as a global function only under the
@@ -1639,15 +1633,25 @@ Window control
       derived from the Turtle method ``clear``.
 
 
-.. function:: reset()
-              resetscreen()
+.. function:: clearscreen()
 
-   Reset all Turtles on the Screen to their initial state.
+   Delete all drawings and all turtles from the TurtleScreen.  Reset the now
+   empty TurtleScreen to its initial state: white background, no background
+   image, no event bindings and tracing on.
+
+
+.. function:: reset()
+   :noindex:
 
    .. note::
       This TurtleScreen method is available as a global function only under the
       name ``resetscreen``.  The global function ``reset`` is another one
       derived from the Turtle method ``reset``.
+
+
+.. function:: resetscreen()
+
+   Reset all Turtles on the Screen to their initial state.
 
 
 .. function:: screensize(canvwidth=None, canvheight=None, bg=None)

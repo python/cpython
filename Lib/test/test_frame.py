@@ -45,6 +45,19 @@ class ClearTest(unittest.TestCase):
         # The reference was released by .clear()
         self.assertIs(None, wr())
 
+    def test_clear_does_not_clear_specials(self):
+        class C:
+            pass
+        c = C()
+        exc = self.outer(c=c)
+        del c
+        f = exc.__traceback__.tb_frame
+        f.clear()
+        self.assertIsNot(f.f_code, None)
+        self.assertIsNot(f.f_locals, None)
+        self.assertIsNot(f.f_builtins, None)
+        self.assertIsNot(f.f_globals, None)
+
     def test_clear_generator(self):
         endly = False
         def g():
