@@ -77,7 +77,10 @@ struct SOCKADDR_BTH_REDEF {
 typedef int socklen_t;
 # endif /* IPPROTO_IPV6 */
 
-/* Future remove once Py_WINVER has been bumped to >=0x0604 */
+/* Remove ifdef once Py_WINVER >= 0x0604
+ * socket.h only defines AF_HYPERV if _WIN32_WINNT is at that level or higher
+ * so for now it's just manually defined.
+ */
 # ifndef AF_HYPERV
 #  define AF_HYPERV 34
 # endif
