@@ -2370,14 +2370,9 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertIs(s.expandtabs(), s)
 
     def test_raiseMemError(self):
-        if struct.calcsize('P') == 8:
-            # 64 bits pointers
-            ascii_struct_size = 48
-            compact_struct_size = 72
-        else:
-            # 32 bits pointers
-            ascii_struct_size = 24
-            compact_struct_size = 36
+        null_byte = 1
+        ascii_struct_size = sys.getsizeof("a") - len("a") - null_byte
+        compact_struct_size = sys.getsizeof("\xff") - len("\xff") - null_byte
 
         for char in ('a', '\xe9', '\u20ac', '\U0010ffff'):
             code = ord(char)
@@ -2395,8 +2390,9 @@ class UnicodeTest(string_tests.CommonTest,
             # be allocatable, given enough memory.
             maxlen = ((sys.maxsize - struct_size) // char_size)
             alloc = lambda: char * maxlen
-            self.assertRaises(MemoryError, alloc)
-            self.assertRaises(MemoryError, alloc)
+            with self.subTest(char=char):
+                self.assertRaises(MemoryError, alloc)
+                self.assertRaises(MemoryError, alloc)
 
     def test_format_subclass(self):
         class S(str):
