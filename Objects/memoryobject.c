@@ -179,17 +179,19 @@ PyTypeObject _PyManagedBuffer_Type = {
     (((PyMemoryViewObject *)mv)->flags&_Py_MEMORYVIEW_RELEASED || \
      ((PyMemoryViewObject *)mv)->mbuf->flags&_Py_MANAGED_BUFFER_RELEASED)
 
+#define RELEASED_ERROR() \
+    PyErr_SetString(PyExc_ValueError, \
+        "operation forbidden on released memoryview object")
+
 #define CHECK_RELEASED(mv) \
     if (BASE_INACCESSIBLE(mv)) {                                  \
-        PyErr_SetString(PyExc_ValueError,                         \
-            "operation forbidden on released memoryview object"); \
+        RELEASED_ERROR();                                         \
         return NULL;                                              \
     }
 
 #define CHECK_RELEASED_INT(mv) \
     if (BASE_INACCESSIBLE(mv)) {                                  \
-        PyErr_SetString(PyExc_ValueError,                         \
-            "operation forbidden on released memoryview object"); \
+        RELEASED_ERROR();                                         \
         return -1;                                                \
     }
 
@@ -1767,23 +1769,23 @@ err_format:
 /* Pack a single item. 'fmt' can be any native format character in
    struct module syntax. */
 static int
-pack_single(char *ptr, PyObject *item, const char *fmt)
+pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item,
+            const char *fmt)
 {
-    unsigned long long llu;
-    unsigned long lu;
-    size_t zu;
-    long long lld;
-    long ld;
-    Py_ssize_t zd;
-    double d;
-    void *p;
+    // gh-92888: CHECK_RELEASED_INT() is called before the final write and
+    // after function calls, like _PyNumber_Index(), which can execute
+    // arbitrary Python code which can release the memoryview indirectly.
 
     switch (fmt[0]) {
     /* signed integers */
-    case 'b': case 'h': case 'i': case 'l':
-        ld = pylong_as_ld(item);
-        if (ld == -1 && PyErr_Occurred())
+    case 'b': case 'h': case 'i': case 'l': {
+        long ld = pylong_as_ld(item);
+        if (ld == -1 && PyErr_Occurred()) {
             goto err_occurred;
+        }
+
+        CHECK_RELEASED_INT(self);
+
         switch (fmt[0]) {
         case 'b':
             if (ld < SCHAR_MIN || ld > SCHAR_MAX) goto err_range;
@@ -1798,12 +1800,17 @@ pack_single(char *ptr, PyObject *item, const char *fmt)
             PACK_SINGLE(ptr, ld, long); break;
         }
         break;
+    }
 
     /* unsigned integers */
-    case 'B': case 'H': case 'I': case 'L':
-        lu = pylong_as_lu(item);
-        if (lu == (unsigned long)-1 && PyErr_Occurred())
+    case 'B': case 'H': case 'I': case 'L': {
+        unsigned long lu = pylong_as_lu(item);
+        if (lu == (unsigned long)-1 && PyErr_Occurred()) {
             goto err_occurred;
+        }
+
+        CHECK_RELEASED_INT(self);
+
         switch (fmt[0]) {
         case 'B':
             if (lu > UCHAR_MAX) goto err_range;
@@ -1818,40 +1825,67 @@ pack_single(char *ptr, PyObject *item, const char *fmt)
             PACK_SINGLE(ptr, lu, unsigned long); break;
         }
         break;
+    }
 
     /* native 64-bit */
-    case 'q':
-        lld = pylong_as_lld(item);
-        if (lld == -1 && PyErr_Occurred())
+    case 'q': {
+        long long lld = pylong_as_lld(item);
+        if (lld == -1 && PyErr_Occurred()) {
             goto err_occurred;
+        }
+
+        CHECK_RELEASED_INT(self);
+
         PACK_SINGLE(ptr, lld, long long);
         break;
-    case 'Q':
-        llu = pylong_as_llu(item);
-        if (llu == (unsigned long long)-1 && PyErr_Occurred())
+    }
+
+    case 'Q': {
+        unsigned long long llu = pylong_as_llu(item);
+        if (llu == (unsigned long long)-1 && PyErr_Occurred()) {
             goto err_occurred;
+        }
+
+        CHECK_RELEASED_INT(self);
+
         PACK_SINGLE(ptr, llu, unsigned long long);
         break;
+    }
 
     /* ssize_t and size_t */
-    case 'n':
-        zd = pylong_as_zd(item);
-        if (zd == -1 && PyErr_Occurred())
+    case 'n': {
+        Py_ssize_t zd = pylong_as_zd(item);
+        if (zd == -1 && PyErr_Occurred()) {
             goto err_occurred;
+        }
+
+        CHECK_RELEASED_INT(self);
+
         PACK_SINGLE(ptr, zd, Py_ssize_t);
         break;
-    case 'N':
-        zu = pylong_as_zu(item);
-        if (zu == (size_t)-1 && PyErr_Occurred())
+    }
+
+    case 'N': {
+        size_t zu = pylong_as_zu(item);
+        if (zu == (size_t)-1 && PyErr_Occurred()) {
             goto err_occurred;
+        }
+
+        CHECK_RELEASED_INT(self);
+
         PACK_SINGLE(ptr, zu, size_t);
         break;
+    }
 
     /* floats */
-    case 'f': case 'd':
-        d = PyFloat_AsDouble(item);
-        if (d == -1.0 && PyErr_Occurred())
+    case 'f': case 'd': {
+        double d = PyFloat_AsDouble(item);
+        if (d == -1.0 && PyErr_Occurred()) {
             goto err_occurred;
+        }
+
+        CHECK_RELEASED_INT(self);
+
         if (fmt[0] == 'f') {
             PACK_SINGLE(ptr, d, float);
         }
@@ -1859,31 +1893,50 @@ pack_single(char *ptr, PyObject *item, const char *fmt)
             PACK_SINGLE(ptr, d, double);
         }
         break;
+    }
 
     /* bool */
-    case '?':
-        ld = PyObject_IsTrue(item);
-        if (ld < 0)
+    case '?': {
+        int res = PyObject_IsTrue(item);
+        if (res < 0) {
             return -1; /* preserve original error */
-        PACK_SINGLE(ptr, ld, _Bool);
-         break;
+        }
+
+        CHECK_RELEASED_INT(self);
+
+        PACK_SINGLE(ptr, res, _Bool);
+        break;
+    }
 
     /* bytes object */
-    case 'c':
-        if (!PyBytes_Check(item))
+    case 'c': {
+        if (!PyBytes_Check(item)) {
             return type_error_int(fmt);
-        if (PyBytes_GET_SIZE(item) != 1)
+        }
+        if (PyBytes_GET_SIZE(item) != 1) {
             return value_error_int(fmt);
-        *ptr = PyBytes_AS_STRING(item)[0];
+        }
+        char ch = PyBytes_AS_STRING(item)[0];
+
+        // No need to check CHECK_RELEASED_INT(): PyBytes_GET_SIZE() and
+        // PyBytes_AS_STRING() cannot execute arbitrary Python.
+
+        *ptr = ch;
         break;
+    }
 
     /* pointer */
-    case 'P':
-        p = PyLong_AsVoidPtr(item);
-        if (p == NULL && PyErr_Occurred())
+    case 'P': {
+        void *p = PyLong_AsVoidPtr(item);
+        if (p == NULL && PyErr_Occurred()) {
             goto err_occurred;
+        }
+
+        CHECK_RELEASED_INT(self);
+
         PACK_SINGLE(ptr, p, void *);
         break;
+    }
 
     /* default */
     default: goto err_format;
@@ -2516,15 +2569,13 @@ static int
 memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
 {
     Py_buffer *view = &(self->view);
-    Py_buffer src;
-    const char *fmt;
-    char *ptr;
 
     CHECK_RELEASED_INT(self);
 
-    fmt = adjust_fmt(view);
-    if (fmt == NULL)
+    const char *fmt = adjust_fmt(view);
+    if (fmt == NULL) {
         return -1;
+    }
 
     if (view->readonly) {
         PyErr_SetString(PyExc_TypeError, "cannot modify read-only memory");
@@ -2534,11 +2585,12 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
         PyErr_SetString(PyExc_TypeError, "cannot delete memory");
         return -1;
     }
+
     if (view->ndim == 0) {
         if (key == Py_Ellipsis ||
             (PyTuple_Check(key) && PyTuple_GET_SIZE(key)==0)) {
-            ptr = (char *)view->buf;
-            return pack_single(ptr, value, fmt);
+            char *ptr = (char *)view->buf;
+            return pack_single(self, ptr, value, fmt);
         }
         else {
             PyErr_SetString(PyExc_TypeError,
@@ -2557,11 +2609,13 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
         index = PyNumber_AsSsize_t(key, PyExc_IndexError);
         if (index == -1 && PyErr_Occurred())
             return -1;
-        ptr = ptr_from_index(view, index);
-        if (ptr == NULL)
+        char *ptr = ptr_from_index(view, index);
+        if (ptr == NULL) {
             return -1;
-        return pack_single(ptr, value, fmt);
+        }
+        return pack_single(self, ptr, value, fmt);
     }
+
     /* one-dimensional: fast path */
     if (PySlice_Check(key) && view->ndim == 1) {
         Py_buffer dest; /* sliced view */
@@ -2569,8 +2623,10 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
         int ret = -1;
 
         /* rvalue must be an exporter */
-        if (PyObject_GetBuffer(value, &src, PyBUF_FULL_RO) < 0)
+        Py_buffer src;
+        if (PyObject_GetBuffer(value, &src, PyBUF_FULL_RO) < 0) {
             return ret;
+        }
 
         dest = *view;
         dest.shape = &arrays[0]; dest.shape[0] = view->shape[0];
@@ -2579,9 +2635,17 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
             dest.suboffsets = &arrays[2]; dest.suboffsets[0] = view->suboffsets[0];
         }
 
-        if (init_slice(&dest, key, 0) < 0)
+        if (init_slice(&dest, key, 0) < 0) {
             goto end_block;
+        }
         dest.len = dest.shape[0] * dest.itemsize;
+
+        // gh-92888: PyObject_GetBuffer() and PySlice_Unpack() can execute
+        // arbitrary Python code which can release the memoryview indirectly
+        if (BASE_INACCESSIBLE(self)) {
+            RELEASED_ERROR();
+            goto end_block;
+        }
 
         ret = copy_single(&dest, &src);
 
@@ -2589,18 +2653,22 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
         PyBuffer_Release(&src);
         return ret;
     }
+
     if (is_multiindex(key)) {
-        char *ptr;
         if (PyTuple_GET_SIZE(key) < view->ndim) {
             PyErr_SetString(PyExc_NotImplementedError,
                             "sub-views are not implemented");
             return -1;
         }
-        ptr = ptr_from_tuple(view, key);
-        if (ptr == NULL)
+
+        char *ptr = ptr_from_tuple(view, key);
+        if (ptr == NULL) {
             return -1;
-        return pack_single(ptr, value, fmt);
+        }
+
+        return pack_single(self, ptr, value, fmt);
     }
+
     if (PySlice_Check(key) || is_multislice(key)) {
         /* Call memory_subscript() to produce a sliced lvalue, then copy
            rvalue into lvalue. This is already implemented in _testbuffer.c. */

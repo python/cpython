@@ -1,0 +1,3 @@
+If a memoryview is released while setting an item, raise an exception. For
+example, converting an object to an index in C can execute arbitrary Python
+code which can indirectly release the memoryview. Patch by Victor Stinner.

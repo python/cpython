@@ -396,6 +396,51 @@ class AbstractMemoryTests:
         self.assertEqual(c.format, "H")
         self.assertEqual(d.format, "H")
 
+    def test_index_release(self):
+        # gh-92888: If a memory view is released while setting an item, an
+        # exception must be raised before writing into memory.
+
+        def create_index(view):
+            class IndexRelease:
+                def __index__(self):
+                    view.release()
+                    return 0
+            return IndexRelease()
+
+        def set_item(view, index):
+            view[index] = 0
+
+        def delete_item(view, index):
+            del view[index]
+
+        def set_first_items(view, index):
+            view[:index] = [0]
+
+        def set_last_items(view, index):
+            view[index:] = [0]
+
+        if not self.rw_type:
+            self.skipTest("no writable type to test")
+        tp = self.rw_type
+        b = self.rw_type(self._source)
+        view = self._view(b)
+
+        regex = 'operation forbidden on released memoryview object'
+
+        for setter in (
+            set_item,
+            delete_item,
+            set_first_items,
+            set_last_items,
+        ):
+            with self.subTest(setter=setter):
+                index = create_index(view)
+                with self.assertRaisesRegex(ValueError, regex):
+                    setter(view, index)
+
+        # Check that the read-write object was not modified
+        self.assertEqual(b, self.rw_type(self._source))
+
 
 # Variations on source objects for the buffer: bytes-like objects, then arrays
 # with itemsize > 1.
