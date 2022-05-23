@@ -571,8 +571,15 @@ PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 static inline int
 _Py_saturated_addone(PY_UINT32_T a, PY_UINT32_T *result)
 {
+#if (defined(__clang__) || defined(__GNUC__))
+    // Option 1
+    return __builtin_add_overflow(a, 1, result);
+    // Option 2
+    // return __builtin_uadd_overflow(a, 1, (unsigned int *)result);
+#else
     *result = a + 1;
     return *result < a;
+#endif
 }
 #endif
 
@@ -584,14 +591,27 @@ static inline void Py_INCREF(PyObject *op)
 #else
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
-#if SIZEOF_VOID_P > 4
-    PY_UINT32_T new_refcount;
-    if (_Py_saturated_addone(
-          _Py_CAST(PY_UINT32_T, op->ob_refcnt), &new_refcount)) {
+#if defined(__x86_64__) && SIZEOF_VOID_P > 4
+    // Branchless saturated add
+    uint32_t *refcnt = (uint32_t*)&op->ob_refcnt;
+    __asm__ (
+         "add    %[one],     %[refcnt]  \n\t"
+         "cmovc  %[carry],   %[refcnt]"
+         : [refcnt] "+&r" (*refcnt)
+         : [one] "g" (1), [carry] "r" (-1)
+    );
+#elif SIZEOF_VOID_P > 4
+    // Portable saturated add, branching on the carry flag
+    PY_UINT32_T new_refcnt;
+    PY_UINT32_T cur_refcnt = _Py_CAST(PY_UINT32_T, op->ob_refcnt);
+    new_refcnt = cur_refcnt + 1;
+    if (new_refcnt < cur_refcnt) {
         return;
     }
-    op->ob_refcnt = new_refcount;
+    op->ob_refcnt = new_refcnt;
+
 #else
+    // Explicitly check immortality against the immortal value
     if (_Py_IsImmortal(op)) {
         return;
     }
