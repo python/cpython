@@ -1319,9 +1319,9 @@ initialization::
         }
 
         /* Specify sys.path explicitly */
-        /* To calculate the default and then modify, finish initialization and
-           then use PySys_GetObject("path") to get the list. */
-        condig.module_search_paths_set = 1
+        /* If you want to modify the default set of paths, finish
+           initialization first and then use PySys_GetObject("path") */
+        config.module_search_paths_set = 1;
         status = PyWideStringList_Append(&config.module_search_paths,
                                          L"/path/to/stdlib");
         if (PyStatus_Exception(status)) {
