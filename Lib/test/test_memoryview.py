@@ -581,11 +581,11 @@ class OtherTest(unittest.TestCase):
         m = memoryview(bytearray(b'\xff'*size)).cast('B', (64, 2))
         with self.assertRaisesRegex(ValueError, "operation forbidden"):
             m[MyIndex(), 0]
-        
+
         ba = None
         m = memoryview(bytearray(b'\xff'*size)).cast('B', (2, 64))
         with self.assertRaisesRegex(ValueError, "operation forbidden"):
-            m[0, MyIndex()], 0
+            m[0, MyIndex()]
 
         ba = None
         m = memoryview(bytearray(b'\xff'*size))
