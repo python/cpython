@@ -598,7 +598,7 @@ def _default_mime_types():
 _default_mime_types()
 
 
-def _cli():
+def _main():
     from argparse import ArgumentParser
     parser = ArgumentParser(description='compare directories and files')
     parser.add_argument('-e', '--extension', action='store_true',
@@ -619,4 +619,4 @@ def _cli():
 
 
 if __name__ == '__main__':
-    _cli()
+    _main()
