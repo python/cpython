@@ -1233,7 +1233,7 @@ custom adapter functions.
 Letting your object adapt itself
 """"""""""""""""""""""""""""""""
 
-Suppose we have `Point` class that represents a pair of coordinates,
+Suppose we have ``Point`` class that represents a pair of coordinates,
 ``x`` and ``y``, in a Cartesian coordinate system.
 We want to store the coordinate pair as a text string in the database,
 using a semicolon to separate the coordinates.
