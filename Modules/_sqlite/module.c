@@ -108,7 +108,7 @@ pysqlite_complete_statement_impl(PyObject *module, const char *statement)
 _sqlite3.register_adapter as pysqlite_register_adapter
 
     type: object(type='PyTypeObject *')
-    callable as adapter: object
+    adapter as caster: object
     /
 
 Register a function to adapt Python types to SQLite types.
@@ -116,8 +116,8 @@ Register a function to adapt Python types to SQLite types.
 
 static PyObject *
 pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
-                               PyObject *adapter)
-/*[clinic end generated code: output=83bab29ff572feb4 input=b6813f5d620955ed]*/
+                               PyObject *caster)
+/*[clinic end generated code: output=a287e8db18e8af23 input=f96c4fb2beba002b]*/
 {
     int rc;
 
@@ -131,7 +131,7 @@ pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
 
     pysqlite_state *state = pysqlite_get_state(module);
     PyObject *protocol = (PyObject *)state->PrepareProtocolType;
-    rc = pysqlite_microprotocols_add(state, type, protocol, adapter);
+    rc = pysqlite_microprotocols_add(state, type, protocol, caster);
     if (rc == -1) {
         return NULL;
     }
@@ -142,29 +142,29 @@ pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
 /*[clinic input]
 _sqlite3.register_converter as pysqlite_register_converter
 
-    type as tp: unicode
-    callable as converter: object
+    typename as orig_name: unicode
+    converter as callable: object
     /
 
 Register a function to convert SQLite types to Python types.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_register_converter_impl(PyObject *module, PyObject *tp,
-                                 PyObject *converter)
-/*[clinic end generated code: output=59b8c05cdddf7e54 input=63d20a7be9873f12]*/
+pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
+                                 PyObject *callable)
+/*[clinic end generated code: output=a2f2bfeed7230062 input=138f93f0063cb031]*/
 {
     PyObject* name = NULL;
     PyObject* retval = NULL;
 
     /* convert the name to upper case */
     pysqlite_state *state = pysqlite_get_state(module);
-    name = PyObject_CallMethodNoArgs(tp, state->str_upper);
+    name = PyObject_CallMethodNoArgs(orig_name, state->str_upper);
     if (!name) {
         goto error;
     }
 
-    if (PyDict_SetItem(state->converters, name, converter) != 0) {
+    if (PyDict_SetItem(state->converters, name, callable) != 0) {
         goto error;
     }
 

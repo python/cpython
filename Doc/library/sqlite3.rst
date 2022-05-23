@@ -318,23 +318,22 @@ Module functions and constants
       Added the ``sqlite3.connect/handle`` auditing event.
 
 
-.. function:: register_converter(type, callable)
+.. function:: register_converter(typename, converter)
 
-   Register *callable* to convert SQLite *type* into a Python type.
-   *callable* is invoked for all values of type *typename*.
-   Confer the parameter *detect_types* of :meth:`Connection.connect`
-   regarding how type detection works.
+   Register callable *converter* to convert SQLite type name *typename* into a
+   Python type. The converter is invoked for all SQLite values of type
+   *typename*. Confer the parameter *detect_types* of
+   :meth:`Connection.connect` regarding how type detection works.
 
-   .. note::
-      *type* and the name of the type in your query are matched in a
-      case-insensitive manner.
+   Note: *typename* and the name of the type in your query are matched in a
+   case-insensitive manner.
 
 
-.. function:: register_adapter(type, callable)
+.. function:: register_adapter(type, adapter)
 
-   Register *callable* to adapt Python *type* into an SQLite type.
-   *callable* is called with the Python value and must return a valid SQLite
-   type:
+   Register callable *adapter* to adapt Python type *type* into an SQLite type.
+   The adapter is called with a Python object as its sole argument,
+   and must return a valid SQLite type:
    :class:`int`, :class:`float`, :class:`str`, :class:`bytes`, or :const:`None`.
 
 
