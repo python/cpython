@@ -1861,7 +1861,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(LOAD_FAST) {
+        TARGET(LOAD_FAST_CHECK) {
             PyObject *value = GETLOCAL(oparg);
             if (value == NULL) {
                 goto unbound_local_error;
@@ -1871,7 +1871,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(LOAD_FAST_KNOWN) {
+        TARGET(LOAD_FAST) {
             PyObject *value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);

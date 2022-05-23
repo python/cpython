@@ -1148,7 +1148,7 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
 
         case LOAD_FAST:
-        case LOAD_FAST_KNOWN:
+        case LOAD_FAST_CHECK:
             return 1;
         case STORE_FAST:
             return -1;
@@ -7822,13 +7822,13 @@ scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
             MAYBE_PUSH(instr->i_except);
         }
         switch (instr->i_opcode) {
-            case LOAD_FAST:
+            case LOAD_FAST_CHECK:
                 // if this doesn't raise, then var is defined
                 unsafe = false;
                 break;
-            case LOAD_FAST_KNOWN:
+            case LOAD_FAST:
                 if (unsafe) {
-                    b->b_instr[i].i_opcode = LOAD_FAST;
+                    b->b_instr[i].i_opcode = LOAD_FAST_CHECK;
                 }
                 unsafe = false;
                 break;
@@ -7856,21 +7856,10 @@ scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
 #undef MAYBE_PUSH
 
 int
-mark_known_variables(struct assembler *a, struct compiler *c)
+mark_unknown_variables(struct assembler *a, struct compiler *c)
 {
-    Py_ssize_t num_blocks = 0;
-    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
-    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
-        num_blocks++;
-        for (Py_ssize_t i = 0; i < b->b_iused; i++) {
-            struct instr *instr = &b->b_instr[i];
-            if (instr->i_opcode == LOAD_FAST) {
-                instr->i_opcode = LOAD_FAST_KNOWN;
-            }
-        }
-    }
-    // fprintf(stderr, "num blocks: %d\nnum_locals: %d\n", (int)num_blocks, num_locals);
-    basicblock **stack = PyMem_New(basicblock *, num_blocks);
+
+    basicblock **stack = make_cfg_traversal_stack(a->a_entry);
     if (stack == NULL) {
         return -1;
     }
@@ -7889,6 +7878,7 @@ mark_known_variables(struct assembler *a, struct compiler *c)
         }
     }
 
+    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
     for (int target = 0; target < nlocals; target++) {
         for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
             b->b_visited = 0;
@@ -8528,7 +8518,7 @@ assemble(struct compiler *c, int addNone)
     /* Order of basic blocks must have been determined by now */
     normalize_jumps(&a);
 
-    if (mark_known_variables(&a, c) < 0) {
+    if (mark_unknown_variables(&a, c) < 0) {
         goto error;
     }
     // fprintf(stderr, "Success???\n");

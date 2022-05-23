@@ -456,19 +456,19 @@ _PyFrame_GetState(PyFrameObject *frame)
 }
 
 void
-replace_LOAD_FAST_KNOWNs(PyCodeObject *co)
+add_load_fast_null_checks(PyCodeObject *co)
 {
     _Py_CODEUNIT *instructions = _PyCode_CODE(co);
     for (Py_ssize_t i = 0; i < Py_SIZE(co); i++) {
         switch (_Py_OPCODE(instructions[i])) {
-            case LOAD_FAST_KNOWN:
-                _Py_SET_OPCODE(instructions[i], LOAD_FAST);
+            case LOAD_FAST:
+                _Py_SET_OPCODE(instructions[i], LOAD_FAST_CHECK);
                 break;
             case LOAD_FAST__LOAD_FAST:
-                _Py_SET_OPCODE(instructions[i], LOAD_FAST);
+                _Py_SET_OPCODE(instructions[i], LOAD_FAST_CHECK);
                 break;
             case LOAD_FAST__LOAD_CONST:
-                _Py_SET_OPCODE(instructions[i], LOAD_FAST);
+                _Py_SET_OPCODE(instructions[i], LOAD_FAST_CHECK);
                 break;
             case LOAD_CONST__LOAD_FAST:
                 _Py_SET_OPCODE(instructions[i], LOAD_CONST);
@@ -569,7 +569,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    replace_LOAD_FAST_KNOWNs(f->f_frame->f_code);
+    add_load_fast_null_checks(f->f_frame->f_code);
 
     /* PyCode_NewWithPosOnlyArgs limits co_code to be under INT_MAX so this
      * should never overflow. */
@@ -1073,7 +1073,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
     }
     fast = _PyFrame_GetLocalsArray(frame);
     co = frame->f_code;
-    bool replaced_code = false;
+    bool added_null_checks = false;
 
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
     for (int i = 0; i < co->co_nlocalsplus; i++) {
@@ -1092,9 +1092,9 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
                 continue;
             }
         }
-        if (!replaced_code) {
-            replace_LOAD_FAST_KNOWNs(co);
-            replaced_code = true;
+        if (!added_null_checks) {
+            add_load_fast_null_checks(co);
+            added_null_checks = true;
         }
         PyObject *oldvalue = fast[i];
         PyObject *cell = NULL;
