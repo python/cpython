@@ -1,2 +1,0 @@
-The function ``wait_process`` in ``Lib/test/support/__init__.py`` no longer
-ignores its ``timeout`` argument.
