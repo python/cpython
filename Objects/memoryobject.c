@@ -381,8 +381,9 @@ copy_rec(const Py_ssize_t *shape, Py_ssize_t ndim, Py_ssize_t itemsize,
 
 /* Faster copying of one-dimensional arrays. */
 static int
-copy_single(const Py_buffer *dest, const Py_buffer *src)
+copy_single(PyMemoryViewObject *self, const Py_buffer *dest, const Py_buffer *src)
 {
+    CHECK_RELEASED_INT(self); /* See gh-92888 for why we need this here */
     char *mem = NULL;
 
     assert(dest->ndim == 1);
@@ -2593,7 +2594,7 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
             goto end_block;
         dest.len = dest.shape[0] * dest.itemsize;
 
-        ret = copy_single(&dest, &src);
+        ret = copy_single(self, &dest, &src);
 
     end_block:
         PyBuffer_Release(&src);

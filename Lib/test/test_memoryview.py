@@ -545,28 +545,83 @@ class OtherTest(unittest.TestCase):
             with self.assertRaises(TypeError):
                 pickle.dumps(m, proto)
 
-    def test_memoryview_bad_index_uaf(self):
-        # memoryview Use After Free (memory_ass_sub) see gh-92888
-        uaf_backing = bytearray(bytearray.__basicsize__)
-        uaf_view = memoryview(uaf_backing).cast('n') # ssize_t format
-        memory_backing = None
-
-        class weird_index:
+    def test_use_released_memory(self):
+        size = 128
+        def release():
+            m.release()
+            nonlocal ba
+            ba = bytearray(size)
+        class MyIndex:
             def __index__(self):
-                nonlocal memory_backing
-                uaf_view.release() # release memoryview (UAF)
-                # free `uaf_backing` memory and allocate a new bytearray into it
-                memory_backing = uaf_backing.clear() or bytearray()
-                return 2 # `ob_size` idx
+                release()
+                return 4
+        class MyFloat:
+            def __float__(self):
+                release()
+                return 4.25
+        class MyBool:
+            def __bool__(self):
+                release()
+                return True
 
-        # by the time this line finishes executing, it writes the max ptr size
-        # into the `ob_size` slot of `memory_backing`
-        with self.assertRaisesRegex(ValueError, "operation forbidden on released memoryview object"):
-            uaf_view[weird_index()] = (2 ** (tuple.__itemsize__ * 8) - 1) // 2
-        memory = memoryview(memory_backing)
-        with self.assertRaisesRegex(IndexError, "index out of bounds"):
-            memory[id(250) + int.__basicsize__] = 100
-        self.assertEqual(250, eval("250"))
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size))
+        with self.assertRaises(ValueError):
+            m[MyIndex()]
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size))
+        self.assertEqual(list(m[:MyIndex()]), [255] * 4)
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size))
+        self.assertEqual(list(m[MyIndex():8]), [255] * 4)
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size))
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+            m[MyIndex()] = 42
+        self.assertEqual(ba[:8], b'\0'*8)
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size))
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):        
+            m[:MyIndex()] = b'spam'
+        self.assertEqual(ba[:8], b'\0'*8)
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size))
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):        
+            m[MyIndex():8] = b'spam'
+        self.assertEqual(ba[:8], b'\0'*8)
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size))
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+            m[0] = MyIndex()
+        self.assertEqual(ba[:8], b'\0'*8)
+
+        for fmt in 'bhilqnBHILQN':
+            with self.subTest(fmt=fmt):
+                ba = None
+                m = memoryview(bytearray(b'\xff'*size)).cast(fmt)
+                with self.assertRaisesRegex(ValueError, "operation forbidden"):
+                    m[0] = MyIndex()
+                self.assertEqual(ba[:8], b'\0'*8)
+
+        for fmt in 'fd':
+            with self.subTest(fmt=fmt):
+                ba = None
+                m = memoryview(bytearray(b'\xff'*size)).cast(fmt)
+                with self.assertRaisesRegex(ValueError, "operation forbidden"):
+                    m[0] = MyFloat()
+                self.assertEqual(ba[:8], b'\0'*8)
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size)).cast('?')
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+            m[0] = MyBool()
+        self.assertEqual(ba[:8], b'\0'*8)
 
 if __name__ == "__main__":
     unittest.main()
