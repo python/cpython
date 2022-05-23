@@ -2258,7 +2258,7 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(str(Open.AC), 'Open.AC')
         self.assertEqual(str(Open.RO | Open.CE), 'Open.CE')
         self.assertEqual(str(Open.WO | Open.CE), 'Open.CE|WO')
-        self.assertEqual(str(~Open.RO), 'Open.CE|AC|RW|WO')
+        self.assertEqual(str(~Open.RO), 'Open.CE|RW|WO')
         self.assertEqual(str(~Open.WO), 'Open.CE|RW')
         self.assertEqual(str(~Open.AC), 'Open.CE')
         self.assertEqual(str(~(Open.RO | Open.CE)), 'Open.AC')
@@ -2285,7 +2285,7 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(repr(Open.AC), '<Open.AC: 3>')
         self.assertEqual(repr(Open.RO | Open.CE), '<Open.CE: 524288>')
         self.assertEqual(repr(Open.WO | Open.CE), '<Open.CE|WO: 524289>')
-        self.assertEqual(repr(~Open.RO), '<Open.CE|AC|RW|WO: 524291>')
+        self.assertEqual(repr(~Open.RO), '<Open.CE|RW|WO: 524291>')
         self.assertEqual(repr(~Open.WO), '<Open.CE|RW: 524290>')
         self.assertEqual(repr(~Open.AC), '<Open.CE: 524288>')
         self.assertEqual(repr(~(Open.RO | Open.CE)), '<Open.AC: 3>')
@@ -2728,12 +2728,12 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(str(Open.RO | Open.CE), 'Open.CE')
         self.assertEqual(str(Open.WO | Open.CE), 'Open.CE|WO')
         self.assertEqual(str(Open(4)), 'Open.4')
-        self.assertEqual(str(~Open.RO), 'Open.CE|AC|RW|WO')
+        self.assertEqual(str(~Open.RO), 'Open.CE|RW|WO')
         self.assertEqual(str(~Open.WO), 'Open.CE|RW')
         self.assertEqual(str(~Open.AC), 'Open.CE')
-        self.assertEqual(str(~(Open.RO | Open.CE)), 'Open.AC|RW|WO')
+        self.assertEqual(str(~(Open.RO | Open.CE)), 'Open.RW|WO')
         self.assertEqual(str(~(Open.WO | Open.CE)), 'Open.RW')
-        self.assertEqual(str(Open(~4)), 'Open.CE|AC|RW|WO')
+        self.assertEqual(str(Open(~4)), 'Open.CE|RW|WO')
 
     def test_repr(self):
         Perm = self.Perm
@@ -2761,12 +2761,21 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(repr(Open.RO | Open.CE), '<Open.CE: 524288>')
         self.assertEqual(repr(Open.WO | Open.CE), '<Open.CE|WO: 524289>')
         self.assertEqual(repr(Open(4)), '<Open.4: 4>')
-        self.assertEqual(repr(~Open.RO), '<Open.CE|AC|RW|WO: -1>')
+        self.assertEqual(repr(~Open.RO), '<Open.CE|RW|WO: -1>')
         self.assertEqual(repr(~Open.WO), '<Open.CE|RW: -2>')
         self.assertEqual(repr(~Open.AC), '<Open.CE: -4>')
-        self.assertEqual(repr(~(Open.RO | Open.CE)), '<Open.AC|RW|WO: -524289>')
+        self.assertEqual(repr(~(Open.RO | Open.CE)), '<Open.RW|WO: -524289>')
         self.assertEqual(repr(~(Open.WO | Open.CE)), '<Open.RW: -524290>')
-        self.assertEqual(repr(Open(~4)), '<Open.CE|AC|RW|WO: -5>')
+        self.assertEqual(repr(Open(~4)), '<Open.CE|RW|WO: -5>')
+
+    def test_list_intflag(self):
+        Perm = self.Perm
+        Open = self.Open
+        Color = self.Color
+
+        self.assertEqual(list(Perm), [Perm.X, Perm.W, Perm.R])
+        self.assertEqual(list(Open), [Open.WO, Open.RW, Open.CE])
+        self.assertEqual(list(Color), [Color.RED, Color.GREEN, Color.BLUE])
 
     def test_format(self):
         Perm = self.Perm
