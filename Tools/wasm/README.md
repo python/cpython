@@ -239,6 +239,7 @@ are:
   yet. A future version of WASI may provide a limited ``set_permissions`` API.
 - File locking (``fcntl``) is not available.
 - ``os.pipe()``, ``os.mkfifo()``, and ``os.mknod()`` are not supported.
+- ``process_time`` clock does not work.
 
 
 # Detect WebAssembly builds
