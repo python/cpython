@@ -236,23 +236,11 @@ static PyMethodDef xx_methods[] = {
 PyDoc_STRVAR(module_doc,
 "This is a module for testing limited API from Python 3.5.");
 
-static PyObject *
-create_and_add_type(PyObject *module, const char *name, PyType_Spec *spec)
-{
-    PyObject *type = PyType_FromSpec(spec);
-    if (type == NULL) {
-        return NULL;
-    }
-    if (PyModule_AddObject(module, name, type) < 0) {
-        Py_DECREF(type);
-        return NULL;
-    }
-    return type;
-}
-
 static int
 xx_modexec(PyObject *m)
 {
+    PyObject *o;
+
     /* Due to cross platform compiler issues the slots must be filled
      * here. It's required for portability to Windows without requiring
      * C++. */
@@ -273,15 +261,33 @@ xx_modexec(PyObject *m)
         return -1;
     }
 
-    /* Add Xxo, Str, and Null types */
-    Xxo_Type = create_and_add_type(m, "Xxo", &Xxo_Type_spec);
+    /* Add Xxo */
+    Xxo_Type = PyType_FromSpec(&Xxo_Type_spec);
     if (Xxo_Type == NULL) {
         return -1;
     }
-    if (create_and_add_type(m, "Str", &Str_Type_spec) == NULL) {
+    if (PyModule_AddObject(m, "Xxo", Xxo_Type) < 0) {
+        Py_DECREF(Xxo_Type);
         return -1;
     }
-    if (create_and_add_type(m, "Null", &Null_Type_spec) == NULL) {
+
+    /* Add Str */
+    o = PyType_FromSpec(&Str_Type_spec);
+    if (o == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObject(m, "Str", o) < 0) {
+        Py_DECREF(o);
+        return -1;
+    }
+
+    /* Add Null */
+    o = PyType_FromSpec(&Null_Type_spec);
+    if (o == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObject(m, "Null", o) < 0) {
+        Py_DECREF(o);
         return -1;
     }
 
