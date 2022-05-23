@@ -12311,9 +12311,7 @@ if test "x$have_libffi" = xyes; then :
       ctypes_malloc_closure=yes
      ;; #(
   sunos5) :
-    as_fn_append LIBFFI_LIBS " -mimpure-text" ;; #(
-  hp*|HP*) :
-    as_fn_append LIBFFI_LIBS " -fPIC"
+    as_fn_append LIBFFI_LIBS " -mimpure-text"
    ;; #(
   *) :
      ;;

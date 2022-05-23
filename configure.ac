@@ -3633,8 +3633,7 @@ AS_VAR_IF([have_libffi], [yes], [
       AS_VAR_APPEND([LIBFFI_CFLAGS], [" -I\$(srcdir)/Modules/_ctypes/darwin -DMACOSX"])
       ctypes_malloc_closure=yes
     ],
-    [sunos5], [AS_VAR_APPEND([LIBFFI_LIBS], [" -mimpure-text"])],
-    [hp*|HP*], [AS_VAR_APPEND([LIBFFI_LIBS], [" -fPIC"])]
+    [sunos5], [AS_VAR_APPEND([LIBFFI_LIBS], [" -mimpure-text"])]
   )
   AS_VAR_IF([ctypes_malloc_closure], [yes], [
     MODULE__CTYPES_MALLOC_CLOSURE=_ctypes/malloc_closure.c
