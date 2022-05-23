@@ -1786,7 +1786,7 @@ class Generic:
 
     @_tp_cache
     def __class_getitem__(cls, params):
-        """Parameterizes a generic class.
+        """Parametrizes a generic class.
 
         At least, parameterizing a generic class is the *main* thing this method
         does. For example, for some generic class `Foo`, this is called when we
