@@ -157,55 +157,55 @@ exit:
 }
 
 PyDoc_STRVAR(pysqlite_register_adapter__doc__,
-"register_adapter($module, type, caster, /)\n"
+"register_adapter($module, type, callable, /)\n"
 "--\n"
 "\n"
-"Registers an adapter with sqlite3\'s adapter registry.");
+"Register a function to adapt Python types to SQLite types.");
 
 #define PYSQLITE_REGISTER_ADAPTER_METHODDEF    \
     {"register_adapter", _PyCFunction_CAST(pysqlite_register_adapter), METH_FASTCALL, pysqlite_register_adapter__doc__},
 
 static PyObject *
 pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
-                               PyObject *caster);
+                               PyObject *adapter);
 
 static PyObject *
 pysqlite_register_adapter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyTypeObject *type;
-    PyObject *caster;
+    PyObject *adapter;
 
     if (!_PyArg_CheckPositional("register_adapter", nargs, 2, 2)) {
         goto exit;
     }
     type = (PyTypeObject *)args[0];
-    caster = args[1];
-    return_value = pysqlite_register_adapter_impl(module, type, caster);
+    adapter = args[1];
+    return_value = pysqlite_register_adapter_impl(module, type, adapter);
 
 exit:
     return return_value;
 }
 
 PyDoc_STRVAR(pysqlite_register_converter__doc__,
-"register_converter($module, name, converter, /)\n"
+"register_converter($module, type, callable, /)\n"
 "--\n"
 "\n"
-"Registers a converter with sqlite3.");
+"Register a function to convert SQLite types to Python types.");
 
 #define PYSQLITE_REGISTER_CONVERTER_METHODDEF    \
     {"register_converter", _PyCFunction_CAST(pysqlite_register_converter), METH_FASTCALL, pysqlite_register_converter__doc__},
 
 static PyObject *
-pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
-                                 PyObject *callable);
+pysqlite_register_converter_impl(PyObject *module, PyObject *tp,
+                                 PyObject *converter);
 
 static PyObject *
 pysqlite_register_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *orig_name;
-    PyObject *callable;
+    PyObject *tp;
+    PyObject *converter;
 
     if (!_PyArg_CheckPositional("register_converter", nargs, 2, 2)) {
         goto exit;
@@ -217,9 +217,9 @@ pysqlite_register_converter(PyObject *module, PyObject *const *args, Py_ssize_t 
     if (PyUnicode_READY(args[0]) == -1) {
         goto exit;
     }
-    orig_name = args[0];
-    callable = args[1];
-    return_value = pysqlite_register_converter_impl(module, orig_name, callable);
+    tp = args[0];
+    converter = args[1];
+    return_value = pysqlite_register_converter_impl(module, tp, converter);
 
 exit:
     return return_value;
@@ -292,4 +292,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a7cfa6dc9d54273c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b03f4a0db3e35eb7 input=a9049054013a1b77]*/
