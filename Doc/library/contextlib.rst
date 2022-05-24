@@ -130,7 +130,9 @@ Functions and classes provided:
    either as decorators or with :keyword:`async with` statements::
 
      import time
+     from contextlib import asynccontextmanager
 
+     @asynccontextmanager
      async def timeit():
          now = time.monotonic()
          try:
@@ -179,7 +181,7 @@ Functions and classes provided:
    ``page.close()`` will be called when the :keyword:`with` block is exited.
 
 
-.. class:: aclosing(thing)
+.. function:: aclosing(thing)
 
    Return an async context manager that calls the ``aclose()`` method of *thing*
    upon completion of the block.  This is basically equivalent to::
@@ -499,6 +501,9 @@ Functions and classes provided:
           # All opened files will automatically be closed at the end of
           # the with statement, even if attempts to open files later
           # in the list raise an exception
+
+   The :meth:`__enter__` method returns the :class:`ExitStack` instance, and
+   performs no additional operations.
 
    Each instance maintains a stack of registered callbacks that are called in
    reverse order when the instance is closed (either explicitly or implicitly

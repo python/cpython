@@ -178,10 +178,11 @@ following example::
        raise ValueError('Invalid log level: %s' % loglevel)
    logging.basicConfig(level=numeric_level, ...)
 
-The call to :func:`basicConfig` should come *before* any calls to :func:`debug`,
-:func:`info` etc. As it's intended as a one-off simple configuration facility,
-only the first call will actually do anything: subsequent calls are effectively
-no-ops.
+The call to :func:`basicConfig` should come *before* any calls to
+:func:`debug`, :func:`info`, etc. Otherwise, those functions will call
+:func:`basicConfig` for you with the default options. As it's intended as a
+one-off simple configuration facility, only the first call will actually do
+anything: subsequent calls are effectively no-ops.
 
 If you run the above script several times, the messages from successive runs
 are appended to the file *example.log*. If you want each run to start afresh,
@@ -830,6 +831,13 @@ etc. then the code::
 should have the desired effect. If an organisation produces a number of
 libraries, then the logger name specified can be 'orgname.foo' rather than
 just 'foo'.
+
+.. note:: It is strongly advised that you *do not log to the root logger*
+   in your library. Instead, use a logger with a unique and easily
+   identifiable name, such as the ``__name__`` for your library's top-level package
+   or module. Logging to the root logger will make it difficult or impossible for
+   the application developer to configure the logging verbosity or handlers of
+   your library as they wish.
 
 .. note:: It is strongly advised that you *do not add any handlers other
    than* :class:`~logging.NullHandler` *to your library's loggers*. This is

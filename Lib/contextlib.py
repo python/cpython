@@ -161,6 +161,7 @@ class _GeneratorContextManager(
             except RuntimeError as exc:
                 # Don't re-raise the passed in exception. (issue27122)
                 if exc is value:
+                    exc.__traceback__ = traceback
                     return False
                 # Avoid suppressing if a StopIteration exception
                 # was passed to throw() and later wrapped into a RuntimeError
@@ -172,6 +173,7 @@ class _GeneratorContextManager(
                     isinstance(value, StopIteration)
                     and exc.__cause__ is value
                 ):
+                    exc.__traceback__ = traceback
                     return False
                 raise
             except BaseException as exc:
@@ -183,6 +185,7 @@ class _GeneratorContextManager(
                 # and the __exit__() protocol.
                 if exc is not value:
                     raise
+                exc.__traceback__ = traceback
                 return False
             raise RuntimeError("generator didn't stop after throw()")
 
@@ -192,14 +195,6 @@ class _AsyncGeneratorContextManager(
     AsyncContextDecorator,
 ):
     """Helper for @asynccontextmanager decorator."""
-
-    def __call__(self, func):
-        @wraps(func)
-        async def inner(*args, **kwds):
-            async with self.__class__(self.func, self.args, self.kwds):
-                return await func(*args, **kwds)
-
-        return inner
 
     async def __aenter__(self):
         # do not keep args and kwds alive unnecessarily

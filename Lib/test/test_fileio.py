@@ -9,7 +9,9 @@ from array import array
 from weakref import proxy
 from functools import wraps
 
-from test.support import cpython_only, swap_attr, gc_collect
+from test.support import (
+    cpython_only, swap_attr, gc_collect, is_emscripten, is_wasi
+)
 from test.support.os_helper import (TESTFN, TESTFN_UNICODE, make_bad_fd)
 from test.support.warnings_helper import check_warnings
 from collections import UserList
@@ -65,6 +67,7 @@ class AutoFileTests:
             self.assertRaises((AttributeError, TypeError),
                               setattr, f, attr, 'oops')
 
+    @unittest.skipIf(is_wasi, "WASI does not expose st_blksize.")
     def testBlksize(self):
         # test private _blksize attribute
         blksize = io.DEFAULT_BUFFER_SIZE
@@ -373,7 +376,7 @@ class OtherFileTests:
             self.assertEqual(f.isatty(), False)
             f.close()
 
-            if sys.platform != "win32":
+            if sys.platform != "win32" and not is_emscripten:
                 try:
                     f = self.FileIO("/dev/tty", "a")
                 except OSError:

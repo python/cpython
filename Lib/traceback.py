@@ -1,6 +1,6 @@
 """Extract, format and print information about Python stack traces."""
 
-import collections
+import collections.abc
 import itertools
 import linecache
 import sys
@@ -98,7 +98,11 @@ def _parse_value_tb(exc, value, tb):
         raise ValueError("Both or neither of value and tb must be given")
     if value is tb is _sentinel:
         if exc is not None:
-            return exc, exc.__traceback__
+            if isinstance(exc, BaseException):
+                return exc, exc.__traceback__
+
+            raise TypeError(f'Exception expected for value, '
+                            f'{type(exc).__name__} found')
         else:
             return None, None
     return value, tb
@@ -159,18 +163,18 @@ def format_exception_only(exc, /, value=_sentinel):
 # -- not official API but folk probably use these two functions.
 
 def _format_final_exc_line(etype, value):
-    valuestr = _some_str(value)
+    valuestr = _safe_string(value, 'exception')
     if value is None or not valuestr:
         line = "%s\n" % etype
     else:
         line = "%s: %s\n" % (etype, valuestr)
     return line
 
-def _some_str(value):
+def _safe_string(value, what, func=str):
     try:
-        return str(value)
+        return func(value)
     except:
-        return '<exception str() failed>'
+        return f'<{what} {func.__name__}() failed>'
 
 # --
 
@@ -684,7 +688,9 @@ class TracebackException:
         self.exc_type = exc_type
         # Capture now to permit freeing resources: only complication is in the
         # unofficial API _format_final_exc_line
-        self._str = _some_str(exc_value)
+        self._str = _safe_string(exc_value, 'exception')
+        self.__notes__ = getattr(exc_value, '__notes__', None)
+
         if exc_type and issubclass(exc_type, SyntaxError):
             # Handle SyntaxError's specially
             self.filename = exc_value.filename
@@ -808,12 +814,20 @@ class TracebackException:
         stype = self.exc_type.__qualname__
         smod = self.exc_type.__module__
         if smod not in ("__main__", "builtins"):
+            if not isinstance(smod, str):
+                smod = "<unknown>"
             stype = smod + '.' + stype
 
         if not issubclass(self.exc_type, SyntaxError):
             yield _format_final_exc_line(stype, self._str)
         else:
             yield from self._format_syntax_error(stype)
+        if isinstance(self.__notes__, collections.abc.Sequence):
+            for note in self.__notes__:
+                note = _safe_string(note, 'note')
+                yield from [l + '\n' for l in note.split('\n')]
+        elif self.__notes__ is not None:
+            yield _safe_string(self.__notes__, '__notes__', func=repr)
 
     def _format_syntax_error(self, stype):
         """Format SyntaxError exceptions (internal helper)."""
@@ -903,7 +917,7 @@ class TracebackException:
                 # format exception group
                 is_toplevel = (_ctx.exception_group_depth == 0)
                 if is_toplevel:
-                     _ctx.exception_group_depth += 1
+                    _ctx.exception_group_depth += 1
 
                 if exc.stack:
                     yield from _ctx.emit(

@@ -66,9 +66,6 @@ are always available.  They are listed here in alphabetical order.
    Return an :term:`asynchronous iterator` for an :term:`asynchronous iterable`.
    Equivalent to calling ``x.__aiter__()``.
 
-   ``aiter(x)`` itself has an ``__aiter__()`` method that returns ``x``,
-   so ``aiter(aiter(x))`` is the same as ``aiter(x)``.
-
    Note: Unlike :func:`iter`, :func:`aiter` has no 2-argument variant.
 
    .. versionadded:: 3.10
@@ -251,7 +248,7 @@ are always available.  They are listed here in alphabetical order.
 
       class C:
           @classmethod
-          def f(cls, arg1, arg2, ...): ...
+          def f(cls, arg1, arg2): ...
 
    The ``@classmethod`` form is a function :term:`decorator` -- see
    :ref:`function` for details.
@@ -273,6 +270,11 @@ are always available.  They are listed here in alphabetical order.
       Class methods now inherit the method attributes (``__module__``,
       ``__name__``, ``__qualname__``, ``__doc__`` and ``__annotations__``) and
       have a new ``__wrapped__`` attribute.
+
+   .. versionchanged:: 3.11
+      Class methods can no longer wrap other :term:`descriptors <descriptor>` such as
+      :func:`property`.
+
 
 .. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
 
@@ -498,6 +500,7 @@ are always available.  They are listed here in alphabetical order.
               yield n, elem
               n += 1
 
+.. _func-eval:
 
 .. function:: eval(expression[, globals[, locals]])
 
@@ -550,7 +553,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. index:: builtin: exec
 
-.. function:: exec(object[, globals[, locals]])
+.. function:: exec(object[, globals[, locals]], *, closure=None)
 
    This function supports dynamic execution of Python code. *object* must be
    either a string or a code object.  If it is a string, the string is parsed as
@@ -579,6 +582,11 @@ are always available.  They are listed here in alphabetical order.
    builtins are available to the executed code by inserting your own
    ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
 
+   The *closure* argument specifies a closure--a tuple of cellvars.
+   It's only valid when the *object* is a code object containing free variables.
+   The length of the tuple must exactly match the number of free variables
+   referenced by the code object.
+
    .. audit-event:: exec code_object exec
 
       Raises an :ref:`auditing event <auditing>` ``exec`` with the code object
@@ -596,6 +604,9 @@ are always available.  They are listed here in alphabetical order.
       modifications to the default *locals* dictionary should not be attempted.
       Pass an explicit *locals* dictionary if you need to see effects of the
       code on *locals* after function :func:`exec` returns.
+
+   .. versionchanged:: 3.11
+      Added the *closure* parameter.
 
 
 .. function:: filter(function, iterable)
@@ -736,9 +747,9 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: globals()
 
-   Return a dictionary representing the current global symbol table. This is always
-   the dictionary of the current module (inside a function or method, this is the
-   module where it is defined, not the module from which it is called).
+   Return the dictionary implementing the current module namespace. For code within
+   functions, this is set when the function is defined and remains the same
+   regardless of where the function is called.
 
 
 .. function:: hasattr(object, name)
@@ -849,8 +860,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. audit-event:: builtins.input/result result input
 
-      Raises an auditing event ``builtins.input/result`` with the result after
-      successfully reading input.
+      Raises an :ref:`auditing event <auditing>` ``builtins.input/result``
+      with the result after successfully reading input.
 
 
 .. class:: int([x])
@@ -894,6 +905,9 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.8
       Falls back to :meth:`__index__` if :meth:`__int__` is not defined.
 
+   .. versionchanged:: 3.11
+      The delegation to :meth:`__trunc__` is deprecated.
+
 
 .. function:: isinstance(object, classinfo)
 
@@ -905,7 +919,8 @@ are always available.  They are listed here in alphabetical order.
    tuples) or a :ref:`types-union` of multiple types, return ``True`` if
    *object* is an instance of any of the types.
    If *classinfo* is not a type or tuple of types and such tuples,
-   a :exc:`TypeError` exception is raised.
+   a :exc:`TypeError` exception is raised. :exc:`TypeError` may not be
+   raised for an invalid type if an earlier check succeeds.
 
    .. versionchanged:: 3.10
       *classinfo* can be a :ref:`types-union`.
@@ -916,7 +931,8 @@ are always available.  They are listed here in alphabetical order.
    Return ``True`` if *class* is a subclass (direct, indirect, or :term:`virtual
    <abstract base class>`) of *classinfo*.  A
    class is considered a subclass of itself. *classinfo* may be a tuple of class
-   objects or a :ref:`types-union`, in which case return ``True`` if *class* is a
+   objects (or recursively, other such tuples)
+   or a :ref:`types-union`, in which case return ``True`` if *class* is a
    subclass of any entry in *classinfo*.  In any other case, a :exc:`TypeError`
    exception is raised.
 
@@ -929,8 +945,8 @@ are always available.  They are listed here in alphabetical order.
    Return an :term:`iterator` object.  The first argument is interpreted very
    differently depending on the presence of the second argument. Without a
    second argument, *object* must be a collection object which supports the
-   iteration protocol (the :meth:`__iter__` method), or it must support the
-   sequence protocol (the :meth:`__getitem__` method with integer arguments
+   :term:`iterable` protocol (the :meth:`__iter__` method), or it must support
+   the sequence protocol (the :meth:`__getitem__` method with integer arguments
    starting at ``0``).  If it does not support either of those protocols,
    :exc:`TypeError` is raised. If the second argument, *sentinel*, is given,
    then *object* must be a callable object.  The iterator created in this case
@@ -1060,7 +1076,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: next(iterator[, default])
 
-   Retrieve the next item from the *iterator* by calling its
+   Retrieve the next item from the :term:`iterator` by calling its
    :meth:`~iterator.__next__` method.  If *default* is given, it is returned
    if the iterator is exhausted, otherwise :exc:`StopIteration` is raised.
 
@@ -1123,8 +1139,8 @@ are always available.  They are listed here in alphabetical order.
    (which on *some* Unix systems, means that *all* writes append to the end of
    the file regardless of the current seek position).  In text mode, if
    *encoding* is not specified the encoding used is platform-dependent:
-   ``locale.getpreferredencoding(False)`` is called to get the current locale
-   encoding. (For reading and writing raw bytes use binary mode and leave
+   :func:`locale.getencoding()` is called to get the current locale encoding.
+   (For reading and writing raw bytes use binary mode and leave
    *encoding* unspecified.)  The available modes are:
 
    .. _filemodes:
@@ -1165,7 +1181,11 @@ are always available.  They are listed here in alphabetical order.
    *buffering* is an optional integer used to set the buffering policy.  Pass 0
    to switch buffering off (only allowed in binary mode), 1 to select line
    buffering (only usable in text mode), and an integer > 1 to indicate the size
-   in bytes of a fixed-size chunk buffer.  When no *buffering* argument is
+   in bytes of a fixed-size chunk buffer. Note that specifying a buffer size this
+   way applies for binary buffered I/O, but ``TextIOWrapper`` (i.e., files opened
+   with ``mode='r+'``) would have another buffering. To disable buffering in
+   ``TextIOWrapper``, consider using the ``write_through`` flag for
+   :func:`io.TextIOWrapper.reconfigure`. When no *buffering* argument is
    given, the default buffering policy works as follows:
 
    * Binary files are buffered in fixed-size chunks; the size of the buffer is
@@ -1179,10 +1199,9 @@ are always available.  They are listed here in alphabetical order.
 
    *encoding* is the name of the encoding used to decode or encode the file.
    This should only be used in text mode.  The default encoding is platform
-   dependent (whatever :func:`locale.getpreferredencoding` returns), but any
-   :term:`text encoding` supported by Python
-   can be used.  See the :mod:`codecs` module for
-   the list of supported encodings.
+   dependent (whatever :func:`locale.getencoding` returns), but any
+   :term:`text encoding` supported by Python can be used.
+   See the :mod:`codecs` module for the list of supported encodings.
 
    *errors* is an optional string that specifies how encoding and decoding
    errors are to be handled—this cannot be used in binary mode.
@@ -1574,7 +1593,7 @@ are always available.  They are listed here in alphabetical order.
    :func:`itertools.islice` for an alternate version that returns an iterator.
 
 
-.. function:: sorted(iterable, *, key=None, reverse=False)
+.. function:: sorted(iterable, /, *, key=None, reverse=False)
 
    Return a new sorted list from the items in *iterable*.
 

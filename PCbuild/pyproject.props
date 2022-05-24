@@ -18,6 +18,7 @@
     <SupportSigning Condition="'$(SupportSigning)' == ''">true</SupportSigning>
     <SupportSigning Condition="'$(Configuration)' == 'Debug'">false</SupportSigning>
     <SupportSigning Condition="'$(ConfigurationType)' == 'StaticLibrary'">false</SupportSigning>
+    <LinkIncremental Condition="$(Configuration) != 'Debug'">false</LinkIncremental>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -45,6 +46,7 @@
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <ControlFlowGuard Condition="$(EnableControlFlowGuard) != ''">$(EnableControlFlowGuard)</ControlFlowGuard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <ClCompile Condition="$(Configuration) == 'Debug'">
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
@@ -224,5 +226,18 @@ public override bool Execute() {
 
     <Warning Text="vcruntime*.dll not found under $(VCRedistDir)." Condition="@(VCRuntimeDLL) == ''" />
     <Message Text="VC Runtime DLL(s):%0A- @(VCRuntimeDLL,'%0A- ')" />
+  </Target>
+
+  <Target Name="FindPythonForBuild" Condition="$(PythonForBuild) == ''">
+    <Exec Command="$(MSBuildThisFileDirectory)\find_python.bat -q"
+          EchoOff="true"
+          ConsoleToMsBuild="true">
+        <Output TaskParameter="ConsoleOutput" ItemName="_CmdExeLines" />
+    </Exec>
+    <PropertyGroup>
+      <PythonForBuild>@(_CmdExeLines)</PythonForBuild>
+    </PropertyGroup>
+    <Error Text="Failed to locate suitable Python runtime for building from source." Condition="$(PythonForBuild)==''" />
+    <Message Text="Using PythonForBuild=$(PythonForBuild)" Importance="high" />
   </Target>
 </Project>

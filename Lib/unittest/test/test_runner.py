@@ -3,6 +3,7 @@ import os
 import sys
 import pickle
 import subprocess
+from test import support
 
 import unittest
 from unittest.case import _Outcome
@@ -43,6 +44,29 @@ def cleanup(ordering, blowUp=False):
     else:
         ordering.append('cleanup_exc')
         raise Exception('CleanUpExc')
+
+
+class TestCM:
+    def __init__(self, ordering, enter_result=None):
+        self.ordering = ordering
+        self.enter_result = enter_result
+
+    def __enter__(self):
+        self.ordering.append('enter')
+        return self.enter_result
+
+    def __exit__(self, *exc_info):
+        self.ordering.append('exit')
+
+
+class LacksEnterAndExit:
+    pass
+class LacksEnter:
+    def __exit__(self, *exc_info):
+        pass
+class LacksExit:
+    def __enter__(self):
+        pass
 
 
 class TestCleanUp(unittest.TestCase):
@@ -170,6 +194,39 @@ class TestCleanUp(unittest.TestCase):
 
         test.debug()
         self.assertEqual(ordering, ['setUp', 'test', 'tearDown', 'cleanup1', 'cleanup2'])
+
+
+    def test_enterContext(self):
+        class TestableTest(unittest.TestCase):
+            def testNothing(self):
+                pass
+
+        test = TestableTest('testNothing')
+        cleanups = []
+
+        test.addCleanup(cleanups.append, 'cleanup1')
+        cm = TestCM(cleanups, 42)
+        self.assertEqual(test.enterContext(cm), 42)
+        test.addCleanup(cleanups.append, 'cleanup2')
+
+        self.assertTrue(test.doCleanups())
+        self.assertEqual(cleanups, ['enter', 'cleanup2', 'exit', 'cleanup1'])
+
+    def test_enterContext_arg_errors(self):
+        class TestableTest(unittest.TestCase):
+            def testNothing(self):
+                pass
+
+        test = TestableTest('testNothing')
+
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            test.enterContext(LacksEnterAndExit())
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            test.enterContext(LacksEnter())
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            test.enterContext(LacksExit())
+
+        self.assertEqual(test._cleanups, [])
 
 
 class TestClassCleanup(unittest.TestCase):
@@ -449,6 +506,35 @@ class TestClassCleanup(unittest.TestCase):
                          'Exception: TearDownExc')
         self.assertEqual(ordering,
                          ['setUpClass', 'test', 'tearDownClass', 'cleanup_good'])
+
+    def test_enterClassContext(self):
+        class TestableTest(unittest.TestCase):
+            def testNothing(self):
+                pass
+
+        cleanups = []
+
+        TestableTest.addClassCleanup(cleanups.append, 'cleanup1')
+        cm = TestCM(cleanups, 42)
+        self.assertEqual(TestableTest.enterClassContext(cm), 42)
+        TestableTest.addClassCleanup(cleanups.append, 'cleanup2')
+
+        TestableTest.doClassCleanups()
+        self.assertEqual(cleanups, ['enter', 'cleanup2', 'exit', 'cleanup1'])
+
+    def test_enterClassContext_arg_errors(self):
+        class TestableTest(unittest.TestCase):
+            def testNothing(self):
+                pass
+
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            TestableTest.enterClassContext(LacksEnterAndExit())
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            TestableTest.enterClassContext(LacksEnter())
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            TestableTest.enterClassContext(LacksExit())
+
+        self.assertEqual(TestableTest._class_cleanups, [])
 
 
 class TestModuleCleanUp(unittest.TestCase):
@@ -999,6 +1085,31 @@ class TestModuleCleanUp(unittest.TestCase):
                           'cleanup2',  'setUp2', 'test2', 'tearDown2',
                           'cleanup3', 'tearDownModule', 'cleanup1'])
 
+    def test_enterModuleContext(self):
+        cleanups = []
+
+        unittest.addModuleCleanup(cleanups.append, 'cleanup1')
+        cm = TestCM(cleanups, 42)
+        self.assertEqual(unittest.enterModuleContext(cm), 42)
+        unittest.addModuleCleanup(cleanups.append, 'cleanup2')
+
+        unittest.case.doModuleCleanups()
+        self.assertEqual(cleanups, ['enter', 'cleanup2', 'exit', 'cleanup1'])
+
+    def test_enterModuleContext_arg_errors(self):
+        class TestableTest(unittest.TestCase):
+            def testNothing(self):
+                pass
+
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            unittest.enterModuleContext(LacksEnterAndExit())
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            unittest.enterModuleContext(LacksEnter())
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            unittest.enterModuleContext(LacksExit())
+
+        self.assertEqual(unittest.case._module_cleanups, [])
+
 
 class Test_TextTestRunner(unittest.TestCase):
     """Tests for TextTestRunner."""
@@ -1139,6 +1250,7 @@ class Test_TextTestRunner(unittest.TestCase):
         expectedresult = (runner.stream, DESCRIPTIONS, VERBOSITY)
         self.assertEqual(runner._makeResult(), expectedresult)
 
+    @support.requires_subprocess()
     def test_warnings(self):
         """
         Check that warnings argument of TextTestRunner correctly affects the
@@ -1150,6 +1262,8 @@ class Test_TextTestRunner(unittest.TestCase):
             return [b.splitlines() for b in p.communicate()]
         opts = dict(stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                     cwd=os.path.dirname(__file__))
+        ae_msg = b'Please use assertEqual instead.'
+        at_msg = b'Please use assertTrue instead.'
 
         # no args -> all the warnings are printed, unittest warnings only once
         p = subprocess.Popen([sys.executable, '-E', '_test_warnings.py'], **opts)
@@ -1157,11 +1271,11 @@ class Test_TextTestRunner(unittest.TestCase):
             out, err = get_parse_out_err(p)
         self.assertIn(b'OK', err)
         # check that the total number of warnings in the output is correct
-        self.assertEqual(len(out), 10)
+        self.assertEqual(len(out), 12)
         # check that the numbers of the different kind of warnings is correct
         for msg in [b'dw', b'iw', b'uw']:
             self.assertEqual(out.count(msg), 3)
-        for msg in [b'rw']:
+        for msg in [ae_msg, at_msg, b'rw']:
             self.assertEqual(out.count(msg), 1)
 
         args_list = (
@@ -1188,9 +1302,11 @@ class Test_TextTestRunner(unittest.TestCase):
         with p:
             out, err = get_parse_out_err(p)
         self.assertIn(b'OK', err)
-        self.assertEqual(len(out), 12)
+        self.assertEqual(len(out), 14)
         for msg in [b'dw', b'iw', b'uw', b'rw']:
             self.assertEqual(out.count(msg), 3)
+        for msg in [ae_msg, at_msg]:
+            self.assertEqual(out.count(msg), 1)
 
     def testStdErrLookedUpAtInstantiationTime(self):
         # see issue 10786

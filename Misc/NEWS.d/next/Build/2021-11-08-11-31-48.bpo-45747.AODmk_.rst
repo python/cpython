@@ -1,1 +1,0 @@
-gdbm and dbm build dependencies are now detected by ``configure``.

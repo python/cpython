@@ -117,6 +117,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	BUILT=
 	BUILT_SHARED=
 	DISABLED=
+	CONFIGURED=
 	MODS=
 	SHAREDMODS=
 	OBJS=
@@ -154,6 +155,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		cpps=
 		libs=
 		mods=
+		mods_upper=
 		skip=
 		for arg in $line
 		do
@@ -184,15 +186,37 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*.c++)		srcs="$srcs $arg";;
 			*.cxx)		srcs="$srcs $arg";;
 			*.cpp)		srcs="$srcs $arg";;
+			\$\(*_CFLAGS\))		cpps="$cpps $arg";;
+			\$\(*_INCLUDES\))	cpps="$cpps $arg";;
+			\$\(*_LIBS\))		libs="$libs $arg";;
+			\$\(*_LDFLAGS\))	libs="$libs $arg";;
+			\$\(*_RPATH\))		libs="$libs $arg";;
 			\$*)		libs="$libs $arg"
 					cpps="$cpps $arg";;
 			*.*)		echo 1>&2 "bad word $arg in $line"
 					exit 1;;
 			-u)		skip=libs; libs="$libs -u";;
-			[a-zA-Z_]*)	mods="$mods $arg";;
+			[a-zA-Z_]*)
+					mods="$mods $arg"
+					mods_upper=$(echo $mods | tr '[a-z]' '[A-Z]');;
 			*)		echo 1>&2 "bad word $arg in $line"
 					exit 1;;
 			esac
+		done
+		if test -z "$cpps" -a -z "$libs"; then
+			cpps="\$(MODULE_${mods_upper}_CFLAGS)"
+			libs="\$(MODULE_${mods_upper}_LDFLAGS)"
+		fi
+		for mod in $mods
+		do
+			case $CONFIGURED in
+			*,${mod},*)
+				# Detected multiple rules for a module, first rule wins. This
+				# allows users to disable modules in Setup.local.
+				echo 1>&2 "maksetup: '$mod' was handled by previous rule."
+				continue 2;;
+			esac
+			CONFIGURED="$CONFIGURED,${mod},"
 		done
 		case $doconfig in
 		yes)
@@ -240,7 +264,6 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*)
 				cc="$cc \$(PY_BUILTIN_MODULE_CFLAGS)";;
 			esac
-			mods_upper=$(echo $mods | tr '[a-z]' '[A-Z]')
 			# force rebuild when header file or module build flavor (static/shared) is changed
 			rule="$obj: $src \$(MODULE_${mods_upper}_DEPS) \$(PYTHON_HEADERS) Modules/config.c; $cc $cpps -c $src -o $obj"
 			echo "$rule" >>$rulesf

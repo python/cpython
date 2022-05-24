@@ -1140,7 +1140,7 @@ blocks. Patch by Pablo Galindo.
 
 Constructors of subclasses of some builtin classes (e.g. :class:`tuple`,
 :class:`list`, :class:`frozenset`) no longer accept arbitrary keyword
-arguments. Subclass of :class:`set` can now define a ``__new__()`` method
+arguments. [reverted in 3.11a4] Subclass of :class:`set` can now define a ``__new__()`` method
 with additional keyword parameters without overriding also ``__init__()``.
 
 ..
@@ -1597,7 +1597,7 @@ use map function instead of genexpr in capwords.
 .. section: Library
 
 Fix typo: ``importlib.find_loader`` is really slated for removal in Python
-3.12 not 3.10, like the others in GH-25169.
+3.12 not 3.10, like the others in PR 25169.
 
 Patch by Hugo van Kemenade.
 

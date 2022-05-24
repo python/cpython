@@ -15,11 +15,14 @@ import subprocess
 import sys
 import time
 import unittest
+from test import support
+
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 # Test import all of the things we're about to try testing up front.
 import _io
 import _pyio
-
 
 @unittest.skipUnless(os.name == 'posix', 'tests requires a posix system.')
 class TestFileIOSignalInterrupt:

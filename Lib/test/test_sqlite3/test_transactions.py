@@ -23,6 +23,8 @@
 import os, unittest
 import sqlite3 as sqlite
 
+from test.test_sqlite3.test_dbapi import memory_database
+
 def get_db_path():
     return "sqlite_testdb"
 
@@ -129,10 +131,7 @@ class TransactionTests(unittest.TestCase):
         self.con1.commit()
 
     def test_rollback_cursor_consistency(self):
-        """
-        Checks if cursors on the connection are set into a "reset" state
-        when a rollback is done on the connection.
-        """
+        """Check that cursors behave correctly after rollback."""
         con = sqlite.connect(":memory:")
         cur = con.cursor()
         cur.execute("create table test(x)")
@@ -140,8 +139,45 @@ class TransactionTests(unittest.TestCase):
         cur.execute("select 1 union select 2 union select 3")
 
         con.rollback()
-        with self.assertRaises(sqlite.InterfaceError):
-            cur.fetchall()
+        self.assertEqual(cur.fetchall(), [(1,), (2,), (3,)])
+
+
+class RollbackTests(unittest.TestCase):
+    """bpo-44092: sqlite3 now leaves it to SQLite to resolve rollback issues"""
+
+    def setUp(self):
+        self.con = sqlite.connect(":memory:")
+        self.cur1 = self.con.cursor()
+        self.cur2 = self.con.cursor()
+        with self.con:
+            self.con.execute("create table t(c)");
+            self.con.executemany("insert into t values(?)", [(0,), (1,), (2,)])
+        self.cur1.execute("begin transaction")
+        select = "select c from t"
+        self.cur1.execute(select)
+        self.con.rollback()
+        self.res = self.cur2.execute(select)  # Reusing stmt from cache
+
+    def tearDown(self):
+        self.con.close()
+
+    def _check_rows(self):
+        for i, row in enumerate(self.res):
+            self.assertEqual(row[0], i)
+
+    def test_no_duplicate_rows_after_rollback_del_cursor(self):
+        del self.cur1
+        self._check_rows()
+
+    def test_no_duplicate_rows_after_rollback_close_cursor(self):
+        self.cur1.close()
+        self._check_rows()
+
+    def test_no_duplicate_rows_after_rollback_new_query(self):
+        self.cur1.execute("select c from t where c = 1")
+        self._check_rows()
+
+
 
 class SpecialCommandTests(unittest.TestCase):
     def setUp(self):
@@ -161,6 +197,7 @@ class SpecialCommandTests(unittest.TestCase):
     def tearDown(self):
         self.cur.close()
         self.con.close()
+
 
 class TransactionalDDL(unittest.TestCase):
     def setUp(self):
@@ -194,6 +231,102 @@ class TransactionalDDL(unittest.TestCase):
 
     def tearDown(self):
         self.con.close()
+
+
+class IsolationLevelFromInit(unittest.TestCase):
+    CREATE = "create table t(t)"
+    INSERT = "insert into t values(1)"
+
+    def setUp(self):
+        self.traced = []
+
+    def _run_test(self, cx):
+        cx.execute(self.CREATE)
+        cx.set_trace_callback(lambda stmt: self.traced.append(stmt))
+        with cx:
+            cx.execute(self.INSERT)
+
+    def test_isolation_level_default(self):
+        with memory_database() as cx:
+            self._run_test(cx)
+            self.assertEqual(self.traced, ["BEGIN ", self.INSERT, "COMMIT"])
+
+    def test_isolation_level_begin(self):
+        with memory_database(isolation_level="") as cx:
+            self._run_test(cx)
+            self.assertEqual(self.traced, ["BEGIN ", self.INSERT, "COMMIT"])
+
+    def test_isolation_level_deferred(self):
+        with memory_database(isolation_level="DEFERRED") as cx:
+            self._run_test(cx)
+            self.assertEqual(self.traced, ["BEGIN DEFERRED", self.INSERT, "COMMIT"])
+
+    def test_isolation_level_immediate(self):
+        with memory_database(isolation_level="IMMEDIATE") as cx:
+            self._run_test(cx)
+            self.assertEqual(self.traced,
+                             ["BEGIN IMMEDIATE", self.INSERT, "COMMIT"])
+
+    def test_isolation_level_exclusive(self):
+        with memory_database(isolation_level="EXCLUSIVE") as cx:
+            self._run_test(cx)
+            self.assertEqual(self.traced,
+                             ["BEGIN EXCLUSIVE", self.INSERT, "COMMIT"])
+
+    def test_isolation_level_none(self):
+        with memory_database(isolation_level=None) as cx:
+            self._run_test(cx)
+            self.assertEqual(self.traced, [self.INSERT])
+
+
+class IsolationLevelPostInit(unittest.TestCase):
+    QUERY = "insert into t values(1)"
+
+    def setUp(self):
+        self.cx = sqlite.connect(":memory:")
+        self.cx.execute("create table t(t)")
+        self.traced = []
+        self.cx.set_trace_callback(lambda stmt: self.traced.append(stmt))
+
+    def tearDown(self):
+        self.cx.close()
+
+    def test_isolation_level_default(self):
+        with self.cx:
+            self.cx.execute(self.QUERY)
+        self.assertEqual(self.traced, ["BEGIN ", self.QUERY, "COMMIT"])
+
+    def test_isolation_level_begin(self):
+        self.cx.isolation_level = ""
+        with self.cx:
+            self.cx.execute(self.QUERY)
+        self.assertEqual(self.traced, ["BEGIN ", self.QUERY, "COMMIT"])
+
+    def test_isolation_level_deferrred(self):
+        self.cx.isolation_level = "DEFERRED"
+        with self.cx:
+            self.cx.execute(self.QUERY)
+        self.assertEqual(self.traced, ["BEGIN DEFERRED", self.QUERY, "COMMIT"])
+
+    def test_isolation_level_immediate(self):
+        self.cx.isolation_level = "IMMEDIATE"
+        with self.cx:
+            self.cx.execute(self.QUERY)
+        self.assertEqual(self.traced,
+                         ["BEGIN IMMEDIATE", self.QUERY, "COMMIT"])
+
+    def test_isolation_level_exclusive(self):
+        self.cx.isolation_level = "EXCLUSIVE"
+        with self.cx:
+            self.cx.execute(self.QUERY)
+        self.assertEqual(self.traced,
+                         ["BEGIN EXCLUSIVE", self.QUERY, "COMMIT"])
+
+    def test_isolation_level_none(self):
+        self.cx.isolation_level = None
+        with self.cx:
+            self.cx.execute(self.QUERY)
+        self.assertEqual(self.traced, [self.QUERY])
 
 
 if __name__ == "__main__":
