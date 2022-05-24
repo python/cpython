@@ -13255,7 +13255,7 @@ os_get_terminal_size_impl(PyObject *module, int fd)
         case 2: nhandle = STD_ERROR_HANDLE;
             break;
         default:
-            return PyErr_Format(PyExc_ValueError, "bad file descriptor");
+            nhandle = _get_osfhandle(fd);
         }
         handle = GetStdHandle(nhandle);
         if (handle == NULL)
