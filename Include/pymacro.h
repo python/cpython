@@ -150,4 +150,7 @@
 // For example, "int x; _Py_RVALUE(x) = 1;" fails with a compiler error.
 #define _Py_RVALUE(EXPR) ((void)0, (EXPR))
 
+// Return non-zero if the type is signed, return zero if it's unsigned.
+#define _Py_IS_TYPE_SIGNED(type) ((type)(-1) < 0)
+
 #endif /* Py_PYMACRO_H */
