@@ -149,7 +149,7 @@ class RegexFlag:
     DOTALL = S = _compiler.SRE_FLAG_DOTALL # make dot match newline
     VERBOSE = X = _compiler.SRE_FLAG_VERBOSE # ignore whitespace and comments
     # sre extensions (experimental, don't rely on these)
-    TEMPLATE = T = _compiler.SRE_FLAG_TEMPLATE # disable backtracking
+    TEMPLATE = T = _compiler.SRE_FLAG_TEMPLATE # unknown purpose, deprecated
     DEBUG = _compiler.SRE_FLAG_DEBUG # dump pattern after compilation
     __str__ = object.__str__
     _numeric_repr_ = hex
