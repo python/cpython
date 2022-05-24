@@ -24,4 +24,5 @@
 #define STRINGLIB_CHECK_EXACT    PyBytes_CheckExact
 #define STRINGLIB_TOSTR          PyObject_Str
 #define STRINGLIB_TOASCII        PyObject_Repr
+#define STRINGLIB_FAST_MEMCHR    memchr
 #endif /* !STRINGLIB_STRINGDEFS_H */
