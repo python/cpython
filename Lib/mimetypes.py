@@ -600,7 +600,7 @@ _default_mime_types()
 
 def _main():
     from argparse import ArgumentParser
-    parser = ArgumentParser(description='compare directories and files')
+    parser = ArgumentParser(description='map filename extensions to MIME types')
     parser.add_argument('-e', '--extension', action='store_true',
                         help='guess extension instead of type')
     parser.add_argument('-l', '--lenient', action='store_true',
@@ -610,12 +610,17 @@ def _main():
     for gtype in arguments.type:
         if arguments.extension:
             guess = guess_extension(gtype, not arguments.lenient)
-            if not guess: print("I don't know anything about type", gtype)
-            else: print(guess)
+            if guess:
+                print(guess)
+            else:
+                print("I don't know anything about type", gtype)
+
         else:
             guess, encoding = guess_type(gtype, not arguments.lenient)
-            if not guess: print("I don't know anything about type", gtype)
-            else: print('type:', guess, 'encoding:', encoding)
+            if guess:
+                print('type:', guess, 'encoding:', encoding)
+            else:
+                print("I don't know anything about type", gtype)
 
 
 if __name__ == '__main__':
