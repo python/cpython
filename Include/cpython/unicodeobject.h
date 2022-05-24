@@ -193,7 +193,7 @@ static inline unsigned int PyUnicode_CHECK_INTERNED(PyObject *op) {
 #endif
 
 /* For backward compatibility */
-static inline unsigned int PyUnicode_IS_READY(PyObject *op) {
+static inline unsigned int PyUnicode_IS_READY(PyObject* Py_UNUSED(op)) {
     return 1;
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
@@ -262,8 +262,9 @@ static inline void* _PyUnicode_COMPACT_DATA(PyObject *op) {
 }
 
 static inline void* _PyUnicode_NONCOMPACT_DATA(PyObject *op) {
+    void *data;
     assert(!PyUnicode_IS_COMPACT(op));
-    void *data = _PyUnicodeObject_CAST(op)->data.any;
+    data = _PyUnicodeObject_CAST(op)->data.any;
     assert(data != NULL);
     return data;
 }
@@ -303,6 +304,7 @@ static inline Py_ssize_t PyUnicode_GET_LENGTH(PyObject *op) {
 static inline void PyUnicode_WRITE(int kind, void *data,
                                    Py_ssize_t index, Py_UCS4 value)
 {
+    assert(index >= 0);
     if (kind == PyUnicode_1BYTE_KIND) {
         assert(value <= 0xffU);
         _Py_STATIC_CAST(Py_UCS1*, data)[index] = _Py_STATIC_CAST(Py_UCS1, value);
@@ -328,6 +330,7 @@ static inline void PyUnicode_WRITE(int kind, void *data,
 static inline Py_UCS4 PyUnicode_READ(int kind,
                                      const void *data, Py_ssize_t index)
 {
+    assert(index >= 0);
     if (kind == PyUnicode_1BYTE_KIND) {
         return _Py_STATIC_CAST(const Py_UCS1*, data)[index];
     }
@@ -339,7 +342,8 @@ static inline Py_UCS4 PyUnicode_READ(int kind,
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #define PyUnicode_READ(kind, data, index) \
-    PyUnicode_READ(_Py_STATIC_CAST(int, kind), _Py_CAST(const void*, data), \
+    PyUnicode_READ(_Py_STATIC_CAST(int, kind), \
+                   _Py_STATIC_CAST(const void*, data), \
                    (index))
 #endif
 
@@ -349,7 +353,13 @@ static inline Py_UCS4 PyUnicode_READ(int kind,
    cache kind and use PyUnicode_READ instead. */
 static inline Py_UCS4 PyUnicode_READ_CHAR(PyObject *unicode, Py_ssize_t index)
 {
-    int kind = PyUnicode_KIND(unicode);
+    int kind;
+
+    assert(index >= 0);
+    // Tolerate reading the NUL character at str[len(str)]
+    assert(index <= PyUnicode_GET_LENGTH(unicode));
+
+    kind = PyUnicode_KIND(unicode);
     if (kind == PyUnicode_1BYTE_KIND) {
         return PyUnicode_1BYTE_DATA(unicode)[index];
     }
@@ -369,11 +379,13 @@ static inline Py_UCS4 PyUnicode_READ_CHAR(PyObject *unicode, Py_ssize_t index)
    than iterating over the string. */
 static inline Py_UCS4 PyUnicode_MAX_CHAR_VALUE(PyObject *op)
 {
+    int kind;
+
     if (PyUnicode_IS_ASCII(op)) {
         return 0x7fU;
     }
 
-    int kind = PyUnicode_KIND(op);
+    kind = PyUnicode_KIND(op);
     if (kind == PyUnicode_1BYTE_KIND) {
        return 0xffU;
     }
@@ -401,7 +413,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_New(
     );
 
 /* For backward compatibility */
-static inline int PyUnicode_READY(PyObject *op)
+static inline int PyUnicode_READY(PyObject* Py_UNUSED(op))
 {
     return 0;
 }
