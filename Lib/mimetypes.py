@@ -607,15 +607,16 @@ def _main():
                         help='search also for common but non-standard types')
     parser.add_argument('type', nargs='+', help='type to search')
     arguments = parser.parse_args()
-    for gtype in arguments.type:
-        if arguments.extension:
+
+    if arguments.extension:
+        for gtype in arguments.type:
             guess = guess_extension(gtype, not arguments.lenient)
             if guess:
                 print(guess)
             else:
                 print("I don't know anything about type", gtype)
-
-        else:
+    else:
+        for gtype in arguments.type:
             guess, encoding = guess_type(gtype, not arguments.lenient)
             if guess:
                 print('type:', guess, 'encoding:', encoding)
