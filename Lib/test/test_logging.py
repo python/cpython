@@ -4585,10 +4585,14 @@ class LogRecordTest(BaseTest):
             r = logging.makeLogRecord({})
             assertion(r.taskName)
 
-        logging.logAsyncioTasks = True
-        asyncio.run(log_record(self.assertIsNotNone))
-        logging.logAsyncioTasks = False
-        asyncio.run(log_record(self.assertIsNone))
+        try:
+            with asyncio.Runner() as runner:
+                logging.logAsyncioTasks = True
+                runner.run(log_record(self.assertIsNotNone))
+                logging.logAsyncioTasks = False
+                runner.run(log_record(self.assertIsNone))
+        finally:
+            asyncio.set_event_loop_policy(None)
 
 
 class BasicConfigTest(unittest.TestCase):
