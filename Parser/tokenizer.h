@@ -84,6 +84,9 @@ struct tok_state {
                              NEWLINE token after it. */
     /* How to proceed when asked for a new token in interactive mode */
     enum interactive_underflow_t interactive_underflow;
+#ifdef Py_DEBUG
+    int debug;
+#endif
 };
 
 extern struct tok_state *_PyTokenizer_FromString(const char *, int);
