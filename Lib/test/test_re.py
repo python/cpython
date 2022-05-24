@@ -2405,7 +2405,7 @@ class ReTests(unittest.TestCase):
         self.assertIn('flag', str(cm.warning))
         self.assertNotIn('function', str(cm.warning))
 
-        # while deprecated, ti should still function
+        # while deprecated, is should still function
         self.assertEqual(template_re1, template_re2)
         self.assertTrue(template_re1.match('ahoy'))
         self.assertFalse(template_re1.match('nope'))
