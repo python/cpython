@@ -647,6 +647,9 @@ class DictConfigurator(BaseConfigurator):
 
     def configure_formatter(self, config):
         """Configure a formatter from a dictionary."""
+        if isinstance(config, logging.Formatter):
+            return config
+
         if '()' in config:
             factory = config['()'] # for use in exception handler
             try:
@@ -683,6 +686,9 @@ class DictConfigurator(BaseConfigurator):
 
     def configure_filter(self, config):
         """Configure a filter from a dictionary."""
+        if isinstance(config, logging.Filter):
+            return config
+
         if '()' in config:
             result = self.configure_custom(config)
         else:
@@ -744,7 +750,7 @@ class DictConfigurator(BaseConfigurator):
         props = config.pop('.', None)
         kwargs = {k: config[k] for k in config if valid_ident(k)}
         try:
-            result = factory(**kwargs)
+            result = factory(**kwargs) if not isinstance(factory, logging.Handler) else factory
         except TypeError as te:
             if "'stream'" not in str(te):
                 raise
