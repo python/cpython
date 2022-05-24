@@ -806,7 +806,10 @@ as internal buffering of data.
 
    This copy is done without the additional cost of transferring data
    from the kernel to user space and then back into the kernel. Additionally,
-   some filesystems could implement extra optimizations. The copy is done as if
+   some filesystems could implement extra optimizations, such as the use of
+   reflinks (i.e., two or more inodes that share pointers to the same
+   copy-on-write disk blocks; supported file systems include btrfs and XFS)
+   and server-side copy (in the case of NFS). The copy is done as if
    both files are opened as binary.
 
    The return value is the amount of bytes copied. This could be less than the
