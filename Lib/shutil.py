@@ -1023,6 +1023,11 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
         zip_filename = os.path.abspath(zip_filename)
     return zip_filename
 
+# Maps the name of the archive format to a tuple containing:
+# * the archiving function
+# * extra keyword arguments
+# * description
+# * does it support the root_dir argument?
 _ARCHIVE_FORMATS = {
     'tar':   (_make_tarball, [('compress', None)],
               "uncompressed tar file", True),
@@ -1238,6 +1243,11 @@ def _unpack_tarfile(filename, extract_dir):
     finally:
         tarobj.close()
 
+# Maps the name of the archive format to a tuple containing:
+# * extensions
+# * the unpacking function
+# * extra keyword arguments
+# * description
 _UNPACK_FORMATS = {
     'tar':   (['.tar'], _unpack_tarfile, [], "uncompressed tar file"),
     'zip':   (['.zip'], _unpack_zipfile, [], "ZIP file"),
