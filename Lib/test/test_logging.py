@@ -18,7 +18,7 @@
 
 Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
 """
-
+import asyncio
 import logging
 import logging.handlers
 import logging.config
@@ -4552,12 +4552,15 @@ class LogRecordTest(BaseTest):
                 import multiprocessing
 
     def test_optional(self):
-        r = logging.makeLogRecord({})
+        NONE = self.assertIsNone
         NOT_NONE = self.assertIsNotNone
+
+        r = logging.makeLogRecord({})
         NOT_NONE(r.thread)
         NOT_NONE(r.threadName)
         NOT_NONE(r.process)
         NOT_NONE(r.processName)
+        NONE(r.taskName)
         log_threads = logging.logThreads
         log_processes = logging.logProcesses
         log_multiprocessing = logging.logMultiprocessing
@@ -4566,15 +4569,27 @@ class LogRecordTest(BaseTest):
             logging.logProcesses = False
             logging.logMultiprocessing = False
             r = logging.makeLogRecord({})
-            NONE = self.assertIsNone
+
             NONE(r.thread)
             NONE(r.threadName)
             NONE(r.process)
             NONE(r.processName)
+            NONE(r.taskName)
         finally:
             logging.logThreads = log_threads
             logging.logProcesses = log_processes
             logging.logMultiprocessing = log_multiprocessing
+
+    def test_taskName(self):
+        async def log_record(assertion):
+            r = logging.makeLogRecord({})
+            assertion(r.taskName)
+
+        logging.logAsyncioTasks = True
+        asyncio.run(log_record(self.assertIsNotNone))
+        logging.logAsyncioTasks = False
+        asyncio.run(log_record(self.assertIsNone))
+
 
 class BasicConfigTest(unittest.TestCase):
 
@@ -5644,7 +5659,7 @@ class MiscTestCase(unittest.TestCase):
             'logThreads', 'logMultiprocessing', 'logProcesses', 'currentframe',
             'PercentStyle', 'StrFormatStyle', 'StringTemplateStyle',
             'Filterer', 'PlaceHolder', 'Manager', 'RootLogger', 'root',
-            'threading'}
+            'threading', 'logAsyncioTasks'}
         support.check__all__(self, logging, not_exported=not_exported)
 
 
