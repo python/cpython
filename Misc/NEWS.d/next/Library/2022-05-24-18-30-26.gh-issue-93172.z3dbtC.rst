@@ -1,0 +1,1 @@
+Removed an unnecessary ``if`` in ``binascii_a2b_qp_impl()`` from ``Modules/binascii.c``.
