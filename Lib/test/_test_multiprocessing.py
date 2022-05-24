@@ -5690,21 +5690,22 @@ class TestSyncManagerTypes(unittest.TestCase):
 
     @classmethod
     def _test_list(cls, obj):
-        assert obj[0] == 5
-        assert obj.count(5) == 1
-        assert obj.index(5) == 0
+        case = unittest.TestCase()
+        case.assertEqual(obj[0], 5)
+        case.assertEqual(obj.count(5), 1)
+        case.assertEqual(obj.index(5), 0)
         obj.sort()
         obj.reverse()
         for x in obj:
             pass
-        assert len(obj) == 1
-        assert obj.pop(0) == 5
+        case.assertEqual(len(obj), 1)
+        case.assertEqual(obj.pop(0), 5)
 
     def test_list(self):
         o = self.manager.list()
         o.append(5)
         self.run_worker(self._test_list, o)
-        assert not o
+        self.assertIsNotNone(o)
         self.assertEqual(len(o), 0)
 
     @classmethod
