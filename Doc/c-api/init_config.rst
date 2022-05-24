@@ -986,6 +986,9 @@ PyConfig
       Incremented by the :option:`-d` command line option. Set to the
       :envvar:`PYTHONDEBUG` environment variable value.
 
+      Need a :ref:`debug build of Python <debug-build>` (the ``Py_DEBUG`` macro
+      must be defined).
+
       Default: ``0``.
 
    .. c:member:: int pathconfig_warnings
