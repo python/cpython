@@ -292,15 +292,15 @@ class Compat32(Policy):
 
     def header_source_parse(self, sourcelines):
         """+
-        The name is parsed as everything up to the ':' and returned unmodified.
-        The value is determined by stripping leading whitespace off the
-        remainder of the first line, joining all subsequent lines together, and
-        stripping any trailing carriage return or linefeed characters.
+        The name is parsed as everything up to the ':' and returned stripped
+        of any trailing whitespace. The value is determined by stripping leading
+        whitespace off the remainder of the first line, joining all subsequent
+        lines together, and stripping any trailing carriage return or linefeed characters.
 
         """
         name, value = sourcelines[0].split(':', 1)
         value = value.lstrip(' \t') + ''.join(sourcelines[1:])
-        return (name, value.rstrip('\r\n'))
+        return (name.rstrip(' \t'), value.rstrip('\r\n'))
 
     def header_store_parse(self, name, value):
         """+
