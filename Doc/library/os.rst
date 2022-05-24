@@ -812,6 +812,14 @@ as internal buffering of data.
    The return value is the amount of bytes copied. This could be less than the
    amount requested.
 
+   .. note::
+
+      This function should not be used for copying a file from special
+      filesystems like procfs and sysfs because of
+      `a known issue <https://lore.kernel.org/linux-fsdevel/20210126135012.1.If45b7cdc3ff707bc1efa17f5366057d60603c45f@changeid/>`_.
+      It will copy nothing and return 0 because file sizes there are not known
+      to the system.
+
    .. availability:: Linux kernel >= 4.5 or glibc >= 2.27.
 
    .. versionadded:: 3.8
