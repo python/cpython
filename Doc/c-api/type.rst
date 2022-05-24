@@ -228,7 +228,7 @@ The following functions and structs are used to create
 
    Metaclasses that override :c:member:`~PyTypeObject.tp_new` are not supported.
 
-   .. versionadded:: 3.11
+   .. versionadded:: 3.12
 
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 

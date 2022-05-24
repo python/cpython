@@ -1608,11 +1608,6 @@ New Features
 * Added the :c:member:`PyConfig.safe_path` member.
   (Contributed by Victor Stinner in :gh:`57684`.)
 
-* Added the new limited C API function :c:func:`PyType_FromMetaclass`,
-  which generalizes the existing :c:func:`PyType_FromModuleAndSpec` using
-  an additional metaclass argument.
-  (Contributed by Wenzel Jakob in :gh:`93012`.)
-
 Porting to Python 3.11
 ----------------------
 
