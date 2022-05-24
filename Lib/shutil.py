@@ -114,11 +114,11 @@ def _determine_linux_fastcopy_blocksize(infd):
     content changes while being copied.
     """
     try:
-        blocksize = max(os.fstat(infd).st_size, 2 ** 23)  # min 8MiB
+        blocksize = max(os.fstat(infd).st_size, 2 ** 23)  # min 8 MiB
     except OSError:
-        blocksize = 2 ** 27  # 128MiB
-    # On 32-bit architectures truncate to 1GiB to avoid OverflowError,
-    # see bpo-38319.
+        blocksize = 2 ** 27  # 128 MiB
+    # On 32-bit architectures truncate to 1 GiB to avoid OverflowError,
+    # see gh-82500.
     if sys.maxsize < 2 ** 32:
         blocksize = min(blocksize, 2 ** 30)
     return blocksize
