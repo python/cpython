@@ -1243,7 +1243,7 @@ def _unpack_tarfile(filename, extract_dir):
     finally:
         tarobj.close()
 
-# Maps the name of the archive format to a tuple containing:
+# Maps the name of the unpack format to a tuple containing:
 # * extensions
 # * the unpacking function
 # * extra keyword arguments
