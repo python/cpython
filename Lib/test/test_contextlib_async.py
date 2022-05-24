@@ -16,8 +16,10 @@ def _async_test(func):
     def wrapper(*args, **kwargs):
         coro = func(*args, **kwargs)
         asyncio.run(coro)
-        asyncio.set_event_loop_policy(None)
     return wrapper
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
 
 
 class TestAbstractAsyncContextManager(unittest.TestCase):
