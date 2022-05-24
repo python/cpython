@@ -1,0 +1,1 @@
+Allow passing instances of logging objects to logging.dictConfig
