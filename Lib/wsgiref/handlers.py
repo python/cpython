@@ -237,7 +237,7 @@ class BaseHandler:
         self.status = status
         self.headers = self.headers_class(headers)
         status = self._convert_string_type(status, "Status")
-        if not len(status) >= 4:
+        if len(status) < 4:
             raise AssertionError("Status must be at least 4 characters")
         if not status[:3].isdigit():
             raise AssertionError("Status message must begin w/3-digit code")
