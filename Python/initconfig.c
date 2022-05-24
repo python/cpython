@@ -40,7 +40,7 @@ Options (and corresponding environment variables):\n\
          debug builds); also PYTHONDEBUG=x\n\
 -E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
 -h     : print this help message and exit (also --help)\n\
---help-env      : print help about Python-specific environment variables and exit\n\
+--help-env      : print help about Python environment variables and exit\n\
 --help-xoptions : print help about implementation-specific -X options and exit\n\
 --help-all      : print complete help information and exit\n\
 ";
@@ -151,7 +151,7 @@ static const char usage_envvars4[] =
 "PYTHONNODEBUGRANGES: If this variable is set, it disables the inclusion of the \n"
 "   tables mapping extra location information (end line, start column offset \n"
 "   and end column offset) to every instruction in code objects. This is useful \n"
-"   when smaller cothe de objects and pyc files are desired as well as suppressing the \n"
+"   when smaller code objects and pyc files are desired as well as suppressing the \n"
 "   extra visual location indicators when the interpreter displays tracebacks.\n";
 static const char usage_envvars5[] = "\
 These variables have equivalent command-line parameters (see --help for details):\n\
