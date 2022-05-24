@@ -1,0 +1,1 @@
+Fixed tests that were breaking while running with basic optimizations enabled (-O, assertions off).
