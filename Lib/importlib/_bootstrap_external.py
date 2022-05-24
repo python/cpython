@@ -406,7 +406,7 @@ _code_type = type(_write_atomic.__code__)
 
 #     Python 3.12a1 3500 (Remove PRECALL opcode)
 #     Python 3.12a1 3501 (YIELD_VALUE oparg == stack_depth)
-#     Python 3.12a1 3502 (LOAD_FAST_KNOWN, no NULL-check in LOAD_FAST)
+#     Python 3.12a1 3502 (LOAD_FAST_CHECK, no NULL-check in LOAD_FAST)
 
 #     Python 3.13 will start with 3550
 
