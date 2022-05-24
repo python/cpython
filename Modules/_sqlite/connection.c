@@ -2091,6 +2091,13 @@ serialize_impl(pysqlite_Connection *self, const char *name)
                      name);
         return NULL;
     }
+#if PY_SSIZE_T_MAX < 9223372036854775807
+    if (size > PY_SSIZE_T_MAX) {
+        PyErr_Format(PyExc_OverflowError,
+                     "serialized '%s' too large to convert to bytes", name);
+        return NULL;
+    }
+#endif
     PyObject *res = PyBytes_FromStringAndSize(data, (Py_ssize_t)size);
     if (!(flags & SQLITE_SERIALIZE_NOCOPY)) {
         sqlite3_free((void *)data);
