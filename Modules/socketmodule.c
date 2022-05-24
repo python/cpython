@@ -1588,16 +1588,20 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
         SOCKADDR_HV *a = (SOCKADDR_HV *) addr;
 
         wchar_t *guidStr;
-        if (UuidToStringW(&a->VmId, &guidStr) == RPC_S_OUT_OF_MEMORY) {
-            return PyErr_NoMemory();
+        RPC_STATUS res = UuidToStringW(&a->VmId, &guidStr);
+        if (res != RPC_S_OK) {
+            PyErr_SetFromWindowsErr(res);
+            return 0;
         }
         PyObject *vmId = PyUnicode_FromWideChar(guidStr, -1);
-        RPC_STATUS res = RpcStringFreeW(&guidStr);
+        res = RpcStringFreeW(&guidStr);
         assert(res == RPC_S_OK);
 
-        if (UuidToStringW(&a->ServiceId, &guidStr) == RPC_S_OUT_OF_MEMORY) {
+        res = UuidToStringW(&a->ServiceId, &guidStr);
+        if (res != RPC_S_OK) {
             Py_DECREF(vmId);
-            return PyErr_NoMemory();
+            PyErr_SetFromWindowsErr(res);
+            return 0;
         }
         PyObject *serviceId = PyUnicode_FromWideChar(guidStr, -1);
         res = RpcStringFreeW(&guidStr);
