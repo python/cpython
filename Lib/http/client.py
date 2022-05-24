@@ -1405,7 +1405,8 @@ else:
         def __init__(self, host, port=None, key_file=None, cert_file=None,
                      timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
                      source_address=None, *, context=None,
-                     check_hostname=None, blocksize=8192):
+                     check_hostname=None, blocksize=8192,
+                     server_hostname=None):
             super(HTTPSConnection, self).__init__(host, port, timeout,
                                                   source_address,
                                                   blocksize=blocksize)
@@ -1417,6 +1418,7 @@ else:
                               DeprecationWarning, 2)
             self.key_file = key_file
             self.cert_file = cert_file
+            self.server_hostname = server_hostname
             if context is None:
                 context = ssl._create_default_https_context()
                 # send ALPN extension to indicate HTTP/1.1 protocol
@@ -1446,7 +1448,9 @@ else:
 
             super().connect()
 
-            if self._tunnel_host:
+            if self.server_hostname is not None:
+                server_hostname = self.server_hostname
+            elif self._tunnel_host:
                 server_hostname = self._tunnel_host
             else:
                 server_hostname = self.host
