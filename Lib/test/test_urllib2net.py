@@ -3,6 +3,7 @@ import unittest
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
+from test.support import ResourceDenied
 from test.test_urllib2 import sanepathname2url
 
 import os
