@@ -1,0 +1,2 @@
+The emamil library now parses messages that use obsolete email syntac where
+header field names can be followed by whitespace
