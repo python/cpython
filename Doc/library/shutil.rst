@@ -67,8 +67,8 @@ Directory and files operations
    a new symbolic link will be created instead of copying the
    file *src* points to.
 
-   *allow_reflink* enables copy-on-write on supported Linux filesystems.
-   The :c:func:`copy_file_range` system call is used internally when
+   *allow_reflink* enables copy-on-write on supported Linux filesystems (e.g.,
+   btrfs and XFS). :func:`os.copy_file_range` is used internally when
    *allow_reflink* is true.
 
    .. audit-event:: shutil.copyfile src,dst shutil.copyfile
@@ -176,8 +176,8 @@ Directory and files operations
    is true and *src* is a symbolic link, *dst* will be a copy of
    the file *src* refers to.
 
-   *allow_reflink* enables copy-on-write on supported Linux filesystems.
-   The :c:func:`copy_file_range` system call is used internally when
+   *allow_reflink* enables copy-on-write on supported Linux filesystems (e.g.,
+   btrfs and XFS). :func:`os.copy_file_range` is used internally when
    *allow_reflink* is true.
 
    :func:`~shutil.copy` copies the file data and the file's permission
@@ -217,8 +217,8 @@ Directory and files operations
    it can; :func:`copy2` never raises an exception because it
    cannot preserve file metadata.
 
-   *allow_reflink* enables copy-on-write on supported Linux filesystems.
-   The :c:func:`copy_file_range` system call is used internally when
+   *allow_reflink* enables copy-on-write on supported Linux filesystems (e.g.,
+   btrfs and XFS). :func:`os.copy_file_range` is used internally when
    *allow_reflink* is true.
 
    :func:`copy2` uses :func:`copystat` to copy the file metadata.
