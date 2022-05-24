@@ -2022,13 +2022,7 @@ class TextIOWrapper(TextIOBase):
         encoding = text_encoding(encoding)
 
         if encoding == "locale":
-            try:
-                import locale
-            except ImportError:
-                # Importing locale may fail if Python is being built
-                encoding = "utf-8"
-            else:
-                encoding = locale.getencoding()
+            encoding = self._get_locale_encoding()
 
         if not isinstance(encoding, str):
             raise ValueError("invalid encoding: %r" % encoding)
@@ -2162,7 +2156,7 @@ class TextIOWrapper(TextIOBase):
             if not isinstance(encoding, str):
                 raise TypeError("invalid encoding: %r" % encoding)
             if encoding == "locale":
-                encoding = locale.getencoding()
+                encoding = self._get_locale_encoding()
 
         if newline is Ellipsis:
             newline = self._readnl
@@ -2266,6 +2260,15 @@ class TextIOWrapper(TextIOBase):
             chars = self._decoded_chars[offset:offset + n]
         self._decoded_chars_used += len(chars)
         return chars
+
+    def _get_locale_encoding(self):
+        try:
+            import locale
+        except ImportError:
+            # Importing locale may fail if Python is being built
+            return "utf-8"
+        else:
+            return locale.getencoding()
 
     def _rewind_decoded_chars(self, n):
         """Rewind the _decoded_chars buffer."""
