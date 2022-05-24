@@ -1041,11 +1041,6 @@ class DisWithFileTests(DisTests):
         return output.getvalue()
 
 
-if sys.flags.optimize:
-    code_info_consts = "0: None"
-else:
-    code_info_consts = "0: 'Formatted details of methods, functions, or code.'"
-
 code_info_code_info = f"""\
 Name:              code_info
 Filename:          (.*)
@@ -1056,7 +1051,7 @@ Number of locals:  1
 Stack size:        \\d+
 Flags:             OPTIMIZED, NEWLOCALS
 Constants:
-   {code_info_consts}
+   0: 'Formatted details of methods, functions, or code.'
 Names:
    0: _format_code_info
    1: _get_code_object

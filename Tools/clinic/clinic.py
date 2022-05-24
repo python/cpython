@@ -495,8 +495,8 @@ def permute_optional_groups(left, required, right):
     required = tuple(required)
     result = []
 
-    if not required:
-        assert not left
+    if not required and left:
+        raise AssertionError('If required is empty, left must also be empty.')
 
     accumulator = []
     counts = set()
