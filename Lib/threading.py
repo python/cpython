@@ -368,14 +368,21 @@ class Condition:
         """
         if not self._is_owned():
             raise RuntimeError("cannot notify on un-acquired lock")
-        all_waiters = self._waiters
-        waiters_to_notify = _deque(_islice(all_waiters, n))
-        if not waiters_to_notify:
-            return
-        for waiter in waiters_to_notify:
-            waiter.release()
+        waiters = self._waiters
+        while waiters and n > 0:
+            waiter = waiters[0]
             try:
-                all_waiters.remove(waiter)
+                waiter.release()
+            except RuntimeError:
+                # gh-92530: The previous call of notify() released the lock,
+                # but was interrupted before removing it from the queue.
+                # It can happen if a signal handler raises an exception,
+                # like CTRL+C which raises KeyboardInterrupt.
+                pass
+            else:
+                n -= 1
+            try:
+                waiters.remove(waiter)
             except ValueError:
                 pass
 
@@ -481,8 +488,7 @@ class Semaphore:
             raise ValueError('n must be one or more')
         with self._cond:
             self._value += n
-            for i in range(n):
-                self._cond.notify()
+            self._cond.notify(n)
 
     def __exit__(self, t, v, tb):
         self.release()
@@ -506,7 +512,7 @@ class BoundedSemaphore(Semaphore):
     """
 
     def __init__(self, value=1):
-        Semaphore.__init__(self, value)
+        super().__init__(value)
         self._initial_value = value
 
     def __repr__(self):
@@ -530,8 +536,7 @@ class BoundedSemaphore(Semaphore):
             if self._value + n > self._initial_value:
                 raise ValueError("Semaphore released too many times")
             self._value += n
-            for i in range(n):
-                self._cond.notify()
+            self._cond.notify(n)
 
 
 class Event:
@@ -852,7 +857,7 @@ class Thread:
         *name* is the thread name. By default, a unique name is constructed of
         the form "Thread-N" where N is a small decimal number.
 
-        *args* is the argument tuple for the target invocation. Defaults to ().
+        *args* is a list or tuple of arguments for the target invocation. Defaults to ().
 
         *kwargs* is a dictionary of keyword arguments for the target
         invocation. Defaults to {}.

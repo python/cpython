@@ -12,6 +12,9 @@ import threading
 import _threading_local
 
 
+threading_helper.requires_working_threading(module=True)
+
+
 class Weak(object):
     pass
 

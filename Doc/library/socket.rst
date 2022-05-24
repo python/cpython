@@ -233,9 +233,9 @@ resolution and/or the host configuration.  For deterministic behavior use a
 numeric address in *host* portion.
 
 All errors raise exceptions.  The normal exceptions for invalid argument types
-and out-of-memory conditions can be raised; starting from Python 3.3, errors
+and out-of-memory conditions can be raised. Errors
 related to socket or address semantics raise :exc:`OSError` or one of its
-subclasses (they used to raise :exc:`socket.error`).
+subclasses.
 
 Non-blocking mode is supported through :meth:`~socket.setblocking`.  A
 generalization of this based on timeouts is supported through
@@ -388,6 +388,15 @@ Constants
        Added ``TCP_KEEPALIVE``. On MacOS this constant can be used in the same
        way that ``TCP_KEEPIDLE`` is used on Linux.
 
+   .. versionchanged:: 3.11
+      Added ``TCP_CONNECTION_INFO``. On MacOS this constant can be used in the
+      same way that ``TCP_INFO`` is used on Linux and BSD.
+
+   .. versionchanged:: 3.12
+      Added ``SO_RTABLE`` and ``SO_USER_COOKIE``. On OpenBSD
+      and FreeBSD respectively those constants can be used in the same way that
+      ``SO_MARK`` is used on Linux.
+
 .. data:: AF_CAN
           PF_CAN
           SOL_CAN_*
@@ -396,9 +405,12 @@ Constants
    Many constants of these forms, documented in the Linux documentation, are
    also defined in the socket module.
 
-   .. availability:: Linux >= 2.6.25.
+   .. availability:: Linux >= 2.6.25, NetBSD >= 8.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.11
+      NetBSD support was added.
 
 .. data:: CAN_BCM
           CAN_BCM_*
@@ -553,6 +565,30 @@ Constants
 
    .. availability:: Linux >= 4.7.
 
+.. data:: SCM_CREDS2
+          LOCAL_CREDS
+          LOCAL_CREDS_PERSISTENT
+
+   LOCAL_CREDS and LOCAL_CREDS_PERSISTENT can be used
+   with SOCK_DGRAM, SOCK_STREAM sockets, equivalent to
+   Linux/DragonFlyBSD SO_PASSCRED, while LOCAL_CREDS
+   sends the credentials at first read, LOCAL_CREDS_PERSISTENT
+   sends for each read, SCM_CREDS2 must be then used for
+   the latter for the message type.
+
+   .. versionadded:: 3.11
+
+   .. availability:: FreeBSD.
+
+.. data:: SO_INCOMING_CPU
+
+   Constant to optimize CPU locality, to be used in conjunction with
+   :data:`SO_REUSEPORT`.
+
+  .. versionadded:: 3.11
+
+  .. availability:: Linux >= 3.9
+
 Functions
 ^^^^^^^^^
 
@@ -642,7 +678,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
       Windows support added.
 
 
-.. function:: create_connection(address[, timeout[, source_address]])
+.. function:: create_connection(address, timeout=GLOBAL_DEFAULT, source_address=None, *, all_errors=False)
 
    Connect to a TCP service listening on the internet *address* (a 2-tuple
    ``(host, port)``), and return the socket object.  This is a higher-level
@@ -661,13 +697,22 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    socket to bind to as its source address before connecting.  If host or port
    are '' or 0 respectively the OS default behavior will be used.
 
+   When a connection cannot be created, an exception is raised. By default,
+   it is the exception from the last address in the list. If *all_errors*
+   is ``True``, it is an :exc:`ExceptionGroup` containing the errors of all
+   attempts.
+
    .. versionchanged:: 3.2
       *source_address* was added.
+
+   .. versionchanged:: 3.11
+      *all_errors* was added.
+
 
 .. function:: create_server(address, *, family=AF_INET, backlog=None, reuse_port=False, dualstack_ipv6=False)
 
    Convenience function which creates a TCP socket bound to *address* (a 2-tuple
-   ``(host, port)``) and return the socket object.
+   ``(host, port)``) and returns the socket object.
 
    *family* should be either :data:`AF_INET` or :data:`AF_INET6`.
    *backlog* is the queue size passed to :meth:`socket.listen`; when ``0``

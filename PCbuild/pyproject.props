@@ -18,6 +18,7 @@
     <SupportSigning Condition="'$(SupportSigning)' == ''">true</SupportSigning>
     <SupportSigning Condition="'$(Configuration)' == 'Debug'">false</SupportSigning>
     <SupportSigning Condition="'$(ConfigurationType)' == 'StaticLibrary'">false</SupportSigning>
+    <LinkIncremental Condition="$(Configuration) != 'Debug'">false</LinkIncremental>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -45,6 +46,7 @@
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <ControlFlowGuard Condition="$(EnableControlFlowGuard) != ''">$(EnableControlFlowGuard)</ControlFlowGuard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <ClCompile Condition="$(Configuration) == 'Debug'">
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>

@@ -1,1 +1,0 @@
-:opcode:`PREP_RERAISE_STAR` no longer pushes ``lasti`` to the stack.

@@ -696,10 +696,14 @@ a pure Python equivalent:
     >>> b.g == b['g'] == ('getattr_hook', b, 'g')
     True
 
+Note, there is no :meth:`__getattr__` hook in the :meth:`__getattribute__`
+code.  That is why calling :meth:`__getattribute__` directly or with
+``super().__getattribute__`` will bypass :meth:`__getattr__` entirely.
 
-Interestingly, attribute lookup doesn't call :meth:`object.__getattribute__`
-directly.  Instead, both the dot operator and the :func:`getattr` function
-perform attribute lookup by way of a helper function:
+Instead, it is the dot operator and the :func:`getattr` function that are
+responsible for invoking :meth:`__getattr__` whenever :meth:`__getattribute__`
+raises an :exc:`AttributeError`.  Their logic is encapsulated in a helper
+function:
 
 .. testcode::
 
@@ -743,12 +747,6 @@ perform attribute lookup by way of a helper function:
     Traceback (most recent call last):
         ...
     AttributeError: 'ClassWithoutGetAttr' object has no attribute 'z'
-
-So if :meth:`__getattr__` exists, it is called whenever :meth:`__getattribute__`
-raises :exc:`AttributeError` (either directly or in one of the descriptor calls).
-
-Also, if a user calls :meth:`object.__getattribute__` directly, the
-:meth:`__getattr__` hook is bypassed entirely.
 
 
 Invocation from a class
@@ -991,17 +989,17 @@ here is a pure Python equivalent:
             if obj is None:
                 return self
             if self.fget is None:
-                raise AttributeError(f'unreadable attribute {self._name}')
+                raise AttributeError(f"property '{self._name}' has no getter")
             return self.fget(obj)
 
         def __set__(self, obj, value):
             if self.fset is None:
-                raise AttributeError(f"can't set attribute {self._name}")
+                raise AttributeError(f"property '{self._name}' has no setter")
             self.fset(obj, value)
 
         def __delete__(self, obj):
             if self.fdel is None:
-                raise AttributeError(f"can't delete attribute {self._name}")
+                raise AttributeError(f"property '{self._name}' has no deleter")
             self.fdel(obj)
 
         def getter(self, fget):
@@ -1351,6 +1349,8 @@ Using the non-data descriptor protocol, a pure Python version of
             if cls is None:
                 cls = type(obj)
             if hasattr(type(self.f), '__get__'):
+                # This code path was added in Python 3.9
+                # and was deprecated in Python 3.11.
                 return self.f.__get__(cls, cls)
             return MethodType(self.f, cls)
 
@@ -1388,7 +1388,7 @@ Using the non-data descriptor protocol, a pure Python version of
 The code path for ``hasattr(type(self.f), '__get__')`` was added in
 Python 3.9 and makes it possible for :func:`classmethod` to support
 chained decorators.  For example, a classmethod and property could be
-chained together:
+chained together.  In Python 3.11, this functionality was deprecated.
 
 .. testcode::
 
@@ -1456,7 +1456,7 @@ attributes stored in ``__slots__``:
     >>> mark.dept = 'Space Pirate'
     Traceback (most recent call last):
         ...
-    AttributeError: can't set attribute
+    AttributeError: property 'dept' of 'Immutable' object has no setter
     >>> mark.location = 'Mars'
     Traceback (most recent call last):
         ...
@@ -1544,7 +1544,7 @@ variables:
         'Simulate how the type metaclass adds member objects for slots'
 
         def __new__(mcls, clsname, bases, mapping):
-            'Emuluate type_new() in Objects/typeobject.c'
+            'Emulate type_new() in Objects/typeobject.c'
             # type_new() calls PyTypeReady() which calls add_methods()
             slot_names = mapping.get('slot_names', [])
             for offset, name in enumerate(slot_names):

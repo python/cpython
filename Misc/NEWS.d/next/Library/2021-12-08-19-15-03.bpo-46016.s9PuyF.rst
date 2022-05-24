@@ -1,1 +1,0 @@
-Adding :attr:`F_DUP2FD` and :attr:`F_DUP2FD_CLOEXEC` constants from FreeBSD into the fcntl module.

@@ -82,6 +82,7 @@ class SubinterpreterTest(unittest.TestCase):
         self.assertEqual(ret, 0)
         self.assertEqual(atexit._ncallbacks(), n)
 
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_callback_on_subinterpreter_teardown(self):
         # This tests if a callback is called on
         # subinterpreter teardown.

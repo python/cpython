@@ -33,6 +33,7 @@
 # PREFIX            -- [in] sysconfig.get_config_var(...)
 # EXEC_PREFIX       -- [in] sysconfig.get_config_var(...)
 # PYTHONPATH        -- [in] sysconfig.get_config_var(...)
+# WITH_NEXT_FRAMEWORK   -- [in] sysconfig.get_config_var(...)
 # VPATH             -- [in] sysconfig.get_config_var(...)
 # PLATLIBDIR        -- [in] sysconfig.get_config_var(...)
 # PYDEBUGEXT        -- [in, opt] '_d' on Windows for debug builds
@@ -127,7 +128,7 @@
 # checked by looking for the BUILDDIR_TXT file, which contains the
 # relative path to the platlib dir. The executable_dir value is
 # derived from joining the VPATH preprocessor variable to the
-# directory containing pybuilddir.txt. If it is not found, the 
+# directory containing pybuilddir.txt. If it is not found, the
 # BUILD_LANDMARK file is found, which is part of the source tree.
 # prefix is then found by searching up for a file that should only
 # exist in the source tree, and the stdlib dir is set to prefix/Lib.
@@ -227,6 +228,7 @@ ENV_PYTHONPATH = config['pythonpath_env']
 use_environment = config.get('use_environment', 1)
 
 pythonpath = config.get('module_search_paths')
+pythonpath_was_set = config.get('module_search_paths_set')
 
 real_executable_dir = None
 stdlib_dir = None
@@ -277,7 +279,7 @@ elif os_name == 'darwin':
     # executable path was provided in the config.
     real_executable = executable
 
-if not executable and program_name:
+if not executable and program_name and ENV_PATH:
     # Resolve names against PATH.
     # NOTE: The use_environment value is ignored for this lookup.
     # To properly isolate, launch Python with a full path.
@@ -301,9 +303,19 @@ if ENV_PYTHONEXECUTABLE or ENV___PYVENV_LAUNCHER__:
     # If set, these variables imply that we should be using them as
     # sys.executable and when searching for venvs. However, we should
     # use the argv0 path for prefix calculation
-    base_executable = executable
+
+    if os_name == 'darwin' and WITH_NEXT_FRAMEWORK:
+        # In a framework build the binary in {sys.exec_prefix}/bin is
+        # a stub executable that execs the real interpreter in an
+        # embedded app bundle. That bundle is an implementation detail
+        # and should not affect base_executable.
+        base_executable = f"{dirname(library)}/bin/python{VERSION_MAJOR}.{VERSION_MINOR}"
+    else:
+        base_executable = executable
+
     if not real_executable:
-        real_executable = executable
+        real_executable = base_executable
+        #real_executable_dir = dirname(real_executable)
     executable = ENV_PYTHONEXECUTABLE or ENV___PYVENV_LAUNCHER__
     executable_dir = dirname(executable)
 
@@ -351,7 +363,18 @@ if not home and not py_setpath:
         key, had_equ, value = line.partition('=')
         if had_equ and key.strip().lower() == 'home':
             executable_dir = real_executable_dir = value.strip()
-            base_executable = joinpath(executable_dir, basename(executable))
+            if not base_executable:
+                # First try to resolve symlinked executables, since that may be
+                # more accurate than assuming the executable in 'home'.
+                try:
+                    base_executable = realpath(executable)
+                    if base_executable == executable:
+                        # No change, so probably not a link. Clear it and fall back
+                        base_executable = ''
+                except OSError:
+                    pass
+                if not base_executable:
+                    base_executable = joinpath(executable_dir, basename(executable))
             break
     else:
         venv_prefix = None
@@ -604,8 +627,8 @@ if py_setpath:
     config['module_search_paths'] = py_setpath.split(DELIM)
     config['module_search_paths_set'] = 1
 
-elif not pythonpath:
-    # If pythonpath was already set, we leave it alone.
+elif not pythonpath_was_set:
+    # If pythonpath was already explicitly set or calculated, we leave it alone.
     # This won't matter in normal use, but if an embedded host is trying to
     # recalculate paths while running then we do not want to change it.
     pythonpath = []
@@ -642,19 +665,12 @@ elif not pythonpath:
                     i = 0
                     while True:
                         try:
-                            keyname = winreg.EnumKey(key, i)
-                            subkey = winreg.OpenKeyEx(key, keyname)
-                            if not subkey:
-                                continue
-                            try:
-                                v = winreg.QueryValue(subkey)
-                            finally:
-                                winreg.CloseKey(subkey)
-                            if isinstance(v, str):
-                                pythonpath.append(v)
-                            i += 1
+                            v = winreg.QueryValue(key, winreg.EnumKey(key, i))
                         except OSError:
                             break
+                        if isinstance(v, str):
+                            pythonpath.append(v)
+                        i += 1
                 finally:
                     winreg.CloseKey(key)
             except OSError:
@@ -702,6 +718,7 @@ if pth:
     config['isolated'] = 1
     config['use_environment'] = 0
     config['site_import'] = 0
+    config['safe_path'] = 1
     pythonpath = []
     for line in pth:
         line = line.partition('#')[0].strip()

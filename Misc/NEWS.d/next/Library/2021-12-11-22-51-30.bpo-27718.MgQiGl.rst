@@ -1,2 +1,0 @@
-Fix help for the :mod:`signal` module. Some functions (e.g. ``signal()`` and
-``getsignal()``) were omitted.
