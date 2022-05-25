@@ -124,6 +124,7 @@ Constants
 =========
 
 .. data:: asyncio.subprocess.PIPE
+   :module:
 
    Can be passed to the *stdin*, *stdout* or *stderr* parameters.
 
@@ -137,11 +138,13 @@ Constants
    attributes will point to :class:`StreamReader` instances.
 
 .. data:: asyncio.subprocess.STDOUT
+   :module:
 
    Special value that can be used as the *stderr* argument and indicates
    that standard error should be redirected into standard output.
 
 .. data:: asyncio.subprocess.DEVNULL
+   :module:
 
    Special value that can be used as the *stdin*, *stdout* or *stderr* argument
    to process creation functions.  It indicates that the special file
@@ -157,6 +160,7 @@ wrapper that allows communicating with subprocesses and watching for
 their completion.
 
 .. class:: asyncio.subprocess.Process
+   :module:
 
    An object that wraps OS processes created by the
    :func:`create_subprocess_exec` and :func:`create_subprocess_shell`
@@ -275,7 +279,7 @@ their completion.
       Use the :meth:`communicate` method rather than
       :attr:`process.stdin.write() <stdin>`,
       :attr:`await process.stdout.read() <stdout>` or
-      :attr:`await process.stderr.read <stderr>`.
+      :attr:`await process.stderr.read() <stderr>`.
       This avoids deadlocks due to streams pausing reading or writing
       and blocking the child process.
 

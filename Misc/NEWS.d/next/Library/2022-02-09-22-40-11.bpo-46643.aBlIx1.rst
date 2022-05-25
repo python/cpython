@@ -1,3 +1,0 @@
-In :func:`typing.get_type_hints`, support evaluating stringified
-``ParamSpecArgs`` and ``ParamSpecKwargs`` annotations. Patch by
-Gregory Beauregard.

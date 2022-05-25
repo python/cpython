@@ -893,7 +893,7 @@ PyDoc_STRVAR(_operator_call__doc__,
 "Same as obj(*args, **kwargs).");
 
 #define _OPERATOR_CALL_METHODDEF    \
-    {"call", (PyCFunction)(void(*)(void))_operator_call, METH_FASTCALL | METH_KEYWORDS, _operator_call__doc__},
+    {"call", _PyCFunction_CAST(_operator_call), METH_FASTCALL | METH_KEYWORDS, _operator_call__doc__},
 
 static PyObject *
 _operator_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1230,9 +1230,6 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* prepare attr while checking args */
     for (idx = 0; idx < nattrs; ++idx) {
         PyObject *item = PyTuple_GET_ITEM(args, idx);
-        Py_ssize_t item_len;
-        const void *data;
-        unsigned int kind;
         int dot_count;
 
         if (!PyUnicode_Check(item)) {
@@ -1245,9 +1242,9 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(attr);
             return NULL;
         }
-        item_len = PyUnicode_GET_LENGTH(item);
-        kind = PyUnicode_KIND(item);
-        data = PyUnicode_DATA(item);
+        Py_ssize_t item_len = PyUnicode_GET_LENGTH(item);
+        int kind = PyUnicode_KIND(item);
+        const void *data = PyUnicode_DATA(item);
 
         /* check whether the string is dotted */
         dot_count = 0;

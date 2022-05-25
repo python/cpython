@@ -1,1 +1,0 @@
-Specialize ``LOAD_METHOD`` for instances with a dict.

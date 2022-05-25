@@ -6,6 +6,12 @@ import warnings
 __all__ = ["getcaps","findmatch"]
 
 
+_DEPRECATION_MSG = ('The {name} module is deprecated and will be removed in '
+                    'Python {remove}. See the mimetypes module for an '
+                    'alternative.')
+warnings._deprecated(__name__, _DEPRECATION_MSG, remove=(3, 13))
+
+
 def lineno_sort_key(entry):
     # Sort in ascending order, with unspecified entries at the end
     if 'lineno' in entry:

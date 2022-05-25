@@ -6,11 +6,12 @@ from test.support import warnings_helper
 import socket
 import io
 
-import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import smtpd
-    import asyncore
+
+smtpd = warnings_helper.import_deprecated('smtpd')
+asyncore = warnings_helper.import_deprecated('asyncore')
+
+if not socket_helper.has_gethostname:
+    raise unittest.SkipTest("test requires gethostname()")
 
 
 class DummyServer(smtpd.SMTPServer):

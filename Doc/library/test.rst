@@ -980,13 +980,6 @@ The :mod:`test.support` module defines the following classes:
       Try to match a single stored value (*dv*) with a supplied value (*v*).
 
 
-.. class:: BasicTestRunner()
-
-   .. method:: run(test)
-
-      Run *test* and return the result.
-
-
 :mod:`test.support.socket_helper` --- Utilities for socket tests
 ================================================================
 

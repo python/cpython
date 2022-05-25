@@ -36,17 +36,6 @@
 
 /* -------------------------------------------------------------------- */
 
-#if 0
-static int memory = 0;
-#define ALLOC(size, comment)\
-do { memory += size; printf("%8d - %s\n", memory, comment); } while (0)
-#define RELEASE(size, comment)\
-do { memory -= size; printf("%8d - %s\n", memory, comment); } while (0)
-#else
-#define ALLOC(size, comment)
-#define RELEASE(size, comment)
-#endif
-
 /* compiler tweaks */
 #if defined(_MSC_VER)
 #define LOCAL(type) static __inline type __fastcall
@@ -301,7 +290,6 @@ create_new_element(PyObject* tag, PyObject* attrib)
 
     self->weakreflist = NULL;
 
-    ALLOC(sizeof(ElementObject), "create element");
     PyObject_GC_Track(self);
 
     if (attrib != NULL && !is_empty_dict(attrib)) {
@@ -676,7 +664,6 @@ element_dealloc(ElementObject* self)
     */
     element_gc_clear(self);
 
-    RELEASE(sizeof(ElementObject), "destroy element");
     Py_TYPE(self)->tp_free((PyObject *)self);
     Py_TRASHCAN_END
 }
@@ -1134,7 +1121,7 @@ checkpath(PyObject* tag)
     if (PyUnicode_Check(tag)) {
         const Py_ssize_t len = PyUnicode_GET_LENGTH(tag);
         const void *data = PyUnicode_DATA(tag);
-        unsigned int kind = PyUnicode_KIND(tag);
+        int kind = PyUnicode_KIND(tag);
         if (len >= 3 && PyUnicode_READ(kind, data, 0) == '{' && (
                 PyUnicode_READ(kind, data, 1) == '}' || (
                 PyUnicode_READ(kind, data, 1) == '*' &&
@@ -4362,7 +4349,7 @@ static PyTypeObject XMLParser_Type = {
 /* python module interface */
 
 static PyMethodDef _functions[] = {
-    {"SubElement", (PyCFunction)(void(*)(void)) subelement, METH_VARARGS | METH_KEYWORDS},
+    {"SubElement", _PyCFunction_CAST(subelement), METH_VARARGS | METH_KEYWORDS},
     _ELEMENTTREE__SET_FACTORIES_METHODDEF
     {NULL, NULL}
 };
