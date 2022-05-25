@@ -29,7 +29,7 @@ import threading
 import unittest
 import urllib.parse
 
-from test.support import SHORT_TIMEOUT, bigmemtest, check_disallow_instantiation
+from test.support import SHORT_TIMEOUT, check_disallow_instantiation
 from test.support import threading_helper
 from _testcapi import INT_MAX, ULLONG_MAX
 from os import SEEK_SET, SEEK_CUR, SEEK_END
@@ -625,13 +625,6 @@ class SerializeTests(unittest.TestCase):
                 # SQLite does not generate an error until you try to query the
                 # deserialized database.
                 cx.execute("create table fail(f)")
-
-    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
-    @bigmemtest(size=2**63, memuse=3, dry_run=False)
-    def test_deserialize_too_much_data_64bit(self):
-        with memory_database() as cx:
-            with self.assertRaisesRegex(OverflowError, "'data' is too large"):
-                cx.deserialize(b"b" * size)
 
 
 class OpenTests(unittest.TestCase):
