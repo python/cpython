@@ -36,9 +36,6 @@ _testcapi = import_helper.import_module('_testcapi')
 
 import _testinternalcapi
 
-# Were we compiled --with-pydebug or with #define Py_DEBUG?
-Py_DEBUG = hasattr(sys, 'gettotalrefcount')
-
 
 def decode_stderr(err):
     return err.decode('utf-8', 'replace').replace('\r', '')
@@ -230,7 +227,7 @@ class CAPITest(unittest.TestCase):
     def test_return_null_without_error(self):
         # Issue #23571: A function must not return NULL without setting an
         # error
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             code = textwrap.dedent("""
                 import _testcapi
                 from test import support
@@ -258,7 +255,7 @@ class CAPITest(unittest.TestCase):
 
     def test_return_result_with_error(self):
         # Issue #23571: A function must not return a result with an error set
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             code = textwrap.dedent("""
                 import _testcapi
                 from test import support
@@ -516,7 +513,7 @@ class CAPITest(unittest.TestCase):
         del subclass_instance
 
         # Test that setting __class__ modified the reference counts of the types
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             # gh-89373: In debug mode, _Py_Dealloc() keeps a strong reference
             # to the type while calling tp_dealloc()
             self.assertEqual(type_refcnt, B.refcnt_in_del)
@@ -586,7 +583,7 @@ class CAPITest(unittest.TestCase):
         del subclass_instance
 
         # Test that setting __class__ modified the reference counts of the types
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             # gh-89373: In debug mode, _Py_Dealloc() keeps a strong reference
             # to the type while calling tp_dealloc()
             self.assertEqual(type_refcnt, _testcapi.HeapCTypeSubclassWithFinalizer.refcnt_in_del)
@@ -1029,7 +1026,7 @@ class PyMemPymallocDebugTests(PyMemDebugTests):
     PYTHONMALLOC = 'pymalloc_debug'
 
 
-@unittest.skipUnless(Py_DEBUG, 'need Py_DEBUG')
+@unittest.skipUnless(support.Py_DEBUG, 'need Py_DEBUG')
 class PyMemDefaultTests(PyMemDebugTests):
     # test default allocator of Python compiled in debug mode
     PYTHONMALLOC = ''

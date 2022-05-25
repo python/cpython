@@ -38,8 +38,7 @@ import _ssl
 
 from ssl import TLSVersion, _TLSContentType, _TLSMessageType, _TLSAlertType
 
-Py_DEBUG = hasattr(sys, 'gettotalrefcount')
-Py_DEBUG_WIN32 = Py_DEBUG and sys.platform == 'win32'
+Py_DEBUG_WIN32 = support.Py_DEBUG and sys.platform == 'win32'
 
 PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = socket_helper.HOST
@@ -1657,7 +1656,8 @@ class ContextTests(unittest.TestCase):
             self.assertEqual(ctx.cert_store_stats(), {"crl": 0, "x509": 1, "x509_ca": 0})
 
     @unittest.skipUnless(sys.platform == "win32", "Windows specific")
-    @unittest.skipIf(hasattr(sys, "gettotalrefcount"), "Debug build does not share environment between CRTs")
+    @unittest.skipIf(support.Py_DEBUG,
+                     "Debug build does not share environment between CRTs")
     def test_load_default_certs_env_windows(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ctx.load_default_certs()
