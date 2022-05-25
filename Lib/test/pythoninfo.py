@@ -512,7 +512,6 @@ def collect_sysconfig(info_add):
         'WITH_VALGRIND',
     ):
         value = sysconfig.get_config_var(name)
-        print(name, repr(value))
         if value:
             text = 'Yes'
         else:
