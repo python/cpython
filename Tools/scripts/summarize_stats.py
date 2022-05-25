@@ -68,7 +68,7 @@ def print_specialization_stats(name, family_stats, defines):
             rows.append((label, val, f"{100*val/total_attempts:0.1f}%"))
         emit_table(("", "Count:", "Ratio:"), rows)
         total_failures = family_stats.get("specialization.failure", 0)
-        failure_kinds = [ 0 ] * 30
+        failure_kinds = [ 0 ] * 32
         for key in family_stats:
             if not key.startswith("specialization.failure_kind"):
                 continue
