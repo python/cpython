@@ -5377,6 +5377,8 @@ prtrace(PyThreadState *tstate, PyObject *v, const char *str)
     }
     printf("\n");
     PyErr_Restore(type, value, traceback);
+    // gh-91924: PyObject_Print() can indirectly set lltrace to 0
+    lltrace = 1;
     return 1;
 }
 #endif
