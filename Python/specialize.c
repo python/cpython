@@ -2027,8 +2027,11 @@ setup_init_cleanup_func(void) {
     PyObject *empty_str = _PyUnicode_FromASCII("", 0);
     PyObject *name = _PyUnicode_FromASCII("type.__call__", strlen("type.__call__"));
     PyObject *code = PyBytes_FromStringAndSize(INIT_CLEANUP_CODE, 8);
+    const unsigned char loc[2] = { 0x80 | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3) | 3, 0 };
+    PyObject *lines = PyBytes_FromStringAndSize((const char *)&loc, 2);
     if (empty_bytes == NULL || empty_str == NULL || name == NULL || code == NULL) {
         goto cleanup;
+
     }
     struct _PyCodeConstructor con = {
         .filename = empty_str,
@@ -2038,7 +2041,7 @@ setup_init_cleanup_func(void) {
 
         .code = code,
         .firstlineno = 1,
-        .linetable = empty_bytes,
+        .linetable = lines,
 
         .consts = empty_tuple,
         .names = empty_tuple,
@@ -2081,6 +2084,7 @@ cleanup:
     Py_XDECREF(empty_str);
     Py_XDECREF(name);
     Py_XDECREF(code);
+    Py_XDECREF(lines);
     PyErr_Clear();
     return _Py_InitCleanupFunc == NULL ? -1 : 0;
 }
