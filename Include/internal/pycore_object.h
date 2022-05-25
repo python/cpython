@@ -32,14 +32,14 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
 #define _Py_FatalRefcountError(message) _Py_FatalRefcountErrorFunc(__func__, message)
 
 /// Increment reference counter by specified number of items
-static inline void Py_INCREF_n(PyObject* op, Py_ssize_t n)
+static inline void Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 {
 #ifdef Py_REF_DEBUG
     _Py_RefTotal+=n;
 #endif
     op->ob_refcnt+=n;
 }
-#define Py_INCREF_n(op, n) Py_INCREF_n(_PyObject_CAST(op), n)
+#define Py_RefcntAdd(op, n) Py_RefcntAdd(_PyObject_CAST(op), n)
 
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
@@ -252,18 +252,6 @@ extern int _Py_CheckSlotResult(
 // Test if a type supports weak references
 static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
     return (type->tp_weaklistoffset > 0);
-}
-
-/// Method to copy objects for specified number of times inside a buffer
-static inline void
-_objects_repeat(char *dest, Py_ssize_t len_dest, Py_ssize_t len_src)
-{
-        Py_ssize_t copied = len_src;
-        while (copied < len_dest) {
-            Py_ssize_t bytes_to_copy = Py_MIN(copied, len_dest - copied);
-            memcpy(dest + copied, dest, bytes_to_copy);
-            copied += bytes_to_copy;
-        }
 }
 
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);

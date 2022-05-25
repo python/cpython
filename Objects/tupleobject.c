@@ -504,7 +504,7 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
             return (PyObject *)a;
         }
     }
-    if (input_size == 0 || n <= 0) {
+    if (n <= 0) {
         return tuple_get_empty();
     }
     assert(n>0);
@@ -521,7 +521,7 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
     PyObject **dest = np->ob_item;
     if (input_size == 1) {
         PyObject *elem = a->ob_item[0];
-        Py_INCREF_n(elem, n);
+        Py_RefcntAdd(elem, n);
         PyObject **dest_end = dest + output_size;
         while (dest < dest_end) {
             *dest++ = elem;
@@ -531,11 +531,11 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
         PyObject **src = a->ob_item;
         PyObject **src_end = src + input_size;
         while (src < src_end) {
-            Py_INCREF_n(*src, n);
+            Py_RefcntAdd(*src, n);
             *dest++ = *src++;
         }
 
-        _objects_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size, sizeof(PyObject *)*input_size);
+        _Py_memory_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size, sizeof(PyObject *)*input_size);
     }
     _PyObject_GC_TRACK(np);
     return (PyObject *) np;
