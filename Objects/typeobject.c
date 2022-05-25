@@ -3366,18 +3366,6 @@ static const PySlot_Offset pyslot_offsets[] = {
 };
 
 PyObject *
-PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
-{
-    return PyType_FromModuleAndSpec(NULL, spec, bases);
-}
-
-PyObject *
-PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
-{
-    return PyType_FromMetaclass(NULL, module, spec, bases);
-}
-
-PyObject *
 PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
                      PyType_Spec *spec, PyObject *bases)
 {
@@ -3656,9 +3644,21 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
 }
 
 PyObject *
+PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
+{
+    return PyType_FromMetaclass(NULL, module, spec, bases);
+}
+
+PyObject *
+PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
+{
+    return PyType_FromMetaclass(NULL, NULL, spec, bases);
+}
+
+PyObject *
 PyType_FromSpec(PyType_Spec *spec)
 {
-    return PyType_FromSpecWithBases(spec, NULL);
+    return PyType_FromMetaclass(NULL, NULL, spec, NULL);
 }
 
 PyObject *
