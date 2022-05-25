@@ -1,0 +1,1 @@
+Remove assert in :func:`clinic.permute_optional_groups` so that it works as intended, and tests pass, when running with optimizations (``-O``).
