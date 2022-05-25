@@ -160,16 +160,14 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'fstatvfs'),
                          'test needs posix.fstatvfs()')
     def test_fstatvfs(self):
-        fp = open(os_helper.TESTFN)
-        try:
+        with open(os_helper.TESTFN, 'rb') as fp:
             self.assertTrue(posix.fstatvfs(fp.fileno()))
             self.assertTrue(posix.statvfs(fp.fileno()))
 
     @unittest.skipUnless(hasattr(posix, 'ftruncate'),
                          'test needs posix.ftruncate()')
     def test_ftruncate(self):
-        fp = open(os_helper.TESTFN, 'w+')
-        try:
+        with open(os_helper.TESTFN, 'wb+') as fp:
             # we need to have some data to truncate
             fp.write(b'test')
             fp.flush()
@@ -544,8 +542,7 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'dup'),
                          'test needs posix.dup()')
     def test_dup(self):
-        fp = open(os_helper.TESTFN)
-        try:
+        with open(os_helper.TESTFN) as fp:
             fd = posix.dup(fp.fileno())
             self.assertIsInstance(fd, int)
             os.close(fd)
@@ -559,9 +556,7 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'dup2'),
                          'test needs posix.dup2()')
     def test_dup2(self):
-        fp1 = open(os_helper.TESTFN)
-        fp2 = open(os_helper.TESTFN)
-        try:
+        with open(os_helper.TESTFN) as fp1, open(os_helper.TESTFN) as fp2:
             posix.dup2(fp1.fileno(), fp2.fileno())
 
     @unittest.skipUnless(hasattr(os, 'O_CLOEXEC'), "needs os.O_CLOEXEC")
@@ -608,8 +603,7 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'fstat'),
                          'test needs posix.fstat()')
     def test_fstat(self):
-        fp = open(os_helper.TESTFN)
-        try:
+        with open(os_helper.TESTFN) as fp:
             self.assertTrue(posix.fstat(fp.fileno()))
             self.assertTrue(posix.stat(fp.fileno()))
 
@@ -788,8 +782,7 @@ class PosixTester(unittest.TestCase):
         os.unlink(os_helper.TESTFN)
 
         # re-create the file
-        test_file = open(os_helper.TESTFN, 'w')
-        try:
+        with open(os_helper.TESTFN, 'w') as test_file:
             fd = test_file.fileno()
             self._test_all_chown_common(posix.fchown, fd,
                                         getattr(posix, 'fstat', None))
