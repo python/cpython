@@ -1832,7 +1832,8 @@ These are not used in annotations. They are building blocks for declaring types.
       Keys marked with ``Required`` will always appear in ``__required_keys__``
       and keys marked with ``NotRequired`` will always appear in ``__optional_keys__``.
 
-      It is also possible to use mixed inheritance to declare both required and
+      For backwards compatibility with Python 3.10 and below,
+      it is also possible to use mixed inheritance to declare both required and
       non-required keys in the same ``TypedDict`` , declaring a ``TypedDict`` with one value
       for the ``total`` argument and then inheriting it from another ``TypedDict`` with
       a different value for ``total``.
