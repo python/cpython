@@ -1,2 +1,2 @@
-The emamil library now parses messages that use obsolete email syntac where
+The email library now parses messages that use obsolete email syntax where
 header field names can be followed by whitespace
