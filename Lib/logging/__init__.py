@@ -365,18 +365,15 @@ class LogRecord(object):
             self.process = os.getpid()
         else:
             self.process = None
-
-    @property
-    def taskName(self):
         if logAsyncioTasks:
             asyncio = sys.modules.get('asyncio')
             if asyncio is not None:
                 try:
-                    return asyncio.current_task().get_name()
+                    self.taskName = asyncio.current_task().get_name()
                 except Exception:
-                    return None
+                    self.taskName = None
         else:
-            return None
+            self.taskName = None
 
     def __repr__(self):
         return '<LogRecord: %s, %s, %s, %s, "%s">'%(self.name, self.levelno,
