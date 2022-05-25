@@ -4985,6 +4985,7 @@ handle_eval_breaker:
             if (shim == NULL) {
                 goto error;
             }
+            CALL_STAT_INC(inlined_py_calls);
             shim->previous = frame;
             shim->prev_instr = _PyCode_CODE(shim->f_code) + 1;
             assert(_Py_OPCODE(*(_PyCode_CODE(shim->f_code)+ 2)) == EXIT_INIT_CHECK);
