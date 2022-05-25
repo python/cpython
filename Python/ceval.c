@@ -107,7 +107,6 @@ static PyObject * do_call_core(
     PyObject *callargs, PyObject *kwdict, int use_tracing);
 
 #ifdef LLTRACE
-static int lltrace;
 static void
 dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
@@ -1753,6 +1752,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     _Py_CODEUNIT *first_instr;
     _Py_CODEUNIT *next_instr;
     PyObject **stack_pointer;
+#ifdef LLTRACE
+    int lltrace;
+#endif
 
 /* Sets the above local variables from the frame */
 #define SET_LOCALS_FROM_FRAME() \
