@@ -1,0 +1,1 @@
+IDLE now uses UTF-8 for its configuration file. Patch by Victor Stinner.
