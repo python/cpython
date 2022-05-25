@@ -1336,13 +1336,12 @@ timestamp converter.
 Adapter and Converter Recipes
 -----------------------------
 
-This section shows recipes for common adapters and converters.
+This section shows recipes for timezone-naive adapters and converters.
 
 .. testcode::
 
    import sqlite3
 
-   # Timezone-naive datetime adapters and converters.
    def adapt_date(val):
        return val.isoformat()
 
@@ -1350,15 +1349,17 @@ This section shows recipes for common adapters and converters.
        return val.isoformat(" ")
 
    def convert_date(val):
+       import datetime
        return datetime.date(*map(int, val.split(b"-")))
 
    def convert_timestamp(val):
+       import datetime
        datepart, timepart = val.split(b" ")
        year, month, day = map(int, datepart.split(b"-"))
        timepart_full = timepart.split(b".")
        hours, minutes, seconds = map(int, timepart_full[0].split(b":"))
        if len(timepart_full) == 2:
-           microseconds = int('{:0<6.6}'.format(timepart_full[1].decode()))
+           microseconds = int("{:0<6.6}".format(timepart_full[1].decode()))
        else:
            microseconds = 0
 
