@@ -2209,7 +2209,8 @@ class CoroutineTest(unittest.TestCase):
 
 
 @unittest.skipIf(
-    support.is_emscripten, "asyncio does not work under Emscripten yet."
+    support.is_emscripten or support.is_wasi,
+    "asyncio does not work under Emscripten/WASI yet."
 )
 class CoroAsyncIOCompatTest(unittest.TestCase):
 

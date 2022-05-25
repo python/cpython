@@ -13,7 +13,7 @@ import unittest
 from unittest import mock
 
 from test.support import import_helper
-from test.support import is_emscripten
+from test.support import is_emscripten, is_wasi
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 
@@ -1530,6 +1530,7 @@ class _BasePathTest(object):
         p = self.cls('')
         self.assertEqual(p.stat(), os.stat('.'))
 
+    @unittest.skipIf(is_wasi, "WASI has no user accounts.")
     def test_expanduser_common(self):
         P = self.cls
         p = P('~')
@@ -1693,10 +1694,15 @@ class _BasePathTest(object):
                 "dirA", "dirA/linkC", "dirB", "dirB/linkD", "dirC",
                 "dirC/dirD", "dirE", "linkB",
             ])
+        _check(p.rglob(""), ["", "dirA", "dirB", "dirC", "dirE", "dirC/dirD"])
 
         p = P(BASE, "dirC")
+        _check(p.rglob("*"), ["dirC/fileC", "dirC/novel.txt",
+                              "dirC/dirD", "dirC/dirD/fileD"])
         _check(p.rglob("file*"), ["dirC/fileC", "dirC/dirD/fileD"])
         _check(p.rglob("*/*"), ["dirC/dirD/fileD"])
+        _check(p.rglob("*/"), ["dirC/dirD"])
+        _check(p.rglob(""), ["dirC", "dirC/dirD"])
         # gh-91616, a re module regression
         _check(p.rglob("*.txt"), ["dirC/novel.txt"])
         _check(p.rglob("*.*"), ["dirC/novel.txt"])
@@ -1993,28 +1999,6 @@ class _BasePathTest(object):
         self.assertFileNotFound(p.unlink)
 
     @unittest.skipUnless(hasattr(os, "link"), "os.link() is not present")
-    def test_link_to(self):
-        P = self.cls(BASE)
-        p = P / 'fileA'
-        size = p.stat().st_size
-        # linking to another path.
-        q = P / 'dirA' / 'fileAA'
-        try:
-            with self.assertWarns(DeprecationWarning):
-                p.link_to(q)
-        except PermissionError as e:
-            self.skipTest('os.link(): %s' % e)
-        self.assertEqual(q.stat().st_size, size)
-        self.assertEqual(os.path.samefile(p, q), True)
-        self.assertTrue(p.stat)
-        # Linking to a str of a relative path.
-        r = rel_join('fileAAA')
-        with self.assertWarns(DeprecationWarning):
-            q.link_to(r)
-        self.assertEqual(os.stat(r).st_size, size)
-        self.assertTrue(q.stat)
-
-    @unittest.skipUnless(hasattr(os, "link"), "os.link() is not present")
     def test_hardlink_to(self):
         P = self.cls(BASE)
         target = P / 'fileA'
@@ -2039,7 +2023,7 @@ class _BasePathTest(object):
         # linking to another path.
         q = P / 'dirA' / 'fileAA'
         with self.assertRaises(NotImplementedError):
-            p.link_to(q)
+            q.hardlink_to(p)
 
     def test_rename(self):
         P = self.cls(BASE)
@@ -2525,7 +2509,8 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             print(path.resolve(strict))
 
     @unittest.skipIf(
-        is_emscripten, "umask is not implemented on Emscripten."
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
     )
     def test_open_mode(self):
         old_mask = os.umask(0)
@@ -2551,7 +2536,8 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             os.chdir(current_directory)
 
     @unittest.skipIf(
-        is_emscripten, "umask is not implemented on Emscripten."
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
     )
     def test_touch_mode(self):
         old_mask = os.umask(0)

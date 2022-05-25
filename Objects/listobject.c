@@ -94,6 +94,12 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
     assert(self->ob_item == NULL);
     assert(size > 0);
 
+    /* Since the Python memory allocator has granularity of 16 bytes on 64-bit
+     * platforms (8 on 32-bit), there is no benefit of allocating space for
+     * the odd number of items, and there is no drawback of rounding the
+     * allocated size up to the nearest even number.
+     */
+    size = (size + 1) & ~(size_t)1;
     PyObject **items = PyMem_New(PyObject*, size);
     if (items == NULL) {
         PyErr_NoMemory();
@@ -1573,8 +1579,10 @@ static void
 merge_freemem(MergeState *ms)
 {
     assert(ms != NULL);
-    if (ms->a.keys != ms->temparray)
+    if (ms->a.keys != ms->temparray) {
         PyMem_Free(ms->a.keys);
+        ms->a.keys = NULL;
+    }
 }
 
 /* Ensure enough temp memory for 'need' array slots is available.

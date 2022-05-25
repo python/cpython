@@ -74,6 +74,9 @@ except ModuleNotFoundError:
 else:
     _mswindows = True
 
+# wasm32-emscripten and wasm32-wasi do not support processes
+_can_fork_exec = sys.platform not in {"emscripten", "wasi"}
+
 if _mswindows:
     import _winapi
     from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
@@ -97,13 +100,10 @@ if _mswindows:
                     "CREATE_NO_WINDOW", "DETACHED_PROCESS",
                     "CREATE_DEFAULT_ERROR_MODE", "CREATE_BREAKAWAY_FROM_JOB"])
 else:
-    if sys.platform in {"emscripten", "wasi"}:
-        def _fork_exec(*args, **kwargs):
-            raise OSError(
-                errno.ENOTSUP, f"{sys.platform} does not support processes."
-            )
-    else:
+    if _can_fork_exec:
         from _posixsubprocess import fork_exec as _fork_exec
+    else:
+        _fork_exec = None
     import select
     import selectors
 
@@ -313,12 +313,14 @@ def _args_from_interpreter_flags():
             args.append('-E')
         if sys.flags.no_user_site:
             args.append('-s')
+        if sys.flags.safe_path:
+            args.append('-P')
 
     # -W options
     warnopts = sys.warnoptions[:]
-    bytes_warning = sys.flags.bytes_warning
     xoptions = getattr(sys, '_xoptions', {})
-    dev_mode = ('dev' in xoptions)
+    bytes_warning = sys.flags.bytes_warning
+    dev_mode = sys.flags.dev_mode
 
     if bytes_warning > 1:
         warnopts.remove("error::BytesWarning")
@@ -769,6 +771,8 @@ class Popen:
 
       start_new_session (POSIX only)
 
+      process_group (POSIX only)
+
       group (POSIX only)
 
       extra_groups (POSIX only)
@@ -794,8 +798,14 @@ class Popen:
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
                  pass_fds=(), *, user=None, group=None, extra_groups=None,
-                 encoding=None, errors=None, text=None, umask=-1, pipesize=-1):
+                 encoding=None, errors=None, text=None, umask=-1, pipesize=-1,
+                 process_group=None):
         """Create new Popen instance."""
+        if not _can_fork_exec:
+            raise OSError(
+                errno.ENOTSUP, f"{sys.platform} does not support processes."
+            )
+
         _cleanup()
         # Held while anything is calling waitpid before returncode has been
         # updated to prevent clobbering returncode if wait() or poll() are
@@ -900,6 +910,9 @@ class Popen:
             else:
                 line_buffering = False
 
+        if process_group is None:
+            process_group = -1  # The internal APIs are int-only
+
         gid = None
         if group is not None:
             if not hasattr(os, 'setregid'):
@@ -1003,7 +1016,7 @@ class Popen:
                                 errread, errwrite,
                                 restore_signals,
                                 gid, gids, uid, umask,
-                                start_new_session)
+                                start_new_session, process_group)
         except:
             # Cleanup if the child failed starting.
             for f in filter(None, (self.stdin, self.stdout, self.stderr)):
@@ -1387,7 +1400,7 @@ class Popen:
                            unused_restore_signals,
                            unused_gid, unused_gids, unused_uid,
                            unused_umask,
-                           unused_start_new_session):
+                           unused_start_new_session, unused_process_group):
             """Execute program (MS Windows version)"""
 
             assert not pass_fds, "pass_fds not supported on Windows."
@@ -1719,7 +1732,7 @@ class Popen:
                            errread, errwrite,
                            restore_signals,
                            gid, gids, uid, umask,
-                           start_new_session):
+                           start_new_session, process_group):
             """Execute program (POSIX version)"""
 
             if isinstance(args, (str, bytes)):
@@ -1755,6 +1768,7 @@ class Popen:
                     and (c2pwrite == -1 or c2pwrite > 2)
                     and (errwrite == -1 or errwrite > 2)
                     and not start_new_session
+                    and process_group == -1
                     and gid is None
                     and gids is None
                     and uid is None
@@ -1812,7 +1826,7 @@ class Popen:
                             errread, errwrite,
                             errpipe_read, errpipe_write,
                             restore_signals, start_new_session,
-                            gid, gids, uid, umask,
+                            process_group, gid, gids, uid, umask,
                             preexec_fn, _USE_VFORK)
                     self._child_created = True
                 finally:
