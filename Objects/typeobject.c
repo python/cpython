@@ -3374,7 +3374,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 PyObject *
 PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 {
-    return PyType_FromMetaclass(&PyType_Type, module, spec, bases);
+    return PyType_FromMetaclass(NULL, module, spec, bases);
 }
 
 PyObject *
@@ -3390,6 +3390,9 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     Py_ssize_t nmembers, weaklistoffset, dictoffset, vectorcalloffset;
     char *res_start;
     short slot_offset, subslot_offset;
+
+    if (!metaclass)
+        metaclass = &PyType_Type;
 
     if (metaclass->tp_new != PyType_Type.tp_new) {
         PyErr_SetString(PyExc_TypeError,

@@ -190,10 +190,15 @@ Creating Heap-Allocated Types
 The following functions and structs are used to create
 :ref:`heap types <heap-types>`.
 
-.. c:function:: PyObject* PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
+.. c:function:: PyObject* PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module, PyType_Spec *spec, PyObject *bases)
 
    Create and return a :ref:`heap type <heap-types>` from the *spec*
    (:const:`Py_TPFLAGS_HEAPTYPE`).
+
+   The metaclass *metaclass* is used to construct the resulting type object.
+   When *metaclass* is ``NULL``, the default :c:type:`PyType_Type` is used
+   instead. Note that metaclasses that override
+   :c:member:`~PyTypeObject.tp_new` are not supported.
 
    The *bases* argument can be used to specify base classes; it can either
    be only one class or a tuple of classes.
@@ -208,9 +213,13 @@ The following functions and structs are used to create
    The associated module is not inherited by subclasses; it must be specified
    for each class individually.
 
-   This function calls :c:func:`PyType_Ready` on the new type. Its behavior is
-   equivalent to ``PyType_FromMetaclass(&PyType_Type, NULL, spec,
-   bases)``.
+   This function calls :c:func:`PyType_Ready` on the new type.
+
+   .. versionadded:: 3.12
+
+.. c:function:: PyObject* PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
+
+   Equivalent to ``PyType_FromMetaclass(NULL, module, spec, bases)``.
 
    .. versionadded:: 3.9
 
@@ -219,26 +228,16 @@ The following functions and structs are used to create
       The function now accepts a single class as the *bases* argument and
       ``NULL`` as the ``tp_doc`` slot.
 
-.. c:function:: PyObject* PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module, PyType_Spec *spec, PyObject *bases)
-
-   Create and return a :ref:`heap type <heap-types>` from the *spec*
-   (:const:`Py_TPFLAGS_HEAPTYPE`). This function is a generalization of
-   :c:func:`PyType_FromModuleAndSpec`, with the main difference being that
-   the metaclass *metaclass* is used to construct the resulting type object.
-
-   Metaclasses that override :c:member:`~PyTypeObject.tp_new` are not supported.
-
-   .. versionadded:: 3.12
 
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
-   Equivalent to ``PyType_FromModuleAndSpec(NULL, spec, bases)``.
+   Equivalent to ``PyType_FromMetaclass(NULL, NULL, spec, bases)``.
 
    .. versionadded:: 3.3
 
 .. c:function:: PyObject* PyType_FromSpec(PyType_Spec *spec)
 
-   Equivalent to ``PyType_FromSpecWithBases(spec, NULL)``.
+   Equivalent to ``PyType_FromMetaclass(NULL, NULL, spec, NULL)``.
 
 .. c:type:: PyType_Spec
 
