@@ -776,13 +776,8 @@ class TestCopyTree(BaseTest, unittest.TestCase):
     #     ├── doesnotexist.txt -> IDONOTEXIST
     #     └── test.txt -> ../test.txt
     #
-    # Then use copytree with symlinks=False and ignore_dangling_symlinks=True.
     # It is important to copy src_dir/subdir and not the entire src_dir to
-    # reproduce the wrong behavior. As a result, in the destination file
-    # structure the symlink should become a file and its contents should be
-    # the same as that of the original source file that the symlink was
-    # pointing to. The symlink doesnotexist.txt should be ignored, no error
-    # should occur, and no copy should appear in the destination file tree.
+    # reproduce the wrong behavior without the fix.
     @os_helper.skip_unless_symlink
     def test_copytree_no_symlinks_ignore_dangling_symlinks(self):
         src_dir = self.mkdtemp()
