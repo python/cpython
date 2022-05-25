@@ -1221,7 +1221,11 @@ Deprecated
   removed in Python 3.13. Use :func:`locale.setlocale`,
   :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
   :func:`locale.getlocale` functions instead.
-  (Contributed by Victor Stinner in :issue:`46659`.)
+  (Contributed by Victor Stinner in :gh:`90817`.)
+
+* The :func:`locale.resetlocale` function is deprecated and will be
+  removed in Python 3.13. Use ``locale.setlocale(locale.LC_ALL, "")`` instead.
+  (Contributed by Victor Stinner in :gh:`90817`.)
 
 * The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
   deprecated since at least Python 3.6. Their documentation and deprecation
