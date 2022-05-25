@@ -323,7 +323,7 @@ Module functions and constants
    Register the *converter* callable to convert SQLite objects of type *typename* into a
    Python object of a specific type. The converter is invoked for all SQLite values of type
    *typename*. Consult the parameter *detect_types* of
-   :meth:`Connection.connect` regarding how type detection works.
+   :meth:`Connection.connect` for information regarding how type detection works.
 
    Note: *typename* and the name of the type in your query are matched in a
    case-insensitive manner.
@@ -1220,7 +1220,7 @@ Using adapters to store custom Python types in SQLite databases
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 SQLite supports only a limited set of types natively.
-To store custom Python types in SQLite databases, **adapt** them one of the
+To store custom Python types in SQLite databases, **adapt** them to one of the
 basic types supported by SQLite:
 :class:`int`, :class:`float`, :class:`str`, :class:`bytes`, or :const:`None`.
 
@@ -1235,7 +1235,7 @@ custom adapter functions.
 Letting your object adapt itself
 """"""""""""""""""""""""""""""""
 
-Suppose we have ``Point`` class that represents a pair of coordinates,
+Suppose we have a ``Point`` class that represents a pair of coordinates,
 ``x`` and ``y``, in a Cartesian coordinate system.
 The coordinate pair will be stored as a text string in the database,
 using a semicolon to separate the coordinates.
@@ -1268,7 +1268,7 @@ Converting SQLite values to custom Python types
 
 Writing an adapter lets you send custom Python types to SQLite. But to make it
 really useful we need to make the Python to SQLite to Python roundtrip work.
-To be able to convert SQLite value to custom Python types, we use _converters_.
+To be able to convert SQLite values to custom Python types, we use _converters_.
 
 Let's go back to the :class:`Point` class. We stored the x and y coordinates
 separated via semicolons as strings in SQLite.
