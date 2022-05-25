@@ -1255,13 +1255,6 @@ This function can then be registered using :meth:`register_adapter`.
 
 .. literalinclude:: ../includes/sqlite3/adapter_point_2.py
 
-The :mod:`sqlite3` module has two default adapters for Python's built-in
-:class:`datetime.date` and :class:`datetime.datetime` types.
-Suppose we want to store :class:`datetime.datetime` objects not in ISO
-representation, but as a Unix timestamp.
-
-.. literalinclude:: ../includes/sqlite3/adapter_datetime.py
-
 
 Converting SQLite values to custom Python types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1333,41 +1326,45 @@ timestamp converter.
 .. _sqlite3-adapter-converter-recipes:
 
 Adapter and Converter Recipes
------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This section shows recipes for timezone-naive adapters and converters.
+This section shows recipes for common adapters and converters.
 
-.. testcode::
+.. code-block::
 
+   import datetime
    import sqlite3
 
-   def adapt_date(val):
+   def adapt_date_iso(val):
+       """Adapt datetime.date to ISO 8601 date."""
        return val.isoformat()
 
-   def adapt_datetime(val):
-       return val.isoformat(" ")
+   def adapt_datetime_iso(val):
+       """Adapt datetime.datetime to timezone-naive ISO 8601 date."""
+       return val.isoformat()
+
+   def adapt_datetime_epoch(val)
+       """Adapt datetime.datetime to Unix timestamp."""
+       return int(val.timestamp())
+
+   sqlite3.register_adapter(datetime.date, adapt_date_iso)
+   sqlite3.register_adapter(datetime.datetime, adapt_datetime_iso)
+   sqlite3.register_adapter(datetime.datetime, adapt_datetime_epoch)
 
    def convert_date(val):
-       import datetime
-       return datetime.date(*map(int, val.split(b"-")))
+       """Convert ISO 8601 date to datetime.date object."""
+       return datetime.date.fromisoformat(val)
+
+   def convert_datetime(val):
+       """Convert ISO 8601 datetime to datetime.datetime object."""
+       return datetime.datetime.fromisoformat(val)
 
    def convert_timestamp(val):
-       import datetime
-       datepart, timepart = val.split(b" ")
-       year, month, day = map(int, datepart.split(b"-"))
-       timepart_full = timepart.split(b".")
-       hours, minutes, seconds = map(int, timepart_full[0].split(b":"))
-       if len(timepart_full) == 2:
-           microseconds = int("{:0<6.6}".format(timepart_full[1].decode()))
-       else:
-           microseconds = 0
+       """Convert Unix epoch timestamp to datetime.datetime object."""
+       return datetime.datetime.fromtimestamp(val)
 
-       val = datetime.datetime(year, month, day, hours, minutes, seconds, microseconds)
-       return val
-
-   sqlite3.register_adapter(datetime.date, adapt_date)
-   sqlite3.register_adapter(datetime.datetime, adapt_datetime)
    sqlite3.register_converter("date", convert_date)
+   sqlite3.register_converter("datetime", convert_datetime)
    sqlite3.register_converter("timestamp", convert_timestamp)
 
 
