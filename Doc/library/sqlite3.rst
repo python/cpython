@@ -1103,12 +1103,13 @@ The exception hierarchy is defined by DB-API 2.0.
 .. exception:: Warning
 
    This exception is not raised by :mod:`sqlite3`.
+   ``Warning`` is a subclass of :exc:`Exception`.
 
 .. exception:: Error
 
-   The base class of the other error exceptions in this module.  Use this to
-   catch all errors with one single :keyword:`except` statement.  :exc:`Error`
-   is a subclass of :exc:`Exception`.
+   The base class of the other exceptions in this module.
+   Use this to catch all errors with one single :keyword:`except` statement.
+   ``Error`` is a subclass of :exc:`Exception`.
 
    .. attribute:: sqlite_errorcode
 
@@ -1126,50 +1127,59 @@ The exception hierarchy is defined by DB-API 2.0.
 
 .. exception:: InterfaceError
 
-   Exception raised for errors that are related to the database interface
-   rather than the database itself.  It is a subclass of :exc:`Error`.
+   Exception raised for misuse of the low-level SQLite C API.
+   In other words, if this exception is raised, it is probably a bug in the
+   ``sqlite3`` module.
+   ``InterfaceError`` is a subclass of :exc:`Error`.
 
 .. exception:: DatabaseError
 
-   Exception raised for errors that are related to the database.  It is a
-   subclass of :exc:`Error`.
+   Exception raised for errors that are related to the database.
+   This serves the base exception for several types of database errors.
+   It is only raised implicitly through the specialised variants.
+   ``DatabaseError`` is a subclass of :exc:`Error`.
 
 .. exception:: DataError
 
-   Exception raised for errors that are due to problems with the processed data
-   like numeric value out of range and too long strings, etc.  It is a subclass
-   of :exc:`DatabaseError`.
+   Exception raised for errors caused by problems with the processed data,
+   like numeric value out of range, and too long strings.
+   ``DataError`` is a subclass of :exc:`DatabaseError`.
 
 .. exception:: OperationalError
 
-   Exception raised for errors that are related to the database's operation
-   and not necessarily under the control of the programmer, e.g. an unexpected
-   disconnect occurs, the data source name is not found, a transaction could
-   not be processed, etc.  It is a subclass of :exc:`DatabaseError`.
+   Exception raised for errors that are related to the database's operation,
+   and not necessarily under the control of the programmer.
+   For example, the database path is not found,
+   or a transaction could not be processed.
+   ``OperationalError`` is a subclass of :exc:`DatabaseError`.
 
 .. exception:: IntegrityError
 
    Exception raised when the relational integrity of the database is affected,
-   e.g. a foreign key check fails.  It is a subclass of :exc:`DatabaseError`.
+   for example, a foreign key check fails.
+   ``IntegrityError`` is a subclass of :exc:`DatabaseError`.
 
 .. exception:: InternalError
 
-   Exception raised when the database encounters an internal error, e.g. the
-   cursor is not valid anymore, the transaction is out of sync, etc.  It is a
-   subclass of :exc:`DatabaseError`.
+   Exception raised when SQLite encounters an internal error.
+   If this is raised, it may indicate that there is a problem with the runtime
+   SQLite library.
+   ``InternalError`` is a subclass of :exc:`DatabaseError`.
 
 .. exception:: ProgrammingError
 
-   Exception raised for programming errors, e.g. table not found or already
-   exists, syntax error in the SQL statement, wrong number of parameters
-   specified, etc.  It is a subclass of :exc:`DatabaseError`.
+   Exception raised for ``sqlite3`` API programming errors.
+   for example syntax errors in SQL statements, and wrong number of bindings
+   supplied to a query.
+   ``ProgrammingError`` is a subclass of :exc:`DatabaseError`.
 
 .. exception:: NotSupportedError
 
-   Exception raised in case a method or database API was used which is not
-   supported by the database, e.g. calling the :meth:`~Connection.rollback`
-   method on a connection that does not support transaction or has
-   transactions turned off.  It is a subclass of :exc:`DatabaseError`.
+   Exception raised in case a method or database API is not supported by the
+   underlying SQLite library. For example, setting *deterministic* to
+   :const:`True` in :meth:`create_function`, if the underlying SQLite library
+   does not support deterministic functions.
+   ``NotSupportedError`` is a subclass of :exc:`DatabaseError`.
 
 
 .. _sqlite3-blob-objects:
