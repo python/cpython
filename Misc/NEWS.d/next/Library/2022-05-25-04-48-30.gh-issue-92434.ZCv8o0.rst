@@ -1,0 +1,2 @@
+:meth:`~sqlite3.Connection.serialize` raises :exc:`OverflowError` on 32bit Python
+when more than ``Py_SSIZE_T_MAX`` bytes of serialization occurs.
