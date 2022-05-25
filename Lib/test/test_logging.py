@@ -4909,7 +4909,7 @@ class BasicConfigTest(unittest.TestCase):
             with open('test.log', encoding='utf-8') as f:
                 data = f.read().strip()
             os.remove('test.log')
-            self.assertEqual('Task-1 - hello world', data)
+            self.assertRegex(data, r'Task-\d+ - hello world')
 
 
     def _test_log(self, method, level=None):
