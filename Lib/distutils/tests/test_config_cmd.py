@@ -34,8 +34,11 @@ class ConfigTestCase(support.LoggingSilencer,
 
     def test_dump_file(self):
         this_file = os.path.splitext(__file__)[0] + '.py'
-        with open(this_file, encoding='ascii') as f:
+        f = open(this_file)
+        try:
             numlines = len(f.readlines())
+        finally:
+            f.close()
 
         dump_file(this_file, 'I am the header')
         self.assertEqual(len(self._logs), numlines+1)

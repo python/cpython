@@ -43,8 +43,7 @@ class PyPIRCCommand(Command):
     def _store_pypirc(self, username, password):
         """Creates a default .pypirc file."""
         rc = self._get_rc_file()
-        with os.fdopen(os.open(rc, os.O_CREAT | os.O_WRONLY, 0o600), 'w',
-                       encoding='utf-8') as f:
+        with os.fdopen(os.open(rc, os.O_CREAT | os.O_WRONLY, 0o600), 'w') as f:
             f.write(DEFAULT_PYPIRC % (username, password))
 
     def _read_pypirc(self):

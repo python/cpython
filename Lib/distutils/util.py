@@ -388,9 +388,9 @@ def byte_compile (py_files,
         log.info("writing byte-compilation script '%s'", script_name)
         if not dry_run:
             if script_fd is not None:
-                script = os.fdopen(script_fd, "w", encoding='ascii')
+                script = os.fdopen(script_fd, "w")
             else:
-                script = open(script_name, "w", encoding='ascii')
+                script = open(script_name, "w")
 
             with script:
                 script.write("""\
@@ -412,12 +412,12 @@ files = [
                 #if prefix:
                 #    prefix = os.path.abspath(prefix)
 
-                script.write(",\n".join(map(ascii, py_files)) + "]\n")
+                script.write(",\n".join(map(repr, py_files)) + "]\n")
                 script.write("""
-byte_compile(files, optimize=%a, force=%a,
-             prefix=%a, base_dir=%a,
-             verbose=%a, dry_run=False,
-             direct=True)
+byte_compile(files, optimize=%r, force=%r,
+             prefix=%r, base_dir=%r,
+             verbose=%r, dry_run=0,
+             direct=1)
 """ % (optimize, force, prefix, base_dir, verbose))
 
         msg = distutils._DEPRECATION_MESSAGE

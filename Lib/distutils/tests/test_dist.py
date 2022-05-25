@@ -90,7 +90,7 @@ class DistributionTestCase(support.LoggingSilencer,
 
         fakepath = '/somedir'
 
-        with open(TESTFN, "w", encoding='ascii') as f:
+        with open(TESTFN, "w") as f:
             print(("[install]\n"
                    "install-base = {0}\n"
                    "install-platbase = {0}\n"
@@ -145,9 +145,12 @@ class DistributionTestCase(support.LoggingSilencer,
     def test_command_packages_configfile(self):
         sys.argv.append("build")
         self.addCleanup(os.unlink, TESTFN)
-        with open(TESTFN, "w", encoding='ascii') as f:
+        f = open(TESTFN, "w")
+        try:
             print("[global]", file=f)
             print("command_packages = foo.bar, splat", file=f)
+        finally:
+            f.close()
 
         d = self.create_distribution([TESTFN])
         self.assertEqual(d.get_command_packages(),
@@ -230,7 +233,7 @@ class DistributionTestCase(support.LoggingSilencer,
         else:
             user_filename = os.path.join(temp_home, "pydistutils.cfg")
 
-        with open(user_filename, 'w', encoding='ascii') as f:
+        with open(user_filename, 'w') as f:
             f.write('[distutils]\n')
 
         def _expander(path):
@@ -443,8 +446,11 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
 
         temp_dir = self.mkdtemp()
         user_filename = os.path.join(temp_dir, user_filename)
-        with open(user_filename, 'wb') as f:
-            f.write(b'.')
+        f = open(user_filename, 'w')
+        try:
+            f.write('.')
+        finally:
+            f.close()
 
         try:
             dist = Distribution()

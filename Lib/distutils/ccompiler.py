@@ -776,7 +776,7 @@ class CCompiler:
         if library_dirs is None:
             library_dirs = []
         fd, fname = tempfile.mkstemp(".c", funcname, text=True)
-        f = os.fdopen(fd, "w", encoding='ascii')
+        f = os.fdopen(fd, "w")
         try:
             for incl in includes:
                 f.write("""#include "%s"\n""" % incl)

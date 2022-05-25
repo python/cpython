@@ -703,26 +703,32 @@ class MSVCCompiler(CCompiler) :
             # with .pyd's.
             # Returns either the filename of the modified manifest or
             # None if no manifest should be embedded.
-            with open(manifest_file, 'rb') as manifest_f:
+            manifest_f = open(manifest_file)
+            try:
                 manifest_buf = manifest_f.read()
+            finally:
+                manifest_f.close()
             pattern = re.compile(
-                br"""<assemblyIdentity.*?name=("|')Microsoft\."""\
-                br"""VC\d{2}\.CRT("|').*?(/>|</assemblyIdentity>)""",
+                r"""<assemblyIdentity.*?name=("|')Microsoft\."""\
+                r"""VC\d{2}\.CRT("|').*?(/>|</assemblyIdentity>)""",
                 re.DOTALL)
-            manifest_buf = re.sub(pattern, b"", manifest_buf)
-            pattern = br"<dependentAssembly>\s*</dependentAssembly>"
-            manifest_buf = re.sub(pattern, b"", manifest_buf)
+            manifest_buf = re.sub(pattern, "", manifest_buf)
+            pattern = r"<dependentAssembly>\s*</dependentAssembly>"
+            manifest_buf = re.sub(pattern, "", manifest_buf)
             # Now see if any other assemblies are referenced - if not, we
             # don't want a manifest embedded.
             pattern = re.compile(
-                br"""<assemblyIdentity.*?name=(?:"|')(.+?)(?:"|')"""
-                br""".*?(?:/>|</assemblyIdentity>)""", re.DOTALL)
+                r"""<assemblyIdentity.*?name=(?:"|')(.+?)(?:"|')"""
+                r""".*?(?:/>|</assemblyIdentity>)""", re.DOTALL)
             if re.search(pattern, manifest_buf) is None:
                 return None
 
-            with open(manifest_file, 'wb') as manifest_f:
+            manifest_f = open(manifest_file, 'w')
+            try:
                 manifest_f.write(manifest_buf)
                 return manifest_file
+            finally:
+                manifest_f.close()
         except OSError:
             pass
 

@@ -42,8 +42,11 @@ class InstallScriptsTestCase(support.TempdirManager,
 
         def write_script(name, text):
             expected.append(name)
-            with open(os.path.join(source, name), "w", encoding='ascii') as f:
+            f = open(os.path.join(source, name), "w")
+            try:
                 f.write(text)
+            finally:
+                f.close()
 
         write_script("script1.py", ("#! /usr/bin/env python2.3\n"
                                     "# bogus script w/ Python sh-bang\n"

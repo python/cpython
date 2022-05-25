@@ -53,8 +53,11 @@ class TextFileTestCase(support.TempdirManager, unittest.TestCase):
 
         tmpdir = self.mkdtemp()
         filename = os.path.join(tmpdir, "test.txt")
-        with open(filename, "w", encoding='ascii') as out_file:
+        out_file = open(filename, "w")
+        try:
             out_file.write(TEST_DATA)
+        finally:
+            out_file.close()
 
         in_file = TextFile(filename, strip_comments=0, skip_blanks=0,
                            lstrip_ws=0, rstrip_ws=0)

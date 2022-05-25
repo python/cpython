@@ -71,8 +71,11 @@ class BuildScriptsTestCase(support.TempdirManager,
         return expected
 
     def write_script(self, dir, name, text):
-        with open(os.path.join(dir, name), "w", encoding='ascii') as f:
+        f = open(os.path.join(dir, name), "w")
+        try:
             f.write(text)
+        finally:
+            f.close()
 
     def test_version_int(self):
         source = self.mkdtemp()
