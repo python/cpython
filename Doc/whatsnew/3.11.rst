@@ -1273,6 +1273,11 @@ Deprecated
   is now deprecated. Support will be removed in Python 3.13. (Contributed by
   Jingchen Ye in :gh:`90224`.)
 
+* The :func:`re.template` function and the corresponding :const:`re.TEMPLATE`
+  and :const:`re.T` flags are deprecated, as they were undocumented and
+  lacked an obvious purpose. They will be removed in Python 3.13.
+  (Contributed by Serhiy Storchaka and Miro Hrončok in :gh:`92728`.)
+
 
 Pending Removal in Python 3.12
 ==============================
