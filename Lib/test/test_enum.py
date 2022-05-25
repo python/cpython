@@ -2544,7 +2544,9 @@ class TestFlag(unittest.TestCase):
             b = 3
             c = 4
             d = 6
-        self.assertEqual(repr(Bizarre(7)), '<Bizarre.d|c|b: 7>')
+
+        name = "TestFlag.test_bizarre.<locals>.Bizarre"
+        self.assertRaisesRegex(ValueError, "7 is not a valid " + name, Bizarre, 7)
 
     def test_multiple_mixin(self):
         class AllMixin:
