@@ -4872,6 +4872,30 @@ class BasicConfigTest(unittest.TestCase):
             # didn't write anything due to the encoding error
             self.assertEqual(data, r'')
 
+    def test_log_taskName(self):
+        async def log_record():
+            logging.warning('hello world')
+
+        try:
+            encoding = 'utf-8'
+            logging.basicConfig(filename='test.log', errors='strict', encoding=encoding,
+                                format='%(taskName)s - %(message)s', level=logging.WARNING)
+
+            self.assertEqual(len(logging.root.handlers), 1)
+            handler = logging.root.handlers[0]
+            self.assertIsInstance(handler, logging.FileHandler)
+
+            with asyncio.Runner(debug=True) as runner:
+                logging.logAsyncioTasks = True
+                runner.run(log_record())
+        finally:
+            asyncio.set_event_loop_policy(None)
+            handler.close()
+            with open('test.log', encoding='utf-8') as f:
+                data = f.read().strip()
+            os.remove('test.log')
+            self.assertEqual('Task-1 - hello world', data)
+
 
     def _test_log(self, method, level=None):
         # logging.root has no handlers so basicConfig should be called
