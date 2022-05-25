@@ -127,13 +127,21 @@ def collect_sys(info_add):
             encoding = '%s/%s' % (encoding, errors)
         info_add('sys.%s.encoding' % name, encoding)
 
-    # Were we compiled --with-pydebug or with #define Py_DEBUG?
+    # Were we compiled --with-pydebug?
     Py_DEBUG = hasattr(sys, 'gettotalrefcount')
     if Py_DEBUG:
         text = 'Yes (sys.gettotalrefcount() present)'
     else:
         text = 'No (sys.gettotalrefcount() missing)'
-    info_add('Py_DEBUG', text)
+    info_add('build.Py_DEBUG', text)
+
+    # Were we compiled --with-trace-refs?
+    Py_TRACE_REFS = hasattr(sys, 'getobjects')
+    if Py_TRACE_REFS:
+        text = 'Yes (sys.getobjects() present)'
+    else:
+        text = 'No (sys.getobjects() missing)'
+    info_add('build.Py_REF_DEBUG', text)
 
 
 def collect_platform(info_add):
@@ -488,6 +496,28 @@ def collect_sysconfig(info_add):
         value = normalize_text(value)
         info_add('sysconfig[%s]' % name, value)
 
+    NDEBUG = ('-DNDEBUG' in sysconfig.get_config_vars()['PY_CFLAGS'])
+    if NDEBUG:
+        text = 'ignore assertions (macro defined)'
+    else:
+        text= 'build assertions (macro not defined)'
+    info_add('build.NDEBUG',text)
+
+    for name in (
+        'WITH_DOC_STRINGS',
+        'WITH_DTRACE',
+        'WITH_FREELISTS',
+        'WITH_PYMALLOC',
+        'WITH_VALGRIND',
+    ):
+        value = sysconfig.get_config_var(name)
+        print(name, repr(value))
+        if value:
+            text = 'Yes'
+        else:
+            text = 'No'
+        info_add(f'build.{name}', text)
+
 
 def collect_ssl(info_add):
     import os
@@ -605,7 +635,6 @@ def collect_testcapi(info_add):
         return
 
     call_func(info_add, 'pymem.allocator', _testcapi, 'pymem_getallocatorsname')
-    copy_attr(info_add, 'pymem.with_pymalloc', _testcapi, 'WITH_PYMALLOC')
 
 
 def collect_resource(info_add):
@@ -646,6 +675,13 @@ def collect_test_support(info_add):
 
     call_func(info_add, 'test_support._is_gui_available', support, '_is_gui_available')
     call_func(info_add, 'test_support.python_is_optimized', support, 'python_is_optimized')
+
+    info_add('test_support.check_sanitizer(address=True)',
+             support.check_sanitizer(address=True))
+    info_add('test_support.check_sanitizer(memory=True)',
+             support.check_sanitizer(memory=True))
+    info_add('test_support.check_sanitizer(ub=True)',
+             support.check_sanitizer(ub=True))
 
 
 def collect_cc(info_add):
