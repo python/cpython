@@ -35,10 +35,12 @@ Options and arguments (and corresponding environment variables):\n\
          and comparing bytes/bytearray with str. (-bb: issue errors)\n\
 -B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
 -c cmd : program passed in as string (terminates option list)\n\
+--check-hash-based-pycs always|default|never:\n\
+         control how Python invalidates hash-based .pyc files\n\
 -d     : turn on parser debugging output (for experts only, only works on\n\
          debug builds); also PYTHONDEBUG=x\n\
 -E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
--h     : print this help message and exit (also --help)\n\
+-h     : print this help message and exit (also --help or -?)\n\
 ";
 static const char usage_2[] = "\
 -i     : inspect interactively after running script; forces a prompt even\n\
@@ -82,7 +84,8 @@ static const char usage_3[] = "\
              checks which are too expensive to be enabled by default. Effect of the\n\
              developer mode:\n\
                 * Add default warning filter, as -W default\n\
-                * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks() C function\n\
+                * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks()\n\
+                  C function\n\
                 * Enable the faulthandler module to dump the Python traceback on a crash\n\
                 * Enable asyncio debug mode\n\
                 * Set the dev_mode attribute of sys.flags to True\n\
@@ -100,9 +103,6 @@ static const char usage_3[] = "\
             when the interpreter displays tracebacks.\n\
          -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
             The default is \"on\" (or \"off\" if you are running a local build).\n\
-\n\
---check-hash-based-pycs always|default|never:\n\
-    control how Python invalidates hash-based .pyc files\n\
 ";
 static const char usage_4[] = "\
 file   : program read from script file\n\
@@ -141,7 +141,7 @@ static const char usage_6[] =
 "PYTHONNODEBUGRANGES: If this variable is set, it disables the inclusion of the \n"
 "   tables mapping extra location information (end line, start column offset \n"
 "   and end column offset) to every instruction in code objects. This is useful \n"
-"   when smaller cothe de objects and pyc files are desired as well as suppressing the \n"
+"   when smaller code objects and pyc files are desired as well as suppressing the \n"
 "   extra visual location indicators when the interpreter displays tracebacks.\n";
 
 #if defined(MS_WINDOWS)
