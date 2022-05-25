@@ -8,7 +8,7 @@ class Point:
         return f"Point({self.x}, {self.y})"
 
 def adapt_point(point):
-    return ("%f;%f" % (point.x, point.y)).encode("utf-8")
+    return f"{point.x};{point.y}".encode("utf-8")
 
 def convert_point(s):
     x, y = list(map(float, s.split(b";")))

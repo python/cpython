@@ -199,12 +199,12 @@ Module functions and constants
 
 .. data:: PARSE_DECLTYPES
 
-   Use this flag with the *detect_types* keyword of :meth:`connect` to enable
-   parsing of declared types for each column it return.
+   Use this flag with the *detect_types* parameter of :meth:`connect` to enable
+   parsing of declared types for each column returned.
    The types are declared when the database table is created.
-   :mod:`sqlite3` will look up a converter function using the first word of the
+   ``sqlite3`` will look up a converter function using the first word of the
    declared type as the converter dictionary key.
-   The following SQL code results in the following lookups:
+   For example, the following SQL code results in the following lookups:
 
    .. code-block:: sql
 
@@ -220,11 +220,11 @@ Module functions and constants
 
 .. data:: PARSE_COLNAMES
 
-   Use this flag with the *detect_types* keyword of :meth:`connect` to enable
+   Use this flag with the *detect_types* parameter of :meth:`connect` to enable
    parsing of column names in queries.
-   :mod:`sqlite3` will look for strings containing brackets, and will look up a
-   converter function using the word inside the brackets as the converter
-   dictionary key.
+   ``sqlite3`` will look for strings containing square brackets (``[]``),
+   and will look up a converter function using the word inside the brackets as
+   the converter dictionary key.
 
    .. code-block:: sql
 
@@ -262,8 +262,8 @@ Module functions and constants
    Set it to any combination of :const:`PARSE_DECLTYPES` and
    :const:`PARSE_COLNAMES` to enable type detection.
    Types cannot be detected for generated fields (for example ``max(data)``),
-   even when *detect_types* parameter is set. In such cases, the returned type
-   is :class:`str`.
+   even when the *detect_types* parameter is set.
+   In such cases, the returned type is :class:`str`.
 
    By default, *check_same_thread* is :const:`True` and only the creating thread may
    use the connection. If set :const:`False`, the returned connection may be shared
@@ -320,9 +320,9 @@ Module functions and constants
 
 .. function:: register_converter(typename, converter)
 
-   Register callable *converter* to convert SQLite type name *typename* into a
-   Python type. The converter is invoked for all SQLite values of type
-   *typename*. Confer the parameter *detect_types* of
+   Register the *converter* callable to convert SQLite objects of type *typename* into a
+   Python object of a specific type. The converter is invoked for all SQLite values of type
+   *typename*. Consult the parameter *detect_types* of
    :meth:`Connection.connect` regarding how type detection works.
 
    Note: *typename* and the name of the type in your query are matched in a
@@ -331,7 +331,7 @@ Module functions and constants
 
 .. function:: register_adapter(type, adapter)
 
-   Register callable *adapter* to adapt Python type *type* into an SQLite type.
+   Register an *adapter* callable to adapt the Python type *type* into an SQLite type.
    The adapter is called with a Python object as its sole argument,
    and must return a valid SQLite type:
    :class:`int`, :class:`float`, :class:`str`, :class:`bytes`, or :const:`None`.
@@ -1219,12 +1219,13 @@ types via converters.
 Using adapters to store custom Python types in SQLite databases
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+SQLite supports only a limited set of types natively.
 To store custom Python types in SQLite databases, **adapt** them one of the
 basic types supported by SQLite:
 :class:`int`, :class:`float`, :class:`str`, :class:`bytes`, or :const:`None`.
 
 There are two ways to adapt Python objects to SQLite types:
-letting your object adapt itself, or using an adapter function.
+letting your object adapt itself, or using an *adapter callable*.
 The latter will take precedence above the former. For a library that exports a
 custom type, it may make sense to let that type be able to adapt itself. As an
 application developer, it may make more sense to take control, and register
@@ -1236,10 +1237,11 @@ Letting your object adapt itself
 
 Suppose we have ``Point`` class that represents a pair of coordinates,
 ``x`` and ``y``, in a Cartesian coordinate system.
-We want to store the coordinate pair as a text string in the database,
+The coordinate pair will be stored as a text string in the database,
 using a semicolon to separate the coordinates.
-We implement this by adding a ``__conform__(self, protocol)`` method which
-returns the adapted value. *protocol* will be :class:`PrepareProtocol`.
+This can be implemented by adding a ``__conform__(self, protocol)``
+method which returns the adapted value.
+The object passed to *protocol* will be of type :class:`PrepareProtocol`.
 
 .. literalinclude:: ../includes/sqlite3/adapter_point_1.py
 
@@ -1247,9 +1249,9 @@ returns the adapted value. *protocol* will be :class:`PrepareProtocol`.
 Registering an adapter callable
 """""""""""""""""""""""""""""""
 
-Continuing the above example, let's rewrite it using an adapter function.
-We use :meth:`register_adapter` to add an adapter function that takes a Python
-type as its argument, and returns an SQLite compatible type.
+The other possibility is to create a function that converts the Python object
+to an SQLite-compatible type.
+This function can then be registered using :meth:`register_adapter`.
 
 .. literalinclude:: ../includes/sqlite3/adapter_point_2.py
 
@@ -1264,15 +1266,19 @@ but as a Unix timestamp.
 Converting SQLite values to custom Python types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Writing an adapter lets you send custom Python types to SQLite. But to make it
+really useful we need to make the Python to SQLite to Python roundtrip work.
 To be able to convert SQLite value to custom Python types, we use _converters_.
 
-Let's revisit the ``Point`` class example from above;
-the coordinate pair is stored in the database as a semicolon separated string.
-We define a converter that accept a string, and return a ``Point`` object.
+Let's go back to the :class:`Point` class. We stored the x and y coordinates
+separated via semicolons as strings in SQLite.
+
+First, we'll define a converter function that accepts the string as a parameter
+and constructs a :class:`Point` object from it.
 
 .. note::
 
-   Converter functions **always** are passed a :class:`bytes` object,
+   Converter functions are **always** passed a :class:`bytes` object,
    no matter the underlying SQLite data type.
 
 ::
@@ -1281,9 +1287,9 @@ We define a converter that accept a string, and return a ``Point`` object.
        x, y = map(float, s.split(b";"))
        return Point(x, y)
 
-We now need to tell :mod:`sqlite3` when it should convert a given SQLite value.
-This is done when connecting to a database, using the *detect_types* keyword of
-:meth:`connect`. We've got three options:
+We now need to tell ``sqlite3`` when it should convert a given SQLite value.
+This is done when connecting to a database, using the *detect_types* parameter
+of :meth:`connect`. We've got three options:
 
 * Implicit: set *detect_types* to :const:`PARSE_DECLTYPES`
 * Explicit: set *detect_types* to :const:`PARSE_COLNAMES`
@@ -1336,7 +1342,7 @@ This section shows recipes for common adapters and converters.
 
    import sqlite3
 
-   # Timezone naive datetime adapters and converters.
+   # Timezone-naive datetime adapters and converters.
    def adapt_date(val):
        return val.isoformat()
 
