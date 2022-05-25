@@ -1229,7 +1229,7 @@ binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
             }
         }
     }
-    rv = PyBytes_FromStringAndSize((char *)odata, out)
+    rv = PyBytes_FromStringAndSize((char *)odata, out);
     PyMem_Free(odata);
     return rv;
 }
