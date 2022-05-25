@@ -22471,7 +22471,6 @@ fi
 
 fi
 
-
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --disable-test-modules" >&5
