@@ -39,20 +39,36 @@ class CmdLineTest(unittest.TestCase):
         self.assertTrue(out == b'' or out.endswith(b'\n'))
         self.assertNotIn(b'Traceback', out)
         self.assertNotIn(b'Traceback', err)
+        return out
 
     def test_help(self):
         self.verify_valid_flag('-h')
         self.verify_valid_flag('-?')
-        self.verify_valid_flag('--help')
+        out = self.verify_valid_flag('--help')
+        lines = out.splitlines()
+        self.assertIn(b'usage', lines[0])
+        self.assertNotIn(b'PYTHONPATH', out)
+        self.assertNotIn(b'-X dev', out)
+        self.assertLess(len(lines), 50)
 
     def test_help_env(self):
-        self.verify_valid_flag('--help-env')
+        out = self.verify_valid_flag('--help-env')
+        self.assertIn(b'PYTHONPATH', out)
 
     def test_help_xoptions(self):
-        self.verify_valid_flag('--help-xoptions')
+        out = self.verify_valid_flag('--help-xoptions')
+        self.assertIn(b'-X dev', out)
 
     def test_help_all(self):
-        self.verify_valid_flag('--help-all')
+        out = self.verify_valid_flag('--help-all')
+        lines = out.splitlines()
+        self.assertIn(b'usage', lines[0])
+        self.assertIn(b'PYTHONPATH', out)
+        self.assertIn(b'-X dev', out)
+
+        # The first line contains the program name,
+        # but the rest should be ASCII-only
+        b''.join(lines[1:]).decode('ascii')
 
     def test_optimize(self):
         self.verify_valid_flag('-O')
@@ -60,14 +76,6 @@ class CmdLineTest(unittest.TestCase):
 
     def test_site_flag(self):
         self.verify_valid_flag('-S')
-
-    def test_usage(self):
-        rc, out, err = assert_python_ok('-h')
-        lines = out.splitlines()
-        self.assertIn(b'usage', lines[0])
-        # The first line contains the program name,
-        # but the rest should be ASCII-only
-        b''.join(lines[1:]).decode('ascii')
 
     def test_version(self):
         version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
