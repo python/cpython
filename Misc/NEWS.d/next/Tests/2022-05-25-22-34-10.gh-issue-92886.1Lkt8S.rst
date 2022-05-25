@@ -1,0 +1,1 @@
+Fixing tests that fail when running with optimizations (``-O``) in ``_test_multiprocessing.py``
