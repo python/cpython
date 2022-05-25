@@ -496,7 +496,7 @@ def collect_sysconfig(info_add):
         value = normalize_text(value)
         info_add('sysconfig[%s]' % name, value)
 
-    NDEBUG = ('-DNDEBUG' in sysconfig.get_config_vars()['PY_CFLAGS'])
+    NDEBUG = ('-DNDEBUG' in sysconfig.get_config_var('PY_CFLAGS'))
     if NDEBUG:
         text = 'ignore assertions (macro defined)'
     else:
