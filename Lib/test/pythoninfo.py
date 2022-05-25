@@ -10,6 +10,9 @@ import unittest
 import warnings
 
 
+MS_WINDOWS = (sys.platform == 'win32')
+
+
 def normalize_text(text):
     if text is None:
         return None
@@ -463,6 +466,11 @@ def collect_datetime(info_add):
 
 
 def collect_sysconfig(info_add):
+    # On Windows, sysconfig is not reliable to get macros used
+    # to build Python
+    if MS_WINDOWS:
+        return
+
     import sysconfig
 
     for name in (
