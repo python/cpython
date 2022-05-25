@@ -28,9 +28,9 @@
 static const char usage_line[] =
 "usage: %ls [option] ... [-c cmd | -m mod | file | -] [arg] ...\n";
 
-/* Long help messages, split into parts < 512 bytes */
+/* Long help message */
 /* Lines sorted by option name; keep in sync with usage_envvars* below */
-static const char usage_1[] = "\
+static const char usage_help[] = "\
 Options (and corresponding environment variables):\n\
 -b     : issue warnings about str(bytes_instance), str(bytearray_instance)\n\
          and comparing bytes/bytearray with str. (-bb: issue errors)\n\
@@ -45,8 +45,6 @@ Options (and corresponding environment variables):\n\
 --help-env      : print help about Python environment variables and exit\n\
 --help-xoptions : print help about implementation-specific -X options and exit\n\
 --help-all      : print complete help information and exit\n\
-";
-static const char usage_2[] = "\
 -i     : inspect interactively after running script; forces a prompt even\n\
          if stdin does not appear to be a terminal; also PYTHONINSPECT=x\n\
 -I     : isolate Python from the user's environment (implies -E and -s)\n\
@@ -59,8 +57,6 @@ static const char usage_2[] = "\
 -q     : don't print version and copyright messages on interactive startup\n\
 -s     : don't add user site directory to sys.path; also PYTHONNOUSERSITE\n\
 -S     : don't imply 'import site' on initialization\n\
-";
-static const char usage_3[] = "\
 -u     : force the stdout and stderr streams to be unbuffered;\n\
          this option has no effect on stdin; also PYTHONUNBUFFERED=x\n\
 -v     : verbose (trace import statements); also PYTHONVERBOSE=x\n\
@@ -71,8 +67,6 @@ static const char usage_3[] = "\
          also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
 -X opt : set implementation-specific option\n\
-";
-static const char usage_4[] = "\
 Arguments:\n\
 file   : program read from script file\n\
 -      : program read from stdin (default; interactive mode if a tty)\n\
@@ -128,12 +122,11 @@ The following implementation-specific options are available:\n\
    The default is \"on\" (or \"off\" if you are running a local build).";
 
 /* Envvars that don't have equivalent command-line options are listed first */
-static const char usage_envvars1[] = "\
-Environment variables that change behavior:\n\
-PYTHONSTARTUP: file executed on interactive startup (no default)\n\
-PYTHONPATH   : '%lc'-separated list of directories prefixed to the\n\
-               default module search path.  The result is sys.path.\n";
-static const char usage_envvars2[] =
+static const char usage_envvars[] =
+"Environment variables that change behavior:\n"
+"PYTHONSTARTUP: file executed on interactive startup (no default)\n"
+"PYTHONPATH   : '%lc'-separated list of directories prefixed to the\n"
+"               default module search path.  The result is sys.path.\n"
 "PYTHONSAFEPATH: don't prepend a potentially unsafe path to sys.path.\n"
 "PYTHONHOME   : alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
 "               The default module search path uses %s.\n"
@@ -141,8 +134,7 @@ static const char usage_envvars2[] =
 "PYTHONCASEOK : ignore case in 'import' statements (Windows).\n"
 "PYTHONUTF8: if set to 1, enable the UTF-8 mode.\n"
 "PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n"
-"PYTHONFAULTHANDLER: dump the Python traceback on fatal errors.\n";
-static const char usage_envvars3[] =
+"PYTHONFAULTHANDLER: dump the Python traceback on fatal errors.\n"
 "PYTHONHASHSEED: if this variable is set to 'random', a random value is used\n"
 "   to seed the hashes of str and bytes objects.  It can also be set to an\n"
 "   integer in the range [0,4294967295] to get hash values with a\n"
@@ -152,8 +144,7 @@ static const char usage_envvars3[] =
 "   hooks.\n"
 "PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
 "   coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display of\n"
-"   locale coercion and locale compatibility warnings on stderr.";
-static const char usage_envvars4[] =
+"   locale coercion and locale compatibility warnings on stderr.\n"
 "PYTHONBREAKPOINT: if this variable is set to 0, it disables the default\n"
 "   debugger. It can be set to the callable of your debugger of choice.\n"
 "PYTHONDEVMODE: enable the development mode.\n"
@@ -163,17 +154,16 @@ static const char usage_envvars4[] =
 "   tables mapping extra location information (end line, start column offset \n"
 "   and end column offset) to every instruction in code objects. This is useful \n"
 "   when smaller code objects and pyc files are desired as well as suppressing the \n"
-"   extra visual location indicators when the interpreter displays tracebacks.\n";
-static const char usage_envvars5[] = "\
-These variables have equivalent command-line parameters (see --help for details):\n\
-PYTHONDEBUG             : enable parser debug mode (-d)\n\
-PYTHONDONTWRITEBYTECODE : don't write .pyc files (-B)\n\
-PYTHONINSPECT           : inspect interactively after running script (-i)\n\
-PYTHONNOUSERSITE        : disable user site directory (-s)\n\
-PYTHONOPTIMIZE          : enable level 1 optimizations (-O)\n\
-PYTHONUNBUFFERED        : disable stdout/stderr buffering (-u)\n\
-PYTHONVERBOSE           : trace import statements (-v)\n\
-PYTHONWARNINGS=arg      : warning control (-W arg)";
+"   extra visual location indicators when the interpreter displays tracebacks.\n"
+"These variables have equivalent command-line parameters (see --help for details):\n"
+"PYTHONDEBUG             : enable parser debug mode (-d)\n"
+"PYTHONDONTWRITEBYTECODE : don't write .pyc files (-B)\n"
+"PYTHONINSPECT           : inspect interactively after running script (-i)\n"
+"PYTHONNOUSERSITE        : disable user site directory (-s)\n"
+"PYTHONOPTIMIZE          : enable level 1 optimizations (-O)\n"
+"PYTHONUNBUFFERED        : disable stdout/stderr buffering (-u)\n"
+"PYTHONVERBOSE           : trace import statements (-v)\n"
+"PYTHONWARNINGS=arg      : warning control (-W arg)";
 
 #if defined(MS_WINDOWS)
 #  define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
@@ -2269,21 +2259,14 @@ config_usage(int error, const wchar_t* program)
     if (error)
         fprintf(f, "Try `python -h' for more information.\n");
     else {
-        fputs(usage_1, f);
-        fputs(usage_2, f);
-        fputs(usage_3, f);
-        fputs(usage_4, f);
+        fputs(usage_help, f);
     }
 }
 
 static void
 config_envvars_usage()
 {
-    printf(usage_envvars1, (wint_t)DELIM);
-    printf(usage_envvars2, (wint_t)DELIM, PYTHONHOMEHELP);
-    puts(usage_envvars3);
-    puts(usage_envvars4);
-    puts(usage_envvars5);
+    printf(usage_envvars, (wint_t)DELIM, (wint_t)DELIM, PYTHONHOMEHELP);
 }
 
 static void
