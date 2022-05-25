@@ -661,6 +661,42 @@ it with :func:`staticmethod`. For example::
 You don't need to wrap with :func:`staticmethod` if you're setting the import
 callable on a configurator *instance*.
 
+.. _configure-queue:
+
+Configuring QueueHandler and QueueListener
+""""""""""""""""""""""""""""""""""""""""""
+
+If you want to configure a :class:`~logging.handlers.QueueHandler`, noting that this
+is normally used in conjunction with a :class:`~logging.handlers.QueueListener`, you
+can configure both together. After the configuration, the ``QueueListener`` instance
+will be available as the :attr:`listener` attribute of the created handler, and that
+in turn will be available to you using :func:`~logging.getHandlerByName` and passing
+whatever name you have used for the ``QueueHandler`` in your configuration. The
+dictionary schema for configuring the pair is shown in the example YAML snippet below.
+
+.. code-block:: yaml
+
+    handlers:
+      qhand:
+        class: logging.handlers.QueueHandler
+        queue: my.module.queuefactory
+        handlers:
+          - hand_name_1
+          - hand_name_2
+          ...
+
+If the ``queue`` key is provided, the value should resolve to a callable which returns
+a suitable :class:`queue.Queue` instance for use by the handler and listener. If it is
+not provided, a standard unbounded :class:`queue.Queue` instance is created and used.
+The values under the ``handlers`` key are the names of other handlers in the
+configuration (not shown in the above snippet) which will be passed to the
+``QueueListener``, which will be stored in the handler's :attr:`listener` attribute.
+You can customize the listener class with a ``listener`` key whose value is a string
+which resolves to a listener class, such as ``'mypackage.CustomListener'``. Any custom
+queue handler and listener classes will need to deal with the same initialization
+signatures as :class:`~logging.handlers.QueueHandler` and
+:class:`~logging.handlers.QueueListener`.
+
 
 .. _logging-config-fileformat:
 

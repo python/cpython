@@ -38,7 +38,8 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'exception', 'fatal', 'getLevelName', 'getLogger', 'getLoggerClass',
            'info', 'log', 'makeLogRecord', 'setLoggerClass', 'shutdown',
            'warn', 'warning', 'getLogRecordFactory', 'setLogRecordFactory',
-           'lastResort', 'raiseExceptions', 'getLevelNamesMapping']
+           'lastResort', 'raiseExceptions', 'getLevelNamesMapping',
+           'getHandlerByName']
 
 import threading
 
@@ -884,6 +885,15 @@ def _addHandlerRef(handler):
         _handlerList.append(weakref.ref(handler, _removeHandlerRef))
     finally:
         _releaseLock()
+
+
+def getHandlerByName(name):
+    """
+    Get a handler with the specified *name*, or None if there isn't one with
+    that name.
+    """
+    return _handlers.get(name)
+
 
 class Handler(Filterer):
     """
