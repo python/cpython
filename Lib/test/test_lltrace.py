@@ -1,6 +1,6 @@
 import opcode
-import os
 import re
+import sys
 import textwrap
 import unittest
 
@@ -8,6 +8,9 @@ from test.support import os_helper, verbose
 from test.support.script_helper import assert_python_ok
 
 
+Py_DEBUG = hasattr(sys, 'gettotalrefcount')
+
+@unittest.skipUnless(Py_DEBUG, "lltrace requires Py_DEBUG")
 class TestLLTrace(unittest.TestCase):
 
     def test_lltrace_does_not_crash_on_subscript_operator(self):
