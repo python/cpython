@@ -199,7 +199,7 @@ Module functions and constants
 
 .. data:: PARSE_DECLTYPES
 
-   Use this flag with the *detect_types* parameter of :meth:`connect` to enable
+   Use this flag together with the *detect_types* parameter of :meth:`connect` to enable
    parsing of declared types for each column returned.
    The types are declared when the database table is created.
    ``sqlite3`` will look up a converter function using the first word of the
@@ -220,7 +220,7 @@ Module functions and constants
 
 .. data:: PARSE_COLNAMES
 
-   Use this flag with the *detect_types* parameter of :meth:`connect` to enable
+   Use this flag together with the *detect_types* parameter of :meth:`connect` to enable
    parsing of column names in queries.
    ``sqlite3`` will look for strings containing square brackets (``[]``),
    and will look up a converter function using the word inside the brackets as
@@ -1220,7 +1220,7 @@ Using adapters to store custom Python types in SQLite databases
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 SQLite supports only a limited set of types natively.
-To store custom Python types in SQLite databases, **adapt** them to one of the
+To store custom Python types in SQLite databases, *adapt* them to one of the
 basic types supported by SQLite:
 :class:`int`, :class:`float`, :class:`str`, :class:`bytes`, or :const:`None`.
 
@@ -1256,9 +1256,9 @@ This function can then be registered using :meth:`register_adapter`.
 .. literalinclude:: ../includes/sqlite3/adapter_point_2.py
 
 The :mod:`sqlite3` module has two default adapters for Python's built-in
-:class:`datetime.date` and :class:`datetime.datetime` types.  Now let's suppose
-we want to store :class:`datetime.datetime` objects not in ISO representation,
-but as a Unix timestamp.
+:class:`datetime.date` and :class:`datetime.datetime` types.
+Suppose we want to store :class:`datetime.datetime` objects not in ISO
+representation, but as a Unix timestamp.
 
 .. literalinclude:: ../includes/sqlite3/adapter_datetime.py
 
@@ -1266,9 +1266,8 @@ but as a Unix timestamp.
 Converting SQLite values to custom Python types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Writing an adapter lets you send custom Python types to SQLite. But to make it
-really useful we need to make the Python to SQLite to Python roundtrip work.
-To be able to convert SQLite values to custom Python types, we use _converters_.
+Writing an adapter lets you send custom Python types to SQLite.
+To be able to convert SQLite values to custom Python types, we use *converters*.
 
 Let's go back to the :class:`Point` class. We stored the x and y coordinates
 separated via semicolons as strings in SQLite.
@@ -1289,7 +1288,7 @@ and constructs a :class:`Point` object from it.
 
 We now need to tell ``sqlite3`` when it should convert a given SQLite value.
 This is done when connecting to a database, using the *detect_types* parameter
-of :meth:`connect`. We've got three options:
+of :meth:`connect`. There are three options:
 
 * Implicit: set *detect_types* to :const:`PARSE_DECLTYPES`
 * Explicit: set *detect_types* to :const:`PARSE_COLNAMES`
