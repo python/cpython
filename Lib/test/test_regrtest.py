@@ -166,7 +166,7 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.checkError([opt], 'expected one argument')
 
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-        with open(os_helper.TESTFN, "w") as fp:
+        with open(os_helper.TESTFN, "w", encoding='utf-8') as fp:
             print('matchfile1', file=fp)
             print('matchfile2', file=fp)
 
@@ -188,7 +188,7 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertEqual(ns.match_tests, ['pattern1', 'pattern2'])
 
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-        with open(os_helper.TESTFN, "w") as fp:
+        with open(os_helper.TESTFN, "w", encoding='utf-8') as fp:
             print('matchfile1', file=fp)
             print('matchfile2', file=fp)
 

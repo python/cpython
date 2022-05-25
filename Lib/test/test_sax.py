@@ -353,8 +353,8 @@ class PrepareInputSourceTest(unittest.TestCase):
 
     def setUp(self):
         self.file = os_helper.TESTFN
-        with open(self.file, "w") as tmp:
-            tmp.write("This was read from a file.")
+        with open(self.file, "wb") as tmp:
+            tmp.write(b"This was read from a file.")
 
     def tearDown(self):
         os_helper.unlink(self.file)

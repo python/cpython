@@ -342,7 +342,7 @@ class ErrorHandlerTest(unittest.TestCase):
         self.check_result(handled=False)
 
     def check_result(self, handled):
-        with open(os_helper.TESTFN) as log:
+        with open(os_helper.TESTFN, encoding='ascii') as log:
             expected = 'Handler called\n' + 'Error handled\n' * handled
             self.assertEqual(log.read(), expected)
 
@@ -360,7 +360,7 @@ class BaseErrorTestServer(socketserver.TCPServer):
         self.wait_done()
 
     def handle_error(self, request, client_address):
-        with open(os_helper.TESTFN, 'a') as log:
+        with open(os_helper.TESTFN, 'a', encoding='ascii') as log:
             log.write('Error handled\n')
 
     def wait_done(self):
@@ -369,8 +369,8 @@ class BaseErrorTestServer(socketserver.TCPServer):
 
 class BadHandler(socketserver.BaseRequestHandler):
     def handle(self):
-        with open(os_helper.TESTFN, 'a') as log:
-            log.write('Handler called\n')
+        with open(os_helper.TESTFN, 'a', encoding='ascii') as log:
+            log.write(b'Handler called\n')
         raise self.server.exception('Test error')
 
 

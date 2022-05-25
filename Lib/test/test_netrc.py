@@ -286,7 +286,7 @@ class NetrcTestCase(unittest.TestCase):
                              ('bar', '', 'pass'))
             os.chmod(fn, 0o622)
             self.assertRaises(netrc.NetrcParseError, netrc.netrc)
-        with open(fn, 'wt') as f:
+        with open(fn, 'wt', encoding='ascii') as f:
             f.write("""\
                 machine foo.domain.com login anonymous password pass
                 default login foo password pass

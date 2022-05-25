@@ -224,7 +224,7 @@ class PyCompileCLITestCase(unittest.TestCase):
         self.directory = tempfile.mkdtemp()
         self.source_path = os.path.join(self.directory, '_test.py')
         self.cache_path = importlib.util.cache_from_source(self.source_path)
-        with open(self.source_path, 'w') as file:
+        with open(self.source_path, 'w', encoding='ascii') as file:
             file.write('x = 123\n')
 
     def tearDown(self):

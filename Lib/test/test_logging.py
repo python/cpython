@@ -5276,7 +5276,7 @@ class FileHandlerTest(BaseFileTest):
         fh.emit(self.next_rec())    # '1'
         fh.close()
         fh.emit(self.next_rec())    # '2'
-        with open(self.fn) as fp:
+        with open(self.fn, encoding='ascii') as fp:
             self.assertEqual(fp.read().strip(), '1')
 
 class RotatingFileHandlerTest(BaseFileTest):
@@ -5437,7 +5437,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             for f in files:
                 print('Contents of %s:' % f)
                 path = os.path.join(dn, f)
-                with open(path, 'r') as tf:
+                with open(path, 'r', encoding='latin1') as tf:
                     print(tf.read())
         self.assertTrue(found, msg=msg)
 

@@ -575,7 +575,7 @@ class _pthFileTests(unittest.TestCase):
                 _pth_file = os.path.splitext(exe_file)[0] + '._pth'
             else:
                 _pth_file = os.path.splitext(dll_file)[0] + '._pth'
-            with open(_pth_file, 'w') as f:
+            with open(_pth_file, 'w', encoding='locale') as f:
                 for line in lines:
                     print(line, file=f)
             return exe_file
@@ -588,7 +588,7 @@ class _pthFileTests(unittest.TestCase):
             exe_file = os.path.join(temp_dir, os.path.split(sys.executable)[1])
             os.symlink(sys.executable, exe_file)
             _pth_file = exe_file + '._pth'
-            with open(_pth_file, 'w') as f:
+            with open(_pth_file, 'w', encoding='locale') as f:
                 for line in lines:
                     print(line, file=f)
             return exe_file

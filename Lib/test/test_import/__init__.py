@@ -729,7 +729,7 @@ class PathsTests(unittest.TestCase):
     # Regression test for http://bugs.python.org/issue3677.
     @unittest.skipUnless(sys.platform == 'win32', 'Windows-specific')
     def test_UNC_path(self):
-        with open(os.path.join(self.path, 'test_unc_path.py'), 'w', encoding='ascii') as f:
+        with open(os.path.join(self.path, 'test_unc_path.py'), 'w') as f:
             f.write("testdata = 'test_unc_path'")
         importlib.invalidate_caches()
         # Create the UNC path, like \\myhost\c$\foo\bar.
@@ -1162,7 +1162,7 @@ class ImportTracebackTests(unittest.TestCase):
         self.assert_traceback(tb, [__file__])
 
     def test_nonexistent_module_nested(self):
-        self.create_module("foo", b"import nonexistent_xyzzy")
+        self.create_module("foo", "import nonexistent_xyzzy")
         try:
             import foo
         except ImportError as e:
@@ -1172,7 +1172,7 @@ class ImportTracebackTests(unittest.TestCase):
         self.assert_traceback(tb, [__file__, 'foo.py'])
 
     def test_exec_failure(self):
-        self.create_module("foo", b"1/0")
+        self.create_module("foo", "1/0")
         try:
             import foo
         except ZeroDivisionError as e:
@@ -1182,8 +1182,8 @@ class ImportTracebackTests(unittest.TestCase):
         self.assert_traceback(tb, [__file__, 'foo.py'])
 
     def test_exec_failure_nested(self):
-        self.create_module("foo", b"import bar")
-        self.create_module("bar", b"1/0")
+        self.create_module("foo", "import bar")
+        self.create_module("bar", "1/0")
         try:
             import foo
         except ZeroDivisionError as e:
@@ -1194,7 +1194,7 @@ class ImportTracebackTests(unittest.TestCase):
 
     # A few more examples from issue #15425
     def test_syntax_error(self):
-        self.create_module("foo", b"invalid syntax is invalid")
+        self.create_module("foo", "invalid syntax is invalid")
         try:
             import foo
         except SyntaxError as e:
@@ -1219,7 +1219,7 @@ class ImportTracebackTests(unittest.TestCase):
         return init_path, bar_path
 
     def test_broken_submodule(self):
-        init_path, bar_path = self._setup_broken_package(b"", b"1/0")
+        init_path, bar_path = self._setup_broken_package("", "1/0")
         try:
             import _parent_foo.bar
         except ZeroDivisionError as e:
@@ -1229,7 +1229,7 @@ class ImportTracebackTests(unittest.TestCase):
         self.assert_traceback(tb, [__file__, bar_path])
 
     def test_broken_from(self):
-        init_path, bar_path = self._setup_broken_package(b"", b"1/0")
+        init_path, bar_path = self._setup_broken_package("", "1/0")
         try:
             from _parent_foo import bar
         except ZeroDivisionError as e:
@@ -1239,7 +1239,7 @@ class ImportTracebackTests(unittest.TestCase):
         self.assert_traceback(tb, [__file__, bar_path])
 
     def test_broken_parent(self):
-        init_path, bar_path = self._setup_broken_package(b"1/0", b"")
+        init_path, bar_path = self._setup_broken_package("1/0", "")
         try:
             import _parent_foo.bar
         except ZeroDivisionError as e:
@@ -1249,7 +1249,7 @@ class ImportTracebackTests(unittest.TestCase):
         self.assert_traceback(tb, [__file__, init_path])
 
     def test_broken_parent_from(self):
-        init_path, bar_path = self._setup_broken_package(b"1/0", b"")
+        init_path, bar_path = self._setup_broken_package("1/0", "")
         try:
             from _parent_foo import bar
         except ZeroDivisionError as e:
@@ -1262,7 +1262,7 @@ class ImportTracebackTests(unittest.TestCase):
     def test_import_bug(self):
         # We simulate a bug in importlib and check that it's not stripped
         # away from the traceback.
-        self.create_module("foo", b"")
+        self.create_module("foo", "")
         importlib = sys.modules['_frozen_importlib_external']
         if 'load_module' in vars(importlib.SourceLoader):
             old_exec_module = importlib.SourceLoader.exec_module

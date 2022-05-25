@@ -107,7 +107,7 @@ class TracebackCases(unittest.TestCase):
         # Make sure that if `-X no_debug_ranges` is used, there are no carets
         # in the traceback.
         try:
-            with open(TESTFN, 'w') as f:
+            with open(TESTFN, 'w', encoding='ascii') as f:
                 f.write("x = 1 / 0\n")
 
             _, _, stderr = assert_python_failure(
@@ -131,7 +131,7 @@ class TracebackCases(unittest.TestCase):
                 traceback.print_exc()
             """)
         try:
-            with open(TESTFN, 'w') as f:
+            with open(TESTFN, 'w', encoding='ascii') as f:
                 f.write(code)
 
             _, _, stderr = assert_python_ok(
@@ -163,7 +163,7 @@ class TracebackCases(unittest.TestCase):
                     pass
         """)
         try:
-            with open(TESTFN, 'w') as f:
+            with open(TESTFN, 'w', encoding='ascii') as f:
                 f.write(code)
 
             rc, _, _ = assert_python_ok(TESTFN)
@@ -576,7 +576,7 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
     def test_traceback_specialization_with_syntax_error(self):
         bytecode = compile("1 / 0 / 1 / 2\n", TESTFN, "exec")
 
-        with open(TESTFN, "w") as file:
+        with open(TESTFN, "w", encoding='ascii') as file:
             # make the file's contents invalid
             file.write("1 $ 0 / 1 / 2\n")
         self.addCleanup(unlink, TESTFN)
@@ -600,7 +600,7 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         source = "a" * 256
         bytecode = compile(source, TESTFN, "exec")
 
-        with open(TESTFN, "w") as file:
+        with open(TESTFN, "w", encoding='ascii') as file:
             file.write(source)
         self.addCleanup(unlink, TESTFN)
 

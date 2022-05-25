@@ -54,7 +54,7 @@ class TurtleConfigTest(unittest.TestCase):
 
     def get_cfg_file(self, cfg_str):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-        with open(os_helper.TESTFN, 'w') as f:
+        with open(os_helper.TESTFN, 'w', encoding='utf-8') as f:
             f.write(cfg_str)
         return os_helper.TESTFN
 

@@ -175,8 +175,8 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'truncate'), "test needs posix.truncate()")
     def test_truncate(self):
-        with open(os_helper.TESTFN, 'w') as fp:
-            fp.write('test')
+        with open(os_helper.TESTFN, 'wb') as fp:
+            fp.write(b'test')
             fp.flush()
         posix.truncate(os_helper.TESTFN, 0)
 
@@ -542,7 +542,7 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'dup'),
                          'test needs posix.dup()')
     def test_dup(self):
-        with open(os_helper.TESTFN) as fp:
+        with open(os_helper.TESTFN, 'rb') as fp:
             fd = posix.dup(fp.fileno())
             self.assertIsInstance(fd, int)
             os.close(fd)
@@ -556,7 +556,7 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'dup2'),
                          'test needs posix.dup2()')
     def test_dup2(self):
-        with open(os_helper.TESTFN) as fp1, open(os_helper.TESTFN) as fp2:
+        with open(os_helper.TESTFN, 'rb') as fp1, open(os_helper.TESTFN, 'rb') as fp2:
             posix.dup2(fp1.fileno(), fp2.fileno())
 
     @unittest.skipUnless(hasattr(os, 'O_CLOEXEC'), "needs os.O_CLOEXEC")
@@ -603,7 +603,7 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'fstat'),
                          'test needs posix.fstat()')
     def test_fstat(self):
-        with open(os_helper.TESTFN) as fp:
+        with open(os_helper.TESTFN, 'rb') as fp:
             self.assertTrue(posix.fstat(fp.fileno()))
             self.assertTrue(posix.stat(fp.fileno()))
 
@@ -782,7 +782,7 @@ class PosixTester(unittest.TestCase):
         os.unlink(os_helper.TESTFN)
 
         # re-create the file
-        with open(os_helper.TESTFN, 'w') as test_file:
+        with open(os_helper.TESTFN, 'wb') as test_file:
             fd = test_file.fileno()
             self._test_all_chown_common(posix.fchown, fd,
                                         getattr(posix, 'fstat', None))
@@ -1338,8 +1338,8 @@ class TestPosixDirFd(unittest.TestCase):
     @unittest.skipUnless(os.stat in os.supports_dir_fd, "test needs dir_fd support in os.stat()")
     def test_stat_dir_fd(self):
         with self.prepare() as (dir_fd, name, fullname):
-            with open(fullname, 'w') as outfile:
-                outfile.write("testline\n")
+            with open(fullname, 'wb') as outfile:
+                outfile.write(b"testline\n")
             self.addCleanup(posix.unlink, fullname)
 
             s1 = posix.stat(fullname)

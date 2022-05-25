@@ -2109,7 +2109,7 @@ class RequestBodyTest(TestCase):
             # will be sent using chunked transfer encoding instead.
             self.assertIsNone(message.get("content-length"))
             self.assertEqual("chunked", message.get("transfer-encoding"))
-            self.assertEqual(b'5\r\nbody\xc1\r\n0\r\n\r\n', f.read())
+            self.assertEqual(b'4\r\nbody\r\n0\r\n\r\n', f.read())
 
     def test_binary_file_body(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)

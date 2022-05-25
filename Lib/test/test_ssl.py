@@ -4718,7 +4718,7 @@ requires_keylog = unittest.skipUnless(
 class TestSSLDebug(unittest.TestCase):
 
     def keylog_lines(self, fname=os_helper.TESTFN):
-        with open(fname) as f:
+        with open(fname, 'rb') as f:
             return len(list(f))
 
     @requires_keylog

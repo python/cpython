@@ -379,7 +379,7 @@ class FileContextTestCase(unittest.TestCase):
                     1 / 0
             self.assertTrue(f.closed)
         finally:
-            support.unlink(tfn)
+            os_helper.unlink(tfn)
 
 class LockContextTestCase(unittest.TestCase):
 
