@@ -355,4 +355,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c4d7e4ef878985f8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1dfdb5300546018c input=a9049054013a1b77]*/
