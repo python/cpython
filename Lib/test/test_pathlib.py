@@ -13,7 +13,7 @@ import unittest
 from unittest import mock
 
 from test.support import import_helper
-from test.support import is_emscripten
+from test.support import is_emscripten, is_wasi
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 
@@ -1530,6 +1530,7 @@ class _BasePathTest(object):
         p = self.cls('')
         self.assertEqual(p.stat(), os.stat('.'))
 
+    @unittest.skipIf(is_wasi, "WASI has no user accounts.")
     def test_expanduser_common(self):
         P = self.cls
         p = P('~')
@@ -2508,7 +2509,8 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             print(path.resolve(strict))
 
     @unittest.skipIf(
-        is_emscripten, "umask is not implemented on Emscripten."
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
     )
     def test_open_mode(self):
         old_mask = os.umask(0)
@@ -2534,7 +2536,8 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             os.chdir(current_directory)
 
     @unittest.skipIf(
-        is_emscripten, "umask is not implemented on Emscripten."
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
     )
     def test_touch_mode(self):
         old_mask = os.umask(0)
