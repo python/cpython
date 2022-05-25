@@ -61,11 +61,12 @@ FLAGS = {
     "x": SRE_FLAG_VERBOSE,
     # extensions
     "a": SRE_FLAG_ASCII,
+    "t": SRE_FLAG_TEMPLATE,
     "u": SRE_FLAG_UNICODE,
 }
 
 TYPE_FLAGS = SRE_FLAG_ASCII | SRE_FLAG_LOCALE | SRE_FLAG_UNICODE
-GLOBAL_FLAGS = SRE_FLAG_DEBUG
+GLOBAL_FLAGS = SRE_FLAG_DEBUG | SRE_FLAG_TEMPLATE
 
 class State:
     # keeps track of state for parsing
