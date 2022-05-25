@@ -1582,7 +1582,7 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
     }
 #endif /* HAVE_SOCKADDR_ALG */
 
-#ifdef AF_HYPERV
+#ifdef HAVE_AF_HYPERV
     case AF_HYPERV:
     {
         SOCKADDR_HV *a = (SOCKADDR_HV *) addr;
@@ -2407,7 +2407,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         return 1;
     }
 #endif /* HAVE_SOCKADDR_ALG */
-#ifdef AF_HYPERV
+#ifdef HAVE_AF_HYPERV
     case AF_HYPERV:
     {
         switch (s->sock_proto) {
@@ -2476,7 +2476,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             return 0;
         }
     }
-#endif /* AF_HYPERV */
+#endif /* HAVE_AF_HYPERV */
 
     /* More cases here... */
 
@@ -2626,13 +2626,13 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
         return 1;
     }
 #endif /* HAVE_SOCKADDR_ALG */
-#ifdef AF_HYPERV
+#ifdef HAVE_AF_HYPERV
     case AF_HYPERV:
     {
         *len_ret = sizeof (SOCKADDR_HV);
         return 1;
     }
-#endif /* AF_HYPERV */
+#endif /* HAVE_AF_HYPERV */
 
     /* More cases here... */
 
@@ -7460,7 +7460,7 @@ PyInit__socket(void)
     /* Linux LLC */
     PyModule_AddIntMacro(m, AF_LLC);
 #endif
-#ifdef AF_HYPERV
+#ifdef HAVE_AF_HYPERV
     /* Hyper-V sockets */
     PyModule_AddIntMacro(m, AF_HYPERV);
 
@@ -7481,7 +7481,7 @@ PyInit__socket(void)
     PyModule_AddStringConstant(m, "HV_GUID_CHILDREN", "90DB8B89-0D35-4F79-8CE9-49EA0AC8B7CD");
     PyModule_AddStringConstant(m, "HV_GUID_LOOPBACK", "E0E16197-DD56-4A10-9195-5EE7A155A838");
     PyModule_AddStringConstant(m, "HV_GUID_PARENT", "A42E7CDA-D03F-480C-9CC2-A4DE20ABB878");
-#endif /* AF_HYPERV */
+#endif /* HAVE_AF_HYPERV */
 
 #ifdef USE_BLUETOOTH
     PyModule_AddIntMacro(m, AF_BLUETOOTH);
