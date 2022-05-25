@@ -397,10 +397,6 @@ APIs:
    ASCII-encoded string. The following format characters are allowed:
 
    .. % This should be exactly the same as the table in PyErr_Format.
-   .. % The descriptions for %zd and %zu are wrong, but the truth is complicated
-   .. % because not all compilers support the %z width modifier -- we fake it
-   .. % when necessary via interpolating PY_FORMAT_SIZE_T.
-   .. % Similar comments apply to the %ll width modifier and
 
    .. tabularcolumns:: |l|l|L|
 
