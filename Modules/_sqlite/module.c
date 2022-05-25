@@ -111,13 +111,13 @@ _sqlite3.register_adapter as pysqlite_register_adapter
     adapter as caster: object
     /
 
-Register a function to adapt Python types to SQLite types.
+Register a function to adapt Python objects to SQLite values.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
                                PyObject *caster)
-/*[clinic end generated code: output=a287e8db18e8af23 input=f96c4fb2beba002b]*/
+/*[clinic end generated code: output=a287e8db18e8af23 input=29a5e0f213030242]*/
 {
     int rc;
 
@@ -146,13 +146,13 @@ _sqlite3.register_converter as pysqlite_register_converter
     converter as callable: object
     /
 
-Register a function to convert SQLite types to Python types.
+Register a function to convert SQLite values to Python objects.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
                                  PyObject *callable)
-/*[clinic end generated code: output=a2f2bfeed7230062 input=138f93f0063cb031]*/
+/*[clinic end generated code: output=a2f2bfeed7230062 input=159a444971b40378]*/
 {
     PyObject* name = NULL;
     PyObject* retval = NULL;
