@@ -1,0 +1,3 @@
+Specialize calls to Python class by inserting a shim frame to cleanup after
+``__init__`` method, allocating the object, and jumping directly to the
+``__init__`` method.
