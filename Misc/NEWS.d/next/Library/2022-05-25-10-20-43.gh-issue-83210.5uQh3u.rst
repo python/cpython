@@ -1,0 +1,1 @@
+Multi-bit aliases are no longer listed when enumerating an :class:`IntFlag`
