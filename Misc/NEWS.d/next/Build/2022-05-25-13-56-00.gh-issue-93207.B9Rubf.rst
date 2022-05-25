@@ -1,0 +1,1 @@
+Remove configure check for ``stdarg.h`` as it was not required. Patch by Kumar Aditya.
