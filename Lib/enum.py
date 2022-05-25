@@ -538,7 +538,7 @@ class EnumType(type):
         #
         # create a default docstring if one has not been provided
         if enum_class.__doc__ is None:
-            if not member_names:
+            if not member_names or not list(enum_class):
                 enum_class.__doc__ = classdict['__doc__'] = _dedent("""\
                         Create a collection of name/value pairs.
 
