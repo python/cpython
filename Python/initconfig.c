@@ -36,6 +36,8 @@ Options (and corresponding environment variables):\n\
          and comparing bytes/bytearray with str. (-bb: issue errors)\n\
 -B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
 -c cmd : program passed in as string (terminates option list)\n\
+--check-hash-based-pycs always|default|never :\n\
+         control how Python invalidates hash-based .pyc files\n\
 -d     : turn on parser debugging output (for experts only, only works on\n\
          debug builds); also PYTHONDEBUG=x\n\
 -E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
@@ -69,8 +71,6 @@ static const char usage_3[] = "\
          also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
 -X opt : set implementation-specific option\n\
---check-hash-based-pycs always|default|never :\n\
-         control how Python invalidates hash-based .pyc files\n\
 ";
 static const char usage_4[] = "\
 Arguments:\n\
@@ -81,40 +81,51 @@ arg ...: arguments passed to program in sys.argv[1:]\n\
 
 static const char usage_xoptions[] = "\
 The following implementation-specific options are available:\n\
-         -X faulthandler: enable faulthandler\n\
-         -X showrefcount: output the total reference count and number of used\n\
-             memory blocks when the program finishes or after each statement in the\n\
-             interactive interpreter. This only works on debug builds\n\
-         -X tracemalloc: start tracing Python memory allocations using the\n\
-             tracemalloc module. By default, only the most recent frame is stored in a\n\
-             traceback of a trace. Use -X tracemalloc=NFRAME to start tracing with a\n\
-             traceback limit of NFRAME frames\n\
-         -X importtime: show how long each import takes. It shows module name,\n\
-             cumulative time (including nested imports) and self time (excluding\n\
-             nested imports). Note that its output may be broken in multi-threaded\n\
-             application. Typical usage is python3 -X importtime -c 'import asyncio'\n\
-         -X dev: enable CPython's \"development mode\", introducing additional runtime\n\
-             checks which are too expensive to be enabled by default. Effect of the\n\
-             developer mode:\n\
-                * Add default warning filter, as -W default\n\
-                * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks() C function\n\
-                * Enable the faulthandler module to dump the Python traceback on a crash\n\
-                * Enable asyncio debug mode\n\
-                * Set the dev_mode attribute of sys.flags to True\n\
-                * io.IOBase destructor logs close() exceptions\n\
-         -X utf8: enable UTF-8 mode for operating system interfaces, overriding the default\n\
-             locale-aware mode. -X utf8=0 explicitly disables UTF-8 mode (even when it would\n\
-             otherwise activate automatically)\n\
-         -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the\n\
-             given directory instead of to the code tree\n\
-         -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None'\n\
-         -X no_debug_ranges: disable the inclusion of the tables mapping extra location \n\
-            information (end line, start column offset and end column offset) to every \n\
-            instruction in code objects. This is useful when smaller code objects and pyc \n\
-            files are desired as well as suppressing the extra visual location indicators \n\
-            when the interpreter displays tracebacks.\n\
-         -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
-            The default is \"on\" (or \"off\" if you are running a local build).";
+\n\
+-X faulthandler: enable faulthandler\n\
+\n\
+-X showrefcount: output the total reference count and number of used\n\
+    memory blocks when the program finishes or after each statement in the\n\
+    interactive interpreter. This only works on debug builds\n\
+\n\
+-X tracemalloc: start tracing Python memory allocations using the\n\
+    tracemalloc module. By default, only the most recent frame is stored in a\n\
+    traceback of a trace. Use -X tracemalloc=NFRAME to start tracing with a\n\
+    traceback limit of NFRAME frames\n\
+\n\
+-X importtime: show how long each import takes. It shows module name,\n\
+    cumulative time (including nested imports) and self time (excluding\n\
+    nested imports). Note that its output may be broken in multi-threaded\n\
+    application. Typical usage is python3 -X importtime -c 'import asyncio'\n\
+\n\
+-X dev: enable CPython's \"development mode\", introducing additional runtime\n\
+    checks which are too expensive to be enabled by default. Effect of the\n\
+    developer mode:\n\
+       * Add default warning filter, as -W default\n\
+       * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks()\n\
+         C function\n\
+       * Enable the faulthandler module to dump the Python traceback on a crash\n\
+       * Enable asyncio debug mode\n\
+       * Set the dev_mode attribute of sys.flags to True\n\
+       * io.IOBase destructor logs close() exceptions\n\
+\n\
+-X utf8: enable UTF-8 mode for operating system interfaces, overriding the default\n\
+    locale-aware mode. -X utf8=0 explicitly disables UTF-8 mode (even when it would\n\
+    otherwise activate automatically)\n\
+\n\
+-X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the\n\
+    given directory instead of to the code tree\n\
+\n\
+-X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None'\n\
+\n\
+-X no_debug_ranges: disable the inclusion of the tables mapping extra location \n\
+   information (end line, start column offset and end column offset) to every \n\
+   instruction in code objects. This is useful when smaller code objects and pyc \n\
+   files are desired as well as suppressing the extra visual location indicators \n\
+   when the interpreter displays tracebacks.\n\
+\n\
+-X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
+   The default is \"on\" (or \"off\" if you are running a local build).";
 
 /* Envvars that don't have equivalent command-line options are listed first */
 static const char usage_envvars1[] = "\

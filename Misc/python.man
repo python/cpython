@@ -344,7 +344,19 @@ Set implementation-specific option. The following options are available:
         otherwise activate automatically). See PYTHONUTF8 for more details
 
     -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the
-         given directory instead of to the code tree.
+        given directory instead of to the code tree.
+
+    -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None'
+
+    -X no_debug_ranges: disable the inclusion of the tables mapping extra location
+       information (end line, start column offset and end column offset) to every
+       instruction in code objects. This is useful when smaller code objects and pyc
+       files are desired as well as suppressing the extra visual location indicators
+       when the interpreter displays tracebacks.
+
+    -X frozen_modules=[on|off]: whether or not frozen modules should be used.
+       The default is "on" (or "off" if you are running a local build).
+
 .TP
 .B \-x
 Skip the first line of the source.  This is intended for a DOS
