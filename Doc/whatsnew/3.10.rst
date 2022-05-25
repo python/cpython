@@ -1223,6 +1223,12 @@ now call :func:`inspect.get_annotations` to retrieve annotations. This means
 also now un-stringize stringized annotations.
 (Contributed by Larry Hastings in :issue:`43817`.)
 
+itertools
+---------
+
+Add :func:`itertools.pairwise()`.
+(Contributed by Raymond Hettinger in :issue:`38200`.)
+
 linecache
 ---------
 

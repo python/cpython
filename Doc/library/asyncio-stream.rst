@@ -295,6 +295,24 @@ StreamWriter
       be resumed.  When there is nothing to wait for, the :meth:`drain`
       returns immediately.
 
+   .. coroutinemethod:: start_tls(sslcontext, \*, server_hostname=None, \
+                          ssl_handshake_timeout=None)
+
+      Upgrade an existing stream-based connection to TLS.
+
+      Parameters:
+
+      * *sslcontext*: a configured instance of :class:`~ssl.SSLContext`.
+
+      * *server_hostname*: sets or overrides the host name that the target
+        server's certificate will be matched against.
+
+      * *ssl_handshake_timeout* is the time in seconds to wait for the TLS
+        handshake to complete before aborting the connection.  ``60.0`` seconds
+        if ``None`` (default).
+
+      .. versionadded:: 3.11
+
    .. method:: is_closing()
 
       Return ``True`` if the stream is closed or in the process of

@@ -13,6 +13,7 @@
 import _sre
 from . import _parser
 from ._constants import *
+from ._casefix import _EXTRA_CASES
 
 assert _sre.MAGIC == MAGIC, "SRE module mismatch"
 
@@ -26,46 +27,6 @@ _REPEATING_CODES = {
     MAX_REPEAT: (REPEAT, MAX_UNTIL, REPEAT_ONE),
     POSSESSIVE_REPEAT: (POSSESSIVE_REPEAT, SUCCESS, POSSESSIVE_REPEAT_ONE),
 }
-
-# Sets of lowercase characters which have the same uppercase.
-_equivalences = (
-    # LATIN SMALL LETTER I, LATIN SMALL LETTER DOTLESS I
-    (0x69, 0x131), # iı
-    # LATIN SMALL LETTER S, LATIN SMALL LETTER LONG S
-    (0x73, 0x17f), # sſ
-    # MICRO SIGN, GREEK SMALL LETTER MU
-    (0xb5, 0x3bc), # µμ
-    # COMBINING GREEK YPOGEGRAMMENI, GREEK SMALL LETTER IOTA, GREEK PROSGEGRAMMENI
-    (0x345, 0x3b9, 0x1fbe), # \u0345ιι
-    # GREEK SMALL LETTER IOTA WITH DIALYTIKA AND TONOS, GREEK SMALL LETTER IOTA WITH DIALYTIKA AND OXIA
-    (0x390, 0x1fd3), # ΐΐ
-    # GREEK SMALL LETTER UPSILON WITH DIALYTIKA AND TONOS, GREEK SMALL LETTER UPSILON WITH DIALYTIKA AND OXIA
-    (0x3b0, 0x1fe3), # ΰΰ
-    # GREEK SMALL LETTER BETA, GREEK BETA SYMBOL
-    (0x3b2, 0x3d0), # βϐ
-    # GREEK SMALL LETTER EPSILON, GREEK LUNATE EPSILON SYMBOL
-    (0x3b5, 0x3f5), # εϵ
-    # GREEK SMALL LETTER THETA, GREEK THETA SYMBOL
-    (0x3b8, 0x3d1), # θϑ
-    # GREEK SMALL LETTER KAPPA, GREEK KAPPA SYMBOL
-    (0x3ba, 0x3f0), # κϰ
-    # GREEK SMALL LETTER PI, GREEK PI SYMBOL
-    (0x3c0, 0x3d6), # πϖ
-    # GREEK SMALL LETTER RHO, GREEK RHO SYMBOL
-    (0x3c1, 0x3f1), # ρϱ
-    # GREEK SMALL LETTER FINAL SIGMA, GREEK SMALL LETTER SIGMA
-    (0x3c2, 0x3c3), # ςσ
-    # GREEK SMALL LETTER PHI, GREEK PHI SYMBOL
-    (0x3c6, 0x3d5), # φϕ
-    # LATIN SMALL LETTER S WITH DOT ABOVE, LATIN SMALL LETTER LONG S WITH DOT ABOVE
-    (0x1e61, 0x1e9b), # ṡẛ
-    # LATIN SMALL LIGATURE LONG S T, LATIN SMALL LIGATURE ST
-    (0xfb05, 0xfb06), # ﬅﬆ
-)
-
-# Maps the lowercase code to lowercase codes which have the same uppercase.
-_ignorecase_fixes = {i: tuple(j for j in t if i != j)
-                     for t in _equivalences for i in t}
 
 class _CompileData:
     __slots__ = ('code', 'repeat_count')
@@ -95,7 +56,7 @@ def _compile(data, pattern, flags):
         if flags & SRE_FLAG_UNICODE:
             iscased = _sre.unicode_iscased
             tolower = _sre.unicode_tolower
-            fixes = _ignorecase_fixes
+            fixes = _EXTRA_CASES
         else:
             iscased = _sre.ascii_iscased
             tolower = _sre.ascii_tolower
@@ -147,6 +108,8 @@ def _compile(data, pattern, flags):
             else:
                 emit(ANY)
         elif op in REPEATING_CODES:
+            if flags & SRE_FLAG_TEMPLATE:
+                raise error("internal: unsupported template operator %r" % (op,))
             if _simple(av[2]):
                 emit(REPEATING_CODES[op][2])
                 skip = _len(code); emit(0)
@@ -201,12 +164,6 @@ def _compile(data, pattern, flags):
                     raise error("look-behind requires fixed-width pattern")
                 emit(lo) # look behind
             _compile(data, av[1], flags)
-            emit(SUCCESS)
-            code[skip] = _len(code) - skip
-        elif op is CALL:
-            emit(op)
-            skip = _len(code); emit(0)
-            _compile(data, av, flags)
             emit(SUCCESS)
             code[skip] = _len(code) - skip
         elif op is AT:
@@ -339,11 +296,19 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
                     charmap += b'\0' * 0xff00
                     continue
                 # Character set contains non-BMP character codes.
+                # For range, all BMP characters in the range are already
+                # proceeded.
                 if fixup:
                     hascased = True
-                    # There are only two ranges of cased non-BMP characters:
-                    # 10400-1044F (Deseret) and 118A0-118DF (Warang Citi),
-                    # and for both ranges RANGE_UNI_IGNORE works.
+                    # For now, IN_UNI_IGNORE+LITERAL and
+                    # IN_UNI_IGNORE+RANGE_UNI_IGNORE work for all non-BMP
+                    # characters, because two characters (at least one of
+                    # which is not in the BMP) match case-insensitively
+                    # if and only if:
+                    # 1) c1.lower() == c2.lower()
+                    # 2) c1.lower() == c2 or c1.lower().upper() == c2
+                    # Also, both c.lower() and c.lower().upper() are single
+                    # characters for every non-BMP character.
                     if op is RANGE:
                         op = RANGE_UNI_IGNORE
                 tail.append((op, av))

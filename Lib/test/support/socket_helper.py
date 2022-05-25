@@ -5,11 +5,14 @@ import unittest
 import sys
 
 from .. import support
-
+from . import warnings_helper
 
 HOST = "localhost"
 HOSTv4 = "127.0.0.1"
 HOSTv6 = "::1"
+
+# WASI SDK 15.0 does not provide gethostname, stub raises OSError ENOTSUP.
+has_gethostname = not support.is_wasi
 
 
 def find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM):
@@ -190,7 +193,7 @@ _NOT_SET = object()
 def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
     """Return a context manager that raises ResourceDenied when various issues
     with the internet connection manifest themselves as exceptions."""
-    import nntplib
+    nntplib = warnings_helper.import_deprecated("nntplib")
     import urllib.error
     if timeout is _NOT_SET:
         timeout = support.INTERNET_TIMEOUT

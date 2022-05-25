@@ -12,6 +12,7 @@ class BuildTestCase(support.TempdirManager,
                     support.LoggingSilencer,
                     unittest.TestCase):
 
+    @unittest.skipUnless(sys.executable, "test requires sys.executable")
     def test_finalize_options(self):
         pkg_dir, dist = self.create_dist()
         cmd = build(dist)

@@ -345,22 +345,26 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     Py_ssize_t i, n;
     int custom = !Py_IS_TYPE(type, &PyType_Type);
     int unbound;
-    PyObject *mro_meth = NULL;
-    PyObject *type_mro_meth = NULL;
 
     if (custom) {
+        PyObject *mro_meth, *type_mro_meth;
         mro_meth = lookup_maybe_method(
             (PyObject *)type, &_Py_ID(mro), &unbound);
-        if (mro_meth == NULL)
+        if (mro_meth == NULL) {
             goto clear;
+        }
         type_mro_meth = lookup_maybe_method(
             (PyObject *)&PyType_Type, &_Py_ID(mro), &unbound);
-        if (type_mro_meth == NULL)
+        if (type_mro_meth == NULL) {
+            Py_DECREF(mro_meth);
             goto clear;
-        if (mro_meth != type_mro_meth)
+        }
+        int custom_mro = (mro_meth != type_mro_meth);
+        Py_DECREF(mro_meth);
+        Py_DECREF(type_mro_meth);
+        if (custom_mro) {
             goto clear;
-        Py_XDECREF(mro_meth);
-        Py_XDECREF(type_mro_meth);
+        }
     }
     n = PyTuple_GET_SIZE(bases);
     for (i = 0; i < n; i++) {
@@ -373,8 +377,6 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     }
     return;
  clear:
-    Py_XDECREF(mro_meth);
-    Py_XDECREF(type_mro_meth);
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
     type->tp_version_tag = 0; /* 0 is not a valid version tag */
 }
@@ -4289,7 +4291,7 @@ type___sizeof___impl(PyTypeObject *self)
 static PyMethodDef type_methods[] = {
     TYPE_MRO_METHODDEF
     TYPE___SUBCLASSES___METHODDEF
-    {"__prepare__", (PyCFunction)(void(*)(void))type_prepare,
+    {"__prepare__", _PyCFunction_CAST(type_prepare),
      METH_FASTCALL | METH_KEYWORDS | METH_CLASS,
      PyDoc_STR("__prepare__() -> dict\n"
                "used to create the namespace for the class statement")},
@@ -4557,7 +4559,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
         PyErr_Format(PyExc_TypeError,
                      "Can't instantiate abstract class %s "
-                     "with abstract method%s %U",
+                     "without an implementation for abstract method%s %U",
                      type->tp_name,
                      method_count > 1 ? "s" : "",
                      joined);
@@ -5030,7 +5032,6 @@ object_getstate_default(PyObject *obj, int required)
 
             name = PyList_GET_ITEM(slotnames, i);
             Py_INCREF(name);
-            value = PyObject_GetAttr(obj, name);
             if (_PyObject_LookupAttr(obj, name, &value) < 0) {
                 Py_DECREF(name);
                 goto error;
@@ -7142,7 +7143,7 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static struct PyMethodDef tp_new_methoddef[] = {
-    {"__new__", (PyCFunction)(void(*)(void))tp_new_wrapper, METH_VARARGS|METH_KEYWORDS,
+    {"__new__", _PyCFunction_CAST(tp_new_wrapper), METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("__new__($type, *args, **kwargs)\n--\n\n"
                "Create and return a new object.  "
                "See help(type) for accurate signature.")},
@@ -8391,7 +8392,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
         }
         else if (Py_IS_TYPE(descr, &PyCFunction_Type) &&
                  PyCFunction_GET_FUNCTION(descr) ==
-                 (PyCFunction)(void(*)(void))tp_new_wrapper &&
+                 _PyCFunction_CAST(tp_new_wrapper) &&
                  ptr == (void**)&type->tp_new)
         {
             /* The __new__ wrapper is not a wrapper descriptor,
@@ -8980,7 +8981,7 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
     if (firstarg != NULL && (_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL)) {
         // "firstarg" is a cell here unless (very unlikely) super()
         // was called from the C-API before the first MAKE_CELL op.
-        if (cframe->f_lasti >= 0) {
+        if (_PyInterpreterFrame_LASTI(cframe) >= 0) {
             // MAKE_CELL and COPY_FREE_VARS have no quickened forms, so no need
             // to use _PyOpcode_Deopt here:
             assert(_Py_OPCODE(_PyCode_CODE(co)[0]) == MAKE_CELL ||

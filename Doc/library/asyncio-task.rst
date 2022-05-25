@@ -20,7 +20,7 @@ Coroutines
 
 :term:`Coroutines <coroutine>` declared with the async/await syntax is the
 preferred way of writing asyncio applications.  For example, the following
-snippet of code (requires Python 3.7+) prints "hello", waits 1 second,
+snippet of code prints "hello", waits 1 second,
 and then prints "world"::
 
     >>> import asyncio
@@ -222,21 +222,6 @@ Creating Tasks
    The task is executed in the loop returned by :func:`get_running_loop`,
    :exc:`RuntimeError` is raised if there is no running loop in
    current thread.
-
-   This function has been **added in Python 3.7**.  Prior to
-   Python 3.7, the low-level :func:`asyncio.ensure_future` function
-   can be used instead::
-
-       async def coro():
-           ...
-
-       # In Python 3.7+
-       task = asyncio.create_task(coro())
-       ...
-
-       # This works in all Python versions but is less readable
-       task = asyncio.ensure_future(coro())
-       ...
 
    .. important::
 

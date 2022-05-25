@@ -11,7 +11,6 @@ import fnmatch
 import fractions
 import itertools
 import locale
-import mmap
 import os
 import pickle
 import select
@@ -24,6 +23,7 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
+import textwrap
 import time
 import types
 import unittest
@@ -58,6 +58,10 @@ try:
 except ImportError:
     INT_MAX = PY_SSIZE_T_MAX = sys.maxsize
 
+try:
+    import mmap
+except ImportError:
+    mmap = None
 
 from test.support.script_helper import assert_python_ok
 from test.support import unix_shell
@@ -1761,6 +1765,7 @@ class RemoveDirsTests(unittest.TestCase):
         self.assertTrue(os.path.exists(os_helper.TESTFN))
 
 
+@unittest.skipIf(support.is_wasi, "WASI has no /dev/null")
 class DevNullTests(unittest.TestCase):
     def test_devnull(self):
         with open(os.devnull, 'wb', 0) as f:
@@ -2107,6 +2112,7 @@ class Win32ErrorTests(unittest.TestCase):
         self.assertRaises(OSError, os.chmod, os_helper.TESTFN, 0)
 
 
+@unittest.skipIf(support.is_wasi, "Cannot create invalid FD on WASI.")
 class TestInvalidFD(unittest.TestCase):
     singles = ["fchdir", "dup", "fdatasync", "fstat",
                "fstatvfs", "fsync", "tcgetpgrp", "ttyname"]
@@ -2166,7 +2172,8 @@ class TestInvalidFD(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'fpathconf'), 'test needs os.fpathconf()')
     @unittest.skipIf(
-        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+        support.is_emscripten or support.is_wasi,
+        "musl libc issue on Emscripten/WASI, bpo-46390"
     )
     def test_fpathconf(self):
         self.check(os.pathconf, "PC_NAME_MAX")
@@ -2459,6 +2466,7 @@ class Win32KillTests(unittest.TestCase):
         # os.kill on Windows can take an int which gets set as the exit code
         self._kill(100)
 
+    @unittest.skipIf(mmap is None, "requires mmap")
     def _kill_with_event(self, event, name):
         tagname = "test_os_%s" % uuid.uuid1()
         m = mmap.mmap(-1, 1, tagname)
@@ -2882,6 +2890,49 @@ class Win32NtTests(unittest.TestCase):
         handle_delta = handle_count.value - before_count
 
         self.assertEqual(0, handle_delta)
+
+    @support.requires_subprocess()
+    def test_stat_unlink_race(self):
+        # bpo-46785: the implementation of os.stat() falls back to reading
+        # the parent directory if CreateFileW() fails with a permission
+        # error. If reading the parent directory fails because the file or
+        # directory are subsequently unlinked, or because the volume or
+        # share are no longer available, then the original permission error
+        # should not be restored.
+        filename =  os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+        deadline = time.time() + 5
+        command = textwrap.dedent("""\
+            import os
+            import sys
+            import time
+
+            filename = sys.argv[1]
+            deadline = float(sys.argv[2])
+
+            while time.time() < deadline:
+                try:
+                    with open(filename, "w") as f:
+                        pass
+                except OSError:
+                    pass
+                try:
+                    os.remove(filename)
+                except OSError:
+                    pass
+            """)
+
+        with subprocess.Popen([sys.executable, '-c', command, filename, str(deadline)]) as proc:
+            while time.time() < deadline:
+                try:
+                    os.stat(filename)
+                except FileNotFoundError as e:
+                    assert e.winerror == 2  # ERROR_FILE_NOT_FOUND
+            try:
+                proc.wait(1)
+            except subprocess.TimeoutExpired:
+                proc.terminate()
+
 
 @os_helper.skip_unless_symlink
 class NonLocalSymlinkTests(unittest.TestCase):

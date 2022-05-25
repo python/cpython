@@ -714,7 +714,7 @@ Constants
    Selects SSL version 2 as the channel encryption protocol.
 
    This protocol is not available if OpenSSL is compiled with the
-   ``OPENSSL_NO_SSL2`` flag.
+   ``no-ssl2`` option.
 
    .. warning::
 
@@ -728,8 +728,8 @@ Constants
 
    Selects SSL version 3 as the channel encryption protocol.
 
-   This protocol is not be available if OpenSSL is compiled with the
-   ``OPENSSL_NO_SSLv3`` flag.
+   This protocol is not available if OpenSSL is compiled with the
+   ``no-ssl3`` option.
 
    .. warning::
 
@@ -1548,7 +1548,7 @@ to speed up repeated connections from the same clients.
    string must be the path to a single file in PEM format containing the
    certificate as well as any number of CA certificates needed to establish
    the certificate's authenticity.  The *keyfile* string, if present, must
-   point to a file containing the private key in.  Otherwise the private
+   point to a file containing the private key.  Otherwise the private
    key will be taken from *certfile* as well.  See the discussion of
    :ref:`ssl-certificates` for more information on how the certificate
    is stored in the *certfile*.
@@ -2357,7 +2357,7 @@ waiting for clients to connect::
    context.load_cert_chain(certfile="mycertfile", keyfile="mykeyfile")
 
    bindsocket = socket.socket()
-   bindsocket.bind(('myaddr.mydomain.com', 10023))
+   bindsocket.bind(('myaddr.example.com', 10023))
    bindsocket.listen(5)
 
 When a client connects, you'll call :meth:`accept` on the socket to get the

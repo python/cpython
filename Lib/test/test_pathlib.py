@@ -13,7 +13,7 @@ import unittest
 from unittest import mock
 
 from test.support import import_helper
-from test.support import is_emscripten
+from test.support import is_emscripten, is_wasi
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 
@@ -1388,6 +1388,7 @@ class _BasePathTest(object):
     #  |   |-- dirD
     #  |   |   `-- fileD
     #  |   `-- fileC
+    #  |   `-- novel.txt
     #  |-- dirE  # No permissions
     #  |-- fileA
     #  |-- linkA -> fileA
@@ -1412,6 +1413,8 @@ class _BasePathTest(object):
             f.write(b"this is file B\n")
         with open(join('dirC', 'fileC'), 'wb') as f:
             f.write(b"this is file C\n")
+        with open(join('dirC', 'novel.txt'), 'wb') as f:
+            f.write(b"this is a novel\n")
         with open(join('dirC', 'dirD', 'fileD'), 'wb') as f:
             f.write(b"this is file D\n")
         os.chmod(join('dirE'), 0)
@@ -1527,6 +1530,7 @@ class _BasePathTest(object):
         p = self.cls('')
         self.assertEqual(p.stat(), os.stat('.'))
 
+    @unittest.skipIf(is_wasi, "WASI has no user accounts.")
     def test_expanduser_common(self):
         P = self.cls
         p = P('~')
@@ -1659,6 +1663,11 @@ class _BasePathTest(object):
         else:
             _check(p.glob("*/fileB"), ['dirB/fileB', 'linkB/fileB'])
 
+        if not os_helper.can_symlink():
+            _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE"])
+        else:
+            _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE", "linkB"])
+
     def test_rglob_common(self):
         def _check(glob, expected):
             self.assertEqual(set(glob), { P(BASE, q) for q in expected })
@@ -1676,9 +1685,27 @@ class _BasePathTest(object):
                                         "linkB/fileB", "dirA/linkC/fileB"])
         _check(p.rglob("file*"), ["fileA", "dirB/fileB",
                                   "dirC/fileC", "dirC/dirD/fileD"])
+        if not os_helper.can_symlink():
+            _check(p.rglob("*/"), [
+                "dirA", "dirB", "dirC", "dirC/dirD", "dirE",
+            ])
+        else:
+            _check(p.rglob("*/"), [
+                "dirA", "dirA/linkC", "dirB", "dirB/linkD", "dirC",
+                "dirC/dirD", "dirE", "linkB",
+            ])
+        _check(p.rglob(""), ["", "dirA", "dirB", "dirC", "dirE", "dirC/dirD"])
+
         p = P(BASE, "dirC")
+        _check(p.rglob("*"), ["dirC/fileC", "dirC/novel.txt",
+                              "dirC/dirD", "dirC/dirD/fileD"])
         _check(p.rglob("file*"), ["dirC/fileC", "dirC/dirD/fileD"])
         _check(p.rglob("*/*"), ["dirC/dirD/fileD"])
+        _check(p.rglob("*/"), ["dirC/dirD"])
+        _check(p.rglob(""), ["dirC", "dirC/dirD"])
+        # gh-91616, a re module regression
+        _check(p.rglob("*.txt"), ["dirC/novel.txt"])
+        _check(p.rglob("*.*"), ["dirC/novel.txt"])
 
     @os_helper.skip_unless_symlink
     def test_rglob_symlink_loop(self):
@@ -1689,7 +1716,8 @@ class _BasePathTest(object):
         expect = {'brokenLink',
                   'dirA', 'dirA/linkC',
                   'dirB', 'dirB/fileB', 'dirB/linkD',
-                  'dirC', 'dirC/dirD', 'dirC/dirD/fileD', 'dirC/fileC',
+                  'dirC', 'dirC/dirD', 'dirC/dirD/fileD',
+                  'dirC/fileC', 'dirC/novel.txt',
                   'dirE',
                   'fileA',
                   'linkA',
@@ -1971,28 +1999,6 @@ class _BasePathTest(object):
         self.assertFileNotFound(p.unlink)
 
     @unittest.skipUnless(hasattr(os, "link"), "os.link() is not present")
-    def test_link_to(self):
-        P = self.cls(BASE)
-        p = P / 'fileA'
-        size = p.stat().st_size
-        # linking to another path.
-        q = P / 'dirA' / 'fileAA'
-        try:
-            with self.assertWarns(DeprecationWarning):
-                p.link_to(q)
-        except PermissionError as e:
-            self.skipTest('os.link(): %s' % e)
-        self.assertEqual(q.stat().st_size, size)
-        self.assertEqual(os.path.samefile(p, q), True)
-        self.assertTrue(p.stat)
-        # Linking to a str of a relative path.
-        r = rel_join('fileAAA')
-        with self.assertWarns(DeprecationWarning):
-            q.link_to(r)
-        self.assertEqual(os.stat(r).st_size, size)
-        self.assertTrue(q.stat)
-
-    @unittest.skipUnless(hasattr(os, "link"), "os.link() is not present")
     def test_hardlink_to(self):
         P = self.cls(BASE)
         target = P / 'fileA'
@@ -2017,7 +2023,7 @@ class _BasePathTest(object):
         # linking to another path.
         q = P / 'dirA' / 'fileAA'
         with self.assertRaises(NotImplementedError):
-            p.link_to(q)
+            q.hardlink_to(p)
 
     def test_rename(self):
         P = self.cls(BASE)
@@ -2503,7 +2509,8 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             print(path.resolve(strict))
 
     @unittest.skipIf(
-        is_emscripten, "umask is not implemented on Emscripten."
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
     )
     def test_open_mode(self):
         old_mask = os.umask(0)
@@ -2529,7 +2536,8 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             os.chdir(current_directory)
 
     @unittest.skipIf(
-        is_emscripten, "umask is not implemented on Emscripten."
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
     )
     def test_touch_mode(self):
         old_mask = os.umask(0)
@@ -2697,6 +2705,7 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
         P = self.cls
         p = P(BASE)
         self.assertEqual(set(p.glob("FILEa")), { P(BASE, "fileA") })
+        self.assertEqual(set(p.glob("*a\\")), { P(BASE, "dirA") })
         self.assertEqual(set(p.glob("F*a")), { P(BASE, "fileA") })
         self.assertEqual(set(map(str, p.glob("FILEa"))), {f"{p}\\FILEa"})
         self.assertEqual(set(map(str, p.glob("F*a"))), {f"{p}\\fileA"})
@@ -2705,6 +2714,7 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
         P = self.cls
         p = P(BASE, "dirC")
         self.assertEqual(set(p.rglob("FILEd")), { P(BASE, "dirC/dirD/fileD") })
+        self.assertEqual(set(p.rglob("*\\")), { P(BASE, "dirC/dirD") })
         self.assertEqual(set(map(str, p.rglob("FILEd"))), {f"{p}\\dirD\\FILEd"})
 
     def test_expanduser(self):

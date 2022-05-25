@@ -88,6 +88,9 @@ tok_new(void)
     tok->async_def_nl = 0;
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
     tok->str = NULL;
+#ifdef Py_DEBUG
+    tok->debug = _Py_GetConfig()->parser_debug;
+#endif
     return tok;
 }
 
@@ -1021,7 +1024,7 @@ tok_nextc(struct tok_state *tok)
             rc = tok_underflow_file(tok);
         }
 #if defined(Py_DEBUG)
-        if (Py_DebugFlag) {
+        if (tok->debug) {
             fprintf(stderr, "line[%d] = ", tok->lineno);
             print_escape(stderr, tok->cur, tok->inp - tok->cur);
             fprintf(stderr, "  tok->done = %d\n", tok->done);
@@ -1139,7 +1142,7 @@ indenterror(struct tok_state *tok)
 }
 
 static int
-parser_warn(struct tok_state *tok, const char *format, ...)
+parser_warn(struct tok_state *tok, PyObject *category, const char *format, ...)
 {
     PyObject *errmsg;
     va_list vargs;
@@ -1154,9 +1157,9 @@ parser_warn(struct tok_state *tok, const char *format, ...)
         goto error;
     }
 
-    if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, errmsg, tok->filename,
+    if (PyErr_WarnExplicitObject(category, errmsg, tok->filename,
                                  tok->lineno, NULL, NULL) < 0) {
-        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+        if (PyErr_ExceptionMatches(category)) {
             /* Replace the DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
@@ -1234,7 +1237,9 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind)
     }
     if (r) {
         tok_backup(tok, c);
-        if (parser_warn(tok, "invalid %s literal", kind)) {
+        if (parser_warn(tok, PyExc_SyntaxWarning,
+                "invalid %s literal", kind))
+        {
             return 0;
         }
         tok_nextc(tok);
@@ -1990,10 +1995,10 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
     /* Check for two-character token */
     {
         int c2 = tok_nextc(tok);
-        int token = PyToken_TwoChars(c, c2);
+        int token = _PyToken_TwoChars(c, c2);
         if (token != OP) {
             int c3 = tok_nextc(tok);
-            int token3 = PyToken_ThreeChars(c, c2, c3);
+            int token3 = _PyToken_ThreeChars(c, c2, c3);
             if (token3 != OP) {
                 token = token3;
             }
@@ -2057,7 +2062,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
     /* Punctuation character */
     *p_start = tok->start;
     *p_end = tok->cur;
-    return PyToken_OneChar(c);
+    return _PyToken_OneChar(c);
 }
 
 int
