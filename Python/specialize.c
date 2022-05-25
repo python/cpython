@@ -2022,19 +2022,27 @@ setup_init_cleanup_func(void) {
     if (_Py_InitCleanupFunc != NULL) {
         return 0;
     }
-    PyObject *empty_bytes = PyBytes_FromStringAndSize(NULL, 0);
-    PyObject *empty_tuple = PyTuple_New(0);
-    PyObject *empty_str = _PyUnicode_FromASCII("", 0);
-    PyObject *name = _PyUnicode_FromASCII("type.__call__", strlen("type.__call__"));
-    PyObject *code = PyBytes_FromStringAndSize(INIT_CLEANUP_CODE, 8);
-    const unsigned char loc[2] = { 0x80 | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3) | 3, 0 };
-    PyObject *lines = PyBytes_FromStringAndSize((const char *)&loc, 2);
-    if (empty_bytes == NULL || empty_str == NULL || name == NULL || code == NULL) {
-        goto cleanup;
+    PyObject *name = NULL;
+    PyObject *code = NULL;
+    PyObject *lines = NULL;
+    PyCodeObject *codeobj = NULL;
+    PyObject *globals = NULL;
 
+    name = _PyUnicode_FromASCII("type.__call__", strlen("type.__call__"));
+    if (name == NULL) {
+        goto cleanup;
+    }
+    code = PyBytes_FromStringAndSize(INIT_CLEANUP_CODE, 8);
+    if (code == NULL) {
+        goto cleanup;
+    }
+    const char loc[2] = { 0x80 | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3) | 3, 0 };
+    lines = PyBytes_FromStringAndSize(loc, 2);
+    if (lines == NULL) {
+        goto cleanup;
     }
     struct _PyCodeConstructor con = {
-        .filename = empty_str,
+        .filename = &_Py_STR(empty),
         .name = name,
         .qualname = name,
         .flags = CO_NEWLOCALS | CO_OPTIMIZED,
@@ -2043,11 +2051,11 @@ setup_init_cleanup_func(void) {
         .firstlineno = 1,
         .linetable = lines,
 
-        .consts = empty_tuple,
-        .names = empty_tuple,
+        .consts = (PyObject *)&_Py_SINGLETON(tuple_empty),
+        .names = (PyObject *)&_Py_SINGLETON(tuple_empty),
 
-        .localsplusnames = empty_tuple,
-        .localspluskinds = empty_bytes,
+        .localsplusnames = (PyObject *)&_Py_SINGLETON(tuple_empty),
+        .localspluskinds = (PyObject *)&_Py_SINGLETON(bytes_empty),
 
         .argcount = 0,
         .posonlyargcount = 0,
@@ -2055,16 +2063,15 @@ setup_init_cleanup_func(void) {
 
         .stacksize = 2,
 
-        .exceptiontable = empty_bytes,
+        .exceptiontable = (PyObject *)&_Py_SINGLETON(bytes_empty),
     };
 
-    PyCodeObject *codeobj = _PyCode_New(&con);
+    codeobj = _PyCode_New(&con);
     if (codeobj == NULL) {
         goto cleanup;
     }
-    PyObject *globals = PyDict_New();
+    globals = PyDict_New();
     if (globals == NULL) {
-        Py_DECREF(codeobj);
         goto cleanup;
     }
     PyFrameConstructor desc = {
@@ -2079,13 +2086,12 @@ setup_init_cleanup_func(void) {
     };
     _Py_InitCleanupFunc = _PyFunction_FromConstructor(&desc);
 cleanup:
-    Py_XDECREF(empty_bytes);
-    Py_XDECREF(empty_tuple);
-    Py_XDECREF(empty_str);
+    PyErr_Clear();
+    Py_XDECREF(codeobj);
+    Py_DECREF(globals);
     Py_XDECREF(name);
     Py_XDECREF(code);
     Py_XDECREF(lines);
-    PyErr_Clear();
     return _Py_InitCleanupFunc == NULL ? -1 : 0;
 }
 

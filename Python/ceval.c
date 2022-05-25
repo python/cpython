@@ -446,6 +446,7 @@ PyEval_InitThreads(void)
 void
 _PyEval_Fini(void)
 {
+    Py_CLEAR(_Py_InitCleanupFunc);
 #ifdef Py_STATS
     _Py_PrintSpecializationStats(1);
 #endif
