@@ -1,0 +1,1 @@
+Replace ``assert`` statements with ``raise AssertionError()`` in :class:`BaseHandler` so that behaviour is maintained and tests in ``test_wsgiref.py`` pass when running with optimizations ``(-O)``.
