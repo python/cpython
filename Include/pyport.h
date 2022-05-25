@@ -186,32 +186,10 @@ typedef Py_ssize_t Py_ssize_clean_t;
 /* Largest possible value of size_t. */
 #define PY_SIZE_MAX SIZE_MAX
 
-/* Macro kept for backward compatibility: use "z" in new code.
+/* Macro kept for backward compatibility: use directly "z" in new code.
  *
- * PY_FORMAT_SIZE_T is a platform-specific modifier for use in a printf
- * format to convert an argument with the width of a size_t or Py_ssize_t.
- * C99 introduced "z" for this purpose, but old MSVCs had not supported it.
- * Since MSVC supports "z" since (at least) 2015, we can just use "z"
- * for new code.
- *
- * These "high level" Python format functions interpret "z" correctly on
- * all platforms (Python interprets the format string itself, and does whatever
- * the platform C requires to convert a size_t/Py_ssize_t argument):
- *
- *     PyBytes_FromFormat
- *     PyErr_Format
- *     PyBytes_FromFormatV
- *     PyUnicode_FromFormatV
- *
- * Lower-level uses require that you interpolate the correct format modifier
- * yourself (e.g., calling printf, fprintf, sprintf, PyOS_snprintf); for
- * example,
- *
- *     Py_ssize_t index;
- *     fprintf(stderr, "index %" PY_FORMAT_SIZE_T "d sucks\n", index);
- *
- * That will expand to %zd or to something else correct for a Py_ssize_t on
- * the platform.
+ * PY_FORMAT_SIZE_T is a modifier for use in a printf format to convert an
+ * argument with the width of a size_t or Py_ssize_t: "z" (C99).
  */
 #ifndef PY_FORMAT_SIZE_T
 #   define PY_FORMAT_SIZE_T "z"
