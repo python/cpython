@@ -2541,12 +2541,28 @@ class TestFlag(unittest.TestCase):
 
     def test_bizarre(self):
         class Bizarre(Flag):
-            b = 3
-            c = 4
-            d = 6
+            B = 3
+            C = 4
+            D = 6
 
         name = "TestFlag.test_bizarre.<locals>.Bizarre"
         self.assertRaisesRegex(ValueError, "7 is not a valid " + name, Bizarre, 7)
+
+        # Bizarre.C is the only single-bit enum value, the rest are multi-bit aliases
+        #   and should not be listed
+        self.assertEqual(list(Bizarre), [Bizarre.C])
+
+    def test_list_with_flags_with_multibit_aliases(self):
+        class ExampleFlag(Flag):
+            A = 7
+            B = 4
+            C = 2
+            D = 1
+
+        # The above contains a single multi-bit alias and several members with single-bit values
+        #   All the single-bit values should be listed in order but the multi-bit alias, A, should
+        #   be omitted.
+        self.assertEqual(list(ExampleFlag), [ExampleFlag.B, ExampleFlag.C, ExampleFlag.D])
 
     def test_multiple_mixin(self):
         class AllMixin:
