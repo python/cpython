@@ -35,7 +35,7 @@ class CmdLineTest(unittest.TestCase):
         assert_python_failure('< .')
 
     def verify_valid_flag(self, cmd_line):
-        _, out, err = assert_python_ok(*cmd_line)
+        rc, out, err = assert_python_ok(*cmd_line)
         self.assertTrue(out == b'' or out.endswith(b'\n'))
         self.assertNotIn(b'Traceback', out)
         self.assertNotIn(b'Traceback', err)
@@ -63,7 +63,6 @@ class CmdLineTest(unittest.TestCase):
 
     def test_usage(self):
         rc, out, err = assert_python_ok('-h')
-        self.assertEqual(rc, 0)
         lines = out.splitlines()
         self.assertIn(b'usage', lines[0])
         # The first line contains the program name,
@@ -74,7 +73,6 @@ class CmdLineTest(unittest.TestCase):
         version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
         for switch in '-V', '--version', '-VV':
             rc, out, err = assert_python_ok(switch)
-            self.assertEqual(rc, 0)
             self.assertFalse(err.startswith(version))
             self.assertTrue(out.startswith(version))
 
@@ -109,7 +107,6 @@ class CmdLineTest(unittest.TestCase):
                      'Cannot run -E tests when PYTHON env vars are required.')
     def test_unknown_xoptions(self):
         rc, out, err = assert_python_failure('-X', 'blech')
-        self.assertEqual(rc, 1)
         self.assertIn(b'Unknown value for option -X', err)
         msg = b'Fatal Python error: Unknown value for option -X (see --help-xoptions)'
         self.assertEqual(err.splitlines().count(msg), 1)
