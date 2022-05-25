@@ -532,7 +532,10 @@ def collect_ssl(info_add):
 
 
 def collect_socket(info_add):
-    import socket
+    try:
+        import socket
+    except ImportError:
+        return
 
     hostname = socket.gethostname()
     info_add('socket.hostname', hostname)
