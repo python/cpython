@@ -907,6 +907,27 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(sem.locked())
         self.assertTrue(t2.done())
 
+    async def test_acquire_no_hang(self):
+
+        sem = asyncio.Semaphore(1)
+
+        async def c1(tasks):
+            async with sem:
+                await asyncio.sleep(0)
+            tasks[1].cancel()
+
+        async def c2(tasks):
+            async with sem:
+                await asyncio.sleep(0)
+
+        tasks = []
+        tasks.append(asyncio.create_task(c1(tasks)))
+        tasks.append(asyncio.create_task(c2(tasks)))
+
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+        await asyncio.wait_for(sem.acquire(), timeout=0.01)
+
     def test_release_not_acquired(self):
         sem = asyncio.BoundedSemaphore()
 
@@ -944,6 +965,77 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
             ['c1_1', 'c2_1', 'c3_1', 'c1_2', 'c2_2', 'c3_2'],
             result
         )
+
+    async def test_acquire_fifo_order_2(self):
+        sem = asyncio.Semaphore(1)
+        result = []
+
+        async def c1(result):
+            await sem.acquire()
+            result.append(1)
+            return True
+
+        async def c2(result):
+            await sem.acquire()
+            result.append(2)
+            sem.release()
+            await sem.acquire()
+            result.append(4)
+            return True
+
+        async def c3(result):
+            await sem.acquire()
+            result.append(3)
+            return True
+
+        t1 = asyncio.create_task(c1(result))
+        t2 = asyncio.create_task(c2(result))
+        t3 = asyncio.create_task(c3(result))
+
+        await asyncio.sleep(0)
+
+        sem.release()
+        sem.release()
+
+        tasks = [t1, t2, t3]
+        await asyncio.gather(*tasks)
+        self.assertEqual([1, 2, 3, 4], result)
+
+    async def test_acquire_fifo_order_3(self):
+        sem = asyncio.Semaphore(0)
+        result = []
+
+        async def c1(result):
+            await sem.acquire()
+            result.append(1)
+            return True
+
+        async def c2(result):
+            await sem.acquire()
+            result.append(2)
+            return True
+
+        async def c3(result):
+            await sem.acquire()
+            result.append(3)
+            return True
+
+        t1 = asyncio.create_task(c1(result))
+        t2 = asyncio.create_task(c2(result))
+        t3 = asyncio.create_task(c3(result))
+
+        await asyncio.sleep(0)
+
+        t1.cancel()
+
+        await asyncio.sleep(0.01)
+
+        sem.release()
+        sem.release()
+
+        tasks = [t1, t2, t3]
+        await asyncio.gather(*tasks, return_exceptions=True)
+        self.assertEqual([2, 3], result)
 
 
 class BarrierTests(unittest.IsolatedAsyncioTestCase):

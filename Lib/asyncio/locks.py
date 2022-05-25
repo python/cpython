@@ -348,7 +348,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
             raise ValueError("Semaphore initial value must be >= 0")
         self._value = value
         self._waiters = collections.deque()
-        self._wakeup_scheduled = False
+        self._wakeup_scheduled = 0
 
     def __repr__(self):
         res = super().__repr__()
@@ -362,7 +362,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
             waiter = self._waiters.popleft()
             if not waiter.done():
                 waiter.set_result(None)
-                self._wakeup_scheduled = True
+                self._wakeup_scheduled += 1
                 return
 
     def locked(self):
@@ -378,18 +378,22 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
         called release() to make it larger than 0, and then return
         True.
         """
-        # _wakeup_scheduled is set if *another* task is scheduled to wakeup
-        # but its acquire() is not resumed yet
-        while self._wakeup_scheduled or self._value <= 0:
+        freshman = True
+        while self._value <= 0 or (freshman and self._wakeup_scheduled):
+            freshman = False
             fut = self._get_loop().create_future()
             self._waiters.append(fut)
             try:
                 await fut
-                # reset _wakeup_scheduled *after* waiting for a future
-                self._wakeup_scheduled = False
             except exceptions.CancelledError:
-                self._wake_up_next()
+                if not fut.cancelled():
+                    self._wakeup_scheduled -= 1
+                    self._wake_up_next()
                 raise
+            else:
+                self._wakeup_scheduled -= 1
+                if self._value > 1 and self._wakeup_scheduled == 0:
+                    self._wake_up_next()
         self._value -= 1
         return True
 
