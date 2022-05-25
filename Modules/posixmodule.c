@@ -13244,20 +13244,9 @@ os_get_terminal_size_impl(PyObject *module, int fd)
 
 #ifdef TERMSIZE_USE_CONIO
     {
-        DWORD nhandle;
         HANDLE handle;
         CONSOLE_SCREEN_BUFFER_INFO csbi;
-        switch (fd) {
-        case 0: nhandle = STD_INPUT_HANDLE;
-            break;
-        case 1: nhandle = STD_OUTPUT_HANDLE;
-            break;
-        case 2: nhandle = STD_ERROR_HANDLE;
-            break;
-        default:
-            nhandle = _get_osfhandle(fd);
-        }
-        handle = GetStdHandle(nhandle);
+        handle = (HANDLE)_get_osfhandle(fd);
         if (handle == NULL)
             return PyErr_Format(PyExc_OSError, "handle cannot be retrieved");
         if (handle == INVALID_HANDLE_VALUE)
