@@ -18,7 +18,6 @@
 
 Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
 """
-import asyncio
 import logging
 import logging.handlers
 import logging.config
@@ -50,6 +49,7 @@ from test.support import warnings_helper
 from test.support.logging_helper import TestHandler
 import textwrap
 import threading
+import asyncio
 import time
 import unittest
 import warnings
@@ -4564,10 +4564,12 @@ class LogRecordTest(BaseTest):
         log_threads = logging.logThreads
         log_processes = logging.logProcesses
         log_multiprocessing = logging.logMultiprocessing
+        log_asyncio_tasks = logging.logAsyncioTasks
         try:
             logging.logThreads = False
             logging.logProcesses = False
             logging.logMultiprocessing = False
+            logging.logAsyncioTasks = False
             r = logging.makeLogRecord({})
 
             NONE(r.thread)
@@ -4579,18 +4581,31 @@ class LogRecordTest(BaseTest):
             logging.logThreads = log_threads
             logging.logProcesses = log_processes
             logging.logMultiprocessing = log_multiprocessing
+            logging.logAsyncioTasks = log_asyncio_tasks
 
-    def test_taskName(self):
-        async def log_record(assertion):
-            r = logging.makeLogRecord({})
-            assertion(r.taskName)
+    async def _make_record_async(self, assertion):
+        r = logging.makeLogRecord({})
+        assertion(r.taskName)
 
+    def test_taskName_with_asyncio_imported(self):
         try:
+            make_record = self._make_record_async
             with asyncio.Runner() as runner:
                 logging.logAsyncioTasks = True
-                runner.run(log_record(self.assertIsNotNone))
+                runner.run(make_record(self.assertIsNotNone))
                 logging.logAsyncioTasks = False
-                runner.run(log_record(self.assertIsNone))
+                runner.run(make_record(self.assertIsNone))
+        finally:
+            asyncio.set_event_loop_policy(None)
+
+    def test_taskName_without_asyncio_imported(self):
+        try:
+            make_record = self._make_record_async
+            with asyncio.Runner() as runner, support.swap_item(sys.modules, 'asyncio', None):
+                logging.logAsyncioTasks = True
+                runner.run(make_record(self.assertIsNone))
+                logging.logAsyncioTasks = False
+                runner.run(make_record(self.assertIsNone))
         finally:
             asyncio.set_event_loop_policy(None)
 

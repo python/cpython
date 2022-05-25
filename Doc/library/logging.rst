@@ -879,7 +879,7 @@ the options available to you.
    *processName* was added.
 
 .. versionchanged:: 3.12
-   *taskname* was added.
+   *taskName* was added.
 
 .. _logger-adapter:
 
