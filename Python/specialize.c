@@ -907,7 +907,7 @@ typedef enum {
     MANAGED_DICT = 2,
     OFFSET_DICT = 3,
     NO_DICT = 4,
-    LAZY_DICT = 5,    
+    LAZY_DICT = 5,
 } ObjectDictKind;
 
 // Please collect stats carefully before and after modifying. A subtle change
@@ -2014,15 +2014,6 @@ char INIT_CLEANUP_CODE[8] = {
     EXIT_INIT_CHECK, 0,
     RETURN_VALUE, 0
 };
-
-/* Long form
-    LOAD_ASSERTION_ERROR, 0,
-    RAISE_VARARGS, 1,
-    POP_JUMP_FORWARD_IF_NOT_NONE, 1,
-    RETURN_VALUE, 0
-    LOAD_CONSTANT TypeError
-    LOAD_CONSTANT "__init__() should return None, not
-*/
 
 PyFunctionObject *_Py_InitCleanupFunc = NULL;
 
