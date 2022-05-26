@@ -1,0 +1,1 @@
+Fix assert function in asyncio locks test.

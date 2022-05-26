@@ -853,7 +853,7 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(t1.result())
         race_tasks = [t2, t3, t4]
         done_tasks = [t for t in race_tasks if t.done() and t.result()]
-        self.assertTrue(2, len(done_tasks))
+        self.assertEqual(2, len(done_tasks))
 
         # cleanup locked semaphore
         sem.release()
