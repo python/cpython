@@ -101,7 +101,7 @@ static const char usage_3[] = "\
          -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
             The default is \"on\" (or \"off\" if you are running a local build).\n\
 --check-hash-based-pycs always|default|never:\n\
-         control how Python invalidates hash-based .pyc files\n\
+    control how Python invalidates hash-based .pyc files\n\
 ";
 static const char usage_4[] = "\
 file   : program read from script file\n\
