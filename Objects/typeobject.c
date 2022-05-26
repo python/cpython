@@ -1653,6 +1653,7 @@ vectorcall_unbound(PyThreadState *tstate, int unbound, PyObject *func,
         args++;
         nargsf = nargsf - 1 + PY_VECTORCALL_ARGUMENTS_OFFSET;
     }
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_SLOT, func);
     return _PyObject_VectorcallTstate(tstate, func, args, nargsf, NULL);
 }
 
@@ -1705,11 +1706,6 @@ vectorcall_maybe(PyThreadState *tstate, PyObject *name,
             Py_RETURN_NOTIMPLEMENTED;
         return NULL;
     }
-#ifdef Py_STATS
-    if (PyFunction_Check(func)) {
-        EVAL_CALL_STAT_INC(EVAL_CALL_SLOT);
-    }
-#endif
     PyObject *retval = vectorcall_unbound(tstate, unbound, func, args, nargs);
     Py_DECREF(func);
     return retval;

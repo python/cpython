@@ -328,11 +328,7 @@ _PyObject_Call(PyThreadState *tstate, PyObject *callable,
     assert(!_PyErr_Occurred(tstate));
     assert(PyTuple_Check(args));
     assert(kwargs == NULL || PyDict_Check(kwargs));
-#ifdef Py_STATS
-    if (PyFunction_Check(callable)) {
-        EVAL_CALL_STAT_INC(EVAL_CALL_API);
-    }
-#endif
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, callable);
     vectorcallfunc vector_func = _PyVectorcall_Function(callable);
     if (vector_func != NULL) {
         return _PyVectorcall_Call(tstate, vector_func, callable, args, kwargs);
@@ -400,7 +396,7 @@ _PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
     assert(nargs >= 0);
     PyThreadState *tstate = _PyThreadState_GET();
     assert(nargs == 0 || stack != NULL);
-    EVAL_CALL_STAT_INC(EVAL_CALL_FUNCTION);
+    EVAL_CALL_STAT_INC(EVAL_CALL_FUNCTION_VECTORCALL);
     if (((PyCodeObject *)f->func_code)->co_flags & CO_OPTIMIZED) {
         return _PyEval_Vector(tstate, f, NULL, stack, nargs, kwnames);
     }
@@ -532,11 +528,7 @@ _PyObject_CallFunctionVa(PyThreadState *tstate, PyObject *callable,
     if (stack == NULL) {
         return NULL;
     }
-#ifdef Py_STATS
-    if (PyFunction_Check(callable)) {
-        EVAL_CALL_STAT_INC(EVAL_CALL_API);
-    }
-#endif
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, callable);
     if (nargs == 1 && PyTuple_Check(stack[0])) {
         /* Special cases for backward compatibility:
            - PyObject_CallFunction(func, "O", tuple) calls func(*tuple)
