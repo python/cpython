@@ -18,7 +18,6 @@
 
 Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
 """
-
 import logging
 import logging.handlers
 import logging.config
@@ -50,6 +49,7 @@ from test.support import warnings_helper
 from test.support.logging_helper import TestHandler
 import textwrap
 import threading
+import asyncio
 import time
 import unittest
 import warnings
@@ -4552,29 +4552,63 @@ class LogRecordTest(BaseTest):
                 import multiprocessing
 
     def test_optional(self):
-        r = logging.makeLogRecord({})
+        NONE = self.assertIsNone
         NOT_NONE = self.assertIsNotNone
+
+        r = logging.makeLogRecord({})
         NOT_NONE(r.thread)
         NOT_NONE(r.threadName)
         NOT_NONE(r.process)
         NOT_NONE(r.processName)
+        NONE(r.taskName)
         log_threads = logging.logThreads
         log_processes = logging.logProcesses
         log_multiprocessing = logging.logMultiprocessing
+        log_asyncio_tasks = logging.logAsyncioTasks
         try:
             logging.logThreads = False
             logging.logProcesses = False
             logging.logMultiprocessing = False
+            logging.logAsyncioTasks = False
             r = logging.makeLogRecord({})
-            NONE = self.assertIsNone
+
             NONE(r.thread)
             NONE(r.threadName)
             NONE(r.process)
             NONE(r.processName)
+            NONE(r.taskName)
         finally:
             logging.logThreads = log_threads
             logging.logProcesses = log_processes
             logging.logMultiprocessing = log_multiprocessing
+            logging.logAsyncioTasks = log_asyncio_tasks
+
+    async def _make_record_async(self, assertion):
+        r = logging.makeLogRecord({})
+        assertion(r.taskName)
+
+    def test_taskName_with_asyncio_imported(self):
+        try:
+            make_record = self._make_record_async
+            with asyncio.Runner() as runner:
+                logging.logAsyncioTasks = True
+                runner.run(make_record(self.assertIsNotNone))
+                logging.logAsyncioTasks = False
+                runner.run(make_record(self.assertIsNone))
+        finally:
+            asyncio.set_event_loop_policy(None)
+
+    def test_taskName_without_asyncio_imported(self):
+        try:
+            make_record = self._make_record_async
+            with asyncio.Runner() as runner, support.swap_item(sys.modules, 'asyncio', None):
+                logging.logAsyncioTasks = True
+                runner.run(make_record(self.assertIsNone))
+                logging.logAsyncioTasks = False
+                runner.run(make_record(self.assertIsNone))
+        finally:
+            asyncio.set_event_loop_policy(None)
+
 
 class BasicConfigTest(unittest.TestCase):
 
@@ -4852,6 +4886,30 @@ class BasicConfigTest(unittest.TestCase):
             os.remove('test.log')
             # didn't write anything due to the encoding error
             self.assertEqual(data, r'')
+
+    def test_log_taskName(self):
+        async def log_record():
+            logging.warning('hello world')
+
+        try:
+            encoding = 'utf-8'
+            logging.basicConfig(filename='test.log', errors='strict', encoding=encoding,
+                                format='%(taskName)s - %(message)s', level=logging.WARNING)
+
+            self.assertEqual(len(logging.root.handlers), 1)
+            handler = logging.root.handlers[0]
+            self.assertIsInstance(handler, logging.FileHandler)
+
+            with asyncio.Runner(debug=True) as runner:
+                logging.logAsyncioTasks = True
+                runner.run(log_record())
+        finally:
+            asyncio.set_event_loop_policy(None)
+            handler.close()
+            with open('test.log', encoding='utf-8') as f:
+                data = f.read().strip()
+            os.remove('test.log')
+            self.assertRegex(data, r'Task-\d+ - hello world')
 
 
     def _test_log(self, method, level=None):
@@ -5644,7 +5702,7 @@ class MiscTestCase(unittest.TestCase):
             'logThreads', 'logMultiprocessing', 'logProcesses', 'currentframe',
             'PercentStyle', 'StrFormatStyle', 'StringTemplateStyle',
             'Filterer', 'PlaceHolder', 'Manager', 'RootLogger', 'root',
-            'threading'}
+            'threading', 'logAsyncioTasks'}
         support.check__all__(self, logging, not_exported=not_exported)
 
 
