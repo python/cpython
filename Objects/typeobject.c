@@ -1705,6 +1705,11 @@ vectorcall_maybe(PyThreadState *tstate, PyObject *name,
             Py_RETURN_NOTIMPLEMENTED;
         return NULL;
     }
+#ifdef Py_STATS
+    if (PyFunction_Check(func)) {
+        EVAL_CALL_STAT_INC(EVAL_CALL_SLOT);
+    }
+#endif
     PyObject *retval = vectorcall_unbound(tstate, unbound, func, args, nargs);
     Py_DECREF(func);
     return retval;

@@ -10,6 +10,17 @@ extern "C" {
 
 #define SPECIALIZATION_FAILURE_KINDS 32
 
+/* Stats for determining who is calling PyEval_EvalFrame */
+#define EVAL_CALL_TOTAL 0
+#define EVAL_CALL_VECTOR 1
+#define EVAL_CALL_GENERATOR 2
+#define EVAL_CALL_LEGACY 3
+#define EVAL_CALL_FUNCTION 4
+#define EVAL_CALL_BUILD_CLASS 5
+#define EVAL_CALL_SLOT 6
+
+#define EVAL_CALL_KINDS 7
+
 typedef struct _specialization_stats {
     uint64_t success;
     uint64_t failure;
@@ -31,7 +42,7 @@ typedef struct _call_stats {
     uint64_t pyeval_calls;
     uint64_t frames_pushed;
     uint64_t frame_objects_created;
-    uint64_t eval_calls[16];
+    uint64_t eval_calls[EVAL_CALL_KINDS];
 } CallStats;
 
 typedef struct _object_stats {
@@ -74,14 +85,6 @@ extern void _Py_PrintSpecializationStats(int to_file);
 #define _Py_DECREF_STAT_INC()  _py_stats.object_stats.decrefs++
 
 #endif
-
-/* Temporary stats for determining who is calling PyEval_EvalFrame */
-#define EVAL_CALL_TOTAL 0
-#define EVAL_CALL_VECTOR 1
-#define EVAL_CALL_GENERATOR 2
-#define EVAL_CALL_LEGACY 3
-#define EVAL_CALL_FUNCTION 4
-#define EVAL_CALL_BUILD_CLASS 5
 
 #else
 
