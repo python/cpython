@@ -274,11 +274,8 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
     }
     else {
         if (Py_REFCNT(op) <= 0) {
-            /* XXX(twouters) cast refcount to long until %zd is
-               universally available */
             Py_BEGIN_ALLOW_THREADS
-            fprintf(fp, "<refcnt %ld at %p>",
-                (long)Py_REFCNT(op), (void *)op);
+            fprintf(fp, "<refcnt %zd at %p>", Py_REFCNT(op), (void *)op);
             Py_END_ALLOW_THREADS
         }
         else {
@@ -371,9 +368,7 @@ _PyObject_Dump(PyObject* op)
 
     /* first, write fields which are the least likely to crash */
     fprintf(stderr, "object address  : %p\n", (void *)op);
-    /* XXX(twouters) cast refcount to long until %zd is
-       universally available */
-    fprintf(stderr, "object refcount : %ld\n", (long)Py_REFCNT(op));
+    fprintf(stderr, "object refcount : %zd\n", Py_REFCNT(op));
     fflush(stderr);
 
     PyTypeObject *type = Py_TYPE(op);
@@ -1846,6 +1841,8 @@ extern PyTypeObject PyHKEY_Type;
 #endif
 extern PyTypeObject _Py_GenericAliasIterType;
 extern PyTypeObject _PyMemoryIter_Type;
+extern PyTypeObject _PyLineIterator;
+extern PyTypeObject _PyPositionsIterator;
 
 static PyTypeObject* static_types[] = {
     // The two most important base types: must be initialized first and
@@ -1944,12 +1941,14 @@ static PyTypeObject* static_types[] = {
     &_PyHamt_CollisionNode_Type,
     &_PyHamt_Type,
     &_PyInterpreterID_Type,
+    &_PyLineIterator,
     &_PyManagedBuffer_Type,
     &_PyMemoryIter_Type,
     &_PyMethodWrapper_Type,
     &_PyNamespace_Type,
     &_PyNone_Type,
     &_PyNotImplemented_Type,
+    &_PyPositionsIterator,
     &_PyUnicodeASCIIIter_Type,
     &_PyUnion_Type,
     &_PyWeakref_CallableProxyType,

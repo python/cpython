@@ -189,6 +189,12 @@ class HeadlightsC(IntFlag, boundary=enum.CONFORM):
     FOG_C = auto()
 
 
+@enum.global_enum
+class NoName(Flag):
+    ONE = 1
+    TWO = 2
+
+
 # tests
 
 class _EnumTests:
@@ -616,6 +622,7 @@ class _PlainOutputTests:
     def test_str(self):
         TE = self.MainEnum
         if self.is_flag:
+            self.assertEqual(str(TE(0)), "MainEnum(0)")
             self.assertEqual(str(TE.dupe), "MainEnum.dupe")
             self.assertEqual(str(self.dupe2), "MainEnum.first|third")
         else:
@@ -3241,6 +3248,10 @@ class OldTestIntFlag(unittest.TestCase):
                 repr(HeadlightsC(2**3)),
                 '%(m)s.OFF_C' % {'m': SHORT_MODULE},
                 )
+
+    def test_global_enum_str(self):
+        self.assertEqual(str(NoName.ONE & NoName.TWO), 'NoName(0)')
+        self.assertEqual(str(NoName(0)), 'NoName(0)')
 
     def test_format(self):
         Perm = self.Perm

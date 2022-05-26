@@ -835,8 +835,10 @@ PyConfig
 
       * Set :c:member:`~PyConfig.safe_path` to ``1``:
         don't prepend a potentially unsafe path to :data:`sys.path` at Python
-        startup.
-      * Set :c:member:`~PyConfig.use_environment` to ``0``.
+        startup, such as the current directory, the script's directory or an
+        empty string.
+      * Set :c:member:`~PyConfig.use_environment` to ``0``: ignore ``PYTHON``
+        environment variables.
       * Set :c:member:`~PyConfig.user_site_directory` to ``0``: don't add the user
         site directory to :data:`sys.path`.
       * Python REPL doesn't import :mod:`readline` nor enable default readline
@@ -846,7 +848,8 @@ PyConfig
 
       Default: ``0`` in Python mode, ``1`` in isolated mode.
 
-      See also :c:member:`PyPreConfig.isolated`.
+      See also the :ref:`Isolated Configuration <init-isolated-conf>` and
+      :c:member:`PyPreConfig.isolated`.
 
    .. c:member:: int legacy_windows_stdio
 
@@ -982,6 +985,9 @@ PyConfig
 
       Incremented by the :option:`-d` command line option. Set to the
       :envvar:`PYTHONDEBUG` environment variable value.
+
+      Need a :ref:`debug build of Python <debug-build>` (the ``Py_DEBUG`` macro
+      must be defined).
 
       Default: ``0``.
 
@@ -1177,13 +1183,13 @@ PyConfig
       imported, showing the place (filename or built-in module) from which
       it is loaded.
 
-      If greater or equal to ``2``, print a message for each file that is checked
-      for when searching for a module. Also provides information on module
-      cleanup at exit.
+      If greater than or equal to ``2``, print a message for each file that is
+      checked for when searching for a module. Also provides information on
+      module cleanup at exit.
 
       Incremented by the :option:`-v` command line option.
 
-      Set to the :envvar:`PYTHONVERBOSE` environment variable value.
+      Set by the :envvar:`PYTHONVERBOSE` environment variable value.
 
       Default: ``0``.
 
@@ -1289,7 +1295,11 @@ Example setting the program name::
     }
 
 More complete example modifying the default configuration, read the
-configuration, and then override some parameters::
+configuration, and then override some parameters. Note that since
+3.11, many parameters are not calculated until initialization, and
+so values cannot be read from the configuration structure. Any values
+set before initialize is called will be left unchanged by
+initialization::
 
     PyStatus init_python(const char *program_name)
     {
@@ -1314,7 +1324,15 @@ configuration, and then override some parameters::
             goto done;
         }
 
-        /* Append our custom search path to sys.path */
+        /* Specify sys.path explicitly */
+        /* If you want to modify the default set of paths, finish
+           initialization first and then use PySys_GetObject("path") */
+        config.module_search_paths_set = 1;
+        status = PyWideStringList_Append(&config.module_search_paths,
+                                         L"/path/to/stdlib");
+        if (PyStatus_Exception(status)) {
+            goto done;
+        }
         status = PyWideStringList_Append(&config.module_search_paths,
                                          L"/path/to/more/modules");
         if (PyStatus_Exception(status)) {
@@ -1417,8 +1435,8 @@ It is possible to completely ignore the function calculating the default
 path configuration by setting explicitly all path configuration output
 fields listed above. A string is considered as set even if it is non-empty.
 ``module_search_paths`` is considered as set if
-``module_search_paths_set`` is set to ``1``. In this case, path
-configuration input fields are ignored as well.
+``module_search_paths_set`` is set to ``1``. In this case,
+``module_search_paths`` will be used without modification.
 
 Set :c:member:`~PyConfig.pathconfig_warnings` to ``0`` to suppress warnings when
 calculating the path configuration (Unix only, Windows does not log any warning).

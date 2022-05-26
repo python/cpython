@@ -1506,9 +1506,6 @@
 /* Define if you want to coerce the C locale to a UTF-8 based locale */
 #undef PY_COERCE_C_LOCALE
 
-/* Define to printf format modifier for Py_ssize_t */
-#undef PY_FORMAT_SIZE_T
-
 /* Define to 1 to build the sqlite module with loadable extensions support. */
 #undef PY_SQLITE_ENABLE_LOAD_EXTENSION
 

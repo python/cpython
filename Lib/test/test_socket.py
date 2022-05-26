@@ -22,6 +22,7 @@ from weakref import proxy
 import signal
 import math
 import pickle
+import re
 import struct
 import random
 import shutil
@@ -143,6 +144,17 @@ def _have_socket_bluetooth():
     return True
 
 
+def _have_socket_hyperv():
+    """Check whether AF_HYPERV sockets are supported on this host."""
+    try:
+        s = socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW)
+    except (AttributeError, OSError):
+        return False
+    else:
+        s.close()
+    return True
+
+
 @contextlib.contextmanager
 def socket_setdefaulttimeout(timeout):
     old_timeout = socket.getdefaulttimeout()
@@ -170,6 +182,8 @@ HAVE_SOCKET_VSOCK = _have_socket_vsock()
 HAVE_SOCKET_UDPLITE = hasattr(socket, "IPPROTO_UDPLITE")
 
 HAVE_SOCKET_BLUETOOTH = _have_socket_bluetooth()
+
+HAVE_SOCKET_HYPERV = _have_socket_hyperv()
 
 # Size in bytes of the int type
 SIZEOF_INT = array.array("i").itemsize
@@ -2457,6 +2471,60 @@ class BasicBluetoothTest(unittest.TestCase):
     def testCreateScoSocket(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_SCO) as s:
             pass
+
+
+@unittest.skipUnless(HAVE_SOCKET_HYPERV,
+                     'Hyper-V sockets required for this test.')
+class BasicHyperVTest(unittest.TestCase):
+
+    def testHyperVConstants(self):
+        socket.HVSOCKET_CONNECT_TIMEOUT
+        socket.HVSOCKET_CONNECT_TIMEOUT_MAX
+        socket.HVSOCKET_CONTAINER_PASSTHRU
+        socket.HVSOCKET_CONNECTED_SUSPEND
+        socket.HVSOCKET_ADDRESS_FLAG_PASSTHRU
+        socket.HV_GUID_ZERO
+        socket.HV_GUID_WILDCARD
+        socket.HV_GUID_BROADCAST
+        socket.HV_GUID_CHILDREN
+        socket.HV_GUID_LOOPBACK
+        socket.HV_GUID_LOOPBACK
+
+    def testCreateHyperVSocketWithUnknownProtoFailure(self):
+        expected = "A protocol was specified in the socket function call " \
+            "that does not support the semantics of the socket type requested"
+        with self.assertRaisesRegex(OSError, expected):
+            socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM)
+
+    def testCreateHyperVSocketAddrNotTupleFailure(self):
+        expected = "connect(): AF_HYPERV address must be tuple, not str"
+        with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
+            with self.assertRaisesRegex(TypeError, re.escape(expected)):
+                s.connect(socket.HV_GUID_ZERO)
+
+    def testCreateHyperVSocketAddrNotTupleOf2StrsFailure(self):
+        expected = "AF_HYPERV address must be a str tuple (vm_id, service_id)"
+        with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
+            with self.assertRaisesRegex(TypeError, re.escape(expected)):
+                s.connect((socket.HV_GUID_ZERO,))
+
+    def testCreateHyperVSocketAddrNotTupleOfStrsFailure(self):
+        expected = "AF_HYPERV address must be a str tuple (vm_id, service_id)"
+        with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
+            with self.assertRaisesRegex(TypeError, re.escape(expected)):
+                s.connect((1, 2))
+
+    def testCreateHyperVSocketAddrVmIdNotValidUUIDFailure(self):
+        expected = "connect(): AF_HYPERV address vm_id is not a valid UUID string"
+        with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
+            with self.assertRaisesRegex(ValueError, re.escape(expected)):
+                s.connect(("00", socket.HV_GUID_ZERO))
+
+    def testCreateHyperVSocketAddrServiceIdNotValidUUIDFailure(self):
+        expected = "connect(): AF_HYPERV address service_id is not a valid UUID string"
+        with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
+            with self.assertRaisesRegex(ValueError, re.escape(expected)):
+                s.connect((socket.HV_GUID_ZERO, "00"))
 
 
 class BasicTCPTest(SocketConnectedTest):
