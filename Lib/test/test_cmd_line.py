@@ -93,10 +93,11 @@ class CmdLineTest(unittest.TestCase):
             "🚀" * 100: b"Fatal Python error: Unknown value for option -X"
         }
         for arg, expected_err in cases.items():
-            rc, out, err = assert_python_failure('-X', arg)
-            self.assertIn(b'Unknown value for option -X', err)
-            self.assertEqual(err.splitlines().count(expected_err), 1)
-            self.assertEqual(b'', out)
+            with self.subTest(f"-X {arg!r}"):
+                rc, out, err = assert_python_failure('-X', arg)
+                self.assertIn(b'Unknown value for option -X', err)
+                self.assertEqual(err.splitlines().count(expected_err), 1)
+                self.assertEqual(b'', out)
 
     def test_showrefcount(self):
         def run_python(*args):
