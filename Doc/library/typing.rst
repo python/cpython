@@ -1855,7 +1855,7 @@ These are not used in annotations. They are building blocks for declaring types.
    .. versionadded:: 3.8
 
    .. versionchanged:: 3.11
-      Added support for marking individual keys as :data`Required` or :data:`NotRequired`.
+      Added support for marking individual keys as :data:`Required` or :data:`NotRequired`.
       See :pep:`655`.
 
    .. versionchanged:: 3.11
