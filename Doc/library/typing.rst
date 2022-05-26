@@ -1834,7 +1834,7 @@ These are not used in annotations. They are building blocks for declaring types.
       For backwards compatibility with Python 3.10 and below,
       it is also possible to use inheritance to declare both required and
       non-required keys in the same ``TypedDict`` . This is done by declaring a
-      ``TypedDict`` with one value for the ``total`` argument, and then
+      ``TypedDict`` with one value for the ``total`` argument and then
       inheriting from it in another ``TypedDict`` with a different value for
       ``total``::
 
