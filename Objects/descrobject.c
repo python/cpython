@@ -1627,6 +1627,8 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         return NULL;
     }
 
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_STDLIB, gs->prop_get);
+    EVAL_CALL_STAT_DEC_IF_FUNCTION(EVAL_CALL_API, gs->prop_get);
     return PyObject_CallOneArg(gs->prop_get, obj);
 }
 
@@ -1677,6 +1679,7 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
         res = PyObject_CallOneArg(func, obj);
     }
     else {
+        EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_STDLIB, func);
         PyObject *args[] = { obj, value };
         res = PyObject_Vectorcall(func, args, 2, NULL);
     }

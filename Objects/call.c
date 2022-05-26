@@ -109,7 +109,13 @@ _Py_CheckSlotResult(PyObject *obj, const char *slot_name, int success)
 PyObject *
 PyObject_CallNoArgs(PyObject *func)
 {
-    return _PyObject_CallNoArgs(func);
+#ifdef Py_STATS
+    if (PyFunction_Check(func)) {
+        EVAL_CALL_STAT_INC(EVAL_CALL_API);
+    }
+#endif
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyObject_VectorcallTstate(tstate, func, NULL, 0, NULL);
 }
 
 
@@ -322,7 +328,11 @@ _PyObject_Call(PyThreadState *tstate, PyObject *callable,
     assert(!_PyErr_Occurred(tstate));
     assert(PyTuple_Check(args));
     assert(kwargs == NULL || PyDict_Check(kwargs));
-
+#ifdef Py_STATS
+    if (PyFunction_Check(callable)) {
+        EVAL_CALL_STAT_INC(EVAL_CALL_API);
+    }
+#endif
     vectorcallfunc vector_func = _PyVectorcall_Function(callable);
     if (vector_func != NULL) {
         return _PyVectorcall_Call(tstate, vector_func, callable, args, kwargs);
@@ -367,6 +377,7 @@ PyCFunction_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 PyObject *
 PyObject_CallOneArg(PyObject *func, PyObject *arg)
 {
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, func);
     assert(arg != NULL);
     PyObject *_args[2];
     PyObject **args = _args + 1;  // For PY_VECTORCALL_ARGUMENTS_OFFSET
@@ -521,7 +532,11 @@ _PyObject_CallFunctionVa(PyThreadState *tstate, PyObject *callable,
     if (stack == NULL) {
         return NULL;
     }
-
+#ifdef Py_STATS
+    if (PyFunction_Check(callable)) {
+        EVAL_CALL_STAT_INC(EVAL_CALL_API);
+    }
+#endif
     if (nargs == 1 && PyTuple_Check(stack[0])) {
         /* Special cases for backward compatibility:
            - PyObject_CallFunction(func, "O", tuple) calls func(*tuple)
@@ -816,6 +831,11 @@ object_vacall(PyThreadState *tstate, PyObject *base,
         stack[i] = va_arg(vargs, PyObject *);
     }
 
+#ifdef Py_STATS
+    if (PyFunction_Check(callable)) {
+        EVAL_CALL_STAT_INC(EVAL_CALL_API);
+    }
+#endif
     /* Call the function */
     result = _PyObject_VectorcallTstate(tstate, callable, stack, nargs, NULL);
 
@@ -853,6 +873,11 @@ PyObject_VectorcallMethod(PyObject *name, PyObject *const *args,
         args++;
         nargsf--;
     }
+#ifdef Py_STATS
+    if (PyFunction_Check(callable)) {
+        EVAL_CALL_STAT_INC(EVAL_CALL_METHOD);
+    }
+#endif
     PyObject *result = _PyObject_VectorcallTstate(tstate, callable,
                                                   args, nargsf, kwnames);
     Py_DECREF(callable);
