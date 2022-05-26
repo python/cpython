@@ -23,6 +23,26 @@ _testcppext_add(PyObject *Py_UNUSED(module), PyObject *args)
 }
 
 
+// Class to test operator casting an object to PyObject*
+class StrongRef
+{
+public:
+    StrongRef(PyObject *obj) : m_obj(obj) {
+        Py_INCREF(this->m_obj);
+    }
+
+    ~StrongRef() {
+        Py_DECREF(this->m_obj);
+    }
+
+    // Cast to PyObject*: get a borrowed reference
+    inline operator PyObject*() const { return this->m_obj; }
+
+private:
+    PyObject *m_obj;  // Strong reference
+};
+
+
 static PyObject *
 test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
@@ -30,6 +50,8 @@ test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     if (obj == nullptr) {
         return nullptr;
     }
+    Py_ssize_t refcnt = Py_REFCNT(obj);
+    assert(refcnt >= 1);
 
     // gh-92138: For backward compatibility, functions of Python C API accepts
     // "const PyObject*". Check that using it does not emit C++ compiler
@@ -38,21 +60,19 @@ test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_INCREF(const_obj);
     Py_DECREF(const_obj);
     PyTypeObject *type = Py_TYPE(const_obj);
-    assert(Py_REFCNT(const_obj) >= 1);
-
-    struct PyObjectProxy {
-      PyObject* obj;
-      operator PyObject *() { return obj; }
-    } proxy_obj = { obj };
-    Py_INCREF(proxy_obj);
-    Py_DECREF(proxy_obj);
-    assert(Py_REFCNT(proxy_obj) >= 1);
-
-
+    assert(Py_REFCNT(const_obj) == refcnt);
     assert(type == &PyTuple_Type);
     assert(PyTuple_GET_SIZE(const_obj) == 2);
     PyObject *one = PyTuple_GET_ITEM(const_obj, 0);
     assert(PyLong_AsLong(one) == 1);
+
+    // gh-92898: StrongRef doesn't inherit from PyObject but has an operator to
+    // cast to PyObject*.
+    StrongRef strong_ref(obj);
+    assert(Py_TYPE(strong_ref) == &PyTuple_Type);
+    assert(Py_REFCNT(strong_ref) == (refcnt + 1));
+    Py_INCREF(strong_ref);
+    Py_DECREF(strong_ref);
 
     Py_DECREF(obj);
     Py_RETURN_NONE;
