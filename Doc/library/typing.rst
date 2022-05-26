@@ -1734,8 +1734,7 @@ These are not used in annotations. They are building blocks for declaring types.
    key omitted.
 
    It is also possible to mark all keys as non-required by default
-   by specifying a totality of ``False``.
-   Usage::
+   by specifying a totality of ``False``::
 
       class Point2D(TypedDict, total=False):
           x: int
