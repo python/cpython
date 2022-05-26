@@ -18,8 +18,9 @@ extern "C" {
 #define EVAL_CALL_FUNCTION 4
 #define EVAL_CALL_BUILD_CLASS 5
 #define EVAL_CALL_SLOT 6
+#define EVAL_CALL_FUNCTION_EX 7
 
-#define EVAL_CALL_KINDS 7
+#define EVAL_CALL_KINDS 8
 
 typedef struct _specialization_stats {
     uint64_t success;

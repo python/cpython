@@ -7302,7 +7302,6 @@ do_call_core(PyThreadState *tstate,
             )
 {
     PyObject *result;
-
     if (PyCFunction_CheckExact(func) || PyCMethod_CheckExact(func)) {
         C_TRACE(result, PyObject_Call(func, callargs, kwdict));
         return result;
@@ -7332,6 +7331,11 @@ do_call_core(PyThreadState *tstate,
             return result;
         }
     }
+#ifdef Py_STATS
+    if (PyFunction_Check(func)) {
+        EVAL_CALL_STAT_INC(EVAL_CALL_FUNCTION_EX);
+    }
+#endif
     return PyObject_Call(func, callargs, kwdict);
 }
 
