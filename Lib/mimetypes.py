@@ -601,11 +601,17 @@ _default_mime_types()
 def _main():
     from argparse import ArgumentParser
     parser = ArgumentParser(description='map filename extensions to MIME types')
-    parser.add_argument('-e', '--extension', action='store_true',
-                        help='guess extension instead of type')
-    parser.add_argument('-l', '--lenient', action='store_true',
-                        help='search also for common but non-standard types')
-    parser.add_argument('type', nargs='+', help='type to search')
+    parser.add_argument(
+        '-e', '--extension',
+        action='store_true',
+        help='guess extension instead of type'
+    )
+    parser.add_argument(
+        '-l', '--lenient',
+        action='store_true',
+        help='additianally search for common but non-standard types'
+    )
+    parser.add_argument('type', nargs='+', help='a type to search')
     arguments = parser.parse_args()
 
     if arguments.extension:
