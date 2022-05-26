@@ -13246,11 +13246,9 @@ os_get_terminal_size_impl(PyObject *module, int fd)
     {
         HANDLE handle;
         CONSOLE_SCREEN_BUFFER_INFO csbi;
-        handle = (HANDLE)_get_osfhandle(fd);
-        if (handle == NULL)
-            return PyErr_Format(PyExc_OSError, "handle cannot be retrieved");
+        handle = _Py_get_osfhandle(fd);
         if (handle == INVALID_HANDLE_VALUE)
-            return PyErr_SetFromWindowsErr(0);
+            return NULL;
 
         if (!GetConsoleScreenBufferInfo(handle, &csbi))
             return PyErr_SetFromWindowsErr(0);
