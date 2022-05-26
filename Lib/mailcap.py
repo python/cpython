@@ -20,7 +20,7 @@ def lineno_sort_key(entry):
     else:
         return 1, 0
 
-_find_unsafe = re.compile(r'[^\xa1-\U0010FFFF\w@%+=:,./-]').search
+_find_unsafe = re.compile(r'[^\xa1-\U0010FFFF\w@+=:,./-]').search
 
 class UnsafeMailcapInput(Warning):
     """Warning raised when refusing unsafe input"""
