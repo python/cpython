@@ -1207,6 +1207,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
     if (func == NULL) {
         return NULL;
     }
+    EVAL_CALL_STAT_INC(EVAL_CALL_LEGACY);
     PyObject *res = _PyEval_Vector(tstate, func, locals, NULL, 0, NULL);
     Py_DECREF(func);
     return res;
@@ -6508,6 +6509,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     if (func == NULL) {
         goto fail;
     }
+    EVAL_CALL_STAT_INC(EVAL_CALL_LEGACY);
     res = _PyEval_Vector(tstate, func, locals,
                          allargs, argcount,
                          kwnames);

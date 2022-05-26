@@ -176,6 +176,9 @@ print_call_stats(FILE *out, CallStats *stats)
     fprintf(out, "Calls to Python functions inlined: %" PRIu64 "\n", stats->inlined_py_calls);
     fprintf(out, "Frames pushed: %" PRIu64 "\n", stats->frames_pushed);
     fprintf(out, "Frame objects created: %" PRIu64 "\n", stats->frame_objects_created);
+    for (int i = 0; i <= EVAL_CALL_BUILD_CLASS; i++) {
+        fprintf(out, "Calls PyEval_EvalFrame[%d] : %" PRIu64 "\n", i, stats->eval_calls[i]);
+    }
 }
 
 static void

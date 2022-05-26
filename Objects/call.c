@@ -389,6 +389,7 @@ _PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
     assert(nargs >= 0);
     PyThreadState *tstate = _PyThreadState_GET();
     assert(nargs == 0 || stack != NULL);
+    EVAL_CALL_STAT_INC(EVAL_CALL_FUNCTION);
     if (((PyCodeObject *)f->func_code)->co_flags & CO_OPTIMIZED) {
         return _PyEval_Vector(tstate, f, NULL, stack, nargs, kwnames);
     }

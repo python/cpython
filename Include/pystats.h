@@ -78,8 +78,10 @@ extern void _Py_PrintSpecializationStats(int to_file);
 /* Temporary stats for determining who is calling PyEval_EvalFrame */
 #define EVAL_CALL_TOTAL 0
 #define EVAL_CALL_VECTOR 1
-#define EVAL_CALL_LEGACY 2
 #define EVAL_CALL_GENERATOR 2
+#define EVAL_CALL_LEGACY 3
+#define EVAL_CALL_FUNCTION 4
+#define EVAL_CALL_BUILD_CLASS 5
 
 #else
 
