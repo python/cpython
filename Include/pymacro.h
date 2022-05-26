@@ -151,6 +151,8 @@
 #define _Py_RVALUE(EXPR) ((void)0, (EXPR))
 
 // Return non-zero if the type is signed, return zero if it's unsigned.
-#define _Py_IS_TYPE_SIGNED(type) ((type)(-1) < 0)
+// Use "<= 0" rather than "< 0" to prevent the compiler warning:
+// "comparison of unsigned expression in '< 0' is always false".
+#define _Py_IS_TYPE_SIGNED(type) ((type)(-1) <= 0)
 
 #endif /* Py_PYMACRO_H */
