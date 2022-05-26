@@ -41,10 +41,7 @@ Options (and corresponding environment variables):\n\
 -d     : turn on parser debugging output (for experts only, only works on\n\
          debug builds); also PYTHONDEBUG=x\n\
 -E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
--h     : print this help message and exit (also --help)\n\
---help-env      : print help about Python environment variables and exit\n\
---help-xoptions : print help about implementation-specific -X options and exit\n\
---help-all      : print complete help information and exit\n\
+-h     : print this help message and exit (also -? or --help)\n\
 -i     : inspect interactively after running script; forces a prompt even\n\
          if stdin does not appear to be a terminal; also PYTHONINSPECT=x\n\
 -I     : isolate Python from the user's environment (implies -E and -s)\n\
@@ -67,6 +64,11 @@ Options (and corresponding environment variables):\n\
          also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
 -X opt : set implementation-specific option\n\
+--check-hash-based-pycs always|default|never:\n\
+         control how Python invalidates hash-based .pyc files\n\
+--help-env      : print help about Python environment variables and exit\n\
+--help-xoptions : print help about implementation-specific -X options and exit\n\
+--help-all      : print complete help information and exit\n\
 Arguments:\n\
 file   : program read from script file\n\
 -      : program read from stdin (default; interactive mode if a tty)\n\

@@ -204,6 +204,7 @@ CH_UNICODE = {
 }
 
 # flags
+SRE_FLAG_TEMPLATE = 1 # template mode (unknown purpose, deprecated)
 SRE_FLAG_IGNORECASE = 2 # case insensitive
 SRE_FLAG_LOCALE = 4 # honour system locale
 SRE_FLAG_MULTILINE = 8 # treat target as multiline string

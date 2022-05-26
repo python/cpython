@@ -333,7 +333,8 @@ Set implementation-specific option. The following options are available:
         more verbose than the default if the code is correct: new warnings are
         only emitted when an issue is detected. Effect of the developer mode:
            * Add default warning filter, as -W default
-           * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks() C function
+           * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks()
+             C function
            * Enable the faulthandler module to dump the Python traceback on a crash
            * Enable asyncio debug mode
            * Set the dev_mode attribute of sys.flags to True
