@@ -226,7 +226,9 @@ Creating Tasks
    .. important::
 
       Save a reference to the result of this function, to avoid
-      a task disappearing mid execution.
+      a task disappearing mid execution. The event loop only keeps
+      weak references to all task. Without a strong reference, the
+      task may get garbage-collected at any time.
 
    .. versionadded:: 3.7
 
