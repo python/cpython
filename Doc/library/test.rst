@@ -369,7 +369,7 @@ The :mod:`test.support` module defines the following constants:
 .. data:: HAVE_DOCSTRINGS
 
    Set to ``True`` if function docstrings are available.
-   See the :option:`python -OO <-O>` which strips docstrings of functions implemented in Python.
+   See the :option:`python -OO <-O>` option, which strips docstrings of functions implemented in Python.
 
    See also the :data:`MISSING_C_DOCSTRINGS` variable.
 
@@ -446,7 +446,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: match_test(test)
 
-   Return whether *test* matches the patterns set in :func:`set_match_tests`.
+   Determine whether *test* matches the patterns set in :func:`set_match_tests`.
 
 
 .. function:: set_match_tests(accept_patterns=None, ignore_patterns=None)
@@ -646,7 +646,7 @@ The :mod:`test.support` module defines the following functions:
 .. function:: calcobjsize(fmt)
 
    Return the size of the :c:type:`PyObject` whose structure members are
-   defined by *fmt* including the Python object header and alignment.
+   defined by *fmt*. The returned value includes the size of the Python object header and alignment.
 
 
 .. function:: calcvobjsize(fmt)
@@ -670,7 +670,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: system_must_validate_cert(f)
 
-   A decorator that skips the test on TLS certification validation failures.
+   A decorator that skips the decorated test on TLS certification validation failures.
 
 
 .. decorator:: run_with_locale(catstr, *locales)
@@ -1252,7 +1252,7 @@ The :mod:`test.support.threading_helper` module provides support for threading t
    Context manager to start *threads*, which is a sequence of threads.
    *unlock* is a function called after the threads are started, even if an
    exception was raised; an example would be :meth:`threading.Event.set`.
-   This also attempts to join the started threads upon exit.
+   ``start_threads`` will attempt to join the started threads upon exit.
 
 
 .. function:: threading_cleanup(*original_values)
@@ -1435,8 +1435,8 @@ The :mod:`test.support.os_helper` module provides support for os tests.
 .. function:: rmdir(filename)
 
    Call :func:`os.rmdir` on *filename*.  On Windows platforms, this is
-   wrapped with a wait loop that checks for the existence of the file.
-   This is needed due to antivirus programs that can hold files open and prevent
+   wrapped with a wait loop that checks for the existence of the file,
+   which is needed due to antivirus programs that can hold files open and prevent
    deletion.
 
 
