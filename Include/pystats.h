@@ -31,6 +31,7 @@ typedef struct _call_stats {
     uint64_t pyeval_calls;
     uint64_t frames_pushed;
     uint64_t frame_objects_created;
+    uint64_t eval_calls[16];
 } CallStats;
 
 typedef struct _object_stats {
@@ -73,6 +74,12 @@ extern void _Py_PrintSpecializationStats(int to_file);
 #define _Py_DECREF_STAT_INC()  _py_stats.object_stats.decrefs++
 
 #endif
+
+/* Temporary stats for determining who is calling PyEval_EvalFrame */
+#define EVAL_CALL_TOTAL 0
+#define EVAL_CALL_VECTOR 1
+#define EVAL_CALL_LEGACY 2
+#define EVAL_CALL_GENERATOR 2
 
 #else
 

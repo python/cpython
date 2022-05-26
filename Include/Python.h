@@ -5,6 +5,8 @@
 #ifndef Py_PYTHON_H
 #define Py_PYTHON_H
 
+#define Py_STATS 1
+
 // Since this is a "meta-include" file, no #ifdef __cplusplus / extern "C" {
 
 // Include Python header files

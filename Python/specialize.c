@@ -904,7 +904,7 @@ typedef enum {
     MANAGED_DICT = 2,
     OFFSET_DICT = 3,
     NO_DICT = 4,
-    LAZY_DICT = 5,    
+    LAZY_DICT = 5,
 } ObjectDictKind;
 
 // Please collect stats carefully before and after modifying. A subtle change
