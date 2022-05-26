@@ -326,7 +326,10 @@ class MimetypesCliTestCase(unittest.TestCase):
     def test_guess_type(self):
         retcode, out, err = self.mimetypes_cmd('-l', 'foo.pic')
         self.assertEqual(retcode, 0)
-        self.assertEqual(out, "type: image/pict encoding: None")
+        self.assertIn(out, [
+            'type: image/pict encoding: None',
+            'type: image/x-pict encoding: None'
+        ])
         self.assertEqual(err, '')
 
         retcode, out, err = self.mimetypes_cmd('foo.pic')
