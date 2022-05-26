@@ -38,7 +38,7 @@ Options and arguments (and corresponding environment variables):\n\
 -d     : turn on parser debugging output (for experts only, only works on\n\
          debug builds); also PYTHONDEBUG=x\n\
 -E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
--h     : print this help message and exit (also --help or -?)\n\
+-h     : print this help message and exit (also -? or --help)\n\
 ";
 static const char usage_2[] = "\
 -i     : inspect interactively after running script; forces a prompt even\n\
