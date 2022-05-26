@@ -1542,13 +1542,13 @@ class _PosixSpawnMixin:
         self.addCleanup(os_helper.unlink, pidfile)
         script = f"""if 1:
             import os
-            with open({pidfile!r}, "w", encoding='utf-8') as pidfile:
+            with open({pidfile!r}, "w", encoding='ascii') as pidfile:
                 pidfile.write(str(os.getpid()))
             """
         args = self.python_args('-c', script)
         pid = self.spawn_func(args[0], args, os.environ)
         support.wait_process(pid, exitcode=0)
-        with open(pidfile, encoding="utf-8") as f:
+        with open(pidfile, encoding="latin1") as f:
             self.assertEqual(f.read(), str(pid))
 
     def test_no_such_executable(self):

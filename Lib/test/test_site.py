@@ -133,7 +133,7 @@ class HelperFunctionsTests(unittest.TestCase):
         pth_dir = os.path.abspath(pth_dir)
         pth_basename = pth_name + '.pth'
         pth_fn = os.path.join(pth_dir, pth_basename)
-        with open(pth_fn, 'w', encoding='utf-8') as pth_file:
+        with open(pth_fn, 'w', encoding='locale') as pth_file:
             self.addCleanup(lambda: os.remove(pth_fn))
             pth_file.write(contents)
         return pth_dir, pth_basename
@@ -374,7 +374,7 @@ class PthFile(object):
         Make sure to call self.cleanup() to undo anything done by this method.
 
         """
-        FILE = open(self.file_path, 'w', encoding='ascii')
+        FILE = open(self.file_path, 'w', encoding='locale')
         try:
             print("#import @bad module name", file=FILE)
             print("\n", file=FILE)

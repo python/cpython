@@ -297,7 +297,7 @@ class IBMTestCases(unittest.TestCase):
             raise unittest.SkipTest
         with open(file, encoding="utf-8") as f:
             for line in f:
-                line = line.rstrip('\n')
+                line = line.replace('\r\n', '').replace('\n', '')
                 #print line
                 try:
                     t = self.eval_line(line)

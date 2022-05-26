@@ -370,7 +370,7 @@ class BaseErrorTestServer(socketserver.TCPServer):
 class BadHandler(socketserver.BaseRequestHandler):
     def handle(self):
         with open(os_helper.TESTFN, 'a', encoding='ascii') as log:
-            log.write(b'Handler called\n')
+            log.write('Handler called\n')
         raise self.server.exception('Test error')
 
 

@@ -2117,7 +2117,7 @@ class PtyTests(unittest.TestCase):
         os.write(fd, terminal_input)
 
         # Get results from the pipe
-        with open(r, encoding="utf-8") as rpipe:
+        with open(r, encoding="ascii") as rpipe:
             lines = []
             while True:
                 line = rpipe.readline().strip()

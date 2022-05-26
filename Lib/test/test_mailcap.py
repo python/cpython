@@ -94,7 +94,7 @@ class HelperFunctionTest(unittest.TestCase):
 
     def test_readmailcapfile(self):
         # Test readmailcapfile() using test file. It should match MAILCAPDICT.
-        with open(MAILCAPFILE, 'r', encoding='utf-8') as mcf:
+        with open(MAILCAPFILE, 'r') as mcf:
             with self.assertWarns(DeprecationWarning):
                 d = mailcap.readmailcapfile(mcf)
         self.assertDictEqual(d, MAILCAPDICT_DEPRECATED)

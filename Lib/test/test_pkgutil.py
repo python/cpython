@@ -371,14 +371,15 @@ class ExtendPathTests(unittest.TestCase):
         pkgdir = os.path.join(dirname, pkgname)
         os.mkdir(pkgdir)
         with open(os.path.join(pkgdir, '__init__.py'), 'w', encoding='ascii') as fl:
-            fl.write('from pkgutil import extend_path\n__path__ = extend_path(__path__, __name__)\n')
+            fl.write('from pkgutil import extend_path\n'
+                     '__path__ = extend_path(__path__, __name__)\n')
 
         return dirname
 
     def create_submodule(self, dirname, pkgname, submodule_name, value):
         module_name = os.path.join(dirname, pkgname, submodule_name + '.py')
         with open(module_name, 'w', encoding='ascii') as fl:
-            print('value={!a}'.format(value), file=fl)
+            print(f'value={value!a}', file=fl)
 
     def test_simple(self):
         pkgname = 'foo'
