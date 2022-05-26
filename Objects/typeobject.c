@@ -3379,8 +3379,9 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     char *res_start;
     short slot_offset, subslot_offset;
 
-    if (!metaclass)
+    if (!metaclass) {
         metaclass = &PyType_Type;
+    }
 
     if (metaclass->tp_new != PyType_Type.tp_new) {
         PyErr_SetString(PyExc_TypeError,
