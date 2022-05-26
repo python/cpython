@@ -1032,7 +1032,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    as either required or non-required respectively.
 
    For more information, see :class:`TypedDict` and
-   :pep:`655` (Marking individual TypedDict items as required or potentially-missing).
+   :pep:`655` ("Marking individual TypedDict items as required or potentially-missing").
 
    .. versionadded:: 3.11
 
