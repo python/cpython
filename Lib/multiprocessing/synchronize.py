@@ -16,6 +16,7 @@ import sys
 import tempfile
 import _multiprocessing
 import time
+import errno
 
 from . import context
 from . import process
@@ -59,6 +60,10 @@ class SemLock(object):
                     unlink_now)
             except FileExistsError:
                 pass
+            except OSError as e:
+                if e.errno == errno.ENOSPC:
+                    raise Exception("There is not enough space in the"
+                                    " file system(tmpfs) to create a semaphore") from e
             else:
                 break
         else:
