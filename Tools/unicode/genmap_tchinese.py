@@ -51,7 +51,7 @@ def parse_hkscs_map(fo):
         # In both supported cases, we only need the first and last column:
         #  * Big-5 is a hex string (always 4 digits)
         #  * iso10646:2003 is either a hex string (4 or 5 digits) or a sequence
-        #    of hex strings like: `<code_point1,code_point2>` 
+        #    of hex strings like: `<code_point1,code_point2>`
         try:
             hkscs_col, _, _, uni_col = line.split()
             hkscs = int(hkscs_col, 16)
@@ -209,7 +209,7 @@ class HintsWriter:
 
 
 def main_hkscs():
-    filename = f'python-mappings/hkscs-{HKSCS_VERSION}-big5-iso.txt'    
+    filename = f'python-mappings/hkscs-{HKSCS_VERSION}-big5-iso.txt'
     with open_mapping_file(filename, MAPPINGS_HKSCS) as f:
         table = parse_hkscs_map(f)
     hkscsdecmap, hkscsencmap_bmp, hkscsencmap_nonbmp, isbmpmap = (
