@@ -570,8 +570,8 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: disable_gc()
 
-   A context manager that disables the garbage collector upon entry and
-   reenables it upon exit, if it was initially enabled.
+   A context manager that disables the garbage collector on entry. On
+   exit, the garbage collector is restored to its prior state.
 
 
 .. function:: swap_attr(obj, attr, new_val)
