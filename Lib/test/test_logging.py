@@ -62,7 +62,7 @@ from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
 
 
 asyncore = warnings_helper.import_deprecated('asyncore')
-smtpd = warnings_helper.import_deprecated('smtpd')
+smtpd = warnings_helper.import_deprecated('_smtpd')
 
 
 try:

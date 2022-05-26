@@ -722,7 +722,6 @@
     <Compile Include="shutil.py" />
     <Compile Include="signal.py" />
     <Compile Include="site.py" />
-    <Compile Include="smtpd.py" />
     <Compile Include="smtplib.py" />
     <Compile Include="sndhdr.py" />
     <Compile Include="socket.py" />
@@ -1263,7 +1262,6 @@
     <Compile Include="test\test_signal.py" />
     <Compile Include="test\test_site.py" />
     <Compile Include="test\test_slice.py" />
-    <Compile Include="test\test_smtpd.py" />
     <Compile Include="test\test_smtplib.py" />
     <Compile Include="test\test_smtpnet.py" />
     <Compile Include="test\test_sndhdr.py" />
@@ -1582,6 +1580,7 @@
     <Compile Include="_pydecimal.py" />
     <Compile Include="_pyio.py" />
     <Compile Include="_sitebuiltins.py" />
+    <Compile Include="_smtpd.py" />
     <Compile Include="_strptime.py" />
     <Compile Include="_threading_local.py" />
     <Compile Include="_weakrefset.py" />
