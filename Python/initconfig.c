@@ -165,7 +165,7 @@ static const char usage_envvars[] =
 "PYTHONOPTIMIZE          : enable level 1 optimizations (-O)\n"
 "PYTHONUNBUFFERED        : disable stdout/stderr buffering (-u)\n"
 "PYTHONVERBOSE           : trace import statements (-v)\n"
-"PYTHONWARNINGS=arg      : warning control (-W arg)";
+"PYTHONWARNINGS=arg      : warning control (-W arg)\n";
 
 #if defined(MS_WINDOWS)
 #  define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
