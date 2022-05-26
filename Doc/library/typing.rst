@@ -1829,7 +1829,7 @@ These are not used in annotations. They are building blocks for declaring types.
       :class:`frozenset` objects containing required and non-required keys, respectively.
 
       Keys marked with :data:`Required` will always appear in ``__required_keys__``
-      and keys marked with ``NotRequired`` will always appear in ``__optional_keys__``.
+      and keys marked with :data:`NotRequired` will always appear in ``__optional_keys__``.
 
       For backwards compatibility with Python 3.10 and below,
       it is also possible to use inheritance to declare both required and
