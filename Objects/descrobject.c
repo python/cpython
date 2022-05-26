@@ -1805,7 +1805,9 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
             prop_doc = NULL;
             Py_DECREF(Py_None);
         }
-        self->getter_doc = 1;
+        if (prop_doc != NULL){
+            self->getter_doc = 1;
+        }
     }
 
     /* At this point `prop_doc` is either NULL or
