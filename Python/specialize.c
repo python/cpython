@@ -903,7 +903,8 @@ typedef enum {
     MANAGED_VALUES = 1,
     MANAGED_DICT = 2,
     OFFSET_DICT = 3,
-    NO_DICT = 4
+    NO_DICT = 4,
+    LAZY_DICT = 5,    
 } ObjectDictKind;
 
 // Please collect stats carefully before and after modifying. A subtle change
@@ -972,14 +973,17 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         else {
             PyObject *dict = *(PyObject **) ((char *)owner + dictoffset);
             if (dict == NULL) {
-                SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NO_DICT);
-                goto fail;
+                // This object will have a dict if user access __dict__
+                dictkind = LAZY_DICT;
+                keys = NULL;
             }
-            keys = ((PyDictObject *)dict)->ma_keys;
-            dictkind = OFFSET_DICT;
+            else {
+                keys = ((PyDictObject *)dict)->ma_keys;
+                dictkind = OFFSET_DICT;
+            }
         }
     }
-    if (dictkind != NO_DICT) {
+    if (dictkind == MANAGED_VALUES || dictkind == MANAGED_DICT || dictkind == OFFSET_DICT) {
         Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
         if (index != DKIX_EMPTY) {
             SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_LOAD_METHOD_IS_ATTR);
@@ -1007,6 +1011,11 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             assert(owner_cls->tp_dictoffset > 0 && owner_cls->tp_dictoffset <= INT16_MAX);
             cache->dict_offset = (uint16_t)owner_cls->tp_dictoffset;
             _Py_SET_OPCODE(*instr, LOAD_METHOD_WITH_DICT);
+            break;
+        case LAZY_DICT:
+            assert(owner_cls->tp_dictoffset > 0 && owner_cls->tp_dictoffset <= INT16_MAX);
+            cache->dict_offset = (uint16_t)owner_cls->tp_dictoffset;
+            _Py_SET_OPCODE(*instr, LOAD_METHOD_LAZY_DICT);
             break;
     }
     /* `descr` is borrowed. This is safe for methods (even inherited ones from

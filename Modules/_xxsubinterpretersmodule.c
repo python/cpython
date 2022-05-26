@@ -2338,7 +2338,7 @@ channel_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
             ids = NULL;
             break;
         }
-        PyList_SET_ITEM(ids, i, id);
+        PyList_SET_ITEM(ids, (Py_ssize_t)i, id);
     }
 
 finally:

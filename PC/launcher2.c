@@ -972,9 +972,6 @@ checkDefaults(SearchInfo *search)
         if (!slash) {
             search->tag = tag;
             search->tagLength = n;
-            // gh-92817: allow a high priority env to be selected even if it
-            // doesn't match the tag
-            search->lowPriorityTag = true;
         } else {
             search->company = tag;
             search->companyLength = (int)(slash - tag);
@@ -982,6 +979,9 @@ checkDefaults(SearchInfo *search)
             search->tagLength = n - (search->companyLength + 1);
             search->oldStyleTag = false;
         }
+        // gh-92817: allow a high priority env to be selected even if it
+        // doesn't match the tag
+        search->lowPriorityTag = true;
     }
 
     return 0;

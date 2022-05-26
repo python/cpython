@@ -68,7 +68,7 @@ else:
 
 # Does io.IOBase finalizer log the exception if the close() method fails?
 # The exception is ignored silently by default in release build.
-IOBASE_EMITS_UNRAISABLE = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mode)
+IOBASE_EMITS_UNRAISABLE = (support.Py_DEBUG or sys.flags.dev_mode)
 
 
 def _default_chunk_size():
@@ -3569,6 +3569,10 @@ class TextIOWrapperTest(unittest.TestCase):
 
         F.tell = lambda x: 0
         t = self.TextIOWrapper(F(), encoding='utf-8')
+
+    def test_reconfigure_locale(self):
+        wrapper = io.TextIOWrapper(io.BytesIO(b"test"))
+        wrapper.reconfigure(encoding="locale")
 
     def test_reconfigure_encoding_read(self):
         # latin1 -> utf8

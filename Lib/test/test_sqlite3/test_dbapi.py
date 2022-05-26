@@ -29,7 +29,7 @@ import threading
 import unittest
 import urllib.parse
 
-from test.support import SHORT_TIMEOUT, bigmemtest, check_disallow_instantiation
+from test.support import SHORT_TIMEOUT, check_disallow_instantiation
 from test.support import threading_helper
 from _testcapi import INT_MAX, ULLONG_MAX
 from os import SEEK_SET, SEEK_CUR, SEEK_END
@@ -228,7 +228,7 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_READONLY_CANTLOCK",
             "SQLITE_READONLY_RECOVERY",
         ]
-        if sqlite.version_info >= (3, 7, 16):
+        if sqlite.sqlite_version_info >= (3, 7, 16):
             consts += [
                 "SQLITE_CONSTRAINT_CHECK",
                 "SQLITE_CONSTRAINT_COMMITHOOK",
@@ -241,63 +241,63 @@ class ModuleTests(unittest.TestCase):
                 "SQLITE_CONSTRAINT_VTAB",
                 "SQLITE_READONLY_ROLLBACK",
             ]
-        if sqlite.version_info >= (3, 7, 17):
+        if sqlite.sqlite_version_info >= (3, 7, 17):
             consts += [
                 "SQLITE_IOERR_MMAP",
                 "SQLITE_NOTICE_RECOVER_ROLLBACK",
                 "SQLITE_NOTICE_RECOVER_WAL",
             ]
-        if sqlite.version_info >= (3, 8, 0):
+        if sqlite.sqlite_version_info >= (3, 8, 0):
             consts += [
                 "SQLITE_BUSY_SNAPSHOT",
                 "SQLITE_IOERR_GETTEMPPATH",
                 "SQLITE_WARNING_AUTOINDEX",
             ]
-        if sqlite.version_info >= (3, 8, 1):
+        if sqlite.sqlite_version_info >= (3, 8, 1):
             consts += ["SQLITE_CANTOPEN_CONVPATH", "SQLITE_IOERR_CONVPATH"]
-        if sqlite.version_info >= (3, 8, 2):
+        if sqlite.sqlite_version_info >= (3, 8, 2):
             consts.append("SQLITE_CONSTRAINT_ROWID")
-        if sqlite.version_info >= (3, 8, 3):
+        if sqlite.sqlite_version_info >= (3, 8, 3):
             consts.append("SQLITE_READONLY_DBMOVED")
-        if sqlite.version_info >= (3, 8, 7):
+        if sqlite.sqlite_version_info >= (3, 8, 7):
             consts.append("SQLITE_AUTH_USER")
-        if sqlite.version_info >= (3, 9, 0):
+        if sqlite.sqlite_version_info >= (3, 9, 0):
             consts.append("SQLITE_IOERR_VNODE")
-        if sqlite.version_info >= (3, 10, 0):
+        if sqlite.sqlite_version_info >= (3, 10, 0):
             consts.append("SQLITE_IOERR_AUTH")
-        if sqlite.version_info >= (3, 14, 1):
+        if sqlite.sqlite_version_info >= (3, 14, 1):
             consts.append("SQLITE_OK_LOAD_PERMANENTLY")
-        if sqlite.version_info >= (3, 21, 0):
+        if sqlite.sqlite_version_info >= (3, 21, 0):
             consts += [
                 "SQLITE_IOERR_BEGIN_ATOMIC",
                 "SQLITE_IOERR_COMMIT_ATOMIC",
                 "SQLITE_IOERR_ROLLBACK_ATOMIC",
             ]
-        if sqlite.version_info >= (3, 22, 0):
+        if sqlite.sqlite_version_info >= (3, 22, 0):
             consts += [
                 "SQLITE_ERROR_MISSING_COLLSEQ",
                 "SQLITE_ERROR_RETRY",
                 "SQLITE_READONLY_CANTINIT",
                 "SQLITE_READONLY_DIRECTORY",
             ]
-        if sqlite.version_info >= (3, 24, 0):
+        if sqlite.sqlite_version_info >= (3, 24, 0):
             consts += ["SQLITE_CORRUPT_SEQUENCE", "SQLITE_LOCKED_VTAB"]
-        if sqlite.version_info >= (3, 25, 0):
+        if sqlite.sqlite_version_info >= (3, 25, 0):
             consts += ["SQLITE_CANTOPEN_DIRTYWAL", "SQLITE_ERROR_SNAPSHOT"]
-        if sqlite.version_info >= (3, 31, 0):
+        if sqlite.sqlite_version_info >= (3, 31, 0):
             consts += [
                 "SQLITE_CANTOPEN_SYMLINK",
                 "SQLITE_CONSTRAINT_PINNED",
                 "SQLITE_OK_SYMLINK",
             ]
-        if sqlite.version_info >= (3, 32, 0):
+        if sqlite.sqlite_version_info >= (3, 32, 0):
             consts += [
                 "SQLITE_BUSY_TIMEOUT",
                 "SQLITE_CORRUPT_INDEX",
                 "SQLITE_IOERR_DATA",
             ]
-        if sqlite.version_info >= (3, 34, 0):
-            const.append("SQLITE_IOERR_CORRUPTFS")
+        if sqlite.sqlite_version_info >= (3, 34, 0):
+            consts.append("SQLITE_IOERR_CORRUPTFS")
         for const in consts:
             with self.subTest(const=const):
                 self.assertTrue(hasattr(sqlite, const))
@@ -625,13 +625,6 @@ class SerializeTests(unittest.TestCase):
                 # SQLite does not generate an error until you try to query the
                 # deserialized database.
                 cx.execute("create table fail(f)")
-
-    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
-    @bigmemtest(size=2**63, memuse=3, dry_run=False)
-    def test_deserialize_too_much_data_64bit(self):
-        with memory_database() as cx:
-            with self.assertRaisesRegex(OverflowError, "'data' is too large"):
-                cx.deserialize(b"b" * size)
 
 
 class OpenTests(unittest.TestCase):

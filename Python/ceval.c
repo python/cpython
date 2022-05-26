@@ -107,7 +107,6 @@ static PyObject * do_call_core(
     PyObject *callargs, PyObject *kwdict, int use_tracing);
 
 #ifdef LLTRACE
-static int lltrace;
 static void
 dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
@@ -1715,6 +1714,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     uint8_t opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
+#ifdef LLTRACE
+    int lltrace = 0;
+#endif
 
     _PyCFrame cframe;
     CallShape call_shape;
@@ -4660,6 +4662,29 @@ handle_eval_breaker:
             uint32_t type_version = read_u32(cache->type_version);
             DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_METHOD);
             assert(self_cls->tp_dictoffset == 0);
+            STAT_INC(LOAD_METHOD, hit);
+            PyObject *res = read_obj(cache->descr);
+            assert(res != NULL);
+            assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
+            Py_INCREF(res);
+            SET_TOP(res);
+            PUSH(self);
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_METHOD);
+            NOTRACE_DISPATCH();
+        }
+
+        TARGET(LOAD_METHOD_LAZY_DICT) {
+            assert(cframe.use_tracing == 0);
+            PyObject *self = TOP();
+            PyTypeObject *self_cls = Py_TYPE(self);
+            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
+            uint32_t type_version = read_u32(cache->type_version);
+            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_METHOD);
+            int dictoffset = cache->dict_offset;
+            PyObject *dict = *(PyObject **)((char *)self + dictoffset);
+            assert(dictoffset == self_cls->tp_dictoffset && dictoffset > 0);
+            /* This object has a __dict__, just not yet created */
+            DEOPT_IF(dict != NULL, LOAD_METHOD);
             STAT_INC(LOAD_METHOD, hit);
             PyObject *res = read_obj(cache->descr);
             assert(res != NULL);
