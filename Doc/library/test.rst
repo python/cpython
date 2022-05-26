@@ -652,7 +652,7 @@ The :mod:`test.support` module defines the following functions:
 .. function:: calcvobjsize(fmt)
 
    Return the size of the :c:type:`PyVarObject` whose structure members are
-   defined by *fmt* including the Python object header and alignment.
+   defined by *fmt*. The returned value includes the size of the Python object header and alignment.
 
 
 .. function:: checksizeof(test, o, size)
