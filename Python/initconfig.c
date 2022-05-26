@@ -35,8 +35,6 @@ Options and arguments (and corresponding environment variables):\n\
          and comparing bytes/bytearray with str. (-bb: issue errors)\n\
 -B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
 -c cmd : program passed in as string (terminates option list)\n\
---check-hash-based-pycs always|default|never:\n\
-         control how Python invalidates hash-based .pyc files\n\
 -d     : turn on parser debugging output (for experts only, only works on\n\
          debug builds); also PYTHONDEBUG=x\n\
 -E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
@@ -67,7 +65,6 @@ static const char usage_3[] = "\
          also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
 -X opt : set implementation-specific option. The following options are available:\n\
-\n\
          -X faulthandler: enable faulthandler\n\
          -X showrefcount: output the total reference count and number of used\n\
              memory blocks when the program finishes or after each statement in the\n\
@@ -103,6 +100,8 @@ static const char usage_3[] = "\
             when the interpreter displays tracebacks.\n\
          -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
             The default is \"on\" (or \"off\" if you are running a local build).\n\
+--check-hash-based-pycs always|default|never:\n\
+         control how Python invalidates hash-based .pyc files\n\
 ";
 static const char usage_4[] = "\
 file   : program read from script file\n\
