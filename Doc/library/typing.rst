@@ -1028,7 +1028,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
 .. data:: NotRequired
 
-   A special typing construct that marks individual keys of a :class:`TypedDict`
+   Special typing constructs that mark individual keys of a :class:`TypedDict`
    as either required or non-required respectively.
 
    For more information, see
