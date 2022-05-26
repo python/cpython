@@ -36,8 +36,6 @@ Options (and corresponding environment variables):\n\
          and comparing bytes/bytearray with str. (-bb: issue errors)\n\
 -B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
 -c cmd : program passed in as string (terminates option list)\n\
---check-hash-based-pycs always|default|never :\n\
-         control how Python invalidates hash-based .pyc files\n\
 -d     : turn on parser debugging output (for experts only, only works on\n\
          debug builds); also PYTHONDEBUG=x\n\
 -E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\

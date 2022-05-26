@@ -47,13 +47,13 @@ class CmdLineTest(unittest.TestCase):
         out = self.verify_valid_flag('--help')
         lines = out.splitlines()
         self.assertIn(b'usage', lines[0])
-        self.assertNotIn(b'PYTHONPATH', out)
+        self.assertNotIn(b'PYTHONHOME', out)
         self.assertNotIn(b'-X dev', out)
         self.assertLess(len(lines), 50)
 
     def test_help_env(self):
         out = self.verify_valid_flag('--help-env')
-        self.assertIn(b'PYTHONPATH', out)
+        self.assertIn(b'PYTHONHOME', out)
 
     def test_help_xoptions(self):
         out = self.verify_valid_flag('--help-xoptions')
@@ -63,7 +63,7 @@ class CmdLineTest(unittest.TestCase):
         out = self.verify_valid_flag('--help-all')
         lines = out.splitlines()
         self.assertIn(b'usage', lines[0])
-        self.assertIn(b'PYTHONPATH', out)
+        self.assertIn(b'PYTHONHOME', out)
         self.assertIn(b'-X dev', out)
 
         # The first line contains the program name,
