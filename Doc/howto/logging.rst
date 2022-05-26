@@ -1101,6 +1101,9 @@ need:
 | Current process name when using ``multiprocessing`` | Set ``logging.logMultiprocessing`` to ``False``.  |
 | to manage multiple processes.                       |                                                   |
 +-----------------------------------------------------+---------------------------------------------------+
+| Current :class:`asyncio.Task` name when using       | Set ``logging.logAsyncioTasks`` to ``False``.     |
+| ``asyncio``.                                        |                                                   |
++-----------------------------------------------------+---------------------------------------------------+
 
 Also note that the core logging module only includes the basic handlers. If
 you don't import :mod:`logging.handlers` and :mod:`logging.config`, they won't
