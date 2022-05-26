@@ -1750,7 +1750,7 @@ These are not used in annotations. They are building blocks for declaring types.
    and makes all items defined in the class body required.
 
    Individual keys of a ``total=False`` ``TypedDict`` can be marked as
-   required using ``Required``::
+   required using :data:`Required`::
 
       class Point2D(TypedDict, total=False):
           x: Required[int]
