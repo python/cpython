@@ -114,13 +114,16 @@ def translate(pat):
                         chunks.append(pat[i:k])
                         i = k+1
                         k = k+3
-                    chunks.append(pat[i:j])
-                    if not chunks[-1]:
-                        del chunks[-1]
+                    chunk = pat[i:j]
+                    if chunk:
+                        chunks.append(chunk)
+                    else:
                         chunks[-1] += '-'
+                    # Remove empty ranges -- invalid in RE.
                     for k in range(len(chunks)-1, 0, -1):
                         if chunks[k-1][-1] > chunks[k][0]:
-                            chunks[k-1:k+1] = [chunks[k-1][:-1] + chunks[k][1:]]
+                            chunks[k-1] = chunks[k-1][:-1] + chunks[k][1:]
+                            del chunks[k]
                     # Escape backslashes and hyphens for set difference (--).
                     # Hyphens that create ranges shouldn't be escaped.
                     stuff = '-'.join(s.replace('\\', r'\\').replace('-', r'\-')
@@ -129,9 +132,11 @@ def translate(pat):
                 stuff = re.sub(r'([&~|])', r'\\\1', stuff)
                 i = j+1
                 if not stuff:
-                    add(f'(?!)')  # never match
+                    # Empty range: never match.
+                    add('(?!)')
                 elif stuff == '!':
-                    add(f'.')  # match any character
+                    # Negated empty range: match any character.
+                    add('.')
                 else:
                     if stuff[0] == '!':
                         stuff = '^' + stuff[1:]
