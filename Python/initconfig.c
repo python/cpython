@@ -2086,8 +2086,8 @@ config_read(PyConfig *config, int compute_path_config)
     const wchar_t* option = _Py_check_xoptions(&config->xoptions, known_xoptions);
     if (option != NULL) {
         if ((wcslen(option) * sizeof(wchar_t)) < 100) {
-            static char error_msg[128];
-            sprintf(error_msg, "Unknown value for option -X %ls", option);
+            static char error_msg[150];
+            sprintf(error_msg, "Unknown value for option -X '%ls'", option);
             return PyStatus_Error(error_msg);
         }
         return PyStatus_Error("Unknown value for option -X");
