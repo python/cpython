@@ -1720,7 +1720,7 @@ These are not used in annotations. They are building blocks for declaring types.
       Point2D = TypedDict('Point2D', {'in': int, 'x-y': int})
 
    By default, all keys must be present in a ``TypedDict``. It is possible to
-   mark individual keys as non-required using ``NotRequired``::
+   mark individual keys as non-required using :data:`NotRequired`::
 
       class Point2D(TypedDict):
           x: int
