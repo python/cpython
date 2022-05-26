@@ -1,3 +1,3 @@
-Add the ability for :func:`dictConfig` to usefully configure
-:class:`QueueHandler` and :class:`QueueListener` as a pair, and add a
-:func:`getHandlerByName` API to allow access to handlers by name.
+Add the ability for :func:`logging.config.dictConfig` to usefully configure
+:class:`~logging.handlers.QueueHandler` and :class:`~logging.handlers.QueueListener`
+as a pair, and add a :func:`logging.getHandlerByName` API to allow access to handlers by name.
