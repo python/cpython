@@ -99,6 +99,30 @@ def bisect_left(a, x, lo=0, hi=None, *, key=None):
     return lo
 
 
+def contains(a, x, lo=0, hi=None, *, key=None):
+    """Return True if x is in a, assuming a is sorted.
+
+    Optional args lo, hi and key are passed to bisect_left.
+    """
+    index = bisect_left(a, x, lo=lo, hi=hi, key=key)
+
+    # When hi is set, and x is larger than a[hi-1], bisect_left will return
+    # hi as index, and the later comparisons may be true even though contains
+    # should compute False as x was not in the bounded slice.
+    if hi is not None and index == hi:
+        return False
+
+    try:
+        element = a[index]
+    except IndexError:
+        return False
+
+    if key is None:
+        return element == x
+
+    return key(element) == x
+
+
 # Overwrite above definitions with a fast C implementation
 try:
     from _bisect import *

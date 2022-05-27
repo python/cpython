@@ -1,0 +1,1 @@
+New :func:`bisect.contains` function

@@ -104,6 +104,17 @@ The following functions are provided:
       Added the *key* parameter.
 
 
+.. function:: contains(a, x, lo=0, hi=len(a), *, key=None)
+
+   Return ``True`` if *x* is in *a*, assuming *a* is sorted.
+
+   *lo*, *hi* and *key* parameters are passed to :func:`bisect.bisect_left`.
+
+   The runtime of this function is ``O(log n)``.
+
+   .. versionadded:: 3.12
+
+
 Performance Notes
 -----------------
 

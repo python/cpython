@@ -300,6 +300,40 @@ class TestInsortC(TestInsort, unittest.TestCase):
 
 #==============================================================================
 
+class TestContains(unittest.TestCase):
+    def setUp(self):
+        self.precomputedCases = [
+            ([], 1, False),
+            ([1], 1, True),
+            ([2], 1, False),
+            ([1, 2, 3], 2, True),
+            ([1, 1, 2], 2, True),
+            ([1, 2, 4], 3, False),
+        ]
+
+    def test_precomputed_cases(self):
+        for lst, elem, expected in self.precomputedCases:
+            self.assertEqual(py_bisect.contains(lst, elem), expected)
+
+    def test_lo(self):
+        lst = [3, 6, 7, 8, 13]
+        self.assertTrue(py_bisect.contains(lst, 7, lo=2))
+        self.assertFalse(py_bisect.contains(lst, 7, lo=3))
+
+    def test_hi(self):
+        lst = [3, 6, 7, 8, 13]
+        self.assertTrue(py_bisect.contains(lst, 7, hi=3))
+        self.assertFalse(py_bisect.contains(lst, 7, hi=2))
+
+    def test_key(self):
+        lst = [('red', 5), ('blue', 1), ('yellow', 8), ('black', 0)]
+        key = (lambda e: e[1])
+        lst.sort(key=key)
+        self.assertFalse(py_bisect.contains(lst, 2, key=key))
+        self.assertTrue(py_bisect.contains(lst, 8, key=key))
+
+#==============================================================================
+
 class LenOnly:
     "Dummy sequence class defining __len__ but not __getitem__."
     def __len__(self):
