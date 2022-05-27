@@ -21,33 +21,19 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import contextlib
+import os
 import sqlite3 as sqlite
 import subprocess
 import sys
 import threading
 import unittest
+import urllib.parse
 
-from test.support import (
-    SHORT_TIMEOUT,
-    bigmemtest,
-    check_disallow_instantiation,
-    threading_helper,
-)
+from test.support import SHORT_TIMEOUT, check_disallow_instantiation
+from test.support import threading_helper
 from _testcapi import INT_MAX, ULLONG_MAX
 from os import SEEK_SET, SEEK_CUR, SEEK_END
-from test.support.os_helper import TESTFN, unlink, temp_dir
-
-
-# Helper for tests using TESTFN
-@contextlib.contextmanager
-def managed_connect(*args, in_mem=False, **kwargs):
-    cx = sqlite.connect(*args, **kwargs)
-    try:
-        yield cx
-    finally:
-        cx.close()
-        if not in_mem:
-            unlink(TESTFN)
+from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE, unlink, temp_dir, FakePath
 
 
 # Helper for temporary memory databases
@@ -242,7 +228,7 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_READONLY_CANTLOCK",
             "SQLITE_READONLY_RECOVERY",
         ]
-        if sqlite.version_info >= (3, 7, 16):
+        if sqlite.sqlite_version_info >= (3, 7, 16):
             consts += [
                 "SQLITE_CONSTRAINT_CHECK",
                 "SQLITE_CONSTRAINT_COMMITHOOK",
@@ -255,63 +241,63 @@ class ModuleTests(unittest.TestCase):
                 "SQLITE_CONSTRAINT_VTAB",
                 "SQLITE_READONLY_ROLLBACK",
             ]
-        if sqlite.version_info >= (3, 7, 17):
+        if sqlite.sqlite_version_info >= (3, 7, 17):
             consts += [
                 "SQLITE_IOERR_MMAP",
                 "SQLITE_NOTICE_RECOVER_ROLLBACK",
                 "SQLITE_NOTICE_RECOVER_WAL",
             ]
-        if sqlite.version_info >= (3, 8, 0):
+        if sqlite.sqlite_version_info >= (3, 8, 0):
             consts += [
                 "SQLITE_BUSY_SNAPSHOT",
                 "SQLITE_IOERR_GETTEMPPATH",
                 "SQLITE_WARNING_AUTOINDEX",
             ]
-        if sqlite.version_info >= (3, 8, 1):
+        if sqlite.sqlite_version_info >= (3, 8, 1):
             consts += ["SQLITE_CANTOPEN_CONVPATH", "SQLITE_IOERR_CONVPATH"]
-        if sqlite.version_info >= (3, 8, 2):
+        if sqlite.sqlite_version_info >= (3, 8, 2):
             consts.append("SQLITE_CONSTRAINT_ROWID")
-        if sqlite.version_info >= (3, 8, 3):
+        if sqlite.sqlite_version_info >= (3, 8, 3):
             consts.append("SQLITE_READONLY_DBMOVED")
-        if sqlite.version_info >= (3, 8, 7):
+        if sqlite.sqlite_version_info >= (3, 8, 7):
             consts.append("SQLITE_AUTH_USER")
-        if sqlite.version_info >= (3, 9, 0):
+        if sqlite.sqlite_version_info >= (3, 9, 0):
             consts.append("SQLITE_IOERR_VNODE")
-        if sqlite.version_info >= (3, 10, 0):
+        if sqlite.sqlite_version_info >= (3, 10, 0):
             consts.append("SQLITE_IOERR_AUTH")
-        if sqlite.version_info >= (3, 14, 1):
+        if sqlite.sqlite_version_info >= (3, 14, 1):
             consts.append("SQLITE_OK_LOAD_PERMANENTLY")
-        if sqlite.version_info >= (3, 21, 0):
+        if sqlite.sqlite_version_info >= (3, 21, 0):
             consts += [
                 "SQLITE_IOERR_BEGIN_ATOMIC",
                 "SQLITE_IOERR_COMMIT_ATOMIC",
                 "SQLITE_IOERR_ROLLBACK_ATOMIC",
             ]
-        if sqlite.version_info >= (3, 22, 0):
+        if sqlite.sqlite_version_info >= (3, 22, 0):
             consts += [
                 "SQLITE_ERROR_MISSING_COLLSEQ",
                 "SQLITE_ERROR_RETRY",
                 "SQLITE_READONLY_CANTINIT",
                 "SQLITE_READONLY_DIRECTORY",
             ]
-        if sqlite.version_info >= (3, 24, 0):
+        if sqlite.sqlite_version_info >= (3, 24, 0):
             consts += ["SQLITE_CORRUPT_SEQUENCE", "SQLITE_LOCKED_VTAB"]
-        if sqlite.version_info >= (3, 25, 0):
+        if sqlite.sqlite_version_info >= (3, 25, 0):
             consts += ["SQLITE_CANTOPEN_DIRTYWAL", "SQLITE_ERROR_SNAPSHOT"]
-        if sqlite.version_info >= (3, 31, 0):
+        if sqlite.sqlite_version_info >= (3, 31, 0):
             consts += [
                 "SQLITE_CANTOPEN_SYMLINK",
                 "SQLITE_CONSTRAINT_PINNED",
                 "SQLITE_OK_SYMLINK",
             ]
-        if sqlite.version_info >= (3, 32, 0):
+        if sqlite.sqlite_version_info >= (3, 32, 0):
             consts += [
                 "SQLITE_BUSY_TIMEOUT",
                 "SQLITE_CORRUPT_INDEX",
                 "SQLITE_IOERR_DATA",
             ]
-        if sqlite.version_info >= (3, 34, 0):
-            const.append("SQLITE_IOERR_CORRUPTFS")
+        if sqlite.sqlite_version_info >= (3, 34, 0):
+            consts.append("SQLITE_IOERR_CORRUPTFS")
         for const in consts:
             with self.subTest(const=const):
                 self.assertTrue(hasattr(sqlite, const))
@@ -333,7 +319,7 @@ class ModuleTests(unittest.TestCase):
     @unittest.skipIf(sqlite.sqlite_version_info <= (3, 7, 16),
                      "Requires SQLite 3.7.16 or newer")
     def test_extended_error_code_on_exception(self):
-        with managed_connect(":memory:", in_mem=True) as con:
+        with memory_database() as con:
             with con:
                 con.execute("create table t(t integer check(t > 0))")
             errmsg = "constraint failed"
@@ -343,15 +329,6 @@ class ModuleTests(unittest.TestCase):
             self.assertEqual(exc.sqlite_errorcode,
                              sqlite.SQLITE_CONSTRAINT_CHECK)
             self.assertEqual(exc.sqlite_errorname, "SQLITE_CONSTRAINT_CHECK")
-
-    # sqlite3_enable_shared_cache() is deprecated on macOS and calling it may raise
-    # OperationalError on some buildbots.
-    @unittest.skipIf(sys.platform == "darwin", "shared cache is deprecated on macOS")
-    def test_shared_cache_deprecated(self):
-        for enable in (True, False):
-            with self.assertWarns(DeprecationWarning) as cm:
-                sqlite.enable_shared_cache(enable)
-            self.assertIn("dbapi.py", cm.filename)
 
     def test_disallow_instantiation(self):
         cx = sqlite.connect(":memory:")
@@ -400,7 +377,7 @@ class ConnectionTests(unittest.TestCase):
     def test_failed_open(self):
         YOU_CANNOT_OPEN_THIS = "/foo/bar/bla/23534/mydb.db"
         with self.assertRaises(sqlite.OperationalError):
-            con = sqlite.connect(YOU_CANNOT_OPEN_THIS)
+            sqlite.connect(YOU_CANNOT_OPEN_THIS)
 
     def test_close(self):
         self.cx.close()
@@ -649,13 +626,6 @@ class SerializeTests(unittest.TestCase):
                 # deserialized database.
                 cx.execute("create table fail(f)")
 
-    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
-    @bigmemtest(size=2**63, memuse=3, dry_run=False)
-    def test_deserialize_too_much_data_64bit(self):
-        with memory_database() as cx:
-            with self.assertRaisesRegex(OverflowError, "'data' is too large"):
-                cx.deserialize(b"b" * size)
-
 
 class OpenTests(unittest.TestCase):
     _sql = "create table test(id integer)"
@@ -663,24 +633,84 @@ class OpenTests(unittest.TestCase):
     def test_open_with_path_like_object(self):
         """ Checks that we can successfully connect to a database using an object that
             is PathLike, i.e. has __fspath__(). """
-        class Path:
-            def __fspath__(self):
-                return TESTFN
-        path = Path()
-        with managed_connect(path) as cx:
+        path = FakePath(TESTFN)
+        self.addCleanup(unlink, path)
+        self.assertFalse(os.path.exists(path))
+        with contextlib.closing(sqlite.connect(path)) as cx:
+            self.assertTrue(os.path.exists(path))
+            cx.execute(self._sql)
+
+    @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
+    @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
+    @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
+    def test_open_with_undecodable_path(self):
+        path = TESTFN_UNDECODABLE
+        self.addCleanup(unlink, path)
+        self.assertFalse(os.path.exists(path))
+        with contextlib.closing(sqlite.connect(path)) as cx:
+            self.assertTrue(os.path.exists(path))
             cx.execute(self._sql)
 
     def test_open_uri(self):
-        with managed_connect(TESTFN) as cx:
+        path = TESTFN
+        self.addCleanup(unlink, path)
+        uri = "file:" + urllib.parse.quote(os.fsencode(path))
+        self.assertFalse(os.path.exists(path))
+        with contextlib.closing(sqlite.connect(uri, uri=True)) as cx:
+            self.assertTrue(os.path.exists(path))
             cx.execute(self._sql)
-        with managed_connect(f"file:{TESTFN}", uri=True) as cx:
+
+    def test_open_unquoted_uri(self):
+        path = TESTFN
+        self.addCleanup(unlink, path)
+        uri = "file:" + path
+        self.assertFalse(os.path.exists(path))
+        with contextlib.closing(sqlite.connect(uri, uri=True)) as cx:
+            self.assertTrue(os.path.exists(path))
             cx.execute(self._sql)
+
+    def test_open_uri_readonly(self):
+        path = TESTFN
+        self.addCleanup(unlink, path)
+        uri = "file:" + urllib.parse.quote(os.fsencode(path)) + "?mode=ro"
+        self.assertFalse(os.path.exists(path))
+        # Cannot create new DB
         with self.assertRaises(sqlite.OperationalError):
-            with managed_connect(f"file:{TESTFN}?mode=ro", uri=True) as cx:
+            sqlite.connect(uri, uri=True)
+        self.assertFalse(os.path.exists(path))
+        sqlite.connect(path).close()
+        self.assertTrue(os.path.exists(path))
+        # Cannot modify new DB
+        with contextlib.closing(sqlite.connect(uri, uri=True)) as cx:
+            with self.assertRaises(sqlite.OperationalError):
                 cx.execute(self._sql)
 
+    @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
+    @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
+    @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
+    def test_open_undecodable_uri(self):
+        path = TESTFN_UNDECODABLE
+        self.addCleanup(unlink, path)
+        uri = "file:" + urllib.parse.quote(path)
+        self.assertFalse(os.path.exists(path))
+        with contextlib.closing(sqlite.connect(uri, uri=True)) as cx:
+            self.assertTrue(os.path.exists(path))
+            cx.execute(self._sql)
+
+    def test_factory_database_arg(self):
+        def factory(database, *args, **kwargs):
+            nonlocal database_arg
+            database_arg = database
+            return sqlite.Connection(":memory:", *args, **kwargs)
+
+        for database in (TESTFN, os.fsencode(TESTFN),
+                         FakePath(TESTFN), FakePath(os.fsencode(TESTFN))):
+            database_arg = None
+            sqlite.connect(database, factory=factory).close()
+            self.assertEqual(database_arg, database)
+
     def test_database_keyword(self):
-        with sqlite.connect(database=":memory:") as cx:
+        with contextlib.closing(sqlite.connect(database=":memory:")) as cx:
             self.assertEqual(type(cx), sqlite.Connection)
 
 
@@ -743,7 +773,7 @@ class CursorTests(unittest.TestCase):
         self.assertEqual(row[0], "Hu\x00go")
 
     def test_execute_non_iterable(self):
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(sqlite.ProgrammingError) as cm:
             self.cu.execute("insert into test(id) values (?)", 42)
         self.assertEqual(str(cm.exception), 'parameters are of unsupported type')
 

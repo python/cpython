@@ -571,9 +571,10 @@ Decimal objects
       >>> Decimal(321).exp()
       Decimal('2.561702493119680037517373933E+139')
 
-   .. method:: from_float(f)
+   .. classmethod:: from_float(f)
 
-      Classmethod that converts a float to a decimal number, exactly.
+      Alternative constructor that only accepts instances of :class:`float` or
+      :class:`int`.
 
       Note `Decimal.from_float(0.1)` is not the same as `Decimal('0.1')`.
       Since 0.1 is not exactly representable in binary floating point, the

@@ -33,9 +33,6 @@ The recommended approach to invoking subprocesses is to use the :func:`run`
 function for all use cases it can handle. For more advanced use cases, the
 underlying :class:`Popen` interface can be used directly.
 
-The :func:`run` function was added in Python 3.5; if you need to retain
-compatibility with older versions, see the :ref:`call-function-trio` section.
-
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
                   capture_output=False, shell=False, cwd=None, timeout=None, \
@@ -344,7 +341,8 @@ functions.
                  startupinfo=None, creationflags=0, restore_signals=True, \
                  start_new_session=False, pass_fds=(), *, group=None, \
                  extra_groups=None, user=None, umask=-1, \
-                 encoding=None, errors=None, text=None, pipesize=-1)
+                 encoding=None, errors=None, text=None, pipesize=-1, \
+                 process_group=None)
 
    Execute a child program in a new process.  On POSIX, the class uses
    :meth:`os.execvpe`-like behavior to execute the child program.  On Windows,
@@ -500,18 +498,16 @@ functions.
 
    .. warning::
 
-      The *preexec_fn* parameter is not safe to use in the presence of threads
+      The *preexec_fn* parameter is NOT SAFE to use in the presence of threads
       in your application.  The child process could deadlock before exec is
       called.
-      If you must use it, keep it trivial!  Minimize the number of libraries
-      you call into.
 
    .. note::
 
       If you need to modify the environment for the child use the *env*
       parameter rather than doing it in a *preexec_fn*.
-      The *start_new_session* parameter can take the place of a previously
-      common use of *preexec_fn* to call os.setsid() in the child.
+      The *start_new_session* and *process_group* parameters should take the place of
+      code using *preexec_fn* to call :func:`os.setsid` or :func:`os.setpgid` in the child.
 
    .. versionchanged:: 3.8
 
@@ -568,11 +564,19 @@ functions.
    .. versionchanged:: 3.2
       *restore_signals* was added.
 
-   If *start_new_session* is true the setsid() system call will be made in the
-   child process prior to the execution of the subprocess.  (POSIX only)
+   If *start_new_session* is true the ``setsid()`` system call will be made in the
+   child process prior to the execution of the subprocess.
 
+   .. availability:: POSIX
    .. versionchanged:: 3.2
       *start_new_session* was added.
+
+   If *process_group* is a non-negative integer, the ``setpgid(0, value)`` system call will
+   be made in the child process prior to the execution of the subprocess.
+
+   .. availability:: POSIX
+   .. versionchanged:: 3.11
+      *process_group* was added.
 
    If *group* is not ``None``, the setregid() system call will be made in the
    child process prior to the execution of the subprocess. If the provided

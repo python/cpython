@@ -15,6 +15,9 @@ from test.support import os_helper
 if sys.platform != 'win32':
     from asyncio import unix_events
 
+if support.check_sanitizer(address=True):
+    raise unittest.SkipTest("Exposes ASAN flakiness in GitHub CI")
+
 # Program blocking
 PROGRAM_BLOCKED = [sys.executable, '-c', 'import time; time.sleep(3600)']
 

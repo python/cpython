@@ -18,9 +18,6 @@ from test.support.script_helper import (
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-# Debug build?
-Py_DEBUG = hasattr(sys, "gettotalrefcount")
-
 
 # XXX (ncoghlan): Move to script_helper and make consistent with run_python
 def _kill_python_and_exit_code(p):
@@ -120,7 +117,7 @@ class CmdLineTest(unittest.TestCase):
         # "-X showrefcount" shows the refcount, but only in debug builds
         rc, out, err = run_python('-I', '-X', 'showrefcount', '-c', code)
         self.assertEqual(out.rstrip(), b"{'showrefcount': True}")
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             # bpo-46417: Tolerate negative reference count which can occur
             # because of bugs in C extensions. This test is only about checking
             # the showrefcount feature.
@@ -363,6 +360,8 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(path1.encode('ascii'), out)
         self.assertIn(path2.encode('ascii'), out)
 
+    @unittest.skipIf(sys.flags.safe_path,
+                     'PYTHONSAFEPATH changes default sys.path')
     def test_empty_PYTHONPATH_issue16309(self):
         # On Posix, it is documented that setting PATH to the
         # empty string is equivalent to not setting PATH at all,
@@ -579,13 +578,13 @@ class CmdLineTest(unittest.TestCase):
                      'Cannot run -I tests when PYTHON env vars are required.')
     def test_isolatedmode(self):
         self.verify_valid_flag('-I')
-        self.verify_valid_flag('-IEs')
+        self.verify_valid_flag('-IEPs')
         rc, out, err = assert_python_ok('-I', '-c',
             'from sys import flags as f; '
-            'print(f.no_user_site, f.ignore_environment, f.isolated)',
+            'print(f.no_user_site, f.ignore_environment, f.isolated, f.safe_path)',
             # dummyvar to prevent extraneous -E
             dummyvar="")
-        self.assertEqual(out.strip(), b'1 1 1')
+        self.assertEqual(out.strip(), b'1 1 1 True')
         with os_helper.temp_cwd() as tmpdir:
             fake = os.path.join(tmpdir, "uuid.py")
             main = os.path.join(tmpdir, "main.py")
@@ -594,9 +593,10 @@ class CmdLineTest(unittest.TestCase):
             with open(main, "w", encoding="utf-8") as f:
                 f.write("import uuid\n")
                 f.write("print('ok')\n")
+            # Use -E to ignore PYTHONSAFEPATH env var
             self.assertRaises(subprocess.CalledProcessError,
                               subprocess.check_output,
-                              [sys.executable, main], cwd=tmpdir,
+                              [sys.executable, '-E', main], cwd=tmpdir,
                               stderr=subprocess.DEVNULL)
             out = subprocess.check_output([sys.executable, "-I", main],
                                           cwd=tmpdir)
@@ -682,7 +682,7 @@ class CmdLineTest(unittest.TestCase):
         code = ("import warnings; "
                 "print(' '.join('%s::%s' % (f[0], f[2].__name__) "
                                 "for f in warnings.filters))")
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             expected_filters = "default::Warning"
         else:
             expected_filters = ("default::Warning "
@@ -754,7 +754,7 @@ class CmdLineTest(unittest.TestCase):
         expected_filters = ("error::BytesWarning "
                             "once::UserWarning "
                             "always::UserWarning")
-        if not Py_DEBUG:
+        if not support.Py_DEBUG:
             expected_filters += (" "
                                  "default::DeprecationWarning "
                                  "ignore::DeprecationWarning "
@@ -792,10 +792,10 @@ class CmdLineTest(unittest.TestCase):
         # Test the PYTHONMALLOC environment variable
         pymalloc = support.with_pymalloc()
         if pymalloc:
-            default_name = 'pymalloc_debug' if Py_DEBUG else 'pymalloc'
+            default_name = 'pymalloc_debug' if support.Py_DEBUG else 'pymalloc'
             default_name_debug = 'pymalloc_debug'
         else:
-            default_name = 'malloc_debug' if Py_DEBUG else 'malloc'
+            default_name = 'malloc_debug' if support.Py_DEBUG else 'malloc'
             default_name_debug = 'malloc_debug'
 
         tests = [
@@ -880,7 +880,8 @@ class IgnoreEnvironmentTest(unittest.TestCase):
         # Issue 31845: a startup refactoring broke reading flags from env vars
         expected_outcome = """
             (sys.flags.debug == sys.flags.optimize ==
-             sys.flags.dont_write_bytecode == sys.flags.verbose == 0)
+             sys.flags.dont_write_bytecode ==
+             sys.flags.verbose == sys.flags.safe_path == 0)
         """
         self.run_ignoring_vars(
             expected_outcome,
@@ -888,6 +889,7 @@ class IgnoreEnvironmentTest(unittest.TestCase):
             PYTHONOPTIMIZE="1",
             PYTHONDONTWRITEBYTECODE="1",
             PYTHONVERBOSE="1",
+            PYTHONSAFEPATH="1",
         )
 
 class SyntaxErrorTests(unittest.TestCase):
