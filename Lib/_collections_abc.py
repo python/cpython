@@ -97,6 +97,9 @@ async def _ag(): yield
 _ag = _ag()
 async_generator = type(_ag)
 del _ag
+## code object ##
+line_iterator = type(_f.__code__.co_lines())
+positions_iterator = type(_f.__code__.co_positions())
 
 
 ### ONE-TRICK PONIES ###
