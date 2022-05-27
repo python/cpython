@@ -8,7 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-
 /* Forward declarations */
 struct pyruntimestate;
 struct _ceval_runtime_state;

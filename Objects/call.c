@@ -109,11 +109,7 @@ _Py_CheckSlotResult(PyObject *obj, const char *slot_name, int success)
 PyObject *
 PyObject_CallNoArgs(PyObject *func)
 {
-#ifdef Py_STATS
-    if (PyFunction_Check(func)) {
-        EVAL_CALL_STAT_INC(EVAL_CALL_API);
-    }
-#endif
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, func);
     PyThreadState *tstate = _PyThreadState_GET();
     return _PyObject_VectorcallTstate(tstate, func, NULL, 0, NULL);
 }
@@ -865,11 +861,7 @@ PyObject_VectorcallMethod(PyObject *name, PyObject *const *args,
         args++;
         nargsf--;
     }
-#ifdef Py_STATS
-    if (PyFunction_Check(callable)) {
-        EVAL_CALL_STAT_INC(EVAL_CALL_METHOD);
-    }
-#endif
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_METHOD, callable);
     PyObject *result = _PyObject_VectorcallTstate(tstate, callable,
                                                   args, nargsf, kwnames);
     Py_DECREF(callable);
