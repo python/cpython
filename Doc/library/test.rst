@@ -319,6 +319,15 @@ The :mod:`test.support` module defines the following constants:
    to make writes blocking.
 
 
+.. data:: Py_DEBUG
+
+   True if Python is built with the :c:macro:`Py_DEBUG` macro defined: if
+   Python is :ref:`built in debug mode <debug-build>`
+   (:option:`./configure --with-pydebug <--with-pydebug>`).
+
+   .. versionadded:: 3.12
+
+
 .. data:: SOCK_MAX_SIZE
 
    A constant that is likely larger than the underlying OS socket buffer size,
@@ -978,13 +987,6 @@ The :mod:`test.support` module defines the following classes:
    .. method:: match_value(self, k, dv, v)
 
       Try to match a single stored value (*dv*) with a supplied value (*v*).
-
-
-.. class:: BasicTestRunner()
-
-   .. method:: run(test)
-
-      Run *test* and return the result.
 
 
 :mod:`test.support.socket_helper` --- Utilities for socket tests

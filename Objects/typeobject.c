@@ -345,22 +345,26 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     Py_ssize_t i, n;
     int custom = !Py_IS_TYPE(type, &PyType_Type);
     int unbound;
-    PyObject *mro_meth = NULL;
-    PyObject *type_mro_meth = NULL;
 
     if (custom) {
+        PyObject *mro_meth, *type_mro_meth;
         mro_meth = lookup_maybe_method(
             (PyObject *)type, &_Py_ID(mro), &unbound);
-        if (mro_meth == NULL)
+        if (mro_meth == NULL) {
             goto clear;
+        }
         type_mro_meth = lookup_maybe_method(
             (PyObject *)&PyType_Type, &_Py_ID(mro), &unbound);
-        if (type_mro_meth == NULL)
+        if (type_mro_meth == NULL) {
+            Py_DECREF(mro_meth);
             goto clear;
-        if (mro_meth != type_mro_meth)
+        }
+        int custom_mro = (mro_meth != type_mro_meth);
+        Py_DECREF(mro_meth);
+        Py_DECREF(type_mro_meth);
+        if (custom_mro) {
             goto clear;
-        Py_XDECREF(mro_meth);
-        Py_XDECREF(type_mro_meth);
+        }
     }
     n = PyTuple_GET_SIZE(bases);
     for (i = 0; i < n; i++) {
@@ -373,8 +377,6 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     }
     return;
  clear:
-    Py_XDECREF(mro_meth);
-    Py_XDECREF(type_mro_meth);
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
     type->tp_version_tag = 0; /* 0 is not a valid version tag */
 }
@@ -3364,13 +3366,8 @@ static const PySlot_Offset pyslot_offsets[] = {
 };
 
 PyObject *
-PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
-{
-    return PyType_FromModuleAndSpec(NULL, spec, bases);
-}
-
-PyObject *
-PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
+PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
+                     PyType_Spec *spec, PyObject *bases)
 {
     PyHeapTypeObject *res;
     PyObject *modname;
@@ -3381,6 +3378,16 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     Py_ssize_t nmembers, weaklistoffset, dictoffset, vectorcalloffset;
     char *res_start;
     short slot_offset, subslot_offset;
+
+    if (!metaclass) {
+        metaclass = &PyType_Type;
+    }
+
+    if (metaclass->tp_new != PyType_Type.tp_new) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Metaclasses with custom tp_new are not supported.");
+        return NULL;
+    }
 
     nmembers = weaklistoffset = dictoffset = vectorcalloffset = 0;
     for (slot = spec->slots; slot->slot; slot++) {
@@ -3410,7 +3417,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         }
     }
 
-    res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, nmembers);
+    res = (PyHeapTypeObject*)metaclass->tp_alloc(metaclass, nmembers);
     if (res == NULL)
         return NULL;
     res_start = (char*)res;
@@ -3638,9 +3645,21 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 }
 
 PyObject *
+PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
+{
+    return PyType_FromMetaclass(NULL, module, spec, bases);
+}
+
+PyObject *
+PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
+{
+    return PyType_FromMetaclass(NULL, NULL, spec, bases);
+}
+
+PyObject *
 PyType_FromSpec(PyType_Spec *spec)
 {
-    return PyType_FromSpecWithBases(spec, NULL);
+    return PyType_FromMetaclass(NULL, NULL, spec, NULL);
 }
 
 PyObject *
@@ -4557,7 +4576,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
         PyErr_Format(PyExc_TypeError,
                      "Can't instantiate abstract class %s "
-                     "with abstract method%s %U",
+                     "without an implementation for abstract method%s %U",
                      type->tp_name,
                      method_count > 1 ? "s" : "",
                      joined);

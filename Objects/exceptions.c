@@ -7,6 +7,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdbool.h>
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
@@ -1097,7 +1098,7 @@ exceptiongroup_split_recursive(PyObject *exc,
     for (Py_ssize_t i = 0; i < num_excs; i++) {
         PyObject *e = PyTuple_GET_ITEM(eg->excs, i);
         _exceptiongroup_split_result rec_result;
-        if (Py_EnterRecursiveCall(" in exceptiongroup_split_recursive")) {
+        if (_Py_EnterRecursiveCall(" in exceptiongroup_split_recursive")) {
             goto done;
         }
         if (exceptiongroup_split_recursive(
@@ -1105,10 +1106,10 @@ exceptiongroup_split_recursive(PyObject *exc,
                 construct_rest, &rec_result) < 0) {
             assert(!rec_result.match);
             assert(!rec_result.rest);
-            Py_LeaveRecursiveCall();
+            _Py_LeaveRecursiveCall();
             goto done;
         }
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCall();
         if (rec_result.match) {
             assert(PyList_CheckExact(match_list));
             if (PyList_Append(match_list, rec_result.match) < 0) {
@@ -1234,11 +1235,11 @@ collect_exception_group_leaves(PyObject *exc, PyObject *leaves)
     /* recursive calls */
     for (Py_ssize_t i = 0; i < num_excs; i++) {
         PyObject *e = PyTuple_GET_ITEM(eg->excs, i);
-        if (Py_EnterRecursiveCall(" in collect_exception_group_leaves")) {
+        if (_Py_EnterRecursiveCall(" in collect_exception_group_leaves")) {
             return -1;
         }
         int res = collect_exception_group_leaves(e, leaves);
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCall();
         if (res < 0) {
             return -1;
         }
@@ -3815,11 +3816,7 @@ _PyErr_TrySetFromCause(const char *format, ...)
         Py_DECREF(tb);
     }
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     msg_prefix = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
     if (msg_prefix == NULL) {

@@ -112,6 +112,7 @@ bytes(cdata)
 #endif
 
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "structmember.h"         // PyMemberDef
 
 #include <ffi.h>
@@ -395,9 +396,9 @@ _ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
         strcat(new_prefix, "(");
         for (k = 0; k < ndim; ++k) {
             if (k < ndim-1) {
-                sprintf(buf, "%"PY_FORMAT_SIZE_T"d,", shape[k]);
+                sprintf(buf, "%zd,", shape[k]);
             } else {
-                sprintf(buf, "%"PY_FORMAT_SIZE_T"d)", shape[k]);
+                sprintf(buf, "%zd)", shape[k]);
             }
             strcat(new_prefix, buf);
         }
@@ -2270,12 +2271,12 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
-        if (Py_EnterRecursiveCall("while processing _as_parameter_")) {
+        if (_Py_EnterRecursiveCall("while processing _as_parameter_")) {
             Py_DECREF(as_parameter);
             return NULL;
         }
         value = PyCSimpleType_from_param(type, as_parameter);
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCall();
         Py_DECREF(as_parameter);
         return value;
     }

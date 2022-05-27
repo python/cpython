@@ -1,3 +1,0 @@
-Raise an ArgumentError when the same subparser name is added twice to an
-`argparse.ArgumentParser`.  This is consistent with the (default) behavior
-when the same option string is added twice to an ArgumentParser.

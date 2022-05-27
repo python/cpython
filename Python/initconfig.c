@@ -38,7 +38,7 @@ Options and arguments (and corresponding environment variables):\n\
 -d     : turn on parser debugging output (for experts only, only works on\n\
          debug builds); also PYTHONDEBUG=x\n\
 -E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
--h     : print this help message and exit (also --help)\n\
+-h     : print this help message and exit (also -? or --help)\n\
 ";
 static const char usage_2[] = "\
 -i     : inspect interactively after running script; forces a prompt even\n\
@@ -49,6 +49,7 @@ static const char usage_2[] = "\
          .pyc extension; also PYTHONOPTIMIZE=x\n\
 -OO    : do -O changes and also discard docstrings; add .opt-2 before\n\
          .pyc extension\n\
+-P     : don't prepend a potentially unsafe path to sys.path\n\
 -q     : don't print version and copyright messages on interactive startup\n\
 -s     : don't add user site directory to sys.path; also PYTHONNOUSERSITE\n\
 -S     : don't imply 'import site' on initialization\n\
@@ -64,7 +65,6 @@ static const char usage_3[] = "\
          also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
 -X opt : set implementation-specific option. The following options are available:\n\
-\n\
          -X faulthandler: enable faulthandler\n\
          -X showrefcount: output the total reference count and number of used\n\
              memory blocks when the program finishes or after each statement in the\n\
@@ -81,7 +81,8 @@ static const char usage_3[] = "\
              checks which are too expensive to be enabled by default. Effect of the\n\
              developer mode:\n\
                 * Add default warning filter, as -W default\n\
-                * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks() C function\n\
+                * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks()\n\
+                  C function\n\
                 * Enable the faulthandler module to dump the Python traceback on a crash\n\
                 * Enable asyncio debug mode\n\
                 * Set the dev_mode attribute of sys.flags to True\n\
@@ -99,7 +100,6 @@ static const char usage_3[] = "\
             when the interpreter displays tracebacks.\n\
          -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
             The default is \"on\" (or \"off\" if you are running a local build).\n\
-\n\
 --check-hash-based-pycs always|default|never:\n\
     control how Python invalidates hash-based .pyc files\n\
 ";
@@ -113,6 +113,7 @@ PYTHONPATH   : '%lc'-separated list of directories prefixed to the\n\
                default module search path.  The result is sys.path.\n\
 ";
 static const char usage_5[] =
+"PYTHONSAFEPATH: don't prepend a potentially unsafe path to sys.path.\n"
 "PYTHONHOME   : alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
 "               The default module search path uses %s.\n"
 "PYTHONPLATLIBDIR : override sys.platlibdir.\n"
@@ -139,7 +140,7 @@ static const char usage_6[] =
 "PYTHONNODEBUGRANGES: If this variable is set, it disables the inclusion of the \n"
 "   tables mapping extra location information (end line, start column offset \n"
 "   and end column offset) to every instruction in code objects. This is useful \n"
-"   when smaller cothe de objects and pyc files are desired as well as suppressing the \n"
+"   when smaller code objects and pyc files are desired as well as suppressing the \n"
 "   extra visual location indicators when the interpreter displays tracebacks.\n";
 
 #if defined(MS_WINDOWS)
@@ -647,6 +648,10 @@ config_check_consistency(const PyConfig *config)
     assert(config->check_hash_pycs_mode != NULL);
     assert(config->_install_importlib >= 0);
     assert(config->pathconfig_warnings >= 0);
+    assert(config->_is_python_build >= 0);
+    assert(config->safe_path >= 0);
+    // config->use_frozen_modules is initialized later
+    // by _PyConfig_InitImportConfig().
     return 1;
 }
 #endif
@@ -737,6 +742,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
 #else
     config->use_frozen_modules = 1;
 #endif
+    config->safe_path = 0;
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
 }
@@ -792,6 +798,7 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->use_hash_seed = 0;
     config->faulthandler = 0;
     config->tracemalloc = 0;
+    config->safe_path = 1;
     config->pathconfig_warnings = 0;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
@@ -959,6 +966,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(_init_main);
     COPY_ATTR(_isolated_interpreter);
     COPY_ATTR(use_frozen_modules);
+    COPY_ATTR(safe_path);
     COPY_WSTRLIST(orig_argv);
     COPY_ATTR(_is_python_build);
 
@@ -1065,6 +1073,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(_isolated_interpreter);
     SET_ITEM_WSTRLIST(orig_argv);
     SET_ITEM_INT(use_frozen_modules);
+    SET_ITEM_INT(safe_path);
     SET_ITEM_INT(_is_python_build);
 
     return dict;
@@ -1350,6 +1359,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(_init_main);
     GET_UINT(_isolated_interpreter);
     GET_UINT(use_frozen_modules);
+    GET_UINT(safe_path);
     GET_UINT(_is_python_build);
 
 #undef CHECK_VALUE
@@ -1631,6 +1641,10 @@ config_read_env_vars(PyConfig *config)
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
+    }
+
+    if (config_get_env(config, "PYTHONSAFEPATH")) {
+        config->safe_path = 1;
     }
 
     return _PyStatus_OK();
@@ -2000,6 +2014,7 @@ config_init_import(PyConfig *config, int compute_path_config)
                               "(expected \"on\" or \"off\")");
     }
 
+    assert(config->use_frozen_modules >= 0);
     return _PyStatus_OK();
 }
 
@@ -2325,6 +2340,10 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         case 'O':
             config->optimization_level++;
+            break;
+
+        case 'P':
+            config->safe_path = 1;
             break;
 
         case 'B':
@@ -2849,6 +2868,7 @@ _PyConfig_Read(PyConfig *config, int compute_path_config)
 
     assert(config->isolated >= 0);
     if (config->isolated) {
+        config->safe_path = 1;
         config->use_environment = 0;
         config->user_site_directory = 0;
     }
@@ -2994,6 +3014,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     PySys_WriteStderr("  isolated = %i\n", config->isolated);
     PySys_WriteStderr("  environment = %i\n", config->use_environment);
     PySys_WriteStderr("  user site = %i\n", config->user_site_directory);
+    PySys_WriteStderr("  safe_path = %i\n", config->safe_path);
     PySys_WriteStderr("  import site = %i\n", config->site_import);
     PySys_WriteStderr("  is in build tree = %i\n", config->_is_python_build);
     DUMP_CONFIG("stdlib dir", stdlib_dir);

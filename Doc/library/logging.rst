@@ -242,6 +242,10 @@ is the module's name in the Python package namespace.
       above example). In such circumstances, it is likely that specialized
       :class:`Formatter`\ s would be used with particular :class:`Handler`\ s.
 
+      If no handler is attached to this logger (or any of its ancestors,
+      taking into account the relevant :attr:`Logger.propagate` attributes),
+      the message will be sent to the handler set on :attr:`lastResort`.
+
       .. versionchanged:: 3.2
          The *stack_info* parameter was added.
 
@@ -868,10 +872,14 @@ the options available to you.
 +----------------+-------------------------+-----------------------------------------------+
 | threadName     | ``%(threadName)s``      | Thread name (if available).                   |
 +----------------+-------------------------+-----------------------------------------------+
+| taskName       | ``%(taskName)s``        | :class:`asyncio.Task` name (if available).    |
++----------------+-------------------------+-----------------------------------------------+
 
 .. versionchanged:: 3.1
    *processName* was added.
 
+.. versionchanged:: 3.12
+   *taskName* was added.
 
 .. _logger-adapter:
 
@@ -1038,6 +1046,10 @@ functions.
    above example). In such circumstances, it is likely that specialized
    :class:`Formatter`\ s would be used with particular :class:`Handler`\ s.
 
+   This function (as well as :func:`info`, :func:`warning`, :func:`error` and
+   :func:`critical`) will call :func:`basicConfig` if the root logger doesn't
+   have any handler attached.
+
    .. versionchanged:: 3.2
       The *stack_info* parameter was added.
 
@@ -1079,16 +1091,6 @@ functions.
 
    Logs a message with level *level* on the root logger. The other arguments are
    interpreted as for :func:`debug`.
-
-   .. note:: The above module-level convenience functions, which delegate to the
-      root logger, call :func:`basicConfig` to ensure that at least one handler
-      is available. Because of this, they should *not* be used in threads,
-      in versions of Python earlier than 2.7.1 and 3.2, unless at least one
-      handler has been added to the root logger *before* the threads are
-      started. In earlier versions of Python, due to a thread safety shortcoming
-      in :func:`basicConfig`, this can (under rare circumstances) lead to
-      handlers being added multiple times to the root logger, which can in turn
-      lead to multiple messages for the same event.
 
 .. function:: disable(level=CRITICAL)
 

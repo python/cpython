@@ -490,11 +490,11 @@ class Obj2ModPrototypeVisitor(PickleVisitor):
 class Obj2ModVisitor(PickleVisitor):
     @contextmanager
     def recursive_call(self, node, level):
-        self.emit('if (Py_EnterRecursiveCall(" while traversing \'%s\' node")) {' % node, level, reflow=False)
+        self.emit('if (_Py_EnterRecursiveCall(" while traversing \'%s\' node")) {' % node, level, reflow=False)
         self.emit('goto failed;', level + 1)
         self.emit('}', level)
         yield
-        self.emit('Py_LeaveRecursiveCall();', level)
+        self.emit('_Py_LeaveRecursiveCall();', level)
 
     def funcHeader(self, name):
         ctype = get_c_type(name)
@@ -1482,9 +1482,10 @@ def generate_module_def(mod, metadata, f, internal_h):
     print(textwrap.dedent("""
         #include "Python.h"
         #include "pycore_ast.h"
-        #include "pycore_ast_state.h"       // struct ast_state
-        #include "pycore_interp.h"          // _PyInterpreterState.ast
-        #include "pycore_pystate.h"         // _PyInterpreterState_GET()
+        #include "pycore_ast_state.h"     // struct ast_state
+        #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
+        #include "pycore_interp.h"        // _PyInterpreterState.ast
+        #include "pycore_pystate.h"       // _PyInterpreterState_GET()
         #include "structmember.h"
         #include <stddef.h>
 

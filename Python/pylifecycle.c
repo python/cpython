@@ -1091,8 +1091,6 @@ pyinit_main_reconfigure(PyThreadState *tstate)
 static PyStatus
 init_interp_main(PyThreadState *tstate)
 {
-    extern void _PyThread_debug_deprecation(void);
-
     assert(!_PyErr_Occurred(tstate));
 
     PyStatus status;
@@ -1193,9 +1191,6 @@ init_interp_main(PyThreadState *tstate)
         emit_stderr_warning_for_legacy_locale(interp->runtime);
 #endif
     }
-
-    // Warn about PYTHONTHREADDEBUG deprecation
-    _PyThread_debug_deprecation();
 
     assert(!_PyErr_Occurred(tstate));
 
@@ -2843,11 +2838,7 @@ _Py_FatalErrorFormat(const char *func, const char *format, ...)
     }
 
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     vfprintf(stream, format, vargs);
     va_end(vargs);
 

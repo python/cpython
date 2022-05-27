@@ -1740,6 +1740,17 @@ class OtherTests(unittest.TestCase):
             fp.write("short file")
         self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, TESTFN)
 
+    def test_negative_central_directory_offset_raises_BadZipFile(self):
+        # Zip file containing an empty EOCD record
+        buffer = bytearray(b'PK\x05\x06' + b'\0'*18)
+
+        # Set the size of the central directory bytes to become 1,
+        # causing the central directory offset to become negative
+        for dirsize in 1, 2**32-1:
+            buffer[12:16] = struct.pack('<L', dirsize)
+            f = io.BytesIO(buffer)
+            self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, f)
+
     def test_closed_zip_raises_ValueError(self):
         """Verify that testzip() doesn't swallow inappropriate exceptions."""
         data = io.BytesIO()
