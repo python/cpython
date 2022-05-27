@@ -176,6 +176,9 @@ print_call_stats(FILE *out, CallStats *stats)
     fprintf(out, "Calls to Python functions inlined: %" PRIu64 "\n", stats->inlined_py_calls);
     fprintf(out, "Frames pushed: %" PRIu64 "\n", stats->frames_pushed);
     fprintf(out, "Frame objects created: %" PRIu64 "\n", stats->frame_objects_created);
+    for (int i = 0; i < EVAL_CALL_KINDS; i++) {
+        fprintf(out, "Calls via PyEval_EvalFrame[%d] : %" PRIu64 "\n", i, stats->eval_calls[i]);
+    }
 }
 
 static void
@@ -904,7 +907,7 @@ typedef enum {
     MANAGED_DICT = 2,
     OFFSET_DICT = 3,
     NO_DICT = 4,
-    LAZY_DICT = 5,    
+    LAZY_DICT = 5,
 } ObjectDictKind;
 
 // Please collect stats carefully before and after modifying. A subtle change
