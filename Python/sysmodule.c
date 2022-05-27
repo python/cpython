@@ -1776,10 +1776,15 @@ sys__getframe_impl(PyObject *module, int depth)
         return NULL;
     }
 
-    while (depth > 0 && frame != NULL) {
-        frame = frame->previous;
-        if (!frame->is_artificial) {
-            --depth;
+    if (frame != NULL) {
+        while (depth > 0) {
+            frame = frame->previous;
+            if (frame == NULL) {
+                break;
+            }
+            if (!frame->is_artificial) {
+                --depth;
+            }
         }
     }
     if (frame == NULL) {
