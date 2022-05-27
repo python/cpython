@@ -151,6 +151,11 @@ C API Changes
 New Features
 ------------
 
+* Added the new limited C API function :c:func:`PyType_FromMetaclass`,
+  which generalizes the existing :c:func:`PyType_FromModuleAndSpec` using
+  an additional metaclass argument.
+  (Contributed by Wenzel Jakob in :gh:`93012`.)
+
 Porting to Python 3.12
 ----------------------
 
