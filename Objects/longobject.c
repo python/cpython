@@ -3143,23 +3143,23 @@ long_hash(PyLongObject *v)
 }
 
 /* Helper *only* for x_add(). */
-#define X_ADD(a, b)                                             \
-    do {                                                        \
-        z = _PyLong_New(size_##a+1);                            \
-        if (z == NULL)                                          \
-            return NULL;                                        \
-        for (i = 0; i < size_##b; ++i) {                        \
-            carry += a->ob_digit[i] + b->ob_digit[i];           \
-            z->ob_digit[i] = carry & PyLong_MASK;               \
-            carry >>= PyLong_SHIFT;                             \
-        }                                                       \
-        for (; i < size_##a; ++i) {                             \
-            carry += a->ob_digit[i];                            \
-            z->ob_digit[i] = carry & PyLong_MASK;               \
-            carry >>= PyLong_SHIFT;                             \
-        }                                                       \
-        z->ob_digit[i] = carry;                                 \
-        return long_normalize(z);                               \
+#define X_ADD(a, b)                                     \
+    do {                                                \
+        z = _PyLong_New(size_##a+1);                    \
+        if (z == NULL)                                  \
+            return NULL;                                \
+        for (i = 0; i < size_##b; ++i) {                \
+            carry += a->ob_digit[i] + b->ob_digit[i];   \
+            z->ob_digit[i] = carry & PyLong_MASK;       \
+            carry >>= PyLong_SHIFT;                     \
+        }                                               \
+        for (; i < size_##a; ++i) {                     \
+            carry += a->ob_digit[i];                    \
+            z->ob_digit[i] = carry & PyLong_MASK;       \
+            carry >>= PyLong_SHIFT;                     \
+        }                                               \
+        z->ob_digit[i] = carry;                         \
+        return long_normalize(z);                       \
     } while (0)
 
 /* Add the absolute values of two integers. */
@@ -3181,30 +3181,30 @@ x_add(PyLongObject *a, PyLongObject *b)
 }
 
 /* Helper *only* for x_sub(). */
-#define X_SUB(a, b)                                                 \
-    do {                                                            \
-        z = _PyLong_New(size_##a);                                  \
-        if (z == NULL)                                              \
-            return NULL;                                            \
-        for (i = 0; i < size_##b; ++i) {                            \
-            /* The following assumes unsigned arithmetic            \
-               works module 2**N for some N>PyLong_SHIFT. */        \
-            borrow = a->ob_digit[i] - b->ob_digit[i] - borrow;      \
-            z->ob_digit[i] = borrow & PyLong_MASK;                  \
-            borrow >>= PyLong_SHIFT;                                \
-            borrow &= 1; /* Keep only one sign bit */               \
-        }                                                           \
-        for (; i < size_##a; ++i) {                                 \
-            borrow = a->ob_digit[i] - borrow;                       \
-            z->ob_digit[i] = borrow & PyLong_MASK;                  \
-            borrow >>= PyLong_SHIFT;                                \
-            borrow &= 1; /* Keep only one sign bit */               \
-        }                                                           \
-        assert(borrow == 0);                                        \
-        if (sign < 0) {                                             \
-            Py_SET_SIZE(z, -Py_SIZE(z));                            \
-        }                                                           \
-        return maybe_small_long(long_normalize(z));                 \
+#define X_SUB(a, b)                                             \
+    do {                                                        \
+        z = _PyLong_New(size_##a);                              \
+        if (z == NULL)                                          \
+            return NULL;                                        \
+        for (i = 0; i < size_##b; ++i) {                        \
+            /* The following assumes unsigned arithmetic        \
+               works module 2**N for some N>PyLong_SHIFT. */    \
+            borrow = a->ob_digit[i] - b->ob_digit[i] - borrow;  \
+            z->ob_digit[i] = borrow & PyLong_MASK;              \
+            borrow >>= PyLong_SHIFT;                            \
+            borrow &= 1; /* Keep only one sign bit */           \
+        }                                                       \
+        for (; i < size_##a; ++i) {                             \
+            borrow = a->ob_digit[i] - borrow;                   \
+            z->ob_digit[i] = borrow & PyLong_MASK;              \
+            borrow >>= PyLong_SHIFT;                            \
+            borrow &= 1; /* Keep only one sign bit */           \
+        }                                                       \
+        assert(borrow == 0);                                    \
+        if (sign < 0) {                                         \
+            Py_SET_SIZE(z, -Py_SIZE(z));                        \
+        }                                                       \
+        return maybe_small_long(long_normalize(z));             \
     } while (0)
 
 /* Subtract the absolute values of two integers. */
