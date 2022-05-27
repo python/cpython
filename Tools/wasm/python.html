@@ -251,7 +251,7 @@ class BufferQueue {
     }
 
     addData(data) {
-        let lines = data.split(/(?<=\n)/g)
+        let lines = data.match(/.*(\n|$)/g)
         if (this.lastLineIsIncomplete()) {
             this.buffer[this.buffer.length-1] += lines.shift()
         }
