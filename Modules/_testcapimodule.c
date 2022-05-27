@@ -5858,6 +5858,20 @@ settrace_to_record(PyObject *self, PyObject *list)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_macros(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    // Py_MIN(), Py_MAX()
+    assert(Py_MIN(5, 11) == 5);
+    assert(Py_MAX(5, 11) == 11);
+
+    // _Py_IS_TYPE_SIGNED()
+    assert(_Py_IS_TYPE_SIGNED(int));
+    assert(!_Py_IS_TYPE_SIGNED(unsigned int));
+
+    Py_RETURN_NONE;
+}
+
 static PyObject *negative_dictoffset(PyObject *, PyObject *);
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
@@ -6149,6 +6163,7 @@ static PyMethodDef TestMethods[] = {
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
+    {"test_macros", test_macros, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
