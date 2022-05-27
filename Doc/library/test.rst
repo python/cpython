@@ -319,6 +319,15 @@ The :mod:`test.support` module defines the following constants:
    to make writes blocking.
 
 
+.. data:: Py_DEBUG
+
+   True if Python is built with the :c:macro:`Py_DEBUG` macro defined: if
+   Python is :ref:`built in debug mode <debug-build>`
+   (:option:`./configure --with-pydebug <--with-pydebug>`).
+
+   .. versionadded:: 3.12
+
+
 .. data:: SOCK_MAX_SIZE
 
    A constant that is likely larger than the underlying OS socket buffer size,
@@ -607,6 +616,15 @@ The :mod:`test.support` module defines the following functions:
    target of the "as" clause, if there is one.
 
 
+.. function:: flush_std_streams()
+
+   Call the ``flush()`` method on :data:`sys.stdout` and then on
+   :data:`sys.stderr`. It can be used to make sure that the logs order is
+   consistent before writing into stderr.
+
+   .. versionadded:: 3.11
+
+
 .. function:: print_warning(msg)
 
    Print a warning into :data:`sys.__stderr__`. Format the message as:
@@ -684,8 +702,8 @@ The :mod:`test.support` module defines the following functions:
 
 .. decorator:: requires_mac_version(*min_version)
 
-   Decorator for the minimum version when running test on Mac OS X.  If the
-   MAC OS X version is less than the minimum, raise :exc:`unittest.SkipTest`.
+   Decorator for the minimum version when running test on macOS.  If the
+   macOS version is less than the minimum, raise :exc:`unittest.SkipTest`.
 
 
 .. decorator:: requires_IEEE_754
@@ -971,13 +989,6 @@ The :mod:`test.support` module defines the following classes:
       Try to match a single stored value (*dv*) with a supplied value (*v*).
 
 
-.. class:: BasicTestRunner()
-
-   .. method:: run(test)
-
-      Run *test* and return the result.
-
-
 :mod:`test.support.socket_helper` --- Utilities for socket tests
 ================================================================
 
@@ -1249,7 +1260,7 @@ The :mod:`test.support.threading_helper` module provides support for threading t
    Context manager catching :class:`threading.Thread` exception using
    :func:`threading.excepthook`.
 
-   Attributes set when an exception is catched:
+   Attributes set when an exception is caught:
 
    * ``exc_type``
    * ``exc_value``
@@ -1458,7 +1469,7 @@ The :mod:`test.support.os_helper` module provides support for os tests.
 .. function:: unlink(filename)
 
    Call :func:`os.unlink` on *filename*.  On Windows platforms, this is
-   wrapped with a wait loop that checks for the existence fo the file.
+   wrapped with a wait loop that checks for the existence of the file.
 
 
 :mod:`test.support.import_helper` --- Utilities for import tests

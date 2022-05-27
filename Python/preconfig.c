@@ -1,15 +1,12 @@
 #include "Python.h"
+#include "pycore_fileutils.h"     // DECODE_LOCALE_ERR
 #include "pycore_getopt.h"        // _PyOS_GetOpt()
 #include "pycore_initconfig.h"    // _PyArgv
 #include "pycore_pymem.h"         // _PyMem_GetAllocatorName()
 #include "pycore_runtime.h"       // _PyRuntime_Initialize()
+
 #include <locale.h>               // setlocale()
-
-
-#define DECODE_LOCALE_ERR(NAME, LEN) \
-    (((LEN) == -2) \
-     ? _PyStatus_ERR("cannot decode " NAME) \
-     : _PyStatus_NO_MEMORY())
+#include <stdlib.h>               // getenv()
 
 
 /* Forward declarations */
@@ -87,8 +84,7 @@ _PyArgv_AsWstrList(const _PyArgv *args, PyWideStringList *list)
             wchar_t *arg = Py_DecodeLocale(args->bytes_argv[i], &len);
             if (arg == NULL) {
                 _PyWideStringList_Clear(&wargv);
-                return DECODE_LOCALE_ERR("command line arguments",
-                                         (Py_ssize_t)len);
+                return DECODE_LOCALE_ERR("command line arguments", len);
             }
             wargv.items[i] = arg;
             wargv.length++;
@@ -830,12 +826,10 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
         _Py_SetLocaleFromEnv(LC_CTYPE);
     }
 
-    _PyPreCmdline cmdline = _PyPreCmdline_INIT;
-    int init_utf8_mode = Py_UTF8Mode;
-#ifdef MS_WINDOWS
-    int init_legacy_encoding = Py_LegacyWindowsFSEncodingFlag;
-#endif
+    PyPreConfig save_runtime_config;
+    preconfig_copy(&save_runtime_config, &_PyRuntime.preconfig);
 
+    _PyPreCmdline cmdline = _PyPreCmdline_INIT;
     int locale_coerced = 0;
     int loops = 0;
 
@@ -851,11 +845,9 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
         }
 
         /* bpo-34207: Py_DecodeLocale() and Py_EncodeLocale() depend
-           on Py_UTF8Mode and Py_LegacyWindowsFSEncodingFlag. */
-        Py_UTF8Mode = config->utf8_mode;
-#ifdef MS_WINDOWS
-        Py_LegacyWindowsFSEncodingFlag = config->legacy_windows_fs_encoding;
-#endif
+           on the utf8_mode and legacy_windows_fs_encoding members
+           of _PyRuntime.preconfig. */
+        preconfig_copy(&_PyRuntime.preconfig, config);
 
         if (args) {
             // Set command line arguments at each iteration. If they are bytes
@@ -918,14 +910,10 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
     status = _PyStatus_OK();
 
 done:
-    if (init_ctype_locale != NULL) {
-        setlocale(LC_CTYPE, init_ctype_locale);
-        PyMem_RawFree(init_ctype_locale);
-    }
-    Py_UTF8Mode = init_utf8_mode ;
-#ifdef MS_WINDOWS
-    Py_LegacyWindowsFSEncodingFlag = init_legacy_encoding;
-#endif
+    // Revert side effects
+    setlocale(LC_CTYPE, init_ctype_locale);
+    PyMem_RawFree(init_ctype_locale);
+    preconfig_copy(&_PyRuntime.preconfig, &save_runtime_config);
     _PyPreCmdline_Clear(&cmdline);
     return status;
 }

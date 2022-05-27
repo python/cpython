@@ -1,2 +1,0 @@
-The *compresslevel* and *preset* keyword arguments of :func:`tarfile.open`
-are now both documented and tested.

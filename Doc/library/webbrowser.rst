@@ -169,7 +169,7 @@ Notes:
    Only on Windows platforms.
 
 (3)
-   Only on Mac OS X platform.
+   Only on macOS platform.
 
 .. versionadded:: 3.3
    Support for Chrome/Chromium has been added.
@@ -195,6 +195,11 @@ Browser Controller Objects
 
 Browser controllers provide these methods which parallel three of the
 module-level convenience functions:
+
+
+.. attribute:: name
+
+   System-dependent name for the browser.
 
 
 .. method:: controller.open(url, new=0, autoraise=True)

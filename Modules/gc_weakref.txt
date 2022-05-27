@@ -50,7 +50,7 @@ CT while gc is running.
     https://www.python.org/sf/1055820
 
 shows how innocent it can be, and also how nasty.  Variants of the three
-focussed test cases attached to that bug report are now part of Python's
+focused test cases attached to that bug report are now part of Python's
 standard Lib/test/test_gc.py.
 
 Jim Fulton gave the best nutshell summary of the new (in 2.4 and 2.3.5)

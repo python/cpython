@@ -520,11 +520,14 @@ Same with keyword only args:
 
 """
 
-import sys
+import doctest
+import unittest
 from test import support
 
-def test_main():
-    support.run_doctest(sys.modules[__name__], True)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

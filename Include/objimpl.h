@@ -182,9 +182,9 @@ PyAPI_FUNC(void) PyObject_GC_UnTrack(void *);
 PyAPI_FUNC(void) PyObject_GC_Del(void *);
 
 #define PyObject_GC_New(type, typeobj) \
-                ( (type *) _PyObject_GC_New(typeobj) )
+    _Py_CAST(type*, _PyObject_GC_New(typeobj))
 #define PyObject_GC_NewVar(type, typeobj, n) \
-                ( (type *) _PyObject_GC_NewVar((typeobj), (n)) )
+    _Py_CAST(type*, _PyObject_GC_NewVar((typeobj), (n)))
 
 PyAPI_FUNC(int) PyObject_GC_IsTracked(PyObject *);
 PyAPI_FUNC(int) PyObject_GC_IsFinalized(PyObject *);
@@ -205,7 +205,7 @@ PyAPI_FUNC(int) PyObject_GC_IsFinalized(PyObject *);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_OBJIMPL_H
-#  include  "cpython/objimpl.h"
+#  include "cpython/objimpl.h"
 #  undef Py_CPYTHON_OBJIMPL_H
 #endif
 

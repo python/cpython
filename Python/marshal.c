@@ -9,11 +9,10 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "longintrepr.h"
-#include "code.h"
-#include "marshal.h"
-#include "pycore_hashtable.h"
-#include "pycore_code.h"        // _PyCode_New()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_code.h"          // _PyCode_New()
+#include "pycore_hashtable.h"     // _Py_hashtable_t
+#include "marshal.h"              // Py_MARSHAL_VERSION
 
 /*[clinic input]
 module marshal
@@ -270,8 +269,8 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
 static void
 w_float_bin(double v, WFILE *p)
 {
-    unsigned char buf[8];
-    if (_PyFloat_Pack8(v, buf, 1) < 0) {
+    char buf[8];
+    if (PyFloat_Pack8(v, buf, 1) < 0) {
         p->error = WFERR_UNMARSHALLABLE;
         return;
     }
@@ -299,9 +298,14 @@ w_ref(PyObject *v, char *flag, WFILE *p)
     if (p->version < 3 || p->hashtable == NULL)
         return 0; /* not writing object references */
 
-    /* if it has only one reference, it definitely isn't shared */
-    if (Py_REFCNT(v) == 1)
+    /* If it has only one reference, it definitely isn't shared.
+     * But we use TYPE_REF always for interned string, to PYC file stable
+     * as possible.
+     */
+    if (Py_REFCNT(v) == 1 &&
+            !(PyUnicode_CheckExact(v) && PyUnicode_CHECK_INTERNED(v))) {
         return 0;
+    }
 
     entry = _Py_hashtable_get_entry(p->hashtable, v);
     if (entry != NULL) {
@@ -544,13 +548,18 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
     }
     else if (PyCode_Check(v)) {
         PyCodeObject *co = (PyCodeObject *)v;
+        PyObject *co_code = _PyCode_GetCode(co);
+        if (co_code == NULL) {
+            p->error = WFERR_NOMEMORY;
+            return;
+        }
         W_TYPE(TYPE_CODE, p);
         w_long(co->co_argcount, p);
         w_long(co->co_posonlyargcount, p);
         w_long(co->co_kwonlyargcount, p);
         w_long(co->co_stacksize, p);
         w_long(co->co_flags, p);
-        w_object(co->co_code, p);
+        w_object(co_code, p);
         w_object(co->co_consts, p);
         w_object(co->co_names, p);
         w_object(co->co_localsplusnames, p);
@@ -560,9 +569,8 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_qualname, p);
         w_long(co->co_firstlineno, p);
         w_object(co->co_linetable, p);
-        w_object(co->co_endlinetable, p);
-        w_object(co->co_columntable, p);
         w_object(co->co_exceptiontable, p);
+        Py_DECREF(co_code);
     }
     else if (PyObject_CheckBuffer(v)) {
         /* Write unknown bytes-like objects as a bytes object */
@@ -702,7 +710,6 @@ r_string(Py_ssize_t n, RFILE *p)
         read = fread(p->buf, 1, n, p->fp);
     }
     else {
-        _Py_IDENTIFIER(readinto);
         PyObject *res, *mview;
         Py_buffer buf;
 
@@ -712,7 +719,7 @@ r_string(Py_ssize_t n, RFILE *p)
         if (mview == NULL)
             return NULL;
 
-        res = _PyObject_CallMethodId(p->readable, &PyId_readinto, "N", mview);
+        res = _PyObject_CallMethod(p->readable, &_Py_ID(readinto), "N", mview);
         if (res != NULL) {
             read = PyNumber_AsSsize_t(res, PyExc_ValueError);
             Py_DECREF(res);
@@ -883,10 +890,10 @@ r_PyLong(RFILE *p)
 static double
 r_float_bin(RFILE *p)
 {
-    const unsigned char *buf = (const unsigned char *) r_string(8, p);
+    const char *buf = r_string(8, p);
     if (buf == NULL)
         return -1;
-    return _PyFloat_Unpack8(buf, 1);
+    return PyFloat_Unpack8(buf, 1);
 }
 
 /* Issue #33720: Disable inlining for reducing the C stack consumption
@@ -1292,7 +1299,7 @@ r_object(RFILE *p)
 
         if (n == 0 && type == TYPE_FROZENSET) {
             /* call frozenset() to get the empty frozenset singleton */
-            v = _PyObject_CallNoArg((PyObject*)&PyFrozenSet_Type);
+            v = _PyObject_CallNoArgs((PyObject*)&PyFrozenSet_Type);
             if (v == NULL)
                 break;
             R_REF(v);
@@ -1353,9 +1360,7 @@ r_object(RFILE *p)
             PyObject *name = NULL;
             PyObject *qualname = NULL;
             int firstlineno;
-            PyObject *linetable = NULL;
-            PyObject* endlinetable = NULL;
-            PyObject* columntable = NULL;
+            PyObject* linetable = NULL;
             PyObject *exceptiontable = NULL;
 
             idx = r_ref_reserve(flag, p);
@@ -1411,12 +1416,6 @@ r_object(RFILE *p)
             linetable = r_object(p);
             if (linetable == NULL)
                 goto code_error;
-            endlinetable = r_object(p);
-            if (endlinetable == NULL)
-                goto code_error;
-            columntable = r_object(p);
-            if (columntable == NULL)
-                goto code_error;
             exceptiontable = r_object(p);
             if (exceptiontable == NULL)
                 goto code_error;
@@ -1430,8 +1429,6 @@ r_object(RFILE *p)
                 .code = code,
                 .firstlineno = firstlineno,
                 .linetable = linetable,
-                .endlinetable = endlinetable,
-                .columntable = columntable,
 
                 .consts = consts,
                 .names = names,
@@ -1469,8 +1466,6 @@ r_object(RFILE *p)
             Py_XDECREF(name);
             Py_XDECREF(qualname);
             Py_XDECREF(linetable);
-            Py_XDECREF(endlinetable);
-            Py_XDECREF(columntable);
             Py_XDECREF(exceptiontable);
         }
         retval = v;
@@ -1712,12 +1707,11 @@ marshal_dump_impl(PyObject *module, PyObject *value, PyObject *file,
     /* XXX Quick hack -- need to do this differently */
     PyObject *s;
     PyObject *res;
-    _Py_IDENTIFIER(write);
 
     s = PyMarshal_WriteObjectToString(value, version);
     if (s == NULL)
         return NULL;
-    res = _PyObject_CallMethodIdOneArg(file, &PyId_write, s);
+    res = _PyObject_CallMethodOneArg(file, &_Py_ID(write), s);
     Py_DECREF(s);
     return res;
 }
@@ -1744,7 +1738,6 @@ marshal_load(PyObject *module, PyObject *file)
 /*[clinic end generated code: output=f8e5c33233566344 input=c85c2b594cd8124a]*/
 {
     PyObject *data, *result;
-    _Py_IDENTIFIER(read);
     RFILE rf;
 
     /*
@@ -1754,7 +1747,7 @@ marshal_load(PyObject *module, PyObject *file)
      * This can be removed if we guarantee good error handling
      * for r_string()
      */
-    data = _PyObject_CallMethodId(file, &PyId_read, "i", 0);
+    data = _PyObject_CallMethod(file, &_Py_ID(read), "i", 0);
     if (data == NULL)
         return NULL;
     if (!PyBytes_Check(data)) {

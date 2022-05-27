@@ -301,6 +301,8 @@ The :mod:`locale` module defines the following exception and functions:
    *language code* and *encoding* may be ``None`` if their values cannot be
    determined.
 
+   .. deprecated:: 3.11 3.13
+
 
 .. function:: getlocale(category=LC_CTYPE)
 
@@ -325,15 +327,35 @@ The :mod:`locale` module defines the following exception and functions:
    is not necessary or desired, *do_setlocale* should be set to ``False``.
 
    On Android or if the :ref:`Python UTF-8 Mode <utf8-mode>` is enabled, always
-   return ``'UTF-8'``, the :term:`locale encoding` and the *do_setlocale*
+   return ``'utf-8'``, the :term:`locale encoding` and the *do_setlocale*
    argument are ignored.
 
    The :ref:`Python preinitialization <c-preinit>` configures the LC_CTYPE
    locale. See also the :term:`filesystem encoding and error handler`.
 
    .. versionchanged:: 3.7
-      The function now always returns ``UTF-8`` on Android or if the
+      The function now always returns ``"utf-8"`` on Android or if the
       :ref:`Python UTF-8 Mode <utf8-mode>` is enabled.
+
+
+.. function:: getencoding()
+
+   Get the current :term:`locale encoding`:
+
+   * On Android and VxWorks, return ``"utf-8"``.
+   * On Unix, return the encoding of the current :data:`LC_CTYPE` locale.
+     Return ``"utf-8"`` if ``nl_langinfo(CODESET)`` returns an empty string:
+     for example, if the current LC_CTYPE locale is not supported.
+   * On Windows, return the ANSI code page.
+
+   The :ref:`Python preinitialization <c-preinit>` configures the LC_CTYPE
+   locale. See also the :term:`filesystem encoding and error handler`.
+
+   This function is similar to
+   :func:`getpreferredencoding(False) <getpreferredencoding>` except this
+   function ignores the :ref:`Python UTF-8 Mode <utf8-mode>`.
+
+   .. versionadded:: 3.11
 
 
 .. function:: normalize(localename)
@@ -352,6 +374,8 @@ The :mod:`locale` module defines the following exception and functions:
 
    The default setting is determined by calling :func:`getdefaultlocale`.
    *category* defaults to :const:`LC_ALL`.
+
+   .. deprecated:: 3.11 3.13
 
 
 .. function:: strcoll(string1, string2)
@@ -435,10 +459,10 @@ The :mod:`locale` module defines the following exception and functions:
     .. versionadded:: 3.10
 
 
-.. function:: atof(string)
+.. function:: atof(string, func=float)
 
-   Converts a string to a floating point number, following the :const:`LC_NUMERIC`
-   settings.
+   Converts a string to a number, following the :const:`LC_NUMERIC` settings,
+   by calling *func* on the result of calling :func:`delocalize` on *string*.
 
 
 .. function:: atoi(string)

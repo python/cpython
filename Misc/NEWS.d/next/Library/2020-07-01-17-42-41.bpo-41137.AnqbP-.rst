@@ -1,1 +1,0 @@
-Use utf-8 encoding while reading .pdbrc files. Patch by Srinivas Reddy Thatiparthy

@@ -479,9 +479,9 @@ If the same attribute name occurs in both an instance and in a class,
 then attribute lookup prioritizes the instance::
 
     >>> class Warehouse:
-            purpose = 'storage'
-            region = 'west'
-
+    ...    purpose = 'storage'
+    ...    region = 'west'
+    ...
     >>> w1 = Warehouse()
     >>> print(w1.purpose, w1.region)
     storage west
@@ -797,7 +797,7 @@ using the :func:`next` built-in function; this example shows how it all works::
    >>> s = 'abc'
    >>> it = iter(s)
    >>> it
-   <iterator object at 0x00A1DB50>
+   <str_iterator object at 0x10c90e650>
    >>> next(it)
    'a'
    >>> next(it)

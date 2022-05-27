@@ -548,8 +548,9 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # Check that the cached data is removed if the file is deleted
         os.remove(TEMP_ZIP)
         zi.invalidate_caches()
-        self.assertIsNone(zi._files)
+        self.assertFalse(zi._files)
         self.assertIsNone(zipimport._zip_directory_cache.get(zi.archive))
+        self.assertIsNone(zi.find_spec("name_does_not_matter"))
 
     def testZipImporterMethodsInSubDirectory(self):
         packdir = TESTPACK + os.sep
@@ -709,8 +710,8 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
     def doTraceback(self, module):
         try:
             module.do_raise()
-        except:
-            tb = sys.exc_info()[2].tb_next
+        except Exception as e:
+            tb = e.__traceback__.tb_next
 
             f,lno,n,line = extract_tb(tb, 1)[0]
             self.assertEqual(line, raise_src.strip())
@@ -803,6 +804,7 @@ class BadFileZipImportTestCase(unittest.TestCase):
         os_helper.create_empty_file(TESTMOD)
         self.assertZipFailure(TESTMOD)
 
+    @unittest.skipIf(support.is_wasi, "mode 000 not supported.")
     def testFileUnreadable(self):
         os_helper.unlink(TESTMOD)
         fd = os.open(TESTMOD, os.O_CREAT, 000)
@@ -860,15 +862,9 @@ class BadFileZipImportTestCase(unittest.TestCase):
             zipimport._zip_directory_cache.clear()
 
 
-def test_main():
-    try:
-        support.run_unittest(
-              UncompressedZipImportTestCase,
-              CompressedZipImportTestCase,
-              BadFileZipImportTestCase,
-            )
-    finally:
-        os_helper.unlink(TESTMOD)
+def tearDownModule():
+    os_helper.unlink(TESTMOD)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

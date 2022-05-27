@@ -20,6 +20,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import test.support
 import unittest
 
 # Local imports
@@ -61,6 +62,9 @@ class TestPgen2Caching(support.TestCase):
             shutil.rmtree(tmpdir)
 
     @unittest.skipIf(sys.executable is None, 'sys.executable required')
+    @unittest.skipIf(
+        sys.platform in {'emscripten', 'wasi'}, 'requires working subprocess'
+    )
     def test_load_grammar_from_subprocess(self):
         tmpdir = tempfile.mkdtemp()
         tmpsubdir = os.path.join(tmpdir, 'subdir')
@@ -88,10 +92,8 @@ class TestPgen2Caching(support.TestCase):
 from lib2to3.pgen2 import driver as pgen2_driver
 pgen2_driver.load_grammar(%r, save=True, force=True)
             """ % (grammar_sub_copy,)
-            msg = ("lib2to3 package is deprecated and may not be able "
-                   "to parse Python 3.10+")
             cmd = [sys.executable,
-                   f'-Wignore:{msg}:PendingDeprecationWarning',
+                   '-Wignore:lib2to3:DeprecationWarning',
                    '-c', code]
             subprocess.check_call( cmd, env=sub_env)
             self.assertTrue(os.path.exists(pickle_sub_name))
@@ -586,25 +588,31 @@ class TestParserIdempotency(support.TestCase):
 
     """A cut-down version of pytree_idempotency.py."""
 
+    def parse_file(self, filepath):
+        if test.support.verbose:
+            print(f"Parse file: {filepath}")
+        with open(filepath, "rb") as fp:
+            encoding = tokenize.detect_encoding(fp.readline)[0]
+        self.assertIsNotNone(encoding,
+                             "can't detect encoding for %s" % filepath)
+        with open(filepath, "r", encoding=encoding) as fp:
+            source = fp.read()
+        try:
+            tree = driver.parse_string(source)
+        except ParseError:
+            try:
+                tree = driver_no_print_statement.parse_string(source)
+            except ParseError as err:
+                self.fail('ParseError on file %s (%s)' % (filepath, err))
+        new = str(tree)
+        if new != source:
+            print(diff_texts(source, new, filepath))
+            self.fail("Idempotency failed: %s" % filepath)
+
     def test_all_project_files(self):
         for filepath in support.all_project_files():
-            with open(filepath, "rb") as fp:
-                encoding = tokenize.detect_encoding(fp.readline)[0]
-            self.assertIsNotNone(encoding,
-                                 "can't detect encoding for %s" % filepath)
-            with open(filepath, "r", encoding=encoding) as fp:
-                source = fp.read()
-            try:
-                tree = driver.parse_string(source)
-            except ParseError:
-                try:
-                    tree = driver_no_print_statement.parse_string(source)
-                except ParseError as err:
-                    self.fail('ParseError on file %s (%s)' % (filepath, err))
-            new = str(tree)
-            if new != source:
-                print(diff_texts(source, new, filepath))
-                self.fail("Idempotency failed: %s" % filepath)
+            with self.subTest(filepath=filepath):
+                self.parse_file(filepath)
 
     def test_extended_unpacking(self):
         driver.parse_string("a, *b, c = x\n")

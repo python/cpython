@@ -1,1 +1,0 @@
-``weakref.proxy`` objects referencing non-iterators now raise ``TypeError`` rather than dereferencing the null ``tp_iternext`` slot and crashing.

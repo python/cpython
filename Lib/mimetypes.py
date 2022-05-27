@@ -141,25 +141,23 @@ class MimeTypes:
                 type = 'text/plain'
             return type, None           # never compressed, so encoding is None
         base, ext = posixpath.splitext(url)
-        while ext in self.suffix_map:
-            base, ext = posixpath.splitext(base + self.suffix_map[ext])
+        while (ext_lower := ext.lower()) in self.suffix_map:
+            base, ext = posixpath.splitext(base + self.suffix_map[ext_lower])
+        # encodings_map is case sensitive
         if ext in self.encodings_map:
             encoding = self.encodings_map[ext]
             base, ext = posixpath.splitext(base)
         else:
             encoding = None
+        ext = ext.lower()
         types_map = self.types_map[True]
         if ext in types_map:
             return types_map[ext], encoding
-        elif ext.lower() in types_map:
-            return types_map[ext.lower()], encoding
         elif strict:
             return None, encoding
         types_map = self.types_map[False]
         if ext in types_map:
             return types_map[ext], encoding
-        elif ext.lower() in types_map:
-            return types_map[ext.lower()], encoding
         else:
             return None, encoding
 
@@ -436,6 +434,8 @@ def _default_mime_types():
         '.doc'    : 'application/msword',
         '.dot'    : 'application/msword',
         '.wiz'    : 'application/msword',
+        '.nq'     : 'application/n-quads',
+        '.nt'     : 'application/n-triples',
         '.bin'    : 'application/octet-stream',
         '.a'      : 'application/octet-stream',
         '.dll'    : 'application/octet-stream',
@@ -449,6 +449,7 @@ def _default_mime_types():
         '.ps'     : 'application/postscript',
         '.ai'     : 'application/postscript',
         '.eps'    : 'application/postscript',
+        '.trig'   : 'application/trig',
         '.m3u'    : 'application/vnd.apple.mpegurl',
         '.m3u8'   : 'application/vnd.apple.mpegurl',
         '.xls'    : 'application/vnd.ms-excel',
@@ -516,6 +517,7 @@ def _default_mime_types():
         '.aiff'   : 'audio/x-aiff',
         '.ra'     : 'audio/x-pn-realaudio',
         '.wav'    : 'audio/x-wav',
+        '.avif'   : 'image/avif',
         '.bmp'    : 'image/bmp',
         '.gif'    : 'image/gif',
         '.ief'    : 'image/ief',
@@ -546,14 +548,17 @@ def _default_mime_types():
         '.csv'    : 'text/csv',
         '.html'   : 'text/html',
         '.htm'    : 'text/html',
+        '.n3'     : 'text/n3',
         '.txt'    : 'text/plain',
         '.bat'    : 'text/plain',
         '.c'      : 'text/plain',
         '.h'      : 'text/plain',
         '.ksh'    : 'text/plain',
         '.pl'     : 'text/plain',
+        '.srt'    : 'text/plain',
         '.rtx'    : 'text/richtext',
         '.tsv'    : 'text/tab-separated-values',
+        '.vtt'    : 'text/vtt',
         '.py'     : 'text/x-python',
         '.etx'    : 'text/x-setext',
         '.sgm'    : 'text/x-sgml',
@@ -585,6 +590,7 @@ def _default_mime_types():
         '.pict': 'image/pict',
         '.pct' : 'image/pict',
         '.pic' : 'image/pict',
+        '.webp': 'image/webp',
         '.xul' : 'text/xul',
         }
 

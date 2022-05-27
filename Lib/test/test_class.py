@@ -611,6 +611,49 @@ class ClassTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             type.__setattr__(A, b'x', None)
 
+    def testTypeAttributeAccessErrorMessages(self):
+        class A:
+            pass
+
+        error_msg = "type object 'A' has no attribute 'x'"
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            A.x
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            del A.x
+
+    def testObjectAttributeAccessErrorMessages(self):
+        class A:
+            pass
+        class B:
+            y = 0
+            __slots__ = ('z',)
+
+        error_msg = "'A' object has no attribute 'x'"
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            A().x
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            del A().x
+
+        error_msg = "'B' object has no attribute 'x'"
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            B().x
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            del B().x
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            B().x = 0
+
+        error_msg = "'B' object attribute 'y' is read-only"
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            del B().y
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            B().y = 0
+
+        error_msg = 'z'
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            B().z
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            del B().z
+
     def testConstructorErrorMessages(self):
         # bpo-31506: Improves the error message logic for object_new & object_init
 
@@ -665,6 +708,24 @@ class ClassTests(unittest.TestCase):
 
         with self.assertRaisesRegex(TypeError, error_msg):
             object.__init__(E(), 42)
+
+    def testClassWithExtCall(self):
+        class Meta(int):
+            def __init__(*args, **kwargs):
+                pass
+
+            def __new__(cls, name, bases, attrs, **kwargs):
+                return bases, kwargs
+
+        d = {'metaclass': Meta}
+
+        class A(**d): pass
+        self.assertEqual(A, ((), {}))
+        class A(0, 1, 2, 3, 4, 5, 6, 7, **d): pass
+        self.assertEqual(A, (tuple(range(8)), {}))
+        class A(0, *range(1, 8), **d, foo='bar'): pass
+        self.assertEqual(A, (tuple(range(8)), {'foo': 'bar'}))
+
 
 if __name__ == '__main__':
     unittest.main()
