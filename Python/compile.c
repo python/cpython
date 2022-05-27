@@ -7775,7 +7775,7 @@ scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
                 break;
             case LOAD_FAST:
                 if (unsafe) {
-                    b->b_instr[i].i_opcode = LOAD_FAST_CHECK;
+                    instr->i_opcode = LOAD_FAST_CHECK;
                 }
                 unsafe = false;
                 break;
