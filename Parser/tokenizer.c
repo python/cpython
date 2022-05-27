@@ -88,6 +88,9 @@ tok_new(void)
     tok->async_def_nl = 0;
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
     tok->str = NULL;
+#ifdef Py_DEBUG
+    tok->debug = _Py_GetConfig()->parser_debug;
+#endif
     return tok;
 }
 
@@ -1021,7 +1024,7 @@ tok_nextc(struct tok_state *tok)
             rc = tok_underflow_file(tok);
         }
 #if defined(Py_DEBUG)
-        if (Py_DebugFlag) {
+        if (tok->debug) {
             fprintf(stderr, "line[%d] = ", tok->lineno);
             print_escape(stderr, tok->cur, tok->inp - tok->cur);
             fprintf(stderr, "  tok->done = %d\n", tok->done);

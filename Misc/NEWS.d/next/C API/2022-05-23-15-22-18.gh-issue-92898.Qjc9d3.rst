@@ -1,0 +1,2 @@
+Fix C++ compiler warnings when casting function arguments to ``PyObject*``.
+Patch by Serge Guelton.

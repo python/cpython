@@ -271,6 +271,9 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #  include <fcntl.h>
 # endif
 
+/* Helpers needed for AF_HYPERV */
+# include <Rpc.h>
+
 /* Macros based on the IPPROTO enum, see: https://bugs.python.org/issue29515 */
 #ifdef MS_WINDOWS
 #define IPPROTO_ICMP IPPROTO_ICMP
@@ -1579,6 +1582,35 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
     }
 #endif /* HAVE_SOCKADDR_ALG */
 
+#ifdef HAVE_AF_HYPERV
+    case AF_HYPERV:
+    {
+        SOCKADDR_HV *a = (SOCKADDR_HV *) addr;
+
+        wchar_t *guidStr;
+        RPC_STATUS res = UuidToStringW(&a->VmId, &guidStr);
+        if (res != RPC_S_OK) {
+            PyErr_SetFromWindowsErr(res);
+            return 0;
+        }
+        PyObject *vmId = PyUnicode_FromWideChar(guidStr, -1);
+        res = RpcStringFreeW(&guidStr);
+        assert(res == RPC_S_OK);
+
+        res = UuidToStringW(&a->ServiceId, &guidStr);
+        if (res != RPC_S_OK) {
+            Py_DECREF(vmId);
+            PyErr_SetFromWindowsErr(res);
+            return 0;
+        }
+        PyObject *serviceId = PyUnicode_FromWideChar(guidStr, -1);
+        res = RpcStringFreeW(&guidStr);
+        assert(res == RPC_S_OK);
+
+        return Py_BuildValue("NN", vmId, serviceId);
+    }
+#endif /* AF_HYPERV */
+
     /* More cases here... */
 
     default:
@@ -2375,6 +2407,76 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         return 1;
     }
 #endif /* HAVE_SOCKADDR_ALG */
+#ifdef HAVE_AF_HYPERV
+    case AF_HYPERV:
+    {
+        switch (s->sock_proto) {
+        case HV_PROTOCOL_RAW:
+        {
+            PyObject *vm_id_obj = NULL;
+            PyObject *service_id_obj = NULL;
+
+            SOCKADDR_HV *addr = &addrbuf->hv;
+
+            memset(addr, 0, sizeof(*addr));
+            addr->Family = AF_HYPERV;
+
+            if (!PyTuple_Check(args)) {
+                PyErr_Format(PyExc_TypeError,
+                    "%s(): AF_HYPERV address must be tuple, not %.500s",
+                    caller, Py_TYPE(args)->tp_name);
+                return 0;
+            }
+            if (!PyArg_ParseTuple(args,
+                "UU;AF_HYPERV address must be a str tuple (vm_id, service_id)",
+                &vm_id_obj, &service_id_obj))
+            {
+                return 0;
+            }
+
+            wchar_t *guid_str = PyUnicode_AsWideCharString(vm_id_obj, NULL);
+            if (guid_str == NULL) {
+                PyErr_Format(PyExc_ValueError,
+                    "%s(): AF_HYPERV address vm_id is not a valid UUID string",
+                    caller);
+                return 0;
+            }
+            RPC_STATUS rc = UuidFromStringW(guid_str, &addr->VmId);
+            PyMem_Free(guid_str);
+            if (rc != RPC_S_OK) {
+                PyErr_Format(PyExc_ValueError,
+                    "%s(): AF_HYPERV address vm_id is not a valid UUID string",
+                    caller);
+                return 0;
+            }
+
+            guid_str = PyUnicode_AsWideCharString(service_id_obj, NULL);
+            if (guid_str == NULL) {
+                PyErr_Format(PyExc_ValueError,
+                    "%s(): AF_HYPERV address service_id is not a valid UUID string",
+                    caller);
+                return 0;
+            }
+            rc = UuidFromStringW(guid_str, &addr->ServiceId);
+            PyMem_Free(guid_str);
+            if (rc != RPC_S_OK) {
+                PyErr_Format(PyExc_ValueError,
+                    "%s(): AF_HYPERV address service_id is not a valid UUID string",
+                    caller);
+                return 0;
+            }
+
+            *len_ret = sizeof(*addr);
+            return 1;
+        }
+        default:
+            PyErr_Format(PyExc_OSError,
+                "%s(): unsupported AF_HYPERV protocol: %d",
+                caller, s->sock_proto);
+            return 0;
+        }
+    }
+#endif /* HAVE_AF_HYPERV */
 
     /* More cases here... */
 
@@ -2524,6 +2626,13 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
         return 1;
     }
 #endif /* HAVE_SOCKADDR_ALG */
+#ifdef HAVE_AF_HYPERV
+    case AF_HYPERV:
+    {
+        *len_ret = sizeof (SOCKADDR_HV);
+        return 1;
+    }
+#endif /* HAVE_AF_HYPERV */
 
     /* More cases here... */
 
@@ -7351,6 +7460,28 @@ PyInit__socket(void)
     /* Linux LLC */
     PyModule_AddIntMacro(m, AF_LLC);
 #endif
+#ifdef HAVE_AF_HYPERV
+    /* Hyper-V sockets */
+    PyModule_AddIntMacro(m, AF_HYPERV);
+
+    /* for proto */
+    PyModule_AddIntMacro(m, HV_PROTOCOL_RAW);
+
+    /* for setsockopt() */
+    PyModule_AddIntMacro(m, HVSOCKET_CONNECT_TIMEOUT);
+    PyModule_AddIntMacro(m, HVSOCKET_CONNECT_TIMEOUT_MAX);
+    PyModule_AddIntMacro(m, HVSOCKET_CONTAINER_PASSTHRU);
+    PyModule_AddIntMacro(m, HVSOCKET_CONNECTED_SUSPEND);
+    PyModule_AddIntMacro(m, HVSOCKET_ADDRESS_FLAG_PASSTHRU);
+
+    /* for bind() or connect() */
+    PyModule_AddStringConstant(m, "HV_GUID_ZERO", "00000000-0000-0000-0000-000000000000");
+    PyModule_AddStringConstant(m, "HV_GUID_WILDCARD", "00000000-0000-0000-0000-000000000000");
+    PyModule_AddStringConstant(m, "HV_GUID_BROADCAST", "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF");
+    PyModule_AddStringConstant(m, "HV_GUID_CHILDREN", "90DB8B89-0D35-4F79-8CE9-49EA0AC8B7CD");
+    PyModule_AddStringConstant(m, "HV_GUID_LOOPBACK", "E0E16197-DD56-4A10-9195-5EE7A155A838");
+    PyModule_AddStringConstant(m, "HV_GUID_PARENT", "A42E7CDA-D03F-480C-9CC2-A4DE20ABB878");
+#endif /* HAVE_AF_HYPERV */
 
 #ifdef USE_BLUETOOTH
     PyModule_AddIntMacro(m, AF_BLUETOOTH);

@@ -59,6 +59,7 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
+    "Py_DEBUG",
     ]
 
 
@@ -2205,3 +2206,8 @@ def requires_venv_with_pip():
     except ImportError:
         ctypes = None
     return unittest.skipUnless(ctypes, 'venv: pip requires ctypes')
+
+
+# True if Python is built with the Py_DEBUG macro defined: if
+# Python is built in debug mode (./configure --with-pydebug).
+Py_DEBUG = hasattr(sys, 'gettotalrefcount')

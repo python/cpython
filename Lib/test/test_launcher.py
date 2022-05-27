@@ -484,7 +484,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
     def test_virtualenv_with_env(self):
         with self.fake_venv() as (venv_exe, env):
             data1 = self.run_py([], env={**env, "PY_PYTHON": "PythonTestSuite/3"})
-            data2 = self.run_py(["-3"], env={**env, "PY_PYTHON": "PythonTestSuite/3"})
+            data2 = self.run_py(["-V:PythonTestSuite/3"], env={**env, "PY_PYTHON": "PythonTestSuite/3"})
         # Compare stdout, because stderr goes via ascii
         self.assertEqual(data1["stdout"].strip(), str(venv_exe))
         self.assertEqual(data1["SearchInfo.lowPriorityTag"], "True")

@@ -454,7 +454,14 @@ unicode_check_encoding_errors(const char *encoding, const char *errors)
         return 0;
     }
 
-    if (encoding != NULL) {
+    if (encoding != NULL
+        // Fast path for the most common built-in encodings. Even if the codec
+        // is cached, _PyCodec_Lookup() decodes the bytes string from UTF-8 to
+        // create a temporary Unicode string (the key in the cache).
+        && strcmp(encoding, "utf-8") != 0
+        && strcmp(encoding, "utf8") != 0
+        && strcmp(encoding, "ascii") != 0)
+    {
         PyObject *handler = _PyCodec_Lookup(encoding);
         if (handler == NULL) {
             return -1;
@@ -462,7 +469,14 @@ unicode_check_encoding_errors(const char *encoding, const char *errors)
         Py_DECREF(handler);
     }
 
-    if (errors != NULL) {
+    if (errors != NULL
+        // Fast path for the most common built-in error handlers.
+        && strcmp(errors, "strict") != 0
+        && strcmp(errors, "ignore") != 0
+        && strcmp(errors, "replace") != 0
+        && strcmp(errors, "surrogateescape") != 0
+        && strcmp(errors, "surrogatepass") != 0)
+    {
         PyObject *handler = PyCodec_LookupError(errors);
         if (handler == NULL) {
             return -1;
