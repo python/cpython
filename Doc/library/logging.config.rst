@@ -698,14 +698,16 @@ If the ``queue`` key is present, the corresponding value can be one of the follo
   the :class:`queue.Queue` instance to use. That callable could be a
   :class:`queue.Queue` subclass or a function which returns a suitable queue instance.
 
-If the  `queue` key is absent, a standard unbounded :class:`queue.Queue` instance is
+If the  ``queue`` key is absent, a standard unbounded :class:`queue.Queue` instance is
 created and used.
 
-If the `listener` key is present, the corresponding value can be one of the following:
+If the ``listener`` key is present, the corresponding value can be one of the following:
 
 * A subclass of :class:`logging.handlers.QueueListener`. This is of course only
   possible if you are constructing or modifying the configuration dictionary in
   code.
+
+If the ``listener`` key is absent, :class:`logging.handlers.QueueListener` is used.
 
 The values under the ``handlers`` key are the names of other handlers in the
 configuration (not shown in the above snippet) which will be passed to the queue
