@@ -1572,7 +1572,7 @@ class Flag(Enum, boundary=STRICT):
     __rxor__ = __xor__
 
 
-class IntFlag(int, ReprEnum, Flag, boundary=EJECT):
+class IntFlag(int, ReprEnum, Flag, boundary=KEEP):
     """
     Support for integer-based Flags
     """
