@@ -3455,6 +3455,13 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
         Py_DECREF(bases);
         goto fail;
     }
+    if (!PyType_Check(metaclass)) {
+        Py_DECREF(bases);
+        PyErr_Format(PyExc_TypeError,
+                     "Metaclass '%R' is not a subclass of 'type'.",
+                     metaclass);
+        goto fail;
+    }
     if (metaclass->tp_new != PyType_Type.tp_new) {
         Py_DECREF(bases);
         PyErr_SetString(PyExc_TypeError,
