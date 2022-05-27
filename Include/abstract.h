@@ -14,12 +14,12 @@ extern "C" {
 
    Print an object 'o' on file 'fp'.  Returns -1 on error. The flags argument
    is used to enable certain printing options. The only option currently
-   supported is Py_PRINT_RAW. By default, PyObject_Print "stringifies" 'o' by
-   calling its __repr__ method. However, if Py_PRINT_RAW is specified
-   in 'flags' the object is "stringified" for printing by invoking its __str__
-   method. If Py_PRINT_RAW is specified and the object does not have a
-   __str__ method, only then will it's __repr__ method be called to perform
-   "stringification". */
+   supported is Py_PRINT_RAW. 
+   
+   By default, PyObject_Print stringifies 'o' by calling its __repr__ method. 
+   However, if Py_PRINT_RAW is specified in 'flags' the object's __str__  method
+   is used for conversion to a string, falling back on __repr__ if no 
+   __str__ method exists. */
 
 
 /* Implemented elsewhere:
