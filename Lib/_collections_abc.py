@@ -98,9 +98,10 @@ _ag = _ag()
 async_generator = type(_ag)
 del _ag
 ## code object ##
+def _f(): pass
 line_iterator = type(_f.__code__.co_lines())
 positions_iterator = type(_f.__code__.co_positions())
-
+del _f
 
 ### ONE-TRICK PONIES ###
 
