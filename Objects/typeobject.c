@@ -1653,6 +1653,7 @@ vectorcall_unbound(PyThreadState *tstate, int unbound, PyObject *func,
         args++;
         nargsf = nargsf - 1 + PY_VECTORCALL_ARGUMENTS_OFFSET;
     }
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_SLOT, func);
     return _PyObject_VectorcallTstate(tstate, func, args, nargsf, NULL);
 }
 
