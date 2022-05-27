@@ -268,8 +268,6 @@ extern int _PyStaticCode_InternStrings(PyCodeObject *co);
 #define EVAL_CALL_STAT_INC(name) _py_stats.call_stats.eval_calls[name]++
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) \
     do { if (PyFunction_Check(callable)) _py_stats.call_stats.eval_calls[name]++; } while (0)
-#define EVAL_CALL_STAT_DEC_IF_FUNCTION(name, callable) \
-    do { if (PyFunction_Check(callable)) _py_stats.call_stats.eval_calls[name]--; } while (0)
 
 // Used by the _opcode extension which is built as a shared library
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
@@ -283,7 +281,6 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define OBJECT_STAT_INC_COND(name, cond) ((void)0)
 #define EVAL_CALL_STAT_INC(name) ((void)0)
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) ((void)0)
-#define EVAL_CALL_STAT_DEC_IF_FUNCTION(name, callable) ((void)0)
 #endif  // !Py_STATS
 
 // Cache values are only valid in memory, so use native endianness.
