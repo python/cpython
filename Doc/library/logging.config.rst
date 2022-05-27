@@ -680,23 +680,40 @@ dictionary schema for configuring the pair is shown in the example YAML snippet 
       qhand:
         class: logging.handlers.QueueHandler
         queue: my.module.queuefactory
+        listener: my.package.CustomListener
         handlers:
           - hand_name_1
           - hand_name_2
           ...
 
-If the ``queue`` key is provided, the value should resolve to a callable which returns
-a suitable :class:`queue.Queue` instance for use by the handler and listener. If it is
-not provided, a standard unbounded :class:`queue.Queue` instance is created and used.
-The values under the ``handlers`` key are the names of other handlers in the
-configuration (not shown in the above snippet) which will be passed to the
-``QueueListener``, which will be stored in the handler's :attr:`listener` attribute.
-You can customize the listener class with a ``listener`` key whose value is a string
-which resolves to a listener class, such as ``'mypackage.CustomListener'``. Any custom
-queue handler and listener classes will need to deal with the same initialization
-signatures as :class:`~logging.handlers.QueueHandler` and
-:class:`~logging.handlers.QueueListener`.
+The ``queue`` and ``listener`` keys are optional.
 
+If the ``queue`` key is present, the corresponding value can be one of the following:
+
+* An actual instance of :class:`queue.Queue` or a subclass thereof. This is of course
+  only possible if you are constructing or modifying the configuration dictionary in
+  code.
+
+* A string that resolves to a callable which, when called with no arguments, returns
+  the :class:`queue.Queue` instance to use. That callable could be a
+  :class:`queue.Queue` subclass or a function which returns a suitable queue instance.
+
+If the  `queue` key is absent, a standard unbounded :class:`queue.Queue` instance is
+created and used.
+
+If the `listener` key is present, the corresponding value can be one of the following:
+
+* A subclass of :class:`logging.handlers.QueueListener`. This is of course only
+  possible if you are constructing or modifying the configuration dictionary in
+  code.
+
+The values under the ``handlers`` key are the names of other handlers in the
+configuration (not shown in the above snippet) which will be passed to the queue
+listener.
+
+Any custom queue handler and listener classes will need to deal with the same
+initialization signatures as :class:`~logging.handlers.QueueHandler` and
+:class:`~logging.handlers.QueueListener`.
 
 .. _logging-config-fileformat:
 

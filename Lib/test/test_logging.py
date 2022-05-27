@@ -2236,6 +2236,9 @@ class CustomHandler(logging.StreamHandler):
 class CustomListener(logging.handlers.QueueListener):
     pass
 
+class CustomQueue(queue.Queue):
+    pass
+
 def queueMaker():
     return queue.Queue()
 
@@ -3538,7 +3541,8 @@ class ConfigDictTest(BaseTest):
             )
 
     def test_config_queue_handler(self):
-        qvalues = (None, __name__ + '.queueMaker')
+        q = CustomQueue()
+        qvalues = (None, __name__ + '.queueMaker', __name__ + '.CustomQueue', q)
         lvalues = (None, __name__ + '.CustomListener', CustomListener)
         for qspec, lspec in itertools.product(qvalues, lvalues):
             cd = copy.deepcopy(self.config_queue_handler)
