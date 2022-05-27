@@ -1947,7 +1947,7 @@ AS_CASE([$ac_sys_system],
     dnl build with WASM debug info if either Py_DEBUG is set or the target is
     dnl node-debug or browser-debug.
     AS_VAR_IF([Py_DEBUG], [yes], [wasm_debug=yes], [wasm_debug=no])
-    
+
     dnl Start with 20 MB and allow to grow
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sTOTAL_MEMORY=20971520"])
 
@@ -5020,27 +5020,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[int foo(int x) { return 0; }]], [[return fo
 AS_VAR_IF([ac_cv_function_prototypes], [yes], [
   AC_DEFINE(HAVE_PROTOTYPES, 1,
      [Define if your compiler supports function prototype])
-])
-
-works=no
-AC_CACHE_CHECK([for variable length prototypes and stdarg.h], [ac_cv_stdarg_prototypes], [
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <stdarg.h>
-int foo(int x, ...) {
-	va_list va;
-	va_start(va, x);
-	va_arg(va, int);
-	va_arg(va, char *);
-	va_arg(va, double);
-	return 0;
-}
-]], [[return foo(10, "", 3.14);]])],
-  [ac_cv_stdarg_prototypes=yes], [ac_cv_stdarg_prototypes=no])
-])
-AS_VAR_IF([ac_cv_stdarg_prototypes], [yes], [
-  AC_DEFINE(HAVE_STDARG_PROTOTYPES, 1,
-   [Define if your compiler supports variable length function prototypes
-   (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h>])
 ])
 
 
