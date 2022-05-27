@@ -5054,7 +5054,7 @@ handle_eval_breaker:
                 goto error;
             }
             STACK_SHRINK(1);
-            Py_DECREF(Py_None);
+            _Py_DECREF_NO_DEALLOC(Py_None);
             NOTRACE_DISPATCH();
         }
 

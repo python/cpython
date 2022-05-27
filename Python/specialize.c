@@ -2088,7 +2088,7 @@ setup_init_cleanup_func(void) {
 cleanup:
     PyErr_Clear();
     Py_XDECREF(codeobj);
-    Py_DECREF(globals);
+    Py_XDECREF(globals);
     Py_XDECREF(name);
     Py_XDECREF(code);
     Py_XDECREF(lines);
