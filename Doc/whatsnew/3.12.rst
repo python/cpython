@@ -144,6 +144,11 @@ Changes in the Python API
 Build Changes
 =============
 
+* ``va_start()`` with two parameters, like ``va_start(args, format),``
+  is now required to build Python.
+  ``va_start()`` is no longer called with a single parameter.
+  (Contributed by Kumar Aditya in :gh:`93207`.)
+
 
 C API Changes
 =============
