@@ -1030,8 +1030,8 @@ class TestNamedTemporaryFile(BaseTestCase):
         try:
             # setting delete_on_close = True to test, that this does not have
             # an effect, if delete = False
-            with tempfile.NamedTemporaryFile(dir=dir, delete = False,
-                                             delete_on_close = True) as f:
+            with tempfile.NamedTemporaryFile(dir=dir, delete=False,
+                                             delete_on_close=True) as f:
                 f.write(b'blat')
                 f_name = f.name
             self.assertTrue(os.path.exists(f.name),
