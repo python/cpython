@@ -18,7 +18,6 @@
 
 Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
 """
-
 import logging
 import logging.handlers
 import logging.config
@@ -50,6 +49,7 @@ from test.support import warnings_helper
 from test.support.logging_helper import TestHandler
 import textwrap
 import threading
+import asyncio
 import time
 import unittest
 import warnings
@@ -540,6 +540,12 @@ class CustomLevelsAndFiltersTest(BaseTest):
             handler.removeFilter(garr)
 
 
+def make_temp_file(*args, **kwargs):
+    fd, fn = tempfile.mkstemp(*args, **kwargs)
+    os.close(fd)
+    return fn
+
+
 class HandlerTest(BaseTest):
     def test_name(self):
         h = logging.Handler()
@@ -554,8 +560,7 @@ class HandlerTest(BaseTest):
         # but we can try instantiating them with various options
         if sys.platform in ('linux', 'darwin'):
             for existing in (True, False):
-                fd, fn = tempfile.mkstemp()
-                os.close(fd)
+                fn = make_temp_file()
                 if not existing:
                     os.unlink(fn)
                 h = logging.handlers.WatchedFileHandler(fn, encoding='utf-8', delay=True)
@@ -609,8 +614,7 @@ class HandlerTest(BaseTest):
 
         See Issue #27493.
         """
-        fd, fn = tempfile.mkstemp()
-        os.close(fd)
+        fn = make_temp_file()
         os.unlink(fn)
         pfn = pathlib.Path(fn)
         cases = (
@@ -649,8 +653,7 @@ class HandlerTest(BaseTest):
         self.deletion_time = None
 
         for delay in (False, True):
-            fd, fn = tempfile.mkstemp('.log', 'test_logging-3-')
-            os.close(fd)
+            fn = make_temp_file('.log', 'test_logging-3-')
             remover = threading.Thread(target=remove_loop, args=(fn, del_count))
             remover.daemon = True
             remover.start()
@@ -1596,8 +1599,7 @@ class ConfigFileTest(BaseTest):
             os.remove(fn)
 
         with self.check_no_resource_warning():
-            fd, fn = tempfile.mkstemp(".log", "test_logging-X-")
-            os.close(fd)
+            fn = make_temp_file(".log", "test_logging-X-")
 
             # Replace single backslash with double backslash in windows
             # to avoid unicode error during string formatting
@@ -1782,8 +1784,7 @@ class SocketHandlerTest(BaseTest):
         self.root_logger.error('Nor this')
 
 def _get_temp_domain_socket():
-    fd, fn = tempfile.mkstemp(prefix='test_logging_', suffix='.sock')
-    os.close(fd)
+    fn = make_temp_file(prefix='test_logging_', suffix='.sock')
     # just need a name - file can't be present, or we'll get an
     # 'address already in use' error.
     os.remove(fn)
@@ -2135,8 +2136,7 @@ class EncodingTest(BaseTest):
     def test_encoding_plain_file(self):
         # In Python 2.x, a plain file object is treated as having no encoding.
         log = logging.getLogger("test")
-        fd, fn = tempfile.mkstemp(".log", "test_logging-1-")
-        os.close(fd)
+        fn = make_temp_file(".log", "test_logging-1-")
         # the non-ascii data we write to the log.
         data = "foo\x80"
         try:
@@ -3227,8 +3227,7 @@ class ConfigDictTest(BaseTest):
             os.remove(fn)
 
         with self.check_no_resource_warning():
-            fd, fn = tempfile.mkstemp(".log", "test_logging-X-")
-            os.close(fd)
+            fn = make_temp_file(".log", "test_logging-X-")
 
             config = {
                 "version": 1,
@@ -4552,29 +4551,63 @@ class LogRecordTest(BaseTest):
                 import multiprocessing
 
     def test_optional(self):
-        r = logging.makeLogRecord({})
+        NONE = self.assertIsNone
         NOT_NONE = self.assertIsNotNone
+
+        r = logging.makeLogRecord({})
         NOT_NONE(r.thread)
         NOT_NONE(r.threadName)
         NOT_NONE(r.process)
         NOT_NONE(r.processName)
+        NONE(r.taskName)
         log_threads = logging.logThreads
         log_processes = logging.logProcesses
         log_multiprocessing = logging.logMultiprocessing
+        log_asyncio_tasks = logging.logAsyncioTasks
         try:
             logging.logThreads = False
             logging.logProcesses = False
             logging.logMultiprocessing = False
+            logging.logAsyncioTasks = False
             r = logging.makeLogRecord({})
-            NONE = self.assertIsNone
+
             NONE(r.thread)
             NONE(r.threadName)
             NONE(r.process)
             NONE(r.processName)
+            NONE(r.taskName)
         finally:
             logging.logThreads = log_threads
             logging.logProcesses = log_processes
             logging.logMultiprocessing = log_multiprocessing
+            logging.logAsyncioTasks = log_asyncio_tasks
+
+    async def _make_record_async(self, assertion):
+        r = logging.makeLogRecord({})
+        assertion(r.taskName)
+
+    def test_taskName_with_asyncio_imported(self):
+        try:
+            make_record = self._make_record_async
+            with asyncio.Runner() as runner:
+                logging.logAsyncioTasks = True
+                runner.run(make_record(self.assertIsNotNone))
+                logging.logAsyncioTasks = False
+                runner.run(make_record(self.assertIsNone))
+        finally:
+            asyncio.set_event_loop_policy(None)
+
+    def test_taskName_without_asyncio_imported(self):
+        try:
+            make_record = self._make_record_async
+            with asyncio.Runner() as runner, support.swap_item(sys.modules, 'asyncio', None):
+                logging.logAsyncioTasks = True
+                runner.run(make_record(self.assertIsNone))
+                logging.logAsyncioTasks = False
+                runner.run(make_record(self.assertIsNone))
+        finally:
+            asyncio.set_event_loop_policy(None)
+
 
 class BasicConfigTest(unittest.TestCase):
 
@@ -4852,6 +4885,34 @@ class BasicConfigTest(unittest.TestCase):
             os.remove('test.log')
             # didn't write anything due to the encoding error
             self.assertEqual(data, r'')
+
+    def test_log_taskName(self):
+        async def log_record():
+            logging.warning('hello world')
+
+        handler = None
+        log_filename = make_temp_file('.log', 'test-logging-taskname-')
+        self.addCleanup(os.remove, log_filename)
+        try:
+            encoding = 'utf-8'
+            logging.basicConfig(filename=log_filename, errors='strict',
+                                encoding=encoding, level=logging.WARNING,
+                                format='%(taskName)s - %(message)s')
+
+            self.assertEqual(len(logging.root.handlers), 1)
+            handler = logging.root.handlers[0]
+            self.assertIsInstance(handler, logging.FileHandler)
+
+            with asyncio.Runner(debug=True) as runner:
+                logging.logAsyncioTasks = True
+                runner.run(log_record())
+            with open(log_filename, encoding='utf-8') as f:
+                data = f.read().strip()
+            self.assertRegex(data, r'Task-\d+ - hello world')
+        finally:
+            asyncio.set_event_loop_policy(None)
+            if handler:
+                handler.close()
 
 
     def _test_log(self, method, level=None):
@@ -5236,8 +5297,7 @@ class BaseFileTest(BaseTest):
 
     def setUp(self):
         BaseTest.setUp(self)
-        fd, self.fn = tempfile.mkstemp(".log", "test_logging-2-")
-        os.close(fd)
+        self.fn = make_temp_file(".log", "test_logging-2-")
         self.rmfiles = []
 
     def tearDown(self):
@@ -5644,7 +5704,7 @@ class MiscTestCase(unittest.TestCase):
             'logThreads', 'logMultiprocessing', 'logProcesses', 'currentframe',
             'PercentStyle', 'StrFormatStyle', 'StringTemplateStyle',
             'Filterer', 'PlaceHolder', 'Manager', 'RootLogger', 'root',
-            'threading'}
+            'threading', 'logAsyncioTasks'}
         support.check__all__(self, logging, not_exported=not_exported)
 
 

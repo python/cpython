@@ -144,12 +144,22 @@ Changes in the Python API
 Build Changes
 =============
 
+* ``va_start()`` with two parameters, like ``va_start(args, format),``
+  is now required to build Python.
+  ``va_start()`` is no longer called with a single parameter.
+  (Contributed by Kumar Aditya in :gh:`93207`.)
+
 
 C API Changes
 =============
 
 New Features
 ------------
+
+* Added the new limited C API function :c:func:`PyType_FromMetaclass`,
+  which generalizes the existing :c:func:`PyType_FromModuleAndSpec` using
+  an additional metaclass argument.
+  (Contributed by Wenzel Jakob in :gh:`93012`.)
 
 Porting to Python 3.12
 ----------------------

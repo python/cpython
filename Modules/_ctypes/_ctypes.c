@@ -396,9 +396,9 @@ _ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
         strcat(new_prefix, "(");
         for (k = 0; k < ndim; ++k) {
             if (k < ndim-1) {
-                sprintf(buf, "%"PY_FORMAT_SIZE_T"d,", shape[k]);
+                sprintf(buf, "%zd,", shape[k]);
             } else {
-                sprintf(buf, "%"PY_FORMAT_SIZE_T"d)", shape[k]);
+                sprintf(buf, "%zd)", shape[k]);
             }
             strcat(new_prefix, buf);
         }

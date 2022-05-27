@@ -107,7 +107,6 @@ static PyObject * do_call_core(
     PyObject *callargs, PyObject *kwdict, int use_tracing);
 
 #ifdef LLTRACE
-static int lltrace;
 static void
 dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
@@ -1208,6 +1207,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
     if (func == NULL) {
         return NULL;
     }
+    EVAL_CALL_STAT_INC(EVAL_CALL_LEGACY);
     PyObject *res = _PyEval_Vector(tstate, func, locals, NULL, 0, NULL);
     Py_DECREF(func);
     return res;
@@ -1715,6 +1715,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     uint8_t opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
+#ifdef LLTRACE
+    int lltrace = 0;
+#endif
 
     _PyCFrame cframe;
     CallShape call_shape;
@@ -4669,6 +4672,29 @@ handle_eval_breaker:
             NOTRACE_DISPATCH();
         }
 
+        TARGET(LOAD_METHOD_LAZY_DICT) {
+            assert(cframe.use_tracing == 0);
+            PyObject *self = TOP();
+            PyTypeObject *self_cls = Py_TYPE(self);
+            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
+            uint32_t type_version = read_u32(cache->type_version);
+            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_METHOD);
+            int dictoffset = cache->dict_offset;
+            PyObject *dict = *(PyObject **)((char *)self + dictoffset);
+            assert(dictoffset == self_cls->tp_dictoffset && dictoffset > 0);
+            /* This object has a __dict__, just not yet created */
+            DEOPT_IF(dict != NULL, LOAD_METHOD);
+            STAT_INC(LOAD_METHOD, hit);
+            PyObject *res = read_obj(cache->descr);
+            assert(res != NULL);
+            assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
+            Py_INCREF(res);
+            SET_TOP(res);
+            PUSH(self);
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_METHOD);
+            NOTRACE_DISPATCH();
+        }
+
         TARGET(LOAD_METHOD_MODULE) {
             /* LOAD_METHOD, for module methods */
             assert(cframe.use_tracing == 0);
@@ -6405,6 +6431,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
     if (frame == NULL) {
         return NULL;
     }
+    EVAL_CALL_STAT_INC(EVAL_CALL_VECTOR);
     PyObject *retval = _PyEval_EvalFrame(tstate, frame, 0);
     assert(
         _PyFrame_GetStackPointer(frame) == _PyFrame_Stackbase(frame) ||
@@ -6480,6 +6507,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     if (func == NULL) {
         goto fail;
     }
+    EVAL_CALL_STAT_INC(EVAL_CALL_LEGACY);
     res = _PyEval_Vector(tstate, func, locals,
                          allargs, argcount,
                          kwnames);
@@ -7272,7 +7300,6 @@ do_call_core(PyThreadState *tstate,
             )
 {
     PyObject *result;
-
     if (PyCFunction_CheckExact(func) || PyCMethod_CheckExact(func)) {
         C_TRACE(result, PyObject_Call(func, callargs, kwdict));
         return result;
@@ -7302,6 +7329,7 @@ do_call_core(PyThreadState *tstate,
             return result;
         }
     }
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_FUNCTION_EX, func);
     return PyObject_Call(func, callargs, kwdict);
 }
 

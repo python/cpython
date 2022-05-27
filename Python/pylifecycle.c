@@ -2838,11 +2838,7 @@ _Py_FatalErrorFormat(const char *func, const char *format, ...)
     }
 
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     vfprintf(stream, format, vargs);
     va_end(vargs);
 
