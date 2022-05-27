@@ -872,6 +872,29 @@ class HandlerTests(unittest.TestCase):
                 self.assertEqual(req.type, "ftp")
             self.assertEqual(req.type == "ftp", ftp)
 
+    @unittest.skipUnless(sys.platform == "linux", "only relevant for Linux")
+    @unittest.expectedFailure
+    def test_special_file_system_file(self):
+        """
+        Test that addinfo of a requested pseudo file /proc/cpuinfo is
+        correct. See gh-93296.
+        """
+        url = "file:///proc/cpuinfo"
+        handler = urllib.request.FileHandler()
+        response = handler.file_open(Request(url))
+        try:
+            data = response.read()
+            headers = response.info()
+            response_url = response.geturl()
+        finally:
+            response.close()
+        self.assertEqual(headers["Content-type"], "text/plain")
+        # A failure is expected on the next line, because st_size
+        # was used to determine the file size. st_size is 0 for
+        # /proc/cpuinfo despite it is not empty.
+        self.assertEqual(headers["Content-length"], str(len(data)))
+        self.assertEqual(response_url, url)
+
     def test_http(self):
 
         h = urllib.request.AbstractHTTPHandler()
