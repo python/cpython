@@ -3142,6 +3142,25 @@ long_hash(PyLongObject *v)
     return (Py_hash_t)x;
 }
 
+/* Helper *only* for x_add(). */
+#define X_ADD(a, b)                                             \
+    do {                                                        \
+        z = _PyLong_New(size_##a+1);                            \
+        if (z == NULL)                                          \
+            return NULL;                                        \
+        for (i = 0; i < size_##b; ++i) {                        \
+            carry += a->ob_digit[i] + b->ob_digit[i];           \
+            z->ob_digit[i] = carry & PyLong_MASK;               \
+            carry >>= PyLong_SHIFT;                             \
+        }                                                       \
+        for (; i < size_##a; ++i) {                             \
+            carry += a->ob_digit[i];                            \
+            z->ob_digit[i] = carry & PyLong_MASK;               \
+            carry >>= PyLong_SHIFT;                             \
+        }                                                       \
+        z->ob_digit[i] = carry;                                 \
+        return long_normalize(z);                               \
+    } while (0)
 
 /* Add the absolute values of two integers. */
 
@@ -3153,29 +3172,40 @@ x_add(PyLongObject *a, PyLongObject *b)
     Py_ssize_t i;
     digit carry = 0;
 
-    /* Ensure a is the larger of the two: */
-    if (size_a < size_b) {
-        { PyLongObject *temp = a; a = b; b = temp; }
-        { Py_ssize_t size_temp = size_a;
-            size_a = size_b;
-            size_b = size_temp; }
+    if (size_a >= size_b) {
+        X_ADD(a, b);
     }
-    z = _PyLong_New(size_a+1);
-    if (z == NULL)
-        return NULL;
-    for (i = 0; i < size_b; ++i) {
-        carry += a->ob_digit[i] + b->ob_digit[i];
-        z->ob_digit[i] = carry & PyLong_MASK;
-        carry >>= PyLong_SHIFT;
+    else {
+        X_ADD(b, a);
     }
-    for (; i < size_a; ++i) {
-        carry += a->ob_digit[i];
-        z->ob_digit[i] = carry & PyLong_MASK;
-        carry >>= PyLong_SHIFT;
-    }
-    z->ob_digit[i] = carry;
-    return long_normalize(z);
 }
+
+/* Helper *only* for x_sub(). */
+#define X_SUB(a, b)                                                 \
+    do {                                                            \
+        z = _PyLong_New(size_##a);                                  \
+        if (z == NULL)                                              \
+            return NULL;                                            \
+        for (i = 0; i < size_##b; ++i) {                            \
+            /* The following assumes unsigned arithmetic            \
+               works module 2**N for some N>PyLong_SHIFT. */        \
+            borrow = a->ob_digit[i] - b->ob_digit[i] - borrow;      \
+            z->ob_digit[i] = borrow & PyLong_MASK;                  \
+            borrow >>= PyLong_SHIFT;                                \
+            borrow &= 1; /* Keep only one sign bit */               \
+        }                                                           \
+        for (; i < size_##a; ++i) {                                 \
+            borrow = a->ob_digit[i] - borrow;                       \
+            z->ob_digit[i] = borrow & PyLong_MASK;                  \
+            borrow >>= PyLong_SHIFT;                                \
+            borrow &= 1; /* Keep only one sign bit */               \
+        }                                                           \
+        assert(borrow == 0);                                        \
+        if (sign < 0) {                                             \
+            Py_SET_SIZE(z, -Py_SIZE(z));                            \
+        }                                                           \
+        return maybe_small_long(long_normalize(z));                 \
+    } while (0)
 
 /* Subtract the absolute values of two integers. */
 
@@ -3188,49 +3218,29 @@ x_sub(PyLongObject *a, PyLongObject *b)
     int sign = 1;
     digit borrow = 0;
 
-    /* Ensure a is the larger of the two: */
-    if (size_a < size_b) {
-        sign = -1;
-        { PyLongObject *temp = a; a = b; b = temp; }
-        { Py_ssize_t size_temp = size_a;
-            size_a = size_b;
-            size_b = size_temp; }
-    }
-    else if (size_a == size_b) {
+    if (size_a == size_b) {
         /* Find highest digit where a and b differ: */
         i = size_a;
         while (--i >= 0 && a->ob_digit[i] == b->ob_digit[i])
             ;
         if (i < 0)
             return (PyLongObject *)PyLong_FromLong(0);
+        size_a = size_b = i+1;
         if (a->ob_digit[i] < b->ob_digit[i]) {
             sign = -1;
-            { PyLongObject *temp = a; a = b; b = temp; }
+            X_SUB(b, a);
         }
-        size_a = size_b = i+1;
+        else {
+            X_SUB(a, b);
+        }
     }
-    z = _PyLong_New(size_a);
-    if (z == NULL)
-        return NULL;
-    for (i = 0; i < size_b; ++i) {
-        /* The following assumes unsigned arithmetic
-           works module 2**N for some N>PyLong_SHIFT. */
-        borrow = a->ob_digit[i] - b->ob_digit[i] - borrow;
-        z->ob_digit[i] = borrow & PyLong_MASK;
-        borrow >>= PyLong_SHIFT;
-        borrow &= 1; /* Keep only one sign bit */
+    else if (size_a < size_b) {
+        sign = -1;
+        X_SUB(b, a);
     }
-    for (; i < size_a; ++i) {
-        borrow = a->ob_digit[i] - borrow;
-        z->ob_digit[i] = borrow & PyLong_MASK;
-        borrow >>= PyLong_SHIFT;
-        borrow &= 1; /* Keep only one sign bit */
+    else {
+        X_SUB(a, b);
     }
-    assert(borrow == 0);
-    if (sign < 0) {
-        Py_SET_SIZE(z, -Py_SIZE(z));
-    }
-    return maybe_small_long(long_normalize(z));
 }
 
 PyObject *

@@ -1568,5 +1568,24 @@ class LongTest(unittest.TestCase):
                 self.assertEqual(n**2,
                     (1 << (2 * bitlen)) - (1 << (bitlen + 1)) + 1)
 
+    def test_x_add_and_x_sub(self):
+        # A check for each possible path in internal functions x_add, x_sub.
+        if SHIFT == 30:
+            self.assertEqual((1 << 30) + 5, 1073741829)
+            self.assertEqual(5 + (1 << 30), 1073741829)
+            self.assertEqual((1 << 30) - 5, 1073741819)
+            self.assertEqual(5 - (1 << 30), -1073741819)
+            self.assertEqual((1 << 30) - ((1 << 30) + 5), -5)
+            self.assertEqual(((1 << 30) + 5) - (1 << 30), 5)
+            self.assertEqual((1 << 30) - (1 << 30), 0)
+        elif SHIFT == 15:
+            self.assertEqual((1 << 15) + 5, 32773)
+            self.assertEqual(5 + (1 << 15), 32773)
+            self.assertEqual((1 << 15) - 5, 32763)
+            self.assertEqual(5 - (1 << 15), -32763)
+            self.assertEqual((1 << 15) - ((1 << 15) + 5), -5)
+            self.assertEqual(((1 << 15) + 5) - (1 << 15), 5)
+            self.assertEqual((1 << 15) - (1 << 15), 0)
+
 if __name__ == "__main__":
     unittest.main()
