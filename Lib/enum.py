@@ -800,25 +800,18 @@ class EnumType(type):
                 )
 
     def __contains__(cls, member):
-        """
-        Return True if member is a member of this enum
-        raises TypeError if member is not an enum member
+        """Return True if `member` is in `cls`.
 
-        note: in 3.12 TypeError will no longer be raised, and True will also be
-        returned if member is the value of a member in this enum
+        `member` is in `cls` iff:
+        1) `member` is a proper member of the `cls` enum, or
+        2) `member` is the value of a member of the `cls` enum.
+
+        Beware that 2) can lead to some confusion if members of different
+        enums have the same value.
         """
-        if not isinstance(member, Enum):
-            import warnings
-            warnings.warn(
-                    "in 3.12 __contains__ will no longer raise TypeError, but will return True or\n"
-                    "False depending on whether the value is a member or the value of a member",
-                    DeprecationWarning,
-                    stacklevel=2,
-                    )
-            raise TypeError(
-                "unsupported operand type(s) for 'in': '%s' and '%s'" % (
-                    type(member).__qualname__, cls.__class__.__qualname__))
-        return isinstance(member, cls) and member._name_ in cls._member_map_
+        if isinstance(member, cls):
+            return True
+        return member in cls._value2member_map_ or member in cls._unhashable_values_
 
     def __delattr__(cls, attr):
         # nicer error message when someone tries to delete an attribute

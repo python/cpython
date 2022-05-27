@@ -343,20 +343,15 @@ class _EnumTests:
         with self.assertRaises(AttributeError):
             self.MainEnum.second = 'really first'
 
-    @unittest.skipIf(
-            python_version >= (3, 12),
-            '__contains__ now returns True/False for all inputs',
-            )
-    @unittest.expectedFailure
-    def test_contains_er(self):
+    def test_contains_tf(self):
         MainEnum = self.MainEnum
-        self.assertIn(MainEnum.third, MainEnum)
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                self.source_values[1] in MainEnum
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                'first' in MainEnum
+        self.assertIn(MainEnum.first, MainEnum)
+        if type(self) is TestMinimalDate or type(self) is TestMixedDate:
+            self.assertTrue(date(*self.source_values[0]) in MainEnum)
+        else:
+            self.assertTrue(self.source_values[0] in MainEnum)
+        if type(self) is not TestStrEnum:
+            self.assertFalse('first' in MainEnum)
         val = MainEnum.dupe
         self.assertIn(val, MainEnum)
         #
@@ -365,23 +360,26 @@ class _EnumTests:
             two = auto()
         self.assertNotIn(OtherEnum.two, MainEnum)
 
-    @unittest.skipIf(
-            python_version < (3, 12),
-            '__contains__ works only with enum memmbers before 3.12',
-            )
-    @unittest.expectedFailure
-    def test_contains_tf(self):
+    def test_contains_same_name_diff_enum_diff_values(self):
         MainEnum = self.MainEnum
-        self.assertIn(MainEnum.first, MainEnum)
-        self.assertTrue(self.source_values[0] in MainEnum)
-        self.assertFalse('first' in MainEnum)
-        val = MainEnum.dupe
-        self.assertIn(val, MainEnum)
-        #
         class OtherEnum(Enum):
-            one = auto()
-            two = auto()
-        self.assertNotIn(OtherEnum.two, MainEnum)
+            first = "brand"
+            second = "new"
+            third = "values"
+
+        self.assertIn(MainEnum.first, MainEnum)
+        self.assertIn(MainEnum.second, MainEnum)
+        self.assertIn(MainEnum.third, MainEnum)
+        self.assertNotIn(MainEnum.first, OtherEnum)
+        self.assertNotIn(MainEnum.second, OtherEnum)
+        self.assertNotIn(MainEnum.third, OtherEnum)
+
+        self.assertIn(OtherEnum.first, OtherEnum)
+        self.assertIn(OtherEnum.second, OtherEnum)
+        self.assertIn(OtherEnum.third, OtherEnum)
+        self.assertNotIn(OtherEnum.first, MainEnum)
+        self.assertNotIn(OtherEnum.second, MainEnum)
+        self.assertNotIn(OtherEnum.third, MainEnum)
 
     def test_dir_on_class(self):
         TE = self.MainEnum
@@ -1114,6 +1112,28 @@ class TestSpecial(unittest.TestCase):
         self.assertIs(type(Huh.name), Huh)
         self.assertEqual(Huh.name.name, 'name')
         self.assertEqual(Huh.name.value, 1)
+
+    def test_contains_name_and_value_overlap(self):
+        class IntEnum1(IntEnum):
+            X = 1
+        class IntEnum2(IntEnum):
+            X = 1
+        class IntEnum3(IntEnum):
+            X = 2
+        class IntEnum4(IntEnum):
+            Y = 1
+        self.assertIn(IntEnum1.X, IntEnum1)
+        self.assertIn(IntEnum1.X, IntEnum2)
+        self.assertNotIn(IntEnum1.X, IntEnum3)
+        self.assertIn(IntEnum1.X, IntEnum4)
+
+    def test_contains_different_types_same_members(self):
+        class IntEnum1(IntEnum):
+            X = 1
+        class IntFlag1(IntFlag):
+            X = 1
+        self.assertIn(IntEnum1.X, IntFlag1)
+        self.assertIn(IntFlag1.X, IntEnum1)
 
     def test_inherited_data_type(self):
         class HexInt(int):
@@ -2969,34 +2989,6 @@ class OldTestFlag(unittest.TestCase):
         test_pickle_dump_load(self.assertIs, FlagStooges.CURLY|FlagStooges.MOE)
         test_pickle_dump_load(self.assertIs, FlagStooges)
 
-    @unittest.skipIf(
-            python_version >= (3, 12),
-            '__contains__ now returns True/False for all inputs',
-            )
-    @unittest.expectedFailure
-    def test_contains_er(self):
-        Open = self.Open
-        Color = self.Color
-        self.assertFalse(Color.BLACK in Open)
-        self.assertFalse(Open.RO in Color)
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                'BLACK' in Color
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                'RO' in Open
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                1 in Color
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                1 in Open
-
-    @unittest.skipIf(
-            python_version < (3, 12),
-            '__contains__ only works with enum memmbers before 3.12',
-            )
-    @unittest.expectedFailure
     def test_contains_tf(self):
         Open = self.Open
         Color = self.Color
@@ -3004,6 +2996,8 @@ class OldTestFlag(unittest.TestCase):
         self.assertFalse(Open.RO in Color)
         self.assertFalse('BLACK' in Color)
         self.assertFalse('RO' in Open)
+        self.assertTrue(Color.BLACK in Color)
+        self.assertTrue(Open.RO in Open)
         self.assertTrue(1 in Color)
         self.assertTrue(1 in Open)
 
@@ -3543,43 +3537,11 @@ class OldTestIntFlag(unittest.TestCase):
         self.assertEqual(len(lst), len(Thing))
         self.assertEqual(len(Thing), 0, Thing)
 
-    @unittest.skipIf(
-            python_version >= (3, 12),
-            '__contains__ now returns True/False for all inputs',
-            )
-    @unittest.expectedFailure
-    def test_contains_er(self):
-        Open = self.Open
-        Color = self.Color
-        self.assertTrue(Color.GREEN in Color)
-        self.assertTrue(Open.RW in Open)
-        self.assertFalse(Color.GREEN in Open)
-        self.assertFalse(Open.RW in Color)
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                'GREEN' in Color
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                'RW' in Open
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                2 in Color
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                2 in Open
-
-    @unittest.skipIf(
-            python_version < (3, 12),
-            '__contains__ only works with enum memmbers before 3.12',
-            )
-    @unittest.expectedFailure
     def test_contains_tf(self):
         Open = self.Open
         Color = self.Color
         self.assertTrue(Color.GREEN in Color)
         self.assertTrue(Open.RW in Open)
-        self.assertTrue(Color.GREEN in Open)
-        self.assertTrue(Open.RW in Color)
         self.assertFalse('GREEN' in Color)
         self.assertFalse('RW' in Open)
         self.assertTrue(2 in Color)
@@ -4088,11 +4050,14 @@ class Color(enum.Enum)
  |  Methods inherited from enum.EnumType:
  |\x20\x20
  |  __contains__(member) from enum.EnumType
- |      Return True if member is a member of this enum
- |      raises TypeError if member is not an enum member
- |\x20\x20\x20\x20\x20\x20
- |      note: in 3.12 TypeError will no longer be raised, and True will also be
- |      returned if member is the value of a member in this enum
+ |      Return True if `member` is in `cls`.
+ |      
+ |      `member` is in `cls` iff:
+ |      1) `member` is a proper member of the `cls` enum, or
+ |      2) `member` is the value of a member of the `cls` enum.
+ |      
+ |      Beware that 2) can lead to some confusion if members of different
+ |      enums have the same value.
  |\x20\x20
  |  __getitem__(name) from enum.EnumType
  |      Return the member matching `name`.
