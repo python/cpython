@@ -1778,7 +1778,9 @@ sys__getframe_impl(PyObject *module, int depth)
 
     while (depth > 0 && frame != NULL) {
         frame = frame->previous;
-        --depth;
+        if (!frame->is_artificial) {
+            --depth;
+        }
     }
     if (frame == NULL) {
         _PyErr_SetString(tstate, PyExc_ValueError,

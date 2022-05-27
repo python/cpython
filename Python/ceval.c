@@ -1574,7 +1574,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
     Py_INCREF(res);
 
 #define TRACE_FUNCTION_EXIT() \
-    if (cframe.use_tracing) { \
+    if (cframe.use_tracing && !frame->is_artificial) { \
         if (trace_function_exit(tstate, frame, retval)) { \
             Py_DECREF(retval); \
             goto exit_unwind; \
@@ -5010,6 +5010,7 @@ handle_eval_breaker:
             if (shim == NULL) {
                 goto error;
             }
+            shim->is_artificial = true;
             CALL_STAT_INC(inlined_py_calls);
             shim->previous = frame;
             shim->prev_instr = _PyCode_CODE(shim->f_code) + 1;
