@@ -8706,7 +8706,7 @@ jump_thread(struct instr *inst, struct instr *target, int opcode)
     assert(is_jump(target));
     // bpo-45773: If inst->i_target == target->i_target, then nothing actually
     // changes (and we fall into an infinite loop):
-    if (inst->i_lineno == target->i_lineno &&
+    if ((inst->i_lineno == target->i_lineno || target->i_lineno == -1) &&
         inst->i_target != target->i_target)
     {
         inst->i_target = target->i_target;
