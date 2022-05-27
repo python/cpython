@@ -1127,11 +1127,11 @@ script execution tests.
    variables *env_vars* succeeds (``rc == 0``) and return a ``(return code,
    stdout, stderr)`` tuple.
 
-   If the *__cleanenv* keyword is set, *env_vars* is used as a fresh
+   If the *__cleanenv* keyword-only parameter is set, *env_vars* is used as a fresh
    environment.
 
    Python is started in isolated mode (command line option ``-I``),
-   except if the *__isolated* keyword is set to ``False``.
+   except if the *__isolated* keyword-only parameter is set to ``False``.
 
    .. versionchanged:: 3.9
       The function no longer strips whitespaces from *stderr*.
