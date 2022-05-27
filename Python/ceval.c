@@ -7331,11 +7331,7 @@ do_call_core(PyThreadState *tstate,
             return result;
         }
     }
-#ifdef Py_STATS
-    if (PyFunction_Check(func)) {
-        EVAL_CALL_STAT_INC(EVAL_CALL_FUNCTION_EX);
-    }
-#endif
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_FUNCTION_EX, func);
     return PyObject_Call(func, callargs, kwdict);
 }
 
