@@ -1211,88 +1211,139 @@ test_get_type_name(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
-static PyType_Slot MinimalType_slots[] = {
+static PyType_Slot empty_type_slots[] = {
     {0, 0},
 };
 
-static PyType_Spec MinimalType_spec = {
-    "_testcapi.MinimalSpecType",
-    sizeof(CDataObject),
-    0,
-    Py_TPFLAGS_DEFAULT,
-    MinimalType_slots
+static PyType_Spec MinimalMetaclass_spec = {
+    .name = "_testcapi.MinimalMetaclass",
+    .basicsize = sizeof(PyHeapTypeObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .slots = empty_type_slots,
 };
 
+static PyType_Spec MinimalType_spec = {
+    .name = "_testcapi.MinimalSpecType",
+    .basicsize = sizeof(PyObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = empty_type_slots,
+};
 
 static PyObject *
 test_from_spec_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *bases = PyTuple_Pack(1, PyCArray_Type);
-    if (bases == NULL) {
-        return NULL;
+    PyObject *metaclass = NULL;
+    PyObject *class = NULL;
+    PyObject *new = NULL;
+    PyObject *result = NULL;
+
+    metaclass = PyType_FromSpecWithBases(&MinimalMetaclass_spec, (PyObject*)&PyType_Type);
+    if (metaclass == NULL) {
+        goto finally;
+    }
+    class = PyObject_CallFunction(metaclass, "s(){}", "TestClass");
+    if (class == NULL) {
+        goto finally;
     }
 
-    PyObject *new = PyType_FromSpecWithBases(&MinimalType_spec, bases);
-    Py_DECREF(bases);
+    new = PyType_FromSpecWithBases(&MinimalType_spec, class);
     if (new == NULL) {
-        return NULL;
+        goto finally;
     }
-    if (Py_TYPE(new) != Py_TYPE(&PyCArray_Type)) {
+    if (Py_TYPE(new) != (PyTypeObject*)metaclass) {
         PyErr_SetString(PyExc_AssertionError,
-                "MetaType appears not correctly inherited from ABC!");
-        Py_DECREF(new);
-        return NULL;
+                "Metaclass not set properly!");
+        goto finally;
     }
-    Py_DECREF(new);
-    Py_RETURN_NONE;
+    result = Py_NewRef(Py_None);
+
+finally:
+    Py_XDECREF(metaclass);
+    Py_XDECREF(class);
+    Py_XDECREF(new);
+    return result;
 }
 
 
 static PyObject *
 test_from_spec_invalid_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *bases = PyTuple_Pack(2, PyCArray_Type, PyCFuncPtr_Type);
+    PyObject *metaclass_a = NULL;
+    PyObject *metaclass_b = NULL;
+    PyObject *class_a = NULL;
+    PyObject *class_b = NULL;
+    PyObject *bases = NULL;
+    PyObject *new = NULL;
+    PyObject *meta_error_string = NULL;
+    PyObject *exc_type = NULL;
+    PyObject *exc_value = NULL;
+    PyObject *exc_traceback = NULL;
+    PyObject *result = NULL;
+
+    metaclass_a = PyType_FromSpecWithBases(&MinimalMetaclass_spec, (PyObject*)&PyType_Type);
+    if (metaclass_a == NULL) {
+        goto finally;
+    }
+    metaclass_b = PyType_FromSpecWithBases(&MinimalMetaclass_spec, (PyObject*)&PyType_Type);
+    if (metaclass_b == NULL) {
+        goto finally;
+    }
+    class_a = PyObject_CallFunction(metaclass_a, "s(){}", "TestClassA");
+    if (class_a == NULL) {
+        goto finally;
+    }
+
+    class_b = PyObject_CallFunction(metaclass_b, "s(){}", "TestClassB");
+    if (class_b == NULL) {
+        goto finally;
+    }
+
+    bases = PyTuple_Pack(2, class_a, class_b);
     if (bases == NULL) {
-        return NULL;
+        goto finally;
     }
 
     /*
      * The following should raise a TypeError due to a MetaClass conflict.
      */
-    PyObject *new = PyType_FromSpecWithBases(&MinimalType_spec, bases);
-    Py_DECREF(bases);
+    new = PyType_FromSpecWithBases(&MinimalType_spec, bases);
     if (new != NULL) {
-        Py_DECREF(new);
         PyErr_SetString(PyExc_AssertionError,
                 "MetaType conflict not recognized by PyType_FromSpecWithBases");
-        return NULL;
+            goto finally;
     }
-    if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-        PyObject *type, *value, *traceback, *meta_error_string;
 
-        PyErr_Fetch(&type, &value, &traceback);
-        Py_DECREF(type);
-        Py_DECREF(traceback);
+    // Assert that the correct exception was raised
+    if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+        PyErr_Fetch(&exc_type, &exc_value, &exc_traceback);
 
         meta_error_string = PyUnicode_FromString("metaclass conflict:");
         if (meta_error_string == NULL) {
-            Py_DECREF(value);
-            return NULL;
+            goto finally;
         }
-        int res = PyUnicode_Contains(value, meta_error_string);
-        Py_DECREF(value);
-        Py_DECREF(meta_error_string);
+        int res = PyUnicode_Contains(exc_value, meta_error_string);
         if (res < 0) {
-            return NULL;
+            goto finally;
         }
         if (res == 0) {
             PyErr_SetString(PyExc_AssertionError,
                     "TypeError did not inlclude expected message.");
-            return NULL;
+            goto finally;
         }
-        Py_RETURN_NONE;
+        result = Py_NewRef(Py_None);
     }
-    return NULL;
+finally:
+    Py_XDECREF(metaclass_a);
+    Py_XDECREF(metaclass_b);
+    Py_XDECREF(bases);
+    Py_XDECREF(new);
+    Py_XDECREF(meta_error_string);
+    Py_XDECREF(exc_type);
+    Py_XDECREF(exc_value);
+    Py_XDECREF(exc_traceback);
+    Py_XDECREF(class_a);
+    Py_XDECREF(class_b);
+    return result;
 }
 
 
