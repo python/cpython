@@ -2287,7 +2287,8 @@ _sample_headers = [
     ("Mime-Version", "1.0"),
     ("Content-Type", """multipart/mixed; boundary="NMuMz9nt05w80d4+\""""),
     ("Content-Disposition", "inline"),
-    ("User-Agent", "Mutt/1.5.9i")]
+    ("User-Agent", "Mutt/1.5.9i"),
+]
 
 _sample_payloads = ("""This is a sample message.
 
