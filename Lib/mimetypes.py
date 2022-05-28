@@ -517,7 +517,6 @@ def _default_mime_types():
         '.aiff'   : 'audio/x-aiff',
         '.ra'     : 'audio/x-pn-realaudio',
         '.wav'    : 'audio/x-wav',
-        '.avif'   : 'image/avif',
         '.bmp'    : 'image/bmp',
         '.gif'    : 'image/gif',
         '.ief'    : 'image/ief',
@@ -590,7 +589,6 @@ def _default_mime_types():
         '.pict': 'image/pict',
         '.pct' : 'image/pict',
         '.pic' : 'image/pict',
-        '.webp': 'image/webp',
         '.xul' : 'text/xul',
         }
 
@@ -599,35 +597,49 @@ _default_mime_types()
 
 
 def _main():
-    from argparse import ArgumentParser
-    parser = ArgumentParser(description='map filename extensions to MIME types')
-    parser.add_argument(
-        '-e', '--extension',
-        action='store_true',
-        help='guess extension instead of type'
-    )
-    parser.add_argument(
-        '-l', '--lenient',
-        action='store_true',
-        help='additianally search for common but non-standard types'
-    )
-    parser.add_argument('type', nargs='+', help='a type to search')
-    arguments = parser.parse_args()
+    import getopt
 
-    if arguments.extension:
-        for gtype in arguments.type:
-            guess = guess_extension(gtype, not arguments.lenient)
-            if guess:
-                print(guess)
-            else:
-                print("I don't know anything about type", gtype)
-    else:
-        for gtype in arguments.type:
-            guess, encoding = guess_type(gtype, not arguments.lenient)
-            if guess:
-                print('type:', guess, 'encoding:', encoding)
-            else:
-                print("I don't know anything about type", gtype)
+    USAGE = """\
+Usage: mimetypes.py [options] type
+
+Options:
+    --help / -h       -- print this message and exit
+    --lenient / -l    -- additionally search of some common, but non-standard
+                         types.
+    --extension / -e  -- guess extension instead of type
+
+More than one type argument may be given.
+"""
+
+    def usage(code, msg=''):
+        print(USAGE)
+        if msg: print(msg)
+        sys.exit(code)
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'hle',
+                                   ['help', 'lenient', 'extension'])
+    except getopt.error as msg:
+        usage(1, msg)
+
+    strict = 1
+    extension = 0
+    for opt, arg in opts:
+        if opt in ('-h', '--help'):
+            usage(0)
+        elif opt in ('-l', '--lenient'):
+            strict = 0
+        elif opt in ('-e', '--extension'):
+            extension = 1
+    for gtype in args:
+        if extension:
+            guess = guess_extension(gtype, strict)
+            if not guess: print("I don't know anything about type", gtype)
+            else: print(guess)
+        else:
+            guess, encoding = guess_type(gtype, strict)
+            if not guess: print("I don't know anything about type", gtype)
+            else: print('type:', guess, 'encoding:', encoding)
 
 
 if __name__ == '__main__':
