@@ -327,7 +327,9 @@ class MimetypesCliTestCase(unittest.TestCase):
         retcode, out, err = self.mimetypes_cmd('-l', 'foo.pic')
         self.assertEqual(retcode, 0)
         self.assertIn(out, [
+            # Returned from the defaults when mime.types is missing
             'type: image/pict encoding: None',
+            # May be returned when mime.types is present
             'type: image/x-pict encoding: None'
         ])
         self.assertEqual(err, '')
