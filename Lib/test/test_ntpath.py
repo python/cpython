@@ -121,17 +121,19 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitdrive("//?/c:")', ("//?/c:", ""))
         tester('ntpath.splitdrive("//?/c:/")', ("//?/c:", "/"))
         tester('ntpath.splitdrive("//?/c:/dir")', ("//?/c:", "/dir"))
-        tester('ntpath.splitdrive("//?/c:blah")', ("", "//?/c:blah"))
         tester('ntpath.splitdrive("//?/UNC/")', ("", "//?/UNC/"))
         tester('ntpath.splitdrive("//?/UNC/server/")', ("//?/UNC/server/", ""))
         tester('ntpath.splitdrive("//?/UNC/server/share")', ("//?/UNC/server/share", ""))
         tester('ntpath.splitdrive("//?/UNC/server/share/dir")', ("//?/UNC/server/share", "/dir"))
         tester('ntpath.splitdrive("//?/VOLUME{00000000-0000-0000-0000-000000000000}/spam")',
                ('//?/VOLUME{00000000-0000-0000-0000-000000000000}', '/spam'))
+        tester('ntpath.splitdrive("//?/BootPartition/")', ("//?/BootPartition", "/"))
+        tester('ntpath.splitdrive("//?/Harddisk0Partition2/")', ("//?/Harddisk0Partition2", "/"))
+        tester('ntpath.splitdrive("//?/HarddiskVolume2/")', ("//?/HarddiskVolume2", "/"))
+
         tester('ntpath.splitdrive("\\\\?\\c:")', ("\\\\?\\c:", ""))
         tester('ntpath.splitdrive("\\\\?\\c:\\")', ("\\\\?\\c:", "\\"))
         tester('ntpath.splitdrive("\\\\?\\c:\\dir")', ("\\\\?\\c:", "\\dir"))
-        tester('ntpath.splitdrive("\\\\?\\c:blah")', ("", "\\\\?\\c:blah"))
         tester('ntpath.splitdrive("\\\\?\\UNC\\")', ("", "\\\\?\\UNC\\"))
         tester('ntpath.splitdrive("\\\\?\\UNC\\server\\")', ("\\\\?\\UNC\\server\\", ""))
         tester('ntpath.splitdrive("\\\\?\\UNC\\server\\share")', ("\\\\?\\UNC\\server\\share", ""))
@@ -139,6 +141,9 @@ class TestNtpath(NtpathTestCase):
                ("\\\\?\\UNC\\server\\share", "\\dir"))
         tester('ntpath.splitdrive("\\\\?\\VOLUME{00000000-0000-0000-0000-000000000000}\\spam")',
                ('\\\\?\\VOLUME{00000000-0000-0000-0000-000000000000}', '\\spam'))
+        tester('ntpath.splitdrive("\\\\?\\BootPartition\\")', ("\\\\?\\BootPartition", "\\"))
+        tester('ntpath.splitdrive("\\\\?\\Harddisk0Partition2\\")', ("\\\\?\\Harddisk0Partition2", "\\"))
+        tester('ntpath.splitdrive("\\\\?\\HarddiskVolume2\\")', ("\\\\?\\HarddiskVolume2", "\\"))
 
     def test_split(self):
         tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))

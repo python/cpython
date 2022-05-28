@@ -146,55 +146,35 @@ def splitdrive(p):
             sep = b'\\'
             altsep = b'/'
             colon = b':'
-            prefix = b'\\\\?\\'
-            unc_prefix = b'UNC\\'
-            vol_prefix = b'VOLUME{'
+            unc_prefix = b'\\\\?\\UNC\\'
         else:
             sep = '\\'
             altsep = '/'
             colon = ':'
-            prefix = '\\\\?\\'
-            unc_prefix = 'UNC\\'
-            vol_prefix = 'VOLUME{'
+            unc_prefix = '\\\\?\\UNC\\'
         normp = p.replace(altsep, sep)
-        if normp[:4] == prefix:
-            if normp[4:8].upper() == unc_prefix:
-                # e.g. \\?\UNC\server\share\dir\file
+        if (normp[0:2] == sep * 2) and (normp[2:3] != sep):
+            # is a UNC path:
+            # vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
+            # \\machine\mountpoint\directory\etc\...
+            #           directory ^^^^^^^^^^^^^^^
+            if normp[:8].upper() == unc_prefix:
                 start = 8
-            elif normp[4:11].upper() == vol_prefix:
-                # e.g. \\?\VOLUME{...}\dir\file
-                start = 2
-            elif normp[5:6] == colon and not normp[6:7].strip(sep):
-                # e.g. \\?\c:\dir\file
-                return p[:6], p[6:]
             else:
-                # anything else with a \\?\ prefix
-                return p[:0], p
-        else:
-            if normp[:2] == sep*2 and normp[2:3] != sep:
-                # e.g. \\server\share\dir\file
                 start = 2
-            elif normp[1:2] == colon:
-                # e.g. c:\dir\file
-                return p[:2], p[2:]
-            else:
-                # anything else
+            index = normp.find(sep, start)
+            if index == -1:
                 return p[:0], p
-        # is a UNC path:
-        # vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
-        # \\machine\mountpoint\directory\etc\...
-        #           directory ^^^^^^^^^^^^^^^
-        index = normp.find(sep, start)
-        if index == -1:
-            return p[:0], p
-        index2 = normp.find(sep, index + 1)
-        # a UNC path can't have two slashes in a row
-        # (after the initial two)
-        if index2 == index + 1:
-            return p[:0], p
-        if index2 == -1:
-            index2 = len(p)
-        return p[:index2], p[index2:]
+            index2 = normp.find(sep, index + 1)
+            # a UNC path can't have two slashes in a row
+            # (after the initial two)
+            if index2 == index + 1:
+                return p[:0], p
+            if index2 == -1:
+                index2 = len(p)
+            return p[:index2], p[index2:]
+        if normp[1:2] == colon:
+            return p[:2], p[2:]
     return p[:0], p
 
 
