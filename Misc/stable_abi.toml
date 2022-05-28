@@ -2275,3 +2275,5 @@
     added = '3.11'
 [function.PyErr_SetHandledException]
     added = '3.11'
+[function.PyType_FromMetaclass]
+    added = '3.12'

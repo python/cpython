@@ -51,9 +51,6 @@ struct _ceval_state {
     /* Request for dropping the GIL */
     _Py_atomic_int gil_drop_request;
     struct _pending_calls pending;
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    struct _gil_runtime_state gil;
-#endif
 };
 
 

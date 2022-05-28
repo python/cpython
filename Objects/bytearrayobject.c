@@ -1096,6 +1096,7 @@ bytearray_dealloc(PyByteArrayObject *self)
 #define STRINGLIB_ISSPACE Py_ISSPACE
 #define STRINGLIB_ISLINEBREAK(x) ((x == '\n') || (x == '\r'))
 #define STRINGLIB_CHECK_EXACT PyByteArray_CheckExact
+#define STRINGLIB_FAST_MEMCHR memchr
 #define STRINGLIB_MUTABLE 1
 
 #include "stringlib/fastsearch.h"

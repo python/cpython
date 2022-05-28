@@ -3148,6 +3148,8 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     /* Success block for __anext__ */
     VISIT(c, expr, s->v.AsyncFor.target);
     VISIT_SEQ(c, stmt, s->v.AsyncFor.body);
+    /* Mark jump as artificial */
+    UNSET_LOC(c);
     ADDOP_JUMP(c, JUMP, start);
 
     compiler_pop_fblock(c, FOR_LOOP, start);
@@ -6092,11 +6094,7 @@ static int
 compiler_error(struct compiler *c, const char *format, ...)
 {
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     PyObject *msg = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
     if (msg == NULL) {
@@ -6129,11 +6127,7 @@ static int
 compiler_warn(struct compiler *c, const char *format, ...)
 {
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     PyObject *msg = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
     if (msg == NULL) {
@@ -8704,7 +8698,7 @@ jump_thread(struct instr *inst, struct instr *target, int opcode)
     assert(is_jump(target));
     // bpo-45773: If inst->i_target == target->i_target, then nothing actually
     // changes (and we fall into an infinite loop):
-    if (inst->i_lineno == target->i_lineno &&
+    if ((inst->i_lineno == target->i_lineno || target->i_lineno == -1) &&
         inst->i_target != target->i_target)
     {
         inst->i_target = target->i_target;

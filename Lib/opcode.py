@@ -303,6 +303,7 @@ _specializations = {
     "LOAD_METHOD": [
         "LOAD_METHOD_ADAPTIVE",
         "LOAD_METHOD_CLASS",
+        "LOAD_METHOD_LAZY_DICT",
         "LOAD_METHOD_MODULE",
         "LOAD_METHOD_NO_DICT",
         "LOAD_METHOD_WITH_DICT",
