@@ -260,6 +260,8 @@ def generate_runtime_init(identifiers, strings):
                     for i in range(-nsmallnegints, nsmallposints):
                         printer.write(f'_PyLong_DIGIT_INIT({i}),')
                 printer.write('')
+                # Small int offset zero
+                printer.write('.small_ints_zero_offset = 0,')
                 # Global bytes objects.
                 printer.write('.bytes_empty = _PyBytes_SIMPLE_INIT(0, 0),')
                 with printer.block('.bytes_characters =', ','):

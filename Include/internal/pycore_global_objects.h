@@ -33,6 +33,7 @@ struct _Py_global_objects {
          * -_PY_NSMALLNEGINTS (inclusive) to _PY_NSMALLPOSINTS (exclusive).
          */
         PyLongObject small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
+        PyLongObject* small_ints_zero_offset;
 
         PyBytesObject bytes_empty;
         struct {

@@ -99,6 +99,9 @@ init_runtime(_PyRuntimeState *runtime,
              PyThread_type_lock interpreters_mutex,
              PyThread_type_lock xidregistry_mutex)
 {
+    // this is a hack to initialize small_ints_zero_offset. should probably be moved somewhere else
+    _Py_SINGLETON(small_ints_zero_offset) = _Py_SINGLETON(small_ints) + _PY_NSMALLNEGINTS;
+
     if (runtime->_initialized) {
         Py_FatalError("runtime already initialized");
     }

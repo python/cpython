@@ -55,7 +55,7 @@ static PyObject *
 get_small_int(sdigit ival)
 {
     assert(IS_SMALL_INT(ival));
-    PyObject *v = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + ival];
+    PyObject *v = (PyObject *)&_PyLong_SMALL_INTS_ZERO_OFFSET[ival];
     Py_INCREF(v);
     return v;
 }
