@@ -1,1 +1,0 @@
-Update documentation for SocketType to align with its implementation.
