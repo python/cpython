@@ -330,8 +330,8 @@ class MimetypesCliTestCase(unittest.TestCase):
         self.assertEqual(err, '')
 
     @unittest.skipIf(
-        sys.platform == "macos",
-        "mime.types knows the whole common_types so they are marked as strict"
+        sys.platform == 'darwin',
+        'mime.types knows the whole common_types so they are marked as strict'
     )
     def test_guess_type_conflicting_with_mimetypes(self):
         retcode, out, err = self.mimetypes_cmd('foo.pic')
