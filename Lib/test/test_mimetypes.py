@@ -326,7 +326,7 @@ class MimetypesCliTestCase(unittest.TestCase):
     def test_guess_type(self):
         retcode, out, err = self.mimetypes_cmd('-l', 'foo.xul')
         self.assertEqual(retcode, 0)
-        self.assertEqual(out, 'type: image/text encoding: None')
+        self.assertEqual(out, 'type: text/xul encoding: None')
         self.assertEqual(err, '')
 
         # Previously, there was .pic format that macOS knew as strict
