@@ -1222,7 +1222,7 @@ class HTTPConnection:
                         # remove interface scope from IPv6 address
                         # when used as Host header
                         if host.find('%') >= 0:
-                            host_enc = host_enc[:host.find('%')] + b']'
+                            host_enc = host_enc[:host.find('%')]
                         host_enc = b'[' + host_enc + b']'
 
                     if port == self.default_port:
