@@ -1425,6 +1425,11 @@ Removed
   Python's test suite."
   (Contributed by Victor Stinner in :issue:`46852`.)
 
+* The ``--experimental-isolated-subinterpreters`` configure flag
+  (and corresponding ``EXPERIMENTAL_ISOLATED_SUBINTERPRETERS``)
+  have been removed.
+
+
 Porting to Python 3.11
 ======================
 
