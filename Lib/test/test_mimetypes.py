@@ -315,8 +315,8 @@ class MimetypesCliTestCase(unittest.TestCase):
 
         retcode, out, err = self.mimetypes_cmd('-e', 'image/jpg')
         self.assertEqual(retcode, 1)
-        self.assertEqual(out, "I don't know anything about type image/jpg")
-        self.assertEqual(err, '')
+        self.assertEqual(out, '')
+        self.assertEqual(err, "I don't know anything about type image/jpg")
 
         retcode, out, err = self.mimetypes_cmd('-e', 'image/jpeg')
         self.assertEqual(retcode, 0)
@@ -332,8 +332,8 @@ class MimetypesCliTestCase(unittest.TestCase):
         # Previously, there was .pic format that macOS knew as strict
         retcode, out, err = self.mimetypes_cmd('foo.xul')
         self.assertEqual(retcode, 1)
-        self.assertEqual(out, "I don't know anything about type foo.xul")
-        self.assertEqual(err, '')
+        self.assertEqual(out, '')
+        self.assertEqual(err, "I don't know anything about type foo.xul")
 
 if __name__ == "__main__":
     unittest.main()
