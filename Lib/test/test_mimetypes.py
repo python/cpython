@@ -324,11 +324,11 @@ class MimetypesCliTestCase(unittest.TestCase):
         self.assertEqual(err, '')
 
     def test_guess_type(self):
+        print(f'====================================================================={sys.platform}')
         retcode, out, err = self.mimetypes_cmd('-l', 'foo.pic')
         self.assertEqual(retcode, 0)
         self.assertEqual(out, 'type: image/pict encoding: None')
         self.assertEqual(err, '')
-        print(f'====================================================================={sys.platform}')
 
     @unittest.skipIf(
         sys.platform == 'darwin',
