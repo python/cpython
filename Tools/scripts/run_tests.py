@@ -33,7 +33,7 @@ def main(regrtest_args):
 
     args.extend(['-m', 'test',    # Run the test suite
                  '-r',            # Randomize test order
-                 'test_mimetypes'
+                 '-w',            # Re-run failed tests in verbose mode
                  ])
     if sys.platform == 'win32':
         args.append('-n')         # Silence alerts under Windows
