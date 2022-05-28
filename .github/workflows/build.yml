@@ -29,7 +29,6 @@ jobs:
   build_macos:
     name: 'macOS'
     runs-on: macos-latest
-    needs: check_source
     env:
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
