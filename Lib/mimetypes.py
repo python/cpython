@@ -620,14 +620,14 @@ def _main():
             if guess:
                 print(guess)
             else:
-                sys.exit("I don't know anything about type", gtype)
+                sys.exit(f"I don't know anything about type {gtype}")
     else:
         for gtype in arguments.type:
             guess, encoding = guess_type(gtype, not arguments.lenient)
             if guess:
                 print('type:', guess, 'encoding:', encoding)
             else:
-                sys.exit("I don't know anything about type", gtype)
+                sys.exit(f"I don't know anything about type {gtype}")
 
 
 if __name__ == '__main__':
