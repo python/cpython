@@ -324,19 +324,15 @@ class MimetypesCliTestCase(unittest.TestCase):
         self.assertEqual(err, '')
 
     def test_guess_type(self):
-        retcode, out, err = self.mimetypes_cmd('-l', 'foo.pic')
+        retcode, out, err = self.mimetypes_cmd('-l', 'foo.xul')
         self.assertEqual(retcode, 0)
-        self.assertIn(out, [
-            # Returned from the defaults when mime.types is missing
-            'type: image/pict encoding: None',
-            # May be returned when mime.types is present
-            'type: image/x-pict encoding: None'
-        ])
+        self.assertEqual(out, 'type: image/text encoding: None')
         self.assertEqual(err, '')
 
-        retcode, out, err = self.mimetypes_cmd('foo.pic')
+        # Previously, there was .pic format that macOS knew as strict
+        retcode, out, err = self.mimetypes_cmd('foo.xul')
         self.assertEqual(retcode, 1)
-        self.assertEqual(out, "I don't know anything about type foo.pic")
+        self.assertEqual(out, "I don't know anything about type foo.xul")
         self.assertEqual(err, '')
 
 if __name__ == "__main__":
