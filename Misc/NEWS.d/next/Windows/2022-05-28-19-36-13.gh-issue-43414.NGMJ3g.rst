@@ -1,0 +1,4 @@
+Modified os.get_terminal_size() to use _Py_get_osfhandle(fd) instead of
+using hardcoded process standard handles in Windows. Added a Windows
+specific test in TermsizeTest in Lib/test/test_os.py
+###########################################################################
