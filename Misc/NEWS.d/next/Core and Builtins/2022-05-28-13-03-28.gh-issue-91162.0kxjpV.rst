@@ -1,0 +1,1 @@
+Fix substitution of e.g. ``tuple[int, ...]`` into a generic type alias with parameters e.g. ``T, *Ts``.
