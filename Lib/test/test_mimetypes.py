@@ -314,7 +314,7 @@ class MimetypesCliTestCase(unittest.TestCase):
         self.assertEqual(err, '')
 
         retcode, out, err = self.mimetypes_cmd('-e', 'image/jpg')
-        self.assertEqual(retcode, 0)
+        self.assertEqual(retcode, 1)
         self.assertEqual(out, "I don't know anything about type image/jpg")
         self.assertEqual(err, '')
 
@@ -335,7 +335,7 @@ class MimetypesCliTestCase(unittest.TestCase):
         self.assertEqual(err, '')
 
         retcode, out, err = self.mimetypes_cmd('foo.pic')
-        self.assertEqual(retcode, 0)
+        self.assertEqual(retcode, 1)
         self.assertEqual(out, "I don't know anything about type foo.pic")
         self.assertEqual(err, '')
 

@@ -1,0 +1,2 @@
+Command-line :mod:`mimetypes` started to return 1 instead of 0 for
+abruptions and 2 instead of 1 for incorrect command line parameters.
