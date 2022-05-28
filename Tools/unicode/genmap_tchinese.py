@@ -3,13 +3,9 @@
 #
 # Original Author:  Hye-Shik Chang <perky@FreeBSD.org>
 #
-from genmap_support import (
-    open_mapping_file,
-    loadmap,
-    DecodeMapWriter,
-    EncodeMapWriter,
-    BufferedFiller,
-)
+import os
+
+from genmap_support import *
 
 
 # ranges for (lead byte, follower byte)
@@ -173,6 +169,7 @@ def main_tw():
                 del cp950decmap[c1][c2]
 
     with open('mappings_tw.h', 'w') as fp:
+        print_autogen(fp, os.path.basename(__file__))
         write_big5_maps(fp, 'BIG5', 'big5', big5decmap, big5encmap)
         write_big5_maps(fp, 'CP950', 'cp950ext', cp950decmap, cp950encmap)
 
@@ -217,6 +214,7 @@ def main_hkscs():
     )
     with open('mappings_hk.h', 'w') as fp:
         print('Generating BIG5HKSCS decode map...')
+        print_autogen(fp, os.path.basename(__file__))
         writer = DecodeMapWriter(fp, 'big5hkscs', hkscsdecmap)
         writer.update_decode_map(BIG5HKSCS_C1, BIG5HKSCS_C2)
         writer.generate()
