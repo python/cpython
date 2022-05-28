@@ -24,7 +24,7 @@ read_mime_types(file) -- parse one file, return a dictionary or None
 """
 
 import os
-from sys import exit
+import sys
 import posixpath
 import urllib.parse
 
@@ -620,14 +620,14 @@ def _main():
             if guess:
                 print(guess)
             else:
-                exit("I don't know anything about type", gtype)
+                sys.exit("I don't know anything about type", gtype)
     else:
         for gtype in arguments.type:
             guess, encoding = guess_type(gtype, not arguments.lenient)
             if guess:
                 print('type:', guess, 'encoding:', encoding)
             else:
-                exit("I don't know anything about type", gtype)
+                sys.exit("I don't know anything about type", gtype)
 
 
 if __name__ == '__main__':
