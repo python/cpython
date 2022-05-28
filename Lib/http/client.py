@@ -1195,6 +1195,12 @@ class HTTPConnection:
                         netloc_enc = netloc.encode("ascii")
                     except UnicodeEncodeError:
                         netloc_enc = netloc.encode("idna")
+
+                    # remove interface scope from IPv6 address
+                    # when used as Host header
+                    if netloc.find('%') >= 0:
+                        netloc_enc = netloc_enc[:netloc.find('%')] + b']'
+
                     self.putheader('Host', netloc_enc)
                 else:
                     if self._tunnel_host:
@@ -1213,6 +1219,10 @@ class HTTPConnection:
                     # when used as Host header
 
                     if host.find(':') >= 0:
+                        # remove interface scope from IPv6 address
+                        # when used as Host header
+                        if host.find('%') >= 0:
+                            host_enc = host_enc[:host.find('%')] + b']'
                         host_enc = b'[' + host_enc + b']'
 
                     if port == self.default_port:
