@@ -324,10 +324,9 @@ class MimetypesCliTestCase(unittest.TestCase):
         self.assertEqual(err, '')
 
     def test_guess_type(self):
-        print(f'====================================================================={sys.platform}')
-        retcode, out, err = self.mimetypes_cmd('-l', 'foo.pic')
+        retcode, out, err = self.mimetypes_cmd('-l', 'foo.mid')
         self.assertEqual(retcode, 0)
-        self.assertEqual(out, 'type: image/pict encoding: None')
+        self.assertEqual(out, 'type: audio/midi encoding: None')
         self.assertEqual(err, '')
 
     @unittest.skipIf(
@@ -335,10 +334,10 @@ class MimetypesCliTestCase(unittest.TestCase):
         'mime.types knows the whole common_types so they are marked as strict'
     )
     def test_guess_type_conflicting_with_mimetypes(self):
-        retcode, out, err = self.mimetypes_cmd('foo.pic')
+        retcode, out, err = self.mimetypes_cmd('foo.mid')
         self.assertEqual(retcode, 1)
         self.assertEqual(out, '')
-        self.assertEqual(err, "I don't know anything about type foo.pic")
+        self.assertEqual(err, "I don't know anything about type foo.mid")
 
 if __name__ == "__main__":
     unittest.main()
