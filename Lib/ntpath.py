@@ -153,7 +153,7 @@ def splitdrive(p):
             colon = ':'
             unc_prefix = '\\\\?\\UNC\\'
         normp = p.replace(altsep, sep)
-        if (normp[0:2] == sep * 2) and (normp[2:3] != sep):
+        if (normp[0:2] == sep*2) and (normp[2:3] != sep):
             # is a UNC path:
             # vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
             # \\machine\mountpoint\directory\etc\...
