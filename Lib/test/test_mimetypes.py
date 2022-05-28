@@ -324,16 +324,20 @@ class MimetypesCliTestCase(unittest.TestCase):
         self.assertEqual(err, '')
 
     def test_guess_type(self):
-        retcode, out, err = self.mimetypes_cmd('-l', 'foo.pict')
+        retcode, out, err = self.mimetypes_cmd('-l', 'foo.pic')
         self.assertEqual(retcode, 0)
         self.assertEqual(out, 'type: image/pict encoding: None')
         self.assertEqual(err, '')
 
-        # Previously, there was .pic format that macOS knew as strict
-        retcode, out, err = self.mimetypes_cmd('foo.pict')
+    @unittest.skipIf(
+        sys.platform == "macos",
+        "mime.types knows the whole common_types so they are marked as strict"
+    )
+    def test_guess_type_conflicting_with_mimetypes(self):
+        retcode, out, err = self.mimetypes_cmd('foo.pic')
         self.assertEqual(retcode, 1)
         self.assertEqual(out, '')
-        self.assertEqual(err, "I don't know anything about type foo.pict")
+        self.assertEqual(err, "I don't know anything about type foo.pic")
 
 if __name__ == "__main__":
     unittest.main()
