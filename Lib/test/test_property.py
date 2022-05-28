@@ -288,10 +288,10 @@ class PropertySubclassTests(unittest.TestCase):
                      "Docstrings are omitted with -O2 and above")
     def test_docstring_copy2(self):
         """
-        Property tries to provide the best docstring it finds for it's copies.
-        If a user-provieded docstring is avaialble it's preserved in the copies.
-        If no docsting is available during property creation, the property
-        would utilze docstring from getter if available.
+        Property tries to provide the best docstring it finds for its instances.
+        If a user-provided docstring is available, it is preserved on copies.
+        If no docstring is available during property creation, the property
+        will utilize the docstring from the getter if available.
         """
         def getter1(self):
             return 1
@@ -302,7 +302,7 @@ class PropertySubclassTests(unittest.TestCase):
             """doc 3"""
             return 3
 
-        # Case-1: user-provied doc is preserved in copies
+        # Case-1: user-provided doc is preserved in copies
         #         of property with undocumented getter
         p = property(getter1, None, None, "doc-A")
 
@@ -310,7 +310,7 @@ class PropertySubclassTests(unittest.TestCase):
         self.assertEqual(p.__doc__, "doc-A")
         self.assertEqual(p2.__doc__, "doc-A")
 
-        # Case-2: user-provied doc is preserved in copies
+        # Case-2: user-provided doc is preserved in copies
         #         of property with documented getter
         p = property(getter2, None, None, "doc-A")
 
@@ -318,7 +318,7 @@ class PropertySubclassTests(unittest.TestCase):
         self.assertEqual(p.__doc__, "doc-A")
         self.assertEqual(p2.__doc__, "doc-A")
 
-        # Case-3: with no user-provied doc new getter doc
+        # Case-3: with no user-provided doc new getter doc
         #         takes precendence
         p = property(getter2, None, None, None)
 
@@ -326,7 +326,7 @@ class PropertySubclassTests(unittest.TestCase):
         self.assertEqual(p.__doc__, "doc 2")
         self.assertEqual(p2.__doc__, "doc 3")
 
-        # Case-4: A user-provied doc is assigned after property construction
+        # Case-4: A user-provided doc is assigned after property construction
         #         with documented getter. The doc IS NOT preserved.
         #         It's an odd behaviour, but it's a strange enough
         #         use case with no easy solution.
@@ -336,7 +336,7 @@ class PropertySubclassTests(unittest.TestCase):
         self.assertEqual(p.__doc__, "user")
         self.assertEqual(p2.__doc__, "doc 3")
 
-        # Case-5: A user-provied doc is assigned after property construction
+        # Case-5: A user-provided doc is assigned after property construction
         #         with UNdocumented getter. The doc IS preserved.
         p = property(getter1, None, None, None)
         p.__doc__ = "user"
