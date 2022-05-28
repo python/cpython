@@ -501,6 +501,15 @@ def template_replace(templates: list[str], replacements: dict[str, list[str]]) -
           ("Huskies are cute but also tiring")
       ]
 
+    Example 3: Suppose that:
+      templates = ["Huskies are word1. I said word!"]
+      replacements = {"word1": ["cool", "awesome"]}
+    Then we would return:
+      [
+          ("Huskies are cool. I said cool!"),
+          ("Huskies are awesome. I said awesome!"),
+      ]
+
     Note that if any of the replacements do not occur in any template:
       templates = ["Huskies are word1", "Beagles!"]
       replacements = {"word1": ["playful", "cute"],
@@ -560,6 +569,19 @@ class TemplateReplacementTests(BaseTestCase):
             ("Cats are small", "Dogs are fluffy"),
             ("Cats are cute", "Dogs are big"),
             ("Cats are cute", "Dogs are fluffy"),
+        ]
+        self.assertEqual(actual, expected)
+
+    def test_two_instances_of_replacement_word_yields_correct_renders(self):
+        actual = template_replace(
+                templates=["Cats are word1. That's word1!"],
+                replacements={
+                    "word1": ["smol", "cute"],
+                },
+        )
+        expected = [
+            ("Cats are smol. That's smol!",),
+            ("Cats are cute. That's cute!",),
         ]
         self.assertEqual(actual, expected)
 
@@ -774,9 +796,12 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             # Should be tuple[int, *tuple[int, ...]]
             ('tuple[T, *Ts]',                          '[*tuple_type[int, ...]]',                        'TypeError'),
 
+            ('generic[T, *Ts]',                        '[*tuple_type[int, ...], *tuple_type[str, ...]]', 'TypeError'),
+            ('generic[*Ts, T]',                        '[*tuple_type[int, ...], *tuple_type[str, ...]]', 'TypeError'),
+
             ('generic[*Ts, T]',                        '[int]',                                          'generic[int]'),
             ('generic[*Ts, T]',                        '[int, str]',                                     'generic[int, str]'),
-            ('generic[*Ts, T]',                          '[int, str, bool]',                             'generic[int, str, bool]'),
+            ('generic[*Ts, T]',                        '[int, str, bool]',                                'generic[int, str, bool]'),
 
             ('generic[T, *tuple_type[int, ...]]',      '[str]',                                          'generic[str, *tuple_type[int, ...]]'),
             ('generic[T1, T2, *tuple_type[int, ...]]', '[str, bool]',                                    'generic[str, bool, *tuple_type[int, ...]]'),
