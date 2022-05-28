@@ -324,16 +324,16 @@ class MimetypesCliTestCase(unittest.TestCase):
         self.assertEqual(err, '')
 
     def test_guess_type(self):
-        retcode, out, err = self.mimetypes_cmd('-l', 'foo.midi')
+        retcode, out, err = self.mimetypes_cmd('-l', 'foo.pict')
         self.assertEqual(retcode, 0)
-        self.assertEqual(out, 'type: audio/midi encoding: None')
+        self.assertEqual(out, 'type: image/pict encoding: None')
         self.assertEqual(err, '')
 
         # Previously, there was .pic format that macOS knew as strict
-        retcode, out, err = self.mimetypes_cmd('foo.midi')
+        retcode, out, err = self.mimetypes_cmd('foo.pict')
         self.assertEqual(retcode, 1)
         self.assertEqual(out, '')
-        self.assertEqual(err, "I don't know anything about type foo.midi")
+        self.assertEqual(err, "I don't know anything about type foo.pict")
 
 if __name__ == "__main__":
     unittest.main()
