@@ -388,8 +388,8 @@ extern "C" {
             _PyLong_DIGIT_INIT(255), \
             _PyLong_DIGIT_INIT(256), \
         }, \
-        .small_ints_zero_offset = 0, \
         \
+        .small_ints_zero_offset = 0, \
         .bytes_empty = _PyBytes_SIMPLE_INIT(0, 0), \
         .bytes_characters = { \
             _PyBytes_CHAR_INIT(0), \
