@@ -328,6 +328,7 @@ class MimetypesCliTestCase(unittest.TestCase):
         self.assertEqual(retcode, 0)
         self.assertEqual(out, 'type: image/pict encoding: None')
         self.assertEqual(err, '')
+        print(f'====================================================================={sys.platform}')
 
     @unittest.skipIf(
         sys.platform == 'darwin',
