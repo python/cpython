@@ -7762,6 +7762,8 @@ scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
     bool unsafe = unsafe_to_start;
     for (int i = 0; i < b->b_iused; i++) {
         struct instr *instr = &b->b_instr[i];
+        assert(instr->i_opcode != EXTENDED_ARG);
+        assert(instr->i_opcode != EXTENDED_ARG_QUICK);
         if (instr->i_oparg != target) {
             continue;
         }
