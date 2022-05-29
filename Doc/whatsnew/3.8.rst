@@ -45,6 +45,7 @@
 :Editor: Raymond Hettinger
 
 This article explains the new features in Python 3.8, compared to 3.7.
+Python 3.8 was released on October 14, 2019.
 For full details, see the :ref:`changelog <changelog>`.
 
 .. testsetup::
