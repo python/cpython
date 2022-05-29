@@ -1783,16 +1783,6 @@ class _UnpackGenericAlias(_GenericAlias, _root=True):
         assert len(self.__args__) == 1
         return isinstance(self.__args__[0], TypeVarTuple)
 
-    @property
-    def __typing_is_unpacked_var_tuple__(self):
-        assert self.__origin__ is Unpack
-        assert len(self.__args__) == 1
-        arg, = self.__args__
-        if isinstance(arg, _GenericAlias):
-            assert arg.__origin__ is tuple
-            return len(arg.__args__) >= 2 and arg.__args__[-1] is ...
-        return False
-
 
 class Generic:
     """Abstract base class for generic types.
