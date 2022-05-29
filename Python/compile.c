@@ -5660,7 +5660,6 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP_LOAD_CONST(c, Py_None);
     ADD_YIELD_FROM(c, 1);
     compiler_with_except_finish(c, cleanup);
-    ADDOP_JUMP(c, JUMP, exit);
 
     compiler_use_next_block(c, exit);
     return 1;
@@ -5754,7 +5753,6 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, PUSH_EXC_INFO);
     ADDOP(c, WITH_EXCEPT_START);
     compiler_with_except_finish(c, cleanup);
-    ADDOP_JUMP(c, JUMP, exit);
 
     compiler_use_next_block(c, exit);
     return 1;

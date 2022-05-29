@@ -383,7 +383,7 @@ class CodeTest(unittest.TestCase):
                 ("RERAISE", 1),
                 ("COPY", 3),
                 ("POP_EXCEPT", None),
-                ("RERAISE", 1),
+                ("RERAISE", 1)
             ]
         )
 
