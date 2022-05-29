@@ -906,6 +906,14 @@ def _is_unpacked_typevartuple(x: Any) -> bool:
     return ((not isinstance(x, type)) and
             getattr(x, '__typing_is_unpacked_typevartuple__', False))
 
+def _is_unpacked_var_tuple(x: Any) -> bool:
+    if isinstance(x, type) and not isinstance(x, GenericAlias):
+        return False
+    args = getattr(x, '__typing_unpacked_tuple_args__', None)
+    if args and args[-1] is ...:
+        return True
+    return False
+
 
 def _is_typevar_like(x: Any) -> bool:
     return isinstance(x, (TypeVar, ParamSpec)) or _is_unpacked_typevartuple(x)
@@ -1422,13 +1430,28 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         plen = len(params)
         if typevartuple_index is not None:
             i = typevartuple_index
-            j = alen - (plen - i - 1)
-            if j < i:
+            j = plen - typevartuple_index - 1
+            var_tuple_index = None
+            for k, arg in enumerate(args):
+                if _is_unpacked_var_tuple(arg):
+                    if var_tuple_index is not None:
+                        raise TypeError("More than one unpacked variable-size tuple argument")
+                    var_tuple_index = k
+                    fillarg = args[var_tuple_index].__typing_unpacked_tuple_args__[0]
+            if var_tuple_index is not None:
+                i = min(i, var_tuple_index)
+                j = min(j, alen - var_tuple_index - 1)
+            elif i + j > alen:
                 raise TypeError(f"Too few arguments for {self};"
                                 f" actual {alen}, expected at least {plen-1}")
+
             new_arg_by_param.update(zip(params[:i], args[:i]))
-            new_arg_by_param[params[i]] = tuple(args[i: j])
-            new_arg_by_param.update(zip(params[i + 1:], args[j:]))
+            for k in range(i, typevartuple_index):
+                new_arg_by_param[params[k]] = fillarg
+            new_arg_by_param[params[typevartuple_index]] = tuple(args[i: alen - j])
+            for k in range(typevartuple_index + 1, plen - j):
+                new_arg_by_param[params[k]] = fillarg
+            new_arg_by_param.update(zip(params[plen - j:], args[alen - j:]))
         else:
             if alen != plen:
                 raise TypeError(f"Too {'many' if alen > plen else 'few'} arguments for {self};"
@@ -1759,6 +1782,16 @@ class _UnpackGenericAlias(_GenericAlias, _root=True):
         assert self.__origin__ is Unpack
         assert len(self.__args__) == 1
         return isinstance(self.__args__[0], TypeVarTuple)
+
+    @property
+    def __typing_is_unpacked_var_tuple__(self):
+        assert self.__origin__ is Unpack
+        assert len(self.__args__) == 1
+        arg, = self.__args__
+        if isinstance(arg, _GenericAlias):
+            assert arg.__origin__ is tuple
+            return len(arg.__args__) >= 2 and arg.__args__[-1] is ...
+        return False
 
 
 class Generic:
