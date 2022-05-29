@@ -79,7 +79,7 @@ New Features
 Other Language Changes
 ======================
 
-* XXX The :func:`tempfile.NamedTemporaryFile` has a new optional parameter *delete_on_close* (Contributed by Evgeny Zorin in :issue:`14243`.)
+* XXX The :class:`tempfile.NamedTemporaryFile` has a new optional parameter *delete_on_close* (Contributed by Evgeny Zorin in :issue:`14243`.)
 
 
 New Modules

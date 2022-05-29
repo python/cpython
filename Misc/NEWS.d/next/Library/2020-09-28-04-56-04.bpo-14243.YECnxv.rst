@@ -1,1 +1,1 @@
-The :func:`tempfile.NamedTemporaryFile` has a new optional parameter *delete_on_close*
+The :class:`tempfile.NamedTemporaryFile` has a new optional parameter *delete_on_close*
