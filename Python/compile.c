@@ -7805,9 +7805,9 @@ scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
 #undef MAYBE_PUSH
 
 static int
-mark_unknown_variables(struct assembler *a, struct compiler *c)
+add_checks_for_loads_of_unknown_variables(struct assembler *a,
+                                          struct compiler *c)
 {
-
     basicblock **stack = make_cfg_traversal_stack(a->a_entry);
     if (stack == NULL) {
         return -1;
@@ -8499,7 +8499,7 @@ assemble(struct compiler *c, int addNone)
     /* Order of basic blocks must have been determined by now */
     normalize_jumps(&a);
 
-    if (mark_unknown_variables(&a, c) < 0) {
+    if (add_checks_for_loads_of_unknown_variables(&a, c) < 0) {
         goto error;
     }
 

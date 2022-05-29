@@ -462,11 +462,7 @@ add_load_fast_null_checks(PyCodeObject *co)
     for (Py_ssize_t i = 0; i < Py_SIZE(co); i++) {
         switch (_Py_OPCODE(instructions[i])) {
             case LOAD_FAST:
-                _Py_SET_OPCODE(instructions[i], LOAD_FAST_CHECK);
-                break;
             case LOAD_FAST__LOAD_FAST:
-                _Py_SET_OPCODE(instructions[i], LOAD_FAST_CHECK);
-                break;
             case LOAD_FAST__LOAD_CONST:
                 _Py_SET_OPCODE(instructions[i], LOAD_FAST_CHECK);
                 break;
