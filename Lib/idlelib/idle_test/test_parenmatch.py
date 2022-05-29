@@ -88,7 +88,7 @@ class ParenMatchTest(unittest.TestCase):
         text = self.text
         pm = self.get_parenmatch()
 
-        text.insert('insert', '# this is a commen)')
+        text.insert('insert', '# this is a comment)')
         pm.paren_closed_event('event')
 
         text.insert('insert', '\ndef')
