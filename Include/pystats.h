@@ -10,6 +10,20 @@ extern "C" {
 
 #define SPECIALIZATION_FAILURE_KINDS 32
 
+/* Stats for determining who is calling PyEval_EvalFrame */
+#define EVAL_CALL_TOTAL 0
+#define EVAL_CALL_VECTOR 1
+#define EVAL_CALL_GENERATOR 2
+#define EVAL_CALL_LEGACY 3
+#define EVAL_CALL_FUNCTION_VECTORCALL 4
+#define EVAL_CALL_BUILD_CLASS 5
+#define EVAL_CALL_SLOT 6
+#define EVAL_CALL_FUNCTION_EX 7
+#define EVAL_CALL_API 8
+#define EVAL_CALL_METHOD 9
+
+#define EVAL_CALL_KINDS 10
+
 typedef struct _specialization_stats {
     uint64_t success;
     uint64_t failure;
@@ -31,11 +45,14 @@ typedef struct _call_stats {
     uint64_t pyeval_calls;
     uint64_t frames_pushed;
     uint64_t frame_objects_created;
+    uint64_t eval_calls[EVAL_CALL_KINDS];
 } CallStats;
 
 typedef struct _object_stats {
     uint64_t increfs;
     uint64_t decrefs;
+    uint64_t interpreter_increfs;
+    uint64_t interpreter_decrefs;
     uint64_t allocations;
     uint64_t allocations512;
     uint64_t allocations4k;
@@ -60,9 +77,17 @@ PyAPI_DATA(PyStats) _py_stats;
 
 extern void _Py_PrintSpecializationStats(int to_file);
 
+#ifdef _PY_INTERPRETER
+
+#define _Py_INCREF_STAT_INC() _py_stats.object_stats.interpreter_increfs++
+#define _Py_DECREF_STAT_INC()  _py_stats.object_stats.interpreter_decrefs++
+
+#else
 
 #define _Py_INCREF_STAT_INC() _py_stats.object_stats.increfs++
 #define _Py_DECREF_STAT_INC()  _py_stats.object_stats.decrefs++
+
+#endif
 
 #else
 

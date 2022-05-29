@@ -12,8 +12,14 @@ extern "C" {
 struct pyruntimestate;
 struct _ceval_runtime_state;
 
+/* WASI has limited call stack. wasmtime 0.36 can handle sufficient amount of
+   C stack frames for little more than 750 recursions. */
 #ifndef Py_DEFAULT_RECURSION_LIMIT
-#  define Py_DEFAULT_RECURSION_LIMIT 1000
+#  ifdef __wasi__
+#    define Py_DEFAULT_RECURSION_LIMIT 750
+#  else
+#    define Py_DEFAULT_RECURSION_LIMIT 1000
+#  endif
 #endif
 
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
@@ -62,6 +68,7 @@ extern PyObject* _PyEval_BuiltinsFromGlobals(
 static inline PyObject*
 _PyEval_EvalFrame(PyThreadState *tstate, struct _PyInterpreterFrame *frame, int throwflag)
 {
+    EVAL_CALL_STAT_INC(EVAL_CALL_TOTAL);
     if (tstate->interp->eval_frame == NULL) {
         return _PyEval_EvalFrameDefault(tstate, frame, throwflag);
     }
@@ -74,11 +81,7 @@ _PyEval_Vector(PyThreadState *tstate,
             PyObject* const* args, size_t argcount,
             PyObject *kwnames);
 
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-extern int _PyEval_ThreadsInitialized(PyInterpreterState *interp);
-#else
 extern int _PyEval_ThreadsInitialized(struct pyruntimestate *runtime);
-#endif
 extern PyStatus _PyEval_InitGIL(PyThreadState *tstate);
 extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
