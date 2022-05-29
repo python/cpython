@@ -324,8 +324,7 @@ Can Python be compiled to machine code, C or some other language?
 `Cython <http://cython.org/>`_ compiles a modified version of Python with
 optional annotations into C extensions.  `Nuitka <http://www.nuitka.net/>`_ is
 an up-and-coming compiler of Python into C++ code, aiming to support the full
-Python language. For compiling to Java you can consider
-`VOC <https://voc.readthedocs.io>`_.
+Python language.
 
 
 How does Python manage memory?
