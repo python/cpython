@@ -7764,6 +7764,11 @@ scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
         struct instr *instr = &b->b_instr[i];
         assert(instr->i_opcode != EXTENDED_ARG);
         assert(instr->i_opcode != EXTENDED_ARG_QUICK);
+        assert(instr->i_opcode != LOAD_FAST__LOAD_FAST);
+        assert(instr->i_opcode != STORE_FAST__LOAD_FAST);
+        assert(instr->i_opcode != LOAD_CONST__LOAD_FAST);
+        assert(instr->i_opcode != STORE_FAST__STORE_FAST);
+        assert(instr->i_opcode != LOAD_FAST__LOAD_CONST);
         if (instr->i_oparg != target) {
             continue;
         }
