@@ -264,6 +264,15 @@ typedef struct basicblock_ {
     unsigned b_return : 1;
 } basicblock;
 
+
+static struct instr *
+basicblock_last_instr(basicblock *b) {
+    if (b->b_iused) {
+        return &b->b_instr[b->b_iused - 1];
+    }
+    return NULL;
+}
+
 /* fblockinfo tracks the current frame block.
 
 A frame block is used to handle loops, try/except, and try/finally.
@@ -331,9 +340,6 @@ struct compiler_unit {
     int u_col_offset;      /* the offset of the current stmt */
     int u_end_lineno;      /* the end line of the current stmt */
     int u_end_col_offset;  /* the end offset of the current stmt */
-
-    /* true if we need to create an implicit basicblock before the next instr */
-    int u_need_new_implicit_block;
 };
 
 /* This struct captures the global state of a compilation.
@@ -389,10 +395,11 @@ typedef struct {
     Py_ssize_t on_top;
 } pattern_context;
 
+static int basicblock_next_instr(basicblock *);
+
 static int compiler_enter_scope(struct compiler *, identifier, int, void *, int);
 static void compiler_free(struct compiler *);
 static basicblock *compiler_new_block(struct compiler *);
-static int compiler_next_instr(basicblock *);
 static int compiler_addop(struct compiler *, int);
 static int compiler_addop_i(struct compiler *, int, Py_ssize_t);
 static int compiler_addop_j(struct compiler *, int, basicblock *);
@@ -830,7 +837,6 @@ compiler_use_next_block(struct compiler *c, basicblock *block)
     assert(block != NULL);
     c->u->u_curblock->b_next = block;
     c->u->u_curblock = block;
-    c->u->u_need_new_implicit_block = 0;
     return block;
 }
 
@@ -846,7 +852,7 @@ compiler_copy_block(struct compiler *c, basicblock *block)
         return NULL;
     }
     for (int i = 0; i < block->b_iused; i++) {
-        int n = compiler_next_instr(result);
+        int n = basicblock_next_instr(result);
         if (n < 0) {
             return NULL;
         }
@@ -863,7 +869,7 @@ compiler_copy_block(struct compiler *c, basicblock *block)
 */
 
 static int
-compiler_next_instr(basicblock *b)
+basicblock_next_instr(basicblock *b)
 {
     assert(b != NULL);
     if (b->b_instr == NULL) {
@@ -1206,7 +1212,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
     return stack_effect(opcode, oparg, -1);
 }
 
-static int is_end_of_basic_block(struct instr *instr)
+static int
+is_end_of_basic_block(struct instr *instr)
 {
     int opcode = instr->i_opcode;
 
@@ -1219,7 +1226,8 @@ static int is_end_of_basic_block(struct instr *instr)
 static int
 compiler_use_new_implicit_block_if_needed(struct compiler *c)
 {
-    if (c->u->u_need_new_implicit_block) {
+    basicblock *b = c->u->u_curblock;
+    if (b->b_iused && is_end_of_basic_block(basicblock_last_instr(b))) {
         basicblock *b = compiler_new_block(c);
         if (b == NULL) {
             return -1;
@@ -1229,32 +1237,19 @@ compiler_use_new_implicit_block_if_needed(struct compiler *c)
     return 0;
 }
 
-static void
-compiler_check_if_end_of_block(struct compiler *c, struct instr *instr)
-{
-    if (is_end_of_basic_block(instr)) {
-        c->u->u_need_new_implicit_block = 1;
-    }
-}
-
 /* Add an opcode with no argument.
    Returns 0 on failure, 1 on success.
 */
 
 static int
-compiler_addop_line(struct compiler *c, int opcode, int line,
-                    int end_line, int col_offset, int end_col_offset)
+basicblock_addop_line(basicblock *b, int opcode, int line,
+                      int end_line, int col_offset, int end_col_offset)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     assert(!HAS_ARG(opcode) || IS_ARTIFICIAL(opcode));
 
-    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
-        return -1;
-    }
-
-    basicblock *b = c->u->u_curblock;
-    int off = compiler_next_instr(b);
+    int off = basicblock_next_instr(b);
     if (off < 0) {
         return 0;
     }
@@ -1269,21 +1264,26 @@ compiler_addop_line(struct compiler *c, int opcode, int line,
     i->i_col_offset = col_offset;
     i->i_end_col_offset = end_col_offset;
 
-    compiler_check_if_end_of_block(c, i);
     return 1;
 }
 
 static int
 compiler_addop(struct compiler *c, int opcode)
 {
-    return compiler_addop_line(c, opcode, c->u->u_lineno, c->u->u_end_lineno,
-                               c->u->u_col_offset, c->u->u_end_col_offset);
+    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
+        return -1;
+    }
+    return basicblock_addop_line(c->u->u_curblock, opcode, c->u->u_lineno, c->u->u_end_lineno,
+                                 c->u->u_col_offset, c->u->u_end_col_offset);
 }
 
 static int
 compiler_addop_noline(struct compiler *c, int opcode)
 {
-    return compiler_addop_line(c, opcode, -1, 0, 0, 0);
+    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
+        return -1;
+    }
+    return basicblock_addop_line(c->u->u_curblock, opcode, -1, 0, 0, 0);
 }
 
 
@@ -1477,9 +1477,9 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
 */
 
 static int
-compiler_addop_i_line(struct compiler *c, int opcode, Py_ssize_t oparg,
-                      int lineno, int end_lineno,
-                      int col_offset, int end_col_offset)
+basicblock_addop_i_line(basicblock *b, int opcode, Py_ssize_t oparg,
+                        int lineno, int end_lineno,
+                        int col_offset, int end_col_offset)
 {
     /* oparg value is unsigned, but a signed C int is usually used to store
        it in the C code (like Python/ceval.c).
@@ -1494,12 +1494,7 @@ compiler_addop_i_line(struct compiler *c, int opcode, Py_ssize_t oparg,
     assert(HAS_ARG(opcode));
     assert(0 <= oparg && oparg <= 2147483647);
 
-    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
-        return -1;
-    }
-
-    basicblock *b = c->u->u_curblock;
-    int off = compiler_next_instr(b);
+    int off = basicblock_next_instr(b);
     if (off < 0) {
         return 0;
     }
@@ -1511,40 +1506,41 @@ compiler_addop_i_line(struct compiler *c, int opcode, Py_ssize_t oparg,
     i->i_col_offset = col_offset;
     i->i_end_col_offset = end_col_offset;
 
-    compiler_check_if_end_of_block(c, i);
     return 1;
 }
 
 static int
 compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
 {
-    return compiler_addop_i_line(c, opcode, oparg,
-                                 c->u->u_lineno, c->u->u_end_lineno,
-                                 c->u->u_col_offset, c->u->u_end_col_offset);
+    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
+        return -1;
+    }
+    return basicblock_addop_i_line(c->u->u_curblock, opcode, oparg,
+                                   c->u->u_lineno, c->u->u_end_lineno,
+                                   c->u->u_col_offset, c->u->u_end_col_offset);
 }
 
 static int
 compiler_addop_i_noline(struct compiler *c, int opcode, Py_ssize_t oparg)
 {
-    return compiler_addop_i_line(c, opcode, oparg, -1, 0, 0, 0);
+    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
+        return -1;
+    }
+    return basicblock_addop_i_line(c->u->u_curblock, opcode, oparg, -1, 0, 0, 0);
 }
 
-static int add_jump_to_block(struct compiler *c, int opcode,
-                             int lineno, int end_lineno,
-                             int col_offset, int end_col_offset,
-                             basicblock *target)
+static int
+basicblock_add_jump(basicblock *b, int opcode,
+                    int lineno, int end_lineno,
+                    int col_offset, int end_col_offset,
+                    basicblock *target)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     assert(HAS_ARG(opcode) || IS_VIRTUAL_OPCODE(opcode));
     assert(target != NULL);
 
-    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
-        return -1;
-    }
-
-    basicblock *b = c->u->u_curblock;
-    int off = compiler_next_instr(b);
+    int off = basicblock_next_instr(b);
     struct instr *i = &b->b_instr[off];
     if (off < 0) {
         return 0;
@@ -1556,22 +1552,27 @@ static int add_jump_to_block(struct compiler *c, int opcode,
     i->i_col_offset = col_offset;
     i->i_end_col_offset = end_col_offset;
 
-    compiler_check_if_end_of_block(c, i);
     return 1;
 }
 
 static int
 compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
 {
-    return add_jump_to_block(c, opcode, c->u->u_lineno,
-                             c->u->u_end_lineno, c->u->u_col_offset,
-                             c->u->u_end_col_offset, b);
+    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
+        return -1;
+    }
+    return basicblock_add_jump(c->u->u_curblock, opcode, c->u->u_lineno,
+                               c->u->u_end_lineno, c->u->u_col_offset,
+                               c->u->u_end_col_offset, b);
 }
 
 static int
 compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 {
-    return add_jump_to_block(c, opcode, -1, 0, 0, 0, b);
+    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
+        return -1;
+    }
+    return basicblock_add_jump(c->u->u_curblock, opcode, -1, 0, 0, 0, b);
 }
 
 #define ADDOP(C, OP) { \
@@ -8085,7 +8086,7 @@ build_cellfixedoffsets(struct compiler *c)
 
 static inline int
 insert_instruction(basicblock *block, int pos, struct instr *instr) {
-    if (compiler_next_instr(block) < 0) {
+    if (basicblock_next_instr(block) < 0) {
         return -1;
     }
     for (int i = block->b_iused-1; i > pos; i--) {
@@ -8971,7 +8972,7 @@ extend_block(basicblock *bb) {
         basicblock *to_copy = last->i_target;
         last->i_opcode = NOP;
         for (int i = 0; i < to_copy->b_iused; i++) {
-            int index = compiler_next_instr(bb);
+            int index = basicblock_next_instr(bb);
             if (index < 0) {
                 return -1;
             }
