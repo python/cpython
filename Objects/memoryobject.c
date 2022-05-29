@@ -193,6 +193,11 @@ PyTypeObject _PyManagedBuffer_Type = {
         return -1;                                                \
     }
 
+/* See gh-92888. These macros signal that we need to check the memoryview
+   again due to possible read after frees. */
+#define CHECK_RELEASED_AGAIN(mv) CHECK_RELEASED(mv)
+#define CHECK_RELEASED_INT_AGAIN(mv) CHECK_RELEASED_INT(mv)
+
 #define CHECK_LIST_OR_TUPLE(v) \
     if (!PyList_Check(v) && !PyTuple_Check(v)) { \
         PyErr_SetString(PyExc_TypeError,         \
@@ -383,7 +388,7 @@ copy_rec(const Py_ssize_t *shape, Py_ssize_t ndim, Py_ssize_t itemsize,
 static int
 copy_single(PyMemoryViewObject *self, const Py_buffer *dest, const Py_buffer *src)
 {
-    CHECK_RELEASED_INT(self); /* See gh-92888 for why we need this here */
+    CHECK_RELEASED_INT_AGAIN(self);
     char *mem = NULL;
 
     assert(dest->ndim == 1);
@@ -1690,7 +1695,7 @@ unpack_single(PyMemoryViewObject *self, const char *ptr, const char *fmt)
     unsigned char uc;
     void *p;
 
-    CHECK_RELEASED(self); /* See gh-92888 for why we need this here */
+    CHECK_RELEASED_AGAIN(self);
 
     switch (fmt[0]) {
 
@@ -1781,15 +1786,13 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
     double d;
     void *p;
 
-    CHECK_RELEASED_INT(self); /* See gh-92888 for why we need this here */
-
     switch (fmt[0]) {
     /* signed integers */
     case 'b': case 'h': case 'i': case 'l':
         ld = pylong_as_ld(item);
         if (ld == -1 && PyErr_Occurred())
             goto err_occurred;
-        CHECK_RELEASED_INT(self); /* See gh-92888 for why we need this here */
+        CHECK_RELEASED_INT_AGAIN(self);
         switch (fmt[0]) {
         case 'b':
             if (ld < SCHAR_MIN || ld > SCHAR_MAX) goto err_range;
@@ -1810,7 +1813,7 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
         lu = pylong_as_lu(item);
         if (lu == (unsigned long)-1 && PyErr_Occurred())
             goto err_occurred;
-        CHECK_RELEASED_INT(self); /* See gh-92888 for why we need this here */
+        CHECK_RELEASED_INT_AGAIN(self);
         switch (fmt[0]) {
         case 'B':
             if (lu > UCHAR_MAX) goto err_range;
@@ -1831,14 +1834,14 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
         lld = pylong_as_lld(item);
         if (lld == -1 && PyErr_Occurred())
             goto err_occurred;
-        CHECK_RELEASED_INT(self); /* See gh-92888 for why we need this here */
+        CHECK_RELEASED_INT_AGAIN(self);
         PACK_SINGLE(ptr, lld, long long);
         break;
     case 'Q':
         llu = pylong_as_llu(item);
         if (llu == (unsigned long long)-1 && PyErr_Occurred())
             goto err_occurred;
-        CHECK_RELEASED_INT(self); /* See gh-92888 for why we need this here */
+        CHECK_RELEASED_INT_AGAIN(self);
         PACK_SINGLE(ptr, llu, unsigned long long);
         break;
 
@@ -1847,14 +1850,14 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
         zd = pylong_as_zd(item);
         if (zd == -1 && PyErr_Occurred())
             goto err_occurred;
-        CHECK_RELEASED_INT(self); /* See gh-92888 for why we need this here */
+        CHECK_RELEASED_INT_AGAIN(self);
         PACK_SINGLE(ptr, zd, Py_ssize_t);
         break;
     case 'N':
         zu = pylong_as_zu(item);
         if (zu == (size_t)-1 && PyErr_Occurred())
             goto err_occurred;
-        CHECK_RELEASED_INT(self); /* See gh-92888 for why we need this here */
+        CHECK_RELEASED_INT_AGAIN(self);
         PACK_SINGLE(ptr, zu, size_t);
         break;
 
@@ -1863,7 +1866,7 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
         d = PyFloat_AsDouble(item);
         if (d == -1.0 && PyErr_Occurred())
             goto err_occurred;
-        CHECK_RELEASED_INT(self); /* See gh-92888 for why we need this here */
+        CHECK_RELEASED_INT_AGAIN(self);
         if (fmt[0] == 'f') {
             PACK_SINGLE(ptr, d, float);
         }
@@ -1877,7 +1880,7 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
         ld = PyObject_IsTrue(item);
         if (ld < 0)
             return -1; /* preserve original error */
-        CHECK_RELEASED_INT(self); /* See gh-92888 for why we need this here */
+        CHECK_RELEASED_INT_AGAIN(self);
         PACK_SINGLE(ptr, ld, _Bool);
          break;
 
@@ -1895,7 +1898,7 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
         p = PyLong_AsVoidPtr(item);
         if (p == NULL && PyErr_Occurred())
             goto err_occurred;
-        CHECK_RELEASED_INT(self); /* See gh-92888 for why we need this here */
+        CHECK_RELEASED_INT_AGAIN(self);
         PACK_SINGLE(ptr, p, void *);
         break;
 

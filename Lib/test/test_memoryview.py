@@ -546,6 +546,9 @@ class OtherTest(unittest.TestCase):
                 pickle.dumps(m, proto)
 
     def test_use_released_memory(self):
+        # gh-92888: Previously it was possible to use a memoryview even after
+        # backing buffer is freed in certain cases. This tests that those
+        # cases raise an exception.
         size = 128
         def release():
             m.release()
@@ -564,25 +567,20 @@ class OtherTest(unittest.TestCase):
                 release()
                 return True
 
-        ba = None
         m = memoryview(bytearray(b'\xff'*size))
         with self.assertRaises(ValueError):
             m[MyIndex()]
 
-        ba = None
         m = memoryview(bytearray(b'\xff'*size))
         self.assertEqual(list(m[:MyIndex()]), [255] * 4)
 
-        ba = None
         m = memoryview(bytearray(b'\xff'*size))
         self.assertEqual(list(m[MyIndex():8]), [255] * 4)
 
-        ba = None
         m = memoryview(bytearray(b'\xff'*size)).cast('B', (64, 2))
         with self.assertRaisesRegex(ValueError, "operation forbidden"):
             m[MyIndex(), 0]
 
-        ba = None
         m = memoryview(bytearray(b'\xff'*size)).cast('B', (2, 64))
         with self.assertRaisesRegex(ValueError, "operation forbidden"):
             m[0, MyIndex()]
