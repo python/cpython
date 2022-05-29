@@ -78,6 +78,8 @@ annotations. These include:
      *Introducing* :data:`TypeVarTuple`
 * :pep:`647`: User-Defined Type Guards
      *Introducing* :data:`TypeGuard`
+* :pep:`655`: Marking individual TypedDict items as required or potentially-missing
+     *Introducing* :data:`Required` and :data:`NotRequired`
 * :pep:`673`: Self type
     *Introducing* :data:`Self`
 * :pep:`675`: Arbitrary Literal String Type
@@ -1022,6 +1024,18 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    .. versionadded:: 3.8
 
+.. data:: Required
+
+.. data:: NotRequired
+
+   Special typing constructs that mark individual keys of a :class:`TypedDict`
+   as either required or non-required respectively.
+
+   For more information, see :class:`TypedDict` and
+   :pep:`655` ("Marking individual TypedDict items as required or potentially-missing").
+
+   .. versionadded:: 3.11
+
 .. data:: Annotated
 
    A type, introduced in :pep:`593` (``Flexible function and variable
@@ -1706,8 +1720,21 @@ These are not used in annotations. They are building blocks for declaring types.
       Point2D = TypedDict('Point2D', {'in': int, 'x-y': int})
 
    By default, all keys must be present in a ``TypedDict``. It is possible to
-   override this by specifying totality.
-   Usage::
+   mark individual keys as non-required using :data:`NotRequired`::
+
+      class Point2D(TypedDict):
+          x: int
+          y: int
+          label: NotRequired[str]
+
+      # Alternative syntax
+      Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': NotRequired[str]})
+
+   This means that a ``Point2D`` ``TypedDict`` can have the ``label``
+   key omitted.
+
+   It is also possible to mark all keys as non-required by default
+   by specifying a totality of ``False``::
 
       class Point2D(TypedDict, total=False):
           x: int
@@ -1720,6 +1747,21 @@ These are not used in annotations. They are building blocks for declaring types.
    omitted. A type checker is only expected to support a literal ``False`` or
    ``True`` as the value of the ``total`` argument. ``True`` is the default,
    and makes all items defined in the class body required.
+
+   Individual keys of a ``total=False`` ``TypedDict`` can be marked as
+   required using :data:`Required`::
+
+      class Point2D(TypedDict, total=False):
+          x: Required[int]
+          y: Required[int]
+          label: str
+
+      # Alternative syntax
+      Point2D = TypedDict('Point2D', {
+          'x': Required[int],
+          'y': Required[int],
+          'label': str
+      }, total=False)
 
    It is possible for a ``TypedDict`` type to inherit from one or more other ``TypedDict`` types
    using the class-based syntax.
@@ -1785,11 +1827,16 @@ These are not used in annotations. They are building blocks for declaring types.
 
       ``Point2D.__required_keys__`` and ``Point2D.__optional_keys__`` return
       :class:`frozenset` objects containing required and non-required keys, respectively.
-      Currently the only way to declare both required and non-required keys in the
-      same ``TypedDict`` is mixed inheritance, declaring a ``TypedDict`` with one value
-      for the ``total`` argument and then inheriting it from another ``TypedDict`` with
-      a different value for ``total``.
-      Usage::
+
+      Keys marked with :data:`Required` will always appear in ``__required_keys__``
+      and keys marked with :data:`NotRequired` will always appear in ``__optional_keys__``.
+
+      For backwards compatibility with Python 3.10 and below,
+      it is also possible to use inheritance to declare both required and
+      non-required keys in the same ``TypedDict`` . This is done by declaring a
+      ``TypedDict`` with one value for the ``total`` argument and then
+      inheriting from it in another ``TypedDict`` with a different value for
+      ``total``::
 
          >>> class Point2D(TypedDict, total=False):
          ...     x: int
@@ -1806,6 +1853,10 @@ These are not used in annotations. They are building blocks for declaring types.
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.11
+      Added support for marking individual keys as :data:`Required` or :data:`NotRequired`.
+      See :pep:`655`.
 
    .. versionchanged:: 3.11
       Added support for generic ``TypedDict``\ s.
@@ -2426,6 +2477,75 @@ Functions and decorators
 
       x = reveal_type(1)  # prints "Runtime type is int"
       print(x)  # prints "1"
+
+   .. versionadded:: 3.11
+
+.. decorator:: dataclass_transform
+
+   :data:`~typing.dataclass_transform` may be used to
+   decorate a class, metaclass, or a function that is itself a decorator.
+   The presence of ``@dataclass_transform()`` tells a static type checker that the
+   decorated object performs runtime "magic" that
+   transforms a class, giving it :func:`dataclasses.dataclass`-like behaviors.
+
+   Example usage with a decorator function::
+
+      T = TypeVar("T")
+
+      @dataclass_transform()
+      def create_model(cls: type[T]) -> type[T]:
+          ...
+          return cls
+
+      @create_model
+      class CustomerModel:
+          id: int
+          name: str
+
+   On a base class::
+
+      @dataclass_transform()
+      class ModelBase: ...
+
+      class CustomerModel(ModelBase):
+          id: int
+          name: str
+
+   On a metaclass::
+
+      @dataclass_transform()
+      class ModelMeta(type): ...
+
+      class ModelBase(metaclass=ModelMeta): ...
+
+      class CustomerModel(ModelBase):
+          id: int
+          name: str
+
+   The ``CustomerModel`` classes defined above will
+   be treated by type checkers similarly to classes created with
+   :func:`@dataclasses.dataclass <dataclasses.dataclass>`.
+   For example, type checkers will assume these classes have
+   ``__init__`` methods that accept ``id`` and ``name``.
+
+   The arguments to this decorator can be used to customize this behavior:
+
+   * ``eq_default`` indicates whether the ``eq`` parameter is assumed to be
+     ``True`` or ``False`` if it is omitted by the caller.
+   * ``order_default`` indicates whether the ``order`` parameter is
+     assumed to be True or False if it is omitted by the caller.
+   * ``kw_only_default`` indicates whether the ``kw_only`` parameter is
+     assumed to be True or False if it is omitted by the caller.
+   * ``field_specifiers`` specifies a static list of supported classes
+     or functions that describe fields, similar to ``dataclasses.field()``.
+   * Arbitrary other keyword arguments are accepted in order to allow for
+     possible future extensions.
+
+   At runtime, this decorator records its arguments in the
+   ``__dataclass_transform__`` attribute on the decorated object.
+   It has no other runtime effect.
+
+   See :pep:`681` for more details.
 
    .. versionadded:: 3.11
 

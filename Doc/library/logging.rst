@@ -242,6 +242,10 @@ is the module's name in the Python package namespace.
       above example). In such circumstances, it is likely that specialized
       :class:`Formatter`\ s would be used with particular :class:`Handler`\ s.
 
+      If no handler is attached to this logger (or any of its ancestors,
+      taking into account the relevant :attr:`Logger.propagate` attributes),
+      the message will be sent to the handler set on :attr:`lastResort`.
+
       .. versionchanged:: 3.2
          The *stack_info* parameter was added.
 
@@ -868,10 +872,14 @@ the options available to you.
 +----------------+-------------------------+-----------------------------------------------+
 | threadName     | ``%(threadName)s``      | Thread name (if available).                   |
 +----------------+-------------------------+-----------------------------------------------+
+| taskName       | ``%(taskName)s``        | :class:`asyncio.Task` name (if available).    |
++----------------+-------------------------+-----------------------------------------------+
 
 .. versionchanged:: 3.1
    *processName* was added.
 
+.. versionchanged:: 3.12
+   *taskName* was added.
 
 .. _logger-adapter:
 
@@ -1037,6 +1045,10 @@ functions.
    context (such as remote client IP address and authenticated user name, in the
    above example). In such circumstances, it is likely that specialized
    :class:`Formatter`\ s would be used with particular :class:`Handler`\ s.
+
+   This function (as well as :func:`info`, :func:`warning`, :func:`error` and
+   :func:`critical`) will call :func:`basicConfig` if the root logger doesn't
+   have any handler attached.
 
    .. versionchanged:: 3.2
       The *stack_info* parameter was added.
