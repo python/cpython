@@ -190,11 +190,6 @@ extern "C" {
 #  define OVERALLOCATE_FACTOR 4
 #endif
 
-/* bpo-40521: Interned strings are shared by all interpreters. */
-#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-#  define INTERNED_STRINGS
-#endif
-
 /* This dictionary holds all interned unicode strings.  Note that references
    to strings in this dictionary are *not* counted in the string's ob_refcnt.
    When the interned string reaches a refcnt of 0 the string deallocation
@@ -203,9 +198,7 @@ extern "C" {
    Another way to look at this is that to say that the actual reference
    count of a string is:  s->ob_refcnt + (s->state ? 2 : 0)
 */
-#ifdef INTERNED_STRINGS
 static PyObject *interned = NULL;
-#endif
 
 /* Forward declaration */
 static inline int
@@ -454,7 +447,14 @@ unicode_check_encoding_errors(const char *encoding, const char *errors)
         return 0;
     }
 
-    if (encoding != NULL) {
+    if (encoding != NULL
+        // Fast path for the most common built-in encodings. Even if the codec
+        // is cached, _PyCodec_Lookup() decodes the bytes string from UTF-8 to
+        // create a temporary Unicode string (the key in the cache).
+        && strcmp(encoding, "utf-8") != 0
+        && strcmp(encoding, "utf8") != 0
+        && strcmp(encoding, "ascii") != 0)
+    {
         PyObject *handler = _PyCodec_Lookup(encoding);
         if (handler == NULL) {
             return -1;
@@ -462,7 +462,14 @@ unicode_check_encoding_errors(const char *encoding, const char *errors)
         Py_DECREF(handler);
     }
 
-    if (errors != NULL) {
+    if (errors != NULL
+        // Fast path for the most common built-in error handlers.
+        && strcmp(errors, "strict") != 0
+        && strcmp(errors, "ignore") != 0
+        && strcmp(errors, "replace") != 0
+        && strcmp(errors, "surrogateescape") != 0
+        && strcmp(errors, "surrogatepass") != 0)
+    {
         PyObject *handler = PyCodec_LookupError(errors);
         if (handler == NULL) {
             return -1;
@@ -1516,7 +1523,6 @@ unicode_dealloc(PyObject *unicode)
     }
 #endif
 
-#ifdef INTERNED_STRINGS
     if (PyUnicode_CHECK_INTERNED(unicode)) {
         /* Revive the dead object temporarily. PyDict_DelItem() removes two
            references (key and value) which were ignored by
@@ -1532,7 +1538,6 @@ unicode_dealloc(PyObject *unicode)
         assert(Py_REFCNT(unicode) == 1);
         Py_SET_REFCNT(unicode, 0);
     }
-#endif
 
     if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
         PyObject_Free(_PyUnicode_UTF8(unicode));
@@ -2694,11 +2699,7 @@ PyUnicode_FromFormat(const char *format, ...)
     PyObject* ret;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     ret = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
     return ret;
@@ -10558,13 +10559,11 @@ _PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
     if (PyUnicode_CHECK_INTERNED(left))
         return 0;
 
-#ifdef INTERNED_STRINGS
     assert(_PyUnicode_HASH(right_uni) != -1);
     Py_hash_t hash = _PyUnicode_HASH(left);
     if (hash != -1 && hash != _PyUnicode_HASH(right_uni)) {
         return 0;
     }
-#endif
 
     return unicode_compare_eq(left, right_uni);
 }
@@ -14635,7 +14634,6 @@ PyUnicode_InternInPlace(PyObject **p)
         return;
     }
 
-#ifdef INTERNED_STRINGS
     if (interned == NULL) {
         interned = PyDict_New();
         if (interned == NULL) {
@@ -14661,11 +14659,6 @@ PyUnicode_InternInPlace(PyObject **p)
        this. */
     Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
     _PyUnicode_STATE(s).interned = 1;
-#else
-    // PyDict expects that interned strings have their hash
-    // (PyASCIIObject.hash) already computed.
-    (void)unicode_hash(s);
-#endif
 }
 
 // Function kept for the stable ABI.

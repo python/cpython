@@ -1981,12 +1981,10 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
 
     /* Copy the current interpreter config into the new interpreter */
     const PyConfig *config;
-#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     if (save_tstate != NULL) {
         config = _PyInterpreterState_GetConfig(save_tstate->interp);
     }
     else
-#endif
     {
         /* No current thread state, copy from the main interpreter */
         PyInterpreterState *main_interp = _PyInterpreterState_Main();
@@ -2838,11 +2836,7 @@ _Py_FatalErrorFormat(const char *func, const char *format, ...)
     }
 
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     vfprintf(stream, format, vargs);
     va_end(vargs);
 
