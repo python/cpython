@@ -7812,40 +7812,22 @@ add_checks_for_loads_of_unknown_variables(struct assembler *a,
     if (stack == NULL) {
         return -1;
     }
-
-    // Which locals are function parameters?
-    uint64_t param_mask = 0;
-    PyObject *param_names = c->u->u_ste->ste_varnames;
-    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(param_names); i++) {
-        PyObject *param = PyList_GET_ITEM(param_names, i);
-        PyObject *index = PyDict_GetItem(c->u->u_varnames, param);
-        assert(index != NULL);
-        assert(PyLong_CheckExact(index));
-        long l_index = PyLong_AsLong(index);
-        if (l_index < 64) {
-            param_mask |= ((uint64_t)1 << (uint64_t)l_index);
-        }
-    }
-
+    Py_ssize_t nparams = PyList_GET_SIZE(c->u->u_ste->ste_varnames);
     int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
     for (int target = 0; target < nlocals; target++) {
         for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
             b->b_visited = 0;
         }
         basicblock **stack_top = stack;
-        bool param = false;
-        if (target < 64) {
-            uint64_t bit = ((uint64_t)1 << (uint64_t)target);
-            param = (bit & param_mask) != 0;
-        }
-        if (!param) {
-            // non-parameter local variables start out uninitialized.
-            *(stack_top++) = a->a_entry;
-            a->a_entry->b_visited = 1;
-        }
+
         // First pass: find the relevant DFS starting points:
         // the places where "being uninitialized" originates,
         // which are the entry block and any DELETE_FAST statements.
+        if (target >= nparams) {
+            // only non-parameter locals start out uninitialized.
+            *(stack_top++) = a->a_entry;
+            a->a_entry->b_visited = 1;
+        }
         for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
             scan_block_for_local(target, b, false, &stack_top);
         }
