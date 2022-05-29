@@ -609,7 +609,7 @@ def _main():
     parser.add_argument(
         '-l', '--lenient',
         action='store_true',
-        help='additianally search for common but non-standard types'
+        help='additionally search for common but non-standard types'
     )
     parser.add_argument('type', nargs='+', help='a type to search')
     arguments = parser.parse_args()
