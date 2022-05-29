@@ -758,11 +758,6 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[*Ts]',                           '[*tuple_type[int, ...]]',                        'generic[*tuple_type[int, ...]]'),
             ('generic[*Ts]',                           '[str, *tuple_type[int, ...], bool]',             'generic[str, *tuple_type[int, ...], bool]'),
 
-            # Technically, multiple unpackings are forbidden by PEP 646, but we
-            # choose to be less restrictive at runtime, to allow folks room
-            # to experiment. So all three of these should be valid.
-            #('generic[*Ts]',                           '[*tuple_type[int, ...], *tuple_type[str, ...]]', 'generic[*tuple_type[int, ...], *tuple_type[str, ...]]'),
-
             ('generic[*Ts]',                           '[*Ts]',                                          'generic[*Ts]'),
             ('generic[*Ts]',                           '[T, *Ts]',                                       'generic[T, *Ts]'),
             ('generic[*Ts]',                           '[*Ts, T]',                                       'generic[*Ts, T]'),
@@ -770,15 +765,17 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[T, *Ts]',                        '[int, str]',                                     'generic[int, str]'),
             ('generic[T, *Ts]',                        '[int, str, bool]',                               'generic[int, str, bool]'),
 
-            #('generic[T, *Ts]',                        '[*tuple[int, ...]]',                             'TypeError'),  # Should be generic[int, *tuple[int, ...]]
-            ('C[T, *Ts]',                        '[*tuple_type[int, ...]]',                        'C[int, *tuple_type[int, ...]]'),
-            ('C[*Ts, T]',                        '[*tuple_type[int, ...]]',                        'C[*tuple_type[int, ...], int]'),
-            ('C[T1, *Ts, T2]',                   '[*tuple_type[int, ...]]',                        'C[int, *tuple_type[int, ...], int]'),
-
-
             ('generic[*Ts, T]',                        '[int]',                                          'generic[int]'),
             ('generic[*Ts, T]',                        '[int, str]',                                     'generic[int, str]'),
             ('generic[*Ts, T]',                        '[int, str, bool]',                               'generic[int, str, bool]'),
+
+            ('generic[T, *Ts]',                        '[*tuple_type[int, ...]]',                        'generic[int, *tuple_type[int, ...]]'),
+            ('generic[*Ts, T]',                        '[*tuple_type[int, ...]]',                        'generic[*tuple_type[int, ...], int]'),
+            ('generic[T1, *Ts, T2]',                   '[*tuple_type[int, ...]]',                        'generic[int, *tuple_type[int, ...], int]'),
+            ('generic[T, str, *Ts]',                   '[*tuple_type[int, ...]]',                        'generic[int, str, *tuple_type[int, ...]]'),
+            ('generic[*Ts, str, T]',                   '[*tuple_type[int, ...]]',                        'generic[*tuple_type[int, ...], str, int]'),
+            ('generic[list[T], *Ts]',                  '[*tuple_type[int, ...]]',                        'generic[list[int], *tuple_type[int, ...]]'),
+            ('generic[*Ts, list[T]]',                  '[*tuple_type[int, ...]]',                        'generic[*tuple_type[int, ...], list[int]]'),
 
             ('generic[T, *tuple_type[int, ...]]',      '[str]',                                          'generic[str, *tuple_type[int, ...]]'),
             ('generic[T1, T2, *tuple_type[int, ...]]', '[str, bool]',                                    'generic[str, bool, *tuple_type[int, ...]]'),

@@ -1429,8 +1429,8 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         alen = len(args)
         plen = len(params)
         if typevartuple_index is not None:
-            i = typevartuple_index
-            j = plen - typevartuple_index - 1
+            left = typevartuple_index
+            right = plen - typevartuple_index - 1
             var_tuple_index = None
             for k, arg in enumerate(args):
                 if _is_unpacked_var_tuple(arg):
@@ -1439,19 +1439,19 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
                     var_tuple_index = k
                     fillarg = args[var_tuple_index].__typing_unpacked_tuple_args__[0]
             if var_tuple_index is not None:
-                i = min(i, var_tuple_index)
-                j = min(j, alen - var_tuple_index - 1)
-            elif i + j > alen:
+                left = min(left, var_tuple_index)
+                right = min(right, alen - var_tuple_index - 1)
+            elif left + right > alen:
                 raise TypeError(f"Too few arguments for {self};"
                                 f" actual {alen}, expected at least {plen-1}")
 
-            new_arg_by_param.update(zip(params[:i], args[:i]))
-            for k in range(i, typevartuple_index):
+            new_arg_by_param.update(zip(params[:left], args[:left]))
+            for k in range(left, typevartuple_index):
                 new_arg_by_param[params[k]] = fillarg
-            new_arg_by_param[params[typevartuple_index]] = tuple(args[i: alen - j])
-            for k in range(typevartuple_index + 1, plen - j):
+            new_arg_by_param[params[typevartuple_index]] = tuple(args[left: alen - right])
+            for k in range(typevartuple_index + 1, plen - right):
                 new_arg_by_param[params[k]] = fillarg
-            new_arg_by_param.update(zip(params[plen - j:], args[alen - j:]))
+            new_arg_by_param.update(zip(params[plen - right:], args[alen - right:]))
         else:
             if alen != plen:
                 raise TypeError(f"Too {'many' if alen > plen else 'few'} arguments for {self};"
