@@ -66,10 +66,10 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-x
 ]
 [
-[
 .B \-X
 .I option
 ]
+[
 .B \-?
 ]
 .br
@@ -302,7 +302,8 @@ Set implementation specific option. The following options are available:
         more verbose than the default if the code is correct: new warnings are
         only emitted when an issue is detected. Effect of the developer mode:
            * Add default warning filter, as -W default
-           * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks() C function
+           * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks()
+             C function
            * Enable the faulthandler module to dump the Python traceback on a crash
            * Enable asyncio debug mode
            * Set the dev_mode attribute of sys.flags to True
@@ -313,7 +314,10 @@ Set implementation specific option. The following options are available:
         otherwise activate automatically). See PYTHONUTF8 for more details
 
     -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the
-         given directory instead of to the code tree.
+        given directory instead of to the code tree.
+
+    -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None'
+
 .TP
 .B \-x
 Skip the first line of the source.  This is intended for a DOS

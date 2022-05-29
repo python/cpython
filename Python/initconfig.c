@@ -41,7 +41,7 @@ Options and arguments (and corresponding environment variables):\n\
 -d     : turn on parser debugging output (for experts only, only works on\n\
          debug builds); also PYTHONDEBUG=x\n\
 -E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
--h     : print this help message and exit (also --help)\n\
+-h     : print this help message and exit (also -? or --help)\n\
 ";
 static const char usage_2[] = "\
 -i     : inspect interactively after running script; forces a prompt even\n\
@@ -67,7 +67,6 @@ static const char usage_3[] = "\
          also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
 -X opt : set implementation-specific option. The following options are available:\n\
-\n\
          -X faulthandler: enable faulthandler\n\
          -X showrefcount: output the total reference count and number of used\n\
              memory blocks when the program finishes or after each statement in the\n\
@@ -84,7 +83,8 @@ static const char usage_3[] = "\
              checks which are too expensive to be enabled by default. Effect of the\n\
              developer mode:\n\
                 * Add default warning filter, as -W default\n\
-                * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks() C function\n\
+                * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks()\n\
+                  C function\n\
                 * Enable the faulthandler module to dump the Python traceback on a crash\n\
                 * Enable asyncio debug mode\n\
                 * Set the dev_mode attribute of sys.flags to True\n\
@@ -95,7 +95,6 @@ static const char usage_3[] = "\
          -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the\n\
              given directory instead of to the code tree\n\
          -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None'\n\
-\n\
 --check-hash-based-pycs always|default|never:\n\
     control how Python invalidates hash-based .pyc files\n\
 ";
