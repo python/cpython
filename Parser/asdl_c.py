@@ -488,6 +488,12 @@ class Obj2ModPrototypeVisitor(PickleVisitor):
 
 
 class Obj2ModVisitor(PickleVisitor):
+
+    attribute_special_defaults = {
+        "end_lineno": "lineno",
+        "end_col_offset": "col_offset",
+    }
+
     @contextmanager
     def recursive_call(self, node, level):
         self.emit('if (_Py_EnterRecursiveCall(" while traversing \'%s\' node")) {' % node, level, reflow=False)
@@ -637,7 +643,13 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("if (tmp == NULL || tmp == Py_None) {", depth)
             self.emit("Py_CLEAR(tmp);", depth+1)
             if self.isNumeric(field):
-                self.emit("%s = 0;" % field.name, depth+1)
+                if field.name in self.attribute_special_defaults:
+                    self.emit(
+                        "%s = %s;" % (field.name, self.attribute_special_defaults[field.name]),
+                        depth+1,
+                    )
+                else:
+                    self.emit("%s = 0;" % field.name, depth+1)
             elif not self.isSimpleType(field):
                 self.emit("%s = NULL;" % field.name, depth+1)
             else:

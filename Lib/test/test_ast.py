@@ -362,6 +362,25 @@ class AST_Tests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     compile(tree, '<string>', 'exec')
 
+    def test_compilation_of_ast_nodes_with_default_end_position_values(self):
+        tree = ast.Module(
+	        body=[
+                ast.Assign(
+                    targets=[
+                        ast.Name(
+                            id='a',
+                            ctx=ast.Store(),
+                            lineno=10,
+                            col_offset=10)
+                    ],
+                value=ast.Constant(
+                    value=1,
+                    lineno=10,
+                    col_offset=40),
+                lineno=10,
+                col_offset=10)],
+	        type_ignores=[])
+        compile(tree, "<string>", "exec")
 
     def test_slice(self):
         slc = ast.parse("x[::]").body[0].value.slice
