@@ -269,9 +269,7 @@ _Py_make_parameters(PyObject *args)
    a non-empty tuple, return a new reference to obj. */
 static PyObject *
 subs_tvars(PyObject *obj, PyObject *params,
-           PyObject **argitems, Py_ssize_t nargs,
-           Py_ssize_t varparam, Py_ssize_t left, Py_ssize_t right,
-           PyObject *fillarg)
+           PyObject **argitems, Py_ssize_t nargs)
 {
     PyObject *subparams;
     if (_PyObject_LookupAttr(obj, &_Py_ID(__parameters__), &subparams) < 0) {
@@ -289,30 +287,22 @@ subs_tvars(PyObject *obj, PyObject *params,
         for (Py_ssize_t i = 0; i < nsubargs; ++i) {
             PyObject *arg = PyTuple_GET_ITEM(subparams, i);
             Py_ssize_t iparam = tuple_index(params, nparams, arg);
-            if (iparam == varparam) {
-                j = tuple_extend(&subargs, j,
-                                 argitems + left, nargs - left - right);
-                if (j < 0) {
-                    return NULL;
+            if (iparam >= 0) {
+                PyObject *param = PyTuple_GET_ITEM(params, iparam);
+                arg = argitems[iparam];
+                if (Py_TYPE(param)->tp_iter && PyTuple_Check(arg)) {  // TypeVarTuple
+                    j = tuple_extend(&subargs, j,
+                                    &PyTuple_GET_ITEM(arg, 0),
+                                    PyTuple_GET_SIZE(arg));
+                    if (j < 0) {
+                        return NULL;
+                    }
+                    continue;
                 }
             }
-            else {
-                if (iparam >= 0) {
-                    if (iparam < left) {
-                        arg = argitems[iparam];
-                    }
-                    else if (iparam >= nparams - right) {
-                        iparam += nargs - nparams;
-                        arg = argitems[iparam];
-                    }
-                    else {
-                        arg = fillarg;
-                    }
-                }
-                Py_INCREF(arg);
-                PyTuple_SET_ITEM(subargs, j, arg);
-                j++;
-            }
+            Py_INCREF(arg);
+            PyTuple_SET_ITEM(subargs, j, arg);
+            j++;
         }
         assert(j == PyTuple_GET_SIZE(subargs));
 
@@ -409,27 +399,6 @@ _unpack_args(PyObject *item)
     return newargs;
 }
 
-static PyObject *
-_get_unpacked_var_tuple_arg(PyObject *arg)
-{
-    if (PyType_Check(arg)) {
-        return NULL;
-    }
-    PyObject *subargs = _unpacked_tuple_args(arg);
-    if (subargs != NULL &&
-        PyTuple_Check(subargs) &&
-        PyTuple_GET_SIZE(subargs) == 2 &&
-        PyTuple_GET_ITEM(subargs, 1) == Py_Ellipsis)
-    {
-        PyObject *subarg = PyTuple_GET_ITEM(subargs, 0);
-        Py_INCREF(subarg);
-        Py_DECREF(subargs);
-        return subarg;
-    }
-    Py_XDECREF(subargs);
-    return NULL;
-}
-
 PyObject *
 _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObject *item)
 {
@@ -440,67 +409,36 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
                             self);
     }
     item = _unpack_args(item);
-    int is_tuple = PyTuple_Check(item);
-    Py_ssize_t nitems = is_tuple ? PyTuple_GET_SIZE(item) : 1;
-    PyObject **argitems = is_tuple ? &PyTuple_GET_ITEM(item, 0) : &item;
-    Py_ssize_t varparam = nparams;
     for (Py_ssize_t i = 0; i < nparams; i++) {
         PyObject *param = PyTuple_GET_ITEM(parameters, i);
-        if (Py_TYPE(param)->tp_iter) {  // TypeVarTuple
-            if (varparam < nparams) {
-                Py_DECREF(item);
-                return PyErr_Format(PyExc_TypeError,
-                                    "More than one TypeVarTuple parameter in %S",
-                                    self);
-            }
-            varparam = i;
+        PyObject *prepare, *tmp;
+        if (_PyObject_LookupAttr(param, &_Py_ID(__typing_prepare_subst__), &prepare) < 0) {
+            Py_DECREF(item);
+            return NULL;
         }
-    }
-    PyObject *fillarg = NULL;
-    Py_ssize_t vartuplearg = nitems;
-    Py_ssize_t left = varparam;
-    Py_ssize_t right = nparams - varparam - 1;
-    if (varparam < nparams) {
-        for (Py_ssize_t i = 0; i < nitems; i++) {
-            PyObject *arg = _get_unpacked_var_tuple_arg(argitems[i]);
-            if (arg) {
-                if (vartuplearg < nitems) {
-                    Py_DECREF(arg);
-                    Py_DECREF(fillarg);
-                    Py_DECREF(item);
-                    return PyErr_Format(PyExc_TypeError,
-                                        "More than one unpacked arbitrary-length tuple argument",
-                                        self);
-                }
-                vartuplearg = i;
-                fillarg = arg;
+        if (prepare && prepare != Py_None) {
+            if (PyTuple_Check(item)) {
+                tmp = PyObject_CallFunction(prepare, "OO", self, item);
             }
-            else if (PyErr_Occurred()) {
-                Py_XDECREF(fillarg);
-                Py_DECREF(item);
+            else {
+                tmp = PyObject_CallFunction(prepare, "O(O)", self, item);
+            }
+            Py_DECREF(prepare);
+            Py_SETREF(item, tmp);
+            if (item == NULL) {
                 return NULL;
             }
         }
-        if (vartuplearg < nitems) {
-            assert(fillarg);
-            left = Py_MIN(left, vartuplearg);
-            right = Py_MIN(right, nitems - vartuplearg - 1);
-        }
-        else if (left + right > nitems) {
-            Py_DECREF(item);
-            return PyErr_Format(PyExc_TypeError,
-                                "Too few arguments for %R",
-                                self);
-        }
     }
-    else {
-        if (nitems != nparams) {
-            Py_DECREF(item);
-            return PyErr_Format(PyExc_TypeError,
-                                "Too %s arguments for %R; actual %zd, expected %zd",
-                                nitems > nparams ? "many" : "few",
-                                self, nitems, nparams);
-        }
+    int is_tuple = PyTuple_Check(item);
+    Py_ssize_t nitems = is_tuple ? PyTuple_GET_SIZE(item) : 1;
+    PyObject **argitems = is_tuple ? &PyTuple_GET_ITEM(item, 0) : &item;
+    if (nitems != nparams) {
+        Py_DECREF(item);
+        return PyErr_Format(PyExc_TypeError,
+                            "Too %s arguments for %R; actual %zd, expected %zd",
+                            nitems > nparams ? "many" : "few",
+                            self, nitems, nparams);
     }
     /* Replace all type variables (specified by parameters)
        with corresponding values specified by argitems.
@@ -511,7 +449,6 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *newargs = PyTuple_New(nargs);
     if (newargs == NULL) {
-        Py_XDECREF(fillarg);
         Py_DECREF(item);
         return NULL;
     }
@@ -520,50 +457,26 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
         int unpack = _is_unpacked_typevartuple(arg);
         if (unpack < 0) {
             Py_DECREF(newargs);
-            Py_XDECREF(fillarg);
             Py_DECREF(item);
             return NULL;
         }
         PyObject *subst;
         if (_PyObject_LookupAttr(arg, &_Py_ID(__typing_subst__), &subst) < 0) {
             Py_DECREF(newargs);
-            Py_XDECREF(fillarg);
             Py_DECREF(item);
             return NULL;
         }
         if (subst) {
             Py_ssize_t iparam = tuple_index(parameters, nparams, arg);
             assert(iparam >= 0);
-            if (iparam == varparam) {
-                Py_DECREF(subst);
-                Py_DECREF(newargs);
-                Py_XDECREF(fillarg);
-                Py_DECREF(item);
-                PyErr_SetString(PyExc_TypeError,
-                        "Substitution of bare TypeVarTuple is not supported");
-                return NULL;
-            }
-            if (iparam < left) {
-                arg = argitems[iparam];
-            }
-            else if (iparam >= nparams - right) {
-                iparam += nitems - nparams;
-                arg = argitems[iparam];
-            }
-            else {
-                assert(fillarg);
-                arg = fillarg;
-            }
-            arg = PyObject_CallOneArg(subst, arg);
+            arg = PyObject_CallOneArg(subst, argitems[iparam]);
             Py_DECREF(subst);
         }
         else {
-            arg = subs_tvars(arg, parameters, argitems, nitems,
-                             varparam, left, right, fillarg);
+            arg = subs_tvars(arg, parameters, argitems, nitems);
         }
         if (arg == NULL) {
             Py_DECREF(newargs);
-            Py_XDECREF(fillarg);
             Py_DECREF(item);
             return NULL;
         }
@@ -572,7 +485,6 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
                     &PyTuple_GET_ITEM(arg, 0), PyTuple_GET_SIZE(arg));
             Py_DECREF(arg);
             if (jarg < 0) {
-                Py_XDECREF(fillarg);
                 Py_DECREF(item);
                 return NULL;
             }
@@ -583,7 +495,6 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
         }
     }
 
-    Py_XDECREF(fillarg);
     Py_DECREF(item);
     return newargs;
 }
