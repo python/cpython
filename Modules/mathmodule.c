@@ -1329,7 +1329,7 @@ FUNC1(sinh, sinh, 1,
       "Return the hyperbolic sine of x.")
 FUNC1(sqrt, sqrt, 0,
       "sqrt($module, x, /)\n--\n\n"
-      "Return the square root of x.")
+      "Return the principal square root of x.")
 FUNC1(tan, tan, 0,
       "tan($module, x, /)\n--\n\n"
       "Return the tangent of x (measured in radians).")
