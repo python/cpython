@@ -81,11 +81,7 @@ _PyEval_Vector(PyThreadState *tstate,
             PyObject* const* args, size_t argcount,
             PyObject *kwnames);
 
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-extern int _PyEval_ThreadsInitialized(PyInterpreterState *interp);
-#else
 extern int _PyEval_ThreadsInitialized(struct pyruntimestate *runtime);
-#endif
 extern PyStatus _PyEval_InitGIL(PyThreadState *tstate);
 extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
