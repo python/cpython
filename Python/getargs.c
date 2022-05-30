@@ -2792,11 +2792,7 @@ PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t m
     stack = _PyTuple_ITEMS(args);
     nargs = PyTuple_GET_SIZE(args);
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, max);
-#else
-    va_start(vargs);
-#endif
     retval = unpack_stack(stack, nargs, name, min, max, vargs);
     va_end(vargs);
     return retval;
@@ -2809,11 +2805,7 @@ _PyArg_UnpackStack(PyObject *const *args, Py_ssize_t nargs, const char *name,
     int retval;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, max);
-#else
-    va_start(vargs);
-#endif
     retval = unpack_stack(args, nargs, name, min, max, vargs);
     va_end(vargs);
     return retval;

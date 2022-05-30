@@ -107,7 +107,6 @@ static PyObject * do_call_core(
     PyObject *callargs, PyObject *kwdict, int use_tracing);
 
 #ifdef LLTRACE
-static int lltrace;
 static void
 dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
@@ -353,21 +352,6 @@ _Py_FatalError_TstateNULL(const char *func)
                        "(the current Python thread state is NULL)");
 }
 
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-int
-_PyEval_ThreadsInitialized(PyInterpreterState *interp)
-{
-    return gil_created(&interp->ceval.gil);
-}
-
-int
-PyEval_ThreadsInitialized(void)
-{
-    // Fatal error if there is no current interpreter
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    return _PyEval_ThreadsInitialized(interp);
-}
-#else
 int
 _PyEval_ThreadsInitialized(_PyRuntimeState *runtime)
 {
@@ -380,25 +364,18 @@ PyEval_ThreadsInitialized(void)
     _PyRuntimeState *runtime = &_PyRuntime;
     return _PyEval_ThreadsInitialized(runtime);
 }
-#endif
 
 PyStatus
 _PyEval_InitGIL(PyThreadState *tstate)
 {
-#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     if (!_Py_IsMainInterpreter(tstate->interp)) {
         /* Currently, the GIL is shared by all interpreters,
            and only the main interpreter is responsible to create
            and destroy it. */
         return _PyStatus_OK();
     }
-#endif
 
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    struct _gil_runtime_state *gil = &tstate->interp->ceval.gil;
-#else
     struct _gil_runtime_state *gil = &tstate->interp->runtime->ceval.gil;
-#endif
     assert(!gil_created(gil));
 
     PyThread_init_thread();
@@ -413,20 +390,14 @@ _PyEval_InitGIL(PyThreadState *tstate)
 void
 _PyEval_FiniGIL(PyInterpreterState *interp)
 {
-#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     if (!_Py_IsMainInterpreter(interp)) {
         /* Currently, the GIL is shared by all interpreters,
            and only the main interpreter is responsible to create
            and destroy it. */
         return;
     }
-#endif
 
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    struct _gil_runtime_state *gil = &interp->ceval.gil;
-#else
     struct _gil_runtime_state *gil = &interp->runtime->ceval.gil;
-#endif
     if (!gil_created(gil)) {
         /* First Py_InitializeFromConfig() call: the GIL doesn't exist
            yet: do nothing. */
@@ -490,13 +461,9 @@ PyEval_AcquireThread(PyThreadState *tstate)
     take_gil(tstate);
 
     struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    (void)_PyThreadState_Swap(gilstate, tstate);
-#else
     if (_PyThreadState_Swap(gilstate, tstate) != NULL) {
         Py_FatalError("non-NULL old thread state");
     }
-#endif
 }
 
 void
@@ -523,11 +490,7 @@ _PyEval_ReInitThreads(PyThreadState *tstate)
 {
     _PyRuntimeState *runtime = tstate->interp->runtime;
 
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    struct _gil_runtime_state *gil = &tstate->interp->ceval.gil;
-#else
     struct _gil_runtime_state *gil = &runtime->ceval.gil;
-#endif
     if (!gil_created(gil)) {
         return _PyStatus_OK();
     }
@@ -559,21 +522,12 @@ PyThreadState *
 PyEval_SaveThread(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    PyThreadState *old_tstate = _PyThreadState_GET();
-    PyThreadState *tstate = _PyThreadState_Swap(&runtime->gilstate, old_tstate);
-#else
     PyThreadState *tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
-#endif
     _Py_EnsureTstateNotNULL(tstate);
 
     struct _ceval_runtime_state *ceval = &runtime->ceval;
     struct _ceval_state *ceval2 = &tstate->interp->ceval;
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    assert(gil_created(&ceval2->gil));
-#else
     assert(gil_created(&ceval->gil));
-#endif
     drop_gil(ceval, ceval2, tstate);
     return tstate;
 }
@@ -837,9 +791,7 @@ Py_MakePendingCalls(void)
 void
 _PyEval_InitRuntimeState(struct _ceval_runtime_state *ceval)
 {
-#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     _gil_initialize(&ceval->gil);
-#endif
 }
 
 void
@@ -849,10 +801,6 @@ _PyEval_InitState(struct _ceval_state *ceval, PyThread_type_lock pending_lock)
     assert(pending->lock == NULL);
 
     pending->lock = pending_lock;
-
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    _gil_initialize(&ceval->gil);
-#endif
 }
 
 void
@@ -1208,6 +1156,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
     if (func == NULL) {
         return NULL;
     }
+    EVAL_CALL_STAT_INC(EVAL_CALL_LEGACY);
     PyObject *res = _PyEval_Vector(tstate, func, locals, NULL, 0, NULL);
     Py_DECREF(func);
     return res;
@@ -1267,13 +1216,9 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
         take_gil(tstate);
 
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-        (void)_PyThreadState_Swap(&runtime->gilstate, tstate);
-#else
         if (_PyThreadState_Swap(&runtime->gilstate, tstate) != NULL) {
             Py_FatalError("orphan tstate");
         }
-#endif
     }
 
     /* Check for asynchronous exception. */
@@ -1715,6 +1660,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     uint8_t opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
+#ifdef LLTRACE
+    int lltrace = 0;
+#endif
 
     _PyCFrame cframe;
     CallShape call_shape;
@@ -4671,6 +4619,29 @@ handle_eval_breaker:
             NOTRACE_DISPATCH();
         }
 
+        TARGET(LOAD_METHOD_LAZY_DICT) {
+            assert(cframe.use_tracing == 0);
+            PyObject *self = TOP();
+            PyTypeObject *self_cls = Py_TYPE(self);
+            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
+            uint32_t type_version = read_u32(cache->type_version);
+            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_METHOD);
+            int dictoffset = cache->dict_offset;
+            PyObject *dict = *(PyObject **)((char *)self + dictoffset);
+            assert(dictoffset == self_cls->tp_dictoffset && dictoffset > 0);
+            /* This object has a __dict__, just not yet created */
+            DEOPT_IF(dict != NULL, LOAD_METHOD);
+            STAT_INC(LOAD_METHOD, hit);
+            PyObject *res = read_obj(cache->descr);
+            assert(res != NULL);
+            assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
+            Py_INCREF(res);
+            SET_TOP(res);
+            PUSH(self);
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_METHOD);
+            NOTRACE_DISPATCH();
+        }
+
         TARGET(LOAD_METHOD_MODULE) {
             /* LOAD_METHOD, for module methods */
             assert(cframe.use_tracing == 0);
@@ -6407,6 +6378,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
     if (frame == NULL) {
         return NULL;
     }
+    EVAL_CALL_STAT_INC(EVAL_CALL_VECTOR);
     PyObject *retval = _PyEval_EvalFrame(tstate, frame, 0);
     assert(
         _PyFrame_GetStackPointer(frame) == _PyFrame_Stackbase(frame) ||
@@ -6482,6 +6454,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     if (func == NULL) {
         goto fail;
     }
+    EVAL_CALL_STAT_INC(EVAL_CALL_LEGACY);
     res = _PyEval_Vector(tstate, func, locals,
                          allargs, argcount,
                          kwnames);
@@ -7274,7 +7247,6 @@ do_call_core(PyThreadState *tstate,
             )
 {
     PyObject *result;
-
     if (PyCFunction_CheckExact(func) || PyCMethod_CheckExact(func)) {
         C_TRACE(result, PyObject_Call(func, callargs, kwdict));
         return result;
@@ -7304,6 +7276,7 @@ do_call_core(PyThreadState *tstate,
             return result;
         }
     }
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_FUNCTION_EX, func);
     return PyObject_Call(func, callargs, kwdict);
 }
 

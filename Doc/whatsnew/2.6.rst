@@ -49,7 +49,7 @@
    This saves the maintainer some effort going through the SVN logs
    when researching a change.
 
-This article explains the new features in Python 2.6, released on October 1
+This article explains the new features in Python 2.6, released on October 1,
 2008.  The release schedule is described in :pep:`361`.
 
 The major theme of Python 2.6 is preparing the migration path to
