@@ -108,13 +108,14 @@ def extract_opcode_stats(stats):
         opcode_stats[int(n)][rest.strip(".")] = value
     return opcode_stats
 
-def parse_kinds(spec_src):
+def parse_kinds(spec_src, prefix="SPEC_FAIL"):
     defines = collections.defaultdict(list)
+    start = "#define " + prefix + "_"
     for line in spec_src:
         line = line.strip()
-        if not line.startswith("#define SPEC_FAIL_"):
+        if not line.startswith(start):
             continue
-        line = line[len("#define SPEC_FAIL_"):]
+        line = line[len(start):]
         name, val = line.split()
         defines[int(val.strip())].append(name.strip())
     return defines
@@ -129,8 +130,6 @@ def kind_to_text(kind, defines, opname):
         opname = "ATTR"
     if opname.endswith("SUBSCR"):
         opname = "SUBSCR"
-    if opname.startswith("PRECALL"):
-        opname = "CALL"
     for name in defines[kind]:
         if name.startswith(opname):
             return pretty(name[len(opname)+1:])
@@ -254,6 +253,9 @@ def emit_specialization_overview(opcode_stats, total):
         ))
 
 def emit_call_stats(stats):
+    stats_path = os.path.join(os.path.dirname(__file__), "../../Include/pystats.h")
+    with open(stats_path) as stats_src:
+        defines = parse_kinds(stats_src, prefix="EVAL_CALL")
     with Section("Call stats", summary="Inlined calls and frame stats"):
         total = 0
         for key, value in stats.items():
@@ -263,6 +265,11 @@ def emit_call_stats(stats):
         for key, value in stats.items():
             if "Calls to" in key:
                 rows.append((key, value, f"{100*value/total:0.1f}%"))
+            elif key.startswith("Calls "):
+                name, index = key[:-1].split("[")
+                index =  int(index)
+                label = name + " (" + pretty(defines[index][0]) + ")"
+                rows.append((label, value, f"{100*value/total:0.1f}%"))
         for key, value in stats.items():
             if key.startswith("Frame"):
                 rows.append((key, value, f"{100*value/total:0.1f}%"))
