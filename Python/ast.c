@@ -22,6 +22,27 @@ static int validate_stmt(struct validator *, stmt_ty);
 static int validate_expr(struct validator *, expr_ty, expr_context_ty);
 static int validate_pattern(struct validator *, pattern_ty, int);
 
+#define VALIDATE_POSITIONS(node) \
+    if (node->lineno > node->end_lineno) { \
+        PyErr_Format(PyExc_ValueError, \
+                     "line %d-%d is not a valid range", \
+                     node->lineno, node->end_lineno); \
+        return 0; \
+    } \
+    if ((node->lineno < 0 && node->end_lineno != node->lineno) || \
+        (node->col_offset < 0 &&  node->col_offset != node->end_col_offset)) { \
+        PyErr_Format(PyExc_ValueError, \
+                     "line %d-%d, column %d-%d is not a valid range", \
+                     node->lineno, node->end_lineno, node->col_offset, node->end_col_offset); \
+        return 0; \
+    } \
+    if (node->lineno == node->end_lineno && node->col_offset > node->end_col_offset) { \
+        PyErr_Format(PyExc_ValueError, \
+                     "line %d, column %d-%d is not a valid range", \
+                     node->lineno, node->col_offset, node->end_col_offset); \
+        return 0; \
+    }
+
 static int
 validate_name(PyObject *name)
 {
@@ -183,6 +204,7 @@ validate_constant(struct validator *state, PyObject *value)
 static int
 validate_expr(struct validator *state, expr_ty exp, expr_context_ty ctx)
 {
+    VALIDATE_POSITIONS(exp);
     int ret = -1;
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
@@ -505,6 +527,7 @@ validate_capture(PyObject *name)
 static int
 validate_pattern(struct validator *state, pattern_ty p, int star_ok)
 {
+    VALIDATE_POSITIONS(p);
     int ret = -1;
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
@@ -674,6 +697,7 @@ validate_body(struct validator *state, asdl_stmt_seq *body, const char *owner)
 static int
 validate_stmt(struct validator *state, stmt_ty stmt)
 {
+    VALIDATE_POSITIONS(stmt);
     int ret = -1;
     Py_ssize_t i;
     if (++state->recursion_depth > state->recursion_limit) {
