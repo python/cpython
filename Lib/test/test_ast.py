@@ -363,23 +363,12 @@ class AST_Tests(unittest.TestCase):
                     compile(tree, '<string>', 'exec')
 
     def test_compilation_of_ast_nodes_with_default_end_position_values(self):
-        tree = ast.Module(
-	        body=[
-                ast.Assign(
-                    targets=[
-                        ast.Name(
-                            id='a',
-                            ctx=ast.Store(),
-                            lineno=10,
-                            col_offset=10)
-                    ],
-                value=ast.Constant(
-                    value=1,
-                    lineno=10,
-                    col_offset=40),
-                lineno=10,
-                col_offset=10)],
-	        type_ignores=[])
+        tree = ast.Module(body=[
+            ast.Import(names=[ast.alias(name='builtins', lineno=1, col_offset=0)], lineno=1, col_offset=0), 
+            ast.Import(names=[ast.alias(name='traceback', lineno=0, col_offset=0)], lineno=0, col_offset=1)
+        ], type_ignores=[])
+
+        # Check that compilation doesn't crash. Note: this may crash explicitly only on debug mode.
         compile(tree, "<string>", "exec")
 
     def test_slice(self):
