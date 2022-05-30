@@ -7366,19 +7366,21 @@ mark_warm(basicblock *entry) {
     basicblock **sp = stack;
 
     *sp++ = entry;
+    entry->b_visited = 1;
     while (sp > stack) {
         basicblock *b = *(--sp);
-        b->b_visited = 1;
         assert(!b->b_except_predecessors);
         b->b_warm = 1;
         basicblock *next = b->b_next;
         if (next && !b->b_nofallthrough && !next->b_visited) {
             *sp++ = next;
+            next->b_visited = 1;
         }
         for (int i=0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             if (is_jump(instr) && !instr->i_target->b_visited) {
                 *sp++ = instr->i_target;
+                instr->i_target->b_visited = 1;
             }
         }
     }
@@ -7406,17 +7408,18 @@ mark_cold(basicblock *entry) {
             assert(b->b_except_predecessors == b->b_predecessors);
             assert(!b->b_warm);
             *sp++ = b;
+            b->b_visited = 1;
         }
     }
 
     while (sp > stack) {
         basicblock *b = *(--sp);
         b->b_cold = 1;
-        b->b_visited = 1;
         basicblock *next = b->b_next;
         if (next && !b->b_nofallthrough) {
             if (!next->b_warm && !next->b_visited) {
                 *sp++ = next;
+                next->b_visited = 1;
             }
         }
         for (int i = 0; i < b->b_iused; i++) {
@@ -7426,6 +7429,7 @@ mark_cold(basicblock *entry) {
                 basicblock *target = b->b_instr[i].i_target;
                 if (!target->b_warm && !target->b_visited) {
                     *sp++ = target;
+                    target->b_visited = 1;
                 }
             }
         }
