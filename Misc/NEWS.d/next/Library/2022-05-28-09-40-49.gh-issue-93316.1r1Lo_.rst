@@ -1,1 +1,1 @@
-Allow negative backlog value for :func:`sock_listen`  on macOS and FreeBSD.
+Allow negative backlog value for :func:`sock_listen`.
