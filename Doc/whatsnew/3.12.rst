@@ -101,10 +101,10 @@ Deprecated
 Pending Removal in Python 3.13
 ==============================
 
-The following APIs have been deprecated in earlier Python releases,
+The following modules and APIs have been deprecated in earlier Python releases,
 and will be removed in Python 3.13.
 
-Removed :pep:`594` modules:
+Modules (see :pep:`594`):
 
 * :mod:`aifc`
 * :mod:`audioop`
@@ -126,15 +126,15 @@ Removed :pep:`594` modules:
 * :mod:`uu`
 * :mod:`xdrlib`
 
-Other removed APIs:
+APIs:
 
-* :class:`configparser.LegacyInterpolation` (:issue:`46607`)
-* :func:`locale.getdefaultlocale` (:issue:`46659`)
-* :meth:`turtle.RawTurtle.settiltangle` (:issue:`45837`)
-* :func:`unittest.findTestCases` (:issue:`5846`)
-* :func:`unittest.makeSuite` (:issue:`5846`)
-* :func:`unittest.getTestCaseNames` (:issue:`5846`)
-* :class:`webbrowser.MacOSX` (:issue:`42255`)
+* :class:`configparser.LegacyInterpolation` (:gh:`90765`)
+* :func:`locale.getdefaultlocale` (:gh:`90817`)
+* :meth:`turtle.RawTurtle.settiltangle` (:gh:`50096`)
+* :func:`unittest.findTestCases` (:gh:`50096`)
+* :func:`unittest.makeSuite` (:gh:`50096`)
+* :func:`unittest.getTestCaseNames` (:gh:`50096`)
+* :class:`webbrowser.MacOSX` (:gh:`86421`)
 
 Pending Removal in Future Versions
 ==================================
@@ -151,7 +151,7 @@ although there is currently no date scheduled for their removal.
   A syntax warning is raised if the numeric literal is
   immediately followed by one of keywords :keyword:`and`, :keyword:`else`,
   :keyword:`for`, :keyword:`if`, :keyword:`in`, :keyword:`is` and :keyword:`or`.
-  In a future release it will be changed to a syntax error. (:issue:`43833`)
+  In a future release it will be changed to a syntax error. (:gh:`87999`)
 
 
 Removed
