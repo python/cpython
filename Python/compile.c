@@ -7445,7 +7445,7 @@ push_cold_blocks_to_end(struct compiler *c, basicblock *entry, int code_flags) {
     }
 
     /* If we have a cold block with fallthrough to a warm block, add */
-    /* and explicit jump instead of fallthrough */
+    /* an explicit jump instead of fallthrough */
     for (basicblock *b = entry; b != NULL; b = b->b_next) {
         if (b->b_cold && !b->b_nofallthrough && b->b_next && b->b_next->b_warm) {
             basicblock *explicit_jump = compiler_new_block(c);
