@@ -1015,10 +1015,14 @@ x = (
         self.assertEqual(f'{3.14:!<10.10}', '3.14!!!!!!')
 
         self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
-                            ["f'{3!'"])
+                            ["f'{3!'",
+                             "f'{3!s'",
+                             "f'{3!g'",
+                             ])
 
         self.assertAllRaise(SyntaxError, 'f-string: missed conversion character',
                             ["f'{3!}'",
+                             "f'{3!:'",
                              "f'{3!:}'",
                              ])
 

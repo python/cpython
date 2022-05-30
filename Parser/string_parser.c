@@ -767,12 +767,14 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
     /* Check for a conversion char, if present. */
     if (**str == '!') {
         *str += 1;
-        if (*str >= end) {
-            goto unexpected_end_of_string;
-        }
-
         const char *conv_start = *str;
-        while (*str < end && **str != '}' && **str != ':') {
+        while (1) {
+            if (*str >= end) {
+                goto unexpected_end_of_string;
+            }
+            if (**str == '}' || **str == ':') {
+                break;
+            }
             *str += 1;
         }
         if (*str == conv_start) {
@@ -787,7 +789,7 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
             !(conversion == 's' || conversion == 'r' || conversion == 'a'))
         {
             PyObject *conv_obj = PyUnicode_FromStringAndSize(conv_start,
-                                                              *str-conv_start);
+                                                             *str-conv_start);
             if (conv_obj) {
                 RAISE_SYNTAX_ERROR(
                         "f-string: invalid conversion character %R: "
@@ -801,9 +803,7 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
     }
 
     /* Check for the format spec, if present. */
-    if (*str >= end) {
-        goto unexpected_end_of_string;
-    }
+    assert(*str < end);
     if (**str == ':') {
         *str += 1;
         if (*str >= end) {
