@@ -82,7 +82,8 @@ The module defines the following user-callable items:
 
    * The file is guaranteed to have a visible name in the file system (on Unix, the directory entry is not unlinked).
 
-   * The *delete_on_close* parameter is added.
+   * There is more granularity in the deletion behaviour of the file
+     (see ``delete_on_close`` below)
 
    The returned object is always a file-like object whose :attr:`!file`
    attribute is the underlying true file object. This file-like object can be
