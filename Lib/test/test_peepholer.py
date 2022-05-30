@@ -777,7 +777,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertInBytecode(f, 'LOAD_FAST_CHECK')
         self.assertNotInBytecode(f, 'LOAD_FAST')
 
-    def test_setting_lineno_removes_known(self):
+    def test_setting_lineno_adds_check(self):
         code = textwrap.dedent("""\
             def f():
                 x = 2
@@ -804,7 +804,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         f()
         self.assertNotInBytecode(f, "LOAD_FAST")
 
-    def test_deleting_local_removes_known(self):
+    def make_function_with_no_checks(self):
         code = textwrap.dedent("""\
             def f():
                 x = 2
@@ -813,11 +813,17 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
                 L = 5
                 if not L:
                     x + 7
+                    y = 2
         """)
         ns = {}
         exec(code, ns)
         f = ns['f']
         self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        return f
+
+    def test_deleting_local_adds_check(self):
+        f = self.make_function_with_no_checks()
         def trace(frame, event, arg):
             if event == 'line' and frame.f_lineno == 4:
                 del frame.f_locals["x"]
@@ -827,6 +833,33 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         sys.settrace(trace)
         f()
         self.assertNotInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_CHECK")
+
+    def test_modifying_local_does_not_add_check(self):
+        f = self.make_function_with_no_checks()
+        def trace(frame, event, arg):
+            if event == 'line' and frame.f_lineno == 4:
+                frame.f_locals["x"] = 42
+                sys.settrace(None)
+                return None
+            return trace
+        sys.settrace(trace)
+        f()
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+
+    def test_initializing_local_does_not_add_check(self):
+        f = self.make_function_with_no_checks()
+        def trace(frame, event, arg):
+            if event == 'line' and frame.f_lineno == 4:
+                frame.f_locals["y"] = 42
+                sys.settrace(None)
+                return None
+            return trace
+        sys.settrace(trace)
+        f()
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
 
 
 if __name__ == "__main__":

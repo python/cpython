@@ -1088,11 +1088,11 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
                 continue;
             }
         }
-        if (!added_null_checks) {
+        PyObject *oldvalue = fast[i];
+        if (!added_null_checks && oldvalue != NULL && value == NULL) {
             add_load_fast_null_checks(co);
             added_null_checks = true;
         }
-        PyObject *oldvalue = fast[i];
         PyObject *cell = NULL;
         if (kind == CO_FAST_FREE) {
             // The cell was set when the frame was created from
