@@ -767,6 +767,16 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         # Assert that it doesn't occur in the LOAD_FAST_CHECK branch.
         self.assertInBytecode(f, 'LOAD_FAST_CHECK')
 
+    def test_load_fast_unknown_after_error_2(self):
+        def f():
+            try:
+                1 / 0
+            except:
+                print(a, b, c, d, e, f, g)
+            a = b = c = d = e = f = g = 1
+        self.assertInBytecode(f, 'LOAD_FAST_CHECK')
+        self.assertNotInBytecode(f, 'LOAD_FAST')
+
     def test_setting_lineno_removes_known(self):
         code = textwrap.dedent("""\
             def f():

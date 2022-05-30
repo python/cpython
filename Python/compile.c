@@ -7769,11 +7769,11 @@ scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
         assert(instr->i_opcode != LOAD_CONST__LOAD_FAST);
         assert(instr->i_opcode != STORE_FAST__STORE_FAST);
         assert(instr->i_opcode != LOAD_FAST__LOAD_CONST);
-        if (instr->i_oparg != target) {
-            continue;
-        }
         if (unsafe && instr->i_except != NULL) {
             MAYBE_PUSH(instr->i_except);
+        }
+        if (instr->i_oparg != target) {
+            continue;
         }
         switch (instr->i_opcode) {
             case LOAD_FAST_CHECK:
