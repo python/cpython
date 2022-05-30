@@ -1,0 +1,489 @@
+.. date: 2022-05-25-12-30-12
+.. gh-issue: 84694
+.. nonce: 5sjy2w
+.. release date: 2022-05-30
+.. section: Core and Builtins
+
+The ``--experimental-isolated-subinterpreters`` configure option and
+``EXPERIMENTAL_ISOLATED_SUBINTERPRETERS`` macro have been removed.
+
+..
+
+.. date: 2022-05-25-04-07-22
+.. gh-issue: 91924
+.. nonce: -UyO4q
+.. section: Core and Builtins
+
+Fix ``__lltrace__`` debug feature if the stdout encoding is not UTF-8. Patch
+by Victor Stinner.
+
+..
+
+.. date: 2022-05-22-02-37-50
+.. gh-issue: 93061
+.. nonce: r70Imp
+.. section: Core and Builtins
+
+Backward jumps after ``async for`` loops are no longer given dubious line
+numbers.
+
+..
+
+.. date: 2022-05-21-23-21-37
+.. gh-issue: 93065
+.. nonce: 5I18WC
+.. section: Core and Builtins
+
+Fix contextvars HAMT implementation to handle iteration over deep trees.
+
+The bug was discovered and fixed by Eli Libman. See
+`MagicStack/immutables#84
+<https://github.com/MagicStack/immutables/issues/84>`_ for more details.
+
+..
+
+.. date: 2022-05-15-15-25-05
+.. gh-issue: 90473
+.. nonce: MoPHYW
+.. section: Core and Builtins
+
+Decrease default recursion limit on WASI to address limited call stack size.
+
+..
+
+.. date: 2022-05-14-13-22-11
+.. gh-issue: 92804
+.. nonce: rAqpI2
+.. section: Core and Builtins
+
+Fix memory leak in ``memoryview`` iterator as it was not finalized at exit.
+Patch by Kumar Aditya.
+
+..
+
+.. date: 2022-05-12-13-23-19
+.. gh-issue: 92236
+.. nonce: sDRzUe
+.. section: Core and Builtins
+
+Remove spurious "LINE" event when starting a generator or coroutine, visible
+tracing functions implemented in C.
+
+..
+
+.. date: 2022-05-10-11-34-35
+.. gh-issue: 92619
+.. nonce: u0V0lY
+.. section: Core and Builtins
+
+Make the compiler duplicate an exit block only if none of its instructions
+have a lineno (previously only the first instruction in the block was
+checked, leading to unnecessarily duplicated blocks).
+
+..
+
+.. date: 2022-05-03-20-12-18
+.. gh-issue: 92261
+.. nonce: aigLnb
+.. section: Core and Builtins
+
+Fix hang when trying to iterate over a ``typing.Union``.
+
+..
+
+.. date: 2022-05-27-13-18-18
+.. gh-issue: 93297
+.. nonce: e2zuHz
+.. section: Library
+
+Make asyncio task groups prevent child tasks from being GCed
+
+..
+
+.. date: 2022-05-25-02-45-41
+.. gh-issue: 90817
+.. nonce: yxANgU
+.. section: Library
+
+The :func:`locale.resetlocale` function is deprecated and will be removed in
+Python 3.13. Use ``locale.setlocale(locale.LC_ALL, "")`` instead. Patch by
+Victor Stinner.
+
+..
+
+.. date: 2022-05-24-10-59-02
+.. gh-issue: 92728
+.. nonce: zxTifq
+.. section: Library
+
+The :func:`re.template` function and the corresponding :const:`re.TEMPLATE`
+and :const:`re.T` flags are restored after they were removed in 3.11.0b1,
+but they are now deprecated, so they might be removed from Python 3.13.
+
+..
+
+.. date: 2022-05-21-13-16-16
+.. gh-issue: 93044
+.. nonce: eJ_XkZ
+.. section: Library
+
+No longer convert the database argument of :func:`sqlite3.connect` to bytes
+before passing it to the factory.
+
+..
+
+.. date: 2022-05-20-15-52-43
+.. gh-issue: 93010
+.. nonce: WF-cAc
+.. section: Library
+
+In a very special case, the email package tried to append the nonexistent
+``InvalidHeaderError`` to the defect list. It should have been
+``InvalidHeaderDefect``.
+
+..
+
+.. date: 2022-05-19-13-33-18
+.. gh-issue: 92675
+.. nonce: ZeerMZ
+.. section: Library
+
+Fix :func:`venv.ensure_directories` to accept :class:`pathlib.Path`
+arguments in addition to :class:`str` paths. Patch by David Foster.
+
+..
+
+.. date: 2022-05-18-21-04-09
+.. gh-issue: 87901
+.. nonce: lnf041
+.. section: Library
+
+Removed the ``encoding`` argument from :func:`os.popen` that was added in
+3.11b1.
+
+..
+
+.. date: 2022-05-18-17-18-41
+.. gh-issue: 91922
+.. nonce: DwWIsJ
+.. section: Library
+
+Fix function :func:`sqlite.connect` and the :class:`sqlite.Connection`
+constructor on non-UTF-8 locales. Also, they now support bytes paths
+non-decodable with the current FS encoding.
+
+..
+
+.. date: 2022-05-16-14-35-39
+.. gh-issue: 92839
+.. nonce: owSMyo
+.. section: Library
+
+Fixed crash resulting from calling bisect.insort() or bisect.insort_left()
+with the key argument not equal to None.
+
+..
+
+.. date: 2022-05-14-11-41-23
+.. gh-issue: 90473
+.. nonce: kPdOZl
+.. section: Library
+
+:mod:`subprocess` now fails early on Emscripten and WASI platforms to work
+around missing :func:`os.pipe` on WASI.
+
+..
+
+.. date: 2022-05-11-19-33-27
+.. gh-issue: 92671
+.. nonce: KE4v6a
+.. section: Library
+
+Fixed :func:`ast.unparse` for empty tuples in the assignment target context.
+
+..
+
+.. date: 2022-05-11-14-34-09
+.. gh-issue: 91581
+.. nonce: glkou2
+.. section: Library
+
+:meth:`~datetime.datetime.utcfromtimestamp` no longer attempts to resolve
+``fold`` in the pure Python implementation, since the fold is never 1 in
+UTC. In addition to being slightly faster in the common case, this also
+prevents some errors when the timestamp is close to :attr:`datetime.min
+<datetime.datetime.min>`.  Patch by Paul Ganssle.
+
+..
+
+.. date: 2022-05-10-07-57-27
+.. gh-issue: 92550
+.. nonce: Rk_UzM
+.. section: Library
+
+Fix :meth:`pathlib.Path.rglob` for empty pattern.
+
+..
+
+.. date: 2022-05-09-09-28-02
+.. gh-issue: 92530
+.. nonce: M4Q1RS
+.. section: Library
+
+Fix an issue that occurred after interrupting
+:func:`threading.Condition.notify`.
+
+..
+
+.. date: 2022-05-09-01-27-25
+.. gh-issue: 92531
+.. nonce: vV7S_O
+.. section: Library
+
+The statistics.median_grouped() function now always return a float.
+Formerly, it did not convert the input type when for sequences of length
+one.
+
+..
+
+.. date: 2022-04-25-10-23-01
+.. gh-issue: 91810
+.. nonce: DOHa6B
+.. section: Library
+
+:class:`~xml.etree.ElementTree.ElementTree` method
+:meth:`~xml.etree.ElementTree.ElementTree.write` and function
+:func:`~xml.etree.ElementTree.tostring` now use the text file's encoding
+("UTF-8" if not available) instead of locale encoding in XML declaration
+when ``encoding="unicode"`` is specified.
+
+..
+
+.. date: 2022-04-15-22-07-36
+.. gh-issue: 90622
+.. nonce: 0C6l8h
+.. section: Library
+
+Worker processes for :class:`concurrent.futures.ProcessPoolExecutor` are no
+longer spawned on demand (a feature added in 3.9) when the multiprocessing
+context start method is ``"fork"`` as that can lead to deadlocks in the
+child processes due to a fork happening while threads are running.
+
+..
+
+.. date: 2022-04-15-13-16-25
+.. gh-issue: 91581
+.. nonce: 9OGsrN
+.. section: Library
+
+Remove an unhandled error case in the C implementation of calls to
+:meth:`datetime.fromtimestamp <datetime.datetime.fromtimestamp>` with no
+time zone (i.e. getting a local time from an epoch timestamp). This should
+have no user-facing effect other than giving a possibly more accurate error
+message when called with timestamps that fall on 10000-01-01 in the local
+time. Patch by Paul Ganssle.
+
+..
+
+.. bpo: 39064
+.. date: 2022-04-03-19-40-09
+.. nonce: 76PbIz
+.. section: Library
+
+:class:`zipfile.ZipFile` now raises :exc:`zipfile.BadZipFile` instead of
+``ValueError`` when reading a corrupt zip file in which the central
+directory offset is negative.
+
+..
+
+.. bpo: 45393
+.. date: 2022-02-09-23-44-27
+.. nonce: 9v5Y8U
+.. section: Library
+
+Fix the formatting for ``await x`` and ``not x`` in the operator precedence
+table when using the :func:`help` system.
+
+..
+
+.. bpo: 28249
+.. date: 2022-01-09-14-23-00
+.. nonce: 4dzB80
+.. section: Library
+
+Set :attr:`doctest.DocTest.lineno` to ``None`` when object does not have
+:attr:`__doc__`.
+
+..
+
+.. bpo: 45046
+.. date: 2021-08-29-19-59-16
+.. nonce: eGq0NC
+.. section: Library
+
+Add support of context managers in :mod:`unittest`: methods
+:meth:`~unittest.TestCase.enterContext` and
+:meth:`~unittest.TestCase.enterClassContext` of class
+:class:`~unittest.TestCase`, method
+:meth:`~unittest.IsolatedAsyncioTestCase.enterAsyncContext` of class
+:class:`~unittest.IsolatedAsyncioTestCase` and function
+:func:`unittest.enterModuleContext`.
+
+..
+
+.. bpo: 42627
+.. date: 2021-05-22-07-58-59
+.. nonce: EejtD0
+.. section: Library
+
+Fix incorrect parsing of Windows registry proxy settings
+
+..
+
+.. date: 2022-05-26-11-33-23
+.. gh-issue: 86438
+.. nonce: kEGGmK
+.. section: Documentation
+
+Clarify that :option:`-W` and :envvar:`PYTHONWARNINGS` are matched literally
+and case-insensitively, rather than as regular expressions, in
+:mod:`warnings`.
+
+..
+
+.. date: 2022-05-18-23-58-26
+.. gh-issue: 92240
+.. nonce: bHvYiz
+.. section: Documentation
+
+Added release dates for "What's New in Python 3.X" for 3.0, 3.1, 3.2, 3.8
+and 3.10
+
+..
+
+.. bpo: 40838
+.. date: 2022-01-13-16-03-15
+.. nonce: k3NVCf
+.. section: Documentation
+
+Document that :func:`inspect.getdoc`, :func:`inspect.getmodule`, and
+:func:`inspect.getsourcefile` might return ``None``.
+
+..
+
+.. bpo: 38056
+.. date: 2019-09-12-08-28-17
+.. nonce: 6ktYkc
+.. section: Documentation
+
+Overhaul the :ref:`error-handlers` documentation in :mod:`codecs`.
+
+..
+
+.. bpo: 13553
+.. date: 2017-12-10-19-13-39
+.. nonce: gQbZs4
+.. section: Documentation
+
+Document tkinter.Tk args.
+
+..
+
+.. date: 2022-05-12-05-51-06
+.. gh-issue: 92670
+.. nonce: 7L43Z_
+.. section: Tests
+
+Skip ``test_shutil.TestCopy.test_copyfile_nonexistent_dir`` test on AIX as
+the test uses a trailing slash to force the OS consider the path as a
+directory, but on AIX the trailing slash has no effect and is considered as
+a file.
+
+..
+
+.. date: 2022-05-12-10-19-15
+.. gh-issue: 90473
+.. nonce: -syvqK
+.. section: Build
+
+Disable pymalloc and increase stack size on ``wasm32-wasi``.
+
+..
+
+.. bpo: 34449
+.. date: 2018-08-21-11-10-18
+.. nonce: Z3qm3c
+.. section: Build
+
+Drop invalid compiler switch ``-fPIC`` for HP aCC on HP-UX. Patch by Michael
+Osipov.
+
+..
+
+.. date: 2022-05-19-21-44-25
+.. gh-issue: 92817
+.. nonce: Jrf-Kv
+.. section: Windows
+
+Ensures that :file:`py.exe` will prefer an active virtual environment over
+default tags specified with environment variables or through a
+:file:`py.ini` file.
+
+..
+
+.. date: 2022-05-19-14-01-30
+.. gh-issue: 92984
+.. nonce: Dsxnlr
+.. section: Windows
+
+Explicitly disable incremental linking for non-Debug builds
+
+..
+
+.. date: 2022-05-16-11-45-06
+.. gh-issue: 92841
+.. nonce: NQx107
+.. section: Windows
+
+:mod:`asyncio` no longer throws ``RuntimeError: Event loop is closed`` on
+interpreter exit after asynchronous socket activity. Patch by Oleg Iarygin.
+
+..
+
+.. bpo: 46907
+.. date: 2022-05-05-06-27-59
+.. nonce: IW-uvT
+.. section: Windows
+
+Update Windows installer to use SQLite 3.38.4.
+
+..
+
+.. date: 2022-05-23-15-22-18
+.. gh-issue: 92898
+.. nonce: Qjc9d3
+.. section: C API
+
+Fix C++ compiler warnings when casting function arguments to ``PyObject*``.
+Patch by Serge Guelton.
+
+..
+
+.. date: 2022-05-19-18-05-51
+.. gh-issue: 92913
+.. nonce: Ass1Hv
+.. section: C API
+
+Ensures changes to :c:member:`PyConfig.module_search_paths` are ignored
+unless :c:member:`PyConfig.module_search_paths_set` is set
+
+..
+
+.. date: 2022-05-13-18-17-48
+.. gh-issue: 92781
+.. nonce: TVDr3-
+.. section: C API
+
+Avoid mixing declarations and code in the C API to fix the compiler warning:
+"ISO C90 forbids mixed declarations and code"
+[-Werror=declaration-after-statement]. Patch by Victor Stinner.
