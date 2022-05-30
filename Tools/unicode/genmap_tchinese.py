@@ -15,7 +15,7 @@ BIG5HKSCS_C1 = (0x87, 0xfe)
 BIG5HKSCS_C2 = (0x40, 0xfe)
 
 MAPPINGS_BIG5 = 'https://unicode.org/Public/MAPPINGS/OBSOLETE/EASTASIA/OTHER/BIG5.TXT'
-MAPPINGS_CP950 = 'http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP950.TXT'
+MAPPINGS_CP950 = 'https://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP950.TXT'
 
 HKSCS_VERSION = '2004'
 # The files for HKSCS mappings are available under a restrictive license.
