@@ -227,8 +227,10 @@ extern void _PyLineTable_InitAddressRange(
 extern int _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
-
-#define ADAPTIVE_CACHE_BACKOFF 64
+/* With a 16 counter, we have 12 bits for the counter value, and 4 bits for the backoff */
+#define ADAPTIVE_BACKOFF_BITS 4
+/* The initial counter value is backoff**2-1, so a backoff of 5 gives a value of 31 */
+#define ADAPTIVE_BACKOFF_START 5
 
 /* Specialization functions */
 
@@ -420,6 +422,32 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
     assert((code & 15) == code);
     *ptr = 128 | (code << 3) | (length - 1);
     return 1;
+}
+
+
+static inline uint16_t
+adaptive_counter_bits(int value, int backoff) {
+    return (value << ADAPTIVE_BACKOFF_BITS) |
+           (backoff & ((1<<ADAPTIVE_BACKOFF_BITS)-1));
+}
+
+#define MAX_BACKOFF_VALUE (16 - ADAPTIVE_BACKOFF_BITS)
+
+static inline uint16_t
+adaptive_counter_start(void) {
+    unsigned int value = (1 << ADAPTIVE_BACKOFF_START) - 1;
+    return adaptive_counter_bits(value, ADAPTIVE_BACKOFF_START);
+}
+
+static inline uint16_t
+adaptive_counter_backoff(uint16_t counter) {
+    unsigned int backoff = counter & ((1<<ADAPTIVE_BACKOFF_BITS)-1);
+    backoff++;
+    if (backoff > MAX_BACKOFF_VALUE) {
+        backoff = MAX_BACKOFF_VALUE;
+    }
+    unsigned int value = (1 << backoff) - 1;
+    return adaptive_counter_bits(value, backoff);
 }
 
 
