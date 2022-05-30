@@ -1,0 +1,1 @@
+Fix handling of the ``doc`` argument in subclasses of :func:`property`.

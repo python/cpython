@@ -1782,38 +1782,55 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     Py_XINCREF(fget);
     Py_XINCREF(fset);
     Py_XINCREF(fdel);
-    Py_XINCREF(doc);
 
     Py_XSETREF(self->prop_get, fget);
     Py_XSETREF(self->prop_set, fset);
     Py_XSETREF(self->prop_del, fdel);
-    Py_XSETREF(self->prop_doc, doc);
+    Py_XSETREF(self->prop_doc, NULL);
     Py_XSETREF(self->prop_name, NULL);
 
     self->getter_doc = 0;
+    PyObject *prop_doc = NULL;
 
+    if (doc != NULL && doc != Py_None) {
+        prop_doc = doc;
+        Py_XINCREF(prop_doc);
+    }
     /* if no docstring given and the getter has one, use that one */
-    if ((doc == NULL || doc == Py_None) && fget != NULL) {
-        PyObject *get_doc;
-        int rc = _PyObject_LookupAttr(fget, &_Py_ID(__doc__), &get_doc);
+    else if (fget != NULL) {
+        int rc = _PyObject_LookupAttr(fget, &_Py_ID(__doc__), &prop_doc);
         if (rc <= 0) {
             return rc;
         }
-        if (Py_IS_TYPE(self, &PyProperty_Type)) {
-            Py_XSETREF(self->prop_doc, get_doc);
+        if (prop_doc == Py_None) {
+            prop_doc = NULL;
+            Py_DECREF(Py_None);
         }
-        else {
-            /* If this is a property subclass, put __doc__
-               in dict of the subclass instance instead,
-               otherwise it gets shadowed by __doc__ in the
-               class's dict. */
-            int err = PyObject_SetAttr(
-                    (PyObject *)self, &_Py_ID(__doc__), get_doc);
-            Py_DECREF(get_doc);
-            if (err < 0)
-                return -1;
+        if (prop_doc != NULL){
+            self->getter_doc = 1;
         }
-        self->getter_doc = 1;
+    }
+
+    /* At this point `prop_doc` is either NULL or
+       a non-None object with incremented ref counter */
+
+    if (Py_IS_TYPE(self, &PyProperty_Type)) {
+        Py_XSETREF(self->prop_doc, prop_doc);
+    } else {
+        /* If this is a property subclass, put __doc__
+           in dict of the subclass instance instead,
+           otherwise it gets shadowed by __doc__ in the
+           class's dict. */
+
+        if (prop_doc == NULL) {
+            prop_doc = Py_None;
+            Py_INCREF(prop_doc);
+        }
+        int err = PyObject_SetAttr(
+                    (PyObject *)self, &_Py_ID(__doc__), prop_doc);
+        Py_XDECREF(prop_doc);
+        if (err < 0)
+            return -1;
     }
 
     return 0;
