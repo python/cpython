@@ -255,11 +255,7 @@ _setException(PyObject *exc, const char* altmsg, ...)
     const char *lib, *func, *reason;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, altmsg);
-#else
-    va_start(vargs);
-#endif
     if (!errcode) {
         if (altmsg == NULL) {
             PyErr_SetString(exc, "no reason supplied");

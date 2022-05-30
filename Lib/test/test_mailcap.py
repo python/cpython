@@ -221,6 +221,10 @@ class FindmatchTest(unittest.TestCase):
 
     @unittest.skipUnless(os.name == "posix", "Requires 'test' command on system")
     @unittest.skipIf(sys.platform == "vxworks", "'test' command is not supported on VxWorks")
+    @unittest.skipUnless(
+        test.support.has_subprocess_support,
+        "'test' command needs process support."
+    )
     def test_test(self):
         # findmatch() will automatically check any "test" conditions and skip
         # the entry if the check fails.
