@@ -436,7 +436,7 @@ Power and logarithmic functions
 
 .. function:: sqrt(x)
 
-   Return the square root of *x*.
+   Return the principal (nonnegative) square root of *x*.
 
 
 Trigonometric functions
