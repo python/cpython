@@ -1,4 +1,4 @@
-# Copyright 2001-2019 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2022 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -19,7 +19,7 @@ Configuration functions for the logging package for Python. The core package
 is based on PEP 282 and comments thereto in comp.lang.python, and influenced
 by Apache's log4j system.
 
-Copyright (C) 2001-2019 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -758,26 +758,48 @@ class DictConfigurator(BaseConfigurator):
                 # Another special case for handler which refers to other handlers
                 if 'handlers' not in config:
                     raise ValueError('No handlers specified for a QueueHandler')
-                if 'queue' in config and\
-                    not isinstance(qspec := config['queue'], queue.Queue):
-                    q = self.resolve(qspec)
-                    if not callable(q):
-                        raise TypeError('Invalid queue specifier %r' % qspec)
-                    config['queue'] = q()
+                if 'queue' in config:
+                    qspec = config['queue']
+                    if not isinstance(qspec, queue.Queue):
+                        if isinstance(qspec, str):
+                            q = self.resolve(qspec)
+                            if not callable(q):
+                                raise TypeError('Invalid queue specifier %r' % qspec)
+                            q = q()
+                        elif isinstance(qspec, dict):
+                            if '()' not in qspec:
+                                raise TypeError('Invalid queue specifier %r' % qspec)
+                            q = self.configure_custom(dict(qspec))
+                        else:
+                            raise TypeError('Invalid queue specifier %r' % qspec)
+                        config['queue'] = q
                 if 'listener' in config:
                     lspec = config['listener']
-                    if isinstance(lspec, str):
-                        listener = self.resolve(lspec)
+                    if isinstance(lspec, type):
+                        if not issubclass(lspec, logging.handlers.QueueListener):
+                            raise TypeError('Invalid listener specifier %r' % lspec)
+                    else:
+                        if isinstance(lspec, str):
+                            listener = self.resolve(lspec)
+                            if isinstance(listener, type) and\
+                                not issubclass(listener, logging.handlers.QueueListener):
+                                raise TypeError('Invalid listener specifier %r' % lspec)
+                        elif isinstance(lspec, dict):
+                            if '()' not in lspec:
+                                raise TypeError('Invalid listener specifier %r' % lspec)
+                            listener = self.configure_custom(dict(lspec))
+                        else:
+                            raise TypeError('Invalid listener specifier %r' % lspec)
+                        if not callable(listener):
+                            raise TypeError('Invalid listener specifier %r' % lspec)
                         config['listener'] = listener
-                    elif not issubclass(lspec, logging.handlers.QueueListener):
-                        raise TypeError('Invalid listener spec %r' % lspec)
                 hlist = []
                 try:
                     for hn in config['handlers']:
                         h = self.config['handlers'][hn]
                         if not isinstance(h, logging.Handler):
                             config.update(config_copy)  # restore for deferred cfg
-                            raise TypeError('needed handler %r '
+                            raise TypeError('Required handler %r '
                                             'is not configured yet' % hn)
                         hlist.append(h)
                 except Exception as e:

@@ -2242,6 +2242,12 @@ class CustomQueue(queue.Queue):
 def queueMaker():
     return queue.Queue()
 
+def listenerMaker(arg1, arg2, respect_handler_level=False):
+    def func(queue, *handlers, **kwargs):
+        kwargs.setdefault('respect_handler_level', respect_handler_level)
+        return CustomListener(queue, *handlers, **kwargs)
+    return func
+
 class ConfigDictTest(BaseTest):
 
     """Reading logging config from a dictionary."""
@@ -3542,8 +3548,18 @@ class ConfigDictTest(BaseTest):
 
     def test_config_queue_handler(self):
         q = CustomQueue()
-        qvalues = (None, __name__ + '.queueMaker', __name__ + '.CustomQueue', q)
-        lvalues = (None, __name__ + '.CustomListener', CustomListener)
+        dq = {
+            '()': __name__ + '.CustomQueue',
+            'maxsize': 10
+        }
+        dl = {
+            '()': __name__ + '.listenerMaker',
+            'arg1': None,
+            'arg2': None,
+            'respect_handler_level': True
+        }
+        qvalues = (None, __name__ + '.queueMaker', __name__ + '.CustomQueue', dq, q)
+        lvalues = (None, __name__ + '.CustomListener', dl, CustomListener)
         for qspec, lspec in itertools.product(qvalues, lvalues):
             cd = copy.deepcopy(self.config_queue_handler)
             fn = make_temp_file('.log', 'test_logging-cqh-')
