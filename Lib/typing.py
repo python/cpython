@@ -906,14 +906,6 @@ def _is_unpacked_typevartuple(x: Any) -> bool:
     return ((not isinstance(x, type)) and
             getattr(x, '__typing_is_unpacked_typevartuple__', False))
 
-def _is_unpacked_var_tuple(x: Any) -> bool:
-    if isinstance(x, type) and not isinstance(x, GenericAlias):
-        return False
-    args = getattr(x, '__typing_unpacked_tuple_args__', None)
-    if args and args[-1] is ...:
-        return True
-    return False
-
 
 def _is_typevar_like(x: Any) -> bool:
     return isinstance(x, (TypeVar, ParamSpec)) or _is_unpacked_typevartuple(x)
@@ -1263,44 +1255,6 @@ class _BaseGenericAlias(_Final, _root=True):
                 + [attr for attr in dir(self.__origin__) if not _is_dunder(attr)]))
 
 
-def _is_unpacked_tuple(x: Any) -> bool:
-    # Is `x` something like `*tuple[int]` or `*tuple[int, ...]`?
-    if not isinstance(x, _UnpackGenericAlias):
-        return False
-    # Alright, `x` is `Unpack[something]`.
-
-    # `x` will always have `__args__`, because Unpack[] and Unpack[()]
-    # aren't legal.
-    unpacked_type = x.__args__[0]
-
-    return getattr(unpacked_type, '__origin__', None) is tuple
-
-
-def _is_unpacked_arbitrary_length_tuple(x: Any) -> bool:
-    if not _is_unpacked_tuple(x):
-        return False
-    unpacked_tuple = x.__args__[0]
-
-    if not hasattr(unpacked_tuple, '__args__'):
-        # It's `Unpack[tuple]`. We can't make any assumptions about the length
-        # of the tuple, so it's effectively an arbitrary-length tuple.
-        return True
-
-    tuple_args = unpacked_tuple.__args__
-    if not tuple_args:
-        # It's `Unpack[tuple[()]]`.
-        return False
-
-    last_arg = tuple_args[-1]
-    if last_arg is Ellipsis:
-        # It's `Unpack[tuple[something, ...]]`, which is arbitrary-length.
-        return True
-
-    # If the arguments didn't end with an ellipsis, then it's not an
-    # arbitrary-length tuple.
-    return False
-
-
 # Special typing constructs Union, Optional, Generic, Callable and Tuple
 # use three special attributes for internal bookkeeping of generic types:
 # * __parameters__ is a tuple of unique free type parameters of a generic
@@ -1433,11 +1387,13 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             right = plen - typevartuple_index - 1
             var_tuple_index = None
             for k, arg in enumerate(args):
-                if _is_unpacked_var_tuple(arg):
-                    if var_tuple_index is not None:
-                        raise TypeError("More than one unpacked variable-size tuple argument")
-                    var_tuple_index = k
-                    fillarg = args[var_tuple_index].__typing_unpacked_tuple_args__[0]
+                if not (isinstance(arg, type) and not isinstance(arg, GenericAlias)):
+                    subargs = getattr(arg, '__typing_unpacked_tuple_args__', None)
+                    if subargs and len(subargs) == 2 and subargs[-1] is ...:
+                        if var_tuple_index is not None:
+                            raise TypeError("More than one unpacked arbitrary-length tuple argument")
+                        var_tuple_index = k
+                        fillarg = subargs[0]
             if var_tuple_index is not None:
                 left = min(left, var_tuple_index)
                 right = min(right, alen - var_tuple_index - 1)

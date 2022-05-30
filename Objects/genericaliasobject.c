@@ -469,7 +469,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
                     Py_DECREF(fillarg);
                     Py_DECREF(item);
                     return PyErr_Format(PyExc_TypeError,
-                                        "More than one unpacked variable-size tuple argument",
+                                        "More than one unpacked arbitrary-length tuple argument",
                                         self);
                 }
                 vartuplearg = i;
