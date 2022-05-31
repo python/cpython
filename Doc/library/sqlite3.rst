@@ -1177,7 +1177,7 @@ The exception hierarchy is defined by DB-API 2.0.
 
    Exception raised in case a method or database API is not supported by the
    underlying SQLite library. For example, setting *deterministic* to
-   :const:`True` in :meth:`create_function`, if the underlying SQLite library
+   :const:`True` in :meth:`~Connection.create_function`, if the underlying SQLite library
    does not support deterministic functions.
    ``NotSupportedError`` is a subclass of :exc:`DatabaseError`.
 
