@@ -79,7 +79,6 @@ New Features
 Other Language Changes
 ======================
 
-* The :class:`tempfile.NamedTemporaryFile` has a new optional parameter *delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
 
 
 New Modules
@@ -91,6 +90,10 @@ New Modules
 Improved Modules
 ================
 
+tempfile
+--------
+
+The :class:`tempfile.NamedTemporaryFile` has a new optional parameter *delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
 
 Optimizations
 =============
