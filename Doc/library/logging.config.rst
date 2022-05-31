@@ -729,6 +729,8 @@ Any custom queue handler and listener classes will need to be defined with the s
 initialization signatures as :class:`~logging.handlers.QueueHandler` and
 :class:`~logging.handlers.QueueListener`.
 
+.. versionadded:: 3.12
+
 .. _logging-config-fileformat:
 
 Configuration file format

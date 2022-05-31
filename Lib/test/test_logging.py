@@ -3548,6 +3548,41 @@ class ConfigDictTest(BaseTest):
                 {"version": 1, "root": {"level": "DEBUG", "filters": [filter_]}}
             )
 
+    def do_queuehandler_configuration(self, qspec, lspec):
+        cd = copy.deepcopy(self.config_queue_handler)
+        fn = make_temp_file('.log', 'test_logging-cqh-')
+        cd['handlers']['h1']['filename'] = fn
+        if qspec is not None:
+            cd['handlers']['ah']['queue'] = qspec
+        if lspec is not None:
+            cd['handlers']['ah']['listener'] = lspec
+        qh = None
+        delay = 0.01
+        try:
+            self.apply_config(cd)
+            qh = logging.getHandlerByName('ah')
+            self.assertEqual(sorted(logging.getHandlerNames()), ['ah', 'h1'])
+            self.assertIsNotNone(qh.listener)
+            qh.listener.start()
+            # Need to let the listener thread get started
+            time.sleep(delay)
+            logging.debug('foo')
+            logging.info('bar')
+            logging.warning('baz')
+            # Need to let the listener thread finish its work
+            time.sleep(delay)
+            with open(fn, encoding='utf-8') as f:
+                data = f.read().splitlines()
+            self.assertEqual(data, ['foo', 'bar', 'baz'])
+        finally:
+            if qh:
+                qh.listener.stop()
+            h = logging.getHandlerByName('h1')
+            if h:
+                self.addCleanup(closeFileHandler, h, fn)
+            else:
+                self.addCleanup(os.remove, fn)
+
     def test_config_queue_handler(self):
         q = CustomQueue()
         dq = {
@@ -3563,39 +3598,18 @@ class ConfigDictTest(BaseTest):
         qvalues = (None, __name__ + '.queueMaker', __name__ + '.CustomQueue', dq, q)
         lvalues = (None, __name__ + '.CustomListener', dl, CustomListener)
         for qspec, lspec in itertools.product(qvalues, lvalues):
-            cd = copy.deepcopy(self.config_queue_handler)
-            fn = make_temp_file('.log', 'test_logging-cqh-')
-            cd['handlers']['h1']['filename'] = fn
-            if qspec:
-                cd['handlers']['ah']['queue'] = qspec
-            if lspec:
-                cd['handlers']['ah']['listener'] = lspec
-            qh = None
-            delay = 0.01
-            try:
-                self.apply_config(cd)
-                qh = logging.getHandlerByName('ah')
-                self.assertEqual(sorted(logging.getHandlerNames()), ['ah', 'h1'])
-                self.assertIsNotNone(qh.listener)
-                qh.listener.start()
-                # Need to let the listener thread get started
-                time.sleep(delay)
-                logging.debug('foo')
-                logging.info('bar')
-                logging.warning('baz')
-                # Need to let the listener thread finish its work
-                time.sleep(delay)
-                with open(fn, encoding='utf-8') as f:
-                    data = f.read().splitlines()
-                self.assertEqual(data, ['foo', 'bar', 'baz'])
-            finally:
-                if qh:
-                    qh.listener.stop()
-                h = logging.getHandlerByName('h1')
-                if h:
-                    self.addCleanup(closeFileHandler, h, fn)
-                else:
-                    self.addCleanup(os.remove, fn)
+            self.do_queuehandler_configuration(qspec, lspec)
+
+        # Some failure cases
+        qvalues = (None, 4, int, '', 'foo')
+        lvalues = (None, 4, int, '', 'bar')
+        for qspec, lspec in itertools.product(qvalues, lvalues):
+            if lspec is None and qspec is None:
+                continue
+            with self.assertRaises(ValueError) as ctx:
+                self.do_queuehandler_configuration(qspec, lspec)
+            msg = str(ctx.exception)
+            self.assertEqual(msg, "Unable to configure handler 'ah'")
 
 
 class ManagerTest(BaseTest):
