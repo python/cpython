@@ -584,32 +584,32 @@ class NewStreamTests(unittest.IsolatedAsyncioTestCase):
             client_writer.close()
             await client_writer.wait_closed()
 
-        # test the server variant with a coroutine as client handler
-        server = await asyncio.start_server(
-            handle_client,
-            host=socket_helper.HOSTv4
-        )
-        addr = server.sockets[0].getsockname()
-        msg = await client(addr)
-        server.close()
-        await server.wait_closed()
-        self.assertEqual(msg, b"hello world!\n")
-
-        # test the server variant with a callback as client handler
-        async def handle_client_with_callback(client_reader, client_writer):
-            asyncio.get_running_loop().create_task(
-                handle_client(client_reader, client_writer)
+        with self.subTest(msg="coroutine"):
+            server = await asyncio.start_server(
+                handle_client,
+                host=socket_helper.HOSTv4
             )
+            addr = server.sockets[0].getsockname()
+            msg = await client(addr)
+            server.close()
+            await server.wait_closed()
+            self.assertEqual(msg, b"hello world!\n")
 
-        server = await asyncio.start_server(
-            handle_client_with_callback,
-            host=socket_helper.HOSTv4
-        )
-        address, port = server.sockets[0].getsockname()
-        msg = await client(addr)
-        server.close()
-        await server.wait_closed()
-        self.assertEqual(msg, b"hello world!\n")
+        with self.subTest(msg="callback"):
+            async def handle_client_callback(client_reader, client_writer):
+                asyncio.get_running_loop().create_task(
+                    handle_client(client_reader, client_writer)
+                )
+
+            server = await asyncio.start_server(
+                handle_client_callback,
+                host=socket_helper.HOSTv4
+            )
+            address, port = server.sockets[0].getsockname()
+            msg = await client(addr)
+            server.close()
+            await server.wait_closed()
+            self.assertEqual(msg, b"hello world!\n")
 
     @socket_helper.skip_unless_bind_unix_socket
     async def test_start_unix_server(self):
@@ -631,33 +631,33 @@ class NewStreamTests(unittest.IsolatedAsyncioTestCase):
             client_writer.close()
             await client_writer.wait_closed()
 
-        # test the server variant with a coroutine as client handler
-        with test_utils.unix_socket_path() as path:
-            server = await asyncio.start_unix_server(
-                handle_client,
-                path=path
-            )
-            msg = await client(path)
-            server.close()
-            await server.wait_closed()
-            self.assertEqual(msg, b"hello world!\n")
+        with self.subTest(msg="coroutine"):
+            with test_utils.unix_socket_path() as path:
+                server = await asyncio.start_unix_server(
+                    handle_client,
+                    path=path
+                )
+                msg = await client(path)
+                server.close()
+                await server.wait_closed()
+                self.assertEqual(msg, b"hello world!\n")
 
-        # test the server variant with a callback as client handler
-        async def handle_client_with_callback(client_reader, client_writer):
-            asyncio.get_running_loop().create_task(
-                handle_client(client_reader, client_writer)
-            )
+        with self.subTest(msg="callback"):
+            async def handle_client_callback(client_reader, client_writer):
+                asyncio.get_running_loop().create_task(
+                    handle_client(client_reader, client_writer)
+                )
 
-        with test_utils.unix_socket_path() as path:
-            server = await asyncio.start_unix_server(
-                handle_client,
-                path=path
-            )
-            server.start_callback()
-            msg = await client(path)
-            server.close()
-            await server.wait_closed()
-            self.assertEqual(msg, b"hello world!\n")
+            with test_utils.unix_socket_path() as path:
+                server = await asyncio.start_unix_server(
+                    handle_client_callback,
+                    path=path
+                )
+                server.start_callback()
+                msg = await client(path)
+                server.close()
+                await server.wait_closed()
+                self.assertEqual(msg, b"hello world!\n")
 
     @unittest.skipIf(ssl is None, 'No ssl module')
     async def test_start_tls(self):
@@ -918,22 +918,20 @@ os.close(fd)
                 self.assertEqual(str(e), str(e2))
                 self.assertEqual(e.consumed, e2.consumed)
 
-    def test_wait_closed_on_close(self):
-        with test_utils.run_test_server() as httpd:
+    async def test_wait_closed_on_close(self):
+        async with test_utils.run_test_server() as httpd:
             rd, wr = self.loop.run_until_complete(
                 asyncio.open_connection(*httpd.address))
 
             wr.write(b'GET / HTTP/1.0\r\n\r\n')
-            f = rd.readline()
-            data = self.loop.run_until_complete(f)
+            await rd.readline()
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
-            f = rd.read()
-            data = self.loop.run_until_complete(f)
+            await rd.read()
             self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
             self.assertFalse(wr.is_closing())
             wr.close()
             self.assertTrue(wr.is_closing())
-            self.loop.run_until_complete(wr.wait_closed())
+            await wr.wait_closed()
 
     def test_wait_closed_on_close_with_unread_data(self):
         with test_utils.run_test_server() as httpd:
@@ -989,15 +987,10 @@ os.close(fd)
 
         self.assertEqual(messages, [])
 
-    def test_eof_feed_when_closing_writer(self):
+    async def test_eof_feed_when_closing_writer(self):
         # See http://bugs.python.org/issue35065
-        messages = []
-        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-
-        with test_utils.run_test_server() as httpd:
-            rd, wr = self.loop.run_until_complete(
-                    asyncio.open_connection(*httpd.address))
-
+        async with test_utils.run_test_server() as httpd:
+            rd, wr = await asyncio.open_connection(*httpd.address)
             wr.close()
             f = wr.wait_closed()
             self.loop.run_until_complete(f)
@@ -1005,8 +998,6 @@ os.close(fd)
             f = rd.read()
             data = self.loop.run_until_complete(f)
             self.assertEqual(data, b'')
-
-        self.assertEqual(messages, [])
 
 
 if __name__ == '__main__':
