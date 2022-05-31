@@ -707,6 +707,19 @@ class NewStreamTests(unittest.IsolatedAsyncioTestCase):
 
 class StreamTests2(test_utils.TestCase):
 
+    def setUp(self):
+        super().setUp()
+        self.loop = asyncio.new_event_loop()
+        self.set_event_loop(self.loop)
+
+    def tearDown(self):
+        # just in case if we have transport close callbacks
+        test_utils.run_briefly(self.loop)
+
+        self.loop.close()
+        gc.collect()
+        super().tearDown()
+
     @unittest.skipIf(sys.platform == 'win32', "Don't have pipes")
     def test_read_all_from_pipe_reader(self):
         # See asyncio issue 168.  This test is derived from the example
