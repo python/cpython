@@ -241,7 +241,7 @@ class PurePath(object):
     """
     __slots__ = (
         '_drv', '_root', '_parts',
-        '_str', '_hash', '_pparts', '_cached_cparts',
+        '_str', '_hash', '_pparts', '_cached_ncparts',
     )
     _flavour = os.path
 
@@ -483,45 +483,45 @@ class PurePath(object):
             return 'file:' + urlquote_from_bytes(self.as_posix().encode('utf-8'))
 
     @property
-    def _cparts(self):
-        # Cached casefolded parts, for hashing and comparison
+    def _ncparts(self):
+        # Cached normcased parts, for hashing and comparison
         try:
-            return self._cached_cparts
+            return self._cached_ncparts
         except AttributeError:
-            self._cached_cparts = [self._flavour.normcase(p) for p in self._parts]
-            return self._cached_cparts
+            self._cached_ncparts = [self._flavour.normcase(p) for p in self._parts]
+            return self._cached_ncparts
 
     def __eq__(self, other):
         if not isinstance(other, PurePath):
             return NotImplemented
-        return self._cparts == other._cparts and self._flavour is other._flavour
+        return self._ncparts == other._ncparts and self._flavour is other._flavour
 
     def __hash__(self):
         try:
             return self._hash
         except AttributeError:
-            self._hash = hash(tuple(self._cparts))
+            self._hash = hash(tuple(self._ncparts))
             return self._hash
 
     def __lt__(self, other):
         if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
-        return self._cparts < other._cparts
+        return self._ncparts < other._ncparts
 
     def __le__(self, other):
         if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
-        return self._cparts <= other._cparts
+        return self._ncparts <= other._ncparts
 
     def __gt__(self, other):
         if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
-        return self._cparts > other._cparts
+        return self._ncparts > other._ncparts
 
     def __ge__(self, other):
         if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
-        return self._cparts >= other._cparts
+        return self._ncparts >= other._ncparts
 
     drive = property(attrgetter('_drv'),
                      doc="""The drive prefix (letter or UNC path), if any.""")
@@ -640,9 +640,9 @@ class PurePath(object):
         else:
             to_abs_parts = to_parts
         n = len(to_abs_parts)
-        def cf(parts):
+        def nc(parts):
             return [self._flavour.normcase(p) for p in parts]
-        if (root or drv) if n == 0 else cf(abs_parts[:n]) != cf(to_abs_parts):
+        if (root or drv) if n == 0 else nc(abs_parts[:n]) != nc(to_abs_parts):
             formatted = self._format_parsed_parts(to_drv, to_root, to_parts)
             raise ValueError("{!r} is not in the subpath of {!r}"
                     " OR one path is relative and the other is absolute."
@@ -733,16 +733,16 @@ class PurePath(object):
         """
         Return True if this path matches the given pattern.
         """
-        cf = self._flavour.normcase
-        path_pattern = cf(path_pattern)
+        nc = self._flavour.normcase
+        path_pattern = nc(path_pattern)
         drv, root, pat_parts = self._parse_parts((path_pattern,))
         if not pat_parts:
             raise ValueError("empty pattern")
-        if drv and drv != cf(self._drv):
+        if drv and drv != nc(self._drv):
             return False
-        if root and root != cf(self._root):
+        if root and root != nc(self._root):
             return False
-        parts = self._cparts
+        parts = self._ncparts
         if drv or root:
             if len(pat_parts) != len(parts):
                 return False
