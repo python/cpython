@@ -1,0 +1,2 @@
+:mod:`test.test_asyncio.test_streams` temporarily introduced two new tests,
+``NewStreamTests`` and ``StreamTests2``.
