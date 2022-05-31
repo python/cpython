@@ -118,21 +118,6 @@ def join(path, *paths):
         raise
 
 
-# Interesting findings about extended paths:
-# * '\\?\c:\a' is an extended path, which bypasses normal Windows API
-#   path processing. Thus relative paths are not resolved and slash is not
-#   translated to backslash. It has the native NT path limit of 32767
-#   characters, but a bit less after resolving device symbolic links,
-#   such as '\??\C:' => '\Device\HarddiskVolume2'.
-# * '\\?\c:/a' looks for a device named 'C:/a' because slash is a
-#   regular name character in the object namespace.
-# * '\\?\c:\foo/bar' is invalid because '/' is illegal in NT filesystems.
-#   The only path separator at the filesystem level is backslash.
-# * '//?/c:\a' and '//?/c:/a' are effectively equivalent to '\\.\c:\a' and
-#   thus limited to MAX_PATH.
-# * Prior to Windows 8, ANSI API bytes paths are limited to MAX_PATH,
-#   even with the '\\?\' prefix.
-
 # Split a path in a drive specification (a drive letter followed by a
 # colon) and the path specification.
 # It is always true that drivespec + pathspec == p
