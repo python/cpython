@@ -583,10 +583,9 @@ arguments will never be treated as file references.
 
 .. versionchanged:: 3.12
    :class:`ArgumentParser` changed encoding and errors to read arguments files
-   from default text encoding (e.g. :func:`locale.getpreferredencoding(False)`
-   and `"strict"`) to :term:`filesystem encoding and error handler`.
-   This change affects Windows; argument file should be encoded with UTF-8
-   instead of ANSI Codepage.
+   from default (e.g. :func:`locale.getpreferredencoding(False)` and
+   ``"strict"``) to :term:`filesystem encoding and error handler`.
+   Arguments file should be encoded in UTF-8 instead of ANSI Codepage on Windows.
 
 
 argument_default
