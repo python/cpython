@@ -87,17 +87,28 @@ The module defines the following user-callable items:
 
    The returned object is always a file-like object whose :attr:`!file`
    attribute is the underlying true file object. This file-like object can be
-   used in a :keyword:`with` statement, just like a normal file.
-
-   The name of the temporary file can be retrieved from the :attr:`name`
-   attribute of the returned file-like object. Whether the name can be used to
-   open the file a second time, while the named temporary file is still open,
-   varies across platforms (it can be so used on Unix; it cannot on Windows).
+   used in a :keyword:`with` statement, just like a normal file.The name of the
+   temporary file can be retrieved from the :attr:`name` attribute of the
+   returned file-like object. 
 
    If *delete* is true (the default) and *delete_on_close* is true (the
    default), the file is deleted as soon as it is closed. If *delete* is true
    and *delete_on_close* is false, the file is deleted on context manager exit
    only. If *delete* is false, the value of *delete_on_close* is ignored.
+
+   Whether the name of the temporary file can be used to open the file a second
+   time, while the named temporary file is still open, varies across platforms:
+
+   * It can be so used on Unix.
+
+   * In Windows, the file can be opened again if *delete_on_close* is false or if
+     the open shares delete access (e.g. by calling ``CreateFileW()`` directly with
+     ``FILE_SHARE_DELETE``, or calling :func:`os.open` with ``O_TEMPORARY``). If
+     *delete_on_close* is false, and the file is opened again without sharing
+     delete access (e.g. via builtin :func:`open`), then the second open must be
+     closed before exiting the context manager, else the :func:`os.unlink` call on
+     context manager exit will fail with a ``PermissionError`` due to an OS
+     sharing-violation error (32).
 
    To use the name of the temporary file to open the closed file second time,
    either make sure not to delete the file upon closure (set the *delete*
@@ -105,6 +116,16 @@ The module defines the following user-callable items:
    :keyword:`with` statement, set the *delete_on_close* to be false. The latter
    approach is recommended as it provides assistance in automatic cleaning of
    the temporary file upon the context manager exit.
+
+   In Windows, if *delete_on_close* is false, and the file is created in a
+   directory for which the user lacks delete access (either directly for files
+   as an inherited rule that grants ``DELETE`` access, or at the directory level
+   via ``FILE_DELETE_CHILD`` access), then the :func:`os.unlink` call on exit of
+   the context manager will fail with a ``PermissionError`` due to an OS
+   access-denied error (5). This cannot happen when *delete_on_close* is true
+   because ``DELETE`` access is implicitly requested when ``CreateFileW()`` is
+   called with ``FILE_FLAG_DELETE_ON_CLOSE``, so the open immediately fails if
+   the caller lacks delete access.
 
    On POSIX (only), a process that is terminated abruptly with SIGKILL
    cannot automatically delete any NamedTemporaryFiles it created.
