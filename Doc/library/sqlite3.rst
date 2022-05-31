@@ -1102,7 +1102,7 @@ The exception hierarchy is defined by DB-API 2.0.
 
 .. exception:: Warning
 
-   This exception is not raised by :mod:`sqlite3`.
+   This exception is not raised by ``sqlite3``.
    ``Warning`` is a subclass of :exc:`Exception`.
 
 .. exception:: Error
@@ -1156,8 +1156,7 @@ The exception hierarchy is defined by DB-API 2.0.
 .. exception:: IntegrityError
 
    Exception raised when the relational integrity of the database is affected,
-   for example, a foreign key check fails.
-   ``IntegrityError`` is a subclass of :exc:`DatabaseError`.
+   e.g. a foreign key check fails.  It is a subclass of :exc:`DatabaseError`.
 
 .. exception:: InternalError
 
