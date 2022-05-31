@@ -767,27 +767,43 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
     /* Check for a conversion char, if present. */
     if (**str == '!') {
         *str += 1;
-        if (*str >= end) {
-            goto unexpected_end_of_string;
+        const char *conv_start = *str;
+        while (1) {
+            if (*str >= end) {
+                goto unexpected_end_of_string;
+            }
+            if (**str == '}' || **str == ':') {
+                break;
+            }
+            *str += 1;
+        }
+        if (*str == conv_start) {
+            RAISE_SYNTAX_ERROR(
+                      "f-string: missed conversion character");
+            goto error;
         }
 
-        conversion = (unsigned char)**str;
-        *str += 1;
-
+        conversion = (unsigned char)*conv_start;
         /* Validate the conversion. */
-        if (!(conversion == 's' || conversion == 'r' || conversion == 'a')) {
-            RAISE_SYNTAX_ERROR(
-                      "f-string: invalid conversion character: "
-                      "expected 's', 'r', or 'a'");
+        if ((*str != conv_start + 1) ||
+            !(conversion == 's' || conversion == 'r' || conversion == 'a'))
+        {
+            PyObject *conv_obj = PyUnicode_FromStringAndSize(conv_start,
+                                                             *str-conv_start);
+            if (conv_obj) {
+                RAISE_SYNTAX_ERROR(
+                        "f-string: invalid conversion character %R: "
+                        "expected 's', 'r', or 'a'",
+                        conv_obj);
+                Py_DECREF(conv_obj);
+            }
             goto error;
         }
 
     }
 
     /* Check for the format spec, if present. */
-    if (*str >= end) {
-        goto unexpected_end_of_string;
-    }
+    assert(*str < end);
     if (**str == ':') {
         *str += 1;
         if (*str >= end) {
