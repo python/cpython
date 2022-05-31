@@ -18,9 +18,6 @@ from test.support.script_helper import (
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-# Debug build?
-Py_DEBUG = hasattr(sys, "gettotalrefcount")
-
 
 # XXX (ncoghlan): Move to script_helper and make consistent with run_python
 def _kill_python_and_exit_code(p):
@@ -120,7 +117,7 @@ class CmdLineTest(unittest.TestCase):
         # "-X showrefcount" shows the refcount, but only in debug builds
         rc, out, err = run_python('-I', '-X', 'showrefcount', '-c', code)
         self.assertEqual(out.rstrip(), b"{'showrefcount': True}")
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             # bpo-46417: Tolerate negative reference count which can occur
             # because of bugs in C extensions. This test is only about checking
             # the showrefcount feature.
@@ -685,7 +682,7 @@ class CmdLineTest(unittest.TestCase):
         code = ("import warnings; "
                 "print(' '.join('%s::%s' % (f[0], f[2].__name__) "
                                 "for f in warnings.filters))")
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             expected_filters = "default::Warning"
         else:
             expected_filters = ("default::Warning "
@@ -757,7 +754,7 @@ class CmdLineTest(unittest.TestCase):
         expected_filters = ("error::BytesWarning "
                             "once::UserWarning "
                             "always::UserWarning")
-        if not Py_DEBUG:
+        if not support.Py_DEBUG:
             expected_filters += (" "
                                  "default::DeprecationWarning "
                                  "ignore::DeprecationWarning "
@@ -795,10 +792,10 @@ class CmdLineTest(unittest.TestCase):
         # Test the PYTHONMALLOC environment variable
         pymalloc = support.with_pymalloc()
         if pymalloc:
-            default_name = 'pymalloc_debug' if Py_DEBUG else 'pymalloc'
+            default_name = 'pymalloc_debug' if support.Py_DEBUG else 'pymalloc'
             default_name_debug = 'pymalloc_debug'
         else:
-            default_name = 'malloc_debug' if Py_DEBUG else 'malloc'
+            default_name = 'malloc_debug' if support.Py_DEBUG else 'malloc'
             default_name_debug = 'malloc_debug'
 
         tests = [

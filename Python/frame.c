@@ -1,4 +1,6 @@
 
+#define _PY_INTERPRETER
+
 #include "Python.h"
 #include "frameobject.h"
 #include "pycore_code.h"           // stats

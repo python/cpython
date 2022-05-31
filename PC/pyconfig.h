@@ -569,9 +569,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define to 1 if you have the <signal.h> header file. */
 #define HAVE_SIGNAL_H 1
 
-/* Define if you have the <stdarg.h> prototypes.  */
-#define HAVE_STDARG_PROTOTYPES
-
 /* Define if you have the <stddef.h> header file.  */
 #define HAVE_STDDEF_H 1
 

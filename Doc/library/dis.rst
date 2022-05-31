@@ -45,9 +45,8 @@ the following command can be used to display the disassembly of
      2           2 PUSH_NULL
                  4 LOAD_GLOBAL              1 (NULL + len)
                  6 LOAD_FAST                0 (alist)
-                 8 PRECALL                  1
-                10 CALL                     1
-                12 RETURN_VALUE
+                 8 CALL                     1
+                18 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -119,7 +118,6 @@ Example::
     PUSH_NULL
     LOAD_GLOBAL
     LOAD_FAST
-    PRECALL
     CALL
     RETURN_VALUE
 
@@ -577,6 +575,8 @@ iterations of the loop.
 
    Pops TOS and yields it from a :term:`generator`.
 
+    .. versionchanged:: 3.11
+       oparg set to be the stack depth, for efficient handling on frames.
 
 .. opcode:: YIELD_FROM
 
@@ -1182,15 +1182,6 @@ iterations of the loop.
    .. versionadded:: 3.7
 
 
-.. opcode:: PRECALL (argc)
-
-   Prefixes :opcode:`CALL`. Logically this is a no op.
-   It exists to enable effective specialization of calls.
-   ``argc`` is the number of arguments as described in :opcode:`CALL`.
-
-   .. versionadded:: 3.11
-
-
 .. opcode:: PUSH_NULL
 
     Pushes a ``NULL`` to the stack.
@@ -1202,7 +1193,7 @@ iterations of the loop.
 
 .. opcode:: KW_NAMES (i)
 
-   Prefixes :opcode:`PRECALL`.
+   Prefixes :opcode:`CALL`.
    Stores a reference to ``co_consts[consti]`` into an internal variable
    for use by :opcode:`CALL`. ``co_consts[consti]`` must be a tuple of strings.
 

@@ -92,32 +92,6 @@ isolation_level_converter(PyObject *str_or_none, const char **result)
     return 1;
 }
 
-static int
-clinic_fsconverter(PyObject *pathlike, const char **result)
-{
-    PyObject *bytes = NULL;
-    Py_ssize_t len;
-    char *str;
-
-    if (!PyUnicode_FSConverter(pathlike, &bytes)) {
-        goto error;
-    }
-    if (PyBytes_AsStringAndSize(bytes, &str, &len) < 0) {
-        goto error;
-    }
-    if ((*result = (const char *)PyMem_Malloc(len+1)) == NULL) {
-        goto error;
-    }
-
-    memcpy((void *)(*result), str, len+1);
-    Py_DECREF(bytes);
-    return 1;
-
-error:
-    Py_XDECREF(bytes);
-    return 0;
-}
-
 #define clinic_state() (pysqlite_get_state_by_type(Py_TYPE(self)))
 #include "clinic/connection.c.h"
 #undef clinic_state
@@ -159,25 +133,17 @@ new_statement_cache(pysqlite_Connection *self, pysqlite_state *state,
 }
 
 /*[python input]
-class FSConverter_converter(CConverter):
-    type = "const char *"
-    converter = "clinic_fsconverter"
-    def converter_init(self):
-        self.c_default = "NULL"
-    def cleanup(self):
-        return f"PyMem_Free((void *){self.name});\n"
-
 class IsolationLevel_converter(CConverter):
     type = "const char *"
     converter = "isolation_level_converter"
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=be142323885672ab]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=cbcfe85b253061c2]*/
 
 /*[clinic input]
 _sqlite3.Connection.__init__ as pysqlite_connection_init
 
-    database: FSConverter
+    database: object
     timeout: double = 5.0
     detect_types: int = 0
     isolation_level: IsolationLevel = ""
@@ -188,14 +154,19 @@ _sqlite3.Connection.__init__ as pysqlite_connection_init
 [clinic start generated code]*/
 
 static int
-pysqlite_connection_init_impl(pysqlite_Connection *self,
-                              const char *database, double timeout,
-                              int detect_types, const char *isolation_level,
+pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
+                              double timeout, int detect_types,
+                              const char *isolation_level,
                               int check_same_thread, PyObject *factory,
                               int cache_size, int uri)
-/*[clinic end generated code: output=7d640ae1d83abfd4 input=342173993434ba1e]*/
+/*[clinic end generated code: output=839eb2fee4293bda input=b8ce63dc6f70a383]*/
 {
-    if (PySys_Audit("sqlite3.connect", "s", database) < 0) {
+    if (PySys_Audit("sqlite3.connect", "O", database) < 0) {
+        return -1;
+    }
+
+    PyObject *bytes;
+    if (!PyUnicode_FSConverter(database, &bytes)) {
         return -1;
     }
 
@@ -210,7 +181,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     sqlite3 *db;
     int rc;
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_open_v2(database, &db,
+    rc = sqlite3_open_v2(PyBytes_AS_STRING(bytes), &db,
                          SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |
                          (uri ? SQLITE_OPEN_URI : 0), NULL);
     if (rc == SQLITE_OK) {
@@ -218,6 +189,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     }
     Py_END_ALLOW_THREADS
 
+    Py_DECREF(bytes);
     if (db == NULL && rc == SQLITE_NOMEM) {
         PyErr_NoMemory();
         return -1;

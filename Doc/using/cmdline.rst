@@ -248,8 +248,11 @@ Miscellaneous options
 
 .. cmdoption:: -d
 
-   Turn on parser debugging output (for expert only, depending on compilation
-   options).  See also :envvar:`PYTHONDEBUG`.
+   Turn on parser debugging output (for expert only).
+   See also the :envvar:`PYTHONDEBUG` environment variable.
+
+   This option requires a :ref:`debug build of Python <debug-build>`, otherwise
+   it's ignored.
 
 
 .. cmdoption:: -E
@@ -659,6 +662,9 @@ conflict.
    If this is set to a non-empty string it is equivalent to specifying the
    :option:`-d` option.  If set to an integer, it is equivalent to specifying
    :option:`-d` multiple times.
+
+   This environment variable requires a :ref:`debug build of Python
+   <debug-build>`, otherwise it's ignored.
 
 
 .. envvar:: PYTHONINSPECT

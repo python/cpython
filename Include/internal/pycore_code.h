@@ -82,12 +82,6 @@ typedef struct {
 
 typedef struct {
     _Py_CODEUNIT counter;
-} _PyPrecallCache;
-
-#define INLINE_CACHE_ENTRIES_PRECALL CACHE_ENTRIES(_PyPrecallCache)
-
-typedef struct {
-    _Py_CODEUNIT counter;
 } _PyStoreSubscrCache;
 
 #define INLINE_CACHE_ENTRIES_STORE_SUBSCR CACHE_ENTRIES(_PyStoreSubscrCache)
@@ -249,8 +243,6 @@ extern int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_C
 extern int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr);
 extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
                                int nargs, PyObject *kwnames);
-extern int _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr,
-                                  int nargs, PyObject *kwnames, int oparg);
 extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                                     int oparg, PyObject **locals);
 extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
@@ -273,6 +265,9 @@ extern int _PyStaticCode_InternStrings(PyCodeObject *co);
 #define OBJECT_STAT_INC(name) _py_stats.object_stats.name++
 #define OBJECT_STAT_INC_COND(name, cond) \
     do { if (cond) _py_stats.object_stats.name++; } while (0)
+#define EVAL_CALL_STAT_INC(name) _py_stats.call_stats.eval_calls[name]++
+#define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) \
+    do { if (PyFunction_Check(callable)) _py_stats.call_stats.eval_calls[name]++; } while (0)
 
 // Used by the _opcode extension which is built as a shared library
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
@@ -284,6 +279,8 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define CALL_STAT_INC(name) ((void)0)
 #define OBJECT_STAT_INC(name) ((void)0)
 #define OBJECT_STAT_INC_COND(name, cond) ((void)0)
+#define EVAL_CALL_STAT_INC(name) ((void)0)
+#define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) ((void)0)
 #endif  // !Py_STATS
 
 // Cache values are only valid in memory, so use native endianness.
