@@ -1136,7 +1136,7 @@ The exception hierarchy is defined by DB-API 2.0.
 
    Exception raised for errors that are related to the database.
    This serves as the base exception for several types of database errors.
-   It is only raised implicitly through the specialised variants.
+   It is only raised implicitly through the specialised subclasses.
    ``DatabaseError`` is a subclass of :exc:`Error`.
 
 .. exception:: DataError
