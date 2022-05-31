@@ -590,7 +590,9 @@ x = (
         self.assertEqual(f'{-10:{"-"}#{1}0{"x"}}', '      -0xa')
         self.assertEqual(f'{10:#{3 != {4:5} and width}x}', '       0xa')
 
-        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
+        self.assertAllRaise(SyntaxError,
+                            """f-string: invalid conversion character 'r{"': """
+                            """expected 's', 'r', or 'a'""",
                             ["""f'{"s"!r{":10"}}'""",
 
                              # This looks like a nested format spec.
@@ -1012,19 +1014,28 @@ x = (
         # Not a conversion, but show that ! is allowed in a format spec.
         self.assertEqual(f'{3.14:!<10.10}', '3.14!!!!!!')
 
-        self.assertAllRaise(SyntaxError, 'f-string: invalid conversion character',
-                            ["f'{3!g}'",
-                             "f'{3!A}'",
-                             "f'{3!3}'",
-                             "f'{3!G}'",
-                             "f'{3!!}'",
-                             "f'{3!:}'",
-                             "f'{3! s}'",  # no space before conversion char
+        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
+                            ["f'{3!'",
+                             "f'{3!s'",
+                             "f'{3!g'",
                              ])
 
-        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
-                            ["f'{x!s{y}}'",
-                             "f'{3!ss}'",
+        self.assertAllRaise(SyntaxError, 'f-string: missed conversion character',
+                            ["f'{3!}'",
+                             "f'{3!:'",
+                             "f'{3!:}'",
+                             ])
+
+        for conv in 'g', 'A', '3', 'G', '!', ' s', 's ', ' s ', 'ä', 'ɐ', 'ª':
+            self.assertAllRaise(SyntaxError,
+                                "f-string: invalid conversion character %r: "
+                                "expected 's', 'r', or 'a'" % conv,
+                                ["f'{3!" + conv + "}'"])
+
+        self.assertAllRaise(SyntaxError,
+                            "f-string: invalid conversion character 'ss': "
+                            "expected 's', 'r', or 'a'",
+                            ["f'{3!ss}'",
                              "f'{3!ss:}'",
                              "f'{3!ss:s}'",
                              ])
