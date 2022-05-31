@@ -3542,7 +3542,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     type->tp_as_buffer = &res->as_buffer;
 
     /* Set tp_base and tp_bases */
-    type->tp_base = Py_NewRef(base);
+    type->tp_base = (PyObject *)Py_NewRef(base);
     type->tp_bases = bases;
     bases = NULL;  // We give our reference to bases to the type
 
