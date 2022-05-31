@@ -1142,7 +1142,7 @@ The exception hierarchy is defined by DB-API 2.0.
 .. exception:: DataError
 
    Exception raised for errors caused by problems with the processed data,
-   like numeric value out of range, and too long strings.
+   like numeric values out of range, and strings which are too long.
    ``DataError`` is a subclass of :exc:`DatabaseError`.
 
 .. exception:: OperationalError
