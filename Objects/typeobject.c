@@ -3409,7 +3409,6 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     PyObject *modname = NULL;
     PyTypeObject *type;
     PyObject *bases = NULL;
-    PyObject *result = NULL;
     int r;
     int success = 0;
 
