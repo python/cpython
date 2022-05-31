@@ -1561,7 +1561,11 @@ eval_frame_handle_pending(PyThreadState *tstate)
         dtrace_function_entry(frame); \
     }
 
+#define ADAPTIVE_COUNTER_IS_ZERO(cache) \
+    (cache)->counter < (1<<ADAPTIVE_BACKOFF_BITS)
 
+#define DECREMENT_ADAPTIVE_COUNTER(cache) \
+    (cache)->counter -= (1<<ADAPTIVE_BACKOFF_BITS)
 
 static int
 trace_function_entry(PyThreadState *tstate, _PyInterpreterFrame *frame)
@@ -2156,7 +2160,7 @@ handle_eval_breaker:
 
         TARGET(BINARY_SUBSCR_ADAPTIVE) {
             _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
-            if (cache->counter == 0) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 PyObject *sub = TOP();
                 PyObject *container = SECOND();
                 next_instr--;
@@ -2167,7 +2171,7 @@ handle_eval_breaker:
             }
             else {
                 STAT_INC(BINARY_SUBSCR, deferred);
-                cache->counter--;
+                DECREMENT_ADAPTIVE_COUNTER(cache);
                 JUMP_TO_INSTRUCTION(BINARY_SUBSCR);
             }
         }
@@ -2321,7 +2325,7 @@ handle_eval_breaker:
 
         TARGET(STORE_SUBSCR_ADAPTIVE) {
             _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
-            if (cache->counter == 0) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 PyObject *sub = TOP();
                 PyObject *container = SECOND();
                 next_instr--;
@@ -2332,7 +2336,7 @@ handle_eval_breaker:
             }
             else {
                 STAT_INC(STORE_SUBSCR, deferred);
-                cache->counter--;
+                DECREMENT_ADAPTIVE_COUNTER(cache);
                 JUMP_TO_INSTRUCTION(STORE_SUBSCR);
             }
         }
@@ -2815,7 +2819,7 @@ handle_eval_breaker:
         TARGET(UNPACK_SEQUENCE_ADAPTIVE) {
             assert(cframe.use_tracing == 0);
             _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
-            if (cache->counter == 0) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 PyObject *seq = TOP();
                 next_instr--;
                 _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
@@ -2823,7 +2827,7 @@ handle_eval_breaker:
             }
             else {
                 STAT_INC(UNPACK_SEQUENCE, deferred);
-                cache->counter--;
+                DECREMENT_ADAPTIVE_COUNTER(cache);
                 JUMP_TO_INSTRUCTION(UNPACK_SEQUENCE);
             }
         }
@@ -3056,7 +3060,7 @@ handle_eval_breaker:
         TARGET(LOAD_GLOBAL_ADAPTIVE) {
             assert(cframe.use_tracing == 0);
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
-            if (cache->counter == 0) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 PyObject *name = GETITEM(names, oparg>>1);
                 next_instr--;
                 if (_Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name) < 0) {
@@ -3066,7 +3070,7 @@ handle_eval_breaker:
             }
             else {
                 STAT_INC(LOAD_GLOBAL, deferred);
-                cache->counter--;
+                DECREMENT_ADAPTIVE_COUNTER(cache);
                 JUMP_TO_INSTRUCTION(LOAD_GLOBAL);
             }
         }
@@ -3480,7 +3484,7 @@ handle_eval_breaker:
         TARGET(LOAD_ATTR_ADAPTIVE) {
             assert(cframe.use_tracing == 0);
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            if (cache->counter == 0) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 PyObject *owner = TOP();
                 PyObject *name = GETITEM(names, oparg);
                 next_instr--;
@@ -3491,7 +3495,7 @@ handle_eval_breaker:
             }
             else {
                 STAT_INC(LOAD_ATTR, deferred);
-                cache->counter--;
+                DECREMENT_ADAPTIVE_COUNTER(cache);
                 JUMP_TO_INSTRUCTION(LOAD_ATTR);
             }
         }
@@ -3589,7 +3593,7 @@ handle_eval_breaker:
         TARGET(STORE_ATTR_ADAPTIVE) {
             assert(cframe.use_tracing == 0);
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            if (cache->counter == 0) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 PyObject *owner = TOP();
                 PyObject *name = GETITEM(names, oparg);
                 next_instr--;
@@ -3600,7 +3604,7 @@ handle_eval_breaker:
             }
             else {
                 STAT_INC(STORE_ATTR, deferred);
-                cache->counter--;
+                DECREMENT_ADAPTIVE_COUNTER(cache);
                 JUMP_TO_INSTRUCTION(STORE_ATTR);
             }
         }
@@ -3719,7 +3723,7 @@ handle_eval_breaker:
         TARGET(COMPARE_OP_ADAPTIVE) {
             assert(cframe.use_tracing == 0);
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
-            if (cache->counter == 0) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 PyObject *right = TOP();
                 PyObject *left = SECOND();
                 next_instr--;
@@ -3728,7 +3732,7 @@ handle_eval_breaker:
             }
             else {
                 STAT_INC(COMPARE_OP, deferred);
-                cache->counter--;
+                DECREMENT_ADAPTIVE_COUNTER(cache);
                 JUMP_TO_INSTRUCTION(COMPARE_OP);
             }
         }
@@ -4526,7 +4530,7 @@ handle_eval_breaker:
         TARGET(LOAD_METHOD_ADAPTIVE) {
             assert(cframe.use_tracing == 0);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
-            if (cache->counter == 0) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 PyObject *owner = TOP();
                 PyObject *name = GETITEM(names, oparg);
                 next_instr--;
@@ -4537,7 +4541,7 @@ handle_eval_breaker:
             }
             else {
                 STAT_INC(LOAD_METHOD, deferred);
-                cache->counter--;
+                DECREMENT_ADAPTIVE_COUNTER(cache);
                 JUMP_TO_INSTRUCTION(LOAD_METHOD);
             }
         }
@@ -4775,7 +4779,7 @@ handle_eval_breaker:
 
         TARGET(CALL_ADAPTIVE) {
             _PyCallCache *cache = (_PyCallCache *)next_instr;
-            if (cache->counter == 0) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 next_instr--;
                 int is_meth = is_method(stack_pointer, oparg);
                 int nargs = oparg + is_meth;
@@ -4789,7 +4793,7 @@ handle_eval_breaker:
             }
             else {
                 STAT_INC(CALL, deferred);
-                cache->counter--;
+                DECREMENT_ADAPTIVE_COUNTER(cache);
                 goto call_function;
             }
         }
@@ -5521,7 +5525,7 @@ handle_eval_breaker:
         TARGET(BINARY_OP_ADAPTIVE) {
             assert(cframe.use_tracing == 0);
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
-            if (cache->counter == 0) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 PyObject *lhs = SECOND();
                 PyObject *rhs = TOP();
                 next_instr--;
@@ -5530,7 +5534,7 @@ handle_eval_breaker:
             }
             else {
                 STAT_INC(BINARY_OP, deferred);
-                cache->counter--;
+                DECREMENT_ADAPTIVE_COUNTER(cache);
                 JUMP_TO_INSTRUCTION(BINARY_OP);
             }
         }
@@ -5658,7 +5662,7 @@ miss:
             assert(adaptive_opcode);
             _Py_SET_OPCODE(next_instr[-1], adaptive_opcode);
             STAT_INC(opcode, deopt);
-            *counter = ADAPTIVE_CACHE_BACKOFF;
+            *counter = adaptive_counter_start();
         }
         next_instr--;
         DISPATCH_GOTO();
