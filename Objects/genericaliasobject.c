@@ -296,7 +296,7 @@ subs_tvars(PyObject *obj, PyObject *params,
             else {
                 if (iparam >= 0) {
                     if (iparam > varparam) {
-                        iparam += nargs - nsubargs;
+                        iparam += nargs - nparams;
                     }
                     arg = argitems[iparam];
                 }
