@@ -3909,6 +3909,9 @@ written in Python, such as a mail server's external command delivery program.
    .. data:: PIDFD_NONBLOCK
 
       This flag indicates that the file descriptor will be non-blocking.
+      If the process referred to by the file descriptor has not yet terminated,
+      then an attempt to wait on the file descriptor using :manpage:`waitid(2)`
+      will immediately return the error :data:`~errno.EAGAIN` rather than blocking.
 
    .. availability:: Linux 5.10+
    .. versionadded:: 3.12
