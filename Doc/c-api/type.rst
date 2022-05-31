@@ -193,7 +193,7 @@ The following functions and structs are used to create
 .. c:function:: PyObject* PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module, PyType_Spec *spec, PyObject *bases)
 
    Create and return a :ref:`heap type <heap-types>` from the *spec*
-   (:const:`Py_TPFLAGS_HEAPTYPE`).
+   (see :const:`Py_TPFLAGS_HEAPTYPE`).
 
    The metaclass *metaclass* is used to construct the resulting type object.
    When *metaclass* is ``NULL``, the metaclass is derived from *bases*
@@ -215,6 +215,19 @@ The following functions and structs are used to create
    for each class individually.
 
    This function calls :c:func:`PyType_Ready` on the new type.
+
+   Note that this function does *not* fully match the behavior of
+   calling :py:class:`type() <type>` or using the :keyword:`class` statement.
+   With user-provided base types or metaclasses, prefer
+   :ref:`calling <capi-call>` :py:class:`type` (or the metaclass)
+   over ``PyType_From*`` functions.
+   Specifically:
+
+   * :py:meth:`~object.__new__` is not called on the new class
+     (and it must be set to ``type.__new__``).
+   * :py:meth:`~object.__init__` is not called on the new class.
+   * :py:meth:`~object.__init_subclass__` is not called on any bases.
+   * :py:meth:`~object.__set_name__` is not called on new descriptors.
 
    .. versionadded:: 3.12
 
