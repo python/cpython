@@ -3416,6 +3416,11 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
 
     nmembers = weaklistoffset = dictoffset = vectorcalloffset = 0;
     for (slot = spec->slots; slot->slot; slot++) {
+        if (slot->slot < 0
+            || (size_t)slot->slot >= Py_ARRAY_LENGTH(pyslot_offsets)) {
+            PyErr_SetString(PyExc_RuntimeError, "invalid slot offset");
+            goto finally;
+        }
         if (slot->slot == Py_tp_members) {
             if (nmembers != 0) {
                 PyErr_SetString(
@@ -3553,12 +3558,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     type->tp_itemsize = spec->itemsize;
 
     for (slot = spec->slots; slot->slot; slot++) {
-        if (slot->slot < 0
-            || (size_t)slot->slot >= Py_ARRAY_LENGTH(pyslot_offsets)) {
-            PyErr_SetString(PyExc_RuntimeError, "invalid slot offset");
-            goto finally;
-        }
-        else if (slot->slot == Py_tp_base || slot->slot == Py_tp_bases) {
+        if (slot->slot == Py_tp_base || slot->slot == Py_tp_bases) {
             /* Processed above */
             continue;
         }
