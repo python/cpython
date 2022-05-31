@@ -1232,7 +1232,9 @@ test_from_spec_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(ignored)
     PyObject *metaclass = NULL;
     PyObject *class = NULL;
     PyObject *new = NULL;
+    PyObject *subclasses = NULL;
     PyObject *result = NULL;
+    int r;
 
     metaclass = PyType_FromSpecWithBases(&MinimalMetaclass_spec, (PyObject*)&PyType_Type);
     if (metaclass == NULL) {
@@ -1252,12 +1254,29 @@ test_from_spec_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(ignored)
                 "Metaclass not set properly!");
         goto finally;
     }
+
+    /* Assert that __subclasses__ is updated */
+    subclasses = PyObject_CallMethod(class, "__subclasses__", "");
+    if (!subclasses) {
+        goto finally;
+    }
+    r = PySequence_Contains(subclasses, new);
+    if (r < 0) {
+        goto finally;
+    }
+    if (r == 0) {
+        PyErr_SetString(PyExc_AssertionError,
+                "subclasses not set properly!");
+        goto finally;
+    }
+
     result = Py_NewRef(Py_None);
 
 finally:
     Py_XDECREF(metaclass);
     Py_XDECREF(class);
     Py_XDECREF(new);
+    Py_XDECREF(subclasses);
     return result;
 }
 
