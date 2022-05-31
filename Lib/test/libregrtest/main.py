@@ -690,6 +690,16 @@ class Regrtest:
         return None
 
     def _main(self, tests, kwargs):
+        myenv = False
+        if 'PYTHONHOME' not in os.environ:
+            for path in sys.path:
+                if not os.path.isdir(path):
+                    continue
+                if os.path.exists(os.path.join(path, 'os.py')):
+                    os.environ['PYTHONHOME'] = os.path.dirname(path)
+                    myenv = True
+                    break
+
         if self.worker_test_name is not None:
             from test.libregrtest.runtest_mp import run_tests_worker
             run_tests_worker(self.ns, self.worker_test_name)
@@ -721,6 +731,12 @@ class Regrtest:
         self.finalize()
 
         self.save_xml_result()
+
+        if myenv:
+            try:
+                del os.environ['PYTHONHOME']
+            except KeyError:
+                pass
 
         if self.bad:
             sys.exit(2)
