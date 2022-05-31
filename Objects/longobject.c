@@ -2391,7 +2391,6 @@ digit beyond the first.
         twodigits c;           /* current input character */
         Py_ssize_t size_z;
         Py_ssize_t digits = 0;
-        int i;
         int convwidth;
         twodigits convmultmax, convmult;
         digit *pz, *pzstop;
@@ -2402,24 +2401,22 @@ digit beyond the first.
         static int convwidth_base[37] = {0,};
         static twodigits convmultmax_base[37] = {0,};
 
-        if (log_base_BASE[base] == 0.0) {
-            twodigits convmax = base;
-            int i = 1;
+        twodigits convmax = base;
+        int i = 1;
 
-            log_base_BASE[base] = (log((double)base) /
-                                   log((double)PyLong_BASE));
-            for (;;) {
-                twodigits next = convmax * base;
-                if (next > PyLong_BASE) {
-                    break;
-                }
-                convmax = next;
-                ++i;
+        log_base_BASE[base] = (log((double)base) /
+                               log((double)PyLong_BASE));
+        for (;;) {
+            twodigits next = convmax * base;
+            if (next > PyLong_BASE) {
+                break;
             }
-            convmultmax_base[base] = convmax;
-            assert(i > 0);
-            convwidth_base[base] = i;
+            convmax = next;
+            ++i;
         }
+        convmultmax_base[base] = convmax;
+        assert(i > 0);
+        convwidth_base[base] = i;
 
         /* Find length of the string of numeric characters. */
         scan = str;
