@@ -3459,6 +3459,8 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
         goto finally;
     }
 
+    /* Calculate the metaclass */
+
     if (!metaclass) {
         metaclass = &PyType_Type;
     }
@@ -3477,6 +3479,20 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
                         "Metaclasses with custom tp_new are not supported.");
         goto finally;
     }
+
+    /* Calculate best base, and check that all bases are type objects */
+    PyTypeObject *base = best_base(bases);  // borrowed ref
+    if (base == NULL) {
+        goto finally;
+    }
+    if (!_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE)) {
+        PyErr_Format(PyExc_TypeError,
+                     "type '%.100s' is not an acceptable base type",
+                     base->tp_name);
+        goto finally;
+    }
+
+    /* Allocate the new type */
 
     res = (PyHeapTypeObject*)metaclass->tp_alloc(metaclass, nmembers);
     if (res == NULL) {
@@ -3520,18 +3536,6 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     type->tp_name = memcpy(res->_ht_tpname, spec->name, name_buf_len);
 
     res->ht_module = Py_XNewRef(module);
-
-    /* Calculate best base, and check that all bases are type objects */
-    PyTypeObject *base = best_base(bases);  // borrowed ref
-    if (base == NULL) {
-        goto finally;
-    }
-    if (!_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE)) {
-        PyErr_Format(PyExc_TypeError,
-                     "type '%.100s' is not an acceptable base type",
-                     base->tp_name);
-        goto finally;
-    }
 
     /* Initialize essential fields */
     type->tp_as_async = &res->as_async;
