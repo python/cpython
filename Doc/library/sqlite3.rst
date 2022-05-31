@@ -1128,7 +1128,7 @@ The exception hierarchy is defined by DB-API 2.0.
 .. exception:: InterfaceError
 
    Exception raised for misuse of the low-level SQLite C API.
-   In other words, if this exception is raised, it is probably a bug in the
+   In other words, if this exception is raised, it probably indicates a bug in the
    ``sqlite3`` module.
    ``InterfaceError`` is a subclass of :exc:`Error`.
 
