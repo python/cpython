@@ -654,7 +654,7 @@ class NewStreamTests(unittest.IsolatedAsyncioTestCase):
                     handle_client_callback,
                     path=path
                 )
-                server.start_callback()
+                server.start()
                 msg = await client(path)
                 server.close()
                 await server.wait_closed()
