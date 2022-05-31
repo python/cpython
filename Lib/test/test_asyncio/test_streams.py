@@ -605,7 +605,8 @@ class NewStreamTests(unittest.IsolatedAsyncioTestCase):
                 handle_client_callback,
                 host=socket_helper.HOSTv4
             )
-            address, port = server.sockets[0].getsockname()
+            addr = server.sockets[0].getsockname()
+            reader, writer = await asyncio.open_connection(*addr)
             msg = await client(addr)
             server.close()
             await server.wait_closed()
