@@ -3421,7 +3421,8 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
             PyErr_SetString(PyExc_RuntimeError, "invalid slot offset");
             goto finally;
         }
-        if (slot->slot == Py_tp_members) {
+        switch (slot->slot) {
+        case Py_tp_members:
             if (nmembers != 0) {
                 PyErr_SetString(
                     PyExc_SystemError,
@@ -3449,6 +3450,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
                     vectorcalloffset = memb->offset;
                 }
             }
+            break;
         }
     }
 
@@ -3558,11 +3560,13 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     type->tp_itemsize = spec->itemsize;
 
     for (slot = spec->slots; slot->slot; slot++) {
-        if (slot->slot == Py_tp_base || slot->slot == Py_tp_bases) {
+        size_t len;
+        switch (slot->slot) {
+        case Py_tp_base:
+        case Py_tp_bases:
             /* Processed above */
-            continue;
-        }
-        else if (slot->slot == Py_tp_doc) {
+            break;
+        case Py_tp_doc:
             /* For the docstring slot, which usually points to a static string
                literal, we need to make a copy */
             if (type->tp_doc != NULL) {
@@ -3573,9 +3577,9 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
             }
             if (slot->pfunc == NULL) {
                 type->tp_doc = NULL;
-                continue;
+                break;
             }
-            size_t len = strlen(slot->pfunc)+1;
+            len = strlen(slot->pfunc)+1;
             char *tp_doc = PyObject_Malloc(len);
             if (tp_doc == NULL) {
                 type->tp_doc = NULL;
@@ -3584,14 +3588,14 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
             }
             memcpy(tp_doc, slot->pfunc, len);
             type->tp_doc = tp_doc;
-        }
-        else if (slot->slot == Py_tp_members) {
+            break;
+        case Py_tp_members:
             /* Move the slots to the heap type itself */
-            size_t len = Py_TYPE(type)->tp_itemsize * nmembers;
+            len = Py_TYPE(type)->tp_itemsize * nmembers;
             memcpy(_PyHeapType_GET_MEMBERS(res), slot->pfunc, len);
             type->tp_members = _PyHeapType_GET_MEMBERS(res);
-        }
-        else {
+            break;
+        default:
             /* Copy other slots directly */
             PySlot_Offset slotoffsets = pyslot_offsets[slot->slot];
             slot_offset = slotoffsets.slot_offset;
@@ -3602,6 +3606,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
                 subslot_offset = slotoffsets.subslot_offset;
                 *(void**)((char*)parent_slot + subslot_offset) = slot->pfunc;
             }
+            break;
         }
     }
     if (type->tp_dealloc == NULL) {
