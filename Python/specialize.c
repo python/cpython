@@ -1645,12 +1645,12 @@ _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     if (fail) {
         STAT_INC(PRECALL, failure);
         assert(!PyErr_Occurred());
-        cache->counter = ADAPTIVE_CACHE_BACKOFF;
+        cache->counter = adaptive_counter_backoff(cache->counter);
     }
     else {
         STAT_INC(PRECALL, success);
         assert(!PyErr_Occurred());
-        cache->counter = initial_counter_value();
+        cache->counter = miss_counter_start();
     }
     return 0;
 }
