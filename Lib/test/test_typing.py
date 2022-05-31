@@ -765,10 +765,16 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[T, *Ts]',                        '[int]',                                          'generic[int]'),
             ('generic[T, *Ts]',                        '[int, str]',                                     'generic[int, str]'),
             ('generic[T, *Ts]',                        '[int, str, bool]',                               'generic[int, str, bool]'),
+            ('generic[list[T], *Ts]',                  '[int]',                                          'generic[list[int]]'),
+            ('generic[list[T], *Ts]',                  '[int, str]',                                     'generic[list[int], str]'),
+            ('generic[list[T], *Ts]',                  '[int, str, bool]',                               'generic[list[int], str, bool]'),
 
             ('generic[*Ts, T]',                        '[int]',                                          'generic[int]'),
             ('generic[*Ts, T]',                        '[int, str]',                                     'generic[int, str]'),
             ('generic[*Ts, T]',                        '[int, str, bool]',                               'generic[int, str, bool]'),
+            ('generic[*Ts, list[T]]',                  '[int]',                                          'generic[list[int]]'),
+            ('generic[*Ts, list[T]]',                  '[int, str]',                                     'generic[int, list[str]]'),
+            ('generic[*Ts, list[T]]',                  '[int, str, bool]',                               'generic[int, str, list[bool]]'),
 
             ('generic[T, *Ts]',                        '[*tuple_type[int, ...]]',                        'generic[int, *tuple_type[int, ...]]'),
             ('generic[*Ts, T]',                        '[*tuple_type[int, ...]]',                        'generic[*tuple_type[int, ...], int]'),
