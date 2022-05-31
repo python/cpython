@@ -1,0 +1,1 @@
+Speed up the ``PyCode_GetCode`` function which also improves accessing the ``co_code`` attribute in Python.
