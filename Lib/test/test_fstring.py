@@ -1026,7 +1026,7 @@ x = (
                              "f'{3!:}'",
                              ])
 
-        for conv in 'g', 'A', '3', 'G', '!', ' s', 's ', 'ж':
+        for conv in 'g', 'A', '3', 'G', '!', ' s', 's ', ' s ', 'ä', 'ɐ', 'ª':
             self.assertAllRaise(SyntaxError,
                                 "f-string: invalid conversion character %r: "
                                 "expected 's', 'r', or 'a'" % conv,
