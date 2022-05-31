@@ -669,10 +669,11 @@ Configuring QueueHandler and QueueListener
 If you want to configure a :class:`~logging.handlers.QueueHandler`, noting that this
 is normally used in conjunction with a :class:`~logging.handlers.QueueListener`, you
 can configure both together. After the configuration, the ``QueueListener`` instance
-will be available as the :attr:`listener` attribute of the created handler, and that
-in turn will be available to you using :func:`~logging.getHandlerByName` and passing
-the name you have used for the ``QueueHandler`` in your configuration. The
-dictionary schema for configuring the pair is shown in the example YAML snippet below.
+will be available as the :attr:`~logging.handlers.QueueHandler.listener` attribute of
+the created handler, and that in turn will be available to you using
+:func:`~logging.getHandlerByName` and passing the name you have used for the
+``QueueHandler`` in your configuration. The dictionary schema for configuring the pair
+is shown in the example YAML snippet below.
 
 .. code-block:: yaml
 
@@ -697,9 +698,9 @@ If the ``queue`` key is present, the corresponding value can be one of the follo
 * A string that resolves to a callable which, when called with no arguments, returns
   the :class:`queue.Queue` instance to use. That callable could be a
   :class:`queue.Queue` subclass or a function which returns a suitable queue instance,
-  such as :func:`my.module.queue_factory`.
+  such as ``my.module.queue_factory()``.
 
-* A dict with a ``()`` key which is constructed in the usual way as discussed in
+* A dict with a ``'()'`` key which is constructed in the usual way as discussed in
   :ref:`logging-config-dict-userdef`. The result of this construction should be a
   :class:`queue.Queue` instance.
 
@@ -713,9 +714,9 @@ If the ``listener`` key is present, the corresponding value can be one of the fo
   code.
 
 * A string which resolves to a class which is a subclass of ``QueueListener``, such as
-  ``'my,package.CustomListener'``.
+  ``'my.package.CustomListener'``.
 
-* A dict with a ``()`` key which is constructed in the usual way as discussed in
+* A dict with a ``'()'`` key which is constructed in the usual way as discussed in
   :ref:`logging-config-dict-userdef`. The result of this construction should be a
   callable with the same signature as the ``QueueListener`` initializer.
 
