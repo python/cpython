@@ -28,9 +28,6 @@
 #include <float.h>                // FLT_MAX
 #include <signal.h>
 
-#include <ffi.h>  /* required by ctypes.h */
-#include "_ctypes/ctypes.h"  /* To test metaclass inheritance */
-
 #ifdef MS_WINDOWS
 #  include <winsock2.h>           // struct timeval
 #endif
