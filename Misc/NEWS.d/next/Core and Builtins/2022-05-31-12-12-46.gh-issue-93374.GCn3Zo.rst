@@ -1,0 +1,1 @@
+Remove redundant check in ``PyLong_FromString()`` from ``Objects/longobject.c``
