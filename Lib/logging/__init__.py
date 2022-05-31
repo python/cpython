@@ -39,7 +39,7 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'info', 'log', 'makeLogRecord', 'setLoggerClass', 'shutdown',
            'warn', 'warning', 'getLogRecordFactory', 'setLogRecordFactory',
            'lastResort', 'raiseExceptions', 'getLevelNamesMapping',
-           'getHandlerByName']
+           'getHandlerByName', 'getHandlerNames']
 
 import threading
 
@@ -893,6 +893,14 @@ def getHandlerByName(name):
     that name.
     """
     return _handlers.get(name)
+
+
+def getHandlerNames():
+    """
+    Return all known handler names as an immutable set.
+    """
+    result = set(_handlers.keys())
+    return frozenset(result)
 
 
 class Handler(Filterer):

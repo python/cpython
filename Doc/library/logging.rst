@@ -1171,6 +1171,12 @@ functions.
 
    .. versionadded:: 3.12
 
+.. function:: getHandlerNames()
+
+   Returns an immutable set of all known handler names.
+
+   .. versionadded:: 3.12
+
 .. function:: makeLogRecord(attrdict)
 
    Creates and returns a new :class:`LogRecord` instance whose attributes are

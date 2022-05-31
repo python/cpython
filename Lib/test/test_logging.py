@@ -3430,6 +3430,8 @@ class ConfigDictTest(BaseTest):
         self.assertIsInstance(handler.target, logging.Handler)
         self.assertIsInstance(handler.formatter._style,
                               logging.StringTemplateStyle)
+        self.assertEqual(sorted(logging.getHandlerNames()),
+                         ['bufferGlobal', 'fileGlobal'])
 
     def test_custom_formatter_class_with_validate(self):
         self.apply_config(self.custom_formatter_class_validate)
@@ -3569,18 +3571,20 @@ class ConfigDictTest(BaseTest):
             if lspec:
                 cd['handlers']['ah']['listener'] = lspec
             qh = None
+            delay = 0.01
             try:
                 self.apply_config(cd)
                 qh = logging.getHandlerByName('ah')
+                self.assertEqual(sorted(logging.getHandlerNames()), ['ah', 'h1'])
                 self.assertIsNotNone(qh.listener)
                 qh.listener.start()
                 # Need to let the listener thread get started
-                time.sleep(0.001)
+                time.sleep(delay)
                 logging.debug('foo')
                 logging.info('bar')
                 logging.warning('baz')
                 # Need to let the listener thread finish its work
-                time.sleep(0.001)
+                time.sleep(delay)
                 with open(fn, encoding='utf-8') as f:
                     data = f.read().splitlines()
                 self.assertEqual(data, ['foo', 'bar', 'baz'])
