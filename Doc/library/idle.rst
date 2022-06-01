@@ -1,7 +1,9 @@
 .. _idle:
 
-IDLE
-====
+:mod:`idlelib` --- IDLE
+=======================
+
+.. module:: idlelib
 
 .. moduleauthor:: Guido van Rossum <guido@python.org>
 

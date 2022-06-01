@@ -116,8 +116,26 @@ source.
 
    .. list-table::
 
+      * - :mod:`ast`
+        - Process Python Abstract Syntax Trees
+
+      * - :mod:`asyncio`
+        - Launch a natively async REPL
+
       * - :mod:`compileall`
-        - Precompiling Python source modules to bytecode
+        - Precompile Python source modules to bytecode
+
+      * - :mod:`doctest`
+        - Run :func:`doctest.testmod` on a module
+
+      * - :mod:`http.server`
+        - Create a server that serves files in the current directory
+
+      * - :mod:`idlelib`
+        - Open IDLE
+
+      * - :mod:`json.tool`
+        - Validate and pretty-print JSON objects
 
       * - :mod:`pickle`
         - Display the contents of pickles saved as files
@@ -125,20 +143,47 @@ source.
       * - :mod:`pickletools`
         - Analyse the contents of pickles saved as files
 
+      * - :mod:`profile`
+        - Profile Python programs
+
       * - :mod:`site`
         - Display details of Python's configuration
 
       * - :mod:`sysconfig`
         - Display additional details of Python's configuration
 
+      * - :mod:`tarfile`
+        - Interact with tar archives
+
       * - :mod:`test`
         - Execute Python's own regression test suite
 
       * - :mod:`timeit`
-        - Microbenchmarking for small Python snippets
+        - Microbenchmark small Python snippets
+
+      * - :mod:`tkinter`
+        - Open a Tk interface to verify proper installation
+
+      * - :mod:`tokenize`
+        - Tokenize Python source code
+
+      * - :mod:`trace`
+        - Trace program execution
 
       * - :mod:`unittest`
         - Find and execute unit tests
+
+      * - :mod:`webbrowser`
+        - Open a page in a new browser window or tab
+
+      * - :mod:`xmlrpc.client`
+        - Launch demo XMLRPC client
+
+      * - :mod:`xmlrpc.server`
+        - Launch demo XMLRPC server
+
+      * - :mod:`zipapp`
+        - Manage Python zip files
 
    .. audit-event:: cpython.run_module module-name cmdoption-m
 
