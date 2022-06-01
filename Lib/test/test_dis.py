@@ -360,7 +360,7 @@ dis_traceback = """\
     -->    BINARY_OP               11 (/)
            POP_TOP
 
-%3d        LOAD_FAST                1 (tb)
+%3d        LOAD_FAST_CHECK          1 (tb)
            RETURN_VALUE
         >> PUSH_EXC_INFO
 
@@ -1399,7 +1399,7 @@ expected_opinfo_jumpy = [
   Instruction(opname='LOAD_CONST', opcode=100, arg=4, argval='I can haz else clause?', argrepr="'I can haz else clause?'", offset=100, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='CALL', opcode=171, arg=1, argval=1, argrepr='', offset=102, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=112, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=114, starts_line=11, is_jump_target=True, positions=None),
+  Instruction(opname='LOAD_FAST_CHECK', opcode=127, arg=0, argval='i', argrepr='i', offset=114, starts_line=11, is_jump_target=True, positions=None),
   Instruction(opname='POP_JUMP_FORWARD_IF_FALSE', opcode=114, arg=34, argval=186, argrepr='to 186', offset=116, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='LOAD_GLOBAL', opcode=116, arg=3, argval='print', argrepr='NULL + print', offset=118, starts_line=12, is_jump_target=True, positions=None),
   Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=130, starts_line=None, is_jump_target=False, positions=None),

@@ -1115,6 +1115,7 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
 
         case LOAD_FAST:
+        case LOAD_FAST_CHECK:
             return 1;
         case STORE_FAST:
             return -1;
@@ -7901,6 +7902,109 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
     } while (extended_arg_recompile);
 }
 
+
+// Ensure each basicblock is only put onto the stack once.
+#define MAYBE_PUSH(B) do {                          \
+        if ((B)->b_visited == 0) {                  \
+            *(*stack_top)++ = (B);                  \
+            (B)->b_visited = 1;                     \
+        }                                           \
+    } while (0)
+
+static void
+scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
+                     basicblock ***stack_top)
+{
+    bool unsafe = unsafe_to_start;
+    for (int i = 0; i < b->b_iused; i++) {
+        struct instr *instr = &b->b_instr[i];
+        assert(instr->i_opcode != EXTENDED_ARG);
+        assert(instr->i_opcode != EXTENDED_ARG_QUICK);
+        assert(instr->i_opcode != LOAD_FAST__LOAD_FAST);
+        assert(instr->i_opcode != STORE_FAST__LOAD_FAST);
+        assert(instr->i_opcode != LOAD_CONST__LOAD_FAST);
+        assert(instr->i_opcode != STORE_FAST__STORE_FAST);
+        assert(instr->i_opcode != LOAD_FAST__LOAD_CONST);
+        if (unsafe && instr->i_except != NULL) {
+            MAYBE_PUSH(instr->i_except);
+        }
+        if (instr->i_oparg != target) {
+            continue;
+        }
+        switch (instr->i_opcode) {
+            case LOAD_FAST_CHECK:
+                // if this doesn't raise, then var is defined
+                unsafe = false;
+                break;
+            case LOAD_FAST:
+                if (unsafe) {
+                    instr->i_opcode = LOAD_FAST_CHECK;
+                }
+                unsafe = false;
+                break;
+            case STORE_FAST:
+                unsafe = false;
+                break;
+            case DELETE_FAST:
+                unsafe = true;
+                break;
+        }
+    }
+    if (unsafe) {
+        // unsafe at end of this block,
+        // so unsafe at start of next blocks
+        if (b->b_next && !b->b_nofallthrough) {
+            MAYBE_PUSH(b->b_next);
+        }
+        if (b->b_iused > 0) {
+            struct instr *last = &b->b_instr[b->b_iused-1];
+            if (is_jump(last)) {
+                assert(last->i_target != NULL);
+                MAYBE_PUSH(last->i_target);
+            }
+        }
+    }
+}
+#undef MAYBE_PUSH
+
+static int
+add_checks_for_loads_of_unknown_variables(struct assembler *a,
+                                          struct compiler *c)
+{
+    basicblock **stack = make_cfg_traversal_stack(a->a_entry);
+    if (stack == NULL) {
+        return -1;
+    }
+    Py_ssize_t nparams = PyList_GET_SIZE(c->u->u_ste->ste_varnames);
+    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
+    for (int target = 0; target < nlocals; target++) {
+        for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+            b->b_visited = 0;
+        }
+        basicblock **stack_top = stack;
+
+        // First pass: find the relevant DFS starting points:
+        // the places where "being uninitialized" originates,
+        // which are the entry block and any DELETE_FAST statements.
+        if (target >= nparams) {
+            // only non-parameter locals start out uninitialized.
+            *(stack_top++) = a->a_entry;
+            a->a_entry->b_visited = 1;
+        }
+        for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+            scan_block_for_local(target, b, false, &stack_top);
+        }
+
+        // Second pass: Depth-first search to propagate uncertainty
+        while (stack_top > stack) {
+            basicblock *b = *--stack_top;
+            scan_block_for_local(target, b, true, &stack_top);
+        }
+    }
+    PyMem_Free(stack);
+    return 0;
+}
+
 static PyObject *
 dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
 {
@@ -8581,6 +8685,10 @@ assemble(struct compiler *c, int addNone)
 
     /* Order of basic blocks must have been determined by now */
     normalize_jumps(&a);
+
+    if (add_checks_for_loads_of_unknown_variables(&a, c) < 0) {
+        goto error;
+    }
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
