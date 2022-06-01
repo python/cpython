@@ -3635,9 +3635,17 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
         type->tp_dealloc = subtype_dealloc;
     }
 
-    if (vectorcalloffset) {
-        type->tp_vectorcall_offset = vectorcalloffset;
-    }
+    /* Set up offsets */
+
+    type->tp_vectorcall_offset = vectorcalloffset;
+    type->tp_weaklistoffset = weaklistoffset;
+    type->tp_dictoffset = dictoffset;
+
+    /* Ready the type (which includes inheritance).
+     *
+     * After this call we should generally only touch up what's
+     * accessible to Python code, like __dict__.
+     */
 
     if (PyType_Ready(type) < 0) {
         goto finally;
@@ -3660,13 +3668,11 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     }
 
     if (weaklistoffset) {
-        type->tp_weaklistoffset = weaklistoffset;
         if (PyDict_DelItemString((PyObject *)type->tp_dict, "__weaklistoffset__") < 0) {
             goto finally;
         }
     }
     if (dictoffset) {
-        type->tp_dictoffset = dictoffset;
         if (PyDict_DelItemString((PyObject *)type->tp_dict, "__dictoffset__") < 0) {
             goto finally;
         }
