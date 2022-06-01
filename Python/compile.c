@@ -7466,28 +7466,44 @@ push_cold_blocks_to_end(struct compiler *c, basicblock *entry, int code_flags) {
     }
 
     assert(!entry->b_cold);  /* First block can't be cold */
-    basicblock *tail = entry;
-    while (tail->b_next) {
-        tail = tail->b_next;
-    }
-    basicblock *origtail = tail;
+    basicblock *cold_blocks = NULL;
+    basicblock *cold_blocks_tail = NULL;
+
     basicblock *b = entry;
-    while(b && b->b_next) {
-        basicblock *next = b->b_next;
-        if (next->b_cold) {
-            if (next->b_next) {
-                b->b_next = next->b_next;
-                next->b_next = NULL;
-                tail->b_next = next;
-                tail = next;
-            }
-        } else {
-            b = next;
+    while(b->b_next) {
+        assert(!b->b_cold);
+        while (b->b_next && !b->b_next->b_cold) {
+            b = b->b_next;
         }
-        if(next == origtail) {
+        if (b->b_next == NULL) {
+            /* no more cold blocks */
             break;
         }
+
+        /* b->b_next is the beginning of a cold streak */
+        assert(!b->b_cold && b->b_next->b_cold);
+
+        basicblock *b_end = b->b_next;
+        while (b_end->b_next && b_end->b_next->b_cold) {
+            b_end = b_end->b_next;
+        }
+
+        /* b_end is the end of the cold streak */
+        assert(b_end && b_end->b_cold);
+        assert(b_end->b_next == NULL || !b_end->b_next->b_cold);
+
+        if (cold_blocks == NULL) {
+            cold_blocks = b->b_next;
+        }
+        else {
+            cold_blocks_tail->b_next = b->b_next;
+        }
+        cold_blocks_tail = b_end;
+        b->b_next = b_end->b_next;
+        b_end->b_next = NULL;
     }
+    assert(b != NULL && b->b_next == NULL);
+    b->b_next = cold_blocks;
     return 0;
 }
 
