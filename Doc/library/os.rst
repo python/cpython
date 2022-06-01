@@ -2328,7 +2328,7 @@ features:
    :exc:`IsADirectoryError` or a :exc:`NotADirectoryError` will be raised
    respectively.  If both are directories and *dst* is empty, *dst* will be
    silently replaced.  If *dst* is a non-empty directory, an :exc:`OSError`
-   is raised. If both are files, *dst* it will be replaced silently if the user
+   is raised. If both are files, *dst* will be replaced silently if the user
    has permission.  The operation may fail on some Unix flavors if *src* and
    *dst* are on different filesystems.  If successful, the renaming will be an
    atomic operation (this is a POSIX requirement).
