@@ -1084,6 +1084,7 @@ x = (
                              "f'{'",
                              "f'x{<'",  # See bpo-46762.
                              "f'x{>'",
+                             "f'{i='",  # See gh-93418.
                              ])
 
         # But these are just normal strings.
