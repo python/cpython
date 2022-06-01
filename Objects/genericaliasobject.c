@@ -320,18 +320,83 @@ subs_tvars(PyObject *obj, PyObject *params,
 static int
 _is_unpacked_typevartuple(PyObject *arg)
 {
-    PyObject *meth;
-    int res = _PyObject_LookupAttr(arg, &_Py_ID(__typing_unpacked__), &meth);
+    PyObject *tmp;
+    if (PyType_Check(arg)) { // TODO: Add test
+        return 0;
+    }
+    int res = _PyObject_LookupAttr(arg, &_Py_ID(__typing_is_unpacked_typevartuple__), &tmp);
     if (res > 0) {
-        PyObject *tmp = PyObject_CallNoArgs(meth);
-        Py_DECREF(meth);
-        if (tmp == NULL) {
-            return -1;
-        }
         res = PyObject_IsTrue(tmp);
         Py_DECREF(tmp);
     }
     return res;
+}
+
+static PyObject *
+_unpacked_tuple_args(PyObject *arg)
+{
+    PyObject *result;
+    assert(!PyType_Check(arg));
+    // Fast path
+    if (_PyGenericAlias_Check(arg) &&
+            ((gaobject *)arg)->starred &&
+            ((gaobject *)arg)->origin == (PyObject *)&PyTuple_Type)
+    {
+        result = ((gaobject *)arg)->args;
+        Py_INCREF(result);
+        return result;
+    }
+
+    if (_PyObject_LookupAttr(arg, &_Py_ID(__typing_unpacked_tuple_args__), &result) > 0) {
+        if (result == Py_None) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        return result;
+    }
+    return NULL;
+}
+
+static PyObject *
+_unpack_args(PyObject *item)
+{
+    PyObject *newargs = PyList_New(0);
+    if (newargs == NULL) {
+        return NULL;
+    }
+    int is_tuple = PyTuple_Check(item);
+    Py_ssize_t nitems = is_tuple ? PyTuple_GET_SIZE(item) : 1;
+    PyObject **argitems = is_tuple ? &PyTuple_GET_ITEM(item, 0) : &item;
+    for (Py_ssize_t i = 0; i < nitems; i++) {
+        item = argitems[i];
+        if (!PyType_Check(item)) {
+            PyObject *subargs = _unpacked_tuple_args(item);
+            if (subargs != NULL &&
+                PyTuple_Check(subargs) &&
+                !(PyTuple_GET_SIZE(subargs) &&
+                  PyTuple_GET_ITEM(subargs, PyTuple_GET_SIZE(subargs)-1) == Py_Ellipsis))
+            {
+                if (PyList_SetSlice(newargs, PY_SSIZE_T_MAX, PY_SSIZE_T_MAX, subargs) < 0) {
+                    Py_DECREF(subargs);
+                    Py_DECREF(newargs);
+                    return NULL;
+                }
+                Py_DECREF(subargs);
+                continue;
+            }
+            Py_XDECREF(subargs);
+            if (PyErr_Occurred()) {
+                Py_DECREF(newargs);
+                return NULL;
+            }
+        }
+        if (PyList_Append(newargs, item) < 0) {
+            Py_DECREF(newargs);
+            return NULL;
+        }
+    }
+    Py_SETREF(newargs, PySequence_Tuple(newargs));
+    return newargs;
 }
 
 PyObject *
@@ -343,18 +408,26 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
                             "%R is not a generic class",
                             self);
     }
+    item = _unpack_args(item);
     int is_tuple = PyTuple_Check(item);
     Py_ssize_t nitems = is_tuple ? PyTuple_GET_SIZE(item) : 1;
     PyObject **argitems = is_tuple ? &PyTuple_GET_ITEM(item, 0) : &item;
-    Py_ssize_t varparam = 0;
-    for (; varparam < nparams; varparam++) {
-        PyObject *param = PyTuple_GET_ITEM(parameters, varparam);
+    Py_ssize_t varparam = nparams;
+    for (Py_ssize_t i = 0; i < nparams; i++) {
+        PyObject *param = PyTuple_GET_ITEM(parameters, i);
         if (Py_TYPE(param)->tp_iter) {  // TypeVarTuple
-            break;
+            if (varparam < nparams) {
+                Py_DECREF(item);
+                return PyErr_Format(PyExc_TypeError,
+                                    "More than one TypeVarTuple parameter in %S",
+                                    self);
+            }
+            varparam = i;
         }
     }
     if (varparam < nparams) {
         if (nitems < nparams - 1) {
+            Py_DECREF(item);
             return PyErr_Format(PyExc_TypeError,
                                 "Too few arguments for %R",
                                 self);
@@ -362,10 +435,11 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     }
     else {
         if (nitems != nparams) {
+            Py_DECREF(item);
             return PyErr_Format(PyExc_TypeError,
-                                "Too %s arguments for %R",
+                                "Too %s arguments for %R; actual %zd, expected %zd",
                                 nitems > nparams ? "many" : "few",
-                                self);
+                                self, nitems, nparams);
         }
     }
     /* Replace all type variables (specified by parameters)
@@ -377,6 +451,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *newargs = PyTuple_New(nargs);
     if (newargs == NULL) {
+        Py_DECREF(item);
         return NULL;
     }
     for (Py_ssize_t iarg = 0, jarg = 0; iarg < nargs; iarg++) {
@@ -384,11 +459,13 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
         int unpack = _is_unpacked_typevartuple(arg);
         if (unpack < 0) {
             Py_DECREF(newargs);
+            Py_DECREF(item);
             return NULL;
         }
         PyObject *subst;
         if (_PyObject_LookupAttr(arg, &_Py_ID(__typing_subst__), &subst) < 0) {
             Py_DECREF(newargs);
+            Py_DECREF(item);
             return NULL;
         }
         if (subst) {
@@ -397,6 +474,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
             if (iparam == varparam) {
                 Py_DECREF(subst);
                 Py_DECREF(newargs);
+                Py_DECREF(item);
                 PyErr_SetString(PyExc_TypeError,
                         "Substitution of bare TypeVarTuple is not supported");
                 return NULL;
@@ -412,6 +490,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
         }
         if (arg == NULL) {
             Py_DECREF(newargs);
+            Py_DECREF(item);
             return NULL;
         }
         if (unpack) {
@@ -419,6 +498,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
                     &PyTuple_GET_ITEM(arg, 0), PyTuple_GET_SIZE(arg));
             Py_DECREF(arg);
             if (jarg < 0) {
+                Py_DECREF(item);
                 return NULL;
             }
         }
@@ -428,6 +508,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
         }
     }
 
+    Py_DECREF(item);
     return newargs;
 }
 
@@ -454,6 +535,7 @@ ga_getitem(PyObject *self, PyObject *item)
     }
 
     PyObject *res = Py_GenericAlias(alias->origin, newargs);
+    ((gaobject *)res)->starred = alias->starred;
 
     Py_DECREF(newargs);
     return res;
@@ -518,6 +600,7 @@ static const char* const attr_exceptions[] = {
     "__args__",
     "__unpacked__",
     "__parameters__",
+    "__typing_unpacked_tuple_args__",
     "__mro_entries__",
     "__reduce_ex__",  // needed so we don't look up object.__reduce_ex__
     "__reduce__",
@@ -689,8 +772,20 @@ ga_parameters(PyObject *self, void *unused)
     return alias->parameters;
 }
 
+static PyObject *
+ga_unpacked_tuple_args(PyObject *self, void *unused)
+{
+    gaobject *alias = (gaobject *)self;
+    if (alias->starred && alias->origin == (PyObject *)&PyTuple_Type) {
+        Py_INCREF(alias->args);
+        return alias->args;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyGetSetDef ga_properties[] = {
     {"__parameters__", ga_parameters, (setter)NULL, "Type variables in the GenericAlias.", NULL},
+    {"__typing_unpacked_tuple_args__", ga_unpacked_tuple_args, (setter)NULL, NULL},
     {0}
 };
 
