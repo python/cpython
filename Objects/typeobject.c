@@ -3407,6 +3407,8 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     PyTypeObject *type;
     PyObject *bases = NULL;
     char *tp_doc = NULL;
+    PyObject *ht_name = NULL;
+    char *_ht_tpname = NULL;
     int r;
 
     const PyType_Slot *slot;
@@ -3478,11 +3480,42 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
         }
     }
 
+    /* Prepare the type name and qualname */
+
     if (spec->name == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "Type spec does not define the name field.");
         goto finally;
     }
+
+    const char *s = strrchr(spec->name, '.');
+    if (s == NULL) {
+        s = spec->name;
+    }
+    else {
+        s++;
+    }
+
+    ht_name = PyUnicode_FromString(s);
+    if (!ht_name) {
+        goto finally;
+    }
+
+    /* Copy spec->name to a buffer we own.
+    *
+    * Unfortunately, we can't use tp_name directly (with some
+    * flag saying that it should be deallocated with the type),
+    * because tp_name is public API and may be set independently
+    * of any such flag.
+    * So, we use a separate buffer, _ht_tpname, that's always
+    * deallocated with the type (if it's non-NULL).
+    */
+    Py_ssize_t name_buf_len = strlen(spec->name) + 1;
+    _ht_tpname = PyMem_Malloc(name_buf_len);
+    if (_ht_tpname == NULL) {
+        goto finally;
+    }
+    memcpy(_ht_tpname, spec->name, name_buf_len);
 
     /* Get a tuple of bases.
      * bases is a strong reference (unlike bases_in).
@@ -3534,47 +3567,18 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     /* The flags must be initialized early, before the GC traverses us */
     type->tp_flags = spec->flags | Py_TPFLAGS_HEAPTYPE;
 
-    /* Set the type name and qualname */
-    const char *s = strrchr(spec->name, '.');
-    if (s == NULL) {
-        s = spec->name;
-    }
-    else {
-        s++;
-    }
-
-    res->ht_name = PyUnicode_FromString(s);
-    if (!res->ht_name) {
-        goto finally;
-    }
-    res->ht_qualname = Py_NewRef(res->ht_name);
-
-    /* Copy spec->name to a buffer we own.
-    *
-    * Unfortunately, we can't use tp_name directly (with some
-    * flag saying that it should be deallocated with the type),
-    * because tp_name is public API and may be set independently
-    * of any such flag.
-    * So, we use a separate buffer, _ht_tpname, that's always
-    * deallocated with the type (if it's non-NULL).
-    */
-    Py_ssize_t name_buf_len = strlen(spec->name) + 1;
-    res->_ht_tpname = PyMem_Malloc(name_buf_len);
-    if (res->_ht_tpname == NULL) {
-        goto finally;
-    }
-    type->tp_name = memcpy(res->_ht_tpname, spec->name, name_buf_len);
-
     res->ht_module = Py_XNewRef(module);
 
     /* Initialize essential fields */
+
     type->tp_as_async = &res->as_async;
     type->tp_as_number = &res->as_number;
     type->tp_as_sequence = &res->as_sequence;
     type->tp_as_mapping = &res->as_mapping;
     type->tp_as_buffer = &res->as_buffer;
 
-    /* Set tp_base and tp_bases */
+    /* Set slots we have prepared */
+
     type->tp_base = (PyTypeObject *)Py_NewRef(base);
     type->tp_bases = bases;
     bases = NULL;  // We give our reference to bases to the type
@@ -3582,9 +3586,20 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     type->tp_doc = tp_doc;
     tp_doc = NULL;  // Give ownership of the allocated memory to the type
 
+    res->ht_qualname = Py_NewRef(ht_name);
+    res->ht_name = ht_name;
+    ht_name = NULL;  // Give our reference to to the type
+
+    type->tp_name = _ht_tpname;
+    res->_ht_tpname = _ht_tpname;
+    _ht_tpname = NULL;  // Give ownership to to the type
+
     /* Copy the sizes */
+
     type->tp_basicsize = spec->basicsize;
     type->tp_itemsize = spec->itemsize;
+
+    /* Copy all the ordinary slots */
 
     for (slot = spec->slots; slot->slot; slot++) {
         switch (slot->slot) {
@@ -3692,6 +3707,8 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     Py_XDECREF(bases);
     Py_XDECREF(modname);
     PyObject_Free(tp_doc);
+    Py_XDECREF(ht_name);
+    PyMem_Free(_ht_tpname);
     return (PyObject*)res;
 }
 
