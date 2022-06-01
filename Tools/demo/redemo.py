@@ -98,7 +98,7 @@ class ReDemo:
             flags = flags | var.get()
         return flags
 
-    def recompile(self, event=None):
+    def recompile(self:
         try:
             self.compiled = re.compile(self.regexdisplay.get(),
                                        self.getflags())
@@ -111,7 +111,7 @@ class ReDemo:
                     background="red")
         self.reevaluate()
 
-    def reevaluate(self, event=None):
+    def reevaluate(self):
         try:
             self.stringdisplay.tag_remove("hit", "1.0", END)
         except TclError:
