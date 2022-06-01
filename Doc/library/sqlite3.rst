@@ -1098,7 +1098,7 @@ Blob Objects
 Exceptions
 ----------
 
-The exception hierarchy is defined by DB-API 2.0.
+The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
 
 .. exception:: Warning
 
@@ -1167,9 +1167,9 @@ The exception hierarchy is defined by DB-API 2.0.
 
 .. exception:: ProgrammingError
 
-   Exception raised for ``sqlite3`` API programming errors.
-   for example syntax errors in SQL statements, and wrong number of bindings
-   supplied to a query.
+   Exception raised for ``sqlite3`` API programming errors,
+   for example supplying the wrong number of bindings to a query,
+   or trying to operate on a closed :class:`Connection`.
    ``ProgrammingError`` is a subclass of :exc:`DatabaseError`.
 
 .. exception:: NotSupportedError
