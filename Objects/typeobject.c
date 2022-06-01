@@ -3411,6 +3411,11 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     char *_ht_tpname = NULL;
     int r;
 
+    /* Prepare slots that need special handling.
+     * Keep in mind that a slot can be given multiple times:
+     * if that would cause trouble (leaks, UB, ...), raise an exception.
+     */
+
     const PyType_Slot *slot;
     Py_ssize_t nmembers = 0;
     Py_ssize_t weaklistoffset, dictoffset, vectorcalloffset;
