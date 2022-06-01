@@ -1,6 +1,5 @@
 """Tests for streams.py."""
 
-import asyncio
 import gc
 import os
 import queue
@@ -10,10 +9,15 @@ import sys
 import threading
 import unittest
 from unittest import mock
-from test.support import import_helper, socket_helper
+from test.support import socket_helper
+try:
+    import ssl
+except ImportError:
+    ssl = None
+
+import asyncio
 from test.test_asyncio import utils as test_utils
 
-ssl = import_helper.import_module('ssl')
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
@@ -924,7 +928,7 @@ os.close(fd)
                 asyncio.open_connection(*httpd.address))
 
             wr.write(b'GET / HTTP/1.0\r\n\r\n')
-            await rd.readline()
+            data = await rd.readline()
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
             await rd.read()
             self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
