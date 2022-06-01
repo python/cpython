@@ -844,7 +844,7 @@ Cursor Objects
       :ref:`placeholders <sqlite3-placeholders>`.
 
       :meth:`execute` will only execute a single SQL statement. If you try to execute
-      more than one statement with it, it will raise a :exc:`ProgrammingError`. Use
+      more than one statement with it, it will raise a :exc:`.Warning`. Use
       :meth:`executescript` if you want to execute multiple SQL statements with one
       call.
 
