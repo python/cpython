@@ -64,9 +64,9 @@ Options (and corresponding environment variables):\n\
 -X opt : set implementation-specific option\n\
 --check-hash-based-pycs always|default|never:\n\
          control how Python invalidates hash-based .pyc files\n\
---help-env      : print help about Python environment variables and exit\n\
---help-xoptions : print help about implementation-specific -X options and exit\n\
---help-all      : print complete help information and exit\n\
+--help-env: print help about Python environment variables and exit\n\
+--help-xoptions: print help about implementation-specific -X options and exit\n\
+--help-all: print complete help information and exit\n\
 Arguments:\n\
 file   : program read from script file\n\
 -      : program read from stdin (default; interactive mode if a tty)\n\
@@ -75,95 +75,88 @@ arg ...: arguments passed to program in sys.argv[1:]\n\
 
 static const char usage_xoptions[] = "\
 The following implementation-specific options are available:\n\
-\n\
 -X faulthandler: enable faulthandler\n\
-\n\
 -X showrefcount: output the total reference count and number of used\n\
-    memory blocks when the program finishes or after each statement in the\n\
-    interactive interpreter. This only works on debug builds\n\
-\n\
+         memory blocks when the program finishes or after each statement in\n\
+         the interactive interpreter. This only works on debug builds\n\
 -X tracemalloc: start tracing Python memory allocations using the\n\
-    tracemalloc module. By default, only the most recent frame is stored in a\n\
-    traceback of a trace. Use -X tracemalloc=NFRAME to start tracing with a\n\
-    traceback limit of NFRAME frames\n\
-\n\
+         tracemalloc module. By default, only the most recent frame is stored\n\
+         in a traceback of a trace. Use -X tracemalloc=NFRAME to start tracing\n\
+         with a traceback limit of NFRAME frames\n\
 -X importtime: show how long each import takes. It shows module name,\n\
-    cumulative time (including nested imports) and self time (excluding\n\
-    nested imports). Note that its output may be broken in multi-threaded\n\
-    application. Typical usage is python3 -X importtime -c 'import asyncio'\n\
-\n\
--X dev: enable CPython's \"development mode\", introducing additional runtime\n\
-    checks which are too expensive to be enabled by default. Effect of the\n\
-    developer mode:\n\
-       * Add default warning filter, as -W default\n\
-       * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks()\n\
-         C function\n\
-       * Enable the faulthandler module to dump the Python traceback on a crash\n\
-       * Enable asyncio debug mode\n\
-       * Set the dev_mode attribute of sys.flags to True\n\
-       * io.IOBase destructor logs close() exceptions\n\
-\n\
--X utf8: enable UTF-8 mode for operating system interfaces, overriding the default\n\
-    locale-aware mode. -X utf8=0 explicitly disables UTF-8 mode (even when it would\n\
-    otherwise activate automatically)\n\
-\n\
--X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the\n\
-    given directory instead of to the code tree\n\
-\n\
+         cumulative time (including nested imports) and self time (excluding\n\
+         nested imports). Note that its output may be broken in multi-threaded\n\
+         application.\n\
+         Typical usage is python3 -X importtime -c 'import asyncio'\n\
+-X dev : enable CPython's \"development mode\", introducing additional runtime\n\
+         checks which are too expensive to be enabled by default. Effect of\n\
+         the developer mode:\n\
+            * Add default warning filter, as -W default\n\
+            * Install debug hooks on memory allocators: see the\n\
+              PyMem_SetupDebugHooks() C function\n\
+            * Enable the faulthandler module to dump the Python traceback on\n\
+              a crash\n\
+            * Enable asyncio debug mode\n\
+            * Set the dev_mode attribute of sys.flags to True\n\
+            * io.IOBase destructor logs close() exceptions\n\
+-X utf8: enable UTF-8 mode for operating system interfaces, overriding the\n\
+         default locale-aware mode. -X utf8=0 explicitly disables UTF-8 mode\n\
+         (even when it would otherwise activate automatically)\n\
+-X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted\n\
+         at the given directory instead of to the code tree\n\
 -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None'\n\
-\n\
--X no_debug_ranges: disable the inclusion of the tables mapping extra location \n\
-   information (end line, start column offset and end column offset) to every \n\
-   instruction in code objects. This is useful when smaller code objects and pyc \n\
-   files are desired as well as suppressing the extra visual location indicators \n\
-   when the interpreter displays tracebacks.\n\
-\n\
+-X no_debug_ranges: disable the inclusion of the tables mapping extra location\n\
+         information (end line, start column offset and end column offset) to\n\
+         every instruction in code objects. This is useful when smaller code\n\
+         objects and pyc files are desired as well as suppressing the extra\n\
+         visual location indicators when the interpreter displays tracebacks.\n\
 -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
-   The default is \"on\" (or \"off\" if you are running a local build).";
+         The default is \"on\" (or \"off\" if you are running a local build).";
 
 /* Envvars that don't have equivalent command-line options are listed first */
 static const char usage_envvars[] =
 "Environment variables that change behavior:\n"
 "PYTHONSTARTUP: file executed on interactive startup (no default)\n"
-"PYTHONPATH   : '%lc'-separated list of directories prefixed to the\n"
-"               default module search path.  The result is sys.path.\n"
+"PYTHONPATH: '%lc'-separated list of directories prefixed to the\n"
+"         default module search path.  The result is sys.path.\n"
 "PYTHONSAFEPATH: don't prepend a potentially unsafe path to sys.path.\n"
-"PYTHONHOME   : alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
-"               The default module search path uses %s.\n"
-"PYTHONPLATLIBDIR : override sys.platlibdir.\n"
-"PYTHONCASEOK : ignore case in 'import' statements (Windows).\n"
+"PYTHONHOME: alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
+"         The default module search path uses %s.\n"
+"PYTHONPLATLIBDIR: override sys.platlibdir.\n"
+"PYTHONCASEOK: ignore case in 'import' statements (Windows).\n"
 "PYTHONUTF8: if set to 1, enable the UTF-8 mode.\n"
 "PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n"
 "PYTHONFAULTHANDLER: dump the Python traceback on fatal errors.\n"
 "PYTHONHASHSEED: if this variable is set to 'random', a random value is used\n"
-"   to seed the hashes of str and bytes objects.  It can also be set to an\n"
-"   integer in the range [0,4294967295] to get hash values with a\n"
-"   predictable seed.\n"
+"         to seed the hashes of str and bytes objects.  It can also be set to\n"
+"         an integer in the range [0,4294967295] to get hash values with a\n"
+"         predictable seed.\n"
 "PYTHONMALLOC: set the Python memory allocators and/or install debug hooks\n"
-"   on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
-"   hooks.\n"
+"         on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
+"         hooks.\n"
 "PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
-"   coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display of\n"
-"   locale coercion and locale compatibility warnings on stderr.\n"
+"         coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display\n"
+"         of locale coercion and locale compatibility warnings on stderr.\n"
 "PYTHONBREAKPOINT: if this variable is set to 0, it disables the default\n"
-"   debugger. It can be set to the callable of your debugger of choice.\n"
+"         debugger. It can be set to the callable of your debugger of choice.\n"
 "PYTHONDEVMODE: enable the development mode.\n"
 "PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files.\n"
 "PYTHONWARNDEFAULTENCODING: enable opt-in EncodingWarning for 'encoding=None'.\n"
-"PYTHONNODEBUGRANGES: If this variable is set, it disables the inclusion of the \n"
-"   tables mapping extra location information (end line, start column offset \n"
-"   and end column offset) to every instruction in code objects. This is useful \n"
-"   when smaller code objects and pyc files are desired as well as suppressing the \n"
-"   extra visual location indicators when the interpreter displays tracebacks.\n"
-"These variables have equivalent command-line parameters (see --help for details):\n"
-"PYTHONDEBUG             : enable parser debug mode (-d)\n"
-"PYTHONDONTWRITEBYTECODE : don't write .pyc files (-B)\n"
-"PYTHONINSPECT           : inspect interactively after running script (-i)\n"
-"PYTHONNOUSERSITE        : disable user site directory (-s)\n"
-"PYTHONOPTIMIZE          : enable level 1 optimizations (-O)\n"
-"PYTHONUNBUFFERED        : disable stdout/stderr buffering (-u)\n"
-"PYTHONVERBOSE           : trace import statements (-v)\n"
-"PYTHONWARNINGS=arg      : warning control (-W arg)\n";
+"PYTHONNODEBUGRANGES: If this variable is set, it disables the inclusion of\n"
+"         the tables mapping extra location information (end line, start column\n"
+"         offset and end column offset) to every instruction in code objects.\n"
+"         This is useful when smaller code objects and pyc files are desired as\n"
+"         well as suppressing the extra visual location indicators when the\n"
+"         interpreter displays tracebacks.\n"
+"These variables have equivalent command-line options (see --help for details):\n"
+"PYTHONDEBUG: enable parser debug mode (-d)\n"
+"PYTHONDONTWRITEBYTECODE: don't write .pyc files (-B)\n"
+"PYTHONINSPECT: inspect interactively after running script (-i)\n"
+"PYTHONNOUSERSITE: disable user site directory (-s)\n"
+"PYTHONOPTIMIZE: enable level 1 optimizations (-O)\n"
+"PYTHONUNBUFFERED: disable stdout/stderr buffering (-u)\n"
+"PYTHONVERBOSE: trace import statements (-v)\n"
+"PYTHONWARNINGS=arg: warning control (-W arg)\n";
 
 #if defined(MS_WINDOWS)
 #  define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
@@ -2279,9 +2272,9 @@ static void
 config_complete_usage(const wchar_t* program)
 {
    config_usage(0, program);
-   puts("\n");
+   putchar('\n');
    config_envvars_usage();
-   puts("\n");
+   putchar('\n');
    config_xoptions_usage();
 }
 
