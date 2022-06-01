@@ -112,6 +112,34 @@ source.
        python -m timeit -s 'setup here' 'benchmarked code here'
        python -m timeit -h # for details
 
+   Other modules include
+
+   .. list-table::
+
+      * - :mod:`compileall`
+        - Precompiling Python source modules to bytecode
+
+      * - :mod:`pickle`
+        - Display the contents of pickles saved as files
+
+      * - :mod:`pickletools`
+        - Analyse the contents of pickles saved as files
+
+      * - :mod:`site`
+        - Display details of Python's configuration
+
+      * - :mod:`sysconfig`
+        - Display additional details of Python's configuration
+
+      * - :mod:`test`
+        - Execute Python's own regression test suite
+
+      * - :mod:`timeit`
+        - Microbenchmarking for small Python snippets
+
+      * - :mod:`unittest`
+        - Find and execute unit tests
+
    .. audit-event:: cpython.run_module module-name cmdoption-m
 
    .. seealso::
