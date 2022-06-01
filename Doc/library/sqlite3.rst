@@ -1104,7 +1104,7 @@ The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
 
    This exception is not currently raised by the ``sqlite3`` module,
    but may be raised by applications using ``sqlite3``,
-   for example if a user-defined function trunkates data while inserting.
+   for example if a user-defined function truncates data while inserting.
    ``Warning`` is a subclass of :exc:`Exception`.
 
 .. exception:: Error
