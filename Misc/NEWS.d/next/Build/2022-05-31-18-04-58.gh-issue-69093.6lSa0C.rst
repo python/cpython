@@ -1,1 +1,0 @@
-Fix ``Modules/Setup.stdlib.in`` rule for ``_sqlite3`` extension.

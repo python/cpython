@@ -1,0 +1,27 @@
+.. date: 2022-05-30-19-00-38
+.. gh-issue: 93359
+.. nonce: zXV3A0
+.. release date: 2022-06-01
+.. section: Core and Builtins
+
+Ensure that custom :mod:`ast` nodes without explicit end positions can be
+compiled. Patch by Pablo Galindo.
+
+..
+
+.. date: 2022-05-30-10-22-46
+.. gh-issue: 93345
+.. nonce: gi1A4L
+.. section: Core and Builtins
+
+Fix a crash in substitution of a ``TypeVar`` in nested generic alias after
+``TypeVarTuple``.
+
+..
+
+.. date: 2022-05-31-18-04-58
+.. gh-issue: 69093
+.. nonce: 6lSa0C
+.. section: Build
+
+Fix ``Modules/Setup.stdlib.in`` rule for ``_sqlite3`` extension.
