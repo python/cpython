@@ -3,8 +3,8 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#include "pycore_gc.h"            // PyGC_Head
-#include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
 
@@ -192,4 +192,4 @@ exit:
 #ifndef _POSIXSHMEM_SHM_UNLINK_METHODDEF
     #define _POSIXSHMEM_SHM_UNLINK_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_UNLINK_METHODDEF) */
-/*[clinic end generated code: output=dae6e051a8e11d3c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4c889c75d55353a6 input=a9049054013a1b77]*/

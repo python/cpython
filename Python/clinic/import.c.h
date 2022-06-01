@@ -3,8 +3,8 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#include "pycore_gc.h"            // PyGC_Head
-#include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
 
@@ -637,4 +637,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=9e1ed21960d1b0cd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=96ff35831e24c781 input=a9049054013a1b77]*/

@@ -3,8 +3,8 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#include "pycore_gc.h"            // PyGC_Head
-#include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
 
@@ -1190,4 +1190,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=2edb28371788ddd8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b8b125686bc745a6 input=a9049054013a1b77]*/

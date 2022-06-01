@@ -3,8 +3,8 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#include "pycore_gc.h"            // PyGC_Head
-#include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
 
@@ -743,4 +743,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=138c89c46ed7c671 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=40ab0d3319282df2 input=a9049054013a1b77]*/

@@ -3,8 +3,8 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#include "pycore_gc.h"            // PyGC_Head
-#include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
 
@@ -1292,4 +1292,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=725d9cbd71ae4cf7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3fee37f03f5f0a2c input=a9049054013a1b77]*/

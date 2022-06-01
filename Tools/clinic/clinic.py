@@ -1783,16 +1783,18 @@ class BlockPrinter:
         write(self.language.stop_line.format(dsl_name=dsl_name))
         write("\n")
 
+        output = ''
         if core_includes:
-            write("\n")
-            write('#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)\n')
-            write('#include "pycore_gc.h"            // PyGC_Head\n')
-            write('#include "pycore_runtime.h"       // _Py_ID()\n')
-            write('#endif\n')
-            write("\n")
+            output += textwrap.dedent("""
+                #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+                #  include "pycore_gc.h"            // PyGC_Head
+                #  include "pycore_runtime.h"       // _Py_ID()
+                #endif
+
+            """)
 
         input = ''.join(block.input)
-        output = ''.join(block.output)
+        output += ''.join(block.output)
         if output:
             if not output.endswith('\n'):
                 output += '\n'
