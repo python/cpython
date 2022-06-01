@@ -3402,6 +3402,10 @@ PyObject *
 PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
                      PyType_Spec *spec, PyObject *bases_in)
 {
+    /* Invariant: A non-NULL value in one of these means this function holds
+     * a strong reference or owns allocated memory.
+     * These get decrefed/freed/returned at the end, on both success and error.
+     */
     PyHeapTypeObject *res = NULL;
     PyObject *modname = NULL;
     PyTypeObject *type;
@@ -3409,6 +3413,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     char *tp_doc = NULL;
     PyObject *ht_name = NULL;
     char *_ht_tpname = NULL;
+
     int r;
 
     /* Prepare slots that need special handling.
