@@ -7453,6 +7453,9 @@ push_cold_blocks_to_end(struct compiler *c, basicblock *entry, int code_flags) {
     for (basicblock *b = entry; b != NULL; b = b->b_next) {
         if (b->b_cold && !b->b_nofallthrough && b->b_next && b->b_next->b_warm) {
             basicblock *explicit_jump = compiler_new_block(c);
+            if (explicit_jump == NULL) {
+                return -1;
+            }
             basicblock_add_jump(explicit_jump, JUMP, -1, 0, 0, 0, b->b_next);
 
             explicit_jump->b_cold = 1;
