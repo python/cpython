@@ -581,7 +581,7 @@ Connection Objects
       method with :const:`None` for *handler*.
 
       Returning a non-zero value from the handler function will terminate the
-      currently executing query and cause it to raise an :exc:`OperationalError`
+      currently executing query and cause it to raise a :exc:`DatabaseError`
       exception.
 
 
@@ -813,7 +813,7 @@ Connection Objects
       *name*, and reopen *name* as an in-memory database based on the
       serialization contained in *data*.  Deserialization will raise
       :exc:`OperationalError` if the database connection is currently involved
-      in a read transaction or a backup operation.  :exc:`DataError` will be
+      in a read transaction or a backup operation.  :exc:`OverflowError` will be
       raised if ``len(data)`` is larger than ``2**63 - 1``, and
       :exc:`DatabaseError` will be raised if *data* does not contain a valid
       SQLite database.
