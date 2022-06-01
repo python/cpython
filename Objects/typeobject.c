@@ -3398,6 +3398,41 @@ get_bases_tuple(PyObject *bases_in, PyType_Spec *spec)
     return PyTuple_Pack(1, bases_in);
 }
 
+static inline int
+check_basicsize_includes_size_and_offsets(PyTypeObject* type) {
+    if (type->tp_alloc != PyType_GenericAlloc) {
+        // Custom allocators can ignore tp_basicsize
+        return 1;
+    }
+
+    if (type->tp_base && type->tp_base->tp_basicsize > type->tp_basicsize) {
+        PyErr_Format(PyExc_TypeError,
+                    "tp_basicsize for type '%s' (%d) is too small for base '%s' (%d)",
+                    type->tp_name, type->tp_basicsize,
+                    type->tp_base->tp_name, type->tp_base->tp_basicsize);
+        return 0;
+    }
+    if (type->tp_weaklistoffset + (Py_ssize_t)sizeof(PyObject*) > (Py_ssize_t)type->tp_basicsize) {
+        PyErr_Format(PyExc_TypeError,
+                    "tp_basicsize for type '%s' (%d) is too small for weaklist offset %d",
+                    type->tp_name, type->tp_basicsize, type->tp_weaklistoffset);
+        return 0;
+    }
+    if (type->tp_dictoffset + (Py_ssize_t)sizeof(PyObject*) > (Py_ssize_t)type->tp_basicsize) {
+        PyErr_Format(PyExc_TypeError,
+                    "tp_basicsize for type '%s' (%d) is too small for dict offset %d",
+                    type->tp_name, type->tp_basicsize, type->tp_dictoffset);
+        return 0;
+    }
+    if (type->tp_vectorcall_offset + (Py_ssize_t)sizeof(vectorcallfunc*) > (Py_ssize_t)type->tp_basicsize) {
+        PyErr_Format(PyExc_TypeError,
+                    "tp_basicsize for type '%s' (%d) is too small for vectorcall offset %d",
+                    type->tp_name, type->tp_basicsize, type->tp_vectorcall_offset);
+        return 0;
+    }
+    return 1;
+}
+
 PyObject *
 PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
                      PyType_Spec *spec, PyObject *bases_in)
@@ -3664,6 +3699,10 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
      */
 
     if (PyType_Ready(type) < 0) {
+        goto finally;
+    }
+
+    if (!check_basicsize_includes_size_and_offsets(type)) {
         goto finally;
     }
 

@@ -1221,7 +1221,7 @@ static PyType_Spec MinimalMetaclass_spec = {
 
 static PyType_Spec MinimalType_spec = {
     .name = "_testcapi.MinimalSpecType",
-    .basicsize = sizeof(PyObject),
+    .basicsize = 0,  // Updated later
     .flags = Py_TPFLAGS_DEFAULT,
     .slots = empty_type_slots,
 };
@@ -1245,6 +1245,7 @@ test_from_spec_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(ignored)
         goto finally;
     }
 
+    MinimalType_spec.basicsize = ((PyTypeObject*)class)->tp_basicsize;
     new = PyType_FromSpecWithBases(&MinimalType_spec, class);
     if (new == NULL) {
         goto finally;
