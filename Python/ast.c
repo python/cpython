@@ -32,8 +32,8 @@ static int validate_pattern(struct validator *, pattern_ty, int);
     if ((node->lineno < 0 && node->end_lineno != node->lineno) || \
         (node->col_offset < 0 && node->col_offset != node->end_col_offset)) { \
         PyErr_Format(PyExc_ValueError, \
-                     "AST node column range (%d, %d) for line %d is not valid", \
-                     node->col_offset, node->end_col_offset, node->lineno); \
+                     "AST node column range (%d, %d) for line range (%d, %d) is not valid", \
+                     node->col_offset, node->end_col_offset, node->lineno, node->end_lineno); \
         return 0; \
     } \
     if (node->lineno == node->end_lineno && node->col_offset > node->end_col_offset) { \
