@@ -8,6 +8,9 @@ Logging HOWTO
 
 .. currentmodule:: logging
 
+This page contains tutorial information. For links to reference information and a
+logging cookbook, please see :ref:`tutorial-ref-links`.
+
 Basic Logging Tutorial
 ----------------------
 
@@ -1108,6 +1111,11 @@ need:
 Also note that the core logging module only includes the basic handlers. If
 you don't import :mod:`logging.handlers` and :mod:`logging.config`, they won't
 take up any memory.
+
+.. _tutorial-ref-links:
+
+Other resources
+---------------
 
 .. seealso::
 
