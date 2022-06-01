@@ -3406,6 +3406,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     PyObject *modname = NULL;
     PyTypeObject *type;
     PyObject *bases = NULL;
+    char *tp_doc = NULL;
     int r;
 
     const PyType_Slot *slot;
@@ -3449,6 +3450,29 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
                     assert(memb->flags == READONLY);
                     vectorcalloffset = memb->offset;
                 }
+            }
+            break;
+        case Py_tp_doc:
+            /* For the docstring slot, which usually points to a static string
+               literal, we need to make a copy */
+            if (tp_doc != NULL) {
+                PyErr_SetString(
+                    PyExc_SystemError,
+                    "Multiple Py_tp_doc slots are not supported.");
+                return NULL;
+            }
+            if (slot->pfunc == NULL) {
+                PyObject_Free(tp_doc);
+                tp_doc = NULL;
+            }
+            else {
+                size_t len = strlen(slot->pfunc)+1;
+                tp_doc = PyObject_Malloc(len);
+                if (tp_doc == NULL) {
+                    PyErr_NoMemory();
+                    goto finally;
+                }
+                memcpy(tp_doc, slot->pfunc, len);
             }
             break;
         }
@@ -3555,43 +3579,23 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     type->tp_bases = bases;
     bases = NULL;  // We give our reference to bases to the type
 
+    type->tp_doc = tp_doc;
+    tp_doc = NULL;  // Give ownership of the allocated memory to the type
+
     /* Copy the sizes */
     type->tp_basicsize = spec->basicsize;
     type->tp_itemsize = spec->itemsize;
 
     for (slot = spec->slots; slot->slot; slot++) {
-        size_t len;
         switch (slot->slot) {
         case Py_tp_base:
         case Py_tp_bases:
-            /* Processed above */
-            break;
         case Py_tp_doc:
-            /* For the docstring slot, which usually points to a static string
-               literal, we need to make a copy */
-            if (type->tp_doc != NULL) {
-                PyErr_SetString(
-                    PyExc_SystemError,
-                    "Multiple Py_tp_doc slots are not supported.");
-                return NULL;
-            }
-            if (slot->pfunc == NULL) {
-                type->tp_doc = NULL;
-                break;
-            }
-            len = strlen(slot->pfunc)+1;
-            char *tp_doc = PyObject_Malloc(len);
-            if (tp_doc == NULL) {
-                type->tp_doc = NULL;
-                PyErr_NoMemory();
-                goto finally;
-            }
-            memcpy(tp_doc, slot->pfunc, len);
-            type->tp_doc = tp_doc;
+            /* Processed above */
             break;
         case Py_tp_members:
             /* Move the slots to the heap type itself */
-            len = Py_TYPE(type)->tp_itemsize * nmembers;
+            size_t len = Py_TYPE(type)->tp_itemsize * nmembers;
             memcpy(_PyHeapType_GET_MEMBERS(res), slot->pfunc, len);
             type->tp_members = _PyHeapType_GET_MEMBERS(res);
             break;
@@ -3687,6 +3691,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     }
     Py_XDECREF(bases);
     Py_XDECREF(modname);
+    PyObject_Free(tp_doc);
     return (PyObject*)res;
 }
 
