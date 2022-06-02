@@ -142,11 +142,6 @@ struct instr {
     int i_end_col_offset;
 };
 
-typedef struct excepthandler {
-    struct instr *setup;
-    int offset;
-} ExceptHandler;
-
 typedef struct exceptstack {
     struct basicblock_ *handlers[CO_MAXBLOCKS+1];
     int depth;
