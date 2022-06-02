@@ -139,12 +139,14 @@ def_op('RERAISE', 119)
 def_op('COPY', 120)
 def_op('BINARY_OP', 122)
 jrel_op('SEND', 123) # Number of bytes to skip
-def_op('LOAD_FAST', 124)        # Local variable number
+def_op('LOAD_FAST', 124)        # Local variable number, no null check
 haslocal.append(124)
 def_op('STORE_FAST', 125)       # Local variable number
 haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
+def_op('LOAD_FAST_CHECK', 127)  # Local variable number
+haslocal.append(127)
 jrel_op('POP_JUMP_FORWARD_IF_NOT_NONE', 128)
 jrel_op('POP_JUMP_FORWARD_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)

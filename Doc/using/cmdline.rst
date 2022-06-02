@@ -183,6 +183,8 @@ automatically enabled, if available on your platform (see
    Automatic enabling of tab-completion and history editing.
 
 
+.. _using-on-generic-options:
+
 Generic options
 ~~~~~~~~~~~~~~~
 
@@ -190,8 +192,28 @@ Generic options
                -h
                --help
 
-   Print a short description of all command line options.
+   Print a short description of all command line options and corresponding
+   environment variables and exit.
 
+.. cmdoption:: --help-env
+
+   Print a short description of Python-specific environment variables
+   and exit.
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: --help-xoptions
+
+   Print a description of implementation-specific :option:`-X` options
+   and exit.
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: --help-all
+
+   Print complete usage information and exit.
+
+   .. versionadded:: 3.11
 
 .. cmdoption:: -V
                --version
@@ -211,6 +233,7 @@ Generic options
 
    .. versionadded:: 3.6
       The ``-VV`` option.
+
 
 .. _using-on-misc-options:
 
@@ -460,6 +483,7 @@ Miscellaneous options
    See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
    details.
 
+
 .. cmdoption:: -x
 
    Skip the first line of the source, allowing use of non-Unix forms of
@@ -551,6 +575,7 @@ Miscellaneous options
 
    .. versionadded:: 3.11
       The ``-X frozen_modules`` option.
+
 
 
 Options you shouldn't use
