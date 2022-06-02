@@ -1978,11 +1978,25 @@ _unsupported_magics = {
     '__del__'
 }
 
+def _get_divmod(self):
+    ret_val = self.__divmod__._mock_return_value
+    if ret_val is DEFAULT:
+        return (type(self)(), type(self)())
+    return ret_val
+
+def _get_rdivmod(self):
+    ret_val = self.__rdivmod__._mock_return_value
+    if ret_val is DEFAULT:
+        return (type(self)(), type(self)())
+    return ret_val
+
 _calculate_return_value = {
     '__hash__': lambda self: object.__hash__(self),
     '__str__': lambda self: object.__str__(self),
     '__sizeof__': lambda self: object.__sizeof__(self),
     '__fspath__': lambda self: f"{type(self).__name__}/{self._extract_mock_name()}/{id(self)}",
+    '__divmod__': _get_divmod,
+    '__rdivmod__': _get_rdivmod,
 }
 
 _return_values = {

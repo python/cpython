@@ -2037,6 +2037,11 @@ The full list of supported magic methods is:
 .. versionchanged:: 3.8
    Added support for ``__aenter__``, ``__aexit__``, ``__aiter__`` and ``__anext__``.
 
+.. versionchanged:: 3.10
+   ``__divmod__`` and ``__rdivmod`` now return a tuple of :class:`MagicMock` instances by default.
+   They previously returned a single :class:`MagicMock` instance.
+   This change was made to better support the unpacking synyax often used with :func:`divmod`.
+
 
 The following methods exist but are *not* supported as they are either in use
 by mock, can't be set dynamically, or can cause problems:
@@ -2107,6 +2112,8 @@ Methods and their defaults:
 * ``__hash__``: default hash for the mock
 * ``__str__``: default str for the mock
 * ``__sizeof__``: default sizeof for the mock
+* ``__divmod__``: ``(MagicMock(), MagicMock())``
+* ``__rdivmod__``: ``(MagicMock(), MagicMock())``
 
 For example:
 
