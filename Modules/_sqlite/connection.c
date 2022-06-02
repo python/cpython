@@ -2092,7 +2092,7 @@ serialize_impl(pysqlite_Connection *self, const char *name)
         return NULL;
     }
 #if PY_SSIZE_T_MAX < 9223372036854775807
-    if (size > PY_SSIZE_T_MAX) {
+    if (size > INT_MAX) {
         PyErr_Format(PyExc_OverflowError,
                      "serialized '%s' too large to convert to bytes", name);
         return NULL;
