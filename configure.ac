@@ -5861,6 +5861,18 @@ then
   [Define if you have struct stat.st_mtimensec])
 fi
 
+# checking for glibc extensions to langinfo.h
+#  _NL_TIME_FIRST_WEEKDAY isn't #define'd, so test it directly
+AC_CACHE_CHECK([for _NL_TIME_FIRST_WEEKDAY], [ac_cv_have__nl_time_first_weekday], [
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <langinfo.h>], [
+    return !!nl_langinfo(_NL_TIME_FIRST_WEEKDAY);
+    ])], [ac_cv_have__nl_time_first_weekday=yes], [ac_cv_have__nl_time_first_weekday=no])
+])
+AS_VAR_IF([ac_cv_have__nl_time_first_weekday], [yes], [
+    AC_DEFINE(HAVE__NL_TIME_FIRST_WEEKDAY, 1,
+    [Define if you have _NL_TIME_FIRST_WEEKDAY in langinfo.h])
+])
+
 # first curses header check
 ac_save_cppflags="$CPPFLAGS"
 if test "$cross_compiling" = no; then

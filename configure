@@ -20462,6 +20462,45 @@ $as_echo "#define HAVE_STAT_TV_NSEC2 1" >>confdefs.h
 
 fi
 
+# checking for glibc extensions to langinfo.h
+#  _NL_TIME_FIRST_WEEKDAY isn't #define'd, so test it directly
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _NL_TIME_FIRST_WEEKDAY" >&5
+$as_echo_n "checking for _NL_TIME_FIRST_WEEKDAY... " >&6; }
+if ${ac_cv_have__nl_time_first_weekday+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <langinfo.h>
+int
+main ()
+{
+
+    return !!nl_langinfo(_NL_TIME_FIRST_WEEKDAY);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_have__nl_time_first_weekday=yes
+else
+  ac_cv_have__nl_time_first_weekday=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have__nl_time_first_weekday" >&5
+$as_echo "$ac_cv_have__nl_time_first_weekday" >&6; }
+if test "x$ac_cv_have__nl_time_first_weekday" = xyes; then :
+
+
+$as_echo "#define HAVE__NL_TIME_FIRST_WEEKDAY 1" >>confdefs.h
+
+
+fi
+
 # first curses header check
 ac_save_cppflags="$CPPFLAGS"
 if test "$cross_compiling" = no; then

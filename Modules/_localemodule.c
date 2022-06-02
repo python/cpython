@@ -623,6 +623,45 @@ _locale_nl_langinfo_impl(PyObject *module, int item)
 }
 #endif /* HAVE_LANGINFO_H */
 
+PyDoc_STRVAR(getfirstweekday__doc__,
+"getfirstweekday() -> integer\n"
+"Return the first day of week. 0 is Monday, 6 is Sunday and None is unknown");
+
+static PyObject*
+PyLocale_getfirstweekday(PyObject* self, PyObject* args)
+{
+    int start = -1;
+#if defined(MS_WINDOWS)
+    char locale[1];
+
+    if (!GetLocaleInfo(LOCALE_USER_DEFAULT,
+                       LOCALE_IFIRSTDAYOFWEEK,
+                       locale, sizeof(locale))) {
+        start = (locale[0] - '0') % 7;
+    }
+#elif defined(HAVE__NL_TIME_FIRST_WEEKDAY)
+    int first_weekday = nl_langinfo(_NL_TIME_FIRST_WEEKDAY)[0];
+    long week_1stday = (long)nl_langinfo(_NL_TIME_WEEK_1STDAY);
+    /* Magic constant is defined by glibc as the third value of the week
+     * keyword of LC_TIME */
+    switch (week_1stday) {
+    default:
+    case 19971130:
+        week_1stday = 0;
+        break;
+    case 19971201:
+        week_1stday = 1;
+        break;
+    }
+    start = (week_1stday + first_weekday - 1) % 7;
+#endif
+    if (0 <= start && start <= 6) {
+        return PyLong_FromLong(start);
+    } else {
+        Py_RETURN_NONE;
+    }
+}
+
 #ifdef HAVE_LIBINTL_H
 
 /*[clinic input]
@@ -801,6 +840,8 @@ static struct PyMethodDef PyLocale_Methods[] = {
 #ifdef HAVE_LANGINFO_H
     _LOCALE_NL_LANGINFO_METHODDEF
 #endif
+  {"getfirstweekday", (PyCFunction) PyLocale_getfirstweekday,
+   METH_NOARGS, getfirstweekday__doc__},
 #ifdef HAVE_LIBINTL_H
     _LOCALE_GETTEXT_METHODDEF
     _LOCALE_DGETTEXT_METHODDEF

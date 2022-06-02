@@ -279,6 +279,14 @@ The :mod:`locale` module defines the following exception and functions:
       0 to 99.
 
 
+.. function:: getfirstweekday()
+
+   Return the first day of week as integer or ``None`` when unknown.
+   0 is Monday, 6 is Sunday.
+
+   .. versionadded:: 3.11
+
+
 .. function:: getdefaultlocale([envvars])
 
    Tries to determine the default locale settings and returns them as a tuple of

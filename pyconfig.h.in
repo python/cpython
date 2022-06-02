@@ -1452,6 +1452,9 @@
 /* Define to 1 if you have the `_getpty' function. */
 #undef HAVE__GETPTY
 
+/* Define if you have _NL_TIME_FIRST_WEEKDAY in langinfo.h */
+#undef HAVE__NL_TIME_FIRST_WEEKDAY
+
 /* Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>.
    */
 #undef MAJOR_IN_MKDEV

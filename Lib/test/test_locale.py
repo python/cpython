@@ -3,6 +3,7 @@ from test.support import verbose, is_android, is_emscripten, is_wasi
 from test.support.warnings_helper import check_warnings
 import unittest
 import locale
+import platform
 import sys
 import codecs
 
@@ -598,6 +599,30 @@ class TestMiscellaneous(unittest.TestCase):
     def test_invalid_iterable_in_localetuple(self):
         with self.assertRaises(TypeError):
             locale.setlocale(locale.LC_ALL, (b'not', b'valid'))
+
+
+class TestGetFirstWeekDay(BaseLocalizedTest):
+
+    locale_type = locale.LC_TIME
+
+    def test_getfirstweekday(self):
+        if platform.libc_ver()[0] == 'glibc':
+            self.assertEqual(locale.getfirstweekday(), 0)
+        elif platform.system() == 'Windows':
+            self.assertEqual(locale.getfirstweekday(), 6)
+        else:
+            self.assertEqual(locale.getfirstweekday(), None)
+
+    @unittest.skipUnless(
+        platform.libc_ver()[0] == 'glibc'
+        or platform.system() == 'Windows',
+        "Implemented and modifiable only with glibc or on Windows")
+    def test_getfirstweekday_fr(self):
+        try:
+            locale.setlocale(self.locale_type, 'fr_FR')
+        except locale.Error:
+            self.skipTest('test needs fr_FR locale')
+        self.assertEqual(locale.getfirstweekday(), 1)
 
 
 class BaseDelocalizeTest(BaseLocalizedTest):
