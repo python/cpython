@@ -4586,6 +4586,7 @@ class LogRecordTest(BaseTest):
         r = logging.makeLogRecord({})
         assertion(r.taskName)
 
+    @support.requires_working_socket()
     def test_taskName_with_asyncio_imported(self):
         try:
             make_record = self._make_record_async
@@ -4597,6 +4598,7 @@ class LogRecordTest(BaseTest):
         finally:
             asyncio.set_event_loop_policy(None)
 
+    @support.requires_working_socket()
     def test_taskName_without_asyncio_imported(self):
         try:
             make_record = self._make_record_async
@@ -4886,6 +4888,7 @@ class BasicConfigTest(unittest.TestCase):
             # didn't write anything due to the encoding error
             self.assertEqual(data, r'')
 
+    @support.requires_working_socket()
     def test_log_taskName(self):
         async def log_record():
             logging.warning('hello world')
