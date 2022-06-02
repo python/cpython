@@ -293,7 +293,6 @@ _specializations = {
         # LOAD_METHOD
         "LOAD_ATTR_METHOD_CLASS",
         "LOAD_ATTR_METHOD_LAZY_DICT",
-        "LOAD_ATTR_METHOD_MODULE",
         "LOAD_ATTR_METHOD_NO_DICT",
         "LOAD_ATTR_METHOD_WITH_DICT",
         "LOAD_ATTR_METHOD_WITH_VALUES",
