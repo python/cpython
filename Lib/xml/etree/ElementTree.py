@@ -731,6 +731,8 @@ class ElementTree:
         with _get_writer(file_or_filename, encoding) as (write, declared_encoding):
             if method == "xml" and (xml_declaration or
                     (xml_declaration is None and
+                     not (encoding.lower() == "unicode" and
+                          hasattr(file_or_filename, "write")) and
                      declared_encoding.lower() not in ("utf-8", "us-ascii"))):
                 write("<?xml version='1.0' encoding='%s'?>\n" % (
                     declared_encoding,))
