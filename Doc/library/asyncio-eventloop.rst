@@ -38,25 +38,12 @@ an event loop:
 
 .. function:: get_event_loop()
 
-   Get the current event loop.
+   An alias of :func:`get_running_loop`.
 
-   If there is no current event loop set in the current OS thread,
-   the OS thread is main, and :func:`set_event_loop` has not yet
-   been called, asyncio will create a new event loop and set it as the
-   current one.
-
-   Because this function has rather complex behavior (especially
-   when custom event loop policies are in use), using the
-   :func:`get_running_loop` function is preferred to :func:`get_event_loop`
-   in coroutines and callbacks.
-
-   Consider also using the :func:`asyncio.run` function instead of using
-   lower level functions to manually create and close an event loop.
-
-   .. deprecated:: 3.10
-      Deprecation warning is emitted if there is no running event loop.
-      In future Python releases, this function will be an alias of
-      :func:`get_running_loop`.
+   .. versionchanged:: 3.12
+      Prior to Python 3.12, this function created a new event loop if there
+      was no running event loop and set it as a current event loop for the
+      current OS thread.
 
 .. function:: set_event_loop(loop)
 
@@ -66,7 +53,7 @@ an event loop:
 
    Create and return a new event loop object.
 
-Note that the behaviour of :func:`get_event_loop`, :func:`set_event_loop`,
+Note that the behaviour of :func:`set_event_loop`
 and :func:`new_event_loop` functions can be altered by
 :ref:`setting a custom event loop policy <asyncio-policies>`.
 
@@ -1663,7 +1650,7 @@ event loop::
         print('Hello World')
         loop.stop()
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
 
     # Schedule a call to hello_world()
     loop.call_soon(hello_world, loop)
@@ -1699,7 +1686,7 @@ after 5 seconds, and then stops the event loop::
         else:
             loop.stop()
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
 
     # Schedule the first call to display_date()
     end_time = loop.time() + 5.0
@@ -1731,7 +1718,7 @@ Wait until a file descriptor received some data using the
     # Create a pair of connected file descriptors
     rsock, wsock = socketpair()
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
 
     def reader():
         data = rsock.recv(100)

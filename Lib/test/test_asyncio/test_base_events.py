@@ -747,7 +747,7 @@ class BaseEventLoopTests(test_utils.TestCase):
     def test_env_var_debug(self):
         code = '\n'.join((
             'import asyncio',
-            'loop = asyncio.get_event_loop()',
+            'loop = asyncio.new_event_loop()',
             'print(loop.get_debug())'))
 
         # Test with -E to not fail if the unit test was run with

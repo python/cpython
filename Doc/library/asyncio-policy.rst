@@ -16,7 +16,7 @@ separate event loop per context. The default policy
 defines *context* to be the current thread.
 
 By using a custom event loop policy, the behavior of
-:func:`get_event_loop`, :func:`set_event_loop`, and
+:func:`set_event_loop` and
 :func:`new_event_loop` functions can be customized.
 
 Policy objects should implement the APIs defined

@@ -21,7 +21,6 @@ _Py_IDENTIFIER(_asyncio_future_blocking);
 _Py_IDENTIFIER(add_done_callback);
 _Py_IDENTIFIER(call_soon);
 _Py_IDENTIFIER(cancel);
-_Py_IDENTIFIER(get_event_loop);
 _Py_IDENTIFIER(throw);
 _Py_IDENTIFIER(_check_future);
 
@@ -326,37 +325,6 @@ set_running_loop(PyObject *loop)
 }
 
 
-static PyObject *
-get_event_loop(int stacklevel)
-{
-    PyObject *loop;
-    PyObject *policy;
-
-    if (get_running_loop(&loop)) {
-        return NULL;
-    }
-    if (loop != NULL) {
-        return loop;
-    }
-
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "There is no current event loop",
-                     stacklevel))
-    {
-        return NULL;
-    }
-
-    policy = PyObject_CallNoArgs(asyncio_get_event_loop_policy);
-    if (policy == NULL) {
-        return NULL;
-    }
-
-    loop = _PyObject_CallMethodIdNoArgs(policy, &PyId_get_event_loop);
-    Py_DECREF(policy);
-    return loop;
-}
-
-
 static int
 call_soon(PyObject *loop, PyObject *func, PyObject *arg, PyObject *ctx)
 {
@@ -504,8 +472,13 @@ future_init(FutureObj *fut, PyObject *loop)
     fut->fut_blocking = 0;
 
     if (loop == Py_None) {
-        loop = get_event_loop(1);
+        if (get_running_loop(&loop)) {
+            return -1;
+        }
         if (loop == NULL) {
+            /* There's no currently running event loop */
+            PyErr_SetString(
+                PyExc_RuntimeError, "no running event loop");
             return -1;
         }
     }
@@ -3164,38 +3137,6 @@ _asyncio__set_running_loop(PyObject *module, PyObject *loop)
 }
 
 /*[clinic input]
-_asyncio.get_event_loop
-
-Return an asyncio event loop.
-
-When called from a coroutine or a callback (e.g. scheduled with
-call_soon or similar API), this function will always return the
-running event loop.
-
-If there is no running event loop set, the function will return
-the result of `get_event_loop_policy().get_event_loop()` call.
-[clinic start generated code]*/
-
-static PyObject *
-_asyncio_get_event_loop_impl(PyObject *module)
-/*[clinic end generated code: output=2a2d8b2f824c648b input=9364bf2916c8655d]*/
-{
-    return get_event_loop(1);
-}
-
-/*[clinic input]
-_asyncio._get_event_loop
-    stacklevel: int = 3
-[clinic start generated code]*/
-
-static PyObject *
-_asyncio__get_event_loop_impl(PyObject *module, int stacklevel)
-/*[clinic end generated code: output=9c1d6d3c802e67c9 input=d17aebbd686f711d]*/
-{
-    return get_event_loop(stacklevel-1);
-}
-
-/*[clinic input]
 _asyncio.get_running_loop
 
 Return the running event loop.  Raise a RuntimeError if there is none.
@@ -3489,8 +3430,6 @@ fail:
 PyDoc_STRVAR(module_doc, "Accelerator module for asyncio");
 
 static PyMethodDef asyncio_methods[] = {
-    _ASYNCIO_GET_EVENT_LOOP_METHODDEF
-    _ASYNCIO__GET_EVENT_LOOP_METHODDEF
     _ASYNCIO_GET_RUNNING_LOOP_METHODDEF
     _ASYNCIO__GET_RUNNING_LOOP_METHODDEF
     _ASYNCIO__SET_RUNNING_LOOP_METHODDEF

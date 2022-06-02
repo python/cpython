@@ -1,0 +1,2 @@
+Make :func:`asyncio.get_event_loop` an alias of
+:func:`asyncio.get_running_loop`.

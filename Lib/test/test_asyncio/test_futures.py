@@ -145,10 +145,8 @@ class BaseFutureTests:
         self.assertTrue(f.cancelled())
 
     def test_constructor_without_loop(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            with self.assertRaisesRegex(RuntimeError, 'There is no current event loop'):
-                self._new_future()
-        self.assertEqual(cm.filename, __file__)
+        with self.assertRaisesRegex(RuntimeError, 'no running event loop'):
+            self._new_future()
 
     def test_constructor_use_running_loop(self):
         async def test():
@@ -158,14 +156,11 @@ class BaseFutureTests:
         self.assertIs(f.get_loop(), self.loop)
 
     def test_constructor_use_global_loop(self):
-        # Deprecated in 3.10
+        # Deprecated in 3.10, error in 3.12
         asyncio.set_event_loop(self.loop)
         self.addCleanup(asyncio.set_event_loop, None)
-        with self.assertWarns(DeprecationWarning) as cm:
-            f = self._new_future()
-        self.assertEqual(cm.filename, __file__)
-        self.assertIs(f._loop, self.loop)
-        self.assertIs(f.get_loop(), self.loop)
+        with self.assertRaisesRegex(RuntimeError, 'no running event loop'):
+            self._new_future()
 
     def test_constructor_positional(self):
         # Make sure Future doesn't accept a positional argument
@@ -507,10 +502,8 @@ class BaseFutureTests:
             return (arg, threading.get_ident())
         ex = concurrent.futures.ThreadPoolExecutor(1)
         f1 = ex.submit(run, 'oi')
-        with self.assertWarns(DeprecationWarning) as cm:
-            with self.assertRaises(RuntimeError):
-                asyncio.wrap_future(f1)
-        self.assertEqual(cm.filename, __file__)
+        with self.assertRaisesRegex(RuntimeError, 'no running event loop'):
+            asyncio.wrap_future(f1)
         ex.shutdown(wait=True)
 
     def test_wrap_future_use_running_loop(self):
@@ -525,17 +518,15 @@ class BaseFutureTests:
         ex.shutdown(wait=True)
 
     def test_wrap_future_use_global_loop(self):
-        # Deprecated in 3.10
+        # Deprecated in 3.10, error in 3.12
         asyncio.set_event_loop(self.loop)
         self.addCleanup(asyncio.set_event_loop, None)
         def run(arg):
             return (arg, threading.get_ident())
         ex = concurrent.futures.ThreadPoolExecutor(1)
         f1 = ex.submit(run, 'oi')
-        with self.assertWarns(DeprecationWarning) as cm:
-            f2 = asyncio.wrap_future(f1)
-        self.assertEqual(cm.filename, __file__)
-        self.assertIs(self.loop, f2._loop)
+        with self.assertRaisesRegex(RuntimeError, 'no running event loop'):
+            asyncio.wrap_future(f1)
         ex.shutdown(wait=True)
 
     def test_wrap_future_cancel(self):

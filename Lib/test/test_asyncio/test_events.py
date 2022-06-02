@@ -2709,15 +2709,11 @@ class GetEventLoopTestsMixin:
             asyncio.set_event_loop_policy(Policy())
             loop = asyncio.new_event_loop()
 
-            with self.assertWarns(DeprecationWarning) as cm:
-                with self.assertRaises(TestError):
-                    asyncio.get_event_loop()
-            self.assertEqual(cm.filename, __file__)
+            with self.assertRaisesRegex(RuntimeError, 'no running'):
+                asyncio.get_event_loop()
             asyncio.set_event_loop(None)
-            with self.assertWarns(DeprecationWarning) as cm:
-                with self.assertRaises(TestError):
-                    asyncio.get_event_loop()
-            self.assertEqual(cm.filename, __file__)
+            with self.assertRaisesRegex(RuntimeError, 'no running'):
+                asyncio.get_event_loop()
 
             with self.assertRaisesRegex(RuntimeError, 'no running'):
                 asyncio.get_running_loop()
@@ -2731,16 +2727,11 @@ class GetEventLoopTestsMixin:
             loop.run_until_complete(func())
 
             asyncio.set_event_loop(loop)
-            with self.assertWarns(DeprecationWarning) as cm:
-                with self.assertRaises(TestError):
-                    asyncio.get_event_loop()
-            self.assertEqual(cm.filename, __file__)
-
+            with self.assertRaisesRegex(RuntimeError, 'no running'):
+                asyncio.get_event_loop()
             asyncio.set_event_loop(None)
-            with self.assertWarns(DeprecationWarning) as cm:
-                with self.assertRaises(TestError):
-                    asyncio.get_event_loop()
-            self.assertEqual(cm.filename, __file__)
+            with self.assertRaisesRegex(RuntimeError, 'no running'):
+                asyncio.get_event_loop()
 
         finally:
             asyncio.set_event_loop_policy(old_policy)
@@ -2759,15 +2750,11 @@ class GetEventLoopTestsMixin:
             loop = asyncio.new_event_loop()
             self.addCleanup(loop.close)
 
-            with self.assertWarns(DeprecationWarning) as cm:
-                loop2 = asyncio.get_event_loop()
-            self.addCleanup(loop2.close)
-            self.assertEqual(cm.filename, __file__)
+            with self.assertRaisesRegex(RuntimeError, 'no running'):
+                asyncio.get_event_loop()
             asyncio.set_event_loop(None)
-            with self.assertWarns(DeprecationWarning) as cm:
-                with self.assertRaisesRegex(RuntimeError, 'no current'):
-                    asyncio.get_event_loop()
-            self.assertEqual(cm.filename, __file__)
+            with self.assertRaisesRegex(RuntimeError, 'no running'):
+                asyncio.get_event_loop()
 
             with self.assertRaisesRegex(RuntimeError, 'no running'):
                 asyncio.get_running_loop()
@@ -2781,15 +2768,11 @@ class GetEventLoopTestsMixin:
             loop.run_until_complete(func())
 
             asyncio.set_event_loop(loop)
-            with self.assertWarns(DeprecationWarning) as cm:
+            with self.assertRaisesRegex(RuntimeError, 'no running'):
                 self.assertIs(asyncio.get_event_loop(), loop)
-            self.assertEqual(cm.filename, __file__)
-
             asyncio.set_event_loop(None)
-            with self.assertWarns(DeprecationWarning) as cm:
-                with self.assertRaisesRegex(RuntimeError, 'no current'):
-                    asyncio.get_event_loop()
-            self.assertEqual(cm.filename, __file__)
+            with self.assertRaisesRegex(RuntimeError, 'no running'):
+                asyncio.get_event_loop()
 
         finally:
             asyncio.set_event_loop_policy(old_policy)
@@ -2807,7 +2790,7 @@ class TestPyGetEventLoop(GetEventLoopTestsMixin, unittest.TestCase):
     _get_running_loop_impl = events._py__get_running_loop
     _set_running_loop_impl = events._py__set_running_loop
     get_running_loop_impl = events._py_get_running_loop
-    get_event_loop_impl = events._py_get_event_loop
+    get_event_loop_impl = events._py_get_running_loop
 
 
 try:
@@ -2821,7 +2804,7 @@ else:
         _get_running_loop_impl = events._c__get_running_loop
         _set_running_loop_impl = events._c__set_running_loop
         get_running_loop_impl = events._c_get_running_loop
-        get_event_loop_impl = events._c_get_event_loop
+        get_event_loop_impl = events._c_get_running_loop
 
 
 class TestServer(unittest.TestCase):

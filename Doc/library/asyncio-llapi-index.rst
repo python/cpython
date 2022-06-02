@@ -19,7 +19,7 @@ Obtaining the Event Loop
       - The **preferred** function to get the running event loop.
 
     * - :func:`asyncio.get_event_loop`
-      - Get an event loop instance (current or via the policy).
+      - An alias of :func:`asyncio.get_running_loop`.
 
     * - :func:`asyncio.set_event_loop`
       - Set the event loop as current via the current policy.
@@ -267,7 +267,7 @@ See also the main documentation section about the
 
 .. rubric:: Examples
 
-* :ref:`Using asyncio.get_event_loop() and loop.run_forever()
+* :ref:`Using asyncio.get_running_loop() and loop.run_forever()
   <asyncio_example_lowlevel_helloworld>`.
 
 * :ref:`Using loop.call_later() <asyncio_example_call_later>`.
@@ -499,7 +499,7 @@ Event Loop Policies
 ===================
 
 Policies is a low-level mechanism to alter the behavior of
-functions like :func:`asyncio.get_event_loop`.  See also
+functions like :func:`asyncio.new_event_loop`.  See also
 the main :ref:`policies section <asyncio-policies>` for more
 details.
 
