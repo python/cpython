@@ -151,9 +151,9 @@ def _callable(obj):
 
 
 def _is_list(obj):
-    # checks for list or tuples
+    # checks for list, tuples, or sets
     # XXXX badly named!
-    return type(obj) in (list, tuple)
+    return type(obj) in (list, tuple, set)
 
 
 def _instance_callable(obj):
@@ -740,7 +740,8 @@ class NonCallableMock(Base):
         from_type = [e for e in from_type if not e.startswith('_')]
         from_dict = [e for e in from_dict if not e.startswith('_') or
                      _is_magic(e)]
-        return sorted(set(extras + from_type + from_dict + from_child_mocks))
+        return sorted(set(list(extras) + from_type + from_dict +
+                          from_child_mocks))
 
 
     def __setattr__(self, name, value):
