@@ -622,12 +622,121 @@ EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
     return 999;
 }
 
+PyObject *py_getBufferInfo(PyObject *self, PyObject *obj)
+{
+    int flags = PyBUF_FULL;
+    int ii;
+    Py_buffer view;
+    PyObject *v;
+    PyObject *x;
+    PyObject *d;
+    int buffer_err;
+
+    d = PyDict_New();
+    if (NULL == d) Py_RETURN_NONE;
+    buffer_err = PyObject_GetBuffer(obj, &view, flags);
+    v = PyLong_FromLong(buffer_err);
+    if (NULL != v){
+        PyDict_SetItemString(d, "err", v);
+        Py_DECREF(v);
+    }
+
+    if (0 == buffer_err) {
+        v = PyLong_FromSsize_t(view.len);
+        if (NULL != v){
+            PyDict_SetItemString(d, "len", v);
+            Py_DECREF(v);
+        }
+        v = PyBool_FromLong(view.readonly);
+        if (NULL != v){
+            PyDict_SetItemString(d, "readonly", v);
+            Py_DECREF(v);
+        }
+        v = PyLong_FromSsize_t(view.itemsize);
+        if (NULL != v){
+            PyDict_SetItemString(d, "itemsize", v);
+            Py_DECREF(v);
+        }
+        if(NULL == view.format) {
+            v = PyUnicode_New(0, 0);
+        } else {
+            v = PyUnicode_FromString(view.format);
+        }
+        if (NULL != v){
+            PyDict_SetItemString(d, "format", v);
+            Py_DECREF(v);
+        }
+        v = PyLong_FromLong(view.ndim);
+        if (NULL != v){
+            PyDict_SetItemString(d, "ndim", v);
+            Py_DECREF(v);
+        }
+        if (NULL == view.shape) {
+            PyDict_SetItemString(d, "shape", Py_None);
+        } else {
+            v = PyTuple_New(view.ndim);
+            if (NULL != v){
+                for (ii=0; ii<view.ndim; ++ii) {
+                    x = PyLong_FromSsize_t(view.shape[ii]);
+                    if (NULL == x) {
+                        Py_DECREF(v);
+                        Py_DECREF(d);
+                        return NULL;
+                    }
+                    PyTuple_SetItem(v, ii, x);
+                }
+                PyDict_SetItemString(d, "shape", v);
+                Py_DECREF(v);
+            }
+        }
+        if (NULL == view.strides) {
+            PyDict_SetItemString(d, "strides", Py_None);
+        } else {
+            v = PyTuple_New(view.ndim);
+            if (NULL != v){
+                for (ii=0; ii<view.ndim; ++ii) {
+                    x = PyLong_FromSsize_t(view.strides[ii]);
+                    if (NULL == x) {
+                        Py_DECREF(v);
+                        Py_DECREF(d);
+                        return NULL;
+                    }
+                    PyTuple_SetItem(v, ii, x);
+                }
+                PyDict_SetItemString(d, "strides", v);
+                Py_DECREF(v);
+            }
+        }
+        if (NULL == view.suboffsets) {
+            PyDict_SetItemString(d, "suboffsets", Py_None);
+        } else {
+            v = PyTuple_New(view.ndim);
+            if (NULL != v){
+                for (ii=0; ii<view.ndim; ++ii) {
+                    x = PyLong_FromSsize_t(view.suboffsets[ii]);
+                    if (NULL == x) {
+                        Py_DECREF(v);
+                        Py_DECREF(d);
+                        return NULL;
+                    }
+                    PyTuple_SetItem(v, ii, x);
+                }
+                PyDict_SetItemString(d, "suboffsets", v);
+                Py_DECREF(v);
+            }
+        }
+        PyBuffer_Release(&view);
+    }
+    return d;
+}
+
 static PyMethodDef module_methods[] = {
 /*      {"get_last_tf_arg_s", get_last_tf_arg_s, METH_NOARGS},
     {"get_last_tf_arg_u", get_last_tf_arg_u, METH_NOARGS},
 */
     {"func_si", py_func_si, METH_VARARGS},
     {"func", py_func, METH_NOARGS},
+    {"buffer_info", py_getBufferInfo, METH_O},
     { NULL, NULL, 0, NULL},
 };
 

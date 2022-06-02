@@ -1540,7 +1540,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (stgdict->format == NULL)
         goto error;
     stgdict->ndim = itemdict->ndim + 1;
-    stgdict->shape = PyMem_Malloc(sizeof(Py_ssize_t) * stgdict->ndim);
+    stgdict->shape = PyMem_Malloc(sizeof(Py_ssize_t) * stgdict->ndim * 2);
     if (stgdict->shape == NULL) {
         PyErr_NoMemory();
         goto error;
@@ -1549,6 +1549,14 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (stgdict->ndim > 1) {
         memmove(&stgdict->shape[1], itemdict->shape,
             sizeof(Py_ssize_t) * (stgdict->ndim - 1));
+    }
+    stgdict->strides = stgdict->shape + stgdict->ndim;
+    if (stgdict->ndim > 1) {
+        memmove(&stgdict->strides[1], itemdict->strides,
+            sizeof(Py_ssize_t) * (stgdict->ndim - 1));
+        stgdict->strides[0] = stgdict->strides[1] * stgdict->shape[1];
+    } else {
+        stgdict->strides[0] = itemdict->size;
     }
 
     itemsize = itemdict->size;
@@ -2779,26 +2787,34 @@ static int PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
 {
     CDataObject *self = (CDataObject *)myself;
     StgDictObject *dict = PyObject_stgdict(myself);
-    Py_ssize_t i;
 
     if (view == NULL) return 0;
+
+    if ((flags & PyBUF_F_CONTIGUOUS) == PyBUF_F_CONTIGUOUS) {
+        view->obj = NULL;
+        PyErr_Format(PyExc_TypeError, "Fortran contiguous buffer is not supported");
+        return -1;
+    }
 
     view->buf = self->b_ptr;
     view->obj = myself;
     Py_INCREF(myself);
     view->len = self->b_size;
     view->readonly = 0;
-    /* use default format character if not set */
-    view->format = dict->format ? dict->format : "B";
-    view->ndim = dict->ndim;
-    view->shape = dict->shape;
-    view->itemsize = self->b_size;
-    if (view->itemsize) {
-        for (i = 0; i < view->ndim; ++i) {
-            view->itemsize /= dict->shape[i];
-        }
+    if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT) {
+        /* use default format character if not set */
+        view->format = dict->format ? dict->format : "B";
+    } else {
+        view->format = NULL;
     }
-    view->strides = NULL;
+    view->ndim = dict->ndim;
+    view->shape = ((flags & PyBUF_ND) == PyBUF_ND) ? dict->shape : NULL;
+    if (dict->strides) {
+        view->itemsize = dict->strides[dict->ndim - 1];
+    } else {
+        view->itemsize = self->b_size;
+    }
+    view->strides = ((flags & PyBUF_STRIDES) == PyBUF_STRIDES) ? dict->strides : NULL;
     view->suboffsets = NULL;
     view->internal = NULL;
     return 0;
