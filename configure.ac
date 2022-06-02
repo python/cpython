@@ -1947,7 +1947,7 @@ AS_CASE([$ac_sys_system],
     dnl build with WASM debug info if either Py_DEBUG is set or the target is
     dnl node-debug or browser-debug.
     AS_VAR_IF([Py_DEBUG], [yes], [wasm_debug=yes], [wasm_debug=no])
-    
+
     dnl Start with 20 MB and allow to grow
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sTOTAL_MEMORY=20971520"])
 
@@ -5022,27 +5022,6 @@ AS_VAR_IF([ac_cv_function_prototypes], [yes], [
      [Define if your compiler supports function prototype])
 ])
 
-works=no
-AC_CACHE_CHECK([for variable length prototypes and stdarg.h], [ac_cv_stdarg_prototypes], [
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <stdarg.h>
-int foo(int x, ...) {
-	va_list va;
-	va_start(va, x);
-	va_arg(va, int);
-	va_arg(va, char *);
-	va_arg(va, double);
-	return 0;
-}
-]], [[return foo(10, "", 3.14);]])],
-  [ac_cv_stdarg_prototypes=yes], [ac_cv_stdarg_prototypes=no])
-])
-AS_VAR_IF([ac_cv_stdarg_prototypes], [yes], [
-  AC_DEFINE(HAVE_STDARG_PROTOTYPES, 1,
-   [Define if your compiler supports variable length function prototypes
-   (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h>])
-])
-
 
 # check for socketpair
 PY_CHECK_FUNC([socketpair], [
@@ -6004,52 +5983,6 @@ then
 	LIBS="$LIBS -framework CoreFoundation"
 fi
 
-AC_CACHE_CHECK([for %zd printf() format support], ac_cv_have_size_t_format, [dnl
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <stdio.h>
-#include <stddef.h>
-#include <string.h>
-
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-
-#ifdef HAVE_SSIZE_T
-typedef ssize_t Py_ssize_t;
-#elif SIZEOF_VOID_P == SIZEOF_LONG
-typedef long Py_ssize_t;
-#else
-typedef int Py_ssize_t;
-#endif
-
-int main()
-{
-    char buffer[256];
-
-    if(sprintf(buffer, "%zd", (size_t)123) < 0)
-       	return 1;
-
-    if (strcmp(buffer, "123"))
-	return 1;
-
-    if (sprintf(buffer, "%zd", (Py_ssize_t)-123) < 0)
-       	return 1;
-
-    if (strcmp(buffer, "-123"))
-	return 1;
-
-    return 0;
-}
-]])],
-  [ac_cv_have_size_t_format=yes],
-  [ac_cv_have_size_t_format=no],
-  [ac_cv_have_size_t_format="cross -- assuming yes"
-])])
-if test "$ac_cv_have_size_t_format" != no ; then
-  AC_DEFINE(PY_FORMAT_SIZE_T, "z",
-  [Define to printf format modifier for Py_ssize_t])
-fi
-
 AC_CHECK_TYPE(socklen_t,,
   AC_DEFINE(socklen_t,int,
             [Define to `int' if <sys/socket.h> does not define.]),[
@@ -6606,23 +6539,6 @@ AS_VAR_IF([with_builtin_blake2], [yes], [
               [Define to 1 if you want to build _blake2 module with libb2])
   ], [have_libb2=no])
 ])
-
-# --with-experimental-isolated-subinterpreters
-AH_TEMPLATE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS,
-            [Better isolate subinterpreters, experimental build mode.])
-AC_MSG_CHECKING(for --with-experimental-isolated-subinterpreters)
-AC_ARG_WITH(experimental-isolated-subinterpreters,
-  AS_HELP_STRING([--with-experimental-isolated-subinterpreters],
-                 [better isolate subinterpreters, experimental build mode (default is no)]),
-[
-if test "$withval" != no
-then
-  AC_MSG_RESULT(yes);
-  AC_DEFINE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS)
-else
-  AC_MSG_RESULT(no);
-fi],
-[AC_MSG_RESULT(no)])
 
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.

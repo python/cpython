@@ -225,6 +225,29 @@ created.  Socket addresses are represented as follows:
 
   .. versionadded:: 3.9
 
+- :const:`AF_HYPERV` is a Windows-only socket based interface for communicating
+  with Hyper-V hosts and guests. The address family is represented as a
+  ``(vm_id, service_id)`` tuple where the ``vm_id`` and ``service_id`` are
+  UUID strings.
+
+  The ``vm_id`` is the virtual machine identifier or a set of known VMID values
+  if the target is not a specific virtual machine. Known VMID constants
+  defined on ``socket`` are:
+
+  - ``HV_GUID_ZERO``
+  - ``HV_GUID_BROADCAST``
+  - ``HV_GUID_WILDCARD`` - Used to bind on itself and accept connections from
+    all partitions.
+  - ``HV_GUID_CHILDREN`` - Used to bind on itself and accept connection from
+    child partitions.
+  - ``HV_GUID_LOOPBACK`` - Used as a target to itself.
+  - ``HV_GUID_PARENT`` - When used as a bind accepts connection from the parent
+    partition. When used as an address target it will connect to the parent parition.
+
+  The ``service_id`` is the service identifier of the registered service.
+
+  .. versionadded:: 3.12
+
 If you use a hostname in the *host* portion of IPv4/v6 socket address, the
 program may show a nondeterministic behavior, as Python uses the first address
 returned from the DNS resolution.  The socket address will be resolved
@@ -588,6 +611,26 @@ Constants
   .. versionadded:: 3.11
 
   .. availability:: Linux >= 3.9
+
+.. data:: AF_HYPERV
+          HV_PROTOCOL_RAW
+          HVSOCKET_CONNECT_TIMEOUT
+          HVSOCKET_CONNECT_TIMEOUT_MAX
+          HVSOCKET_CONTAINER_PASSTHRU
+          HVSOCKET_CONNECTED_SUSPEND
+          HVSOCKET_ADDRESS_FLAG_PASSTHRU
+          HV_GUID_ZERO
+          HV_GUID_WILDCARD
+          HV_GUID_BROADCAST
+          HV_GUID_CHILDREN
+          HV_GUID_LOOPBACK
+          HV_GUID_LOOPBACK
+
+   Constants for Windows Hyper-V sockets for host/guest communications.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.12
 
 Functions
 ^^^^^^^^^
