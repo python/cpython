@@ -6606,10 +6606,13 @@ AS_CASE([$ac_sys_system],
       ],
       [Emscripten/node*], [],
       [WASI/*], [
-        dnl WASI SDK 15.0 does not support file locking.
+        dnl WASI SDK 15.0 does not support file locking, mmap, and more.
         PY_STDLIB_MOD_SET_NA(
           [_ctypes_test],
-	  [fcntl],
+          [fcntl],
+          [mmap],
+          [resource],
+          [termios],
         )
       ]
     )
