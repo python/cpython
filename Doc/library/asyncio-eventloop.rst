@@ -42,10 +42,12 @@ an event loop:
 
    Get the current event loop.
 
-   If there is no current event loop set in the current OS thread,
-   the OS thread is main, and :func:`set_event_loop` has not yet
-   been called, asyncio will create a new event loop and set it as the
-   current one.
+   When called from a coroutine or a callback (e.g. scheduled with
+   call_soon or similar API), this function will always return the
+   running event loop.
+
+   If there is no running event loop set, the function will return
+   the result of ``get_event_loop_policy().get_event_loop()`` call.
 
    Because this function has rather complex behavior (especially
    when custom event loop policies are in use), using the
@@ -54,11 +56,6 @@ an event loop:
 
    Consider also using the :func:`asyncio.run` function instead of using
    lower level functions to manually create and close an event loop.
-
-   .. deprecated:: 3.10
-      Deprecation warning is emitted if there is no running event loop.
-      In future Python releases, this function will be an alias of
-      :func:`get_running_loop`.
 
 .. function:: set_event_loop(loop)
 
