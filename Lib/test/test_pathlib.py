@@ -2353,6 +2353,9 @@ class _BasePathTest(object):
     @unittest.skipIf(
         is_emscripten, "Unix sockets are not implemented on Emscripten."
     )
+    @unittest.skipIf(
+        is_wasi, "Cannot create socket on WASI."
+    )
     def test_is_socket_true(self):
         P = self.cls(BASE, 'mysock')
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)

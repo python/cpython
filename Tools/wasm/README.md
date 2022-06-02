@@ -237,13 +237,25 @@ are:
   ``socket.gethostbyname()`` are not implemented and always fail.
 - ``chmod(2)`` is not available. It's not possible to modify file permissions,
   yet. A future version of WASI may provide a limited ``set_permissions`` API.
+- User/group related features like ``os.chown()``, ``os.getuid``, etc. are
+  stubs or fail with ``ENOTSUP``.
 - File locking (``fcntl``) is not available.
 - ``os.pipe()``, ``os.mkfifo()``, and ``os.mknod()`` are not supported.
 - ``process_time`` does not work as expected because it's implemented using
   wall clock.
-- ``os.umask`` is a stub.
+- ``os.umask()`` is a stub.
 - ``sys.executable`` is empty.
 - ``/dev/null`` / ``os.devnull`` may not be available.
+- ``os.utime*()`` is buggy in WASM SDK 15.0, see
+  [utimensat() with timespec=NULL sets wrong time](https://github.com/bytecodealliance/wasmtime/issues/4184)
+- ``os.symlink()`` fails with ``PermissionError`` when attempting to create a
+  symlink with an absolute path with wasmtime 0.36.0. The wasmtime runtime
+  uses ``openat2(2)`` syscall with flag ``RESOLVE_BENEATH`` to open files.
+  The flag causes the syscall to reject symlinks with absolute paths.
+- ``os.curdir`` (aka ``.``) seems to behave differently, which breaks some
+  ``importlib`` tests that add ``.`` to ``sys.path`` and indirectly
+  ``sys.path_importer_cache``.
+- WASI runtime environments may not provide a dedicated temp directory.
 
 
 # Detect WebAssembly builds
