@@ -961,7 +961,8 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
 
     return archive_name
 
-def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0, logger=None):
+def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
+                  strict_timestamps=True, logger=None):
     """Create a zip file from all the files under 'base_dir'.
 
     The output zip file will be named 'base_name' + ".zip".  Returns the
@@ -984,7 +985,8 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0, logger=None):
 
     if not dry_run:
         with zipfile.ZipFile(zip_filename, "w",
-                             compression=zipfile.ZIP_DEFLATED) as zf:
+                             compression=zipfile.ZIP_DEFLATED,
+                             strict_timestamps=strict_timestamps) as zf:
             path = os.path.normpath(base_dir)
             if path != os.curdir:
                 zf.write(path, path)
@@ -1057,7 +1059,8 @@ def unregister_archive_format(name):
     del _ARCHIVE_FORMATS[name]
 
 def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
-                 dry_run=0, owner=None, group=None, logger=None):
+                 dry_run=0, owner=None, group=None, strict_timestamps=True,
+                 logger=None):
     """Create an archive file (eg. zip or tar).
 
     'base_name' is the name of the file to create, minus any format-specific
@@ -1073,6 +1076,10 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
 
     'owner' and 'group' are used when creating a tar archive. By default,
     uses the current owner and group.
+
+    'strict_timestamps' is used to when creating a zip archive. When set
+    to False, allows for zipping of files with timestamps before 1980-01-01
+    or after 2107-12-31.
     """
     sys.audit("shutil.make_archive", base_name, format, root_dir, base_dir)
     save_cwd = os.getcwd()
@@ -1100,6 +1107,8 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     if format != 'zip':
         kwargs['owner'] = owner
         kwargs['group'] = group
+    else:
+        kwargs['strict_timestamps'] = strict_timestamps
 
     try:
         filename = func(base_name, base_dir, **kwargs)

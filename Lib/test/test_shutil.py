@@ -1591,6 +1591,42 @@ class TestArchives(BaseTest, unittest.TestCase):
             self.assertEqual(make_archive('test', 'zip'), 'test.zip')
             self.assertTrue(os.path.isfile('test.zip'))
 
+    @support.requires_zlib
+    def test_make_zipfile_before_1980(self):
+
+        # creating something to zip
+        root_dir, base_dir = self._create_files()
+        old_file = os.path.join(root_dir, base_dir, 'old')
+        write_file(old_file, 'xxx')
+
+        # Set atime and mtime to 1970-01-01
+        os.utime(old_file, (0, 0))
+
+        # force shutil to create the directory
+        tmpdir = self.mkdtemp()
+        os.rmdir(tmpdir)
+
+        # working with relative paths
+        work_dir = os.path.dirname(tmpdir)
+        rel_base_name = os.path.join(os.path.basename(tmpdir), 'archive')
+
+        with support.change_cwd(work_dir):
+            with self.assertRaises(ValueError):
+                make_archive(rel_base_name, 'zip', root_dir)
+
+        with support.change_cwd(work_dir):
+            base_name = os.path.abspath(rel_base_name)
+            res = make_archive(rel_base_name, 'zip', root_dir, strict_timestamps=False)
+
+        self.assertEqual(res, base_name + '.zip')
+        self.assertTrue(os.path.isfile(res))
+        self.assertTrue(zipfile.is_zipfile(res))
+        with zipfile.ZipFile(res) as zf:
+            self.assertCountEqual(zf.namelist(),
+                    ['dist/', 'dist/sub/', 'dist/sub2/', 'dist/old',
+                     'dist/file1', 'dist/file2', 'dist/sub/file3',
+                     'outer'])
+
     def test_register_archive_format(self):
 
         self.assertRaises(TypeError, register_archive_format, 'xxx', 1)

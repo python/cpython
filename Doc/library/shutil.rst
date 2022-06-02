@@ -537,7 +537,7 @@ Archiving operations
 High-level utilities to create and read compressed and archived files are also
 provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
-.. function:: make_archive(base_name, format, [root_dir, [base_dir, [verbose, [dry_run, [owner, [group, [logger]]]]]]])
+.. function:: make_archive(base_name, format, [root_dir, [base_dir, [verbose, [dry_run, [owner, [group, [strict_timestamps, [logger]]]]]]]])
 
    Create an archive file (such as zip or tar) and return its name.
 
@@ -564,6 +564,11 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    *owner* and *group* are used when creating a tar archive. By default,
    uses the current owner and group.
+
+   *strict_timestamps* is used to when creating a zip archive. When set to
+   ``False``, allows zipping of files older than 1980-01-01 or newer than
+   or newer than 2107-12-31 (i.e. the ZIP timestamp limits) by setting
+   the timestamp to the appropriate limit.
 
    *logger* must be an object compatible with :pep:`282`, usually an instance of
    :class:`logging.Logger`.
