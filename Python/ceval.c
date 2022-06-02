@@ -1502,22 +1502,6 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* Shared opcode macros */
 
-// shared by LOAD_ATTR_MODULE and LOAD_METHOD_MODULE
-#define LOAD_MODULE_ATTR_OR_METHOD(attr_or_method) \
-    _PyAttrCache *cache = (_PyAttrCache *)next_instr; \
-    DEOPT_IF(!PyModule_CheckExact(owner), LOAD_##attr_or_method); \
-    PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict; \
-    assert(dict != NULL); \
-    DEOPT_IF(dict->ma_keys->dk_version != read_u32(cache->version), \
-             LOAD_##attr_or_method); \
-    assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE); \
-    assert(cache->index < dict->ma_keys->dk_nentries); \
-    PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + cache->index; \
-    res = ep->me_value; \
-    DEOPT_IF(res == NULL, LOAD_##attr_or_method); \
-    STAT_INC(LOAD_##attr_or_method, hit); \
-    Py_INCREF(res);
-
 #define TRACE_FUNCTION_EXIT() \
     if (cframe.use_tracing) { \
         if (trace_function_exit(tstate, frame, retval)) { \
@@ -3467,7 +3451,10 @@ handle_eval_breaker:
 
         TARGET(LOAD_ATTR) {
             PREDICTED(LOAD_ATTR);
-            PyObject *name = GETITEM(names, oparg);
+            if (oparg & 1) {
+                JUMP_TO_INSTRUCTION(LOAD_METHOD);
+            }
+            PyObject *name = GETITEM(names, oparg>>1);
             PyObject *owner = TOP();
             PyObject *res = PyObject_GetAttr(owner, name);
             if (res == NULL) {
@@ -3484,7 +3471,7 @@ handle_eval_breaker:
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 PyObject *owner = TOP();
-                PyObject *name = GETITEM(names, oparg);
+                PyObject *name = GETITEM(names, oparg>>1);
                 next_instr--;
                 if (_Py_Specialize_LoadAttr(owner, next_instr, name) < 0) {
                     goto error;
@@ -3515,6 +3502,8 @@ handle_eval_breaker:
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
+            SET_TOP(NULL);
+            STACK_GROW((oparg & 1));
             SET_TOP(res);
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
@@ -3523,10 +3512,23 @@ handle_eval_breaker:
 
         TARGET(LOAD_ATTR_MODULE) {
             assert(cframe.use_tracing == 0);
-            // shared with LOAD_METHOD_MODULE
             PyObject *owner = TOP();
             PyObject *res;
-            LOAD_MODULE_ATTR_OR_METHOD(ATTR);
+            _PyAttrCache* cache = (_PyAttrCache*)next_instr;
+            DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
+            PyDictObject* dict = (PyDictObject*)((PyModuleObject*)owner)->md_dict;
+            assert(dict != NULL);
+            DEOPT_IF(dict->ma_keys->dk_version != read_u32(cache->version),
+                LOAD_ATTR);
+            assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
+            assert(cache->index < dict->ma_keys->dk_nentries);
+            PyDictUnicodeEntry* ep = DK_UNICODE_ENTRIES(dict->ma_keys) + cache->index;
+            res = ep->me_value;
+            DEOPT_IF(res == NULL, LOAD_##attr_or_method);
+            STAT_INC(LOAD_ATTR, hit);
+            Py_INCREF(res);
+            SET_TOP(NULL);
+            STACK_GROW((oparg & 1));
             SET_TOP(res);
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
@@ -3546,7 +3548,7 @@ handle_eval_breaker:
             PyDictObject *dict = *(PyDictObject **)_PyObject_ManagedDictPointer(owner);
             DEOPT_IF(dict == NULL, LOAD_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
-            PyObject *name = GETITEM(names, oparg);
+            PyObject *name = GETITEM(names, oparg>>1);
             uint16_t hint = cache->index;
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, LOAD_ATTR);
             if (DK_IS_UNICODE(dict->ma_keys)) {
@@ -3562,6 +3564,8 @@ handle_eval_breaker:
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
+            SET_TOP(NULL);
+            STACK_GROW((oparg & 1));
             SET_TOP(res);
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
@@ -3582,6 +3586,8 @@ handle_eval_breaker:
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
+            SET_TOP(NULL);
+            STACK_GROW((oparg & 1));
             SET_TOP(res);
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
@@ -4489,7 +4495,7 @@ handle_eval_breaker:
         TARGET(LOAD_METHOD) {
             PREDICTED(LOAD_METHOD);
             /* Designed to work in tandem with CALL. */
-            PyObject *name = GETITEM(names, oparg);
+            PyObject *name = GETITEM(names, oparg>>1);
             PyObject *obj = TOP();
             PyObject *meth = NULL;
 
@@ -4521,30 +4527,11 @@ handle_eval_breaker:
                 Py_DECREF(obj);
                 PUSH(meth);
             }
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_METHOD);
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             DISPATCH();
         }
 
-        TARGET(LOAD_METHOD_ADAPTIVE) {
-            assert(cframe.use_tracing == 0);
-            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
-                PyObject *owner = TOP();
-                PyObject *name = GETITEM(names, oparg);
-                next_instr--;
-                if (_Py_Specialize_LoadMethod(owner, next_instr, name) < 0) {
-                    goto error;
-                }
-                NOTRACE_DISPATCH_SAME_OPARG();
-            }
-            else {
-                STAT_INC(LOAD_METHOD, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(cache);
-                JUMP_TO_INSTRUCTION(LOAD_METHOD);
-            }
-        }
-
-        TARGET(LOAD_METHOD_WITH_VALUES) {
+        TARGET(LOAD_ATTR_METHOD_WITH_VALUES) {
             /* LOAD_METHOD, with cached method object */
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
@@ -4552,25 +4539,25 @@ handle_eval_breaker:
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
             uint32_t type_version = read_u32(cache->type_version);
             assert(type_version != 0);
-            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_METHOD);
+            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
             assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictObject *dict = *(PyDictObject**)_PyObject_ManagedDictPointer(self);
-            DEOPT_IF(dict != NULL, LOAD_METHOD);
+            DEOPT_IF(dict != NULL, LOAD_ATTR);
             PyHeapTypeObject *self_heap_type = (PyHeapTypeObject *)self_cls;
             DEOPT_IF(self_heap_type->ht_cached_keys->dk_version !=
-                     read_u32(cache->keys_version), LOAD_METHOD);
-            STAT_INC(LOAD_METHOD, hit);
+                     read_u32(cache->keys_version), LOAD_ATTR);
+            STAT_INC(LOAD_ATTR, hit);
             PyObject *res = read_obj(cache->descr);
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
             Py_INCREF(res);
             SET_TOP(res);
             PUSH(self);
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_METHOD);
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             NOTRACE_DISPATCH();
         }
 
-        TARGET(LOAD_METHOD_WITH_DICT) {
+        TARGET(LOAD_ATTR_METHOD_WITH_DICT) {
             /* LOAD_METHOD, with a dict
              Can be either a managed dict, or a tp_dictoffset offset.*/
             assert(cframe.use_tracing == 0);
@@ -4579,7 +4566,7 @@ handle_eval_breaker:
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
 
             DEOPT_IF(self_cls->tp_version_tag != read_u32(cache->type_version),
-                     LOAD_METHOD);
+                     LOAD_ATTR);
             /* Treat index as a signed 16 bit value */
             int dictoffset = *(int16_t *)&cache->dict_offset;
             PyDictObject **dictptr = (PyDictObject**)(((char *)self)+dictoffset);
@@ -4588,95 +4575,82 @@ handle_eval_breaker:
                 (dictoffset == self_cls->tp_dictoffset && dictoffset > 0)
             );
             PyDictObject *dict = *dictptr;
-            DEOPT_IF(dict == NULL, LOAD_METHOD);
+            DEOPT_IF(dict == NULL, LOAD_ATTR);
             DEOPT_IF(dict->ma_keys->dk_version != read_u32(cache->keys_version),
-                     LOAD_METHOD);
-            STAT_INC(LOAD_METHOD, hit);
+                     LOAD_ATTR);
+            STAT_INC(LOAD_ATTR, hit);
             PyObject *res = read_obj(cache->descr);
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
             Py_INCREF(res);
             SET_TOP(res);
             PUSH(self);
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_METHOD);
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             NOTRACE_DISPATCH();
         }
 
-        TARGET(LOAD_METHOD_NO_DICT) {
+        TARGET(LOAD_ATTR_METHOD_NO_DICT) {
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
             uint32_t type_version = read_u32(cache->type_version);
-            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_METHOD);
+            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
             assert(self_cls->tp_dictoffset == 0);
-            STAT_INC(LOAD_METHOD, hit);
+            STAT_INC(LOAD_ATTR, hit);
             PyObject *res = read_obj(cache->descr);
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
             Py_INCREF(res);
             SET_TOP(res);
             PUSH(self);
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_METHOD);
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             NOTRACE_DISPATCH();
         }
 
-        TARGET(LOAD_METHOD_LAZY_DICT) {
+        TARGET(LOAD_ATTR_METHOD_LAZY_DICT) {
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
             uint32_t type_version = read_u32(cache->type_version);
-            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_METHOD);
+            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
             int dictoffset = cache->dict_offset;
             PyObject *dict = *(PyObject **)((char *)self + dictoffset);
             assert(dictoffset == self_cls->tp_dictoffset && dictoffset > 0);
             /* This object has a __dict__, just not yet created */
-            DEOPT_IF(dict != NULL, LOAD_METHOD);
-            STAT_INC(LOAD_METHOD, hit);
+            DEOPT_IF(dict != NULL, LOAD_ATTR);
+            STAT_INC(LOAD_ATTR, hit);
             PyObject *res = read_obj(cache->descr);
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
             Py_INCREF(res);
             SET_TOP(res);
             PUSH(self);
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_METHOD);
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             NOTRACE_DISPATCH();
         }
 
-        TARGET(LOAD_METHOD_MODULE) {
-            /* LOAD_METHOD, for module methods */
-            assert(cframe.use_tracing == 0);
-            PyObject *owner = TOP();
-            PyObject *res;
-            LOAD_MODULE_ATTR_OR_METHOD(METHOD);
-            SET_TOP(NULL);
-            Py_DECREF(owner);
-            PUSH(res);
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_METHOD);
-            NOTRACE_DISPATCH();
-        }
-
-        TARGET(LOAD_METHOD_CLASS) {
+        TARGET(LOAD_ATTR_METHOD_CLASS) {
             /* LOAD_METHOD, for class methods */
             assert(cframe.use_tracing == 0);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
 
             PyObject *cls = TOP();
-            DEOPT_IF(!PyType_Check(cls), LOAD_METHOD);
+            DEOPT_IF(!PyType_Check(cls), LOAD_ATTR);
             uint32_t type_version = read_u32(cache->type_version);
             DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != type_version,
-                     LOAD_METHOD);
+                     LOAD_ATTR);
             assert(type_version != 0);
 
-            STAT_INC(LOAD_METHOD, hit);
+            STAT_INC(LOAD_ATTR, hit);
             PyObject *res = read_obj(cache->descr);
             assert(res != NULL);
             Py_INCREF(res);
             SET_TOP(NULL);
             Py_DECREF(cls);
             PUSH(res);
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_METHOD);
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             NOTRACE_DISPATCH();
         }
 

@@ -285,10 +285,18 @@ _specializations = {
     ],
     "LOAD_ATTR": [
         "LOAD_ATTR_ADAPTIVE",
+        # LOAD_ATTR
         "LOAD_ATTR_INSTANCE_VALUE",
         "LOAD_ATTR_MODULE",
         "LOAD_ATTR_SLOT",
         "LOAD_ATTR_WITH_HINT",
+        # LOAD_METHOD
+        "LOAD_ATTR_METHOD_CLASS",
+        "LOAD_ATTR_METHOD_LAZY_DICT",
+        "LOAD_ATTR_METHOD_MODULE",
+        "LOAD_ATTR_METHOD_NO_DICT",
+        "LOAD_ATTR_METHOD_WITH_DICT",
+        "LOAD_ATTR_METHOD_WITH_VALUES",
     ],
     "LOAD_CONST": [
         "LOAD_CONST__LOAD_FAST",
@@ -301,15 +309,6 @@ _specializations = {
         "LOAD_GLOBAL_ADAPTIVE",
         "LOAD_GLOBAL_BUILTIN",
         "LOAD_GLOBAL_MODULE",
-    ],
-    "LOAD_METHOD": [
-        "LOAD_METHOD_ADAPTIVE",
-        "LOAD_METHOD_CLASS",
-        "LOAD_METHOD_LAZY_DICT",
-        "LOAD_METHOD_MODULE",
-        "LOAD_METHOD_NO_DICT",
-        "LOAD_METHOD_WITH_DICT",
-        "LOAD_METHOD_WITH_VALUES",
     ],
     "RESUME": [
         "RESUME_QUICK",
@@ -374,18 +373,13 @@ _cache_format = {
         "counter": 1,
         "version": 2,
         "index": 1,
+        "keys_version": 2,
+        "descr": 4,
     },
     "STORE_ATTR": {
         "counter": 1,
         "version": 2,
         "index": 1,
-    },
-    "LOAD_METHOD": {
-        "counter": 1,
-        "type_version": 2,
-        "dict_offset": 1,
-        "keys_version": 2,
-        "descr": 4,
     },
     "CALL": {
         "counter": 1,

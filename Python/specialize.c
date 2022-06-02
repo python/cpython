@@ -20,7 +20,6 @@
 uint8_t _PyOpcode_Adaptive[256] = {
     [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
     [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
-    [LOAD_METHOD] = LOAD_METHOD_ADAPTIVE,
     [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
     [STORE_SUBSCR] = STORE_SUBSCR_ADAPTIVE,
     [CALL] = CALL_ADAPTIVE,
@@ -654,6 +653,9 @@ specialize_dict_access(
     return 1;
 }
 
+static int
+specialize_attr_loadmethod(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name);
+
 int
 _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
 {
@@ -666,6 +668,17 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             goto fail;
         }
         goto success;
+    }
+    int oparg = _Py_OPARG(*instr);
+    if (oparg & 1) {
+        int res = specialize_attr_loadmethod(owner, instr, name);
+        if (res < 0) {
+            return -1;
+        }
+        else if (res) {
+            goto success;
+        }
+        /* res == 0 (fail), fall through and let LOAD_ATTR specialize for it */
     }
     PyTypeObject *type = Py_TYPE(owner);
     if (type->tp_dict == NULL) {
@@ -884,7 +897,7 @@ specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr,
         case NON_DESCRIPTOR:
             write_u32(cache->type_version, ((PyTypeObject *)owner)->tp_version_tag);
             write_obj(cache->descr, descr);
-            _Py_SET_OPCODE(*instr, LOAD_METHOD_CLASS);
+            _Py_SET_OPCODE(*instr, LOAD_ATTR_METHOD_CLASS);
             return 0;
 #ifdef Py_STATS
         case ABSENT:
@@ -913,23 +926,12 @@ typedef enum {
 // Please collect stats carefully before and after modifying. A subtle change
 // can cause a significant drop in cache hits. A possible test is
 // python.exe -m test_typing test_re test_dis test_zlib.
-int
-_Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
+static int
+specialize_attr_loadmethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
 {
-    assert(_PyOpcode_Caches[LOAD_METHOD] == INLINE_CACHE_ENTRIES_LOAD_METHOD);
     _PyLoadMethodCache *cache = (_PyLoadMethodCache *)(instr + 1);
     PyTypeObject *owner_cls = Py_TYPE(owner);
 
-    if (PyModule_CheckExact(owner)) {
-        assert(INLINE_CACHE_ENTRIES_LOAD_ATTR <=
-               INLINE_CACHE_ENTRIES_LOAD_METHOD);
-        int err = specialize_module_load_attr(owner, instr, name, LOAD_METHOD,
-                                              LOAD_METHOD_MODULE);
-        if (err) {
-            goto fail;
-        }
-        goto success;
-    }
     if (owner_cls->tp_dict == NULL) {
         if (PyType_Ready(owner_cls) < 0) {
             return -1;
@@ -1001,24 +1003,24 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
     }
     switch(dictkind) {
         case NO_DICT:
-            _Py_SET_OPCODE(*instr, LOAD_METHOD_NO_DICT);
+            _Py_SET_OPCODE(*instr, LOAD_ATTR_METHOD_NO_DICT);
             break;
         case MANAGED_VALUES:
-            _Py_SET_OPCODE(*instr, LOAD_METHOD_WITH_VALUES);
+            _Py_SET_OPCODE(*instr, LOAD_ATTR_METHOD_WITH_VALUES);
             break;
         case MANAGED_DICT:
             *(int16_t *)&cache->dict_offset = (int16_t)MANAGED_DICT_OFFSET;
-            _Py_SET_OPCODE(*instr, LOAD_METHOD_WITH_DICT);
+            _Py_SET_OPCODE(*instr, LOAD_ATTR_METHOD_WITH_DICT);
             break;
         case OFFSET_DICT:
             assert(owner_cls->tp_dictoffset > 0 && owner_cls->tp_dictoffset <= INT16_MAX);
             cache->dict_offset = (uint16_t)owner_cls->tp_dictoffset;
-            _Py_SET_OPCODE(*instr, LOAD_METHOD_WITH_DICT);
+            _Py_SET_OPCODE(*instr, LOAD_ATTR_METHOD_WITH_DICT);
             break;
         case LAZY_DICT:
             assert(owner_cls->tp_dictoffset > 0 && owner_cls->tp_dictoffset <= INT16_MAX);
             cache->dict_offset = (uint16_t)owner_cls->tp_dictoffset;
-            _Py_SET_OPCODE(*instr, LOAD_METHOD_LAZY_DICT);
+            _Py_SET_OPCODE(*instr, LOAD_ATTR_METHOD_LAZY_DICT);
             break;
     }
     /* `descr` is borrowed. This is safe for methods (even inherited ones from
@@ -1039,14 +1041,8 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
     write_obj(cache->descr, descr);
     // Fall through.
 success:
-    STAT_INC(LOAD_METHOD, success);
-    assert(!PyErr_Occurred());
-    cache->counter = miss_counter_start();
-    return 0;
+    return 1;
 fail:
-    STAT_INC(LOAD_METHOD, failure);
-    assert(!PyErr_Occurred());
-    cache->counter = adaptive_counter_backoff(cache->counter);
     return 0;
 }
 
