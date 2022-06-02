@@ -42,11 +42,11 @@ the following command can be used to display the disassembly of
    >>> dis.dis(myfunc)
      1           0 RESUME                   0
 
-     2           2 PUSH_NULL
-                 4 LOAD_GLOBAL              1 (NULL + len)
-                 6 LOAD_FAST                0 (alist)
-                 8 CALL                     1
-                18 RETURN_VALUE
+     2           2 LOAD_GLOBAL              1 (NULL + len)
+                14 LOAD_FAST                0 (alist)
+                16 PRECALL                  1
+                20 CALL                     1
+                30 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -115,7 +115,6 @@ Example::
     ...     print(instr.opname)
     ...
     RESUME
-    PUSH_NULL
     LOAD_GLOBAL
     LOAD_FAST
     CALL
