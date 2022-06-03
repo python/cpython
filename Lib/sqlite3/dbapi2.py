@@ -28,7 +28,6 @@ from _sqlite3 import *
 from _sqlite3 import _deprecated_version
 from warnings import warn
 
-deprecated_names = ["version", "version_info"]
 paramstyle = "qmark"
 
 apilevel = "2.0"
@@ -88,6 +87,8 @@ register_adapters_and_converters()
 # Clean up namespace
 
 del(register_adapters_and_converters)
+
+deprecated_names = ["version", "version_info"]
 
 def __getattr__(name):
     if name in deprecated_names:
