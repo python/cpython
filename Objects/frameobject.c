@@ -475,9 +475,7 @@ add_load_fast_null_checks(PyCodeObject *co)
         }
     }
     // invalidate cached co_code object
-    if (co->_co_code != NULL) {
-        Py_CLEAR(co->_co_code);
-    }
+    Py_CLEAR(co->_co_code);
 }
 
 /* Setter for f_lineno - you can set f_lineno from within a trace function in
