@@ -966,7 +966,8 @@ The :mod:`socket` module also offers various network-related services:
 .. function:: getfqdn([name])
 
    Return a fully qualified domain name for *name*. If *name* is omitted or empty,
-   it is interpreted as the local host.  To find the fully qualified name, the
+   it is interpreted as the local host (as returned by :func:`gethostname`).
+   To find the fully qualified name, the
    hostname returned by :func:`gethostbyaddr` is checked, followed by aliases for the
    host, if available.  The first name which includes a period is selected.  In
    case no fully qualified domain name is available and *name* was provided,
