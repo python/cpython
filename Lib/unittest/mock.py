@@ -2039,11 +2039,31 @@ def _get_async_iter(self):
         return _AsyncIterator(iter(ret_val))
     return __aiter__
 
+def _get_divmod(self):
+    def __divmod__(other):
+        ret_val = self.__divmod__._mock_return_value
+        if ret_val is not DEFAULT:
+            return ret_val
+        return (MagicMock(name='mock.__divmod__()[0]'),
+                MagicMock(name='mock.__divmod__()[1]'))
+    return __divmod__
+
+def _get_rdivmod(self):
+    def __rdivmod__(other):
+        ret_val = self.__rdivmod__._mock_return_value
+        if ret_val is not DEFAULT:
+            return ret_val
+        return (MagicMock(name='mock.__rdivmod__()[0]'),
+                MagicMock(name='mock.__rdivmod__()[1]'))
+    return __rdivmod__
+
 _side_effect_methods = {
     '__eq__': _get_eq,
     '__ne__': _get_ne,
     '__iter__': _get_iter,
-    '__aiter__': _get_async_iter
+    '__aiter__': _get_async_iter,
+    '__divmod__': _get_divmod,
+    '__rdivmod__': _get_rdivmod,
 }
 
 

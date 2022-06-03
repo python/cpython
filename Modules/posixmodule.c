@@ -5351,12 +5351,6 @@ split_py_long_to_s_and_ns(PyObject *module, PyObject *py_long, time_t *s, long *
     divmod = PyNumber_Divmod(py_long, get_posix_state(module)->billion);
     if (!divmod)
         goto exit;
-    if (!PyTuple_Check(divmod) || PyTuple_GET_SIZE(divmod) != 2) {
-        PyErr_Format(PyExc_TypeError,
-                     "%.200s.__divmod__() must return a 2-tuple, not %.200s",
-                     _PyType_Name(Py_TYPE(py_long)), _PyType_Name(Py_TYPE(divmod)));
-        goto exit;
-    }
     *s = _PyLong_AsTime_t(PyTuple_GET_ITEM(divmod, 0));
     if ((*s == -1) && PyErr_Occurred())
         goto exit;

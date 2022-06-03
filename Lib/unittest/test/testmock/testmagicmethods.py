@@ -477,18 +477,22 @@ class TestMockingMagicMethods(unittest.TestCase):
 
     def test_divmod_and_rdivmod(self):
         m = MagicMock()
-        self.assertIsInstance(divmod(5, m), MagicMock)
+        n, d = divmod(m, 2)
+        self.assertIsInstance(n, MagicMock)
+        self.assertIsInstance(d, MagicMock)
+        n, d = m.__divmod__(2)
+        self.assertIsInstance(n, MagicMock)
+        self.assertIsInstance(d, MagicMock)
+        n, d = divmod(2, m)
+        self.assertIsInstance(n, MagicMock)
+        self.assertIsInstance(d, MagicMock)
+        n, d = m.__rdivmod__(2)
+        self.assertIsInstance(n, MagicMock)
+        self.assertIsInstance(d, MagicMock)
         m.__divmod__.return_value = (2, 1)
+        m.__rdivmod__.return_value = (3, 4)
         self.assertEqual(divmod(m, 2), (2, 1))
-        m = MagicMock()
-        foo = divmod(2, m)
-        self.assertIsInstance(foo, MagicMock)
-        foo_direct = m.__divmod__(2)
-        self.assertIsInstance(foo_direct, MagicMock)
-        bar = divmod(m, 2)
-        self.assertIsInstance(bar, MagicMock)
-        bar_direct = m.__rdivmod__(2)
-        self.assertIsInstance(bar_direct, MagicMock)
+        self.assertEqual(divmod(2, m), (3, 4))
 
     # http://bugs.python.org/issue23310
     # Check if you can change behaviour of magic methods in MagicMock init

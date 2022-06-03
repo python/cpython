@@ -611,6 +611,33 @@ class BuiltinTest(unittest.TestCase):
             self.assertAlmostEqual(result[1], exp_result[1])
 
         self.assertRaises(TypeError, divmod)
+        self.assertRaises(TypeError, divmod, 12, 7, 3)
+        self.assertRaises(TypeError, divmod, 12, [])
+        self.assertRaises(TypeError, divmod, [], 7)
+
+        def fake_divmod(divmod_ret_val):
+            class FakeDivmod:
+                def __divmod__(*args):
+                    return divmod_ret_val
+            return FakeDivmod()
+        def fake_rdivmod(divmod_ret_val):
+            class FakeRDivmod:
+                def __rdivmod__(*args):
+                    return divmod_ret_val
+            return FakeRDivmod()
+
+        self.assertEqual(divmod(fake_divmod((2, 3)), []), (2, 3))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(divmod(fake_divmod([2, 3]), []), (2, 3))
+        self.assertRaises(TypeError, divmod, fake_divmod(42), [])
+        self.assertRaises(TypeError, divmod, fake_divmod(()), [])
+        self.assertRaises(TypeError, divmod, fake_divmod((1, 2, 3)), [])
+        self.assertEqual(divmod([], fake_rdivmod((2, 3))), (2, 3))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(divmod([], fake_rdivmod([2, 3])), (2, 3))
+        self.assertRaises(TypeError, divmod, [], fake_rdivmod(42))
+        self.assertRaises(TypeError, divmod, [], fake_rdivmod(()))
+        self.assertRaises(TypeError, divmod, [], fake_rdivmod((1, 2, 3)))
 
     def test_eval(self):
         self.assertEqual(eval('1+1'), 2)

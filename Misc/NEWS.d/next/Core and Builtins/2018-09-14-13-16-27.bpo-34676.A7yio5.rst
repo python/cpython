@@ -1,0 +1,2 @@
+It is now guaranteed that :func:`divmod` and :c:func:`PyNumber_Divmod` always
+return a 2-tuple on success.

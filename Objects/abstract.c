@@ -1065,7 +1065,6 @@ BINARY_FUNC(PyNumber_And, nb_and, "&")
 BINARY_FUNC(PyNumber_Lshift, nb_lshift, "<<")
 BINARY_FUNC(PyNumber_Rshift, nb_rshift, ">>")
 BINARY_FUNC(PyNumber_Subtract, nb_subtract, "-")
-BINARY_FUNC(PyNumber_Divmod, nb_divmod, "divmod()")
 
 PyObject *
 PyNumber_Add(PyObject *v, PyObject *w)
@@ -1084,6 +1083,46 @@ PyNumber_Add(PyObject *v, PyObject *w)
     }
 
     return binop_type_error(v, w, "+");
+}
+
+PyObject *
+PyNumber_Divmod(PyObject *v, PyObject *w)
+{
+    PyObject *orig_result = NULL;
+    PyObject *result = binary_op(v, w, NB_SLOT(nb_divmod), "divmod()");
+    if (result == NULL) {
+        return NULL;
+    }
+    if (!PyTuple_Check(result)) {
+        orig_result = result;
+        result = PySequence_Tuple(result);
+        if (result == NULL) {
+            Py_DECREF(orig_result);
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                goto error;
+            }
+            return NULL;
+        }
+    }
+    if (PyTuple_GET_SIZE(result) != 2) {
+        Py_XDECREF(orig_result);
+        Py_DECREF(result);
+error:
+        PyErr_SetString(PyExc_TypeError,
+                        "__divmod__() and __rdivmod__() must return a 2-tuple");
+        return NULL;
+    }
+    if (orig_result != NULL) {
+        Py_DECREF(orig_result);
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "__divmod__() and __rdivmod__() must return a 2-tuple",
+                         1) < 0)
+        {
+            Py_DECREF(result);
+            return NULL;
+        }
+    }
+    return result;
 }
 
 static PyObject *

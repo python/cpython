@@ -69,6 +69,9 @@ Number Protocol
    See the built-in function :func:`divmod`. Returns ``NULL`` on failure.  This is
    the equivalent of the Python expression ``divmod(o1, o2)``.
 
+   .. versionchanged:: 3.10
+      Always returns a tuple of size 2 on success.
+
 
 .. c:function:: PyObject* PyNumber_Power(PyObject *o1, PyObject *o2, PyObject *o3)
 

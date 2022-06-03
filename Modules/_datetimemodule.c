@@ -1892,29 +1892,6 @@ Done:
     return result;
 }
 
-static PyObject *
-checked_divmod(PyObject *a, PyObject *b)
-{
-    PyObject *result = PyNumber_Divmod(a, b);
-    if (result != NULL) {
-        if (!PyTuple_Check(result)) {
-            PyErr_Format(PyExc_TypeError,
-                         "divmod() returned non-tuple (type %.200s)",
-                         Py_TYPE(result)->tp_name);
-            Py_DECREF(result);
-            return NULL;
-        }
-        if (PyTuple_GET_SIZE(result) != 2) {
-            PyErr_Format(PyExc_TypeError,
-                         "divmod() returned a tuple of size %zd",
-                         PyTuple_GET_SIZE(result));
-            Py_DECREF(result);
-            return NULL;
-        }
-    }
-    return result;
-}
-
 /* Convert a number of us (as a Python int) to a timedelta.
  */
 static PyObject *
@@ -1928,7 +1905,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     PyObject *num = NULL;
     PyObject *result = NULL;
 
-    tuple = checked_divmod(pyus, us_per_second);
+    tuple = PyNumber_Divmod(pyus, us_per_second);
     if (tuple == NULL) {
         goto Done;
     }
@@ -1947,7 +1924,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     Py_INCREF(num);
     Py_DECREF(tuple);
 
-    tuple = checked_divmod(num, seconds_per_day);
+    tuple = PyNumber_Divmod(num, seconds_per_day);
     if (tuple == NULL)
         goto Done;
     Py_DECREF(num);
@@ -2399,7 +2376,7 @@ delta_divmod(PyObject *left, PyObject *right)
         return NULL;
     }
 
-    divmod = checked_divmod(pyus_left, pyus_right);
+    divmod = PyNumber_Divmod(pyus_left, pyus_right);
     Py_DECREF(pyus_left);
     Py_DECREF(pyus_right);
     if (divmod == NULL)

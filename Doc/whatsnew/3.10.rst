@@ -1861,6 +1861,13 @@ Porting to Python 3.10
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
+Changes in the Python API
+-------------------------
+
+* :func:`divmod` and :c:func:`PyNumber_Divmod` will check the result of special
+  methods ``__divmod__`` and ``__rdivmod__`` and emit a deprecation warning if
+  it is not a tuple or raise an error if its size is not 2.
+  (Contributed by Serhiy Storchaka in :issue:`34676`.)
 
 Changes in the Python syntax
 ----------------------------

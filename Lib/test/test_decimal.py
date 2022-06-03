@@ -876,9 +876,9 @@ class ImplicitConstructionTest(unittest.TestCase):
         # Allow other classes to be trained to interact with Decimals
         class E:
             def __divmod__(self, other):
-                return 'divmod ' + str(other)
+                return 'divmod', str(other)
             def __rdivmod__(self, other):
-                return str(other) + ' rdivmod'
+                return str(other), 'rdivmod'
             def __lt__(self, other):
                 return 'lt ' + str(other)
             def __gt__(self, other):
@@ -892,8 +892,8 @@ class ImplicitConstructionTest(unittest.TestCase):
             def __ne__(self, other):
                 return 'ne ' + str(other)
 
-        self.assertEqual(divmod(E(), Decimal(10)), 'divmod 10')
-        self.assertEqual(divmod(Decimal(10), E()), '10 rdivmod')
+        self.assertEqual(divmod(E(), Decimal(10)), ('divmod', '10'))
+        self.assertEqual(divmod(Decimal(10), E()), ('10', 'rdivmod'))
         self.assertEqual(eval('Decimal(10) < E()'), 'gt 10')
         self.assertEqual(eval('Decimal(10) > E()'), 'lt 10')
         self.assertEqual(eval('Decimal(10) <= E()'), 'ge 10')
