@@ -528,6 +528,8 @@ class _PathParents(Sequence):
 
         if idx >= len(self) or idx < -len(self):
             raise IndexError(idx)
+        if idx < 0:
+            idx += len(self)
         return self._pathcls._from_parsed_parts(self._drv, self._root,
                                                 self._parts[:-idx - 1])
 
