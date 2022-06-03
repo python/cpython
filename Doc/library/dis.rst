@@ -52,7 +52,7 @@ the following command can be used to display the disassembly of
    <BLANKLINE>
      3           2 LOAD_GLOBAL              1 (NULL + len)
                 14 LOAD_FAST                0 (alist)
-                16 PRECALL                  1                
+                16 PRECALL                  1
                 20 CALL                     1
                 30 RETURN_VALUE
 
