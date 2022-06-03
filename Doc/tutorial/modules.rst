@@ -84,8 +84,8 @@ refer to its functions, ``modname.itemname``.
 
 Modules can import other modules.  It is customary but not required to place all
 :keyword:`import` statements at the beginning of a module (or script, for that
-matter).  The imported module names are placed in the importing module's global
-symbol table.
+matter).  The imported module names, if placed at the beginning of a module,
+are placed in the importing module's global symbol table.
 
 There is a variant of the :keyword:`import` statement that imports names from a
 module directly into the importing module's symbol table.  For example::
