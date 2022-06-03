@@ -1,0 +1,1 @@
+deprecate sqlite3.version and sqlite3.version_info.
