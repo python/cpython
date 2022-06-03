@@ -1,0 +1,2 @@
+:meth:`fractions.Fraction.limit_denominator()` performance enhancements.
+Patch by Michael Scott Asato Cuthbert.
