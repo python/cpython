@@ -101,6 +101,10 @@
          (opcode) == POP_JUMP_IF_FALSE || \
          (opcode) == POP_JUMP_IF_TRUE)
 
+#define IS_JUMP_OPCODE(opcode) \
+        (IS_VIRTUAL_JUMP_OPCODE(opcode) || \
+         is_bit_set_in_table(_PyOpcode_Jump, opcode))
+
 /* opcodes which are not emitted in codegen stage, only by the assembler */
 #define IS_ASSEMBLER_OPCODE(opcode) \
         ((opcode) == JUMP_FORWARD || \
@@ -124,6 +128,17 @@
          (opcode) == POP_JUMP_BACKWARD_IF_TRUE || \
          (opcode) == POP_JUMP_BACKWARD_IF_FALSE)
 
+#define IS_UNCONDITIONAL_JUMP_OPCODE(opcode) \
+        ((opcode) == JUMP || \
+         (opcode) == JUMP_NO_INTERRUPT || \
+         (opcode) == JUMP_FORWARD || \
+         (opcode) == JUMP_BACKWARD || \
+         (opcode) == JUMP_BACKWARD_NO_INTERRUPT)
+
+#define IS_SCOPE_EXIT_OPCODE(opcode) \
+        ((opcode) == RETURN_VALUE || \
+         (opcode) == RAISE_VARARGS || \
+         (opcode) == RERAISE)
 
 #define IS_TOP_LEVEL_AWAIT(c) ( \
         (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
@@ -141,11 +156,6 @@ struct instr {
     int i_col_offset;
     int i_end_col_offset;
 };
-
-typedef struct excepthandler {
-    struct instr *setup;
-    int offset;
-} ExceptHandler;
 
 typedef struct exceptstack {
     struct basicblock_ *handlers[CO_MAXBLOCKS+1];
@@ -187,8 +197,7 @@ is_block_push(struct instr *instr)
 static inline int
 is_jump(struct instr *i)
 {
-    return IS_VIRTUAL_JUMP_OPCODE(i->i_opcode) ||
-           is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
+    return IS_JUMP_OPCODE(i->i_opcode);
 }
 
 static int
@@ -254,16 +263,10 @@ typedef struct basicblock_ {
     int b_startdepth;
     /* instruction offset for block, computed by assemble_jump_offsets() */
     int b_offset;
-    /* Basic block has no fall through (it ends with a return, raise or jump) */
-    unsigned b_nofallthrough : 1;
     /* Basic block is an exception handler that preserves lasti */
     unsigned b_preserve_lasti : 1;
     /* Used by compiler passes to mark whether they have visited a basic block. */
     unsigned b_visited : 1;
-    /* Basic block exits scope (it ends with a return or raise) */
-    unsigned b_exit : 1;
-    /* b_return is true if a RETURN_VALUE opcode is inserted. */
-    unsigned b_return : 1;
     /* b_cold is true if this block is not perf critical (like an exception handler) */
     unsigned b_cold : 1;
     /* b_warm is used by the cold-detection algorithm to mark blocks which are definitely not cold */
@@ -278,6 +281,29 @@ basicblock_last_instr(basicblock *b) {
     }
     return NULL;
 }
+
+static inline int
+basicblock_returns(basicblock *b) {
+    struct instr *last = basicblock_last_instr(b);
+    return last && last->i_opcode == RETURN_VALUE;
+}
+
+static inline int
+basicblock_exits_scope(basicblock *b) {
+    struct instr *last = basicblock_last_instr(b);
+    return last && IS_SCOPE_EXIT_OPCODE(last->i_opcode);
+}
+
+static inline int
+basicblock_nofallthrough(basicblock *b) {
+    struct instr *last = basicblock_last_instr(b);
+    return (last &&
+            (IS_SCOPE_EXIT_OPCODE(last->i_opcode) ||
+             IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)));
+}
+
+#define BB_NO_FALLTHROUGH(B) (basicblock_nofallthrough(B))
+#define BB_HAS_FALLTHROUGH(B) (!basicblock_nofallthrough(B))
 
 /* fblockinfo tracks the current frame block.
 
@@ -852,7 +878,7 @@ compiler_copy_block(struct compiler *c, basicblock *block)
     /* Cannot copy a block if it has a fallthrough, since
      * a block can only have one fallthrough predecessor.
      */
-    assert(block->b_nofallthrough);
+    assert(BB_NO_FALLTHROUGH(block));
     basicblock *result = compiler_new_block(c);
     if (result == NULL) {
         return NULL;
@@ -864,8 +890,6 @@ compiler_copy_block(struct compiler *c, basicblock *block)
         }
         result->b_instr[n] = block->b_instr[i];
     }
-    result->b_exit = block->b_exit;
-    result->b_nofallthrough = 1;
     return result;
 }
 
@@ -1223,11 +1247,7 @@ static int
 is_end_of_basic_block(struct instr *instr)
 {
     int opcode = instr->i_opcode;
-
-    return is_jump(instr) ||
-        opcode == RETURN_VALUE ||
-        opcode == RAISE_VARARGS ||
-        opcode == RERAISE;
+    return is_jump(instr) || IS_SCOPE_EXIT_OPCODE(opcode);
 }
 
 static int
@@ -1263,9 +1283,6 @@ basicblock_addop_line(basicblock *b, int opcode, int line,
     struct instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = 0;
-    if (opcode == RETURN_VALUE) {
-        b->b_return = 1;
-    }
     i->i_lineno = line;
     i->i_end_lineno = end_line;
     i->i_col_offset = col_offset;
@@ -7144,11 +7161,8 @@ stackdepth(struct compiler *c, basicblock *entry)
             }
             depth = new_depth;
             assert(!IS_ASSEMBLER_OPCODE(instr->i_opcode));
-            if (instr->i_opcode == JUMP_NO_INTERRUPT ||
-                instr->i_opcode == JUMP ||
-                instr->i_opcode == RETURN_VALUE ||
-                instr->i_opcode == RAISE_VARARGS ||
-                instr->i_opcode == RERAISE)
+            if (IS_UNCONDITIONAL_JUMP_OPCODE(instr->i_opcode) ||
+                IS_SCOPE_EXIT_OPCODE(instr->i_opcode))
             {
                 /* remaining code is dead */
                 next = NULL;
@@ -7159,7 +7173,7 @@ stackdepth(struct compiler *c, basicblock *entry)
             }
         }
         if (next != NULL) {
-            assert(b->b_nofallthrough == 0);
+            assert(BB_HAS_FALLTHROUGH(b));
             stackdepth_push(&sp, next, depth);
         }
     }
@@ -7314,7 +7328,7 @@ label_exception_targets(basicblock *entry) {
                 instr->i_except = handler;
                 assert(i == b->b_iused -1);
                 if (!instr->i_target->b_visited) {
-                    if (b->b_nofallthrough == 0) {
+                    if (BB_HAS_FALLTHROUGH(b)) {
                         ExceptStack *copy = copy_except_stack(except_stack);
                         if (copy == NULL) {
                             goto error;
@@ -7334,7 +7348,7 @@ label_exception_targets(basicblock *entry) {
                 instr->i_except = handler;
             }
         }
-        if (b->b_nofallthrough == 0 && !b->b_next->b_visited) {
+        if (BB_HAS_FALLTHROUGH(b) && !b->b_next->b_visited) {
             assert(except_stack != NULL);
             b->b_next->b_exceptstack = except_stack;
             todo[0] = b->b_next;
@@ -7373,7 +7387,7 @@ mark_warm(basicblock *entry) {
         assert(!b->b_except_predecessors);
         b->b_warm = 1;
         basicblock *next = b->b_next;
-        if (next && !b->b_nofallthrough && !next->b_visited) {
+        if (next && BB_HAS_FALLTHROUGH(b) && !next->b_visited) {
             *sp++ = next;
             next->b_visited = 1;
         }
@@ -7417,7 +7431,7 @@ mark_cold(basicblock *entry) {
         basicblock *b = *(--sp);
         b->b_cold = 1;
         basicblock *next = b->b_next;
-        if (next && !b->b_nofallthrough) {
+        if (next && BB_HAS_FALLTHROUGH(b)) {
             if (!next->b_warm && !next->b_visited) {
                 *sp++ = next;
                 next->b_visited = 1;
@@ -7452,7 +7466,7 @@ push_cold_blocks_to_end(struct compiler *c, basicblock *entry, int code_flags) {
     /* If we have a cold block with fallthrough to a warm block, add */
     /* an explicit jump instead of fallthrough */
     for (basicblock *b = entry; b != NULL; b = b->b_next) {
-        if (b->b_cold && !b->b_nofallthrough && b->b_next && b->b_next->b_warm) {
+        if (b->b_cold && BB_HAS_FALLTHROUGH(b) && b->b_next && b->b_next->b_warm) {
             basicblock *explicit_jump = compiler_new_block(c);
             if (explicit_jump == NULL) {
                 return -1;
@@ -7460,7 +7474,6 @@ push_cold_blocks_to_end(struct compiler *c, basicblock *entry, int code_flags) {
             basicblock_add_jump(explicit_jump, JUMP, -1, 0, 0, 0, b->b_next);
 
             explicit_jump->b_cold = 1;
-            explicit_jump->b_nofallthrough = 1;
             explicit_jump->b_next = b->b_next;
             b->b_next = explicit_jump;
         }
@@ -7953,7 +7966,7 @@ scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
     if (unsafe) {
         // unsafe at end of this block,
         // so unsafe at start of next blocks
-        if (b->b_next && !b->b_nofallthrough) {
+        if (b->b_next && BB_HAS_FALLTHROUGH(b)) {
             MAYBE_PUSH(b->b_next);
         }
         if (b->b_iused > 0) {
@@ -8281,9 +8294,10 @@ dump_instr(struct instr *i)
 static void
 dump_basicblock(const basicblock *b)
 {
-    const char *b_return = b->b_return ? "return " : "";
+    const char *b_return = basicblock_returns(b) ? "return " : "";
     fprintf(stderr, "[%d %d %d %p] used: %d, depth: %d, offset: %d %s\n",
-        b->b_cold, b->b_warm, b->b_nofallthrough, b, b->b_iused, b->b_startdepth, b->b_offset, b_return);
+        b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
+        b->b_startdepth, b->b_offset, b_return);
     if (b->b_instr) {
         int i;
         for (i = 0; i < b->b_iused; i++) {
@@ -8545,7 +8559,6 @@ remove_redundant_jumps(basicblock *entry) {
                 b_last_instr->i_opcode == JUMP_NO_INTERRUPT) {
                 if (b_last_instr->i_target == b->b_next) {
                     assert(b->b_next->b_iused);
-                    b->b_nofallthrough = 0;
                     b_last_instr->i_opcode = NOP;
                     removed++;
                 }
@@ -8572,7 +8585,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     /* Make sure every block that falls off the end returns None. */
-    if (!c->u->u_curblock->b_return) {
+    if (!basicblock_returns(c->u->u_curblock)) {
         UNSET_LOC(c);
         if (addNone)
             ADDOP_LOAD_CONST(c, Py_None);
@@ -9064,7 +9077,6 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         jump_if_true = nextop == POP_JUMP_IF_TRUE;
                         if (is_true == jump_if_true) {
                             bb->b_instr[i+1].i_opcode = JUMP;
-                            bb->b_nofallthrough = 1;
                         }
                         else {
                             bb->b_instr[i+1].i_opcode = NOP;
@@ -9084,7 +9096,6 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         jump_if_true = nextop == JUMP_IF_TRUE_OR_POP;
                         if (is_true == jump_if_true) {
                             bb->b_instr[i+1].i_opcode = JUMP;
-                            bb->b_nofallthrough = 1;
                         }
                         else {
                             inst->i_opcode = NOP;
@@ -9273,7 +9284,7 @@ extend_block(basicblock *bb) {
         last->i_opcode != JUMP_BACKWARD) {
         return 0;
     }
-    if (last->i_target->b_exit && last->i_target->b_iused <= MAX_COPY_SIZE) {
+    if (basicblock_exits_scope(last->i_target) && last->i_target->b_iused <= MAX_COPY_SIZE) {
         basicblock *to_copy = last->i_target;
         last->i_opcode = NOP;
         for (int i = 0; i < to_copy->b_iused; i++) {
@@ -9283,7 +9294,6 @@ extend_block(basicblock *bb) {
             }
             bb->b_instr[index] = to_copy->b_instr[i];
         }
-        bb->b_exit = 1;
     }
     return 0;
 }
@@ -9341,34 +9351,21 @@ normalize_basic_block(basicblock *bb) {
     /* Mark blocks as exit and/or nofallthrough.
      Raise SystemError if CFG is malformed. */
     for (int i = 0; i < bb->b_iused; i++) {
-        assert(!IS_ASSEMBLER_OPCODE(bb->b_instr[i].i_opcode));
-        switch(bb->b_instr[i].i_opcode) {
-            case RETURN_VALUE:
-            case RAISE_VARARGS:
-            case RERAISE:
-                bb->b_exit = 1;
-                bb->b_nofallthrough = 1;
-                break;
-            case JUMP:
-            case JUMP_NO_INTERRUPT:
-                bb->b_nofallthrough = 1;
-                /* fall through */
-            case POP_JUMP_IF_NOT_NONE:
-            case POP_JUMP_IF_NONE:
-            case POP_JUMP_IF_FALSE:
-            case POP_JUMP_IF_TRUE:
-            case JUMP_IF_FALSE_OR_POP:
-            case JUMP_IF_TRUE_OR_POP:
-            case FOR_ITER:
-                if (i != bb->b_iused-1) {
-                    PyErr_SetString(PyExc_SystemError, "malformed control flow graph.");
-                    return -1;
-                }
-                /* Skip over empty basic blocks. */
-                while (bb->b_instr[i].i_target->b_iused == 0) {
-                    bb->b_instr[i].i_target = bb->b_instr[i].i_target->b_next;
-                }
-
+        int opcode = bb->b_instr[i].i_opcode;
+        assert(!IS_ASSEMBLER_OPCODE(opcode));
+        int is_jump = IS_JUMP_OPCODE(opcode);
+        int is_exit = IS_SCOPE_EXIT_OPCODE(opcode);
+        if (is_exit || is_jump) {
+            if (i != bb->b_iused-1) {
+                PyErr_SetString(PyExc_SystemError, "malformed control flow graph.");
+                return -1;
+            }
+        }
+        if (is_jump) {
+            /* Skip over empty basic blocks. */
+            while (bb->b_instr[i].i_target->b_iused == 0) {
+                bb->b_instr[i].i_target = bb->b_instr[i].i_target->b_next;
+            }
         }
     }
     return 0;
@@ -9386,7 +9383,7 @@ mark_reachable(struct assembler *a) {
     while (sp > stack) {
         basicblock *b = *(--sp);
         b->b_visited = 1;
-        if (b->b_next && !b->b_nofallthrough) {
+        if (b->b_next && BB_HAS_FALLTHROUGH(b)) {
             if (!b->b_next->b_visited) {
                 assert(b->b_next->b_predecessors == 0);
                 *sp++ = b->b_next;
@@ -9475,7 +9472,7 @@ propagate_line_numbers(struct assembler *a) {
                 COPY_INSTR_LOC(b->b_instr[i], prev_instr);
             }
         }
-        if (!b->b_nofallthrough && b->b_next->b_predecessors == 1) {
+        if (BB_HAS_FALLTHROUGH(b) && b->b_next->b_predecessors == 1) {
             assert(b->b_next->b_iused);
             if (b->b_next->b_instr[0].i_lineno < 0) {
                 COPY_INSTR_LOC(prev_instr, b->b_next->b_instr[0]);
@@ -9523,7 +9520,6 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
        if (b->b_predecessors == 0) {
             b->b_iused = 0;
-            b->b_nofallthrough = 0;
        }
     }
     eliminate_empty_basic_blocks(a->a_entry);
@@ -9563,7 +9559,7 @@ trim_unused_consts(struct assembler *a, PyObject *consts)
 
 static inline int
 is_exit_without_lineno(basicblock *b) {
-    if (!b->b_exit) {
+    if (!basicblock_exits_scope(b)) {
         return 0;
     }
     for (int i = 0; i < b->b_iused; i++) {
@@ -9614,7 +9610,7 @@ duplicate_exits_without_lineno(struct compiler *c)
     /* Any remaining reachable exit blocks without line number can only be reached by
      * fall through, and thus can only have a single predecessor */
     for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
-        if (!b->b_nofallthrough && b->b_next && b->b_iused > 0) {
+        if (BB_HAS_FALLTHROUGH(b) && b->b_next && b->b_iused > 0) {
             if (is_exit_without_lineno(b->b_next)) {
                 assert(b->b_next->b_iused > 0);
                 COPY_INSTR_LOC(b->b_instr[b->b_iused-1],  b->b_next->b_instr[0]);
