@@ -620,6 +620,22 @@ dis_loop_test_quickened_code = """\
        loop_test.__code__.co_firstlineno + 2,
        loop_test.__code__.co_firstlineno + 1,)
 
+def extended_arg_quick():
+    *_, _ = ...
+
+dis_extended_arg_quick_code = """\
+%3d           0 RESUME                   0
+
+%3d           2 LOAD_CONST               1 (Ellipsis)
+              4 EXTENDED_ARG_QUICK       1
+              6 UNPACK_EX              256
+              8 STORE_FAST               0 (_)
+             10 STORE_FAST               0 (_)
+             12 LOAD_CONST               0 (None)
+             14 RETURN_VALUE
+"""% (extended_arg_quick.__code__.co_firstlineno,
+      extended_arg_quick.__code__.co_firstlineno + 1,)
+
 QUICKENING_WARMUP_DELAY = 8
 
 class DisTestBase(unittest.TestCase):
@@ -996,6 +1012,11 @@ class DisTests(DisTestBase):
         self.code_quicken(loop_test, 1)
         got = self.get_disassembly(loop_test, adaptive=True)
         self.do_disassembly_compare(got, dis_loop_test_quickened_code)
+
+    @cpython_only
+    def test_extended_arg_quick(self):
+        got = self.get_disassembly(extended_arg_quick)
+        self.do_disassembly_compare(got, dis_extended_arg_quick_code, True)
 
     def get_cached_values(self, quickened, adaptive):
         def f():
