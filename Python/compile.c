@@ -248,6 +248,8 @@ typedef struct basicblock_ {
     int b_ialloc;
     /* Number of predecssors that a block has. */
     int b_predecessors;
+    /* Number of predecssors that a block has as an exception handler. */
+    int b_except_predecessors;
     /* depth of stack upon entry of block, computed by stackdepth() */
     int b_startdepth;
     /* instruction offset for block, computed by assemble_jump_offsets() */
@@ -262,6 +264,10 @@ typedef struct basicblock_ {
     unsigned b_exit : 1;
     /* b_return is true if a RETURN_VALUE opcode is inserted. */
     unsigned b_return : 1;
+    /* b_cold is true if this block is not perf critical (like an exception handler) */
+    unsigned b_cold : 1;
+    /* b_warm is used by the cold-detection algorithm to mark blocks which are definitely not cold */
+    unsigned b_warm : 1;
 } basicblock;
 
 
@@ -1109,6 +1115,7 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
 
         case LOAD_FAST:
+        case LOAD_FAST_CHECK:
             return 1;
         case STORE_FAST:
             return -1;
@@ -7351,6 +7358,155 @@ error:
     return -1;
 }
 
+static int
+mark_warm(basicblock *entry) {
+    basicblock **stack = make_cfg_traversal_stack(entry);
+    if (stack == NULL) {
+        return -1;
+    }
+    basicblock **sp = stack;
+
+    *sp++ = entry;
+    entry->b_visited = 1;
+    while (sp > stack) {
+        basicblock *b = *(--sp);
+        assert(!b->b_except_predecessors);
+        b->b_warm = 1;
+        basicblock *next = b->b_next;
+        if (next && !b->b_nofallthrough && !next->b_visited) {
+            *sp++ = next;
+            next->b_visited = 1;
+        }
+        for (int i=0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            if (is_jump(instr) && !instr->i_target->b_visited) {
+                *sp++ = instr->i_target;
+                instr->i_target->b_visited = 1;
+            }
+        }
+    }
+    PyMem_Free(stack);
+    return 0;
+}
+
+static int
+mark_cold(basicblock *entry) {
+    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+        assert(!b->b_cold && !b->b_warm);
+    }
+    if (mark_warm(entry) < 0) {
+        return -1;
+    }
+
+    basicblock **stack = make_cfg_traversal_stack(entry);
+    if (stack == NULL) {
+        return -1;
+    }
+
+    basicblock **sp = stack;
+    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+        if (b->b_except_predecessors) {
+            assert(b->b_except_predecessors == b->b_predecessors);
+            assert(!b->b_warm);
+            *sp++ = b;
+            b->b_visited = 1;
+        }
+    }
+
+    while (sp > stack) {
+        basicblock *b = *(--sp);
+        b->b_cold = 1;
+        basicblock *next = b->b_next;
+        if (next && !b->b_nofallthrough) {
+            if (!next->b_warm && !next->b_visited) {
+                *sp++ = next;
+                next->b_visited = 1;
+            }
+        }
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            if (is_jump(instr)) {
+                assert(i == b->b_iused-1);
+                basicblock *target = b->b_instr[i].i_target;
+                if (!target->b_warm && !target->b_visited) {
+                    *sp++ = target;
+                    target->b_visited = 1;
+                }
+            }
+        }
+    }
+    PyMem_Free(stack);
+    return 0;
+}
+
+static int
+push_cold_blocks_to_end(struct compiler *c, basicblock *entry, int code_flags) {
+    if (entry->b_next == NULL) {
+        /* single basicblock, no need to reorder */
+        return 0;
+    }
+    if (mark_cold(entry) < 0) {
+        return -1;
+    }
+
+    /* If we have a cold block with fallthrough to a warm block, add */
+    /* an explicit jump instead of fallthrough */
+    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+        if (b->b_cold && !b->b_nofallthrough && b->b_next && b->b_next->b_warm) {
+            basicblock *explicit_jump = compiler_new_block(c);
+            if (explicit_jump == NULL) {
+                return -1;
+            }
+            basicblock_add_jump(explicit_jump, JUMP, -1, 0, 0, 0, b->b_next);
+
+            explicit_jump->b_cold = 1;
+            explicit_jump->b_nofallthrough = 1;
+            explicit_jump->b_next = b->b_next;
+            b->b_next = explicit_jump;
+        }
+    }
+
+    assert(!entry->b_cold);  /* First block can't be cold */
+    basicblock *cold_blocks = NULL;
+    basicblock *cold_blocks_tail = NULL;
+
+    basicblock *b = entry;
+    while(b->b_next) {
+        assert(!b->b_cold);
+        while (b->b_next && !b->b_next->b_cold) {
+            b = b->b_next;
+        }
+        if (b->b_next == NULL) {
+            /* no more cold blocks */
+            break;
+        }
+
+        /* b->b_next is the beginning of a cold streak */
+        assert(!b->b_cold && b->b_next->b_cold);
+
+        basicblock *b_end = b->b_next;
+        while (b_end->b_next && b_end->b_next->b_cold) {
+            b_end = b_end->b_next;
+        }
+
+        /* b_end is the end of the cold streak */
+        assert(b_end && b_end->b_cold);
+        assert(b_end->b_next == NULL || !b_end->b_next->b_cold);
+
+        if (cold_blocks == NULL) {
+            cold_blocks = b->b_next;
+        }
+        else {
+            cold_blocks_tail->b_next = b->b_next;
+        }
+        cold_blocks_tail = b_end;
+        b->b_next = b_end->b_next;
+        b_end->b_next = NULL;
+    }
+    assert(b != NULL && b->b_next == NULL);
+    b->b_next = cold_blocks;
+    return 0;
+}
 
 static void
 convert_exception_handlers_to_nops(basicblock *entry) {
@@ -7746,6 +7902,109 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
     } while (extended_arg_recompile);
 }
 
+
+// Ensure each basicblock is only put onto the stack once.
+#define MAYBE_PUSH(B) do {                          \
+        if ((B)->b_visited == 0) {                  \
+            *(*stack_top)++ = (B);                  \
+            (B)->b_visited = 1;                     \
+        }                                           \
+    } while (0)
+
+static void
+scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
+                     basicblock ***stack_top)
+{
+    bool unsafe = unsafe_to_start;
+    for (int i = 0; i < b->b_iused; i++) {
+        struct instr *instr = &b->b_instr[i];
+        assert(instr->i_opcode != EXTENDED_ARG);
+        assert(instr->i_opcode != EXTENDED_ARG_QUICK);
+        assert(instr->i_opcode != LOAD_FAST__LOAD_FAST);
+        assert(instr->i_opcode != STORE_FAST__LOAD_FAST);
+        assert(instr->i_opcode != LOAD_CONST__LOAD_FAST);
+        assert(instr->i_opcode != STORE_FAST__STORE_FAST);
+        assert(instr->i_opcode != LOAD_FAST__LOAD_CONST);
+        if (unsafe && instr->i_except != NULL) {
+            MAYBE_PUSH(instr->i_except);
+        }
+        if (instr->i_oparg != target) {
+            continue;
+        }
+        switch (instr->i_opcode) {
+            case LOAD_FAST_CHECK:
+                // if this doesn't raise, then var is defined
+                unsafe = false;
+                break;
+            case LOAD_FAST:
+                if (unsafe) {
+                    instr->i_opcode = LOAD_FAST_CHECK;
+                }
+                unsafe = false;
+                break;
+            case STORE_FAST:
+                unsafe = false;
+                break;
+            case DELETE_FAST:
+                unsafe = true;
+                break;
+        }
+    }
+    if (unsafe) {
+        // unsafe at end of this block,
+        // so unsafe at start of next blocks
+        if (b->b_next && !b->b_nofallthrough) {
+            MAYBE_PUSH(b->b_next);
+        }
+        if (b->b_iused > 0) {
+            struct instr *last = &b->b_instr[b->b_iused-1];
+            if (is_jump(last)) {
+                assert(last->i_target != NULL);
+                MAYBE_PUSH(last->i_target);
+            }
+        }
+    }
+}
+#undef MAYBE_PUSH
+
+static int
+add_checks_for_loads_of_unknown_variables(struct assembler *a,
+                                          struct compiler *c)
+{
+    basicblock **stack = make_cfg_traversal_stack(a->a_entry);
+    if (stack == NULL) {
+        return -1;
+    }
+    Py_ssize_t nparams = PyList_GET_SIZE(c->u->u_ste->ste_varnames);
+    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
+    for (int target = 0; target < nlocals; target++) {
+        for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+            b->b_visited = 0;
+        }
+        basicblock **stack_top = stack;
+
+        // First pass: find the relevant DFS starting points:
+        // the places where "being uninitialized" originates,
+        // which are the entry block and any DELETE_FAST statements.
+        if (target >= nparams) {
+            // only non-parameter locals start out uninitialized.
+            *(stack_top++) = a->a_entry;
+            a->a_entry->b_visited = 1;
+        }
+        for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+            scan_block_for_local(target, b, false, &stack_top);
+        }
+
+        // Second pass: Depth-first search to propagate uncertainty
+        while (stack_top > stack) {
+            basicblock *b = *--stack_top;
+            scan_block_for_local(target, b, true, &stack_top);
+        }
+    }
+    PyMem_Free(stack);
+    return 0;
+}
+
 static PyObject *
 dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
 {
@@ -7905,7 +8164,7 @@ compute_localsplus_info(struct compiler *c, int nlocalsplus,
 
 static PyCodeObject *
 makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
-         int maxdepth, int nlocalsplus)
+         int maxdepth, int nlocalsplus, int code_flags)
 {
     PyCodeObject *co = NULL;
     PyObject *names = NULL;
@@ -7918,11 +8177,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         goto error;
     }
     if (!merge_const_one(c, &names)) {
-        goto error;
-    }
-
-    int flags = compute_code_flags(c);
-    if (flags < 0) {
         goto error;
     }
 
@@ -7956,7 +8210,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         .filename = c->c_filename,
         .name = c->u->u_name,
         .qualname = c->u->u_qualname ? c->u->u_qualname : c->u->u_name,
-        .flags = flags,
+        .flags = code_flags,
 
         .code = a->a_bytecode,
         .firstlineno = c->u->u_firstlineno,
@@ -8014,6 +8268,12 @@ dump_instr(struct instr *i)
     if (HAS_ARG(i->i_opcode)) {
         sprintf(arg, "arg: %d ", i->i_oparg);
     }
+    if (is_jump(i)) {
+        sprintf(arg, "target: %p ", i->i_target);
+    }
+    if (is_block_push(i)) {
+        sprintf(arg, "except_target: %p ", i->i_target);
+    }
     fprintf(stderr, "line: %d, opcode: %d %s%s%s\n",
                     i->i_lineno, i->i_opcode, arg, jabs, jrel);
 }
@@ -8022,8 +8282,8 @@ static void
 dump_basicblock(const basicblock *b)
 {
     const char *b_return = b->b_return ? "return " : "";
-    fprintf(stderr, "used: %d, depth: %d, offset: %d %s\n",
-        b->b_iused, b->b_startdepth, b->b_offset, b_return);
+    fprintf(stderr, "[%d %d %d %p] used: %d, depth: %d, offset: %d %s\n",
+        b->b_cold, b->b_warm, b->b_nofallthrough, b, b->b_iused, b->b_startdepth, b->b_offset, b_return);
     if (b->b_instr) {
         int i;
         for (i = 0; i < b->b_iused; i++) {
@@ -8098,17 +8358,13 @@ insert_instruction(basicblock *block, int pos, struct instr *instr) {
 
 static int
 insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
-                           int *fixed, int nfreevars)
+                           int *fixed, int nfreevars, int code_flags)
 {
 
-    int flags = compute_code_flags(c);
-    if (flags < 0) {
-        return -1;
-    }
     assert(c->u->u_firstlineno > 0);
 
     /* Add the generator prefix instructions. */
-    if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
+    if (code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
         struct instr make_gen = {
             .i_opcode = RETURN_GENERATOR,
             .i_oparg = 0,
@@ -8269,6 +8525,38 @@ fix_cell_offsets(struct compiler *c, basicblock *entryblock, int *fixedmap)
 static void
 propagate_line_numbers(struct assembler *a);
 
+static void
+eliminate_empty_basic_blocks(basicblock *entry);
+
+
+static void
+remove_redundant_jumps(basicblock *entry) {
+    /* If a non-empty block ends with a jump instruction, check if the next
+     * non-empty block reached through normal flow control is the target
+     * of that jump. If it is, then the jump instruction is redundant and
+     * can be deleted.
+     */
+    int removed = 0;
+    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+        if (b->b_iused > 0) {
+            struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
+            assert(!IS_ASSEMBLER_OPCODE(b_last_instr->i_opcode));
+            if (b_last_instr->i_opcode == JUMP ||
+                b_last_instr->i_opcode == JUMP_NO_INTERRUPT) {
+                if (b_last_instr->i_target == b->b_next) {
+                    assert(b->b_next->b_iused);
+                    b->b_nofallthrough = 0;
+                    b_last_instr->i_opcode = NOP;
+                    removed++;
+                }
+            }
+        }
+    }
+    if (removed) {
+        eliminate_empty_basic_blocks(entry);
+    }
+}
+
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
 {
@@ -8277,6 +8565,11 @@ assemble(struct compiler *c, int addNone)
     int j, nblocks;
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
+
+    int code_flags = compute_code_flags(c);
+    if (code_flags < 0) {
+        return NULL;
+    }
 
     /* Make sure every block that falls off the end returns None. */
     if (!c->u->u_curblock->b_return) {
@@ -8303,6 +8596,7 @@ assemble(struct compiler *c, int addNone)
     for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
         nblocks++;
         entryblock = b;
+        assert(b->b_warm == 0 && b->b_cold == 0);
     }
     assert(entryblock != NULL);
 
@@ -8331,7 +8625,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     // This must be called before fix_cell_offsets().
-    if (insert_prefix_instructions(c, entryblock, cellfixedoffsets, nfreevars)) {
+    if (insert_prefix_instructions(c, entryblock, cellfixedoffsets, nfreevars, code_flags)) {
         goto error;
     }
 
@@ -8378,12 +8672,23 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
     convert_exception_handlers_to_nops(entryblock);
-    for (basicblock *b = a.a_entry; b != NULL; b = b->b_next) {
+
+    if (push_cold_blocks_to_end(c, entryblock, code_flags) < 0) {
+        goto error;
+    }
+
+    remove_redundant_jumps(entryblock);
+    assert(a.a_entry == entryblock);
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         clean_basic_block(b);
     }
 
     /* Order of basic blocks must have been determined by now */
     normalize_jumps(&a);
+
+    if (add_checks_for_loads_of_unknown_variables(&a, c) < 0) {
+        goto error;
+    }
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
@@ -8427,7 +8732,7 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    co = makecode(c, &a, consts, maxdepth, nlocalsplus);
+    co = makecode(c, &a, consts, maxdepth, nlocalsplus, code_flags);
  error:
     Py_XDECREF(consts);
     assemble_free(&a);
@@ -9098,6 +9403,11 @@ mark_reachable(struct assembler *a) {
                     *sp++ = target;
                 }
                 target->b_predecessors++;
+                if (is_block_push(instr)) {
+                    target->b_except_predecessors++;
+                }
+                assert(target->b_except_predecessors == 0 ||
+                       target->b_except_predecessors == target->b_predecessors);
             }
         }
     }
@@ -9219,30 +9529,6 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
     eliminate_empty_basic_blocks(a->a_entry);
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         clean_basic_block(b);
-    }
-    /* Delete jump instructions made redundant by previous step. If a non-empty
-       block ends with a jump instruction, check if the next non-empty block
-       reached through normal flow control is the target of that jump. If it
-       is, then the jump instruction is redundant and can be deleted.
-    */
-    int maybe_empty_blocks = 0;
-    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
-        if (b->b_iused > 0) {
-            struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
-            assert(!IS_ASSEMBLER_OPCODE(b_last_instr->i_opcode));
-            if (b_last_instr->i_opcode == JUMP ||
-                b_last_instr->i_opcode == JUMP_NO_INTERRUPT) {
-                if (b_last_instr->i_target == b->b_next) {
-                    assert(b->b_next->b_iused);
-                    b->b_nofallthrough = 0;
-                    b_last_instr->i_opcode = NOP;
-                    maybe_empty_blocks = 1;
-                }
-            }
-        }
-    }
-    if (maybe_empty_blocks) {
-        eliminate_empty_basic_blocks(a->a_entry);
     }
     return 0;
 }
