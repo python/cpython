@@ -25,6 +25,11 @@ or as base classes.
    replaced with its corresponding value.  The characters ``'&'``, ``'<'`` and
    ``'>'`` are always escaped, even if *entities* is provided.
 
+   .. note::
+
+      This function should only be used to escape characters that are
+      problematic to include directly in XML. Do not use this function as a general
+      string translation function.
 
 .. function:: unescape(data, entities={})
 
