@@ -1318,10 +1318,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         with self.tmpdir_with_python() as tmpdir:
             # pybuilddir.txt is a sub-directory relative to the current
             # directory (tmpdir)
+            vpath = sysconfig.get_config_var("VPATH")
             subdir = 'libdir'
             libdir = os.path.join(tmpdir, subdir)
             # The stdlib dir is dirname(executable) + VPATH + 'Lib'
-            stdlibdir = os.path.join(tmpdir, 'Lib')
+            stdlibdir = os.path.normpath(os.path.join(tmpdir, vpath, 'Lib'))
             os.mkdir(libdir)
 
             filename = os.path.join(tmpdir, 'pybuilddir.txt')
