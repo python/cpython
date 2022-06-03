@@ -635,7 +635,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
          If this method is used when the associated process is using a pipe or
          queue then the pipe or queue is liable to become corrupted and may
-         become unusable by other process.  Similarly, if the process has
+         become unusable by other processes. Similarly, if the process has
          acquired a lock or semaphore etc. then terminating it is liable to
          cause other processes to deadlock.
 
@@ -650,7 +650,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       Close the :class:`Process` object, releasing all resources associated
       with it.  :exc:`ValueError` is raised if the underlying process
       is still running.  Once :meth:`close` returns successfully, most
-      other methods and attributes of the :class:`Process` object will
+      of the other methods and attributes of the :class:`Process` object will
       raise :exc:`ValueError`.
 
       .. versionadded:: 3.7
@@ -819,7 +819,7 @@ For an example of the usage of queues for interprocess communication see
 
    .. method:: put(obj[, block[, timeout]])
 
-      Put obj into the queue.  If the optional argument *block* is ``True``
+      Put *obj* into the queue.  If the optional argument *block* is ``True``
       (the default) and *timeout* is ``None`` (the default), block if necessary until
       a free slot is available.  If *timeout* is a positive number, it blocks at
       most *timeout* seconds and raises the :exc:`queue.Full` exception if no
@@ -960,7 +960,7 @@ Miscellaneous
 
 .. function:: active_children()
 
-   Return list of all live children of the current process.
+   Return a list of all live children of the current process.
 
    Calling this has the side effect of "joining" any processes which have
    already finished.
@@ -971,7 +971,7 @@ Miscellaneous
 
    This number is not equivalent to the number of CPUs the current process can
    use.  The number of usable CPUs can be obtained with
-   ``len(os.sched_getaffinity(0))``
+   ``len(os.sched_getaffinity(0))``.
 
    When the number of CPUs cannot be determined a :exc:`NotImplementedError`
    is raised.
@@ -1035,18 +1035,18 @@ Miscellaneous
    :mod:`multiprocessing` module.
 
    If *method* is ``None`` then the default context is returned.
-   Otherwise *method* should be ``'fork'``, ``'spawn'``,
-   ``'forkserver'``.  :exc:`ValueError` is raised if the specified
+   Otherwise *method* should be one of ``'fork'``, ``'spawn'``,
+   or ``'forkserver'``.  :exc:`ValueError` is raised if the specified
    start method is not available.
 
    .. versionadded:: 3.4
 
 .. function:: get_start_method(allow_none=False)
 
-   Return the name of start method used for starting processes.
+   Return the name of the start method used for starting processes.
 
    If the start method has not been fixed and *allow_none* is false,
-   then the start method is fixed to the default and the name is
+   then the start method is fixed to the default and its name is
    returned.  If the start method has not been fixed and *allow_none*
    is true then ``None`` is returned.
 
@@ -1066,7 +1066,7 @@ Miscellaneous
 
    Set the path of the Python interpreter to use when starting a child process.
    (By default :data:`sys.executable` is used).  Embedders will probably need to
-   do some thing like ::
+   do something like ::
 
       set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
 
@@ -1103,7 +1103,7 @@ Connection Objects
 .. currentmodule:: multiprocessing.connection
 
 Connection objects allow the sending and receiving of picklable objects or
-strings.  They can be thought of as message oriented connected sockets.
+strings.  They can be thought of as message-oriented connected sockets.
 
 Connection objects are usually created using
 :func:`Pipe <multiprocessing.Pipe>` -- see also
@@ -1152,9 +1152,9 @@ Connection objects are usually created using
       Send byte data from a :term:`bytes-like object` as a complete message.
 
       If *offset* is given then data is read from that position in *buffer*.  If
-      *size* is given then that many bytes will be read from buffer.  Very large
+      *size* is given then that many bytes will be read from *buffer*.  Very large
       buffers (approximately 32 MiB+, though it depends on the OS) may raise a
-      :exc:`ValueError` exception
+      :exc:`ValueError` exception.
 
    .. method:: recv_bytes([maxlength])
 
@@ -1182,7 +1182,7 @@ Connection objects are usually created using
 
       *buffer* must be a writable :term:`bytes-like object`.  If
       *offset* is given then the message will be written into the buffer from
-      that position.  Offset must be a non-negative integer less than the
+      that position. *offset* must be a non-negative integer less than the
       length of *buffer* (in bytes).
 
       If the buffer is too short then a :exc:`BufferTooShort` exception is
@@ -1245,7 +1245,7 @@ Synchronization primitives
 .. currentmodule:: multiprocessing
 
 Generally synchronization primitives are not as necessary in a multiprocess
-program as they are in a multithreaded program.  See the documentation for
+program as they are in a multithreaded program.  See the documentation for the
 :mod:`threading` module.
 
 Note that one can also create synchronization primitives by using a manager
@@ -2105,7 +2105,7 @@ demonstrates a level of control over the synchronization.
       a new shared object -- see documentation for the *method_to_typeid*
       argument of :meth:`BaseManager.register`.
 
-      If an exception is raised by the call, then is re-raised by
+      If an exception is raised by the call, then it is re-raised by
       :meth:`_callmethod`.  If some other exception is raised in the manager's
       process then this is converted into a :exc:`RemoteError` exception and is
       raised by :meth:`_callmethod`.
@@ -2198,10 +2198,10 @@ with the :class:`Pool` class.
       (see :meth:`object.__del__` for more information).
 
    .. versionadded:: 3.2
-      *maxtasksperchild*
+      *maxtasksperchild*.
 
    .. versionadded:: 3.4
-      *context*
+      *context*.
 
    .. note::
 
@@ -2248,7 +2248,7 @@ with the :class:`Pool` class.
       chunks can be specified by setting *chunksize* to a positive integer.
 
       Note that it may cause high memory usage for very long iterables. Consider
-      using :meth:`imap` or :meth:`imap_unordered` with explicit *chunksize*
+      using :meth:`imap` or :meth:`imap_unordered` with an explicit *chunksize*
       option for better efficiency.
 
    .. method:: map_async(func, iterable[, chunksize[, callback[, error_callback]]])
@@ -2395,7 +2395,7 @@ Usually message passing between processes is done using queues or by using
 :func:`~multiprocessing.Pipe`.
 
 However, the :mod:`multiprocessing.connection` module allows some extra
-flexibility.  It basically gives a high level message oriented API for dealing
+flexibility.  It basically gives a high-level message-oriented API for dealing
 with sockets or Windows named pipes.  It also has support for *digest
 authentication* using the :mod:`hmac` module, and for polling
 multiple connections at the same time.
@@ -2423,13 +2423,13 @@ multiple connections at the same time.
    Attempt to set up a connection to the listener which is using address
    *address*, returning a :class:`~Connection`.
 
-   The type of the connection is determined by *family* argument, but this can
+   The type of the connection is determined by the *family* argument, but this can
    generally be omitted since it can usually be inferred from the format of
-   *address*. (See :ref:`multiprocessing-address-formats`)
+   *address*. (See :ref:`multiprocessing-address-formats`).
 
-   If *authkey* is given and not None, it should be a byte string and will be
+   If *authkey* is given and not ``None``, it should be a byte string and will be
    used as the secret key for an HMAC-based authentication challenge. No
-   authentication is done if *authkey* is None.
+   authentication is done if *authkey* is ``None``.
    :exc:`~multiprocessing.AuthenticationError` is raised if authentication fails.
    See :ref:`multiprocessing-auth-keys`.
 
@@ -2462,9 +2462,9 @@ multiple connections at the same time.
    to the :meth:`~socket.socket.listen` method of the socket once it has been
    bound.
 
-   If *authkey* is given and not None, it should be a byte string and will be
+   If *authkey* is given and not ``None``, it should be a byte string and will be
    used as the secret key for an HMAC-based authentication challenge. No
-   authentication is done if *authkey* is None.
+   authentication is done if *authkey* is ``None``.
    :exc:`~multiprocessing.AuthenticationError` is raised if authentication fails.
    See :ref:`multiprocessing-auth-keys`.
 
@@ -2516,7 +2516,7 @@ multiple connections at the same time.
    A connection or socket object is ready when there is data available
    to be read from it, or the other end has been closed.
 
-   **Unix**: ``wait(object_list, timeout)`` almost equivalent
+   **Unix**: ``wait(object_list, timeout)`` is almost equivalent to
    ``select.select(object_list, [], [], timeout)``.  The difference is
    that, if :func:`select.select` is interrupted by a signal, it can
    raise :exc:`OSError` with an error number of ``EINTR``, whereas
@@ -2899,14 +2899,14 @@ Beware of replacing :data:`sys.stdin` with a "file like object"
         sys.stdin.close()
         sys.stdin = open(os.open(os.devnull, os.O_RDONLY), closefd=False)
 
-    Which solves the fundamental issue of processes colliding with each other
+    which solves the fundamental issue of processes colliding with each other
     resulting in a bad file descriptor error, but introduces a potential danger
     to applications which replace :func:`sys.stdin` with a "file-like object"
-    with output buffering.  This danger is that if multiple processes call
+    with output buffering.  The danger is that if multiple processes call
     :meth:`~io.IOBase.close()` on this file-like object, it could result in the same
     data being flushed to the object multiple times, resulting in corruption.
 
-    If you write a file-like object and implement your own caching, you can
+    If you write to a file-like object and implement your own caching, you can
     make it fork-safe by storing the pid whenever you append to the cache,
     and discarding the cache when the pid changes. For example::
 
@@ -2918,12 +2918,12 @@ Beware of replacing :data:`sys.stdin` with a "file like object"
                self._cache = []
            return self._cache
 
-    For more information, see :issue:`5155`, :issue:`5313` and :issue:`5331`
+    For more information, see :issue:`5155`, :issue:`5313` and :issue:`5331`.
 
 The *spawn* and *forkserver* start methods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There are a few extra restriction which don't apply to the *fork*
+There are a few extra restrictions which don't apply to the *fork*
 start method.
 
 More picklability
@@ -2946,7 +2946,7 @@ Global variables
 Safe importing of main module
 
     Make sure that the main module can be safely imported by a new Python
-    interpreter without causing unintended side effects (such a starting a new
+    interpreter without causing unintended side effects (such as starting a new
     process).
 
     For example, using the *spawn* or *forkserver* start method
