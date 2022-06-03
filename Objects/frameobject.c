@@ -458,24 +458,30 @@ _PyFrame_GetState(PyFrameObject *frame)
 static void
 add_load_fast_null_checks(PyCodeObject *co)
 {
+    int changed = 0;
     _Py_CODEUNIT *instructions = _PyCode_CODE(co);
     for (Py_ssize_t i = 0; i < Py_SIZE(co); i++) {
         switch (_Py_OPCODE(instructions[i])) {
             case LOAD_FAST:
             case LOAD_FAST__LOAD_FAST:
             case LOAD_FAST__LOAD_CONST:
+                changed = 1;
                 _Py_SET_OPCODE(instructions[i], LOAD_FAST_CHECK);
                 break;
             case LOAD_CONST__LOAD_FAST:
+                changed = 1;
                 _Py_SET_OPCODE(instructions[i], LOAD_CONST);
                 break;
             case STORE_FAST__LOAD_FAST:
+                changed = 1;
                 _Py_SET_OPCODE(instructions[i], STORE_FAST);
                 break;
         }
     }
-    // invalidate cached co_code object
-    Py_CLEAR(co->_co_code);
+    if (changed) {
+        // invalidate cached co_code object
+        Py_CLEAR(co->_co_code);
+    }
 }
 
 /* Setter for f_lineno - you can set f_lineno from within a trace function in
