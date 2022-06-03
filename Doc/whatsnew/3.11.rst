@@ -306,23 +306,23 @@ Kumar Srinivasan and Graham Bleaney.)
 PEP 681: Data Class Transforms
 ------------------------------
 
-The new :data:`~typing.dataclass_transform` annotation may be used to
-decorate a function that is itself a decorator, a class, or a metaclass.
+:data:`~typing.dataclass_transform` may be used to
+decorate a class, metaclass, or a function that is itself a decorator.
 The presence of ``@dataclass_transform()`` tells a static type checker that the
-decorated function, class, or metaclass performs runtime "magic" that
-transforms a class, endowing it with dataclass-like behaviors.
+decorated object performs runtime "magic" that
+transforms a class, giving it :func:`dataclasses.dataclass`-like behaviors.
 
 For example::
 
-    # The ``create_model`` decorator is defined by a library.
+    # The create_model decorator is defined by a library.
     @typing.dataclass_transform()
-    def create_model(cls: Type[_T]) -> Type[_T]:
+    def create_model(cls: Type[T]) -> Type[T]:
         cls.__init__ = ...
         cls.__eq__ = ...
         cls.__ne__ = ...
         return cls
 
-    # The ``create_model`` decorator can now be used to create new model
+    # The create_model decorator can now be used to create new model
     # classes, like this:
     @create_model
     class CustomerModel:
@@ -1221,7 +1221,11 @@ Deprecated
   removed in Python 3.13. Use :func:`locale.setlocale`,
   :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
   :func:`locale.getlocale` functions instead.
-  (Contributed by Victor Stinner in :issue:`46659`.)
+  (Contributed by Victor Stinner in :gh:`90817`.)
+
+* The :func:`locale.resetlocale` function is deprecated and will be
+  removed in Python 3.13. Use ``locale.setlocale(locale.LC_ALL, "")`` instead.
+  (Contributed by Victor Stinner in :gh:`90817`.)
 
 * The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
   deprecated since at least Python 3.6. Their documentation and deprecation
@@ -1272,6 +1276,11 @@ Deprecated
 * The keyword argument syntax for constructing :data:`~typing.TypedDict` types
   is now deprecated. Support will be removed in Python 3.13. (Contributed by
   Jingchen Ye in :gh:`90224`.)
+
+* The :func:`re.template` function and the corresponding :const:`re.TEMPLATE`
+  and :const:`re.T` flags are deprecated, as they were undocumented and
+  lacked an obvious purpose. They will be removed in Python 3.13.
+  (Contributed by Serhiy Storchaka and Miro Hrončok in :gh:`92728`.)
 
 
 Pending Removal in Python 3.12

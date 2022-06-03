@@ -26,6 +26,7 @@ ac_cv_func_mkfifo=no
 ac_cv_func_mkfifoat=no
 ac_cv_func_mknod=no
 ac_cv_func_mknodat=no
+ac_cv_func_makedev=no
 
 # fdopendir() fails on SDK 15.0,
 # OSError: [Errno 28] Invalid argument: '.'

@@ -23,6 +23,9 @@ on:
     paths:
     - 'Tools/msi/**'
 
+permissions:
+  contents: read
+
 jobs:
   build_win32:
     name: 'Windows (x86) Installer'
