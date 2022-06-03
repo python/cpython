@@ -592,7 +592,7 @@ def _unpack_opargs(code):
         caches = _inline_cache_entries[deop]
         if deop >= HAVE_ARGUMENT:
             arg = code[i+1] | extended_arg
-            extended_arg = (arg << 8) if op == EXTENDED_ARG else 0
+            extended_arg = (arg << 8) if deop == EXTENDED_ARG else 0
             # The oparg is stored as a signed integer
             # If the value exceeds its upper limit, it will overflow and wrap
             # to a negative integer
