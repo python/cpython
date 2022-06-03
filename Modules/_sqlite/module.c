@@ -707,6 +707,10 @@ module_exec(PyObject *module)
         goto error;
     }
 
+    if (PyModule_AddStringConstant(module, "_deprecated_version", PYSQLITE_VERSION) < 0) {
+        goto error;
+    }
+
     if (PyModule_AddStringConstant(module, "sqlite_version", sqlite3_libversion())) {
         goto error;
     }
