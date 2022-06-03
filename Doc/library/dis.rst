@@ -49,7 +49,7 @@ the following command can be used to display the disassembly of
 
    >>> dis.dis(myfunc)
      1           0 RESUME                   0
-<BLANKLINE>
+   <BLANKLINE>
      2           2 LOAD_GLOBAL              1 (NULL + len)
                 14 LOAD_FAST                0 (alist)
                 16 CALL                     1
