@@ -266,6 +266,8 @@ The following functions and structs are used to create
       Array of :c:type:`PyType_Slot` structures.
       Terminated by the special slot value ``{0, NULL}``.
 
+      Each slot ID should be specified at most once.
+
 .. c:type:: PyType_Slot
 
    Structure defining optional functionality of a type, containing a slot ID
