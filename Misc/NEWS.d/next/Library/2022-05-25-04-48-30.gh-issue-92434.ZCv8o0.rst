@@ -1,2 +1,2 @@
 :meth:`sqlite3.Connection.serialize` now raises :exc:`OverflowError` on 32-bit
-platforms if the serialized database exceeds ``Py_SSIZE_T_MAX`` bytes.
+platforms if the serialized database exceeds ``INT_MAX`` bytes.
