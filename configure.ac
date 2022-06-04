@@ -1094,7 +1094,7 @@ AS_CASE([$PY_SUPPORT_TIER],
   [AC_MSG_RESULT([$host/$ac_cv_cc_name is not supported])]
 )
 
-AC_DEFINE_UNQUOTED([PY_SUPPORT_TIER], [$PY_SUPPORT_TIER], [Support tier (1, 2, 3 or 0 for unsupported)])
+AC_DEFINE_UNQUOTED([PY_SUPPORT_TIER], [$PY_SUPPORT_TIER], [PEP 11 Support tier (1, 2, 3 or 0 for unsupported)])
 
 AC_CACHE_CHECK([for -Wl,--no-as-needed], [ac_cv_wl_no_as_needed], [
   save_LDFLAGS="$LDFLAGS"

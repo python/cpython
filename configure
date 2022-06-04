@@ -5225,7 +5225,7 @@ cat > conftest.c <<EOF
 #elif defined(__ibmxl__) || defined(__xlc__) || defined(__xlC__)
   xlc
 #elif defined(_MSC_VER)
-   msvc
+  msvc
 #elif defined(__clang__)
   clang
 #elif defined(__GNUC__)
@@ -26393,12 +26393,12 @@ fi
 if test "x$PY_SUPPORT_TIER" = x0; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}:
 
-Platform \"$host\" with compiler \"$ac_cv_cc_name\" is not yet supported by
+Platform \"$host\" with compiler \"$ac_cv_cc_name\" is not yet supported by the
 CPython core team, see https://peps.python.org/pep-0011/ for more information.
 " >&5
 $as_echo "$as_me:
 
-Platform \"$host\" with compiler \"$ac_cv_cc_name\" is not yet supported by
+Platform \"$host\" with compiler \"$ac_cv_cc_name\" is not yet supported by the
 CPython core team, see https://peps.python.org/pep-0011/ for more information.
 " >&6;}
 fi
