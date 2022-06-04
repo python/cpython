@@ -63,7 +63,7 @@ class TestPgen2Caching(support.TestCase):
 
     @unittest.skipIf(sys.executable is None, 'sys.executable required')
     @unittest.skipIf(
-        sys.platform == 'emscripten', 'requires working subprocess'
+        sys.platform in {'emscripten', 'wasi'}, 'requires working subprocess'
     )
     def test_load_grammar_from_subprocess(self):
         tmpdir = tempfile.mkdtemp()

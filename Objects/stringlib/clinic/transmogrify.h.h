@@ -11,7 +11,7 @@ PyDoc_STRVAR(stringlib_expandtabs__doc__,
 "If tabsize is not given, a tab size of 8 characters is assumed.");
 
 #define STRINGLIB_EXPANDTABS_METHODDEF    \
-    {"expandtabs", (PyCFunction)(void(*)(void))stringlib_expandtabs, METH_FASTCALL|METH_KEYWORDS, stringlib_expandtabs__doc__},
+    {"expandtabs", _PyCFunction_CAST(stringlib_expandtabs), METH_FASTCALL|METH_KEYWORDS, stringlib_expandtabs__doc__},
 
 static PyObject *
 stringlib_expandtabs_impl(PyObject *self, int tabsize);
@@ -53,7 +53,7 @@ PyDoc_STRVAR(stringlib_ljust__doc__,
 "Padding is done using the specified fill character.");
 
 #define STRINGLIB_LJUST_METHODDEF    \
-    {"ljust", (PyCFunction)(void(*)(void))stringlib_ljust, METH_FASTCALL, stringlib_ljust__doc__},
+    {"ljust", _PyCFunction_CAST(stringlib_ljust), METH_FASTCALL, stringlib_ljust__doc__},
 
 static PyObject *
 stringlib_ljust_impl(PyObject *self, Py_ssize_t width, char fillchar);
@@ -109,7 +109,7 @@ PyDoc_STRVAR(stringlib_rjust__doc__,
 "Padding is done using the specified fill character.");
 
 #define STRINGLIB_RJUST_METHODDEF    \
-    {"rjust", (PyCFunction)(void(*)(void))stringlib_rjust, METH_FASTCALL, stringlib_rjust__doc__},
+    {"rjust", _PyCFunction_CAST(stringlib_rjust), METH_FASTCALL, stringlib_rjust__doc__},
 
 static PyObject *
 stringlib_rjust_impl(PyObject *self, Py_ssize_t width, char fillchar);
@@ -165,7 +165,7 @@ PyDoc_STRVAR(stringlib_center__doc__,
 "Padding is done using the specified fill character.");
 
 #define STRINGLIB_CENTER_METHODDEF    \
-    {"center", (PyCFunction)(void(*)(void))stringlib_center, METH_FASTCALL, stringlib_center__doc__},
+    {"center", _PyCFunction_CAST(stringlib_center), METH_FASTCALL, stringlib_center__doc__},
 
 static PyObject *
 stringlib_center_impl(PyObject *self, Py_ssize_t width, char fillchar);
@@ -249,4 +249,4 @@ stringlib_zfill(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2d9abc7b1cffeca6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=46d058103bffedf7 input=a9049054013a1b77]*/

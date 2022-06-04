@@ -11,6 +11,9 @@ HOST = "localhost"
 HOSTv4 = "127.0.0.1"
 HOSTv6 = "::1"
 
+# WASI SDK 15.0 does not provide gethostname, stub raises OSError ENOTSUP.
+has_gethostname = not support.is_wasi
+
 
 def find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM):
     """Returns an unused port that should be suitable for binding.  This is

@@ -28,6 +28,7 @@ socket.getdefaulttimeout() -- get the default timeout value
 socket.setdefaulttimeout() -- set the default timeout value
 create_connection() -- connects to an address, with an optional timeout and
                        optional source address.
+create_server() -- create a TCP socket and bind it to a specified address.
 
  [*] not available on all platforms!
 

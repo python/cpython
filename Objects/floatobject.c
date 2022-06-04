@@ -141,6 +141,7 @@ PyFloat_FromDouble(double fval)
 #endif
         state->free_list = (PyFloatObject *) Py_TYPE(op);
         state->numfree--;
+        OBJECT_STAT_INC(from_freelist);
     }
     else
 #endif
@@ -256,6 +257,7 @@ _PyFloat_ExactDealloc(PyObject *obj)
     state->numfree++;
     Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
     state->free_list = op;
+    OBJECT_STAT_INC(to_freelist);
 #else
     PyObject_Free(op);
 #endif

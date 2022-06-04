@@ -88,6 +88,7 @@ typedef uint16_t _Py_CODEUNIT;
     PyObject *co_qualname;        /* unicode (qualname, for reference) */      \
     PyObject *co_linetable;       /* bytes object that holds location info */  \
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
+    void *_co_code;               /* cached co_code object/attribute */        \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \
        people to go through the proper APIs. */                                \
@@ -202,6 +203,9 @@ PyAPI_FUNC(int) _PyCode_GetExtra(PyObject *code, Py_ssize_t index,
 PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
                                  void *extra);
 
+/* Equivalent to getattr(code, 'co_code') in Python.
+   Returns a strong reference to a bytes object. */
+PyAPI_FUNC(PyObject *) PyCode_GetCode(PyCodeObject *code);
 
 typedef enum _PyCodeLocationInfoKind {
     /* short forms are 0 to 9 */

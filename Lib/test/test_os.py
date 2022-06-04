@@ -11,7 +11,6 @@ import fnmatch
 import fractions
 import itertools
 import locale
-import mmap
 import os
 import pickle
 import select
@@ -59,6 +58,10 @@ try:
 except ImportError:
     INT_MAX = PY_SSIZE_T_MAX = sys.maxsize
 
+try:
+    import mmap
+except ImportError:
+    mmap = None
 
 from test.support.script_helper import assert_python_ok
 from test.support import unix_shell
@@ -182,6 +185,9 @@ class FileTests(unittest.TestCase):
 
     @unittest.skipIf(
         support.is_emscripten, "Test is unstable under Emscripten."
+    )
+    @unittest.skipIf(
+        support.is_wasi, "WASI does not support dup."
     )
     def test_closerange(self):
         first = os.open(os_helper.TESTFN, os.O_CREAT|os.O_RDWR)
@@ -1585,7 +1591,10 @@ class MakedirTests(unittest.TestCase):
                             'dir5', 'dir6')
         os.makedirs(path)
 
-    @unittest.skipIf(support.is_emscripten, "Emscripten's umask is a stub.")
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "Emscripten's/WASI's umask is a stub."
+    )
     def test_mode(self):
         with os_helper.temp_umask(0o002):
             base = os_helper.TESTFN
@@ -1762,6 +1771,7 @@ class RemoveDirsTests(unittest.TestCase):
         self.assertTrue(os.path.exists(os_helper.TESTFN))
 
 
+@unittest.skipIf(support.is_wasi, "WASI has no /dev/null")
 class DevNullTests(unittest.TestCase):
     def test_devnull(self):
         with open(os.devnull, 'wb', 0) as f:
@@ -2108,6 +2118,7 @@ class Win32ErrorTests(unittest.TestCase):
         self.assertRaises(OSError, os.chmod, os_helper.TESTFN, 0)
 
 
+@unittest.skipIf(support.is_wasi, "Cannot create invalid FD on WASI.")
 class TestInvalidFD(unittest.TestCase):
     singles = ["fchdir", "dup", "fdatasync", "fstat",
                "fstatvfs", "fsync", "tcgetpgrp", "ttyname"]
@@ -2167,7 +2178,8 @@ class TestInvalidFD(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'fpathconf'), 'test needs os.fpathconf()')
     @unittest.skipIf(
-        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+        support.is_emscripten or support.is_wasi,
+        "musl libc issue on Emscripten/WASI, bpo-46390"
     )
     def test_fpathconf(self):
         self.check(os.pathconf, "PC_NAME_MAX")
@@ -2460,6 +2472,7 @@ class Win32KillTests(unittest.TestCase):
         # os.kill on Windows can take an int which gets set as the exit code
         self._kill(100)
 
+    @unittest.skipIf(mmap is None, "requires mmap")
     def _kill_with_event(self, event, name):
         tagname = "test_os_%s" % uuid.uuid1()
         m = mmap.mmap(-1, 1, tagname)

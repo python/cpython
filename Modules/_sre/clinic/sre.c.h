@@ -164,7 +164,7 @@ PyDoc_STRVAR(_sre_SRE_Pattern_match__doc__,
 "Matches zero or more characters at the beginning of the string.");
 
 #define _SRE_SRE_PATTERN_MATCH_METHODDEF    \
-    {"match", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_match, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_match__doc__},
+    {"match", _PyCFunction_CAST(_sre_SRE_Pattern_match), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_match__doc__},
 
 static PyObject *
 _sre_SRE_Pattern_match_impl(PatternObject *self, PyTypeObject *cls,
@@ -234,7 +234,7 @@ PyDoc_STRVAR(_sre_SRE_Pattern_fullmatch__doc__,
 "Matches against all of the string.");
 
 #define _SRE_SRE_PATTERN_FULLMATCH_METHODDEF    \
-    {"fullmatch", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_fullmatch, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_fullmatch__doc__},
+    {"fullmatch", _PyCFunction_CAST(_sre_SRE_Pattern_fullmatch), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_fullmatch__doc__},
 
 static PyObject *
 _sre_SRE_Pattern_fullmatch_impl(PatternObject *self, PyTypeObject *cls,
@@ -306,7 +306,7 @@ PyDoc_STRVAR(_sre_SRE_Pattern_search__doc__,
 "Return None if no position in the string matches.");
 
 #define _SRE_SRE_PATTERN_SEARCH_METHODDEF    \
-    {"search", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_search, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_search__doc__},
+    {"search", _PyCFunction_CAST(_sre_SRE_Pattern_search), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_search__doc__},
 
 static PyObject *
 _sre_SRE_Pattern_search_impl(PatternObject *self, PyTypeObject *cls,
@@ -376,7 +376,7 @@ PyDoc_STRVAR(_sre_SRE_Pattern_findall__doc__,
 "Return a list of all non-overlapping matches of pattern in string.");
 
 #define _SRE_SRE_PATTERN_FINDALL_METHODDEF    \
-    {"findall", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_findall, METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_findall__doc__},
+    {"findall", _PyCFunction_CAST(_sre_SRE_Pattern_findall), METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_findall__doc__},
 
 static PyObject *
 _sre_SRE_Pattern_findall_impl(PatternObject *self, PyObject *string,
@@ -447,7 +447,7 @@ PyDoc_STRVAR(_sre_SRE_Pattern_finditer__doc__,
 "For each match, the iterator returns a match object.");
 
 #define _SRE_SRE_PATTERN_FINDITER_METHODDEF    \
-    {"finditer", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_finditer, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_finditer__doc__},
+    {"finditer", _PyCFunction_CAST(_sre_SRE_Pattern_finditer), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_finditer__doc__},
 
 static PyObject *
 _sre_SRE_Pattern_finditer_impl(PatternObject *self, PyTypeObject *cls,
@@ -516,7 +516,7 @@ PyDoc_STRVAR(_sre_SRE_Pattern_scanner__doc__,
 "\n");
 
 #define _SRE_SRE_PATTERN_SCANNER_METHODDEF    \
-    {"scanner", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_scanner, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_scanner__doc__},
+    {"scanner", _PyCFunction_CAST(_sre_SRE_Pattern_scanner), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_scanner__doc__},
 
 static PyObject *
 _sre_SRE_Pattern_scanner_impl(PatternObject *self, PyTypeObject *cls,
@@ -586,7 +586,7 @@ PyDoc_STRVAR(_sre_SRE_Pattern_split__doc__,
 "Split string by the occurrences of pattern.");
 
 #define _SRE_SRE_PATTERN_SPLIT_METHODDEF    \
-    {"split", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_split, METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_split__doc__},
+    {"split", _PyCFunction_CAST(_sre_SRE_Pattern_split), METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_split__doc__},
 
 static PyObject *
 _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
@@ -637,7 +637,7 @@ PyDoc_STRVAR(_sre_SRE_Pattern_sub__doc__,
 "Return the string obtained by replacing the leftmost non-overlapping occurrences of pattern in string by the replacement repl.");
 
 #define _SRE_SRE_PATTERN_SUB_METHODDEF    \
-    {"sub", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_sub, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_sub__doc__},
+    {"sub", _PyCFunction_CAST(_sre_SRE_Pattern_sub), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_sub__doc__},
 
 static PyObject *
 _sre_SRE_Pattern_sub_impl(PatternObject *self, PyTypeObject *cls,
@@ -690,7 +690,7 @@ PyDoc_STRVAR(_sre_SRE_Pattern_subn__doc__,
 "Return the tuple (new_string, number_of_subs_made) found by replacing the leftmost non-overlapping occurrences of pattern with the replacement repl.");
 
 #define _SRE_SRE_PATTERN_SUBN_METHODDEF    \
-    {"subn", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_subn, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_subn__doc__},
+    {"subn", _PyCFunction_CAST(_sre_SRE_Pattern_subn), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_subn__doc__},
 
 static PyObject *
 _sre_SRE_Pattern_subn_impl(PatternObject *self, PyTypeObject *cls,
@@ -769,7 +769,7 @@ PyDoc_STRVAR(_sre_compile__doc__,
 "\n");
 
 #define _SRE_COMPILE_METHODDEF    \
-    {"compile", (PyCFunction)(void(*)(void))_sre_compile, METH_FASTCALL|METH_KEYWORDS, _sre_compile__doc__},
+    {"compile", _PyCFunction_CAST(_sre_compile), METH_FASTCALL|METH_KEYWORDS, _sre_compile__doc__},
 
 static PyObject *
 _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
@@ -852,7 +852,7 @@ PyDoc_STRVAR(_sre_SRE_Match_expand__doc__,
 "Return the string obtained by doing backslash substitution on the string template, as done by the sub() method.");
 
 #define _SRE_SRE_MATCH_EXPAND_METHODDEF    \
-    {"expand", (PyCFunction)(void(*)(void))_sre_SRE_Match_expand, METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Match_expand__doc__},
+    {"expand", _PyCFunction_CAST(_sre_SRE_Match_expand), METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Match_expand__doc__},
 
 static PyObject *
 _sre_SRE_Match_expand_impl(MatchObject *self, PyObject *template);
@@ -887,7 +887,7 @@ PyDoc_STRVAR(_sre_SRE_Match_groups__doc__,
 "    Is used for groups that did not participate in the match.");
 
 #define _SRE_SRE_MATCH_GROUPS_METHODDEF    \
-    {"groups", (PyCFunction)(void(*)(void))_sre_SRE_Match_groups, METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Match_groups__doc__},
+    {"groups", _PyCFunction_CAST(_sre_SRE_Match_groups), METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Match_groups__doc__},
 
 static PyObject *
 _sre_SRE_Match_groups_impl(MatchObject *self, PyObject *default_value);
@@ -927,7 +927,7 @@ PyDoc_STRVAR(_sre_SRE_Match_groupdict__doc__,
 "    Is used for groups that did not participate in the match.");
 
 #define _SRE_SRE_MATCH_GROUPDICT_METHODDEF    \
-    {"groupdict", (PyCFunction)(void(*)(void))_sre_SRE_Match_groupdict, METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Match_groupdict__doc__},
+    {"groupdict", _PyCFunction_CAST(_sre_SRE_Match_groupdict), METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Match_groupdict__doc__},
 
 static PyObject *
 _sre_SRE_Match_groupdict_impl(MatchObject *self, PyObject *default_value);
@@ -964,7 +964,7 @@ PyDoc_STRVAR(_sre_SRE_Match_start__doc__,
 "Return index of the start of the substring matched by group.");
 
 #define _SRE_SRE_MATCH_START_METHODDEF    \
-    {"start", (PyCFunction)(void(*)(void))_sre_SRE_Match_start, METH_FASTCALL, _sre_SRE_Match_start__doc__},
+    {"start", _PyCFunction_CAST(_sre_SRE_Match_start), METH_FASTCALL, _sre_SRE_Match_start__doc__},
 
 static Py_ssize_t
 _sre_SRE_Match_start_impl(MatchObject *self, PyObject *group);
@@ -1001,7 +1001,7 @@ PyDoc_STRVAR(_sre_SRE_Match_end__doc__,
 "Return index of the end of the substring matched by group.");
 
 #define _SRE_SRE_MATCH_END_METHODDEF    \
-    {"end", (PyCFunction)(void(*)(void))_sre_SRE_Match_end, METH_FASTCALL, _sre_SRE_Match_end__doc__},
+    {"end", _PyCFunction_CAST(_sre_SRE_Match_end), METH_FASTCALL, _sre_SRE_Match_end__doc__},
 
 static Py_ssize_t
 _sre_SRE_Match_end_impl(MatchObject *self, PyObject *group);
@@ -1038,7 +1038,7 @@ PyDoc_STRVAR(_sre_SRE_Match_span__doc__,
 "For match object m, return the 2-tuple (m.start(group), m.end(group)).");
 
 #define _SRE_SRE_MATCH_SPAN_METHODDEF    \
-    {"span", (PyCFunction)(void(*)(void))_sre_SRE_Match_span, METH_FASTCALL, _sre_SRE_Match_span__doc__},
+    {"span", _PyCFunction_CAST(_sre_SRE_Match_span), METH_FASTCALL, _sre_SRE_Match_span__doc__},
 
 static PyObject *
 _sre_SRE_Match_span_impl(MatchObject *self, PyObject *group);
@@ -1094,7 +1094,7 @@ PyDoc_STRVAR(_sre_SRE_Scanner_match__doc__,
 "\n");
 
 #define _SRE_SRE_SCANNER_MATCH_METHODDEF    \
-    {"match", (PyCFunction)(void(*)(void))_sre_SRE_Scanner_match, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Scanner_match__doc__},
+    {"match", _PyCFunction_CAST(_sre_SRE_Scanner_match), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Scanner_match__doc__},
 
 static PyObject *
 _sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls);
@@ -1115,7 +1115,7 @@ PyDoc_STRVAR(_sre_SRE_Scanner_search__doc__,
 "\n");
 
 #define _SRE_SRE_SCANNER_SEARCH_METHODDEF    \
-    {"search", (PyCFunction)(void(*)(void))_sre_SRE_Scanner_search, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Scanner_search__doc__},
+    {"search", _PyCFunction_CAST(_sre_SRE_Scanner_search), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Scanner_search__doc__},
 
 static PyObject *
 _sre_SRE_Scanner_search_impl(ScannerObject *self, PyTypeObject *cls);
@@ -1129,4 +1129,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyTypeObject *cls, PyObject *const 
     }
     return _sre_SRE_Scanner_search_impl(self, cls);
 }
-/*[clinic end generated code: output=8d8200b2177cd667 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=97e7ce058366760b input=a9049054013a1b77]*/

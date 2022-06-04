@@ -15,7 +15,7 @@ operating system::
 
    >>> import os
    >>> os.getcwd()      # Return the current working directory
-   'C:\\Python311'
+   'C:\\Python312'
    >>> os.chdir('/server/accesslogs')   # Change current working directory
    >>> os.system('mkdir today')   # Run the command mkdir in the system shell
    0
@@ -327,7 +327,7 @@ Python has a "batteries included" philosophy.  This is best seen through the
 sophisticated and robust capabilities of its larger packages. For example:
 
 * The :mod:`xmlrpc.client` and :mod:`xmlrpc.server` modules make implementing
-  remote procedure calls into an almost trivial task.  Despite the modules
+  remote procedure calls into an almost trivial task.  Despite the modules'
   names, no direct knowledge or handling of XML is needed.
 
 * The :mod:`email` package is a library for managing email messages, including
