@@ -1,0 +1,2 @@
+Expand range of matches for ``%Z`` with :meth:`datetime.datetime.strptime`
+to additionally include any two to five character abbreviations.
