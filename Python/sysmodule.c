@@ -292,11 +292,7 @@ _PySys_Audit(PyThreadState *tstate, const char *event,
              const char *argFormat, ...)
 {
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, argFormat);
-#else
-    va_start(vargs);
-#endif
     int res = sys_audit_tstate(tstate, event, argFormat, vargs);
     va_end(vargs);
     return res;
@@ -307,11 +303,7 @@ PySys_Audit(const char *event, const char *argFormat, ...)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, argFormat);
-#else
-    va_start(vargs);
-#endif
     int res = sys_audit_tstate(tstate, event, argFormat, vargs);
     va_end(vargs);
     return res;

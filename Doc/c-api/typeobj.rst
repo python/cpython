@@ -2071,7 +2071,7 @@ flag set.
 
 This is done by filling a :c:type:`PyType_Spec` structure and calling
 :c:func:`PyType_FromSpec`, :c:func:`PyType_FromSpecWithBases`,
-or :c:func:`PyType_FromModuleAndSpec`.
+:c:func:`PyType_FromModuleAndSpec`, or :c:func:`PyType_FromMetaclass`.
 
 
 .. _number-structs:

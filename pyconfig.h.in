@@ -44,9 +44,6 @@
 /* Define if --enable-ipv6 is specified */
 #undef ENABLE_IPV6
 
-/* Better isolate subinterpreters, experimental build mode. */
-#undef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-
 /* Define to 1 if your system stores words within floats with the most
    significant word first */
 #undef FLOAT_WORDS_BIGENDIAN
@@ -1114,10 +1111,6 @@
 
 /* Define if you have struct stat.st_mtimensec */
 #undef HAVE_STAT_TV_NSEC2
-
-/* Define if your compiler supports variable length function prototypes (e.g.
-   void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
-#undef HAVE_STDARG_PROTOTYPES
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
