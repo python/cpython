@@ -27,6 +27,8 @@ import collections.abc
 from _sqlite3 import *
 from _sqlite3 import _deprecated_version
 
+_deprecated_names = ["version", "version_info"]
+
 paramstyle = "qmark"
 
 apilevel = "2.0"
@@ -87,7 +89,6 @@ register_adapters_and_converters()
 
 del(register_adapters_and_converters)
 
-_deprecated_names = ["version", "version_info"]
 
 def __getattr__(name):
     if name in _deprecated_names:

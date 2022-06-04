@@ -60,7 +60,6 @@ from sqlite3.dbapi2 import ( _deprecated_names,
                             _deprecated_version)
 
 def __getattr__(name):
-    
     if name in _deprecated_names:
         from warnings import warn
         warn(f"{name} is deprecated. Will be removed in python 3.14", DeprecationWarning, stacklevel=2)
