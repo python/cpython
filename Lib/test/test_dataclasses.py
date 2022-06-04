@@ -1442,15 +1442,26 @@ class TestCase(unittest.TestCase):
                     replace(obj, x=0)
 
     def test_is_dataclass_genericalias(self):
+        T = TypeVar("T")
         @dataclass
         class A(types.GenericAlias):
             origin: type
             args: type
+        @dataclass
+        class B(Generic[T]):
+            a: T
+        @dataclass
+        class C(Generic[T]):
+            a: T
+            __class_getitem__ = classmethod(types.GenericAlias)
         self.assertTrue(is_dataclass(A))
+        self.assertTrue(is_dataclass(B))
+        self.assertTrue(is_dataclass(C))
+        self.assertTrue(is_dataclass(B[int]))
+        self.assertTrue(is_dataclass(C[int]))
         a = A(list, int)
         self.assertTrue(is_dataclass(type(a)))
         self.assertTrue(is_dataclass(a))
-
 
     def test_helper_fields_with_class_instance(self):
         # Check that we can call fields() on either a class or instance,

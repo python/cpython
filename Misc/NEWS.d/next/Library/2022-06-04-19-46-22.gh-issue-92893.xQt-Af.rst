@@ -1,0 +1,2 @@
+Fix issue when ``dataclassses.is_dataclass`` returns ``False`` for generic
+aliases. Patch provided by Yurii Karabas.

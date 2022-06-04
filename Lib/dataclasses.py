@@ -1243,6 +1243,12 @@ def _is_dataclass_instance(obj):
 def is_dataclass(obj):
     """Returns True if obj is a dataclass or an instance of a
     dataclass."""
+    typing = sys.modules.get('typing')
+
+    if typing:
+        if isinstance(obj, (typing._GenericAlias, GenericAlias)) and is_dataclass(typing.get_origin(obj)):
+            return True
+
     cls = obj if isinstance(obj, type) and not isinstance(obj, GenericAlias) else type(obj)
     return hasattr(cls, _FIELDS)
 
