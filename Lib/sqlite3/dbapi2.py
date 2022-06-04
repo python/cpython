@@ -39,18 +39,14 @@ Time = datetime.time
 
 Timestamp = datetime.datetime
 
-
 def DateFromTicks(ticks):
     return Date(*time.localtime(ticks)[:3])
-
 
 def TimeFromTicks(ticks):
     return Time(*time.localtime(ticks)[3:6])
 
-
 def TimestampFromTicks(ticks):
     return Timestamp(*time.localtime(ticks)[:6])
-
 
 _deprecated_version_info = tuple(
     [int(x) for x in _deprecated_version.split(".")])
@@ -83,18 +79,17 @@ def register_adapters_and_converters():
         val = datetime.datetime(year, month, day, hours, minutes, seconds, microseconds)
         return val
 
+
     register_adapter(datetime.date, adapt_date)
     register_adapter(datetime.datetime, adapt_datetime)
     register_converter("date", convert_date)
     register_converter("timestamp", convert_timestamp)
-
 
 register_adapters_and_converters()
 
 # Clean up namespace
 
 del(register_adapters_and_converters)
-
 
 def __getattr__(name):
     if name in _deprecated_names:
