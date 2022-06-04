@@ -839,6 +839,7 @@
     <Compile Include="test\sample_doctest_no_doctests.py" />
     <Compile Include="test\seq_tests.py" />
     <Compile Include="test\signalinterproctester.py" />
+    <Compile Include="test\smtpd.py" />
     <Compile Include="test\sortperf.py" />
     <Compile Include="test\ssltests.py" />
     <Compile Include="test\ssl_servers.py" />
@@ -1580,7 +1581,6 @@
     <Compile Include="_pydecimal.py" />
     <Compile Include="_pyio.py" />
     <Compile Include="_sitebuiltins.py" />
-    <Compile Include="_smtpd.py" />
     <Compile Include="_strptime.py" />
     <Compile Include="_threading_local.py" />
     <Compile Include="_weakrefset.py" />

@@ -68,7 +68,6 @@ static const char* _Py_stdlib_module_names[] = {
 "_sha512",
 "_signal",
 "_sitebuiltins",
-"_smtpd",
 "_socket",
 "_sqlite3",
 "_sre",
