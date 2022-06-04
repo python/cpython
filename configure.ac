@@ -781,7 +781,7 @@ cat > conftest.c <<EOF
 #elif defined(__ibmxl__) || defined(__xlc__) || defined(__xlC__)
   xlc
 #elif defined(_MSC_VER)
-   msvc
+  msvc
 #elif defined(__clang__)
   clang
 #elif defined(__GNUC__)
@@ -6946,6 +6946,6 @@ fi
 
 AS_VAR_IF([PY_SUPPORT_TIER], [0], [AC_MSG_NOTICE([
 
-Platform "$host" with compiler "$ac_cv_cc_name" is not yet supported by
+Platform "$host" with compiler "$ac_cv_cc_name" is not yet supported by the
 CPython core team, see https://peps.python.org/pep-0011/ for more information.
 ])])
