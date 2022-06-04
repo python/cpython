@@ -126,7 +126,7 @@ Removed
   (and corresponding ``EXPERIMENTAL_ISOLATED_SUBINTERPRETERS``)
   have been removed.
 
-* :mod:`smtpd` has been removed according to the schedule in :pep:`594`, 
+* ``smtpd`` has been removed according to the schedule in :pep:`594`, 
   having been deprecated in Python 3.4.7 and 3.5.4.
   Use aiosmtpd_ PyPI module or any other
   :keyword:`async`/:keyword:`await`-based server instead.
@@ -159,8 +159,8 @@ Changes in the Python API
   select from a larger range than ``randrange(10**25)``.
   (Originally suggested by Serhiy Storchaka gh-86388.)
 
-* Removed the strictly synchronous smtpd module, deprecated in Python 3.4.7 and
-  3.5.4.  A recommended replacement is the
+* Removed the strictly synchronous ``smtpd`` module, deprecated in Python 3.4.7
+  and 3.5.4.  A recommended replacement is the
   :keyword:`async`/:keyword:`await`-based aiosmtpd_ PyPI module.
 
 
