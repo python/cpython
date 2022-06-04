@@ -48,8 +48,7 @@ def TimeFromTicks(ticks):
 def TimestampFromTicks(ticks):
     return Timestamp(*time.localtime(ticks)[:6])
 
-_deprecated_version_info = tuple(
-    [int(x) for x in _deprecated_version.split(".")])
+_deprecated_version_info = tuple(map(int, _deprecated_version.split(".")))
 sqlite_version_info = tuple([int(x) for x in sqlite_version.split(".")])
 
 Binary = memoryview
@@ -93,6 +92,7 @@ del(register_adapters_and_converters)
 def __getattr__(name):
     if name in _deprecated_names:
         from warnings import warn
+
         warn(f"{name} is deprecated and will be removed in Python 3.14",
              DeprecationWarning, stacklevel=2)
         return globals()[f"_deprecated_{name}"]
