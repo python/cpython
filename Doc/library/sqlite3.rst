@@ -149,7 +149,7 @@ Module functions and constants
 
    The version number of this module, as a tuple of integers. This is not the
    version of the SQLite library.
-   
+
    .. deprecated-removed:: 3.12 3.14
 
 
