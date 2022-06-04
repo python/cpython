@@ -27,7 +27,7 @@ import collections.abc
 from _sqlite3 import *
 from _sqlite3 import _deprecated_version
 
-_deprecated_names = ["version", "version_info"]
+_deprecated_names = frozenset({"version", "version_info"})
 
 paramstyle = "qmark"
 
