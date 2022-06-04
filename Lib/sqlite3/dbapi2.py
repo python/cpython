@@ -26,7 +26,6 @@ import collections.abc
 
 from _sqlite3 import *
 from _sqlite3 import _deprecated_version
-from warnings import warn
 
 paramstyle = "qmark"
 
@@ -88,10 +87,11 @@ register_adapters_and_converters()
 
 del(register_adapters_and_converters)
 
-deprecated_names = ["version", "version_info"]
+_deprecated_names = ["version", "version_info"]
 
 def __getattr__(name):
-    if name in deprecated_names:
+    if name in _deprecated_names:
+        from warnings import warn
         warn(f"{name} is deprecated. Will be removed in python 3.14", DeprecationWarning, stacklevel=2)
         return globals()[f"_deprecated_{name}"]
-    raise AttributeError(f"module {__name__} has no attribute {name}")
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
