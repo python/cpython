@@ -65,6 +65,14 @@ class ModuleTests(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             sqlite.version_info
 
+    def test_dbapi2_version(self):
+        with self.assertWarns(DeprecationWarning):
+            sqlite.dbapi2.version
+
+    def test_dbapi2_version_info(self):
+        with self.assertWarns(DeprecationWarning):
+            sqlite.dbapi2.version_info
+
     def test_thread_safety(self):
         self.assertIn(sqlite.threadsafety, {0, 1, 3},
                       "threadsafety is %d, should be 0, 1 or 3" %
