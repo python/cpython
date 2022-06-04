@@ -826,7 +826,7 @@ PyDoc_STRVAR(_winapi_LCMapStringEx__doc__,
 "\n");
 
 #define _WINAPI_LCMAPSTRINGEX_METHODDEF    \
-    {"LCMapStringEx", (PyCFunction)(void(*)(void))_winapi_LCMapStringEx, METH_FASTCALL|METH_KEYWORDS, _winapi_LCMapStringEx__doc__},
+    {"LCMapStringEx", _PyCFunction_CAST(_winapi_LCMapStringEx), METH_FASTCALL|METH_KEYWORDS, _winapi_LCMapStringEx__doc__},
 
 static PyObject *
 _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
@@ -850,13 +850,9 @@ _winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
 
 exit:
     /* Cleanup for locale */
-    #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)locale);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
     /* Cleanup for src */
-    #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)src);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
 
     return return_value;
 }
@@ -1205,4 +1201,4 @@ _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b007dde2e7f2fff8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6cdefec63a1d7f12 input=a9049054013a1b77]*/
