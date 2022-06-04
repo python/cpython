@@ -1,3 +1,3 @@
-Using Windows function ``LCMapStringEx`` in :func:``ntpath.normcase`` instead
-of :func:``str.lower`` to deal with non ASCII characters. The ``LCMapStringEx``
-is added in :mod:``_winapi`` module also.
+Support native Windows case-insensitive path comparisons by using
+``LCMapStringEx`` instead of :func:`str.lower` in :func:`ntpath.normcase`.
+Add ``LCMapStringEx`` to the :mod:`_winapi` module.
