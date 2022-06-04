@@ -126,8 +126,9 @@ Removed
   (and corresponding ``EXPERIMENTAL_ISOLATED_SUBINTERPRETERS``)
   have been removed.
 
-* :mod:`smtpd`, deprecated in Python 3.4.7 and 3.5.4, is now removed according
-  to :pep:`594` schedule. Use aiosmtpd_ PyPI module or any other
+* :mod:`smtpd` has been removed according to the schedule in :pep:`594`, 
+  having been deprecated in Python 3.4.7 and 3.5.4.
+  Use aiosmtpd_ PyPI module or any other
   :keyword:`async`/:keyword:`await`-based server instead.
   (Contributed by Oleg Iarygin in :gh:`93243`.)
 
