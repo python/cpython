@@ -13,7 +13,7 @@ import unittest
 from unittest import mock
 
 from test.support import import_helper
-from test.support import is_emscripten
+from test.support import is_emscripten, is_wasi
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 
@@ -465,6 +465,9 @@ class _BasePurePathTest(object):
         self.assertEqual(par[0], P('/a/b'))
         self.assertEqual(par[1], P('/a'))
         self.assertEqual(par[2], P('/'))
+        self.assertEqual(par[-1], P('/'))
+        self.assertEqual(par[-2], P('/a'))
+        self.assertEqual(par[-3], P('/a/b'))
         self.assertEqual(par[0:1], (P('/a/b'),))
         self.assertEqual(par[:2], (P('/a/b'), P('/a')))
         self.assertEqual(par[:-1], (P('/a/b'), P('/a')))
@@ -472,6 +475,8 @@ class _BasePurePathTest(object):
         self.assertEqual(par[::2], (P('/a/b'), P('/')))
         self.assertEqual(par[::-1], (P('/'), P('/a'), P('/a/b')))
         self.assertEqual(list(par), [P('/a/b'), P('/a'), P('/')])
+        with self.assertRaises(IndexError):
+            par[-4]
         with self.assertRaises(IndexError):
             par[3]
 
@@ -1530,6 +1535,7 @@ class _BasePathTest(object):
         p = self.cls('')
         self.assertEqual(p.stat(), os.stat('.'))
 
+    @unittest.skipIf(is_wasi, "WASI has no user accounts.")
     def test_expanduser_common(self):
         P = self.cls
         p = P('~')
@@ -2352,6 +2358,9 @@ class _BasePathTest(object):
     @unittest.skipIf(
         is_emscripten, "Unix sockets are not implemented on Emscripten."
     )
+    @unittest.skipIf(
+        is_wasi, "Cannot create socket on WASI."
+    )
     def test_is_socket_true(self):
         P = self.cls(BASE, 'mysock')
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -2508,7 +2517,8 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             print(path.resolve(strict))
 
     @unittest.skipIf(
-        is_emscripten, "umask is not implemented on Emscripten."
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
     )
     def test_open_mode(self):
         old_mask = os.umask(0)
@@ -2534,7 +2544,8 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             os.chdir(current_directory)
 
     @unittest.skipIf(
-        is_emscripten, "umask is not implemented on Emscripten."
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
     )
     def test_touch_mode(self):
         old_mask = os.umask(0)

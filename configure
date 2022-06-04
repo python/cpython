@@ -1061,7 +1061,6 @@ with_openssl
 with_openssl_rpath
 with_ssl_default_suites
 with_builtin_hashlib_hashes
-with_experimental_isolated_subinterpreters
 enable_test_modules
 '
       ac_precious_vars='build_alias
@@ -1861,9 +1860,6 @@ Optional Packages:
   --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2
                           builtin hash modules, md5, sha1, sha256, sha512,
                           sha3 (with shake), blake2
-  --with-experimental-isolated-subinterpreters
-                          better isolate subinterpreters, experimental build
-                          mode (default is no)
 
 Some influential environment variables:
   PKG_CONFIG  path to pkg-config utility
@@ -18418,52 +18414,6 @@ $as_echo "#define HAVE_PROTOTYPES 1" >>confdefs.h
 
 fi
 
-works=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for variable length prototypes and stdarg.h" >&5
-$as_echo_n "checking for variable length prototypes and stdarg.h... " >&6; }
-if ${ac_cv_stdarg_prototypes+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <stdarg.h>
-int foo(int x, ...) {
-	va_list va;
-	va_start(va, x);
-	va_arg(va, int);
-	va_arg(va, char *);
-	va_arg(va, double);
-	return 0;
-}
-
-int
-main ()
-{
-return foo(10, "", 3.14);
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_stdarg_prototypes=yes
-else
-  ac_cv_stdarg_prototypes=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_stdarg_prototypes" >&5
-$as_echo "$ac_cv_stdarg_prototypes" >&6; }
-if test "x$ac_cv_stdarg_prototypes" = xyes; then :
-
-
-$as_echo "#define HAVE_STDARG_PROTOTYPES 1" >>confdefs.h
-
-
-fi
-
 
 # check for socketpair
 
@@ -21150,72 +21100,6 @@ then
 	LIBS="$LIBS -framework CoreFoundation"
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for %zd printf() format support" >&5
-$as_echo_n "checking for %zd printf() format support... " >&6; }
-if ${ac_cv_have_size_t_format+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test "$cross_compiling" = yes; then :
-  ac_cv_have_size_t_format="cross -- assuming yes"
-
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <stdio.h>
-#include <stddef.h>
-#include <string.h>
-
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-
-#ifdef HAVE_SSIZE_T
-typedef ssize_t Py_ssize_t;
-#elif SIZEOF_VOID_P == SIZEOF_LONG
-typedef long Py_ssize_t;
-#else
-typedef int Py_ssize_t;
-#endif
-
-int main()
-{
-    char buffer[256];
-
-    if(sprintf(buffer, "%zd", (size_t)123) < 0)
-       	return 1;
-
-    if (strcmp(buffer, "123"))
-	return 1;
-
-    if (sprintf(buffer, "%zd", (Py_ssize_t)-123) < 0)
-       	return 1;
-
-    if (strcmp(buffer, "-123"))
-	return 1;
-
-    return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ac_cv_have_size_t_format=yes
-else
-  ac_cv_have_size_t_format=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have_size_t_format" >&5
-$as_echo "$ac_cv_have_size_t_format" >&6; }
-if test "$ac_cv_have_size_t_format" != no ; then
-
-$as_echo "#define PY_FORMAT_SIZE_T \"z\"" >>confdefs.h
-
-fi
-
 ac_fn_c_check_type "$LINENO" "socklen_t" "ac_cv_type_socklen_t" "
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -22475,30 +22359,6 @@ fi
 
 fi
 
-# --with-experimental-isolated-subinterpreters
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-experimental-isolated-subinterpreters" >&5
-$as_echo_n "checking for --with-experimental-isolated-subinterpreters... " >&6; }
-
-# Check whether --with-experimental-isolated-subinterpreters was given.
-if test "${with_experimental_isolated_subinterpreters+set}" = set; then :
-  withval=$with_experimental_isolated_subinterpreters;
-if test "$withval" != no
-then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; };
-  $as_echo "#define EXPERIMENTAL_ISOLATED_SUBINTERPRETERS 1" >>confdefs.h
-
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; };
-fi
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --disable-test-modules" >&5
@@ -22611,6 +22471,10 @@ case $ac_sys_system in #(
 
 
     py_cv_module__ctypes_test=n/a
+    py_cv_module_fcntl=n/a
+    py_cv_module_mmap=n/a
+    py_cv_module_resource=n/a
+    py_cv_module_termios=n/a
     py_cv_module_=n/a
 
 

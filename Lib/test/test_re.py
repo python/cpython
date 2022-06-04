@@ -1,6 +1,6 @@
 from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
-                          check_disallow_instantiation, is_emscripten)
+                          check_disallow_instantiation, is_emscripten, is_wasi)
 import locale
 import re
 import string
@@ -1943,7 +1943,10 @@ class ReTests(unittest.TestCase):
         # with ignore case.
         self.assertEqual(re.fullmatch('[a-c]+', 'ABC', re.I).span(), (0, 3))
 
-    @unittest.skipIf(is_emscripten, "musl libc issue on Emscripten, bpo-46390")
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "musl libc issue on Emscripten/WASI, bpo-46390"
+    )
     def test_locale_caching(self):
         # Issue #22410
         oldlocale = locale.setlocale(locale.LC_CTYPE)
@@ -1980,7 +1983,10 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.match(b'(?Li)\xc5', b'\xe5'))
         self.assertIsNone(re.match(b'(?Li)\xe5', b'\xc5'))
 
-    @unittest.skipIf(is_emscripten, "musl libc issue on Emscripten, bpo-46390")
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "musl libc issue on Emscripten/WASI, bpo-46390"
+    )
     def test_locale_compiled(self):
         oldlocale = locale.setlocale(locale.LC_CTYPE)
         self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
@@ -2380,6 +2386,30 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.fullmatch(r'(?s:(?>.*?\.).*)\Z', "a.txt")) # reproducer
         self.assertTrue(re.fullmatch(r'(?s:(?=(?P<g0>.*?\.))(?P=g0).*)\Z', "a.txt"))
 
+    def test_template_function_and_flag_is_deprecated(self):
+        with self.assertWarns(DeprecationWarning) as cm:
+            template_re1 = re.template(r'a')
+        self.assertIn('re.template()', str(cm.warning))
+        self.assertIn('is deprecated', str(cm.warning))
+        self.assertIn('function', str(cm.warning))
+        self.assertNotIn('flag', str(cm.warning))
+
+        with self.assertWarns(DeprecationWarning) as cm:
+            # we deliberately use more flags here to test that that still
+            # triggers the warning
+            # if paranoid, we could test multiple different combinations,
+            # but it's probably not worth it
+            template_re2 = re.compile(r'a', flags=re.TEMPLATE|re.UNICODE)
+        self.assertIn('re.TEMPLATE', str(cm.warning))
+        self.assertIn('is deprecated', str(cm.warning))
+        self.assertIn('flag', str(cm.warning))
+        self.assertNotIn('function', str(cm.warning))
+
+        # while deprecated, is should still function
+        self.assertEqual(template_re1, template_re2)
+        self.assertTrue(template_re1.match('ahoy'))
+        self.assertFalse(template_re1.match('nope'))
+
 
 def get_debug_out(pat):
     with captured_stdout() as out:
@@ -2574,11 +2604,11 @@ class PatternReprTests(unittest.TestCase):
                          "re.IGNORECASE|re.DOTALL|re.VERBOSE|0x100000")
         self.assertEqual(
                 repr(~re.I),
-                "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.DOTALL|re.VERBOSE|re.DEBUG|0x1")
+                "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.DOTALL|re.VERBOSE|re.TEMPLATE|re.DEBUG")
         self.assertEqual(repr(~(re.I|re.S|re.X)),
-                         "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.DEBUG|0x1")
+                         "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.TEMPLATE|re.DEBUG")
         self.assertEqual(repr(~(re.I|re.S|re.X|(1<<20))),
-                         "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.DEBUG|0xffe01")
+                         "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.TEMPLATE|re.DEBUG|0xffe00")
 
 
 class ImplementationTest(unittest.TestCase):

@@ -19,8 +19,8 @@ PyAPI_DATA(PyLongObject) _Py_FalseStruct;
 PyAPI_DATA(PyLongObject) _Py_TrueStruct;
 
 /* Use these macros */
-#define Py_False ((PyObject *) &_Py_FalseStruct)
-#define Py_True ((PyObject *) &_Py_TrueStruct)
+#define Py_False _PyObject_CAST(&_Py_FalseStruct)
+#define Py_True _PyObject_CAST(&_Py_TrueStruct)
 
 // Test if an object is the True singleton, the same as "x is True" in Python.
 PyAPI_FUNC(int) Py_IsTrue(PyObject *x);

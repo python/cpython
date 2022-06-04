@@ -20,7 +20,8 @@ from unittest import mock
 
 from test.support import os_helper
 from test.support import (
-    STDLIB_DIR, is_jython, swap_attr, swap_item, cpython_only, is_emscripten)
+    STDLIB_DIR, is_jython, swap_attr, swap_item, cpython_only, is_emscripten,
+    is_wasi)
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, DirsOnSysPath, CleanImport)
 from test.support.os_helper import (
@@ -535,7 +536,10 @@ class FilePermissionTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
-    @unittest.skipIf(is_emscripten, "Emscripten's umask is a stub.")
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "Emscripten's/WASI's umask is a stub."
+    )
     def test_creation_mode(self):
         mask = 0o022
         with temp_umask(mask), _ready_to_import() as (name, path):

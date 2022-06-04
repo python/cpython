@@ -24,6 +24,9 @@ on:
     - 'Doc/**'
     - 'Misc/**'
 
+permissions:
+  contents: read
+
 jobs:
   build_doc:
     name: 'Docs'
@@ -43,12 +46,12 @@ jobs:
     # Run "check doctest html" as 3 steps to get a more readable output
     # in the web UI
     - name: 'Check documentation'
-      run: make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W --keep-going -j4" check
+      run: make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W --keep-going" check
     # Use "xvfb-run" since some doctest tests open GUI windows
     - name: 'Run documentation doctest'
-      run: xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W --keep-going -j4" doctest
+      run: xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W --keep-going" doctest
     - name: 'Build HTML documentation'
-      run: make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W --keep-going -j4" html
+      run: make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W --keep-going" html
     - name: 'Upload'
       uses: actions/upload-artifact@v3
       with:

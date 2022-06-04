@@ -5697,7 +5697,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_lineno = 0;
+        end_lineno = lineno;
     }
     else {
         int res;
@@ -5714,7 +5714,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_col_offset = 0;
+        end_col_offset = col_offset;
     }
     else {
         int res;
@@ -8114,7 +8114,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_lineno = 0;
+        end_lineno = lineno;
     }
     else {
         int res;
@@ -8131,7 +8131,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_col_offset = 0;
+        end_col_offset = col_offset;
     }
     else {
         int res;
@@ -10291,7 +10291,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_lineno = 0;
+        end_lineno = lineno;
     }
     else {
         int res;
@@ -10308,7 +10308,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_col_offset = 0;
+        end_col_offset = col_offset;
     }
     else {
         int res;
@@ -10755,7 +10755,7 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_lineno = 0;
+        end_lineno = lineno;
     }
     else {
         int res;
@@ -10772,7 +10772,7 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_col_offset = 0;
+        end_col_offset = col_offset;
     }
     else {
         int res;
@@ -10877,7 +10877,7 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_lineno = 0;
+        end_lineno = lineno;
     }
     else {
         int res;
@@ -10894,7 +10894,7 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_col_offset = 0;
+        end_col_offset = col_offset;
     }
     else {
         int res;
@@ -10999,7 +10999,7 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_lineno = 0;
+        end_lineno = lineno;
     }
     else {
         int res;
@@ -11016,7 +11016,7 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_col_offset = 0;
+        end_col_offset = col_offset;
     }
     else {
         int res;

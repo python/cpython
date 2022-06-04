@@ -19,6 +19,8 @@ class TestCPPExt(unittest.TestCase):
     # With MSVC, the linker fails with: cannot open file 'python311.lib'
     # https://github.com/python/cpython/pull/32175#issuecomment-1111175897
     @unittest.skipIf(MS_WINDOWS, 'test fails on Windows')
+    # the test uses venv+pip: skip if it's not available
+    @support.requires_venv_with_pip()
     def test_build(self):
         # Build in a temporary directory
         with os_helper.temp_cwd():

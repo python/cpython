@@ -308,6 +308,32 @@ test_dict_inner(int count)
     }
 }
 
+static PyObject *pytype_fromspec_meta(PyObject* self, PyObject *meta)
+{
+    if (!PyType_Check(meta)) {
+        PyErr_SetString(
+            TestError,
+            "pytype_fromspec_meta: must be invoked with a type argument!");
+        return NULL;
+    }
+
+    PyType_Slot HeapCTypeViaMetaclass_slots[] = {
+        {0},
+    };
+
+    PyType_Spec HeapCTypeViaMetaclass_spec = {
+        "_testcapi.HeapCTypeViaMetaclass",
+        sizeof(PyObject),
+        0,
+        Py_TPFLAGS_DEFAULT,
+        HeapCTypeViaMetaclass_slots
+    };
+
+    return PyType_FromMetaclass(
+        (PyTypeObject *) meta, NULL, &HeapCTypeViaMetaclass_spec, NULL);
+}
+
+
 static PyObject*
 test_dict_iteration(PyObject* self, PyObject *Py_UNUSED(ignored))
 {
@@ -1221,7 +1247,7 @@ test_type_from_ephemeral_spec(PyObject *self, PyObject *Py_UNUSED(ignored))
     memcpy(name, NAME, sizeof(NAME));
 
     doc = PyMem_New(char, sizeof(DOC));
-    if (name == NULL) {
+    if (doc == NULL) {
         PyErr_NoMemory();
         goto finally;
     }
@@ -5832,6 +5858,20 @@ settrace_to_record(PyObject *self, PyObject *list)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_macros(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    // Py_MIN(), Py_MAX()
+    assert(Py_MIN(5, 11) == 5);
+    assert(Py_MAX(5, 11) == 11);
+
+    // _Py_IS_TYPE_SIGNED()
+    assert(_Py_IS_TYPE_SIGNED(int));
+    assert(!_Py_IS_TYPE_SIGNED(unsigned int));
+
+    Py_RETURN_NONE;
+}
+
 static PyObject *negative_dictoffset(PyObject *, PyObject *);
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
@@ -5886,6 +5926,7 @@ static PyMethodDef TestMethods[] = {
     {"test_long_numbits",       test_long_numbits,               METH_NOARGS},
     {"test_k_code",             test_k_code,                     METH_NOARGS},
     {"test_empty_argparse",     test_empty_argparse,             METH_NOARGS},
+    {"pytype_fromspec_meta",    pytype_fromspec_meta,            METH_O},
     {"parse_tuple_and_keywords", parse_tuple_and_keywords, METH_VARARGS},
     {"pyobject_repr_from_null", pyobject_repr_from_null, METH_NOARGS},
     {"pyobject_str_from_null",  pyobject_str_from_null, METH_NOARGS},
@@ -6122,6 +6163,7 @@ static PyMethodDef TestMethods[] = {
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
+    {"test_macros", test_macros, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
@@ -7078,6 +7120,38 @@ static PyType_Spec HeapCTypeSubclassWithFinalizer_spec = {
     HeapCTypeSubclassWithFinalizer_slots
 };
 
+static PyType_Slot HeapCTypeMetaclass_slots[] = {
+    {0},
+};
+
+static PyType_Spec HeapCTypeMetaclass_spec = {
+    "_testcapi.HeapCTypeMetaclass",
+    sizeof(PyHeapTypeObject),
+    sizeof(PyMemberDef),
+    Py_TPFLAGS_DEFAULT,
+    HeapCTypeMetaclass_slots
+};
+
+static PyObject *
+heap_ctype_metaclass_custom_tp_new(PyTypeObject *tp, PyObject *args, PyObject *kwargs)
+{
+    return PyType_Type.tp_new(tp, args, kwargs);
+}
+
+static PyType_Slot HeapCTypeMetaclassCustomNew_slots[] = {
+    { Py_tp_new, heap_ctype_metaclass_custom_tp_new },
+    {0},
+};
+
+static PyType_Spec HeapCTypeMetaclassCustomNew_spec = {
+    "_testcapi.HeapCTypeMetaclassCustomNew",
+    sizeof(PyHeapTypeObject),
+    sizeof(PyMemberDef),
+    Py_TPFLAGS_DEFAULT,
+    HeapCTypeMetaclassCustomNew_slots
+};
+
+
 typedef struct {
     PyObject_HEAD
     PyObject *dict;
@@ -7590,6 +7664,20 @@ PyInit__testcapi(void)
     }
     Py_DECREF(subclass_with_finalizer_bases);
     PyModule_AddObject(m, "HeapCTypeSubclassWithFinalizer", HeapCTypeSubclassWithFinalizer);
+
+    PyObject *HeapCTypeMetaclass = PyType_FromMetaclass(
+        &PyType_Type, m, &HeapCTypeMetaclass_spec, (PyObject *) &PyType_Type);
+    if (HeapCTypeMetaclass == NULL) {
+        return NULL;
+    }
+    PyModule_AddObject(m, "HeapCTypeMetaclass", HeapCTypeMetaclass);
+
+    PyObject *HeapCTypeMetaclassCustomNew = PyType_FromMetaclass(
+        &PyType_Type, m, &HeapCTypeMetaclassCustomNew_spec, (PyObject *) &PyType_Type);
+    if (HeapCTypeMetaclassCustomNew == NULL) {
+        return NULL;
+    }
+    PyModule_AddObject(m, "HeapCTypeMetaclassCustomNew", HeapCTypeMetaclassCustomNew);
 
     if (PyType_Ready(&ContainerNoGC_type) < 0) {
         return NULL;
