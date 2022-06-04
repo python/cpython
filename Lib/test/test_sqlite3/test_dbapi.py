@@ -57,6 +57,14 @@ class ModuleTests(unittest.TestCase):
         self.assertEqual(sqlite.apilevel, "2.0",
                          "apilevel is %s, should be 2.0" % sqlite.apilevel)
 
+    def test_version(self):
+        with self.assertWarns(DeprecationWarning):
+            sqlite.version
+
+    def test_version_info(self):
+        with self.assertWarns(DeprecationWarning):
+            sqlite.version_info
+
     def test_thread_safety(self):
         self.assertIn(sqlite.threadsafety, {0, 1, 3},
                       "threadsafety is %d, should be 0, 1 or 3" %
