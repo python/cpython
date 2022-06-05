@@ -2918,7 +2918,7 @@ Beware of replacing :data:`sys.stdin` with a "file like object"
                self._cache = []
            return self._cache
 
-    For more information, see :issue:`5155`, :issue:`5313` and :issue:`5331`.
+    For more information, see :gh:`49405`, :gh:`49563` and :gh:`49581`.
 
 The *spawn* and *forkserver* start methods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
