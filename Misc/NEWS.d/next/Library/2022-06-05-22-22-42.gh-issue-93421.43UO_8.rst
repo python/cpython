@@ -1,0 +1,2 @@
+Fix :data:`sqlite3.Cursor.rowcount` for ``UPDATE ... RETURNING``` SQL
+queries. Patch by Erlend E. Aasland.
