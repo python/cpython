@@ -1,1 +1,0 @@
-A few typos from the ``multiprocessing`` module documentation has been corrected.
