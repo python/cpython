@@ -107,6 +107,7 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
 
     self->arraysize = 1;
     self->closed = 0;
+    self->rowcount = -1L;
 
     Py_INCREF(Py_None);
     Py_XSETREF(self->row_factory, Py_None);
@@ -855,7 +856,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         goto error;
     }
 
-    if (self->statement->in_use) {
+    if (sqlite3_stmt_readonly(self->statement->st)) {
         Py_SETREF(self->statement,
                   pysqlite_statement_create(self->connection, operation));
         if (self->statement == NULL) {
@@ -865,6 +866,14 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
     stmt_reset(self->statement);
     stmt_mark_dirty(self->statement);
+
+    // Save current row count
+    if (sqlite3_stmt_readonly(self->statement->st)) {
+        self->rowcount = -1L;
+    }
+    else {
+        self->rowcount = (long)sqlite3_total_changes(self->connection->db);
+    }
 
     /* We start a transaction implicitly before a DML statement.
        SELECT is the only exception. See #9924. */
@@ -972,6 +981,7 @@ error:
     self->locked = 0;
 
     if (PyErr_Occurred()) {
+        self->rowcount = -1L;
         return NULL;
     } else {
         return Py_NewRef((PyObject *)self);
@@ -1299,6 +1309,19 @@ pysqlite_cursor_close_impl(pysqlite_Cursor *self)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+get_rowcount(pysqlite_Cursor *self, void *Py_UNUSED(closure))
+{
+    if (!check_cursor(self)) {
+        return -1;
+    }
+    if (self->rowcount != -1L) {
+        long changes = (long)sqlite3_total_changes(self->connection->db);
+        return PyLong_FromLong(changes - self->rowcount);
+    }
+    return PyLong_FromLong(-1L);
+}
+
 static PyMethodDef cursor_methods[] = {
     PYSQLITE_CURSOR_CLOSE_METHODDEF
     PYSQLITE_CURSOR_EXECUTEMANY_METHODDEF
@@ -1312,21 +1335,6 @@ static PyMethodDef cursor_methods[] = {
     {NULL, NULL}
 };
 
-static PyObject *
-get_rowcount(pysqlite_Cursor *self, void *Py_UNUSED(unused))
-{
-    if (!check_cursor(self)) {
-        return NULL;
-    }
-    int changes = sqlite3_changes(self->connection->db);
-    return PyLong_FromLong(changes);
-}
-
-static PyGetSetDef cursor_getset[] = {
-    {"rowcount",  (getter)get_rowcount, (setter)NULL},
-    {NULL},
-};
-
 static struct PyMemberDef cursor_members[] =
 {
     {"connection", T_OBJECT, offsetof(pysqlite_Cursor, connection), READONLY},
@@ -1336,6 +1344,11 @@ static struct PyMemberDef cursor_members[] =
     {"row_factory", T_OBJECT, offsetof(pysqlite_Cursor, row_factory), 0},
     {"__weaklistoffset__", T_PYSSIZET, offsetof(pysqlite_Cursor, in_weakreflist), READONLY},
     {NULL}
+};
+
+static PyGetSetDef cursor_getset[] = {
+    {"rowcount",  (getter)get_rowcount, (setter)NULL},
+    {NULL},
 };
 
 static const char cursor_doc[] =
