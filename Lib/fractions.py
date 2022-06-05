@@ -241,7 +241,7 @@ class Fraction(numbers.Rational):
         if max_denominator < 1:
             raise ValueError("max_denominator should be at least 1")
         if self._denominator <= max_denominator:
-            return Fraction(self._numerator, self._denominator, _normalize=False)
+            return Fraction(self)
 
         p0, q0, p1, q1 = 0, 1, 1, 0
         n, d = self._numerator, self._denominator
