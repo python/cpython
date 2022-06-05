@@ -260,7 +260,7 @@ class Fraction(numbers.Rational):
         bound2_n = p1
         bound2_d = q1
 
-        # diff1_n = numerator of (bound1 minus self) as a Fraction; 
+        # diff1_n = numerator of (bound1 minus self) as a Fraction;
         # etc. for diff1_d, diff2_n, diff2_d
         diff1_n = abs(bound1_n*d_original - n_original*bound1_d)
         diff1_d = d_original * bound1_d
