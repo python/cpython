@@ -1377,8 +1377,7 @@ _PyCode_GetCode(PyCodeObject *co)
         return NULL;
     }
     deopt_code((_Py_CODEUNIT *)PyBytes_AS_STRING(code), Py_SIZE(co));
-    assert(co->_co_code == NULL);
-    co->_co_code = (void *)Py_NewRef(code);
+    Py_XSETREF(co->_co_code, Py_NewRef(code));
     return code;
 }
 
