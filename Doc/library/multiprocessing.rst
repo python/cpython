@@ -1706,7 +1706,7 @@ their parent process exits.  The manager classes are defined in the
    shutdown times out, the process is terminated. If terminating the process
    also times out, the process is killed.
 
-   .. versionchanged: 3.11
+   .. versionchanged:: 3.11
       Added the *shutdown_timeout* parameter.
 
    .. method:: start([initializer[, initargs]])
