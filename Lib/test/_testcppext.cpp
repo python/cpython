@@ -77,6 +77,9 @@ test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     // gh-93442: Pass 0 as NULL for PyObject*
     Py_XINCREF(0);
     Py_XDECREF(0);
+    // ensure that nullptr works too
+    Py_XINCREF(nullptr);
+    Py_XDECREF(nullptr);
 
     Py_DECREF(obj);
     Py_RETURN_NONE;
