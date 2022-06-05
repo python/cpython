@@ -74,6 +74,14 @@ test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_INCREF(strong_ref);
     Py_DECREF(strong_ref);
 
+    // gh-93442: handle null pointer variants.
+    Py_INCREF(nullptr);
+    Py_DECREF(nullptr);
+    Py_INCREF(NULL);
+    Py_DECREF(NULL);
+    Py_INCREF(0);
+    Py_DECREF(0);
+
     Py_DECREF(obj);
     Py_RETURN_NONE;
 }

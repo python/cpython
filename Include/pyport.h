@@ -27,6 +27,22 @@
 #  define _Py_STATIC_CAST(type, expr) static_cast<type>(expr)
 extern "C++" {
     namespace {
+
+        // Overloads to cope with NULL and nullptr
+        template <typename type>
+        inline type _Py_CAST_impl(long int ptr) {
+            return reinterpret_cast<type>(ptr);
+        }
+        template <typename type>
+        inline type _Py_CAST_impl(int ptr) {
+            return reinterpret_cast<type>(ptr);
+        }
+        template <typename type>
+        inline type _Py_CAST_impl(std::nullptr_t) {
+            return static_cast<type>(nullptr);
+        }
+
+        // Overloads to cope with regular pointers
         template <typename type, typename expr_type>
             inline type _Py_CAST_impl(expr_type *expr) {
                 return reinterpret_cast<type>(expr);
@@ -37,6 +53,7 @@ extern "C++" {
                 return reinterpret_cast<type>(const_cast<expr_type *>(expr));
             }
 
+        // Overloads to cope with object that defines a conversion to `type`
         template <typename type, typename expr_type>
             inline type _Py_CAST_impl(expr_type &expr) {
                 return static_cast<type>(expr);
