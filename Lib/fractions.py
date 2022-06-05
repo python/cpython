@@ -90,6 +90,13 @@ class Fraction(numbers.Rational):
         Fraction(147, 100)
 
         """
+        # private _normalize=False should only be set if the Fraction is
+        # already asserted to be normalized.
+        # (see discussion: at https://github.com/python/cpython/pull/93477)
+        # if a non-normalized Fraction is passed in with _normalize=False
+        # then API calls may give inconsistent results on equivalent
+        # Fraction objects.
+
         self = super(Fraction, cls).__new__(cls)
 
         if denominator is None:
@@ -252,19 +259,19 @@ class Fraction(numbers.Rational):
         bound1_d = q0 + k*q1
         bound2_n = p1
         bound2_d = q1
-        bound1_minus_self_n = abs((bound1_n * d_original)
-                                  - (n_original * bound1_d))
-        bound1_minus_self_d = d_original * bound1_d
-        bound2_minus_self_n = abs((bound2_n * d_original)
-                                  - (n_original * bound2_d))
-        bound2_minus_self_d = d_original * bound2_d
 
-        difference = ((bound1_minus_self_n * bound2_minus_self_d)
-                      - (bound2_minus_self_n * bound1_minus_self_d))
-        if difference >= 0:
-            return Fraction(bound2_n, bound2_d)
+        # diff1_n = numerator of (bound1 minus self) as a Fraction; 
+        # etc. for diff1_d, diff2_n, diff2_d
+        diff1_n = abs(bound1_n*d_original - n_original*bound1_d)
+        diff1_d = d_original * bound1_d
+        diff2_n = abs(bound2_n*d_original - n_original*bound2_d)
+        diff2_d = d_original * bound2_d
+
+        if diff1_n * diff2_d >= diff2_n * diff1_d:
+            # bound2 is closer (or equal) to original as bound 1
+            return Fraction(bound2_n, bound2_d, _normalize=False)
         else:
-            return Fraction(bound1_n, bound1_d)
+            return Fraction(bound1_n, bound1_d, _normalize=False)
 
     @property
     def numerator(a):
