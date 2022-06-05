@@ -107,7 +107,6 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
 
     self->arraysize = 1;
     self->closed = 0;
-    self->rowcount = -1L;
 
     Py_INCREF(Py_None);
     Py_XSETREF(self->row_factory, Py_None);
@@ -835,10 +834,9 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         stmt_reset(self->statement);
     }
 
-    /* reset description and rowcount */
+    /* reset description */
     Py_INCREF(Py_None);
     Py_SETREF(self->description, Py_None);
-    self->rowcount = 0L;
 
     if (self->statement) {
         (void)stmt_reset(self->statement);
@@ -944,12 +942,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             }
         }
 
-        if (self->statement->is_dml) {
-            self->rowcount += (long)sqlite3_changes(self->connection->db);
-        } else {
-            self->rowcount= -1L;
-        }
-
         if (rc == SQLITE_DONE && !multiple) {
             stmt_reset(self->statement);
             Py_CLEAR(self->statement);
@@ -980,7 +972,6 @@ error:
     self->locked = 0;
 
     if (PyErr_Occurred()) {
-        self->rowcount = -1L;
         return NULL;
     } else {
         return Py_NewRef((PyObject *)self);
@@ -1321,13 +1312,27 @@ static PyMethodDef cursor_methods[] = {
     {NULL, NULL}
 };
 
+static PyObject *
+get_rowcount(pysqlite_Cursor *self, void *Py_UNUSED(unused))
+{
+    if (!check_cursor(self)) {
+        return NULL;
+    }
+    int changes = sqlite3_changes(self->connection->db);
+    return PyLong_FromLong(changes);
+}
+
+static PyGetSetDef cursor_getset[] = {
+    {"rowcount",  (getter)get_rowcount, (setter)NULL},
+    {NULL},
+};
+
 static struct PyMemberDef cursor_members[] =
 {
     {"connection", T_OBJECT, offsetof(pysqlite_Cursor, connection), READONLY},
     {"description", T_OBJECT, offsetof(pysqlite_Cursor, description), READONLY},
     {"arraysize", T_INT, offsetof(pysqlite_Cursor, arraysize), 0},
     {"lastrowid", T_OBJECT, offsetof(pysqlite_Cursor, lastrowid), READONLY},
-    {"rowcount", T_LONG, offsetof(pysqlite_Cursor, rowcount), READONLY},
     {"row_factory", T_OBJECT, offsetof(pysqlite_Cursor, row_factory), 0},
     {"__weaklistoffset__", T_PYSSIZET, offsetof(pysqlite_Cursor, in_weakreflist), READONLY},
     {NULL}
@@ -1346,6 +1351,7 @@ static PyType_Slot cursor_slots[] = {
     {Py_tp_init, pysqlite_cursor_init},
     {Py_tp_traverse, cursor_traverse},
     {Py_tp_clear, cursor_clear},
+    {Py_tp_getset, cursor_getset},
     {0, NULL},
 };
 
