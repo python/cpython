@@ -5,6 +5,7 @@
 from dataclasses import *
 
 import abc
+import sys
 import pickle
 import inspect
 import builtins
@@ -1442,11 +1443,17 @@ class TestCase(unittest.TestCase):
                     replace(obj, x=0)
 
     def test_is_dataclass_genericalias(self):
-        T = TypeVar("T")
         @dataclass
         class A(types.GenericAlias):
             origin: type
             args: type
+        self.assertTrue(is_dataclass(A))
+        a = A(list, int)
+        self.assertTrue(is_dataclass(type(a)))
+        self.assertTrue(is_dataclass(a))
+
+    def test_is_dataclass_generic_class(self, expected=True):
+        T = TypeVar("T")
         @dataclass
         class B(Generic[T]):
             a: T
@@ -1454,14 +1461,20 @@ class TestCase(unittest.TestCase):
         class C(Generic[T]):
             a: T
             __class_getitem__ = classmethod(types.GenericAlias)
-        self.assertTrue(is_dataclass(A))
-        self.assertTrue(is_dataclass(B))
-        self.assertTrue(is_dataclass(C))
-        self.assertTrue(is_dataclass(B[int]))
-        self.assertTrue(is_dataclass(C[int]))
-        a = A(list, int)
-        self.assertTrue(is_dataclass(type(a)))
-        self.assertTrue(is_dataclass(a))
+
+        for cls in (B, C):
+            with self.subTest(cls=cls):
+                self.assertTrue(is_dataclass(cls))
+                self.assertEqual(is_dataclass(cls[int]), expected)
+
+    def test_is_dataclass_typing_not_imported(self):
+        module = sys.modules.pop('typing')
+        try:
+            self.test_is_dataclass()
+            self.test_is_dataclass_genericalias()
+            self.test_is_dataclass_generic_class(expected=False)
+        finally:
+            sys.modules['typing'] = module
 
     def test_helper_fields_with_class_instance(self):
         # Check that we can call fields() on either a class or instance,
