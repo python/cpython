@@ -90,13 +90,6 @@ class Fraction(numbers.Rational):
         Fraction(147, 100)
 
         """
-        # private _normalize=False should only be set if the Fraction is
-        # already asserted to be normalized.
-        # (see discussion: at https://github.com/python/cpython/pull/93477)
-        # if a non-normalized Fraction is passed in with _normalize=False
-        # then API calls may give inconsistent results on equivalent
-        # Fraction objects.
-
         self = super(Fraction, cls).__new__(cls)
 
         if denominator is None:
