@@ -589,8 +589,8 @@ Supported operations:
 +-------------------------------+----------------------------------------------+
 | Operation                     | Result                                       |
 +===============================+==============================================+
-| ``date2 = date1 + timedelta`` | *date2* is ``timedelta.days`` days removed   |
-|                               | from *date1*. (1)                            |
+| ``date2 = date1 + timedelta`` | *date1* is ``timedelta.days`` days removed   |
+|                               | from *date2*. (1)                            |
 +-------------------------------+----------------------------------------------+
 | ``date2 = date1 - timedelta`` | Computes *date2* such that ``date2 +         |
 |                               | timedelta == date1``. (2)                    |
