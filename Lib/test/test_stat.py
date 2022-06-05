@@ -161,7 +161,7 @@ class TestFilemode:
         else:
             self.assertEqual(modestr[0], 'd')
 
-    @unittest.skipUnless(hasattr(os, 'symlink'), 'os.symlink not available')
+    @os_helper.skip_unless_symlink
     def test_link(self):
         try:
             os.symlink(os.getcwd(), TESTFN)
