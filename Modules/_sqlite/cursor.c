@@ -835,10 +835,9 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         stmt_reset(self->statement);
     }
 
-    /* reset description and rowcount */
+    /* reset description */
     Py_INCREF(Py_None);
     Py_SETREF(self->description, Py_None);
-    self->rowcount = 0L;
 
     if (self->statement) {
         (void)stmt_reset(self->statement);
@@ -867,6 +866,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
     stmt_reset(self->statement);
     stmt_mark_dirty(self->statement);
+    self->rowcount = self->statement->is_dml ? 0L : -1L;
 
     /* We start a transaction implicitly before a DML statement.
        SELECT is the only exception. See #9924. */
@@ -944,13 +944,14 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             }
         }
 
-        if (self->statement->is_dml) {
+        if (self->statement->is_dml && multiple) {
             self->rowcount += (long)sqlite3_changes(self->connection->db);
-        } else {
-            self->rowcount= -1L;
         }
 
         if (rc == SQLITE_DONE && !multiple) {
+            if (self->statement->is_dml) {
+                self->rowcount = (long)sqlite3_changes(self->connection->db);
+            }
             stmt_reset(self->statement);
             Py_CLEAR(self->statement);
         }
@@ -1125,6 +1126,9 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
     }
     int rc = stmt_step(stmt);
     if (rc == SQLITE_DONE) {
+        if (self->statement->is_dml) {
+            self->rowcount = (long)sqlite3_changes(self->connection->db);
+        }
         (void)stmt_reset(self->statement);
     }
     else if (rc != SQLITE_ROW) {
