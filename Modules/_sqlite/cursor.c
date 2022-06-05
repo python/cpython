@@ -1313,7 +1313,7 @@ static PyObject *
 get_rowcount(pysqlite_Cursor *self, void *Py_UNUSED(closure))
 {
     if (!check_cursor(self)) {
-        return -1;
+        return NULL;
     }
     if (self->rowcount != -1L) {
         long changes = (long)sqlite3_total_changes(self->connection->db);
