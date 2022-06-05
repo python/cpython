@@ -143,9 +143,9 @@ Module functions and constants
    the SQLite library.
 
    .. deprecated-removed:: 3.12 3.14
-      It used to reflect the ``pysqlite`` version number, until the external
-      pysqlite package stopped upstreaming changes to the stdlib :mod:`sqlite3`
-      module, but today it carries no meaning or practical value.
+      This constant used to reflect the version number of the ``pysqlite``
+      package, a third-party library which used to upstream changes to
+      ``sqlite3``. Today, it carries no meaning or practical value.
 
 
 .. data:: version_info
