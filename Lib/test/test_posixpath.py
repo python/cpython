@@ -387,8 +387,7 @@ class PosixPathTest(unittest.TestCase):
         self.assertEqual(realpath(b'../..'), dirname(dirname(os.getcwdb())))
         self.assertEqual(realpath(b'/'.join([b'..'] * 100)), b'/')
 
-    @unittest.skipUnless(hasattr(os, "symlink"),
-                         "Missing symlink implementation")
+    @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_basic(self):
         # Basic operation.
@@ -398,8 +397,7 @@ class PosixPathTest(unittest.TestCase):
         finally:
             os_helper.unlink(ABSTFN)
 
-    @unittest.skipUnless(hasattr(os, "symlink"),
-                         "Missing symlink implementation")
+    @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_strict(self):
         # Bug #43757: raise FileNotFoundError in strict mode if we encounter
@@ -411,8 +409,7 @@ class PosixPathTest(unittest.TestCase):
         finally:
             os_helper.unlink(ABSTFN)
 
-    @unittest.skipUnless(hasattr(os, "symlink"),
-                         "Missing symlink implementation")
+    @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_relative(self):
         try:
@@ -421,8 +418,7 @@ class PosixPathTest(unittest.TestCase):
         finally:
             os_helper.unlink(ABSTFN)
 
-    @unittest.skipUnless(hasattr(os, "symlink"),
-                         "Missing symlink implementation")
+    @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_symlink_loops(self):
         # Bug #930024, return the path unchanged if we get into an infinite
@@ -463,8 +459,7 @@ class PosixPathTest(unittest.TestCase):
             os_helper.unlink(ABSTFN+"c")
             os_helper.unlink(ABSTFN+"a")
 
-    @unittest.skipUnless(hasattr(os, "symlink"),
-                         "Missing symlink implementation")
+    @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_symlink_loops_strict(self):
         # Bug #43757, raise OSError if we get into an infinite symlink loop in
@@ -505,8 +500,7 @@ class PosixPathTest(unittest.TestCase):
             os_helper.unlink(ABSTFN+"c")
             os_helper.unlink(ABSTFN+"a")
 
-    @unittest.skipUnless(hasattr(os, "symlink"),
-                         "Missing symlink implementation")
+    @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_repeated_indirect_symlinks(self):
         # Issue #6975.
@@ -520,8 +514,7 @@ class PosixPathTest(unittest.TestCase):
             os_helper.unlink(ABSTFN + '/link')
             safe_rmdir(ABSTFN)
 
-    @unittest.skipUnless(hasattr(os, "symlink"),
-                         "Missing symlink implementation")
+    @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_deep_recursion(self):
         depth = 10
@@ -540,8 +533,7 @@ class PosixPathTest(unittest.TestCase):
                 os_helper.unlink(ABSTFN + '/%d' % i)
             safe_rmdir(ABSTFN)
 
-    @unittest.skipUnless(hasattr(os, "symlink"),
-                         "Missing symlink implementation")
+    @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_resolve_parents(self):
         # We also need to resolve any symlinks in the parents of a relative
@@ -560,8 +552,7 @@ class PosixPathTest(unittest.TestCase):
             safe_rmdir(ABSTFN + "/y")
             safe_rmdir(ABSTFN)
 
-    @unittest.skipUnless(hasattr(os, "symlink"),
-                         "Missing symlink implementation")
+    @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_resolve_before_normalizing(self):
         # Bug #990669: Symbolic links should be resolved before we
@@ -589,8 +580,7 @@ class PosixPathTest(unittest.TestCase):
             safe_rmdir(ABSTFN + "/k")
             safe_rmdir(ABSTFN)
 
-    @unittest.skipUnless(hasattr(os, "symlink"),
-                         "Missing symlink implementation")
+    @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_resolve_first(self):
         # Bug #1213894: The first component of the path, if not absolute,
