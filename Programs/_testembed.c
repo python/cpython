@@ -481,6 +481,27 @@ static int test_init_compat_config(void)
 }
 
 
+static int test_repeated_init_compat_config(void)
+{
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
+    config_set_program_name(&config);
+
+    for (int i=0; i<3; i++) {
+        PyStatus status = Py_InitializeFromConfig(&config);
+        if (PyStatus_Exception(status)) {
+            Py_ExitStatusException(status);
+        }
+        Py_Finalize();
+    }
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
 static int test_init_global_config(void)
 {
     /* FIXME: test Py_IgnoreEnvironmentFlag */
@@ -1939,6 +1960,7 @@ static struct TestCase TestCases[] = {
     {"test_init_initialize_config", test_init_initialize_config},
     {"test_preinit_compat_config", test_preinit_compat_config},
     {"test_init_compat_config", test_init_compat_config},
+    {"test_repeated_init_compat_config", test_repeated_init_compat_config},
     {"test_init_global_config", test_init_global_config},
     {"test_init_from_config", test_init_from_config},
     {"test_init_parse_argv", test_init_parse_argv},

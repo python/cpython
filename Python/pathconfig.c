@@ -42,7 +42,10 @@ typedef struct _PyPathConfig {
       {.module_search_path = NULL}
 
 
-_PyPathConfig _Py_path_config = _PyPathConfig_INIT;
+static _PyPathConfig _Py_path_config = _PyPathConfig_INIT;
+
+// Turned on when _Py_path_config.home is set directly by Py_SetPythonHome()
+static int home_is_original = 0;
 
 
 const wchar_t *
@@ -76,6 +79,7 @@ _PyPathConfig_ClearGlobal(void)
 #undef CLEAR
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    home_is_original = 0;
 }
 
 PyStatus
@@ -103,11 +107,17 @@ _PyPathConfig_ReadGlobal(PyConfig *config)
     COPY(exec_prefix);
     COPY(stdlib_dir);
     COPY(program_name);
-    COPY(home);
     COPY2(executable, program_full_path);
     // module_search_path must be initialised - not read
 #undef COPY
 #undef COPY2
+
+    // _Py_path_config.home cannot be reused in getpath.py except when
+    // the value is set by Py_SetPythonHome().
+    if (_Py_path_config.home && !config->home && home_is_original) {
+        status = PyConfig_SetString(config, &config->home, _Py_path_config.home);
+        if (_PyStatus_EXCEPTION(status)) goto done;
+    }
 
 done:
     return status;
@@ -136,6 +146,12 @@ _PyPathConfig_UpdateGlobal(const PyConfig *config)
             if (!_Py_path_config.ATTR) goto error; \
         } \
     } while (0)
+
+    if (!_Py_path_config.home ||
+        (config->home && wcscmp(_Py_path_config.home, config->home) != 0))
+    {
+        home_is_original = 0;
+    }
 
     COPY(prefix);
     COPY(exec_prefix);
@@ -242,6 +258,11 @@ Py_SetPythonHome(const wchar_t *home)
     PyMem_RawFree(_Py_path_config.home);
     if (has_value) {
         _Py_path_config.home = _PyMem_RawWcsdup(home);
+        home_is_original = 1;
+    }
+    else {
+        _Py_path_config.home = NULL;
+        home_is_original = 0;
     }
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);

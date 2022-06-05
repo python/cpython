@@ -1386,6 +1386,48 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                    api=API_COMPAT, env=env,
                                    ignore_stderr=False, cwd=tmpdir)
 
+    @unittest.skipUnless(MS_WINDOWS, 'Windows only')
+    def test_repeated_init_pybuilddir_pythonhome_win32(self):
+        # Test an out-of-build-tree layout with PYTHONHOME override,
+        # repeating path calculation.
+        config = self._get_expected_config()
+        paths = config['config']['module_search_paths']
+
+        for path in paths:
+            if not os.path.isdir(path):
+                continue
+            if os.path.exists(os.path.join(path, 'os.py')):
+                home = os.path.dirname(path)
+                break
+        else:
+            self.fail(f"Unable to find home in {paths!r}")
+
+        with self.tmpdir_with_python() as tmpdir:
+            filename = os.path.join(tmpdir, 'pybuilddir.txt')
+            with open(filename, "w", encoding="utf8") as fp:
+                fp.write(tmpdir)
+
+            config = {
+                'home': home,
+                'base_exec_prefix': home,
+                'base_prefix': home,
+                'base_executable': self.test_exe,
+                'executable': self.test_exe,
+                'prefix': home,
+                'exec_prefix': home,
+                'stdlib_dir': os.path.join(home, 'Lib'),
+                'module_search_paths': [
+                    os.path.join(tmpdir, os.path.basename(paths[0])),  # .zip
+                    os.path.join(home, 'Lib'),
+                    os.path.join(tmpdir),
+                ],
+            }
+            pyd = import_helper.import_module('_testinternalcapi').__file__
+            shutil.copyfile(pyd, os.path.join(tmpdir, os.path.basename(pyd)))
+            self.check_all_configs("test_repeated_init_compat_config", config,
+                                   api=API_COMPAT, env=dict(PYTHONHOME=home),
+                                   ignore_stderr=False, cwd=tmpdir)
+
     def test_init_pyvenv_cfg(self):
         # Test path configuration with pyvenv.cfg configuration file
 
