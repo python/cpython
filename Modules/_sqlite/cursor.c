@@ -856,7 +856,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         goto error;
     }
 
-    if (sqlite3_stmt_readonly(self->statement->st)) {
+    if (self->statement->in_use) {
         Py_SETREF(self->statement,
                   pysqlite_statement_create(self->connection, operation));
         if (self->statement == NULL) {
