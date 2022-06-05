@@ -24,9 +24,23 @@
 //
 // The type argument must not be a constant type.
 #ifdef __cplusplus
+#include <cstddef>
 #  define _Py_STATIC_CAST(type, expr) static_cast<type>(expr)
 extern "C++" {
     namespace {
+        template <typename type>
+        inline type _Py_CAST_impl(long int ptr) {
+            return reinterpret_cast<type>(ptr);
+        }
+        template <typename type>
+        inline type _Py_CAST_impl(int ptr) {
+            return reinterpret_cast<type>(ptr);
+        }
+        template <typename type>
+        inline type _Py_CAST_impl(std::nullptr_t) {
+            return static_cast<type>(nullptr);
+        }
+
         template <typename type, typename expr_type>
             inline type _Py_CAST_impl(expr_type *expr) {
                 return reinterpret_cast<type>(expr);

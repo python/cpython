@@ -74,6 +74,10 @@ test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_INCREF(strong_ref);
     Py_DECREF(strong_ref);
 
+    // gh-93442: Pass 0 as NULL for PyObject*
+    Py_XINCREF(0);
+    Py_XDECREF(0);
+
     Py_DECREF(obj);
     Py_RETURN_NONE;
 }
