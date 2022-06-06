@@ -1,3 +1,4 @@
+#! /usr/bin/env python3
 """Compares checksums for wheels in :mod:`ensurepip` against the Cheeseshop."""
 
 import hashlib
