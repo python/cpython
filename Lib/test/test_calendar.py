@@ -562,10 +562,13 @@ class CalendarTestCase(unittest.TestCase):
 
         cal = calendar.LocaleTextCalendar(locale='')
         local_weekday = cal.formatweekday(1, 10)
+        local_weekday_abbr = cal.formatweekday(1, 3)
         local_month = cal.formatmonthname(2010, 10, 10)
         self.assertIsInstance(local_weekday, str)
+        self.assertIsInstance(local_weekday_abbr, str)
         self.assertIsInstance(local_month, str)
         self.assertEqual(len(local_weekday), 10)
+        self.assertEqual(len(local_weekday_abbr), 3)
         self.assertGreaterEqual(len(local_month), 10)
 
         cal = calendar.LocaleHTMLCalendar(locale=None)
