@@ -463,7 +463,10 @@ def create_empty_file(filename):
 def open_dir_fd(path):
     """Open a file descriptor to a directory."""
     assert os.path.isdir(path)
-    dir_fd = os.open(path, os.O_RDONLY)
+    flags = os.O_RDONLY
+    if hasattr(os, "O_DIRECTORY"):
+        flags |= os.O_DIRECTORY
+    dir_fd = os.open(path, flags)
     try:
         yield dir_fd
     finally:

@@ -235,6 +235,9 @@ are:
   call read/write/accept on a file descriptor that is passed into the process.
 - ``socket.gethostname()`` and host name resolution APIs like
   ``socket.gethostbyname()`` are not implemented and always fail.
+- ``open(2)`` checks flags more strictly. Caller must pass either
+  ``O_RDONLY``, ``O_RDWR``, or ``O_WDONLY`` to ``os.open``. Directory file
+  descriptors must be created with flags ``O_RDONLY | O_DIRECTORY``.
 - ``chmod(2)`` is not available. It's not possible to modify file permissions,
   yet. A future version of WASI may provide a limited ``set_permissions`` API.
 - User/group related features like ``os.chown()``, ``os.getuid``, etc. are
