@@ -54,11 +54,6 @@ typedef struct PySlot_Offset {
 } PySlot_Offset;
 
 
-/* bpo-40521: Interned strings are shared by all subinterpreters */
-#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-#  define INTERN_NAME_STRINGS
-#endif
-
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
@@ -345,22 +340,26 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     Py_ssize_t i, n;
     int custom = !Py_IS_TYPE(type, &PyType_Type);
     int unbound;
-    PyObject *mro_meth = NULL;
-    PyObject *type_mro_meth = NULL;
 
     if (custom) {
+        PyObject *mro_meth, *type_mro_meth;
         mro_meth = lookup_maybe_method(
             (PyObject *)type, &_Py_ID(mro), &unbound);
-        if (mro_meth == NULL)
+        if (mro_meth == NULL) {
             goto clear;
+        }
         type_mro_meth = lookup_maybe_method(
             (PyObject *)&PyType_Type, &_Py_ID(mro), &unbound);
-        if (type_mro_meth == NULL)
+        if (type_mro_meth == NULL) {
+            Py_DECREF(mro_meth);
             goto clear;
-        if (mro_meth != type_mro_meth)
+        }
+        int custom_mro = (mro_meth != type_mro_meth);
+        Py_DECREF(mro_meth);
+        Py_DECREF(type_mro_meth);
+        if (custom_mro) {
             goto clear;
-        Py_XDECREF(mro_meth);
-        Py_XDECREF(type_mro_meth);
+        }
     }
     n = PyTuple_GET_SIZE(bases);
     for (i = 0; i < n; i++) {
@@ -373,8 +372,6 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     }
     return;
  clear:
-    Py_XDECREF(mro_meth);
-    Py_XDECREF(type_mro_meth);
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
     type->tp_version_tag = 0; /* 0 is not a valid version tag */
 }
@@ -1651,6 +1648,7 @@ vectorcall_unbound(PyThreadState *tstate, int unbound, PyObject *func,
         args++;
         nargsf = nargsf - 1 + PY_VECTORCALL_ARGUMENTS_OFFSET;
     }
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_SLOT, func);
     return _PyObject_VectorcallTstate(tstate, func, args, nargsf, NULL);
 }
 
@@ -3364,13 +3362,8 @@ static const PySlot_Offset pyslot_offsets[] = {
 };
 
 PyObject *
-PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
-{
-    return PyType_FromModuleAndSpec(NULL, spec, bases);
-}
-
-PyObject *
-PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
+PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
+                     PyType_Spec *spec, PyObject *bases)
 {
     PyHeapTypeObject *res;
     PyObject *modname;
@@ -3381,6 +3374,16 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     Py_ssize_t nmembers, weaklistoffset, dictoffset, vectorcalloffset;
     char *res_start;
     short slot_offset, subslot_offset;
+
+    if (!metaclass) {
+        metaclass = &PyType_Type;
+    }
+
+    if (metaclass->tp_new != PyType_Type.tp_new) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Metaclasses with custom tp_new are not supported.");
+        return NULL;
+    }
 
     nmembers = weaklistoffset = dictoffset = vectorcalloffset = 0;
     for (slot = spec->slots; slot->slot; slot++) {
@@ -3410,7 +3413,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         }
     }
 
-    res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, nmembers);
+    res = (PyHeapTypeObject*)metaclass->tp_alloc(metaclass, nmembers);
     if (res == NULL)
         return NULL;
     res_start = (char*)res;
@@ -3638,9 +3641,21 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 }
 
 PyObject *
+PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
+{
+    return PyType_FromMetaclass(NULL, module, spec, bases);
+}
+
+PyObject *
+PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
+{
+    return PyType_FromMetaclass(NULL, NULL, spec, bases);
+}
+
+PyObject *
 PyType_FromSpec(PyType_Spec *spec)
 {
-    return PyType_FromSpecWithBases(spec, NULL);
+    return PyType_FromMetaclass(NULL, NULL, spec, NULL);
 }
 
 PyObject *
@@ -3759,7 +3774,7 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
 {
     Py_hash_t hash;
     if (!PyUnicode_CheckExact(name) ||
-        (hash = ((PyASCIIObject *) name)->hash) == -1)
+        (hash = _PyASCIIObject_CAST(name)->hash) == -1)
     {
         hash = PyObject_Hash(name);
         if (hash == -1) {
@@ -3853,7 +3868,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         struct type_cache_entry *entry = &cache->hashtable[h];
         entry->version = type->tp_version_tag;
         entry->value = res;  /* borrowed */
-        assert(((PyASCIIObject *)(name))->hash != -1);
+        assert(_PyASCIIObject_CAST(name)->hash != -1);
 #if MCACHE_STATS
         if (entry->name != Py_None && entry->name != name) {
             cache->collisions++;
@@ -4007,7 +4022,7 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
             if (name == NULL)
                 return -1;
         }
-#ifdef INTERN_NAME_STRINGS
+        /* bpo-40521: Interned strings are shared by all subinterpreters */
         if (!PyUnicode_CHECK_INTERNED(name)) {
             PyUnicode_InternInPlace(&name);
             if (!PyUnicode_CHECK_INTERNED(name)) {
@@ -4017,7 +4032,6 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
                 return -1;
             }
         }
-#endif
     }
     else {
         /* Will fail in _PyObject_GenericSetAttrWithDict. */
@@ -4289,7 +4303,7 @@ type___sizeof___impl(PyTypeObject *self)
 static PyMethodDef type_methods[] = {
     TYPE_MRO_METHODDEF
     TYPE___SUBCLASSES___METHODDEF
-    {"__prepare__", (PyCFunction)(void(*)(void))type_prepare,
+    {"__prepare__", _PyCFunction_CAST(type_prepare),
      METH_FASTCALL | METH_KEYWORDS | METH_CLASS,
      PyDoc_STR("__prepare__() -> dict\n"
                "used to create the namespace for the class statement")},
@@ -4557,7 +4571,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
         PyErr_Format(PyExc_TypeError,
                      "Can't instantiate abstract class %s "
-                     "with abstract method%s %U",
+                     "without an implementation for abstract method%s %U",
                      type->tp_name,
                      method_count > 1 ? "s" : "",
                      joined);
@@ -4960,141 +4974,172 @@ _PyType_GetSlotNames(PyTypeObject *cls)
 }
 
 static PyObject *
-_PyObject_GetState(PyObject *obj, int required)
+object_getstate_default(PyObject *obj, int required)
 {
     PyObject *state;
-    PyObject *getstate;
+    PyObject *slotnames;
 
-    if (_PyObject_LookupAttr(obj, &_Py_ID(__getstate__), &getstate) < 0) {
+    if (required && Py_TYPE(obj)->tp_itemsize) {
+        PyErr_Format(PyExc_TypeError,
+                     "cannot pickle %.200s objects",
+                     Py_TYPE(obj)->tp_name);
         return NULL;
     }
-    if (getstate == NULL) {
-        PyObject *slotnames;
 
-        if (required && Py_TYPE(obj)->tp_itemsize) {
+    if (_PyObject_IsInstanceDictEmpty(obj)) {
+        state = Py_None;
+        Py_INCREF(state);
+    }
+    else {
+        state = PyObject_GenericGetDict(obj, NULL);
+        if (state == NULL) {
+            return NULL;
+        }
+    }
+
+    slotnames = _PyType_GetSlotNames(Py_TYPE(obj));
+    if (slotnames == NULL) {
+        Py_DECREF(state);
+        return NULL;
+    }
+
+    assert(slotnames == Py_None || PyList_Check(slotnames));
+    if (required) {
+        Py_ssize_t basicsize = PyBaseObject_Type.tp_basicsize;
+        if (Py_TYPE(obj)->tp_dictoffset &&
+            (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0)
+        {
+            basicsize += sizeof(PyObject *);
+        }
+        if (Py_TYPE(obj)->tp_weaklistoffset) {
+            basicsize += sizeof(PyObject *);
+        }
+        if (slotnames != Py_None) {
+            basicsize += sizeof(PyObject *) * PyList_GET_SIZE(slotnames);
+        }
+        if (Py_TYPE(obj)->tp_basicsize > basicsize) {
+            Py_DECREF(slotnames);
+            Py_DECREF(state);
             PyErr_Format(PyExc_TypeError,
                          "cannot pickle '%.200s' object",
                          Py_TYPE(obj)->tp_name);
             return NULL;
         }
-        if (_PyObject_IsInstanceDictEmpty(obj)) {
-            state = Py_None;
-            Py_INCREF(state);
-        }
-        else {
-            state = PyObject_GenericGetDict(obj, NULL);
-            if (state == NULL) {
-                return NULL;
-            }
-        }
+    }
 
-        slotnames = _PyType_GetSlotNames(Py_TYPE(obj));
-        if (slotnames == NULL) {
+    if (slotnames != Py_None && PyList_GET_SIZE(slotnames) > 0) {
+        PyObject *slots;
+        Py_ssize_t slotnames_size, i;
+
+        slots = PyDict_New();
+        if (slots == NULL) {
+            Py_DECREF(slotnames);
             Py_DECREF(state);
             return NULL;
         }
 
-        assert(slotnames == Py_None || PyList_Check(slotnames));
-        if (required) {
-            Py_ssize_t basicsize = PyBaseObject_Type.tp_basicsize;
-            if (Py_TYPE(obj)->tp_dictoffset &&
-                (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0)
-            {
-                basicsize += sizeof(PyObject *);
+        slotnames_size = PyList_GET_SIZE(slotnames);
+        for (i = 0; i < slotnames_size; i++) {
+            PyObject *name, *value;
+
+            name = PyList_GET_ITEM(slotnames, i);
+            Py_INCREF(name);
+            if (_PyObject_LookupAttr(obj, name, &value) < 0) {
+                Py_DECREF(name);
+                goto error;
             }
-            if (Py_TYPE(obj)->tp_weaklistoffset) {
-                basicsize += sizeof(PyObject *);
+            if (value == NULL) {
+                Py_DECREF(name);
+                /* It is not an error if the attribute is not present. */
             }
-            if (slotnames != Py_None) {
-                basicsize += sizeof(PyObject *) * PyList_GET_SIZE(slotnames);
+            else {
+                int err = PyDict_SetItem(slots, name, value);
+                Py_DECREF(name);
+                Py_DECREF(value);
+                if (err) {
+                    goto error;
+                }
             }
-            if (Py_TYPE(obj)->tp_basicsize > basicsize) {
+
+            /* The list is stored on the class so it may mutate while we
+               iterate over it */
+            if (slotnames_size != PyList_GET_SIZE(slotnames)) {
+                PyErr_Format(PyExc_RuntimeError,
+                             "__slotsname__ changed size during iteration");
+                goto error;
+            }
+
+            /* We handle errors within the loop here. */
+            if (0) {
+              error:
                 Py_DECREF(slotnames);
+                Py_DECREF(slots);
                 Py_DECREF(state);
-                PyErr_Format(PyExc_TypeError,
-                             "cannot pickle '%.200s' object",
-                             Py_TYPE(obj)->tp_name);
                 return NULL;
             }
         }
 
-        if (slotnames != Py_None && PyList_GET_SIZE(slotnames) > 0) {
-            PyObject *slots;
-            Py_ssize_t slotnames_size, i;
+        /* If we found some slot attributes, pack them in a tuple along
+           the original attribute dictionary. */
+        if (PyDict_GET_SIZE(slots) > 0) {
+            PyObject *state2;
 
-            slots = PyDict_New();
-            if (slots == NULL) {
+            state2 = PyTuple_Pack(2, state, slots);
+            Py_DECREF(state);
+            if (state2 == NULL) {
                 Py_DECREF(slotnames);
-                Py_DECREF(state);
+                Py_DECREF(slots);
                 return NULL;
             }
-
-            slotnames_size = PyList_GET_SIZE(slotnames);
-            for (i = 0; i < slotnames_size; i++) {
-                PyObject *name, *value;
-
-                name = PyList_GET_ITEM(slotnames, i);
-                Py_INCREF(name);
-                if (_PyObject_LookupAttr(obj, name, &value) < 0) {
-                    goto error;
-                }
-                if (value == NULL) {
-                    Py_DECREF(name);
-                    /* It is not an error if the attribute is not present. */
-                }
-                else {
-                    int err = PyDict_SetItem(slots, name, value);
-                    Py_DECREF(name);
-                    Py_DECREF(value);
-                    if (err) {
-                        goto error;
-                    }
-                }
-
-                /* The list is stored on the class so it may mutate while we
-                   iterate over it */
-                if (slotnames_size != PyList_GET_SIZE(slotnames)) {
-                    PyErr_Format(PyExc_RuntimeError,
-                                 "__slotsname__ changed size during iteration");
-                    goto error;
-                }
-
-                /* We handle errors within the loop here. */
-                if (0) {
-                  error:
-                    Py_DECREF(slotnames);
-                    Py_DECREF(slots);
-                    Py_DECREF(state);
-                    return NULL;
-                }
-            }
-
-            /* If we found some slot attributes, pack them in a tuple along
-               the original attribute dictionary. */
-            if (PyDict_GET_SIZE(slots) > 0) {
-                PyObject *state2;
-
-                state2 = PyTuple_Pack(2, state, slots);
-                Py_DECREF(state);
-                if (state2 == NULL) {
-                    Py_DECREF(slotnames);
-                    Py_DECREF(slots);
-                    return NULL;
-                }
-                state = state2;
-            }
-            Py_DECREF(slots);
+            state = state2;
         }
-        Py_DECREF(slotnames);
+        Py_DECREF(slots);
     }
-    else { /* getstate != NULL */
-        state = _PyObject_CallNoArgs(getstate);
-        Py_DECREF(getstate);
-        if (state == NULL)
-            return NULL;
-    }
+    Py_DECREF(slotnames);
 
     return state;
+}
+
+static PyObject *
+object_getstate(PyObject *obj, int required)
+{
+    PyObject *getstate, *state;
+
+    getstate = PyObject_GetAttr(obj, &_Py_ID(__getstate__));
+    if (getstate == NULL) {
+        return NULL;
+    }
+    if (PyCFunction_Check(getstate) &&
+        PyCFunction_GET_SELF(getstate) == obj &&
+        PyCFunction_GET_FUNCTION(getstate) == object___getstate__)
+    {
+        /* If __getstate__ is not overriden pass the required argument. */
+        state = object_getstate_default(obj, required);
+    }
+    else {
+        state = _PyObject_CallNoArgs(getstate);
+    }
+    Py_DECREF(getstate);
+    return state;
+}
+
+PyObject *
+_PyObject_GetState(PyObject *obj)
+{
+    return object_getstate(obj, 0);
+}
+
+/*[clinic input]
+object.__getstate__
+
+Helper for pickle.
+[clinic start generated code]*/
+
+static PyObject *
+object___getstate___impl(PyObject *self)
+/*[clinic end generated code: output=5a2500dcb6217e9e input=692314d8fbe194ee]*/
+{
+    return object_getstate_default(self, 0);
 }
 
 static int
@@ -5309,8 +5354,7 @@ reduce_newobj(PyObject *obj)
         return NULL;
     }
 
-    state = _PyObject_GetState(obj,
-                !hasargs && !PyList_Check(obj) && !PyDict_Check(obj));
+    state = object_getstate(obj, !(hasargs || PyList_Check(obj) || PyDict_Check(obj)));
     if (state == NULL) {
         Py_DECREF(newobj);
         Py_DECREF(newargs);
@@ -5558,6 +5602,7 @@ error:
 static PyMethodDef object_methods[] = {
     OBJECT___REDUCE_EX___METHODDEF
     OBJECT___REDUCE___METHODDEF
+    OBJECT___GETSTATE___METHODDEF
     {"__subclasshook__", object_subclasshook, METH_CLASS | METH_VARARGS,
      object_subclasshook_doc},
     {"__init_subclass__", object_init_subclass, METH_CLASS | METH_NOARGS,
@@ -7110,7 +7155,7 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static struct PyMethodDef tp_new_methoddef[] = {
-    {"__new__", (PyCFunction)(void(*)(void))tp_new_wrapper, METH_VARARGS|METH_KEYWORDS,
+    {"__new__", _PyCFunction_CAST(tp_new_wrapper), METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("__new__($type, *args, **kwargs)\n--\n\n"
                "Create and return a new object.  "
                "See help(type) for accurate signature.")},
@@ -8359,7 +8404,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
         }
         else if (Py_IS_TYPE(descr, &PyCFunction_Type) &&
                  PyCFunction_GET_FUNCTION(descr) ==
-                 (PyCFunction)(void(*)(void))tp_new_wrapper &&
+                 _PyCFunction_CAST(tp_new_wrapper) &&
                  ptr == (void**)&type->tp_new)
         {
             /* The __new__ wrapper is not a wrapper descriptor,
@@ -8423,17 +8468,11 @@ _PyTypes_InitSlotDefs(void)
     for (slotdef *p = slotdefs; p->name; p++) {
         /* Slots must be ordered by their offset in the PyHeapTypeObject. */
         assert(!p[1].name || p->offset <= p[1].offset);
-#ifdef INTERN_NAME_STRINGS
+        /* bpo-40521: Interned strings are shared by all subinterpreters */
         p->name_strobj = PyUnicode_InternFromString(p->name);
         if (!p->name_strobj || !PyUnicode_CHECK_INTERNED(p->name_strobj)) {
             return _PyStatus_NO_MEMORY();
         }
-#else
-        p->name_strobj = PyUnicode_FromString(p->name);
-        if (!p->name_strobj) {
-            return _PyStatus_NO_MEMORY();
-        }
-#endif
     }
     slotdefs_initialized = 1;
     return _PyStatus_OK();
@@ -8458,24 +8497,17 @@ update_slot(PyTypeObject *type, PyObject *name)
     int offset;
 
     assert(PyUnicode_CheckExact(name));
-#ifdef INTERN_NAME_STRINGS
     assert(PyUnicode_CHECK_INTERNED(name));
-#endif
 
     assert(slotdefs_initialized);
     pp = ptrs;
     for (p = slotdefs; p->name; p++) {
         assert(PyUnicode_CheckExact(p->name_strobj));
         assert(PyUnicode_CheckExact(name));
-#ifdef INTERN_NAME_STRINGS
+        /* bpo-40521: Using interned strings. */
         if (p->name_strobj == name) {
             *pp++ = p;
         }
-#else
-        if (p->name_strobj == name || _PyUnicode_EQ(p->name_strobj, name)) {
-            *pp++ = p;
-        }
-#endif
     }
     *pp = NULL;
     for (pp = ptrs; *pp; pp++) {
@@ -8948,8 +8980,11 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
     if (firstarg != NULL && (_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL)) {
         // "firstarg" is a cell here unless (very unlikely) super()
         // was called from the C-API before the first MAKE_CELL op.
-        if (cframe->f_lasti >= 0) {
-            assert(_Py_OPCODE(*co->co_firstinstr) == MAKE_CELL || _Py_OPCODE(*co->co_firstinstr) == COPY_FREE_VARS);
+        if (_PyInterpreterFrame_LASTI(cframe) >= 0) {
+            // MAKE_CELL and COPY_FREE_VARS have no quickened forms, so no need
+            // to use _PyOpcode_Deopt here:
+            assert(_Py_OPCODE(_PyCode_CODE(co)[0]) == MAKE_CELL ||
+                   _Py_OPCODE(_PyCode_CODE(co)[0]) == COPY_FREE_VARS);
             assert(PyCell_Check(firstarg));
             firstarg = PyCell_GET(firstarg);
         }

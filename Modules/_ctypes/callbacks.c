@@ -82,7 +82,7 @@ PyTypeObject PyCThunk_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,                            /* tp_flags */
-    "CThunkObject",                             /* tp_doc */
+    PyDoc_STR("CThunkObject"),                  /* tp_doc */
     CThunkObject_traverse,                      /* tp_traverse */
     CThunkObject_clear,                         /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -399,7 +399,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 #endif
     result = ffi_prep_cif(&p->cif, cc,
                           Py_SAFE_DOWNCAST(nargs, Py_ssize_t, int),
-                          _ctypes_get_ffi_type(restype),
+                          p->ffi_restype,
                           &p->atypes[0]);
     if (result != FFI_OK) {
         PyErr_Format(PyExc_RuntimeError,

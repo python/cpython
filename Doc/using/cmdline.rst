@@ -183,6 +183,8 @@ automatically enabled, if available on your platform (see
    Automatic enabling of tab-completion and history editing.
 
 
+.. _using-on-generic-options:
+
 Generic options
 ~~~~~~~~~~~~~~~
 
@@ -190,8 +192,28 @@ Generic options
                -h
                --help
 
-   Print a short description of all command line options.
+   Print a short description of all command line options and corresponding
+   environment variables and exit.
 
+.. cmdoption:: --help-env
+
+   Print a short description of Python-specific environment variables
+   and exit.
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: --help-xoptions
+
+   Print a description of implementation-specific :option:`-X` options
+   and exit.
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: --help-all
+
+   Print complete usage information and exit.
+
+   .. versionadded:: 3.11
 
 .. cmdoption:: -V
                --version
@@ -211,6 +233,7 @@ Generic options
 
    .. versionadded:: 3.6
       The ``-VV`` option.
+
 
 .. _using-on-misc-options:
 
@@ -248,14 +271,19 @@ Miscellaneous options
 
 .. cmdoption:: -d
 
-   Turn on parser debugging output (for expert only, depending on compilation
-   options).  See also :envvar:`PYTHONDEBUG`.
+   Turn on parser debugging output (for expert only).
+   See also the :envvar:`PYTHONDEBUG` environment variable.
+
+   This option requires a :ref:`debug build of Python <debug-build>`, otherwise
+   it's ignored.
 
 
 .. cmdoption:: -E
 
    Ignore all :envvar:`PYTHON*` environment variables, e.g.
    :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
+
+   See also the :option:`-P` and :option:`-I` (isolated) options.
 
 
 .. cmdoption:: -i
@@ -271,7 +299,9 @@ Miscellaneous options
 
 .. cmdoption:: -I
 
-   Run Python in isolated mode. This also implies -E and -s.
+   Run Python in isolated mode. This also implies :option:`-E`, :option:`-P`
+   and :option:`-s` options.
+
    In isolated mode :data:`sys.path` contains neither the script's directory nor
    the user's site-packages directory. All :envvar:`PYTHON*` environment
    variables are ignored, too. Further restrictions may be imposed to prevent
@@ -299,6 +329,23 @@ Miscellaneous options
 
    .. versionchanged:: 3.5
       Modify ``.pyc`` filenames according to :pep:`488`.
+
+
+.. cmdoption:: -P
+
+   Don't prepend a potentially unsafe path to :data:`sys.path`:
+
+   * ``python -m module`` command line: Don't prepend the current working
+     directory.
+   * ``python script.py`` command line: Don't prepend the script's directory.
+     If it's a symbolic link, resolve symbolic links.
+   * ``python -c code`` and ``python`` (REPL) command lines: Don't prepend an
+     empty string, which means the current working directory.
+
+   See also the :envvar:`PYTHONSAFEPATH` environment variable, and :option:`-E`
+   and :option:`-I` (isolated) options.
+
+   .. versionadded:: 3.11
 
 
 .. cmdoption:: -q
@@ -436,6 +483,7 @@ Miscellaneous options
    See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
    details.
 
+
 .. cmdoption:: -x
 
    Skip the first line of the source, allowing use of non-Unix forms of
@@ -529,6 +577,7 @@ Miscellaneous options
       The ``-X frozen_modules`` option.
 
 
+
 Options you shouldn't use
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -583,6 +632,14 @@ conflict.
    within a Python program as the variable :data:`sys.path`.
 
 
+.. envvar:: PYTHONSAFEPATH
+
+   If this is set to a non-empty string, don't prepend a potentially unsafe
+   path to :data:`sys.path`: see the :option:`-P` option for details.
+
+   .. versionadded:: 3.11
+
+
 .. envvar:: PYTHONPLATLIBDIR
 
    If this is set to a non-empty string, it overrides the :data:`sys.platlibdir`
@@ -630,6 +687,9 @@ conflict.
    If this is set to a non-empty string it is equivalent to specifying the
    :option:`-d` option.  If set to an integer, it is equivalent to specifying
    :option:`-d` multiple times.
+
+   This environment variable requires a :ref:`debug build of Python
+   <debug-build>`, otherwise it's ignored.
 
 
 .. envvar:: PYTHONINSPECT
@@ -969,15 +1029,6 @@ conflict.
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
-
-.. envvar:: PYTHONTHREADDEBUG
-
-   If set, Python will print threading debug info into stdout.
-
-   Need a :ref:`debug build of Python <debug-build>`.
-
-   .. deprecated-removed:: 3.10 3.12
-
 
 .. envvar:: PYTHONDUMPREFS
 

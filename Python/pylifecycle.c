@@ -9,7 +9,6 @@
 #include "pycore_dict.h"          // _PyDict_Fini()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
-#include "pycore_frame.h"         // _PyFrame_Fini()
 #include "pycore_genobject.h"     // _PyAsyncGen_Fini()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -96,11 +95,16 @@ __attribute__((
 
 #endif
 
+/* Suppress deprecation warning for PyBytesObject.ob_shash */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
 _PyRuntimeState _PyRuntime
 #if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
 __attribute__ ((section (".PyRuntime")))
 #endif
 = _PyRuntimeState_INIT;
+_Py_COMP_DIAG_POP
+
 static int runtime_initialized = 0;
 
 PyStatus
@@ -1087,8 +1091,6 @@ pyinit_main_reconfigure(PyThreadState *tstate)
 static PyStatus
 init_interp_main(PyThreadState *tstate)
 {
-    extern void _PyThread_debug_deprecation(void);
-
     assert(!_PyErr_Occurred(tstate));
 
     PyStatus status;
@@ -1189,9 +1191,6 @@ init_interp_main(PyThreadState *tstate)
         emit_stderr_warning_for_legacy_locale(interp->runtime);
 #endif
     }
-
-    // Warn about PYTHONTHREADDEBUG deprecation
-    _PyThread_debug_deprecation();
 
     assert(!_PyErr_Occurred(tstate));
 
@@ -1667,7 +1666,6 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyUnicode_FiniTypes(interp);
     _PySys_Fini(interp);
     _PyExc_Fini(interp);
-    _PyFrame_Fini(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);
     _PyFloat_FiniType(interp);
@@ -1983,12 +1981,10 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
 
     /* Copy the current interpreter config into the new interpreter */
     const PyConfig *config;
-#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     if (save_tstate != NULL) {
         config = _PyInterpreterState_GetConfig(save_tstate->interp);
     }
     else
-#endif
     {
         /* No current thread state, copy from the main interpreter */
         PyInterpreterState *main_interp = _PyInterpreterState_Main();
@@ -2840,11 +2836,7 @@ _Py_FatalErrorFormat(const char *func, const char *format, ...)
     }
 
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     vfprintf(stream, format, vargs);
     va_end(vargs);
 

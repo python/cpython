@@ -19,6 +19,7 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import warnings_helper
 
+support.requires_working_socket(module=True)
 
 here = os.path.dirname(__file__)
 # Self-signed cert file for 'localhost'

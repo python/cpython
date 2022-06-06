@@ -246,9 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1m",
-              url="https://www.openssl.org/source/openssl-1.1.1m.tar.gz",
-              checksum='8ec70f665c145c3103f6e330f538a9db',
+              name="OpenSSL 1.1.1n",
+              url="https://www.openssl.org/source/openssl-1.1.1n.tar.gz",
+              checksum='2aad5635f9bb338bc2c6b7d19cbc9676',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -271,10 +271,11 @@ def library_recipes():
             tk_patches = [ ]
 
 
+        base_url = "https://prdownloads.sourceforge.net/tcl/{what}{version}-src.tar.gz"
         result.extend([
           dict(
               name="Tcl %s"%(tcl_tk_ver,),
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl%s-src.tar.gz"%(tcl_tk_ver,),
+              url=base_url.format(what="tcl", version=tcl_tk_ver),
               checksum=tcl_checksum,
               buildDir="unix",
               configure_pre=[
@@ -291,7 +292,7 @@ def library_recipes():
               ),
           dict(
               name="Tk %s"%(tcl_tk_ver,),
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk%s-src.tar.gz"%(tcl_tk_ver,),
+              url=base_url.format(what="tk", version=tcl_tk_ver),
               checksum=tk_checksum,
               patches=tk_patches,
               buildDir="unix",
@@ -358,14 +359,13 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.37.2",
-              url="https://sqlite.org/2022/sqlite-autoconf-3370200.tar.gz",
-              checksum='683cc5312ee74e71079c14d24b7a6d27',
+              name="SQLite 3.38.4",
+              url="https://sqlite.org/2022/sqlite-autoconf-3380400.tar.gz",
+              checksum="34c0b92a0609ed4ce78582e8dc1ed45a",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
                             '-DSQLITE_ENABLE_FTS3_PARENTHESIS '
-                            '-DSQLITE_ENABLE_JSON1 '
                             '-DSQLITE_ENABLE_RTREE '
                             '-DSQLITE_OMIT_AUTOINIT '
                             '-DSQLITE_TCL=0 '
@@ -1157,11 +1157,11 @@ def buildPython():
         (' ', '--without-ensurepip ')[PYTHON_3],
         (' ', "--with-openssl='%s/libraries/usr/local'"%(
                             shellQuote(WORKDIR)[1:-1],))[PYTHON_3],
-        (' ', "--with-tcltk-includes='-I%s/libraries/usr/local/include'"%(
-                            shellQuote(WORKDIR)[1:-1],))[internalTk()],
-        (' ', "--with-tcltk-libs='-L%s/libraries/usr/local/lib -ltcl8.6 -ltk8.6'"%(
-                            shellQuote(WORKDIR)[1:-1],))[internalTk()],
         (' ', "--enable-optimizations --with-lto")[compilerCanOptimize()],
+        (' ', "TCLTK_CFLAGS='-I%s/libraries/usr/local/include'"%(
+                            shellQuote(WORKDIR)[1:-1],))[internalTk()],
+        (' ', "TCLTK_LIBS='-L%s/libraries/usr/local/lib -ltcl8.6 -ltk8.6'"%(
+                            shellQuote(WORKDIR)[1:-1],))[internalTk()],
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
 
@@ -1352,7 +1352,7 @@ def buildPython():
         build_time_vars = l_dict['build_time_vars']
     vars = {}
     for k, v in build_time_vars.items():
-        if type(v) == type(''):
+        if isinstance(v, str):
             for p in (include_path, lib_path):
                 v = v.replace(' ' + p, '')
                 v = v.replace(p + ' ', '')

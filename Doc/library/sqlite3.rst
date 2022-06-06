@@ -191,7 +191,7 @@ Module functions and constants
    |                  |                 |                      | connections and cursors       |
    +------------------+-----------------+----------------------+-------------------------------+
 
-   .. _threadsafety: https://www.python.org/dev/peps/pep-0249/#threadsafety
+   .. _threadsafety: https://peps.python.org/pep-0249/#threadsafety
    .. _SQLITE_THREADSAFE: https://sqlite.org/compile.html#threadsafe
 
    .. versionchanged:: 3.11
@@ -394,6 +394,23 @@ Connection Objects
       supplied, this must be a callable returning an instance of :class:`Cursor`
       or its subclasses.
 
+   .. method:: blobopen(table, column, row, /, *, readonly=False, name="main")
+
+      Open a :class:`Blob` handle to the :abbr:`BLOB (Binary Large OBject)`
+      located in table name *table*, column name *column*, and row index *row*
+      of database *name*.
+      When *readonly* is :const:`True` the blob is opened without write
+      permissions.
+      Trying to open a blob in a ``WITHOUT ROWID`` table will raise
+      :exc:`OperationalError`.
+
+      .. note::
+
+         The blob size cannot be changed using the :class:`Blob` class.
+         Use the SQL function ``zeroblob`` to create a blob with a fixed size.
+
+      .. versionadded:: 3.11
+
    .. method:: commit()
 
       This method commits the current transaction. If you don't call this method,
@@ -414,24 +431,21 @@ Connection Objects
 
    .. method:: execute(sql[, parameters])
 
-      This is a nonstandard shortcut that creates a cursor object by calling
-      the :meth:`~Connection.cursor` method, calls the cursor's
-      :meth:`~Cursor.execute` method with the *parameters* given, and returns
-      the cursor.
+      Create a new :class:`Cursor` object and call
+      :meth:`~Cursor.execute` on it with the given *sql* and *parameters*.
+      Return the new cursor object.
 
    .. method:: executemany(sql[, parameters])
 
-      This is a nonstandard shortcut that creates a cursor object by
-      calling the :meth:`~Connection.cursor` method, calls the cursor's
-      :meth:`~Cursor.executemany` method with the *parameters* given, and
-      returns the cursor.
+      Create a new :class:`Cursor` object and call
+      :meth:`~Cursor.executemany` on it with the given *sql* and *parameters*.
+      Return the new cursor object.
 
    .. method:: executescript(sql_script)
 
-      This is a nonstandard shortcut that creates a cursor object by
-      calling the :meth:`~Connection.cursor` method, calls the cursor's
-      :meth:`~Cursor.executescript` method with the given *sql_script*, and
-      returns the cursor.
+      Create a new :class:`Cursor` object and call
+      :meth:`~Cursor.executescript` on it with the given *sql_script*.
+      Return the new cursor object.
 
    .. method:: create_function(name, num_params, func, *, deterministic=False)
 
@@ -473,24 +487,50 @@ Connection Objects
       .. literalinclude:: ../includes/sqlite3/mysumaggr.py
 
 
+   .. method:: create_window_function(name, num_params, aggregate_class, /)
+
+      Creates user-defined aggregate window function *name*.
+
+      *aggregate_class* must implement the following methods:
+
+      * ``step``: adds a row to the current window
+      * ``value``: returns the current value of the aggregate
+      * ``inverse``: removes a row from the current window
+      * ``finalize``: returns the final value of the aggregate
+
+      ``step`` and ``value`` accept *num_params* number of parameters,
+      unless *num_params* is ``-1``, in which case they may take any number of
+      arguments.  ``finalize`` and ``value`` can return any of the types
+      supported by SQLite:
+      :class:`bytes`, :class:`str`, :class:`int`, :class:`float`, and
+      :const:`None`.  Call :meth:`create_window_function` with
+      *aggregate_class* set to :const:`None` to clear window function *name*.
+
+      Aggregate window functions are supported by SQLite 3.25.0 and higher.
+      :exc:`NotSupportedError` will be raised if used with older versions.
+
+      .. versionadded:: 3.11
+
+      Example:
+
+      .. literalinclude:: ../includes/sqlite3/sumintwindow.py
+
+
    .. method:: create_collation(name, callable)
 
-      Creates a collation with the specified *name* and *callable*. The callable will
-      be passed two string arguments. It should return -1 if the first is ordered
-      lower than the second, 0 if they are ordered equal and 1 if the first is ordered
-      higher than the second.  Note that this controls sorting (ORDER BY in SQL) so
-      your comparisons don't affect other SQL operations.
+      Create a collation named *name* using the collating function *callable*.
+      *callable* is passed two :class:`string <str>` arguments,
+      and it should return an :class:`integer <int>`:
 
-      Note that the callable will get its parameters as Python bytestrings, which will
-      normally be encoded in UTF-8.
+      * ``1`` if the first is ordered higher than the second
+      * ``-1`` if the first is ordered lower than the second
+      * ``0`` if they are ordered equal
 
-      The following example shows a custom collation that sorts "the wrong way":
+      The following example shows a reverse sorting collation:
 
       .. literalinclude:: ../includes/sqlite3/collation_reverse.py
 
-      To remove a collation, call ``create_collation`` with ``None`` as callable::
-
-         con.create_collation("reverse", None)
+      Remove a collation function by setting *callable* to :const:`None`.
 
       .. versionchanged:: 3.11
          The collation name can contain any Unicode character.  Earlier, only
@@ -748,6 +788,44 @@ Connection Objects
       .. versionadded:: 3.11
 
 
+   .. method:: serialize(*, name="main")
+
+      This method serializes a database into a :class:`bytes` object.  For an
+      ordinary on-disk database file, the serialization is just a copy of the
+      disk file.  For an in-memory database or a "temp" database, the
+      serialization is the same sequence of bytes which would be written to
+      disk if that database were backed up to disk.
+
+      *name* is the database to be serialized, and defaults to the main
+      database.
+
+      .. note::
+
+         This method is only available if the underlying SQLite library has the
+         serialize API.
+
+      .. versionadded:: 3.11
+
+
+   .. method:: deserialize(data, /, *, name="main")
+
+      This method causes the database connection to disconnect from database
+      *name*, and reopen *name* as an in-memory database based on the
+      serialization contained in *data*.  Deserialization will raise
+      :exc:`OperationalError` if the database connection is currently involved
+      in a read transaction or a backup operation.  :exc:`DataError` will be
+      raised if ``len(data)`` is larger than ``2**63 - 1``, and
+      :exc:`DatabaseError` will be raised if *data* does not contain a valid
+      SQLite database.
+
+      .. note::
+
+         This method is only available if the underlying SQLite library has the
+         deserialize API.
+
+      .. versionadded:: 3.11
+
+
 .. _sqlite3-cursor-objects:
 
 Cursor Objects
@@ -963,6 +1041,58 @@ Now we plug :class:`Row` in::
    35.14
 
 
+Blob Objects
+------------
+
+.. versionadded:: 3.11
+
+.. class:: Blob
+
+   A :class:`Blob` instance is a :term:`file-like object`
+   that can read and write data in an SQLite :abbr:`BLOB (Binary Large OBject)`.
+   Call :func:`len(blob) <len>` to get the size (number of bytes) of the blob.
+   Use indices and :term:`slices <slice>` for direct access to the blob data.
+
+   Use the :class:`Blob` as a :term:`context manager` to ensure that the blob
+   handle is closed after use.
+
+   .. literalinclude:: ../includes/sqlite3/blob.py
+
+   .. method:: close()
+
+      Close the blob.
+
+      The blob will be unusable from this point onward.  An
+      :class:`~sqlite3.Error` (or subclass) exception will be raised if any
+      further operation is attempted with the blob.
+
+   .. method:: read(length=-1, /)
+
+      Read *length* bytes of data from the blob at the current offset position.
+      If the end of the blob is reached, the data up to
+      :abbr:`EOF (End of File)` will be returned.  When *length* is not
+      specified, or is negative, :meth:`~Blob.read` will read until the end of
+      the blob.
+
+   .. method:: write(data, /)
+
+      Write *data* to the blob at the current offset.  This function cannot
+      change the blob length.  Writing beyond the end of the blob will raise
+      :exc:`ValueError`.
+
+   .. method:: tell()
+
+      Return the current access position of the blob.
+
+   .. method:: seek(offset, origin=os.SEEK_SET, /)
+
+      Set the current access position of the blob to *offset*.  The *origin*
+      argument defaults to :data:`os.SEEK_SET` (absolute blob positioning).
+      Other values for *origin* are :data:`os.SEEK_CUR` (seek relative to the
+      current position) and :data:`os.SEEK_END` (seek relative to the blob’s
+      end).
+
+
 .. _sqlite3-exceptions:
 
 Exceptions
@@ -1020,6 +1150,8 @@ Exceptions
    method on a connection that does not support transaction or has
    transactions turned off.  It is a subclass of :exc:`DatabaseError`.
 
+
+.. _sqlite3-blob-objects:
 
 .. _sqlite3-types:
 

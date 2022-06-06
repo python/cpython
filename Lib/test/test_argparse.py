@@ -41,11 +41,11 @@ class TestCase(unittest.TestCase):
         # The tests assume that line wrapping occurs at 80 columns, but this
         # behaviour can be overridden by setting the COLUMNS environment
         # variable.  To ensure that this width is used, set COLUMNS to 80.
-        env = os_helper.EnvironmentVarGuard()
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
         env['COLUMNS'] = '80'
-        self.addCleanup(env.__exit__)
 
 
+@os_helper.skip_unless_working_chmod
 class TempDirMixin(object):
 
     def setUp(self):
@@ -2265,8 +2265,7 @@ class TestAddSubparsers(TestCase):
             main description
 
             positional arguments:
-              foo         
-
+              foo         \n
             options:
               -h, --help  show this help message and exit
         '''))
@@ -2282,8 +2281,7 @@ class TestAddSubparsers(TestCase):
             main description
 
             positional arguments:
-              {}          
-
+              {}          \n
             options:
               -h, --help  show this help message and exit
         '''))
@@ -3350,6 +3348,7 @@ class TestHelpFormattingMetaclass(type):
             def _test(self, tester, parser_text):
                 expected_text = getattr(tester, self.func_suffix)
                 expected_text = textwrap.dedent(expected_text)
+                tester.maxDiff = None
                 tester.assertEqual(expected_text, parser_text)
 
             def test_format(self, tester):
@@ -3429,9 +3428,8 @@ class TestShortColumns(HelpTestCase):
     but we don't want any exceptions thrown in such cases. Only ugly representation.
     '''
     def setUp(self):
-        env = os_helper.EnvironmentVarGuard()
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
         env.set("COLUMNS", '15')
-        self.addCleanup(env.__exit__)
 
     parser_signature            = TestHelpBiggerOptionals.parser_signature
     argument_signatures         = TestHelpBiggerOptionals.argument_signatures
@@ -3745,7 +3743,7 @@ class TestHelpUsage(HelpTestCase):
           -w W [W ...]          w
           -x [X ...]            x
           --foo, --no-foo       Whether to foo
-          --bar, --no-bar       Whether to bar (default: True)
+          --bar, --no-bar       Whether to bar
           -f, --foobar, --no-foobar, --barfoo, --no-barfoo
           --bazz, --no-bazz     Bazz!
 
@@ -4425,6 +4423,8 @@ class TestHelpArgumentDefaults(HelpTestCase):
         Sig('--bar', action='store_true', help='bar help'),
         Sig('--taz', action=argparse.BooleanOptionalAction,
             help='Whether to taz it', default=True),
+        Sig('--corge', action=argparse.BooleanOptionalAction,
+            help='Whether to corge it', default=argparse.SUPPRESS),
         Sig('--quux', help="Set the quux", default=42),
         Sig('spam', help='spam help'),
         Sig('badger', nargs='?', default='wooden', help='badger help'),
@@ -4434,8 +4434,8 @@ class TestHelpArgumentDefaults(HelpTestCase):
          [Sig('--baz', type=int, default=42, help='baz help')]),
     ]
     usage = '''\
-        usage: PROG [-h] [--foo FOO] [--bar] [--taz | --no-taz] [--quux QUUX]
-                    [--baz BAZ]
+        usage: PROG [-h] [--foo FOO] [--bar] [--taz | --no-taz] [--corge | --no-corge]
+                    [--quux QUUX] [--baz BAZ]
                     spam [badger]
         '''
     help = usage + '''\
@@ -4443,20 +4443,21 @@ class TestHelpArgumentDefaults(HelpTestCase):
         description
 
         positional arguments:
-          spam             spam help
-          badger           badger help (default: wooden)
+          spam                 spam help
+          badger               badger help (default: wooden)
 
         options:
-          -h, --help       show this help message and exit
-          --foo FOO        foo help - oh and by the way, None
-          --bar            bar help (default: False)
-          --taz, --no-taz  Whether to taz it (default: True)
-          --quux QUUX      Set the quux (default: 42)
+          -h, --help           show this help message and exit
+          --foo FOO            foo help - oh and by the way, None
+          --bar                bar help (default: False)
+          --taz, --no-taz      Whether to taz it (default: True)
+          --corge, --no-corge  Whether to corge it
+          --quux QUUX          Set the quux (default: 42)
 
         title:
           description
 
-          --baz BAZ        baz help (default: 42)
+          --baz BAZ            baz help (default: 42)
         '''
     version = ''
 
@@ -4806,6 +4807,19 @@ class TestConflictHandling(TestCase):
               --spam NEW_SPAM
             '''))
 
+    def test_subparser_conflict(self):
+        parser = argparse.ArgumentParser()
+        sp = parser.add_subparsers()
+        sp.add_parser('fullname', aliases=['alias'])
+        self.assertRaises(argparse.ArgumentError,
+                          sp.add_parser, 'fullname')
+        self.assertRaises(argparse.ArgumentError,
+                          sp.add_parser, 'alias')
+        self.assertRaises(argparse.ArgumentError,
+                          sp.add_parser, 'other', aliases=['fullname'])
+        self.assertRaises(argparse.ArgumentError,
+                          sp.add_parser, 'other', aliases=['alias'])
+
 
 # =============================
 # Help and Version option tests
@@ -4902,12 +4916,13 @@ class TestStrings(TestCase):
             nargs='+',
             default=42,
             choices=[1, 2, 3],
+            required=False,
             help='HELP',
             metavar='METAVAR')
         string = (
             "Action(option_strings=['--foo', '-a', '-b'], dest='b', "
             "nargs='+', const=None, default=42, type='int', "
-            "choices=[1, 2, 3], help='HELP', metavar='METAVAR')")
+            "choices=[1, 2, 3], required=False, help='HELP', metavar='METAVAR')")
         self.assertStringEqual(option, string)
 
     def test_argument(self):
@@ -4918,12 +4933,13 @@ class TestStrings(TestCase):
             nargs='?',
             default=2.5,
             choices=[0.5, 1.5, 2.5],
+            required=True,
             help='H HH H',
             metavar='MV MV MV')
         string = (
             "Action(option_strings=[], dest='x', nargs='?', "
             "const=None, default=2.5, type=%r, choices=[0.5, 1.5, 2.5], "
-            "help='H HH H', metavar='MV MV MV')" % float)
+            "required=True, help='H HH H', metavar='MV MV MV')" % float)
         self.assertStringEqual(argument, string)
 
     def test_namespace(self):

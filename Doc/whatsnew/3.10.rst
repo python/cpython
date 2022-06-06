@@ -47,7 +47,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.10, compared to 3.9.
-
+Python 3.10 was released on October 4, 2021.
 For full details, see the :ref:`changelog <changelog>`.
 
 Summary -- Release highlights
@@ -1223,6 +1223,12 @@ now call :func:`inspect.get_annotations` to retrieve annotations. This means
 also now un-stringize stringized annotations.
 (Contributed by Larry Hastings in :issue:`43817`.)
 
+itertools
+---------
+
+Add :func:`itertools.pairwise()`.
+(Contributed by Raymond Hettinger in :issue:`38200`.)
+
 linecache
 ---------
 
@@ -2019,8 +2025,8 @@ Build Changes
 
 * The ``configure`` script now uses the ``pkg-config`` utility, if available,
   to detect the location of Tcl/Tk headers and libraries.  As before, those
-  locations can be explicitly specified with the :option:`--with-tcltk-includes`
-  and :option:`--with-tcltk-libs` configuration options.
+  locations can be explicitly specified with the ``--with-tcltk-includes``
+  and ``--with-tcltk-libs`` configuration options.
   (Contributed by Manolis Stamatogiannakis in :issue:`42603`.)
 
 * Add :option:`--with-openssl-rpath` option to ``configure`` script. The option

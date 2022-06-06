@@ -330,6 +330,16 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(Class().inner(), 'spam')
         self.assertEqual(Class().outer(), 'eggs')
 
+    def test_bound_function_inside_classmethod(self):
+        class A:
+            def foo(self, cls):
+                return 'spam'
+
+        class B:
+            bar = classmethod(A().foo)
+
+        self.assertEqual(B.bar(), 'spam')
+
     def test_wrapped_classmethod_inside_classmethod(self):
         class MyClassMethod1:
             def __init__(self, func):

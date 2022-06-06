@@ -10,6 +10,7 @@ import array
 from binascii import unhexlify
 import hashlib
 import importlib
+import io
 import itertools
 import os
 import sys
@@ -20,12 +21,11 @@ import warnings
 from test import support
 from test.support import _4G, bigmemtest
 from test.support.import_helper import import_fresh_module
+from test.support import os_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from http.client import HTTPException
 
-# Were we compiled --with-pydebug or with #define Py_DEBUG?
-COMPILED_WITH_PYDEBUG = hasattr(sys, 'gettotalrefcount')
 
 # default builtin hash module
 default_builtin_hashes = {'md5', 'sha1', 'sha256', 'sha512', 'sha3', 'blake2'}
@@ -107,7 +107,7 @@ class HashLibTestCase(unittest.TestCase):
     shakes = {'shake_128', 'shake_256'}
 
     # Issue #14693: fallback modules are always compiled under POSIX
-    _warn_on_extension_import = os.name == 'posix' or COMPILED_WITH_PYDEBUG
+    _warn_on_extension_import = (os.name == 'posix' or support.Py_DEBUG)
 
     def _conditional_import_module(self, module_name):
         """Import a module and return a reference to it or None on failure."""
@@ -221,6 +221,10 @@ class HashLibTestCase(unittest.TestCase):
     def test_algorithms_available(self):
         self.assertTrue(set(hashlib.algorithms_guaranteed).
                             issubset(hashlib.algorithms_available))
+        # all available algorithms must be loadable, bpo-47101
+        self.assertNotIn("undefined", hashlib.algorithms_available)
+        for name in hashlib.algorithms_available:
+            digest = hashlib.new(name, usedforsecurity=False)
 
     def test_usedforsecurity_true(self):
         hashlib.new("sha256", usedforsecurity=True)
@@ -370,6 +374,36 @@ class HashLibTestCase(unittest.TestCase):
             self.assertEqual(computed, digest)
             if not shake:
                 self.assertEqual(len(digest), m.digest_size)
+
+        if not shake and kwargs.get("key") is None:
+            # skip shake and blake2 extended parameter tests
+            self.check_file_digest(name, data, hexdigest)
+
+    def check_file_digest(self, name, data, hexdigest):
+        hexdigest = hexdigest.lower()
+        try:
+            hashlib.new(name)
+        except ValueError:
+            # skip, algorithm is blocked by security policy.
+            return
+        digests = [name]
+        digests.extend(self.constructors_to_test[name])
+
+        with open(os_helper.TESTFN, "wb") as f:
+            f.write(data)
+
+        try:
+            for digest in digests:
+                buf = io.BytesIO(data)
+                buf.seek(0)
+                self.assertEqual(
+                    hashlib.file_digest(buf, digest).hexdigest(), hexdigest
+                )
+                with open(os_helper.TESTFN, "rb") as f:
+                    digestobj = hashlib.file_digest(f, digest)
+                self.assertEqual(digestobj.hexdigest(), hexdigest)
+        finally:
+            os.unlink(os_helper.TESTFN)
 
     def check_no_unicode(self, algorithm_name):
         # Unicode objects are not allowed as input.
@@ -879,6 +913,7 @@ class HashLibTestCase(unittest.TestCase):
         )
 
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_threaded_hashing(self):
         # Updating the same hash object from several threads at once
         # using data chunk sizes containing the same byte sequences.
@@ -1116,6 +1151,33 @@ class KDFTests(unittest.TestCase):
     def test_normalized_name(self):
         self.assertNotIn("blake2b512", hashlib.algorithms_available)
         self.assertNotIn("sha3-512", hashlib.algorithms_available)
+
+    def test_file_digest(self):
+        data = b'a' * 65536
+        d1 = hashlib.sha256()
+        self.addCleanup(os.unlink, os_helper.TESTFN)
+        with open(os_helper.TESTFN, "wb") as f:
+            for _ in range(10):
+                d1.update(data)
+                f.write(data)
+
+        with open(os_helper.TESTFN, "rb") as f:
+            d2 = hashlib.file_digest(f, hashlib.sha256)
+
+        self.assertEqual(d1.hexdigest(), d2.hexdigest())
+        self.assertEqual(d1.name, d2.name)
+        self.assertIs(type(d1), type(d2))
+
+        with self.assertRaises(ValueError):
+            hashlib.file_digest(None, "sha256")
+
+        with self.assertRaises(ValueError):
+            with open(os_helper.TESTFN, "r") as f:
+                hashlib.file_digest(f, "sha256")
+
+        with self.assertRaises(ValueError):
+            with open(os_helper.TESTFN, "wb") as f:
+                hashlib.file_digest(f, "sha256")
 
 
 if __name__ == "__main__":

@@ -364,6 +364,7 @@ class PlatformTest(unittest.TestCase):
             # parent
             support.wait_process(pid, exitcode=0)
 
+    @unittest.skipIf(support.is_emscripten, "Does not apply to Emscripten")
     def test_libc_ver(self):
         # check that libc_ver(executable) doesn't raise an exception
         if os.path.isdir(sys.executable) and \

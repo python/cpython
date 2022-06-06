@@ -2093,17 +2093,17 @@ static const unsigned long SmallFactorials[] = {
 /*[clinic input]
 math.factorial
 
-    x as arg: object
+    n as arg: object
     /
 
-Find x!.
+Find n!.
 
 Raise a ValueError if x is negative or non-integral.
 [clinic start generated code]*/
 
 static PyObject *
 math_factorial(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=6686f26fae00e9ca input=6d1c8105c0d91fb4]*/
+/*[clinic end generated code: output=6686f26fae00e9ca input=713fb771677e8c31]*/
 {
     long x, two_valuation;
     int overflow;
@@ -2312,7 +2312,7 @@ math_modf_impl(PyObject *module, double x)
    in that int is larger than PY_SSIZE_T_MAX. */
 
 static PyObject*
-loghelper(PyObject* arg, double (*func)(double), const char *funcname)
+loghelper(PyObject* arg, double (*func)(double))
 {
     /* If it is int, do it ourselves. */
     if (PyLong_Check(arg)) {
@@ -2372,11 +2372,11 @@ math_log_impl(PyObject *module, PyObject *x, int group_right_1,
     PyObject *num, *den;
     PyObject *ans;
 
-    num = loghelper(x, m_log, "log");
+    num = loghelper(x, m_log);
     if (num == NULL || base == NULL)
         return num;
 
-    den = loghelper(base, m_log, "log");
+    den = loghelper(base, m_log);
     if (den == NULL) {
         Py_DECREF(num);
         return NULL;
@@ -2402,7 +2402,7 @@ static PyObject *
 math_log2(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=5425899a4d5d6acb input=08321262bae4f39b]*/
 {
-    return loghelper(x, m_log2, "log2");
+    return loghelper(x, m_log2);
 }
 
 
@@ -2419,7 +2419,7 @@ static PyObject *
 math_log10(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=be72a64617df9c6f input=b2469d02c6469e53]*/
 {
-    return loghelper(x, m_log10, "log10");
+    return loghelper(x, m_log10);
 }
 
 
@@ -3852,11 +3852,11 @@ static PyMethodDef math_methods[] = {
     {"asin",            math_asin,      METH_O,         math_asin_doc},
     {"asinh",           math_asinh,     METH_O,         math_asinh_doc},
     {"atan",            math_atan,      METH_O,         math_atan_doc},
-    {"atan2",           (PyCFunction)(void(*)(void))math_atan2,     METH_FASTCALL,  math_atan2_doc},
+    {"atan2",           _PyCFunction_CAST(math_atan2),     METH_FASTCALL,  math_atan2_doc},
     {"atanh",           math_atanh,     METH_O,         math_atanh_doc},
     {"cbrt",            math_cbrt,      METH_O,         math_cbrt_doc},
     MATH_CEIL_METHODDEF
-    {"copysign",        (PyCFunction)(void(*)(void))math_copysign,  METH_FASTCALL,  math_copysign_doc},
+    {"copysign",        _PyCFunction_CAST(math_copysign),  METH_FASTCALL,  math_copysign_doc},
     {"cos",             math_cos,       METH_O,         math_cos_doc},
     {"cosh",            math_cosh,      METH_O,         math_cosh_doc},
     MATH_DEGREES_METHODDEF
@@ -3873,14 +3873,14 @@ static PyMethodDef math_methods[] = {
     MATH_FREXP_METHODDEF
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
-    {"gcd",             (PyCFunction)(void(*)(void))math_gcd,       METH_FASTCALL,  math_gcd_doc},
-    {"hypot",           (PyCFunction)(void(*)(void))math_hypot,     METH_FASTCALL,  math_hypot_doc},
+    {"gcd",             _PyCFunction_CAST(math_gcd),       METH_FASTCALL,  math_gcd_doc},
+    {"hypot",           _PyCFunction_CAST(math_hypot),     METH_FASTCALL,  math_hypot_doc},
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
     MATH_ISINF_METHODDEF
     MATH_ISNAN_METHODDEF
     MATH_ISQRT_METHODDEF
-    {"lcm",             (PyCFunction)(void(*)(void))math_lcm,       METH_FASTCALL,  math_lcm_doc},
+    {"lcm",             _PyCFunction_CAST(math_lcm),       METH_FASTCALL,  math_lcm_doc},
     MATH_LDEXP_METHODDEF
     {"lgamma",          math_lgamma,    METH_O,         math_lgamma_doc},
     MATH_LOG_METHODDEF
@@ -3890,7 +3890,7 @@ static PyMethodDef math_methods[] = {
     MATH_MODF_METHODDEF
     MATH_POW_METHODDEF
     MATH_RADIANS_METHODDEF
-    {"remainder",       (PyCFunction)(void(*)(void))math_remainder, METH_FASTCALL,  math_remainder_doc},
+    {"remainder",       _PyCFunction_CAST(math_remainder), METH_FASTCALL,  math_remainder_doc},
     {"sin",             math_sin,       METH_O,         math_sin_doc},
     {"sinh",            math_sinh,      METH_O,         math_sinh_doc},
     {"sqrt",            math_sqrt,      METH_O,         math_sqrt_doc},

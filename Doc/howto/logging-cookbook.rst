@@ -7,7 +7,8 @@ Logging Cookbook
 :Author: Vinay Sajip <vinay_sajip at red-dove dot com>
 
 This page contains a number of recipes related to logging, which have been found
-useful in the past.
+useful in the past. For links to tutorial and reference information, please see
+:ref:`cookbook-ref-links`.
 
 .. currentmodule:: logging
 
@@ -1788,22 +1789,15 @@ Python used.
 If you need more specialised processing, you can use a custom JSON encoder,
 as in the following complete example::
 
-    from __future__ import unicode_literals
-
     import json
     import logging
 
-    # This next bit is to ensure the script runs unchanged on 2.x and 3.x
-    try:
-        unicode
-    except NameError:
-        unicode = str
 
     class Encoder(json.JSONEncoder):
         def default(self, o):
             if isinstance(o, set):
                 return tuple(o)
-            elif isinstance(o, unicode):
+            elif isinstance(o, str):
                 return o.encode('unicode_escape').decode('ascii')
             return super().default(o)
 
@@ -3082,3 +3076,23 @@ the :ref:`existing mechanisms <context-info>` for passing contextual
 information into your logs and restrict the loggers created to those describing
 areas within your application (generally modules, but occasionally slightly
 more fine-grained than that).
+
+.. _cookbook-ref-links:
+
+Other resources
+---------------
+
+.. seealso::
+
+   Module :mod:`logging`
+      API reference for the logging module.
+
+   Module :mod:`logging.config`
+      Configuration API for the logging module.
+
+   Module :mod:`logging.handlers`
+      Useful handlers included with the logging module.
+
+   :ref:`Basic Tutorial <logging-basic-tutorial>`
+
+   :ref:`Advanced Tutorial <logging-advanced-tutorial>`

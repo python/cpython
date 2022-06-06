@@ -728,16 +728,10 @@ class ElementTree:
                 encoding = "utf-8"
             else:
                 encoding = "us-ascii"
-        enc_lower = encoding.lower()
-        with _get_writer(file_or_filename, enc_lower) as write:
+        with _get_writer(file_or_filename, encoding) as (write, declared_encoding):
             if method == "xml" and (xml_declaration or
                     (xml_declaration is None and
-                     enc_lower not in ("utf-8", "us-ascii", "unicode"))):
-                declared_encoding = encoding
-                if enc_lower == "unicode":
-                    # Retrieve the default encoding for the xml declaration
-                    import locale
-                    declared_encoding = locale.getpreferredencoding()
+                     declared_encoding.lower() not in ("utf-8", "us-ascii"))):
                 write("<?xml version='1.0' encoding='%s'?>\n" % (
                     declared_encoding,))
             if method == "text":
@@ -762,19 +756,20 @@ def _get_writer(file_or_filename, encoding):
         write = file_or_filename.write
     except AttributeError:
         # file_or_filename is a file name
-        if encoding == "unicode":
-            file = open(file_or_filename, "w")
+        if encoding.lower() == "unicode":
+            file = open(file_or_filename, "w",
+                        errors="xmlcharrefreplace")
         else:
             file = open(file_or_filename, "w", encoding=encoding,
                         errors="xmlcharrefreplace")
         with file:
-            yield file.write
+            yield file.write, file.encoding
     else:
         # file_or_filename is a file-like object
         # encoding determines if it is a text or binary writer
-        if encoding == "unicode":
+        if encoding.lower() == "unicode":
             # use a text writer as is
-            yield write
+            yield write, getattr(file_or_filename, "encoding", None) or "utf-8"
         else:
             # wrap a binary writer with TextIOWrapper
             with contextlib.ExitStack() as stack:
@@ -805,7 +800,7 @@ def _get_writer(file_or_filename, encoding):
                 # Keep the original file open when the TextIOWrapper is
                 # destroyed
                 stack.callback(file.detach)
-                yield file.write
+                yield file.write, encoding
 
 def _namespaces(elem, default_namespace=None):
     # identify namespaces used in this tree

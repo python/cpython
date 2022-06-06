@@ -37,7 +37,8 @@ descriptor.
    On macOS, the fcntl module exposes the ``F_GETPATH`` constant, which obtains
    the path of a file from a file descriptor.
    On Linux(>=3.15), the fcntl module exposes the ``F_OFD_GETLK``, ``F_OFD_SETLK``
-   and ``F_OFD_SETLKW`` constants, which working with open file description locks.
+   and ``F_OFD_SETLKW`` constants, which are used when working with open file
+   description locks.
 
 .. versionchanged:: 3.10
    On Linux >= 2.6.11, the fcntl module exposes the ``F_GETPIPE_SZ`` and

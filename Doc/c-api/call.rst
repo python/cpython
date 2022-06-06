@@ -26,7 +26,7 @@ This convention is not only used by *tp_call*:
 :c:member:`~PyTypeObject.tp_new` and :c:member:`~PyTypeObject.tp_init`
 also pass arguments this way.
 
-To call an object, use :c:func:`PyObject_Call` or other
+To call an object, use :c:func:`PyObject_Call` or another
 :ref:`call API <capi-call>`.
 
 

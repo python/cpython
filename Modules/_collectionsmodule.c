@@ -1347,27 +1347,24 @@ deque_traverse(dequeobject *deque, visitproc visit, void *arg)
 static PyObject *
 deque_reduce(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *dict, *it;
+    PyObject *state, *it;
 
-    if (_PyObject_LookupAttr((PyObject *)deque, &_Py_ID(__dict__), &dict) < 0) {
+    state = _PyObject_GetState((PyObject *)deque);
+    if (state == NULL) {
         return NULL;
-    }
-    if (dict == NULL) {
-        dict = Py_None;
-        Py_INCREF(dict);
     }
 
     it = PyObject_GetIter((PyObject *)deque);
     if (it == NULL) {
-        Py_DECREF(dict);
+        Py_DECREF(state);
         return NULL;
     }
 
     if (deque->maxlen < 0) {
-        return Py_BuildValue("O()NN", Py_TYPE(deque), dict, it);
+        return Py_BuildValue("O()NN", Py_TYPE(deque), state, it);
     }
     else {
-        return Py_BuildValue("O(()n)NN", Py_TYPE(deque), deque->maxlen, dict, it);
+        return Py_BuildValue("O(()n)NN", Py_TYPE(deque), deque->maxlen, state, it);
     }
 }
 
@@ -1539,12 +1536,6 @@ deque_sizeof(dequeobject *deque, void *unused)
 PyDoc_STRVAR(sizeof_doc,
 "D.__sizeof__() -- size of D in memory, in bytes");
 
-static int
-deque_bool(dequeobject *deque)
-{
-    return Py_SIZE(deque) != 0;
-}
-
 static PyObject *
 deque_get_maxlen(dequeobject *deque, void *Py_UNUSED(ignored))
 {
@@ -1575,20 +1566,6 @@ static PySequenceMethods deque_as_sequence = {
     (ssizeargfunc)deque_inplace_repeat, /* sq_inplace_repeat */
 };
 
-static PyNumberMethods deque_as_number = {
-    0,                                  /* nb_add */
-    0,                                  /* nb_subtract */
-    0,                                  /* nb_multiply */
-    0,                                  /* nb_remainder */
-    0,                                  /* nb_divmod */
-    0,                                  /* nb_power */
-    0,                                  /* nb_negative */
-    0,                                  /* nb_positive */
-    0,                                  /* nb_absolute */
-    (inquiry)deque_bool,                /* nb_bool */
-    0,                                  /* nb_invert */
- };
-
 static PyObject *deque_iter(dequeobject *deque);
 static PyObject *deque_reviter(dequeobject *deque, PyObject *Py_UNUSED(ignored));
 PyDoc_STRVAR(reversed_doc,
@@ -1611,9 +1588,9 @@ static PyMethodDef deque_methods[] = {
         METH_O,                  extend_doc},
     {"extendleft",              (PyCFunction)deque_extendleft,
         METH_O,                  extendleft_doc},
-    {"index",                   (PyCFunction)(void(*)(void))deque_index,
+    {"index",                   _PyCFunction_CAST(deque_index),
         METH_FASTCALL,            index_doc},
-    {"insert",                  (PyCFunction)(void(*)(void))deque_insert,
+    {"insert",                  _PyCFunction_CAST(deque_insert),
         METH_FASTCALL,            insert_doc},
     {"pop",                     (PyCFunction)deque_pop,
         METH_NOARGS,             pop_doc},
@@ -1627,7 +1604,7 @@ static PyMethodDef deque_methods[] = {
         METH_NOARGS,             reversed_doc},
     {"reverse",                 (PyCFunction)deque_reverse,
         METH_NOARGS,             reverse_doc},
-    {"rotate",                  (PyCFunction)(void(*)(void))deque_rotate,
+    {"rotate",                  _PyCFunction_CAST(deque_rotate),
         METH_FASTCALL,            rotate_doc},
     {"__sizeof__",              (PyCFunction)deque_sizeof,
         METH_NOARGS,             sizeof_doc},
@@ -1653,7 +1630,7 @@ static PyTypeObject deque_type = {
     0,                                  /* tp_setattr */
     0,                                  /* tp_as_async */
     deque_repr,                         /* tp_repr */
-    &deque_as_number,                   /* tp_as_number */
+    0,                                  /* tp_as_number */
     &deque_as_sequence,                 /* tp_as_sequence */
     0,                                  /* tp_as_mapping */
     PyObject_HashNotImplemented,        /* tp_hash */
@@ -2352,7 +2329,7 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
                 break;
 
             if (!PyUnicode_CheckExact(key) ||
-                (hash = ((PyASCIIObject *) key)->hash) == -1)
+                (hash = _PyASCIIObject_CAST(key)->hash) == -1)
             {
                 hash = PyObject_Hash(key);
                 if (hash == -1)
