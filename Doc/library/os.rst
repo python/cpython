@@ -809,8 +809,11 @@ as internal buffering of data.
    some filesystems could implement extra optimizations, such as the use of
    reflinks (i.e., two or more inodes that share pointers to the same
    copy-on-write disk blocks; supported file systems include btrfs and XFS)
-   and server-side copy (in the case of NFS). The copy is done as if
-   both files are opened as binary.
+   and server-side copy (in the case of NFS).
+
+   The copy is done as if both files are opened in binary mode, meaning that
+   this function will not convert encodings or line endings even if you have
+   opened the files in text mode for that as described in :ref:`tut-files`.
 
    The return value is the amount of bytes copied. This could be less than the
    amount requested.
