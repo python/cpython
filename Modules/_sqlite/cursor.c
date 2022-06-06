@@ -944,7 +944,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             }
         }
 
-        if (self->statement->is_dml && multiple) {
+        if (self->statement->is_dml && rc == SQLITE_DONE && multiple) {
             self->rowcount += (long)sqlite3_changes(self->connection->db);
         }
 
