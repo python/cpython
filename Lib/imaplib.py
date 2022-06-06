@@ -66,7 +66,7 @@ Commands = {
         'CREATE':       ('AUTH', 'SELECTED'),
         'DELETE':       ('AUTH', 'SELECTED'),
         'DELETEACL':    ('AUTH', 'SELECTED'),
-        'ENABLE':       ('NONAUTH', 'AUTH', ),
+        'ENABLE':       ('AUTH', ),
         'EXAMINE':      ('AUTH', 'SELECTED'),
         'EXPUNGE':      ('SELECTED',),
         'FETCH':        ('SELECTED',),
