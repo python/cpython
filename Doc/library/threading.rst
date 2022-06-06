@@ -150,7 +150,7 @@ This module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: settrace(func)
+.. function:: settrace(func, *, running_threads=False)
 
    .. index:: single: trace function
 
@@ -158,6 +158,11 @@ This module defines the following functions:
    The *func* will be passed to  :func:`sys.settrace` for each thread, before its
    :meth:`~Thread.run` method is called.
 
+   If *running_threads* is set, the tracing function will be installed in all running
+   threads.
+
+   .. versionchanged:: 3.12
+      The *running_threads* parameter was added.
 
 .. function:: gettrace()
 
@@ -170,7 +175,7 @@ This module defines the following functions:
    .. versionadded:: 3.10
 
 
-.. function:: setprofile(func)
+.. function:: setprofile(func, *, running_threads=False)
 
    .. index:: single: profile function
 
@@ -178,6 +183,11 @@ This module defines the following functions:
    The *func* will be passed to  :func:`sys.setprofile` for each thread, before its
    :meth:`~Thread.run` method is called.
 
+   If *running_threads* is set, the profile function will be installed in all running
+   threads.
+
+   .. versionchanged:: 3.12
+      The *running_threads* parameter was added.
 
 .. function:: getprofile()
 

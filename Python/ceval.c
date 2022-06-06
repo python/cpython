@@ -6455,6 +6455,20 @@ PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
     }
 }
 
+void
+PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *arg)
+{
+    PyThreadState *this_tstate = _PyThreadState_GET();
+    PyInterpreterState* interp = this_tstate->interp;
+    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
+    while (ts) {
+        if (_PyEval_SetProfile(ts, func, arg) < 0) {
+            _PyErr_WriteUnraisableMsg("in PyEval_SetProfileAllThreads", NULL);
+        }
+        ts = PyThreadState_Next(ts);
+    }
+}
+
 int
 _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
 {
@@ -6508,6 +6522,19 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
     }
 }
 
+void
+PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *arg)
+{
+    PyThreadState *this_tstate = _PyThreadState_GET();
+    PyInterpreterState* interp = this_tstate->interp;
+    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
+    while (ts) {
+        if (_PyEval_SetTrace(ts, func, arg) < 0) {
+            _PyErr_WriteUnraisableMsg("in PyEval_SetTraceAllThreads", NULL);
+        }
+        ts = PyThreadState_Next(ts);
+    }
+}
 
 int
 _PyEval_SetCoroutineOriginTrackingDepth(int depth)

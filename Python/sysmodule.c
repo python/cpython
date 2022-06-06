@@ -1022,6 +1022,43 @@ function call.  See the debugger chapter in the library manual."
 );
 
 /*[clinic input]
+sys._settraceallthreads
+
+    arg: object
+    /
+
+Set the global debug tracing function in all running threads.
+
+It will be called on each function call. See the debugger chapter
+in the library manual.
+[clinic start generated code]*/
+
+static PyObject *
+sys__settraceallthreads(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=161cca30207bf3ca input=57c1ae02b1b5ee94]*/
+{
+    PyObject* argument = NULL;
+    Py_tracefunc func = NULL;
+
+    if (arg != Py_None) {
+        func = trace_trampoline;
+        argument = arg;
+    }
+
+    PyThreadState *this_tstate = _PyThreadState_GET();
+    PyInterpreterState* interp = this_tstate->interp;
+    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
+    while (ts) {
+        if (_PyEval_SetTrace(ts, func, argument) < 0) {
+            return NULL;
+        }
+        ts = PyThreadState_Next(ts);
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 sys.gettrace
 
 Return the global debug tracing function set with sys.settrace.
@@ -1065,6 +1102,43 @@ PyDoc_STRVAR(setprofile_doc,
 Set the profiling function.  It will be called on each function call\n\
 and return.  See the profiler chapter in the library manual."
 );
+
+/*[clinic input]
+sys._setprofileallthreads
+
+    arg: object
+    /
+
+Set the profiling function in all running threads.
+
+It will be called on each function call and return.  See the profiler chapter
+in the library manual.
+[clinic start generated code]*/
+
+static PyObject *
+sys__setprofileallthreads(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=2d61319e27b309fe input=7daefd8797f0476f]*/
+{
+    PyObject* argument = NULL;
+    Py_tracefunc func = NULL;
+
+    if (arg != Py_None) {
+        func = profile_trampoline;
+        argument = arg;
+    }
+
+    PyThreadState *this_tstate = _PyThreadState_GET();
+    PyInterpreterState* interp = this_tstate->interp;
+    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
+    while (ts) {
+        if (_PyEval_SetProfile(ts, func, argument) < 0) {
+            return NULL;
+        }
+        ts = PyThreadState_Next(ts);
+    }
+
+    Py_RETURN_NONE;
+}
 
 /*[clinic input]
 sys.getprofile
@@ -2035,9 +2109,11 @@ static PyMethodDef sys_methods[] = {
     SYS_GETSWITCHINTERVAL_METHODDEF
     SYS_SETDLOPENFLAGS_METHODDEF
     {"setprofile", sys_setprofile, METH_O, setprofile_doc},
+    SYS__SETPROFILEALLTHREADS_METHODDEF
     SYS_GETPROFILE_METHODDEF
     SYS_SETRECURSIONLIMIT_METHODDEF
     {"settrace", sys_settrace, METH_O, settrace_doc},
+    SYS__SETTRACEALLTHREADS_METHODDEF
     SYS_GETTRACE_METHODDEF
     SYS_CALL_TRACING_METHODDEF
     SYS__DEBUGMALLOCSTATS_METHODDEF

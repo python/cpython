@@ -55,29 +55,39 @@ del _thread
 _profile_hook = None
 _trace_hook = None
 
-def setprofile(func):
+def setprofile(func, *, running_threads=False):
     """Set a profile function for all threads started from the threading module.
 
     The func will be passed to sys.setprofile() for each thread, before its
     run() method is called.
 
+    If running_threads is set, the profile function will be installed in all running
+    threads.
     """
     global _profile_hook
     _profile_hook = func
+
+    if running_threads:
+        _sys._setprofileallthreads(func)
 
 def getprofile():
     """Get the profiler function as set by threading.setprofile()."""
     return _profile_hook
 
-def settrace(func):
+def settrace(func, *, running_threads=False):
     """Set a trace function for all threads started from the threading module.
 
     The func will be passed to sys.settrace() for each thread, before its run()
     method is called.
 
+    If running_threads is set, the trace function will be installed in all running
+    threads.
     """
     global _trace_hook
     _trace_hook = func
+
+    if running_threads:
+        _sys._settraceallthreads(func)
 
 def gettrace():
     """Get the trace function as set by threading.settrace()."""
