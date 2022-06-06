@@ -1,1 +1,4 @@
-Allow specifying ``weakref_slot`` several times in dataclass MRO
+Fixed a case where dataclasses would try to add ``__weakref__`` into the
+``__slots__`` for a dataclass that specified ``weakref_slot=True`` when it was
+already defined in one of its bases. This resulted in a ``TypeError`` upon the
+new class being created.
