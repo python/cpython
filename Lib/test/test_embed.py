@@ -1389,7 +1389,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     @unittest.skipUnless(MS_WINDOWS, 'Windows only')
     def test_repeated_init_pybuilddir_pythonhome_win32(self):
         # Test an out-of-build-tree layout with PYTHONHOME override,
-        # repeating path calculation.
+        # repeating path calculation (gh-91985). This layout is cited
+        # from test_buildtree_pythonhome_win32 in test_getpath.
         config = self._get_expected_config()
         paths = config['config']['module_search_paths']
 
