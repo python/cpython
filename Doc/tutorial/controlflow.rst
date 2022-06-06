@@ -250,7 +250,7 @@ at a more abstract level.  The :keyword:`!pass` is silently ignored::
 :keyword:`!match` Statements
 ============================
 
-A match statement takes an expression and compares its value to successive
+A :keyword:`match` statement takes an expression and compares its value to successive
 patterns given as one or more case blocks.  This is superficially
 similar to a switch statement in C, Java or JavaScript (and many
 other languages), but it can also extract components (sequence elements or
@@ -395,9 +395,11 @@ Several other key features of this statement:
 
       from enum import Enum
       class Color(Enum):
-          RED = 0
-          GREEN = 1
-          BLUE = 2
+          RED = 'red'
+          GREEN = 'green'
+          BLUE = 'blue'
+
+      color = Color(input("Enter your choice of 'red', 'blue' or 'green': "))
 
       match color:
           case Color.RED:
@@ -882,7 +884,7 @@ zero or more normal arguments may occur. ::
        file.write(separator.join(args))
 
 
-Normally, these ``variadic`` arguments will be last in the list of formal
+Normally, these *variadic* arguments will be last in the list of formal
 parameters, because they scoop up all remaining input arguments that are
 passed to the function. Any formal parameters which occur after the ``*args``
 parameter are 'keyword-only' arguments, meaning that they can only be used as

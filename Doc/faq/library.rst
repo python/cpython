@@ -240,9 +240,6 @@ Be sure to use the :mod:`threading` module and not the :mod:`_thread` module.
 The :mod:`threading` module builds convenient abstractions on top of the
 low-level primitives provided by the :mod:`_thread` module.
 
-Aahz has a set of slides from his threading tutorial that are helpful; see
-http://www.pythoncraft.com/OSCON2001/.
-
 
 None of my threads seem to run: why?
 ------------------------------------
@@ -614,9 +611,9 @@ use ``p.read(n)``.
 How do I access the serial (RS232) port?
 ----------------------------------------
 
-For Win32, POSIX (Linux, BSD, etc.), Jython:
+For Win32, OSX, Linux, BSD, Jython, IronPython:
 
-   http://pyserial.sourceforge.net
+   https://pypi.org/project/pyserial/
 
 For Unix, see a Usenet post by Mitch Chapman:
 

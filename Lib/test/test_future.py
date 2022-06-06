@@ -175,7 +175,7 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         scope = {}
         exec(
             "from __future__ import annotations\n"
-            + code, {}, scope
+            + code, scope
         )
         return scope
 
@@ -287,10 +287,11 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("list[str]")
         eq("dict[str, int]")
         eq("set[str,]")
+        eq("tuple[()]")
         eq("tuple[str, ...]")
-        eq("tuple[(str, *types)]")
+        eq("tuple[str, *types]")
         eq("tuple[str, int, (str, int)]")
-        eq("tuple[(*int, str, str, (str, int))]")
+        eq("tuple[*int, str, str, (str, int)]")
         eq("tuple[str, int, float, dict[str, int]]")
         eq("slice[0]")
         eq("slice[0:1]")
@@ -305,6 +306,21 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("slice[1:2, 1]")
         eq("slice[1:2, 2, 3]")
         eq("slice[()]")
+        # Note that `slice[*Ts]`, `slice[*Ts,]`, and `slice[(*Ts,)]` all have
+        # the same AST, but only `slice[*Ts,]` passes this test, because that's
+        # what the unparser produces.
+        eq("slice[*Ts,]")
+        eq("slice[1, *Ts]")
+        eq("slice[*Ts, 2]")
+        eq("slice[1, *Ts, 2]")
+        eq("slice[*Ts, *Ts]")
+        eq("slice[1, *Ts, *Ts]")
+        eq("slice[*Ts, 1, *Ts]")
+        eq("slice[*Ts, *Ts, 1]")
+        eq("slice[1, *Ts, *Ts, 2]")
+        eq("slice[1:2, *Ts]")
+        eq("slice[*Ts, 1:2]")
+        eq("slice[1:2, *Ts, 3:4]")
         eq("slice[a, b:c, d:e:f]")
         eq("slice[(x for x in a)]")
         eq('str or None if sys.version_info[0] > (3,) else str or bytes or None')
@@ -402,6 +418,25 @@ class AnnotationsFutureTestCase(unittest.TestCase):
             def foo():
                 def bar(arg: (yield)): pass
             """))
+
+    def test_get_type_hints_on_func_with_variadic_arg(self):
+        # `typing.get_type_hints` might break on a function with a variadic
+        # annotation (e.g. `f(*args: *Ts)`) if `from __future__ import
+        # annotations`, because it could try to evaluate `*Ts` as an expression,
+        # which on its own isn't value syntax.
+        namespace = self._exec_future(dedent("""\
+        class StarredC: pass
+        class C:
+          def __iter__(self):
+            yield StarredC()
+        c = C()
+        def f(*args: *c): pass
+        import typing
+        hints = typing.get_type_hints(f)
+        """))
+
+        hints = namespace.pop('hints')
+        self.assertIsInstance(hints['args'], namespace['StarredC'])
 
 
 if __name__ == "__main__":

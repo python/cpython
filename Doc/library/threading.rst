@@ -114,7 +114,7 @@ This module defines the following functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD.
 
    .. versionadded:: 3.8
 
@@ -293,7 +293,7 @@ There is the possibility that "dummy thread objects" are created. These are
 thread objects corresponding to "alien threads", which are threads of control
 started outside the threading module, such as directly from C code.  Dummy
 thread objects have limited functionality; they are always considered alive and
-daemonic, and cannot be :meth:`~Thread.join`\ ed.  They are never deleted,
+daemonic, and cannot be :ref:`joined <meth-thread-join>`.  They are never deleted,
 since it is impossible to detect the termination of alien threads.
 
 
@@ -314,7 +314,7 @@ since it is impossible to detect the termination of alien threads.
    or "Thread-*N* (target)" where "target" is ``target.__name__`` if the
    *target* argument is specified.
 
-   *args* is the argument tuple for the target invocation.  Defaults to ``()``.
+   *args* is a list or tuple of arguments for the target invocation.  Defaults to ``()``.
 
    *kwargs* is a dictionary of keyword arguments for the target invocation.
    Defaults to ``{}``.
@@ -353,6 +353,21 @@ since it is impossible to detect the termination of alien threads.
       the *target* argument, if any, with positional and keyword arguments taken
       from the *args* and *kwargs* arguments, respectively.
 
+      Using list or tuple as the *args* argument which passed to the :class:`Thread`
+      could achieve the same effect.
+
+      Example::
+
+         >>> from threading import Thread
+         >>> t = Thread(target=print, args=[1])
+         >>> t.run()
+         1
+         >>> t = Thread(target=print, args=(1,))
+         >>> t.run()
+         1
+
+   .. _meth-thread-join:
+
    .. method:: join(timeout=None)
 
       Wait until the thread terminates. This blocks the calling thread until
@@ -370,7 +385,7 @@ since it is impossible to detect the termination of alien threads.
       When the *timeout* argument is not present or ``None``, the operation will
       block until the thread terminates.
 
-      A thread can be :meth:`~Thread.join`\ ed many times.
+      A thread can be joined many times.
 
       :meth:`~Thread.join` raises a :exc:`RuntimeError` if an attempt is made
       to join the current thread as that would cause a deadlock. It is also
@@ -428,8 +443,8 @@ since it is impossible to detect the termination of alien threads.
 
    .. attribute:: daemon
 
-      A boolean value indicating whether this thread is a daemon thread (True)
-      or not (False).  This must be set before :meth:`~Thread.start` is called,
+      A boolean value indicating whether this thread is a daemon thread (``True``)
+      or not (``False``).  This must be set before :meth:`~Thread.start` is called,
       otherwise :exc:`RuntimeError` is raised.  Its initial value is inherited
       from the creating thread; the main thread is not a daemon thread and
       therefore all threads created in the main thread default to
@@ -503,7 +518,7 @@ All methods are executed atomically.
       value, block for at most the number of seconds specified by *timeout*
       and as long as the lock cannot be acquired.  A *timeout* argument of ``-1``
       specifies an unbounded wait.  It is forbidden to specify a *timeout*
-      when *blocking* is false.
+      when *blocking* is ``False``.
 
       The return value is ``True`` if the lock is acquired successfully,
       ``False`` if not (for example if the *timeout* expired).
@@ -531,7 +546,7 @@ All methods are executed atomically.
 
    .. method:: locked()
 
-      Return true if the lock is acquired.
+      Return ``True`` if the lock is acquired.
 
 
 
@@ -580,17 +595,17 @@ Reentrant locks also support the :ref:`context management protocol <with-locks>`
       is unlocked, only one at a time will be able to grab ownership of the lock.
       There is no return value in this case.
 
-      When invoked with the *blocking* argument set to true, do the same thing as when
+      When invoked with the *blocking* argument set to ``True``, do the same thing as when
       called without arguments, and return ``True``.
 
-      When invoked with the *blocking* argument set to false, do not block.  If a call
+      When invoked with the *blocking* argument set to ``False``, do not block.  If a call
       without an argument would block, return ``False`` immediately; otherwise, do the
       same thing as when called without arguments, and return ``True``.
 
       When invoked with the floating-point *timeout* argument set to a positive
       value, block for at most the number of seconds specified by *timeout*
       and as long as the lock cannot be acquired.  Return ``True`` if the lock has
-      been acquired, false if the timeout has elapsed.
+      been acquired, ``False`` if the timeout has elapsed.
 
       .. versionchanged:: 3.2
          The *timeout* parameter is new.
@@ -831,7 +846,7 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
         thread will be awoken by each call to :meth:`~Semaphore.release`.  The
         order in which threads are awoken should not be relied on.
 
-      When invoked with *blocking* set to false, do not block.  If a call
+      When invoked with *blocking* set to ``False``, do not block.  If a call
       without an argument would block, return ``False`` immediately; otherwise, do
       the same thing as when called without arguments, and return ``True``.
 

@@ -9,7 +9,7 @@ PyDoc_STRVAR(dict_fromkeys__doc__,
 "Create a new dictionary with keys from iterable and values set to value.");
 
 #define DICT_FROMKEYS_METHODDEF    \
-    {"fromkeys", (PyCFunction)(void(*)(void))dict_fromkeys, METH_FASTCALL|METH_CLASS, dict_fromkeys__doc__},
+    {"fromkeys", _PyCFunction_CAST(dict_fromkeys), METH_FASTCALL|METH_CLASS, dict_fromkeys__doc__},
 
 static PyObject *
 dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value);
@@ -52,7 +52,7 @@ PyDoc_STRVAR(dict_get__doc__,
 "Return the value for key if key is in the dictionary, else default.");
 
 #define DICT_GET_METHODDEF    \
-    {"get", (PyCFunction)(void(*)(void))dict_get, METH_FASTCALL, dict_get__doc__},
+    {"get", _PyCFunction_CAST(dict_get), METH_FASTCALL, dict_get__doc__},
 
 static PyObject *
 dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value);
@@ -88,7 +88,7 @@ PyDoc_STRVAR(dict_setdefault__doc__,
 "Return the value for key if key is in the dictionary, else default.");
 
 #define DICT_SETDEFAULT_METHODDEF    \
-    {"setdefault", (PyCFunction)(void(*)(void))dict_setdefault, METH_FASTCALL, dict_setdefault__doc__},
+    {"setdefault", _PyCFunction_CAST(dict_setdefault), METH_FASTCALL, dict_setdefault__doc__},
 
 static PyObject *
 dict_setdefault_impl(PyDictObject *self, PyObject *key,
@@ -126,7 +126,7 @@ PyDoc_STRVAR(dict_pop__doc__,
 "raise a KeyError.");
 
 #define DICT_POP_METHODDEF    \
-    {"pop", (PyCFunction)(void(*)(void))dict_pop, METH_FASTCALL, dict_pop__doc__},
+    {"pop", _PyCFunction_CAST(dict_pop), METH_FASTCALL, dict_pop__doc__},
 
 static PyObject *
 dict_pop_impl(PyDictObject *self, PyObject *key, PyObject *default_value);
@@ -191,4 +191,4 @@ dict___reversed__(PyDictObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict___reversed___impl(self);
 }
-/*[clinic end generated code: output=7b77c16e43d6735a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=582766ac0154c8bf input=a9049054013a1b77]*/

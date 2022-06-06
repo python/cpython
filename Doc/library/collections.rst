@@ -271,12 +271,12 @@ For example::
     .. versionadded:: 3.1
 
     .. versionchanged:: 3.7 As a :class:`dict` subclass, :class:`Counter`
-       Inherited the capability to remember insertion order.  Math operations
+       inherited the capability to remember insertion order.  Math operations
        on *Counter* objects also preserve order.  Results are ordered
        according to when an element is first encountered in the left operand
        and then by the order encountered in the right operand.
 
-    Counter objects support three methods beyond those available for all
+    Counter objects support additional methods beyond those available for all
     dictionaries:
 
     .. method:: elements()
@@ -366,8 +366,11 @@ Several mathematical operations are provided for combining :class:`Counter`
 objects to produce multisets (counters that have counts greater than zero).
 Addition and subtraction combine counters by adding or subtracting the counts
 of corresponding elements.  Intersection and union return the minimum and
-maximum of corresponding counts.  Each operation can accept inputs with signed
+maximum of corresponding counts.  Equality and inclusion compare
+corresponding counts.  Each operation can accept inputs with signed
 counts, but the output will exclude results with counts of zero or less.
+
+.. doctest::
 
     >>> c = Counter(a=3, b=1)
     >>> d = Counter(a=1, b=2)
@@ -375,10 +378,14 @@ counts, but the output will exclude results with counts of zero or less.
     Counter({'a': 4, 'b': 3})
     >>> c - d                       # subtract (keeping only positive counts)
     Counter({'a': 2})
-    >>> c & d                       # intersection:  min(c[x], d[x]) # doctest: +SKIP
+    >>> c & d                       # intersection:  min(c[x], d[x])
     Counter({'a': 1, 'b': 1})
     >>> c | d                       # union:  max(c[x], d[x])
     Counter({'a': 3, 'b': 2})
+    >>> c == d                      # equality:  c[x] == d[x]
+    False
+    >>> c <= d                      # inclusion:  c[x] <= d[x]
+    False
 
 Unary addition and subtraction are shortcuts for adding an empty counter
 or subtracting from an empty counter.
@@ -1085,18 +1092,35 @@ Some differences from :class:`dict` still remain:
   Space efficiency, iteration speed, and the performance of update
   operations were secondary.
 
-* Algorithmically, :class:`OrderedDict` can handle frequent reordering
-  operations better than :class:`dict`.  This makes it suitable for tracking
-  recent accesses (for example in an `LRU cache
-  <https://medium.com/@krishankantsinghal/my-first-blog-on-medium-583159139237>`_).
+* The :class:`OrderedDict` algorithm can handle frequent reordering operations
+  better than :class:`dict`.  As shown in the recipes below, this makes it
+  suitable for implementing various kinds of LRU caches.
 
 * The equality operation for :class:`OrderedDict` checks for matching order.
+
+  A regular :class:`dict` can emulate the order sensitive equality test with
+  ``p == q and all(k1 == k2 for k1, k2 in zip(p, q))``.
 
 * The :meth:`popitem` method of :class:`OrderedDict` has a different
   signature.  It accepts an optional argument to specify which item is popped.
 
-* :class:`OrderedDict` has a :meth:`move_to_end` method to
-  efficiently reposition an element to an endpoint.
+  A regular :class:`dict` can emulate OrderedDict's ``od.popitem(last=True)``
+  with ``d.popitem()`` which is guaranteed to pop the rightmost (last) item.
+
+  A regular :class:`dict` can emulate OrderedDict's ``od.popitem(last=False)``
+  with ``(k := next(iter(d)), d.pop(k))`` which will return and remove the
+  leftmost (first) item if it exists.
+
+* :class:`OrderedDict` has a :meth:`move_to_end` method to efficiently
+  reposition an element to an endpoint.
+
+  A regular :class:`dict` can emulate OrderedDict's ``od.move_to_end(k,
+  last=True)`` with ``d[k] = d.pop(k)`` which will move the key and its
+  associated value to the rightmost (last) position.
+
+  A regular :class:`dict` does not have an efficient equivalent for
+  OrderedDict's ``od.move_to_end(k, last=False)`` which moves the key
+  and its associated value to the leftmost (first) position.
 
 * Until Python 3.8, :class:`dict` lacked a :meth:`__reversed__` method.
 
@@ -1120,14 +1144,16 @@ Some differences from :class:`dict` still remain:
         Move an existing *key* to either end of an ordered dictionary.  The item
         is moved to the right end if *last* is true (the default) or to the
         beginning if *last* is false.  Raises :exc:`KeyError` if the *key* does
-        not exist::
+        not exist:
+
+        .. doctest::
 
             >>> d = OrderedDict.fromkeys('abcde')
             >>> d.move_to_end('b')
-            >>> ''.join(d.keys())
+            >>> ''.join(d)
             'acdeb'
             >>> d.move_to_end('b', last=False)
-            >>> ''.join(d.keys())
+            >>> ''.join(d)
             'bacde'
 
         .. versionadded:: 3.2

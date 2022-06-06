@@ -1167,6 +1167,37 @@ Control flow
             type_ignores=[])
 
 
+.. class:: TryStar(body, handlers, orelse, finalbody)
+
+   ``try`` blocks which are followed by ``except*`` clauses. The attributes are the
+   same as for :class:`Try` but the :class:`ExceptHandler` nodes in ``handlers``
+   are interpreted as ``except*`` blocks rather then ``except``.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... try:
+        ...    ...
+        ... except* Exception:
+        ...    ...
+        ... """), indent=4))
+        Module(
+            body=[
+                TryStar(
+                    body=[
+                        Expr(
+                            value=Constant(value=Ellipsis))],
+                    handlers=[
+                        ExceptHandler(
+                            type=Name(id='Exception', ctx=Load()),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])],
+                    orelse=[],
+                    finalbody=[])],
+            type_ignores=[])
+
+
 .. class:: ExceptHandler(type, name, body)
 
    A single ``except`` clause. ``type`` is the exception type it will match,
@@ -1795,7 +1826,7 @@ Function and class definitions
    * ``bases`` is a list of nodes for explicitly specified base classes.
    * ``keywords`` is a list of :class:`keyword` nodes, principally for 'metaclass'.
      Other keywords will be passed to the metaclass, as per `PEP-3115
-     <https://www.python.org/dev/peps/pep-3115/>`_.
+     <https://peps.python.org/pep-3115/>`_.
    * ``starargs`` and ``kwargs`` are each a single node, as in a function call.
      starargs will be expanded to join the list of base classes, and kwargs will
      be passed to the metaclass.

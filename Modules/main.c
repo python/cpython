@@ -158,11 +158,10 @@ error:
 static int
 pymain_sys_path_add_path0(PyInterpreterState *interp, PyObject *path0)
 {
-    _Py_IDENTIFIER(path);
     PyObject *sys_path;
     PyObject *sysdict = interp->sysdict;
     if (sysdict != NULL) {
-        sys_path = _PyDict_GetItemIdWithError(sysdict, &PyId_path);
+        sys_path = PyDict_GetItemWithError(sysdict, &_Py_ID(path));
         if (sys_path == NULL && PyErr_Occurred()) {
             return -1;
         }
@@ -214,6 +213,13 @@ pymain_import_readline(const PyConfig *config)
     }
 
     PyObject *mod = PyImport_ImportModule("readline");
+    if (mod == NULL) {
+        PyErr_Clear();
+    }
+    else {
+        Py_DECREF(mod);
+    }
+    mod = PyImport_ImportModule("rlcompleter");
     if (mod == NULL) {
         PyErr_Clear();
     }
@@ -534,11 +540,16 @@ pymain_repl(PyConfig *config, int *exitcode)
 static void
 pymain_run_python(int *exitcode)
 {
+    PyObject *main_importer_path = NULL;
     PyInterpreterState *interp = _PyInterpreterState_GET();
     /* pymain_run_stdin() modify the config */
     PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
 
-    PyObject *main_importer_path = NULL;
+    /* ensure path config is written into global variables */
+    if (_PyStatus_EXCEPTION(_PyPathConfig_UpdateGlobal(config))) {
+        goto error;
+    }
+
     if (config->run_filename != NULL) {
         /* If filename is a package (ex: directory or ZIP file) which contains
            __main__.py, main_importer_path is set to filename and will be
@@ -551,12 +562,15 @@ pymain_run_python(int *exitcode)
         }
     }
 
+    // import readline and rlcompleter before script dir is added to sys.path
+    pymain_import_readline(config);
+
     if (main_importer_path != NULL) {
         if (pymain_sys_path_add_path0(interp, main_importer_path) < 0) {
             goto error;
         }
     }
-    else if (!config->isolated) {
+    else if (!config->safe_path) {
         PyObject *path0 = NULL;
         int res = _PyPathConfig_ComputeSysPath0(&config->argv, &path0);
         if (res < 0) {
@@ -573,7 +587,6 @@ pymain_run_python(int *exitcode)
     }
 
     pymain_header(config);
-    pymain_import_readline(config);
 
     if (config->run_command) {
         *exitcode = pymain_run_command(config->run_command);

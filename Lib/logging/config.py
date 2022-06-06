@@ -30,7 +30,6 @@ import logging
 import logging.handlers
 import re
 import struct
-import sys
 import threading
 import traceback
 
@@ -392,11 +391,9 @@ class BaseConfigurator(object):
                     self.importer(used)
                     found = getattr(found, frag)
             return found
-        except ImportError:
-            e, tb = sys.exc_info()[1:]
+        except ImportError as e:
             v = ValueError('Cannot resolve %r: %s' % (s, e))
-            v.__cause__, v.__traceback__ = e, tb
-            raise v
+            raise v from e
 
     def ext_convert(self, value):
         """Default converter for the ext:// protocol."""
@@ -697,7 +694,11 @@ class DictConfigurator(BaseConfigurator):
         """Add filters to a filterer from a list of names."""
         for f in filters:
             try:
-                filterer.addFilter(self.config['filters'][f])
+                if callable(f) or callable(getattr(f, 'filter', None)):
+                    filter_ = f
+                else:
+                    filter_ = self.config['filters'][f]
+                filterer.addFilter(filter_)
             except Exception as e:
                 raise ValueError('Unable to add filter %r' % f) from e
 

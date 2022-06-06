@@ -8,6 +8,7 @@ Licensed to the PSF under a contributor agreement.
 import ensurepip
 import os
 import os.path
+import pathlib
 import re
 import shutil
 import struct
@@ -15,11 +16,13 @@ import subprocess
 import sys
 import tempfile
 from test.support import (captured_stdout, captured_stderr, requires_zlib,
-                          skip_if_broken_multiprocessing_synchronize)
+                          skip_if_broken_multiprocessing_synchronize, verbose,
+                          requires_subprocess, is_emscripten, is_wasi,
+                          requires_venv_with_pip)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 try:
     import ctypes
@@ -33,6 +36,10 @@ requireVenvCreate = unittest.skipUnless(
     or sys._base_executable != sys.executable,
     'cannot run venv.create from within a venv on this platform')
 
+if is_emscripten or is_wasi:
+    raise unittest.SkipTest("venv is not available on Emscripten/WASI.")
+
+@requires_subprocess()
 def check_output(cmd, encoding=None):
     p = subprocess.Popen(cmd,
         stdout=subprocess.PIPE,
@@ -40,6 +47,8 @@ def check_output(cmd, encoding=None):
         encoding=encoding)
     out, err = p.communicate()
     if p.returncode:
+        if verbose and err:
+            print(err.decode('utf-8', 'backslashreplace'))
         raise subprocess.CalledProcessError(
             p.returncode, cmd, out, err)
     return out, err
@@ -91,12 +100,23 @@ class BasicTest(BaseTest):
         fn = self.get_env_file(*args)
         self.assertTrue(os.path.isdir(fn))
 
-    def test_defaults(self):
+    def test_defaults_with_str_path(self):
         """
-        Test the create function with default arguments.
+        Test the create function with default arguments and a str path.
         """
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
+        self._check_output_of_default_create()
+
+    def test_defaults_with_pathlib_path(self):
+        """
+        Test the create function with default arguments and a pathlib.Path path.
+        """
+        rmtree(self.env_dir)
+        self.run_with_capture(venv.create, pathlib.Path(self.env_dir))
+        self._check_output_of_default_create()
+
+    def _check_output_of_default_create(self):
         self.isdir(self.bindir)
         self.isdir(self.include)
         self.isdir(*self.lib)
@@ -112,12 +132,48 @@ class BasicTest(BaseTest):
         executable = sys._base_executable
         path = os.path.dirname(executable)
         self.assertIn('home = %s' % path, data)
+        self.assertIn('executable = %s' %
+                      os.path.realpath(sys.executable), data)
+        copies = '' if os.name=='nt' else ' --copies'
+        cmd = f'command = {sys.executable} -m venv{copies} --without-pip {self.env_dir}'
+        self.assertIn(cmd, data)
         fn = self.get_env_file(self.bindir, self.exe)
         if not os.path.exists(fn):  # diagnostics for Windows buildbot failures
             bd = self.get_env_file(self.bindir)
             print('Contents of %r:' % bd)
             print('    %r' % os.listdir(bd))
         self.assertTrue(os.path.exists(fn), 'File %r should exist.' % fn)
+
+    def test_config_file_command_key(self):
+        attrs = [
+            (None, None),
+            ('symlinks', '--copies'),
+            ('with_pip', '--without-pip'),
+            ('system_site_packages', '--system-site-packages'),
+            ('clear', '--clear'),
+            ('upgrade', '--upgrade'),
+            ('upgrade_deps', '--upgrade-deps'),
+            ('prompt', '--prompt'),
+        ]
+        for attr, opt in attrs:
+            rmtree(self.env_dir)
+            if not attr:
+                b = venv.EnvBuilder()
+            else:
+                b = venv.EnvBuilder(
+                    **{attr: False if attr in ('with_pip', 'symlinks') else True})
+            b.upgrade_dependencies = Mock() # avoid pip command to upgrade deps
+            b._setup_pip = Mock() # avoid pip setup
+            self.run_with_capture(b.create, self.env_dir)
+            data = self.get_text_file_contents('pyvenv.cfg')
+            if not attr:
+                for opt in ('--system-site-packages', '--clear', '--upgrade',
+                        '--upgrade-deps', '--prompt'):
+                    self.assertNotRegex(data, rf'command = .* {opt}')
+            elif os.name=='nt' and attr=='symlinks':
+                pass
+            else:
+                self.assertRegex(data, rf'command = .* {opt}')
 
     def test_prompt(self):
         env_name = os.path.split(self.env_dir)[1]
@@ -194,7 +250,21 @@ class BasicTest(BaseTest):
             ('base_exec_prefix', sys.base_exec_prefix)):
             cmd[2] = 'import sys; print(sys.%s)' % prefix
             out, err = check_output(cmd)
-            self.assertEqual(out.strip(), expected.encode())
+            self.assertEqual(out.strip(), expected.encode(), prefix)
+
+    @requireVenvCreate
+    def test_sysconfig_preferred_and_default_scheme(self):
+        """
+        Test that the sysconfig preferred(prefix) and default scheme is venv.
+        """
+        rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir)
+        envpy = os.path.join(self.env_dir, self.bindir, self.exe)
+        cmd = [envpy, '-c', None]
+        for call in ('get_preferred_scheme("prefix")', 'get_default_scheme()'):
+            cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
+            out, err = check_output(cmd)
+            self.assertEqual(out.strip(), b'venv', err)
 
     if sys.platform == 'win32':
         ENV_SUBDIRS = (
@@ -410,6 +480,16 @@ class BasicTest(BaseTest):
             'import os; print("__PYVENV_LAUNCHER__" in os.environ)'])
         self.assertEqual(out.strip(), 'False'.encode())
 
+    def test_pathsep_error(self):
+        """
+        Test that venv creation fails when the target directory contains
+        the path separator.
+        """
+        rmtree(self.env_dir)
+        bad_itempath = self.env_dir + os.pathsep
+        self.assertRaises(ValueError, venv.create, bad_itempath)
+        self.assertRaises(ValueError, venv.create, pathlib.Path(bad_itempath))
+
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""
@@ -540,9 +620,7 @@ class EnsurePipTest(BaseTest):
         if not system_site_packages:
             self.assert_pip_not_installed()
 
-    # Issue #26610: pip/pep425tags.py requires ctypes
-    @unittest.skipUnless(ctypes, 'pip requires ctypes')
-    @requires_zlib()
+    @requires_venv_with_pip()
     def test_with_pip(self):
         self.do_test_with_pip(False)
         self.do_test_with_pip(True)

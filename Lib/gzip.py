@@ -587,7 +587,8 @@ def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=None):
     header = _create_simple_gzip_header(compresslevel, mtime)
     trailer = struct.pack("<LL", zlib.crc32(data), (len(data) & 0xffffffff))
     # Wbits=-15 creates a raw deflate block.
-    return header + zlib.compress(data, wbits=-15) + trailer
+    return (header + zlib.compress(data, level=compresslevel, wbits=-15) +
+            trailer)
 
 
 def decompress(data):
@@ -603,6 +604,9 @@ def decompress(data):
         do = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
         # Read all the data except the header
         decompressed = do.decompress(data[fp.tell():])
+        if not do.eof or len(do.unused_data) < 8:
+            raise EOFError("Compressed file ended before the end-of-stream "
+                           "marker was reached")
         crc, length = struct.unpack("<II", do.unused_data[:8])
         if crc != zlib.crc32(decompressed):
             raise BadGzipFile("CRC check failed")

@@ -311,6 +311,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
                      "This test can't be run on Cygwin (issue #1071513).")
     @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
                      "This test can't be run reliably as root (issue #1076467).")
+    @os_helper.skip_unless_working_chmod
     def test_on_error(self):
         self.errorState = 0
         os.mkdir(TESTFN)
@@ -404,6 +405,27 @@ class TestRmTree(BaseTest, unittest.TestCase):
         else:
             self.assertFalse(shutil._use_fd_functions)
             self.assertFalse(shutil.rmtree.avoids_symlink_attacks)
+
+    @unittest.skipUnless(shutil._use_fd_functions, "dir_fd is not supported")
+    def test_rmtree_with_dir_fd(self):
+        tmp_dir = self.mkdtemp()
+        victim = 'killme'
+        fullname = os.path.join(tmp_dir, victim)
+        dir_fd = os.open(tmp_dir, os.O_RDONLY)
+        self.addCleanup(os.close, dir_fd)
+        os.mkdir(fullname)
+        os.mkdir(os.path.join(fullname, 'subdir'))
+        write_file(os.path.join(fullname, 'subdir', 'somefile'), 'foo')
+        self.assertTrue(os.path.exists(fullname))
+        shutil.rmtree(victim, dir_fd=dir_fd)
+        self.assertFalse(os.path.exists(fullname))
+
+    @unittest.skipIf(shutil._use_fd_functions, "dir_fd is supported")
+    def test_rmtree_with_dir_fd_unsupported(self):
+        tmp_dir = self.mkdtemp()
+        with self.assertRaises(NotImplementedError):
+            shutil.rmtree(tmp_dir, dir_fd=0)
+        self.assertTrue(os.path.exists(tmp_dir))
 
     def test_rmtree_dont_delete_file(self):
         # When called on a file instead of a directory, don't delete it.
@@ -1273,6 +1295,10 @@ class TestCopy(BaseTest, unittest.TestCase):
         self.assertEqual(read_file(src_file), 'foo')
 
     @unittest.skipIf(MACOS or SOLARIS or _winapi, 'On MACOS, Solaris and Windows the errors are not confusing (though different)')
+    # gh-92670: The test uses a trailing slash to force the OS consider
+    # the path as a directory, but on AIX the trailing slash has no effect
+    # and is considered as a file.
+    @unittest.skipIf(AIX, 'Not valid on AIX, see gh-92670')
     def test_copyfile_nonexistent_dir(self):
         # Issue 43219
         src_dir = self.mkdtemp()
@@ -2627,6 +2653,7 @@ class TestGetTerminalSize(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
+    @unittest.skipIf(support.is_wasi, "WASI has no /dev/null")
     def test_fallback(self):
         with os_helper.EnvironmentVarGuard() as env:
             del env['LINES']

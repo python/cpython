@@ -11,7 +11,8 @@ import threading
 import socket
 
 from test.support import (verbose,
-                          run_with_tz, run_with_locale, cpython_only)
+                          run_with_tz, run_with_locale, cpython_only,
+                          requires_working_socket)
 from test.support import hashlib_helper
 from test.support import threading_helper
 from test.support import warnings_helper
@@ -22,6 +23,8 @@ try:
     import ssl
 except ImportError:
     ssl = None
+
+support.requires_working_socket(module=True)
 
 CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "keycert3.pem")
 CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "pycacert.pem")
@@ -387,7 +390,7 @@ class NewIMAPTestsMixin():
         self.assertEqual(code, 'OK')
         self.assertEqual(server.response, b'ZmFrZQ==\r\n')  # b64 encoded 'fake'
 
-    @hashlib_helper.requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_login_cram_md5_bytes(self):
         class AuthHandler(SimpleIMAPHandler):
             capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
@@ -405,7 +408,7 @@ class NewIMAPTestsMixin():
         ret, _ = client.login_cram_md5("tim", b"tanstaaftanstaaf")
         self.assertEqual(ret, "OK")
 
-    @hashlib_helper.requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_login_cram_md5_plain_text(self):
         class AuthHandler(SimpleIMAPHandler):
             capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
@@ -851,7 +854,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
                              b'ZmFrZQ==\r\n')  # b64 encoded 'fake'
 
     @threading_helper.reap_threads
-    @hashlib_helper.requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_login_cram_md5(self):
 
         class AuthHandler(SimpleIMAPHandler):
@@ -936,6 +939,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
 
     @threading_helper.reap_threads
     @cpython_only
+    @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
     def test_dump_ur(self):
         # See: http://bugs.python.org/issue26543
         untagged_resp_dict = {'READ-WRITE': [b'']}

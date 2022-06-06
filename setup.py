@@ -7,6 +7,7 @@ import importlib.util
 import logging
 import os
 import re
+import shlex
 import sys
 import sysconfig
 import warnings
@@ -54,9 +55,6 @@ with warnings.catch_warnings():
     from distutils.spawn import find_executable
 
 
-# Compile extensions used to test Python?
-TEST_EXTENSIONS = (sysconfig.get_config_var('TEST_MODULES') == 'yes')
-
 # This global variable is used to hold the list of modules to be disabled.
 DISABLED_MODULE_LIST = []
 
@@ -86,6 +84,14 @@ CYGWIN = (HOST_PLATFORM == 'cygwin')
 MACOS = (HOST_PLATFORM == 'darwin')
 AIX = (HOST_PLATFORM.startswith('aix'))
 VXWORKS = ('vxworks' in HOST_PLATFORM)
+EMSCRIPTEN = HOST_PLATFORM == 'emscripten-wasm32'
+CC = os.environ.get("CC")
+if not CC:
+    CC = sysconfig.get_config_var("CC")
+
+if EMSCRIPTEN:
+    # emcc is a Python script from a different Python interpreter.
+    os.environ.pop("PYTHONPATH", None)
 
 
 SUMMARY = """
@@ -207,28 +213,6 @@ def macosx_sdk_root():
     return MACOS_SDK_ROOT
 
 
-def macosx_sdk_specified():
-    """Returns true if an SDK was explicitly configured.
-
-    True if an SDK was selected at configure time, either by specifying
-    --enable-universalsdk=(something other than no or /) or by adding a
-    -isysroot option to CFLAGS.  In some cases, like when making
-    decisions about macOS Tk framework paths, we need to be able to
-    know whether the user explicitly asked to build with an SDK versus
-    the implicit use of an SDK when header files are no longer
-    installed on a running system by the Command Line Tools.
-    """
-    global MACOS_SDK_SPECIFIED
-
-    # If already called, return cached result.
-    if MACOS_SDK_SPECIFIED:
-        return MACOS_SDK_SPECIFIED
-
-    # Find the sdk root and set MACOS_SDK_SPECIFIED
-    macosx_sdk_root()
-    return MACOS_SDK_SPECIFIED
-
-
 def is_macosx_sdk_path(path):
     """
     Returns True if 'path' can be located in a macOS SDK
@@ -286,59 +270,6 @@ def find_file(filename, std_dirs, paths):
     return None
 
 
-def find_library_file(compiler, libname, std_dirs, paths):
-    result = compiler.find_library_file(std_dirs + paths, libname)
-    if result is None:
-        return None
-
-    if MACOS:
-        sysroot = macosx_sdk_root()
-
-    # Check whether the found file is in one of the standard directories
-    dirname = os.path.dirname(result)
-    for p in std_dirs:
-        # Ensure path doesn't end with path separator
-        p = p.rstrip(os.sep)
-
-        if MACOS and is_macosx_sdk_path(p):
-            # Note that, as of Xcode 7, Apple SDKs may contain textual stub
-            # libraries with .tbd extensions rather than the normal .dylib
-            # shared libraries installed in /.  The Apple compiler tool
-            # chain handles this transparently but it can cause problems
-            # for programs that are being built with an SDK and searching
-            # for specific libraries.  Distutils find_library_file() now
-            # knows to also search for and return .tbd files.  But callers
-            # of find_library_file need to keep in mind that the base filename
-            # of the returned SDK library file might have a different extension
-            # from that of the library file installed on the running system,
-            # for example:
-            #   /Applications/Xcode.app/Contents/Developer/Platforms/
-            #       MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk/
-            #       usr/lib/libedit.tbd
-            # vs
-            #   /usr/lib/libedit.dylib
-            if os.path.join(sysroot, p[1:]) == dirname:
-                return [ ]
-
-        if p == dirname:
-            return [ ]
-
-    # Otherwise, it must have been in one of the additional directories,
-    # so we have to figure out which one.
-    for p in paths:
-        # Ensure path doesn't end with path separator
-        p = p.rstrip(os.sep)
-
-        if MACOS and is_macosx_sdk_path(p):
-            if os.path.join(sysroot, p[1:]) == dirname:
-                return [ p ]
-
-        if p == dirname:
-            return [p]
-    else:
-        assert False, "Internal error: Path not found in std_dirs or paths"
-
-
 def validate_tzpath():
     base_tzpath = sysconfig.get_config_var('TZPATH')
     if not base_tzpath:
@@ -360,7 +291,7 @@ def find_module_file(module, dirlist):
         return module
     if len(dirs) > 1:
         log.info(f"WARNING: multiple copies of {module} found")
-    return os.path.join(dirs[0], module)
+    return os.path.abspath(os.path.join(dirs[0], module))
 
 
 class PyBuildExt(build_ext):
@@ -380,6 +311,78 @@ class PyBuildExt(build_ext):
 
     def add(self, ext):
         self.extensions.append(ext)
+
+    def addext(self, ext, *, update_flags=True):
+        """Add extension with Makefile MODULE_{name} support
+        """
+        if update_flags:
+            self.update_extension_flags(ext)
+
+        state = sysconfig.get_config_var(f"MODULE_{ext.name.upper()}")
+        if state == "yes":
+            self.extensions.append(ext)
+        elif state == "disabled":
+            self.disabled_configure.append(ext.name)
+        elif state == "missing":
+            self.missing.append(ext.name)
+        elif state == "n/a":
+            # not available on current platform
+            pass
+        else:
+            # not migrated to MODULE_{name} yet.
+            self.announce(
+                f'WARNING: Makefile is missing module variable for "{ext.name}"',
+                level=2
+            )
+            self.extensions.append(ext)
+
+    def update_extension_flags(self, ext):
+        """Update extension flags with module CFLAGS and LDFLAGS
+
+        Reads MODULE_{name}_CFLAGS and _LDFLAGS
+
+        Distutils appends extra args to the compiler arguments. Some flags like
+        -I must appear earlier, otherwise the pre-processor picks up files
+        from system include directories.
+        """
+        upper_name = ext.name.upper()
+        # Parse compiler flags (-I, -D, -U, extra args)
+        cflags = sysconfig.get_config_var(f"MODULE_{upper_name}_CFLAGS")
+        if cflags:
+            for token in shlex.split(cflags):
+                switch = token[0:2]
+                value = token[2:]
+                if switch == '-I':
+                    ext.include_dirs.append(value)
+                elif switch == '-D':
+                    key, _, val = value.partition("=")
+                    if not val:
+                        val = None
+                    ext.define_macros.append((key, val))
+                elif switch == '-U':
+                    ext.undef_macros.append(value)
+                else:
+                    ext.extra_compile_args.append(token)
+
+        # Parse linker flags (-L, -l, extra objects, extra args)
+        ldflags = sysconfig.get_config_var(f"MODULE_{upper_name}_LDFLAGS")
+        if ldflags:
+            for token in shlex.split(ldflags):
+                switch = token[0:2]
+                value = token[2:]
+                if switch == '-L':
+                    ext.library_dirs.append(value)
+                elif switch == '-l':
+                    ext.libraries.append(value)
+                elif (
+                    token[0] != '-' and
+                    token.endswith(('.a', '.o', '.so', '.sl', '.dylib'))
+                ):
+                    ext.extra_objects.append(token)
+                else:
+                    ext.extra_link_args.append(token)
+
+        return ext
 
     def set_srcdir(self):
         self.srcdir = sysconfig.get_config_var('srcdir')
@@ -402,7 +405,13 @@ class PyBuildExt(build_ext):
     def update_sources_depends(self):
         # Fix up the autodetected modules, prefixing all the source files
         # with Modules/.
-        moddirlist = [os.path.join(self.srcdir, 'Modules')]
+        # Add dependencies from MODULE_{name}_DEPS variable
+        moddirlist = [
+            # files in Modules/ directory
+            os.path.join(self.srcdir, 'Modules'),
+            # files relative to build base, e.g. libmpdec.a, libexpat.a
+            os.getcwd()
+        ]
 
         # Fix up the paths for scripts, too
         self.distribution.scripts = [os.path.join(self.srcdir, filename)
@@ -418,11 +427,16 @@ class PyBuildExt(build_ext):
         for ext in self.extensions:
             ext.sources = [ find_module_file(filename, moddirlist)
                             for filename in ext.sources ]
-            if ext.depends is not None:
-                ext.depends = [find_module_file(filename, moddirlist)
-                               for filename in ext.depends]
-            else:
-                ext.depends = []
+            # Update dependencies from Makefile
+            makedeps = sysconfig.get_config_var(f"MODULE_{ext.name.upper()}_DEPS")
+            if makedeps:
+                # remove backslashes from line break continuations
+                ext.depends.extend(
+                    dep for dep in makedeps.split() if dep != "\\"
+                )
+            ext.depends = [
+                find_module_file(filename, moddirlist) for filename in ext.depends
+            ]
             # re-compile extensions if a header file has been changed
             ext.depends.extend(headers)
 
@@ -475,6 +489,9 @@ class PyBuildExt(build_ext):
 
     def build_extensions(self):
         self.set_srcdir()
+        self.set_compiler_executables()
+        self.configure_compiler()
+        self.init_inc_lib_dirs()
 
         # Detect which modules should be compiled
         self.detect_modules()
@@ -484,7 +501,6 @@ class PyBuildExt(build_ext):
 
         self.update_sources_depends()
         mods_built, mods_disabled = self.handle_configured_extensions()
-        self.set_compiler_executables()
 
         if LIST_MODULE_NAMES:
             for ext in self.extensions:
@@ -579,7 +595,9 @@ class PyBuildExt(build_ext):
                 print("Custom linker flags may require --with-openssl-rpath=auto")
             print()
 
-        if os.environ.get("PYTHONSTRICTEXTENSIONBUILD") and (self.failed or self.failed_on_import):
+        if os.environ.get("PYTHONSTRICTEXTENSIONBUILD") and (
+            self.failed or self.failed_on_import or self.missing
+        ):
             raise RuntimeError("Failed to build some stdlib modules")
 
     def build_extension(self, ext):
@@ -670,12 +688,11 @@ class PyBuildExt(build_ext):
     def add_multiarch_paths(self):
         # Debian/Ubuntu multiarch support.
         # https://wiki.ubuntu.com/MultiarchSpec
-        cc = sysconfig.get_config_var('CC')
         tmpfile = os.path.join(self.build_temp, 'multiarch')
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
         ret = run_command(
-            '%s -print-multiarch > %s 2> /dev/null' % (cc, tmpfile))
+            '%s -print-multiarch > %s 2> /dev/null' % (CC, tmpfile))
         multiarch_path_component = ''
         try:
             if ret == 0:
@@ -737,11 +754,10 @@ class PyBuildExt(build_ext):
                 d = os.path.normpath(d)
                 add_dir_to_list(self.compiler.library_dirs, d)
 
-        cc = sysconfig.get_config_var('CC')
         tmpfile = os.path.join(self.build_temp, 'wrccpaths')
         os.makedirs(self.build_temp, exist_ok=True)
         try:
-            ret = run_command('%s --print-search-dirs >%s' % (cc, tmpfile))
+            ret = run_command('%s --print-search-dirs >%s' % (CC, tmpfile))
             if ret:
                 return
             with open(tmpfile) as fp:
@@ -759,11 +775,12 @@ class PyBuildExt(build_ext):
                 pass
 
     def add_cross_compiling_paths(self):
-        cc = sysconfig.get_config_var('CC')
         tmpfile = os.path.join(self.build_temp, 'ccpaths')
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
-        ret = run_command('%s -E -v - </dev/null 2>%s 1>/dev/null' % (cc, tmpfile))
+        # bpo-38472: With a German locale, GCC returns "gcc-Version 9.1.0
+        # (GCC)", whereas it returns "gcc version 9.1.0" with the C locale.
+        ret = run_command('LC_ALL=C %s -E -v - </dev/null 2>%s 1>/dev/null' % (CC, tmpfile))
         is_gcc = False
         is_clang = False
         in_incdirs = False
@@ -907,102 +924,68 @@ class PyBuildExt(build_ext):
         #
 
         # array objects
-        self.add(Extension('array', ['arraymodule.c']))
+        self.addext(Extension('array', ['arraymodule.c']))
 
         # Context Variables
-        self.add(Extension('_contextvars', ['_contextvarsmodule.c']))
+        self.addext(Extension('_contextvars', ['_contextvarsmodule.c']))
 
         # math library functions, e.g. sin()
-        self.add(Extension('math',  ['mathmodule.c'],
-                           depends=['_math.h'],
-                           libraries=['m']))
+        self.addext(Extension('math',  ['mathmodule.c']))
 
         # complex math library functions
-        self.add(Extension('cmath', ['cmathmodule.c'],
-                           depends=['_math.h'],
-                           libraries=['m']))
+        self.addext(Extension('cmath', ['cmathmodule.c']))
 
-        # time libraries: librt may be needed for clock_gettime()
-        time_libs = []
-        lib = sysconfig.get_config_var('TIMEMODULE_LIB')
-        if lib:
-            time_libs.append(lib)
-
-        # time operations and variables
-        self.add(Extension('time', ['timemodule.c'],
-                           libraries=time_libs))
         # libm is needed by delta_new() that uses round() and by accum() that
         # uses modf().
-        self.add(Extension('_datetime', ['_datetimemodule.c'],
-                           libraries=['m']))
-        # zoneinfo module
-        self.add(Extension('_zoneinfo', ['_zoneinfo.c']))
+        self.addext(Extension('_datetime', ['_datetimemodule.c']))
+        self.addext(Extension('_zoneinfo', ['_zoneinfo.c']))
         # random number generator implemented in C
-        self.add(Extension("_random", ["_randommodule.c"]))
-        # bisect
-        self.add(Extension("_bisect", ["_bisectmodule.c"]))
-        # heapq
-        self.add(Extension("_heapq", ["_heapqmodule.c"]))
+        self.addext(Extension("_random", ["_randommodule.c"]))
+        self.addext(Extension("_bisect", ["_bisectmodule.c"]))
+        self.addext(Extension("_heapq", ["_heapqmodule.c"]))
         # C-optimized pickle replacement
-        self.add(Extension("_pickle", ["_pickle.c"]))
+        self.addext(Extension("_pickle", ["_pickle.c"]))
         # _json speedups
-        self.add(Extension("_json", ["_json.c"]))
+        self.addext(Extension("_json", ["_json.c"]))
 
         # profiler (_lsprof is for cProfile.py)
-        self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
+        self.addext(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
         # static Unicode character database
-        self.add(Extension('unicodedata', ['unicodedata.c'],
-                           depends=['unicodedata_db.h', 'unicodename_db.h']))
-        # _opcode module
-        self.add(Extension('_opcode', ['_opcode.c']))
+        self.addext(Extension('unicodedata', ['unicodedata.c']))
+        self.addext(Extension('_opcode', ['_opcode.c']))
+
         # asyncio speedups
-        self.add(Extension("_asyncio", ["_asynciomodule.c"]))
-        # _abc speedups
-        self.add(Extension("_abc", ["_abc.c"]))
-        # _queue module
-        self.add(Extension("_queue", ["_queuemodule.c"]))
-        # _statistics module
-        self.add(Extension("_statistics", ["_statisticsmodule.c"]))
-        # _typing module
-        self.add(Extension("_typing", ["_typingmodule.c"]))
+        self.addext(Extension("_asyncio", ["_asynciomodule.c"]))
+
+        self.addext(Extension("_queue", ["_queuemodule.c"]))
+        self.addext(Extension("_statistics", ["_statisticsmodule.c"]))
+        self.addext(Extension("_struct", ["_struct.c"]))
+        self.addext(Extension("_typing", ["_typingmodule.c"]))
 
         # Modules with some UNIX dependencies -- on by default:
         # (If you have a really backward UNIX, select and socket may not be
         # supported...)
 
         # fcntl(2) and ioctl(2)
-        libs = []
-        if (self.config_h_vars.get('FLOCK_NEEDS_LIBBSD', False)):
-            # May be necessary on AIX for flock function
-            libs = ['bsd']
-        self.add(Extension('fcntl', ['fcntlmodule.c'],
-                           libraries=libs))
-        # pwd(3)
-        self.add(Extension('pwd', ['pwdmodule.c']))
+        self.addext(Extension('fcntl', ['fcntlmodule.c']))
         # grp(3)
-        if not VXWORKS:
-            self.add(Extension('grp', ['grpmodule.c']))
-        # spwd, shadow passwords
-        if (self.config_h_vars.get('HAVE_GETSPNAM', False) or
-                self.config_h_vars.get('HAVE_GETSPENT', False)):
-            self.add(Extension('spwd', ['spwdmodule.c']))
-        # AIX has shadow passwords, but access is not via getspent(), etc.
-        # module support is not expected so it not 'missing'
-        elif not AIX:
-            self.missing.append('spwd')
+        self.addext(Extension('grp', ['grpmodule.c']))
+
+        self.addext(Extension('_socket', ['socketmodule.c']))
+        self.addext(Extension('spwd', ['spwdmodule.c']))
 
         # select(2); not on ancient System V
-        self.add(Extension('select', ['selectmodule.c']))
+        self.addext(Extension('select', ['selectmodule.c']))
 
         # Memory-mapped files (also works on Win32).
-        self.add(Extension('mmap', ['mmapmodule.c']))
+        self.addext(Extension('mmap', ['mmapmodule.c']))
 
         # Lance Ellinghaus's syslog module
         # syslog daemon interface
-        self.add(Extension('syslog', ['syslogmodule.c']))
+        self.addext(Extension('syslog', ['syslogmodule.c']))
 
         # Python interface to subinterpreter C-API.
-        self.add(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c']))
+        self.addext(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c']))
 
         #
         # Here ends the simple stuff.  From here on, modules need certain
@@ -1018,36 +1001,35 @@ class PyBuildExt(build_ext):
         # 64-bit platforms.
         #
         # audioop needs libm for floor() in multiple functions.
-        self.add(Extension('audioop', ['audioop.c'],
-                           libraries=['m']))
+        self.addext(Extension('audioop', ['audioop.c']))
 
         # CSV files
-        self.add(Extension('_csv', ['_csv.c']))
+        self.addext(Extension('_csv', ['_csv.c']))
 
         # POSIX subprocess module helper.
-        self.add(Extension('_posixsubprocess', ['_posixsubprocess.c']))
+        self.addext(Extension('_posixsubprocess', ['_posixsubprocess.c']))
 
     def detect_test_extensions(self):
         # Python C API test module
-        self.add(Extension('_testcapi', ['_testcapimodule.c'],
-                           depends=['testcapi_long.h']))
+        self.addext(Extension('_testcapi', ['_testcapimodule.c']))
 
         # Python Internal C API test module
-        self.add(Extension('_testinternalcapi', ['_testinternalcapi.c']))
+        self.addext(Extension('_testinternalcapi', ['_testinternalcapi.c']))
 
         # Python PEP-3118 (buffer protocol) test module
-        self.add(Extension('_testbuffer', ['_testbuffer.c']))
+        self.addext(Extension('_testbuffer', ['_testbuffer.c']))
 
         # Test loading multiple modules from one compiled file (https://bugs.python.org/issue16421)
-        self.add(Extension('_testimportmultiple', ['_testimportmultiple.c']))
+        self.addext(Extension('_testimportmultiple', ['_testimportmultiple.c']))
 
         # Test multi-phase extension module init (PEP 489)
-        self.add(Extension('_testmultiphase', ['_testmultiphase.c']))
+        self.addext(Extension('_testmultiphase', ['_testmultiphase.c']))
 
         # Fuzz tests.
-        self.add(Extension('_xxtestfuzz',
-                           ['_xxtestfuzz/_xxtestfuzz.c',
-                            '_xxtestfuzz/fuzzer.c']))
+        self.addext(Extension(
+            '_xxtestfuzz',
+            ['_xxtestfuzz/_xxtestfuzz.c', '_xxtestfuzz/fuzzer.c']
+        ))
 
     def detect_readline_curses(self):
         # readline
@@ -1195,23 +1177,7 @@ class PyBuildExt(build_ext):
             self.missing.append('_curses_panel')
 
     def detect_crypt(self):
-        # crypt module.
-        if VXWORKS:
-            # bpo-31904: crypt() function is not provided by VxWorks.
-            # DES_crypt() OpenSSL provides is too weak to implement
-            # the encryption.
-            self.missing.append('_crypt')
-            return
-
-        if self.compiler.find_library_file(self.lib_dirs, 'crypt'):
-            libs = ['crypt']
-        else:
-            libs = []
-
-        self.add(Extension('_crypt', ['_cryptmodule.c'], libraries=libs))
-
-    def detect_socket(self):
-        self.add(Extension('_socket', ['socketmodule.c'], depends=['socketmodule.h']))
+        self.addext(Extension('_crypt', ['_cryptmodule.c']))
 
     def detect_dbm_gdbm(self):
         # Modules that provide persistent dictionary-like semantics.  You will
@@ -1226,11 +1192,9 @@ class PyBuildExt(build_ext):
 
         # libdb, gdbm and ndbm headers and libraries
         have_ndbm_h = sysconfig.get_config_var("HAVE_NDBM_H")
-        have_gdbm_h = sysconfig.get_config_var("HAVE_GDBM_H")
         have_gdbm_ndbm_h = sysconfig.get_config_var("HAVE_GDBM_NDBM_H")
         have_gdbm_dash_ndbm_h = sysconfig.get_config_var("HAVE_GDBM_DASH_NDBM_H")
         have_libndbm = sysconfig.get_config_var("HAVE_LIBNDBM")
-        have_libgdbm = sysconfig.get_config_var("HAVE_LIBGDBM")
         have_libgdbm_compat = sysconfig.get_config_var("HAVE_LIBGDBM_COMPAT")
         have_libdb = sysconfig.get_config_var("HAVE_LIBDB")
 
@@ -1243,7 +1207,7 @@ class PyBuildExt(build_ext):
             if dbm_args:
                 dbm_order = [arg.split('=')[-1] for arg in dbm_args][-1].split(":")
             else:
-                dbm_order = "ndbm:gdbm:bdb".split(":")
+                dbm_order = "gdbm:ndbm:bdb".split(":")
             dbmext = None
             for cand in dbm_order:
                 if cand == "ndbm":
@@ -1288,173 +1252,47 @@ class PyBuildExt(build_ext):
                 self.missing.append('_dbm')
 
         # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
-        if 'gdbm' in dbm_order and have_libgdbm:
-            self.add(Extension('_gdbm', ['_gdbmmodule.c'],
-                               libraries=['gdbm']))
-        else:
-            self.missing.append('_gdbm')
+        self.addext(Extension('_gdbm', ['_gdbmmodule.c']))
 
     def detect_sqlite(self):
-        # The sqlite interface
-        sqlite_setup_debug = False   # verbose debug prints from this script?
-
-        # We hunt for #define SQLITE_VERSION "n.n.n"
-        sqlite_incdir = sqlite_libdir = None
-        sqlite_inc_paths = [ '/usr/include',
-                             '/usr/include/sqlite',
-                             '/usr/include/sqlite3',
-                             '/usr/local/include',
-                             '/usr/local/include/sqlite',
-                             '/usr/local/include/sqlite3',
-                             ]
-        if CROSS_COMPILING:
-            sqlite_inc_paths = []
-        MIN_SQLITE_VERSION_NUMBER = (3, 7, 15)  # Issue 40810
-        MIN_SQLITE_VERSION = ".".join([str(x)
-                                    for x in MIN_SQLITE_VERSION_NUMBER])
-
-        # Scan the default include directories before the SQLite specific
-        # ones. This allows one to override the copy of sqlite on OSX,
-        # where /usr/include contains an old version of sqlite.
-        if MACOS:
-            sysroot = macosx_sdk_root()
-
-        for d_ in self.inc_dirs + sqlite_inc_paths:
-            d = d_
-            if MACOS and is_macosx_sdk_path(d):
-                d = os.path.join(sysroot, d[1:])
-
-            f = os.path.join(d, "sqlite3.h")
-            if os.path.exists(f):
-                if sqlite_setup_debug: print("sqlite: found %s"%f)
-                with open(f) as file:
-                    incf = file.read()
-                m = re.search(
-                    r'\s*.*#\s*.*define\s.*SQLITE_VERSION\W*"([\d\.]*)"', incf)
-                if m:
-                    sqlite_version = m.group(1)
-                    sqlite_version_tuple = tuple([int(x)
-                                        for x in sqlite_version.split(".")])
-                    if sqlite_version_tuple >= MIN_SQLITE_VERSION_NUMBER:
-                        # we win!
-                        if sqlite_setup_debug:
-                            print("%s/sqlite3.h: version %s"%(d, sqlite_version))
-                        sqlite_incdir = d
-                        break
-                    else:
-                        if sqlite_setup_debug:
-                            print("%s: version %s is too old, need >= %s"%(d,
-                                        sqlite_version, MIN_SQLITE_VERSION))
-                elif sqlite_setup_debug:
-                    print("sqlite: %s had no SQLITE_VERSION"%(f,))
-
-        if sqlite_incdir:
-            sqlite_dirs_to_check = [
-                os.path.join(sqlite_incdir, '..', 'lib64'),
-                os.path.join(sqlite_incdir, '..', 'lib'),
-                os.path.join(sqlite_incdir, '..', '..', 'lib64'),
-                os.path.join(sqlite_incdir, '..', '..', 'lib'),
-            ]
-            sqlite_libfile = self.compiler.find_library_file(
-                                sqlite_dirs_to_check + self.lib_dirs, 'sqlite3')
-            if sqlite_libfile:
-                sqlite_libdir = [os.path.abspath(os.path.dirname(sqlite_libfile))]
-
-        if sqlite_incdir and sqlite_libdir:
-            sqlite_srcs = [
-                '_sqlite/connection.c',
-                '_sqlite/cursor.c',
-                '_sqlite/microprotocols.c',
-                '_sqlite/module.c',
-                '_sqlite/prepare_protocol.c',
-                '_sqlite/row.c',
-                '_sqlite/statement.c',
-                '_sqlite/util.c', ]
-            sqlite_defines = []
-
-            # Enable support for loadable extensions in the sqlite3 module
-            # if --enable-loadable-sqlite-extensions configure option is used.
-            if (
-                MACOS and
-                sqlite_incdir == os.path.join(MACOS_SDK_ROOT, "usr/include") and
-                sysconfig.get_config_var("PY_SQLITE_ENABLE_LOAD_EXTENSION")
-            ):
-                raise DistutilsError("System version of SQLite does not support loadable extensions")
-
-            include_dirs = ["Modules/_sqlite"]
-            # Only include the directory where sqlite was found if it does
-            # not already exist in set include directories, otherwise you
-            # can end up with a bad search path order.
-            if sqlite_incdir not in self.compiler.include_dirs:
-                include_dirs.append(sqlite_incdir)
-            # avoid a runtime library path for a system library dir
-            if sqlite_libdir and sqlite_libdir[0] in self.lib_dirs:
-                sqlite_libdir = None
-            self.add(Extension('_sqlite3', sqlite_srcs,
-                               define_macros=sqlite_defines,
-                               include_dirs=include_dirs,
-                               library_dirs=sqlite_libdir,
-                               libraries=["sqlite3",]))
-        else:
-            self.missing.append('_sqlite3')
+        sources = [
+            "_sqlite/blob.c",
+            "_sqlite/connection.c",
+            "_sqlite/cursor.c",
+            "_sqlite/microprotocols.c",
+            "_sqlite/module.c",
+            "_sqlite/prepare_protocol.c",
+            "_sqlite/row.c",
+            "_sqlite/statement.c",
+            "_sqlite/util.c",
+        ]
+        self.addext(Extension("_sqlite3", sources=sources))
 
     def detect_platform_specific_exts(self):
         # Unix-only modules
-        if not MS_WINDOWS:
-            if not VXWORKS:
-                # Steen Lumholt's termios module
-                self.add(Extension('termios', ['termios.c']))
-                # Jeremy Hylton's rlimit interface
-            self.add(Extension('resource', ['resource.c']))
-        else:
-            self.missing.extend(['resource', 'termios'])
+        # Steen Lumholt's termios module
+        self.addext(Extension('termios', ['termios.c']))
+        # Jeremy Hylton's rlimit interface
+        self.addext(Extension('resource', ['resource.c']))
+        # linux/soundcard.h or sys/soundcard.h
+        self.addext(Extension('ossaudiodev', ['ossaudiodev.c']))
 
-        # Platform-specific libraries
-        if HOST_PLATFORM.startswith(('linux', 'freebsd', 'gnukfreebsd')):
-            self.add(Extension('ossaudiodev', ['ossaudiodev.c']))
-        elif not AIX:
-            self.missing.append('ossaudiodev')
-
-        if MACOS:
-            self.add(Extension('_scproxy', ['_scproxy.c'],
-                               extra_link_args=[
-                                   '-framework', 'SystemConfiguration',
-                                   '-framework', 'CoreFoundation']))
+        # macOS-only, needs SystemConfiguration and CoreFoundation framework
+        self.addext(Extension('_scproxy', ['_scproxy.c']))
 
     def detect_compress_exts(self):
         # Andrew Kuchling's zlib module.
-        have_zlib = sysconfig.get_config_var("HAVE_LIBZ")
-        if have_zlib:
-            self.add(Extension('zlib', ['zlibmodule.c'],
-                                libraries=['z']))
-        else:
-            self.missing.append('zlib')
+        self.addext(Extension('zlib', ['zlibmodule.c']))
 
         # Helper module for various ascii-encoders.  Uses zlib for an optimized
         # crc32 if we have it.  Otherwise binascii uses its own.
-        if have_zlib:
-            define_macros = [('USE_ZLIB_CRC32', None)]
-            libraries = ['z']
-        else:
-            define_macros = None
-            libraries = []
-        self.add(Extension('binascii', ['binascii.c'],
-                           define_macros=define_macros,
-                           libraries=libraries))
+        self.addext(Extension('binascii', ['binascii.c']))
 
         # Gustavo Niemeyer's bz2 module.
-        if sysconfig.get_config_var("HAVE_LIBBZ2"):
-            self.add(Extension('_bz2', ['_bz2module.c'],
-                               libraries=['bz2']))
-        else:
-            self.missing.append('_bz2')
+        self.addext(Extension('_bz2', ['_bz2module.c']))
 
         # LZMA compression support.
-        if sysconfig.get_config_var("HAVE_LIBLZMA"):
-            self.add(Extension('_lzma', ['_lzmamodule.c'],
-                               libraries=['lzma']))
-        else:
-            self.missing.append('_lzma')
+        self.addext(Extension('_lzma', ['_lzmamodule.c']))
 
     def detect_expat_elementtree(self):
         # Interface to the Expat XML parser
@@ -1468,120 +1306,47 @@ class PyBuildExt(build_ext):
         #
         # More information on Expat can be found at www.libexpat.org.
         #
-        if '--with-system-expat' in sysconfig.get_config_var("CONFIG_ARGS"):
-            expat_inc = []
-            extra_compile_args = []
-            expat_lib = ['expat']
-            expat_sources = []
-            expat_depends = []
-        else:
-            expat_inc = [os.path.join(self.srcdir, 'Modules', 'expat')]
-            extra_compile_args = []
-            # bpo-44394: libexpat uses isnan() of math.h and needs linkage
-            # against the libm
-            expat_lib = ['m']
-            expat_sources = ['expat/xmlparse.c',
-                             'expat/xmlrole.c',
-                             'expat/xmltok.c']
-            expat_depends = ['expat/ascii.h',
-                             'expat/asciitab.h',
-                             'expat/expat.h',
-                             'expat/expat_config.h',
-                             'expat/expat_external.h',
-                             'expat/internal.h',
-                             'expat/latin1tab.h',
-                             'expat/utf8tab.h',
-                             'expat/xmlrole.h',
-                             'expat/xmltok.h',
-                             'expat/xmltok_impl.h'
-                             ]
-
-            cc = sysconfig.get_config_var('CC').split()[0]
-            ret = run_command(
-                      '"%s" -Werror -Wno-unreachable-code -E -xc /dev/null >/dev/null 2>&1' % cc)
-            if ret == 0:
-                extra_compile_args.append('-Wno-unreachable-code')
-
-        self.add(Extension('pyexpat',
-                           extra_compile_args=extra_compile_args,
-                           include_dirs=expat_inc,
-                           libraries=expat_lib,
-                           sources=['pyexpat.c'] + expat_sources,
-                           depends=expat_depends))
+        self.addext(Extension('pyexpat', sources=['pyexpat.c']))
 
         # Fredrik Lundh's cElementTree module.  Note that this also
         # uses expat (via the CAPI hook in pyexpat).
-
-        if os.path.isfile(os.path.join(self.srcdir, 'Modules', '_elementtree.c')):
-            self.add(Extension('_elementtree',
-                               include_dirs=expat_inc,
-                               libraries=expat_lib,
-                               sources=['_elementtree.c'],
-                               depends=['pyexpat.c', *expat_sources,
-                                        *expat_depends]))
-        else:
-            self.missing.append('_elementtree')
+        self.addext(Extension('_elementtree', sources=['_elementtree.c']))
 
     def detect_multibytecodecs(self):
         # Hye-Shik Chang's CJKCodecs modules.
-        self.add(Extension('_multibytecodec',
-                           ['cjkcodecs/multibytecodec.c']))
+        self.addext(Extension('_multibytecodec',
+                              ['cjkcodecs/multibytecodec.c']))
         for loc in ('kr', 'jp', 'cn', 'tw', 'hk', 'iso2022'):
-            self.add(Extension('_codecs_%s' % loc,
-                               ['cjkcodecs/_codecs_%s.c' % loc]))
+            self.addext(Extension(
+                f'_codecs_{loc}', [f'cjkcodecs/_codecs_{loc}.c']
+            ))
 
     def detect_multiprocessing(self):
         # Richard Oudkerk's multiprocessing module
-        if MS_WINDOWS:
-            multiprocessing_srcs = ['_multiprocessing/multiprocessing.c',
-                                    '_multiprocessing/semaphore.c']
-        else:
-            multiprocessing_srcs = ['_multiprocessing/multiprocessing.c']
-            if (sysconfig.get_config_var('HAVE_SEM_OPEN') and not
-                sysconfig.get_config_var('POSIX_SEMAPHORES_NOT_ENABLED')):
-                multiprocessing_srcs.append('_multiprocessing/semaphore.c')
-        self.add(Extension('_multiprocessing', multiprocessing_srcs,
-                           include_dirs=["Modules/_multiprocessing"]))
-
-        if (not MS_WINDOWS and
-           sysconfig.get_config_var('HAVE_SHM_OPEN') and
-           sysconfig.get_config_var('HAVE_SHM_UNLINK')):
-            posixshmem_srcs = ['_multiprocessing/posixshmem.c']
-            libs = []
-            if sysconfig.get_config_var('SHM_NEEDS_LIBRT'):
-                # need to link with librt to get shm_open()
-                libs.append('rt')
-            self.add(Extension('_posixshmem', posixshmem_srcs,
-                               define_macros={},
-                               libraries=libs,
-                               include_dirs=["Modules/_multiprocessing"]))
-        else:
-            self.missing.append('_posixshmem')
+        multiprocessing_srcs = ['_multiprocessing/multiprocessing.c']
+        if (
+            sysconfig.get_config_var('HAVE_SEM_OPEN') and not
+            sysconfig.get_config_var('POSIX_SEMAPHORES_NOT_ENABLED')
+        ):
+            multiprocessing_srcs.append('_multiprocessing/semaphore.c')
+        self.addext(Extension('_multiprocessing', multiprocessing_srcs))
+        self.addext(Extension('_posixshmem', ['_multiprocessing/posixshmem.c']))
 
     def detect_uuid(self):
         # Build the _uuid module if possible
-        uuid_h = sysconfig.get_config_var("HAVE_UUID_H")
-        uuid_uuid_h = sysconfig.get_config_var("HAVE_UUID_UUID_H")
-        if uuid_h or uuid_uuid_h:
-            if sysconfig.get_config_var("HAVE_LIBUUID"):
-                uuid_libs = ["uuid"]
-            else:
-                uuid_libs = []
-            self.add(Extension('_uuid', ['_uuidmodule.c'],
-                               libraries=uuid_libs))
-        else:
-            self.missing.append('_uuid')
+        self.addext(Extension('_uuid', ['_uuidmodule.c']))
 
     def detect_modules(self):
-        self.configure_compiler()
-        self.init_inc_lib_dirs()
+        # remove dummy extension
+        self.extensions = []
 
+        # Some C extensions are built by entries in Modules/Setup.bootstrap.
+        # These are extensions are required to bootstrap the interpreter or
+        # build process.
         self.detect_simple_extensions()
-        if TEST_EXTENSIONS:
-            self.detect_test_extensions()
+        self.detect_test_extensions()
         self.detect_readline_curses()
         self.detect_crypt()
-        self.detect_socket()
         self.detect_openssl_hashlib()
         self.detect_hash_builtins()
         self.detect_dbm_gdbm()
@@ -1594,321 +1359,17 @@ class PyBuildExt(build_ext):
         self.detect_decimal()
         self.detect_ctypes()
         self.detect_multiprocessing()
-        if not self.detect_tkinter():
-            self.missing.append('_tkinter')
+        self.detect_tkinter()
         self.detect_uuid()
 
-##         # Uncomment these lines if you want to play with xxmodule.c
-##         self.add(Extension('xx', ['xxmodule.c']))
+        # Uncomment the next line if you want to play with xxmodule.c
+#        self.add(Extension('xx', ['xxmodule.c']))
 
-        # The limited C API is not compatible with the Py_TRACE_REFS macro.
-        if not sysconfig.get_config_var('Py_TRACE_REFS'):
-            self.add(Extension('xxlimited', ['xxlimited.c']))
-            self.add(Extension('xxlimited_35', ['xxlimited_35.c']))
-
-    def detect_tkinter_fromenv(self):
-        # Build _tkinter using the Tcl/Tk locations specified by
-        # the _TCLTK_INCLUDES and _TCLTK_LIBS environment variables.
-        # This method is meant to be invoked by detect_tkinter().
-        #
-        # The variables can be set via one of the following ways.
-        #
-        # - Automatically, at configuration time, by using pkg-config.
-        #   The tool is called by the configure script.
-        #   Additional pkg-config configuration paths can be set via the
-        #   PKG_CONFIG_PATH environment variable.
-        #
-        #     PKG_CONFIG_PATH=".../lib/pkgconfig" ./configure ...
-        #
-        # - Explicitly, at configuration time by setting both
-        #   --with-tcltk-includes and --with-tcltk-libs.
-        #
-        #     ./configure ... \
-        #     --with-tcltk-includes="-I/path/to/tclincludes \
-        #                            -I/path/to/tkincludes"
-        #     --with-tcltk-libs="-L/path/to/tcllibs -ltclm.n \
-        #                        -L/path/to/tklibs -ltkm.n"
-        #
-        #  - Explicitly, at compile time, by passing TCLTK_INCLUDES and
-        #    TCLTK_LIBS to the make target.
-        #    This will override any configuration-time option.
-        #
-        #      make TCLTK_INCLUDES="..." TCLTK_LIBS="..."
-        #
-        # This can be useful for building and testing tkinter with multiple
-        # versions of Tcl/Tk.  Note that a build of Tk depends on a particular
-        # build of Tcl so you need to specify both arguments and use care when
-        # overriding.
-
-        # The _TCLTK variables are created in the Makefile sharedmods target.
-        tcltk_includes = os.environ.get('_TCLTK_INCLUDES')
-        tcltk_libs = os.environ.get('_TCLTK_LIBS')
-        if not (tcltk_includes and tcltk_libs):
-            # Resume default configuration search.
-            return False
-
-        extra_compile_args = tcltk_includes.split()
-        extra_link_args = tcltk_libs.split()
-        self.add(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
-                           define_macros=[('WITH_APPINIT', 1)],
-                           extra_compile_args = extra_compile_args,
-                           extra_link_args = extra_link_args))
-        return True
-
-    def detect_tkinter_darwin(self):
-        # Build default _tkinter on macOS using Tcl and Tk frameworks.
-        # This method is meant to be invoked by detect_tkinter().
-        #
-        # The macOS native Tk (AKA Aqua Tk) and Tcl are most commonly
-        # built and installed as macOS framework bundles.  However,
-        # for several reasons, we cannot take full advantage of the
-        # Apple-supplied compiler chain's -framework options here.
-        # Instead, we need to find and pass to the compiler the
-        # absolute paths of the Tcl and Tk headers files we want to use
-        # and the absolute path to the directory containing the Tcl
-        # and Tk frameworks for linking.
-        #
-        # We want to handle here two common use cases on macOS:
-        # 1. Build and link with system-wide third-party or user-built
-        #    Tcl and Tk frameworks installed in /Library/Frameworks.
-        # 2. Build and link using a user-specified macOS SDK so that the
-        #    built Python can be exported to other systems.  In this case,
-        #    search only the SDK's /Library/Frameworks (normally empty)
-        #    and /System/Library/Frameworks.
-        #
-        # Any other use cases are handled either by detect_tkinter_fromenv(),
-        # or detect_tkinter(). The former handles non-standard locations of
-        # Tcl/Tk, defined via the _TCLTK_INCLUDES and _TCLTK_LIBS environment
-        # variables. The latter handles any Tcl/Tk versions installed in
-        # standard Unix directories.
-        #
-        # It would be desirable to also handle here the case where
-        # you want to build and link with a framework build of Tcl and Tk
-        # that is not in /Library/Frameworks, say, in your private
-        # $HOME/Library/Frameworks directory or elsewhere. It turns
-        # out to be difficult to make that work automatically here
-        # without bringing into play more tools and magic. That case
-        # can be handled using a recipe with the right arguments
-        # to detect_tkinter_fromenv().
-        #
-        # Note also that the fallback case here is to try to use the
-        # Apple-supplied Tcl and Tk frameworks in /System/Library but
-        # be forewarned that they are deprecated by Apple and typically
-        # out-of-date and buggy; their use should be avoided if at
-        # all possible by installing a newer version of Tcl and Tk in
-        # /Library/Frameworks before building Python without
-        # an explicit SDK or by configuring build arguments explicitly.
-
-        from os.path import join, exists
-
-        sysroot = macosx_sdk_root() # path to the SDK or '/'
-
-        if macosx_sdk_specified():
-            # Use case #2: an SDK other than '/' was specified.
-            # Only search there.
-            framework_dirs = [
-                join(sysroot, 'Library', 'Frameworks'),
-                join(sysroot, 'System', 'Library', 'Frameworks'),
-            ]
-        else:
-            # Use case #1: no explicit SDK selected.
-            # Search the local system-wide /Library/Frameworks,
-            # not the one in the default SDK, otherwise fall back to
-            # /System/Library/Frameworks whose header files may be in
-            # the default SDK or, on older systems, actually installed.
-            framework_dirs = [
-                join('/', 'Library', 'Frameworks'),
-                join(sysroot, 'System', 'Library', 'Frameworks'),
-            ]
-
-        # Find the directory that contains the Tcl.framework and
-        # Tk.framework bundles.
-        for F in framework_dirs:
-            # both Tcl.framework and Tk.framework should be present
-            for fw in 'Tcl', 'Tk':
-                if not exists(join(F, fw + '.framework')):
-                    break
-            else:
-                # ok, F is now directory with both frameworks. Continue
-                # building
-                break
-        else:
-            # Tk and Tcl frameworks not found. Normal "unix" tkinter search
-            # will now resume.
-            return False
-
-        include_dirs = [
-            join(F, fw + '.framework', H)
-            for fw in ('Tcl', 'Tk')
-            for H in ('Headers',)
-        ]
-
-        # Add the base framework directory as well
-        compile_args = ['-F', F]
-
-        # Do not build tkinter for archs that this Tk was not built with.
-        cflags = sysconfig.get_config_vars('CFLAGS')[0]
-        archs = re.findall(r'-arch\s+(\w+)', cflags)
-
-        tmpfile = os.path.join(self.build_temp, 'tk.arch')
-        if not os.path.exists(self.build_temp):
-            os.makedirs(self.build_temp)
-
-        run_command(
-            "file {}/Tk.framework/Tk | grep 'for architecture' > {}".format(F, tmpfile)
-        )
-        with open(tmpfile) as fp:
-            detected_archs = []
-            for ln in fp:
-                a = ln.split()[-1]
-                if a in archs:
-                    detected_archs.append(ln.split()[-1])
-        os.unlink(tmpfile)
-
-        arch_args = []
-        for a in detected_archs:
-            arch_args.append('-arch')
-            arch_args.append(a)
-
-        compile_args += arch_args
-        link_args = [','.join(['-Wl', '-F', F, '-framework', 'Tcl', '-framework', 'Tk']), *arch_args]
-
-        # The X11/xlib.h file bundled in the Tk sources can cause function
-        # prototype warnings from the compiler. Since we cannot easily fix
-        # that, suppress the warnings here instead.
-        if '-Wstrict-prototypes' in cflags.split():
-            compile_args.append('-Wno-strict-prototypes')
-
-        self.add(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
-                           define_macros=[('WITH_APPINIT', 1)],
-                           include_dirs=include_dirs,
-                           libraries=[],
-                           extra_compile_args=compile_args,
-                           extra_link_args=link_args))
-        return True
+        self.addext(Extension('xxlimited', ['xxlimited.c']))
+        self.addext(Extension('xxlimited_35', ['xxlimited_35.c']))
 
     def detect_tkinter(self):
-        # The _tkinter module.
-        #
-        # Detection of Tcl/Tk is attempted in the following order:
-        #   - Through environment variables.
-        #   - Platform specific detection of Tcl/Tk (currently only macOS).
-        #   - Search of various standard Unix header/library paths.
-        #
-        # Detection stops at the first successful method.
-
-        # Check for Tcl and Tk at the locations indicated by _TCLTK_INCLUDES
-        # and _TCLTK_LIBS environment variables.
-        if self.detect_tkinter_fromenv():
-            return True
-
-        # Rather than complicate the code below, detecting and building
-        # AquaTk is a separate method. Only one Tkinter will be built on
-        # Darwin - either AquaTk, if it is found, or X11 based Tk.
-        if (MACOS and self.detect_tkinter_darwin()):
-            return True
-
-        # Assume we haven't found any of the libraries or include files
-        # The versions with dots are used on Unix, and the versions without
-        # dots on Windows, for detection by cygwin.
-        tcllib = tklib = tcl_includes = tk_includes = None
-        for version in ['8.6', '86', '8.5', '85', '8.4', '84', '8.3', '83',
-                        '8.2', '82', '8.1', '81', '8.0', '80']:
-            tklib = self.compiler.find_library_file(self.lib_dirs,
-                                                        'tk' + version)
-            tcllib = self.compiler.find_library_file(self.lib_dirs,
-                                                         'tcl' + version)
-            if tklib and tcllib:
-                # Exit the loop when we've found the Tcl/Tk libraries
-                break
-
-        # Now check for the header files
-        if tklib and tcllib:
-            # Check for the include files on Debian and {Free,Open}BSD, where
-            # they're put in /usr/include/{tcl,tk}X.Y
-            dotversion = version
-            if '.' not in dotversion and "bsd" in HOST_PLATFORM.lower():
-                # OpenBSD and FreeBSD use Tcl/Tk library names like libtcl83.a,
-                # but the include subdirs are named like .../include/tcl8.3.
-                dotversion = dotversion[:-1] + '.' + dotversion[-1]
-            tcl_include_sub = []
-            tk_include_sub = []
-            for dir in self.inc_dirs:
-                tcl_include_sub += [dir + os.sep + "tcl" + dotversion]
-                tk_include_sub += [dir + os.sep + "tk" + dotversion]
-            tk_include_sub += tcl_include_sub
-            tcl_includes = find_file('tcl.h', self.inc_dirs, tcl_include_sub)
-            tk_includes = find_file('tk.h', self.inc_dirs, tk_include_sub)
-
-        if (tcllib is None or tklib is None or
-            tcl_includes is None or tk_includes is None):
-            self.announce("INFO: Can't locate Tcl/Tk libs and/or headers", 2)
-            return False
-
-        # OK... everything seems to be present for Tcl/Tk.
-
-        include_dirs = []
-        libs = []
-        defs = []
-        added_lib_dirs = []
-        for dir in tcl_includes + tk_includes:
-            if dir not in include_dirs:
-                include_dirs.append(dir)
-
-        # Check for various platform-specific directories
-        if HOST_PLATFORM == 'sunos5':
-            include_dirs.append('/usr/openwin/include')
-            added_lib_dirs.append('/usr/openwin/lib')
-        elif os.path.exists('/usr/X11R6/include'):
-            include_dirs.append('/usr/X11R6/include')
-            added_lib_dirs.append('/usr/X11R6/lib64')
-            added_lib_dirs.append('/usr/X11R6/lib')
-        elif os.path.exists('/usr/X11R5/include'):
-            include_dirs.append('/usr/X11R5/include')
-            added_lib_dirs.append('/usr/X11R5/lib')
-        else:
-            # Assume default location for X11
-            include_dirs.append('/usr/X11/include')
-            added_lib_dirs.append('/usr/X11/lib')
-
-        # If Cygwin, then verify that X is installed before proceeding
-        if CYGWIN:
-            x11_inc = find_file('X11/Xlib.h', [], include_dirs)
-            if x11_inc is None:
-                return False
-
-        # Check for BLT extension
-        if self.compiler.find_library_file(self.lib_dirs + added_lib_dirs,
-                                               'BLT8.0'):
-            defs.append( ('WITH_BLT', 1) )
-            libs.append('BLT8.0')
-        elif self.compiler.find_library_file(self.lib_dirs + added_lib_dirs,
-                                                'BLT'):
-            defs.append( ('WITH_BLT', 1) )
-            libs.append('BLT')
-
-        # Add the Tcl/Tk libraries
-        libs.append('tk'+ version)
-        libs.append('tcl'+ version)
-
-        # Finally, link with the X11 libraries (not appropriate on cygwin)
-        if not CYGWIN:
-            libs.append('X11')
-
-        # XXX handle these, but how to detect?
-        # *** Uncomment and edit for PIL (TkImaging) extension only:
-        #       -DWITH_PIL -I../Extensions/Imaging/libImaging  tkImaging.c \
-        # *** Uncomment and edit for TOGL extension only:
-        #       -DWITH_TOGL togl.c \
-        # *** Uncomment these for TOGL extension only:
-        #       -lGL -lGLU -lXext -lXmu \
-
-        self.add(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
-                           define_macros=[('WITH_APPINIT', 1)] + defs,
-                           include_dirs=include_dirs,
-                           libraries=libs,
-                           library_dirs=added_lib_dirs))
-        return True
+        self.addext(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c']))
 
     def configure_ctypes(self, ext):
         return True
@@ -1929,7 +1390,6 @@ class PyBuildExt(build_ext):
                    '_ctypes/callproc.c',
                    '_ctypes/stgdict.c',
                    '_ctypes/cfield.c']
-        depends = ['_ctypes/ctypes.h']
 
         if MACOS:
             sources.append('_ctypes/malloc_closure.c')
@@ -1948,22 +1408,15 @@ class PyBuildExt(build_ext):
             # finding some -z option for the Sun compiler.
             extra_link_args.append('-mimpure-text')
 
-        elif HOST_PLATFORM.startswith('hp-ux'):
-            extra_link_args.append('-fPIC')
-
         ext = Extension('_ctypes',
                         include_dirs=include_dirs,
                         extra_compile_args=extra_compile_args,
                         extra_link_args=extra_link_args,
                         libraries=[],
-                        sources=sources,
-                        depends=depends)
+                        sources=sources)
         self.add(ext)
-        if TEST_EXTENSIONS:
-            # function my_sqrt() needs libm for sqrt()
-            self.add(Extension('_ctypes_test',
-                               sources=['_ctypes/_ctypes_test.c'],
-                               libraries=['m']))
+        # function my_sqrt() needs libm for sqrt()
+        self.addext(Extension('_ctypes_test', ['_ctypes/_ctypes_test.c']))
 
         ffi_inc = sysconfig.get_config_var("LIBFFI_INCLUDEDIR")
         ffi_lib = None
@@ -2016,319 +1469,40 @@ class PyBuildExt(build_ext):
 
     def detect_decimal(self):
         # Stefan Krah's _decimal module
-        extra_compile_args = []
-        undef_macros = []
-        if '--with-system-libmpdec' in sysconfig.get_config_var("CONFIG_ARGS"):
-            include_dirs = []
-            libraries = ['mpdec']
-            sources = ['_decimal/_decimal.c']
-            depends = ['_decimal/docstrings.h']
-        else:
-            include_dirs = [os.path.abspath(os.path.join(self.srcdir,
-                                                         'Modules',
-                                                         '_decimal',
-                                                         'libmpdec'))]
-            libraries = ['m']
-            sources = [
-              '_decimal/_decimal.c',
-              '_decimal/libmpdec/basearith.c',
-              '_decimal/libmpdec/constants.c',
-              '_decimal/libmpdec/context.c',
-              '_decimal/libmpdec/convolute.c',
-              '_decimal/libmpdec/crt.c',
-              '_decimal/libmpdec/difradix2.c',
-              '_decimal/libmpdec/fnt.c',
-              '_decimal/libmpdec/fourstep.c',
-              '_decimal/libmpdec/io.c',
-              '_decimal/libmpdec/mpalloc.c',
-              '_decimal/libmpdec/mpdecimal.c',
-              '_decimal/libmpdec/numbertheory.c',
-              '_decimal/libmpdec/sixstep.c',
-              '_decimal/libmpdec/transpose.c',
-              ]
-            depends = [
-              '_decimal/docstrings.h',
-              '_decimal/libmpdec/basearith.h',
-              '_decimal/libmpdec/bits.h',
-              '_decimal/libmpdec/constants.h',
-              '_decimal/libmpdec/convolute.h',
-              '_decimal/libmpdec/crt.h',
-              '_decimal/libmpdec/difradix2.h',
-              '_decimal/libmpdec/fnt.h',
-              '_decimal/libmpdec/fourstep.h',
-              '_decimal/libmpdec/io.h',
-              '_decimal/libmpdec/mpalloc.h',
-              '_decimal/libmpdec/mpdecimal.h',
-              '_decimal/libmpdec/numbertheory.h',
-              '_decimal/libmpdec/sixstep.h',
-              '_decimal/libmpdec/transpose.h',
-              '_decimal/libmpdec/typearith.h',
-              '_decimal/libmpdec/umodarith.h',
-              ]
-
-        config = {
-          'x64':     [('CONFIG_64','1'), ('ASM','1')],
-          'uint128': [('CONFIG_64','1'), ('ANSI','1'), ('HAVE_UINT128_T','1')],
-          'ansi64':  [('CONFIG_64','1'), ('ANSI','1')],
-          'ppro':    [('CONFIG_32','1'), ('PPRO','1'), ('ASM','1')],
-          'ansi32':  [('CONFIG_32','1'), ('ANSI','1')],
-          'ansi-legacy': [('CONFIG_32','1'), ('ANSI','1'),
-                          ('LEGACY_COMPILER','1')],
-          'universal':   [('UNIVERSAL','1')]
-        }
-
-        cc = sysconfig.get_config_var('CC')
-        sizeof_size_t = sysconfig.get_config_var('SIZEOF_SIZE_T')
-        machine = os.environ.get('PYTHON_DECIMAL_WITH_MACHINE')
-
-        if machine:
-            # Override automatic configuration to facilitate testing.
-            define_macros = config[machine]
-        elif MACOS:
-            # Universal here means: build with the same options Python
-            # was built with.
-            define_macros = config['universal']
-        elif sizeof_size_t == 8:
-            if sysconfig.get_config_var('HAVE_GCC_ASM_FOR_X64'):
-                define_macros = config['x64']
-            elif sysconfig.get_config_var('HAVE_GCC_UINT128_T'):
-                define_macros = config['uint128']
-            else:
-                define_macros = config['ansi64']
-        elif sizeof_size_t == 4:
-            ppro = sysconfig.get_config_var('HAVE_GCC_ASM_FOR_X87')
-            if ppro and ('gcc' in cc or 'clang' in cc) and \
-               not 'sunos' in HOST_PLATFORM:
-                # solaris: problems with register allocation.
-                # icc >= 11.0 works as well.
-                define_macros = config['ppro']
-                extra_compile_args.append('-Wno-unknown-pragmas')
-            else:
-                define_macros = config['ansi32']
-        else:
-            raise DistutilsError("_decimal: unsupported architecture")
-
-        # Workarounds for toolchain bugs:
-        if sysconfig.get_config_var('HAVE_IPA_PURE_CONST_BUG'):
-            # Some versions of gcc miscompile inline asm:
-            # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
-            # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
-            extra_compile_args.append('-fno-ipa-pure-const')
-        if sysconfig.get_config_var('HAVE_GLIBC_MEMMOVE_BUG'):
-            # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
-            # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
-            undef_macros.append('_FORTIFY_SOURCE')
-
-        # Uncomment for extra functionality:
-        #define_macros.append(('EXTRA_FUNCTIONALITY', 1))
-        self.add(Extension('_decimal',
-                           include_dirs=include_dirs,
-                           libraries=libraries,
-                           define_macros=define_macros,
-                           undef_macros=undef_macros,
-                           extra_compile_args=extra_compile_args,
-                           sources=sources,
-                           depends=depends))
+        self.addext(
+            Extension(
+                '_decimal',
+                ['_decimal/_decimal.c'],
+                # Uncomment for extra functionality:
+                # define_macros=[('EXTRA_FUNCTIONALITY', 1)]
+            )
+        )
 
     def detect_openssl_hashlib(self):
-        # Detect SSL support for the socket module (via _ssl)
-        config_vars = sysconfig.get_config_vars()
-
-        def split_var(name, sep):
-            # poor man's shlex, the re module is not available yet.
-            value = config_vars.get(name)
-            if not value:
-                return ()
-            # This trick works because ax_check_openssl uses --libs-only-L,
-            # --libs-only-l, and --cflags-only-I.
-            value = ' ' + value
-            sep = ' ' + sep
-            return [v.strip() for v in value.split(sep) if v.strip()]
-
-        openssl_includes = split_var('OPENSSL_INCLUDES', '-I')
-        openssl_libdirs = split_var('OPENSSL_LDFLAGS', '-L')
-        openssl_libs = split_var('OPENSSL_LIBS', '-l')
-        openssl_rpath = config_vars.get('OPENSSL_RPATH')
-        if not openssl_libs:
-            # libssl and libcrypto not found
-            self.missing.extend(['_ssl', '_hashlib'])
-            return None, None
-
-        # Find OpenSSL includes
-        ssl_incs = find_file(
-            'openssl/ssl.h', self.inc_dirs, openssl_includes
-        )
-        if ssl_incs is None:
-            self.missing.extend(['_ssl', '_hashlib'])
-            return None, None
-
-        if openssl_rpath == 'auto':
-            runtime_library_dirs = openssl_libdirs[:]
-        elif not openssl_rpath:
-            runtime_library_dirs = []
-        else:
-            runtime_library_dirs = [openssl_rpath]
-
-        openssl_extension_kwargs = dict(
-            include_dirs=openssl_includes,
-            library_dirs=openssl_libdirs,
-            libraries=openssl_libs,
-            runtime_library_dirs=runtime_library_dirs,
-        )
-
-        # This static linking is NOT OFFICIALLY SUPPORTED.
-        # Requires static OpenSSL build with position-independent code. Some
-        # features like DSO engines or external OSSL providers don't work.
-        # Only tested on GCC and clang on X86_64.
-        if os.environ.get("PY_UNSUPPORTED_OPENSSL_BUILD") == "static":
-            extra_linker_args = []
-            for lib in openssl_extension_kwargs["libraries"]:
-                # link statically
-                extra_linker_args.append(f"-l:lib{lib}.a")
-                # don't export symbols
-                extra_linker_args.append(f"-Wl,--exclude-libs,lib{lib}.a")
-            openssl_extension_kwargs["extra_link_args"] = extra_linker_args
-            # don't link OpenSSL shared libraries.
-            # include libz for OpenSSL build flavors with compression support
-            openssl_extension_kwargs["libraries"] = ["z"]
-
-        self.add(
-            Extension(
-                '_ssl',
-                ['_ssl.c'],
-                depends=[
-                    'socketmodule.h',
-                    '_ssl.h',
-                    '_ssl_data_111.h',
-                    '_ssl_data_300.h',
-                    '_ssl_data.h',
-                    '_ssl/debughelpers.c',
-                    '_ssl/misc.c',
-                    '_ssl/cert.c',
-                ],
-                **openssl_extension_kwargs
-            )
-        )
-        self.add(
-            Extension(
-                '_hashlib',
-                ['_hashopenssl.c'],
-                depends=['hashlib.h'],
-                **openssl_extension_kwargs,
-            )
-        )
+        self.addext(Extension('_ssl', ['_ssl.c']))
+        self.addext(Extension('_hashlib', ['_hashopenssl.c']))
 
     def detect_hash_builtins(self):
         # By default we always compile these even when OpenSSL is available
         # (issue #14693). It's harmless and the object code is tiny
         # (40-50 KiB per module, only loaded when actually used).  Modules can
         # be disabled via the --with-builtin-hashlib-hashes configure flag.
-        supported = {"md5", "sha1", "sha256", "sha512", "sha3", "blake2"}
 
-        configured = sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES")
-        configured = configured.strip('"').lower()
-        configured = {
-            m.strip() for m in configured.split(",")
-        }
-
-        self.disabled_configure.extend(
-            sorted(supported.difference(configured))
-        )
-
-        if "sha256" in configured:
-            self.add(Extension(
-                '_sha256', ['sha256module.c'],
-                depends=['hashlib.h'],
-            ))
-
-        if "sha512" in configured:
-            self.add(Extension(
-                '_sha512', ['sha512module.c'],
-                depends=['hashlib.h'],
-            ))
-
-        if "md5" in configured:
-            self.add(Extension(
-                '_md5', ['md5module.c'],
-                depends=['hashlib.h'],
-            ))
-
-        if "sha1" in configured:
-            self.add(Extension(
-                '_sha1', ['sha1module.c'],
-                depends=['hashlib.h'],
-            ))
-
-        if "blake2" in configured:
-            blake2_deps = glob(
-                os.path.join(escape(self.srcdir), 'Modules/_blake2/impl/*')
-            )
-            blake2_deps.append('hashlib.h')
-            self.add(Extension(
-                '_blake2',
-                [
-                    '_blake2/blake2module.c',
-                    '_blake2/blake2b_impl.c',
-                    '_blake2/blake2s_impl.c'
-                ],
-                depends=blake2_deps,
-            ))
-
-        if "sha3" in configured:
-            sha3_deps = glob(
-                os.path.join(escape(self.srcdir), 'Modules/_sha3/kcp/*')
-            )
-            sha3_deps.append('hashlib.h')
-            self.add(Extension(
-                '_sha3',
-                ['_sha3/sha3module.c'],
-                depends=sha3_deps,
-            ))
+        self.addext(Extension('_md5', ['md5module.c']))
+        self.addext(Extension('_sha1', ['sha1module.c']))
+        self.addext(Extension('_sha256', ['sha256module.c']))
+        self.addext(Extension('_sha512', ['sha512module.c']))
+        self.addext(Extension('_sha3', ['_sha3/sha3module.c']))
+        self.addext(Extension('_blake2',
+            [
+                '_blake2/blake2module.c',
+                '_blake2/blake2b_impl.c',
+                '_blake2/blake2s_impl.c'
+            ]
+        ))
 
     def detect_nis(self):
-        if MS_WINDOWS or CYGWIN or HOST_PLATFORM == 'qnx6':
-            self.missing.append('nis')
-            return
-
-        libs = []
-        library_dirs = []
-        includes_dirs = []
-
-        # bpo-32521: glibc has deprecated Sun RPC for some time. Fedora 28
-        # moved headers and libraries to libtirpc and libnsl. The headers
-        # are in tircp and nsl sub directories.
-        rpcsvc_inc = find_file(
-            'rpcsvc/yp_prot.h', self.inc_dirs,
-            [os.path.join(inc_dir, 'nsl') for inc_dir in self.inc_dirs]
-        )
-        rpc_inc = find_file(
-            'rpc/rpc.h', self.inc_dirs,
-            [os.path.join(inc_dir, 'tirpc') for inc_dir in self.inc_dirs]
-        )
-        if rpcsvc_inc is None or rpc_inc is None:
-            # not found
-            self.missing.append('nis')
-            return
-        includes_dirs.extend(rpcsvc_inc)
-        includes_dirs.extend(rpc_inc)
-
-        if self.compiler.find_library_file(self.lib_dirs, 'nsl'):
-            libs.append('nsl')
-        else:
-            # libnsl-devel: check for libnsl in nsl/ subdirectory
-            nsl_dirs = [os.path.join(lib_dir, 'nsl') for lib_dir in self.lib_dirs]
-            libnsl = self.compiler.find_library_file(nsl_dirs, 'nsl')
-            if libnsl is not None:
-                library_dirs.append(os.path.dirname(libnsl))
-                libs.append('nsl')
-
-        if self.compiler.find_library_file(self.lib_dirs, 'tirpc'):
-            libs.append('tirpc')
-
-        self.add(Extension('nis', ['nismodule.c'],
-                           libraries=libs,
-                           library_dirs=library_dirs,
-                           include_dirs=includes_dirs))
+        self.addext(Extension('nis', ['nismodule.c']))
 
 
 class PyBuildInstall(install):
@@ -2436,9 +1610,9 @@ def main():
                       'build_scripts': PyBuildScripts,
                       'install': PyBuildInstall,
                       'install_lib': PyBuildInstallLib},
-          # The struct module is defined here, because build_ext won't be
+          # A dummy module is defined here, because build_ext won't be
           # called unless there's at least one extension module defined.
-          ext_modules=[Extension('_struct', ['_struct.c'])],
+          ext_modules=[Extension('_dummy', ['_dummy.c'])],
 
           # If you change the scripts installed here, you also need to
           # check the PyBuildScripts command above, and change the links

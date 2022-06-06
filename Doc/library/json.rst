@@ -125,13 +125,6 @@ See :ref:`json-commandline` for detailed documentation.
    This module's encoders and decoders preserve input and output order by
    default.  Order is only lost if the underlying containers are unordered.
 
-   Prior to Python 3.7, :class:`dict` was not guaranteed to be ordered, so
-   inputs and outputs were typically scrambled unless
-   :class:`collections.OrderedDict` was specifically requested.  Starting
-   with Python 3.7, the regular :class:`dict` became order preserving, so
-   it is no longer necessary to specify :class:`collections.OrderedDict` for
-   JSON generation and parsing.
-
 
 Basic Usage
 -----------
@@ -159,7 +152,7 @@ Basic Usage
 
    If *check_circular* is false (default: ``True``), then the circular
    reference check for container types will be skipped and a circular reference
-   will result in an :exc:`OverflowError` (or worse).
+   will result in a :exc:`RecursionError` (or worse).
 
    If *allow_nan* is false (default: ``True``), then it will be a
    :exc:`ValueError` to serialize out of range :class:`float` values (``nan``,
@@ -432,7 +425,7 @@ Encoders and Decoders
 
    If *check_circular* is true (the default), then lists, dicts, and custom
    encoded objects will be checked for circular references during encoding to
-   prevent an infinite recursion (which would cause an :exc:`OverflowError`).
+   prevent an infinite recursion (which would cause a :exc:`RecursionError`).
    Otherwise, no such check takes place.
 
    If *allow_nan* is true (the default), then ``NaN``, ``Infinity``, and

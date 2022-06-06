@@ -84,7 +84,7 @@ PyDoc_STRVAR(_tracemalloc_start__doc__,
 "trace to nframe.");
 
 #define _TRACEMALLOC_START_METHODDEF    \
-    {"start", (PyCFunction)(void(*)(void))_tracemalloc_start, METH_FASTCALL, _tracemalloc_start__doc__},
+    {"start", _PyCFunction_CAST(_tracemalloc_start), METH_FASTCALL, _tracemalloc_start__doc__},
 
 static PyObject *
 _tracemalloc_start_impl(PyObject *module, int nframe);
@@ -212,4 +212,4 @@ _tracemalloc_reset_peak(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _tracemalloc_reset_peak_impl(module);
 }
-/*[clinic end generated code: output=bafca0a19b0b0823 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2ae4fe05f1a340c9 input=a9049054013a1b77]*/

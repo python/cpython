@@ -11,7 +11,7 @@ from test.test_tools import scriptsdir, skip_if_missing
 
 skip_if_missing()
 
-@hashlib_helper.requires_hashdigest('md5')
+@hashlib_helper.requires_hashdigest('md5', openssl=True)
 class MD5SumTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

@@ -10,7 +10,6 @@
 
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_floatobject.h"   // _PyFloat_Pack8()
 
 #include <ffi.h>
 #include "ctypes.h"
@@ -326,7 +325,7 @@ PyTypeObject PyCField_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    "Structure/Union member",                   /* tp_doc */
+    PyDoc_STR("Structure/Union member"),        /* tp_doc */
     (traverseproc)PyCField_traverse,                    /* tp_traverse */
     (inquiry)PyCField_clear,                            /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -1009,10 +1008,10 @@ d_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
     if (x == -1 && PyErr_Occurred())
         return NULL;
 #ifdef WORDS_BIGENDIAN
-    if (_PyFloat_Pack8(x, (unsigned char *)ptr, 1))
+    if (PyFloat_Pack8(x, ptr, 1))
         return NULL;
 #else
-    if (_PyFloat_Pack8(x, (unsigned char *)ptr, 0))
+    if (PyFloat_Pack8(x, ptr, 0))
         return NULL;
 #endif
     _RET(value);
@@ -1022,9 +1021,9 @@ static PyObject *
 d_get_sw(void *ptr, Py_ssize_t size)
 {
 #ifdef WORDS_BIGENDIAN
-    return PyFloat_FromDouble(_PyFloat_Unpack8(ptr, 1));
+    return PyFloat_FromDouble(PyFloat_Unpack8(ptr, 1));
 #else
-    return PyFloat_FromDouble(_PyFloat_Unpack8(ptr, 0));
+    return PyFloat_FromDouble(PyFloat_Unpack8(ptr, 0));
 #endif
 }
 
@@ -1057,10 +1056,10 @@ f_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
     if (x == -1 && PyErr_Occurred())
         return NULL;
 #ifdef WORDS_BIGENDIAN
-    if (_PyFloat_Pack4(x, (unsigned char *)ptr, 1))
+    if (PyFloat_Pack4(x, ptr, 1))
         return NULL;
 #else
-    if (_PyFloat_Pack4(x, (unsigned char *)ptr, 0))
+    if (PyFloat_Pack4(x, ptr, 0))
         return NULL;
 #endif
     _RET(value);
@@ -1070,9 +1069,9 @@ static PyObject *
 f_get_sw(void *ptr, Py_ssize_t size)
 {
 #ifdef WORDS_BIGENDIAN
-    return PyFloat_FromDouble(_PyFloat_Unpack4(ptr, 1));
+    return PyFloat_FromDouble(PyFloat_Unpack4(ptr, 1));
 #else
-    return PyFloat_FromDouble(_PyFloat_Unpack4(ptr, 0));
+    return PyFloat_FromDouble(PyFloat_Unpack4(ptr, 0));
 #endif
 }
 
@@ -1481,55 +1480,40 @@ P_get(void *ptr, Py_ssize_t size)
 }
 
 static struct fielddesc formattable[] = {
-    { 's', s_set, s_get, &ffi_type_pointer},
-    { 'b', b_set, b_get, &ffi_type_schar},
-    { 'B', B_set, B_get, &ffi_type_uchar},
-    { 'c', c_set, c_get, &ffi_type_schar},
-    { 'd', d_set, d_get, &ffi_type_double, d_set_sw, d_get_sw},
-    { 'g', g_set, g_get, &ffi_type_longdouble},
-    { 'f', f_set, f_get, &ffi_type_float, f_set_sw, f_get_sw},
-    { 'h', h_set, h_get, &ffi_type_sshort, h_set_sw, h_get_sw},
-    { 'H', H_set, H_get, &ffi_type_ushort, H_set_sw, H_get_sw},
-    { 'i', i_set, i_get, &ffi_type_sint, i_set_sw, i_get_sw},
-    { 'I', I_set, I_get, &ffi_type_uint, I_set_sw, I_get_sw},
-/* XXX Hm, sizeof(int) == sizeof(long) doesn't hold on every platform */
-/* As soon as we can get rid of the type codes, this is no longer a problem */
-#if SIZEOF_LONG == 4
-    { 'l', l_set, l_get, &ffi_type_sint32, l_set_sw, l_get_sw},
-    { 'L', L_set, L_get, &ffi_type_uint32, L_set_sw, L_get_sw},
-#elif SIZEOF_LONG == 8
-    { 'l', l_set, l_get, &ffi_type_sint64, l_set_sw, l_get_sw},
-    { 'L', L_set, L_get, &ffi_type_uint64, L_set_sw, L_get_sw},
-#else
-# error
-#endif
-#if SIZEOF_LONG_LONG == 8
-    { 'q', q_set, q_get, &ffi_type_sint64, q_set_sw, q_get_sw},
-    { 'Q', Q_set, Q_get, &ffi_type_uint64, Q_set_sw, Q_get_sw},
-#else
-# error
-#endif
-    { 'P', P_set, P_get, &ffi_type_pointer},
-    { 'z', z_set, z_get, &ffi_type_pointer},
-    { 'u', u_set, u_get, NULL}, /* ffi_type set later */
-    { 'U', U_set, U_get, &ffi_type_pointer},
-    { 'Z', Z_set, Z_get, &ffi_type_pointer},
+    { 's', s_set, s_get, NULL},
+    { 'b', b_set, b_get, NULL},
+    { 'B', B_set, B_get, NULL},
+    { 'c', c_set, c_get, NULL},
+    { 'd', d_set, d_get, NULL, d_set_sw, d_get_sw},
+    { 'g', g_set, g_get, NULL},
+    { 'f', f_set, f_get, NULL, f_set_sw, f_get_sw},
+    { 'h', h_set, h_get, NULL, h_set_sw, h_get_sw},
+    { 'H', H_set, H_get, NULL, H_set_sw, H_get_sw},
+    { 'i', i_set, i_get, NULL, i_set_sw, i_get_sw},
+    { 'I', I_set, I_get, NULL, I_set_sw, I_get_sw},
+    { 'l', l_set, l_get, NULL, l_set_sw, l_get_sw},
+    { 'L', L_set, L_get, NULL, L_set_sw, L_get_sw},
+    { 'q', q_set, q_get, NULL, q_set_sw, q_get_sw},
+    { 'Q', Q_set, Q_get, NULL, Q_set_sw, Q_get_sw},
+    { 'P', P_set, P_get, NULL},
+    { 'z', z_set, z_get, NULL},
+    { 'u', u_set, u_get, NULL},
+    { 'U', U_set, U_get, NULL},
+    { 'Z', Z_set, Z_get, NULL},
 #ifdef MS_WIN32
-    { 'X', BSTR_set, BSTR_get, &ffi_type_pointer},
+    { 'X', BSTR_set, BSTR_get, NULL},
 #endif
-    { 'v', vBOOL_set, vBOOL_get, &ffi_type_sshort},
-#if SIZEOF__BOOL == 1
-    { '?', bool_set, bool_get, &ffi_type_uchar}, /* Also fallback for no native _Bool support */
-#elif SIZEOF__BOOL == SIZEOF_SHORT
-    { '?', bool_set, bool_get, &ffi_type_ushort},
-#elif SIZEOF__BOOL == SIZEOF_INT
-    { '?', bool_set, bool_get, &ffi_type_uint, I_set_sw, I_get_sw},
+    { 'v', vBOOL_set, vBOOL_get, NULL},
+#if SIZEOF__BOOL == SIZEOF_INT
+    { '?', bool_set, bool_get, NULL, I_set_sw, I_get_sw},
 #elif SIZEOF__BOOL == SIZEOF_LONG
-    { '?', bool_set, bool_get, &ffi_type_ulong, L_set_sw, L_get_sw},
+    { '?', bool_set, bool_get, NULL, L_set_sw, L_get_sw},
 #elif SIZEOF__BOOL == SIZEOF_LONG_LONG
-    { '?', bool_set, bool_get, &ffi_type_ulong, Q_set_sw, Q_get_sw},
+    { '?', bool_set, bool_get, NULL, Q_set_sw, Q_get_sw},
+#else
+    { '?', bool_set, bool_get, NULL},
 #endif /* SIZEOF__BOOL */
-    { 'O', O_set, O_get, &ffi_type_pointer},
+    { 'O', O_set, O_get, NULL},
     { 0, NULL, NULL, NULL},
 };
 
@@ -1537,6 +1521,79 @@ static struct fielddesc formattable[] = {
   Ideas: Implement VARIANT in this table, using 'V' code.
   Use '?' as code for BOOL.
 */
+
+/* Delayed initialization. Windows cannot statically reference dynamically
+   loaded addresses from DLLs. */
+void
+_ctypes_init_fielddesc(void)
+{
+    struct fielddesc *fd = formattable;
+    for (; fd->code; ++fd) {
+        switch (fd->code) {
+        case 's': fd->pffi_type = &ffi_type_pointer; break;
+        case 'b': fd->pffi_type = &ffi_type_schar; break;
+        case 'B': fd->pffi_type = &ffi_type_uchar; break;
+        case 'c': fd->pffi_type = &ffi_type_schar; break;
+        case 'd': fd->pffi_type = &ffi_type_double; break;
+        case 'g': fd->pffi_type = &ffi_type_longdouble; break;
+        case 'f': fd->pffi_type = &ffi_type_float; break;
+        case 'h': fd->pffi_type = &ffi_type_sshort; break;
+        case 'H': fd->pffi_type = &ffi_type_ushort; break;
+        case 'i': fd->pffi_type = &ffi_type_sint; break;
+        case 'I': fd->pffi_type = &ffi_type_uint; break;
+        /* XXX Hm, sizeof(int) == sizeof(long) doesn't hold on every platform */
+        /* As soon as we can get rid of the type codes, this is no longer a problem */
+    #if SIZEOF_LONG == 4
+        case 'l': fd->pffi_type = &ffi_type_sint32; break;
+        case 'L': fd->pffi_type = &ffi_type_uint32; break;
+    #elif SIZEOF_LONG == 8
+        case 'l': fd->pffi_type = &ffi_type_sint64; break;
+        case 'L': fd->pffi_type = &ffi_type_uint64; break;
+    #else
+        #error
+    #endif
+    #if SIZEOF_LONG_LONG == 8
+        case 'q': fd->pffi_type = &ffi_type_sint64; break;
+        case 'Q': fd->pffi_type = &ffi_type_uint64; break;
+    #else
+        #error
+    #endif
+        case 'P': fd->pffi_type = &ffi_type_pointer; break;
+        case 'z': fd->pffi_type = &ffi_type_pointer; break;
+        case 'u':
+            if (sizeof(wchar_t) == sizeof(short))
+                fd->pffi_type = &ffi_type_sshort;
+            else if (sizeof(wchar_t) == sizeof(int))
+                fd->pffi_type = &ffi_type_sint;
+            else if (sizeof(wchar_t) == sizeof(long))
+                fd->pffi_type = &ffi_type_slong;
+            else
+                Py_UNREACHABLE();
+            break;
+        case 'U': fd->pffi_type = &ffi_type_pointer; break;
+        case 'Z': fd->pffi_type = &ffi_type_pointer; break;
+    #ifdef MS_WIN32
+        case 'X': fd->pffi_type = &ffi_type_pointer; break;
+    #endif
+        case 'v': fd->pffi_type = &ffi_type_sshort; break;
+    #if SIZEOF__BOOL == 1
+        case '?': fd->pffi_type = &ffi_type_uchar; break; /* Also fallback for no native _Bool support */
+    #elif SIZEOF__BOOL == SIZEOF_SHORT
+        case '?': fd->pffi_type = &ffi_type_ushort; break;
+    #elif SIZEOF__BOOL == SIZEOF_INT
+        case '?': fd->pffi_type = &ffi_type_uint; break;
+    #elif SIZEOF__BOOL == SIZEOF_LONG
+        case '?': fd->pffi_type = &ffi_type_ulong; break;
+    #elif SIZEOF__BOOL == SIZEOF_LONG_LONG
+        case '?': fd->pffi_type = &ffi_type_ulong; break;
+    #endif /* SIZEOF__BOOL */
+        case 'O': fd->pffi_type = &ffi_type_pointer; break;
+        default:
+            Py_UNREACHABLE();
+        }
+    }
+
+}
 
 struct fielddesc *
 _ctypes_get_fielddesc(const char *fmt)
@@ -1546,12 +1603,7 @@ _ctypes_get_fielddesc(const char *fmt)
 
     if (!initialized) {
         initialized = 1;
-        if (sizeof(wchar_t) == sizeof(short))
-            _ctypes_get_fielddesc("u")->pffi_type = &ffi_type_sshort;
-        else if (sizeof(wchar_t) == sizeof(int))
-            _ctypes_get_fielddesc("u")->pffi_type = &ffi_type_sint;
-        else if (sizeof(wchar_t) == sizeof(long))
-            _ctypes_get_fielddesc("u")->pffi_type = &ffi_type_slong;
+        _ctypes_init_fielddesc();
     }
 
     for (; table->code; ++table) {
@@ -1560,78 +1612,5 @@ _ctypes_get_fielddesc(const char *fmt)
     }
     return NULL;
 }
-
-typedef struct { char c; char x; } s_char;
-typedef struct { char c; short x; } s_short;
-typedef struct { char c; int x; } s_int;
-typedef struct { char c; long x; } s_long;
-typedef struct { char c; float x; } s_float;
-typedef struct { char c; double x; } s_double;
-typedef struct { char c; long double x; } s_long_double;
-typedef struct { char c; char *x; } s_char_p;
-typedef struct { char c; void *x; } s_void_p;
-
-/*
-#define CHAR_ALIGN (sizeof(s_char) - sizeof(char))
-#define SHORT_ALIGN (sizeof(s_short) - sizeof(short))
-#define LONG_ALIGN (sizeof(s_long) - sizeof(long))
-*/
-#define INT_ALIGN (sizeof(s_int) - sizeof(int))
-#define FLOAT_ALIGN (sizeof(s_float) - sizeof(float))
-#define DOUBLE_ALIGN (sizeof(s_double) - sizeof(double))
-#define LONGDOUBLE_ALIGN (sizeof(s_long_double) - sizeof(long double))
-
-/* #define CHAR_P_ALIGN (sizeof(s_char_p) - sizeof(char*)) */
-#define VOID_P_ALIGN (sizeof(s_void_p) - sizeof(void*))
-
-/*
-#ifdef HAVE_USABLE_WCHAR_T
-typedef struct { char c; wchar_t x; } s_wchar;
-typedef struct { char c; wchar_t *x; } s_wchar_p;
-
-#define WCHAR_ALIGN (sizeof(s_wchar) - sizeof(wchar_t))
-#define WCHAR_P_ALIGN (sizeof(s_wchar_p) - sizeof(wchar_t*))
-#endif
-*/
-
-typedef struct { char c; long long x; } s_long_long;
-#define LONG_LONG_ALIGN (sizeof(s_long_long) - sizeof(long long))
-
-/* from ffi.h:
-typedef struct _ffi_type
-{
-    size_t size;
-    unsigned short alignment;
-    unsigned short type;
-    struct _ffi_type **elements;
-} ffi_type;
-*/
-
-/* align and size are bogus for void, but they must not be zero */
-ffi_type ffi_type_void = { 1, 1, FFI_TYPE_VOID };
-
-ffi_type ffi_type_uint8 = { 1, 1, FFI_TYPE_UINT8 };
-ffi_type ffi_type_sint8 = { 1, 1, FFI_TYPE_SINT8 };
-
-ffi_type ffi_type_uint16 = { 2, 2, FFI_TYPE_UINT16 };
-ffi_type ffi_type_sint16 = { 2, 2, FFI_TYPE_SINT16 };
-
-ffi_type ffi_type_uint32 = { 4, INT_ALIGN, FFI_TYPE_UINT32 };
-ffi_type ffi_type_sint32 = { 4, INT_ALIGN, FFI_TYPE_SINT32 };
-
-ffi_type ffi_type_uint64 = { 8, LONG_LONG_ALIGN, FFI_TYPE_UINT64 };
-ffi_type ffi_type_sint64 = { 8, LONG_LONG_ALIGN, FFI_TYPE_SINT64 };
-
-ffi_type ffi_type_float = { sizeof(float), FLOAT_ALIGN, FFI_TYPE_FLOAT };
-ffi_type ffi_type_double = { sizeof(double), DOUBLE_ALIGN, FFI_TYPE_DOUBLE };
-
-#ifdef ffi_type_longdouble
-#undef ffi_type_longdouble
-#endif
-  /* This is already defined on OSX */
-ffi_type ffi_type_longdouble = { sizeof(long double), LONGDOUBLE_ALIGN,
-                                 FFI_TYPE_LONGDOUBLE };
-
-ffi_type ffi_type_pointer = { sizeof(void *), VOID_P_ALIGN, FFI_TYPE_POINTER };
 
 /*---------------- EOF ----------------*/

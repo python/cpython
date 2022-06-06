@@ -1,5 +1,4 @@
-from .. import abc
-from .. import util
+from test.test_importlib import abc, util
 
 machinery = util.import_importlib('importlib.machinery')
 
@@ -10,6 +9,10 @@ import warnings
 class FinderTests(abc.FinderTests):
 
     """Test the finder for extension modules."""
+
+    def setUp(self):
+        if not self.machinery.EXTENSION_SUFFIXES:
+            raise unittest.SkipTest("Requires dynamic loading support.")
 
     def find_spec(self, fullname):
         importer = self.machinery.FileFinder(util.EXTENSIONS.path,

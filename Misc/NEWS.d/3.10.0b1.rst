@@ -941,7 +941,7 @@ result from ``entry_points()`` as deprecated.
 
 ..
 
-.. bpo: 47383
+.. gh: 47383
 .. date: 2021-04-08-19-32-26
 .. nonce: YI1hdL
 .. section: Library
@@ -1001,7 +1001,7 @@ some :mod:`dataclasses`.
 
 Fix :mod:`sqlite3` regression for zero-sized blobs with converters, where
 ``b""`` was returned instead of ``None``. The regression was introduced by
-GH-24723. Patch by Erlend E. Aasland.
+PR 24723. Patch by Erlend E. Aasland.
 
 ..
 
@@ -1673,7 +1673,8 @@ zips together prompts from the sidebar with lines from the selected text.
 .. nonce: 3EFl1H
 .. section: IDLE
 
-Fix reference leak in test_squeezer. Patch by Pablo Galindo
+Fix reference leak in test_sidebar and test_squeezer.
+Patches by Terry Jan Reedy and Pablo Galindo
 
 ..
 

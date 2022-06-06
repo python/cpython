@@ -89,10 +89,13 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>Py_NO_ENABLE_SHARED;Py_BUILD_CORE;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Optimization>Disabled</Optimization>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>version.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -104,6 +107,7 @@
     <ClCompile Include="..\Modules\faulthandler.c" />
     <ClCompile Include="..\Modules\gcmodule.c" />
     <ClCompile Include="..\Modules\getbuildinfo.c" />
+    <ClCompile Include="..\Modules\getpath_noop.c" />
     <ClCompile Include="..\Modules\posixmodule.c" />
     <ClCompile Include="..\Modules\signalmodule.c" />
     <ClCompile Include="..\Modules\_tracemalloc.c" />
@@ -163,10 +167,11 @@
     <ClCompile Include="..\Parser\parser.c" />
     <ClCompile Include="..\Parser\peg_api.c" />
     <ClCompile Include="..\Parser\pegen.c" />
+    <ClCompile Include="..\Parser\pegen_errors.c" />
+    <ClCompile Include="..\Parser\action_helpers.c" />
     <ClCompile Include="..\Parser\string_parser.c" />
     <ClCompile Include="..\Parser\token.c" />
     <ClCompile Include="..\Parser\tokenizer.c" />
-    <ClCompile Include="..\PC\getpathp.c" />
     <ClCompile Include="..\PC\invalid_parameter_handler.c" />
     <ClCompile Include="..\PC\msvcrtmodule.c" />
     <ClCompile Include="..\PC\winreg.c" />
@@ -224,7 +229,9 @@
     <ClCompile Include="..\Python\structmember.c" />
     <ClCompile Include="..\Python\suggestions.c" />
     <ClCompile Include="..\Python\symtable.c" />
-    <ClCompile Include="..\Python\sysmodule.c" />
+    <ClCompile Include="..\Python\sysmodule.c">
+      <PreprocessorDefinitions>VPATH="$(PyVPath)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
   </ItemGroup>
@@ -300,6 +307,21 @@
       <IntFile>$(IntDir)stat.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\stat.h</OutFile>
     </None>
+    <None Include="..\Lib\importlib\util.py">
+      <ModName>importlib.util</ModName>
+      <IntFile>$(IntDir)importlib.util.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\importlib.util.h</OutFile>
+    </None>
+    <None Include="..\Lib\importlib\machinery.py">
+      <ModName>importlib.machinery</ModName>
+      <IntFile>$(IntDir)importlib.machinery.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\importlib.machinery.h</OutFile>
+    </None>
+    <None Include="..\Lib\runpy.py">
+      <ModName>runpy</ModName>
+      <IntFile>$(IntDir)runpy.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\runpy.h</OutFile>
+    </None>
     <None Include="..\Lib\__hello__.py">
       <ModName>__hello__</ModName>
       <IntFile>$(IntDir)__hello__.g.h</IntFile>
@@ -332,9 +354,29 @@
     </None>
     <!-- END frozen modules -->
   </ItemGroup>
+  <ItemGroup>
+    <!-- We manually freeze getpath.py rather than through freeze_modules -->
+    <GetPath Include="..\Modules\getpath.py">
+      <ModName>getpath</ModName>
+      <IntFile>$(IntDir)getpath.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\getpath.h</OutFile>
+    </GetPath>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="_RebuildGetPath" AfterTargets="_RebuildFrozen" Condition="$(Configuration) != 'PGUpdate'">
+    <Exec Command='"$(TargetPath)" "%(GetPath.ModName)" "%(GetPath.FullPath)" "%(GetPath.IntFile)"' />
+
+    <Copy SourceFiles="%(GetPath.IntFile)"
+          DestinationFiles="%(GetPath.OutFile)"
+          Condition="!Exists(%(GetPath.OutFile)) or (Exists(%(GetPath.IntFile)) and '$([System.IO.File]::ReadAllText(%(GetPath.OutFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))' != '$([System.IO.File]::ReadAllText(%(GetPath.IntFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))')">
+      <Output TaskParameter="CopiedFiles" ItemName="_UpdatedGetPath" />
+    </Copy>
+
+    <Message Text="Updated files: @(_UpdatedGetPath->'%(Filename)%(Extension)',', ')"
+             Condition="'@(_UpdatedGetPath)' != ''" Importance="high" />
+  </Target>
   <Target Name="_RebuildFrozen" AfterTargets="AfterBuild" Condition="$(Configuration) != 'PGUpdate'">
     <Exec Command='"$(TargetPath)" "%(None.ModName)" "%(None.FullPath)" "%(None.IntFile)"' />
 
@@ -346,6 +388,38 @@
 
     <Message Text="Updated files: @(_Updated->'%(Filename)%(Extension)',', ')"
              Condition="'@(_Updated)' != ''" Importance="high" />
+  </Target>
+  <Target Name="_RebuildDeepFrozen"
+          AfterTargets="_RebuildFrozen"
+          DependsOnTargets="FindPythonForBuild"
+          Condition="$(Configuration) != 'PGUpdate'">
+    <!-- BEGIN deepfreeze rule -->
+	<Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\scripts\deepfreeze.py" ^
+		 "$(PySourcePath)Python\frozen_modules\importlib._bootstrap.h:importlib._bootstrap" ^
+		 "$(PySourcePath)Python\frozen_modules\importlib._bootstrap_external.h:importlib._bootstrap_external" ^
+		 "$(PySourcePath)Python\frozen_modules\zipimport.h:zipimport" ^
+		 "$(PySourcePath)Python\frozen_modules\abc.h:abc" ^
+		 "$(PySourcePath)Python\frozen_modules\codecs.h:codecs" ^
+		 "$(PySourcePath)Python\frozen_modules\io.h:io" ^
+		 "$(PySourcePath)Python\frozen_modules\_collections_abc.h:_collections_abc" ^
+		 "$(PySourcePath)Python\frozen_modules\_sitebuiltins.h:_sitebuiltins" ^
+		 "$(PySourcePath)Python\frozen_modules\genericpath.h:genericpath" ^
+		 "$(PySourcePath)Python\frozen_modules\ntpath.h:ntpath" ^
+		 "$(PySourcePath)Python\frozen_modules\posixpath.h:posixpath" ^
+		 "$(PySourcePath)Python\frozen_modules\os.h:os" ^
+		 "$(PySourcePath)Python\frozen_modules\site.h:site" ^
+		 "$(PySourcePath)Python\frozen_modules\stat.h:stat" ^
+		 "$(PySourcePath)Python\frozen_modules\importlib.util.h:importlib.util" ^
+		 "$(PySourcePath)Python\frozen_modules\importlib.machinery.h:importlib.machinery" ^
+		 "$(PySourcePath)Python\frozen_modules\runpy.h:runpy" ^
+		 "$(PySourcePath)Python\frozen_modules\__hello__.h:__hello__" ^
+		 "$(PySourcePath)Python\frozen_modules\__phello__.h:__phello__" ^
+		 "$(PySourcePath)Python\frozen_modules\__phello__.ham.h:__phello__.ham" ^
+		 "$(PySourcePath)Python\frozen_modules\__phello__.ham.eggs.h:__phello__.ham.eggs" ^
+		 "$(PySourcePath)Python\frozen_modules\__phello__.spam.h:__phello__.spam" ^
+		 "$(PySourcePath)Python\frozen_modules\frozen_only.h:frozen_only" ^
+		 "-o" "$(PySourcePath)Python\deepfreeze\deepfreeze.c"'/>
+    <!-- END deepfreeze rule -->
   </Target>
   <Target Name="_CleanFrozen" BeforeTargets="CoreClean" Condition="$(Configuration) != 'PGUpdate'">
     <ItemGroup>

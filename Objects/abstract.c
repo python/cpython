@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_object.h"        // _Py_CheckSlotResult()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -92,7 +92,6 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
 {
     PyObject *hint, *result;
     Py_ssize_t res;
-    _Py_IDENTIFIER(__length_hint__);
     if (_PyObject_HasLen(o)) {
         res = PyObject_Length(o);
         if (res < 0) {
@@ -107,7 +106,7 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
             return res;
         }
     }
-    hint = _PyObject_LookupSpecial(o, &PyId___length_hint__);
+    hint = _PyObject_LookupSpecial(o, &_Py_ID(__length_hint__));
     if (hint == NULL) {
         if (PyErr_Occurred()) {
             return -1;
@@ -177,21 +176,24 @@ PyObject_GetItem(PyObject *o, PyObject *key)
 
     if (PyType_Check(o)) {
         PyObject *meth, *result;
-        _Py_IDENTIFIER(__class_getitem__);
 
         // Special case type[int], but disallow other types so str[int] fails
         if ((PyTypeObject*)o == &PyType_Type) {
             return Py_GenericAlias(o, key);
         }
 
-        if (_PyObject_LookupAttrId(o, &PyId___class_getitem__, &meth) < 0) {
+        if (_PyObject_LookupAttr(o, &_Py_ID(__class_getitem__), &meth) < 0) {
             return NULL;
         }
-        if (meth) {
+        if (meth && meth != Py_None) {
             result = PyObject_CallOneArg(meth, key);
             Py_DECREF(meth);
             return result;
         }
+        Py_XDECREF(meth);
+        PyErr_Format(PyExc_TypeError, "type '%.200s' is not subscriptable",
+                     ((PyTypeObject *)o)->tp_name);
+        return NULL;
     }
 
     return type_error("'%.200s' object is not subscriptable", o);
@@ -474,7 +476,7 @@ PyBuffer_IsContiguous(const Py_buffer *view, char order)
 
 
 void*
-PyBuffer_GetPointer(Py_buffer *view, Py_ssize_t *indices)
+PyBuffer_GetPointer(const Py_buffer *view, const Py_ssize_t *indices)
 {
     char* pointer;
     int i;
@@ -564,12 +566,13 @@ done:
 }
 
 int
-PyBuffer_FromContiguous(Py_buffer *view, void *buf, Py_ssize_t len, char fort)
+PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, char fort)
 {
     int k;
     void (*addone)(int, Py_ssize_t *, const Py_ssize_t *);
     Py_ssize_t *indices, elements;
-    char *src, *ptr;
+    char *ptr;
+    const char *src;
 
     if (len > view->len) {
         len = view->len;
@@ -769,7 +772,6 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
     PyObject *meth;
     PyObject *empty = NULL;
     PyObject *result = NULL;
-    _Py_IDENTIFIER(__format__);
 
     if (format_spec != NULL && !PyUnicode_Check(format_spec)) {
         PyErr_Format(PyExc_SystemError,
@@ -796,7 +798,7 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
     }
 
     /* Find the (unbound!) __format__ method */
-    meth = _PyObject_LookupSpecial(obj, &PyId___format__);
+    meth = _PyObject_LookupSpecial(obj, &_Py_ID(__format__));
     if (meth == NULL) {
         PyThreadState *tstate = _PyThreadState_GET();
         if (!_PyErr_Occurred(tstate)) {
@@ -1152,6 +1154,12 @@ PyNumber_Power(PyObject *v, PyObject *w, PyObject *z)
     return ternary_op(v, w, z, NB_SLOT(nb_power), "** or pow()");
 }
 
+PyObject *
+_PyNumber_PowerNoMod(PyObject *lhs, PyObject *rhs)
+{
+    return PyNumber_Power(lhs, rhs, Py_None);
+}
+
 /* Binary in-place operators */
 
 /* The in-place operators are defined to fall back to the 'normal',
@@ -1242,21 +1250,10 @@ INPLACE_BINOP(PyNumber_InPlaceAnd, nb_inplace_and, nb_and, "&=")
 INPLACE_BINOP(PyNumber_InPlaceLshift, nb_inplace_lshift, nb_lshift, "<<=")
 INPLACE_BINOP(PyNumber_InPlaceRshift, nb_inplace_rshift, nb_rshift, ">>=")
 INPLACE_BINOP(PyNumber_InPlaceSubtract, nb_inplace_subtract, nb_subtract, "-=")
-INPLACE_BINOP(PyNumber_InMatrixMultiply, nb_inplace_matrix_multiply, nb_matrix_multiply, "@=")
-
-PyObject *
-PyNumber_InPlaceFloorDivide(PyObject *v, PyObject *w)
-{
-    return binary_iop(v, w, NB_SLOT(nb_inplace_floor_divide),
-                      NB_SLOT(nb_floor_divide), "//=");
-}
-
-PyObject *
-PyNumber_InPlaceTrueDivide(PyObject *v, PyObject *w)
-{
-    return binary_iop(v, w, NB_SLOT(nb_inplace_true_divide),
-                      NB_SLOT(nb_true_divide), "/=");
-}
+INPLACE_BINOP(PyNumber_InPlaceMatrixMultiply, nb_inplace_matrix_multiply, nb_matrix_multiply, "@=")
+INPLACE_BINOP(PyNumber_InPlaceFloorDivide, nb_inplace_floor_divide, nb_floor_divide, "//=")
+INPLACE_BINOP(PyNumber_InPlaceTrueDivide, nb_inplace_true_divide, nb_true_divide,  "/=")
+INPLACE_BINOP(PyNumber_InPlaceRemainder, nb_inplace_remainder, nb_remainder, "%=")
 
 PyObject *
 PyNumber_InPlaceAdd(PyObject *v, PyObject *w)
@@ -1311,24 +1308,16 @@ PyNumber_InPlaceMultiply(PyObject *v, PyObject *w)
 }
 
 PyObject *
-PyNumber_InPlaceMatrixMultiply(PyObject *v, PyObject *w)
-{
-    return binary_iop(v, w, NB_SLOT(nb_inplace_matrix_multiply),
-                      NB_SLOT(nb_matrix_multiply), "@=");
-}
-
-PyObject *
-PyNumber_InPlaceRemainder(PyObject *v, PyObject *w)
-{
-    return binary_iop(v, w, NB_SLOT(nb_inplace_remainder),
-                            NB_SLOT(nb_remainder), "%=");
-}
-
-PyObject *
 PyNumber_InPlacePower(PyObject *v, PyObject *w, PyObject *z)
 {
     return ternary_iop(v, w, z, NB_SLOT(nb_inplace_power),
                                 NB_SLOT(nb_power), "**=");
+}
+
+PyObject *
+_PyNumber_InPlacePowerNoMod(PyObject *lhs, PyObject *rhs)
+{
+    return PyNumber_InPlacePower(lhs, rhs, Py_None);
 }
 
 
@@ -1532,7 +1521,6 @@ PyNumber_Long(PyObject *o)
     PyNumberMethods *m;
     PyObject *trunc_func;
     Py_buffer view;
-    _Py_IDENTIFIER(__trunc__);
 
     if (o == NULL) {
         return null_error();
@@ -1574,8 +1562,13 @@ PyNumber_Long(PyObject *o)
     if (m && m->nb_index) {
         return PyNumber_Index(o);
     }
-    trunc_func = _PyObject_LookupSpecial(o, &PyId___trunc__);
+    trunc_func = _PyObject_LookupSpecial(o, &_Py_ID(__trunc__));
     if (trunc_func) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "The delegation of int() to __trunc__ is deprecated.", 1)) {
+            Py_DECREF(trunc_func);
+            return NULL;
+        }
         result = _PyObject_CallNoArgs(trunc_func);
         Py_DECREF(trunc_func);
         if (result == NULL || PyLong_CheckExact(result)) {
@@ -2413,12 +2406,12 @@ PyMapping_HasKey(PyObject *o, PyObject *key)
    a helper for PyMapping_Keys(), PyMapping_Items() and PyMapping_Values().
  */
 static PyObject *
-method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
+method_output_as_list(PyObject *o, PyObject *meth)
 {
     PyObject *it, *result, *meth_output;
 
     assert(o != NULL);
-    meth_output = _PyObject_CallMethodIdNoArgs(o, meth_id);
+    meth_output = PyObject_CallMethodNoArgs(o, meth);
     if (meth_output == NULL || PyList_CheckExact(meth_output)) {
         return meth_output;
     }
@@ -2429,7 +2422,7 @@ method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
             _PyErr_Format(tstate, PyExc_TypeError,
                           "%.200s.%U() returned a non-iterable (type %.200s)",
                           Py_TYPE(o)->tp_name,
-                          _PyUnicode_FromId(meth_id),
+                          meth,
                           Py_TYPE(meth_output)->tp_name);
         }
         Py_DECREF(meth_output);
@@ -2444,43 +2437,37 @@ method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
 PyObject *
 PyMapping_Keys(PyObject *o)
 {
-    _Py_IDENTIFIER(keys);
-
     if (o == NULL) {
         return null_error();
     }
     if (PyDict_CheckExact(o)) {
         return PyDict_Keys(o);
     }
-    return method_output_as_list(o, &PyId_keys);
+    return method_output_as_list(o, &_Py_ID(keys));
 }
 
 PyObject *
 PyMapping_Items(PyObject *o)
 {
-    _Py_IDENTIFIER(items);
-
     if (o == NULL) {
         return null_error();
     }
     if (PyDict_CheckExact(o)) {
         return PyDict_Items(o);
     }
-    return method_output_as_list(o, &PyId_items);
+    return method_output_as_list(o, &_Py_ID(items));
 }
 
 PyObject *
 PyMapping_Values(PyObject *o)
 {
-    _Py_IDENTIFIER(values);
-
     if (o == NULL) {
         return null_error();
     }
     if (PyDict_CheckExact(o)) {
         return PyDict_Values(o);
     }
-    return method_output_as_list(o, &PyId_values);
+    return method_output_as_list(o, &_Py_ID(values));
 }
 
 /* isinstance(), issubclass() */
@@ -2512,10 +2499,9 @@ PyMapping_Values(PyObject *o)
 static PyObject *
 abstract_get_bases(PyObject *cls)
 {
-    _Py_IDENTIFIER(__bases__);
     PyObject *bases;
 
-    (void)_PyObject_LookupAttrId(cls, &PyId___bases__, &bases);
+    (void)_PyObject_LookupAttr(cls, &_Py_ID(__bases__), &bases);
     if (bases != NULL && !PyTuple_Check(bases)) {
         Py_DECREF(bases);
         return NULL;
@@ -2560,7 +2546,7 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
         break;
     }
     assert(n >= 2);
-    if (Py_EnterRecursiveCall(" in __issubclass__")) {
+    if (_Py_EnterRecursiveCall(" in __issubclass__")) {
         Py_DECREF(bases);
         return -1;
     }
@@ -2570,7 +2556,7 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
             break;
         }
     }
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall();
     Py_DECREF(bases);
     return r;
 }
@@ -2596,11 +2582,10 @@ object_isinstance(PyObject *inst, PyObject *cls)
 {
     PyObject *icls;
     int retval;
-    _Py_IDENTIFIER(__class__);
     if (PyType_Check(cls)) {
         retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
         if (retval == 0) {
-            retval = _PyObject_LookupAttrId(inst, &PyId___class__, &icls);
+            retval = _PyObject_LookupAttr(inst, &_Py_ID(__class__), &icls);
             if (icls != NULL) {
                 if (icls != (PyObject *)(Py_TYPE(inst)) && PyType_Check(icls)) {
                     retval = PyType_IsSubtype(
@@ -2618,7 +2603,7 @@ object_isinstance(PyObject *inst, PyObject *cls)
         if (!check_class(cls,
             "isinstance() arg 2 must be a type, a tuple of types, or a union"))
             return -1;
-        retval = _PyObject_LookupAttrId(inst, &PyId___class__, &icls);
+        retval = _PyObject_LookupAttr(inst, &_Py_ID(__class__), &icls);
         if (icls != NULL) {
             retval = abstract_issubclass(icls, cls);
             Py_DECREF(icls);
@@ -2631,8 +2616,6 @@ object_isinstance(PyObject *inst, PyObject *cls)
 static int
 object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls)
 {
-    _Py_IDENTIFIER(__instancecheck__);
-
     /* Quick test for an exact match */
     if (Py_IS_TYPE(inst, (PyTypeObject *)cls)) {
         return 1;
@@ -2643,10 +2626,14 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
         return object_isinstance(inst, cls);
     }
 
+    if (_PyUnion_Check(cls)) {
+        cls = _Py_union_args(cls);
+    }
+
     if (PyTuple_Check(cls)) {
         /* Not a general sequence -- that opens up the road to
            recursion and stack overflow. */
-        if (_Py_EnterRecursiveCall(tstate, " in __instancecheck__")) {
+        if (_Py_EnterRecursiveCallTstate(tstate, " in __instancecheck__")) {
             return -1;
         }
         Py_ssize_t n = PyTuple_GET_SIZE(cls);
@@ -2659,19 +2646,19 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
                 break;
             }
         }
-        _Py_LeaveRecursiveCall(tstate);
+        _Py_LeaveRecursiveCallTstate(tstate);
         return r;
     }
 
-    PyObject *checker = _PyObject_LookupSpecial(cls, &PyId___instancecheck__);
+    PyObject *checker = _PyObject_LookupSpecial(cls, &_Py_ID(__instancecheck__));
     if (checker != NULL) {
-        if (_Py_EnterRecursiveCall(tstate, " in __instancecheck__")) {
+        if (_Py_EnterRecursiveCallTstate(tstate, " in __instancecheck__")) {
             Py_DECREF(checker);
             return -1;
         }
 
         PyObject *res = PyObject_CallOneArg(checker, inst);
-        _Py_LeaveRecursiveCall(tstate);
+        _Py_LeaveRecursiveCallTstate(tstate);
         Py_DECREF(checker);
 
         if (res == NULL) {
@@ -2722,7 +2709,6 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
 static int
 object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
 {
-    _Py_IDENTIFIER(__subclasscheck__);
     PyObject *checker;
 
     /* We know what type's __subclasscheck__ does. */
@@ -2733,9 +2719,13 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
         return recursive_issubclass(derived, cls);
     }
 
+    if (_PyUnion_Check(cls)) {
+        cls = _Py_union_args(cls);
+    }
+
     if (PyTuple_Check(cls)) {
 
-        if (_Py_EnterRecursiveCall(tstate, " in __subclasscheck__")) {
+        if (_Py_EnterRecursiveCallTstate(tstate, " in __subclasscheck__")) {
             return -1;
         }
         Py_ssize_t n = PyTuple_GET_SIZE(cls);
@@ -2747,19 +2737,19 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
                 /* either found it, or got an error */
                 break;
         }
-        _Py_LeaveRecursiveCall(tstate);
+        _Py_LeaveRecursiveCallTstate(tstate);
         return r;
     }
 
-    checker = _PyObject_LookupSpecial(cls, &PyId___subclasscheck__);
+    checker = _PyObject_LookupSpecial(cls, &_Py_ID(__subclasscheck__));
     if (checker != NULL) {
         int ok = -1;
-        if (_Py_EnterRecursiveCall(tstate, " in __subclasscheck__")) {
+        if (_Py_EnterRecursiveCallTstate(tstate, " in __subclasscheck__")) {
             Py_DECREF(checker);
             return ok;
         }
         PyObject *res = PyObject_CallOneArg(checker, derived);
-        _Py_LeaveRecursiveCall(tstate);
+        _Py_LeaveRecursiveCallTstate(tstate);
         Py_DECREF(checker);
         if (res != NULL) {
             ok = PyObject_IsTrue(res);
@@ -2886,7 +2876,6 @@ PyIter_Next(PyObject *iter)
 PySendResult
 PyIter_Send(PyObject *iter, PyObject *arg, PyObject **result)
 {
-    _Py_IDENTIFIER(send);
     assert(arg != NULL);
     assert(result != NULL);
     if (Py_TYPE(iter)->tp_as_async && Py_TYPE(iter)->tp_as_async->am_send) {
@@ -2898,7 +2887,7 @@ PyIter_Send(PyObject *iter, PyObject *arg, PyObject **result)
         *result = Py_TYPE(iter)->tp_iternext(iter);
     }
     else {
-        *result = _PyObject_CallMethodIdOneArg(iter, &PyId_send, arg);
+        *result = PyObject_CallMethodOneArg(iter, &_Py_ID(send), arg);
     }
     if (*result != NULL) {
         return PYGEN_NEXT;

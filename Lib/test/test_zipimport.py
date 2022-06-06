@@ -710,8 +710,8 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
     def doTraceback(self, module):
         try:
             module.do_raise()
-        except:
-            tb = sys.exc_info()[2].tb_next
+        except Exception as e:
+            tb = e.__traceback__.tb_next
 
             f,lno,n,line = extract_tb(tb, 1)[0]
             self.assertEqual(line, raise_src.strip())
@@ -804,6 +804,7 @@ class BadFileZipImportTestCase(unittest.TestCase):
         os_helper.create_empty_file(TESTMOD)
         self.assertZipFailure(TESTMOD)
 
+    @unittest.skipIf(support.is_wasi, "mode 000 not supported.")
     def testFileUnreadable(self):
         os_helper.unlink(TESTMOD)
         fd = os.open(TESTMOD, os.O_CREAT, 000)

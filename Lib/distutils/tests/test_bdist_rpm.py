@@ -49,6 +49,9 @@ class BuildRpmTestCase(support.TempdirManager,
                      'the rpm command is not found')
     @unittest.skipIf(find_executable('rpmbuild') is None,
                      'the rpmbuild command is not found')
+    # import foo fails with safe path
+    @unittest.skipIf(sys.flags.safe_path,
+                     'PYTHONSAFEPATH changes default sys.path')
     def test_quiet(self):
         # let's create a package
         tmp_dir = self.mkdtemp()
@@ -93,6 +96,9 @@ class BuildRpmTestCase(support.TempdirManager,
                      'the rpm command is not found')
     @unittest.skipIf(find_executable('rpmbuild') is None,
                      'the rpmbuild command is not found')
+    # import foo fails with safe path
+    @unittest.skipIf(sys.flags.safe_path,
+                     'PYTHONSAFEPATH changes default sys.path')
     def test_no_optimize_flag(self):
         # let's create a package that breaks bdist_rpm
         tmp_dir = self.mkdtemp()

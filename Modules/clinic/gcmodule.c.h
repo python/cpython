@@ -79,7 +79,7 @@ PyDoc_STRVAR(gc_collect__doc__,
 "The number of unreachable objects is returned.");
 
 #define GC_COLLECT_METHODDEF    \
-    {"collect", (PyCFunction)(void(*)(void))gc_collect, METH_FASTCALL|METH_KEYWORDS, gc_collect__doc__},
+    {"collect", _PyCFunction_CAST(gc_collect), METH_FASTCALL|METH_KEYWORDS, gc_collect__doc__},
 
 static Py_ssize_t
 gc_collect_impl(PyObject *module, int generation);
@@ -233,7 +233,7 @@ PyDoc_STRVAR(gc_get_objects__doc__,
 "that are in that generation.");
 
 #define GC_GET_OBJECTS_METHODDEF    \
-    {"get_objects", (PyCFunction)(void(*)(void))gc_get_objects, METH_FASTCALL|METH_KEYWORDS, gc_get_objects__doc__},
+    {"get_objects", _PyCFunction_CAST(gc_get_objects), METH_FASTCALL|METH_KEYWORDS, gc_get_objects__doc__},
 
 static PyObject *
 gc_get_objects_impl(PyObject *module, Py_ssize_t generation);
@@ -372,4 +372,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=61e15f3a549f3ab5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=71f7136d6e3f2323 input=a9049054013a1b77]*/

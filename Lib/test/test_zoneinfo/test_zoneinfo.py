@@ -17,8 +17,8 @@ import unittest
 from datetime import date, datetime, time, timedelta, timezone
 from functools import cached_property
 
-from . import _support as test_support
-from ._support import OS_ENV_LOCK, TZPATH_TEST_LOCK, ZoneInfoTestBase
+from test.test_zoneinfo import _support as test_support
+from test.test_zoneinfo._support import OS_ENV_LOCK, TZPATH_TEST_LOCK, ZoneInfoTestBase
 from test.support.import_helper import import_module
 
 lzma = import_module('lzma')
@@ -2107,3 +2107,7 @@ class ZoneDumpData:
 
     _ZONEDUMP_DATA = None
     _FIXED_OFFSET_ZONES = None
+
+
+if __name__ == '__main__':
+    unittest.main()

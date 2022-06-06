@@ -1,6 +1,7 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
+#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 // windows.h must be included before pycore internal headers
@@ -13,8 +14,17 @@
 
 #include <stdbool.h>
 
+#ifdef MS_WIN32
+#  include <malloc.h>
+#endif
+
 #include <ffi.h>
 #include "ctypes.h"
+
+#ifdef HAVE_ALLOCA_H
+/* AIX needs alloca.h for alloca() */
+#include <alloca.h>
+#endif
 
 /**************************************************************/
 
@@ -72,7 +82,7 @@ PyTypeObject PyCThunk_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,                            /* tp_flags */
-    "CThunkObject",                             /* tp_doc */
+    PyDoc_STR("CThunkObject"),                  /* tp_doc */
     CThunkObject_traverse,                      /* tp_traverse */
     CThunkObject_clear,                         /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -146,47 +156,29 @@ static void _CallPythonObject(void *mem,
                               int flags,
                               void **pArgs)
 {
-    Py_ssize_t i;
-    PyObject *result;
-    PyObject *arglist = NULL;
-    Py_ssize_t nArgs;
+    PyObject *result = NULL;
+    Py_ssize_t i = 0, j = 0, nargs = 0;
     PyObject *error_object = NULL;
     int *space;
     PyGILState_STATE state = PyGILState_Ensure();
 
-    nArgs = PySequence_Length(converters);
-    /* Hm. What to return in case of error?
-       For COM, 0xFFFFFFFF seems better than 0.
-    */
-    if (nArgs < 0) {
-        PrintError("BUG: PySequence_Length");
-        goto Done;
-    }
-
-    arglist = PyTuple_New(nArgs);
-    if (!arglist) {
-        PrintError("PyTuple_New()");
-        goto Done;
-    }
-    for (i = 0; i < nArgs; ++i) {
-        /* Note: new reference! */
-        PyObject *cnv = PySequence_GetItem(converters, i);
+    assert(PyTuple_Check(converters));
+    nargs = PyTuple_GET_SIZE(converters);
+    assert(nargs <= CTYPES_MAX_ARGCOUNT);
+    PyObject **args = alloca(nargs * sizeof(PyObject *));
+    PyObject **cnvs = PySequence_Fast_ITEMS(converters);
+    for (i = 0; i < nargs; i++) {
+        PyObject *cnv = cnvs[i]; // borrowed ref
         StgDictObject *dict;
-        if (cnv)
-            dict = PyType_stgdict(cnv);
-        else {
-            PrintError("Getting argument converter %zd\n", i);
-            goto Done;
-        }
+        dict = PyType_stgdict(cnv);
 
         if (dict && dict->getfunc && !_ctypes_simple_instance(cnv)) {
             PyObject *v = dict->getfunc(*pArgs, dict->size);
             if (!v) {
                 PrintError("create argument %zd:\n", i);
-                Py_DECREF(cnv);
                 goto Done;
             }
-            PyTuple_SET_ITEM(arglist, i, v);
+            args[i] = v;
             /* XXX XXX XX
                We have the problem that c_byte or c_short have dict->size of
                1 resp. 4, but these parameters are pushed as sizeof(int) bytes.
@@ -197,17 +189,15 @@ static void _CallPythonObject(void *mem,
             CDataObject *obj = (CDataObject *)_PyObject_CallNoArgs(cnv);
             if (!obj) {
                 PrintError("create argument %zd:\n", i);
-                Py_DECREF(cnv);
                 goto Done;
             }
             if (!CDataObject_Check(obj)) {
                 Py_DECREF(obj);
-                Py_DECREF(cnv);
                 PrintError("unexpected result of create argument %zd:\n", i);
                 goto Done;
             }
             memcpy(obj->b_ptr, *pArgs, dict->size);
-            PyTuple_SET_ITEM(arglist, i, (PyObject *)obj);
+            args[i] = (PyObject *)obj;
 #ifdef MS_WIN32
             TryAddRef(dict, obj);
 #endif
@@ -215,10 +205,8 @@ static void _CallPythonObject(void *mem,
             PyErr_SetString(PyExc_TypeError,
                             "cannot build parameter");
             PrintError("Parsing argument %zd\n", i);
-            Py_DECREF(cnv);
             goto Done;
         }
-        Py_DECREF(cnv);
         /* XXX error handling! */
         pArgs++;
     }
@@ -241,7 +229,7 @@ static void _CallPythonObject(void *mem,
 #endif
     }
 
-    result = PyObject_CallObject(callable, arglist);
+    result = PyObject_Vectorcall(callable, args, nargs, NULL);
     if (result == NULL) {
         _PyErr_WriteUnraisableMsg("on calling ctypes callback function",
                                   callable);
@@ -308,7 +296,9 @@ static void _CallPythonObject(void *mem,
     Py_XDECREF(result);
 
   Done:
-    Py_XDECREF(arglist);
+    for (j = 0; j < i; j++) {
+        Py_DECREF(args[j]);
+    }
     PyGILState_Release(state);
 }
 
@@ -328,12 +318,12 @@ static void closure_fcn(ffi_cif *cif,
                       args);
 }
 
-static CThunkObject* CThunkObject_new(Py_ssize_t nArgs)
+static CThunkObject* CThunkObject_new(Py_ssize_t nargs)
 {
     CThunkObject *p;
     Py_ssize_t i;
 
-    p = PyObject_GC_NewVar(CThunkObject, &PyCThunk_Type, nArgs);
+    p = PyObject_GC_NewVar(CThunkObject, &PyCThunk_Type, nargs);
     if (p == NULL) {
         return NULL;
     }
@@ -348,7 +338,7 @@ static CThunkObject* CThunkObject_new(Py_ssize_t nArgs)
     p->setfunc = NULL;
     p->ffi_restype = NULL;
 
-    for (i = 0; i < nArgs + 1; ++i)
+    for (i = 0; i < nargs + 1; ++i)
         p->atypes[i] = NULL;
     PyObject_GC_Track((PyObject *)p);
     return p;
@@ -361,11 +351,12 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 {
     int result;
     CThunkObject *p;
-    Py_ssize_t nArgs, i;
+    Py_ssize_t nargs, i;
     ffi_abi cc;
 
-    nArgs = PySequence_Size(converters);
-    p = CThunkObject_new(nArgs);
+    assert(PyTuple_Check(converters));
+    nargs = PyTuple_GET_SIZE(converters);
+    p = CThunkObject_new(nargs);
     if (p == NULL)
         return NULL;
 
@@ -378,12 +369,10 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     }
 
     p->flags = flags;
-    for (i = 0; i < nArgs; ++i) {
-        PyObject *cnv = PySequence_GetItem(converters, i);
-        if (cnv == NULL)
-            goto error;
+    PyObject **cnvs = PySequence_Fast_ITEMS(converters);
+    for (i = 0; i < nargs; ++i) {
+        PyObject *cnv = cnvs[i]; // borrowed ref
         p->atypes[i] = _ctypes_get_ffi_type(cnv);
-        Py_DECREF(cnv);
     }
     p->atypes[i] = NULL;
 
@@ -409,8 +398,8 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         cc = FFI_STDCALL;
 #endif
     result = ffi_prep_cif(&p->cif, cc,
-                          Py_SAFE_DOWNCAST(nArgs, Py_ssize_t, int),
-                          _ctypes_get_ffi_type(restype),
+                          Py_SAFE_DOWNCAST(nargs, Py_ssize_t, int),
+                          p->ffi_restype,
                           &p->atypes[0]);
     if (result != FFI_OK) {
         PyErr_Format(PyExc_RuntimeError,
@@ -418,7 +407,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         goto error;
     }
 #if HAVE_FFI_PREP_CLOSURE_LOC
-#   if USING_APPLE_OS_LIBFFI
+#   ifdef USING_APPLE_OS_LIBFFI
 #      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
 #   else
 #      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME 1
@@ -430,7 +419,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     } else
 #endif
     {
-#if USING_APPLE_OS_LIBFFI && defined(__arm64__)
+#if defined(USING_APPLE_OS_LIBFFI) && defined(__arm64__)
         PyErr_Format(PyExc_NotImplementedError, "ffi_prep_closure_loc() is missing");
         goto error;
 #else
@@ -490,7 +479,7 @@ long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
     if (context == NULL)
         context = PyUnicode_InternFromString("_ctypes.DllGetClassObject");
 
-    mod = PyImport_ImportModuleNoBlock("ctypes");
+    mod = PyImport_ImportModule("ctypes");
     if (!mod) {
         PyErr_WriteUnraisable(context ? context : Py_None);
         /* There has been a warning before about this already */
@@ -563,7 +552,7 @@ long Call_CanUnloadNow(void)
     if (context == NULL)
         context = PyUnicode_InternFromString("_ctypes.DllCanUnloadNow");
 
-    mod = PyImport_ImportModuleNoBlock("ctypes");
+    mod = PyImport_ImportModule("ctypes");
     if (!mod) {
 /*              OutputDebugString("Could not import ctypes"); */
         /* We assume that this error can only occur when shutting
