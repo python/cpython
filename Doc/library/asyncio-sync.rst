@@ -429,7 +429,7 @@ Barrier
 
       Put the barrier into a broken state.  This causes any active or future
       calls to :meth:`wait` to fail with the :class:`BrokenBarrierError`.
-      Use this for example if one of the taks needs to abort, to avoid infinite
+      Use this for example if one of the tasks needs to abort, to avoid infinite
       waiting tasks.
 
    .. attribute:: parties
