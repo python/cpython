@@ -411,8 +411,8 @@ Barrier
          ...
          async with barrier as position:
             if position == 0:
-               # Only one task print this
-               print('End of *draining phasis*')
+               # Only one task prints this
+               print('End of *draining phase*')
 
       This method may raise a :class:`BrokenBarrierError` exception if the
       barrier is broken or reset while a task is waiting.
