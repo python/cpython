@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-"""Compares checksums for wheels in :mod:`ensurepip` against the Cheeseshop."""
+"""Compare checksums for wheels in :mod:`ensurepip` against the Cheeseshop."""
 
 import hashlib
 import json
@@ -24,6 +24,7 @@ for package_name in PACKAGE_NAMES:
     # Find the package on disk
     package_path = next(WHEEL_DIR.glob(f"{package_name}*.whl"), None)
     if package_path is None:
+        error(package_path, f"Could not find a {package_name} wheel on disk.")
         continue
 
     print(f"Verifying checksum for {package_path}.")
