@@ -1,1 +1,1 @@
-imaplib allows early UTF8 enabling to handle UTF8 passwords
+new example for UTF-8 credentials in the documentation of imaplib (SASL PLAIN authentication)
