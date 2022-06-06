@@ -1,0 +1,1 @@
+imaplib allows early UTF8 enabling to handle UTF8 passwords
