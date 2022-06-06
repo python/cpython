@@ -867,14 +867,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     stmt_reset(self->statement);
     stmt_mark_dirty(self->statement);
 
-    // Save current row count
-    if (sqlite3_stmt_readonly(self->statement->st)) {
-        self->rowcount = -1L;
-    }
-    else {
-        self->rowcount = (long)sqlite3_total_changes(self->connection->db);
-    }
-
     /* We start a transaction implicitly before a DML statement.
        SELECT is the only exception. See #9924. */
     if (self->connection->isolation_level
@@ -884,6 +876,14 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         if (begin_transaction(self->connection) < 0) {
             goto error;
         }
+    }
+
+    if (self->statement->is_dml) {
+        // Save current row count
+        self->rowcount = (long)sqlite3_total_changes(self->connection->db);
+    }
+    else {
+        self->rowcount = -1L;
     }
 
     while (1) {
@@ -1315,11 +1315,11 @@ get_rowcount(pysqlite_Cursor *self, void *Py_UNUSED(closure))
     if (!check_cursor(self)) {
         return NULL;
     }
-    if (self->rowcount != -1L) {
-        long changes = (long)sqlite3_total_changes(self->connection->db);
-        return PyLong_FromLong(changes - self->rowcount);
+    if (self->rowcount == -1L) {
+        return PyLong_FromLong(-1L);
     }
-    return PyLong_FromLong(-1L);
+    long changes = (long)sqlite3_total_changes(self->connection->db);
+    return PyLong_FromLong(changes - self->rowcount);
 }
 
 static PyMethodDef cursor_methods[] = {

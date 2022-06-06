@@ -887,13 +887,6 @@ class CursorTests(unittest.TestCase):
         self.cu.executemany("insert into test(name) values (?)", [(1,), (2,), (3,)])
         self.assertEqual(self.cu.rowcount, 3)
 
-    def test_rowcount_prefixed_with_comment(self):
-        # gh-79579: rowcount is updated even if query is prefixed with comments
-        self.cu.execute("/* foo */ insert into test(name) values (?)", ('foo',))
-        self.assertEqual(self.cu.rowcount, 1)
-        self.cu.execute("/* bar */ update test set name='bar' where name='foo'")
-        self.assertEqual(self.cu.rowcount, 2)
-
     @unittest.skipIf(sqlite.sqlite_version_info < (3, 35, 0),
                      "Requires SQLite 3.35.0 or newer")
     def test_rowcount_update_returning(self):
