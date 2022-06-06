@@ -786,7 +786,7 @@ class PosixTester(unittest.TestCase):
             self.assertRaises(TypeError, chown_func, first_param, uid, t(gid))
             check_stat(uid, gid)
 
-    @unittest.skipUnless(hasattr(posix, 'chown'), "test needs os.chown()")
+    @os_helper.skip_unless_working_chmod
     def test_chown(self):
         # raise an OSError if the file does not exist
         os.unlink(os_helper.TESTFN)
@@ -796,6 +796,7 @@ class PosixTester(unittest.TestCase):
         os_helper.create_empty_file(os_helper.TESTFN)
         self._test_all_chown_common(posix.chown, os_helper.TESTFN, posix.stat)
 
+    @os_helper.skip_unless_working_chmod
     @unittest.skipUnless(hasattr(posix, 'fchown'), "test needs os.fchown()")
     def test_fchown(self):
         os.unlink(os_helper.TESTFN)
@@ -809,6 +810,7 @@ class PosixTester(unittest.TestCase):
         finally:
             test_file.close()
 
+    @os_helper.skip_unless_working_chmod
     @unittest.skipUnless(hasattr(posix, 'lchown'), "test needs os.lchown()")
     def test_lchown(self):
         os.unlink(os_helper.TESTFN)

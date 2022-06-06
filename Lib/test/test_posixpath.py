@@ -193,8 +193,7 @@ class PosixPathTest(unittest.TestCase):
         self.assertIs(posixpath.ismount('/\x00'), False)
         self.assertIs(posixpath.ismount(b'/\x00'), False)
 
-    @unittest.skipUnless(os_helper.can_symlink(),
-                         "Test requires symlink support")
+    @os_helper.skip_unless_symlink
     def test_ismount_symlinks(self):
         # Symlinks are never mountpoints.
         try:

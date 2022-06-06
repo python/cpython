@@ -1670,7 +1670,7 @@ class MakedirTests(unittest.TestCase):
         os.removedirs(path)
 
 
-@unittest.skipUnless(hasattr(os, 'chown'), "Test needs chown")
+@os_helper.skip_unless_working_chmod
 class ChownFileTests(unittest.TestCase):
 
     @classmethod
@@ -3784,7 +3784,6 @@ class OSErrorTests(unittest.TestCase):
     def test_oserror_filename(self):
         funcs = [
             (self.filenames, os.chdir,),
-            (self.filenames, os.chmod, 0o777),
             (self.filenames, os.lstat,),
             (self.filenames, os.open, os.O_RDONLY),
             (self.filenames, os.rmdir,),
@@ -3805,6 +3804,8 @@ class OSErrorTests(unittest.TestCase):
                 (self.filenames, os.rename, "dst"),
                 (self.filenames, os.replace, "dst"),
             ))
+        if os_helper.can_chmod():
+            funcs.append((self.filenames, os.chmod, 0o777))
         if hasattr(os, "chown"):
             funcs.append((self.filenames, os.chown, 0, 0))
         if hasattr(os, "lchown"):
