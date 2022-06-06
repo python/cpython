@@ -237,6 +237,42 @@ def skip_unless_xattr(test):
     return test if ok else unittest.skip(msg)(test)
 
 
+_can_chmod = None
+
+def can_chmod():
+    global _can_chmod
+    if _can_chmod is not None:
+        return _can_chmod
+    if not hasattr(os, "chown"):
+        _can_chmod = False
+        return _can_chmod
+    try:
+        with open(TESTFN, "wb") as f:
+            try:
+                os.chmod(TESTFN, 0o777)
+                mode1 = os.stat(TESTFN).st_mode
+                os.chmod(TESTFN, 0o666)
+                mode2 = os.stat(TESTFN).st_mode
+            except OSError as e:
+                can = False
+            else:
+                can = stat.S_IMODE(mode1) != stat.S_IMODE(mode2)
+    finally:
+        os.unlink(TESTFN)
+    _can_chmod = can
+    return can
+
+
+def skip_unless_working_chmod(test):
+    """Skip tests that require working os.chmod()
+
+    WASI SDK 15.0 cannot change file mode bits.
+    """
+    ok = can_chmod()
+    msg = "requires working os.chmod()"
+    return test if ok else unittest.skip(msg)(test)
+
+
 def unlink(filename):
     try:
         _unlink(filename)
