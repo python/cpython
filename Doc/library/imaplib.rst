@@ -230,9 +230,20 @@ An :class:`IMAP4` instance has the following methods:
    that will be base64 encoded and sent to the server.  It should return
    ``None`` if the client abort response ``*`` should be sent instead.
 
+   Example of a SASL PLAIN *authobject*::
+
+      def plain_auth(data):
+         user = input('User: ')
+         password = getpass.getpass()
+         response = f'{user}\x00{user}\x00{password}'
+         return response
+
+      M.authenticate('PLAIN', plain_auth)
+
    .. versionchanged:: 3.5
       string usernames and passwords are now encoded to ``utf-8`` instead of
-      being limited to ASCII.
+      being limited to ASCII. :meth:`authenticate` is the only standard way
+      to use ``utf-8`` credentials on an ``IMAP4rev1`` server.
 
 
 .. method:: IMAP4.check()
@@ -631,33 +642,6 @@ retrieves and prints all messages::
 
    M = imaplib.IMAP4()
    M.login(getpass.getuser(), getpass.getpass())
-   M.select()
-   typ, data = M.search(None, 'ALL')
-   for num in data[0].split():
-       typ, data = M.fetch(num, '(RFC822)')
-       print('Message %s\n%s\n' % (num, data[0][1]))
-   M.close()
-   M.logout()
-
-.. _imap4-plain-sasl-auth-example:
-
-IMAP4 Plain SASL Auth Example
--------------
-
-The :meth:`login` method is limited to ASCII characters by specification.
-If you need to handle UTF-8 credentials you can use a simple
-authentication object::
-
-   import getpass, imaplib
-
-   def plain_auth(data):
-      user = input('User: ')
-      password = getpass.getpass()
-      response = f'{user}\x00{user}\x00{password}'
-      return response
-
-   M = imaplib.IMAP4()
-   M.authenticate('PLAIN', plain_auth)
    M.select()
    typ, data = M.search(None, 'ALL')
    for num in data[0].split():
