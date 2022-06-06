@@ -272,6 +272,7 @@ class NetrcTestCase(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX only test')
     @unittest.skipIf(pwd is None, 'security check requires pwd module')
+    @os_helper.skip_unless_working_chmod
     def test_security(self):
         # This test is incomplete since we are normally not run as root and
         # therefore can't test the file ownership being wrong.
