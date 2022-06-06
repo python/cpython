@@ -852,6 +852,8 @@ class PathLikeTests(NtpathTestCase):
 
     def test_path_normcase(self):
         self._check_function(self.path.normcase)
+        if sys.platform == 'win32':
+            self.assertEqual(ntpath.normcase('\u03a9\u2126'), 'ωΩ')
 
     def test_path_isabs(self):
         self._check_function(self.path.isabs)
