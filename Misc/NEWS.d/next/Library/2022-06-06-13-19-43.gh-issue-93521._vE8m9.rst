@@ -1,0 +1,1 @@
+Allow specifying ``weakref_slot`` several times in dataclass MRO
