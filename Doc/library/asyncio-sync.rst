@@ -345,7 +345,7 @@ BoundedSemaphore
 Barrier
 =======
 
-.. class:: Barrier(parties, action=None)
+.. class:: Barrier(parties)
 
    A barrier object.  Not thread-safe.
 
