@@ -235,8 +235,7 @@ An :class:`IMAP4` instance has the following methods:
       def plain_auth(data):
          user = input('User: ')
          password = getpass.getpass()
-         response = f'{user}\x00{user}\x00{password}'
-         return response
+         return f'{user}\x00{user}\x00{password}'
 
       M.authenticate('PLAIN', plain_auth)
 
