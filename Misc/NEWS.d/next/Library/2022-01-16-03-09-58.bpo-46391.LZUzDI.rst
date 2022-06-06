@@ -1,2 +1,2 @@
-Fix that Library multiprocess leaks named resources when global named
-resources are used in the main module in spawn context.
+Fix a multiprocessing bug where a global named resource (such as a semaphore)
+could leak when a child process is spawned (as opposed to forked).
