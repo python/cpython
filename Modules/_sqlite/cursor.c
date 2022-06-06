@@ -776,6 +776,16 @@ stmt_mark_dirty(pysqlite_Statement *self)
     self->in_use = 1;
 }
 
+static inline sqlite3_int64
+total_changes(sqlite3 *db)
+{
+#if SQLITE_VERSION_NUMBER >= 3037000
+    return sqlite3_total_changes64(db);
+#else
+    return (sqlite3_int64)sqlite3_total_changes(db);
+#endif
+}
+
 PyObject *
 _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation, PyObject* second_argument)
 {
@@ -880,7 +890,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
     if (self->statement->is_dml) {
         // Save current row count
-        self->rowcount = (long)sqlite3_total_changes(self->connection->db);
+        self->rowcount = total_changes(self->connection->db);
     }
     else {
         self->rowcount = -1L;
@@ -1318,7 +1328,7 @@ get_rowcount(pysqlite_Cursor *self, void *Py_UNUSED(closure))
     if (self->rowcount == -1L) {
         return PyLong_FromLong(-1L);
     }
-    long changes = (long)sqlite3_total_changes(self->connection->db);
+    sqlite3_int64 changes = total_changes(self->connection->db);
     return PyLong_FromLong(changes - self->rowcount);
 }
 
