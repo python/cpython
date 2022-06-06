@@ -1,1 +1,0 @@
-Fixed a bug where setting ``frame.f_lineno`` to jump over a list comprehension could misbehave or crash.

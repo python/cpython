@@ -1,1 +1,0 @@
-Pin Jinja to a version compatible with Sphinx version 3.2.1.
