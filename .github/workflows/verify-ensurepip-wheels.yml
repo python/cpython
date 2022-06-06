@@ -9,6 +9,9 @@ on:
     paths:
       - 'Lib/ensurepip/_bundled/**'
 
+permissions:
+  contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
