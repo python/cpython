@@ -1,0 +1,1 @@
+test_unicode test_raiseMemError now correctly calculates size of NULL byte(s).
