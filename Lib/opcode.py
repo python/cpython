@@ -283,13 +283,13 @@ _specializations = {
     ],
     "LOAD_ATTR": [
         "LOAD_ATTR_ADAPTIVE",
-        # LOAD_ATTR
+        # These potentially push [NULL, bound method] onto the stack.
         "LOAD_ATTR_CLASS",
         "LOAD_ATTR_INSTANCE_VALUE",
         "LOAD_ATTR_MODULE",
         "LOAD_ATTR_SLOT",
         "LOAD_ATTR_WITH_HINT",
-        # LOAD_METHOD
+        # These will always push [unbound method, self] onto the stack.
         "LOAD_ATTR_METHOD_LAZY_DICT",
         "LOAD_ATTR_METHOD_NO_DICT",
         "LOAD_ATTR_METHOD_WITH_DICT",

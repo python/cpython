@@ -361,22 +361,14 @@ miss_counter_start(void) {
 
 /* Methods */
 
-#define SPEC_FAIL_LOAD_METHOD_OVERRIDING_DESCRIPTOR 8
-#define SPEC_FAIL_LOAD_METHOD_NON_OVERRIDING_DESCRIPTOR 9
-#define SPEC_FAIL_LOAD_METHOD_NOT_DESCRIPTOR 10
-#define SPEC_FAIL_LOAD_METHOD_METHOD 11
-#define SPEC_FAIL_LOAD_METHOD_MUTABLE_CLASS 12
-#define SPEC_FAIL_LOAD_METHOD_PROPERTY 13
-#define SPEC_FAIL_LOAD_METHOD_NON_OBJECT_SLOT 14
-#define SPEC_FAIL_LOAD_METHOD_IS_ATTR 15
-#define SPEC_FAIL_LOAD_METHOD_DICT_SUBCLASS 16
-#define SPEC_FAIL_LOAD_METHOD_BUILTIN_CLASS_METHOD 17
-#define SPEC_FAIL_LOAD_METHOD_CLASS_METHOD_OBJ 18
-#define SPEC_FAIL_LOAD_METHOD_OBJECT_SLOT 19
-#define SPEC_FAIL_LOAD_METHOD_HAS_DICT 20
-#define SPEC_FAIL_LOAD_METHOD_HAS_MANAGED_DICT 21
-#define SPEC_FAIL_LOAD_METHOD_INSTANCE_ATTRIBUTE 22
-#define SPEC_FAIL_LOAD_METHOD_METACLASS_ATTRIBUTE 23
+#define SPEC_FAIL_LOAD_METHOD_METHOD 20
+#define SPEC_FAIL_LOAD_METHOD_IS_ATTR 21
+#define SPEC_FAIL_LOAD_METHOD_BUILTIN_CLASS_METHOD 22
+#define SPEC_FAIL_LOAD_METHOD_CLASS_METHOD_OBJ 23
+#define SPEC_FAIL_LOAD_METHOD_OBJECT_SLOT 24
+#define SPEC_FAIL_LOAD_METHOD_HAS_MANAGED_DICT 25
+#define SPEC_FAIL_LOAD_METHOD_INSTANCE_ATTRIBUTE 26
+#define SPEC_FAIL_LOAD_METHOD_METACLASS_ATTRIBUTE 27
 
 /* Binary subscr and store subscr */
 
@@ -691,7 +683,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         if (specialize_attr_loadmethod(owner, instr, name, descr, kind)) {
             goto success;
         }
-        /* res == 0 (fail), fall through and let LOAD_ATTR specialize for it */
+        /* (fail), fall through and let LOAD_ATTR specialize for it */
     }
     switch(kind) {
         case OVERRIDING:
@@ -855,23 +847,23 @@ success:
 
 #ifdef Py_STATS
 static int
-load_method_fail_kind(DescriptorClassification kind)
+load_attr_fail_kind(DescriptorClassification kind)
 {
     switch (kind) {
         case OVERRIDING:
-            return SPEC_FAIL_LOAD_METHOD_OVERRIDING_DESCRIPTOR;
+            return SPEC_FAIL_ATTR_OVERRIDING_DESCRIPTOR;
         case METHOD:
-            return SPEC_FAIL_LOAD_METHOD_METHOD;
+            return SPEC_FAIL_ATTR_METHOD;
         case PROPERTY:
-            return SPEC_FAIL_LOAD_METHOD_PROPERTY;
+            return SPEC_FAIL_ATTR_PROPERTY;
         case OBJECT_SLOT:
             return SPEC_FAIL_LOAD_METHOD_OBJECT_SLOT;
         case OTHER_SLOT:
-            return SPEC_FAIL_LOAD_METHOD_NON_OBJECT_SLOT;
+            return SPEC_FAIL_ATTR_NON_OBJECT_SLOT;
         case DUNDER_CLASS:
             return SPEC_FAIL_OTHER;
         case MUTABLE:
-            return SPEC_FAIL_LOAD_METHOD_MUTABLE_CLASS;
+            return SPEC_FAIL_ATTR_MUTABLE_CLASS;
         case GETSET_OVERRIDDEN:
             return SPEC_FAIL_OVERRIDDEN;
         case BUILTIN_CLASSMETHOD:
@@ -879,9 +871,9 @@ load_method_fail_kind(DescriptorClassification kind)
         case PYTHON_CLASSMETHOD:
             return SPEC_FAIL_LOAD_METHOD_CLASS_METHOD_OBJ;
         case NON_OVERRIDING:
-            return SPEC_FAIL_LOAD_METHOD_NON_OVERRIDING_DESCRIPTOR;
+            return SPEC_FAIL_ATTR_NON_OVERRIDING_DESCRIPTOR;
         case NON_DESCRIPTOR:
-            return SPEC_FAIL_LOAD_METHOD_NOT_DESCRIPTOR;
+            return SPEC_FAIL_ATTR_NOT_DESCRIPTOR;
         case ABSENT:
             return SPEC_FAIL_LOAD_METHOD_INSTANCE_ATTRIBUTE;
     }
@@ -907,15 +899,15 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
 #ifdef Py_STATS
         case ABSENT:
             if (_PyType_Lookup(Py_TYPE(owner), name) != NULL) {
-                SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_LOAD_METHOD_METACLASS_ATTRIBUTE);
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_LOAD_METHOD_METACLASS_ATTRIBUTE);
             }
             else {
-                SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_EXPECTED_ERROR);
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR);
             }
             return -1;
 #endif
         default:
-            SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
+            SPECIALIZATION_FAIL(LOAD_ATTR, load_attr_fail_kind(kind));
             return -1;
     }
 }
@@ -977,7 +969,7 @@ PyObject *descr, DescriptorClassification kind)
     if (dictkind == MANAGED_VALUES || dictkind == OFFSET_DICT) {
         Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
         if (index != DKIX_EMPTY) {
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_LOAD_METHOD_IS_ATTR);
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_LOAD_METHOD_IS_ATTR);
             goto fail;
         }
         uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(keys);
