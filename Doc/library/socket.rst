@@ -826,11 +826,12 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
 .. data:: SocketType
 
-   This is the base class for a type object of socket objects, and
-   ``isinstance(socket(...), SocketType)`` returns ``True``.
+   This is the base class for a type object of socket objects, such that
+   ``isinstance(socket(...), SocketType)`` is ``True``.
 
    .. versionchanged:: 3.0
-      SocketType is now the base class for the socket object type.
+      SocketType is the base class for the socket object type rather than
+      being ``type(socket(...))``` directly.
 
 
 Other functions
