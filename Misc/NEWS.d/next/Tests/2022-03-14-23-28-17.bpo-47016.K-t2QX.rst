@@ -1,2 +1,2 @@
 Create a GitHub Actions workflow for verifying bundled pip and setuptools.
-Patch by Illia Volochii.
+Patch by Illia Volochii and Adam Turner.
