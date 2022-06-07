@@ -43,6 +43,9 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-OO
 ]
 [
+.B \-P
+]
+[
 .B \-s
 ]
 [
@@ -66,10 +69,10 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-x
 ]
 [
-[
 .B \-X
 .I option
 ]
+[
 .B \-?
 ]
 .br
@@ -80,6 +83,19 @@ python \- an interpreted, interactive, object-oriented programming language
 .I always
 |
 .I never
+]
+.br
+       [
+.B \--help
+]
+[
+.B \--help-env
+]
+[
+.B \--help-xoptions
+]
+[
+.B \--help-all
 ]
 .br
        [
@@ -146,6 +162,16 @@ the behavior of the interpreter.
 .B \-h ", " \-? ", "\-\-help
 Prints the usage for the interpreter executable and exits.
 .TP
+.B "\-\-help\-env"
+Prints help about Python-specific environment variables and exits.
+.TP
+.B "\-\-help\-xoptions"
+Prints help about implementation-specific \fB\-X\fP options and exits.
+.TP
+.TP
+.B "\-\-help\-all"
+Prints complete usage information and exits.
+.TP
 .B \-i
 When a script is passed as first argument or the \fB\-c\fP option is
 used, enter interactive mode after executing the script or the
@@ -154,7 +180,7 @@ useful to inspect global variables or a stack trace when a script
 raises an exception.
 .TP
 .B \-I
-Run Python in isolated mode. This also implies \fB\-E\fP and \fB\-s\fP. In
+Run Python in isolated mode. This also implies \fB\-E\fP, \fB\-P\fP and \fB\-s\fP. In
 isolated mode sys.path contains neither the script's directory nor the user's
 site-packages directory. All PYTHON* environment variables are ignored, too.
 Further restrictions may be imposed to prevent the user from injecting
@@ -176,6 +202,11 @@ adding .opt-1 before the .pyc extension.
 .B \-OO
 Do \fB-O\fP and also discard docstrings; change the filename for
 compiled (bytecode) files by adding .opt-2 before the .pyc extension.
+.TP
+.B \-P
+Don't automatically prepend a potentially unsafe path to \fBsys.path\fP such
+as the current directory, the script's directory or an empty string. See also the
+\fBPYTHONSAFEPATH\fP environment variable.
 .TP
 .B \-q
 Do not print the version and copyright messages. These messages are
@@ -279,7 +310,7 @@ a regular expression on the warning message.
 
 .TP
 .BI "\-X " option
-Set implementation specific option. The following options are available:
+Set implementation-specific option. The following options are available:
 
     -X faulthandler: enable faulthandler
 
@@ -302,7 +333,8 @@ Set implementation specific option. The following options are available:
         more verbose than the default if the code is correct: new warnings are
         only emitted when an issue is detected. Effect of the developer mode:
            * Add default warning filter, as -W default
-           * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks() C function
+           * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks()
+             C function
            * Enable the faulthandler module to dump the Python traceback on a crash
            * Enable asyncio debug mode
            * Set the dev_mode attribute of sys.flags to True
@@ -313,7 +345,19 @@ Set implementation specific option. The following options are available:
         otherwise activate automatically). See PYTHONUTF8 for more details
 
     -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the
-         given directory instead of to the code tree.
+        given directory instead of to the code tree.
+
+    -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None'
+
+    -X no_debug_ranges: disable the inclusion of the tables mapping extra location
+       information (end line, start column offset and end column offset) to every
+       instruction in code objects. This is useful when smaller code objects and pyc
+       files are desired as well as suppressing the extra visual location indicators
+       when the interpreter displays tracebacks.
+
+    -X frozen_modules=[on|off]: whether or not frozen modules should be used.
+       The default is "on" (or "off" if you are running a local build).
+
 .TP
 .B \-x
 Skip the first line of the source.  This is intended for a DOS
@@ -398,6 +442,10 @@ needed for developing Python extensions and embedding the
 interpreter.
 .RE
 .SH ENVIRONMENT VARIABLES
+.IP PYTHONSAFEPATH
+If this is set to a non-empty string, don't automatically prepend a potentially
+unsafe path to \fBsys.path\fP such as the current directory, the script's
+directory or an empty string. See also the \fB\-P\fP option.
 .IP PYTHONHOME
 Change the location of the standard Python libraries.  By default, the
 libraries are searched in ${prefix}/lib/python<version> and
@@ -548,9 +596,6 @@ can be set to the callable of your debugger of choice.
 Setting these variables only has an effect in a debug build of Python, that is,
 if Python was configured with the
 \fB\--with-pydebug\fP build option.
-.IP PYTHONTHREADDEBUG
-If this environment variable is set, Python will print threading debug info.
-The feature is deprecated in Python 3.10 and will be removed in Python 3.12.
 .IP PYTHONDUMPREFS
 If this environment variable is set, Python will dump objects and reference
 counts still alive after shutting down the interpreter.

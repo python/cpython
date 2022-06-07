@@ -10,6 +10,9 @@ import io
 smtpd = warnings_helper.import_deprecated('smtpd')
 asyncore = warnings_helper.import_deprecated('asyncore')
 
+if not socket_helper.has_gethostname:
+    raise unittest.SkipTest("test requires gethostname()")
+
 
 class DummyServer(smtpd.SMTPServer):
     def __init__(self, *args, **kwargs):

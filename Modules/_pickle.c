@@ -2579,7 +2579,7 @@ raw_unicode_escape(PyObject *obj)
     char *p;
     Py_ssize_t i, size;
     const void *data;
-    unsigned int kind;
+    int kind;
     _PyBytesWriter writer;
 
     if (PyUnicode_READY(obj))

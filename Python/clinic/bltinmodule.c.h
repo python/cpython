@@ -408,7 +408,7 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_exec__doc__,
-"exec($module, source, globals=None, locals=None, /)\n"
+"exec($module, source, globals=None, locals=None, /, *, closure=None)\n"
 "--\n"
 "\n"
 "Execute the given source in the context of globals and locals.\n"
@@ -417,37 +417,52 @@ PyDoc_STRVAR(builtin_exec__doc__,
 "or a code object as returned by compile().\n"
 "The globals must be a dictionary and locals can be any mapping,\n"
 "defaulting to the current globals and locals.\n"
-"If only globals is given, locals defaults to it.");
+"If only globals is given, locals defaults to it.\n"
+"The closure must be a tuple of cellvars, and can only be used\n"
+"when source is a code object requiring exactly that many cellvars.");
 
 #define BUILTIN_EXEC_METHODDEF    \
-    {"exec", _PyCFunction_CAST(builtin_exec), METH_FASTCALL, builtin_exec__doc__},
+    {"exec", _PyCFunction_CAST(builtin_exec), METH_FASTCALL|METH_KEYWORDS, builtin_exec__doc__},
 
 static PyObject *
 builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
-                  PyObject *locals);
+                  PyObject *locals, PyObject *closure);
 
 static PyObject *
-builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "", "", "closure", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "exec", 0};
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *source;
     PyObject *globals = Py_None;
     PyObject *locals = Py_None;
+    PyObject *closure = NULL;
 
-    if (!_PyArg_CheckPositional("exec", nargs, 1, 3)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     source = args[0];
     if (nargs < 2) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
+    noptargs--;
     globals = args[1];
     if (nargs < 3) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
+    noptargs--;
     locals = args[2];
-skip_optional:
-    return_value = builtin_exec_impl(module, source, globals, locals);
+skip_optional_posonly:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    closure = args[3];
+skip_optional_kwonly:
+    return_value = builtin_exec_impl(module, source, globals, locals, closure);
 
 exit:
     return return_value;
@@ -1030,4 +1045,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6a2b78ef82bc5155 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a2c5c53e8aead7c3 input=a9049054013a1b77]*/
