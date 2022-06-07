@@ -89,5 +89,8 @@ ac_cv_func_setresgid=no
 ac_cv_func_link=no
 ac_cv_func_linkat=no
 
+# Emscripten's faccessat does not accept AT_* flags.
+ac_cv_func_faccessat=no
+
 # alarm signal is not delivered, may need a callback into the event loop?
 ac_cv_func_alarm=no
