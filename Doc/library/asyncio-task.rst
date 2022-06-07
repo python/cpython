@@ -227,24 +227,23 @@ Creating Tasks
 
       Save a reference to the result of this function, to avoid
       a task disappearing mid execution. The event loop only keeps
-      weak references to all task. Without a strong reference, the
-      task may get garbage-collected at any time. If you want to have
-      "fire-and-forget" background tasks you can do something like this::
+      weak references to tasks. A task that isn't referenced elsewhere
+      may get garbage-collected at any time, even before it's done.
+      For reliable "fire-and-forget" background tasks, gather them in
+      a collection::
 
-          # create an empty set to store references to background tasks
           background_tasks = set()
 
-          # start 10 background tasks
           for i in range(10):
               task = asyncio.create_task(some_coro(param=i))
 
-              # Add task to set. This creates a strong reference.
+              # Add task to the set. This creates a strong reference.
               background_tasks.add(task)
 
-              # To prevent accumulation of references to already finished
-              # tasks, make each task remove its own reference from set after
+              # To prevent keeping references to finished tasks forever,
+              # make each task remove its own reference from the set after
               # completion:
-              task.add_done_callback(lambda t: background_tasks.discard(t))
+              task.add_done_callback(background_tasks.discard)
 
    .. versionadded:: 3.7
 
