@@ -575,8 +575,7 @@ class CalendarTestCase(unittest.TestCase):
             # For long widths, the full day name is used.
             self.assertEqual(cal.formatweekday(0, 10), "  Monday  ")
         except locale.Error:
-            # cannot set the en_US locale -- skip test
-            raise unittest.SkipTest('cannot set the en_US  locale')
+            raise unittest.SkipTest('cannot set the en_US locale')
 
     def test_locale_html_calendar_custom_css_class_month_name(self):
         try:
