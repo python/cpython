@@ -62,7 +62,7 @@ class ModuleTests(unittest.TestCase):
             sqlite.version
         self.assertEqual(cm.filename,  __file__)
         self.assertEqual('version is deprecated and will be removed in Python 3.14', str(cm.warning))
-        
+
     def test_version_info(self):
         with self.assertWarns(DeprecationWarning) as cm:
             sqlite.version_info
