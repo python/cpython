@@ -656,6 +656,8 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertEqual(mod.test(1), 1)
         if __debug__:
             self.assertRaises(AssertionError, mod.test, False)
+        else:
+            self.assertEqual(mod.test(0), 0)
 
     def testImport_WithStuff(self):
         # try importing from a zipfile which contains additional
