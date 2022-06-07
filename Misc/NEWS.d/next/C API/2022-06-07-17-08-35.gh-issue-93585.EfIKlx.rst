@@ -1,0 +1,6 @@
+Set ``PyCode_Type.tp_basicsize`` to ``sizeof(PyCodeObject)``. Cython makes the
+assumption that ``PyCode_Type.tp_basicsize`` equals to
+``sizeof(PyCodeObject)``. This assumption is no longer true since the commit
+2bde6827ea4f136297b2d882480b981ff26262b6. Restore ``tp_basicsize`` until the
+PyCodeObject structure can use a C99 flexible array of size zero with the
+syntax ``char co_code_adaptive[]``. Patch by Victor Stinner.

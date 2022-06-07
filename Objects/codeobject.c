@@ -1910,7 +1910,7 @@ static struct PyMethodDef code_methods[] = {
 PyTypeObject PyCode_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "code",
-    offsetof(PyCodeObject, co_code_adaptive),
+    sizeof(PyCodeObject),
     sizeof(_Py_CODEUNIT),
     (destructor)code_dealloc,           /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
