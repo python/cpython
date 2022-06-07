@@ -115,8 +115,8 @@ WIN32 is still required for the locale module.
 
 /* set the COMPILER and support tier
  *
- * win_amd64 MSCV (x86_64-pc-windows-msvc): 1
- * win32 MSCV (i686-pc-windows-msvc): 1
+ * win_amd64 MSVC (x86_64-pc-windows-msvc): 1
+ * win32 MSVC (i686-pc-windows-msvc): 1
  * win_arm64 MSVC (aarch64-pc-windows-msvc): 3
  * other archs and ICC: 0
  */
