@@ -1,1 +1,0 @@
-Update documentation of :func:`os.copy_file_range`. Patch by Illia Volochii.
