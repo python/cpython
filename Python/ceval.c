@@ -4581,7 +4581,7 @@ handle_eval_breaker:
             DEOPT_IF(self_cls->tp_version_tag != read_u32(cache->type_version),
                      LOAD_METHOD);
             /* Treat index as a signed 16 bit value */
-            int dictoffset = self_cls->tp_dictoffset;
+            Py_ssize_t dictoffset = self_cls->tp_dictoffset;
             assert(dictoffset > 0);
             PyDictObject **dictptr = (PyDictObject**)(((char *)self)+dictoffset);
             PyDictObject *dict = *dictptr;
@@ -4625,7 +4625,7 @@ handle_eval_breaker:
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
             uint32_t type_version = read_u32(cache->type_version);
             DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_METHOD);
-            int dictoffset = self_cls->tp_dictoffset;
+            Py_ssize_t dictoffset = self_cls->tp_dictoffset;
             assert(dictoffset > 0);
             PyObject *dict = *(PyObject **)((char *)self + dictoffset);
             /* This object has a __dict__, just not yet created */
