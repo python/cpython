@@ -1,4 +1,1 @@
-Added clear message
-
-When there is not enough disk space to create new semaphores, a confusing error occurs.
-This fix adds a clearer message.
+Add an explicit message for when there is not enough disk space to create new semaphores.
