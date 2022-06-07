@@ -58,20 +58,28 @@ class ModuleTests(unittest.TestCase):
                          "apilevel is %s, should be 2.0" % sqlite.apilevel)
 
     def test_version(self):
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarns(DeprecationWarning) as cm:
             sqlite.version
+        self.assertIn("test_dbapi.py", cm.filename)
+        self.assertEqual('version is deprecated and will be removed in Python 3.14', str(cm.warning))
 
     def test_version_info(self):
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarns(DeprecationWarning) as cm:
             sqlite.version_info
+        self.assertIn("test_dbapi.py", cm.filename)
+        self.assertEqual('version_info is deprecated and will be removed in Python 3.14', str(cm.warning))
 
     def test_dbapi2_version(self):
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarns(DeprecationWarning) as cm:
             sqlite.dbapi2.version
+        self.assertIn("test_dbapi.py", cm.filename)
+        self.assertEqual('version is deprecated and will be removed in Python 3.14', str(cm.warning))
 
     def test_dbapi2_version_info(self):
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarns(DeprecationWarning) as cm:
             sqlite.dbapi2.version_info
+        self.assertIn("test_dbapi.py", cm.filename)
+        self.assertEqual('version_info is deprecated and will be removed in Python 3.14', str(cm.warning))
 
     def test_thread_safety(self):
         self.assertIn(sqlite.threadsafety, {0, 1, 3},
