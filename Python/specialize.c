@@ -676,7 +676,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             return -1;
         }
     }
-    PyObject* descr = NULL;
+    PyObject *descr = NULL;
     DescriptorClassification kind = analyze_descriptor(type, name, &descr, 0);
     assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
     if ((oparg & 1) && kind == METHOD) {
