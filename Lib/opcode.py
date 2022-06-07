@@ -284,12 +284,12 @@ _specializations = {
     "LOAD_ATTR": [
         "LOAD_ATTR_ADAPTIVE",
         # LOAD_ATTR
+        "LOAD_ATTR_CLASS",
         "LOAD_ATTR_INSTANCE_VALUE",
         "LOAD_ATTR_MODULE",
         "LOAD_ATTR_SLOT",
         "LOAD_ATTR_WITH_HINT",
         # LOAD_METHOD
-        "LOAD_ATTR_METHOD_CLASS",
         "LOAD_ATTR_METHOD_LAZY_DICT",
         "LOAD_ATTR_METHOD_NO_DICT",
         "LOAD_ATTR_METHOD_WITH_DICT",

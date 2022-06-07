@@ -3626,6 +3626,30 @@ handle_eval_breaker:
             NOTRACE_DISPATCH();
         }
 
+        TARGET(LOAD_ATTR_CLASS) {
+            /* LOAD_METHOD, for class methods */
+            assert(cframe.use_tracing == 0);
+            _PyLoadMethodCache* cache = (_PyLoadMethodCache*)next_instr;
+
+            PyObject* cls = TOP();
+            DEOPT_IF(!PyType_Check(cls), LOAD_ATTR);
+            uint32_t type_version = read_u32(cache->type_version);
+            DEOPT_IF(((PyTypeObject*)cls)->tp_version_tag != type_version,
+                LOAD_ATTR);
+            assert(type_version != 0);
+
+            STAT_INC(LOAD_ATTR, hit);
+            PyObject* res = read_obj(cache->descr);
+            assert(res != NULL);
+            Py_INCREF(res);
+            SET_TOP(NULL);
+            STACK_GROW((oparg & 1));
+            SET_TOP(res);
+            Py_DECREF(cls);
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
+            NOTRACE_DISPATCH();
+        }
+
         TARGET(STORE_ATTR_ADAPTIVE) {
             assert(cframe.use_tracing == 0);
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
@@ -4617,29 +4641,6 @@ handle_eval_breaker:
             Py_INCREF(res);
             SET_TOP(res);
             PUSH(self);
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            NOTRACE_DISPATCH();
-        }
-
-        TARGET(LOAD_ATTR_METHOD_CLASS) {
-            /* LOAD_METHOD, for class methods */
-            assert(cframe.use_tracing == 0);
-            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
-
-            PyObject *cls = TOP();
-            DEOPT_IF(!PyType_Check(cls), LOAD_ATTR);
-            uint32_t type_version = read_u32(cache->type_version);
-            DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != type_version,
-                     LOAD_ATTR);
-            assert(type_version != 0);
-
-            STAT_INC(LOAD_ATTR, hit);
-            PyObject *res = read_obj(cache->descr);
-            assert(res != NULL);
-            Py_INCREF(res);
-            SET_TOP(NULL);
-            Py_DECREF(cls);
-            PUSH(res);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             NOTRACE_DISPATCH();
         }

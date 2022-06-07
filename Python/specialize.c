@@ -653,8 +653,9 @@ specialize_dict_access(
     return 1;
 }
 
-static int
-specialize_attr_loadmethod(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name);
+static int specialize_attr_loadmethod(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name,
+    PyObject* descr, DescriptorClassification kind);
+static int specialize_class_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name);
 
 int
 _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
@@ -669,25 +670,29 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         }
         goto success;
     }
-    int oparg = _Py_OPARG(*instr);
-    if (oparg & 1) {
-        int res = specialize_attr_loadmethod(owner, instr, name);
-        if (res < 0) {
-            return -1;
+    if (PyType_Check(owner)) {
+        int err = specialize_class_load_attr(owner, instr, name);
+        if (err) {
+            goto fail;
         }
-        else if (res) {
-            goto success;
-        }
-        /* res == 0 (fail), fall through and let LOAD_ATTR specialize for it */
+        goto success;
     }
-    PyTypeObject *type = Py_TYPE(owner);
+    int oparg = _Py_OPARG(*instr);
+    PyTypeObject* type = Py_TYPE(owner);
     if (type->tp_dict == NULL) {
         if (PyType_Ready(type) < 0) {
             return -1;
         }
     }
-    PyObject *descr;
+    PyObject* descr = NULL;
     DescriptorClassification kind = analyze_descriptor(type, name, &descr, 0);
+    assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
+    if ((oparg & 1) && kind == METHOD) {
+        if (specialize_attr_loadmethod(owner, instr, name, descr, kind)) {
+            goto success;
+        }
+        /* res == 0 (fail), fall through and let LOAD_ATTR specialize for it */
+    }
     switch(kind) {
         case OVERRIDING:
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_OVERRIDING_DESCRIPTOR);
@@ -885,7 +890,7 @@ load_method_fail_kind(DescriptorClassification kind)
 #endif
 
 static int
-specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr,
+specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
                              PyObject *name)
 {
     _PyLoadMethodCache *cache = (_PyLoadMethodCache *)(instr + 1);
@@ -897,7 +902,7 @@ specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr,
         case NON_DESCRIPTOR:
             write_u32(cache->type_version, ((PyTypeObject *)owner)->tp_version_tag);
             write_obj(cache->descr, descr);
-            _Py_SET_OPCODE(*instr, LOAD_ATTR_METHOD_CLASS);
+            _Py_SET_OPCODE(*instr, LOAD_ATTR_CLASS);
             return 0;
 #ifdef Py_STATS
         case ABSENT:
@@ -927,32 +932,13 @@ typedef enum {
 // can cause a significant drop in cache hits. A possible test is
 // python.exe -m test_typing test_re test_dis test_zlib.
 static int
-specialize_attr_loadmethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
+specialize_attr_loadmethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
+PyObject *descr, DescriptorClassification kind)
 {
     _PyLoadMethodCache *cache = (_PyLoadMethodCache *)(instr + 1);
     PyTypeObject *owner_cls = Py_TYPE(owner);
 
-    if (owner_cls->tp_dict == NULL) {
-        if (PyType_Ready(owner_cls) < 0) {
-            return -1;
-        }
-    }
-    if (PyType_Check(owner)) {
-        int err = specialize_class_load_method(owner, instr, name);
-        if (err) {
-            goto fail;
-        }
-        goto success;
-    }
-
-    PyObject *descr = NULL;
-    DescriptorClassification kind = 0;
-    kind = analyze_descriptor(owner_cls, name, &descr, 0);
-    assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
-    if (kind != METHOD) {
-        SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
-        goto fail;
-    }
+    assert(kind == METHOD && descr != NULL);
     ObjectDictKind dictkind;
     PyDictKeysObject *keys;
     if (owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
@@ -968,7 +954,7 @@ specialize_attr_loadmethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
     else {
         Py_ssize_t dictoffset = owner_cls->tp_dictoffset;
         if (dictoffset < 0 || dictoffset > INT16_MAX) {
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_RANGE);
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_RANGE);
             goto fail;
         }
         if (dictoffset == 0) {
@@ -996,7 +982,7 @@ specialize_attr_loadmethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         }
         uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(keys);
         if (keys_version == 0) {
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_VERSIONS);
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
             goto fail;
         }
         write_u32(cache->keys_version, keys_version);
@@ -1037,7 +1023,6 @@ specialize_attr_loadmethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
     write_u32(cache->type_version, owner_cls->tp_version_tag);
     write_obj(cache->descr, descr);
     // Fall through.
-success:
     return 1;
 fail:
     return 0;

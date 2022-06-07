@@ -157,11 +157,11 @@ extern "C" {
 #define EXTENDED_ARG_QUICK                      58
 #define JUMP_BACKWARD_QUICK                     59
 #define LOAD_ATTR_ADAPTIVE                      62
-#define LOAD_ATTR_INSTANCE_VALUE                63
-#define LOAD_ATTR_MODULE                        64
-#define LOAD_ATTR_SLOT                          65
-#define LOAD_ATTR_WITH_HINT                     66
-#define LOAD_ATTR_METHOD_CLASS                  67
+#define LOAD_ATTR_CLASS                         63
+#define LOAD_ATTR_INSTANCE_VALUE                64
+#define LOAD_ATTR_MODULE                        65
+#define LOAD_ATTR_SLOT                          66
+#define LOAD_ATTR_WITH_HINT                     67
 #define LOAD_ATTR_METHOD_LAZY_DICT              72
 #define LOAD_ATTR_METHOD_NO_DICT                73
 #define LOAD_ATTR_METHOD_WITH_DICT              76
