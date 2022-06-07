@@ -848,15 +848,15 @@ on the right is the text you'd replace it with.
 ``'s#'``    ``str(zeroes=True)``
 ``'s*'``    ``Py_buffer(accept={buffer, str})``
 ``'U'``     ``unicode``
-``'u'``     ``Py_UNICODE``
-``'u#'``    ``Py_UNICODE(zeroes=True)``
+``'u'``     ``wchar_t``
+``'u#'``    ``wchar_t(zeroes=True)``
 ``'w*'``    ``Py_buffer(accept={rwbuffer})``
 ``'Y'``     ``PyByteArrayObject``
 ``'y'``     ``str(accept={bytes})``
 ``'y#'``    ``str(accept={robuffer}, zeroes=True)``
 ``'y*'``    ``Py_buffer``
-``'Z'``     ``Py_UNICODE(accept={str, NoneType})``
-``'Z#'``    ``Py_UNICODE(accept={str, NoneType}, zeroes=True)``
+``'Z'``     ``wchar_t(accept={str, NoneType})``
+``'Z#'``    ``wchar_t(accept={str, NoneType}, zeroes=True)``
 ``'z'``     ``str(accept={str, NoneType})``
 ``'z#'``    ``str(accept={str, NoneType}, zeroes=True)``
 ``'z*'``    ``Py_buffer(accept={buffer, str, NoneType})``
@@ -1347,7 +1347,7 @@ Here's the simplest example of a custom converter, from ``Modules/zlibmodule.c``
     /*[python end generated code: output=da39a3ee5e6b4b0d input=35521e4e733823c7]*/
 
 This block adds a converter to Argument Clinic named ``ssize_t``.  Parameters
-declared as ``ssize_t`` will be declared as type ``Py_ssize_t``, and will
+declared as ``ssize_t`` will be declared as type :c:type:`Py_ssize_t`, and will
 be parsed by the ``'O&'`` format unit, which will call the
 ``ssize_t_converter`` converter function.  ``ssize_t`` variables
 automatically support default values.

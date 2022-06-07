@@ -500,6 +500,7 @@ are always available.  They are listed here in alphabetical order.
               yield n, elem
               n += 1
 
+.. _func-eval:
 
 .. function:: eval(expression[, globals[, locals]])
 
@@ -552,7 +553,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. index:: builtin: exec
 
-.. function:: exec(object[, globals[, locals]])
+.. function:: exec(object[, globals[, locals]], *, closure=None)
 
    This function supports dynamic execution of Python code. *object* must be
    either a string or a code object.  If it is a string, the string is parsed as
@@ -581,6 +582,11 @@ are always available.  They are listed here in alphabetical order.
    builtins are available to the executed code by inserting your own
    ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
 
+   The *closure* argument specifies a closure--a tuple of cellvars.
+   It's only valid when the *object* is a code object containing free variables.
+   The length of the tuple must exactly match the number of free variables
+   referenced by the code object.
+
    .. audit-event:: exec code_object exec
 
       Raises an :ref:`auditing event <auditing>` ``exec`` with the code object
@@ -598,6 +604,9 @@ are always available.  They are listed here in alphabetical order.
       modifications to the default *locals* dictionary should not be attempted.
       Pass an explicit *locals* dictionary if you need to see effects of the
       code on *locals* after function :func:`exec` returns.
+
+   .. versionchanged:: 3.11
+      Added the *closure* parameter.
 
 
 .. function:: filter(function, iterable)
@@ -851,8 +860,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. audit-event:: builtins.input/result result input
 
-      Raises an auditing event ``builtins.input/result`` with the result after
-      successfully reading input.
+      Raises an :ref:`auditing event <auditing>` ``builtins.input/result``
+      with the result after successfully reading input.
 
 
 .. class:: int([x])

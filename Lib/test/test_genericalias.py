@@ -11,6 +11,7 @@ from concurrent.futures import Future
 from concurrent.futures.thread import _WorkItem
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
 from contextvars import ContextVar, Token
+from csv import DictReader, DictWriter
 from dataclasses import Field
 from functools import partial, partialmethod, cached_property
 from graphlib import TopologicalSorter
@@ -122,7 +123,8 @@ class BaseTest(unittest.TestCase):
                      WeakSet, ReferenceType, ref,
                      ShareableList,
                      Future, _WorkItem,
-                     Morsel]
+                     Morsel,
+                     DictReader, DictWriter]
     if ctypes is not None:
         generic_types.extend((ctypes.Array, ctypes.LibraryLoader))
     if ValueProxy is not None:
@@ -485,6 +487,26 @@ class BaseTest(unittest.TestCase):
         t = tuple[int, str]
         iter_x = iter(t)
         del iter_x
+
+
+class TypeIterationTests(unittest.TestCase):
+    _UNITERABLE_TYPES = (list, tuple)
+
+    def test_cannot_iterate(self):
+        for test_type in self._UNITERABLE_TYPES:
+            with self.subTest(type=test_type):
+                expected_error_regex = "object is not iterable"
+                with self.assertRaisesRegex(TypeError, expected_error_regex):
+                    iter(test_type)
+                with self.assertRaisesRegex(TypeError, expected_error_regex):
+                    list(test_type)
+                with self.assertRaisesRegex(TypeError, expected_error_regex):
+                    for _ in test_type:
+                        pass
+
+    def test_is_not_instance_of_iterable(self):
+        for type_to_test in self._UNITERABLE_TYPES:
+            self.assertNotIsInstance(type_to_test, Iterable)
 
 
 if __name__ == "__main__":

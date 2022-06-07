@@ -1,1 +1,0 @@
-New http.HTTPMethod enum to represent all the available HTTP request methods in a convenient way

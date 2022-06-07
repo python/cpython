@@ -1162,7 +1162,7 @@ class SkipitemTest(unittest.TestCase):
         dict_b = {'b':1}
         keywords = ["a", "b"]
 
-        supported = ('s#', 's*', 'z#', 'z*', 'u#', 'Z#', 'y#', 'y*', 'w#', 'w*')
+        supported = ('s#', 's*', 'z#', 'z*', 'y#', 'y*', 'w#', 'w*')
         for c in string.ascii_letters:
             for c2 in '#*':
                 f = c + c2
@@ -1254,14 +1254,6 @@ class Test_testcapi(unittest.TestCase):
     locals().update((name, getattr(_testcapi, name))
                     for name in dir(_testcapi)
                     if name.startswith('test_') and name.endswith('_code'))
-
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test_u_code(self):
-        _testcapi.test_u_code()
-
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test_Z_code(self):
-        _testcapi.test_Z_code()
 
 
 if __name__ == "__main__":

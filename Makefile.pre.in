@@ -1325,11 +1325,11 @@ regen-token:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py rst \
 		$(srcdir)/Grammar/Tokens \
 		$(srcdir)/Doc/library/token-list.inc
-	# Regenerate Include/token.h from Grammar/Tokens
+	# Regenerate Include/internal/pycore_token.h from Grammar/Tokens
 	# using Tools/scripts/generate_token.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py h \
 		$(srcdir)/Grammar/Tokens \
-		$(srcdir)/Include/token.h
+		$(srcdir)/Include/internal/pycore_token.h
 	# Regenerate Parser/token.c from Grammar/Tokens
 	# using Tools/scripts/generate_token.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py c \
@@ -1405,8 +1405,7 @@ UNICODE_DEPS = \
 		$(srcdir)/Objects/stringlib/ucs2lib.h \
 		$(srcdir)/Objects/stringlib/ucs4lib.h \
 		$(srcdir)/Objects/stringlib/undef.h \
-		$(srcdir)/Objects/stringlib/unicode_format.h \
-		$(srcdir)/Objects/stringlib/unicodedefs.h
+		$(srcdir)/Objects/stringlib/unicode_format.h
 
 Objects/bytes_methods.o: $(srcdir)/Objects/bytes_methods.c $(BYTESTR_DEPS)
 Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS)
@@ -1510,6 +1509,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pymem.h \
 		$(srcdir)/Include/pyport.h \
 		$(srcdir)/Include/pystate.h \
+		$(srcdir)/Include/pystats.h \
 		$(srcdir)/Include/pystrcmp.h \
 		$(srcdir)/Include/pystrtod.h \
 		$(srcdir)/Include/pythonrun.h \
@@ -1521,7 +1521,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/structmember.h \
 		$(srcdir)/Include/structseq.h \
 		$(srcdir)/Include/sysmodule.h \
-		$(srcdir)/Include/token.h \
 		$(srcdir)/Include/traceback.h \
 		$(srcdir)/Include/tracemalloc.h \
 		$(srcdir)/Include/tupleobject.h \
@@ -1632,6 +1631,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_structseq.h \
 		$(srcdir)/Include/internal/pycore_symtable.h \
 		$(srcdir)/Include/internal/pycore_sysmodule.h \
+		$(srcdir)/Include/internal/pycore_token.h \
 		$(srcdir)/Include/internal/pycore_traceback.h \
 		$(srcdir)/Include/internal/pycore_tuple.h \
 		$(srcdir)/Include/internal/pycore_typeobject.h \

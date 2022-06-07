@@ -497,10 +497,16 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
             lock.acquire()
 
         mp_context = self.get_context()
+        if mp_context.get_start_method(allow_none=False) == "fork":
+            # fork pre-spawns, not on demand.
+            expected_num_processes = self.worker_count
+        else:
+            expected_num_processes = 3
+
         sem = mp_context.Semaphore(0)
         for _ in range(3):
             self.executor.submit(acquire_lock, sem)
-        self.assertEqual(len(self.executor._processes), 3)
+        self.assertEqual(len(self.executor._processes), expected_num_processes)
         for _ in range(3):
             sem.release()
         processes = self.executor._processes
@@ -1021,6 +1027,8 @@ class ProcessPoolExecutorTest(ExecutorTest):
     def test_idle_process_reuse_one(self):
         executor = self.executor
         assert executor._max_workers >= 4
+        if self.get_context().get_start_method(allow_none=False) == "fork":
+            raise unittest.SkipTest("Incompatible with the fork start method.")
         executor.submit(mul, 21, 2).result()
         executor.submit(mul, 6, 7).result()
         executor.submit(mul, 3, 14).result()
@@ -1029,6 +1037,8 @@ class ProcessPoolExecutorTest(ExecutorTest):
     def test_idle_process_reuse_multiple(self):
         executor = self.executor
         assert executor._max_workers <= 5
+        if self.get_context().get_start_method(allow_none=False) == "fork":
+            raise unittest.SkipTest("Incompatible with the fork start method.")
         executor.submit(mul, 12, 7).result()
         executor.submit(mul, 33, 25)
         executor.submit(mul, 25, 26).result()

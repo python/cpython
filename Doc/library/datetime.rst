@@ -998,7 +998,7 @@ Other constructors, all class methods:
    ISO 8601 format, with the following exceptions:
 
    1. Time zone offsets may have fractional seconds.
-   2. The `T` separator may be replaced by any single unicode character.
+   2. The ``T`` separator may be replaced by any single unicode character.
    3. Ordinal dates are not currently supported.
    4. Fractional hours and minutes are not supported.
 

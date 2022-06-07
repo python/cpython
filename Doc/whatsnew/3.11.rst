@@ -63,7 +63,7 @@ Summary -- Release highlights
    Brevity is key.
 
 - Python 3.11 is up to 10-60% faster than Python 3.10. On average, we measured a
-  1.22x speedup on the standard benchmark suite. See `Faster CPython`_ for details.
+  1.25x speedup on the standard benchmark suite. See `Faster CPython`_ for details.
 
 .. PEP-sized items next.
 
@@ -306,23 +306,23 @@ Kumar Srinivasan and Graham Bleaney.)
 PEP 681: Data Class Transforms
 ------------------------------
 
-The new :data:`~typing.dataclass_transform` annotation may be used to
-decorate a function that is itself a decorator, a class, or a metaclass.
+:data:`~typing.dataclass_transform` may be used to
+decorate a class, metaclass, or a function that is itself a decorator.
 The presence of ``@dataclass_transform()`` tells a static type checker that the
-decorated function, class, or metaclass performs runtime "magic" that
-transforms a class, endowing it with dataclass-like behaviors.
+decorated object performs runtime "magic" that
+transforms a class, giving it :func:`dataclasses.dataclass`-like behaviors.
 
 For example::
 
-    # The ``create_model`` decorator is defined by a library.
+    # The create_model decorator is defined by a library.
     @typing.dataclass_transform()
-    def create_model(cls: Type[_T]) -> Type[_T]:
+    def create_model(cls: Type[T]) -> Type[T]:
         cls.__init__ = ...
         cls.__eq__ = ...
         cls.__ne__ = ...
         return cls
 
-    # The ``create_model`` decorator can now be used to create new model
+    # The create_model decorator can now be used to create new model
     # classes, like this:
     @create_model
     class CustomerModel:
@@ -403,6 +403,11 @@ Other CPython Implementation Changes
   instead of prepending them.
   (Contributed by Bastian Neuburger in :issue:`44934`.)
 
+* The :c:member:`PyConfig.module_search_paths_set` field must now be set to 1 for
+  initialization to use :c:member:`PyConfig.module_search_paths` to initialize
+  :data:`sys.path`. Otherwise, initialization will recalculate the path and replace
+  any values added to ``module_search_paths``.
+
 
 New Modules
 ===========
@@ -431,9 +436,15 @@ asyncio
   existing stream-based connections to TLS. (Contributed by Ian Good in
   :issue:`34975`.)
 
+* Add :class:`~asyncio.Barrier` class to the synchronization primitives of
+  the asyncio library. (Contributed by Yves Duprat and Andrew Svetlov in
+  :gh:`87518`.)
+
 datetime
 --------
 
+* Add :attr:`datetime.UTC`, a convenience alias for
+  :attr:`datetime.timezone.utc`. (Contributed by Kabir Kwatra in :gh:`91973`.)
 * :meth:`datetime.date.fromisoformat`, :meth:`datetime.time.fromisoformat` and
   :meth:`datetime.datetime.fromisoformat` can now be used to parse most ISO 8601
   formats (barring only those that support fractional hours and minutes).
@@ -724,6 +735,12 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   the given type. At runtime it simply returns the received value.
   (Contributed by Jelle Zijlstra in :gh:`90638`.)
 
+* :data:`typing.TypedDict` types can now be generic. (Contributed by
+  Samodya Abeysiriwardane in :gh:`89026`.)
+
+* :class:`~typing.NamedTuple` types can now be generic.
+  (Contributed by Serhiy Storchaka in :issue:`43923`.)
+
 * Allow subclassing of :class:`typing.Any`. This is useful for avoiding
   type checker errors related to highly dynamic class, such as mocks.
   (Contributed by Shantanu Jain in :gh:`91154`.)
@@ -737,11 +754,33 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   to clear all registered overloads of a function.
   (Contributed by Jelle Zijlstra in :gh:`89263`.)
 
-* :data:`typing.TypedDict` subclasses can now be generic. (Contributed by
-  Samodya Abey in :gh:`89026`.)
+* The :meth:`__init__` method of :class:`~typing.Protocol` subclasses
+  is now preserved. (Contributed by Adrian Garcia Badarasco in :gh:`88970`.)
 
-* :class:`~typing.NamedTuple` subclasses can now be generic.
-  (Contributed by Serhiy Storchaka in :issue:`43923`.)
+* The representation of empty tuple types (``Tuple[()]``) is simplified.
+  This affects introspection, e.g. ``get_args(Tuple[()])`` now evaluates
+  to ``()`` instead of ``((),)``.
+  (Contributed by Serhiy Storchaka in :gh:`91137`.)
+
+* Loosen runtime requirements for type annotations by removing the callable
+  check in the private ``typing._type_check`` function. (Contributed by
+  Gregory Beauregard in :gh:`90802`.)
+
+* :func:`typing.get_type_hints` now supports evaluating strings as forward
+  references in :ref:`PEP 585 generic aliases <types-genericalias>`.
+  (Contributed by Niklas Rosenstein in :gh:`85542`.)
+
+* :func:`typing.get_type_hints` no longer adds :data:`~typing.Optional`
+  to parameters with ``None`` as a default. (Contributed by Nikita Sobolev
+  in :gh:`90353`.)
+
+* :func:`typing.get_type_hints` now supports evaluating bare stringified
+  :data:`~typing.ClassVar` annotations. (Contributed by Gregory Beauregard
+  in :gh:`90711`.)
+
+* :func:`typing.no_type_check` no longer modifies external classes and functions.
+  It also now correctly marks classmethods as not to be type checked. (Contributed
+  by Nikita Sobolev in :gh:`90729`.)
 
 
 tkinter
@@ -756,6 +795,18 @@ unicodedata
 -----------
 
 * The Unicode database has been updated to version 14.0.0. (:issue:`45190`).
+
+
+unittest
+--------
+
+* Added methods :meth:`~unittest.TestCase.enterContext` and
+  :meth:`~unittest.TestCase.enterClassContext` of class
+  :class:`~unittest.TestCase`, method
+  :meth:`~unittest.IsolatedAsyncioTestCase.enterAsyncContext` of
+  class :class:`~unittest.IsolatedAsyncioTestCase` and function
+  :func:`unittest.enterModuleContext`.
+  (Contributed by Serhiy Storchaka in :issue:`45046`.)
 
 
 venv
@@ -828,7 +879,7 @@ Optimizations
 Faster CPython
 ==============
 
-CPython 3.11 is on average `1.22x faster <https://github.com/faster-cpython/ideas/blob/main/main-vs-310.rst>`_
+CPython 3.11 is on average `25% faster <https://github.com/faster-cpython/ideas/blob/main/main-vs-310.rst>`_
 than CPython 3.10 when measured with the
 `pyperformance <https://github.com/python/pyperformance>`_ benchmark suite,
 and compiled with GCC on Ubuntu Linux. Depending on your workload, the speedup
@@ -879,10 +930,11 @@ holds execution information. The following are new frame optimizations:
 - Streamlined the internal frame struct to contain only essential information.
   Frames previously held extra debugging and memory management information.
 
-Old-style frame objects are now created only when required by debuggers. For
-most user code, no frame objects are created at all. As a result, nearly all
-Python functions calls have sped up significantly. We measured a 3-7% speedup
-in pyperformance.
+Old-style frame objects are now created only when requested by debuggers or
+by Python introspection functions such as ``sys._getframe`` or
+``inspect.currentframe``. For most user code, no frame objects are
+created at all. As a result, nearly all Python functions calls have sped
+up significantly. We measured a 3-7% speedup in pyperformance.
 
 (Contributed by Mark Shannon in :issue:`44590`.)
 
@@ -930,7 +982,8 @@ and specialization attempts are not too expensive. This allows specialization
 to adapt to new circumstances.
 
 (PEP written by Mark Shannon, with ideas inspired by Stefan Brunthaler.
-See :pep:`659` for more information.)
+See :pep:`659` for more information. Implementation by Mark Shannon and Brandt
+Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
 
 ..
    If I missed out anyone, please add them.
@@ -1100,8 +1153,8 @@ Deprecated
   that was added in Python 3.10.
   (Contributed by Raymond Hettinger in :gh:`89519`.)
 
-* Octal escapes with value larger than ``0o377`` now produce
-  a :exc:`DeprecationWarning`.
+* Octal escapes in string and bytes literals with value larger than ``0o377`` now
+  produce :exc:`DeprecationWarning`.
   In a future Python version they will be a :exc:`SyntaxWarning` and
   eventually a :exc:`SyntaxError`.
   (Contributed by Serhiy Storchaka in :gh:`81548`.)
@@ -1154,7 +1207,7 @@ Deprecated
 
   * the :class:`configparser.SafeConfigParser` class
   * the :attr:`configparser.ParsingError.filename` property
-  * the :meth:`configparser.ParsingError.readfp` method
+  * the :meth:`configparser.RawConfigParser.readfp` method
 
   (Contributed by Hugo van Kemenade in :issue:`45173`.)
 
@@ -1168,7 +1221,11 @@ Deprecated
   removed in Python 3.13. Use :func:`locale.setlocale`,
   :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
   :func:`locale.getlocale` functions instead.
-  (Contributed by Victor Stinner in :issue:`46659`.)
+  (Contributed by Victor Stinner in :gh:`90817`.)
+
+* The :func:`locale.resetlocale` function is deprecated and will be
+  removed in Python 3.13. Use ``locale.setlocale(locale.LC_ALL, "")`` instead.
+  (Contributed by Victor Stinner in :gh:`90817`.)
 
 * The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
   deprecated since at least Python 3.6. Their documentation and deprecation
@@ -1215,6 +1272,70 @@ Deprecated
   currently unplanned, but users are encouraged to use :class:`str` instead
   wherever possible.
   (Contributed by Alex Waygood in :gh:`92332`.)
+
+* The keyword argument syntax for constructing :data:`~typing.TypedDict` types
+  is now deprecated. Support will be removed in Python 3.13. (Contributed by
+  Jingchen Ye in :gh:`90224`.)
+
+* The :func:`re.template` function and the corresponding :const:`re.TEMPLATE`
+  and :const:`re.T` flags are deprecated, as they were undocumented and
+  lacked an obvious purpose. They will be removed in Python 3.13.
+  (Contributed by Serhiy Storchaka and Miro Hrončok in :gh:`92728`.)
+
+
+Pending Removal in Python 3.12
+==============================
+
+The following APIs have been deprecated in earlier Python releases,
+and will be removed in Python 3.12.
+
+Python API:
+
+* :class:`pkgutil.ImpImporter`
+* :class:`pkgutil.ImpLoader`
+* :envvar:`PYTHONTHREADDEBUG`
+* :func:`importlib.find_loader`
+* :func:`importlib.util.module_for_loader`
+* :func:`importlib.util.set_loader_wrapper`
+* :func:`importlib.util.set_package_wrapper`
+* :meth:`importlib.abc.Loader.module_repr`
+* :meth:`importlib.abc.Loadermodule_repr`
+* :meth:`importlib.abc.MetaPathFinder.find_module`
+* :meth:`importlib.abc.MetaPathFinder.find_module`
+* :meth:`importlib.abc.PathEntryFinder.find_loader`
+* :meth:`importlib.abc.PathEntryFinder.find_module`
+* :meth:`importlib.machinery.BuiltinImporter.find_module`
+* :meth:`importlib.machinery.BuiltinLoader.module_repr`
+* :meth:`importlib.machinery.FileFinder.find_loader`
+* :meth:`importlib.machinery.FileFinder.find_module`
+* :meth:`importlib.machinery.FrozenImporter.find_module`
+* :meth:`importlib.machinery.FrozenLoader.module_repr`
+* :meth:`importlib.machinery.PathFinder.find_module`
+* :meth:`importlib.machinery.WindowsRegistryFinder.find_module`
+* :meth:`pathlib.Path.link_to`
+* The entire :ref:`distutils namespace <distutils-deprecated>`
+* :func:`cgi.log`
+* :func:`sqlite3.OptimizedUnicode`
+* :func:`sqlite3.enable_shared_cache`
+
+C API:
+
+* :c:func:`PyUnicode_AS_DATA`
+* :c:func:`PyUnicode_AS_UNICODE`
+* :c:func:`PyUnicode_AsUnicodeAndSize`
+* :c:func:`PyUnicode_AsUnicode`
+* :c:func:`PyUnicode_FromUnicode`
+* :c:func:`PyUnicode_GET_DATA_SIZE`
+* :c:func:`PyUnicode_GET_SIZE`
+* :c:func:`PyUnicode_GetSize`
+* :c:func:`PyUnicode_IS_COMPACT`
+* :c:func:`PyUnicode_IS_READY`
+* :c:func:`PyUnicode_READY`
+* :c:func:`Py_UNICODE_WSTR_LENGTH`
+* :c:func:`_PyUnicode_AsUnicode`
+* :c:macro:`PyUnicode_WCHAR_KIND`
+* :c:type:`PyUnicodeObject`
+* :c:func:`PyUnicode_InternImmortal()`
 
 
 Removed
@@ -1433,37 +1554,6 @@ Build Changes
 C API Changes
 =============
 
-* :c:func:`PyErr_SetExcInfo()` no longer uses the ``type`` and ``traceback``
-  arguments, the interpreter now derives those values from the exception
-  instance (the ``value`` argument). The function still steals references
-  of all three arguments.
-  (Contributed by Irit Katriel in :issue:`45711`.)
-
-* :c:func:`PyErr_GetExcInfo()` now derives the ``type`` and ``traceback``
-  fields of the result from the exception instance (the ``value`` field).
-  (Contributed by Irit Katriel in :issue:`45711`.)
-
-* :c:type:`_frozen` has a new ``is_package`` field to indicate whether
-  or not the frozen module is a package.  Previously, a negative value
-  in the ``size`` field was the indicator.  Now only non-negative values
-  be used for ``size``.
-  (Contributed by Kumar Aditya in :issue:`46608`.)
-
-* :c:func:`_PyFrameEvalFunction` now takes ``_PyInterpreterFrame*``
-  as its second parameter, instead of ``PyFrameObject*``.
-  See :pep:`523` for more details of how to use this function pointer type.
-
-* :c:func:`PyCode_New` and :c:func:`PyCode_NewWithPosOnlyArgs` now take
-  an additional ``exception_table`` argument.
-  Using these functions should be avoided, if at all possible.
-  To get a custom code object: create a code object using the compiler,
-  then get a modified version with the ``replace`` method.
-
-* :c:type:`PyCodeObject` no longer has a ``co_code`` field.  Instead,
-  use ``PyObject_GetAttrString(code_object, "co_code")`` or
-  :c:func:`PyCode_GetCode` to get the underlying bytes object.
-  (Contributed by Brandt Bucher in :issue:`46841` and Ken Jin in :gh:`92154`.)
-
 New Features
 ------------
 
@@ -1529,6 +1619,37 @@ New Features
 
 Porting to Python 3.11
 ----------------------
+
+* :c:func:`PyErr_SetExcInfo()` no longer uses the ``type`` and ``traceback``
+  arguments, the interpreter now derives those values from the exception
+  instance (the ``value`` argument). The function still steals references
+  of all three arguments.
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
+* :c:func:`PyErr_GetExcInfo()` now derives the ``type`` and ``traceback``
+  fields of the result from the exception instance (the ``value`` field).
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
+* :c:type:`_frozen` has a new ``is_package`` field to indicate whether
+  or not the frozen module is a package.  Previously, a negative value
+  in the ``size`` field was the indicator.  Now only non-negative values
+  be used for ``size``.
+  (Contributed by Kumar Aditya in :issue:`46608`.)
+
+* :c:func:`_PyFrameEvalFunction` now takes ``_PyInterpreterFrame*``
+  as its second parameter, instead of ``PyFrameObject*``.
+  See :pep:`523` for more details of how to use this function pointer type.
+
+* :c:func:`PyCode_New` and :c:func:`PyCode_NewWithPosOnlyArgs` now take
+  an additional ``exception_table`` argument.
+  Using these functions should be avoided, if at all possible.
+  To get a custom code object: create a code object using the compiler,
+  then get a modified version with the ``replace`` method.
+
+* :c:type:`PyCodeObject` no longer has a ``co_code`` field.  Instead,
+  use ``PyObject_GetAttrString(code_object, "co_code")`` or
+  :c:func:`PyCode_GetCode` to get the underlying bytes object.
+  (Contributed by Brandt Bucher in :issue:`46841` and Ken Jin in :gh:`92154`.)
 
 * The old trashcan macros (``Py_TRASHCAN_SAFE_BEGIN``/``Py_TRASHCAN_SAFE_END``)
   are now deprecated. They should be replaced by the new macros
@@ -1753,6 +1874,16 @@ Porting to Python 3.11
 
 * Distributors are encouraged to build Python with the optimized Blake2
   library `libb2`_.
+
+* The :c:member:`PyConfig.module_search_paths_set` field must now be set to 1 for
+  initialization to use :c:member:`PyConfig.module_search_paths` to initialize
+  :data:`sys.path`. Otherwise, initialization will recalculate the path and replace
+  any values added to ``module_search_paths``.
+
+* :c:func:`PyConfig_Read` no longer calculates the initial search path, and will not
+  fill any values into :c:member:`PyConfig.module_search_paths`. To calculate default
+  paths and then modify them, finish initialization and use :c:func:`PySys_GetObject`
+  to retrieve :data:`sys.path` as a Python list object and modify it directly.
 
 
 Deprecated
