@@ -61,25 +61,29 @@ class ModuleTests(unittest.TestCase):
         with self.assertWarns(DeprecationWarning) as cm:
             sqlite.version
         self.assertEqual(cm.filename,  __file__)
-        self.assertEqual('version is deprecated and will be removed in Python 3.14', str(cm.warning))
+        self.assertEqual('version is deprecated and will be removed in Python 3.14',
+                         str(cm.warning))
 
     def test_version_info(self):
         with self.assertWarns(DeprecationWarning) as cm:
             sqlite.version_info
         self.assertEqual(cm.filename,  __file__)
-        self.assertEqual('version_info is deprecated and will be removed in Python 3.14', str(cm.warning))
+        self.assertEqual('version_info is deprecated and will be removed in Python 3.14',
+                         str(cm.warning))
 
     def test_dbapi2_version(self):
         with self.assertWarns(DeprecationWarning) as cm:
             sqlite.dbapi2.version
         self.assertEqual(cm.filename,  __file__)
-        self.assertEqual('version is deprecated and will be removed in Python 3.14', str(cm.warning))
+        self.assertEqual('version is deprecated and will be removed in Python 3.14',
+                         str(cm.warning))
 
     def test_dbapi2_version_info(self):
         with self.assertWarns(DeprecationWarning) as cm:
             sqlite.dbapi2.version_info
         self.assertEqual(cm.filename,  __file__)
-        self.assertEqual('version_info is deprecated and will be removed in Python 3.14', str(cm.warning))
+        self.assertEqual('version_info is deprecated and will be removed in Python 3.14',
+                         str(cm.warning))
 
     def test_thread_safety(self):
         self.assertIn(sqlite.threadsafety, {0, 1, 3},
