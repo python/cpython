@@ -2354,6 +2354,7 @@ class _BasePathTest(object):
         self.assertIs((P / 'fileA\udfff').is_char_device(), False)
         self.assertIs((P / 'fileA\x00').is_char_device(), False)
 
+    @unittest.skipIf(sys.platform == "win32", "Windows does not have /dev/null")
     def test_is_char_device_true(self):
         # Under Unix, /dev/null should generally be a char device.
         P = self.cls('/dev/null')
