@@ -811,19 +811,18 @@ as internal buffering of data.
    copy-on-write disk blocks; supported file systems include btrfs and XFS)
    and server-side copy (in the case of NFS).
 
-   The copy is done as if both files are opened in binary mode, meaning that
-   this function will not convert encodings or line endings even if you have
-   opened the files in text mode for that as described in :ref:`tut-files`.
+   The function copies bytes between two file descriptors. Text options, like
+   the encoding and the line ending, are ignored.
 
    The return value is the amount of bytes copied. This could be less than the
    amount requested.
 
    .. note::
 
-      :func:`os.copy_file_range` should not be used for copying a range of a
-      pseudo file from a special filesystem like procfs and sysfs. It will
-      always copy no bytes and return 0 as if the file was empty because of a
-      known Linux kernel issue.
+      On Linux, :func:`os.copy_file_range` should not be used for copying a
+      range of a pseudo file from a special filesystem like procfs and sysfs.
+      It will always copy no bytes and return 0 as if the file was empty
+      because of a known Linux kernel issue.
 
    .. availability:: Linux kernel >= 4.5 or glibc >= 2.27.
 
