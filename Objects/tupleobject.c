@@ -521,7 +521,7 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
     PyObject **dest = np->ob_item;
     if (input_size == 1) {
         PyObject *elem = a->ob_item[0];
-        Py_RefcntAdd(elem, n);
+        _Py_RefcntAdd(elem, n);
         PyObject **dest_end = dest + output_size;
         while (dest < dest_end) {
             *dest++ = elem;
@@ -531,7 +531,7 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
         PyObject **src = a->ob_item;
         PyObject **src_end = src + input_size;
         while (src < src_end) {
-            Py_RefcntAdd(*src, n);
+            _Py_RefcntAdd(*src, n);
             *dest++ = *src++;
         }
 

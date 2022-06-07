@@ -567,7 +567,7 @@ list_repeat(PyListObject *a, Py_ssize_t n)
     PyObject **dest = np->ob_item;
     if (input_size == 1) {
         PyObject *elem = a->ob_item[0];
-        Py_RefcntAdd(elem, n);
+        _Py_RefcntAdd(elem, n);
         PyObject **dest_end = dest + output_size;
         while (dest < dest_end) {
             *dest++ = elem;
@@ -577,7 +577,7 @@ list_repeat(PyListObject *a, Py_ssize_t n)
         PyObject **src = a->ob_item;
         PyObject **src_end = src + input_size;
         while (src < src_end) {
-            Py_RefcntAdd(*src, n);
+            _Py_RefcntAdd(*src, n);
             *dest++ = *src++;
         }
 
@@ -758,7 +758,7 @@ list_inplace_repeat(PyListObject *self, Py_ssize_t n)
 
     PyObject **items = self->ob_item;
     for (Py_ssize_t j = 0; j < input_size; j++) {
-        Py_RefcntAdd(items[j], n-1);
+        _Py_RefcntAdd(items[j], n-1);
     }
     _Py_memory_repeat((char *)items, sizeof(PyObject *)*output_size, sizeof(PyObject *)*input_size);
 
