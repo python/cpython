@@ -707,7 +707,7 @@ module_exec(PyObject *module)
         goto error;
     }
 
-    if (PyModule_AddStringConstant(module, "version", PYSQLITE_VERSION) < 0) {
+    if (PyModule_AddStringConstant(module, "_deprecated_version", PYSQLITE_VERSION) < 0) {
         goto error;
     }
 
