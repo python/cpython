@@ -719,9 +719,7 @@ Imparting contextual information in handlers
 Each :class:`~Handler` has its own chain of filters.
 If you want to add contextual information to a :class:`LogRecord` without leaking
 it to other handlers, you can use a filter that returns
-a new :class:`~LogRecord` instead of modifying it in-place:
-
-script::
+a new :class:`~LogRecord` instead of modifying it in-place, as shown in the following script::
 
     import copy
     import logging
