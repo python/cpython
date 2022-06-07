@@ -10,8 +10,6 @@ typedef struct {
     PyObject *it_seq; /* Set to NULL when iterator is exhausted */
 } seqiterobject;
 
-_Py_IDENTIFIER(iter);
-
 PyObject *
 PySeqIter_New(PyObject *seq)
 {
@@ -106,10 +104,10 @@ static PyObject *
 iter_reduce(seqiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     if (it->it_seq != NULL)
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
+        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
                              it->it_seq, it->it_index);
     else
-        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
@@ -245,10 +243,10 @@ static PyObject *
 calliter_reduce(calliterobject *it, PyObject *Py_UNUSED(ignored))
 {
     if (it->it_callable != NULL && it->it_sentinel != NULL)
-        return Py_BuildValue("N(OO)", _PyEval_GetBuiltinId(&PyId_iter),
+        return Py_BuildValue("N(OO)", _PyEval_GetBuiltin(&_Py_ID(iter)),
                              it->it_callable, it->it_sentinel);
     else
-        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
 }
 
 static PyMethodDef calliter_methods[] = {

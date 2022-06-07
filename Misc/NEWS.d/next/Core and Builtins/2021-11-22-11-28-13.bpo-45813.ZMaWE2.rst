@@ -1,1 +1,0 @@
-Fix crash when calling coro.cr_frame.clear() after coroutine has been freed.

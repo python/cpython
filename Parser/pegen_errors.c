@@ -248,10 +248,26 @@ get_error_line_from_tokenizer_buffers(Parser *p, Py_ssize_t lineno)
     assert((p->tok->fp == NULL && p->tok->str != NULL) || p->tok->fp == stdin);
 
     char *cur_line = p->tok->fp_interactive ? p->tok->interactive_src_start : p->tok->str;
-    assert(cur_line != NULL);
+    if (cur_line == NULL) {
+        assert(p->tok->fp_interactive);
+        // We can reach this point if the tokenizer buffers for interactive source have not been
+        // initialized because we failed to decode the original source with the given locale.
+        return PyUnicode_FromStringAndSize("", 0);
+    }
 
-    for (int i = 0; i < lineno - 1; i++) {
-        cur_line = strchr(cur_line, '\n') + 1;
+    Py_ssize_t relative_lineno = p->starting_lineno ? lineno - p->starting_lineno + 1 : lineno;
+    const char* buf_end = p->tok->fp_interactive ? p->tok->interactive_src_end : p->tok->inp;
+
+    for (int i = 0; i < relative_lineno - 1; i++) {
+        char *new_line = strchr(cur_line, '\n') + 1;
+        // The assert is here for debug builds but the conditional that
+        // follows is there so in release builds we do not crash at the cost
+        // to report a potentially wrong line.
+        assert(new_line != NULL && new_line <= buf_end);
+        if (new_line == NULL || new_line > buf_end) {
+            break;
+        }
+        cur_line = new_line;
     }
 
     char *next_newline;
@@ -300,7 +316,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         goto error;
     }
 
-    if (p->tok->fp_interactive) {
+    if (p->tok->fp_interactive && p->tok->interactive_src_start != NULL) {
         error_line = get_error_line_from_tokenizer_buffers(p, lineno);
     }
     else if (p->start_rule == Py_file_input) {
@@ -388,7 +404,8 @@ _Pypegen_set_syntax_error(Parser* p, Token* last_token) {
     if (PyErr_Occurred()) {
         // Prioritize tokenizer errors to custom syntax errors raised
         // on the second phase only if the errors come from the parser.
-        if (p->tok->done == E_DONE && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+        int is_tok_ok = (p->tok->done == E_DONE || p->tok->done == E_OK);
+        if (is_tok_ok && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
             _PyPegen_tokenize_full_source_to_check_for_errors(p);
         }
         // Propagate the existing syntax error.
@@ -399,7 +416,7 @@ _Pypegen_set_syntax_error(Parser* p, Token* last_token) {
         RAISE_SYNTAX_ERROR("error at start before reading any input");
     }
     // Parser encountered EOF (End of File) unexpectedtly
-    if (p->tok->done == E_EOF) {
+    if (last_token->type == ERRORTOKEN && p->tok->done == E_EOF) {
         if (p->tok->level) {
             raise_unclosed_parentheses_error(p);
         } else {

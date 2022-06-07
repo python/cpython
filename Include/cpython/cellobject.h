@@ -21,8 +21,25 @@ PyAPI_FUNC(PyObject *) PyCell_New(PyObject *);
 PyAPI_FUNC(PyObject *) PyCell_Get(PyObject *);
 PyAPI_FUNC(int) PyCell_Set(PyObject *, PyObject *);
 
-#define PyCell_GET(op) (((PyCellObject *)(op))->ob_ref)
-#define PyCell_SET(op, v) ((void)(((PyCellObject *)(op))->ob_ref = v))
+static inline PyObject* PyCell_GET(PyObject *op) {
+    PyCellObject *cell;
+    assert(PyCell_Check(op));
+    cell = _Py_CAST(PyCellObject*, op);
+    return cell->ob_ref;
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyCell_GET(op) PyCell_GET(_PyObject_CAST(op))
+#endif
+
+static inline void PyCell_SET(PyObject *op, PyObject *value) {
+    PyCellObject *cell;
+    assert(PyCell_Check(op));
+    cell = _Py_CAST(PyCellObject*, op);
+    cell->ob_ref = value;
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyCell_SET(op, value) PyCell_SET(_PyObject_CAST(op), (value))
+#endif
 
 #ifdef __cplusplus
 }

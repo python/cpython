@@ -10,6 +10,7 @@
 *.so.*
 *.dylib
 *.dll
+*.wasm
 *.orig
 *.pyc
 *.pyd
@@ -57,6 +58,8 @@ Doc/.env/
 Include/pydtrace_probes.h
 Lib/distutils/command/*.pdb
 Lib/lib2to3/*.pickle
+Lib/site-packages/*
+!Lib/site-packages/README.txt
 Lib/test/data/*
 !Lib/test/data/README
 /_bootstrap_python
@@ -74,6 +77,7 @@ Mac/pythonw
 Misc/python.pc
 Misc/python-embed.pc
 Misc/python-config.sh
+Modules/Setup.bootstrap
 Modules/Setup.config
 Modules/Setup.local
 Modules/Setup.stdlib
@@ -114,6 +118,8 @@ Tools/unicode/data/
 /config.log
 /config.status
 /config.status.lineno
+# hendrikmuhs/ccache-action@v1
+/.ccache
 /platform
 /profile-clean-stamp
 /profile-run-stamp

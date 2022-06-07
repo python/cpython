@@ -235,7 +235,7 @@ class TestVec2D(VectorComparisonMixin, unittest.TestCase):
         self.assertVectorsAlmostEqual(-vec, expected)
 
     def test_distance(self):
-        self.assertEqual(abs(Vec2D(6, 8)), 10)
+        self.assertAlmostEqual(abs(Vec2D(6, 8)), 10)
         self.assertEqual(abs(Vec2D(0, 0)), 0)
         self.assertAlmostEqual(abs(Vec2D(2.5, 6)), 6.5)
 

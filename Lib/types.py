@@ -52,11 +52,9 @@ ModuleType = type(sys)
 
 try:
     raise TypeError
-except TypeError:
-    tb = sys.exc_info()[2]
-    TracebackType = type(tb)
-    FrameType = type(tb.tb_frame)
-    tb = None; del tb
+except TypeError as exc:
+    TracebackType = type(exc.__traceback__)
+    FrameType = type(exc.__traceback__.tb_frame)
 
 # For Jython, the following two types are identical
 GetSetDescriptorType = type(FunctionType.__code__)
@@ -82,7 +80,7 @@ def resolve_bases(bases):
     updated = False
     shift = 0
     for i, base in enumerate(bases):
-        if isinstance(base, type):
+        if isinstance(base, type) and not isinstance(base, GenericAlias):
             continue
         if not hasattr(base, "__mro_entries__"):
             continue

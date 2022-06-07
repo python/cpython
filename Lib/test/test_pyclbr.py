@@ -216,11 +216,10 @@ class PyclbrTest(TestCase):
     def test_others(self):
         cm = self.checkModule
 
-        # These were once about the 10 longest modules
+        # These were once some of the longest modules.
         cm('random', ignore=('Random',))  # from _random import Random as CoreGenerator
         cm('cgi', ignore=('log',))      # set with = in module
         cm('pickle', ignore=('partial', 'PickleBuffer'))
-        cm('aifc', ignore=('_aifc_params',))  # set with = in module
         cm('sre_parse', ignore=('dump', 'groups', 'pos')) # from sre_constants import *; property
         cm(
             'pdb',

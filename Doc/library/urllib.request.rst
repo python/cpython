@@ -218,6 +218,7 @@ The following classes are provided:
    (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11"``, while
    :mod:`urllib`'s default user agent string is
    ``"Python-urllib/2.6"`` (on Python 2.6).
+   All header keys are sent in camel case.
 
    An appropriate ``Content-Type`` header should be included if the *data*
    argument is present.  If this header has not been provided and *data*
@@ -546,7 +547,8 @@ request.
    name, and later calls will overwrite previous calls in case the *key* collides.
    Currently, this is no loss of HTTP functionality, since all headers which have
    meaning when used more than once have a (header-specific) way of gaining the
-   same functionality using only one header.
+   same functionality using only one header.  Note that headers added using
+   this method are also added to redirected requests.
 
 
 .. method:: Request.add_unredirected_header(key, header)
@@ -737,7 +739,7 @@ The following attribute and methods should only be used by classes derived from
 
    This method, if implemented, will be called by the parent
    :class:`OpenerDirector`.  It should return a file-like object as described in
-   the return value of the :meth:`open` of :class:`OpenerDirector`, or ``None``.
+   the return value of the :meth:`~OpenerDirector.open` method of :class:`OpenerDirector`, or ``None``.
    It should raise :exc:`~urllib.error.URLError`, unless a truly exceptional
    thing happens (for example, :exc:`MemoryError` should not be mapped to
    :exc:`URLError`).

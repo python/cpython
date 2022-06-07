@@ -21,19 +21,23 @@ _Py_IsMainThread(void)
 }
 
 
+static inline PyInterpreterState *
+_PyInterpreterState_Main(void)
+{
+    return _PyRuntime.interpreters.main;
+}
+
 static inline int
 _Py_IsMainInterpreter(PyInterpreterState *interp)
 {
-    /* Use directly _PyRuntime rather than tstate->interp->runtime, since
-       this function is used in performance critical code path (ceval) */
-    return (interp == _PyRuntime.interpreters.main);
+    return (interp == _PyInterpreterState_Main());
 }
 
 
 static inline const PyConfig *
 _Py_GetMainConfig(void)
 {
-    PyInterpreterState *interp = _PyRuntime.interpreters.main;
+    PyInterpreterState *interp = _PyInterpreterState_Main();
     if (interp == NULL) {
         return NULL;
     }
@@ -45,7 +49,7 @@ _Py_GetMainConfig(void)
 static inline int
 _Py_ThreadCanHandleSignals(PyInterpreterState *interp)
 {
-    return (_Py_IsMainThread() && interp == _PyRuntime.interpreters.main);
+    return (_Py_IsMainThread() && _Py_IsMainInterpreter(interp));
 }
 
 
@@ -60,18 +64,10 @@ _Py_ThreadCanHandlePendingCalls(void)
 /* Variable and macro for in-line access to current thread
    and interpreter state */
 
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-PyAPI_FUNC(PyThreadState*) _PyThreadState_GetTSS(void);
-#endif
-
 static inline PyThreadState*
 _PyRuntimeState_GetThreadState(_PyRuntimeState *runtime)
 {
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    return _PyThreadState_GetTSS();
-#else
     return (PyThreadState*)_Py_atomic_load_relaxed(&runtime->gilstate.tstate_current);
-#endif
 }
 
 /* Get the current Python thread state.
@@ -86,11 +82,7 @@ _PyRuntimeState_GetThreadState(_PyRuntimeState *runtime)
 static inline PyThreadState*
 _PyThreadState_GET(void)
 {
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    return _PyThreadState_GetTSS();
-#else
     return _PyRuntimeState_GetThreadState(&_PyRuntime);
-#endif
 }
 
 PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalError_TstateNULL(const char *func);
@@ -127,20 +119,17 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 
 // PyThreadState functions
 
+PyAPI_FUNC(void) _PyThreadState_SetCurrent(PyThreadState *tstate);
+// We keep this around exclusively for stable ABI compatibility.
 PyAPI_FUNC(void) _PyThreadState_Init(
     PyThreadState *tstate);
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(
     _PyRuntimeState *runtime,
     PyThreadState *tstate);
 
-static inline void
-_PyThreadState_PauseTracing(PyThreadState *tstate)
-{
-    tstate->cframe->use_tracing = 0;
-}
 
 static inline void
-_PyThreadState_ResumeTracing(PyThreadState *tstate)
+_PyThreadState_UpdateTracingState(PyThreadState *tstate)
 {
     int use_tracing = (tstate->c_tracefunc != NULL
                        || tstate->c_profilefunc != NULL);
@@ -166,7 +155,7 @@ extern void _PySignal_AfterFork(void);
 PyAPI_FUNC(int) _PyState_AddModule(
     PyThreadState *tstate,
     PyObject* module,
-    struct PyModuleDef* def);
+    PyModuleDef* def);
 
 
 PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);

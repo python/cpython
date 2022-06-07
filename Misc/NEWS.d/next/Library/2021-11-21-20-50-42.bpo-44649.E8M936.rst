@@ -1,2 +1,0 @@
-Handle dataclass(slots=True) with a field that has default a default value,
-but for which init=False.

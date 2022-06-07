@@ -21,14 +21,14 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import datetime
-import sys
 import unittest
 import sqlite3 as sqlite
 import weakref
 import functools
-from test import support
 
-from .test_dbapi import memory_database, managed_connect, cx_limit
+from test import support
+from unittest.mock import patch
+from test.test_sqlite3.test_dbapi import memory_database, cx_limit
 
 
 class RegressionTests(unittest.TestCase):
@@ -231,28 +231,6 @@ class RegressionTests(unittest.TestCase):
         with self.assertRaises(sqlite.ProgrammingError):
             cur = con.cursor()
 
-    def test_cursor_registration(self):
-        """
-        Verifies that subclassed cursor classes are correctly registered with
-        the connection object, too.  (fetch-across-rollback problem)
-        """
-        class Connection(sqlite.Connection):
-            def cursor(self):
-                return Cursor(self)
-
-        class Cursor(sqlite.Cursor):
-            def __init__(self, con):
-                sqlite.Cursor.__init__(self, con)
-
-        con = Connection(":memory:")
-        cur = con.cursor()
-        cur.execute("create table foo(x)")
-        cur.executemany("insert into foo(x) values (?)", [(3,), (4,), (5,)])
-        cur.execute("select x from foo")
-        con.rollback()
-        with self.assertRaises(sqlite.InterfaceError):
-            cur.fetchall()
-
     def test_auto_commit(self):
         """
         Verifies that creating a connection in autocommit mode works.
@@ -342,12 +320,15 @@ class RegressionTests(unittest.TestCase):
 
     def test_null_character(self):
         # Issue #21147
-        con = sqlite.connect(":memory:")
-        self.assertRaises(ValueError, con, "\0select 1")
-        self.assertRaises(ValueError, con, "select 1\0")
-        cur = con.cursor()
-        self.assertRaises(ValueError, cur.execute, " \0select 2")
-        self.assertRaises(ValueError, cur.execute, "select 2\0")
+        cur = self.con.cursor()
+        queries = ["\0select 1", "select 1\0"]
+        for query in queries:
+            with self.subTest(query=query):
+                self.assertRaisesRegex(sqlite.ProgrammingError, "null char",
+                                       self.con.execute, query)
+            with self.subTest(query=query):
+                self.assertRaisesRegex(sqlite.ProgrammingError, "null char",
+                                       cur.execute, query)
 
     def test_surrogates(self):
         con = sqlite.connect(":memory:")
@@ -441,7 +422,7 @@ class RegressionTests(unittest.TestCase):
         self.assertEqual(val, b'')
 
     def test_table_lock_cursor_replace_stmt(self):
-        with managed_connect(":memory:", in_mem=True) as con:
+        with memory_database() as con:
             cur = con.cursor()
             cur.execute("create table t(t)")
             cur.executemany("insert into t values(?)",
@@ -452,7 +433,7 @@ class RegressionTests(unittest.TestCase):
             con.commit()
 
     def test_table_lock_cursor_dealloc(self):
-        with managed_connect(":memory:", in_mem=True) as con:
+        with memory_database() as con:
             con.execute("create table t(t)")
             con.executemany("insert into t values(?)",
                             ((v,) for v in range(5)))
@@ -463,7 +444,7 @@ class RegressionTests(unittest.TestCase):
             con.commit()
 
     def test_table_lock_cursor_non_readonly_select(self):
-        with managed_connect(":memory:", in_mem=True) as con:
+        with memory_database() as con:
             con.execute("create table t(t)")
             con.executemany("insert into t values(?)",
                             ((v,) for v in range(5)))
@@ -478,7 +459,7 @@ class RegressionTests(unittest.TestCase):
             con.commit()
 
     def test_executescript_step_through_select(self):
-        with managed_connect(":memory:", in_mem=True) as con:
+        with memory_database() as con:
             values = [(v,) for v in range(5)]
             with con:
                 con.execute("create table t(t)")
@@ -487,6 +468,44 @@ class RegressionTests(unittest.TestCase):
             con.create_function("step", 1, lambda x: steps.append((x,)))
             con.executescript("select step(t) from t")
             self.assertEqual(steps, values)
+
+
+class RecursiveUseOfCursors(unittest.TestCase):
+    # GH-80254: sqlite3 should not segfault for recursive use of cursors.
+    msg = "Recursive use of cursors not allowed"
+
+    def setUp(self):
+        self.con = sqlite.connect(":memory:",
+                                  detect_types=sqlite.PARSE_COLNAMES)
+        self.cur = self.con.cursor()
+        self.cur.execute("create table test(x foo)")
+        self.cur.executemany("insert into test(x) values (?)",
+                             [("foo",), ("bar",)])
+
+    def tearDown(self):
+        self.cur.close()
+        self.con.close()
+
+    def test_recursive_cursor_init(self):
+        conv = lambda x: self.cur.__init__(self.con)
+        with patch.dict(sqlite.converters, {"INIT": conv}):
+            self.cur.execute(f'select x as "x [INIT]", x from test')
+            self.assertRaisesRegex(sqlite.ProgrammingError, self.msg,
+                                   self.cur.fetchall)
+
+    def test_recursive_cursor_close(self):
+        conv = lambda x: self.cur.close()
+        with patch.dict(sqlite.converters, {"CLOSE": conv}):
+            self.cur.execute(f'select x as "x [CLOSE]", x from test')
+            self.assertRaisesRegex(sqlite.ProgrammingError, self.msg,
+                                   self.cur.fetchall)
+
+    def test_recursive_cursor_iter(self):
+        conv = lambda x, l=[]: self.cur.fetchone() if l else l.append(None)
+        with patch.dict(sqlite.converters, {"ITER": conv}):
+            self.cur.execute(f'select x as "x [ITER]", x from test')
+            self.assertRaisesRegex(sqlite.ProgrammingError, self.msg,
+                                   self.cur.fetchall)
 
 
 if __name__ == "__main__":

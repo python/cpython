@@ -271,6 +271,15 @@ class TestLongMessage(unittest.TestCase):
                              r"\+ \{'key': 'value'\}$",
                              r"\+ \{'key': 'value'\} : oops$"])
 
+    def testAssertDictContainsSubset(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+
+            self.assertMessages('assertDictContainsSubset', ({'key': 'value'}, {}),
+                                ["^Missing: 'key'$", "^oops$",
+                                 "^Missing: 'key'$",
+                                 "^Missing: 'key' : oops$"])
+
     def testAssertMultiLineEqual(self):
         self.assertMessages('assertMultiLineEqual', ("", "foo"),
                             [r"\+ foo$", "^oops$",

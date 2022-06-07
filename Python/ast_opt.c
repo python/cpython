@@ -268,15 +268,10 @@ parse_literal(PyObject *fmt, Py_ssize_t *ppos, PyArena *arena)
     PyObject *str = PyUnicode_Substring(fmt, start, pos);
     /* str = str.replace('%%', '%') */
     if (str && has_percents) {
-        _Py_static_string(PyId_double_percent, "%%");
-        _Py_static_string(PyId_percent, "%");
-        PyObject *double_percent = _PyUnicode_FromId(&PyId_double_percent);
-        PyObject *percent = _PyUnicode_FromId(&PyId_percent);
-        if (!double_percent || !percent) {
-            Py_DECREF(str);
-            return NULL;
-        }
-        Py_SETREF(str, PyUnicode_Replace(str, double_percent, percent, -1));
+        _Py_DECLARE_STR(percent, "%");
+        _Py_DECLARE_STR(dbl_percent, "%%");
+        Py_SETREF(str, PyUnicode_Replace(str, &_Py_STR(dbl_percent),
+                                         &_Py_STR(percent), -1));
     }
     if (!str) {
         return NULL;
@@ -315,6 +310,7 @@ simple_format_arg_parse(PyObject *fmt, Py_ssize_t *ppos,
             case ' ': *flags |= F_BLANK; continue;
             case '#': *flags |= F_ALT; continue;
             case '0': *flags |= F_ZERO; continue;
+            case 'z': *flags |= F_NO_NEG_0; continue;
         }
         break;
     }
@@ -618,7 +614,6 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 
     ops = node->v.Compare.ops;
     args = node->v.Compare.comparators;
-    /* TODO: optimize cases with literal arguments. */
     /* Change literal list or set in 'in' or 'not in' into
        tuple or frozenset respectively. */
     i = asdl_seq_LEN(ops) - 1;
@@ -661,15 +656,6 @@ static int astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState 
     } \
 }
 
-#define CALL_INT_SEQ(FUNC, TYPE, ARG) { \
-    int i; \
-    asdl_int_seq *seq = (ARG); /* avoid variable capture */ \
-    for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-        TYPE elt = (TYPE)asdl_seq_GET(seq, i); \
-        if (!FUNC(elt, ctx_, state)) \
-            return 0; \
-    } \
-}
 
 static int
 astfold_body(asdl_stmt_seq *stmts, PyArena *ctx_, _PyASTOptimizeState *state)
@@ -973,6 +959,12 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL_SEQ(astfold_stmt, stmt, node_->v.Try.orelse);
         CALL_SEQ(astfold_stmt, stmt, node_->v.Try.finalbody);
         break;
+    case TryStar_kind:
+        CALL_SEQ(astfold_stmt, stmt, node_->v.TryStar.body);
+        CALL_SEQ(astfold_excepthandler, excepthandler, node_->v.TryStar.handlers);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.TryStar.orelse);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.TryStar.finalbody);
+        break;
     case Assert_kind:
         CALL(astfold_expr, expr_ty, node_->v.Assert.test);
         CALL_OPT(astfold_expr, expr_ty, node_->v.Assert.msg);
@@ -1080,7 +1072,6 @@ astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 #undef CALL
 #undef CALL_OPT
 #undef CALL_SEQ
-#undef CALL_INT_SEQ
 
 /* See comments in symtable.c. */
 #define COMPILER_STACK_FRAME_SCALE 3

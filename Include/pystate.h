@@ -11,16 +11,6 @@ extern "C" {
 removed (with effort). */
 #define MAX_CO_EXTRA_USERS 255
 
-/* Forward declarations for PyFrameObject, PyThreadState
-   and PyInterpreterState */
-struct _ts;
-struct _is;
-
-/* struct _ts is defined in cpython/pystate.h */
-typedef struct _ts PyThreadState;
-/* struct _is is defined in internal/pycore_interp.h */
-typedef struct _is PyInterpreterState;
-
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
@@ -50,10 +40,10 @@ PyAPI_FUNC(int64_t) PyInterpreterState_GetID(PyInterpreterState *);
 /* State unique per thread */
 
 /* New in 3.3 */
-PyAPI_FUNC(int) PyState_AddModule(PyObject*, struct PyModuleDef*);
-PyAPI_FUNC(int) PyState_RemoveModule(struct PyModuleDef*);
+PyAPI_FUNC(int) PyState_AddModule(PyObject*, PyModuleDef*);
+PyAPI_FUNC(int) PyState_RemoveModule(PyModuleDef*);
 #endif
-PyAPI_FUNC(PyObject*) PyState_FindModule(struct PyModuleDef*);
+PyAPI_FUNC(PyObject*) PyState_FindModule(PyModuleDef*);
 
 PyAPI_FUNC(PyThreadState *) PyThreadState_New(PyInterpreterState *);
 PyAPI_FUNC(void) PyThreadState_Clear(PyThreadState *);

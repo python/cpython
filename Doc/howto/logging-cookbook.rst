@@ -7,7 +7,8 @@ Logging Cookbook
 :Author: Vinay Sajip <vinay_sajip at red-dove dot com>
 
 This page contains a number of recipes related to logging, which have been found
-useful in the past.
+useful in the past. For links to tutorial and reference information, please see
+:ref:`cookbook-ref-links`.
 
 .. currentmodule:: logging
 
@@ -541,6 +542,17 @@ alternative there, as well as adapting the above script to use your alternative
 serialization.
 
 
+Running a logging socket listener in production
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To run a logging listener in production, you may need to use a process-management tool
+such as `Supervisor <http://supervisord.org/>`_. `Here
+<https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b>`_ is a Gist which
+provides the bare-bones files to run the above functionality using Supervisor: you
+will need to change the `/path/to/` parts in the Gist to reflect the actual paths you
+want to use.
+
+
 .. _context-info:
 
 Adding contextual information to your logging output
@@ -981,6 +993,17 @@ to this (remembering to first import :mod:`concurrent.futures`)::
     with concurrent.futures.ProcessPoolExecutor(max_workers=10) as executor:
         for i in range(10):
             executor.submit(worker_process, queue, worker_configurer)
+
+Deploying Web applications using Gunicorn and uWSGI
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When deploying Web applications using `Gunicorn <https://gunicorn.org/>`_ or `uWSGI
+<https://uwsgi-docs.readthedocs.io/en/latest/>`_ (or similar), multiple worker
+processes are created to handle client requests. In such environments, avoid creating
+file-based handlers directly in your web application. Instead, use a
+:class:`SocketHandler` to log from the web application to a listener in a separate
+process. This can be set up using a process management tool such as Supervisor - see
+`Running a logging socket listener in production`_ for more details.
 
 
 Using file rotation
@@ -1766,22 +1789,15 @@ Python used.
 If you need more specialised processing, you can use a custom JSON encoder,
 as in the following complete example::
 
-    from __future__ import unicode_literals
-
     import json
     import logging
 
-    # This next bit is to ensure the script runs unchanged on 2.x and 3.x
-    try:
-        unicode
-    except NameError:
-        unicode = str
 
     class Encoder(json.JSONEncoder):
         def default(self, o):
             if isinstance(o, set):
                 return tuple(o)
-            elif isinstance(o, unicode):
+            elif isinstance(o, str):
                 return o.encode('unicode_escape').decode('ascii')
             return super().default(o)
 
@@ -3060,3 +3076,23 @@ the :ref:`existing mechanisms <context-info>` for passing contextual
 information into your logs and restrict the loggers created to those describing
 areas within your application (generally modules, but occasionally slightly
 more fine-grained than that).
+
+.. _cookbook-ref-links:
+
+Other resources
+---------------
+
+.. seealso::
+
+   Module :mod:`logging`
+      API reference for the logging module.
+
+   Module :mod:`logging.config`
+      Configuration API for the logging module.
+
+   Module :mod:`logging.handlers`
+      Useful handlers included with the logging module.
+
+   :ref:`Basic Tutorial <logging-basic-tutorial>`
+
+   :ref:`Advanced Tutorial <logging-advanced-tutorial>`

@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_pymem.h"         // _PyTraceMalloc_Config
+#include "pycore_code.h"         // stats
 
 #include <stdbool.h>
 #include <stdlib.h>               // malloc()
@@ -89,7 +90,7 @@ struct _PyTraceMalloc_Config _Py_tracemalloc_config = _PyTraceMalloc_Config_INIT
 
 
 static void *
-_PyMem_RawMalloc(void *ctx, size_t size)
+_PyMem_RawMalloc(void *Py_UNUSED(ctx), size_t size)
 {
     /* PyMem_RawMalloc(0) means malloc(1). Some systems would return NULL
        for malloc(0), which would be treated as an error. Some platforms would
@@ -101,7 +102,7 @@ _PyMem_RawMalloc(void *ctx, size_t size)
 }
 
 static void *
-_PyMem_RawCalloc(void *ctx, size_t nelem, size_t elsize)
+_PyMem_RawCalloc(void *Py_UNUSED(ctx), size_t nelem, size_t elsize)
 {
     /* PyMem_RawCalloc(0, 0) means calloc(1, 1). Some systems would return NULL
        for calloc(0, 0), which would be treated as an error. Some platforms
@@ -115,7 +116,7 @@ _PyMem_RawCalloc(void *ctx, size_t nelem, size_t elsize)
 }
 
 static void *
-_PyMem_RawRealloc(void *ctx, void *ptr, size_t size)
+_PyMem_RawRealloc(void *Py_UNUSED(ctx), void *ptr, size_t size)
 {
     if (size == 0)
         size = 1;
@@ -123,7 +124,7 @@ _PyMem_RawRealloc(void *ctx, void *ptr, size_t size)
 }
 
 static void
-_PyMem_RawFree(void *ctx, void *ptr)
+_PyMem_RawFree(void *Py_UNUSED(ctx), void *ptr)
 {
     free(ptr);
 }
@@ -131,21 +132,22 @@ _PyMem_RawFree(void *ctx, void *ptr)
 
 #ifdef MS_WINDOWS
 static void *
-_PyObject_ArenaVirtualAlloc(void *ctx, size_t size)
+_PyObject_ArenaVirtualAlloc(void *Py_UNUSED(ctx), size_t size)
 {
     return VirtualAlloc(NULL, size,
                         MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 }
 
 static void
-_PyObject_ArenaVirtualFree(void *ctx, void *ptr, size_t size)
+_PyObject_ArenaVirtualFree(void *Py_UNUSED(ctx), void *ptr,
+    size_t Py_UNUSED(size))
 {
     VirtualFree(ptr, 0, MEM_RELEASE);
 }
 
 #elif defined(ARENAS_USE_MMAP)
 static void *
-_PyObject_ArenaMmap(void *ctx, size_t size)
+_PyObject_ArenaMmap(void *Py_UNUSED(ctx), size_t size)
 {
     void *ptr;
     ptr = mmap(NULL, size, PROT_READ|PROT_WRITE,
@@ -157,20 +159,20 @@ _PyObject_ArenaMmap(void *ctx, size_t size)
 }
 
 static void
-_PyObject_ArenaMunmap(void *ctx, void *ptr, size_t size)
+_PyObject_ArenaMunmap(void *Py_UNUSED(ctx), void *ptr, size_t size)
 {
     munmap(ptr, size);
 }
 
 #else
 static void *
-_PyObject_ArenaMalloc(void *ctx, size_t size)
+_PyObject_ArenaMalloc(void *Py_UNUSED(ctx), size_t size)
 {
     return malloc(size);
 }
 
 static void
-_PyObject_ArenaFree(void *ctx, void *ptr, size_t size)
+_PyObject_ArenaFree(void *Py_UNUSED(ctx), void *ptr, size_t Py_UNUSED(size))
 {
     free(ptr);
 }
@@ -615,6 +617,10 @@ PyMem_Malloc(size_t size)
     /* see PyMem_RawMalloc() */
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
+    OBJECT_STAT_INC_COND(allocations512, size < 512);
+    OBJECT_STAT_INC_COND(allocations4k, size >= 512 && size < 4094);
+    OBJECT_STAT_INC_COND(allocations_big, size >= 4094);
+    OBJECT_STAT_INC(allocations);
     return _PyMem.malloc(_PyMem.ctx, size);
 }
 
@@ -624,6 +630,10 @@ PyMem_Calloc(size_t nelem, size_t elsize)
     /* see PyMem_RawMalloc() */
     if (elsize != 0 && nelem > (size_t)PY_SSIZE_T_MAX / elsize)
         return NULL;
+    OBJECT_STAT_INC_COND(allocations512, elsize < 512);
+    OBJECT_STAT_INC_COND(allocations4k, elsize >= 512 && elsize < 4094);
+    OBJECT_STAT_INC_COND(allocations_big, elsize >= 4094);
+    OBJECT_STAT_INC(allocations);
     return _PyMem.calloc(_PyMem.ctx, nelem, elsize);
 }
 
@@ -639,6 +649,7 @@ PyMem_Realloc(void *ptr, size_t new_size)
 void
 PyMem_Free(void *ptr)
 {
+    OBJECT_STAT_INC(frees);
     _PyMem.free(_PyMem.ctx, ptr);
 }
 
@@ -695,6 +706,10 @@ PyObject_Malloc(size_t size)
     /* see PyMem_RawMalloc() */
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
+    OBJECT_STAT_INC_COND(allocations512, size < 512);
+    OBJECT_STAT_INC_COND(allocations4k, size >= 512 && size < 4094);
+    OBJECT_STAT_INC_COND(allocations_big, size >= 4094);
+    OBJECT_STAT_INC(allocations);
     return _PyObject.malloc(_PyObject.ctx, size);
 }
 
@@ -704,6 +719,10 @@ PyObject_Calloc(size_t nelem, size_t elsize)
     /* see PyMem_RawMalloc() */
     if (elsize != 0 && nelem > (size_t)PY_SSIZE_T_MAX / elsize)
         return NULL;
+    OBJECT_STAT_INC_COND(allocations512, elsize < 512);
+    OBJECT_STAT_INC_COND(allocations4k, elsize >= 512 && elsize < 4094);
+    OBJECT_STAT_INC_COND(allocations_big, elsize >= 4094);
+    OBJECT_STAT_INC(allocations);
     return _PyObject.calloc(_PyObject.ctx, nelem, elsize);
 }
 
@@ -719,6 +738,7 @@ PyObject_Realloc(void *ptr, size_t new_size)
 void
 PyObject_Free(void *ptr)
 {
+    OBJECT_STAT_INC(frees);
     _PyObject.free(_PyObject.ctx, ptr);
 }
 
@@ -896,7 +916,6 @@ static int running_on_valgrind = -1;
  * currently targets.
  */
 #define SYSTEM_PAGE_SIZE        (4 * 1024)
-#define SYSTEM_PAGE_SIZE_MASK   (SYSTEM_PAGE_SIZE - 1)
 
 /*
  * Maximum amount of memory managed by the allocator for small requests.
@@ -1569,8 +1588,9 @@ new_arena(void)
         const char *opt = Py_GETENV("PYTHONMALLOCSTATS");
         debug_stats = (opt != NULL && *opt != '\0');
     }
-    if (debug_stats)
+    if (debug_stats) {
         _PyObject_DebugMallocStats(stderr);
+    }
 
     if (unused_arena_objects == NULL) {
         uint i;
@@ -1665,7 +1685,7 @@ new_arena(void)
    pymalloc.  When the radix tree is used, 'poolp' is unused.
  */
 static bool
-address_in_range(void *p, poolp pool)
+address_in_range(void *p, poolp Py_UNUSED(pool))
 {
     return arena_map_is_used(p);
 }
@@ -1926,7 +1946,7 @@ allocate_from_new_pool(uint size)
    or when the max memory limit has been reached.
 */
 static inline void*
-pymalloc_alloc(void *ctx, size_t nbytes)
+pymalloc_alloc(void *Py_UNUSED(ctx), size_t nbytes)
 {
 #ifdef WITH_VALGRIND
     if (UNLIKELY(running_on_valgrind == -1)) {
@@ -2196,7 +2216,7 @@ insert_to_freepool(poolp pool)
    Return 1 if it was freed.
    Return 0 if the block was not allocated by pymalloc_alloc(). */
 static inline int
-pymalloc_free(void *ctx, void *p)
+pymalloc_free(void *Py_UNUSED(ctx), void *p)
 {
     assert(p != NULL);
 

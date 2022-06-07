@@ -489,6 +489,9 @@ class NonCallableMock(Base):
 
     def _mock_add_spec(self, spec, spec_set, _spec_as_instance=False,
                        _eat_self=False):
+        if _is_instance_mock(spec):
+            raise InvalidSpecError(f'Cannot spec a Mock object. [object={spec!r}]')
+
         _spec_class = None
         _spec_signature = None
         _spec_asyncs = []
@@ -1589,9 +1592,9 @@ class _patch(object):
 def _get_target(target):
     try:
         target, attribute = target.rsplit('.', 1)
-    except (TypeError, ValueError):
-        raise TypeError("Need a valid target to patch. You supplied: %r" %
-                        (target,))
+    except (TypeError, ValueError, AttributeError):
+        raise TypeError(
+            f"Need a valid target to patch. You supplied: {target!r}")
     return partial(pkgutil.resolve_name, target), attribute
 
 
@@ -1940,7 +1943,7 @@ right = ' '.join('r%s' % n for n in numerics.split())
 _non_defaults = {
     '__get__', '__set__', '__delete__', '__reversed__', '__missing__',
     '__reduce__', '__reduce_ex__', '__getinitargs__', '__getnewargs__',
-    '__getstate__', '__setstate__', '__getformat__', '__setformat__',
+    '__getstate__', '__setstate__', '__getformat__',
     '__repr__', '__dir__', '__subclasses__', '__format__',
     '__getnewargs_ex__',
 }
@@ -2789,6 +2792,7 @@ FunctionTypes = (
 
 
 file_spec = None
+open_spec = None
 
 
 def _to_stream(read_data):
@@ -2845,8 +2849,12 @@ def mock_open(mock=None, read_data=''):
         import _io
         file_spec = list(set(dir(_io.TextIOWrapper)).union(set(dir(_io.BytesIO))))
 
+    global open_spec
+    if open_spec is None:
+        import _io
+        open_spec = list(set(dir(_io.open)))
     if mock is None:
-        mock = MagicMock(name='open', spec=open)
+        mock = MagicMock(name='open', spec=open_spec)
 
     handle = MagicMock(spec=file_spec)
     handle.__enter__.return_value = handle

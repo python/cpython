@@ -8,11 +8,10 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import script_helper
+from test.support import warnings_helper
 import unittest
 import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import imp
+imp = warnings_helper.import_deprecated('imp')
 import _imp
 
 
@@ -23,7 +22,7 @@ def requires_load_dynamic(meth):
     """Decorator to skip a test if not running under CPython or lacking
     imp.load_dynamic()."""
     meth = support.cpython_only(meth)
-    return unittest.skipIf(not hasattr(imp, 'load_dynamic'),
+    return unittest.skipIf(getattr(imp, 'load_dynamic', None) is None,
                            'imp.load_dynamic() required')(meth)
 
 

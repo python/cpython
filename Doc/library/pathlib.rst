@@ -815,6 +815,9 @@ call fails (for example because the path doesn't exist).
 
    .. audit-event:: pathlib.Path.glob self,pattern pathlib.Path.glob
 
+   .. versionchanged:: 3.11
+      Return only directories if *pattern* ends with a pathname components
+      separator (:data:`~os.sep` or :data:`~os.altsep`).
 
 .. method:: Path.group()
 
@@ -914,7 +917,7 @@ call fails (for example because the path doesn't exist).
 
    The children are yielded in arbitrary order, and the special entries
    ``'.'`` and ``'..'`` are not included.  If a file is removed from or added
-   to the directory after creating the iterator, whether an path object for
+   to the directory after creating the iterator, whether a path object for
    that file be included is unspecified.
 
 .. method:: Path.lchmod(mode)
@@ -1018,8 +1021,9 @@ call fails (for example because the path doesn't exist).
 
    Rename this file or directory to the given *target*, and return a new Path
    instance pointing to *target*.  On Unix, if *target* exists and is a file,
-   it will be replaced silently if the user has permission.  *target* can be
-   either a string or another path object::
+   it will be replaced silently if the user has permission.
+   On Windows, if *target* exists, :exc:`FileExistsError` will be raised.
+   *target* can be either a string or another path object::
 
       >>> p = Path('foo')
       >>> p.open('w').write('some text')
@@ -1042,7 +1046,7 @@ call fails (for example because the path doesn't exist).
 
    Rename this file or directory to the given *target*, and return a new Path
    instance pointing to *target*.  If *target* points to an existing file or
-   directory, it will be unconditionally replaced.
+   empty directory, it will be unconditionally replaced.
 
    The target path may be absolute or relative. Relative paths are interpreted
    relative to the current working directory, *not* the directory of the Path
@@ -1050,6 +1054,18 @@ call fails (for example because the path doesn't exist).
 
    .. versionchanged:: 3.8
       Added return value, return the new Path instance.
+
+
+.. method:: Path.absolute()
+
+   Make the path absolute, without normalization or resolving symlinks.
+   Returns a new path object::
+
+      >>> p = Path('tests')
+      >>> p
+      PosixPath('tests')
+      >>> p.absolute()
+      PosixPath('/home/antoine/pathlib/tests')
 
 
 .. method:: Path.resolve(strict=False)
@@ -1092,6 +1108,9 @@ call fails (for example because the path doesn't exist).
 
    .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
 
+   .. versionchanged:: 3.11
+      Return only directories if *pattern* ends with a pathname components
+      separator (:data:`~os.sep` or :data:`~os.altsep`).
 
 .. method:: Path.rmdir()
 
@@ -1149,25 +1168,6 @@ call fails (for example because the path doesn't exist).
       of :func:`os.link`'s.
 
    .. versionadded:: 3.10
-
-.. method:: Path.link_to(target)
-
-   Make *target* a hard link to this path.
-
-   .. warning::
-
-      This function does not make this path a hard link to *target*, despite
-      the implication of the function and argument names. The argument order
-      (target, link) is the reverse of :func:`Path.symlink_to` and
-      :func:`Path.hardlink_to`, but matches that of :func:`os.link`.
-
-   .. versionadded:: 3.8
-
-   .. deprecated:: 3.10
-
-      This method is deprecated in favor of :meth:`Path.hardlink_to`, as the
-      argument order of :meth:`Path.link_to`  does not match that of
-      :meth:`Path.symlink_to`.
 
 
 .. method:: Path.touch(mode=0o666, exist_ok=True)
@@ -1239,13 +1239,14 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 
    Not all pairs of functions/methods below are equivalent. Some of them,
    despite having some overlapping use-cases, have different semantics. They
-   include :func:`os.path.abspath` and :meth:`Path.resolve`,
+   include :func:`os.path.abspath` and :meth:`Path.absolute`,
    :func:`os.path.relpath` and :meth:`PurePath.relative_to`.
 
 ====================================   ==============================
 :mod:`os` and :mod:`os.path`           :mod:`pathlib`
 ====================================   ==============================
-:func:`os.path.abspath`                :meth:`Path.resolve` [#]_
+:func:`os.path.abspath`                :meth:`Path.absolute` [#]_
+:func:`os.path.realpath`               :meth:`Path.resolve`
 :func:`os.chmod`                       :meth:`Path.chmod`
 :func:`os.mkdir`                       :meth:`Path.mkdir`
 :func:`os.makedirs`                    :meth:`Path.mkdir`
@@ -1278,5 +1279,5 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 
 .. rubric:: Footnotes
 
-.. [#] :func:`os.path.abspath` does not resolve symbolic links while :meth:`Path.resolve` does.
+.. [#] :func:`os.path.abspath` normalizes the resulting path, which may change its meaning in the presence of symlinks, while :meth:`Path.absolute` does not.
 .. [#] :meth:`Path.relative_to` requires ``self`` to be the subpath of the argument, but :func:`os.path.relpath` does not.

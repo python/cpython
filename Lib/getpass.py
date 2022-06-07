@@ -158,7 +158,7 @@ def getuser():
     database.  This works on Windows as long as USERNAME is set.
     Any failure to find a username raises OSError.
 
-    .. versionchanged:: 3.11
+    .. versionchanged:: 3.12
         Failure to find a username raises :exc:`OSError` instead of
         :exc:`ImportError` on non-Unix platforms or :exc:`KeyError`
         on Unix platforms if the password database is empty.

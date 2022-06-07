@@ -154,17 +154,17 @@ The :keyword:`for` statement is used to iterate over the elements of a sequence
 (such as a string, tuple or list) or other iterable object:
 
 .. productionlist:: python-grammar
-   for_stmt: "for" `target_list` "in" `expression_list` ":" `suite`
+   for_stmt: "for" `target_list` "in" `starred_list` ":" `suite`
            : ["else" ":" `suite`]
 
-The expression list is evaluated once; it should yield an iterable object.  An
-iterator is created for the result of the ``expression_list``.  The suite is
-then executed once for each item provided by the iterator, in the order returned
-by the iterator.  Each item in turn is assigned to the target list using the
-standard rules for assignments (see :ref:`assignment`), and then the suite is
-executed.  When the items are exhausted (which is immediately when the sequence
-is empty or an iterator raises a :exc:`StopIteration` exception), the suite in
-the :keyword:`!else` clause, if present, is executed, and the loop terminates.
+The ``starred_list`` expression is evaluated once; it should yield an
+:term:`iterable` object.  An :term:`iterator` is created for that iterable.
+The first item provided
+by the iterator is then assigned to the target list using the standard
+rules for assignments (see :ref:`assignment`), and the suite is executed.  This
+repeats for each item provided by the iterator.  When the iterator is exhausted,
+the suite in the :keyword:`!else` clause,
+if present, is executed, and the loop terminates.
 
 .. index::
    statement: break
@@ -196,30 +196,12 @@ the built-in function :func:`range` returns an iterator of integers suitable to
 emulate the effect of Pascal's ``for i := a to b do``; e.g., ``list(range(3))``
 returns the list ``[0, 1, 2]``.
 
-.. note::
-
-   .. index::
-      single: loop; over mutable sequence
-      single: mutable sequence; loop over
-
-   There is a subtlety when the sequence is being modified by the loop (this can
-   only occur for mutable sequences, e.g. lists).  An internal counter is used
-   to keep track of which item is used next, and this is incremented on each
-   iteration.  When this counter has reached the length of the sequence the loop
-   terminates.  This means that if the suite deletes the current (or a previous)
-   item from the sequence, the next item will be skipped (since it gets the
-   index of the current item which has already been treated).  Likewise, if the
-   suite inserts an item in the sequence before the current item, the current
-   item will be treated again the next time through the loop. This can lead to
-   nasty bugs that can be avoided by making a temporary copy using a slice of
-   the whole sequence, e.g., ::
-
-      for x in a[:]:
-          if x < 0: a.remove(x)
-
+.. versionchanged:: 3.11
+   Starred elements are now allowed in the expression list.
 
 .. _try:
 .. _except:
+.. _except_star:
 .. _finally:
 
 The :keyword:`!try` statement
@@ -237,12 +219,16 @@ The :keyword:`try` statement specifies exception handlers and/or cleanup code
 for a group of statements:
 
 .. productionlist:: python-grammar
-   try_stmt: `try1_stmt` | `try2_stmt`
+   try_stmt: `try1_stmt` | `try2_stmt` | `try3_stmt`
    try1_stmt: "try" ":" `suite`
             : ("except" [`expression` ["as" `identifier`]] ":" `suite`)+
             : ["else" ":" `suite`]
             : ["finally" ":" `suite`]
    try2_stmt: "try" ":" `suite`
+            : ("except" "*" `expression` ["as" `identifier`] ":" `suite`)+
+            : ["else" ":" `suite`]
+            : ["finally" ":" `suite`]
+   try3_stmt: "try" ":" `suite`
             : "finally" ":" `suite`
 
 
@@ -254,9 +240,10 @@ is found that matches the exception.  An expression-less except clause, if
 present, must be last; it matches any exception.  For an except clause with an
 expression, that expression is evaluated, and the clause matches the exception
 if the resulting object is "compatible" with the exception.  An object is
-compatible with an exception if the object is the class or a base class of the exception
-object, or a tuple containing an item that is the class or a base class of
-the exception object.
+compatible with an exception if the object is the class or a
+:term:`non-virtual base class <abstract base class>` of the exception object,
+or a tuple containing an item that is the class or a non-virtual base class
+of the exception object.
 
 If no except clause matches the exception, the search for an exception handler
 continues in the surrounding code and on the invocation stack.  [#]_
@@ -324,6 +311,47 @@ when leaving an exception handler::
    (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
    >>> print(sys.exc_info())
    (None, None, None)
+
+.. index::
+   keyword: except_star
+
+The :keyword:`except*<except_star>` clause(s) are used for handling
+:exc:`ExceptionGroup`\ s. The exception type for matching is interpreted as in
+the case of :keyword:`except`, but in the case of exception groups we can have
+partial matches when the type matches some of the exceptions in the group.
+This means that multiple except* clauses can execute, each handling part of
+the exception group. Each clause executes once and handles an exception group
+of all matching exceptions.  Each exception in the group is handled by at most
+one except* clause, the first that matches it. ::
+
+   >>> try:
+   ...     raise ExceptionGroup("eg",
+   ...         [ValueError(1), TypeError(2), OSError(3), OSError(4)])
+   ... except* TypeError as e:
+   ...     print(f'caught {type(e)} with nested {e.exceptions}')
+   ... except* OSError as e:
+   ...     print(f'caught {type(e)} with nested {e.exceptions}')
+   ...
+   caught <class 'ExceptionGroup'> with nested (TypeError(2),)
+   caught <class 'ExceptionGroup'> with nested (OSError(3), OSError(4))
+     + Exception Group Traceback (most recent call last):
+     |   File "<stdin>", line 2, in <module>
+     | ExceptionGroup: eg
+     +-+---------------- 1 ----------------
+       | ValueError: 1
+       +------------------------------------
+   >>>
+
+   Any remaining exceptions that were not handled by any except* clause
+   are re-raised at the end, combined into an exception group along with
+   all exceptions that were raised from within except* clauses.
+
+   An except* clause must have a matching type, and this type cannot be a
+   subclass of :exc:`BaseExceptionGroup`. It is not possible to mix except
+   and except* in the same :keyword:`try`. :keyword:`break`,
+   :keyword:`continue` and :keyword:`return` cannot appear in an except*
+   clause.
+
 
 .. index::
    keyword: else

@@ -32,12 +32,12 @@ PyAPI_FUNC(void) _PyModule_Clear(PyObject *);
 PyAPI_FUNC(void) _PyModule_ClearDict(PyObject *);
 PyAPI_FUNC(int) _PyModuleSpec_IsInitializing(PyObject *);
 #endif
-PyAPI_FUNC(struct PyModuleDef*) PyModule_GetDef(PyObject*);
+PyAPI_FUNC(PyModuleDef*) PyModule_GetDef(PyObject*);
 PyAPI_FUNC(void*) PyModule_GetState(PyObject*);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
 /* New in 3.5 */
-PyAPI_FUNC(PyObject *) PyModuleDef_Init(struct PyModuleDef*);
+PyAPI_FUNC(PyObject *) PyModuleDef_Init(PyModuleDef*);
 PyAPI_DATA(PyTypeObject) PyModuleDef_Type;
 #endif
 
@@ -48,20 +48,19 @@ typedef struct PyModuleDef_Base {
   PyObject* m_copy;
 } PyModuleDef_Base;
 
-#define PyModuleDef_HEAD_INIT { \
-    PyObject_HEAD_INIT(NULL)    \
-    NULL, /* m_init */          \
-    0,    /* m_index */         \
-    NULL, /* m_copy */          \
+#define PyModuleDef_HEAD_INIT {  \
+    PyObject_HEAD_INIT(_Py_NULL) \
+    _Py_NULL, /* m_init */       \
+    0,        /* m_index */      \
+    _Py_NULL, /* m_copy */       \
   }
 
-struct PyModuleDef_Slot;
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
 /* New in 3.5 */
-typedef struct PyModuleDef_Slot{
+struct PyModuleDef_Slot {
     int slot;
     void *value;
-} PyModuleDef_Slot;
+};
 
 #define Py_mod_create 1
 #define Py_mod_exec 2
@@ -72,17 +71,17 @@ typedef struct PyModuleDef_Slot{
 
 #endif /* New in 3.5 */
 
-typedef struct PyModuleDef{
+struct PyModuleDef {
   PyModuleDef_Base m_base;
   const char* m_name;
   const char* m_doc;
   Py_ssize_t m_size;
   PyMethodDef *m_methods;
-  struct PyModuleDef_Slot* m_slots;
+  PyModuleDef_Slot *m_slots;
   traverseproc m_traverse;
   inquiry m_clear;
   freefunc m_free;
-} PyModuleDef;
+};
 
 
 // Internal C API

@@ -93,6 +93,10 @@ _Py_device_encoding(int fd)
 
     return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
 #else
+    if (_PyRuntime.preconfig.utf8_mode) {
+        _Py_DECLARE_STR(utf_8, "utf-8");
+        return Py_NewRef(&_Py_STR(utf_8));
+    }
     return _Py_GetLocaleEncodingObject();
 #endif
 }
@@ -599,9 +603,9 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
     return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
                             errors);
 #else
-    int use_utf8 = (Py_UTF8Mode == 1);
+    int use_utf8 = (_PyRuntime.preconfig.utf8_mode >= 1);
 #ifdef MS_WINDOWS
-    use_utf8 |= !Py_LegacyWindowsFSEncodingFlag;
+    use_utf8 |= (_PyRuntime.preconfig.legacy_windows_fs_encoding == 0);
 #endif
     if (use_utf8) {
         return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
@@ -791,9 +795,9 @@ encode_locale_ex(const wchar_t *text, char **str, size_t *error_pos,
     return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
                             raw_malloc, errors);
 #else
-    int use_utf8 = (Py_UTF8Mode == 1);
+    int use_utf8 = (_PyRuntime.preconfig.utf8_mode >= 1);
 #ifdef MS_WINDOWS
-    use_utf8 |= !Py_LegacyWindowsFSEncodingFlag;
+    use_utf8 |= (_PyRuntime.preconfig.legacy_windows_fs_encoding == 0);
 #endif
     if (use_utf8) {
         return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
@@ -873,10 +877,10 @@ _Py_EncodeLocaleEx(const wchar_t *text, char **str,
 
 // Get the current locale encoding name:
 //
-// - Return "UTF-8" if _Py_FORCE_UTF8_LOCALE macro is defined (ex: on Android)
-// - Return "UTF-8" if the UTF-8 Mode is enabled
+// - Return "utf-8" if _Py_FORCE_UTF8_LOCALE macro is defined (ex: on Android)
+// - Return "utf-8" if the UTF-8 Mode is enabled
 // - On Windows, return the ANSI code page (ex: "cp1250")
-// - Return "UTF-8" if nl_langinfo(CODESET) returns an empty string.
+// - Return "utf-8" if nl_langinfo(CODESET) returns an empty string.
 // - Otherwise, return nl_langinfo(CODESET).
 //
 // Return NULL on memory allocation failure.
@@ -888,12 +892,8 @@ _Py_GetLocaleEncoding(void)
 #ifdef _Py_FORCE_UTF8_LOCALE
     // On Android langinfo.h and CODESET are missing,
     // and UTF-8 is always used in mbstowcs() and wcstombs().
-    return _PyMem_RawWcsdup(L"UTF-8");
+    return _PyMem_RawWcsdup(L"utf-8");
 #else
-    const PyPreConfig *preconfig = &_PyRuntime.preconfig;
-    if (preconfig->utf8_mode) {
-        return _PyMem_RawWcsdup(L"UTF-8");
-    }
 
 #ifdef MS_WINDOWS
     wchar_t encoding[23];
@@ -906,7 +906,7 @@ _Py_GetLocaleEncoding(void)
     if (!encoding || encoding[0] == '\0') {
         // Use UTF-8 if nl_langinfo() returns an empty string. It can happen on
         // macOS if the LC_CTYPE locale is not supported.
-        return _PyMem_RawWcsdup(L"UTF-8");
+        return _PyMem_RawWcsdup(L"utf-8");
     }
 
     wchar_t *wstr;
@@ -956,7 +956,7 @@ static wchar_t *
 _Py_ConvertWCharForm(const wchar_t *source, Py_ssize_t size,
                      const char *tocode, const char *fromcode)
 {
-    Py_BUILD_ASSERT(sizeof(wchar_t) == 4);
+    static_assert(sizeof(wchar_t) == 4, "wchar_t must be 32-bit");
 
     /* Ensure we won't overflow the size. */
     if (size > (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t))) {
@@ -1244,18 +1244,12 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 #ifdef MS_WINDOWS
     int err;
 
-#if USE_UNICODE_WCHAR_CACHE
-    const wchar_t *wpath = _PyUnicode_AsUnicode(path);
-#else /* USE_UNICODE_WCHAR_CACHE */
     wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     if (wpath == NULL)
         return -2;
 
     err = _Py_wstat(wpath, statbuf);
-#if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free(wpath);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     return err;
 #else
     int ret;
@@ -1663,11 +1657,8 @@ _Py_fopen_obj(PyObject *path, const char *mode)
                      Py_TYPE(path));
         return NULL;
     }
-#if USE_UNICODE_WCHAR_CACHE
-    const wchar_t *wpath = _PyUnicode_AsUnicode(path);
-#else /* USE_UNICODE_WCHAR_CACHE */
+
     wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     if (wpath == NULL)
         return NULL;
 
@@ -1675,9 +1666,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
                                 wmode, Py_ARRAY_LENGTH(wmode));
     if (usize == 0) {
         PyErr_SetFromWindowsErr(0);
-#if !USE_UNICODE_WCHAR_CACHE
         PyMem_Free(wpath);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         return NULL;
     }
 
@@ -1687,9 +1676,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
         Py_END_ALLOW_THREADS
     } while (f == NULL
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-#if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free(wpath);
-#endif /* USE_UNICODE_WCHAR_CACHE */
 #else
     PyObject *bytes;
     const char *path_bytes;
@@ -2000,13 +1987,28 @@ _Py_wrealpath(const wchar_t *path,
 #endif
 
 
-#ifndef MS_WINDOWS
 int
 _Py_isabs(const wchar_t *path)
 {
+#ifdef MS_WINDOWS
+    const wchar_t *tail;
+    HRESULT hr = PathCchSkipRoot(path, &tail);
+    if (FAILED(hr) || path == tail) {
+        return 0;
+    }
+    if (tail == &path[1] && (path[0] == SEP || path[0] == ALTSEP)) {
+        // Exclude paths with leading SEP
+        return 0;
+    }
+    if (tail == &path[2] && path[1] == L':') {
+        // Exclude drive-relative paths (e.g. C:filename.ext)
+        return 0;
+    }
+    return 1;
+#else
     return (path[0] == SEP);
-}
 #endif
+}
 
 
 /* Get an absolute path.
@@ -2017,49 +2019,25 @@ _Py_isabs(const wchar_t *path)
 int
 _Py_abspath(const wchar_t *path, wchar_t **abspath_p)
 {
-#ifdef MS_WINDOWS
-    wchar_t woutbuf[MAX_PATH], *woutbufp = woutbuf;
-    DWORD result;
-
-    result = GetFullPathNameW(path,
-                              Py_ARRAY_LENGTH(woutbuf), woutbuf,
-                              NULL);
-    if (!result) {
-        return -1;
-    }
-
-    if (result > Py_ARRAY_LENGTH(woutbuf)) {
-        if ((size_t)result <= (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
-            woutbufp = PyMem_RawMalloc((size_t)result * sizeof(wchar_t));
-        }
-        else {
-            woutbufp = NULL;
-        }
-        if (!woutbufp) {
-            *abspath_p = NULL;
-            return 0;
-        }
-
-        result = GetFullPathNameW(path, result, woutbufp, NULL);
-        if (!result) {
-            PyMem_RawFree(woutbufp);
+    if (path[0] == '\0' || !wcscmp(path, L".")) {
+        wchar_t cwd[MAXPATHLEN + 1];
+        cwd[Py_ARRAY_LENGTH(cwd) - 1] = 0;
+        if (!_Py_wgetcwd(cwd, Py_ARRAY_LENGTH(cwd) - 1)) {
+            /* unable to get the current directory */
             return -1;
         }
-    }
-
-    if (woutbufp != woutbuf) {
-        *abspath_p = woutbufp;
+        *abspath_p = _PyMem_RawWcsdup(cwd);
         return 0;
     }
 
-    *abspath_p = _PyMem_RawWcsdup(woutbufp);
-    return 0;
-#else
     if (_Py_isabs(path)) {
         *abspath_p = _PyMem_RawWcsdup(path);
         return 0;
     }
 
+#ifdef MS_WINDOWS
+    return _PyOS_getfullpathname(path, abspath_p);
+#else
     wchar_t cwd[MAXPATHLEN + 1];
     cwd[Py_ARRAY_LENGTH(cwd) - 1] = 0;
     if (!_Py_wgetcwd(cwd, Py_ARRAY_LENGTH(cwd) - 1)) {
@@ -2102,7 +2080,8 @@ join_relfile(wchar_t *buffer, size_t bufsize,
              const wchar_t *dirname, const wchar_t *relfile)
 {
 #ifdef MS_WINDOWS
-    if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile, 0))) {
+    if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile,
+        PATHCCH_ALLOW_LONG_PATHS))) {
         return -1;
     }
 #else
@@ -2180,99 +2159,132 @@ _Py_find_basename(const wchar_t *filename)
     return 0;
 }
 
-
-/* Remove navigation elements such as "." and "..".
-
-   This is mostly a C implementation of posixpath.normpath().
-   Return 0 on success.  Return -1 if "orig" is too big for the buffer. */
-int
-_Py_normalize_path(const wchar_t *path, wchar_t *buf, const size_t buf_len)
+/* In-place path normalisation. Returns the start of the normalized
+   path, which will be within the original buffer. Guaranteed to not
+   make the path longer, and will not fail. 'size' is the length of
+   the path, if known. If -1, the first null character will be assumed
+   to be the end of the path. */
+wchar_t *
+_Py_normpath(wchar_t *path, Py_ssize_t size)
 {
-    assert(path && *path != L'\0');
-    assert(*path == SEP);  // an absolute path
-    if (wcslen(path) + 1 >= buf_len) {
-        return -1;
+    if (!path[0] || size == 0) {
+        return path;
     }
+    wchar_t *pEnd = size >= 0 ? &path[size] : NULL;
+    wchar_t *p1 = path;     // sequentially scanned address in the path
+    wchar_t *p2 = path;     // destination of a scanned character to be ljusted
+    wchar_t *minP2 = path;  // the beginning of the destination range
+    wchar_t lastC = L'\0';  // the last ljusted character, p2[-1] in most cases
 
-    int dots = -1;
-    int check_leading = 1;
-    const wchar_t *buf_start = buf;
-    wchar_t *buf_next = buf;
-    // The resulting filename will never be longer than path.
-    for (const wchar_t *remainder = path; *remainder != L'\0'; remainder++) {
-        wchar_t c = *remainder;
-        buf_next[0] = c;
-        buf_next++;
-        if (c == SEP) {
-            assert(dots <= 2);
-            if (dots == 2) {
-                // Turn "/x/y/../z" into "/x/z".
-                buf_next -= 4;  // "/../"
-                assert(*buf_next == SEP);
-                // We cap it off at the root, so "/../spam" becomes "/spam".
-                if (buf_next == buf_start) {
-                    buf_next++;
-                }
-                else {
-                    // Move to the previous SEP in the buffer.
-                    while (*(buf_next - 1) != SEP) {
-                        assert(buf_next != buf_start);
-                        buf_next--;
-                    }
-                }
-            }
-            else if (dots == 1) {
-                // Turn "/./" into "/".
-                buf_next -= 2;  // "./"
-                assert(*(buf_next - 1) == SEP);
-            }
-            else if (dots == 0) {
-                // Turn "//" into "/".
-                buf_next--;
-                assert(*(buf_next - 1) == SEP);
-                if (check_leading) {
-                    if (buf_next - 1 == buf && *(remainder + 1) != SEP) {
-                        // Leave a leading "//" alone, unless "///...".
-                        buf_next++;
-                        buf_start++;
-                    }
-                    check_leading = 0;
-                }
-            }
-            dots = 0;
+#define IS_END(x) (pEnd ? (x) == pEnd : !*(x))
+#ifdef ALTSEP
+#define IS_SEP(x) (*(x) == SEP || *(x) == ALTSEP)
+#else
+#define IS_SEP(x) (*(x) == SEP)
+#endif
+#define SEP_OR_END(x) (IS_SEP(x) || IS_END(x))
+
+    // Skip leading '.\'
+    if (p1[0] == L'.' && IS_SEP(&p1[1])) {
+        path = &path[2];
+        while (IS_SEP(path) && !IS_END(path)) {
+            path++;
         }
-        else {
-            check_leading = 0;
-            if (dots >= 0) {
-                if (c == L'.' && dots < 2) {
-                    dots++;
-                }
-                else {
-                    dots = -1;
-                }
+        p1 = p2 = minP2 = path;
+        lastC = SEP;
+    }
+#ifdef MS_WINDOWS
+    // Skip past drive segment and update minP2
+    else if (p1[0] && p1[1] == L':') {
+        *p2++ = *p1++;
+        *p2++ = *p1++;
+        minP2 = p2;
+        lastC = L':';
+    }
+    // Skip past all \\-prefixed paths, including \\?\, \\.\,
+    // and network paths, including the first segment.
+    else if (IS_SEP(&p1[0]) && IS_SEP(&p1[1])) {
+        int sepCount = 2;
+        *p2++ = SEP;
+        *p2++ = SEP;
+        p1 += 2;
+        for (; !IS_END(p1) && sepCount; ++p1) {
+            if (IS_SEP(p1)) {
+                --sepCount;
+                *p2++ = lastC = SEP;
+            } else {
+                *p2++ = lastC = *p1;
             }
+        }
+        if (sepCount) {
+            minP2 = p2;      // Invalid path
+        } else {
+            minP2 = p2 - 1;  // Absolute path has SEP at minP2
         }
     }
-    if (dots >= 0) {
-        // Strip any trailing dots and trailing slash.
-        buf_next -= dots + 1;  // "/" or "/." or "/.."
-        assert(*buf_next == SEP);
-        if (buf_next == buf_start) {
-            // Leave the leading slash for root.
-            buf_next++;
+#else
+    // Skip past two leading SEPs
+    else if (IS_SEP(&p1[0]) && IS_SEP(&p1[1]) && !IS_SEP(&p1[2])) {
+        *p2++ = *p1++;
+        *p2++ = *p1++;
+        minP2 = p2 - 1;  // Absolute path has SEP at minP2
+        lastC = SEP;
+    }
+#endif /* MS_WINDOWS */
+
+    /* if pEnd is specified, check that. Else, check for null terminator */
+    for (; !IS_END(p1); ++p1) {
+        wchar_t c = *p1;
+#ifdef ALTSEP
+        if (c == ALTSEP) {
+            c = SEP;
         }
-        else {
-            if (dots == 2) {
-                // Move to the previous SEP in the buffer.
-                do {
-                    assert(buf_next != buf_start);
-                    buf_next--;
-                } while (*(buf_next) != SEP);
+#endif
+        if (lastC == SEP) {
+            if (c == L'.') {
+                int sep_at_1 = SEP_OR_END(&p1[1]);
+                int sep_at_2 = !sep_at_1 && SEP_OR_END(&p1[2]);
+                if (sep_at_2 && p1[1] == L'.') {
+                    wchar_t *p3 = p2;
+                    while (p3 != minP2 && *--p3 == SEP) { }
+                    while (p3 != minP2 && *(p3 - 1) != SEP) { --p3; }
+                    if (p2 == minP2
+                        || (p3[0] == L'.' && p3[1] == L'.' && IS_SEP(&p3[2])))
+                    {
+                        // Previous segment is also ../, so append instead.
+                        // Relative path does not absorb ../ at minP2 as well.
+                        *p2++ = L'.';
+                        *p2++ = L'.';
+                        lastC = L'.';
+                    } else if (p3[0] == SEP) {
+                        // Absolute path, so absorb segment
+                        p2 = p3 + 1;
+                    } else {
+                        p2 = p3;
+                    }
+                    p1 += 1;
+                } else if (sep_at_1) {
+                } else {
+                    *p2++ = lastC = c;
+                }
+            } else if (c == SEP) {
+            } else {
+                *p2++ = lastC = c;
             }
+        } else {
+            *p2++ = lastC = c;
         }
     }
-    *buf_next = L'\0';
-    return 0;
+    *p2 = L'\0';
+    if (p2 != minP2) {
+        while (--p2 != minP2 && *p2 == SEP) {
+            *p2 = L'\0';
+        }
+    }
+#undef SEP_OR_END
+#undef IS_SEP
+#undef IS_END
+    return path;
 }
 
 
@@ -2599,10 +2611,11 @@ _Py_closerange(int first, int last)
     first = Py_MAX(first, 0);
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_CLOSE_RANGE
-    if (close_range(first, last, 0) == 0 || errno != ENOSYS) {
-        /* Any errors encountered while closing file descriptors are ignored;
-         * ENOSYS means no kernel support, though,
-         * so we'll fallback to the other methods. */
+    if (close_range(first, last, 0) == 0) {
+        /* close_range() ignores errors when it closes file descriptors.
+         * Possible reasons of an error return are lack of kernel support
+         * or denial of the underlying syscall by a seccomp sandbox on Linux.
+         * Fallback to other methods in case of any error. */
     }
     else
 #endif /* HAVE_CLOSE_RANGE */

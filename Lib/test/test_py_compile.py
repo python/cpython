@@ -119,6 +119,7 @@ class PyCompileTestsBase:
                      'non-root user required')
     @unittest.skipIf(os.name == 'nt',
                      'cannot control directory permissions on Windows')
+    @os_helper.skip_unless_working_chmod
     def test_exceptions_propagate(self):
         # Make sure that exceptions raised thanks to issues with writing
         # bytecode.
@@ -230,6 +231,7 @@ class PyCompileCLITestCase(unittest.TestCase):
     def tearDown(self):
         os_helper.rmtree(self.directory)
 
+    @support.requires_subprocess()
     def pycompilecmd(self, *args, **kwargs):
         # assert_python_* helpers don't return proc object. We'll just use
         # subprocess.run() instead of spawn_python() and its friends to test
