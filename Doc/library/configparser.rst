@@ -65,7 +65,7 @@ Let's take a very basic configuration file that looks like this:
    CompressionLevel = 9
    ForwardX11 = yes
 
-   [bitbucket.org]
+   [forge.example]
    User = hg
 
    [topsecret.server.example]
@@ -85,8 +85,8 @@ creating the above configuration file programmatically.
    >>> config['DEFAULT'] = {'ServerAliveInterval': '45',
    ...                      'Compression': 'yes',
    ...                      'CompressionLevel': '9'}
-   >>> config['bitbucket.org'] = {}
-   >>> config['bitbucket.org']['User'] = 'hg'
+   >>> config['forge.example'] = {}
+   >>> config['forge.example']['User'] = 'hg'
    >>> config['topsecret.server.example'] = {}
    >>> topsecret = config['topsecret.server.example']
    >>> topsecret['Port'] = '50022'     # mutates the parser
@@ -111,12 +111,12 @@ back and explore the data it holds.
    >>> config.read('example.ini')
    ['example.ini']
    >>> config.sections()
-   ['bitbucket.org', 'topsecret.server.example']
-   >>> 'bitbucket.org' in config
+   ['forge.example', 'topsecret.server.example']
+   >>> 'forge.example' in config
    True
    >>> 'python.org' in config
    False
-   >>> config['bitbucket.org']['User']
+   >>> config['forge.example']['User']
    'hg'
    >>> config['DEFAULT']['Compression']
    'yes'
@@ -125,14 +125,14 @@ back and explore the data it holds.
    'no'
    >>> topsecret['Port']
    '50022'
-   >>> for key in config['bitbucket.org']:  # doctest: +SKIP
+   >>> for key in config['forge.example']:  # doctest: +SKIP
    ...     print(key)
    user
    compressionlevel
    serveraliveinterval
    compression
    forwardx11
-   >>> config['bitbucket.org']['ForwardX11']
+   >>> config['forge.example']['ForwardX11']
    'yes'
 
 As we can see above, the API is pretty straightforward.  The only bit of magic
@@ -191,9 +191,9 @@ recognizes Boolean values from ``'yes'``/``'no'``, ``'on'``/``'off'``,
 
    >>> topsecret.getboolean('ForwardX11')
    False
-   >>> config['bitbucket.org'].getboolean('ForwardX11')
+   >>> config['forge.example'].getboolean('ForwardX11')
    True
-   >>> config.getboolean('bitbucket.org', 'Compression')
+   >>> config.getboolean('forge.example', 'Compression')
    True
 
 Apart from :meth:`~ConfigParser.getboolean`, config parsers also
@@ -235,7 +235,7 @@ the ``fallback`` keyword-only argument:
 
 .. doctest::
 
-   >>> config.get('bitbucket.org', 'monster',
+   >>> config.get('forge.example', 'monster',
    ...            fallback='No such things as monsters')
    'No such things as monsters'
 
