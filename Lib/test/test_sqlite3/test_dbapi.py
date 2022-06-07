@@ -57,33 +57,16 @@ class ModuleTests(unittest.TestCase):
         self.assertEqual(sqlite.apilevel, "2.0",
                          "apilevel is %s, should be 2.0" % sqlite.apilevel)
 
-    def test_version(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            sqlite.version
-        self.assertEqual(cm.filename,  __file__)
-        self.assertEqual('version is deprecated and will be removed in Python 3.14',
-                         str(cm.warning))
-
-    def test_version_info(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            sqlite.version_info
-        self.assertEqual(cm.filename,  __file__)
-        self.assertEqual('version_info is deprecated and will be removed in Python 3.14',
-                         str(cm.warning))
-
-    def test_dbapi2_version(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            sqlite.dbapi2.version
-        self.assertEqual(cm.filename,  __file__)
-        self.assertEqual('version is deprecated and will be removed in Python 3.14',
-                         str(cm.warning))
-
-    def test_dbapi2_version_info(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            sqlite.dbapi2.version_info
-        self.assertEqual(cm.filename,  __file__)
-        self.assertEqual('version_info is deprecated and will be removed in Python 3.14',
-                         str(cm.warning))
+    def test_deprecated_version(self):
+        msg = "deprecated and will be removed in Python 3.14"
+        for attr in "version", "version_info":
+            with self.subTest(attr=attr):
+                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                    getattr(sqlite, attr)
+                self.assertEqual(cm.filename,  __file__)
+                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                    getattr(sqlite.dbapi2, attr)
+                self.assertEqual(cm.filename,  __file__)
 
     def test_thread_safety(self):
         self.assertIn(sqlite.threadsafety, {0, 1, 3},
