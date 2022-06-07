@@ -28,6 +28,7 @@ DEFAULT_FRAMEWORK_FALLBACK = [
 
 DEFAULT_LIBRARY_FALLBACK = [
     os.path.expanduser("~/lib"),
+    "/opt/homebrew/lib",
     "/usr/local/lib",
     "/lib",
     "/usr/lib",
