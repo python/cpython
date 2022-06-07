@@ -450,6 +450,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
             support.gc_collect()  # For PyPy or other GCs.
             os.rmdir(dir)
 
+    @os_helper.skip_unless_working_chmod
     def test_file_mode(self):
         # _mkstemp_inner creates files with the proper mode
 
@@ -787,6 +788,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         finally:
             os.rmdir(dir)
 
+    @os_helper.skip_unless_working_chmod
     def test_mode(self):
         # mkdtemp creates directories with the proper mode
 
