@@ -1248,8 +1248,16 @@ textiowrapper_change_encoding(textio *self, PyObject *encoding,
             errors = self->errors;
         }
     }
-    else if (errors == Py_None) {
-        errors = &_Py_ID(strict);
+    else {
+        if (_PyUnicode_EqualToASCIIString(encoding, "locale")) {
+            encoding = _Py_GetLocaleEncodingObject();
+            if (encoding == NULL) {
+                return -1;
+            }
+        }
+        if (errors == Py_None) {
+            errors = &_Py_ID(strict);
+        }
     }
 
     const char *c_errors = PyUnicode_AsUTF8(errors);

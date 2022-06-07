@@ -108,6 +108,8 @@ def _compile(data, pattern, flags):
             else:
                 emit(ANY)
         elif op in REPEATING_CODES:
+            if flags & SRE_FLAG_TEMPLATE:
+                raise error("internal: unsupported template operator %r" % (op,))
             if _simple(av[2]):
                 emit(REPEATING_CODES[op][2])
                 skip = _len(code); emit(0)
@@ -162,12 +164,6 @@ def _compile(data, pattern, flags):
                     raise error("look-behind requires fixed-width pattern")
                 emit(lo) # look behind
             _compile(data, av[1], flags)
-            emit(SUCCESS)
-            code[skip] = _len(code) - skip
-        elif op is CALL:
-            emit(op)
-            skip = _len(code); emit(0)
-            _compile(data, av, flags)
             emit(SUCCESS)
             code[skip] = _len(code) - skip
         elif op is AT:

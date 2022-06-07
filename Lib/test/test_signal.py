@@ -107,6 +107,10 @@ class PosixTests(unittest.TestCase):
         script = os.path.join(dirname, 'signalinterproctester.py')
         assert_python_ok(script)
 
+    @unittest.skipUnless(
+        hasattr(signal, "valid_signals"),
+        "requires signal.valid_signals"
+    )
     def test_valid_signals(self):
         s = signal.valid_signals()
         self.assertIsInstance(s, set)
@@ -115,6 +119,19 @@ class PosixTests(unittest.TestCase):
         self.assertNotIn(0, s)
         self.assertNotIn(signal.NSIG, s)
         self.assertLess(len(s), signal.NSIG)
+
+        # gh-91145: Make sure that all SIGxxx constants exposed by the Python
+        # signal module have a number in the [0; signal.NSIG-1] range.
+        for name in dir(signal):
+            if not name.startswith("SIG"):
+                continue
+            if name in {"SIG_IGN", "SIG_DFL"}:
+                # SIG_IGN and SIG_DFL are pointers
+                continue
+            with self.subTest(name=name):
+                signum = getattr(signal, name)
+                self.assertGreaterEqual(signum, 0)
+                self.assertLess(signum, signal.NSIG)
 
     @unittest.skipUnless(sys.executable, "sys.executable required.")
     @support.requires_subprocess()
@@ -199,6 +216,7 @@ class WakeupFDTests(unittest.TestCase):
         self.assertRaises((ValueError, OSError),
                           signal.set_wakeup_fd, fd)
 
+    @unittest.skipUnless(support.has_socket_support, "needs working sockets.")
     def test_invalid_socket(self):
         sock = socket.socket()
         fd = sock.fileno()
@@ -209,6 +227,7 @@ class WakeupFDTests(unittest.TestCase):
     # Emscripten does not support fstat on pipes yet.
     # https://github.com/emscripten-core/emscripten/issues/16414
     @unittest.skipIf(support.is_emscripten, "Emscripten cannot fstat pipes.")
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_set_wakeup_fd_result(self):
         r1, w1 = os.pipe()
         self.addCleanup(os.close, r1)
@@ -227,6 +246,7 @@ class WakeupFDTests(unittest.TestCase):
         self.assertEqual(signal.set_wakeup_fd(-1), -1)
 
     @unittest.skipIf(support.is_emscripten, "Emscripten cannot fstat pipes.")
+    @unittest.skipUnless(support.has_socket_support, "needs working sockets.")
     def test_set_wakeup_fd_socket_result(self):
         sock1 = socket.socket()
         self.addCleanup(sock1.close)
@@ -247,6 +267,7 @@ class WakeupFDTests(unittest.TestCase):
     # function to test if a socket is in non-blocking mode.
     @unittest.skipIf(sys.platform == "win32", "tests specific to POSIX")
     @unittest.skipIf(support.is_emscripten, "Emscripten cannot fstat pipes.")
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_set_wakeup_fd_blocking(self):
         rfd, wfd = os.pipe()
         self.addCleanup(os.close, rfd)
@@ -307,6 +328,7 @@ class WakeupSignalTests(unittest.TestCase):
         assert_python_ok('-c', code)
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_wakeup_write_error(self):
         # Issue #16105: write() errors in the C signal handler should not
         # pass silently.
@@ -646,6 +668,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 @unittest.skipUnless(hasattr(signal, 'siginterrupt'), "needs signal.siginterrupt()")
 @support.requires_subprocess()
+@unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
 class SiginterruptTest(unittest.TestCase):
 
     def readpipe_interrupted(self, interrupt):

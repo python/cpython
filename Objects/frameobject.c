@@ -2,10 +2,11 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
-#include "pycore_moduleobject.h"  // _PyModule_GetDict()
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_code.h"          // CO_FAST_LOCAL, etc.
 #include "pycore_function.h"      // _PyFunction_FromConstructor()
+#include "pycore_moduleobject.h"  // _PyModule_GetDict()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_opcode.h"        // _PyOpcode_Caches
 
 #include "frameobject.h"          // PyFrameObject
 #include "pycore_frame.h"
@@ -454,6 +455,34 @@ _PyFrame_GetState(PyFrameObject *frame)
     Py_UNREACHABLE();
 }
 
+static void
+add_load_fast_null_checks(PyCodeObject *co)
+{
+    int changed = 0;
+    _Py_CODEUNIT *instructions = _PyCode_CODE(co);
+    for (Py_ssize_t i = 0; i < Py_SIZE(co); i++) {
+        switch (_Py_OPCODE(instructions[i])) {
+            case LOAD_FAST:
+            case LOAD_FAST__LOAD_FAST:
+            case LOAD_FAST__LOAD_CONST:
+                changed = 1;
+                _Py_SET_OPCODE(instructions[i], LOAD_FAST_CHECK);
+                break;
+            case LOAD_CONST__LOAD_FAST:
+                changed = 1;
+                _Py_SET_OPCODE(instructions[i], LOAD_CONST);
+                break;
+            case STORE_FAST__LOAD_FAST:
+                changed = 1;
+                _Py_SET_OPCODE(instructions[i], STORE_FAST);
+                break;
+        }
+    }
+    if (changed) {
+        // invalidate cached co_code object
+        Py_CLEAR(co->_co_code);
+    }
+}
 
 /* Setter for f_lineno - you can set f_lineno from within a trace function in
  * order to jump to a given line of code, subject to some restrictions.  Most
@@ -543,6 +572,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
                     new_lineno);
         return -1;
     }
+
+    add_load_fast_null_checks(f->f_frame->f_code);
 
     /* PyCode_NewWithPosOnlyArgs limits co_code to be under INT_MAX so this
      * should never overflow. */
@@ -1046,6 +1077,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
     }
     fast = _PyFrame_GetLocalsArray(frame);
     co = frame->f_code;
+    bool added_null_checks = false;
 
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
     for (int i = 0; i < co->co_nlocalsplus; i++) {
@@ -1065,6 +1097,10 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
             }
         }
         PyObject *oldvalue = fast[i];
+        if (!added_null_checks && oldvalue != NULL && value == NULL) {
+            add_load_fast_null_checks(co);
+            added_null_checks = true;
+        }
         PyObject *cell = NULL;
         if (kind == CO_FAST_FREE) {
             // The cell was set when the frame was created from
@@ -1085,9 +1121,9 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
         if (cell != NULL) {
             oldvalue = PyCell_GET(cell);
             if (value != oldvalue) {
-                Py_XDECREF(oldvalue);
                 Py_XINCREF(value);
                 PyCell_SET(cell, value);
+                Py_XDECREF(oldvalue);
             }
         }
         else if (value != oldvalue) {

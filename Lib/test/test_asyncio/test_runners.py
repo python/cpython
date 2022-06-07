@@ -376,9 +376,9 @@ class RunnerTests(BaseTest):
         with asyncio.Runner() as runner:
             with self.assertRaises(asyncio.CancelledError):
                 runner.run(coro())
-    
+
     def test_signal_install_not_supported_ok(self):
-        # signal.signal() can throw if the "main thread" doensn't have signals enabled
+        # signal.signal() can throw if the "main thread" doesn't have signals enabled
         assert threading.current_thread() is threading.main_thread()
 
         async def coro():

@@ -384,7 +384,7 @@ call_soon(PyObject *loop, PyObject *func, PyObject *arg, PyObject *ctx)
             nargs++;
         }
         stack[nargs] = (PyObject *)ctx;
-
+        EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, callable);
         handle = PyObject_Vectorcall(callable, stack, nargs, context_kwname);
         Py_DECREF(callable);
     }
@@ -1724,7 +1724,7 @@ FutureIter_traverse(futureiterobject *it, visitproc visit, void *arg)
 
 static PyMethodDef FutureIter_methods[] = {
     {"send",  (PyCFunction)FutureIter_send, METH_O, NULL},
-    {"throw", (PyCFunction)(void(*)(void))FutureIter_throw, METH_FASTCALL, NULL},
+    {"throw", _PyCFunction_CAST(FutureIter_throw), METH_FASTCALL, NULL},
     {"close", (PyCFunction)FutureIter_close, METH_NOARGS, NULL},
     {NULL, NULL}        /* Sentinel */
 };
@@ -2643,11 +2643,7 @@ task_set_error_soon(TaskObj *task, PyObject *et, const char *format, ...)
     PyObject* msg;
 
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     msg = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
 
@@ -2954,6 +2950,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
         PyObject *stack[2];
         stack[0] = wrapper;
         stack[1] = (PyObject *)task->task_context;
+        EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, add_cb);
         tmp = PyObject_Vectorcall(add_cb, stack, 1, context_kwname);
         Py_DECREF(add_cb);
         Py_DECREF(wrapper);

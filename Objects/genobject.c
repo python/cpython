@@ -1,16 +1,19 @@
 /* Generator object implementation */
 
+#define _PY_INTERPRETER
+
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_EvalFrame()
+#include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_opcode.h"        // _PyOpcode_Deopt
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_frame.h"         // _PyInterpreterFrame
-#include "frameobject.h"          // PyFrameObject
 #include "structmember.h"         // PyMemberDef
 #include "opcode.h"               // SEND
+#include "pystats.h"
 
 static PyObject *gen_close(PyGenObject *, PyObject *);
 static PyObject *async_gen_asend_new(PyAsyncGenObject *, PyObject *);
@@ -216,6 +219,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     }
 
     gen->gi_frame_state = FRAME_EXECUTING;
+    EVAL_CALL_STAT_INC(EVAL_CALL_GENERATOR);
     result = _PyEval_EvalFrame(tstate, frame, exc);
     if (gen->gi_frame_state == FRAME_EXECUTING) {
         gen->gi_frame_state = FRAME_COMPLETED;
@@ -821,7 +825,7 @@ PyDoc_STRVAR(sizeof__doc__,
 
 static PyMethodDef gen_methods[] = {
     {"send",(PyCFunction)gen_send, METH_O, send_doc},
-    {"throw",(PyCFunction)(void(*)(void))gen_throw, METH_FASTCALL, throw_doc},
+    {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, throw_doc},
     {"close",(PyCFunction)gen_close, METH_NOARGS, close_doc},
     {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
     {NULL, NULL}        /* Sentinel */
@@ -1169,7 +1173,7 @@ PyDoc_STRVAR(coro_close_doc,
 
 static PyMethodDef coro_methods[] = {
     {"send",(PyCFunction)gen_send, METH_O, coro_send_doc},
-    {"throw",(PyCFunction)(void(*)(void))gen_throw, METH_FASTCALL, coro_throw_doc},
+    {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, coro_throw_doc},
     {"close",(PyCFunction)gen_close, METH_NOARGS, coro_close_doc},
     {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
     {NULL, NULL}        /* Sentinel */
@@ -1276,7 +1280,7 @@ coro_wrapper_traverse(PyCoroWrapper *cw, visitproc visit, void *arg)
 
 static PyMethodDef coro_wrapper_methods[] = {
     {"send",(PyCFunction)coro_wrapper_send, METH_O, coro_send_doc},
-    {"throw",(PyCFunction)(void(*)(void))coro_wrapper_throw,
+    {"throw",_PyCFunction_CAST(coro_wrapper_throw),
     METH_FASTCALL, coro_throw_doc},
     {"close",(PyCFunction)coro_wrapper_close, METH_NOARGS, coro_close_doc},
     {NULL, NULL}        /* Sentinel */
@@ -1831,7 +1835,7 @@ async_gen_asend_close(PyAsyncGenASend *o, PyObject *args)
 
 static PyMethodDef async_gen_asend_methods[] = {
     {"send", (PyCFunction)async_gen_asend_send, METH_O, send_doc},
-    {"throw", (PyCFunction)(void(*)(void))async_gen_asend_throw, METH_FASTCALL, throw_doc},
+    {"throw", _PyCFunction_CAST(async_gen_asend_throw), METH_FASTCALL, throw_doc},
     {"close", (PyCFunction)async_gen_asend_close, METH_NOARGS, close_doc},
     {NULL, NULL}        /* Sentinel */
 };
@@ -1942,6 +1946,7 @@ async_gen_wrapped_val_dealloc(_PyAsyncGenWrappedValue *o)
     if (state->value_numfree < _PyAsyncGen_MAXFREELIST) {
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
         state->value_freelist[state->value_numfree++] = o;
+        OBJECT_STAT_INC(to_freelist);
     }
     else
 #endif
@@ -2018,6 +2023,7 @@ _PyAsyncGenValueWrapperNew(PyObject *val)
     if (state->value_numfree) {
         state->value_numfree--;
         o = state->value_freelist[state->value_numfree];
+        OBJECT_STAT_INC(from_freelist);
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
         _Py_NewReference((PyObject*)o);
     }
@@ -2248,7 +2254,7 @@ async_gen_athrow_close(PyAsyncGenAThrow *o, PyObject *args)
 
 static PyMethodDef async_gen_athrow_methods[] = {
     {"send", (PyCFunction)async_gen_athrow_send, METH_O, send_doc},
-    {"throw", (PyCFunction)(void(*)(void))async_gen_athrow_throw,
+    {"throw", _PyCFunction_CAST(async_gen_athrow_throw),
     METH_FASTCALL, throw_doc},
     {"close", (PyCFunction)async_gen_athrow_close, METH_NOARGS, close_doc},
     {NULL, NULL}        /* Sentinel */

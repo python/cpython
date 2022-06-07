@@ -1088,7 +1088,7 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
     PyObject* u;
     int i;
     const void *data;
-    unsigned int kind;
+    int kind;
 
     if (PyErr_Occurred())
         return XML_STATUS_ERROR;

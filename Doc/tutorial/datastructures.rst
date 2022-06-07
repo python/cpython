@@ -303,7 +303,7 @@ The following list comprehension will transpose rows and columns::
    >>> [[row[i] for row in matrix] for i in range(4)]
    [[1, 5, 9], [2, 6, 10], [3, 7, 11], [4, 8, 12]]
 
-As we saw in the previous section, the nested listcomp is evaluated in
+As we saw in the previous section, the inner list comprehension is evaluated in
 the context of the :keyword:`for` that follows it, so this example is
 equivalent to::
 

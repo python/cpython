@@ -58,6 +58,26 @@ class IsolatedAsyncioTestCase(TestCase):
         # 3. Regular "def func()" that returns awaitable object
         self.addCleanup(*(func, *args), **kwargs)
 
+    async def enterAsyncContext(self, cm):
+        """Enters the supplied asynchronous context manager.
+
+        If successful, also adds its __aexit__ method as a cleanup
+        function and returns the result of the __aenter__ method.
+        """
+        # We look up the special methods on the type to match the with
+        # statement.
+        cls = type(cm)
+        try:
+            enter = cls.__aenter__
+            exit = cls.__aexit__
+        except AttributeError:
+            raise TypeError(f"'{cls.__module__}.{cls.__qualname__}' object does "
+                            f"not support the asynchronous context manager protocol"
+                           ) from None
+        result = await enter(cm)
+        self.addAsyncCleanup(exit, cm, None, None, None)
+        return result
+
     def _callSetUp(self):
         self._asyncioTestContext.run(self.setUp)
         self._callAsync(self.asyncSetUp)

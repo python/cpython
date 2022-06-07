@@ -254,9 +254,9 @@ lock__at_fork_reinit(lockobject *self, PyObject *Py_UNUSED(args))
 
 
 static PyMethodDef lock_methods[] = {
-    {"acquire_lock", (PyCFunction)(void(*)(void))lock_PyThread_acquire_lock,
+    {"acquire_lock", _PyCFunction_CAST(lock_PyThread_acquire_lock),
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
-    {"acquire",      (PyCFunction)(void(*)(void))lock_PyThread_acquire_lock,
+    {"acquire",      _PyCFunction_CAST(lock_PyThread_acquire_lock),
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
     {"release_lock", (PyCFunction)lock_PyThread_release_lock,
      METH_NOARGS, release_doc},
@@ -266,7 +266,7 @@ static PyMethodDef lock_methods[] = {
      METH_NOARGS, locked_doc},
     {"locked",       (PyCFunction)lock_locked_lock,
      METH_NOARGS, locked_doc},
-    {"__enter__",    (PyCFunction)(void(*)(void))lock_PyThread_acquire_lock,
+    {"__enter__",    _PyCFunction_CAST(lock_PyThread_acquire_lock),
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
     {"__exit__",    (PyCFunction)lock_PyThread_release_lock,
      METH_VARARGS, release_doc},
@@ -548,7 +548,7 @@ rlock__at_fork_reinit(rlockobject *self, PyObject *Py_UNUSED(args))
 
 
 static PyMethodDef rlock_methods[] = {
-    {"acquire",      (PyCFunction)(void(*)(void))rlock_acquire,
+    {"acquire",      _PyCFunction_CAST(rlock_acquire),
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"release",      (PyCFunction)rlock_release,
      METH_NOARGS, rlock_release_doc},
@@ -558,7 +558,7 @@ static PyMethodDef rlock_methods[] = {
      METH_VARARGS, rlock_acquire_restore_doc},
     {"_release_save", (PyCFunction)rlock_release_save,
      METH_NOARGS, rlock_release_save_doc},
-    {"__enter__",    (PyCFunction)(void(*)(void))rlock_acquire,
+    {"__enter__",    _PyCFunction_CAST(rlock_acquire),
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"__exit__",    (PyCFunction)rlock_release,
      METH_VARARGS, rlock_release_doc},

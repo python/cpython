@@ -633,7 +633,17 @@ def resetlocale(category=LC_ALL):
         getdefaultlocale(). category defaults to LC_ALL.
 
     """
-    _setlocale(category, _build_localename(getdefaultlocale()))
+    import warnings
+    warnings.warn(
+        'Use locale.setlocale(locale.LC_ALL, "") instead',
+        DeprecationWarning, stacklevel=2
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DeprecationWarning)
+        loc = getdefaultlocale()
+
+    _setlocale(category, _build_localename(loc))
 
 
 try:
@@ -655,6 +665,11 @@ try:
 except NameError:
     def getpreferredencoding(do_setlocale=True):
         """Return the charset that the user is likely using."""
+        if sys.flags.warn_default_encoding:
+            import warnings
+            warnings.warn(
+                "UTF-8 Mode affects locale.getpreferredencoding(). Consider locale.getencoding() instead.",
+                EncodingWarning, 2)
         if sys.flags.utf8_mode:
             return 'utf-8'
         return getencoding()
@@ -663,6 +678,12 @@ else:
     def getpreferredencoding(do_setlocale=True):
         """Return the charset that the user is likely using,
         according to the system configuration."""
+
+        if sys.flags.warn_default_encoding:
+            import warnings
+            warnings.warn(
+                "UTF-8 Mode affects locale.getpreferredencoding(). Consider locale.getencoding() instead.",
+                EncodingWarning, 2)
         if sys.flags.utf8_mode:
             return 'utf-8'
 
