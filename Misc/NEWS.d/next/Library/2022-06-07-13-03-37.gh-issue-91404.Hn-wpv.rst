@@ -1,0 +1,2 @@
+Revert: re module, fix memory leak when a match is terminated by a signal or
+memory allocation failure.
