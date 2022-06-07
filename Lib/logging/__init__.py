@@ -1498,7 +1498,7 @@ class Logger(Filterer):
         To pass exception information, use the keyword argument exc_info with
         a true value, e.g.
 
-        logger.info("Houston, we have a %s", "interesting problem", exc_info=1)
+        logger.info("Houston, we have a %s", "notable problem", exc_info=1)
         """
         if self.isEnabledFor(INFO):
             self._log(INFO, msg, args, **kwargs)

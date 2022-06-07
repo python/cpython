@@ -2504,7 +2504,8 @@ AC_DEFINE(STDC_HEADERS, 1, [Define to 1 if you have the ANSI C header files.])
 # checks for header files
 AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
-  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/memfd.h linux/random.h linux/soundcard.h \
+  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/memfd.h \
+  linux/random.h linux/soundcard.h \
   linux/tipc.h linux/wait.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
@@ -6606,10 +6607,13 @@ AS_CASE([$ac_sys_system],
       ],
       [Emscripten/node*], [],
       [WASI/*], [
-        dnl WASI SDK 15.0 does not support file locking.
+        dnl WASI SDK 15.0 does not support file locking, mmap, and more.
         PY_STDLIB_MOD_SET_NA(
           [_ctypes_test],
-	  [fcntl],
+          [fcntl],
+          [mmap],
+          [resource],
+          [termios],
         )
       ]
     )
