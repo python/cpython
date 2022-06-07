@@ -114,7 +114,7 @@ back and explore the data it holds.
    ['bitbucket.org', 'topsecret.server.com']
    >>> 'bitbucket.org' in config
    True
-   >>> 'bytebong.com' in config
+   >>> 'python.org' in config
    False
    >>> config['bitbucket.org']['User']
    'hg'
