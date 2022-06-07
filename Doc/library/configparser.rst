@@ -68,7 +68,7 @@ Let's take a very basic configuration file that looks like this:
    [bitbucket.org]
    User = hg
 
-   [topsecret.server.com]
+   [topsecret.server.example]
    Port = 50022
    ForwardX11 = no
 
@@ -87,8 +87,8 @@ creating the above configuration file programmatically.
    ...                      'CompressionLevel': '9'}
    >>> config['bitbucket.org'] = {}
    >>> config['bitbucket.org']['User'] = 'hg'
-   >>> config['topsecret.server.com'] = {}
-   >>> topsecret = config['topsecret.server.com']
+   >>> config['topsecret.server.example'] = {}
+   >>> topsecret = config['topsecret.server.example']
    >>> topsecret['Port'] = '50022'     # mutates the parser
    >>> topsecret['ForwardX11'] = 'no'  # same here
    >>> config['DEFAULT']['ForwardX11'] = 'yes'
@@ -111,7 +111,7 @@ back and explore the data it holds.
    >>> config.read('example.ini')
    ['example.ini']
    >>> config.sections()
-   ['bitbucket.org', 'topsecret.server.com']
+   ['bitbucket.org', 'topsecret.server.example']
    >>> 'bitbucket.org' in config
    True
    >>> 'python.org' in config
@@ -120,7 +120,7 @@ back and explore the data it holds.
    'hg'
    >>> config['DEFAULT']['Compression']
    'yes'
-   >>> topsecret = config['topsecret.server.com']
+   >>> topsecret = config['topsecret.server.example']
    >>> topsecret['ForwardX11']
    'no'
    >>> topsecret['Port']
@@ -150,15 +150,15 @@ configuration while the previously existing keys are retained.
    >>> another_config = configparser.ConfigParser()
    >>> another_config.read('example.ini')
    ['example.ini']
-   >>> another_config['topsecret.server.com']['Port']
+   >>> another_config['topsecret.server.example']['Port']
    '50022'
-   >>> another_config.read_string("[topsecret.server.com]\nPort=48484")
-   >>> another_config['topsecret.server.com']['Port']
+   >>> another_config.read_string("[topsecret.server.example]\nPort=48484")
+   >>> another_config['topsecret.server.example']['Port']
    '48484'
-   >>> another_config.read_dict({"topsecret.server.com": {"Port": 21212}})
-   >>> another_config['topsecret.server.com']['Port']
+   >>> another_config.read_dict({"topsecret.server.example": {"Port": 21212}})
+   >>> another_config['topsecret.server.example']['Port']
    '21212'
-   >>> another_config['topsecret.server.com']['ForwardX11']
+   >>> another_config['topsecret.server.example']['ForwardX11']
    'no'
 
 This behaviour is equivalent to a :meth:`ConfigParser.read` call with several
@@ -220,7 +220,7 @@ provide fallback values:
 Please note that default values have precedence over fallback values.
 For instance, in our example the ``'CompressionLevel'`` key was
 specified only in the ``'DEFAULT'`` section.  If we try to get it from
-the section ``'topsecret.server.com'``, we will always get the default,
+the section ``'topsecret.server.example'``, we will always get the default,
 even if we specify a fallback:
 
 .. doctest::
