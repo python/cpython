@@ -679,18 +679,17 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
     PyObject *descr = NULL;
     DescriptorClassification kind = analyze_descriptor(type, name, &descr, 0);
     assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
-    if (kind == METHOD) {
-        if (oparg & 1) {
-            if (specialize_attr_loadmethod(owner, instr, name, descr, kind)) {
-                goto success;
-            }
+    if ((oparg & 1) && kind == METHOD) {
+        if (specialize_attr_loadmethod(owner, instr, name, descr, kind)) {
+            goto success;
         }
-        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METHOD);
-        goto fail;
     }
     switch(kind) {
         case OVERRIDING:
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_OVERRIDING_DESCRIPTOR);
+            goto fail;
+        case METHOD:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METHOD);
             goto fail;
         case PROPERTY:
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_PROPERTY);
