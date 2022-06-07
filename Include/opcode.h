@@ -108,7 +108,6 @@ extern "C" {
 #define FORMAT_VALUE                           155
 #define BUILD_CONST_KEY_MAP                    156
 #define BUILD_STRING                           157
-#define LOAD_METHOD                            160
 #define LIST_EXTEND                            162
 #define SET_UPDATE                             163
 #define DICT_MERGE                             164
@@ -180,13 +179,13 @@ extern "C" {
 #define STORE_ATTR_WITH_HINT                   154
 #define STORE_FAST__LOAD_FAST                  158
 #define STORE_FAST__STORE_FAST                 159
-#define STORE_SUBSCR_ADAPTIVE                  161
-#define STORE_SUBSCR_DICT                      166
-#define STORE_SUBSCR_LIST_INT                  167
-#define UNPACK_SEQUENCE_ADAPTIVE               168
-#define UNPACK_SEQUENCE_LIST                   169
-#define UNPACK_SEQUENCE_TUPLE                  170
-#define UNPACK_SEQUENCE_TWO_TUPLE              177
+#define STORE_SUBSCR_ADAPTIVE                  160
+#define STORE_SUBSCR_DICT                      161
+#define STORE_SUBSCR_LIST_INT                  166
+#define UNPACK_SEQUENCE_ADAPTIVE               167
+#define UNPACK_SEQUENCE_LIST                   168
+#define UNPACK_SEQUENCE_TUPLE                  169
+#define UNPACK_SEQUENCE_TWO_TUPLE              170
 #define DO_TRACING                             255
 
 #define HAS_CONST(op) (false\

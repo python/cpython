@@ -84,8 +84,9 @@
 #define POP_JUMP_IF_TRUE -8
 #define POP_JUMP_IF_NONE -9
 #define POP_JUMP_IF_NOT_NONE -10
+#define LOAD_METHOD -11
 
-#define MIN_VIRTUAL_OPCODE -10
+#define MIN_VIRTUAL_OPCODE -11
 #define MAX_ALLOWED_OPCODE 254
 
 #define IS_WITHIN_OPCODE_RANGE(opcode) \

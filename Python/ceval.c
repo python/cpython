@@ -3451,11 +3451,43 @@ handle_eval_breaker:
 
         TARGET(LOAD_ATTR) {
             PREDICTED(LOAD_ATTR);
+            PyObject* name = GETITEM(names, oparg>>1);
+            PyObject* owner = TOP();
             if (oparg & 1) {
-                JUMP_TO_INSTRUCTION(LOAD_METHOD);
+                /* Designed to work in tandem with CALL. */
+                PyObject* meth = NULL;
+
+                int meth_found = _PyObject_GetMethod(owner, name, &meth);
+
+                if (meth == NULL) {
+                    /* Most likely attribute wasn't found. */
+                    goto error;
+                }
+
+                if (meth_found) {
+                    /* We can bypass temporary bound method object.
+                       meth is unbound method and obj is self.
+
+                       meth | self | arg1 | ... | argN
+                     */
+                    SET_TOP(meth);
+                    PUSH(owner);  // self
+                }
+                else {
+                    /* meth is not an unbound method (but a regular attr, or
+                       something was returned by a descriptor protocol).  Set
+                       the second element of the stack to NULL, to signal
+                       CALL that it's not a method call.
+
+                       NULL | meth | arg1 | ... | argN
+                    */
+                    SET_TOP(NULL);
+                    Py_DECREF(owner);
+                    PUSH(meth);
+                }
+                JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
+                DISPATCH();
             }
-            PyObject *name = GETITEM(names, oparg>>1);
-            PyObject *owner = TOP();
             PyObject *res = PyObject_GetAttr(owner, name);
             if (res == NULL) {
                 goto error;
@@ -4489,45 +4521,6 @@ handle_eval_breaker:
             assert(PyExceptionInstance_Check(value));
             exc_info->exc_value = value;
 
-            DISPATCH();
-        }
-
-        TARGET(LOAD_METHOD) {
-            PREDICTED(LOAD_METHOD);
-            /* Designed to work in tandem with CALL. */
-            PyObject *name = GETITEM(names, oparg>>1);
-            PyObject *obj = TOP();
-            PyObject *meth = NULL;
-
-            int meth_found = _PyObject_GetMethod(obj, name, &meth);
-
-            if (meth == NULL) {
-                /* Most likely attribute wasn't found. */
-                goto error;
-            }
-
-            if (meth_found) {
-                /* We can bypass temporary bound method object.
-                   meth is unbound method and obj is self.
-
-                   meth | self | arg1 | ... | argN
-                 */
-                SET_TOP(meth);
-                PUSH(obj);  // self
-            }
-            else {
-                /* meth is not an unbound method (but a regular attr, or
-                   something was returned by a descriptor protocol).  Set
-                   the second element of the stack to NULL, to signal
-                   CALL that it's not a method call.
-
-                   NULL | meth | arg1 | ... | argN
-                */
-                SET_TOP(NULL);
-                Py_DECREF(obj);
-                PUSH(meth);
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             DISPATCH();
         }
 
