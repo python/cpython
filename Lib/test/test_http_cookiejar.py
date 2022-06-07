@@ -1,6 +1,7 @@
 """Tests for http/cookiejar.py."""
 
 import os
+import sys
 import re
 import test.support
 from test.support import os_helper
@@ -17,6 +18,7 @@ from http.cookiejar import (time2isoz, http2time, iso2time, time2netscape,
      reach, is_HDN, domain_match, user_domain_match, request_path,
      request_port, request_host)
 
+mswindows = (sys.platform == "win32")
 
 class DateTimeTests(unittest.TestCase):
 
@@ -367,6 +369,35 @@ class FileCookieJarTests(unittest.TestCase):
             try: os.unlink(filename)
             except OSError: pass
         self.assertEqual(c._cookies["www.acme.com"]["/"]["boo"].value, None)
+
+    @unittest.skipIf(mswindows, "windows file permissions are incompatible with file modes")
+    def test_lwp_filepermissions(self):
+        # Cookie file should only be readable by the creator
+        filename = os_helper.TESTFN
+        c = LWPCookieJar()
+        interact_netscape(c, "http://www.acme.com/", 'boo')
+        try:
+            c.save(filename, ignore_discard=True)
+            status = os.stat(filename)
+            print(status.st_mode)
+            self.assertEqual(oct(status.st_mode)[-3:], '600')
+        finally:
+            try: os.unlink(filename)
+            except OSError: pass
+
+    @unittest.skipIf(mswindows, "windows file permissions are incompatible with file modes")
+    def test_mozilla_filepermissions(self):
+        # Cookie file should only be readable by the creator
+        filename = os_helper.TESTFN
+        c = MozillaCookieJar()
+        interact_netscape(c, "http://www.acme.com/", 'boo')
+        try:
+            c.save(filename, ignore_discard=True)
+            status = os.stat(filename)
+            self.assertEqual(oct(status.st_mode)[-3:], '600')
+        finally:
+            try: os.unlink(filename)
+            except OSError: pass
 
     def test_bad_magic(self):
         # OSErrors (eg. file doesn't exist) are allowed to propagate
