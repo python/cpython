@@ -3282,6 +3282,10 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
     {
 #ifdef HAVE_CHMOD
         result = chmod(path->narrow, mode);
+#elif defined(__wasi__)
+        // WASI SDK 15.0 does not support chmod.
+        // Ignore missing syscall for now.
+        result = 0;
 #else
         result = -1;
         errno = ENOSYS;
@@ -15254,6 +15258,9 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, P_ALL)) return -1;
 #ifdef P_PIDFD
     if (PyModule_AddIntMacro(m, P_PIDFD)) return -1;
+#endif
+#ifdef PIDFD_NONBLOCK
+    if (PyModule_AddIntMacro(m, PIDFD_NONBLOCK)) return -1;
 #endif
 #endif
 #ifdef WEXITED

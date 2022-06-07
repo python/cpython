@@ -2343,7 +2343,7 @@ features:
    :exc:`IsADirectoryError` or a :exc:`NotADirectoryError` will be raised
    respectively.  If both are directories and *dst* is empty, *dst* will be
    silently replaced.  If *dst* is a non-empty directory, an :exc:`OSError`
-   is raised. If both are files, *dst* it will be replaced silently if the user
+   is raised. If both are files, *dst* will be replaced silently if the user
    has permission.  The operation may fail on some Unix flavors if *src* and
    *dst* are on different filesystems.  If successful, the renaming will be an
    atomic operation (this is a POSIX requirement).
@@ -3912,15 +3912,24 @@ written in Python, such as a mail server's external command delivery program.
 
 .. function:: pidfd_open(pid, flags=0)
 
-   Return a file descriptor referring to the process *pid*.  This descriptor can
-   be used to perform process management without races and signals.  The *flags*
-   argument is provided for future extensions; no flag values are currently
-   defined.
+   Return a file descriptor referring to the process *pid* with *flags* set.
+   This descriptor can be used to perform process management without races
+   and signals.
 
    See the :manpage:`pidfd_open(2)` man page for more details.
 
    .. availability:: Linux 5.3+
    .. versionadded:: 3.9
+
+   .. data:: PIDFD_NONBLOCK
+
+      This flag indicates that the file descriptor will be non-blocking.
+      If the process referred to by the file descriptor has not yet terminated,
+      then an attempt to wait on the file descriptor using :manpage:`waitid(2)`
+      will immediately return the error :data:`~errno.EAGAIN` rather than blocking.
+
+   .. availability:: Linux 5.10+
+   .. versionadded:: 3.12
 
 
 .. function:: plock(op)
