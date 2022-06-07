@@ -1265,7 +1265,7 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :func:`os.link`                        :meth:`Path.hardlink_to`
 :func:`os.symlink`                     :meth:`Path.symlink_to`
 :func:`os.readlink`                    :meth:`Path.readlink`
-:func:`os.path.relpath`                :meth:`Path.relative_to` [#]_
+:func:`os.path.relpath`                :meth:`PurePath.relative_to` [#]_
 :func:`os.stat`                        :meth:`Path.stat`,
                                        :meth:`Path.owner`,
                                        :meth:`Path.group`
@@ -1280,4 +1280,4 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 .. rubric:: Footnotes
 
 .. [#] :func:`os.path.abspath` does not resolve symbolic links while :meth:`Path.resolve` does.
-.. [#] :meth:`Path.relative_to` requires ``self`` to be the subpath of the argument, but :func:`os.path.relpath` does not.
+.. [#] :meth:`PurePath.relative_to` requires ``self`` to be the subpath of the argument, but :func:`os.path.relpath` does not.
