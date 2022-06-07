@@ -4,6 +4,7 @@
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_namespace.h"     // _PyNamespace_New()
+#include "pycore_runtime.h"       // _Py_ID()
 
 #include <ctype.h>
 
@@ -910,13 +911,12 @@ static PyObject *
 time_strptime(PyObject *self, PyObject *args)
 {
     PyObject *module, *func, *result;
-    _Py_IDENTIFIER(_strptime_time);
 
     module = PyImport_ImportModule("_strptime");
     if (!module)
         return NULL;
 
-    func = _PyObject_GetAttrId(module, &PyId__strptime_time);
+    func = PyObject_GetAttr(module, &_Py_ID(_strptime_time));
     Py_DECREF(module);
     if (!func) {
         return NULL;
@@ -1282,7 +1282,7 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 #endif
 
     /* getrusage(RUSAGE_SELF) */
-#if defined(HAVE_SYS_RESOURCE_H)
+#if defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRUSAGE)
     struct rusage ru;
 
     if (getrusage(RUSAGE_SELF, &ru) == 0) {
@@ -1479,7 +1479,9 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
     return 0;
 }
 
-#elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_PROCESS_CPUTIME_ID)
+#elif defined(HAVE_CLOCK_GETTIME) && \
+      defined(CLOCK_PROCESS_CPUTIME_ID) && \
+      !defined(__EMSCRIPTEN__) && !defined(__wasi__)
 #define HAVE_THREAD_TIME
 
 #if defined(__APPLE__) && defined(__has_attribute) && __has_attribute(availability)

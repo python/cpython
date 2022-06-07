@@ -4,7 +4,7 @@ import tkinter
 from tkinter import ttk
 from test import support
 from test.support import requires
-from tkinter.test.support import AbstractTkTest
+from tkinter.test.support import AbstractTkTest, get_tk_patchlevel
 
 requires('gui')
 
@@ -170,6 +170,8 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
                     newname = f'C.{name}'
                     self.assertEqual(style.map(newname), {})
                     style.map(newname, **default)
+                    if theme == 'alt' and name == '.' and get_tk_patchlevel() < (8, 6, 1):
+                        default['embossed'] = [('disabled', '1')]
                     self.assertEqual(style.map(newname), default)
                     for key, value in default.items():
                         self.assertEqual(style.map(newname, key), value)

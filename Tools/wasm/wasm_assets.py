@@ -20,7 +20,11 @@ SRCDIR = pathlib.Path(__file__).parent.parent.parent.absolute()
 SRCDIR_LIB = SRCDIR / "Lib"
 
 # sysconfig data relative to build dir.
-SYSCONFIGDATA_GLOB = "build/lib.*/_sysconfigdata_*.py"
+SYSCONFIGDATA = pathlib.PurePath(
+    "build",
+    f"lib.emscripten-wasm32-{sys.version_info.major}.{sys.version_info.minor}",
+    "_sysconfigdata__emscripten_wasm32-emscripten.py",
+)
 
 # Library directory relative to $(prefix).
 WASM_LIB = pathlib.PurePath("lib")
@@ -38,44 +42,17 @@ WASM_DYNLOAD = WASM_STDLIB / "lib-dynload"
 OMIT_FILES = (
     # regression tests
     "test/",
-    # user interfaces: TK, curses
-    "curses/",
-    "idlelib/",
-    "tkinter/",
-    "turtle.py",
-    "turtledemo/",
     # package management
     "ensurepip/",
     "venv/",
     # build system
     "distutils/",
     "lib2to3/",
-    # concurrency
-    "concurrent/",
-    "multiprocessing/",
     # deprecated
     "asyncore.py",
     "asynchat.py",
-    # Synchronous network I/O and protocols are not supported; for example,
-    # socket.create_connection() raises an exception:
-    # "BlockingIOError: [Errno 26] Operation in progress".
-    "cgi.py",
-    "cgitb.py",
-    "email/",
-    "ftplib.py",
-    "http/",
-    "imaplib.py",
-    "nntplib.py",
-    "poplib.py",
-    "smtpd.py",
-    "smtplib.py",
-    "socketserver.py",
-    "telnetlib.py",
-    "urllib/",
-    "wsgiref/",
-    "xmlrpc/",
-    # dbm / gdbm
-    "dbm/",
+    "uu.py",
+    "xdrlib.py",
     # other platforms
     "_aix_support.py",
     "_bootsubprocess.py",
@@ -83,8 +60,6 @@ OMIT_FILES = (
     # webbrowser
     "antigravity.py",
     "webbrowser.py",
-    # ctypes
-    "ctypes/",
     # Pure Python implementations of C extensions
     "_pydecimal.py",
     "_pyio.py",
@@ -92,6 +67,52 @@ OMIT_FILES = (
     "pydoc_data/",
     "msilib/",
 )
+
+# Synchronous network I/O and protocols are not supported; for example,
+# socket.create_connection() raises an exception:
+# "BlockingIOError: [Errno 26] Operation in progress".
+OMIT_NETWORKING_FILES = (
+    "cgi.py",
+    "cgitb.py",
+    "email/",
+    "ftplib.py",
+    "http/",
+    "imaplib.py",
+    "mailbox.py",
+    "mailcap.py",
+    "nntplib.py",
+    "poplib.py",
+    "smtpd.py",
+    "smtplib.py",
+    "socketserver.py",
+    "telnetlib.py",
+    # keep urllib.parse for pydoc
+    "urllib/error.py",
+    "urllib/request.py",
+    "urllib/response.py",
+    "urllib/robotparser.py",
+    "wsgiref/",
+)
+
+OMIT_MODULE_FILES = {
+    "_asyncio": ["asyncio/"],
+    "audioop": ["aifc.py", "sunau.py", "wave.py"],
+    "_crypt": ["crypt.py"],
+    "_curses": ["curses/"],
+    "_ctypes": ["ctypes/"],
+    "_decimal": ["decimal.py"],
+    "_dbm": ["dbm/ndbm.py"],
+    "_gdbm": ["dbm/gnu.py"],
+    "_json": ["json/"],
+    "_multiprocessing": ["concurrent/", "multiprocessing/"],
+    "pyexpat": ["xml/", "xmlrpc/"],
+    "readline": ["rlcompleter.py"],
+    "_sqlite3": ["sqlite3/"],
+    "_ssl": ["ssl.py"],
+    "_tkinter": ["idlelib/", "tkinter/", "turtle.py", "turtledemo/"],
+
+    "_zoneinfo": ["zoneinfo/"],
+}
 
 # regression test sub directories
 OMIT_SUBDIRS = (
@@ -101,34 +122,59 @@ OMIT_SUBDIRS = (
 )
 
 
-OMIT_ABSOLUTE = {SRCDIR_LIB / name for name in OMIT_FILES}
-OMIT_SUBDIRS_ABSOLUTE = tuple(str(SRCDIR_LIB / name) for name in OMIT_SUBDIRS)
-
-
-def filterfunc(name: str) -> bool:
-    return not name.startswith(OMIT_SUBDIRS_ABSOLUTE)
-
-
 def create_stdlib_zip(
-    args: argparse.Namespace, compression: int = zipfile.ZIP_DEFLATED, *, optimize: int = 0
+    args: argparse.Namespace,
+    *,
+    optimize: int = 0,
 ) -> None:
-    sysconfig_data = list(args.builddir.glob(SYSCONFIGDATA_GLOB))
-    if not sysconfig_data:
-        raise ValueError("No sysconfigdata file found")
+    def filterfunc(name: str) -> bool:
+        return not name.startswith(args.omit_subdirs_absolute)
 
     with zipfile.PyZipFile(
-        args.wasm_stdlib_zip, mode="w", compression=compression, optimize=0
+        args.wasm_stdlib_zip, mode="w", compression=args.compression, optimize=optimize
     ) as pzf:
+        if args.compresslevel is not None:
+            pzf.compresslevel = args.compresslevel
+        pzf.writepy(args.sysconfig_data)
         for entry in sorted(args.srcdir_lib.iterdir()):
             if entry.name == "__pycache__":
                 continue
-            if entry in OMIT_ABSOLUTE:
+            if entry in args.omit_files_absolute:
                 continue
             if entry.name.endswith(".py") or entry.is_dir():
                 # writepy() writes .pyc files (bytecode).
                 pzf.writepy(entry, filterfunc=filterfunc)
-        for entry in sysconfig_data:
-            pzf.writepy(entry)
+
+
+def detect_extension_modules(args: argparse.Namespace):
+    modules = {}
+
+    # disabled by Modules/Setup.local ?
+    with open(args.builddir / "Makefile") as f:
+        for line in f:
+            if line.startswith("MODDISABLED_NAMES="):
+                disabled = line.split("=", 1)[1].strip().split()
+                for modname in disabled:
+                    modules[modname] = False
+                break
+
+    # disabled by configure?
+    with open(args.sysconfig_data) as f:
+        data = f.read()
+    loc = {}
+    exec(data, globals(), loc)
+
+    for name, value in loc["build_time_vars"].items():
+        if value not in {"yes", "missing", "disabled", "n/a"}:
+            continue
+        if not name.startswith("MODULE_"):
+            continue
+        if name.endswith(("_CFLAGS", "_DEPS", "_LDFLAGS")):
+            continue
+        modname = name.removeprefix("MODULE_").lower()
+        if modname not in modules:
+            modules[modname] = value == "yes"
+    return modules
 
 
 def path(val: str) -> pathlib.Path:
@@ -143,7 +189,10 @@ parser.add_argument(
     type=path,
 )
 parser.add_argument(
-    "--prefix", help="install prefix", default=pathlib.Path("/usr/local"), type=path
+    "--prefix",
+    help="install prefix",
+    default=pathlib.Path("/usr/local"),
+    type=path,
 )
 
 
@@ -158,6 +207,27 @@ def main():
     args.wasm_stdlib = args.wasm_root / WASM_STDLIB
     args.wasm_dynload = args.wasm_root / WASM_DYNLOAD
 
+    # bpo-17004: zipimport supports only zlib compression.
+    # Emscripten ZIP_STORED + -sLZ4=1 linker flags results in larger file.
+    args.compression = zipfile.ZIP_DEFLATED
+    args.compresslevel = 9
+
+    args.sysconfig_data = args.builddir / SYSCONFIGDATA
+    if not args.sysconfig_data.is_file():
+        raise ValueError(f"sysconfigdata file {SYSCONFIGDATA} missing.")
+
+    extmods = detect_extension_modules(args)
+    omit_files = list(OMIT_FILES)
+    omit_files.extend(OMIT_NETWORKING_FILES)
+    for modname, modfiles in OMIT_MODULE_FILES.items():
+        if not extmods.get(modname):
+            omit_files.extend(modfiles)
+
+    args.omit_files_absolute = {args.srcdir_lib / name for name in omit_files}
+    args.omit_subdirs_absolute = tuple(
+        str(args.srcdir_lib / name) for name in OMIT_SUBDIRS
+    )
+
     # Empty, unused directory for dynamic libs, but required for site initialization.
     args.wasm_dynload.mkdir(parents=True, exist_ok=True)
     marker = args.wasm_dynload / ".empty"
@@ -166,7 +236,7 @@ def main():
     shutil.copy(args.srcdir_lib / "os.py", args.wasm_stdlib)
     # The rest of stdlib that's useful in a WASM context.
     create_stdlib_zip(args)
-    size = round(args.wasm_stdlib_zip.stat().st_size / 1024 ** 2, 2)
+    size = round(args.wasm_stdlib_zip.stat().st_size / 1024**2, 2)
     parser.exit(0, f"Created {args.wasm_stdlib_zip} ({size} MiB)\n")
 
 

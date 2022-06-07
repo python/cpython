@@ -4,6 +4,7 @@ __all__ = ['html5', 'name2codepoint', 'codepoint2name', 'entitydefs']
 
 
 # maps the HTML entity name to the Unicode code point
+# from https://html.spec.whatwg.org/multipage/named-characters.html
 name2codepoint = {
     'AElig':    0x00c6, # latin capital letter AE = latin capital ligature AE, U+00C6 ISOlat1
     'Aacute':   0x00c1, # latin capital letter A with acute, U+00C1 ISOlat1

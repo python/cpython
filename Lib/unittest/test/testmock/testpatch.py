@@ -1933,8 +1933,13 @@ class PatchTest(unittest.TestCase):
 
 
     def test_invalid_target(self):
-        with self.assertRaises(TypeError):
-            patch('')
+        class Foo:
+            pass
+
+        for target in ['', 12, Foo()]:
+            with self.subTest(target=target):
+                with self.assertRaises(TypeError):
+                    patch(target)
 
 
     def test_cant_set_kwargs_when_passing_a_mock(self):

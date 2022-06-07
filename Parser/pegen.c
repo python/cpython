@@ -37,17 +37,6 @@ _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
     return size;
 }
 
-#if 0
-static const char *
-token_name(int type)
-{
-    if (0 <= type && type <= N_TOKENS) {
-        return _PyParser_TokenNames[type];
-    }
-    return "<Huh?>";
-}
-#endif
-
 // Here, mark is the start of the node, while p->mark is the end.
 // If node==NULL, they should be the same.
 int
@@ -726,6 +715,9 @@ compute_parser_flags(PyCompilerFlags *flags)
     if ((flags->cf_flags & PyCF_ONLY_AST) && flags->cf_feature_version < 7) {
         parser_flags |= PyPARSE_ASYNC_HACKS;
     }
+    if (flags->cf_flags & PyCF_ALLOW_INCOMPLETE_INPUT) {
+        parser_flags |= PyPARSE_ALLOW_INCOMPLETE_INPUT;
+    }
     return parser_flags;
 }
 
@@ -782,7 +774,9 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->known_err_token = NULL;
     p->level = 0;
     p->call_invalid_rules = 0;
-    p->in_raw_rule = 0;
+#ifdef Py_DEBUG
+    p->debug = _Py_GetConfig()->parser_debug;
+#endif
     return p;
 }
 
@@ -811,16 +805,26 @@ reset_parser_state_for_error_pass(Parser *p)
     p->tok->interactive_underflow = IUNDERFLOW_STOP;
 }
 
+static inline int
+_is_end_of_source(Parser *p) {
+    int err = p->tok->done;
+    return err == E_EOF || err == E_EOFS || err == E_EOLS;
+}
+
 void *
 _PyPegen_run_parser(Parser *p)
 {
     void *res = _PyPegen_parse(p);
     assert(p->level == 0);
     if (res == NULL) {
+        if ((p->flags & PyPARSE_ALLOW_INCOMPLETE_INPUT) &&  _is_end_of_source(p)) {
+            PyErr_Clear();
+            return RAISE_SYNTAX_ERROR("incomplete input");
+        }
         if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_SyntaxError)) {
             return NULL;
         }
-        // Make a second parser pass. In this pass we activate heavier and slower checks
+       // Make a second parser pass. In this pass we activate heavier and slower checks
         // to produce better error messages and more complete diagnostics. Extra "invalid_*"
         // rules will be active during parsing.
         Token *last_token = p->tokens[p->fill - 1];

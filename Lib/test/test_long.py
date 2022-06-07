@@ -392,7 +392,8 @@ class LongTest(unittest.TestCase):
                 return 42
             def __trunc__(self):
                 return 1729
-        self.assertEqual(int(LongTrunc()), 1729)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(int(LongTrunc()), 1729)
 
     def check_float_conversion(self, n):
         # Check that int -> float conversion behaviour matches
@@ -984,6 +985,10 @@ class LongTest(unittest.TestCase):
         self.assertEqual((-1122) >> 9, -3)
         self.assertEqual(2**128 >> 9, 2**119)
         self.assertEqual(-2**128 >> 9, -2**119)
+        # Exercise corner case of the current algorithm, where the result of
+        # shifting a two-limb int by the limb size still has two limbs.
+        self.assertEqual((1 - BASE*BASE) >> SHIFT, -BASE)
+        self.assertEqual((BASE - 1 - BASE*BASE) >> SHIFT, -BASE)
 
     def test_big_rshift(self):
         self.assertEqual(42 >> 32, 0)
@@ -1022,6 +1027,48 @@ class LongTest(unittest.TestCase):
         c = a + 1
         self.assertIs(a + b, 1)
         self.assertIs(c - a, 1)
+
+    @support.cpython_only
+    def test_pow_uses_cached_small_ints(self):
+        self.assertIs(pow(10, 3, 998), 2)
+        self.assertIs(10 ** 3 % 998, 2)
+        a, p, m = 10, 3, 998
+        self.assertIs(a ** p % m, 2)
+
+        self.assertIs(pow(2, 31, 2 ** 31 - 1), 1)
+        self.assertIs(2 ** 31 % (2 ** 31 - 1), 1)
+        a, p, m = 2, 31, 2 ** 31 - 1
+        self.assertIs(a ** p % m, 1)
+
+        self.assertIs(pow(2, 100, 2**100 - 3), 3)
+        self.assertIs(2 ** 100 % (2 ** 100 - 3), 3)
+        a, p, m = 2, 100, 2**100 - 3
+        self.assertIs(a ** p % m, 3)
+
+    @support.cpython_only
+    def test_divmod_uses_cached_small_ints(self):
+        big = 10 ** 100
+
+        self.assertIs((big + 1) % big, 1)
+        self.assertIs((big + 1) // big, 1)
+        self.assertIs(big // (big // 2), 2)
+        self.assertIs(big // (big // -4), -4)
+
+        q, r = divmod(2 * big + 3, big)
+        self.assertIs(q, 2)
+        self.assertIs(r, 3)
+
+        q, r = divmod(-4 * big + 100, big)
+        self.assertIs(q, -4)
+        self.assertIs(r, 100)
+
+        q, r = divmod(3 * (-big) - 1, -big)
+        self.assertIs(q, 3)
+        self.assertIs(r, -1)
+
+        q, r = divmod(3 * big - 1, -big)
+        self.assertIs(q, -3)
+        self.assertIs(r, -1)
 
     def test_small_ints(self):
         for i in range(-5, 257):

@@ -2,6 +2,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_ERR
 #include "pycore_pyerrors.h"      // _Py_DumpExtensionModules
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_signal.h"        // Py_NSIG
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
 
 #include "frameobject.h"
@@ -20,6 +21,17 @@
 #  include <sys/resource.h>
 #endif
 
+/* Using an alternative stack requires sigaltstack()
+   and sigaction() SA_ONSTACK */
+#if defined(HAVE_SIGALTSTACK) && defined(HAVE_SIGACTION)
+#  define FAULTHANDLER_USE_ALT_STACK
+#endif
+
+#if defined(FAULTHANDLER_USE_ALT_STACK) && defined(HAVE_LINUX_AUXVEC_H) && defined(HAVE_SYS_AUXV_H)
+#  include <linux/auxvec.h>       // AT_MINSIGSTKSZ
+#  include <sys/auxv.h>           // getauxval()
+#endif
+
 /* Allocate at maximum 100 MiB of the stack to raise the stack overflow */
 #define STACK_OVERFLOW_MAX_SIZE (100 * 1024 * 1024)
 
@@ -32,10 +44,22 @@
 
 #define PUTS(fd, str) _Py_write_noraise(fd, str, strlen(str))
 
-_Py_IDENTIFIER(enable);
-_Py_IDENTIFIER(fileno);
-_Py_IDENTIFIER(flush);
-_Py_IDENTIFIER(stderr);
+
+// clang uses __attribute__((no_sanitize("undefined")))
+// GCC 4.9+ uses __attribute__((no_sanitize_undefined))
+#if defined(__has_feature)  // Clang
+#  if __has_feature(undefined_behavior_sanitizer)
+#    define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
+#  endif
+#endif
+#if defined(__GNUC__) \
+    && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 9))
+#  define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize_undefined))
+#endif
+#ifndef _Py_NO_SANITIZE_UNDEFINED
+#  define _Py_NO_SANITIZE_UNDEFINED
+#endif
+
 
 #ifdef HAVE_SIGACTION
 typedef struct sigaction _Py_sighandler_t;
@@ -92,19 +116,6 @@ typedef struct {
 
 static user_signal_t *user_signals;
 
-/* the following macros come from Python: Modules/signalmodule.c */
-#ifndef NSIG
-# if defined(_NSIG)
-#  define NSIG _NSIG            /* For BSD/SysV */
-# elif defined(_SIGMAX)
-#  define NSIG (_SIGMAX + 1)    /* For QNX */
-# elif defined(SIGMAX)
-#  define NSIG (SIGMAX + 1)     /* For djgpp */
-# else
-#  define NSIG 64               /* Use a reasonable default value */
-# endif
-#endif
-
 static void faulthandler_user(int signum);
 #endif /* FAULTHANDLER_USER */
 
@@ -124,12 +135,6 @@ static fault_handler_t faulthandler_handlers[] = {
 };
 static const size_t faulthandler_nsignals = \
     Py_ARRAY_LENGTH(faulthandler_handlers);
-
-/* Using an alternative stack requires sigaltstack()
-   and sigaction() SA_ONSTACK */
-#if defined(HAVE_SIGALTSTACK) && defined(HAVE_SIGACTION)
-#  define FAULTHANDLER_USE_ALT_STACK
-#endif
 
 #ifdef FAULTHANDLER_USE_ALT_STACK
 static stack_t stack;
@@ -155,7 +160,8 @@ faulthandler_get_fileno(PyObject **file_ptr)
     PyObject *file = *file_ptr;
 
     if (file == NULL || file == Py_None) {
-        file = _PySys_GetObjectId(&PyId_stderr);
+        PyThreadState *tstate = _PyThreadState_GET();
+        file = _PySys_GetAttr(tstate, &_Py_ID(stderr));
         if (file == NULL) {
             PyErr_SetString(PyExc_RuntimeError, "unable to get sys.stderr");
             return -1;
@@ -178,7 +184,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
         return fd;
     }
 
-    result = _PyObject_CallMethodIdNoArgs(file, &PyId_fileno);
+    result = PyObject_CallMethodNoArgs(file, &_Py_ID(fileno));
     if (result == NULL)
         return -1;
 
@@ -196,7 +202,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
         return -1;
     }
 
-    result = _PyObject_CallMethodIdNoArgs(file, &PyId_flush);
+    result = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
     if (result != NULL)
         Py_DECREF(result);
     else {
@@ -878,7 +884,7 @@ check_signum(int signum)
             return 0;
         }
     }
-    if (signum < 1 || NSIG <= signum) {
+    if (signum < 1 || Py_NSIG <= signum) {
         PyErr_SetString(PyExc_ValueError, "signal number out of range");
         return 0;
     }
@@ -917,7 +923,7 @@ faulthandler_register_py(PyObject *self,
         return NULL;
 
     if (user_signals == NULL) {
-        user_signals = PyMem_Calloc(NSIG, sizeof(user_signal_t));
+        user_signals = PyMem_Calloc(Py_NSIG, sizeof(user_signal_t));
         if (user_signals == NULL)
             return PyErr_NoMemory();
     }
@@ -1017,7 +1023,7 @@ faulthandler_suppress_crash_report(void)
 #endif
 }
 
-static PyObject *
+static PyObject* _Py_NO_SANITIZE_UNDEFINED
 faulthandler_read_null(PyObject *self, PyObject *args)
 {
     volatile int *x;
@@ -1106,17 +1112,20 @@ faulthandler_fatal_error_c_thread(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject *
+static PyObject* _Py_NO_SANITIZE_UNDEFINED
 faulthandler_sigfpe(PyObject *self, PyObject *args)
 {
+    faulthandler_suppress_crash_report();
+
     /* Do an integer division by zero: raise a SIGFPE on Intel CPU, but not on
        PowerPC. Use volatile to disable compile-time optimizations. */
     volatile int x = 1, y = 0, z;
-    faulthandler_suppress_crash_report();
     z = x / y;
+
     /* If the division by zero didn't raise a SIGFPE (e.g. on PowerPC),
        raise it manually. */
     raise(SIGFPE);
+
     /* This line is never reached, but we pretend to make something with z
        to silence a compiler warning. */
     return PyLong_FromLong(z);
@@ -1194,7 +1203,7 @@ faulthandler_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(thread.file);
 #ifdef FAULTHANDLER_USER
     if (user_signals != NULL) {
-        for (size_t signum=0; signum < NSIG; signum++)
+        for (size_t signum=0; signum < Py_NSIG; signum++)
             Py_VISIT(user_signals[signum].file);
     }
 #endif
@@ -1220,7 +1229,7 @@ PyDoc_STRVAR(module_doc,
 
 static PyMethodDef module_methods[] = {
     {"enable",
-     (PyCFunction)(void(*)(void))faulthandler_py_enable, METH_VARARGS|METH_KEYWORDS,
+     _PyCFunction_CAST(faulthandler_py_enable), METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("enable(file=sys.stderr, all_threads=True): "
                "enable the fault handler")},
     {"disable", faulthandler_disable_py, METH_NOARGS,
@@ -1228,12 +1237,12 @@ static PyMethodDef module_methods[] = {
     {"is_enabled", faulthandler_is_enabled, METH_NOARGS,
      PyDoc_STR("is_enabled()->bool: check if the handler is enabled")},
     {"dump_traceback",
-     (PyCFunction)(void(*)(void))faulthandler_dump_traceback_py, METH_VARARGS|METH_KEYWORDS,
+     _PyCFunction_CAST(faulthandler_dump_traceback_py), METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("dump_traceback(file=sys.stderr, all_threads=True): "
                "dump the traceback of the current thread, or of all threads "
                "if all_threads is True, into file")},
     {"dump_traceback_later",
-     (PyCFunction)(void(*)(void))faulthandler_dump_traceback_later, METH_VARARGS|METH_KEYWORDS,
+     _PyCFunction_CAST(faulthandler_dump_traceback_later), METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("dump_traceback_later(timeout, repeat=False, file=sys.stderrn, exit=False):\n"
                "dump the traceback of all threads in timeout seconds,\n"
                "or each timeout seconds if repeat is True. If exit is True, "
@@ -1244,13 +1253,13 @@ static PyMethodDef module_methods[] = {
                "to dump_traceback_later().")},
 #ifdef FAULTHANDLER_USER
     {"register",
-     (PyCFunction)(void(*)(void))faulthandler_register_py, METH_VARARGS|METH_KEYWORDS,
+     _PyCFunction_CAST(faulthandler_register_py), METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("register(signum, file=sys.stderr, all_threads=True, chain=False): "
                "register a handler for the signal 'signum': dump the "
                "traceback of the current thread, or of all threads if "
                "all_threads is True, into file")},
     {"unregister",
-     (PyCFunction)(void(*)(void))faulthandler_unregister_py, METH_VARARGS|METH_KEYWORDS,
+     _PyCFunction_CAST(faulthandler_unregister_py), METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("unregister(signum): unregister the handler of the signal "
                 "'signum' registered by register()")},
 #endif
@@ -1336,7 +1345,7 @@ faulthandler_init_enable(void)
         return -1;
     }
 
-    PyObject *res = _PyObject_CallMethodIdNoArgs(module, &PyId_enable);
+    PyObject *res = PyObject_CallMethodNoArgs(module, &_Py_ID(enable));
     Py_DECREF(module);
     if (res == NULL) {
         return -1;
@@ -1357,6 +1366,15 @@ _PyFaulthandler_Init(int enable)
        signal handler uses more than SIGSTKSZ bytes of stack memory on some
        platforms. */
     stack.ss_size = SIGSTKSZ * 2;
+#ifdef AT_MINSIGSTKSZ
+    /* bpo-46968: Query Linux for minimal stack size to ensure signal delivery
+       for the hardware running CPython. This OS feature is available in
+       Linux kernel version >= 5.14 */
+    unsigned long at_minstack_size = getauxval(AT_MINSIGSTKSZ);
+    if (at_minstack_size != 0) {
+        stack.ss_size = SIGSTKSZ + at_minstack_size;
+    }
+#endif
 #endif
 
     memset(&thread, 0, sizeof(thread));
@@ -1386,7 +1404,7 @@ void _PyFaulthandler_Fini(void)
 #ifdef FAULTHANDLER_USER
     /* user */
     if (user_signals != NULL) {
-        for (size_t signum=0; signum < NSIG; signum++) {
+        for (size_t signum=0; signum < Py_NSIG; signum++) {
             faulthandler_unregister(&user_signals[signum], signum);
         }
         PyMem_Free(user_signals);

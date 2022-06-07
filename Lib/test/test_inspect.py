@@ -7,6 +7,7 @@ import inspect
 import io
 import linecache
 import os
+import dis
 from os.path import normcase
 import _pickle
 import pickle
@@ -44,7 +45,8 @@ from test.test_import import _ready_to_import
 # isbuiltin, isroutine, isgenerator, isgeneratorfunction, getmembers,
 # getdoc, getfile, getmodule, getsourcefile, getcomments, getsource,
 # getclasstree, getargvalues, formatargvalues,
-# currentframe, stack, trace, isdatadescriptor
+# currentframe, stack, trace, isdatadescriptor,
+# ismethodwrapper
 
 # NOTE: There are some additional tests relating to interaction with
 #       zipimport in the test_zipimport_support test module.
@@ -93,7 +95,8 @@ class IsTestBase(unittest.TestCase):
                       inspect.ismodule, inspect.istraceback,
                       inspect.isgenerator, inspect.isgeneratorfunction,
                       inspect.iscoroutine, inspect.iscoroutinefunction,
-                      inspect.isasyncgen, inspect.isasyncgenfunction])
+                      inspect.isasyncgen, inspect.isasyncgenfunction,
+                      inspect.ismethodwrapper])
 
     def istest(self, predicate, exp):
         obj = eval(exp)
@@ -108,7 +111,7 @@ class IsTestBase(unittest.TestCase):
             self.assertFalse(other(obj), 'not %s(%s)' % (other.__name__, exp))
 
     def test__all__(self):
-        support.check__all__(self, inspect, not_exported=("k", "v", "mod_dict", "modulesbyfile"))
+        support.check__all__(self, inspect, not_exported=("modulesbyfile",))
 
 def generator_function_example(self):
     for i in range(2):
@@ -169,6 +172,14 @@ class TestPredicates(IsTestBase):
             self.istest(inspect.ismemberdescriptor, 'datetime.timedelta.days')
         else:
             self.assertFalse(inspect.ismemberdescriptor(datetime.timedelta.days))
+        self.istest(inspect.ismethodwrapper, "object().__str__")
+        self.istest(inspect.ismethodwrapper, "object().__eq__")
+        self.istest(inspect.ismethodwrapper, "object().__repr__")
+        self.assertFalse(inspect.ismethodwrapper(type))
+        self.assertFalse(inspect.ismethodwrapper(int))
+        self.assertFalse(inspect.ismethodwrapper(type("AnyClass", (), {})))
+
+
 
     def test_iscoroutine(self):
         async_gen_coro = async_generator_function_example(1)
@@ -241,8 +252,38 @@ class TestPredicates(IsTestBase):
         coro.close(); gen_coro.close() # silence warnings
 
     def test_isroutine(self):
-        self.assertTrue(inspect.isroutine(mod.spam))
+        # method
+        self.assertTrue(inspect.isroutine(git.argue))
+        self.assertTrue(inspect.isroutine(mod.custom_method))
         self.assertTrue(inspect.isroutine([].count))
+        # function
+        self.assertTrue(inspect.isroutine(mod.spam))
+        self.assertTrue(inspect.isroutine(mod.StupidGit.abuse))
+        # slot-wrapper
+        self.assertTrue(inspect.isroutine(object.__init__))
+        self.assertTrue(inspect.isroutine(object.__str__))
+        self.assertTrue(inspect.isroutine(object.__lt__))
+        self.assertTrue(inspect.isroutine(int.__lt__))
+        # method-wrapper
+        self.assertTrue(inspect.isroutine(object().__init__))
+        self.assertTrue(inspect.isroutine(object().__str__))
+        self.assertTrue(inspect.isroutine(object().__lt__))
+        self.assertTrue(inspect.isroutine((42).__lt__))
+        # method-descriptor
+        self.assertTrue(inspect.isroutine(str.join))
+        self.assertTrue(inspect.isroutine(list.append))
+        self.assertTrue(inspect.isroutine(''.join))
+        self.assertTrue(inspect.isroutine([].append))
+        # object
+        self.assertFalse(inspect.isroutine(object))
+        self.assertFalse(inspect.isroutine(object()))
+        self.assertFalse(inspect.isroutine(str()))
+        # module
+        self.assertFalse(inspect.isroutine(mod))
+        # type
+        self.assertFalse(inspect.isroutine(type))
+        self.assertFalse(inspect.isroutine(int))
+        self.assertFalse(inspect.isroutine(type('some_class', (), {})))
 
     def test_isclass(self):
         self.istest(inspect.isclass, 'mod.StupidGit')
@@ -321,14 +362,23 @@ class TestInterpreterStack(IsTestBase):
 
     def test_stack(self):
         self.assertTrue(len(mod.st) >= 5)
-        self.assertEqual(revise(*mod.st[0][1:]),
+        frame1, frame2, frame3, frame4, *_ = mod.st
+        frameinfo = revise(*frame1[1:])
+        self.assertEqual(frameinfo,
              (modfile, 16, 'eggs', ['    st = inspect.stack()\n'], 0))
-        self.assertEqual(revise(*mod.st[1][1:]),
+        self.assertEqual(frame1.positions, dis.Positions(16, 16, 9, 24))
+        frameinfo = revise(*frame2[1:])
+        self.assertEqual(frameinfo,
              (modfile, 9, 'spam', ['    eggs(b + d, c + f)\n'], 0))
-        self.assertEqual(revise(*mod.st[2][1:]),
+        self.assertEqual(frame2.positions, dis.Positions(9, 9, 4, 22))
+        frameinfo = revise(*frame3[1:])
+        self.assertEqual(frameinfo,
              (modfile, 43, 'argue', ['            spam(a, b, c)\n'], 0))
-        self.assertEqual(revise(*mod.st[3][1:]),
+        self.assertEqual(frame3.positions, dis.Positions(43, 43, 12, 25))
+        frameinfo = revise(*frame4[1:])
+        self.assertEqual(frameinfo,
              (modfile, 39, 'abuse', ['        self.argue(a, b, c)\n'], 0))
+        self.assertEqual(frame4.positions, dis.Positions(39, 39, 8, 27))
         # Test named tuple fields
         record = mod.st[0]
         self.assertIs(record.frame, mod.fr)
@@ -340,12 +390,16 @@ class TestInterpreterStack(IsTestBase):
 
     def test_trace(self):
         self.assertEqual(len(git.tr), 3)
-        self.assertEqual(revise(*git.tr[0][1:]),
+        frame1, frame2, frame3, = git.tr
+        self.assertEqual(revise(*frame1[1:]),
              (modfile, 43, 'argue', ['            spam(a, b, c)\n'], 0))
-        self.assertEqual(revise(*git.tr[1][1:]),
+        self.assertEqual(frame1.positions, dis.Positions(43, 43, 12, 25))
+        self.assertEqual(revise(*frame2[1:]),
              (modfile, 9, 'spam', ['    eggs(b + d, c + f)\n'], 0))
-        self.assertEqual(revise(*git.tr[2][1:]),
+        self.assertEqual(frame2.positions, dis.Positions(9, 9, 4, 22))
+        self.assertEqual(revise(*frame3[1:]),
              (modfile, 18, 'eggs', ['    q = y / 0\n'], 0))
+        self.assertEqual(frame3.positions, dis.Positions(18, 18, 8, 13))
 
     def test_frame(self):
         args, varargs, varkw, locals = inspect.getargvalues(mod.fr)
@@ -788,6 +842,10 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls213, 218, 222)
         self.assertSourceEqual(mod2.cls213().func219(), 220, 221)
 
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "socket.accept is broken"
+    )
     def test_nested_class_definition_inside_async_function(self):
         import asyncio
         self.addCleanup(asyncio.set_event_loop_policy, None)
@@ -1215,8 +1273,13 @@ class TestClassesAndFunctions(unittest.TestCase):
             @types.DynamicClassAttribute
             def eggs(self):
                 return 'spam'
+        class B:
+            def __getattr__(self, attribute):
+                return None
         self.assertIn(('eggs', 'scrambled'), inspect.getmembers(A))
         self.assertIn(('eggs', 'spam'), inspect.getmembers(A()))
+        b = B()
+        self.assertIn(('__getattr__', b.__getattr__), inspect.getmembers(b))
 
     def test_getmembers_static(self):
         class A:
@@ -3543,6 +3606,9 @@ class TestParameterObject(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, 'not a valid parameter name'):
             inspect.Parameter('1', kind=inspect.Parameter.VAR_KEYWORD)
+
+        with self.assertRaisesRegex(ValueError, 'not a valid parameter name'):
+            inspect.Parameter('from', kind=inspect.Parameter.VAR_KEYWORD)
 
         with self.assertRaisesRegex(TypeError, 'name must be a str'):
             inspect.Parameter(None, kind=inspect.Parameter.VAR_KEYWORD)

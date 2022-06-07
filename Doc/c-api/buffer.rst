@@ -499,6 +499,13 @@ Buffer-related functions
    This function fails if *len* != *src->len*.
 
 
+.. c:function:: int PyObject_CopyData(Py_buffer *dest, Py_buffer *src)
+
+   Copy data from *src* to *dest* buffer. Can convert between C-style and
+   or Fortran-style buffers.
+
+   ``0`` is returned on success, ``-1`` on error.
+
 .. c:function:: void PyBuffer_FillContiguousStrides(int ndims, Py_ssize_t *shape, Py_ssize_t *strides, int itemsize, char order)
 
    Fill the *strides* array with byte-strides of a :term:`contiguous` (C-style if

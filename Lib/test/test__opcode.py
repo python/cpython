@@ -11,7 +11,6 @@ class OpcodeTests(unittest.TestCase):
 
     def test_stack_effect(self):
         self.assertEqual(stack_effect(dis.opmap['POP_TOP']), -1)
-        self.assertEqual(stack_effect(dis.opmap['DUP_TOP_TWO']), 2)
         self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 0), -1)
         self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 1), -1)
         self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 3), -2)
@@ -19,7 +18,7 @@ class OpcodeTests(unittest.TestCase):
         self.assertRaises(ValueError, stack_effect, dis.opmap['BUILD_SLICE'])
         self.assertRaises(ValueError, stack_effect, dis.opmap['POP_TOP'], 0)
         # All defined opcodes
-        for name, code in dis.opmap.items():
+        for name, code in filter(lambda item: item[0] not in dis.deoptmap, dis.opmap.items()):
             with self.subTest(opname=name):
                 if code < dis.HAVE_ARGUMENT:
                     stack_effect(code)
@@ -48,7 +47,7 @@ class OpcodeTests(unittest.TestCase):
         self.assertEqual(stack_effect(JUMP_FORWARD, 0, jump=False), 0)
         # All defined opcodes
         has_jump = dis.hasjabs + dis.hasjrel
-        for name, code in dis.opmap.items():
+        for name, code in filter(lambda item: item[0] not in dis.deoptmap, dis.opmap.items()):
             with self.subTest(opname=name):
                 if code < dis.HAVE_ARGUMENT:
                     common = stack_effect(code)

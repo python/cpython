@@ -316,15 +316,15 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
 
         with self.assertWarns(DeprecationWarning) as w:
             Foo('test1').run()
-        self.assertIn('It is deprecated to return a value!=None', str(w.warnings[0].message))
-        self.assertIn('test1', str(w.warnings[0].message))
-        self.assertEqual(w.warnings[0].filename, __file__)
+        self.assertIn('It is deprecated to return a value!=None', str(w.warning))
+        self.assertIn('test1', str(w.warning))
+        self.assertEqual(w.filename, __file__)
 
         with self.assertWarns(DeprecationWarning) as w:
             Foo('test2').run()
-        self.assertIn('It is deprecated to return a value!=None', str(w.warnings[0].message))
-        self.assertIn('test2', str(w.warnings[0].message))
-        self.assertEqual(w.warnings[0].filename, __file__)
+        self.assertIn('It is deprecated to return a value!=None', str(w.warning))
+        self.assertIn('test2', str(w.warning))
+        self.assertEqual(w.filename, __file__)
 
     def _check_call_order__subtests(self, result, events, expected_events):
         class Foo(Test.LoggingTestCase):
@@ -697,6 +697,36 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertRaises(self.failureException, self.assertNotIn, 1, [1, 2, 3])
         self.assertRaises(self.failureException, self.assertNotIn, 'cow',
                           animals)
+
+    def testAssertDictContainsSubset(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+
+            self.assertDictContainsSubset({}, {})
+            self.assertDictContainsSubset({}, {'a': 1})
+            self.assertDictContainsSubset({'a': 1}, {'a': 1})
+            self.assertDictContainsSubset({'a': 1}, {'a': 1, 'b': 2})
+            self.assertDictContainsSubset({'a': 1, 'b': 2}, {'a': 1, 'b': 2})
+
+            with self.assertRaises(self.failureException):
+                self.assertDictContainsSubset({1: "one"}, {})
+
+            with self.assertRaises(self.failureException):
+                self.assertDictContainsSubset({'a': 2}, {'a': 1})
+
+            with self.assertRaises(self.failureException):
+                self.assertDictContainsSubset({'c': 1}, {'a': 1})
+
+            with self.assertRaises(self.failureException):
+                self.assertDictContainsSubset({'a': 1, 'c': 1}, {'a': 1})
+
+            with self.assertRaises(self.failureException):
+                self.assertDictContainsSubset({'a': 1, 'c': 1}, {'a': 1})
+
+            one = ''.join(chr(i) for i in range(255))
+            # this used to cause a UnicodeDecodeError constructing the failure msg
+            with self.assertRaises(self.failureException):
+                self.assertDictContainsSubset({'foo': one}, {'foo': '\uFFFD'})
 
     def testAssertEqual(self):
         equal_pairs = [
@@ -1760,18 +1790,45 @@ test case
             pass
         self.assertIsNone(value)
 
-    def testDeprecatedFailMethods(self):
-        """Test that the deprecated fail* methods get removed in 3.11"""
+    def testDeprecatedMethodNames(self):
+        """
+        Test that the deprecated methods raise a DeprecationWarning. See #9424.
+        """
+        old = (
+            (self.failIfEqual, (3, 5)),
+            (self.assertNotEquals, (3, 5)),
+            (self.failUnlessEqual, (3, 3)),
+            (self.assertEquals, (3, 3)),
+            (self.failUnlessAlmostEqual, (2.0, 2.0)),
+            (self.assertAlmostEquals, (2.0, 2.0)),
+            (self.failIfAlmostEqual, (3.0, 5.0)),
+            (self.assertNotAlmostEquals, (3.0, 5.0)),
+            (self.failUnless, (True,)),
+            (self.assert_, (True,)),
+            (self.failUnlessRaises, (TypeError, lambda _: 3.14 + 'spam')),
+            (self.failIf, (False,)),
+            (self.assertDictContainsSubset, (dict(a=1, b=2), dict(a=1, b=2, c=3))),
+            (self.assertRaisesRegexp, (KeyError, 'foo', lambda: {}['foo'])),
+            (self.assertRegexpMatches, ('bar', 'bar')),
+        )
+        for meth, args in old:
+            with self.assertWarns(DeprecationWarning):
+                meth(*args)
+
+    # disable this test for now. When the version where the fail* methods will
+    # be removed is decided, re-enable it and update the version
+    def _testDeprecatedFailMethods(self):
+        """Test that the deprecated fail* methods get removed in 3.x"""
+        if sys.version_info[:2] < (3, 3):
+            return
         deprecated_names = [
             'failIfEqual', 'failUnlessEqual', 'failUnlessAlmostEqual',
             'failIfAlmostEqual', 'failUnless', 'failUnlessRaises', 'failIf',
-            'assertNotEquals', 'assertEquals', 'assertAlmostEquals',
-            'assertNotAlmostEquals', 'assert_', 'assertDictContainsSubset',
-            'assertRaisesRegexp', 'assertRegexpMatches'
+            'assertDictContainsSubset',
         ]
         for deprecated_name in deprecated_names:
             with self.assertRaises(AttributeError):
-                getattr(self, deprecated_name)
+                getattr(self, deprecated_name)  # remove these in 3.x
 
     def testDeepcopy(self):
         # Issue: 5660

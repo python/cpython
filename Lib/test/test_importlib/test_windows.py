@@ -60,17 +60,28 @@ def setup_module(machinery, name, path=None):
         root = machinery.WindowsRegistryFinder.REGISTRY_KEY
     key = root.format(fullname=name,
                       sys_version='%d.%d' % sys.version_info[:2])
+    base_key = "Software\\Python\\PythonCore\\{}.{}".format(
+        sys.version_info.major, sys.version_info.minor)
+    assert key.casefold().startswith(base_key.casefold()), (
+        "expected key '{}' to start with '{}'".format(key, base_key))
     try:
         with temp_module(name, "a = 1") as location:
+            try:
+                OpenKey(HKEY_CURRENT_USER, base_key)
+                if machinery.WindowsRegistryFinder.DEBUG_BUILD:
+                    delete_key = os.path.dirname(key)
+                else:
+                    delete_key = key
+            except OSError:
+                delete_key = base_key
             subkey = CreateKey(HKEY_CURRENT_USER, key)
             if path is None:
                 path = location + ".py"
             SetValue(subkey, "", REG_SZ, path)
             yield
     finally:
-        if machinery.WindowsRegistryFinder.DEBUG_BUILD:
-            key = os.path.dirname(key)
-        delete_registry_tree(HKEY_CURRENT_USER, key)
+        if delete_key:
+            delete_registry_tree(HKEY_CURRENT_USER, delete_key)
 
 
 @unittest.skipUnless(sys.platform.startswith('win'), 'requires Windows')

@@ -940,10 +940,9 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
             # but that's a minor nit.  Since the original implementation
             # allowed empty dicts that type of behavior probably should be
             # preserved for consistency
-        except TypeError:
-            ty, va, tb = sys.exc_info()
+        except TypeError as err:
             raise TypeError("not a valid non-string sequence "
-                            "or mapping object").with_traceback(tb)
+                            "or mapping object") from err
 
     l = []
     if not doseq:

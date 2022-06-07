@@ -590,7 +590,9 @@ x = (
         self.assertEqual(f'{-10:{"-"}#{1}0{"x"}}', '      -0xa')
         self.assertEqual(f'{10:#{3 != {4:5} and width}x}', '       0xa')
 
-        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
+        self.assertAllRaise(SyntaxError,
+                            """f-string: invalid conversion character 'r{"': """
+                            """expected 's', 'r', or 'a'""",
                             ["""f'{"s"!r{":10"}}'""",
 
                              # This looks like a nested format spec.
@@ -628,16 +630,27 @@ x = (
                             ["f'{}'",
                              "f'{ }'"
                              "f' {} '",
-                             "f'{!r}'",
-                             "f'{ !r}'",
                              "f'{10:{ }}'",
                              "f' { } '",
 
                              # The Python parser ignores also the following
                              # whitespace characters in additional to a space.
                              "f'''{\t\f\r\n}'''",
+                             ])
 
-                             # Catch the empty expression before the
+        # Different error messeges are raised when a specfier ('!', ':' or '=') is used after an empty expression
+        self.assertAllRaise(SyntaxError, "f-string: expression required before '!'",
+                            ["f'{!r}'",
+                             "f'{ !r}'",
+                             "f'{!}'",
+                             "f'''{\t\f\r\n!a}'''",
+
+                             # Catch empty expression before the
+                             #  missing closing brace.
+                             "f'{!'",
+                             "f'{!s:'",
+
+                             # Catch empty expression before the
                              #  invalid conversion.
                              "f'{!x}'",
                              "f'{ !xr}'",
@@ -645,16 +658,23 @@ x = (
                              "f'{!x:a}'",
                              "f'{ !xr:}'",
                              "f'{ !xr:a}'",
+                             ])
 
-                             "f'{!}'",
-                             "f'{:}'",
-
-                             # We find the empty expression before the
-                             #  missing closing brace.
-                             "f'{!'",
-                             "f'{!s:'",
+        self.assertAllRaise(SyntaxError, "f-string: expression required before ':'",
+                            ["f'{:}'",
+                             "f'{ :!}'",
+                             "f'{:2}'",
+                             "f'''{\t\f\r\n:a}'''",
                              "f'{:'",
-                             "f'{:x'",
+                             ])
+
+        self.assertAllRaise(SyntaxError, "f-string: expression required before '='",
+                            ["f'{=}'",
+                             "f'{ =}'",
+                             "f'{ =:}'",
+                             "f'{   =!}'",
+                             "f'''{\t\f\r\n=}'''",
+                             "f'{='",
                              ])
 
         # Different error message is raised for other whitespace characters.
@@ -746,12 +766,16 @@ x = (
         # differently inside f-strings.
         self.assertAllRaise(SyntaxError, r"\(unicode error\) 'unicodeescape' codec can't decode bytes in position .*: malformed \\N character escape",
                             [r"f'\N'",
+                             r"f'\N '",
+                             r"f'\N  '",  # See bpo-46503.
                              r"f'\N{'",
                              r"f'\N{GREEK CAPITAL LETTER DELTA'",
 
                              # Here are the non-f-string versions,
                              #  which should give the same errors.
                              r"'\N'",
+                             r"'\N '",
+                             r"'\N  '",
                              r"'\N{'",
                              r"'\N{GREEK CAPITAL LETTER DELTA'",
                              ])
@@ -990,19 +1014,28 @@ x = (
         # Not a conversion, but show that ! is allowed in a format spec.
         self.assertEqual(f'{3.14:!<10.10}', '3.14!!!!!!')
 
-        self.assertAllRaise(SyntaxError, 'f-string: invalid conversion character',
-                            ["f'{3!g}'",
-                             "f'{3!A}'",
-                             "f'{3!3}'",
-                             "f'{3!G}'",
-                             "f'{3!!}'",
-                             "f'{3!:}'",
-                             "f'{3! s}'",  # no space before conversion char
+        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
+                            ["f'{3!'",
+                             "f'{3!s'",
+                             "f'{3!g'",
                              ])
 
-        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
-                            ["f'{x!s{y}}'",
-                             "f'{3!ss}'",
+        self.assertAllRaise(SyntaxError, 'f-string: missed conversion character',
+                            ["f'{3!}'",
+                             "f'{3!:'",
+                             "f'{3!:}'",
+                             ])
+
+        for conv in 'g', 'A', '3', 'G', '!', ' s', 's ', ' s ', 'ä', 'ɐ', 'ª':
+            self.assertAllRaise(SyntaxError,
+                                "f-string: invalid conversion character %r: "
+                                "expected 's', 'r', or 'a'" % conv,
+                                ["f'{3!" + conv + "}'"])
+
+        self.assertAllRaise(SyntaxError,
+                            "f-string: invalid conversion character 'ss': "
+                            "expected 's', 'r', or 'a'",
+                            ["f'{3!ss}'",
                              "f'{3!ss:}'",
                              "f'{3!ss:s}'",
                              ])
@@ -1049,6 +1082,9 @@ x = (
                              "f'{{{'",
                              "f'{{}}{'",
                              "f'{'",
+                             "f'x{<'",  # See bpo-46762.
+                             "f'x{>'",
+                             "f'{i='",  # See gh-93418.
                              ])
 
         # But these are just normal strings.

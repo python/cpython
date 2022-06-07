@@ -1,7 +1,7 @@
 
 import unittest
 
-class ExceptionTestCase(unittest.TestCase):
+class ExceptTestCases(unittest.TestCase):
     def test_try_except_else_finally(self):
         hit_except = False
         hit_else = False
@@ -168,6 +168,127 @@ class ExceptionTestCase(unittest.TestCase):
 
         self.assertFalse(hit_inner_except)
         self.assertTrue(hit_inner_else)
+        self.assertFalse(hit_else)
+        self.assertTrue(hit_finally)
+        self.assertTrue(hit_except)
+
+    def test_nested_exception_in_except(self):
+        hit_else = False
+        hit_finally = False
+        hit_except = False
+        hit_inner_except = False
+        hit_inner_else = False
+
+        try:
+            try:
+                raise Exception('inner exception')
+            except:
+                hit_inner_except = True
+                raise Exception('outer exception')
+            else:
+                hit_inner_else = True
+        except:
+            hit_except = True
+        else:
+            hit_else = True
+        finally:
+            hit_finally = True
+
+        self.assertTrue(hit_inner_except)
+        self.assertFalse(hit_inner_else)
+        self.assertFalse(hit_else)
+        self.assertTrue(hit_finally)
+        self.assertTrue(hit_except)
+
+    def test_nested_exception_in_else(self):
+        hit_else = False
+        hit_finally = False
+        hit_except = False
+        hit_inner_except = False
+        hit_inner_else = False
+
+        try:
+            try:
+                pass
+            except:
+                hit_inner_except = True
+            else:
+                hit_inner_else = True
+                raise Exception('outer exception')
+        except:
+            hit_except = True
+        else:
+            hit_else = True
+        finally:
+            hit_finally = True
+
+        self.assertFalse(hit_inner_except)
+        self.assertTrue(hit_inner_else)
+        self.assertFalse(hit_else)
+        self.assertTrue(hit_finally)
+        self.assertTrue(hit_except)
+
+    def test_nested_exception_in_finally_no_exception(self):
+        hit_else = False
+        hit_finally = False
+        hit_except = False
+        hit_inner_except = False
+        hit_inner_else = False
+        hit_inner_finally = False
+
+        try:
+            try:
+                pass
+            except:
+                hit_inner_except = True
+            else:
+                hit_inner_else = True
+            finally:
+                hit_inner_finally = True
+                raise Exception('outer exception')
+        except:
+            hit_except = True
+        else:
+            hit_else = True
+        finally:
+            hit_finally = True
+
+        self.assertFalse(hit_inner_except)
+        self.assertTrue(hit_inner_else)
+        self.assertTrue(hit_inner_finally)
+        self.assertFalse(hit_else)
+        self.assertTrue(hit_finally)
+        self.assertTrue(hit_except)
+
+    def test_nested_exception_in_finally_with_exception(self):
+        hit_else = False
+        hit_finally = False
+        hit_except = False
+        hit_inner_except = False
+        hit_inner_else = False
+        hit_inner_finally = False
+
+        try:
+            try:
+                raise Exception('inner exception')
+            except:
+                hit_inner_except = True
+            else:
+                hit_inner_else = True
+            finally:
+                hit_inner_finally = True
+                raise Exception('outer exception')
+        except:
+            hit_except = True
+        else:
+            hit_else = True
+        finally:
+            hit_finally = True
+
+
+        self.assertTrue(hit_inner_except)
+        self.assertFalse(hit_inner_else)
+        self.assertTrue(hit_inner_finally)
         self.assertFalse(hit_else)
         self.assertTrue(hit_finally)
         self.assertTrue(hit_except)

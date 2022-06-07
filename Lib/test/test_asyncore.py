@@ -18,10 +18,9 @@ from io import BytesIO
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
 
-import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import asyncore
+support.requires_working_socket(module=True)
+
+asyncore = warnings_helper.import_deprecated('asyncore')
 
 
 HAS_UNIX_SOCKETS = hasattr(socket, 'AF_UNIX')
