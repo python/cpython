@@ -142,11 +142,21 @@ Module functions and constants
    The version number of this module, as a string. This is not the version of
    the SQLite library.
 
+   .. deprecated-removed:: 3.12 3.14
+      This constant used to reflect the version number of the ``pysqlite``
+      package, a third-party library which used to upstream changes to
+      ``sqlite3``. Today, it carries no meaning or practical value.
+
 
 .. data:: version_info
 
    The version number of this module, as a tuple of integers. This is not the
    version of the SQLite library.
+
+   .. deprecated-removed:: 3.12 3.14
+      This constant used to reflect the version number of the ``pysqlite``
+      package, a third-party library which used to upstream changes to
+      ``sqlite3``. Today, it carries no meaning or practical value.
 
 
 .. data:: sqlite_version
