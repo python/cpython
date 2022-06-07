@@ -1,60 +1,76 @@
 #! /usr/bin/env python3
-"""Compare checksums for wheels in :mod:`ensurepip` against the Cheeseshop."""
+
+"""
+Compare checksums for wheels in :mod:`ensurepip` against the Cheeseshop.
+
+When GitHub Actions executes the script, output is formatted accordingly.
+https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-a-notice-message
+"""
 
 import hashlib
 import json
-from pathlib import Path
+import os
 import re
+import sys
+from pathlib import Path
 from urllib.request import urlopen
 
 PACKAGE_NAMES = ("pip", "setuptools")
-ROOT = Path(__file__).parent.parent.parent / "Lib/ensurepip"
-WHEEL_DIR = ROOT / "_bundled"
-ENSURE_PIP_INIT_PY_TEXT = (ROOT / "__init__.py").read_text(encoding="utf-8")
-
-# Contains names of successfully verified packages
-verified_packages = {*()}
+ENSURE_PIP_ROOT = Path(__file__).parent.parent.parent / "Lib/ensurepip"
+WHEEL_DIR = ENSURE_PIP_ROOT / "_bundled"
+ENSURE_PIP_INIT_PY_TEXT = (ENSURE_PIP_ROOT / "__init__.py").read_text(encoding="utf-8")
+GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS")
 
 
-def error(file, message):
-    print(f"::error file={file}::{message}\n")
+def print_notice(file_path: str, message: str) -> None:
+    if GITHUB_ACTIONS:
+        message = f"::notice file={file_path}::{message}"
+    print(message, end="\n\n")
 
 
-for package_name in PACKAGE_NAMES:
+def print_error(file_path: str, message: str) -> None:
+    if GITHUB_ACTIONS:
+        message = f"::error file={file_path}::{message}"
+    print(message, end="\n\n")
+
+
+def verify_wheel(package_name: str) -> bool:
     # Find the package on disk
     package_path = next(WHEEL_DIR.glob(f"{package_name}*.whl"), None)
-    if package_path is None:
-        error(package_path, f"Could not find a {package_name} wheel on disk.")
-        continue
+    if not package_path:
+        print_error("", f"Could not find a {package_name} wheel on disk.")
+        return False
 
     print(f"Verifying checksum for {package_path}.")
 
     # Find the version of the package used by ensurepip
     package_version_match = re.search(
-        f'_{package_name.upper()}_VERSION = "([^"]+)',
-        ENSURE_PIP_INIT_PY_TEXT
+        f'_{package_name.upper()}_VERSION = "([^"]+)', ENSURE_PIP_INIT_PY_TEXT
     )
-    if package_version_match is None:
-        error(package_path, f"No {package_name} version found in Lib/ensurepip/__init__.py.")
-        continue
+    if not package_version_match:
+        print_error(
+            package_path,
+            f"No {package_name} version found in Lib/ensurepip/__init__.py.",
+        )
+        return False
     package_version = package_version_match[1]
 
     # Get the SHA 256 digest from the Cheeseshop
     try:
         raw_text = urlopen(f"https://pypi.org/pypi/{package_name}/json").read()
-    except (OSError, ValueError) as error:
-        error(package_path, f"Could not fetch JSON metadata for {package_name}.")
-        continue
+    except (OSError, ValueError):
+        print_error(package_path, f"Could not fetch JSON metadata for {package_name}.")
+        return False
 
-    expected_digest = ""
     release_files = json.loads(raw_text)["releases"][package_version]
     for release_info in release_files:
         if package_path.name != release_info["filename"]:
             continue
         expected_digest = release_info["digests"].get("sha256", "")
-    if expected_digest == "":
-        error(package_path, f"No digest for {package_name} found from PyPI.")
-        continue
+        break
+    else:
+        print_error(package_path, f"No digest for {package_name} found from PyPI.")
+        return False
 
     # Compute the SHA 256 digest of the wheel on disk
     actual_digest = hashlib.sha256(package_path.read_bytes()).hexdigest()
@@ -62,19 +78,19 @@ for package_name in PACKAGE_NAMES:
     print(f"Expected digest: {expected_digest}")
     print(f"Actual digest:   {actual_digest}")
 
-    # The messages are formatted to be parsed by GitHub Actions.
-    # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-a-notice-message
-    if actual_digest == expected_digest:
-        print(f"::notice file={package_path}::"
-              f"Successfully verified the checksum of the {package_name} wheel.\n")
-        verified_packages.add(package_name)
-    else:
-        error(package_path, f"Failed to verify the checksum of the {package_name} wheel.")
+    if actual_digest != expected_digest:
+        print_error(
+            package_path, f"Failed to verify the checksum of the {package_name} wheel."
+        )
+        return False
 
-# If we verified all packages, the set of package names and the set of verified
-# packages will be equal.
-if {*PACKAGE_NAMES} == verified_packages:
-    raise SystemExit(0)
+    print_notice(
+        package_path,
+        f"Successfully verified the checksum of the {package_name} wheel.",
+    )
+    return True
 
-# Otherwise we failed to verify all the packages.
-raise SystemExit(1)
+
+if __name__ == "__main__":
+    success = all([verify_wheel(package_name) for package_name in PACKAGE_NAMES])
+    sys.exit(0 if success else 1)
