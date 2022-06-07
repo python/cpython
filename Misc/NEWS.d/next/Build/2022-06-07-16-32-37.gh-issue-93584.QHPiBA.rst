@@ -1,0 +1,2 @@
+Avoid file race condition in ``setup.py`` ``add_multiarch_paths()`` method
+and ``_bootsubprocess.check_output()`` function.

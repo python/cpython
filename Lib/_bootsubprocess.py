@@ -4,6 +4,7 @@ implement features required by setup.py to build C extension modules when
 subprocess is unavailable. setup.py is not used on Windows.
 """
 import os
+import time
 
 
 # distutils.spawn used by distutils.command.build_ext
@@ -70,7 +71,9 @@ def check_output(cmd, **kwargs):
     if not _check_cmd(cmd):
         raise ValueError(f"unsupported command: {cmd!r}")
 
-    tmp_filename = "check_output.tmp"
+    # include pid and time stamp to avoid file name clashes with parallel
+    # builds.
+    tmp_filename = f"check_output-{os.getpid()}-{int(time.time() )}.tmp"
     if not isinstance(cmd, str):
         cmd = " ".join(cmd)
     cmd = f"{cmd} >{tmp_filename}"

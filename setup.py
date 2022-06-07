@@ -10,6 +10,7 @@ import re
 import shlex
 import sys
 import sysconfig
+import time
 import warnings
 from glob import glob, escape
 import _osx_support
@@ -688,9 +689,15 @@ class PyBuildExt(build_ext):
     def add_multiarch_paths(self):
         # Debian/Ubuntu multiarch support.
         # https://wiki.ubuntu.com/MultiarchSpec
-        tmpfile = os.path.join(self.build_temp, 'multiarch')
-        if not os.path.exists(self.build_temp):
-            os.makedirs(self.build_temp)
+
+        # Poor man's conflict avoidance. PGO build use $(MAKE), which runs
+        # make in a separate, untracked process. Sometimes main and subproces
+        # run `make sharedmods` at the same time. One process removes
+        # "multiarch" file of the other process.
+        tmpfile = os.path.join(
+            self.build_temp, f"multiarch-{os.getpid()}-{int(time.time() )}.tmp"
+        )
+        os.makedirs(self.build_temp, exist_ok=True)
         ret = run_command(
             '%s -print-multiarch > %s 2> /dev/null' % (CC, tmpfile))
         multiarch_path_component = ''
@@ -713,9 +720,7 @@ class PyBuildExt(build_ext):
         opt = ''
         if CROSS_COMPILING:
             opt = '-t' + sysconfig.get_config_var('HOST_GNU_TYPE')
-        tmpfile = os.path.join(self.build_temp, 'multiarch')
-        if not os.path.exists(self.build_temp):
-            os.makedirs(self.build_temp)
+        os.makedirs(self.build_temp, exist_ok=True)
         ret = run_command(
             'dpkg-architecture %s -qDEB_HOST_MULTIARCH > %s 2> /dev/null' %
             (opt, tmpfile))
