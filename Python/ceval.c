@@ -4988,6 +4988,11 @@ handle_eval_breaker:
         }
 
         TARGET(CALL_NO_KW_ALLOC_AND_ENTER_INIT) {
+            /* This instruction does the following:
+             * 1. Creates the object (by calling ``object.__new__``)
+             * 2. Pushes a shim frame to the frame stack (to cleanup after ``__init__``)
+             * 3. Pushes the frame for ``__init__`` to the frame stack
+             * */
             assert(call_shape.kwnames == NULL);
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             DEOPT_IF(is_method(stack_pointer, oparg), CALL);
