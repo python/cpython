@@ -690,7 +690,7 @@ which has a ``filter`` method with the same semantics.
 .. versionchanged:: 3.12
    You can now return a :class:`LogRecord` instance from filters to replace
    the log record rather than modifying it in place. This allows filters attached to
-   a :class:`Handler` to modify the log record before it is emitted without
+   a :class:`Handler` to modify the log record before it is emitted, without
    having side effects on other handlers.
 
 Although filters are used primarily to filter records based on more
