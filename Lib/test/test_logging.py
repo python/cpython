@@ -1,4 +1,4 @@
-# Copyright 2001-2021 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2022 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -16,7 +16,7 @@
 
 """Test harness for the logging module. Run all tests.
 
-Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 """
 import logging
 import logging.handlers
@@ -29,6 +29,7 @@ import datetime
 import pathlib
 import pickle
 import io
+import itertools
 import gc
 import json
 import os
@@ -1211,6 +1212,9 @@ class ExceptionFormatter(logging.Formatter):
     def formatException(self, ei):
         return "Got a [%s]" % ei[0].__name__
 
+def closeFileHandler(h, fn):
+    h.close()
+    os.remove(fn)
 
 class ConfigFileTest(BaseTest):
 
@@ -1594,10 +1598,6 @@ class ConfigFileTest(BaseTest):
 
     def test_config8_ok(self):
 
-        def cleanup(h1, fn):
-            h1.close()
-            os.remove(fn)
-
         with self.check_no_resource_warning():
             fn = make_temp_file(".log", "test_logging-X-")
 
@@ -1612,7 +1612,7 @@ class ConfigFileTest(BaseTest):
             self.apply_config(config8)
 
         handler = logging.root.handlers[0]
-        self.addCleanup(cleanup, handler, fn)
+        self.addCleanup(closeFileHandler, handler, fn)
 
     def test_logger_disabling(self):
         self.apply_config(self.disable_test)
@@ -2233,6 +2233,21 @@ def handlerFunc():
 class CustomHandler(logging.StreamHandler):
     pass
 
+class CustomListener(logging.handlers.QueueListener):
+    pass
+
+class CustomQueue(queue.Queue):
+    pass
+
+def queueMaker():
+    return queue.Queue()
+
+def listenerMaker(arg1, arg2, respect_handler_level=False):
+    def func(queue, *handlers, **kwargs):
+        kwargs.setdefault('respect_handler_level', respect_handler_level)
+        return CustomListener(queue, *handlers, **kwargs)
+    return func
+
 class ConfigDictTest(BaseTest):
 
     """Reading logging config from a dictionary."""
@@ -2836,7 +2851,7 @@ class ConfigDictTest(BaseTest):
         },
     }
 
-    out_of_order = {
+    bad_format = {
         "version": 1,
         "formatters": {
             "mySimpleFormatter": {
@@ -2856,7 +2871,7 @@ class ConfigDictTest(BaseTest):
                 "formatter": "mySimpleFormatter",
                 "target": "fileGlobal",
                 "level": "DEBUG"
-                }
+            }
         },
         "loggers": {
             "mymodule": {
@@ -2975,13 +2990,36 @@ class ConfigDictTest(BaseTest):
         }
     }
 
+    config_queue_handler = {
+        'version': 1,
+        'handlers' : {
+            'h1' : {
+                'class': 'logging.FileHandler',
+            },
+             # key is before depended on handlers to test that deferred config works
+            'ah' : {
+                'class': 'logging.handlers.QueueHandler',
+                'handlers': ['h1']
+            },
+        },
+        "root": {
+            "level": "DEBUG",
+            "handlers": ["ah"]
+        }
+    }
+
     def apply_config(self, conf):
         logging.config.dictConfig(conf)
+
+    def check_handler(self, name, cls):
+        h = logging.getHandlerByName(name)
+        self.assertIsInstance(h, cls)
 
     def test_config0_ok(self):
         # A simple config which overrides the default settings.
         with support.captured_stdout() as output:
             self.apply_config(self.config0)
+            self.check_handler('hand1', logging.StreamHandler)
             logger = logging.getLogger()
             # Won't output anything
             logger.info(self.next_message())
@@ -3028,6 +3066,7 @@ class ConfigDictTest(BaseTest):
         # A config specifying a custom formatter class.
         with support.captured_stdout() as output:
             self.apply_config(self.config4)
+            self.check_handler('hand1', logging.StreamHandler)
             #logger = logging.getLogger()
             try:
                 raise RuntimeError()
@@ -3056,6 +3095,7 @@ class ConfigDictTest(BaseTest):
 
     def test_config5_ok(self):
         self.test_config1_ok(config=self.config5)
+        self.check_handler('hand1', CustomHandler)
 
     def test_config6_failure(self):
         self.assertRaises(Exception, self.apply_config, self.config6)
@@ -3075,6 +3115,7 @@ class ConfigDictTest(BaseTest):
             self.assert_log_lines([])
         with support.captured_stdout() as output:
             self.apply_config(self.config7)
+            self.check_handler('hand1', logging.StreamHandler)
             logger = logging.getLogger("compiler.parser")
             self.assertTrue(logger.disabled)
             logger = logging.getLogger("compiler.lexer")
@@ -3104,6 +3145,7 @@ class ConfigDictTest(BaseTest):
             self.assert_log_lines([])
         with support.captured_stdout() as output:
             self.apply_config(self.config8)
+            self.check_handler('hand1', logging.StreamHandler)
             logger = logging.getLogger("compiler.parser")
             self.assertFalse(logger.disabled)
             # Both will output a message
@@ -3125,6 +3167,7 @@ class ConfigDictTest(BaseTest):
     def test_config_8a_ok(self):
         with support.captured_stdout() as output:
             self.apply_config(self.config1a)
+            self.check_handler('hand1', logging.StreamHandler)
             logger = logging.getLogger("compiler.parser")
             # See issue #11424. compiler-hyphenated sorts
             # between compiler and compiler.xyz and this
@@ -3145,6 +3188,7 @@ class ConfigDictTest(BaseTest):
             self.assert_log_lines([])
         with support.captured_stdout() as output:
             self.apply_config(self.config8a)
+            self.check_handler('hand1', logging.StreamHandler)
             logger = logging.getLogger("compiler.parser")
             self.assertFalse(logger.disabled)
             # Both will output a message
@@ -3168,6 +3212,7 @@ class ConfigDictTest(BaseTest):
     def test_config_9_ok(self):
         with support.captured_stdout() as output:
             self.apply_config(self.config9)
+            self.check_handler('hand1', logging.StreamHandler)
             logger = logging.getLogger("compiler.parser")
             # Nothing will be output since both handler and logger are set to WARNING
             logger.info(self.next_message())
@@ -3186,6 +3231,7 @@ class ConfigDictTest(BaseTest):
     def test_config_10_ok(self):
         with support.captured_stdout() as output:
             self.apply_config(self.config10)
+            self.check_handler('hand1', logging.StreamHandler)
             logger = logging.getLogger("compiler.parser")
             logger.warning(self.next_message())
             logger = logging.getLogger('compiler')
@@ -3222,10 +3268,6 @@ class ConfigDictTest(BaseTest):
 
     def test_config15_ok(self):
 
-        def cleanup(h1, fn):
-            h1.close()
-            os.remove(fn)
-
         with self.check_no_resource_warning():
             fn = make_temp_file(".log", "test_logging-X-")
 
@@ -3247,7 +3289,7 @@ class ConfigDictTest(BaseTest):
             self.apply_config(config)
 
         handler = logging.root.handlers[0]
-        self.addCleanup(cleanup, handler, fn)
+        self.addCleanup(closeFileHandler, handler, fn)
 
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
@@ -3281,6 +3323,7 @@ class ConfigDictTest(BaseTest):
     def test_listen_config_10_ok(self):
         with support.captured_stdout() as output:
             self.setup_via_listener(json.dumps(self.config10))
+            self.check_handler('hand1', logging.StreamHandler)
             logger = logging.getLogger("compiler.parser")
             logger.warning(self.next_message())
             logger = logging.getLogger('compiler')
@@ -3375,11 +3418,11 @@ class ConfigDictTest(BaseTest):
             ('ERROR', '2'),
         ], pat=r"^[\w.]+ -> (\w+): (\d+)$")
 
-    def test_out_of_order(self):
-        self.assertRaises(ValueError, self.apply_config, self.out_of_order)
+    def test_bad_format(self):
+        self.assertRaises(ValueError, self.apply_config, self.bad_format)
 
-    def test_out_of_order_with_dollar_style(self):
-        config = copy.deepcopy(self.out_of_order)
+    def test_bad_format_with_dollar_style(self):
+        config = copy.deepcopy(self.bad_format)
         config['formatters']['mySimpleFormatter']['format'] = "${asctime} (${name}) ${levelname}: ${message}"
 
         self.apply_config(config)
@@ -3387,6 +3430,8 @@ class ConfigDictTest(BaseTest):
         self.assertIsInstance(handler.target, logging.Handler)
         self.assertIsInstance(handler.formatter._style,
                               logging.StringTemplateStyle)
+        self.assertEqual(sorted(logging.getHandlerNames()),
+                         ['bufferGlobal', 'fileGlobal'])
 
     def test_custom_formatter_class_with_validate(self):
         self.apply_config(self.custom_formatter_class_validate)
@@ -3402,7 +3447,7 @@ class ConfigDictTest(BaseTest):
         config = self.custom_formatter_class_validate.copy()
         config['formatters']['form1']['style'] = "$"
 
-        # Exception should not be raise as we have configured 'validate' to False
+        # Exception should not be raised as we have configured 'validate' to False
         self.apply_config(config)
         handler = logging.getLogger("my_test_logger_custom_formatter").handlers[0]
         self.assertIsInstance(handler.formatter, ExceptionFormatter)
@@ -3502,6 +3547,69 @@ class ConfigDictTest(BaseTest):
                 self.apply_config,
                 {"version": 1, "root": {"level": "DEBUG", "filters": [filter_]}}
             )
+
+    def do_queuehandler_configuration(self, qspec, lspec):
+        cd = copy.deepcopy(self.config_queue_handler)
+        fn = make_temp_file('.log', 'test_logging-cqh-')
+        cd['handlers']['h1']['filename'] = fn
+        if qspec is not None:
+            cd['handlers']['ah']['queue'] = qspec
+        if lspec is not None:
+            cd['handlers']['ah']['listener'] = lspec
+        qh = None
+        delay = 0.01
+        try:
+            self.apply_config(cd)
+            qh = logging.getHandlerByName('ah')
+            self.assertEqual(sorted(logging.getHandlerNames()), ['ah', 'h1'])
+            self.assertIsNotNone(qh.listener)
+            qh.listener.start()
+            # Need to let the listener thread get started
+            time.sleep(delay)
+            logging.debug('foo')
+            logging.info('bar')
+            logging.warning('baz')
+            # Need to let the listener thread finish its work
+            time.sleep(delay)
+            with open(fn, encoding='utf-8') as f:
+                data = f.read().splitlines()
+            self.assertEqual(data, ['foo', 'bar', 'baz'])
+        finally:
+            if qh:
+                qh.listener.stop()
+            h = logging.getHandlerByName('h1')
+            if h:
+                self.addCleanup(closeFileHandler, h, fn)
+            else:
+                self.addCleanup(os.remove, fn)
+
+    def test_config_queue_handler(self):
+        q = CustomQueue()
+        dq = {
+            '()': __name__ + '.CustomQueue',
+            'maxsize': 10
+        }
+        dl = {
+            '()': __name__ + '.listenerMaker',
+            'arg1': None,
+            'arg2': None,
+            'respect_handler_level': True
+        }
+        qvalues = (None, __name__ + '.queueMaker', __name__ + '.CustomQueue', dq, q)
+        lvalues = (None, __name__ + '.CustomListener', dl, CustomListener)
+        for qspec, lspec in itertools.product(qvalues, lvalues):
+            self.do_queuehandler_configuration(qspec, lspec)
+
+        # Some failure cases
+        qvalues = (None, 4, int, '', 'foo')
+        lvalues = (None, 4, int, '', 'bar')
+        for qspec, lspec in itertools.product(qvalues, lvalues):
+            if lspec is None and qspec is None:
+                continue
+            with self.assertRaises(ValueError) as ctx:
+                self.do_queuehandler_configuration(qspec, lspec)
+            msg = str(ctx.exception)
+            self.assertEqual(msg, "Unable to configure handler 'ah'")
 
 
 class ManagerTest(BaseTest):
