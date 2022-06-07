@@ -1164,6 +1164,19 @@ functions.
       This undocumented behaviour was considered a mistake, and was removed in
       Python 3.4, but reinstated in 3.4.2 due to retain backward compatibility.
 
+.. function:: getHandlerByName(name)
+
+   Returns a handler with the specified *name*, or ``None`` if there is no handler
+   with that name.
+
+   .. versionadded:: 3.12
+
+.. function:: getHandlerNames()
+
+   Returns an immutable set of all known handler names.
+
+   .. versionadded:: 3.12
+
 .. function:: makeLogRecord(attrdict)
 
    Creates and returns a new :class:`LogRecord` instance whose attributes are
