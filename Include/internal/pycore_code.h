@@ -67,6 +67,7 @@ typedef struct {
 typedef struct {
     _Py_CODEUNIT counter;
     _Py_CODEUNIT type_version[2];
+    _Py_CODEUNIT UNUSED;
     _Py_CODEUNIT keys_version[2];
     _Py_CODEUNIT descr[4];
 } _PyLoadMethodCache;
