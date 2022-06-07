@@ -1,4 +1,4 @@
-# Copyright 2001-2019 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2022 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 Logging package for Python. Based on PEP 282 and comments thereto in
 comp.lang.python.
 
-Copyright (C) 2001-2019 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -38,7 +38,8 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'exception', 'fatal', 'getLevelName', 'getLogger', 'getLoggerClass',
            'info', 'log', 'makeLogRecord', 'setLoggerClass', 'shutdown',
            'warn', 'warning', 'getLogRecordFactory', 'setLogRecordFactory',
-           'lastResort', 'raiseExceptions', 'getLevelNamesMapping']
+           'lastResort', 'raiseExceptions', 'getLevelNamesMapping',
+           'getHandlerByName', 'getHandlerNames']
 
 import threading
 
@@ -885,6 +886,23 @@ def _addHandlerRef(handler):
     finally:
         _releaseLock()
 
+
+def getHandlerByName(name):
+    """
+    Get a handler with the specified *name*, or None if there isn't one with
+    that name.
+    """
+    return _handlers.get(name)
+
+
+def getHandlerNames():
+    """
+    Return all known handler names as an immutable set.
+    """
+    result = set(_handlers.keys())
+    return frozenset(result)
+
+
 class Handler(Filterer):
     """
     Handler instances dispatch logging events to specific destinations.
@@ -1498,7 +1516,7 @@ class Logger(Filterer):
         To pass exception information, use the keyword argument exc_info with
         a true value, e.g.
 
-        logger.info("Houston, we have a %s", "interesting problem", exc_info=1)
+        logger.info("Houston, we have a %s", "notable problem", exc_info=1)
         """
         if self.isEnabledFor(INFO):
             self._log(INFO, msg, args, **kwargs)

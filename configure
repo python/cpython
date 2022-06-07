@@ -8847,7 +8847,8 @@ $as_echo "#define STDC_HEADERS 1" >>confdefs.h
 # checks for header files
 for ac_header in  \
   alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
-  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/memfd.h linux/random.h linux/soundcard.h \
+  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/memfd.h \
+  linux/random.h linux/soundcard.h \
   linux/tipc.h linux/wait.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
@@ -22472,6 +22473,9 @@ case $ac_sys_system in #(
 
     py_cv_module__ctypes_test=n/a
     py_cv_module_fcntl=n/a
+    py_cv_module_mmap=n/a
+    py_cv_module_resource=n/a
+    py_cv_module_termios=n/a
     py_cv_module_=n/a
 
 

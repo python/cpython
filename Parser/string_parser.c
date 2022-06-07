@@ -756,7 +756,9 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
         while (Py_ISSPACE(**str)) {
             *str += 1;
         }
-
+        if (*str >= end) {
+            goto unexpected_end_of_string;
+        }
         /* Set *expr_text to the text of the expression. */
         *expr_text = PyUnicode_FromStringAndSize(expr_start, *str-expr_start);
         if (!*expr_text) {

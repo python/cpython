@@ -144,7 +144,7 @@ def collect_sys(info_add):
         text = 'Yes (sys.getobjects() present)'
     else:
         text = 'No (sys.getobjects() missing)'
-    info_add('build.Py_REF_DEBUG', text)
+    info_add('build.Py_TRACE_REFS', text)
 
 
 def collect_platform(info_add):

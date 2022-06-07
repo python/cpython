@@ -4561,12 +4561,9 @@ handle_eval_breaker:
             DEOPT_IF(self_cls->tp_version_tag != read_u32(cache->type_version),
                      LOAD_ATTR);
             /* Treat index as a signed 16 bit value */
-            int dictoffset = *(int16_t *)&cache->dict_offset;
+            int dictoffset = self_cls->tp_dictoffset;
+            assert(dictoffset > 0);
             PyDictObject **dictptr = (PyDictObject**)(((char *)self)+dictoffset);
-            assert(
-                dictoffset == MANAGED_DICT_OFFSET ||
-                (dictoffset == self_cls->tp_dictoffset && dictoffset > 0)
-            );
             PyDictObject *dict = *dictptr;
             DEOPT_IF(dict == NULL, LOAD_ATTR);
             DEOPT_IF(dict->ma_keys->dk_version != read_u32(cache->keys_version),
@@ -4608,9 +4605,9 @@ handle_eval_breaker:
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
             uint32_t type_version = read_u32(cache->type_version);
             DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
-            int dictoffset = cache->dict_offset;
+            int dictoffset = self_cls->tp_dictoffset;
+            assert(dictoffset > 0);
             PyObject *dict = *(PyObject **)((char *)self + dictoffset);
-            assert(dictoffset == self_cls->tp_dictoffset && dictoffset > 0);
             /* This object has a __dict__, just not yet created */
             DEOPT_IF(dict != NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
