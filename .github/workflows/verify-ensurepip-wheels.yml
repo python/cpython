@@ -17,5 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
       - name: Compare checksums of bundled pip and setuptools to ones published on PyPI
-        run: ./Misc/verify-bundled-wheels.sh
+        run: ./Tools/scripts/verify_ensurepip_wheels.py
