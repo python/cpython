@@ -161,6 +161,9 @@ lstrip_sql(const char *sql)
                 break;
             case ' ':
             case '\t':
+                if (state == COMMENTEND_1) {
+                    state = IN_COMMENT;
+                }
                 break;
             case '\n':
             case 13:
