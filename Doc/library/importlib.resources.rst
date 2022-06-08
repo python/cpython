@@ -4,7 +4,7 @@
 .. module:: importlib.resources
     :synopsis: Package resource reading, opening, and access
 
-**Source code:** :source:`Lib/importlib/resources.py`
+**Source code:** :source:`Lib/importlib/resources/`
 
 --------------
 

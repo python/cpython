@@ -508,9 +508,6 @@ ABC hierarchy::
            The import machinery now takes care of this automatically.
 
 
-.. include:: importlib.resources.abc.rst
-
-
 :mod:`importlib.machinery` -- Importers and path hooks
 ------------------------------------------------------
 

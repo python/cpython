@@ -1,3 +1,15 @@
+:mod:`importlib.resources.abc` -- Base classes for resources
+------------------------------------------------------------
+
+.. module:: importlib.resources.abc
+    :synopsis: Base classes for package resource reading, opening, and access
+
+**Source code:** :source:`Lib/importlib/resources/abc.py`
+
+--------------
+
+.. versionadded:: 3.11
+
 .. class:: ResourceReader
 
     *Superseded by TraversableResources*
