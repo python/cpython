@@ -798,17 +798,31 @@ as internal buffering of data.
    Copy *count* bytes from file descriptor *src*, starting from offset
    *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
    If *offset_src* is None, then *src* is read from the current position;
-   respectively for *offset_dst*. The files pointed by *src* and *dst*
+   respectively for *offset_dst*.
+
+   In Linux kernel older than 5.3, the files pointed by *src* and *dst*
    must reside in the same filesystem, otherwise an :exc:`OSError` is
    raised with :attr:`~OSError.errno` set to :data:`errno.EXDEV`.
 
    This copy is done without the additional cost of transferring data
    from the kernel to user space and then back into the kernel. Additionally,
-   some filesystems could implement extra optimizations. The copy is done as if
-   both files are opened as binary.
+   some filesystems could implement extra optimizations, such as the use of
+   reflinks (i.e., two or more inodes that share pointers to the same
+   copy-on-write disk blocks; supported file systems include btrfs and XFS)
+   and server-side copy (in the case of NFS).
+
+   The function copies bytes between two file descriptors. Text options, like
+   the encoding and the line ending, are ignored.
 
    The return value is the amount of bytes copied. This could be less than the
    amount requested.
+
+   .. note::
+
+      On Linux, :func:`os.copy_file_range` should not be used for copying a
+      range of a pseudo file from a special filesystem like procfs and sysfs.
+      It will always copy no bytes and return 0 as if the file was empty
+      because of a known Linux kernel issue.
 
    .. availability:: Linux kernel >= 4.5 or glibc >= 2.27.
 
