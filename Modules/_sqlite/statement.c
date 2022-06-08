@@ -82,20 +82,12 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     /* Determine if the statement is a DML statement.
        SELECT is the only exception. See #9924. */
     int is_dml = 0;
-    for (const char *p = sql_cstr; *p != 0; p++) {
-        switch (*p) {
-            case ' ':
-            case '\r':
-            case '\n':
-            case '\t':
-                continue;
-        }
-
+    const char *p = lstrip_sql(sql_cstr);
+    if (p != NULL) {
         is_dml = (PyOS_strnicmp(p, "insert", 6) == 0)
                   || (PyOS_strnicmp(p, "update", 6) == 0)
                   || (PyOS_strnicmp(p, "delete", 6) == 0)
                   || (PyOS_strnicmp(p, "replace", 7) == 0);
-        break;
     }
 
     pysqlite_Statement *self = PyObject_GC_New(pysqlite_Statement,
