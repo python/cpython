@@ -177,7 +177,7 @@ we also call *flavours*:
 
    *pathsegments* is specified similarly to :class:`PurePath`.
 
-   .. unc paths: https://en.wikipedia.org/wiki/Path_(computing)#UNC
+   .. _unc paths: https://en.wikipedia.org/wiki/Path_(computing)#UNC
 
 Regardless of the system you're running on, you can instantiate all of
 these classes, since they don't provide any operation that does system calls.
