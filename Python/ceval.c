@@ -3556,7 +3556,7 @@ handle_eval_breaker:
             assert(cache->index < dict->ma_keys->dk_nentries);
             PyDictUnicodeEntry* ep = DK_UNICODE_ENTRIES(dict->ma_keys) + cache->index;
             res = ep->me_value;
-            DEOPT_IF(res == NULL, LOAD_##attr_or_method);
+            DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
             SET_TOP(NULL);
