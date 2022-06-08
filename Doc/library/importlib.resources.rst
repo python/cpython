@@ -47,10 +47,12 @@ The following types are defined.
 
 .. data:: Package
 
-    The ``Package`` type is defined as ``Union[str, ModuleType]``.  This means
-    that where the function describes accepting a ``Package``, you can pass in
-    either a string or a module.  Module objects must have a resolvable
-    ``__spec__.submodule_search_locations`` that is not ``None``.
+    Where a function is described as accepting a ``Package``, you can pass in
+    either a module name (as a string) or a module object. Module objects must
+    have a resolvable ``__spec__.submodule_search_locations`` that is
+    not ``None``.
+
+    The ``Package`` type is defined as ``Union[str, ModuleType]``.
 
 .. data:: Resource
 
