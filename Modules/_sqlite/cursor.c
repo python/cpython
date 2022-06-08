@@ -953,10 +953,10 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         }
 
         if (multiple) {
-            stmt_reset(self->statement);
             if (self->statement->is_dml && rc == SQLITE_DONE) {
                 self->rowcount += (long)sqlite3_changes(self->connection->db);
             }
+            stmt_reset(self->statement);
         }
         Py_XDECREF(parameters);
     }
