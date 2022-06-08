@@ -1,2 +1,2 @@
-:data:`sqlite3.Cursor.rowcount` is now correctly updated for all datamodifying
-SQL queries.  Patch by Erlend E. Aasland.
+:mod:`sqlite3` now correctly detects DML queries, even when prefixed with
+comments. Patch by Erlend E. Aasland.
