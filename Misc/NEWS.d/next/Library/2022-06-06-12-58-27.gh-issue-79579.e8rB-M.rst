@@ -1,0 +1,2 @@
+:data:`sqlite3.Cursor.rowcount` is now correctly updated for all datamodifying
+SQL queries.  Patch by Erlend E. Aasland.

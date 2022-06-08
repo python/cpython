@@ -906,6 +906,21 @@ class CursorTests(unittest.TestCase):
         self.assertEqual(self.cu.fetchone()[0], 1)
         self.assertEqual(self.cu.rowcount, 1)
 
+    def test_rowcount_prefixed_with_comment(self):
+        # gh-79579: rowcount is updated even if query is prefixed with comments
+        self.cu.execute("/* foo */ insert into test(name) values (?)", ('foo',))
+        self.assertEqual(self.cu.rowcount, 1)
+        self.cu.execute("/* bar */ update test set name='bar' where name='foo'")
+        self.assertEqual(self.cu.rowcount, 2)
+
+    def test_rowcount_vaccuum(self):
+        data = ((1,), (2,), (3,))
+        self.cu.executemany("insert into test(income) values(?)", data)
+        self.assertEqual(self.cu.rowcount, 3)
+        self.cx.commit()
+        self.cu.execute("vacuum")
+        self.assertEqual(self.cu.rowcount, -1)
+
     def test_total_changes(self):
         self.cu.execute("insert into test(name) values ('foo')")
         self.cu.execute("insert into test(name) values ('foo')")
