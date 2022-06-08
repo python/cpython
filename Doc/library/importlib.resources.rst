@@ -17,7 +17,9 @@ text mode.
 
 Resources are roughly akin to files inside directories, though it's important
 to keep in mind that this is just a metaphor.  Resources and packages **do
-not** have to exist as physical files and directories on the file system.
+not** have to exist as physical files and directories on the file system:
+for example, a package and its resources can be imported from a Zip file using
+:py:mod:`zipimport`.
 
 .. note::
 
