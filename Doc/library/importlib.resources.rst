@@ -54,11 +54,6 @@ The following types are defined.
 
     The ``Package`` type is defined as ``Union[str, ModuleType]``.
 
-.. data:: Resource
-
-    This type describes the resource names passed into the various functions
-    in this package.  This is defined as ``Union[str, os.PathLike]``.
-
 
 The following functions are available.
 
@@ -91,6 +86,22 @@ The following functions are available.
 
     .. versionadded:: 3.9
 
+Deprecated functions
+--------------------
+
+An older, deprecated set of functions is still available, but is
+scheduled for removal in a future version of Python.
+The mailn drawback of these function is that they do not allow directories.
+These functions are deprecated in favor of ``files``
+
+.. data:: Resource
+
+    For *resource* arguments of the functions below, you can pass in
+    the name of a resource as a string or
+    a :class:`path-like object <os.PathLike>`.
+
+    The ``Resource`` type is defined as ``Union[str, os.PathLike]``.
+
 .. function:: open_binary(package, resource)
 
     Open for binary reading the *resource* within *package*.
@@ -100,6 +111,10 @@ The following functions are available.
     within *package*; it may not contain path separators and it may not have
     sub-resources (i.e. it cannot be a directory).  This function returns a
     ``typing.BinaryIO`` instance, a binary I/O stream open for reading.
+
+    This function may be replaced by::
+
+       files(package).joinpath(resource).open('rb')
 
    .. deprecated:: 3.11
 
@@ -118,6 +133,10 @@ The following functions are available.
     This function returns a ``typing.TextIO`` instance, a text I/O stream open
     for reading.
 
+    Calls to this function can be replaced by::
+
+       files(package).joinpath(resource).open('r', encoding=encoding, errors=errors)
+
    .. deprecated:: 3.11
 
 
@@ -131,6 +150,10 @@ The following functions are available.
     within *package*; it may not contain path separators and it may not have
     sub-resources (i.e. it cannot be a directory).  This function returns the
     contents of the resource as :class:`bytes`.
+
+    Calls to this function can be replaced by::
+
+       files(package).joinpath(resource).read_bytes()
 
    .. deprecated:: 3.11
 
@@ -146,6 +169,10 @@ The following functions are available.
     sub-resources (i.e. it cannot be a directory).  *encoding* and *errors*
     have the same meaning as with built-in :func:`open`.  This function
     returns the contents of the resource as :class:`str`.
+
+    Calls to this function can be replaced by::
+
+       files(package).joinpath(resource).read_text(encoding=encoding, errors=errors)
 
    .. deprecated:: 3.11
 
@@ -164,15 +191,24 @@ The following functions are available.
     within *package*; it may not contain path separators and it may not have
     sub-resources (i.e. it cannot be a directory).
 
+    Calls to this function can be replaced using :func:`as_file`::
+
+        as_file(files(package).joinpath(resource))
+
    .. deprecated:: 3.11
 
 
 .. function:: is_resource(package, name)
 
     Return ``True`` if there is a resource named *name* in the package,
-    otherwise ``False``.  Remember that directories are *not* resources!
+    otherwise ``False``.
+    This function does not consider directories to be resources.
     *package* is either a name or a module object which conforms to the
     ``Package`` requirements.
+
+    Calls to this function can be replaced by::
+
+        files(package).joinpath(resource).is_file()
 
    .. deprecated:: 3.11
 
@@ -185,5 +221,9 @@ The following functions are available.
 
     *package* is either a name or a module object which conforms to the
     ``Package`` requirements.
+
+    Calls to this function can be replaced by::
+
+        (resource for resource in files(package).iterdir() if resource.is_file())
 
    .. deprecated:: 3.11
