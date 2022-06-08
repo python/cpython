@@ -284,6 +284,12 @@ def generate_runtime_init(identifiers, strings):
                 printer.write('')
                 with printer.block('.tuple_empty =', ','):
                     printer.write('.ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0)')
+        printer.write('')
+        with printer.block("static inline void\n_Py_StaticStrings_Intern(void)"):
+            printer.write(f'PyObject *string;')
+            for i in sorted(identifiers):
+                printer.write(f'string = &_Py_ID({i});')
+                printer.write(f'PyUnicode_InternInPlace(&string);')
         printer.write(END)
         printer.write(after)
 
@@ -314,7 +320,4 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser()
-    args = parser.parse_args()
-    main(**vars(args))
+    main()
