@@ -836,10 +836,6 @@ pycore_interp_init(PyThreadState *tstate)
         return status;
     }
 
-    status = pycore_init_types(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto done;
-    }
     /* Intern statically allocated string identifiers and deepfreeze strings.
      * This must be done before any module initialization so that statically
      * allocated string identifiers are used instead of heap allocated strings.
@@ -850,6 +846,11 @@ pycore_interp_init(PyThreadState *tstate)
 
     if (_Py_Deepfreeze_Init() < 0) {
         return _PyStatus_ERR("failed to initialize deep-frozen modules");
+    }
+
+    status = pycore_init_types(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
     }
 
     if (_PyWarnings_InitState(interp) < 0) {
