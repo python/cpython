@@ -26,7 +26,7 @@
 #include "util.h"
 
 /* prototypes */
-static int pysqlite_check_remaining_sql(const char* tail);
+static const char *pysqlite_check_remaining_sql(const char *sql);
 
 typedef enum {
     LINECOMMENT_1,
@@ -146,16 +146,17 @@ stmt_traverse(pysqlite_Statement *self, visitproc visit, void *arg)
  *
  * Returns 1 if there is more left than should be. 0 if ok.
  */
-static int pysqlite_check_remaining_sql(const char* tail)
+static const char *
+pysqlite_check_remaining_sql(const char *sql)
 {
-    const char* pos = tail;
+    const char *pos = sql;
 
     parse_remaining_sql_state state = NORMAL;
 
     for (;;) {
         switch (*pos) {
             case 0:
-                return 0;
+                return NULL;
             case '-':
                 if (state == NORMAL) {
                     state  = LINECOMMENT_1;
@@ -178,14 +179,14 @@ static int pysqlite_check_remaining_sql(const char* tail)
                 } else if (state == COMMENTEND_1) {
                     state = NORMAL;
                 } else if (state == COMMENTSTART_1) {
-                    return 1;
+                    return pos;
                 }
                 break;
             case '*':
                 if (state == NORMAL) {
-                    return 1;
+                    return pos;
                 } else if (state == LINECOMMENT_1) {
-                    return 1;
+                    return pos;
                 } else if (state == COMMENTSTART_1) {
                     state = IN_COMMENT;
                 } else if (state == IN_COMMENT) {
@@ -198,14 +199,14 @@ static int pysqlite_check_remaining_sql(const char* tail)
                 } else if (state == IN_LINECOMMENT) {
                 } else if (state == IN_COMMENT) {
                 } else {
-                    return 1;
+                    return pos;
                 }
         }
 
         pos++;
     }
 
-    return 0;
+    return NULL;
 }
 
 static PyType_Slot stmt_slots[] = {
