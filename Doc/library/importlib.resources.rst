@@ -112,11 +112,11 @@ These functions are deprecated in favor of ``files``
     sub-resources (i.e. it cannot be a directory).  This function returns a
     ``typing.BinaryIO`` instance, a binary I/O stream open for reading.
 
-    This function may be replaced by::
+    .. deprecated:: 3.11
 
-       files(package).joinpath(resource).open('rb')
+       Calls to this function can be replaced by::
 
-   .. deprecated:: 3.11
+          files(package).joinpath(resource).open('rb')
 
 
 .. function:: open_text(package, resource, encoding='utf-8', errors='strict')
@@ -133,11 +133,11 @@ These functions are deprecated in favor of ``files``
     This function returns a ``typing.TextIO`` instance, a text I/O stream open
     for reading.
 
-    Calls to this function can be replaced by::
+    .. deprecated:: 3.11
 
-       files(package).joinpath(resource).open('r', encoding=encoding, errors=errors)
+       Calls to this function can be replaced by::
 
-   .. deprecated:: 3.11
+          files(package).joinpath(resource).open('r', encoding=encoding, errors=errors)
 
 
 .. function:: read_binary(package, resource)
@@ -151,11 +151,11 @@ These functions are deprecated in favor of ``files``
     sub-resources (i.e. it cannot be a directory).  This function returns the
     contents of the resource as :class:`bytes`.
 
-    Calls to this function can be replaced by::
+    .. deprecated:: 3.11
 
-       files(package).joinpath(resource).read_bytes()
+       Calls to this function can be replaced by::
 
-   .. deprecated:: 3.11
+          files(package).joinpath(resource).read_bytes()
 
 
 .. function:: read_text(package, resource, encoding='utf-8', errors='strict')
@@ -170,11 +170,11 @@ These functions are deprecated in favor of ``files``
     have the same meaning as with built-in :func:`open`.  This function
     returns the contents of the resource as :class:`str`.
 
-    Calls to this function can be replaced by::
+    .. deprecated:: 3.11
 
-       files(package).joinpath(resource).read_text(encoding=encoding, errors=errors)
+       Calls to this function can be replaced by::
 
-   .. deprecated:: 3.11
+          files(package).joinpath(resource).read_text(encoding=encoding, errors=errors)
 
 
 .. function:: path(package, resource)
@@ -191,11 +191,11 @@ These functions are deprecated in favor of ``files``
     within *package*; it may not contain path separators and it may not have
     sub-resources (i.e. it cannot be a directory).
 
-    Calls to this function can be replaced using :func:`as_file`::
+    .. deprecated:: 3.11
 
-        as_file(files(package).joinpath(resource))
+       Calls to this function can be replaced using :func:`as_file`::
 
-   .. deprecated:: 3.11
+          as_file(files(package).joinpath(resource))
 
 
 .. function:: is_resource(package, name)
@@ -206,11 +206,11 @@ These functions are deprecated in favor of ``files``
     *package* is either a name or a module object which conforms to the
     ``Package`` requirements.
 
-    Calls to this function can be replaced by::
+    .. deprecated:: 3.11
 
-        files(package).joinpath(resource).is_file()
+       Calls to this function can be replaced by::
 
-   .. deprecated:: 3.11
+          files(package).joinpath(resource).is_file()
 
 
 .. function:: contents(package)
@@ -222,8 +222,8 @@ These functions are deprecated in favor of ``files``
     *package* is either a name or a module object which conforms to the
     ``Package`` requirements.
 
-    Calls to this function can be replaced by::
+    .. deprecated:: 3.11
 
-        (resource for resource in files(package).iterdir() if resource.is_file())
+       Calls to this function can be replaced by::
 
-   .. deprecated:: 3.11
+          (resource for resource in files(package).iterdir() if resource.is_file())
