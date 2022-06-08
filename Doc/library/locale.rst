@@ -375,6 +375,8 @@ The :mod:`locale` module defines the following exception and functions:
    The default setting is determined by calling :func:`getdefaultlocale`.
    *category* defaults to :const:`LC_ALL`.
 
+   .. deprecated:: 3.11 3.13
+
 
 .. function:: strcoll(string1, string2)
 

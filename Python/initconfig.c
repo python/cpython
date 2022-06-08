@@ -28,9 +28,10 @@
 static const char usage_line[] =
 "usage: %ls [option] ... [-c cmd | -m mod | file | -] [arg] ...\n";
 
-/* Long usage message, split into parts < 512 bytes */
-static const char usage_1[] = "\
-Options and arguments (and corresponding environment variables):\n\
+/* Long help message */
+/* Lines sorted by option name; keep in sync with usage_envvars* below */
+static const char usage_help[] = "\
+Options (and corresponding environment variables):\n\
 -b     : issue warnings about str(bytes_instance), str(bytearray_instance)\n\
          and comparing bytes/bytearray with str. (-bb: issue errors)\n\
 -B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
@@ -38,9 +39,7 @@ Options and arguments (and corresponding environment variables):\n\
 -d     : turn on parser debugging output (for experts only, only works on\n\
          debug builds); also PYTHONDEBUG=x\n\
 -E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
--h     : print this help message and exit (also --help)\n\
-";
-static const char usage_2[] = "\
+-h     : print this help message and exit (also -? or --help)\n\
 -i     : inspect interactively after running script; forces a prompt even\n\
          if stdin does not appear to be a terminal; also PYTHONINSPECT=x\n\
 -I     : isolate Python from the user's environment (implies -E and -s)\n\
@@ -49,12 +48,10 @@ static const char usage_2[] = "\
          .pyc extension; also PYTHONOPTIMIZE=x\n\
 -OO    : do -O changes and also discard docstrings; add .opt-2 before\n\
          .pyc extension\n\
--P     : don't add sys.path[0]\n\
+-P     : don't prepend a potentially unsafe path to sys.path\n\
 -q     : don't print version and copyright messages on interactive startup\n\
 -s     : don't add user site directory to sys.path; also PYTHONNOUSERSITE\n\
 -S     : don't imply 'import site' on initialization\n\
-";
-static const char usage_3[] = "\
 -u     : force the stdout and stderr streams to be unbuffered;\n\
          this option has no effect on stdin; also PYTHONUNBUFFERED=x\n\
 -v     : verbose (trace import statements); also PYTHONVERBOSE=x\n\
@@ -64,56 +61,72 @@ static const char usage_3[] = "\
 -W arg : warning control; arg is action:message:category:module:lineno\n\
          also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
--X opt : set implementation-specific option. The following options are available:\n\
-\n\
-         -X faulthandler: enable faulthandler\n\
-         -X showrefcount: output the total reference count and number of used\n\
-             memory blocks when the program finishes or after each statement in the\n\
-             interactive interpreter. This only works on debug builds\n\
-         -X tracemalloc: start tracing Python memory allocations using the\n\
-             tracemalloc module. By default, only the most recent frame is stored in a\n\
-             traceback of a trace. Use -X tracemalloc=NFRAME to start tracing with a\n\
-             traceback limit of NFRAME frames\n\
-         -X importtime: show how long each import takes. It shows module name,\n\
-             cumulative time (including nested imports) and self time (excluding\n\
-             nested imports). Note that its output may be broken in multi-threaded\n\
-             application. Typical usage is python3 -X importtime -c 'import asyncio'\n\
-         -X dev: enable CPython's \"development mode\", introducing additional runtime\n\
-             checks which are too expensive to be enabled by default. Effect of the\n\
-             developer mode:\n\
-                * Add default warning filter, as -W default\n\
-                * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks() C function\n\
-                * Enable the faulthandler module to dump the Python traceback on a crash\n\
-                * Enable asyncio debug mode\n\
-                * Set the dev_mode attribute of sys.flags to True\n\
-                * io.IOBase destructor logs close() exceptions\n\
-         -X utf8: enable UTF-8 mode for operating system interfaces, overriding the default\n\
-             locale-aware mode. -X utf8=0 explicitly disables UTF-8 mode (even when it would\n\
-             otherwise activate automatically)\n\
-         -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the\n\
-             given directory instead of to the code tree\n\
-         -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None'\n\
-         -X no_debug_ranges: disable the inclusion of the tables mapping extra location \n\
-            information (end line, start column offset and end column offset) to every \n\
-            instruction in code objects. This is useful when smaller code objects and pyc \n\
-            files are desired as well as suppressing the extra visual location indicators \n\
-            when the interpreter displays tracebacks.\n\
-         -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
-            The default is \"on\" (or \"off\" if you are running a local build).\n\
-\n\
+-X opt : set implementation-specific option\n\
 --check-hash-based-pycs always|default|never:\n\
-    control how Python invalidates hash-based .pyc files\n\
-";
-static const char usage_4[] = "\
+         control how Python invalidates hash-based .pyc files\n\
+--help-env      : print help about Python environment variables and exit\n\
+--help-xoptions : print help about implementation-specific -X options and exit\n\
+--help-all      : print complete help information and exit\n\
+Arguments:\n\
 file   : program read from script file\n\
 -      : program read from stdin (default; interactive mode if a tty)\n\
-arg ...: arguments passed to program in sys.argv[1:]\n\n\
-Other environment variables:\n\
-PYTHONSTARTUP: file executed on interactive startup (no default)\n\
-PYTHONPATH   : '%lc'-separated list of directories prefixed to the\n\
-               default module search path.  The result is sys.path.\n\
+arg ...: arguments passed to program in sys.argv[1:]\n\
 ";
-static const char usage_5[] =
+
+static const char usage_xoptions[] = "\
+The following implementation-specific options are available:\n\
+\n\
+-X faulthandler: enable faulthandler\n\
+\n\
+-X showrefcount: output the total reference count and number of used\n\
+    memory blocks when the program finishes or after each statement in the\n\
+    interactive interpreter. This only works on debug builds\n\
+\n\
+-X tracemalloc: start tracing Python memory allocations using the\n\
+    tracemalloc module. By default, only the most recent frame is stored in a\n\
+    traceback of a trace. Use -X tracemalloc=NFRAME to start tracing with a\n\
+    traceback limit of NFRAME frames\n\
+\n\
+-X importtime: show how long each import takes. It shows module name,\n\
+    cumulative time (including nested imports) and self time (excluding\n\
+    nested imports). Note that its output may be broken in multi-threaded\n\
+    application. Typical usage is python3 -X importtime -c 'import asyncio'\n\
+\n\
+-X dev: enable CPython's \"development mode\", introducing additional runtime\n\
+    checks which are too expensive to be enabled by default. Effect of the\n\
+    developer mode:\n\
+       * Add default warning filter, as -W default\n\
+       * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks()\n\
+         C function\n\
+       * Enable the faulthandler module to dump the Python traceback on a crash\n\
+       * Enable asyncio debug mode\n\
+       * Set the dev_mode attribute of sys.flags to True\n\
+       * io.IOBase destructor logs close() exceptions\n\
+\n\
+-X utf8: enable UTF-8 mode for operating system interfaces, overriding the default\n\
+    locale-aware mode. -X utf8=0 explicitly disables UTF-8 mode (even when it would\n\
+    otherwise activate automatically)\n\
+\n\
+-X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the\n\
+    given directory instead of to the code tree\n\
+\n\
+-X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None'\n\
+\n\
+-X no_debug_ranges: disable the inclusion of the tables mapping extra location \n\
+   information (end line, start column offset and end column offset) to every \n\
+   instruction in code objects. This is useful when smaller code objects and pyc \n\
+   files are desired as well as suppressing the extra visual location indicators \n\
+   when the interpreter displays tracebacks.\n\
+\n\
+-X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
+   The default is \"on\" (or \"off\" if you are running a local build).";
+
+/* Envvars that don't have equivalent command-line options are listed first */
+static const char usage_envvars[] =
+"Environment variables that change behavior:\n"
+"PYTHONSTARTUP: file executed on interactive startup (no default)\n"
+"PYTHONPATH   : '%lc'-separated list of directories prefixed to the\n"
+"               default module search path.  The result is sys.path.\n"
 "PYTHONSAFEPATH: don't prepend a potentially unsafe path to sys.path.\n"
 "PYTHONHOME   : alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
 "               The default module search path uses %s.\n"
@@ -121,8 +134,7 @@ static const char usage_5[] =
 "PYTHONCASEOK : ignore case in 'import' statements (Windows).\n"
 "PYTHONUTF8: if set to 1, enable the UTF-8 mode.\n"
 "PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n"
-"PYTHONFAULTHANDLER: dump the Python traceback on fatal errors.\n";
-static const char usage_6[] =
+"PYTHONFAULTHANDLER: dump the Python traceback on fatal errors.\n"
 "PYTHONHASHSEED: if this variable is set to 'random', a random value is used\n"
 "   to seed the hashes of str and bytes objects.  It can also be set to an\n"
 "   integer in the range [0,4294967295] to get hash values with a\n"
@@ -141,8 +153,17 @@ static const char usage_6[] =
 "PYTHONNODEBUGRANGES: If this variable is set, it disables the inclusion of the \n"
 "   tables mapping extra location information (end line, start column offset \n"
 "   and end column offset) to every instruction in code objects. This is useful \n"
-"   when smaller cothe de objects and pyc files are desired as well as suppressing the \n"
-"   extra visual location indicators when the interpreter displays tracebacks.\n";
+"   when smaller code objects and pyc files are desired as well as suppressing the \n"
+"   extra visual location indicators when the interpreter displays tracebacks.\n"
+"These variables have equivalent command-line parameters (see --help for details):\n"
+"PYTHONDEBUG             : enable parser debug mode (-d)\n"
+"PYTHONDONTWRITEBYTECODE : don't write .pyc files (-B)\n"
+"PYTHONINSPECT           : inspect interactively after running script (-i)\n"
+"PYTHONNOUSERSITE        : disable user site directory (-s)\n"
+"PYTHONOPTIMIZE          : enable level 1 optimizations (-O)\n"
+"PYTHONUNBUFFERED        : disable stdout/stderr buffering (-u)\n"
+"PYTHONVERBOSE           : trace import statements (-v)\n"
+"PYTHONWARNINGS=arg      : warning control (-W arg)\n";
 
 #if defined(MS_WINDOWS)
 #  define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
@@ -2085,7 +2106,7 @@ config_read(PyConfig *config, int compute_path_config)
     /* -X options */
     const wchar_t* option = _Py_check_xoptions(&config->xoptions, known_xoptions);
     if (option != NULL) {
-        return PyStatus_Error("Unknown value for option -X");
+        return PyStatus_Error("Unknown value for option -X (see --help-xoptions)");
     }
 
     if (config_get_xoption(config, L"showrefcount")) {
@@ -2238,13 +2259,30 @@ config_usage(int error, const wchar_t* program)
     if (error)
         fprintf(f, "Try `python -h' for more information.\n");
     else {
-        fputs(usage_1, f);
-        fputs(usage_2, f);
-        fputs(usage_3, f);
-        fprintf(f, usage_4, (wint_t)DELIM);
-        fprintf(f, usage_5, (wint_t)DELIM, PYTHONHOMEHELP);
-        fputs(usage_6, f);
+        fputs(usage_help, f);
     }
+}
+
+static void
+config_envvars_usage()
+{
+    printf(usage_envvars, (wint_t)DELIM, (wint_t)DELIM, PYTHONHOMEHELP);
+}
+
+static void
+config_xoptions_usage()
+{
+    puts(usage_xoptions);
+}
+
+static void
+config_complete_usage(const wchar_t* program)
+{
+   config_usage(0, program);
+   puts("\n");
+   config_envvars_usage();
+   puts("\n");
+   config_xoptions_usage();
 }
 
 
@@ -2298,9 +2336,9 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
         }
 
         switch (c) {
+        // Integers represent long options, see Python/getopt.c
         case 0:
-            // Handle long option.
-            assert(longindex == 0); // Only one long option now.
+            // check-hash-based-pycs
             if (wcscmp(_PyOS_optarg, L"always") == 0
                 || wcscmp(_PyOS_optarg, L"never") == 0
                 || wcscmp(_PyOS_optarg, L"default") == 0)
@@ -2317,6 +2355,21 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
                 return _PyStatus_EXIT(2);
             }
             break;
+
+        case 1:
+            // help-all
+            config_complete_usage(program);
+            return _PyStatus_EXIT(0);
+
+        case 2:
+            // help-env
+            config_envvars_usage();
+            return _PyStatus_EXIT(0);
+
+        case 3:
+            // help-xoptions
+            config_xoptions_usage();
+            return _PyStatus_EXIT(0);
 
         case 'b':
             config->bytes_warning++;

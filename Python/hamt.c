@@ -409,14 +409,22 @@ hamt_hash(PyObject *o)
         return -1;
     }
 
-    /* While it's suboptimal to reduce Python's 64 bit hash to
+    /* While it's somewhat suboptimal to reduce Python's 64 bit hash to
        32 bits via XOR, it seems that the resulting hash function
        is good enough (this is also how Long type is hashed in Java.)
        Storing 10, 100, 1000 Python strings results in a relatively
        shallow and uniform tree structure.
 
-       Please don't change this hashing algorithm, as there are many
-       tests that test some exact tree shape to cover all code paths.
+       Also it's worth noting that it would be possible to adapt the tree
+       structure to 64 bit hashes, but that would increase memory pressure
+       and provide little to no performance benefits for collections with
+       fewer than billions of key/value pairs.
+
+       Important: do not change this hash reducing function. There are many
+       tests that need an exact tree shape to cover all code paths and
+       we do that by specifying concrete values for test data's `__hash__`.
+       If this function is changed most of the regression tests would
+       become useless.
     */
     int32_t xored = (int32_t)(hash & 0xffffffffl) ^ (int32_t)(hash >> 32);
     return xored == -1 ? -2 : xored;
@@ -488,11 +496,7 @@ _hamt_dump_format(_PyUnicodeWriter *writer, const char *format, ...)
     int ret;
 
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     msg = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
 

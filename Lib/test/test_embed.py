@@ -22,7 +22,6 @@ if not support.has_subprocess_support:
 
 MS_WINDOWS = (os.name == 'nt')
 MACOS = (sys.platform == 'darwin')
-Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 PYMEM_ALLOCATOR_NOT_SET = 0
 PYMEM_ALLOCATOR_DEBUG = 2
 PYMEM_ALLOCATOR_MALLOC = 3
@@ -343,19 +342,39 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, 'Tests passed\n' * INIT_LOOPS)
 
-    @support.skip_if_pgo_task
     def test_quickened_static_code_gets_unquickened_at_Py_FINALIZE(self):
         # https://github.com/python/cpython/issues/92031
-        code = """if 1:
-            from importlib._bootstrap import _handle_fromlist
-            import dis
-            for name in dis.opmap:
-                # quicken this frozen code object.
-                _handle_fromlist(dis, [name], lambda *args: None)
-        """
+
+        # Do these imports outside of the code string to avoid using
+        # importlib too much from within the code string, so that
+        # _handle_fromlist doesn't get quickened until we intend it to.
+        from dis import _all_opmap
+        resume = _all_opmap["RESUME"]
+        resume_quick = _all_opmap["RESUME_QUICK"]
+        from test.test_dis import QUICKENING_WARMUP_DELAY
+
+        code = textwrap.dedent(f"""\
+            import importlib._bootstrap
+            func = importlib._bootstrap._handle_fromlist
+            code = func.__code__
+
+            # Assert initially unquickened.
+            # Use sets to account for byte order.
+            if set(code._co_code_adaptive[:2]) != set([{resume}, 0]):
+                raise AssertionError()
+
+            for i in range({QUICKENING_WARMUP_DELAY}):
+                func(importlib._bootstrap, ["x"], lambda *args: None)
+
+            # Assert quickening worked
+            if set(code._co_code_adaptive[:2]) != set([{resume_quick}, 0]):
+                raise AssertionError()
+
+            print("Tests passed")
+        """)
         run = self.run_embedded_interpreter
-        for i in range(50):
-            out, err = run("test_repeated_init_exec", code, timeout=60)
+        out, err = run("test_repeated_init_exec", code)
+        self.assertEqual(out, 'Tests passed\n' * INIT_LOOPS)
 
     def test_ucnhash_capi_reset(self):
         # bpo-47182: unicodeobject.c:ucnhash_capi was not reset on shutdown.
@@ -478,7 +497,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'pathconfig_warnings': 1,
         '_init_main': 1,
         '_isolated_interpreter': 0,
-        'use_frozen_modules': not Py_DEBUG,
+        'use_frozen_modules': not support.Py_DEBUG,
         'safe_path': 0,
         '_is_python_build': IGNORE_CONFIG,
     }
@@ -1186,7 +1205,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
              # The current getpath.c doesn't determine the stdlib dir
              # in this case.
             'stdlib_dir': '',
-            'use_frozen_modules': not Py_DEBUG,
+            'use_frozen_modules': not support.Py_DEBUG,
             # overridden by PyConfig
             'program_name': 'conf_program_name',
             'base_executable': 'conf_executable',
@@ -1425,12 +1444,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 config['base_prefix'] = pyvenv_home
                 config['prefix'] = pyvenv_home
                 config['stdlib_dir'] = os.path.join(pyvenv_home, 'Lib')
-                config['use_frozen_modules'] = not Py_DEBUG
+                config['use_frozen_modules'] = not support.Py_DEBUG
             else:
                 # cannot reliably assume stdlib_dir here because it
                 # depends too much on our build. But it ought to be found
                 config['stdlib_dir'] = self.IGNORE_CONFIG
-                config['use_frozen_modules'] = not Py_DEBUG
+                config['use_frozen_modules'] = not support.Py_DEBUG
 
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
@@ -1660,7 +1679,7 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
         """).lstrip()
         self.assertEqual(out, expected)
 
-    @unittest.skipUnless(hasattr(sys, 'gettotalrefcount'),
+    @unittest.skipUnless(support.Py_DEBUG,
                          '-X showrefcount requires a Python debug build')
     def test_no_memleak(self):
         # bpo-1635741: Python must release all memory at exit

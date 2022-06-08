@@ -5071,6 +5071,10 @@ datetime_from_timet_and_us(PyObject *cls, TM_FUNC f, time_t timet, int us,
 
         result_seconds = utc_to_seconds(year, month, day,
                                         hour, minute, second);
+        if (result_seconds == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+
         /* Probe max_fold_seconds to detect a fold. */
         probe_seconds = local(epoch + timet - max_fold_seconds);
         if (probe_seconds == -1)
@@ -5280,7 +5284,7 @@ _sanitize_isoformat_str(PyObject *dtstr)
     //
     // The result of this, if not NULL, returns a new reference
     const void* const unicode_data = PyUnicode_DATA(dtstr);
-    const unsigned int kind = PyUnicode_KIND(dtstr);
+    const int kind = PyUnicode_KIND(dtstr);
 
     // Depending on the format of the string, the separator can only ever be
     // in positions 7, 8 or 10. We'll check each of these for a surrogate and

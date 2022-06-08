@@ -7,7 +7,8 @@ Logging Cookbook
 :Author: Vinay Sajip <vinay_sajip at red-dove dot com>
 
 This page contains a number of recipes related to logging, which have been found
-useful in the past.
+useful in the past. For links to tutorial and reference information, please see
+:ref:`cookbook-ref-links`.
 
 .. currentmodule:: logging
 
@@ -713,6 +714,32 @@ which, when run, produces something like:
     2010-09-06 22:38:15,301 d.e.f DEBUG    IP: 123.231.231.123 User: fred     A message at DEBUG level with 2 parameters
     2010-09-06 22:38:15,301 d.e.f INFO     IP: 123.231.231.123 User: fred     A message at INFO level with 2 parameters
 
+Imparting contextual information in handlers
+--------------------------------------------
+
+Each :class:`~Handler` has its own chain of filters.
+If you want to add contextual information to a :class:`LogRecord` without leaking
+it to other handlers, you can use a filter that returns
+a new :class:`~LogRecord` instead of modifying it in-place, as shown in the following script::
+
+    import copy
+    import logging
+
+    def filter(record: logging.LogRecord):
+        record = copy.copy(record)
+        record.user = 'jim'
+        return record
+
+    if __name__ == '__main__':
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(message)s from %(user)-8s')
+        handler.setFormatter(formatter)
+        handler.addFilter(filter)
+        logger.addHandler(handler)
+
+        logger.info('A log message')
 
 .. _multiple-processes:
 
@@ -3075,3 +3102,23 @@ the :ref:`existing mechanisms <context-info>` for passing contextual
 information into your logs and restrict the loggers created to those describing
 areas within your application (generally modules, but occasionally slightly
 more fine-grained than that).
+
+.. _cookbook-ref-links:
+
+Other resources
+---------------
+
+.. seealso::
+
+   Module :mod:`logging`
+      API reference for the logging module.
+
+   Module :mod:`logging.config`
+      Configuration API for the logging module.
+
+   Module :mod:`logging.handlers`
+      Useful handlers included with the logging module.
+
+   :ref:`Basic Tutorial <logging-basic-tutorial>`
+
+   :ref:`Advanced Tutorial <logging-advanced-tutorial>`

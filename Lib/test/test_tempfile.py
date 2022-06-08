@@ -90,13 +90,9 @@ class BaseTestCase(unittest.TestCase):
     b_check = re.compile(br"^[a-z0-9_-]{8}$")
 
     def setUp(self):
-        self._warnings_manager = warnings_helper.check_warnings()
-        self._warnings_manager.__enter__()
+        self.enterContext(warnings_helper.check_warnings())
         warnings.filterwarnings("ignore", category=RuntimeWarning,
                                 message="mktemp", module=__name__)
-
-    def tearDown(self):
-        self._warnings_manager.__exit__(None, None, None)
 
     def nameCheck(self, name, dir, pre, suf):
         (ndir, nbase) = os.path.split(name)
@@ -454,6 +450,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
             support.gc_collect()  # For PyPy or other GCs.
             os.rmdir(dir)
 
+    @os_helper.skip_unless_working_chmod
     def test_file_mode(self):
         # _mkstemp_inner creates files with the proper mode
 
@@ -791,6 +788,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         finally:
             os.rmdir(dir)
 
+    @os_helper.skip_unless_working_chmod
     def test_mode(self):
         # mkdtemp creates directories with the proper mode
 
