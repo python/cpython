@@ -2370,9 +2370,10 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertIs(s.expandtabs(), s)
 
     def test_raiseMemError(self):
-        null_byte = 1
-        ascii_struct_size = sys.getsizeof("a") - len("a") - null_byte
-        compact_struct_size = sys.getsizeof("\xff") - len("\xff") - null_byte
+        asciifields = "nnb"
+        compactfields = asciifields + "nP"
+        ascii_struct_size = support.calcobjsize(asciifields)
+        compact_struct_size = support.calcobjsize(compactfields)
 
         for char in ('a', '\xe9', '\u20ac', '\U0010ffff'):
             code = ord(char)
