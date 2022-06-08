@@ -1,6 +1,7 @@
 """Tests for http/cookiejar.py."""
 
 import os
+import stat
 import sys
 import re
 import test.support
@@ -371,6 +372,7 @@ class FileCookieJarTests(unittest.TestCase):
         self.assertEqual(c._cookies["www.acme.com"]["/"]["boo"].value, None)
 
     @unittest.skipIf(mswindows, "windows file permissions are incompatible with file modes")
+    @os_helper.skip_unless_working_chmod
     def test_lwp_filepermissions(self):
         # Cookie file should only be readable by the creator
         filename = os_helper.TESTFN
@@ -378,14 +380,13 @@ class FileCookieJarTests(unittest.TestCase):
         interact_netscape(c, "http://www.acme.com/", 'boo')
         try:
             c.save(filename, ignore_discard=True)
-            status = os.stat(filename)
-            print(status.st_mode)
-            self.assertEqual(oct(status.st_mode)[-3:], '600')
+            st = os.stat(filename)
+            self.assertEqual(stat.S_IMODE(st.st_mode), 0o600)
         finally:
-            try: os.unlink(filename)
-            except OSError: pass
+            test.support.unlink(filename)
 
     @unittest.skipIf(mswindows, "windows file permissions are incompatible with file modes")
+    @os_helper.skip_unless_working_chmod
     def test_mozilla_filepermissions(self):
         # Cookie file should only be readable by the creator
         filename = os_helper.TESTFN
@@ -393,11 +394,10 @@ class FileCookieJarTests(unittest.TestCase):
         interact_netscape(c, "http://www.acme.com/", 'boo')
         try:
             c.save(filename, ignore_discard=True)
-            status = os.stat(filename)
-            self.assertEqual(oct(status.st_mode)[-3:], '600')
+            st = os.stat(filename)
+            self.assertEqual(stat.S_IMODE(st.st_mode), 0o600)
         finally:
-            try: os.unlink(filename)
-            except OSError: pass
+            test.support.unlink(filename)
 
     def test_bad_magic(self):
         # OSErrors (eg. file doesn't exist) are allowed to propagate
