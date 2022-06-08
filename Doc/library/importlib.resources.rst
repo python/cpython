@@ -89,8 +89,8 @@ Deprecated functions
 
 An older, deprecated set of functions is still available, but is
 scheduled for removal in a future version of Python.
-The mailn drawback of these function is that they do not allow directories.
-These functions are deprecated in favor of ``files``
+The main drawback of these function is that they do not support
+directories: they assume all resources are located directly within a *package*.
 
 .. data:: Resource
 
