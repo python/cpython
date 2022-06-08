@@ -168,12 +168,16 @@ we also call *flavours*:
 .. class:: PureWindowsPath(*pathsegments)
 
    A subclass of :class:`PurePath`, this path flavour represents Windows
-   filesystem paths::
+   filesystem paths, including `UNC paths`_::
 
       >>> PureWindowsPath('c:/Program Files/')
       PureWindowsPath('c:/Program Files')
+      >>> PureWindowsPath('//server/share/file')
+      PureWindowsPath('//server/share/file')
 
    *pathsegments* is specified similarly to :class:`PurePath`.
+
+   .. UNC paths: https://en.wikipedia.org/wiki/Path_(computing)#UNC
 
 Regardless of the system you're running on, you can instantiate all of
 these classes, since they don't provide any operation that does system calls.
@@ -310,6 +314,27 @@ Pure paths provide the following methods and properties:
 
       >>> PureWindowsPath('//host/share').root
       '\\'
+
+   If the path starts with more than two successive slashes,
+   :class:`~pathlib.PurePosixPath` collapses them::
+
+      >>> PurePosixPath('//etc').root
+      '//'
+      >>> PurePosixPath('///etc').root
+      '/'
+      >>> PurePosixPath('////etc').root
+      '/'
+
+   .. note::
+
+      This behavior conforms to *The Open Group Base Specifications Issue 6*,
+      paragraph `4.11 *Pathname Resolution* <xbd_path_resolution>`_:
+
+      *"A pathname that begins with two successive slashes may be interpreted in
+      an implementation-defined manner, although more than two leading slashes
+      shall be treated as a single slash."*
+
+   .. xbd_path_resolution: https://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap04.html#tag_04_11
 
 .. data:: PurePath.anchor
 
