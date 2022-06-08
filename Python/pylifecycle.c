@@ -840,13 +840,17 @@ pycore_interp_init(PyThreadState *tstate)
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
-    // Intern strings in deep-frozen modules first so that others
-    // can use it instead of creating a heap allocated string.
+    /* Intern statically allocated string identifiers and deepfreeze strings.
+     * This must be done before any module initialization so that statically
+     * allocated string identifiers are used instead of heap allocated strings.
+     * Deepfreeze uses the interned identifiers if it is present to save space
+     * else generates them and they are interned to speed up dict lookups.
+    */
+    _Py_StaticStrings_Intern();
+
     if (_Py_Deepfreeze_Init() < 0) {
         return _PyStatus_ERR("failed to initialize deep-frozen modules");
     }
-    // Intern all statically allocated string identifiers.
-    _Py_StaticStrings_Intern();
 
     if (_PyWarnings_InitState(interp) < 0) {
         return _PyStatus_ERR("can't initialize warnings");
