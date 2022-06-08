@@ -367,8 +367,7 @@ class FileCookieJarTests(unittest.TestCase):
             c = LWPCookieJar()
             c.load(filename, ignore_discard=True)
         finally:
-            try: os.unlink(filename)
-            except OSError: pass
+            os_helper.unlink(filename)
         self.assertEqual(c._cookies["www.acme.com"]["/"]["boo"].value, None)
 
     @unittest.skipIf(mswindows, "windows file permissions are incompatible with file modes")
@@ -383,7 +382,7 @@ class FileCookieJarTests(unittest.TestCase):
             st = os.stat(filename)
             self.assertEqual(stat.S_IMODE(st.st_mode), 0o600)
         finally:
-            test.support.unlink(filename)
+            os_helper.unlink(filename)
 
     @unittest.skipIf(mswindows, "windows file permissions are incompatible with file modes")
     @os_helper.skip_unless_working_chmod
@@ -397,7 +396,7 @@ class FileCookieJarTests(unittest.TestCase):
             st = os.stat(filename)
             self.assertEqual(stat.S_IMODE(st.st_mode), 0o600)
         finally:
-            test.support.unlink(filename)
+            os_helper.unlink(filename)
 
     def test_bad_magic(self):
         # OSErrors (eg. file doesn't exist) are allowed to propagate
@@ -422,8 +421,7 @@ class FileCookieJarTests(unittest.TestCase):
                     c = cookiejar_class()
                     self.assertRaises(LoadError, c.load, filename)
         finally:
-            try: os.unlink(filename)
-            except OSError: pass
+            os_helper.unlink(filename)
 
 class CookieTests(unittest.TestCase):
     # XXX
@@ -527,7 +525,7 @@ class CookieTests(unittest.TestCase):
             c = MozillaCookieJar(filename)
             c.revert(ignore_expires=True, ignore_discard=True)
         finally:
-            os.unlink(c.filename)
+            os_helper.unlink(c.filename)
         # cookies unchanged apart from lost info re. whether path was specified
         self.assertEqual(
             repr(c),
@@ -1797,8 +1795,7 @@ class LWPCookieTests(unittest.TestCase):
             c = LWPCookieJar(policy=pol)
             c.load(filename, ignore_discard=True)
         finally:
-            try: os.unlink(filename)
-            except OSError: pass
+            os_helper.unlink(filename)
 
         self.assertEqual(old, repr(c))
 
@@ -1857,8 +1854,7 @@ class LWPCookieTests(unittest.TestCase):
                                          DefaultCookiePolicy(rfc2965=True))
                 new_c.load(ignore_discard=ignore_discard)
             finally:
-                try: os.unlink(filename)
-                except OSError: pass
+                os_helper.unlink(filename)
             return new_c
 
         new_c = save_and_restore(c, True)
