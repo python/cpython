@@ -11,7 +11,6 @@ import hashlib
 import json
 import os
 import re
-import sys
 from pathlib import Path
 from urllib.request import urlopen
 
@@ -92,5 +91,8 @@ def verify_wheel(package_name: str) -> bool:
 
 
 if __name__ == "__main__":
-    success = all([verify_wheel(package_name) for package_name in PACKAGE_NAMES])
-    sys.exit(0 if success else 1)
+    exit_status = 0
+    for package_name in PACKAGE_NAMES:
+        if not verify_wheel(package_name):
+            exit_status = 1
+    raise SystemExit(exit_status)
