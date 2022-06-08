@@ -78,7 +78,10 @@ class EmbeddingTestsMixin:
         # "Py_Initialize: Unable to get the locale encoding
         # LookupError: no codec search functions registered: can't find encoding"
         self.oldcwd = os.getcwd()
-        os.chdir(builddir)
+        if MS_WINDOWS:
+            os.chdir(support.REPO_ROOT)
+        else:
+            os.chdir(builddir)
 
     def tearDown(self):
         os.chdir(self.oldcwd)
