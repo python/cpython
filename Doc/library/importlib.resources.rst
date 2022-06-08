@@ -71,7 +71,7 @@ The following functions are available.
     containers (think subdirectories).
 
     *package* is either a name or a module object which conforms to the
-    ``Package`` requirements.
+    :data:`Package` requirements.
 
     .. versionadded:: 3.9
 
