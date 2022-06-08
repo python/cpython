@@ -133,9 +133,8 @@ we also call *flavours*:
       PureWindowsPath('c:/Program Files')
 
    Spurious slashes and single dots are collapsed, but double dots (``'..'``)
-   and initial double slashes (``'//'``) are not, since this would change the
-   meaning of a path in the face of symbolic links and UNC (network) paths
-   respectively::
+   and leading double slashes (``'//'``) are not, since this would change the
+   meaning of a path for various reasons (e.g. symbolic links, UNC paths)::
 
       >>> PurePath('foo//bar')
       PurePosixPath('foo/bar')
