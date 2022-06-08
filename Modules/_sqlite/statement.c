@@ -26,7 +26,7 @@
 #include "util.h"
 
 /* prototypes */
-static const char *pysqlite_check_remaining_sql(const char *sql);
+static const char *lstrip_sql(const char *sql);
 
 typedef enum {
     LINECOMMENT_1,
@@ -73,7 +73,7 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
         return NULL;
     }
 
-    if (pysqlite_check_remaining_sql(tail)) {
+    if (lstrip_sql(tail)) {
         PyErr_SetString(connection->ProgrammingError,
                         "You can only execute one statement at a time.");
         goto error;
@@ -147,7 +147,7 @@ stmt_traverse(pysqlite_Statement *self, visitproc visit, void *arg)
  * Returns 1 if there is more left than should be. 0 if ok.
  */
 static const char *
-pysqlite_check_remaining_sql(const char *sql)
+lstrip_sql(const char *sql)
 {
     const char *pos = sql;
 
