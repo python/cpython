@@ -1424,6 +1424,10 @@ then
         HOSTRUNNER='node'
       ])
     ],
+    dnl TODO: support other WASI runtimes
+    dnl wasmtime starts the proces with "/" as CWD. For OOT builds add the
+    dnl directory containing _sysconfigdata to PYTHONPATH.
+    [WASI/*], [HOSTRUNNER='wasmtime run --env PYTHONPATH=$$(realpath --relative-to $(abs_srcdir) $(abs_builddir))/$$(cat pybuilddir.txt) --mapdir /::$(srcdir) --'],
     [HOSTRUNNER='']
   )
 fi
