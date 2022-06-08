@@ -35,9 +35,7 @@ for example, a package and its resources can be imported from a Zip file using
    on `using importlib.resources
    <http://importlib-resources.readthedocs.io/en/latest/using.html>`_ and
    `migrating from pkg_resources to importlib.resources
-   <http://importlib-resources.readthedocs.io/en/latest/migration.html>`_
-   and
-   `migrating legacy usage <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_.
+   <http://importlib-resources.readthedocs.io/en/latest/migration.html>`_.
 
 :class:`Loaders <importlib.abc.Loader>` that wish to support resource reading should implement a
 ``get_resource_reader(fullname)`` method as specified by
