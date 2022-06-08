@@ -1321,11 +1321,14 @@ iterations of the loop.
     If the call raises :exc:`StopIteration`, pop both values, push its return
     value, and increment the bytecode counter by *delta*.
 
-    If TOS1 is ``NULL`` (set when it raises :exc:`StopIteration` during a
-    ``throw()`` through the current frame), pop both values, push TOS (its
-    return value), and increment the bytecode counter by *delta*.
+    If TOS1 is ``NULL`` (set when a ``throw()`` through the current frame
+    returns), pop both values, push TOS (its return value) back, and increment
+    the bytecode counter by *delta*.
 
     .. versionadded:: 3.11
+
+    .. versionchanged:: 3.12
+       Added ``NULL`` handling for subiterators that return during ``throw()``.
 
 
 .. opcode:: ASYNC_GEN_WRAP
