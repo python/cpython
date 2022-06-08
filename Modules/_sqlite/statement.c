@@ -73,7 +73,7 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
         return NULL;
     }
 
-    if (lstrip_sql(tail)) {
+    if (lstrip_sql(tail) != NULL) {
         PyErr_SetString(connection->ProgrammingError,
                         "You can only execute one statement at a time.");
         goto error;
