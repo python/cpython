@@ -57,6 +57,17 @@ class ModuleTests(unittest.TestCase):
         self.assertEqual(sqlite.apilevel, "2.0",
                          "apilevel is %s, should be 2.0" % sqlite.apilevel)
 
+    def test_deprecated_version(self):
+        msg = "deprecated and will be removed in Python 3.14"
+        for attr in "version", "version_info":
+            with self.subTest(attr=attr):
+                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                    getattr(sqlite, attr)
+                self.assertEqual(cm.filename,  __file__)
+                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                    getattr(sqlite.dbapi2, attr)
+                self.assertEqual(cm.filename,  __file__)
+
     def test_thread_safety(self):
         self.assertIn(sqlite.threadsafety, {0, 1, 3},
                       "threadsafety is %d, should be 0, 1 or 3" %

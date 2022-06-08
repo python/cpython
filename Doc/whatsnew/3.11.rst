@@ -736,7 +736,7 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   (Contributed by Jelle Zijlstra in :gh:`90638`.)
 
 * :data:`typing.TypedDict` types can now be generic. (Contributed by
-  Samodya Abey in :gh:`89026`.)
+  Samodya Abeysiriwardane in :gh:`89026`.)
 
 * :class:`~typing.NamedTuple` types can now be generic.
   (Contributed by Serhiy Storchaka in :issue:`43923`.)
