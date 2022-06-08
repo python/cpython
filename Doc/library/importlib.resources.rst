@@ -41,8 +41,6 @@ for example, a package and its resources can be imported from a Zip file using
 ``get_resource_reader(fullname)`` method as specified by
 :class:`importlib.resources.abc.ResourceReader`.
 
-The following types are defined.
-
 .. data:: Package
 
     Where a function is described as accepting a ``Package``, you can pass in
@@ -51,9 +49,6 @@ The following types are defined.
     not ``None``.
 
     The ``Package`` type is defined as ``Union[str, ModuleType]``.
-
-
-The following functions are available.
 
 
 .. function:: files(package)
