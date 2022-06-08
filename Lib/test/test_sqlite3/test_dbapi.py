@@ -914,6 +914,12 @@ class CursorTests(unittest.TestCase):
             insert into test(name) values ('foo')
         """)
         self.assertEqual(self.cu.rowcount, 1)
+        self.cu.execute("""
+            /* -- messy /* /* *- *--
+            */
+            /* one more */ insert into test(name) values ('messy')
+        """)
+        self.assertEqual(self.cu.rowcount, 1)
         self.cu.execute("/* bar */ update test set name='bar' where name='foo'")
         self.assertEqual(self.cu.rowcount, 2)
 
