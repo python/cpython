@@ -8,7 +8,7 @@ extern "C" {
 
 /* Tokenizer interface */
 
-#include "token.h"      /* For token types */
+#include "pycore_token.h" /* For token types */
 
 #define MAXINDENT 100   /* Max indentation level */
 #define MAXLEVEL 200    /* Max parentheses level */
@@ -84,6 +84,9 @@ struct tok_state {
                              NEWLINE token after it. */
     /* How to proceed when asked for a new token in interactive mode */
     enum interactive_underflow_t interactive_underflow;
+#ifdef Py_DEBUG
+    int debug;
+#endif
 };
 
 extern struct tok_state *_PyTokenizer_FromString(const char *, int);

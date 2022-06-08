@@ -1,20 +1,13 @@
 import contextlib
-import glob
 import io
 import os.path
 import re
-import sys
-
 
 __file__ = os.path.abspath(__file__)
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 INTERNAL = os.path.join(ROOT, 'Include', 'internal')
 
 
-STRING_LITERALS = {
-    'empty': '',
-    'dot': '.',
-}
 IGNORED = {
     'ACTION',  # Python/_warnings.c
     'ATTR',  # Python/_warnings.c and Objects/funcobject.c
@@ -115,7 +108,12 @@ def iter_global_strings():
     id_regex = re.compile(r'\b_Py_ID\((\w+)\)')
     str_regex = re.compile(r'\b_Py_DECLARE_STR\((\w+), "(.*?)"\)')
     for filename in iter_files():
-        with open(filename, encoding='utf-8') as infile:
+        try:
+            infile = open(filename, encoding='utf-8')
+        except FileNotFoundError:
+            # The file must have been a temporary file.
+            continue
+        with infile:
             for lno, line in enumerate(infile, 1):
                 for m in id_regex.finditer(line):
                     identifier, = m.groups()
@@ -206,7 +204,7 @@ def generate_global_strings(identifiers, strings):
         printer.write(START)
         with printer.block('struct _Py_global_strings', ';'):
             with printer.block('struct', ' literals;'):
-                for name, literal in sorted(strings.items()):
+                for literal, name in sorted(strings.items(), key=lambda x: x[1]):
                     printer.write(f'STRUCT_FOR_STR({name}, "{literal}")')
             outfile.write('\n')
             with printer.block('struct', ' identifiers;'):
@@ -271,7 +269,7 @@ def generate_runtime_init(identifiers, strings):
                 # Global strings.
                 with printer.block('.strings =', ','):
                     with printer.block('.literals =', ','):
-                        for name, literal in sorted(strings.items()):
+                        for literal, name in sorted(strings.items(), key=lambda x: x[1]):
                             printer.write(f'INIT_STR({name}, "{literal}"),')
                     with printer.block('.identifiers =', ','):
                         for name in sorted(identifiers):
@@ -292,15 +290,15 @@ def generate_runtime_init(identifiers, strings):
 
 def get_identifiers_and_strings() -> 'tuple[set[str], dict[str, str]]':
     identifiers = set(IDENTIFIERS)
-    strings = dict(STRING_LITERALS)
+    strings = {}
     for name, string, *_ in iter_global_strings():
         if string is None:
             if name not in IGNORED:
                 identifiers.add(name)
         else:
-            if name not in strings:
-                strings[name] = string
-            elif string != strings[name]:
+            if string not in strings:
+                strings[string] = name
+            elif name != strings[string]:
                 raise ValueError(f'string mismatch for {name!r} ({string!r} != {strings[name]!r}')
     return identifiers, strings
 

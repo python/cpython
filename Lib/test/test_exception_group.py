@@ -567,7 +567,9 @@ class ExceptionGroupSplitTestBase(ExceptionGroupTestBase):
                 self.assertIs(eg.__cause__, part.__cause__)
                 self.assertIs(eg.__context__, part.__context__)
                 self.assertIs(eg.__traceback__, part.__traceback__)
-                self.assertIs(eg.__note__, part.__note__)
+                self.assertEqual(
+                    getattr(eg, '__notes__', None),
+                    getattr(part, '__notes__', None))
 
         def tbs_for_leaf(leaf, eg):
             for e, tbs in leaf_generator(eg):
@@ -632,7 +634,7 @@ class NestedExceptionGroupSplitTest(ExceptionGroupSplitTestBase):
         try:
             nested_group()
         except ExceptionGroup as e:
-            e.__note__ = f"the note: {id(e)}"
+            e.add_note(f"the note: {id(e)}")
             eg = e
 
         eg_template = [
@@ -727,6 +729,35 @@ class NestedExceptionGroupSplitTest(ExceptionGroupSplitTestBase):
             match, BaseExceptionGroup, [KeyboardInterrupt(2)])
         self.assertMatchesTemplate(
             rest, ExceptionGroup, [ValueError(1)])
+
+    def test_split_copies_notes(self):
+        # make sure each exception group after a split has its own __notes__ list
+        eg = ExceptionGroup("eg", [ValueError(1), TypeError(2)])
+        eg.add_note("note1")
+        eg.add_note("note2")
+        orig_notes = list(eg.__notes__)
+        match, rest = eg.split(TypeError)
+        self.assertEqual(eg.__notes__, orig_notes)
+        self.assertEqual(match.__notes__, orig_notes)
+        self.assertEqual(rest.__notes__, orig_notes)
+        self.assertIsNot(eg.__notes__, match.__notes__)
+        self.assertIsNot(eg.__notes__, rest.__notes__)
+        self.assertIsNot(match.__notes__, rest.__notes__)
+        eg.add_note("eg")
+        match.add_note("match")
+        rest.add_note("rest")
+        self.assertEqual(eg.__notes__, orig_notes + ["eg"])
+        self.assertEqual(match.__notes__, orig_notes + ["match"])
+        self.assertEqual(rest.__notes__, orig_notes + ["rest"])
+
+    def test_split_does_not_copy_non_sequence_notes(self):
+        # __notes__ should be a sequence, which is shallow copied.
+        # If it is not a sequence, the split parts don't get any notes.
+        eg = ExceptionGroup("eg", [ValueError(1), TypeError(2)])
+        eg.__notes__ = 123
+        match, rest = eg.split(TypeError)
+        self.assertFalse(hasattr(match, '__notes__'))
+        self.assertFalse(hasattr(rest, '__notes__'))
 
 
 class NestedExceptionGroupSubclassSplitTest(ExceptionGroupSplitTestBase):

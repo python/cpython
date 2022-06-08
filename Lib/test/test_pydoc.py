@@ -27,7 +27,8 @@ from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
 from test.support import (reap_children, captured_output, captured_stdout,
-                          captured_stderr, is_emscripten, requires_docstrings)
+                          captured_stderr, is_emscripten, is_wasi,
+                          requires_docstrings)
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test import pydoc_mod
 
@@ -932,6 +933,7 @@ class PydocImportTest(PydocBaseTest):
         self.assertEqual(out.getvalue(), '')
         self.assertEqual(err.getvalue(), '')
 
+    @os_helper.skip_unless_working_chmod
     def test_apropos_empty_doc(self):
         pkgdir = os.path.join(TESTFN, 'walkpkg')
         os.mkdir(pkgdir)
@@ -1066,14 +1068,14 @@ class TestDescriptions(unittest.TestCase):
         self.assertIn(types.UnionType.__doc__.strip().splitlines()[0], doc)
 
     def test_special_form(self):
-        self.assertEqual(pydoc.describe(typing.Any), '_SpecialForm')
-        doc = pydoc.render_doc(typing.Any, renderer=pydoc.plaintext)
+        self.assertEqual(pydoc.describe(typing.NoReturn), '_SpecialForm')
+        doc = pydoc.render_doc(typing.NoReturn, renderer=pydoc.plaintext)
         self.assertIn('_SpecialForm in module typing', doc)
-        if typing.Any.__doc__:
-            self.assertIn('Any = typing.Any', doc)
-            self.assertIn(typing.Any.__doc__.strip().splitlines()[0], doc)
+        if typing.NoReturn.__doc__:
+            self.assertIn('NoReturn = typing.NoReturn', doc)
+            self.assertIn(typing.NoReturn.__doc__.strip().splitlines()[0], doc)
         else:
-            self.assertIn('Any = class _SpecialForm(_Final)', doc)
+            self.assertIn('NoReturn = class _SpecialForm(_Final)', doc)
 
     def test_typing_pydoc(self):
         def foo(data: typing.List[typing.Any],
@@ -1356,7 +1358,10 @@ foo
         )
 
 
-@unittest.skipIf(is_emscripten, "Socket server not available on Emscripten.")
+@unittest.skipIf(
+    is_emscripten or is_wasi,
+    "Socket server not available on Emscripten/WASI."
+)
 class PydocServerTest(unittest.TestCase):
     """Tests for pydoc._start_server"""
 

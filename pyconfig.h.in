@@ -44,9 +44,6 @@
 /* Define if --enable-ipv6 is specified */
 #undef ENABLE_IPV6
 
-/* Better isolate subinterpreters, experimental build mode. */
-#undef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-
 /* Define to 1 if your system stores words within floats with the most
    significant word first */
 #undef FLOAT_WORDS_BIGENDIAN
@@ -655,6 +652,9 @@
 /* Define to 1 if you have the `sendfile' library (-lsendfile). */
 #undef HAVE_LIBSENDFILE
 
+/* Define to 1 if you have the `sqlite3' library (-lsqlite3). */
+#undef HAVE_LIBSQLITE3
+
 /* Define to 1 if you have the <libutil.h> header file. */
 #undef HAVE_LIBUTIL_H
 
@@ -684,6 +684,9 @@
 
 /* Define if compiling using Linux 4.1 or later. */
 #undef HAVE_LINUX_CAN_RAW_JOIN_FILTERS
+
+/* Define to 1 if you have the <linux/fs.h> header file. */
+#undef HAVE_LINUX_FS_H
 
 /* Define to 1 if you have the <linux/memfd.h> header file. */
 #undef HAVE_LINUX_MEMFD_H
@@ -717,6 +720,9 @@
 
 /* Define to 1 if you have the `log2' function. */
 #undef HAVE_LOG2
+
+/* Define to 1 if you have the `login_tty' function. */
+#undef HAVE_LOGIN_TTY
 
 /* Define to 1 if the system has the type `long double'. */
 #undef HAVE_LONG_DOUBLE
@@ -1109,10 +1115,6 @@
 /* Define if you have struct stat.st_mtimensec */
 #undef HAVE_STAT_TV_NSEC2
 
-/* Define if your compiler supports variable length function prototypes (e.g.
-   void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
-#undef HAVE_STDARG_PROTOTYPES
-
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
@@ -1357,9 +1359,6 @@
    `tzname'. */
 #undef HAVE_TZNAME
 
-/* Define this if you have tcl and TCL_UTF_MAX==6 */
-#undef HAVE_UCS4_TCL
-
 /* Define to 1 if you have the `umask' function. */
 #undef HAVE_UMASK
 
@@ -1388,6 +1387,9 @@
 
 /* Define to 1 if you have the <utime.h> header file. */
 #undef HAVE_UTIME_H
+
+/* Define to 1 if you have the <utmp.h> header file. */
+#undef HAVE_UTMP_H
 
 /* Define to 1 if you have the `uuid_create' function. */
 #undef HAVE_UUID_CREATE
@@ -1500,11 +1502,11 @@
 /* Define if you want to coerce the C locale to a UTF-8 based locale */
 #undef PY_COERCE_C_LOCALE
 
-/* Define to printf format modifier for Py_ssize_t */
-#undef PY_FORMAT_SIZE_T
-
 /* Define to 1 to build the sqlite module with loadable extensions support. */
 #undef PY_SQLITE_ENABLE_LOAD_EXTENSION
+
+/* Define if SQLite was compiled with the serialize API */
+#undef PY_SQLITE_HAVE_SERIALIZE
 
 /* Default cipher suites list for ssl module. 1: Python's preferred selection,
    2: leave OpenSSL defaults untouched, 0: custom string */

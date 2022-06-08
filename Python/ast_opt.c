@@ -310,6 +310,7 @@ simple_format_arg_parse(PyObject *fmt, Py_ssize_t *ppos,
             case ' ': *flags |= F_BLANK; continue;
             case '#': *flags |= F_ALT; continue;
             case '0': *flags |= F_ZERO; continue;
+            case 'z': *flags |= F_NO_NEG_0; continue;
         }
         break;
     }

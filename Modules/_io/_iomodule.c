@@ -92,9 +92,9 @@ it already exists), 'x' for creating and writing to a new file, and
 'a' for appending (which on some Unix systems, means that all writes
 append to the end of the file regardless of the current seek position).
 In text mode, if encoding is not specified the encoding used is platform
-dependent: locale.getpreferredencoding(False) is called to get the
-current locale encoding. (For reading and writing raw bytes use binary
-mode and leave encoding unspecified.) The available modes are:
+dependent: locale.getencoding() is called to get the current locale encoding.
+(For reading and writing raw bytes use binary mode and leave encoding
+unspecified.) The available modes are:
 
 ========= ===============================================================
 Character Meaning
@@ -196,7 +196,7 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=1543f4511d2356a5]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=5bb37f174cb2fb11]*/
 {
     unsigned i;
 
@@ -457,8 +457,9 @@ _io.text_encoding
 
 A helper function to choose the text encoding.
 
-When encoding is not None, just return it.
-Otherwise, return the default text encoding (i.e. "locale").
+When encoding is not None, this function returns it.
+Otherwise, this function returns the default text encoding
+(i.e. "locale" or "utf-8" depends on UTF-8 mode).
 
 This function emits an EncodingWarning if encoding is None and
 sys.flags.warn_default_encoding is true.
@@ -469,7 +470,7 @@ However, please consider using encoding="utf-8" for new APIs.
 
 static PyObject *
 _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
-/*[clinic end generated code: output=91b2cfea6934cc0c input=bf70231213e2a7b4]*/
+/*[clinic end generated code: output=91b2cfea6934cc0c input=4999aa8b3d90f3d4]*/
 {
     if (encoding == NULL || encoding == Py_None) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -479,7 +480,14 @@ _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
                 return NULL;
             }
         }
-        return &_Py_ID(locale);
+        const PyPreConfig *preconfig = &_PyRuntime.preconfig;
+        if (preconfig->utf8_mode) {
+            _Py_DECLARE_STR(utf_8, "utf-8");
+            encoding = &_Py_STR(utf_8);
+        }
+        else {
+            encoding = &_Py_ID(locale);
+        }
     }
     Py_INCREF(encoding);
     return encoding;

@@ -98,7 +98,7 @@ Lib/ast.py                    @isidentical
 /Lib/unittest/test/testmock/* @cjw296
 
 # SQLite 3
-**/*sqlite*                   @berkerpeksag
+**/*sqlite*                   @berkerpeksag @erlend-aasland
 
 # subprocess
 /Lib/subprocess.py            @gpshead
@@ -146,3 +146,6 @@ Lib/ast.py                    @isidentical
 # macOS
 /Mac/                         @python/macos-team
 **/*osx_support*              @python/macos-team
+
+# pathlib
+**/*pathlib*                  @brettcannon

@@ -706,15 +706,15 @@ Glossary
 
    locale encoding
       On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
-      ``locale.setlocale(locale.LC_CTYPE, new_locale)``.
+      :func:`locale.setlocale(locale.LC_CTYPE, new_locale) <locale.setlocale>`.
 
-      On Windows, it is the ANSI code page (ex: ``cp1252``).
+      On Windows, it is the ANSI code page (ex: ``"cp1252"``).
 
-      ``locale.getpreferredencoding(False)`` can be used to get the locale
-      encoding.
+      On Android and VxWorks, Python uses ``"utf-8"`` as the locale encoding.
 
-      Python uses the :term:`filesystem encoding and error handler` to convert
-      between Unicode filenames and bytes filenames.
+      ``locale.getencoding()`` can be used to get the locale encoding.
+
+      See also the :term:`filesystem encoding and error handler`.
 
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
@@ -1125,7 +1125,16 @@ Glossary
       See also :term:`borrowed reference`.
 
    text encoding
-      A codec which encodes Unicode strings to bytes.
+      A string in Python is a sequence of Unicode code points (in range
+      ``U+0000``--``U+10FFFF``). To store or transfer a string, it needs to be
+      serialized as a sequence of bytes.
+
+      Serializing a string into a sequence of bytes is known as "encoding", and
+      recreating the string from the sequence of bytes is known as "decoding".
+
+      There are a variety of different text serialization
+      :ref:`codecs <standard-encodings>`, which are collectively referred to as
+      "text encodings".
 
    text file
       A :term:`file object` able to read and write :class:`str` objects.
