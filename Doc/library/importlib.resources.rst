@@ -39,7 +39,7 @@ for example, a package and its resources can be imported from a Zip file using
    and
    `migrating legacy usage <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_.
 
-Loaders that wish to support resource reading should implement a
+:class:`Loaders <importlib.abc.Loader>` that wish to support resource reading should implement a
 ``get_resource_reader(fullname)`` method as specified by
 :class:`importlib.abc.ResourceReader`.
 
