@@ -168,7 +168,7 @@ we also call *flavours*:
 .. class:: PureWindowsPath(*pathsegments)
 
    A subclass of :class:`PurePath`, this path flavour represents Windows
-   filesystem paths, including `UNC paths`_::
+   filesystem paths, including `UNC`_ paths::
 
       >>> PureWindowsPath('c:/Program Files/')
       PureWindowsPath('c:/Program Files')
@@ -177,7 +177,7 @@ we also call *flavours*:
 
    *pathsegments* is specified similarly to :class:`PurePath`.
 
-   .. UNC paths: https://en.wikipedia.org/wiki/Path_(computing)#UNC
+   .. UNC: https://en.wikipedia.org/wiki/Path_(computing)#UNC
 
 Regardless of the system you're running on, you can instantiate all of
 these classes, since they don't provide any operation that does system calls.
