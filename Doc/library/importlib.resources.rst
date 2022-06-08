@@ -135,7 +135,7 @@ These functions are deprecated in favor of ``files``
 
        Calls to this function can be replaced by::
 
-          files(package).joinpath(resource).open('r', encoding=encoding, errors=errors)
+          files(package).joinpath(resource).open('r', encoding=encoding)
 
 
 .. function:: read_binary(package, resource)
@@ -172,7 +172,7 @@ These functions are deprecated in favor of ``files``
 
        Calls to this function can be replaced by::
 
-          files(package).joinpath(resource).read_text(encoding=encoding, errors=errors)
+          files(package).joinpath(resource).read_text(encoding=encoding)
 
 
 .. function:: path(package, resource)
