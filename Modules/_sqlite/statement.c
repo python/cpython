@@ -131,12 +131,15 @@ stmt_traverse(pysqlite_Statement *self, visitproc visit, void *arg)
 }
 
 /*
- * Checks if there is anything left in an SQL string after SQLite compiled it.
+ * Strips leading whitespace and SQL comments from input string and returns a
+ * pointer to the first non-whitespace, non-comment character.
+ *
  * This is used to check if somebody tried to execute more than one SQL command
  * with one execute()/executemany() command, which the DB-API and we don't
  * allow.
  *
- * Returns 1 if there is more left than should be. 0 if ok.
+ * It is also used to strip leading whitespace and comments from input SQL
+ * queries, so we can easily detect DML queries.
  */
 static const char *
 lstrip_sql(const char *sql)
