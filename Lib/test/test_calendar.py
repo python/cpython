@@ -548,7 +548,7 @@ class CalendarTestCase(unittest.TestCase):
         # (it is still not thread-safe though)
         old_october = calendar.TextCalendar().formatmonthname(2010, 10, 10)
         try:
-            cal = calendar.LocaleTextCalendar(locale=None)
+            cal = calendar.LocaleTextCalendar(locale='')
             local_weekday = cal.formatweekday(1, 10)
             local_weekday_abbr = cal.formatweekday(1, 3)
             local_month = cal.formatmonthname(2010, 10, 10)
@@ -562,7 +562,7 @@ class CalendarTestCase(unittest.TestCase):
         self.assertEqual(len(local_weekday_abbr), 3)
         self.assertGreaterEqual(len(local_month), 10)
 
-        cal = calendar.LocaleTextCalendar(locale='')
+        cal = calendar.LocaleTextCalendar(locale=None)
         local_weekday = cal.formatweekday(1, 10)
         local_weekday_abbr = cal.formatweekday(1, 3)
         local_month = cal.formatmonthname(2010, 10, 10)
@@ -584,13 +584,13 @@ class CalendarTestCase(unittest.TestCase):
         self.assertEqual(len(local_weekday_abbr), 3)
         self.assertGreaterEqual(len(local_month), 10)
 
-        cal = calendar.LocaleHTMLCalendar(locale=None)
+        cal = calendar.LocaleHTMLCalendar(locale='')
         local_weekday = cal.formatweekday(1)
         local_month = cal.formatmonthname(2010, 10)
         self.assertIsInstance(local_weekday, str)
         self.assertIsInstance(local_month, str)
 
-        cal = calendar.LocaleHTMLCalendar(locale='')
+        cal = calendar.LocaleHTMLCalendar(locale=None)
         local_weekday = cal.formatweekday(1)
         local_month = cal.formatmonthname(2010, 10)
         self.assertIsInstance(local_weekday, str)
