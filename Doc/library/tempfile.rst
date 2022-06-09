@@ -80,10 +80,11 @@ The module defines the following user-callable items:
    This function operates exactly as :func:`TemporaryFile` does, except the
    following differences:
 
-   * The file is guaranteed to have a visible name in the file system (on Unix, the directory entry is not unlinked).
+   * The file is guaranteed to have a visible name in the file system (on Unix,
+     the directory entry is not unlinked).
 
-   * There is more granularity in the deletion behaviour of the file
-     (see ``delete_on_close`` below)
+   * There is more granularity in the deletion behaviour of the file (see
+     ``delete_on_close`` below)
 
    The returned object is always a file-like object whose :attr:`!file`
    attribute is the underlying true file object. This file-like object can be
@@ -120,8 +121,8 @@ The module defines the following user-callable items:
    directory for which the user lacks delete access, then the :func:`os.unlink`
    call on exit of the context manager will fail with a ``PermissionError``.
    This cannot happen when *delete_on_close* is true because delete access is
-   requested by the open, which fails immediately if the requested access is
-   not granted.
+   requested by the open, which fails immediately if the requested access is not
+   granted.
 
    On POSIX (only), a process that is terminated abruptly with SIGKILL
    cannot automatically delete any NamedTemporaryFiles it created.
