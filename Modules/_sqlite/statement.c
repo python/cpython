@@ -139,7 +139,7 @@ stmt_traverse(pysqlite_Statement *self, visitproc visit, void *arg)
  *
  * It is also used to harden DML query detection.
  */
-static const char *
+static inline const char *
 lstrip_sql(const char *sql)
 {
     const char *pos = sql;
