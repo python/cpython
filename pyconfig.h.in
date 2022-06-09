@@ -685,6 +685,9 @@
 /* Define if compiling using Linux 4.1 or later. */
 #undef HAVE_LINUX_CAN_RAW_JOIN_FILTERS
 
+/* Define to 1 if you have the <linux/fs.h> header file. */
+#undef HAVE_LINUX_FS_H
+
 /* Define to 1 if you have the <linux/memfd.h> header file. */
 #undef HAVE_LINUX_MEMFD_H
 

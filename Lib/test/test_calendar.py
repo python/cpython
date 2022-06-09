@@ -606,14 +606,17 @@ class CalendarTestCase(unittest.TestCase):
         self.assertEqual(old_october, new_october)
 
     def test_locale_calendar_formatweekday(self):
-        # formatweekday uses different day names based on the available width.
-        cal = calendar.LocaleTextCalendar(locale='en_US')
-        # For short widths, a centered, abbreviated name is used.
-        self.assertEqual(cal.formatweekday(0, 5), " Mon ")
-        # For really short widths, even the abbreviated name is truncated.
-        self.assertEqual(cal.formatweekday(0, 2), "Mo")
-        # For long widths, the full day name is used.
-        self.assertEqual(cal.formatweekday(0, 10), "  Monday  ")
+        try:
+            # formatweekday uses different day names based on the available width.
+            cal = calendar.LocaleTextCalendar(locale='en_US')
+            # For short widths, a centered, abbreviated name is used.
+            self.assertEqual(cal.formatweekday(0, 5), " Mon ")
+            # For really short widths, even the abbreviated name is truncated.
+            self.assertEqual(cal.formatweekday(0, 2), "Mo")
+            # For long widths, the full day name is used.
+            self.assertEqual(cal.formatweekday(0, 10), "  Monday  ")
+        except locale.Error:
+            raise unittest.SkipTest('cannot set the en_US locale')
 
     def test_locale_calendar_formatmonthname(self):
         try:

@@ -557,6 +557,7 @@ class FilePermissionTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
+    @os_helper.skip_unless_working_chmod
     def test_cached_mode_issue_2051(self):
         # permissions of .pyc should match those of .py, regardless of mask
         mode = 0o600
@@ -573,6 +574,7 @@ class FilePermissionTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
+    @os_helper.skip_unless_working_chmod
     def test_cached_readonly(self):
         mode = 0o400
         with temp_umask(0o022), _ready_to_import() as (name, path):
@@ -886,6 +888,7 @@ class PycacheTests(unittest.TestCase):
     @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
             "due to varying filesystem permission semantics (issue #11956)")
     @skip_if_dont_write_bytecode
+    @os_helper.skip_unless_working_chmod
     def test_unwritable_directory(self):
         # When the umask causes the new __pycache__ directory to be
         # unwritable, the import still succeeds but no .pyc file is written.
