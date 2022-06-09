@@ -908,14 +908,13 @@ class CursorTests(unittest.TestCase):
 
     def test_rowcount_prefixed_with_comment(self):
         # gh-79579: rowcount is updated even if query is prefixed with comments
-        #self.cu.execute("/* foo */ insert into test(name) values (?)", ('foo',))
         self.cu.execute("""
             -- foo
             insert into test(name) values ('foo')
         """)
         self.assertEqual(self.cu.rowcount, 1)
         self.cu.execute("""
-            /* -- messy /* /* *- *--
+            /* -- messy /* /* ** *- *--
             */
             /* one more */ insert into test(name) values ('messy')
         """)
