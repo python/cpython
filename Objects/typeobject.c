@@ -3369,7 +3369,8 @@ static const PySlot_Offset pyslot_offsets[] = {
  * types), return a tuple of types.
  */
 inline static PyObject *
-get_bases_tuple(PyObject *bases_in, PyType_Spec *spec) {
+get_bases_tuple(PyObject *bases_in, PyType_Spec *spec)
+{
     if (!bases_in) {
         /* Default: look in the spec, fall back to (type,). */
         PyTypeObject *base = &PyBaseObject_Type;  // borrowed ref
