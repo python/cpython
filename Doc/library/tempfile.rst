@@ -117,14 +117,11 @@ The module defines the following user-callable items:
    the temporary file upon the context manager exit.
 
    In Windows, if *delete_on_close* is false, and the file is created in a
-   directory for which the user lacks delete access (either directly for files
-   as an inherited rule that grants ``DELETE`` access, or at the directory level
-   via ``FILE_DELETE_CHILD`` access), then the :func:`os.unlink` call on exit of
-   the context manager will fail with a ``PermissionError`` due to an OS
-   access-denied error (5). This cannot happen when *delete_on_close* is true
-   because ``DELETE`` access is implicitly requested when ``CreateFileW()`` is
-   called with ``FILE_FLAG_DELETE_ON_CLOSE``, so the open immediately fails if
-   the caller lacks delete access.
+   directory for which the user lacks delete access, then the :func:`os.unlink`
+   call on exit of the context manager will fail with a ``PermissionError``.
+   This cannot happen when *delete_on_close* is true because delete access is
+   requested by the open, which fails immediately if the requested access is
+   not granted.
 
    On POSIX (only), a process that is terminated abruptly with SIGKILL
    cannot automatically delete any NamedTemporaryFiles it created.
