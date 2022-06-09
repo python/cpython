@@ -1,0 +1,3 @@
+:func:`importlib.invalidate_caches` now drops entries from
+:data:`sys.path_importer_cache` with a relative path as name. This solves a
+caching issue when a process changes its current working directory.
