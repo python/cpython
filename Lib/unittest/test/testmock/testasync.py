@@ -201,9 +201,26 @@ class AsyncAutospecTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             create_autospec(async_func, instance=True)
 
-    @unittest.skip('Broken test from https://bugs.python.org/issue37251')
     def test_create_autospec_awaitable_class(self):
-        self.assertIsInstance(create_autospec(AwaitableClass), AsyncMock)
+        cases = [
+            ('autospec of instance', create_autospec(AwaitableClass())),
+            ('constructed autospec of type', create_autospec(AwaitableClass)()),
+            ('instance autospec of type',
+             create_autospec(AwaitableClass, instance=True)),
+        ]
+        for desc, mock_obj in cases:
+            with self.subTest(f"test async create_autospec output for {desc}"):
+                self.assertIsInstance(mock_obj, AsyncMock)
+                async def main():
+                    await mock_obj
+
+                self.assertEqual(mock_obj.await_count, 0)
+                mock_obj.assert_not_awaited()
+
+                run(main())
+
+                self.assertEqual(mock_obj.await_count, 1)
+                mock_obj.assert_awaited()
 
     def test_create_autospec(self):
         spec = create_autospec(async_func_args)
@@ -813,12 +830,10 @@ class AsyncMockAssert(unittest.TestCase):
             self.mock.assert_awaited()
         with self.assertRaises(AssertionError):
             self.mock.assert_called()
-        with self.assertRaises(TypeError):
-            # You cannot await an AsyncMock, it must be a coroutine
-            run(self._await_coroutine(self.mock))
 
-        with self.assertRaises(AssertionError):
-            self.mock.assert_awaited()
+        run(self._await_coroutine(self.mock))
+
+        self.mock.assert_awaited()
         with self.assertRaises(AssertionError):
             self.mock.assert_called()
 
