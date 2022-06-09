@@ -985,8 +985,11 @@ class CommandLineTestCase(unittest.TestCase):
         except (locale.Error, ValueError):
             self.skipTest('cannot set the system default locale')
         for run in self.runners:
-            output = run('--locale', lang, '--encoding', enc, '2004')
-            self.assertIn('2004'.encode(enc), output)
+            for type in ('text', 'html'):
+                output = run(
+                    '--type', type, '--locale', lang, '--encoding', enc, '2004'
+                )
+                self.assertIn('2004'.encode(enc), output)
 
     def test_option_width(self):
         self.assertFailure('-w')
