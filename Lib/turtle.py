@@ -602,7 +602,7 @@ class TurtleScreenBase(object):
 ##    def _dot(self, pos, size, color):
 ##        """may be implemented for some other graphics toolkit"""
 
-    def _onclick(self, item, fun, num=1, add=None):
+    def _onclick(self, item, fun, num=1, add=None, funArguments={}):
         """Bind fun to mouse-click event on turtle.
         fun must be a function with two arguments, the coordinates
         of the clicked point on the canvas.
@@ -614,7 +614,8 @@ class TurtleScreenBase(object):
             def eventfun(event):
                 x, y = (self.cv.canvasx(event.x)/self.xscale,
                         -self.cv.canvasy(event.y)/self.yscale)
-                fun(x, y)
+                # unpack keyword arguments into function and execute
+                fun(x, y, **funArguments)
             self.cv.tag_bind(item, "<Button-%s>" % num, eventfun, add)
 
     def _onrelease(self, item, fun, num=1, add=None):
@@ -1355,6 +1356,7 @@ class TurtleScreen(TurtleScreenBase):
         fun -- a function with two arguments, the coordinates of the
                clicked point on the canvas.
         btn -- the number of the mouse-button, defaults to 1
+
 
         Example (for a TurtleScreen instance named screen)
 
@@ -3538,7 +3540,7 @@ class RawTurtle(TPen, TNavigator):
         """
         return self.screen.delay(delay)
 
-    def onclick(self, fun, btn=1, add=None):
+    def onclick(self, fun, btn=1, add=None, funArguments={}):
         """Bind fun to mouse-click event on this turtle on canvas.
 
         Arguments:
@@ -3547,6 +3549,21 @@ class RawTurtle(TPen, TNavigator):
         btn --  number of the mouse-button defaults to 1 (left mouse button).
         add --  True or False. If True, new binding will be added, otherwise
                 it will replace a former binding.
+        funArguments -- A dictionary of keyword arguments to be passed into the function 
+        
+        Example for passing in arguments into the function being called on click
+        >>> def remove_turtle(x, y, t):
+        ...     t.hide()
+        ...     print(f"Removed turtle ({t}) from the screen")
+        ...     
+        >>> 
+        >>> turtles = [turtle.Turtle() for i in range(1,10)]
+        >>> for turtle in turtles:
+        ...     t.onclick(remove_turtle, funArguments={"t":turtle})
+        ...     
+        >>> 
+
+
 
         Example for the anonymous turtle, i. e. the procedural way:
 
@@ -3556,7 +3573,7 @@ class RawTurtle(TPen, TNavigator):
         >>> onclick(turn)  # Now clicking into the turtle will turn it.
         >>> onclick(None)  # event-binding will be removed
         """
-        self.screen._onclick(self.turtle._item, fun, btn, add)
+        self.screen._onclick(self.turtle._item, fun, btn, add, funArguments)
         self._update()
 
     def onrelease(self, fun, btn=1, add=None):
