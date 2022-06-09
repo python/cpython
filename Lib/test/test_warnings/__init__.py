@@ -22,8 +22,6 @@ py_warnings = import_helper.import_fresh_module('warnings',
 c_warnings = import_helper.import_fresh_module('warnings',
                                                fresh=['_warnings'])
 
-Py_DEBUG = hasattr(sys, 'gettotalrefcount')
-
 @contextmanager
 def warnings_state(module):
     """Use a specific warnings implementation in warning_tests."""
@@ -1191,7 +1189,7 @@ class EnvironmentVariableTests(BaseTest):
 
     def test_default_filter_configuration(self):
         pure_python_api = self.module is py_warnings
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             expected_default_filters = []
         else:
             if pure_python_api:
