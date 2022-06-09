@@ -389,6 +389,7 @@ dis_traceback = """\
            POP_EXCEPT
            RERAISE                  1
 ExceptionTable:
+4 rows
 """ % (TRACEBACK_CODE.co_firstlineno,
        TRACEBACK_CODE.co_firstlineno + 1,
        TRACEBACK_CODE.co_firstlineno + 2,
@@ -464,6 +465,7 @@ dis_with = """\
            POP_EXCEPT
            RERAISE                  1
 ExceptionTable:
+2 rows
 """ % (_with.__code__.co_firstlineno,
        _with.__code__.co_firstlineno + 1,
        _with.__code__.co_firstlineno + 2,
@@ -536,6 +538,7 @@ dis_asyncwith = """\
            POP_EXCEPT
            RERAISE                  1
 ExceptionTable:
+2 rows
 """ % (_asyncwith.__code__.co_firstlineno,
        _asyncwith.__code__.co_firstlineno + 1,
        _asyncwith.__code__.co_firstlineno + 2,
@@ -580,6 +583,7 @@ dis_tryfinally = """\
            POP_EXCEPT
            RERAISE                  1
 ExceptionTable:
+2 rows
 """ % (_tryfinally.__code__.co_firstlineno,
        _tryfinally.__code__.co_firstlineno + 1,
        _tryfinally.__code__.co_firstlineno + 2,
@@ -609,6 +613,7 @@ dis_tryfinallyconst = """\
            POP_EXCEPT
            RERAISE                  1
 ExceptionTable:
+1 row
 """ % (_tryfinallyconst.__code__.co_firstlineno,
        _tryfinallyconst.__code__.co_firstlineno + 1,
        _tryfinallyconst.__code__.co_firstlineno + 2,
@@ -803,6 +808,18 @@ class DisTestBase(unittest.TestCase):
             self.assertGreaterEqual(offset, expected_offset, line)
             expected_offset = offset + delta
 
+    def assert_exception_table_increasing(self, lines):
+        prev_start, prev_end = -1, -1
+        count = 0
+        for line in lines:
+            m = re.match(r'  (\d+) to (\d+) -> \d+ \[\d+\]', line)
+            start, end = [int(g) for g in m.groups()]
+            self.assertGreaterEqual(end, start)
+            self.assertGreater(start, prev_end)
+            prev_start, prev_end = start, end
+            count += 1
+        return count
+
     def strip_offsets(self, text):
         lines = text.splitlines(True)
         start, end = self.find_offset_column(lines)
@@ -816,6 +833,9 @@ class DisTestBase(unittest.TestCase):
                 res.append(line)
             else:
                 res.append(line[:start] + line[end:])
+        num_rows = self.assert_exception_table_increasing(lines)
+        if num_rows:
+            res.append(f"{num_rows} row{'s' if num_rows > 1 else ''}\n")
         return "".join(res)
 
     def do_disassembly_compare(self, got, expected, with_offsets=False):
