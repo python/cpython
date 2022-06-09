@@ -1515,42 +1515,60 @@ _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
 /*[clinic input]
 _winapi.LCMapStringEx
 
-    locale: LPCWSTR
+    locale: unicode
     flags: DWORD
-    src: LPCWSTR
+    src: unicode
 
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
-                           LPCWSTR src)
-/*[clinic end generated code: output=cf4713d80e2b47c9 input=9fe26f95d5ab0001]*/
+_winapi_LCMapStringEx_impl(PyObject *module, PyObject *locale, DWORD flags,
+                           PyObject *src)
+/*[clinic end generated code: output=8ea4c9d85a4a1f23 input=2fa6ebc92591731b]*/
 {
     if (flags & (LCMAP_SORTHANDLE | LCMAP_HASH | LCMAP_BYTEREV |
                  LCMAP_SORTKEY)) {
         return PyErr_Format(PyExc_ValueError, "unsupported flags");
     }
 
-    int dest_size = LCMapStringEx(locale, flags, src, -1, NULL, 0,
+    wchar_t *locale_ = PyUnicode_AsWideCharString(locale, NULL);
+    if (!locale_) {
+        return NULL;
+    }
+    wchar_t *src_ = PyUnicode_AsWideCharString(src, NULL);
+    if (!src_) {
+        PyMem_Free(locale_);
+        return NULL;
+    }
+
+    int dest_size = LCMapStringEx(locale_, flags, src_, -1, NULL, 0,
                                   NULL, NULL, 0);
     if (dest_size == 0) {
+        PyMem_Free(locale_);
+        PyMem_Free(src_);
         return PyErr_SetFromWindowsErr(0);
     }
 
     wchar_t* dest = PyMem_NEW(wchar_t, dest_size);
     if (dest == NULL) {
+        PyMem_Free(locale_);
+        PyMem_Free(src_);
         return PyErr_NoMemory();
     }
 
-    int nmapped = LCMapStringEx(locale, flags, src, -1, dest, dest_size,
+    int nmapped = LCMapStringEx(locale_, flags, src_, -1, dest, dest_size,
                                 NULL, NULL, 0);
     if (nmapped == 0) {
         DWORD error = GetLastError();
+        PyMem_Free(locale_);
+        PyMem_Free(src_);
         PyMem_DEL(dest);
         return PyErr_SetFromWindowsErr(error);
     }
 
     PyObject *ret = PyUnicode_FromWideChar(dest, dest_size - 1);
+    PyMem_Free(locale_);
+    PyMem_Free(src_);
     PyMem_DEL(dest);
 
     return ret;
