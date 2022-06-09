@@ -53,7 +53,7 @@ Cross Platform
 
 .. function:: machine()
 
-   Returns the machine type, e.g. ``'i386'``. An empty string is returned if the
+   Returns the machine type, e.g. ``'AMD64'``. An empty string is returned if the
    value cannot be determined.
 
 
