@@ -187,10 +187,11 @@ class PropertyTests(unittest.TestCase):
                      "Docstrings are omitted with -O2 and above")
     def test_class_property(self):
         class A:
-            @classmethod
-            @property
-            def __doc__(cls):
-                return 'A doc for %r' % cls.__name__
+            with self.assertWarns(FutureWarning):
+                @classmethod
+                @property
+                def __doc__(cls):
+                    return 'A doc for %r' % cls.__name__
         self.assertEqual(A.__doc__, "A doc for 'A'")
 
     @unittest.skipIf(sys.flags.optimize >= 2,
@@ -198,10 +199,11 @@ class PropertyTests(unittest.TestCase):
     def test_class_property_override(self):
         class A:
             """First"""
-            @classmethod
-            @property
-            def __doc__(cls):
-                return 'Second'
+            with self.assertWarns(FutureWarning):
+                @classmethod
+                @property
+                def __doc__(cls):
+                    return 'Second'
         self.assertEqual(A.__doc__, 'Second')
 
     def test_property_set_name_incorrect_args(self):

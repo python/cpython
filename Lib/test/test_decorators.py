@@ -318,12 +318,13 @@ class TestDecorators(unittest.TestCase):
                 # This should already work.
                 return 'spam'
 
-            @classmethod
-            @decorator
-            def outer(cls):
-                # Raised TypeError with a message saying that the 'Wrapper'
-                # object is not callable.
-                return 'eggs'
+            with self.assertWarns(FutureWarning):
+                @classmethod
+                @decorator
+                def outer(cls):
+                    # Raised TypeError with a message saying that the 'Wrapper'
+                    # object is not callable.
+                    return 'eggs'
 
         self.assertEqual(Class.inner(), 'spam')
         self.assertEqual(Class.outer(), 'eggs')
@@ -385,10 +386,11 @@ class TestDecorators(unittest.TestCase):
                 def f3(cls):
                     return cls
 
-                @classmethod
-                @classmethod
-                def f4(cls):
-                    return cls
+                with self.assertWarns(FutureWarning):
+                    @classmethod
+                    @classmethod
+                    def f4(cls):
+                        return cls
 
                 @myclassmethod
                 @MyClassMethod1

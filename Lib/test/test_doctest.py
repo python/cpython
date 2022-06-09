@@ -17,6 +17,7 @@ import tempfile
 import shutil
 import types
 import contextlib
+import warnings
 
 
 if not support.has_subprocess_support:
@@ -104,14 +105,16 @@ class SampleClass:
 
     a_class_attribute = 42
 
-    @classmethod
-    @property
-    def a_classmethod_property(cls):
-        """
-        >>> print(SampleClass.a_classmethod_property)
-        42
-        """
-        return cls.a_class_attribute
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', FutureWarning)
+        @classmethod
+        @property
+        def a_classmethod_property(cls):
+            """
+            >>> print(SampleClass.a_classmethod_property)
+            42
+            """
+            return cls.a_class_attribute
 
     class NestedClass:
         """
