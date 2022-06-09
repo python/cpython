@@ -131,15 +131,13 @@ stmt_traverse(pysqlite_Statement *self, visitproc visit, void *arg)
 }
 
 /*
- * Strips leading whitespace and SQL comments from input string and returns a
+ * Strip leading whitespace and comments from SQL string and return a
  * pointer to the first non-whitespace, non-comment character.
  *
- * This is used to check if somebody tried to execute more than one SQL command
- * with one execute()/executemany() command, which the DB-API and we don't
- * allow.
+ * This is used to check if somebody tries to execute more than one SQL query
+ * with one execute()/executemany() command, which the DB-API don't allow.
  *
- * It is also used to strip leading whitespace and comments from input SQL
- * queries, so we can easily detect DML queries.
+ * It is also used to harden DML query detection.
  */
 static const char *
 lstrip_sql(const char *sql)
