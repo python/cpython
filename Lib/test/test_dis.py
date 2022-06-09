@@ -1046,8 +1046,10 @@ class DisTests(DisTestBase):
                     caches = list(self.get_cached_values(quickened, adaptive))
                     for cache in caches:
                         self.assertRegex(cache, pattern)
-                    self.assertEqual(caches.count(""), 8)
-                    self.assertEqual(len(caches), 22)
+                    total_caches = 22
+                    empty_caches = 8 if adaptive and quickened else total_caches
+                    self.assertEqual(caches.count(""), empty_caches)
+                    self.assertEqual(len(caches), total_caches)
 
 
 class DisWithFileTests(DisTests):
@@ -1599,7 +1601,33 @@ class InstructionTests(InstructionTestCase):
                 self.assertIsNone(positions.end_lineno)
                 self.assertIsNone(positions.col_offset)
                 self.assertIsNone(positions.end_col_offset)
-
+    
+    @requires_debug_ranges()
+    def test_co_positions_with_lots_of_caches(self):
+        def roots(a, b, c):
+            d = (b**2 - 4 * a * c) ** 0.5
+            yield (-b - d) / (2 * a)
+            if d:
+                yield (-b + d) / (2 * a)
+        code = roots.__code__
+        for show_caches in (False, True):
+            for adaptive in (False, True):
+                with self.subTest(f"{adaptive=}, {show_caches=}"):
+                    co_positions = [
+                        positions
+                        for op, positions in zip(
+                            code.co_code[::2], code.co_positions(), strict=True
+                        )
+                        if show_caches or op != opcode.opmap["CACHE"]
+                    ]
+                    dis_positions = [
+                        instruction.positions
+                        for instruction in dis.get_instructions(
+                            code, adaptive=adaptive, show_caches=show_caches
+                        )
+                    ]
+                    self.assertEqual(co_positions, dis_positions)
+    
 # get_instructions has its own tests above, so can rely on it to validate
 # the object oriented API
 class BytecodeTests(InstructionTestCase, DisTestBase):
