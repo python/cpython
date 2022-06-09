@@ -396,7 +396,7 @@ class InvalidateCacheTests:
             def invalidate_caches(self):
                 self.called = True
 
-        key = 'gobledeegook'
+        key = '/gobledeegook'
         meta_ins = InvalidatingNullFinder()
         path_ins = InvalidatingNullFinder()
         sys.meta_path.insert(0, meta_ins)
