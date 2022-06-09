@@ -3410,7 +3410,6 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     PyTypeObject *type;
     PyObject *bases = NULL;
     int r;
-    int success = 0;
 
     const PyType_Slot *slot;
     Py_ssize_t nmembers, weaklistoffset, dictoffset, vectorcalloffset;
@@ -3670,10 +3669,9 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     }
 
     assert(_PyType_CheckConsistency(type));
-    success = 1;
 
  finally:
-    if (!success) {
+    if (PyErr_Occurred()) {
         Py_CLEAR(res);
     }
     Py_XDECREF(bases);
