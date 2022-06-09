@@ -66,7 +66,8 @@ class TestProgram(object):
     def __init__(self, module='__main__', defaultTest=None, argv=None,
                     testRunner=None, testLoader=loader.defaultTestLoader,
                     exit=True, verbosity=1, failfast=None, catchbreak=None,
-                    buffer=None, warnings=None, *, tb_locals=False):
+                    buffer=None, warnings=None, *, tb_locals=False,
+                    debug=False):
         if isinstance(module, str):
             self.module = __import__(module)
             for part in module.split('.')[1:]:
@@ -82,6 +83,7 @@ class TestProgram(object):
         self.verbosity = verbosity
         self.buffer = buffer
         self.tb_locals = tb_locals
+        self.debug = debug
         if warnings is None and not sys.warnoptions:
             # even if DeprecationWarnings are ignored by default
             # print them anyway unless other warnings settings are
@@ -178,6 +180,8 @@ class TestProgram(object):
         parser.add_argument('--locals', dest='tb_locals',
                             action='store_true',
                             help='Show local variables in tracebacks')
+        parser.add_argument('--debug', action='store_true',
+                            help='Run the given tests in debug mode')
         if self.failfast is None:
             parser.add_argument('-f', '--failfast', dest='failfast',
                                 action='store_true',
@@ -271,8 +275,11 @@ class TestProgram(object):
         else:
             # it is assumed to be a TestRunner instance
             testRunner = self.testRunner
-        self.result = testRunner.run(self.test)
+        if self.debug:
+            testRunner.debug(self.test)
+        else:
+            self.result = testRunner.run(self.test)
         if self.exit:
-            sys.exit(not self.result.wasSuccessful())
+            sys.exit(not (self.debug or self.result.wasSuccessful()))
 
 main = TestProgram

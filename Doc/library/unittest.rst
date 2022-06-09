@@ -220,6 +220,11 @@ Command-line options
 
    See `Signal Handling`_ for the functions that provide this functionality.
 
+.. cmdoption:: --debug
+
+   Run test cases in :meth:`~TestCase.debug` mode.
+   This is useful for post-mortem debugging via :mod:`pdb`.
+
 .. cmdoption:: -f, --failfast
 
    Stop the test run on the first error or failure.
@@ -252,6 +257,9 @@ Command-line options
 
 .. versionadded:: 3.7
    The command-line option ``-k``.
+
+.. versionadded:: 3.10
+   The command-line option ``--debug``.
 
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.

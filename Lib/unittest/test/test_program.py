@@ -163,6 +163,37 @@ class Test_TestProgram(unittest.TestCase):
                     'expected failures=1, unexpected successes=1)\n')
         self.assertTrue(out.endswith(expected))
 
+    class TestRaise(unittest.TestCase):
+        class Error(Exception):
+            pass
+        def test_raise(self):
+            raise self.Error
+
+    class TestRaiseLoader(unittest.TestLoader):
+        def loadTestsFromModule(self, module):
+            return self.suiteClass(
+                [self.loadTestsFromTestCase(Test_TestProgram.TestRaise)])
+
+        def loadTestsFromNames(self, names, module):
+            return self.suiteClass(
+                [self.loadTestsFromTestCase(Test_TestProgram.TestRaise)])
+
+    def test_debug(self):
+        self.assertRaises(
+            self.TestRaise.Error,
+            unittest.main,
+            argv=["TestRaise", "--debug"],
+            testRunner=unittest.TextTestRunner(stream=io.StringIO()),
+            testLoader=self.TestRaiseLoader())
+
+    def test_no_debug(self):
+        self.assertRaises(
+            SystemExit,
+            unittest.main,
+            argv=["TestRaise"],
+            testRunner=unittest.TextTestRunner(stream=io.StringIO()),
+            testLoader=self.TestRaiseLoader())
+
 
 class InitialisableProgram(unittest.TestProgram):
     exit = False
@@ -170,6 +201,7 @@ class InitialisableProgram(unittest.TestProgram):
     verbosity = 1
     defaultTest = None
     tb_locals = False
+    debug = False
     testRunner = None
     testLoader = unittest.defaultTestLoader
     module = '__main__'
@@ -323,6 +355,12 @@ class TestCommandLineArgs(unittest.TestCase):
                                                'tb_locals': True,
                                                'verbosity': 1,
                                                'warnings': None})
+
+    def test_debug(self):
+        program = self.program
+        program.testRunner = FakeRunner
+        program.parseArgs([None, '--debug'])
+        self.assertTrue(program.debug)
 
     def testRunTestsOldRunnerClass(self):
         program = self.program
