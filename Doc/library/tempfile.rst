@@ -101,14 +101,13 @@ The module defines the following user-callable items:
 
    * It can be so used on Unix.
 
-   * In Windows, the file can be opened again if *delete_on_close* is false or if
-     the open shares delete access (e.g. by calling ``CreateFileW()`` directly with
-     ``FILE_SHARE_DELETE``, or calling :func:`os.open` with ``O_TEMPORARY``). If
-     *delete_on_close* is false, and the file is opened again without sharing
-     delete access (e.g. via builtin :func:`open`), then the second open must be
-     closed before exiting the context manager, else the :func:`os.unlink` call on
-     context manager exit will fail with a ``PermissionError`` due to an OS
-     sharing-violation error (32).
+   * In Windows, the file can be opened again if *delete_on_close* is false or
+     if the open shares delete access (e.g. by calling :func:`os.open` with the
+     flag ``O_TEMPORARY``).  If *delete_on_close* is false, and the file is
+     opened again without sharing delete access (e.g. via builtin :func:`open`),
+     then the second open must be closed before exiting the context manager,
+     else the :func:`os.unlink` call on context manager exit will fail with a
+     ``PermissionError``.
 
    To use the name of the temporary file to open the closed file second time,
    either make sure not to delete the file upon closure (set the *delete*
