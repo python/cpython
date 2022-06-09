@@ -4415,6 +4415,11 @@ handle_eval_breaker:
                 NOTRACE_DISPATCH();
             }
             if (local && PyLong_CheckExact(local) && Py_REFCNT(local) == 1) {
+                /* A value from a range iterator is to be stored in a
+                   local variable, and that local variable's existing
+                   value is a PyLongObject not referenced elsewhere.
+                   To avoid an allocation, re-use the existing
+                   PyLongObject for the new value. */
                 if (value > 0) {
                     assert((digit)value <= PyLong_MASK);
                     ((PyLongObject *)local)->ob_digit[0] = value;
