@@ -242,6 +242,10 @@ is the module's name in the Python package namespace.
       above example). In such circumstances, it is likely that specialized
       :class:`Formatter`\ s would be used with particular :class:`Handler`\ s.
 
+      If no handler is attached to this logger (or any of its ancestors,
+      taking into account the relevant :attr:`Logger.propagate` attributes),
+      the message will be sent to the handler set on :attr:`lastResort`.
+
       .. versionchanged:: 3.2
          The *stack_info* parameter was added.
 
@@ -662,9 +666,10 @@ empty string, all events are passed.
 
    .. method:: filter(record)
 
-      Is the specified record to be logged? Returns zero for no, nonzero for
-      yes. If deemed appropriate, the record may be modified in-place by this
-      method.
+      Is the specified record to be logged? Returns falsy for no, truthy for
+      yes. Filters can either modify log records in-place or return a completely
+      different record instance which will replace the original
+      log record in any future processing of the event.
 
 Note that filters attached to handlers are consulted before an event is
 emitted by the handler, whereas filters attached to loggers are consulted
@@ -685,6 +690,12 @@ which has a ``filter`` method with the same semantics.
    assumed to be a callable and called with the record as the single
    parameter. The returned value should conform to that returned by
    :meth:`~Filter.filter`.
+
+.. versionchanged:: 3.12
+   You can now return a :class:`LogRecord` instance from filters to replace
+   the log record rather than modifying it in place. This allows filters attached to
+   a :class:`Handler` to modify the log record before it is emitted, without
+   having side effects on other handlers.
 
 Although filters are used primarily to filter records based on more
 sophisticated criteria than levels, they get to see every record which is
@@ -868,10 +879,14 @@ the options available to you.
 +----------------+-------------------------+-----------------------------------------------+
 | threadName     | ``%(threadName)s``      | Thread name (if available).                   |
 +----------------+-------------------------+-----------------------------------------------+
+| taskName       | ``%(taskName)s``        | :class:`asyncio.Task` name (if available).    |
++----------------+-------------------------+-----------------------------------------------+
 
 .. versionchanged:: 3.1
    *processName* was added.
 
+.. versionchanged:: 3.12
+   *taskName* was added.
 
 .. _logger-adapter:
 
@@ -1038,6 +1053,10 @@ functions.
    above example). In such circumstances, it is likely that specialized
    :class:`Formatter`\ s would be used with particular :class:`Handler`\ s.
 
+   This function (as well as :func:`info`, :func:`warning`, :func:`error` and
+   :func:`critical`) will call :func:`basicConfig` if the root logger doesn't
+   have any handler attached.
+
    .. versionchanged:: 3.2
       The *stack_info* parameter was added.
 
@@ -1151,6 +1170,19 @@ functions.
       text level, and would return the corresponding numeric value of the level.
       This undocumented behaviour was considered a mistake, and was removed in
       Python 3.4, but reinstated in 3.4.2 due to retain backward compatibility.
+
+.. function:: getHandlerByName(name)
+
+   Returns a handler with the specified *name*, or ``None`` if there is no handler
+   with that name.
+
+   .. versionadded:: 3.12
+
+.. function:: getHandlerNames()
+
+   Returns an immutable set of all known handler names.
+
+   .. versionadded:: 3.12
 
 .. function:: makeLogRecord(attrdict)
 

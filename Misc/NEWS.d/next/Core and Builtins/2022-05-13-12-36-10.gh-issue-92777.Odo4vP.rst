@@ -1,0 +1,1 @@
+Specialize ``LOAD_METHOD`` for objects with lazy dictionaries. Patch by Ken Jin.
