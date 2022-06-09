@@ -658,7 +658,7 @@ def timegm(tuple):
     return seconds
 
 
-def main(args):
+def main(args=None):
     import argparse
     parser = argparse.ArgumentParser()
     textgroup = parser.add_argument_group('text only arguments')
@@ -715,7 +715,7 @@ def main(args):
         help="month number (1-12, text only)"
     )
 
-    options = parser.parse_args(args[1:])
+    options = parser.parse_args(args)
 
     if options.locale and not options.encoding:
         parser.error("if --locale is specified --encoding is required")
@@ -763,4 +763,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()
