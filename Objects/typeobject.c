@@ -3485,12 +3485,9 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     if (base == NULL) {
         goto finally;
     }
-    if (!_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE)) {
-        PyErr_Format(PyExc_TypeError,
-                     "type '%.100s' is not an acceptable base type",
-                     base->tp_name);
-        goto finally;
-    }
+    // best_base should check Py_TPFLAGS_BASETYPE & raise a proper exception,
+    // here we just check its work
+    assert(_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE));
 
     /* Allocate the new type */
 
