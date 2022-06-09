@@ -421,6 +421,131 @@ dis_fstring = """\
            RETURN_VALUE
 """ % (_fstring.__code__.co_firstlineno, _fstring.__code__.co_firstlineno + 1)
 
+def _with(c):
+    with c:
+        x = 1
+    y = 2
+
+dis_with = """\
+%3d        RESUME                   0
+
+%3d        LOAD_FAST                0 (c)
+           BEFORE_WITH
+           POP_TOP
+
+%3d        LOAD_CONST               1 (1)
+           STORE_FAST               1 (x)
+
+%3d        LOAD_CONST               0 (None)
+           LOAD_CONST               0 (None)
+           LOAD_CONST               0 (None)
+           CALL                     2
+           POP_TOP
+
+%3d        LOAD_CONST               2 (2)
+           STORE_FAST               2 (y)
+           LOAD_CONST               0 (None)
+           RETURN_VALUE
+
+%3d     >> PUSH_EXC_INFO
+           WITH_EXCEPT_START
+           POP_JUMP_FORWARD_IF_TRUE     1 (to 46)
+           RERAISE                  2
+        >> POP_TOP
+           POP_EXCEPT
+           POP_TOP
+           POP_TOP
+
+%3d        LOAD_CONST               2 (2)
+           STORE_FAST               2 (y)
+           LOAD_CONST               0 (None)
+           RETURN_VALUE
+        >> COPY                     3
+           POP_EXCEPT
+           RERAISE                  1
+ExceptionTable:
+""" % (_with.__code__.co_firstlineno,
+       _with.__code__.co_firstlineno + 1,
+       _with.__code__.co_firstlineno + 2,
+       _with.__code__.co_firstlineno + 1,
+       _with.__code__.co_firstlineno + 3,
+       _with.__code__.co_firstlineno + 1,
+       _with.__code__.co_firstlineno + 3,
+       )
+
+async def _asyncwith(c):
+    async with c:
+        x = 1
+    y = 2
+
+dis_asyncwith = """\
+%3d        RETURN_GENERATOR
+           POP_TOP
+           RESUME                   0
+
+%3d        LOAD_FAST                0 (c)
+           BEFORE_ASYNC_WITH
+           GET_AWAITABLE            1
+           LOAD_CONST               0 (None)
+        >> SEND                     3 (to 22)
+           YIELD_VALUE              3
+           RESUME                   3
+           JUMP_BACKWARD_NO_INTERRUPT     4 (to 14)
+        >> POP_TOP
+
+%3d        LOAD_CONST               1 (1)
+           STORE_FAST               1 (x)
+
+%3d        LOAD_CONST               0 (None)
+           LOAD_CONST               0 (None)
+           LOAD_CONST               0 (None)
+           CALL                     2
+           GET_AWAITABLE            2
+           LOAD_CONST               0 (None)
+        >> SEND                     3 (to 56)
+           YIELD_VALUE              2
+           RESUME                   3
+           JUMP_BACKWARD_NO_INTERRUPT     4 (to 48)
+        >> POP_TOP
+
+%3d        LOAD_CONST               2 (2)
+           STORE_FAST               2 (y)
+           LOAD_CONST               0 (None)
+           RETURN_VALUE
+
+%3d     >> PUSH_EXC_INFO
+           WITH_EXCEPT_START
+           GET_AWAITABLE            2
+           LOAD_CONST               0 (None)
+        >> SEND                     3 (to 82)
+           YIELD_VALUE              6
+           RESUME                   3
+           JUMP_BACKWARD_NO_INTERRUPT     4 (to 74)
+        >> POP_JUMP_FORWARD_IF_TRUE     1 (to 86)
+           RERAISE                  2
+        >> POP_TOP
+           POP_EXCEPT
+           POP_TOP
+           POP_TOP
+
+%3d        LOAD_CONST               2 (2)
+           STORE_FAST               2 (y)
+           LOAD_CONST               0 (None)
+           RETURN_VALUE
+        >> COPY                     3
+           POP_EXCEPT
+           RERAISE                  1
+ExceptionTable:
+""" % (_asyncwith.__code__.co_firstlineno,
+       _asyncwith.__code__.co_firstlineno + 1,
+       _asyncwith.__code__.co_firstlineno + 2,
+       _asyncwith.__code__.co_firstlineno + 1,
+       _asyncwith.__code__.co_firstlineno + 3,
+       _asyncwith.__code__.co_firstlineno + 1,
+       _asyncwith.__code__.co_firstlineno + 3,
+       )
+
+
 def _tryfinally(a, b):
     try:
         return a
@@ -883,6 +1008,12 @@ class DisTests(DisTestBase):
     def test_disassemble_fstring(self):
         self.do_disassembly_test(_fstring, dis_fstring)
 
+    def test_disassemble_with(self):
+        self.do_disassembly_test(_with, dis_with)
+
+    def test_disassemble_asyncwith(self):
+        self.do_disassembly_test(_asyncwith, dis_asyncwith)
+
     def test_disassemble_try_finally(self):
         self.do_disassembly_test(_tryfinally, dis_tryfinally)
         self.do_disassembly_test(_tryfinallyconst, dis_tryfinallyconst)
@@ -1046,8 +1177,8 @@ class DisTests(DisTestBase):
                     caches = list(self.get_cached_values(quickened, adaptive))
                     for cache in caches:
                         self.assertRegex(cache, pattern)
-                    self.assertEqual(caches.count(""), 8)
-                    self.assertEqual(len(caches), 22)
+                    self.assertEqual(caches.count(""), 9)
+                    self.assertEqual(len(caches), 23)
 
 
 class DisWithFileTests(DisTests):
