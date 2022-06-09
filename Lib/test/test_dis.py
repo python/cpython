@@ -1197,8 +1197,8 @@ class DisTests(DisTestBase):
                     caches = list(self.get_cached_values(quickened, adaptive))
                     for cache in caches:
                         self.assertRegex(cache, pattern)
-                    self.assertEqual(caches.count(""), 9)
-                    self.assertEqual(len(caches), 23)
+                    self.assertEqual(caches.count(""), 8)
+                    self.assertEqual(len(caches), 22)
 
 
 class DisWithFileTests(DisTests):
