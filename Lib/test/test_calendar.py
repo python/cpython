@@ -623,7 +623,6 @@ class CalendarTestCase(unittest.TestCase):
             # formatmonthname uses the same month names regardless of the width argument.
             cal = calendar.LocaleTextCalendar(locale='en_US')
         except locale.Error:
-            # cannot set the system default locale -- skip rest of test
             raise unittest.SkipTest('cannot set the en_US locale')
         # For too short widths, a full name (with year) is used.
         self.assertEqual(cal.formatmonthname(2022, 6, 2, withyear=False), "June")
