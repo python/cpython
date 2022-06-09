@@ -166,7 +166,7 @@ lstrip_sql(const char *sql)
                 }
                 break;
             case '\n':
-            case 13:
+            case '\r':
                 if (state == IN_LINECOMMENT) {
                     state = NORMAL;
                 }
