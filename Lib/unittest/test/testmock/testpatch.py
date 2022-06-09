@@ -1947,6 +1947,38 @@ class PatchTest(unittest.TestCase):
         def test(): pass
         with self.assertRaises(TypeError):
             test()
+    
+    def test_patch_generator_function(self):
+        """
+        Previously patching a generator function did
+        not return a generator function, and indeed
+        the desired patch was not even applied.
+ 
+        This test shows that the behaviour is now
+        fixed.
+        """
+        list_being_tested = [0, 1]
+
+        def alternative_len(l):
+            return 666
+
+        patch_len = patch('%s.len' % builtin_string, alternative_len)
+
+        @patch_len
+        def example_normal_function():
+            """ A normal function using `return` """
+            return len(list_being_tested)
+
+        @patch_len
+        def example_generator_function():
+            """ A generator function """
+            yield len(list_being_tested)
+
+        out_normal = example_normal_function()
+        out_generator = list(example_generator_function())
+
+        self.assertTrue(out_normal == 666)
+        self.assertTrue(out_generator == [666])
 
 
 if __name__ == '__main__':

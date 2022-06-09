@@ -1313,6 +1313,8 @@ class _patch(object):
             return self.decorate_class(func)
         if inspect.iscoroutinefunction(func):
             return self.decorate_async_callable(func)
+        if inspect.isgeneratorfunction(func):
+            return self.decorate_generator_callable(func)
         return self.decorate_callable(func)
 
 
@@ -1345,8 +1347,26 @@ class _patch(object):
             yield (args, keywargs)
 
 
+    def decorate_generator_callable(self, func):
+        # NB. Keep the method in sync with decorate_async_callable() and decorate_callable()
+        if hasattr(func, 'patchings'):
+            func.patchings.append(self)
+            return func
+
+        @wraps(func)
+        def patched(*args, **keywargs):
+            with self.decoration_helper(patched,
+                                        args,
+                                        keywargs) as (newargs, newkeywargs):
+                out = yield from func(*newargs, **newkeywargs)
+                return out
+
+        patched.patchings = [self]
+        return patched
+
+
     def decorate_callable(self, func):
-        # NB. Keep the method in sync with decorate_async_callable()
+        # NB. Keep the method in sync with decorate_async_callable() and decorate_generator_callable()
         if hasattr(func, 'patchings'):
             func.patchings.append(self)
             return func
@@ -1363,7 +1383,7 @@ class _patch(object):
 
 
     def decorate_async_callable(self, func):
-        # NB. Keep the method in sync with decorate_callable()
+        # NB. Keep the method in sync with decorate_callable() and decorate_generator_callable()
         if hasattr(func, 'patchings'):
             func.patchings.append(self)
             return func
