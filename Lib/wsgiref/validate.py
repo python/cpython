@@ -128,7 +128,7 @@ def assert_(cond, *args):
         raise AssertionError(*args)
 
 def check_string_type(value, title):
-    if type (value) is str:
+    if isinstance(value, str):
         return value
     raise AssertionError(
         "{0} must be of type str (got {1})".format(title, repr(value)))
@@ -391,7 +391,7 @@ def check_headers(headers):
         "Headers (%r) must be of type list: %r"
         % (headers, type(headers)))
     for item in headers:
-        assert_(type(item) is tuple,
+        assert_(isinstance(item, tuple),
             "Individual headers (%r) must be of type tuple: %r"
             % (item, type(item)))
         assert_(len(item) == 2)
