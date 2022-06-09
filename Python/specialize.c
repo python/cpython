@@ -670,7 +670,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         goto success;
     }
     int oparg = _Py_OPARG(*instr);
-    PyTypeObject* type = Py_TYPE(owner);
+    PyTypeObject *type = Py_TYPE(owner);
     if (type->tp_dict == NULL) {
         if (PyType_Ready(type) < 0) {
             return -1;

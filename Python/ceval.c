@@ -3451,8 +3451,8 @@ handle_eval_breaker:
 
         TARGET(LOAD_ATTR) {
             PREDICTED(LOAD_ATTR);
-            PyObject* name = GETITEM(names, oparg>>1);
-            PyObject* owner = TOP();
+            PyObject *name = GETITEM(names, oparg >> 1);
+            PyObject *owner = TOP();
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL. */
                 PyObject* meth = NULL;
@@ -3546,15 +3546,15 @@ handle_eval_breaker:
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
-            _PyAttrCache* cache = (_PyAttrCache*)next_instr;
+            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
-            PyDictObject* dict = (PyDictObject*)((PyModuleObject*)owner)->md_dict;
+            PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict != NULL);
             DEOPT_IF(dict->ma_keys->dk_version != read_u32(cache->version),
                 LOAD_ATTR);
             assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
             assert(cache->index < dict->ma_keys->dk_nentries);
-            PyDictUnicodeEntry* ep = DK_UNICODE_ENTRIES(dict->ma_keys) + cache->index;
+            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + cache->index;
             res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
@@ -3629,17 +3629,17 @@ handle_eval_breaker:
         TARGET(LOAD_ATTR_CLASS) {
             /* LOAD_METHOD, for class methods */
             assert(cframe.use_tracing == 0);
-            _PyLoadMethodCache* cache = (_PyLoadMethodCache*)next_instr;
+            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
 
-            PyObject* cls = TOP();
+            PyObject *cls = TOP();
             DEOPT_IF(!PyType_Check(cls), LOAD_ATTR);
             uint32_t type_version = read_u32(cache->type_version);
-            DEOPT_IF(((PyTypeObject*)cls)->tp_version_tag != type_version,
+            DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != type_version,
                 LOAD_ATTR);
             assert(type_version != 0);
 
             STAT_INC(LOAD_ATTR, hit);
-            PyObject* res = read_obj(cache->descr);
+            PyObject *res = read_obj(cache->descr);
             assert(res != NULL);
             Py_INCREF(res);
             SET_TOP(NULL);
