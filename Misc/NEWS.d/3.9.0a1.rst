@@ -213,7 +213,7 @@ objects. Patch by Dong-hee Na and Inada Naoki.
 .. section: Core and Builtins
 
 :class:`bytearray`, :class:`~array.array` and :class:`~mmap.mmap` objects
-allow now to export more than 2**31 buffers at a time.
+allow now to export more than ``2**31`` buffers at a time.
 
 ..
 
@@ -279,7 +279,7 @@ visited by ``tp_traverse()`` are valid.
 .. nonce: Xgc6F_
 .. section: Core and Builtins
 
-Remove unecessary intersection and update set operation in dictview with
+Remove unnecessary intersection and update set operation in dictview with
 empty set. (Contributed by Dong-hee Na in :issue:`38210`.)
 
 ..
@@ -868,7 +868,7 @@ Fix the :c:func:`PySys_Audit` call in :class:`mmap.mmap`.
 .. nonce: WJkgKV
 .. section: Core and Builtins
 
-Remove an unnecssary Py_XINCREF in classobject.c.
+Remove an unnecessary Py_XINCREF in classobject.c.
 
 ..
 
@@ -1224,7 +1224,7 @@ Anthony Sottile.
 .. nonce: cyq5nr
 .. section: Library
 
-Now :func:`~logging.config.fileConfig` correcty sets the .name of handlers
+Now :func:`~logging.config.fileConfig` correctly sets the .name of handlers
 loaded.
 
 ..
@@ -1335,7 +1335,7 @@ module on POSIX systems.
 .. nonce: 9TWMlz
 .. section: Library
 
-Revert GH-15522, which introduces a regression in
+Revert PR 15522, which introduces a regression in
 :meth:`mimetypes.guess_type` due to improper handling of filenames as urls.
 
 ..
@@ -1637,7 +1637,7 @@ Preserve subclassing in inspect.Signature.from_callable.
 .. nonce: nHAbuJ
 .. section: Library
 
-Names of hashing algorithms frome OpenSSL are now normalized to follow
+Names of hashing algorithms from OpenSSL are now normalized to follow
 Python's naming conventions. For example OpenSSL uses sha3-512 instead of
 sha3_512 or blake2b512 instead of blake2b.
 
@@ -2403,7 +2403,7 @@ Fixed comparisons of :class:`datetime.timedelta` and
 .. nonce: 7UV5d0
 .. section: Library
 
-Syncronize ``importlib.metadata`` with `importlib_metadata 0.19
+Synchronize ``importlib.metadata`` with `importlib_metadata 0.19
 <https://gitlab.com/python-devs/importlib_metadata/-/milestones/20>`_,
 improving handling of EGG-INFO files and fixing a crash when entry point
 names contained colons.
@@ -3002,7 +3002,7 @@ on platforms with 16-bit :c:type:`wchar_t` (for example, Windows and AIX).
 
 In a subinterpreter, spawning a daemon thread now raises an exception.
 Daemon threads were never supported in subinterpreters. Previously, the
-subinterpreter finalization crashed with a Pyton fatal error if a daemon
+subinterpreter finalization crashed with a Python fatal error if a daemon
 thread was still running.
 
 ..
@@ -3065,7 +3065,7 @@ internal tasks weak set is changed by another thread during iteration.
 .. section: Library
 
 :class:`_pyio.IOBase` destructor now does nothing if getting the ``closed``
-attribute fails to better mimick :class:`_io.IOBase` finalizer.
+attribute fails to better mimic :class:`_io.IOBase` finalizer.
 
 ..
 
@@ -4038,7 +4038,7 @@ crypto policies. Use PKCS#8 format with AES256 encryption instead.
 .. nonce: _x-9uH
 .. section: Tests
 
-test.support now has a helper function to check for availibility of a hash
+test.support now has a helper function to check for availability of a hash
 digest function. Several tests are refactored avoid MD5 and use SHA256
 instead. Other tests are marked to use MD5 and skipped when MD5 is disabled.
 

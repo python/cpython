@@ -13,7 +13,17 @@ module _bisect
 
 #include "clinic/_bisectmodule.c.h"
 
-_Py_IDENTIFIER(insert);
+typedef struct {
+    PyObject *str_insert;
+} bisect_state;
+
+static inline bisect_state*
+get_bisect_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (bisect_state *)state;
+}
 
 static inline Py_ssize_t
 internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi,
@@ -73,8 +83,8 @@ _bisect.bisect_right -> Py_ssize_t
 Return the index where to insert item x in list a, assuming a is sorted.
 
 The return value i is such that all e in a[:i] have e <= x, and all e in
-a[i:] have e > x.  So if x already appears in the list, i points just
-beyond the rightmost x already there
+a[i:] have e > x.  So if x already appears in the list, a.insert(i, x) will
+insert just after the rightmost x already there.
 
 Optional args lo (default 0) and hi (default len(a)) bound the
 slice of a to be searched.
@@ -83,7 +93,7 @@ slice of a to be searched.
 static Py_ssize_t
 _bisect_bisect_right_impl(PyObject *module, PyObject *a, PyObject *x,
                           Py_ssize_t lo, Py_ssize_t hi, PyObject *key)
-/*[clinic end generated code: output=3a4bc09cc7c8a73d input=1313e9ca20c8bc3c]*/
+/*[clinic end generated code: output=3a4bc09cc7c8a73d input=40fcc5afa06ae593]*/
 {
     return internal_bisect_right(a, x, lo, hi, key);
 }
@@ -118,7 +128,7 @@ _bisect_insort_right_impl(PyObject *module, PyObject *a, PyObject *x,
         index = internal_bisect_right(a, x, lo, hi, key);
     } else {
         key_x = PyObject_CallOneArg(key, x);
-        if (x == NULL) {
+        if (key_x == NULL) {
             return NULL;
         }
         index = internal_bisect_right(a, key_x, lo, hi, key);
@@ -131,7 +141,8 @@ _bisect_insort_right_impl(PyObject *module, PyObject *a, PyObject *x,
             return NULL;
     }
     else {
-        result = _PyObject_CallMethodId(a, &PyId_insert, "nO", index, x);
+        bisect_state *state = get_bisect_state(module);
+        result = _PyObject_CallMethod(a, state->str_insert, "nO", index, x);
         if (result == NULL)
             return NULL;
         Py_DECREF(result);
@@ -199,8 +210,8 @@ _bisect.bisect_left -> Py_ssize_t
 Return the index where to insert item x in list a, assuming a is sorted.
 
 The return value i is such that all e in a[:i] have e < x, and all e in
-a[i:] have e >= x.  So if x already appears in the list, i points just
-before the leftmost x already there.
+a[i:] have e >= x.  So if x already appears in the list, a.insert(i, x) will
+insert just before the leftmost x already there.
 
 Optional args lo (default 0) and hi (default len(a)) bound the
 slice of a to be searched.
@@ -209,7 +220,7 @@ slice of a to be searched.
 static Py_ssize_t
 _bisect_bisect_left_impl(PyObject *module, PyObject *a, PyObject *x,
                          Py_ssize_t lo, Py_ssize_t hi, PyObject *key)
-/*[clinic end generated code: output=70749d6e5cae9284 input=3cbeec690f2f6c6e]*/
+/*[clinic end generated code: output=70749d6e5cae9284 input=90dd35b50ceb05e3]*/
 {
     return internal_bisect_left(a, x, lo, hi, key);
 }
@@ -240,12 +251,12 @@ _bisect_insort_left_impl(PyObject *module, PyObject *a, PyObject *x,
 {
     PyObject *result, *key_x;
     Py_ssize_t index;
-    
+
     if (key == Py_None) {
         index = internal_bisect_left(a, x, lo, hi, key);
     } else {
         key_x = PyObject_CallOneArg(key, x);
-        if (x == NULL) {
+        if (key_x == NULL) {
             return NULL;
         }
         index = internal_bisect_left(a, key_x, lo, hi, key);
@@ -257,7 +268,8 @@ _bisect_insort_left_impl(PyObject *module, PyObject *a, PyObject *x,
         if (PyList_Insert(a, index, x) < 0)
             return NULL;
     } else {
-        result = _PyObject_CallMethodId(a, &PyId_insert, "nO", index, x);
+        bisect_state *state = get_bisect_state(module);
+        result = _PyObject_CallMethod(a, state->str_insert, "nO", index, x);
         if (result == NULL)
             return NULL;
         Py_DECREF(result);
@@ -282,13 +294,45 @@ having to sort the list after each insertion. For long lists of items with\n\
 expensive comparison operations, this can be an improvement over the more\n\
 common approach.\n");
 
+static int
+bisect_clear(PyObject *module)
+{
+    bisect_state *state = get_bisect_state(module);
+    Py_CLEAR(state->str_insert);
+    return 0;
+}
+
+static void
+bisect_free(void *module)
+{
+    bisect_clear((PyObject *)module);
+}
+
+static int
+bisect_modexec(PyObject *m)
+{
+    bisect_state *state = get_bisect_state(m);
+    state->str_insert = PyUnicode_InternFromString("insert");
+    if (state->str_insert == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot bisect_slots[] = {
+    {Py_mod_exec, bisect_modexec},
+    {0, NULL}
+};
 
 static struct PyModuleDef _bisectmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_bisect",
+    .m_size = sizeof(bisect_state),
     .m_doc = module_doc,
     .m_methods = bisect_methods,
-    .m_size = 0
+    .m_slots = bisect_slots,
+    .m_clear = bisect_clear,
+    .m_free = bisect_free,
 };
 
 PyMODINIT_FUNC

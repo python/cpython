@@ -19,7 +19,7 @@ from unittest.test.support import (
     TestEquality, TestHashing, LoggingResult, LegacyLoggingResult,
     ResultWithNoStartTestRunStopTestRun
 )
-from test.support import captured_stderr
+from test.support import captured_stderr, gc_collect
 
 
 log_foo = logging.getLogger('foo')
@@ -197,8 +197,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                 super(Foo, self).test()
                 raise RuntimeError('raised by Foo.test')
 
-        expected = ['startTest', 'setUp', 'test', 'tearDown',
-                    'addError', 'stopTest']
+        expected = ['startTest', 'setUp', 'test',
+                    'addError', 'tearDown', 'stopTest']
         Foo(events).run(result)
         self.assertEqual(events, expected)
 
@@ -216,7 +216,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                 raise RuntimeError('raised by Foo.test')
 
         expected = ['startTestRun', 'startTest', 'setUp', 'test',
-                    'tearDown', 'addError', 'stopTest', 'stopTestRun']
+                    'addError', 'tearDown', 'stopTest', 'stopTestRun']
         Foo(events).run()
         self.assertEqual(events, expected)
 
@@ -236,8 +236,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                 super(Foo, self).test()
                 self.fail('raised by Foo.test')
 
-        expected = ['startTest', 'setUp', 'test', 'tearDown',
-                    'addFailure', 'stopTest']
+        expected = ['startTest', 'setUp', 'test',
+                    'addFailure', 'tearDown', 'stopTest']
         Foo(events).run(result)
         self.assertEqual(events, expected)
 
@@ -252,7 +252,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                 self.fail('raised by Foo.test')
 
         expected = ['startTestRun', 'startTest', 'setUp', 'test',
-                    'tearDown', 'addFailure', 'stopTest', 'stopTestRun']
+                    'addFailure', 'tearDown', 'stopTest', 'stopTestRun']
         events = []
         Foo(events).run()
         self.assertEqual(events, expected)
@@ -306,6 +306,26 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
 
         Foo('test').run()
 
+    def test_deprecation_of_return_val_from_test(self):
+        # Issue 41322 - deprecate return of value!=None from a test
+        class Foo(unittest.TestCase):
+            def test1(self):
+                return 1
+            def test2(self):
+                yield 1
+
+        with self.assertWarns(DeprecationWarning) as w:
+            Foo('test1').run()
+        self.assertIn('It is deprecated to return a value!=None', str(w.warning))
+        self.assertIn('test1', str(w.warning))
+        self.assertEqual(w.filename, __file__)
+
+        with self.assertWarns(DeprecationWarning) as w:
+            Foo('test2').run()
+        self.assertIn('It is deprecated to return a value!=None', str(w.warning))
+        self.assertIn('test2', str(w.warning))
+        self.assertEqual(w.filename, __file__)
+
     def _check_call_order__subtests(self, result, events, expected_events):
         class Foo(Test.LoggingTestCase):
             def test(self):
@@ -333,10 +353,10 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
     def test_run_call_order__subtests(self):
         events = []
         result = LoggingResult(events)
-        expected = ['startTest', 'setUp', 'test', 'tearDown',
+        expected = ['startTest', 'setUp', 'test',
                     'addSubTestFailure', 'addSubTestSuccess',
                     'addSubTestFailure', 'addSubTestFailure',
-                    'addSubTestSuccess', 'addError', 'stopTest']
+                    'addSubTestSuccess', 'addError', 'tearDown', 'stopTest']
         self._check_call_order__subtests(result, events, expected)
 
     def test_run_call_order__subtests_legacy(self):
@@ -344,8 +364,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         # text execution stops after the first subtest failure.
         events = []
         result = LegacyLoggingResult(events)
-        expected = ['startTest', 'setUp', 'test', 'tearDown',
-                    'addFailure', 'stopTest']
+        expected = ['startTest', 'setUp', 'test',
+                    'addFailure', 'tearDown', 'stopTest']
         self._check_call_order__subtests(result, events, expected)
 
     def _check_call_order__subtests_success(self, result, events, expected_events):
@@ -366,9 +386,9 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         result = LoggingResult(events)
         # The 6 subtest successes are individually recorded, in addition
         # to the whole test success.
-        expected = (['startTest', 'setUp', 'test', 'tearDown']
+        expected = (['startTest', 'setUp', 'test']
                     + 6 * ['addSubTestSuccess']
-                    + ['addSuccess', 'stopTest'])
+                    + ['tearDown', 'addSuccess', 'stopTest'])
         self._check_call_order__subtests_success(result, events, expected)
 
     def test_run_call_order__subtests_success_legacy(self):
@@ -393,8 +413,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                     self.fail('failure')
                 self.fail('failure')
 
-        expected = ['startTest', 'setUp', 'test', 'tearDown',
-                    'addSubTestFailure', 'stopTest']
+        expected = ['startTest', 'setUp', 'test',
+                    'addSubTestFailure', 'tearDown', 'stopTest']
         Foo(events).run(result)
         self.assertEqual(events, expected)
 
@@ -420,7 +440,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
 
         result = unittest.TestResult()
         result.failfast = True
-        suite = unittest.makeSuite(Foo)
+        suite = unittest.TestLoader().loadTestsFromTestCase(Foo)
         suite.run(result)
 
         expected = ['a1', 'a2', 'b1']
@@ -611,6 +631,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                  'Tests shortDescription() for a method with a longer '
                  'docstring.')
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
     def testShortDescriptionWhitespaceTrimming(self):
         """
             Tests shortDescription() whitespace is trimmed, so that the first
@@ -1947,6 +1969,7 @@ test case
         for method_name in ('test1', 'test2'):
             testcase = TestCase(method_name)
             testcase.run()
+            gc_collect()  # For PyPy or other GCs.
             self.assertEqual(MyException.ninstance, 0)
 
 

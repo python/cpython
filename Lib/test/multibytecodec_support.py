@@ -296,7 +296,7 @@ class TestBase_Mapping(unittest.TestCase):
             self.skipTest("Could not retrieve "+self.mapfileurl)
 
     def open_mapping_file(self):
-        return support.open_urlresource(self.mapfileurl)
+        return support.open_urlresource(self.mapfileurl, encoding="utf-8")
 
     def test_mapping_file(self):
         if self.mapfileurl.endswith('.xml'):

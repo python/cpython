@@ -47,12 +47,10 @@ class _Outcome(object):
         self.result = result
         self.result_supports_subtests = hasattr(result, "addSubTest")
         self.success = True
-        self.skipped = []
         self.expectedFailure = None
-        self.errors = []
 
     @contextlib.contextmanager
-    def testPartExecutor(self, test_case, isTest=False):
+    def testPartExecutor(self, test_case, subTest=False):
         old_success = self.success
         self.success = True
         try:
@@ -61,7 +59,7 @@ class _Outcome(object):
             raise
         except SkipTest as e:
             self.success = False
-            self.skipped.append((test_case, str(e)))
+            _addSkip(self.result, test_case, str(e))
         except _ShouldStop:
             pass
         except:
@@ -70,19 +68,53 @@ class _Outcome(object):
                 self.expectedFailure = exc_info
             else:
                 self.success = False
-                self.errors.append((test_case, exc_info))
+                if subTest:
+                    self.result.addSubTest(test_case.test_case, test_case, exc_info)
+                else:
+                    _addError(self.result, test_case, exc_info)
             # explicitly break a reference cycle:
             # exc_info -> frame -> exc_info
             exc_info = None
         else:
-            if self.result_supports_subtests and self.success:
-                self.errors.append((test_case, None))
+            if subTest and self.success:
+                self.result.addSubTest(test_case.test_case, test_case, None)
         finally:
             self.success = self.success and old_success
 
 
+def _addSkip(result, test_case, reason):
+    addSkip = getattr(result, 'addSkip', None)
+    if addSkip is not None:
+        addSkip(test_case, reason)
+    else:
+        warnings.warn("TestResult has no addSkip method, skips not reported",
+                      RuntimeWarning, 2)
+        result.addSuccess(test_case)
+
+def _addError(result, test, exc_info):
+    if result is not None and exc_info is not None:
+        if issubclass(exc_info[0], test.failureException):
+            result.addFailure(test, exc_info)
+        else:
+            result.addError(test, exc_info)
+
 def _id(obj):
     return obj
+
+
+def _enter_context(cm, addcleanup):
+    # We look up the special methods on the type to match the with
+    # statement.
+    cls = type(cm)
+    try:
+        enter = cls.__enter__
+        exit = cls.__exit__
+    except AttributeError:
+        raise TypeError(f"'{cls.__module__}.{cls.__qualname__}' object does "
+                        f"not support the context manager protocol") from None
+    result = enter(cm)
+    addcleanup(exit, cm, None, None, None)
+    return result
 
 
 _module_cleanups = []
@@ -90,6 +122,10 @@ def addModuleCleanup(function, /, *args, **kwargs):
     """Same as addCleanup, except the cleanup items are called even if
     setUpModule fails (unlike tearDownModule)."""
     _module_cleanups.append((function, args, kwargs))
+
+def enterModuleContext(cm):
+    """Same as enterContext, but module-wide."""
+    return _enter_context(cm, addModuleCleanup)
 
 
 def doModuleCleanups():
@@ -409,11 +445,24 @@ class TestCase(object):
         Cleanup items are called even if setUp fails (unlike tearDown)."""
         self._cleanups.append((function, args, kwargs))
 
+    def enterContext(self, cm):
+        """Enters the supplied context manager.
+
+        If successful, also adds its __exit__ method as a cleanup
+        function and returns the result of the __enter__ method.
+        """
+        return _enter_context(cm, self.addCleanup)
+
     @classmethod
     def addClassCleanup(cls, function, /, *args, **kwargs):
         """Same as addCleanup, except the cleanup items are called even if
         setUpClass fails (unlike tearDownClass)."""
         cls._class_cleanups.append((function, args, kwargs))
+
+    @classmethod
+    def enterClassContext(cls, cm):
+        """Same as enterContext, but class-wide."""
+        return _enter_context(cm, cls.addClassCleanup)
 
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
@@ -461,20 +510,11 @@ class TestCase(object):
         return hash((type(self), self._testMethodName))
 
     def __str__(self):
-        return "%s (%s)" % (self._testMethodName, strclass(self.__class__))
+        return "%s (%s.%s)" % (self._testMethodName, strclass(self.__class__), self._testMethodName)
 
     def __repr__(self):
         return "<%s testMethod=%s>" % \
                (strclass(self.__class__), self._testMethodName)
-
-    def _addSkip(self, result, test_case, reason):
-        addSkip = getattr(result, 'addSkip', None)
-        if addSkip is not None:
-            addSkip(test_case, reason)
-        else:
-            warnings.warn("TestResult has no addSkip method, skips not reported",
-                          RuntimeWarning, 2)
-            result.addSuccess(test_case)
 
     @contextlib.contextmanager
     def subTest(self, msg=_subtest_msg_sentinel, **params):
@@ -494,7 +534,7 @@ class TestCase(object):
             params_map = parent.params.new_child(params)
         self._subtest = _SubTest(self, msg, params_map)
         try:
-            with self._outcome.testPartExecutor(self._subtest, isTest=True):
+            with self._outcome.testPartExecutor(self._subtest, subTest=True):
                 yield
             if not self._outcome.success:
                 result = self._outcome.result
@@ -506,16 +546,6 @@ class TestCase(object):
                 raise _ShouldStop
         finally:
             self._subtest = parent
-
-    def _feedErrorsToResult(self, result, errors):
-        for test, exc_info in errors:
-            if isinstance(test, _SubTest):
-                result.addSubTest(test.test_case, test, exc_info)
-            elif exc_info is not None:
-                if issubclass(exc_info[0], self.failureException):
-                    result.addFailure(test, exc_info)
-                else:
-                    result.addError(test, exc_info)
 
     def _addExpectedFailure(self, result, exc_info):
         try:
@@ -546,7 +576,9 @@ class TestCase(object):
         self.setUp()
 
     def _callTestMethod(self, method):
-        method()
+        if method() is not None:
+            warnings.warn(f'It is deprecated to return a value!=None from a '
+                          f'test case ({method})', DeprecationWarning, stacklevel=3)
 
     def _callTearDown(self):
         self.tearDown()
@@ -555,73 +587,67 @@ class TestCase(object):
         function(*args, **kwargs)
 
     def run(self, result=None):
-        orig_result = result
         if result is None:
             result = self.defaultTestResult()
             startTestRun = getattr(result, 'startTestRun', None)
+            stopTestRun = getattr(result, 'stopTestRun', None)
             if startTestRun is not None:
                 startTestRun()
+        else:
+            stopTestRun = None
 
         result.startTest(self)
-
-        testMethod = getattr(self, self._testMethodName)
-        if (getattr(self.__class__, "__unittest_skip__", False) or
-            getattr(testMethod, "__unittest_skip__", False)):
-            # If the class or method was skipped.
-            try:
+        try:
+            testMethod = getattr(self, self._testMethodName)
+            if (getattr(self.__class__, "__unittest_skip__", False) or
+                getattr(testMethod, "__unittest_skip__", False)):
+                # If the class or method was skipped.
                 skip_why = (getattr(self.__class__, '__unittest_skip_why__', '')
                             or getattr(testMethod, '__unittest_skip_why__', ''))
-                self._addSkip(result, self, skip_why)
-            finally:
-                result.stopTest(self)
-            return
-        expecting_failure_method = getattr(testMethod,
-                                           "__unittest_expecting_failure__", False)
-        expecting_failure_class = getattr(self,
-                                          "__unittest_expecting_failure__", False)
-        expecting_failure = expecting_failure_class or expecting_failure_method
-        outcome = _Outcome(result)
-        try:
-            self._outcome = outcome
+                _addSkip(result, self, skip_why)
+                return result
 
-            with outcome.testPartExecutor(self):
-                self._callSetUp()
-            if outcome.success:
-                outcome.expecting_failure = expecting_failure
-                with outcome.testPartExecutor(self, isTest=True):
-                    self._callTestMethod(testMethod)
-                outcome.expecting_failure = False
+            expecting_failure = (
+                getattr(self, "__unittest_expecting_failure__", False) or
+                getattr(testMethod, "__unittest_expecting_failure__", False)
+            )
+            outcome = _Outcome(result)
+            try:
+                self._outcome = outcome
+
                 with outcome.testPartExecutor(self):
-                    self._callTearDown()
+                    self._callSetUp()
+                if outcome.success:
+                    outcome.expecting_failure = expecting_failure
+                    with outcome.testPartExecutor(self):
+                        self._callTestMethod(testMethod)
+                    outcome.expecting_failure = False
+                    with outcome.testPartExecutor(self):
+                        self._callTearDown()
+                self.doCleanups()
 
-            self.doCleanups()
-            for test, reason in outcome.skipped:
-                self._addSkip(result, test, reason)
-            self._feedErrorsToResult(result, outcome.errors)
-            if outcome.success:
-                if expecting_failure:
-                    if outcome.expectedFailure:
-                        self._addExpectedFailure(result, outcome.expectedFailure)
+                if outcome.success:
+                    if expecting_failure:
+                        if outcome.expectedFailure:
+                            self._addExpectedFailure(result, outcome.expectedFailure)
+                        else:
+                            self._addUnexpectedSuccess(result)
                     else:
-                        self._addUnexpectedSuccess(result)
-                else:
-                    result.addSuccess(self)
-            return result
+                        result.addSuccess(self)
+                return result
+            finally:
+                # explicitly break reference cycle:
+                # outcome.expectedFailure -> frame -> outcome -> outcome.expectedFailure
+                outcome.expectedFailure = None
+                outcome = None
+
+                # clear the outcome, no more needed
+                self._outcome = None
+
         finally:
             result.stopTest(self)
-            if orig_result is None:
-                stopTestRun = getattr(result, 'stopTestRun', None)
-                if stopTestRun is not None:
-                    stopTestRun()
-
-            # explicitly break reference cycles:
-            # outcome.errors -> frame -> outcome -> outcome.errors
-            # outcome.expectedFailure -> frame -> outcome -> outcome.expectedFailure
-            outcome.errors.clear()
-            outcome.expectedFailure = None
-
-            # clear the outcome, no more needed
-            self._outcome = None
+            if stopTestRun is not None:
+                stopTestRun()
 
     def doCleanups(self):
         """Execute all cleanup functions. Normally called for you after
@@ -653,12 +679,20 @@ class TestCase(object):
 
     def debug(self):
         """Run the test without collecting errors in a TestResult"""
-        self.setUp()
-        getattr(self, self._testMethodName)()
-        self.tearDown()
+        testMethod = getattr(self, self._testMethodName)
+        if (getattr(self.__class__, "__unittest_skip__", False) or
+            getattr(testMethod, "__unittest_skip__", False)):
+            # If the class or method was skipped.
+            skip_why = (getattr(self.__class__, '__unittest_skip_why__', '')
+                        or getattr(testMethod, '__unittest_skip_why__', ''))
+            raise SkipTest(skip_why)
+
+        self._callSetUp()
+        self._callTestMethod(testMethod)
+        self._callTearDown()
         while self._cleanups:
-            function, args, kwargs = self._cleanups.pop(-1)
-            function(*args, **kwargs)
+            function, args, kwargs = self._cleanups.pop()
+            self._callCleanup(function, *args, **kwargs)
 
     def skipTest(self, reason):
         """Skip this test."""

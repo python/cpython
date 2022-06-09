@@ -49,26 +49,29 @@ __all__ = ['TestResult', 'TestCase', 'IsolatedAsyncioTestCase', 'TestSuite',
            'defaultTestLoader', 'SkipTest', 'skip', 'skipIf', 'skipUnless',
            'expectedFailure', 'TextTestResult', 'installHandler',
            'registerResult', 'removeResult', 'removeHandler',
-           'addModuleCleanup']
+           'addModuleCleanup', 'doModuleCleanups', 'enterModuleContext']
 
 # Expose obsolete functions for backwards compatibility
+# bpo-5846: Deprecated in Python 3.11, scheduled for removal in Python 3.13.
 __all__.extend(['getTestCaseNames', 'makeSuite', 'findTestCases'])
 
 __unittest = True
 
 from .result import TestResult
 from .case import (addModuleCleanup, TestCase, FunctionTestCase, SkipTest, skip,
-                   skipIf, skipUnless, expectedFailure)
+                   skipIf, skipUnless, expectedFailure, doModuleCleanups,
+                   enterModuleContext)
 from .suite import BaseTestSuite, TestSuite
-from .loader import (TestLoader, defaultTestLoader, makeSuite, getTestCaseNames,
-                     findTestCases)
+from .loader import TestLoader, defaultTestLoader
 from .main import TestProgram, main
 from .runner import TextTestRunner, TextTestResult
 from .signals import installHandler, registerResult, removeResult, removeHandler
 # IsolatedAsyncioTestCase will be imported lazily.
+from .loader import makeSuite, getTestCaseNames, findTestCases
 
 # deprecated
 _TextTestResult = TextTestResult
+
 
 # There are no tests here, so don't try to run anything discovered from
 # introspecting the symbols (e.g. FunctionTestCase). Instead, all our

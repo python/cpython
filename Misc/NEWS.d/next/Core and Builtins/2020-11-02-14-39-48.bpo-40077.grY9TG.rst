@@ -1,1 +1,0 @@
-Convert :mod:`mmap` to use heap types.

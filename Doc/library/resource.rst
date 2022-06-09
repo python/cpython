@@ -241,7 +241,9 @@ platform.
    The maximum size (in bytes) of the swap space that may be reserved or
    used by all of this user id's processes.
    This limit is enforced only if bit 1 of the vm.overcommit sysctl is set.
-   Please see :manpage:`tuning(7)` for a complete description of this sysctl.
+   Please see
+   `tuning(7) <https://www.freebsd.org/cgi/man.cgi?query=tuning&sektion=7>`__
+   for a complete description of this sysctl.
 
    .. availability:: FreeBSD 9 or later.
 
@@ -254,6 +256,14 @@ platform.
    .. availability:: FreeBSD 9 or later.
 
    .. versionadded:: 3.4
+
+.. data:: RLIMIT_KQUEUES
+
+   The maximum number of kqueues this user id is allowed to create.
+
+   .. availability:: FreeBSD 11 or later.
+
+   .. versionadded:: 3.10
 
 Resource Usage
 --------------

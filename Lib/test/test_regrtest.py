@@ -15,14 +15,16 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
+import time
 import unittest
 from test import libregrtest
 from test import support
 from test.support import os_helper
-from test.libregrtest import utils
+from test.libregrtest import utils, setup
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
-Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
 ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
 LOG_PREFIX = r'[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?'
@@ -414,7 +416,7 @@ class BaseTestCase(unittest.TestCase):
 
     def check_executed_tests(self, output, tests, skipped=(), failed=(),
                              env_changed=(), omitted=(),
-                             rerun=(), no_test_ran=(),
+                             rerun={}, no_test_ran=(),
                              randomize=False, interrupted=False,
                              fail_env_changed=False):
         if isinstance(tests, str):
@@ -427,8 +429,6 @@ class BaseTestCase(unittest.TestCase):
             env_changed = [env_changed]
         if isinstance(omitted, str):
             omitted = [omitted]
-        if isinstance(rerun, str):
-            rerun = [rerun]
         if isinstance(no_test_ran, str):
             no_test_ran = [no_test_ran]
 
@@ -466,12 +466,12 @@ class BaseTestCase(unittest.TestCase):
             self.check_line(output, regex)
 
         if rerun:
-            regex = list_regex('%s re-run test%s', rerun)
+            regex = list_regex('%s re-run test%s', rerun.keys())
             self.check_line(output, regex)
             regex = LOG_PREFIX + r"Re-running failed tests in verbose mode"
             self.check_line(output, regex)
-            for test_name in rerun:
-                regex = LOG_PREFIX + f"Re-running {test_name} in verbose mode"
+            for name, match in rerun.items():
+                regex = LOG_PREFIX + f"Re-running {name} in verbose mode \\(matching: {match}\\)"
                 self.check_line(output, regex)
 
         if no_test_ran:
@@ -549,11 +549,10 @@ class BaseTestCase(unittest.TestCase):
 
 
 class CheckActualTests(BaseTestCase):
-    """
-    Check that regrtest appears to find the expected set of tests.
-    """
-
     def test_finds_expected_number_of_tests(self):
+        """
+        Check that regrtest appears to find the expected set of tests.
+        """
         args = ['-Wd', '-E', '-bb', '-m', 'test.regrtest', '--list-tests']
         output = self.run_python(args)
         rough_number_of_tests_found = len(output.splitlines())
@@ -665,7 +664,7 @@ class ProgramsTestCase(BaseTestCase):
             test_args.append('-arm32')   # 32-bit ARM build
         elif platform.architecture()[0] == '64bit':
             test_args.append('-x64')   # 64-bit build
-        if not Py_DEBUG:
+        if not support.Py_DEBUG:
             test_args.append('+d')     # Release build, use python.exe
         self.run_batch(script, *test_args, *self.tests)
 
@@ -682,7 +681,7 @@ class ProgramsTestCase(BaseTestCase):
             rt_args.append('-arm32')   # 32-bit ARM build
         elif platform.architecture()[0] == '64bit':
             rt_args.append('-x64')   # 64-bit build
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             rt_args.append('-d')     # Debug build, use python_d.exe
         self.run_batch(script, *rt_args, *self.regrtest_args, *self.tests)
 
@@ -903,7 +902,7 @@ class ArgsTestCase(BaseTestCase):
             reflog = fp.read()
             self.assertIn(line2, reflog)
 
-    @unittest.skipUnless(Py_DEBUG, 'need a debug build')
+    @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
     def test_huntrleaks(self):
         # test --huntrleaks
         code = textwrap.dedent("""
@@ -917,7 +916,7 @@ class ArgsTestCase(BaseTestCase):
         """)
         self.check_leak(code, 'references')
 
-    @unittest.skipUnless(Py_DEBUG, 'need a debug build')
+    @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
     def test_huntrleaks_fd_leak(self):
         # test --huntrleaks for file descriptor leak
         code = textwrap.dedent("""
@@ -1081,15 +1080,18 @@ class ArgsTestCase(BaseTestCase):
             import unittest
 
             class Tests(unittest.TestCase):
-                def test_bug(self):
-                    # test always fail
+                def test_succeed(self):
+                    return
+
+                def test_fail_always(self):
+                    # test that always fails
                     self.fail("bug")
         """)
         testname = self.create_test(code=code)
 
         output = self.run_tests("-w", testname, exitcode=2)
         self.check_executed_tests(output, [testname],
-                                  failed=testname, rerun=testname)
+                                  failed=testname, rerun={testname: "test_fail_always"})
 
     def test_rerun_success(self):
         # FAILURE then SUCCESS
@@ -1098,7 +1100,8 @@ class ArgsTestCase(BaseTestCase):
             import unittest
 
             class Tests(unittest.TestCase):
-                failed = False
+                def test_succeed(self):
+                    return
 
                 def test_fail_once(self):
                     if not hasattr(builtins, '_test_failed'):
@@ -1109,7 +1112,7 @@ class ArgsTestCase(BaseTestCase):
 
         output = self.run_tests("-w", testname, exitcode=0)
         self.check_executed_tests(output, [testname],
-                                  rerun=testname)
+                                  rerun={testname: "test_fail_once"})
 
     def test_no_tests_ran(self):
         code = textwrap.dedent("""
@@ -1176,7 +1179,7 @@ class ArgsTestCase(BaseTestCase):
                                   no_test_ran=[testname])
 
     @support.cpython_only
-    def test_findleaks(self):
+    def test_uncollectable(self):
         code = textwrap.dedent(r"""
             import _testcapi
             import gc
@@ -1197,12 +1200,6 @@ class ArgsTestCase(BaseTestCase):
         testname = self.create_test(code=code)
 
         output = self.run_tests("--fail-env-changed", testname, exitcode=3)
-        self.check_executed_tests(output, [testname],
-                                  env_changed=[testname],
-                                  fail_env_changed=True)
-
-        # --findleaks is now basically an alias to --fail-env-changed
-        output = self.run_tests("--findleaks", testname, exitcode=3)
         self.check_executed_tests(output, [testname],
                                   env_changed=[testname],
                                   fail_env_changed=True)
@@ -1236,7 +1233,7 @@ class ArgsTestCase(BaseTestCase):
 
     def test_unraisable_exc(self):
         # --fail-env-changed must catch unraisable exception.
-        # The exceptioin must be displayed even if sys.stderr is redirected.
+        # The exception must be displayed even if sys.stderr is redirected.
         code = textwrap.dedent(r"""
             import unittest
             import weakref
@@ -1266,6 +1263,85 @@ class ArgsTestCase(BaseTestCase):
                                   fail_env_changed=True)
         self.assertIn("Warning -- Unraisable exception", output)
         self.assertIn("Exception: weakref callback bug", output)
+
+    def test_threading_excepthook(self):
+        # --fail-env-changed must catch uncaught thread exception.
+        # The exception must be displayed even if sys.stderr is redirected.
+        code = textwrap.dedent(r"""
+            import threading
+            import unittest
+            from test.support import captured_stderr
+
+            class MyObject:
+                pass
+
+            def func_bug():
+                raise Exception("bug in thread")
+
+            class Tests(unittest.TestCase):
+                def test_threading_excepthook(self):
+                    with captured_stderr() as stderr:
+                        thread = threading.Thread(target=func_bug)
+                        thread.start()
+                        thread.join()
+                    self.assertEqual(stderr.getvalue(), '')
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("--fail-env-changed", "-v", testname, exitcode=3)
+        self.check_executed_tests(output, [testname],
+                                  env_changed=[testname],
+                                  fail_env_changed=True)
+        self.assertIn("Warning -- Uncaught thread exception", output)
+        self.assertIn("Exception: bug in thread", output)
+
+    def test_print_warning(self):
+        # bpo-45410: The order of messages must be preserved when -W and
+        # support.print_warning() are used.
+        code = textwrap.dedent(r"""
+            import sys
+            import unittest
+            from test import support
+
+            class MyObject:
+                pass
+
+            def func_bug():
+                raise Exception("bug in thread")
+
+            class Tests(unittest.TestCase):
+                def test_print_warning(self):
+                    print("msg1: stdout")
+                    support.print_warning("msg2: print_warning")
+                    # Fail with ENV CHANGED to see print_warning() log
+                    support.environment_altered = True
+        """)
+        testname = self.create_test(code=code)
+
+        # Expect an output like:
+        #
+        #   test_threading_excepthook (test.test_x.Tests) ... msg1: stdout
+        #   Warning -- msg2: print_warning
+        #   ok
+        regex = (r"test_print_warning.*msg1: stdout\n"
+                 r"Warning -- msg2: print_warning\n"
+                 r"ok\n")
+        for option in ("-v", "-W"):
+            with self.subTest(option=option):
+                cmd = ["--fail-env-changed", option, testname]
+                output = self.run_tests(*cmd, exitcode=3)
+                self.check_executed_tests(output, [testname],
+                                          env_changed=[testname],
+                                          fail_env_changed=True)
+                self.assertRegex(output, regex)
+
+    def test_unicode_guard_env(self):
+        guard = os.environ.get(setup.UNICODE_GUARD_ENV)
+        self.assertIsNotNone(guard, f"{setup.UNICODE_GUARD_ENV} not set")
+        if guard.isascii():
+            # Skip to signify that the env var value was changed by the user;
+            # possibly to something ASCII to work around Unicode issues.
+            self.skipTest("Modified guard")
 
     def test_cleanup(self):
         dirname = os.path.join(self.tmptestdir, "test_python_123")

@@ -1,4 +1,4 @@
-#include "pycore_interp.h"    // _PyInterpreterState.pythread_stacksize
+#include "pycore_interp.h"    // _PyInterpreterState.threads.stacksize
 
 /* Posix threads interface */
 
@@ -23,6 +23,8 @@
 #   include <sys/thread.h>      /* thread_self() */
 #elif defined(__NetBSD__)
 #   include <lwp.h>             /* _lwp_self() */
+#elif defined(__DragonFly__)
+#   include <sys/lwp.h>         /* lwp_gettid() */
 #endif
 
 /* The POSIX spec requires that use of pthread_attr_setstacksize
@@ -32,18 +34,17 @@
 #define THREAD_STACK_SIZE       0       /* use default stack size */
 #endif
 
-/* The default stack size for new threads on OSX and BSD is small enough that
+/* The default stack size for new threads on BSD is small enough that
  * we'll get hard crashes instead of 'maximum recursion depth exceeded'
  * exceptions.
  *
- * The default stack sizes below are the empirically determined minimal stack
+ * The default stack size below is the empirically determined minimal stack
  * sizes where a simple recursive function doesn't cause a hard crash.
+ *
+ * For macOS the value of THREAD_STACK_SIZE is determined in configure.ac
+ * as it also depends on the other configure options like chosen sanitizer
+ * runtimes.
  */
-#if defined(__APPLE__) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
-#undef  THREAD_STACK_SIZE
-/* Note: This matches the value of -Wl,-stack_size in configure.ac */
-#define THREAD_STACK_SIZE       0x1000000
-#endif
 #if defined(__FreeBSD__) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
 #undef  THREAD_STACK_SIZE
 #define THREAD_STACK_SIZE       0x400000
@@ -61,6 +62,10 @@
 #   undef  THREAD_STACK_SIZE
 #   define THREAD_STACK_SIZE    0x800000
 #   endif
+#endif
+#if defined(__VXWORKS__) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
+#undef  THREAD_STACK_SIZE
+#define THREAD_STACK_SIZE       0x100000
 #endif
 /* for safety, ensure a viable minimum stacksize */
 #define THREAD_STACK_MIN        0x8000  /* 32 KiB */
@@ -89,7 +94,7 @@
  * mutexes and condition variables:
  */
 #if (defined(_POSIX_SEMAPHORES) && !defined(HAVE_BROKEN_POSIX_SEMAPHORES) && \
-     defined(HAVE_SEM_TIMEDWAIT))
+     (defined(HAVE_SEM_TIMEDWAIT) || defined(HAVE_SEM_CLOCKWAIT)))
 #  define USE_SEMAPHORES
 #else
 #  undef USE_SEMAPHORES
@@ -249,7 +254,6 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
     size_t      tss;
 #endif
 
-    dprintf(("PyThread_start_new_thread called\n"));
     if (!initialized)
         PyThread_init_thread();
 
@@ -259,7 +263,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #endif
 #if defined(THREAD_STACK_SIZE)
     PyThreadState *tstate = _PyThreadState_GET();
-    size_t stacksize = tstate ? tstate->interp->pythread_stacksize : 0;
+    size_t stacksize = tstate ? tstate->interp->threads.stacksize : 0;
     tss = (stacksize != 0) ? stacksize : THREAD_STACK_SIZE;
     if (tss != 0) {
         if (pthread_attr_setstacksize(&attrs, tss) != 0) {
@@ -347,6 +351,9 @@ PyThread_get_thread_native_id(void)
 #elif defined(__NetBSD__)
     lwpid_t native_id;
     native_id = _lwp_self();
+#elif defined(__DragonFly__)
+    lwpid_t native_id;
+    native_id = lwp_gettid();
 #endif
     return (unsigned long) native_id;
 }
@@ -355,7 +362,6 @@ PyThread_get_thread_native_id(void)
 void _Py_NO_RETURN
 PyThread_exit_thread(void)
 {
-    dprintf(("PyThread_exit_thread called\n"));
     if (!initialized)
         exit(0);
     pthread_exit(0);
@@ -373,7 +379,6 @@ PyThread_allocate_lock(void)
     sem_t *lock;
     int status, error = 0;
 
-    dprintf(("PyThread_allocate_lock called\n"));
     if (!initialized)
         PyThread_init_thread();
 
@@ -389,7 +394,6 @@ PyThread_allocate_lock(void)
         }
     }
 
-    dprintf(("PyThread_allocate_lock() -> %p\n", (void *)lock));
     return (PyThread_type_lock)lock;
 }
 
@@ -400,7 +404,6 @@ PyThread_free_lock(PyThread_type_lock lock)
     int status, error = 0;
 
     (void) error; /* silence unused-but-set-variable warning */
-    dprintf(("PyThread_free_lock(%p) called\n", lock));
 
     if (!thelock)
         return;
@@ -430,33 +433,60 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     PyLockStatus success;
     sem_t *thelock = (sem_t *)lock;
     int status, error = 0;
-    struct timespec ts;
-    _PyTime_t deadline = 0;
 
     (void) error; /* silence unused-but-set-variable warning */
-    dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
-             lock, microseconds, intr_flag));
 
-    if (microseconds > PY_TIMEOUT_MAX) {
-        Py_FatalError("Timeout larger than PY_TIMEOUT_MAX");
-    }
-
-    if (microseconds > 0) {
-        MICROSECONDS_TO_TIMESPEC(microseconds, ts);
-
-        if (!intr_flag) {
-            /* cannot overflow thanks to (microseconds > PY_TIMEOUT_MAX)
-               check done above */
-            _PyTime_t timeout = _PyTime_FromNanoseconds(microseconds * 1000);
-            deadline = _PyTime_GetMonotonicClock() + timeout;
+    _PyTime_t timeout;  // relative timeout
+    if (microseconds >= 0) {
+        _PyTime_t ns;
+        if (microseconds <= _PyTime_MAX / 1000) {
+            ns = microseconds * 1000;
         }
+        else {
+            // bpo-41710: PyThread_acquire_lock_timed() cannot report timeout
+            // overflow to the caller, so clamp the timeout to
+            // [_PyTime_MIN, _PyTime_MAX].
+            //
+            // _PyTime_MAX nanoseconds is around 292.3 years.
+            //
+            // _thread.Lock.acquire() and _thread.RLock.acquire() raise an
+            // OverflowError if microseconds is greater than PY_TIMEOUT_MAX.
+            ns = _PyTime_MAX;
+        }
+        timeout = _PyTime_FromNanoseconds(ns);
     }
+    else {
+        timeout = _PyTime_FromNanoseconds(-1);
+    }
+
+#ifdef HAVE_SEM_CLOCKWAIT
+    struct timespec abs_timeout;
+    // Local scope for deadline
+    {
+        _PyTime_t deadline = _PyTime_Add(_PyTime_GetMonotonicClock(), timeout);
+        _PyTime_AsTimespec_clamp(deadline, &abs_timeout);
+    }
+#else
+    _PyTime_t deadline = 0;
+    if (timeout > 0 && !intr_flag) {
+        deadline = _PyDeadline_Init(timeout);
+    }
+#endif
 
     while (1) {
-        if (microseconds > 0) {
+        if (timeout > 0) {
+#ifdef HAVE_SEM_CLOCKWAIT
+            status = fix_status(sem_clockwait(thelock, CLOCK_MONOTONIC,
+                                              &abs_timeout));
+#else
+            _PyTime_t abs_time = _PyTime_Add(_PyTime_GetSystemClock(),
+                                             timeout);
+            struct timespec ts;
+            _PyTime_AsTimespec_clamp(abs_time, &ts);
             status = fix_status(sem_timedwait(thelock, &ts));
+#endif
         }
-        else if (microseconds == 0) {
+        else if (timeout == 0) {
             status = fix_status(sem_trywait(thelock));
         }
         else {
@@ -469,38 +499,35 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
             break;
         }
 
-        if (microseconds > 0) {
+        // sem_clockwait() uses an absolute timeout, there is no need
+        // to recompute the relative timeout.
+#ifndef HAVE_SEM_CLOCKWAIT
+        if (timeout > 0) {
             /* wait interrupted by a signal (EINTR): recompute the timeout */
-            _PyTime_t dt = deadline - _PyTime_GetMonotonicClock();
-            if (dt < 0) {
+            _PyTime_t timeout = _PyDeadline_Get(deadline);
+            if (timeout < 0) {
                 status = ETIMEDOUT;
                 break;
             }
-            else if (dt > 0) {
-                _PyTime_t realtime_deadline = _PyTime_GetSystemClock() + dt;
-                if (_PyTime_AsTimespec(realtime_deadline, &ts) < 0) {
-                    /* Cannot occur thanks to (microseconds > PY_TIMEOUT_MAX)
-                       check done above */
-                    Py_UNREACHABLE();
-                }
-                /* no need to update microseconds value, the code only care
-                   if (microseconds > 0 or (microseconds == 0). */
-            }
-            else {
-                microseconds = 0;
-            }
         }
+#endif
     }
 
     /* Don't check the status if we're stopping because of an interrupt.  */
     if (!(intr_flag && status == EINTR)) {
-        if (microseconds > 0) {
-            if (status != ETIMEDOUT)
+        if (timeout > 0) {
+            if (status != ETIMEDOUT) {
+#ifdef HAVE_SEM_CLOCKWAIT
+                CHECK_STATUS("sem_clockwait");
+#else
                 CHECK_STATUS("sem_timedwait");
+#endif
+            }
         }
-        else if (microseconds == 0) {
-            if (status != EAGAIN)
+        else if (timeout == 0) {
+            if (status != EAGAIN) {
                 CHECK_STATUS("sem_trywait");
+            }
         }
         else {
             CHECK_STATUS("sem_wait");
@@ -515,8 +542,6 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
         success = PY_LOCK_FAILURE;
     }
 
-    dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) -> %d\n",
-             lock, microseconds, intr_flag, success));
     return success;
 }
 
@@ -527,7 +552,6 @@ PyThread_release_lock(PyThread_type_lock lock)
     int status, error = 0;
 
     (void) error; /* silence unused-but-set-variable warning */
-    dprintf(("PyThread_release_lock(%p) called\n", lock));
 
     status = sem_post(thelock);
     CHECK_STATUS("sem_post");
@@ -544,7 +568,6 @@ PyThread_allocate_lock(void)
     pthread_lock *lock;
     int status, error = 0;
 
-    dprintf(("PyThread_allocate_lock called\n"));
     if (!initialized)
         PyThread_init_thread();
 
@@ -570,7 +593,6 @@ PyThread_allocate_lock(void)
         }
     }
 
-    dprintf(("PyThread_allocate_lock() -> %p\n", (void *)lock));
     return (PyThread_type_lock) lock;
 }
 
@@ -581,7 +603,6 @@ PyThread_free_lock(PyThread_type_lock lock)
     int status, error = 0;
 
     (void) error; /* silence unused-but-set-variable warning */
-    dprintf(("PyThread_free_lock(%p) called\n", lock));
 
     /* some pthread-like implementations tie the mutex to the cond
      * and must have the cond destroyed first.
@@ -602,9 +623,6 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     PyLockStatus success = PY_LOCK_FAILURE;
     pthread_lock *thelock = (pthread_lock *)lock;
     int status, error = 0;
-
-    dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
-             lock, microseconds, intr_flag));
 
     if (microseconds == 0) {
         status = pthread_mutex_trylock( &thelock->mut );
@@ -665,8 +683,6 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     }
 
     if (error) success = PY_LOCK_FAILURE;
-    dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) -> %d\n",
-             lock, microseconds, intr_flag, success));
     return success;
 }
 
@@ -677,7 +693,6 @@ PyThread_release_lock(PyThread_type_lock lock)
     int status, error = 0;
 
     (void) error; /* silence unused-but-set-variable warning */
-    dprintf(("PyThread_release_lock(%p) called\n", lock));
 
     status = pthread_mutex_lock( &thelock->mut );
     CHECK_STATUS_PTHREAD("pthread_mutex_lock[3]");
@@ -735,7 +750,7 @@ _pythread_pthread_set_stacksize(size_t size)
 
     /* set to default */
     if (size == 0) {
-        _PyInterpreterState_GET()->pythread_stacksize = 0;
+        _PyInterpreterState_GET()->threads.stacksize = 0;
         return 0;
     }
 
@@ -752,7 +767,7 @@ _pythread_pthread_set_stacksize(size_t size)
             rc = pthread_attr_setstacksize(&attrs, size);
             pthread_attr_destroy(&attrs);
             if (rc == 0) {
-                _PyInterpreterState_GET()->pythread_stacksize = size;
+                _PyInterpreterState_GET()->threads.stacksize = size;
                 return 0;
             }
         }

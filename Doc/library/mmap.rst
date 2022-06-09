@@ -102,7 +102,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    To ensure validity of the created memory mapping the file specified
    by the descriptor *fileno* is internally automatically synchronized
-   with physical backing store on Mac OS X and OpenVMS.
+   with the physical backing store on macOS.
 
    This example shows a simple way of using :class:`~mmap.mmap`::
 
@@ -256,6 +256,14 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       with :const:`ACCESS_READ` or :const:`ACCESS_COPY`, resizing the map will
       raise a :exc:`TypeError` exception.
 
+      **On Windows**: Resizing the map will raise an :exc:`OSError` if there are other
+      maps against the same named file. Resizing an anonymous map (ie against the
+      pagefile) will silently create a new map with the original data copied over
+      up to the length of the new size.
+
+      .. versionchanged:: 3.11
+         Correctly fails if attempting to resize when another map is held
+         Allows resize against an anonymous map on Windows
 
    .. method:: rfind(sub[, start[, end]])
 
@@ -337,6 +345,8 @@ MADV_* Constants
           MADV_NOCORE
           MADV_CORE
           MADV_PROTECT
+          MADV_FREE_REUSABLE
+          MADV_FREE_REUSE
 
    These options can be passed to :meth:`mmap.madvise`.  Not every option will
    be present on every system.
@@ -357,8 +367,12 @@ MAP_* Constants
           MAP_ANON
           MAP_ANONYMOUS
           MAP_POPULATE
+          MAP_STACK
 
     These are the various flags that can be passed to :meth:`mmap.mmap`. Note that some options might not be present on some systems.
 
     .. versionchanged:: 3.10
        Added MAP_POPULATE constant.
+
+    .. versionadded:: 3.11
+       Added MAP_STACK constant.

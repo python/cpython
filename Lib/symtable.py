@@ -62,7 +62,7 @@ class SymbolTable:
     def get_type(self):
         """Return the type of the symbol table.
 
-        The values retuned are 'class', 'module' and
+        The values returned are 'class', 'module' and
         'function'.
         """
         if self._table.type == _symtable.TYPE_MODULE:
@@ -245,7 +245,7 @@ class Symbol:
         return bool(self.__flags & DEF_PARAM)
 
     def is_global(self):
-        """Return *True* if the sysmbol is global.
+        """Return *True* if the symbol is global.
         """
         return bool(self.__scope in (GLOBAL_IMPLICIT, GLOBAL_EXPLICIT)
                     or (self.__module_scope and self.__flags & DEF_BOUND))
@@ -306,11 +306,15 @@ class Symbol:
     def get_namespace(self):
         """Return the single namespace bound to this name.
 
-        Raises ValueError if the name is bound to multiple namespaces.
+        Raises ValueError if the name is bound to multiple namespaces
+        or no namespace.
         """
-        if len(self.__namespaces) != 1:
+        if len(self.__namespaces) == 0:
+            raise ValueError("name is not bound to any namespaces")
+        elif len(self.__namespaces) > 1:
             raise ValueError("name is bound to multiple namespaces")
-        return self.__namespaces[0]
+        else:
+            return self.__namespaces[0]
 
 if __name__ == "__main__":
     import os, sys

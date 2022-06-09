@@ -17,10 +17,10 @@ BOLD   = "bold"
 ITALIC = "italic"
 
 
-def nametofont(name):
+def nametofont(name, root=None):
     """Given the name of a tk named font, returns a Font representation.
     """
-    return Font(name=name, exists=True)
+    return Font(name=name, exists=True, root=root)
 
 
 class Font:
@@ -68,8 +68,8 @@ class Font:
 
     def __init__(self, root=None, font=None, name=None, exists=False,
                  **options):
-        if not root:
-            root = tkinter._default_root
+        if root is None:
+            root = tkinter._get_default_root('use font')
         tk = getattr(root, 'tk', root)
         if font:
             # get actual settings corresponding to the given font
@@ -107,7 +107,7 @@ class Font:
     def __eq__(self, other):
         if not isinstance(other, Font):
             return NotImplemented
-        return self.name == other.name
+        return self.name == other.name and self._tk == other._tk
 
     def __getitem__(self, key):
         return self.cget(key)
@@ -183,8 +183,8 @@ class Font:
 
 def families(root=None, displayof=None):
     "Get font families (as a tuple)"
-    if not root:
-        root = tkinter._default_root
+    if root is None:
+        root = tkinter._get_default_root('use font.families()')
     args = ()
     if displayof:
         args = ('-displayof', displayof)
@@ -193,8 +193,8 @@ def families(root=None, displayof=None):
 
 def names(root=None):
     "Get names of defined fonts (as a tuple)"
-    if not root:
-        root = tkinter._default_root
+    if root is None:
+        root = tkinter._get_default_root('use font.names()')
     return root.tk.splitlist(root.tk.call("font", "names"))
 
 

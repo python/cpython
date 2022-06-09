@@ -1,9 +1,15 @@
-import mailcap
-import os
 import copy
+import os
+import sys
 import test.support
-from test.support import os_helper
 import unittest
+import warnings
+from test.support import os_helper
+from test.support import warnings_helper
+
+
+mailcap = warnings_helper.import_deprecated('mailcap')
+
 
 # Location of mailcap file
 MAILCAPFILE = test.support.findfile("mailcap.txt")
@@ -122,7 +128,8 @@ class HelperFunctionTest(unittest.TestCase):
             (["", "audio/*", "foo.txt"], ""),
             (["echo foo", "audio/*", "foo.txt"], "echo foo"),
             (["echo %s", "audio/*", "foo.txt"], "echo foo.txt"),
-            (["echo %t", "audio/*", "foo.txt"], "echo audio/*"),
+            (["echo %t", "audio/*", "foo.txt"], None),
+            (["echo %t", "audio/wav", "foo.txt"], "echo audio/wav"),
             (["echo \\%t", "audio/*", "foo.txt"], "echo %t"),
             (["echo foo", "audio/*", "foo.txt", plist], "echo foo"),
             (["echo %{total}", "audio/*", "foo.txt", plist], "echo 3")
@@ -206,7 +213,10 @@ class FindmatchTest(unittest.TestCase):
              ('"An audio fragment"', audio_basic_entry)),
             ([c, "audio/*"],
              {"filename": fname},
-             ("/usr/local/bin/showaudio audio/*", audio_entry)),
+             (None, None)),
+            ([c, "audio/wav"],
+             {"filename": fname},
+             ("/usr/local/bin/showaudio audio/wav", audio_entry)),
             ([c, "message/external-body"],
              {"plist": plist},
              ("showexternal /dev/null default john python.org     /tmp foo bar", message_entry))
@@ -214,6 +224,11 @@ class FindmatchTest(unittest.TestCase):
         self._run_cases(cases)
 
     @unittest.skipUnless(os.name == "posix", "Requires 'test' command on system")
+    @unittest.skipIf(sys.platform == "vxworks", "'test' command is not supported on VxWorks")
+    @unittest.skipUnless(
+        test.support.has_subprocess_support,
+        "'test' command needs process support."
+    )
     def test_test(self):
         # findmatch() will automatically check any "test" conditions and skip
         # the entry if the check fails.

@@ -1,13 +1,18 @@
-#include <float.h>   /* DBL_MAX_10_EXP */
-#include <stdbool.h>
 #include "Python.h"
-#include "Python-ast.h"
+#include "pycore_ast.h"           // expr_ty
+#include "pycore_runtime.h"       // _Py_ID()
+#include <float.h>                // DBL_MAX_10_EXP
+#include <stdbool.h>
 
-static PyObject *_str_open_br;
-static PyObject *_str_dbl_open_br;
-static PyObject *_str_close_br;
-static PyObject *_str_dbl_close_br;
-static PyObject *_str_inf;
+/* This limited unparser is used to convert annotations back to strings
+ * during compilation rather than being a full AST unparser.
+ * See ast.unparse for a full unparser (written in Python)
+ */
+
+_Py_DECLARE_STR(open_br, "{");
+_Py_DECLARE_STR(dbl_open_br, "{{");
+_Py_DECLARE_STR(close_br, "}");
+_Py_DECLARE_STR(dbl_close_br, "}}");
 static PyObject *_str_replace_inf;
 
 /* Forward declarations for recursion via helper functions. */
@@ -75,7 +80,7 @@ append_repr(_PyUnicodeWriter *writer, PyObject *obj)
     {
         PyObject *new_repr = PyUnicode_Replace(
             repr,
-            _str_inf,
+            &_Py_ID(inf),
             _str_replace_inf,
             -1
         );
@@ -570,11 +575,11 @@ escape_braces(PyObject *orig)
 {
     PyObject *temp;
     PyObject *result;
-    temp = PyUnicode_Replace(orig, _str_open_br, _str_dbl_open_br, -1);
+    temp = PyUnicode_Replace(orig, &_Py_STR(open_br), &_Py_STR(dbl_open_br), -1);
     if (!temp) {
         return NULL;
     }
-    result = PyUnicode_Replace(temp, _str_close_br, _str_dbl_close_br, -1);
+    result = PyUnicode_Replace(temp, &_Py_STR(close_br), &_Py_STR(dbl_close_br), -1);
     Py_DECREF(temp);
     return result;
 }
@@ -668,7 +673,7 @@ append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e)
     if (!temp_fv_str) {
         return -1;
     }
-    if (PyUnicode_Find(temp_fv_str, _str_open_br, 0, 1, 1) == 0) {
+    if (PyUnicode_Find(temp_fv_str, &_Py_STR(open_br), 0, 1, 1) == 0) {
         /* Expression starts with a brace, split it with a space from the outer
            one. */
         outer_brace = "{ ";
@@ -781,19 +786,8 @@ static int
 append_ast_subscript(_PyUnicodeWriter *writer, expr_ty e)
 {
     APPEND_EXPR(e->v.Subscript.value, PR_ATOM);
-    int level = PR_TUPLE;
-    expr_ty slice = e->v.Subscript.slice;
-    if (slice->kind == Tuple_kind) {
-        for (Py_ssize_t i = 0; i < asdl_seq_LEN(slice->v.Tuple.elts); i++) {
-            expr_ty element = asdl_seq_GET(slice->v.Tuple.elts, i);
-            if (element->kind == Starred_kind) {
-                ++level;
-                break;
-            }
-        }
-    }
     APPEND_STR("[");
-    APPEND_EXPR(e->v.Subscript.slice, level);
+    APPEND_EXPR(e->v.Subscript.slice, PR_TUPLE);
     APPEND_STR_FINISH("]");
 }
 
@@ -912,36 +906,16 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
         return append_ast_tuple(writer, e, level);
     case NamedExpr_kind:
         return append_named_expr(writer, e, level);
-    default:
-        PyErr_SetString(PyExc_SystemError,
-                        "unknown expression kind");
-        return -1;
+    // No default so compiler emits a warning for unhandled cases
     }
+    PyErr_SetString(PyExc_SystemError,
+                    "unknown expression kind");
+    return -1;
 }
 
 static int
 maybe_init_static_strings(void)
 {
-    if (!_str_open_br &&
-        !(_str_open_br = PyUnicode_InternFromString("{"))) {
-        return -1;
-    }
-    if (!_str_dbl_open_br &&
-        !(_str_dbl_open_br = PyUnicode_InternFromString("{{"))) {
-        return -1;
-    }
-    if (!_str_close_br &&
-        !(_str_close_br = PyUnicode_InternFromString("}"))) {
-        return -1;
-    }
-    if (!_str_dbl_close_br &&
-        !(_str_dbl_close_br = PyUnicode_InternFromString("}}"))) {
-        return -1;
-    }
-    if (!_str_inf &&
-        !(_str_inf = PyUnicode_FromString("inf"))) {
-        return -1;
-    }
     if (!_str_replace_inf &&
         !(_str_replace_inf = PyUnicode_FromFormat("1e%d", 1 + DBL_MAX_10_EXP))) {
         return -1;

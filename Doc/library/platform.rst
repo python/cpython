@@ -42,7 +42,7 @@ Cross Platform
 
    .. note::
 
-      On Mac OS X (and perhaps other platforms), executable files may be
+      On macOS (and perhaps other platforms), executable files may be
       universal files containing multiple architectures.
 
       To get at the "64-bitness" of the current interpreter, it is more
@@ -53,7 +53,7 @@ Cross Platform
 
 .. function:: machine()
 
-   Returns the machine type, e.g. ``'i386'``. An empty string is returned if the
+   Returns the machine type, e.g. ``'AMD64'``. An empty string is returned if the
    value cannot be determined.
 
 
@@ -139,7 +139,7 @@ Cross Platform
 
 .. function:: release()
 
-   Returns the system's release, e.g. ``'2.2.0'`` or ``'NT'`` An empty string is
+   Returns the system's release, e.g. ``'2.2.0'`` or ``'NT'``. An empty string is
    returned if the value cannot be determined.
 
 
@@ -176,7 +176,7 @@ Cross Platform
    Entries which cannot be determined are set to ``''``.
 
    .. versionchanged:: 3.3
-      Result changed from a tuple to a namedtuple.
+      Result changed from a tuple to a :func:`~collections.namedtuple`.
 
 
 Java Platform
@@ -201,7 +201,9 @@ Windows Platform
 
    Get additional version information from the Windows Registry and return a tuple
    ``(release, version, csd, ptype)`` referring to OS release, version number,
-   CSD level (service pack) and OS type (multi/single processor).
+   CSD level (service pack) and OS type (multi/single processor). Values which
+   cannot be determined are set to the defaults given as parameters (which all
+   default to an empty string).
 
    As a hint: *ptype* is ``'Uniprocessor Free'`` on single processor NT machines
    and ``'Multiprocessor Free'`` on multi processor machines. The *'Free'* refers
@@ -211,9 +213,9 @@ Windows Platform
 
 .. function:: win32_edition()
 
-   Returns a string representing the current Windows edition.  Possible
-   values include but are not limited to ``'Enterprise'``, ``'IoTUAP'``,
-   ``'ServerStandard'``, and ``'nanoserver'``.
+   Returns a string representing the current Windows edition, or ``None`` if the
+   value cannot be determined.  Possible values include but are not limited to
+   ``'Enterprise'``, ``'IoTUAP'``, ``'ServerStandard'``, and ``'nanoserver'``.
 
    .. versionadded:: 3.8
 
@@ -225,13 +227,13 @@ Windows Platform
    .. versionadded:: 3.8
 
 
-Mac OS Platform
----------------
+macOS Platform
+--------------
 
 
 .. function:: mac_ver(release='', versioninfo=('','',''), machine='')
 
-   Get Mac OS version information and return it as tuple ``(release, versioninfo,
+   Get macOS version information and return it as tuple ``(release, versioninfo,
    machine)`` with *versioninfo* being a tuple ``(version, dev_stage,
    non_release_version)``.
 
@@ -253,3 +255,41 @@ Unix Platforms
    using :program:`gcc`.
 
    The file is read and scanned in chunks of *chunksize* bytes.
+
+
+Linux Platforms
+---------------
+
+.. function:: freedesktop_os_release()
+
+   Get operating system identification from ``os-release`` file and return
+   it as a dict. The ``os-release`` file is a `freedesktop.org standard
+   <https://www.freedesktop.org/software/systemd/man/os-release.html>`_ and
+   is available in most Linux distributions. A noticeable exception is
+   Android and Android-based distributions.
+
+   Raises :exc:`OSError` or subclass when neither ``/etc/os-release`` nor
+   ``/usr/lib/os-release`` can be read.
+
+   On success, the function returns a dictionary where keys and values are
+   strings. Values have their special characters like ``"`` and ``$``
+   unquoted. The fields ``NAME``, ``ID``, and ``PRETTY_NAME`` are always
+   defined according to the standard. All other fields are optional. Vendors
+   may include additional fields.
+
+   Note that fields like ``NAME``, ``VERSION``, and ``VARIANT`` are strings
+   suitable for presentation to users. Programs should use fields like
+   ``ID``, ``ID_LIKE``, ``VERSION_ID``, or ``VARIANT_ID`` to identify
+   Linux distributions.
+
+   Example::
+
+      def get_like_distro():
+          info = platform.freedesktop_os_release()
+          ids = [info["ID"]]
+          if "ID_LIKE" in info:
+              # ids are space separated and ordered by precedence
+              ids.extend(info["ID_LIKE"].split())
+          return ids
+
+   .. versionadded:: 3.10

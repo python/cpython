@@ -571,9 +571,10 @@ Decimal objects
       >>> Decimal(321).exp()
       Decimal('2.561702493119680037517373933E+139')
 
-   .. method:: from_float(f)
+   .. classmethod:: from_float(f)
 
-      Classmethod that converts a float to a decimal number, exactly.
+      Alternative constructor that only accepts instances of :class:`float` or
+      :class:`int`.
 
       Note `Decimal.from_float(0.1)` is not the same as `Decimal('0.1')`.
       Since 0.1 is not exactly representable in binary floating point, the
@@ -925,12 +926,13 @@ Each thread has its own current context which is accessed or changed using the
 You can also use the :keyword:`with` statement and the :func:`localcontext`
 function to temporarily change the active context.
 
-.. function:: localcontext(ctx=None)
+.. function:: localcontext(ctx=None, \*\*kwargs)
 
    Return a context manager that will set the current context for the active thread
    to a copy of *ctx* on entry to the with-statement and restore the previous context
    when exiting the with-statement. If no context is specified, a copy of the
-   current context is used.
+   current context is used.  The *kwargs* argument is used to set the attributes
+   of the new context.
 
    For example, the following code sets the current decimal precision to 42 places,
    performs a calculation, and then automatically restores the previous context::
@@ -941,6 +943,21 @@ function to temporarily change the active context.
           ctx.prec = 42   # Perform a high precision calculation
           s = calculate_something()
       s = +s  # Round the final result back to the default precision
+
+   Using keyword arguments, the code would be the following::
+
+      from decimal import localcontext
+
+      with localcontext(prec=42) as ctx:
+          s = calculate_something()
+      s = +s
+
+   Raises :exc:`TypeError` if *kwargs* supplies an attribute that :class:`Context` doesn't
+   support.  Raises either :exc:`TypeError` or :exc:`ValueError` if *kwargs* supplies an
+   invalid value for an attribute.
+
+   .. versionchanged:: 3.11
+      :meth:`localcontext` now supports setting context attributes through the use of keyword arguments.
 
 New contexts can also be created using the :class:`Context` constructor
 described below. In addition, the module provides three pre-made contexts:
@@ -1484,7 +1501,8 @@ are also included in the pure Python version for compatibility.
 
 .. data:: HAVE_CONTEXTVAR
 
-   The default value is ``True``. If Python is compiled ``--without-decimal-contextvar``,
+   The default value is ``True``. If Python is :option:`configured using
+   the --without-decimal-contextvar option <--without-decimal-contextvar>`,
    the C version uses a thread-local rather than a coroutine-local context and the value
    is ``False``.  This is slightly faster in some nested context scenarios.
 

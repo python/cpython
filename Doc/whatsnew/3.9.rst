@@ -45,7 +45,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.9, compared to 3.8.
-Python 3.9 was released on October 5th, 2020.
+Python 3.9 was released on October 5, 2020.
 
 For full details, see the :ref:`changelog <changelog>`.
 
@@ -135,8 +135,8 @@ More generally, try to run your tests in the :ref:`Python Development Mode
 <devmode>` which helps to prepare your code to make it compatible with the
 next Python version.
 
-Note: a number of pre-existing deprecatations were removed in this version
-of Python as well. Consult the :ref:`removed-in-python-39` section.
+Note: a number of pre-existing deprecations were removed in this version of
+Python as well. Consult the :ref:`removed-in-python-39` section.
 
 
 New Features
@@ -231,7 +231,7 @@ Other Language Changes
   absolute path for :mod:`__main__` module frames in this case.
   (Contributed by Victor Stinner in :issue:`20443`.)
 
-* In the :ref:`Python Development Mode <devmode>` and in debug build, the
+* In the :ref:`Python Development Mode <devmode>` and in :ref:`debug build <debug-build>`, the
   *encoding* and *errors* arguments are now checked for string encoding and
   decoding operations. Examples: :func:`open`, :meth:`str.encode` and
   :meth:`bytes.decode`.
@@ -266,6 +266,10 @@ Other Language Changes
   :func:`~operator.contains`, :func:`~operator.indexOf` and
   :func:`~operator.countOf` of the :mod:`operator` module.
   (Contributed by Serhiy Storchaka in :issue:`40824`.)
+
+* Unparenthesized lambda expressions can no longer be the expression part in an
+  ``if`` clause in comprehensions and generator expressions. See :issue:`41848`
+  and :issue:`43755` for details.
 
 
 New Modules
@@ -480,7 +484,24 @@ Najera in :issue:`38944`.)
 Added keywords to module name completion list.  (Contributed by Terry J.
 Reedy in :issue:`37765`.)
 
+New in 3.9 maintenance releases
+
+Make IDLE invoke :func:`sys.excepthook` (when started without '-n').
+User hooks were previously ignored.  (Contributed by Ken Hilton in
+:issue:`43008`.)
+
 The changes above have been backported to 3.8 maintenance releases.
+
+Rearrange the settings dialog.  Split the General tab into Windows
+and Shell/Ed tabs.  Move help sources, which extend the Help menu, to the
+Extensions tab.  Make space for new options and shorten the dialog. The
+latter makes the dialog better fit small screens.  (Contributed by Terry Jan
+Reedy in :issue:`40468`.)  Move the indent space setting from the Font tab to
+the new Windows tab.  (Contributed by Mark Roseman and Terry Jan Reedy in
+:issue:`33962`.)
+
+Apply syntax highlighting to `.pyi` files. (Contributed by Alex
+Waygood and Terry Jan Reedy in :issue:`45447`.)
 
 imaplib
 -------
@@ -532,6 +553,10 @@ ipaddress
 Scoped IPv6 addresses can be parsed using :class:`ipaddress.IPv6Address`.
 If present, scope zone ID is available through the :attr:`~ipaddress.IPv6Address.scope_id` attribute.
 (Contributed by Oleksandr Pavliuk in :issue:`34788`.)
+
+Starting with Python 3.9.5 the :mod:`ipaddress` module no longer
+accepts any leading zeros in IPv4 address strings.
+(Contributed by Christian Heimes in :issue:`36384`).
 
 math
 ----
@@ -654,7 +679,7 @@ The socket module now supports the :data:`~socket.CAN_J1939` protocol on
 platforms that support it.  (Contributed by Karl Ding in :issue:`40291`.)
 
 The socket module now has the :func:`socket.send_fds` and
-:func:`socket.recv.fds` methods. (Contributed by Joannah Nanjekye, Shinya
+:func:`socket.recv_fds` functions. (Contributed by Joannah Nanjekye, Shinya
 Okano and Victor Stinner in :issue:`28724`.)
 
 
@@ -663,7 +688,7 @@ time
 
 On AIX, :func:`~time.thread_time` is now implemented with ``thread_cputime()``
 which has nanosecond resolution, rather than
-``clock_gettime(CLOCK_THREAD_CPUTIME_ID)`` which has a resolution of 10 ms.
+``clock_gettime(CLOCK_THREAD_CPUTIME_ID)`` which has a resolution of 10 milliseconds.
 (Contributed by Batuhan Taskaya in :issue:`40192`)
 
 sys
@@ -1110,11 +1135,25 @@ Changes in the Python API
   compatible classes that don't inherit from those mentioned types.
   (Contributed by Roger Aiudi in :issue:`34775`).
 
+* Starting with Python 3.9.5 the :mod:`ipaddress` module no longer
+  accepts any leading zeros in IPv4 address strings. Leading zeros are
+  ambiguous and interpreted as octal notation by some libraries. For example
+  the legacy function :func:`socket.inet_aton` treats leading zeros as octal
+  notatation. glibc implementation of modern :func:`~socket.inet_pton` does
+  not accept any leading zeros.
+  (Contributed by Christian Heimes in :issue:`36384`).
+
+* :func:`codecs.lookup` now normalizes the encoding name the same way as
+  :func:`encodings.normalize_encoding`, except that :func:`codecs.lookup` also
+  converts the name to lower case. For example, ``"latex+latin1"`` encoding
+  name is now normalized to ``"latex_latin1"``.
+  (Contributed by Jordon Xu in :issue:`37751`.)
+
 
 Changes in the C API
 --------------------
 
-* Instances of heap-allocated types (such as those created with
+* Instances of :ref:`heap-allocated types <heap-types>` (such as those created with
   :c:func:`PyType_FromSpec` and similar APIs) hold a reference to their type
   object since Python 3.8. As indicated in the "Changes in the C API" of Python
   3.8, for the vast majority of cases, there should be no side effect but for
@@ -1137,7 +1176,8 @@ Changes in the C API
 
   If your traverse function delegates to ``tp_traverse`` of its base class
   (or another type), ensure that ``Py_TYPE(self)`` is visited only once.
-  Note that only heap types are expected to visit the type in ``tp_traverse``.
+  Note that only :ref:`heap type <heap-types>` are expected to visit the type
+  in ``tp_traverse``.
 
     For example, if your ``tp_traverse`` function includes:
 
@@ -1150,7 +1190,7 @@ Changes in the C API
     .. code-block:: c
 
         #if PY_VERSION_HEX >= 0x03090000
-            // This was not needed before Python 3.9 (Python issue 35810 and 40217)
+            // This was not needed before Python 3.9 (bpo-35810 and bpo-40217)
             if (base->tp_flags & Py_TPFLAGS_HEAPTYPE) {
                 // a heap type's tp_traverse already visited Py_TYPE(self)
             } else {
@@ -1207,7 +1247,7 @@ Build Changes
   non-system Tcl and Tk frameworks if they are installed in
   ``/Library/Frameworks``, as had been the case on older releases
   of macOS. If a macOS SDK is explicitly configured, by using
-  ``--enable-universalsdk=`` or ``-isysroot``, only the SDK itself is
+  :option:`--enable-universalsdk` or ``-isysroot``, only the SDK itself is
   searched. The default behavior can still be overridden with
   ``--with-tcltk-includes`` and ``--with-tcltk-libs``.
   (Contributed by Ned Deily in :issue:`34956`.)
@@ -1355,10 +1395,6 @@ Porting to Python 3.9
     becomes an alias to the :c:func:`PyObject_NewVar` macro. They no longer
     access directly the :c:member:`PyTypeObject.tp_basicsize` member.
 
-  * :c:func:`PyType_HasFeature` now always calls :c:func:`PyType_GetFlags`.
-    Previously, it accessed directly the :c:member:`PyTypeObject.tp_flags`
-    member when the limited C API was not used.
-
   * :c:func:`PyObject_GET_WEAKREFS_LISTPTR` macro was converted to a function:
     the macro accessed directly the :c:member:`PyTypeObject.tp_weaklistoffset`
     member.
@@ -1454,3 +1490,78 @@ Removed
   ``PyNullImporter_Type``, ``PyCmpWrapper_Type``, ``PySortWrapper_Type``,
   ``PyNoArgsFunction``.
   (Contributed by Pablo Galindo Salgado in :issue:`39372`.)
+
+Notable changes in Python 3.9.1
+===============================
+
+typing
+------
+
+The behavior of :class:`typing.Literal` was changed to conform with :pep:`586`
+and to match the behavior of static type checkers specified in the PEP.
+
+1. ``Literal`` now de-duplicates parameters.
+2. Equality comparisons between ``Literal`` objects are now order independent.
+3. ``Literal`` comparisons now respect types.  For example,
+   ``Literal[0] == Literal[False]`` previously evaluated to ``True``.  It is
+   now ``False``.  To support this change, the internally used type cache now
+   supports differentiating types.
+4. ``Literal`` objects will now raise a :exc:`TypeError` exception during
+   equality comparisons if any of their parameters are not :term:`hashable`.
+   Note that declaring ``Literal`` with mutable parameters will not throw
+   an error::
+
+      >>> from typing import Literal
+      >>> Literal[{0}]
+      >>> Literal[{0}] == Literal[{False}]
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      TypeError: unhashable type: 'set'
+
+(Contributed by Yurii Karabas in :issue:`42345`.)
+
+macOS 11.0 (Big Sur) and Apple Silicon Mac support
+--------------------------------------------------
+
+As of 3.9.1, Python now fully supports building and running on macOS 11.0
+(Big Sur) and on Apple Silicon Macs (based on the ``ARM64`` architecture).
+A new universal build variant, ``universal2``, is now available to natively
+support both ``ARM64`` and ``Intel 64`` in one set of executables. Binaries
+can also now be built on current versions of macOS to be deployed on a range
+of older macOS versions (tested to 10.9) while making some newer OS
+functions and options conditionally available based on the operating system
+version in use at runtime ("weaklinking").
+
+(Contributed by Ronald Oussoren and Lawrence D'Anna in :issue:`41100`.)
+
+Notable changes in Python 3.9.2
+===============================
+
+collections.abc
+---------------
+
+:class:`collections.abc.Callable` generic now flattens type parameters, similar
+to what :data:`typing.Callable` currently does.  This means that
+``collections.abc.Callable[[int, str], str]`` will have ``__args__`` of
+``(int, str, str)``; previously this was ``([int, str], str)``.  To allow this
+change, :class:`types.GenericAlias` can now be subclassed, and a subclass will
+be returned when subscripting the :class:`collections.abc.Callable` type.
+Code which accesses the arguments via :func:`typing.get_args` or ``__args__``
+need to account for this change.  A :exc:`DeprecationWarning` may be emitted for
+invalid forms of parameterizing :class:`collections.abc.Callable` which may have
+passed silently in Python 3.9.1.  This :exc:`DeprecationWarning` will
+become a :exc:`TypeError` in Python 3.10.
+(Contributed by Ken Jin in :issue:`42195`.)
+
+urllib.parse
+------------
+
+Earlier Python versions allowed using both ``;`` and ``&`` as
+query parameter separators in :func:`urllib.parse.parse_qs` and
+:func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
+newer W3C recommendations, this has been changed to allow only a single
+separator key, with ``&`` as the default.  This change also affects
+:func:`cgi.parse` and :func:`cgi.parse_multipart` as they use the affected
+functions internally. For more details, please see their respective
+documentation.
+(Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)

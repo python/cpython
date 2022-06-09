@@ -953,12 +953,12 @@ Several performance enhancements have been added:
   considered and traversed by the collector.
   (Contributed by Antoine Pitrou; :issue:`4688`.)
 
-* Long integers are now stored internally either in base 2**15 or in base
-  2**30, the base being determined at build time.  Previously, they
-  were always stored in base 2**15.  Using base 2**30 gives
+* Long integers are now stored internally either in base ``2**15`` or in base
+  ``2**30``, the base being determined at build time.  Previously, they
+  were always stored in base ``2**15``.  Using base ``2**30`` gives
   significant performance improvements on 64-bit machines, but
   benchmark results on 32-bit machines have been mixed.  Therefore,
-  the default is to use base 2**30 on 64-bit machines and base 2**15
+  the default is to use base ``2**30`` on 64-bit machines and base ``2**15``
   on 32-bit machines; on Unix, there's a new configure option
   :option:`!--enable-big-digits` that can be used to override this default.
 
@@ -2089,7 +2089,7 @@ version 1.3.  Some of the new features are:
 
 Fredrik Lundh develops ElementTree and produced the 1.3 version;
 you can read his article describing 1.3 at
-http://effbot.org/zone/elementtree-13-intro.htm.
+https://web.archive.org/web/20200703234532/http://effbot.org/zone/elementtree-13-intro.htm.
 Florent Xicluna updated the version included with
 Python, after discussions on python-dev and in :issue:`6472`.)
 
@@ -2681,7 +2681,7 @@ these commands by default, as long as, when invoked, they provide clear and
 simple directions on how to install them on that platform (usually using
 the system package manager).
 
-__ https://www.python.org/dev/peps/pep-0477/#disabling-ensurepip-by-downstream-distributors
+__ https://peps.python.org/pep-0477/#disabling-ensurepip-by-downstream-distributors
 
 
 Documentation Changes

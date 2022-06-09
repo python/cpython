@@ -15,8 +15,7 @@ sys.path.append(os.path.abspath('includes'))
 
 extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
               'pyspecific', 'c_annotations', 'escape4chm',
-              'asdl_highlight', 'peg_highlight']
-
+              'asdl_highlight', 'peg_highlight', 'glossary_search']
 
 doctest_global_setup = '''
 try:
@@ -46,7 +45,7 @@ today_fmt = '%B %d, %Y'
 highlight_language = 'python3'
 
 # Minimum version of sphinx required
-needs_sphinx = '1.8'
+needs_sphinx = '3.2'
 
 # Ignore any .rst files in the venv/ directory.
 exclude_patterns = ['venv/*', 'README.rst']
@@ -70,7 +69,8 @@ html_theme = 'python_docs_theme'
 html_theme_path = ['tools']
 html_theme_options = {
     'collapsiblesidebar': True,
-    'issues_url': 'https://docs.python.org/3/bugs.html',
+    'issues_url': '/bugs.html',
+    'license_url': '/license.html',
     'root_include_title': False   # We use the version switcher instead.
 }
 
@@ -86,7 +86,7 @@ templates_path = ['tools/templates']
 
 # Custom sidebar templates, filenames relative to this file.
 html_sidebars = {
-    # Defaults taken from http://www.sphinx-doc.org/en/stable/config.html#confval-html_sidebars
+    # Defaults taken from https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_sidebars
     # Removes the quick search block
     '**': ['localtoc.html', 'relations.html', 'customsourcelink.html'],
     'index': ['indexsidebar.html'],
@@ -139,7 +139,7 @@ latex_elements['pointsize'] = '10pt'
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
-_stdauthor = r'Guido van Rossum\\and the Python development team'
+_stdauthor = 'Guido van Rossum and the Python development team'
 latex_documents = [
     ('c-api/index', 'c-api.tex',
      'The Python/C API', _stdauthor, 'manual'),
@@ -218,16 +218,15 @@ coverage_ignore_c_items = {
 # ----------------------------
 
 # Ignore certain URLs.
-linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+',
-                    # Ignore PEPs for now, they all have permanent redirects.
-                    r'http://www.python.org/dev/peps/pep-\d+']
+linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+']
 
 
 # Options for extensions
 # ----------------------
 
-# Relative filename of the reference count data file.
+# Relative filename of the data files
 refcount_file = 'data/refcounts.dat'
+stable_abi_file = 'data/stable_abi.dat'
 
 # Sphinx 2 and Sphinx 3 compatibility
 # -----------------------------------
@@ -238,3 +237,5 @@ c_allow_pre_v3 = True
 # bpo-40204: Disable warnings on Sphinx 2 syntax of the C domain since the
 # documentation is built with -W (warnings treated as errors).
 c_warn_on_allowed_pre_v3 = False
+
+strip_signature_backslash = True

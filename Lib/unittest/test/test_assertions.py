@@ -2,6 +2,7 @@ import datetime
 import warnings
 import weakref
 import unittest
+from test.support import gc_collect
 from itertools import product
 
 
@@ -124,8 +125,10 @@ class Test_Assertions(unittest.TestCase):
                     self.foo()
 
         Foo("test_functional").run()
+        gc_collect()  # For PyPy or other GCs.
         self.assertIsNone(wr())
         Foo("test_with").run()
+        gc_collect()  # For PyPy or other GCs.
         self.assertIsNone(wr())
 
     def testAssertNotRegex(self):

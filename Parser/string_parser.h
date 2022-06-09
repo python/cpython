@@ -2,7 +2,7 @@
 #define STRINGS_H
 
 #include <Python.h>
-#include <Python-ast.h>
+#include <pycore_ast.h>
 #include "pegen.h"
 
 #define EXPRLIST_N_CACHED  64

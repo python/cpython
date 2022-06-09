@@ -353,7 +353,7 @@ module:
 
 The new functions return the number of nanoseconds as an integer value.
 
-`Measurements <https://www.python.org/dev/peps/pep-0564/#annex-clocks-resolution-in-python>`_
+`Measurements <https://peps.python.org/pep-0564/#annex-clocks-resolution-in-python>`_
 show that on Linux and Windows the resolution of :func:`time.time_ns` is
 approximately 3 times better than that of :func:`time.time`.
 
@@ -538,7 +538,7 @@ Other Language Changes
 * The new :option:`-X` ``importtime`` option or the
   :envvar:`PYTHONPROFILEIMPORTTIME` environment variable can be used to show
   the timing of each module import.
-  (Contributed by Victor Stinner in :issue:`31415`.)
+  (Contributed by Inada Naoki in :issue:`31415`.)
 
 
 New Modules
@@ -1588,8 +1588,8 @@ The initialization of the default warnings filters has changed as follows:
        for the new ``-X dev`` mode)
      * any implicit filters defined directly by the warnings machinery
 
-* in CPython debug builds, all warnings are now displayed by default (the
-  implicit filter list is empty)
+* in :ref:`CPython debug builds <debug-build>`, all warnings are now displayed
+  by default (the implicit filter list is empty)
 
 (Contributed by Nick Coghlan and Victor Stinner in :issue:`20361`,
 :issue:`32043`, and :issue:`32230`.)
@@ -2474,7 +2474,7 @@ Windows-only Changes
 
 The file used to override :data:`sys.path` is now called
 ``<python-executable>._pth`` instead of ``'sys.path'``.
-See :ref:`finding_modules` for more information.
+See :ref:`windows_finding_modules` for more information.
 (Contributed by Steve Dower in :issue:`28137`.)
 
 
@@ -2557,3 +2557,16 @@ because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
 details, see the documentation for ``loop.create_datagram_endpoint()``.
 (Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
 :issue:`37228`.)
+
+Notable changes in Python 3.7.10
+================================
+
+Earlier Python versions allowed using both ``;`` and ``&`` as
+query parameter separators in :func:`urllib.parse.parse_qs` and
+:func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
+newer W3C recommendations, this has been changed to allow only a single
+separator key, with ``&`` as the default.  This change also affects
+:func:`cgi.parse` and :func:`cgi.parse_multipart` as they use the affected
+functions internally. For more details, please see their respective
+documentation.
+(Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)

@@ -62,15 +62,48 @@ the definition of all other Python objects.
    See documentation of :c:type:`PyVarObject` above.
 
 
-.. c:function:: PyTypeObject* Py_TYPE(const PyObject *o)
+.. c:function:: int Py_Is(PyObject *x, PyObject *y)
+
+   Test if the *x* object is the *y* object, the same as ``x is y`` in Python.
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: int Py_IsNone(PyObject *x)
+
+   Test if an object is the ``None`` singleton,
+   the same as ``x is None`` in Python.
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: int Py_IsTrue(PyObject *x)
+
+   Test if an object is the ``True`` singleton,
+   the same as ``x is True`` in Python.
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: int Py_IsFalse(PyObject *x)
+
+   Test if an object is the ``False`` singleton,
+   the same as ``x is False`` in Python.
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: PyTypeObject* Py_TYPE(PyObject *o)
 
    Get the type of the Python object *o*.
 
    Return a :term:`borrowed reference`.
 
-   .. versionchanged:: 3.10
-      :c:func:`Py_TYPE()` is changed to the inline static function.
-      Use :c:func:`Py_SET_TYPE()` to set an object type.
+   Use the :c:func:`Py_SET_TYPE` function to set an object type.
+
+   .. versionchanged:: 3.11
+      :c:func:`Py_TYPE()` is changed to an inline static function.
+      The parameter type is no longer :c:type:`const PyObject*`.
 
 
 .. c:function:: int Py_IS_TYPE(PyObject *o, PyTypeObject *type)
@@ -88,13 +121,17 @@ the definition of all other Python objects.
    .. versionadded:: 3.9
 
 
-.. c:function:: Py_ssize_t Py_REFCNT(const PyObject *o)
+.. c:function:: Py_ssize_t Py_REFCNT(PyObject *o)
 
    Get the reference count of the Python object *o*.
 
+   Use the :c:func:`Py_SET_REFCNT()` function to set an object reference count.
+
+   .. versionchanged:: 3.11
+      The parameter type is no longer :c:type:`const PyObject*`.
+
    .. versionchanged:: 3.10
       :c:func:`Py_REFCNT()` is changed to the inline static function.
-      Use :c:func:`Py_SET_REFCNT()` to set an object reference count.
 
 
 .. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
@@ -104,13 +141,15 @@ the definition of all other Python objects.
    .. versionadded:: 3.9
 
 
-.. c:function:: Py_ssize_t Py_SIZE(const PyVarObject *o)
+.. c:function:: Py_ssize_t Py_SIZE(PyVarObject *o)
 
    Get the size of the Python object *o*.
 
-   .. versionchanged:: 3.10
-      :c:func:`Py_SIZE()` is changed to the inline static function.
-      Use :c:func:`Py_SET_SIZE()` to set an object size.
+   Use the :c:func:`Py_SET_SIZE` function to set an object size.
+
+   .. versionchanged:: 3.11
+      :c:func:`Py_SIZE()` is changed to an inline static function.
+      The parameter type is no longer :c:type:`const PyVarObject*`.
 
 
 .. c:function:: void Py_SET_SIZE(PyVarObject *o, Py_ssize_t size)
@@ -282,8 +321,6 @@ There are these calling conventions:
    or possibly ``NULL`` if there are no keywords.  The values of the keyword
    arguments are stored in the *args* array, after the positional arguments.
 
-   This is not part of the :ref:`limited API <stable>`.
-
    .. versionadded:: 3.7
 
 
@@ -307,6 +344,9 @@ There are these calling conventions:
    :c:type:`PyCFunction`.  The first parameter is typically named *self* and will
    hold a reference to the module or object instance.  In all cases the second
    parameter will be ``NULL``.
+
+   The function must have 2 parameters. Since the second parameter is unused,
+   :c:macro:`Py_UNUSED` can be used to prevent a compiler warning.
 
 
 .. data:: METH_O
@@ -442,6 +482,21 @@ Accessing attributes of extension types
           {NULL}  /* Sentinel */
       };
 
+
+.. c:function:: PyObject* PyMember_GetOne(const char *obj_addr, struct PyMemberDef *m)
+
+   Get an attribute belonging to the object at address *obj_addr*.  The
+   attribute is described by ``PyMemberDef`` *m*.  Returns ``NULL``
+   on error.
+
+
+.. c:function:: int PyMember_SetOne(char *obj_addr, struct PyMemberDef *m, PyObject *o)
+
+   Set an attribute belonging to the object at address *obj_addr* to object *o*.
+   The attribute to set is described by ``PyMemberDef`` *m*.  Returns ``0``
+   if successful and a negative value on failure.
+
+
 .. c:type:: PyGetSetDef
 
    Structure to define property-like access for a type. See also description of
@@ -452,7 +507,7 @@ Accessing attributes of extension types
    +=============+==================+===================================+
    | name        | const char \*    | attribute name                    |
    +-------------+------------------+-----------------------------------+
-   | get         | getter           | C Function to get the attribute   |
+   | get         | getter           | C function to get the attribute   |
    +-------------+------------------+-----------------------------------+
    | set         | setter           | optional C function to set or     |
    |             |                  | delete the attribute, if omitted  |

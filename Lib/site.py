@@ -170,7 +170,9 @@ def addpackage(sitedir, name, known_paths):
     fullname = os.path.join(sitedir, name)
     _trace(f"Processing .pth file: {fullname!r}")
     try:
-        f = io.TextIOWrapper(io.open_code(fullname))
+        # locale encoding is not ideal especially on Windows. But we have used
+        # it for a long time. setuptools uses the locale encoding too.
+        f = io.TextIOWrapper(io.open_code(fullname), encoding="locale")
     except OSError:
         return
     with f:
@@ -264,6 +266,10 @@ def _getuserbase():
     if env_base:
         return env_base
 
+    # Emscripten, VxWorks, and WASI have no home directories
+    if sys.platform in {"emscripten", "vxworks", "wasi"}:
+        return None
+
     def joinuser(*args):
         return os.path.expanduser(os.path.join(*args))
 
@@ -311,11 +317,14 @@ def getusersitepackages():
     If the global variable ``USER_SITE`` is not initialized yet, this
     function will also set it.
     """
-    global USER_SITE
+    global USER_SITE, ENABLE_USER_SITE
     userbase = getuserbase() # this will also set USER_BASE
 
     if USER_SITE is None:
-        USER_SITE = _get_path(userbase)
+        if userbase is None:
+            ENABLE_USER_SITE = False # disable user site and return None
+        else:
+            USER_SITE = _get_path(userbase)
 
     return USER_SITE
 
@@ -352,11 +361,11 @@ def getsitepackages(prefixes=None):
             continue
         seen.add(prefix)
 
-        libdirs = [sys.platlibdir]
-        if sys.platlibdir != "lib":
-            libdirs.append("lib")
-
         if os.sep == '/':
+            libdirs = [sys.platlibdir]
+            if sys.platlibdir != "lib":
+                libdirs.append("lib")
+
             for libdir in libdirs:
                 path = os.path.join(prefix, libdir,
                                     "python%d.%d" % sys.version_info[:2],
@@ -364,10 +373,7 @@ def getsitepackages(prefixes=None):
                 sitepackages.append(path)
         else:
             sitepackages.append(prefix)
-
-            for libdir in libdirs:
-                path = os.path.join(prefix, libdir, "site-packages")
-                sitepackages.append(path)
+            sitepackages.append(os.path.join(prefix, "Lib", "site-packages"))
     return sitepackages
 
 def addsitepackages(known_paths, prefixes=None):
@@ -409,8 +415,10 @@ def setcopyright():
     files, dirs = [], []
     # Not all modules are required to have a __file__ attribute.  See
     # PEP 420 for more details.
-    if hasattr(os, '__file__'):
+    here = getattr(sys, '_stdlib_dir', None)
+    if not here and hasattr(os, '__file__'):
         here = os.path.dirname(os.__file__)
+    if here:
         files.extend(["LICENSE.txt", "LICENSE"])
         dirs.extend([os.path.join(here, os.pardir), here, os.curdir])
     builtins.license = _sitebuiltins._Printer(
@@ -630,11 +638,14 @@ def _script():
         for dir in sys.path:
             print("    %r," % (dir,))
         print("]")
-        print("USER_BASE: %r (%s)" % (user_base,
-            "exists" if os.path.isdir(user_base) else "doesn't exist"))
-        print("USER_SITE: %r (%s)" % (user_site,
-            "exists" if os.path.isdir(user_site) else "doesn't exist"))
-        print("ENABLE_USER_SITE: %r" %  ENABLE_USER_SITE)
+        def exists(path):
+            if path is not None and os.path.isdir(path):
+                return "exists"
+            else:
+                return "doesn't exist"
+        print(f"USER_BASE: {user_base!r} ({exists(user_base)})")
+        print(f"USER_SITE: {user_site!r} ({exists(user_site)})")
+        print(f"ENABLE_USER_SITE: {ENABLE_USER_SITE!r}")
         sys.exit(0)
 
     buffer = []

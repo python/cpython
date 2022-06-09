@@ -16,7 +16,7 @@ storage, and deletion.
 This guide has four major sections:
 
 1) The "primer" gives a basic overview, moving gently from simple examples,
-   adding one feature at a time.  It is a great place to start.
+   adding one feature at a time.  Start here if you're new to descriptors.
 
 2) The second section shows a complete, practical descriptor example.  If you
    already know the basics, start there.
@@ -42,21 +42,27 @@ add new capabilities one by one.
 Simple example: A descriptor that returns a constant
 ----------------------------------------------------
 
-The :class:`Ten` class is a descriptor that always returns the constant ``10``::
+The :class:`Ten` class is a descriptor whose :meth:`__get__` method always
+returns the constant ``10``:
 
+.. testcode::
 
     class Ten:
         def __get__(self, obj, objtype=None):
             return 10
 
-To use the descriptor, it must be stored as a class variable in another class::
+To use the descriptor, it must be stored as a class variable in another class:
+
+.. testcode::
 
     class A:
         x = 5                       # Regular class attribute
         y = Ten()                   # Descriptor instance
 
 An interactive session shows the difference between normal attribute lookup
-and descriptor lookup::
+and descriptor lookup:
+
+.. doctest::
 
     >>> a = A()                     # Make an instance of class A
     >>> a.x                         # Normal attribute lookup
@@ -64,9 +70,11 @@ and descriptor lookup::
     >>> a.y                         # Descriptor lookup
     10
 
-In the ``a.x`` attribute lookup, the dot operator finds the value ``5`` stored
-in the class dictionary.  In the ``a.y`` descriptor lookup, the dot operator
-calls the descriptor's :meth:`__get__()` method.  That method returns ``10``.
+In the ``a.x`` attribute lookup, the dot operator finds ``'x': 5``
+in the class dictionary.  In the ``a.y`` lookup, the dot operator
+finds a descriptor instance, recognized by its ``__get__`` method.
+Calling that method returns ``10``.
+
 Note that the value ``10`` is not stored in either the class dictionary or the
 instance dictionary.  Instead, the value ``10`` is computed on demand.
 
@@ -79,7 +87,10 @@ In the next section, we'll create something more useful, a dynamic lookup.
 Dynamic lookups
 ---------------
 
-Interesting descriptors typically run computations instead of doing lookups::
+Interesting descriptors typically run computations instead of returning
+constants:
+
+.. testcode::
 
     import os
 
@@ -98,16 +109,15 @@ Interesting descriptors typically run computations instead of doing lookups::
 An interactive session shows that the lookup is dynamic — it computes
 different, updated answers each time::
 
-    >>> g = Directory('games')
     >>> s = Directory('songs')
-    >>> g.size                              # The games directory has three files
-    3
-    >>> os.system('touch games/newfile')    # Add a fourth file to the directory
-    0
-    >>> g.size                              # Automatically updated
-    4
+    >>> g = Directory('games')
     >>> s.size                              # The songs directory has twenty files
     20
+    >>> g.size                              # The games directory has three files
+    3
+    >>> os.remove('games/chess')            # Delete a game
+    >>> g.size                              # File count is automatically updated
+    2
 
 Besides showing how descriptors can run computations, this example also
 reveals the purpose of the parameters to :meth:`__get__`.  The *self*
@@ -128,7 +138,9 @@ the public attribute is accessed.
 
 In the following example, *age* is the public attribute and *_age* is the
 private attribute.  When the public attribute is accessed, the descriptor logs
-the lookup or update::
+the lookup or update:
+
+.. testcode::
 
     import logging
 
@@ -158,7 +170,15 @@ the lookup or update::
 
 
 An interactive session shows that all access to the managed attribute *age* is
-logged, but that the regular attribute *name* is not logged::
+logged, but that the regular attribute *name* is not logged:
+
+.. testcode::
+    :hide:
+
+    import logging, sys
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout, force=True)
+
+.. doctest::
 
     >>> mary = Person('Mary M', 30)         # The initial age update is logged
     INFO:root:Updating 'age' to 30
@@ -198,7 +218,9 @@ variable name was used.
 In this example, the :class:`Person` class has two descriptor instances,
 *name* and *age*.  When the :class:`Person` class is defined, it makes a
 callback to :meth:`__set_name__` in *LoggedAccess* so that the field names can
-be recorded, giving each descriptor its own *public_name* and *private_name*::
+be recorded, giving each descriptor its own *public_name* and *private_name*:
+
+.. testcode::
 
     import logging
 
@@ -208,7 +230,7 @@ be recorded, giving each descriptor its own *public_name* and *private_name*::
 
         def __set_name__(self, owner, name):
             self.public_name = name
-            self.private_name = f'_{name}'
+            self.private_name = '_' + name
 
         def __get__(self, obj, objtype=None):
             value = getattr(obj, self.private_name)
@@ -233,14 +255,24 @@ be recorded, giving each descriptor its own *public_name* and *private_name*::
 
 An interactive session shows that the :class:`Person` class has called
 :meth:`__set_name__` so that the field names would be recorded.  Here
-we call :func:`vars` to look up the descriptor without triggering it::
+we call :func:`vars` to look up the descriptor without triggering it:
+
+.. doctest::
 
     >>> vars(vars(Person)['name'])
     {'public_name': 'name', 'private_name': '_name'}
     >>> vars(vars(Person)['age'])
     {'public_name': 'age', 'private_name': '_age'}
 
-The new class now logs access to both *name* and *age*::
+The new class now logs access to both *name* and *age*:
+
+.. testcode::
+    :hide:
+
+    import logging, sys
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout, force=True)
+
+.. doctest::
 
     >>> pete = Person('Peter P', 10)
     INFO:root:Updating 'name' to 'Peter P'
@@ -249,7 +281,9 @@ The new class now logs access to both *name* and *age*::
     INFO:root:Updating 'name' to 'Catherine C'
     INFO:root:Updating 'age' to 20
 
-The two *Person* instances contain only the private names::
+The two *Person* instances contain only the private names:
+
+.. doctest::
 
     >>> vars(pete)
     {'_name': 'Peter P', '_age': 10}
@@ -265,7 +299,8 @@ A :term:`descriptor` is what we call any object that defines :meth:`__get__`,
 
 Optionally, descriptors can have a :meth:`__set_name__` method.  This is only
 used in cases where a descriptor needs to know either the class where it was
-created or the name of class variable it was assigned to.
+created or the name of class variable it was assigned to.  (This method, if
+present, is called even if the class is not a descriptor.)
 
 Descriptors get invoked by the dot operator during attribute lookup.  If a
 descriptor is accessed indirectly with ``vars(some_class)[descriptor_name]``,
@@ -275,7 +310,7 @@ Descriptors only work when used as class variables.  When put in instances,
 they have no effect.
 
 The main motivation for descriptors is to provide a hook allowing objects
-stored in class variables to control what happens during dotted lookup.
+stored in class variables to control what happens during attribute lookup.
 
 Traditionally, the calling class controls what happens during lookup.
 Descriptors invert that relationship and allow the data being looked-up to
@@ -303,14 +338,16 @@ restrictions.  If those restrictions aren't met, it raises an exception to
 prevent data corruption at its source.
 
 This :class:`Validator` class is both an :term:`abstract base class` and a
-managed attribute descriptor::
+managed attribute descriptor:
+
+.. testcode::
 
     from abc import ABC, abstractmethod
 
     class Validator(ABC):
 
         def __set_name__(self, owner, name):
-            self.private_name = f'_{name}'
+            self.private_name = '_' + name
 
         def __get__(self, obj, objtype=None):
             return getattr(obj, self.private_name)
@@ -343,7 +380,7 @@ Here are three practical data validation utilities:
    user-defined `predicate
    <https://en.wikipedia.org/wiki/Predicate_(mathematical_logic)>`_ as well.
 
-::
+.. testcode::
 
     class OneOf(Validator):
 
@@ -396,10 +433,12 @@ Here are three practical data validation utilities:
                 )
 
 
-Practical use
--------------
+Practical application
+---------------------
 
-Here's how the data validators can be used in a real class::
+Here's how the data validators can be used in a real class:
+
+.. testcode::
 
     class Component:
 
@@ -412,13 +451,30 @@ Here's how the data validators can be used in a real class::
             self.kind = kind
             self.quantity = quantity
 
-The descriptors prevent invalid instances from being created::
+The descriptors prevent invalid instances from being created:
 
-    Component('WIDGET', 'metal', 5)     # Allowed.
-    Component('Widget', 'metal', 5)     # Blocked: 'Widget' is not all uppercase
-    Component('WIDGET', 'metle', 5)     # Blocked: 'metle' is misspelled
-    Component('WIDGET', 'metal', -5)    # Blocked: -5 is negative
-    Component('WIDGET', 'metal', 'V')   # Blocked: 'V' isn't a number
+.. doctest::
+
+    >>> Component('Widget', 'metal', 5)      # Blocked: 'Widget' is not all uppercase
+    Traceback (most recent call last):
+        ...
+    ValueError: Expected <method 'isupper' of 'str' objects> to be true for 'Widget'
+
+    >>> Component('WIDGET', 'metle', 5)      # Blocked: 'metle' is misspelled
+    Traceback (most recent call last):
+        ...
+    ValueError: Expected 'metle' to be one of {'metal', 'plastic', 'wood'}
+
+    >>> Component('WIDGET', 'metal', -5)     # Blocked: -5 is negative
+    Traceback (most recent call last):
+        ...
+    ValueError: Expected -5 to be at least 0
+    >>> Component('WIDGET', 'metal', 'V')    # Blocked: 'V' isn't a number
+    Traceback (most recent call last):
+        ...
+    TypeError: Expected 'V' to be an int or float
+
+    >>> c = Component('WIDGET', 'metal', 5)  # Allowed:  The inputs are valid
 
 
 Technical Tutorial
@@ -435,23 +491,21 @@ Defines descriptors, summarizes the protocol, and shows how descriptors are
 called.  Provides an example showing how object relational mappings work.
 
 Learning about descriptors not only provides access to a larger toolset, it
-creates a deeper understanding of how Python works and an appreciation for the
-elegance of its design.
+creates a deeper understanding of how Python works.
 
 
 Definition and introduction
 ---------------------------
 
-In general, a descriptor is an object attribute with "binding behavior", one
-whose attribute access has been overridden by methods in the descriptor
-protocol.  Those methods are :meth:`__get__`, :meth:`__set__`, and
-:meth:`__delete__`.  If any of those methods are defined for an object, it is
-said to be a :term:`descriptor`.
+In general, a descriptor is an attribute value that has one of the methods in
+the descriptor protocol.  Those methods are :meth:`__get__`, :meth:`__set__`,
+and :meth:`__delete__`.  If any of those methods are defined for an
+attribute, it is said to be a :term:`descriptor`.
 
 The default behavior for attribute access is to get, set, or delete the
 attribute from an object's dictionary.  For instance, ``a.x`` has a lookup chain
 starting with ``a.__dict__['x']``, then ``type(a).__dict__['x']``, and
-continuing through the base classes of ``type(a)``. If the
+continuing through the method resolution order of ``type(a)``. If the
 looked-up value is an object defining one of the descriptor methods, then Python
 may override the default behavior and invoke the descriptor method instead.
 Where this occurs in the precedence chain depends on which descriptor methods
@@ -479,7 +533,7 @@ as an attribute.
 
 If an object defines :meth:`__set__` or :meth:`__delete__`, it is considered
 a data descriptor.  Descriptors that only define :meth:`__get__` are called
-non-data descriptors (they are typically used for methods but other uses are
+non-data descriptors (they are often used for methods but other uses are
 possible).
 
 Data and non-data descriptors differ in how overrides are calculated with
@@ -504,8 +558,9 @@ But it is more common for a descriptor to be invoked automatically from
 attribute access.
 
 The expression ``obj.x`` looks up the attribute ``x`` in the chain of
-namespaces for ``obj``.  If the search finds a descriptor, its :meth:`__get__`
-method is invoked according to the precedence rules listed below.
+namespaces for ``obj``.  If the search finds a descriptor outside of the
+instance ``__dict__``, its :meth:`__get__` method is invoked according to the
+precedence rules listed below.
 
 The details of invocation depend on whether ``obj`` is an object, class, or
 instance of super.
@@ -523,31 +578,175 @@ If a descriptor is found for ``a.x``, then it is invoked with:
 ``desc.__get__(a, type(a))``.
 
 The logic for a dotted lookup is in :meth:`object.__getattribute__`.  Here is
-a pure Python equivalent::
+a pure Python equivalent:
+
+.. testcode::
 
     def object_getattribute(obj, name):
         "Emulate PyObject_GenericGetAttr() in Objects/object.c"
         null = object()
         objtype = type(obj)
-        value = getattr(objtype, name, null)
-        if value is not null and hasattr(value, '__get__'):
-            if hasattr(value, '__set__') or hasattr(value, '__delete__'):
-                return value.__get__(obj, objtype)  # data descriptor
-        try:
-            return vars(obj)[name]                  # instance variable
-        except (KeyError, TypeError):
-            pass
-        if hasattr(value, '__get__'):
-            return value.__get__(obj, objtype)      # non-data descriptor
-        if value is not null:
-            return value                            # class variable
-        # Emulate slot_tp_getattr_hook() in Objects/typeobject.c
-        if hasattr(objtype, '__getattr__'):
-            return objtype.__getattr__(obj, name)   # __getattr__ hook
+        cls_var = getattr(objtype, name, null)
+        descr_get = getattr(type(cls_var), '__get__', null)
+        if descr_get is not null:
+            if (hasattr(type(cls_var), '__set__')
+                or hasattr(type(cls_var), '__delete__')):
+                return descr_get(cls_var, obj, objtype)     # data descriptor
+        if hasattr(obj, '__dict__') and name in vars(obj):
+            return vars(obj)[name]                          # instance variable
+        if descr_get is not null:
+            return descr_get(cls_var, obj, objtype)         # non-data descriptor
+        if cls_var is not null:
+            return cls_var                                  # class variable
         raise AttributeError(name)
 
-The :exc:`TypeError` exception handler is needed because the instance dictionary
-doesn't exist when its class defines :term:`__slots__`.
+
+.. testcode::
+    :hide:
+
+    # Test the fidelity of object_getattribute() by comparing it with the
+    # normal object.__getattribute__().  The former will be accessed by
+    # square brackets and the latter by the dot operator.
+
+    class Object:
+
+        def __getitem__(obj, name):
+            try:
+                return object_getattribute(obj, name)
+            except AttributeError:
+                if not hasattr(type(obj), '__getattr__'):
+                    raise
+            return type(obj).__getattr__(obj, name)             # __getattr__
+
+    class DualOperator(Object):
+
+        x = 10
+
+        def __init__(self, z):
+            self.z = z
+
+        @property
+        def p2(self):
+            return 2 * self.x
+
+        @property
+        def p3(self):
+            return 3 * self.x
+
+        def m5(self, y):
+            return 5 * y
+
+        def m7(self, y):
+            return 7 * y
+
+        def __getattr__(self, name):
+            return ('getattr_hook', self, name)
+
+    class DualOperatorWithSlots:
+
+        __getitem__ = Object.__getitem__
+
+        __slots__ = ['z']
+
+        x = 15
+
+        def __init__(self, z):
+            self.z = z
+
+        @property
+        def p2(self):
+            return 2 * self.x
+
+        def m5(self, y):
+            return 5 * y
+
+        def __getattr__(self, name):
+            return ('getattr_hook', self, name)
+
+
+.. doctest::
+    :hide:
+
+    >>> a = DualOperator(11)
+    >>> vars(a).update(p3 = '_p3', m7 = '_m7')
+    >>> a.x == a['x'] == 10
+    True
+    >>> a.z == a['z'] == 11
+    True
+    >>> a.p2 == a['p2'] == 20
+    True
+    >>> a.p3 == a['p3'] == 30
+    True
+    >>> a.m5(100) == a.m5(100) == 500
+    True
+    >>> a.m7 == a['m7'] == '_m7'
+    True
+    >>> a.g == a['g'] == ('getattr_hook', a, 'g')
+    True
+
+    >>> b = DualOperatorWithSlots(22)
+    >>> b.x == b['x'] == 15
+    True
+    >>> b.z == b['z'] == 22
+    True
+    >>> b.p2 == b['p2'] == 30
+    True
+    >>> b.m5(200) == b['m5'](200) == 1000
+    True
+    >>> b.g == b['g'] == ('getattr_hook', b, 'g')
+    True
+
+Note, there is no :meth:`__getattr__` hook in the :meth:`__getattribute__`
+code.  That is why calling :meth:`__getattribute__` directly or with
+``super().__getattribute__`` will bypass :meth:`__getattr__` entirely.
+
+Instead, it is the dot operator and the :func:`getattr` function that are
+responsible for invoking :meth:`__getattr__` whenever :meth:`__getattribute__`
+raises an :exc:`AttributeError`.  Their logic is encapsulated in a helper
+function:
+
+.. testcode::
+
+    def getattr_hook(obj, name):
+        "Emulate slot_tp_getattr_hook() in Objects/typeobject.c"
+        try:
+            return obj.__getattribute__(name)
+        except AttributeError:
+            if not hasattr(type(obj), '__getattr__'):
+                raise
+        return type(obj).__getattr__(obj, name)             # __getattr__
+
+.. doctest::
+    :hide:
+
+
+    >>> class ClassWithGetAttr:
+    ...     x = 123
+    ...     def __getattr__(self, attr):
+    ...         return attr.upper()
+    ...
+    >>> cw = ClassWithGetAttr()
+    >>> cw.y = 456
+    >>> getattr_hook(cw, 'x')
+    123
+    >>> getattr_hook(cw, 'y')
+    456
+    >>> getattr_hook(cw, 'z')
+    'Z'
+
+    >>> class ClassWithoutGetAttr:
+    ...     x = 123
+    ...
+    >>> cwo = ClassWithoutGetAttr()
+    >>> cwo.y = 456
+    >>> getattr_hook(cwo, 'x')
+    123
+    >>> getattr_hook(cwo, 'y')
+    456
+    >>> getattr_hook(cwo, 'z')
+    Traceback (most recent call last):
+        ...
+    AttributeError: 'ClassWithoutGetAttr' object has no attribute 'z'
 
 
 Invocation from a class
@@ -634,7 +833,9 @@ be used to implement an `object relational mapping
 
 The essential idea is that the data is stored in an external database.  The
 Python instances only hold keys to the database's tables.  Descriptors take
-care of lookups or updates::
+care of lookups or updates:
+
+.. testcode::
 
     class Field:
 
@@ -649,8 +850,11 @@ care of lookups or updates::
             conn.execute(self.store, [value, obj.key])
             conn.commit()
 
-We can use the :class:`Field` class to define "models" that describe the schema
-for each table in a database::
+We can use the :class:`Field` class to define `models
+<https://en.wikipedia.org/wiki/Database_model>`_ that describe the schema for
+each table in a database:
+
+.. testcode::
 
     class Movie:
         table = 'Movies'                    # Table name
@@ -671,11 +875,40 @@ for each table in a database::
         def __init__(self, key):
             self.key = key
 
-An interactive session shows how data is retrieved from the database and how
-it can be updated::
+To use the models, first connect to the database::
 
     >>> import sqlite3
     >>> conn = sqlite3.connect('entertainment.db')
+
+An interactive session shows how data is retrieved from the database and how
+it can be updated:
+
+.. testsetup::
+
+    song_data = [
+        ('Country Roads', 'John Denver', 1972),
+        ('Me and Bobby McGee', 'Janice Joplin', 1971),
+        ('Coal Miners Daughter', 'Loretta Lynn', 1970),
+    ]
+
+    movie_data = [
+        ('Star Wars', 'George Lucas', 1977),
+        ('Jaws', 'Steven Spielberg', 1975),
+        ('Aliens', 'James Cameron', 1986),
+    ]
+
+    import sqlite3
+
+    conn = sqlite3.connect(':memory:')
+    conn.execute('CREATE TABLE Music (title text, artist text, year integer);')
+    conn.execute('CREATE INDEX MusicNdx ON Music (title);')
+    conn.executemany('INSERT INTO Music VALUES (?, ?, ?);', song_data)
+    conn.execute('CREATE TABLE Movies (title text, director text, year integer);')
+    conn.execute('CREATE INDEX MovieNdx ON Music (title);')
+    conn.executemany('INSERT INTO Movies VALUES (?, ?, ?);', movie_data)
+    conn.commit()
+
+.. doctest::
 
     >>> Movie('Star Wars').director
     'George Lucas'
@@ -689,6 +922,7 @@ it can be updated::
     >>> Movie('Star Wars').director = 'J.J. Abrams'
     >>> Movie('Star Wars').director
     'J.J. Abrams'
+
 
 Pure Python Equivalents
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -707,7 +941,9 @@ triggers a function call upon access to an attribute.  Its signature is::
 
     property(fget=None, fset=None, fdel=None, doc=None) -> property
 
-The documentation shows a typical use to define a managed attribute ``x``::
+The documentation shows a typical use to define a managed attribute ``x``:
+
+.. testcode::
 
     class C:
         def getx(self): return self.__x
@@ -715,8 +951,24 @@ The documentation shows a typical use to define a managed attribute ``x``::
         def delx(self): del self.__x
         x = property(getx, setx, delx, "I'm the 'x' property.")
 
+.. doctest::
+    :hide:
+
+    >>> C.x.__doc__
+    "I'm the 'x' property."
+    >>> c.x = 2.71828
+    >>> c.x
+    2.71828
+    >>> del c.x
+    >>> c.x
+    Traceback (most recent call last):
+      ...
+    AttributeError: 'C' object has no attribute '_C__x'
+
 To see how :func:`property` is implemented in terms of the descriptor protocol,
-here is a pure Python equivalent::
+here is a pure Python equivalent:
+
+.. testcode::
 
     class Property:
         "Emulate PyProperty_Type() in Objects/descrobject.c"
@@ -728,32 +980,93 @@ here is a pure Python equivalent::
             if doc is None and fget is not None:
                 doc = fget.__doc__
             self.__doc__ = doc
+            self._name = ''
+
+        def __set_name__(self, owner, name):
+            self._name = name
 
         def __get__(self, obj, objtype=None):
             if obj is None:
                 return self
             if self.fget is None:
-                raise AttributeError("unreadable attribute")
+                raise AttributeError(f"property '{self._name}' has no getter")
             return self.fget(obj)
 
         def __set__(self, obj, value):
             if self.fset is None:
-                raise AttributeError("can't set attribute")
+                raise AttributeError(f"property '{self._name}' has no setter")
             self.fset(obj, value)
 
         def __delete__(self, obj):
             if self.fdel is None:
-                raise AttributeError("can't delete attribute")
+                raise AttributeError(f"property '{self._name}' has no deleter")
             self.fdel(obj)
 
         def getter(self, fget):
-            return type(self)(fget, self.fset, self.fdel, self.__doc__)
+            prop = type(self)(fget, self.fset, self.fdel, self.__doc__)
+            prop._name = self._name
+            return prop
 
         def setter(self, fset):
-            return type(self)(self.fget, fset, self.fdel, self.__doc__)
+            prop = type(self)(self.fget, fset, self.fdel, self.__doc__)
+            prop._name = self._name
+            return prop
 
         def deleter(self, fdel):
-            return type(self)(self.fget, self.fset, fdel, self.__doc__)
+            prop = type(self)(self.fget, self.fset, fdel, self.__doc__)
+            prop._name = self._name
+            return prop
+
+.. testcode::
+    :hide:
+
+    # Verify the Property() emulation
+
+    class CC:
+        def getx(self):
+            return self.__x
+        def setx(self, value):
+            self.__x = value
+        def delx(self):
+            del self.__x
+        x = Property(getx, setx, delx, "I'm the 'x' property.")
+
+    # Now do it again but use the decorator style
+
+    class CCC:
+        @Property
+        def x(self):
+            return self.__x
+        @x.setter
+        def x(self, value):
+            self.__x = value
+        @x.deleter
+        def x(self):
+            del self.__x
+
+
+.. doctest::
+    :hide:
+
+    >>> cc = CC()
+    >>> hasattr(cc, 'x')
+    False
+    >>> cc.x = 33
+    >>> cc.x
+    33
+    >>> del cc.x
+    >>> hasattr(cc, 'x')
+    False
+
+    >>> ccc = CCC()
+    >>> hasattr(ccc, 'x')
+    False
+    >>> ccc.x = 333
+    >>> ccc.x == 333
+    True
+    >>> del ccc.x
+    >>> hasattr(ccc, 'x')
+    False
 
 The :func:`property` builtin helps whenever a user interface has granted
 attribute access and then subsequent changes require the intervention of a
@@ -763,7 +1076,9 @@ For instance, a spreadsheet class may grant access to a cell value through
 ``Cell('b10').value``. Subsequent improvements to the program require the cell
 to be recalculated on every access; however, the programmer does not want to
 affect existing client code accessing the attribute directly.  The solution is
-to wrap access to the value attribute in a property data descriptor::
+to wrap access to the value attribute in a property data descriptor:
+
+.. testcode::
 
     class Cell:
         ...
@@ -773,6 +1088,9 @@ to wrap access to the value attribute in a property data descriptor::
             "Recalculate the cell before returning value"
             self.recalc()
             return self._value
+
+Either the built-in :func:`property` or our :func:`Property` equivalent would
+work in this example.
 
 
 Functions and methods
@@ -787,10 +1105,12 @@ prepended to the other arguments.  By convention, the instance is called
 *self* but could be called *this* or any other variable name.
 
 Methods can be created manually with :class:`types.MethodType` which is
-roughly equivalent to::
+roughly equivalent to:
+
+.. testcode::
 
     class MethodType:
-        "Emulate Py_MethodType in Objects/classobject.c"
+        "Emulate PyMethod_Type in Objects/classobject.c"
 
         def __init__(self, func, obj):
             self.__func__ = func
@@ -804,7 +1124,9 @@ roughly equivalent to::
 To support automatic creation of methods, functions include the
 :meth:`__get__` method for binding methods during attribute access.  This
 means that functions are non-data descriptors that return bound methods
-during dotted lookup from an instance.  Here's how it works::
+during dotted lookup from an instance.  Here's how it works:
+
+.. testcode::
 
     class Function:
         ...
@@ -816,13 +1138,17 @@ during dotted lookup from an instance.  Here's how it works::
             return MethodType(self, obj)
 
 Running the following class in the interpreter shows how the function
-descriptor works in practice::
+descriptor works in practice:
+
+.. testcode::
 
     class D:
         def f(self, x):
              return x
 
-The function has a :term:`qualified name` attribute to support introspection::
+The function has a :term:`qualified name` attribute to support introspection:
+
+.. doctest::
 
     >>> D.f.__qualname__
     'D.f'
@@ -850,7 +1176,7 @@ Internally, the bound method stores the underlying function and the bound
 instance::
 
     >>> d.f.__func__
-    <function D.f at 0x1012e5ae8>
+    <function D.f at 0x00C45070>
 
     >>> d.f.__self__
     <__main__.D object at 0x1012e1f98>
@@ -859,8 +1185,8 @@ If you have ever wondered where *self* comes from in regular methods or where
 *cls* comes from in class methods, this is it!
 
 
-Static methods
---------------
+Kinds of methods
+----------------
 
 Non-data descriptors provide a simple mechanism for variations on the usual
 patterns of binding functions into methods.
@@ -883,6 +1209,10 @@ This chart summarizes the binding and its two most useful variants:
       | classmethod     | f(type(obj), \*args) | f(cls, \*args)   |
       +-----------------+----------------------+------------------+
 
+
+Static methods
+--------------
+
 Static methods return the underlying function without changes.  Calling either
 ``c.f`` or ``C.f`` is the equivalent of a direct lookup into
 ``object.__getattribute__(c, "f")`` or ``object.__getattribute__(C, "f")``. As a
@@ -902,20 +1232,26 @@ It can be called either from an object or the class:  ``s.erf(1.5) --> .9332`` o
 ``Sample.erf(1.5) --> .9332``.
 
 Since static methods return the underlying function with no changes, the
-example calls are unexciting::
+example calls are unexciting:
+
+.. testcode::
 
     class E:
         @staticmethod
         def f(x):
-            print(x)
+            return x * 10
+
+.. doctest::
 
     >>> E.f(3)
-    3
+    30
     >>> E().f(3)
-    3
+    30
 
 Using the non-data descriptor protocol, a pure Python version of
-:func:`staticmethod` would look like this::
+:func:`staticmethod` would look like this:
+
+.. testcode::
 
     class StaticMethod:
         "Emulate PyStaticMethod_Type() in Objects/funcobject.c"
@@ -926,33 +1262,60 @@ Using the non-data descriptor protocol, a pure Python version of
         def __get__(self, obj, objtype=None):
             return self.f
 
+        def __call__(self, *args, **kwds):
+            return self.f(*args, **kwds)
+
+.. testcode::
+    :hide:
+
+    class E_sim:
+        @StaticMethod
+        def f(x):
+            return x * 10
+
+    wrapped_ord = StaticMethod(ord)
+
+.. doctest::
+    :hide:
+
+    >>> E_sim.f(3)
+    30
+    >>> E_sim().f(3)
+    30
+    >>> wrapped_ord('A')
+    65
+
 
 Class methods
 -------------
 
 Unlike static methods, class methods prepend the class reference to the
 argument list before calling the function.  This format is the same
-for whether the caller is an object or a class::
+for whether the caller is an object or a class:
+
+.. testcode::
 
     class F:
         @classmethod
         def f(cls, x):
             return cls.__name__, x
 
-    >>> print(F.f(3))
+.. doctest::
+
+    >>> F.f(3)
     ('F', 3)
-    >>> print(F().f(3))
+    >>> F().f(3)
     ('F', 3)
 
 This behavior is useful whenever the method only needs to have a class
-reference and does rely on data stored in a specific instance.  One use for
+reference and does not rely on data stored in a specific instance.  One use for
 class methods is to create alternate class constructors.  For example, the
 classmethod :func:`dict.fromkeys` creates a new dictionary from a list of
-keys.  The pure Python equivalent is::
+keys.  The pure Python equivalent is:
 
-    class Dict:
-        ...
+.. testcode::
 
+    class Dict(dict):
         @classmethod
         def fromkeys(cls, iterable, value=None):
             "Emulate dict_fromkeys() in Objects/dictobject.c"
@@ -961,13 +1324,20 @@ keys.  The pure Python equivalent is::
                 d[key] = value
             return d
 
-Now a new dictionary of unique keys can be constructed like this::
+Now a new dictionary of unique keys can be constructed like this:
 
-    >>> Dict.fromkeys('abracadabra')
-    {'a': None, 'r': None, 'b': None, 'c': None, 'd': None}
+.. doctest::
+
+    >>> d = Dict.fromkeys('abracadabra')
+    >>> type(d) is Dict
+    True
+    >>> d
+    {'a': None, 'b': None, 'r': None, 'c': None, 'd': None}
 
 Using the non-data descriptor protocol, a pure Python version of
-:func:`classmethod` would look like this::
+:func:`classmethod` would look like this:
+
+.. testcode::
 
     class ClassMethod:
         "Emulate PyClassMethod_Type() in Objects/funcobject.c"
@@ -978,19 +1348,61 @@ Using the non-data descriptor protocol, a pure Python version of
         def __get__(self, obj, cls=None):
             if cls is None:
                 cls = type(obj)
-            if hasattr(obj, '__get__'):
-                return self.f.__get__(cls)
+            if hasattr(type(self.f), '__get__'):
+                # This code path was added in Python 3.9
+                # and was deprecated in Python 3.11.
+                return self.f.__get__(cls, cls)
             return MethodType(self.f, cls)
 
-The code path for ``hasattr(obj, '__get__')`` was added in Python 3.9 and
-makes it possible for :func:`classmethod` to support chained decorators.
-For example, a classmethod and property could be chained together::
+.. testcode::
+    :hide:
+
+    # Verify the emulation works
+    class T:
+        @ClassMethod
+        def cm(cls, x, y):
+            return (cls, x, y)
+
+        @ClassMethod
+        @property
+        def __doc__(cls):
+            return f'A doc for {cls.__name__!r}'
+
+
+.. doctest::
+    :hide:
+
+    >>> T.cm(11, 22)
+    (<class 'T'>, 11, 22)
+
+    # Also call it from an instance
+    >>> t = T()
+    >>> t.cm(11, 22)
+    (<class 'T'>, 11, 22)
+
+    # Check the alternate path for chained descriptors
+    >>> T.__doc__
+    "A doc for 'T'"
+
+
+The code path for ``hasattr(type(self.f), '__get__')`` was added in
+Python 3.9 and makes it possible for :func:`classmethod` to support
+chained decorators.  For example, a classmethod and property could be
+chained together.  In Python 3.11, this functionality was deprecated.
+
+.. testcode::
 
     class G:
         @classmethod
         @property
         def __doc__(cls):
             return f'A doc for {cls.__name__!r}'
+
+.. doctest::
+
+    >>> G.__doc__
+    "A doc for 'G'"
+
 
 Member objects and __slots__
 ----------------------------
@@ -1000,10 +1412,14 @@ fixed-length array of slot values.  From a user point of view that has
 several effects:
 
 1. Provides immediate detection of bugs due to misspelled attribute
-assignments.  Only attribute names specified in ``__slots__`` are allowed::
+assignments.  Only attribute names specified in ``__slots__`` are allowed:
+
+.. testcode::
 
         class Vehicle:
             __slots__ = ('id_number', 'make', 'model')
+
+.. doctest::
 
         >>> auto = Vehicle()
         >>> auto.id_nubmer = 'VYE483814LQEX'
@@ -1012,7 +1428,9 @@ assignments.  Only attribute names specified in ``__slots__`` are allowed::
         AttributeError: 'Vehicle' object has no attribute 'id_nubmer'
 
 2. Helps create immutable objects where descriptors manage access to private
-attributes stored in ``__slots__``::
+attributes stored in ``__slots__``:
+
+.. testcode::
 
     class Immutable:
 
@@ -1030,15 +1448,32 @@ attributes stored in ``__slots__``::
         def name(self):                         # Read-only descriptor
             return self._name
 
-    mark = Immutable('Botany', 'Mark Watney')   # Create an immutable instance
+.. doctest::
+
+    >>> mark = Immutable('Botany', 'Mark Watney')
+    >>> mark.dept
+    'Botany'
+    >>> mark.dept = 'Space Pirate'
+    Traceback (most recent call last):
+        ...
+    AttributeError: property 'dept' of 'Immutable' object has no setter
+    >>> mark.location = 'Mars'
+    Traceback (most recent call last):
+        ...
+    AttributeError: 'Immutable' object has no attribute 'location'
 
 3. Saves memory.  On a 64-bit Linux build, an instance with two attributes
 takes 48 bytes with ``__slots__`` and 152 bytes without.  This `flyweight
 design pattern <https://en.wikipedia.org/wiki/Flyweight_pattern>`_ likely only
 matters when a large number of instances are going to be created.
 
-4. Blocks tools like :func:`functools.cached_property` which require an
-instance dictionary to function correctly::
+4. Improves speed.  Reading instance variables is 35% faster with
+``__slots__`` (as measured with Python 3.10 on an Apple M1 processor).
+
+5. Blocks tools like :func:`functools.cached_property` which require an
+instance dictionary to function correctly:
+
+.. testcode::
 
     from functools import cached_property
 
@@ -1050,17 +1485,23 @@ instance dictionary to function correctly::
             return 4 * sum((-1.0)**n / (2.0*n + 1.0)
                            for n in reversed(range(100_000)))
 
+.. doctest::
+
     >>> CP().pi
     Traceback (most recent call last):
       ...
     TypeError: No '__dict__' attribute on 'CP' instance to cache 'pi' property.
 
-It's not possible to create an exact drop-in pure Python version of
+It is not possible to create an exact drop-in pure Python version of
 ``__slots__`` because it requires direct access to C structures and control
 over object memory allocation.  However, we can build a mostly faithful
 simulation where the actual C structure for slots is emulated by a private
 ``_slotvalues`` list.  Reads and writes to that private structure are managed
-by member descriptors::
+by member descriptors:
+
+.. testcode::
+
+    null = object()
 
     class Member:
 
@@ -1074,31 +1515,47 @@ by member descriptors::
         def __get__(self, obj, objtype=None):
             'Emulate member_get() in Objects/descrobject.c'
             # Also see PyMember_GetOne() in Python/structmember.c
-            return obj._slotvalues[self.offset]
+            value = obj._slotvalues[self.offset]
+            if value is null:
+                raise AttributeError(self.name)
+            return value
 
         def __set__(self, obj, value):
             'Emulate member_set() in Objects/descrobject.c'
             obj._slotvalues[self.offset] = value
+
+        def __delete__(self, obj):
+            'Emulate member_delete() in Objects/descrobject.c'
+            value = obj._slotvalues[self.offset]
+            if value is null:
+                raise AttributeError(self.name)
+            obj._slotvalues[self.offset] = null
 
         def __repr__(self):
             'Emulate member_repr() in Objects/descrobject.c'
             return f'<Member {self.name!r} of {self.clsname!r}>'
 
 The :meth:`type.__new__` method takes care of adding member objects to class
-variables.  The :meth:`object.__new__` method takes care of creating instances
-that have slots instead of an instance dictionary.  Here is a rough equivalent
-in pure Python::
+variables:
+
+.. testcode::
 
     class Type(type):
         'Simulate how the type metaclass adds member objects for slots'
 
         def __new__(mcls, clsname, bases, mapping):
-            'Emuluate type_new() in Objects/typeobject.c'
+            'Emulate type_new() in Objects/typeobject.c'
             # type_new() calls PyTypeReady() which calls add_methods()
             slot_names = mapping.get('slot_names', [])
             for offset, name in enumerate(slot_names):
                 mapping[name] = Member(name, clsname, offset)
             return type.__new__(mcls, clsname, bases, mapping)
+
+The :meth:`object.__new__` method takes care of creating instances that have
+slots instead of an instance dictionary.  Here is a rough simulation in pure
+Python:
+
+.. testcode::
 
     class Object:
         'Simulate how object.__new__() allocates memory for __slots__'
@@ -1107,13 +1564,35 @@ in pure Python::
             'Emulate object_new() in Objects/typeobject.c'
             inst = super().__new__(cls)
             if hasattr(cls, 'slot_names'):
-                inst._slotvalues = [None] * len(cls.slot_names)
+                empty_slots = [null] * len(cls.slot_names)
+                object.__setattr__(inst, '_slotvalues', empty_slots)
             return inst
 
+        def __setattr__(self, name, value):
+            'Emulate _PyObject_GenericSetAttrWithDict() Objects/object.c'
+            cls = type(self)
+            if hasattr(cls, 'slot_names') and name not in cls.slot_names:
+                raise AttributeError(
+                    f'{type(self).__name__!r} object has no attribute {name!r}'
+                )
+            super().__setattr__(name, value)
+
+        def __delattr__(self, name):
+            'Emulate _PyObject_GenericSetAttrWithDict() Objects/object.c'
+            cls = type(self)
+            if hasattr(cls, 'slot_names') and name not in cls.slot_names:
+                raise AttributeError(
+                    f'{type(self).__name__!r} object has no attribute {name!r}'
+                )
+            super().__delattr__(name)
+
 To use the simulation in a real class, just inherit from :class:`Object` and
-set the :term:`metaclass` to :class:`Type`::
+set the :term:`metaclass` to :class:`Type`:
+
+.. testcode::
 
     class H(Object, metaclass=Type):
+        'Instance variables stored in slots'
 
         slot_names = ['x', 'y']
 
@@ -1123,17 +1602,29 @@ set the :term:`metaclass` to :class:`Type`::
 
 At this point, the metaclass has loaded member objects for *x* and *y*::
 
-    >>> import pprint
-    >>> pprint.pp(dict(vars(H)))
+    >>> from pprint import pp
+    >>> pp(dict(vars(H)))
     {'__module__': '__main__',
+     '__doc__': 'Instance variables stored in slots',
      'slot_names': ['x', 'y'],
      '__init__': <function H.__init__ at 0x7fb5d302f9d0>,
      'x': <Member 'x' of 'H'>,
-     'y': <Member 'y' of 'H'>,
-     '__doc__': None}
+     'y': <Member 'y' of 'H'>}
+
+.. doctest::
+    :hide:
+
+    # We test this separately because the preceding section is not
+    # doctestable due to the hex memory address for the __init__ function
+    >>> isinstance(vars(H)['x'], Member)
+    True
+    >>> isinstance(vars(H)['y'], Member)
+    True
 
 When instances are created, they have a ``slot_values`` list where the
-attributes are stored::
+attributes are stored:
+
+.. doctest::
 
     >>> h = H(10, 20)
     >>> vars(h)
@@ -1142,8 +1633,30 @@ attributes are stored::
     >>> vars(h)
     {'_slotvalues': [55, 20]}
 
-Unlike the real ``__slots__``, this simulation does have an instance
-dictionary just to hold the ``_slotvalues`` array.  So, unlike the real code,
-this simulation doesn't block assignments to misspelled attributes::
+Misspelled or unassigned attributes will raise an exception:
 
-    >>> h.xz = 30   # For actual __slots__ this would raise an AttributeError
+.. doctest::
+
+    >>> h.xz
+    Traceback (most recent call last):
+        ...
+    AttributeError: 'H' object has no attribute 'xz'
+
+.. doctest::
+   :hide:
+
+    # Examples for deleted attributes are not shown because this section
+    # is already a bit lengthy.  We still test that code here.
+    >>> del h.x
+    >>> hasattr(h, 'x')
+    False
+
+    # Also test the code for uninitialized slots
+    >>> class HU(Object, metaclass=Type):
+    ...     slot_names = ['x', 'y']
+    ...
+    >>> hu = HU()
+    >>> hasattr(hu, 'x')
+    False
+    >>> hasattr(hu, 'y')
+    False

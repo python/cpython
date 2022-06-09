@@ -43,13 +43,13 @@ Quick Reference
    +================================================+===================================+===================+===+===+===+===+
    | <R> :c:member:`~PyTypeObject.tp_name`          | const char *                      | __name__          | X | X |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_basicsize`         | Py_ssize_t                        |                   | X | X |   | X |
+   | :c:member:`~PyTypeObject.tp_basicsize`         | :c:type:`Py_ssize_t`              |                   | X | X |   | X |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_itemsize`          | Py_ssize_t                        |                   |   | X |   | X |
+   | :c:member:`~PyTypeObject.tp_itemsize`          | :c:type:`Py_ssize_t`              |                   |   | X |   | X |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_dealloc`           | :c:type:`destructor`              |                   | X | X |   | X |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_vectorcall_offset` | Py_ssize_t                        |                   |   | X |   | X |
+   | :c:member:`~PyTypeObject.tp_vectorcall_offset` | :c:type:`Py_ssize_t`              |                   |   | X |   | X |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | (:c:member:`~PyTypeObject.tp_getattr`)         | :c:type:`getattrfunc`             | __getattribute__, |   |   |   | G |
    |                                                |                                   | __getattr__       |   |   |   |   |
@@ -96,7 +96,7 @@ Quick Reference
    |                                                |                                   | __gt__,           |   |   |   |   |
    |                                                |                                   | __ge__            |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_weaklistoffset`    | Py_ssize_t                        |                   |   | X |   | ? |
+   | :c:member:`~PyTypeObject.tp_weaklistoffset`    | :c:type:`Py_ssize_t`              |                   |   | X |   | ? |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_iter`              | :c:type:`getiterfunc`             | __iter__          |   |   |   | X |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
@@ -117,7 +117,7 @@ Quick Reference
    | :c:member:`~PyTypeObject.tp_descr_set`         | :c:type:`descrsetfunc`            | __set__,          |   |   |   | X |
    |                                                |                                   | __delete__        |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_dictoffset`        | Py_ssize_t                        |                   |   | X |   | ? |
+   | :c:member:`~PyTypeObject.tp_dictoffset`        | :c:type:`Py_ssize_t`              |                   |   | X |   | ? |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_init`              | :c:type:`initproc`                | __init__          | X | X |   | X |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
@@ -189,138 +189,138 @@ sub-slots
 .. table::
    :widths: 26,17,12
 
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | Slot                                                    | :ref:`Type <slot-typedefs-table>` | special      |
-   |                                                         |                                   | methods      |
-   +=========================================================+===================================+==============+
-   | :c:member:`~PyAsyncMethods.am_await`                    | :c:type:`unaryfunc`               | __await__    |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyAsyncMethods.am_aiter`                    | :c:type:`unaryfunc`               | __aiter__    |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyAsyncMethods.am_anext`                    | :c:type:`unaryfunc`               | __anext__    |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyAsyncMethods.am_send`                     | :c:type:`sendfunc`                |              |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   |                                                                                                            |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_add`                     | :c:type:`binaryfunc`              | __add__      |
-   |                                                         |                                   | __radd__     |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_inplace_add`             | :c:type:`binaryfunc`              | __iadd__     |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_subtract`                | :c:type:`binaryfunc`              | __sub__      |
-   |                                                         |                                   | __rsub__     |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_inplace_subtract`        | :c:type:`binaryfunc`              | __sub__      |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_multiply`                | :c:type:`binaryfunc`              | __mul__      |
-   |                                                         |                                   | __rmul__     |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_inplace_multiply`        | :c:type:`binaryfunc`              | __mul__      |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_remainder`               | :c:type:`binaryfunc`              | __mod__      |
-   |                                                         |                                   | __rmod__     |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_inplace_remainder`       | :c:type:`binaryfunc`              | __mod__      |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_divmod`                  | :c:type:`binaryfunc`              | __divmod__   |
-   |                                                         |                                   | __rdivmod__  |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_power`                   | :c:type:`ternaryfunc`             | __pow__      |
-   |                                                         |                                   | __rpow__     |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_inplace_power`           | :c:type:`ternaryfunc`             | __pow__      |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_negative`                | :c:type:`unaryfunc`               | __neg__      |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_positive`                | :c:type:`unaryfunc`               | __pos__      |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_absolute`                | :c:type:`unaryfunc`               | __abs__      |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_bool`                    | :c:type:`inquiry`                 | __bool__     |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_invert`                  | :c:type:`unaryfunc`               | __invert__   |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_lshift`                  | :c:type:`binaryfunc`              | __lshift__   |
-   |                                                         |                                   | __rlshift__  |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_inplace_lshift`          | :c:type:`binaryfunc`              | __lshift__   |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_rshift`                  | :c:type:`binaryfunc`              | __rshift__   |
-   |                                                         |                                   | __rrshift__  |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_inplace_rshift`          | :c:type:`binaryfunc`              | __rshift__   |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_and`                     | :c:type:`binaryfunc`              | __and__      |
-   |                                                         |                                   | __rand__     |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_inplace_and`             | :c:type:`binaryfunc`              | __and__      |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_xor`                     | :c:type:`binaryfunc`              | __xor__      |
-   |                                                         |                                   | __rxor__     |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_inplace_xor`             | :c:type:`binaryfunc`              | __xor__      |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_or`                      | :c:type:`binaryfunc`              | __or__       |
-   |                                                         |                                   | __ror__      |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_inplace_or`              | :c:type:`binaryfunc`              | __or__       |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_int`                     | :c:type:`unaryfunc`               | __int__      |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_reserved`                | void *                            |              |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_float`                   | :c:type:`unaryfunc`               | __float__    |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_floor_divide`            | :c:type:`binaryfunc`              | __floordiv__ |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_inplace_floor_divide`    | :c:type:`binaryfunc`              | __floordiv__ |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_true_divide`             | :c:type:`binaryfunc`              | __truediv__  |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_inplace_true_divide`     | :c:type:`binaryfunc`              | __truediv__  |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_index`                   | :c:type:`unaryfunc`               | __index__    |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_matrix_multiply`         | :c:type:`binaryfunc`              | __matmul__   |
-   |                                                         |                                   | __rmatmul__  |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_inplace_matrix_multiply` | :c:type:`binaryfunc`              | __matmul__   |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   |                                                                                                            |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyMappingMethods.mp_length`                 | :c:type:`lenfunc`                 | __len__      |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyMappingMethods.mp_subscript`              | :c:type:`binaryfunc`              | __getitem__  |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyMappingMethods.mp_ass_subscript`          | :c:type:`objobjargproc`           | __setitem__, |
-   |                                                         |                                   | __delitem__  |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   |                                                                                                            |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PySequenceMethods.sq_length`                | :c:type:`lenfunc`                 | __len__      |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PySequenceMethods.sq_concat`                | :c:type:`binaryfunc`              | __add__      |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PySequenceMethods.sq_repeat`                | :c:type:`ssizeargfunc`            | __mul__      |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PySequenceMethods.sq_item`                  | :c:type:`ssizeargfunc`            | __getitem__  |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PySequenceMethods.sq_ass_item`              | :c:type:`ssizeobjargproc`         | __setitem__  |
-   |                                                         |                                   | __delitem__  |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PySequenceMethods.sq_contains`              | :c:type:`objobjproc`              | __contains__ |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PySequenceMethods.sq_inplace_concat`        | :c:type:`binaryfunc`              | __iadd__     |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PySequenceMethods.sq_inplace_repeat`        | :c:type:`ssizeargfunc`            | __imul__     |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   |                                                                                                            |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyBufferProcs.bf_getbuffer`                 | :c:func:`getbufferproc`           |              |
-   +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyBufferProcs.bf_releasebuffer`             | :c:func:`releasebufferproc`       |              |
-   +---------------------------------------------------------+-----------------------------------+--------------+
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | Slot                                                    | :ref:`Type <slot-typedefs-table>` | special       |
+   |                                                         |                                   | methods       |
+   +=========================================================+===================================+===============+
+   | :c:member:`~PyAsyncMethods.am_await`                    | :c:type:`unaryfunc`               | __await__     |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyAsyncMethods.am_aiter`                    | :c:type:`unaryfunc`               | __aiter__     |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyAsyncMethods.am_anext`                    | :c:type:`unaryfunc`               | __anext__     |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyAsyncMethods.am_send`                     | :c:type:`sendfunc`                |               |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   |                                                                                                             |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_add`                     | :c:type:`binaryfunc`              | __add__       |
+   |                                                         |                                   | __radd__      |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_inplace_add`             | :c:type:`binaryfunc`              | __iadd__      |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_subtract`                | :c:type:`binaryfunc`              | __sub__       |
+   |                                                         |                                   | __rsub__      |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_inplace_subtract`        | :c:type:`binaryfunc`              | __isub__      |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_multiply`                | :c:type:`binaryfunc`              | __mul__       |
+   |                                                         |                                   | __rmul__      |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_inplace_multiply`        | :c:type:`binaryfunc`              | __imul__      |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_remainder`               | :c:type:`binaryfunc`              | __mod__       |
+   |                                                         |                                   | __rmod__      |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_inplace_remainder`       | :c:type:`binaryfunc`              | __imod__      |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_divmod`                  | :c:type:`binaryfunc`              | __divmod__    |
+   |                                                         |                                   | __rdivmod__   |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_power`                   | :c:type:`ternaryfunc`             | __pow__       |
+   |                                                         |                                   | __rpow__      |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_inplace_power`           | :c:type:`ternaryfunc`             | __ipow__      |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_negative`                | :c:type:`unaryfunc`               | __neg__       |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_positive`                | :c:type:`unaryfunc`               | __pos__       |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_absolute`                | :c:type:`unaryfunc`               | __abs__       |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_bool`                    | :c:type:`inquiry`                 | __bool__      |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_invert`                  | :c:type:`unaryfunc`               | __invert__    |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_lshift`                  | :c:type:`binaryfunc`              | __lshift__    |
+   |                                                         |                                   | __rlshift__   |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_inplace_lshift`          | :c:type:`binaryfunc`              | __ilshift__   |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_rshift`                  | :c:type:`binaryfunc`              | __rshift__    |
+   |                                                         |                                   | __rrshift__   |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_inplace_rshift`          | :c:type:`binaryfunc`              | __irshift__   |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_and`                     | :c:type:`binaryfunc`              | __and__       |
+   |                                                         |                                   | __rand__      |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_inplace_and`             | :c:type:`binaryfunc`              | __iand__      |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_xor`                     | :c:type:`binaryfunc`              | __xor__       |
+   |                                                         |                                   | __rxor__      |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_inplace_xor`             | :c:type:`binaryfunc`              | __ixor__      |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_or`                      | :c:type:`binaryfunc`              | __or__        |
+   |                                                         |                                   | __ror__       |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_inplace_or`              | :c:type:`binaryfunc`              | __ior__       |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_int`                     | :c:type:`unaryfunc`               | __int__       |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_reserved`                | void *                            |               |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_float`                   | :c:type:`unaryfunc`               | __float__     |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_floor_divide`            | :c:type:`binaryfunc`              | __floordiv__  |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_inplace_floor_divide`    | :c:type:`binaryfunc`              | __ifloordiv__ |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_true_divide`             | :c:type:`binaryfunc`              | __truediv__   |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_inplace_true_divide`     | :c:type:`binaryfunc`              | __itruediv__  |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_index`                   | :c:type:`unaryfunc`               | __index__     |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_matrix_multiply`         | :c:type:`binaryfunc`              | __matmul__    |
+   |                                                         |                                   | __rmatmul__   |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyNumberMethods.nb_inplace_matrix_multiply` | :c:type:`binaryfunc`              | __imatmul__   |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   |                                                                                                             |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyMappingMethods.mp_length`                 | :c:type:`lenfunc`                 | __len__       |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyMappingMethods.mp_subscript`              | :c:type:`binaryfunc`              | __getitem__   |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyMappingMethods.mp_ass_subscript`          | :c:type:`objobjargproc`           | __setitem__,  |
+   |                                                         |                                   | __delitem__   |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   |                                                                                                             |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PySequenceMethods.sq_length`                | :c:type:`lenfunc`                 | __len__       |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PySequenceMethods.sq_concat`                | :c:type:`binaryfunc`              | __add__       |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PySequenceMethods.sq_repeat`                | :c:type:`ssizeargfunc`            | __mul__       |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PySequenceMethods.sq_item`                  | :c:type:`ssizeargfunc`            | __getitem__   |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PySequenceMethods.sq_ass_item`              | :c:type:`ssizeobjargproc`         | __setitem__   |
+   |                                                         |                                   | __delitem__   |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PySequenceMethods.sq_contains`              | :c:type:`objobjproc`              | __contains__  |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PySequenceMethods.sq_inplace_concat`        | :c:type:`binaryfunc`              | __iadd__      |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PySequenceMethods.sq_inplace_repeat`        | :c:type:`ssizeargfunc`            | __imul__      |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   |                                                                                                             |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyBufferProcs.bf_getbuffer`                 | :c:func:`getbufferproc`           |               |
+   +---------------------------------------------------------+-----------------------------------+---------------+
+   | :c:member:`~PyBufferProcs.bf_releasebuffer`             | :c:func:`releasebufferproc`       |               |
+   +---------------------------------------------------------+-----------------------------------+---------------+
 
 .. _slot-typedefs-table:
 
@@ -333,7 +333,7 @@ slot typedefs
 | :c:type:`allocfunc`         | .. line-block::             | :c:type:`PyObject` * |
 |                             |                             |                      |
 |                             |    :c:type:`PyTypeObject` * |                      |
-|                             |    Py_ssize_t               |                      |
+|                             |    :c:type:`Py_ssize_t`     |                      |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`destructor`        | void *                      | void                 |
 +-----------------------------+-----------------------------+----------------------+
@@ -405,7 +405,7 @@ slot typedefs
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`iternextfunc`      | :c:type:`PyObject` *        | :c:type:`PyObject` * |
 +-----------------------------+-----------------------------+----------------------+
-| :c:type:`lenfunc`           | :c:type:`PyObject` *        | Py_ssize_t           |
+| :c:type:`lenfunc`           | :c:type:`PyObject` *        | :c:type:`Py_ssize_t` |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`getbufferproc`     | .. line-block::             | int                  |
 |                             |                             |                      |
@@ -438,12 +438,12 @@ slot typedefs
 | :c:type:`ssizeargfunc`      | .. line-block::             | :c:type:`PyObject` * |
 |                             |                             |                      |
 |                             |    :c:type:`PyObject` *     |                      |
-|                             |    Py_ssize_t               |                      |
+|                             |    :c:type:`Py_ssize_t`     |                      |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`ssizeobjargproc`   | .. line-block::             | int                  |
 |                             |                             |                      |
 |                             |    :c:type:`PyObject` *     |                      |
-|                             |    Py_ssize_t               |                      |
+|                             |    :c:type:`Py_ssize_t`     |                      |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`objobjproc`        | .. line-block::             | int                  |
 |                             |                             |                      |
@@ -476,36 +476,20 @@ PyObject Slots
 --------------
 
 The type object structure extends the :c:type:`PyVarObject` structure. The
-:attr:`ob_size` field is used for dynamic types (created by  :func:`type_new`,
+:attr:`ob_size` field is used for dynamic types (created by :func:`type_new`,
 usually called from a class statement). Note that :c:data:`PyType_Type` (the
 metatype) initializes :c:member:`~PyTypeObject.tp_itemsize`, which means that its instances (i.e.
 type objects) *must* have the :attr:`ob_size` field.
 
 
-.. c:member:: PyObject* PyObject._ob_next
-             PyObject* PyObject._ob_prev
-
-   These fields are only present when the macro ``Py_TRACE_REFS`` is defined.
-   Their initialization to ``NULL`` is taken care of by the ``PyObject_HEAD_INIT``
-   macro.  For statically allocated objects, these fields always remain ``NULL``.
-   For dynamically allocated objects, these two fields are used to link the object
-   into a doubly-linked list of *all* live objects on the heap.  This could be used
-   for various debugging purposes; currently the only use is to print the objects
-   that are still alive at the end of a run when the environment variable
-   :envvar:`PYTHONDUMPREFS` is set.
-
-   **Inheritance:**
-
-   These fields are not inherited by subtypes.
-
-
 .. c:member:: Py_ssize_t PyObject.ob_refcnt
 
    This is the type object's reference count, initialized to ``1`` by the
-   ``PyObject_HEAD_INIT`` macro.  Note that for statically allocated type objects,
-   the type's instances (objects whose :attr:`ob_type` points back to the type) do
-   *not* count as references.  But for dynamically allocated type objects, the
-   instances *do* count as references.
+   ``PyObject_HEAD_INIT`` macro.  Note that for :ref:`statically allocated type
+   objects <static-types>`, the type's instances (objects whose :attr:`ob_type`
+   points back to the type) do *not* count as references.  But for
+   :ref:`dynamically allocated type objects <heap-types>`, the instances *do*
+   count as references.
 
    **Inheritance:**
 
@@ -535,13 +519,36 @@ type objects) *must* have the :attr:`ob_size` field.
    This field is inherited by subtypes.
 
 
+.. c:member:: PyObject* PyObject._ob_next
+             PyObject* PyObject._ob_prev
+
+   These fields are only present when the macro ``Py_TRACE_REFS`` is defined
+   (see the :option:`configure --with-trace-refs option <--with-trace-refs>`).
+
+   Their initialization to ``NULL`` is taken care of by the
+   ``PyObject_HEAD_INIT`` macro.  For :ref:`statically allocated objects
+   <static-types>`, these fields always remain ``NULL``.  For :ref:`dynamically
+   allocated objects <heap-types>`, these two fields are used to link the
+   object into a doubly-linked list of *all* live objects on the heap.
+
+   This could be used for various debugging purposes; currently the only uses
+   are the :func:`sys.getobjects` function and to print the objects that are
+   still alive at the end of a run when the environment variable
+   :envvar:`PYTHONDUMPREFS` is set.
+
+   **Inheritance:**
+
+   These fields are not inherited by subtypes.
+
+
 PyVarObject Slots
 -----------------
 
 .. c:member:: Py_ssize_t PyVarObject.ob_size
 
-   For statically allocated type objects, this should be initialized to zero.  For
-   dynamically allocated type objects, this field has a special internal meaning.
+   For :ref:`statically allocated type objects <static-types>`, this should be
+   initialized to zero. For :ref:`dynamically allocated type objects
+   <heap-types>`, this field has a special internal meaning.
 
    **Inheritance:**
 
@@ -566,11 +573,13 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    :class:`T` defined in module :mod:`M` in subpackage :mod:`Q` in package :mod:`P`
    should have the :c:member:`~PyTypeObject.tp_name` initializer ``"P.Q.M.T"``.
 
-   For dynamically allocated type objects, this should just be the type name, and
+   For :ref:`dynamically allocated type objects <heap-types>`,
+   this should just be the type name, and
    the module name explicitly stored in the type dict as the value for key
    ``'__module__'``.
 
-   For statically allocated type objects, the tp_name field should contain a dot.
+   For :ref:`statically allocated type objects <static-types>`,
+   the *tp_name* field should contain a dot.
    Everything before the last dot is made accessible as the :attr:`__module__`
    attribute, and everything after the last dot is made accessible as the
    :attr:`~definition.__name__` attribute.
@@ -659,6 +668,18 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    :c:func:`PyObject_GC_Del` if the instance was allocated using
    :c:func:`PyObject_GC_New` or :c:func:`PyObject_GC_NewVar`.
 
+   If the type supports garbage collection (has the :const:`Py_TPFLAGS_HAVE_GC`
+   flag bit set), the destructor should call :c:func:`PyObject_GC_UnTrack`
+   before clearing any member fields.
+
+   .. code-block:: c
+
+     static void foo_dealloc(foo_object *self) {
+         PyObject_GC_UnTrack(self);
+         Py_CLEAR(self->ref);
+         Py_TYPE(self)->tp_free((PyObject *)self);
+     }
+
    Finally, if the type is heap allocated (:const:`Py_TPFLAGS_HEAPTYPE`), the
    deallocator should decrement the reference count for its type object after
    calling the type deallocator. In order to avoid dangling pointers, the
@@ -701,16 +722,10 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    .. warning::
 
-      It is not recommended for :ref:`heap types <heap-types>` to implement
+      It is not recommended for :ref:`mutable heap types <heap-types>` to implement
       the vectorcall protocol.
       When a user sets :attr:`__call__` in Python code, only *tp_call* is updated,
       likely making it inconsistent with the vectorcall function.
-
-   .. note::
-
-      The semantics of the ``tp_vectorcall_offset`` slot are provisional and
-      expected to be finalized in Python 3.9.
-      If you use vectorcall, plan for updating your code for Python 3.9.
 
    .. versionchanged:: 3.8
 
@@ -725,8 +740,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    always inherited. If it's not, then the subclass won't use
    :ref:`vectorcall <vectorcall>`, except when
    :c:func:`PyVectorcall_Call` is explicitly called.
-   This is in particular the case for `heap types`_
-   (including subclasses defined in Python).
+   This is in particular the case for types without the
+   :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set (including subclasses defined in
+   Python).
 
 
 .. c:member:: getattrfunc PyTypeObject.tp_getattr
@@ -1088,8 +1104,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       This is a bitmask of all the bits that pertain to the existence of certain
       fields in the type object and its extension structures. Currently, it includes
-      the following bits: :const:`Py_TPFLAGS_HAVE_STACKLESS_EXTENSION`,
-      :const:`Py_TPFLAGS_HAVE_VERSION_TAG`.
+      the following bits: :const:`Py_TPFLAGS_HAVE_STACKLESS_EXTENSION`.
 
       **Inheritance:**
 
@@ -1116,9 +1131,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       **Inheritance:**
 
-      This flag is never inherited by heap types.
-      For extension types, it is inherited whenever
-      :c:member:`~PyTypeObject.tp_descr_get` is inherited.
+      This flag is never inherited by types without the
+      :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set.  For extension types, it is
+      inherited whenever :c:member:`~PyTypeObject.tp_descr_get` is inherited.
 
 
    .. XXX Document more flags here?
@@ -1163,11 +1178,87 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       **Inheritance:**
 
-      This bit is inherited for *static* subtypes if
+      This bit is inherited for types with the
+      :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set, if
       :c:member:`~PyTypeObject.tp_call` is also inherited.
-      `Heap types`_ do not inherit ``Py_TPFLAGS_HAVE_VECTORCALL``.
 
       .. versionadded:: 3.9
+
+   .. data:: Py_TPFLAGS_IMMUTABLETYPE
+
+      This bit is set for type objects that are immutable: type attributes cannot be set nor deleted.
+
+      :c:func:`PyType_Ready` automatically applies this flag to
+      :ref:`static types <static-types>`.
+
+      **Inheritance:**
+
+      This flag is not inherited.
+
+      .. versionadded:: 3.10
+
+   .. data:: Py_TPFLAGS_DISALLOW_INSTANTIATION
+
+      Disallow creating instances of the type: set
+      :c:member:`~PyTypeObject.tp_new` to NULL and don't create the ``__new__``
+      key in the type dictionary.
+
+      The flag must be set before creating the type, not after. For example, it
+      must be set before :c:func:`PyType_Ready` is called on the type.
+
+      The flag is set automatically on :ref:`static types <static-types>` if
+      :c:member:`~PyTypeObject.tp_base` is NULL or ``&PyBaseObject_Type`` and
+      :c:member:`~PyTypeObject.tp_new` is NULL.
+
+      **Inheritance:**
+
+      This flag is not inherited.
+
+      .. versionadded:: 3.10
+
+
+   .. data:: Py_TPFLAGS_MAPPING
+
+      This bit indicates that instances of the class may match mapping patterns
+      when used as the subject of a :keyword:`match` block. It is automatically
+      set when registering or subclassing :class:`collections.abc.Mapping`, and
+      unset when registering :class:`collections.abc.Sequence`.
+
+      .. note::
+
+         :const:`Py_TPFLAGS_MAPPING` and :const:`Py_TPFLAGS_SEQUENCE` are
+         mutually exclusive; it is an error to enable both flags simultaneously.
+
+      **Inheritance:**
+
+      This flag is inherited by types that do not already set
+      :const:`Py_TPFLAGS_SEQUENCE`.
+
+      .. seealso:: :pep:`634` -- Structural Pattern Matching: Specification
+
+      .. versionadded:: 3.10
+
+
+   .. data:: Py_TPFLAGS_SEQUENCE
+
+      This bit indicates that instances of the class may match sequence patterns
+      when used as the subject of a :keyword:`match` block. It is automatically
+      set when registering or subclassing :class:`collections.abc.Sequence`, and
+      unset when registering :class:`collections.abc.Mapping`.
+
+      .. note::
+
+         :const:`Py_TPFLAGS_MAPPING` and :const:`Py_TPFLAGS_SEQUENCE` are
+         mutually exclusive; it is an error to enable both flags simultaneously.
+
+      **Inheritance:**
+
+      This flag is inherited by types that do not already set
+      :const:`Py_TPFLAGS_MAPPING`.
+
+      .. seealso:: :pep:`634` -- Structural Pattern Matching: Specification
+
+      .. versionadded:: 3.10
 
 
 .. c:member:: const char* PyTypeObject.tp_doc
@@ -1230,9 +1321,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    :c:func:`local_traverse` to have these specific names; don't name them just
    anything.
 
-   Heap-allocated types (:const:`Py_TPFLAGS_HEAPTYPE`, such as those created
-   with :c:func:`PyType_FromSpec` and similar APIs) hold a reference to their
-   type. Their traversal function must therefore either visit
+   Instances of :ref:`heap-allocated types <heap-types>` hold a reference to
+   their type. Their traversal function must therefore either visit
    :c:func:`Py_TYPE(self) <Py_TYPE>`, or delegate this responsibility by
    calling ``tp_traverse`` of another heap-allocated type (such as a
    heap-allocated superclass).
@@ -1296,6 +1386,12 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    it's important that the pointer to the contained object be ``NULL`` at that time,
    so that *self* knows the contained object can no longer be used.  The
    :c:func:`Py_CLEAR` macro performs the operations in a safe order.
+
+   Note that :c:member:`~PyTypeObject.tp_clear` is not *always* called
+   before an instance is deallocated. For example, when reference counting
+   is enough to determine that an object is no longer used, the cyclic garbage
+   collector is not involved and :c:member:`~PyTypeObject.tp_dealloc` is
+   called directly.
 
    Because the goal of :c:member:`~PyTypeObject.tp_clear` functions is to break reference cycles,
    it's not necessary to clear contained objects like Python strings or Python
@@ -1419,9 +1515,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: getiterfunc PyTypeObject.tp_iter
 
-   An optional pointer to a function that returns an iterator for the object.  Its
-   presence normally signals that the instances of this type are iterable (although
-   sequences may be iterable without this function).
+   An optional pointer to a function that returns an :term:`iterator` for the
+   object.  Its presence normally signals that the instances of this type are
+   :term:`iterable` (although sequences may be iterable without this function).
 
    This function has the same signature as :c:func:`PyObject_GetIter`::
 
@@ -1434,8 +1530,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: iternextfunc PyTypeObject.tp_iternext
 
-   An optional pointer to a function that returns the next item in an iterator.
-   The signature is::
+   An optional pointer to a function that returns the next item in an
+   :term:`iterator`. The signature is::
 
       PyObject *tp_iternext(PyObject *self);
 
@@ -1647,8 +1743,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    **Default:**
 
-   This slot has no default.  For static types, if the field is
-   ``NULL`` then no :attr:`__dict__` gets created for instances.
+   This slot has no default.  For :ref:`static types <static-types>`, if the
+   field is ``NULL`` then no :attr:`__dict__` gets created for instances.
 
 
 .. c:member:: initproc PyTypeObject.tp_init
@@ -1683,7 +1779,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    **Default:**
 
-   For static types this field does not have a default.
+   For :ref:`static types <static-types>` this field does not have a default.
 
 
 .. c:member:: allocfunc PyTypeObject.tp_alloc
@@ -1732,16 +1828,20 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    in :c:member:`~PyTypeObject.tp_new`, while for mutable types, most initialization should be
    deferred to :c:member:`~PyTypeObject.tp_init`.
 
+   Set the :const:`Py_TPFLAGS_DISALLOW_INSTANTIATION` flag to disallow creating
+   instances of the type in Python.
+
    **Inheritance:**
 
-   This field is inherited by subtypes, except it is not inherited by static types
-   whose :c:member:`~PyTypeObject.tp_base` is ``NULL`` or ``&PyBaseObject_Type``.
+   This field is inherited by subtypes, except it is not inherited by
+   :ref:`static types <static-types>` whose :c:member:`~PyTypeObject.tp_base`
+   is ``NULL`` or ``&PyBaseObject_Type``.
 
    **Default:**
 
-   For static types this field has no default.  This means if the
-   slot is defined as ``NULL``, the type cannot be called to create new
-   instances; presumably there is some other way to create
+   For :ref:`static types <static-types>` this field has no default.
+   This means if the slot is defined as ``NULL``, the type cannot be called
+   to create new instances; presumably there is some other way to create
    instances, like a factory function.
 
 
@@ -1783,7 +1883,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    (The only example of this are types themselves.  The metatype,
    :c:data:`PyType_Type`, defines this function to distinguish between statically
-   and dynamically allocated types.)
+   and :ref:`dynamically allocated types <heap-types>`.)
 
    **Inheritance:**
 
@@ -1894,6 +1994,17 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    For this field to be taken into account (even through inheritance),
    you must also set the :const:`Py_TPFLAGS_HAVE_FINALIZE` flags bit.
 
+   Also, note that, in a garbage collected Python,
+   :c:member:`~PyTypeObject.tp_dealloc` may be called from
+   any Python thread, not just the thread which created the object (if the object
+   becomes part of a refcount cycle, that cycle might be collected by a garbage
+   collection on any thread).  This is not a problem for Python API calls, since
+   the thread on which tp_dealloc is called will own the Global Interpreter Lock
+   (GIL). However, if the object being destroyed in turn destroys objects from some
+   other C or C++ library, care should be taken to ensure that destroying those
+   objects on the thread which called tp_dealloc will not violate any assumptions
+   of the library.
+
    **Inheritance:**
 
    This field is inherited by subtypes.
@@ -1918,21 +2029,10 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    .. versionadded:: 3.9 (the field exists since 3.8 but it's only used since 3.9)
 
 
-Also, note that, in a garbage collected Python, :c:member:`~PyTypeObject.tp_dealloc` may be called from
-any Python thread, not just the thread which created the object (if the object
-becomes part of a refcount cycle, that cycle might be collected by a garbage
-collection on any thread).  This is not a problem for Python API calls, since
-the thread on which tp_dealloc is called will own the Global Interpreter Lock
-(GIL). However, if the object being destroyed in turn destroys objects from some
-other C or C++ library, care should be taken to ensure that destroying those
-objects on the thread which called tp_dealloc will not violate any assumptions
-of the library.
+.. _static-types:
 
-
-.. _heap-types:
-
-Heap Types
-----------
+Static Types
+------------
 
 Traditionally, types defined in C code are *static*, that is,
 a static :c:type:`PyTypeObject` structure is defined directly in code
@@ -1952,12 +2052,20 @@ Also, since :c:type:`PyTypeObject` is not part of the :ref:`stable ABI <stable>`
 any extension modules using static types must be compiled for a specific
 Python minor version.
 
-An alternative to static types is *heap-allocated types*, or *heap types*
-for short, which correspond closely to classes created by Python's
-``class`` statement.
+
+.. _heap-types:
+
+Heap Types
+----------
+
+An alternative to :ref:`static types <static-types>` is *heap-allocated types*,
+or *heap types* for short, which correspond closely to classes created by
+Python's ``class`` statement. Heap types have the :const:`Py_TPFLAGS_HEAPTYPE`
+flag set.
 
 This is done by filling a :c:type:`PyType_Spec` structure and calling
-:c:func:`PyType_FromSpecWithBases`.
+:c:func:`PyType_FromSpec`, :c:func:`PyType_FromSpecWithBases`,
+:c:func:`PyType_FromModuleAndSpec`, or :c:func:`PyType_FromMetaclass`.
 
 
 .. _number-structs:
@@ -2315,8 +2423,8 @@ Async Object Structures
 
       PyObject *am_await(PyObject *self);
 
-   The returned object must be an iterator, i.e. :c:func:`PyIter_Check` must
-   return ``1`` for it.
+   The returned object must be an :term:`iterator`, i.e. :c:func:`PyIter_Check`
+   must return ``1`` for it.
 
    This slot may be set to ``NULL`` if an object is not an :term:`awaitable`.
 
@@ -2326,7 +2434,8 @@ Async Object Structures
 
       PyObject *am_aiter(PyObject *self);
 
-   Must return an :term:`awaitable` object.  See :meth:`__anext__` for details.
+   Must return an :term:`asynchronous iterator` object.
+   See :meth:`__anext__` for details.
 
    This slot may be set to ``NULL`` if an object does not implement
    asynchronous iteration protocol.
@@ -2348,6 +2457,8 @@ Async Object Structures
 
    See :c:func:`PyIter_Send` for details.
    This slot may be set to ``NULL``.
+
+   .. versionadded:: 3.10
 
 
 .. _slot-typedefs:
@@ -2469,7 +2580,7 @@ include common usage you may encounter.  Some demonstrate tricky corner
 cases.  For more examples, practical info, and a tutorial, see
 :ref:`defining-new-types` and :ref:`new-types-topics`.
 
-A basic static type::
+A basic :ref:`static type <static-types>`::
 
    typedef struct {
        PyObject_HEAD
@@ -2480,7 +2591,7 @@ A basic static type::
        PyVarObject_HEAD_INIT(NULL, 0)
        .tp_name = "mymod.MyObject",
        .tp_basicsize = sizeof(MyObject),
-       .tp_doc = "My objects",
+       .tp_doc = PyDoc_STR("My objects"),
        .tp_new = myobj_new,
        .tp_dealloc = (destructor)myobj_dealloc,
        .tp_repr = (reprfunc)myobj_repr,
@@ -2510,7 +2621,7 @@ with a more verbose initializer::
        0,                              /* tp_setattro */
        0,                              /* tp_as_buffer */
        0,                              /* tp_flags */
-       "My objects",                   /* tp_doc */
+       PyDoc_STR("My objects"),        /* tp_doc */
        0,                              /* tp_traverse */
        0,                              /* tp_clear */
        0,                              /* tp_richcompare */
@@ -2543,7 +2654,7 @@ A type that supports weakrefs, instance dicts, and hashing::
        PyVarObject_HEAD_INIT(NULL, 0)
        .tp_name = "mymod.MyObject",
        .tp_basicsize = sizeof(MyObject),
-       .tp_doc = "My objects",
+       .tp_doc = PyDoc_STR("My objects"),
        .tp_weaklistoffset = offsetof(MyObject, weakreflist),
        .tp_dictoffset = offsetof(MyObject, inst_dict),
        .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
@@ -2558,7 +2669,8 @@ A type that supports weakrefs, instance dicts, and hashing::
    };
 
 A str subclass that cannot be subclassed and cannot be called
-to create instances (e.g. uses a separate factory func)::
+to create instances (e.g. uses a separate factory func) using
+:c:data:`Py_TPFLAGS_DISALLOW_INSTANTIATION` flag::
 
    typedef struct {
        PyUnicodeObject raw;
@@ -2570,13 +2682,12 @@ to create instances (e.g. uses a separate factory func)::
        .tp_name = "mymod.MyStr",
        .tp_basicsize = sizeof(MyStr),
        .tp_base = NULL,  // set to &PyUnicode_Type in module init
-       .tp_doc = "my custom str",
-       .tp_flags = Py_TPFLAGS_DEFAULT,
-       .tp_new = NULL,
+       .tp_doc = PyDoc_STR("my custom str"),
+       .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
        .tp_repr = (reprfunc)myobj_repr,
    };
 
-The simplest static type (with fixed-length instances)::
+The simplest :ref:`static type <static-types>` with fixed-length instances::
 
    typedef struct {
        PyObject_HEAD
@@ -2587,7 +2698,7 @@ The simplest static type (with fixed-length instances)::
        .tp_name = "mymod.MyObject",
    };
 
-The simplest static type (with variable-length instances)::
+The simplest :ref:`static type <static-types>` with variable-length instances::
 
    typedef struct {
        PyObject_VAR_HEAD

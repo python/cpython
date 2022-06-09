@@ -135,6 +135,10 @@ class CodeopTests(unittest.TestCase):
         ai("a = {")
         ai("b + {")
 
+        ai("print([1,\n2,")
+        ai("print({1:1,\n2:3,")
+        ai("print((1,\n2,")
+
         ai("if 9==3:\n   pass\nelse:")
         ai("if 9==3:\n   pass\nelse:\n")
         ai("if 9==3:\n   pass\nelse:\n   pass")
@@ -160,7 +164,6 @@ class CodeopTests(unittest.TestCase):
         ai("","eval")
         ai("\n","eval")
         ai("(","eval")
-        ai("(\n\n\n","eval")
         ai("(9+","eval")
         ai("9+ \\","eval")
         ai("lambda z: \\","eval")
@@ -179,21 +182,21 @@ class CodeopTests(unittest.TestCase):
         ai("from a import (b,c")
         ai("from a import (b,c,")
 
-        ai("[");
-        ai("[a");
-        ai("[a,");
-        ai("[a,b");
-        ai("[a,b,");
+        ai("[")
+        ai("[a")
+        ai("[a,")
+        ai("[a,b")
+        ai("[a,b,")
 
-        ai("{");
-        ai("{a");
-        ai("{a:");
-        ai("{a:b");
-        ai("{a:b,");
-        ai("{a:b,c");
-        ai("{a:b,c:");
-        ai("{a:b,c:d");
-        ai("{a:b,c:d,");
+        ai("{")
+        ai("{a")
+        ai("{a:")
+        ai("{a:b")
+        ai("{a:b,")
+        ai("{a:b,c")
+        ai("{a:b,c:")
+        ai("{a:b,c:d")
+        ai("{a:b,c:d,")
 
         ai("a(")
         ai("a(b")
@@ -272,7 +275,6 @@ class CodeopTests(unittest.TestCase):
         ai("a = 'a\\\n")
 
         ai("a = 1","eval")
-        ai("a = (","eval")
         ai("]","eval")
         ai("())","eval")
         ai("[}","eval")

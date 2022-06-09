@@ -65,7 +65,7 @@ algorithms_guaranteed = set(__always_supported)
 algorithms_available = set(__always_supported)
 
 __all__ = __always_supported + ('new', 'algorithms_guaranteed',
-                                'algorithms_available', 'pbkdf2_hmac')
+                                'algorithms_available', 'pbkdf2_hmac', 'file_digest')
 
 
 __builtin_constructor_cache = {}
@@ -173,6 +173,7 @@ try:
     algorithms_available = algorithms_available.union(
             _hashlib.openssl_md_meth_names)
 except ImportError:
+    _hashlib = None
     new = __py_new
     __get_hash = __get_builtin_constructor
 
@@ -180,6 +181,7 @@ try:
     # OpenSSL's PKCS5_PBKDF2_HMAC requires OpenSSL 1.0+ with HMAC and SHA
     from _hashlib import pbkdf2_hmac
 except ImportError:
+    from warnings import warn as _warn
     _trans_5C = bytes((x ^ 0x5C) for x in range(256))
     _trans_36 = bytes((x ^ 0x36) for x in range(256))
 
@@ -190,6 +192,11 @@ except ImportError:
         as OpenSSL's PKCS5_PBKDF2_HMAC for short passwords and much faster
         for long passwords.
         """
+        _warn(
+            "Python implementation of pbkdf2_hmac() is deprecated.",
+            category=DeprecationWarning,
+            stacklevel=2
+        )
         if not isinstance(hash_name, str):
             raise TypeError(hash_name)
 
@@ -228,15 +235,15 @@ except ImportError:
         loop = 1
         from_bytes = int.from_bytes
         while len(dkey) < dklen:
-            prev = prf(salt + loop.to_bytes(4, 'big'))
+            prev = prf(salt + loop.to_bytes(4))
             # endianness doesn't matter here as long to / from use the same
-            rkey = int.from_bytes(prev, 'big')
+            rkey = from_bytes(prev)
             for i in range(iterations - 1):
                 prev = prf(prev)
                 # rkey = rkey ^ prev
-                rkey ^= from_bytes(prev, 'big')
+                rkey ^= from_bytes(prev)
             loop += 1
-            dkey += rkey.to_bytes(inner.digest_size, 'big')
+            dkey += rkey.to_bytes(inner.digest_size)
 
         return dkey[:dklen]
 
@@ -245,6 +252,52 @@ try:
     from _hashlib import scrypt
 except ImportError:
     pass
+
+
+def file_digest(fileobj, digest, /, *, _bufsize=2**18):
+    """Hash the contents of a file-like object. Returns a digest object.
+
+    *fileobj* must be a file-like object opened for reading in binary mode.
+    It accepts file objects from open(), io.BytesIO(), and SocketIO objects.
+    The function may bypass Python's I/O and use the file descriptor *fileno*
+    directly.
+
+    *digest* must either be a hash algorithm name as a *str*, a hash
+    constructor, or a callable that returns a hash object.
+    """
+    # On Linux we could use AF_ALG sockets and sendfile() to archive zero-copy
+    # hashing with hardware acceleration.
+    if isinstance(digest, str):
+        digestobj = new(digest)
+    else:
+        digestobj = digest()
+
+    if hasattr(fileobj, "getbuffer"):
+        # io.BytesIO object, use zero-copy buffer
+        digestobj.update(fileobj.getbuffer())
+        return digestobj
+
+    # Only binary files implement readinto().
+    if not (
+        hasattr(fileobj, "readinto")
+        and hasattr(fileobj, "readable")
+        and fileobj.readable()
+    ):
+        raise ValueError(
+            f"'{fileobj!r}' is not a file-like object in binary reading mode."
+        )
+
+    # binary file, socket.SocketIO object
+    # Note: socket I/O uses different syscalls than file I/O.
+    buf = bytearray(_bufsize)  # Reusable buffer to reduce allocations.
+    view = memoryview(buf)
+    while True:
+        size = fileobj.readinto(buf)
+        if size == 0:
+            break  # EOF
+        digestobj.update(view[:size])
+
+    return digestobj
 
 
 for __func_name in __always_supported:

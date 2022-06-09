@@ -46,16 +46,6 @@ class-based API instead.
    returned. [#]_
 
 
-.. function:: bind_textdomain_codeset(domain, codeset=None)
-
-   Bind the *domain* to *codeset*, changing the encoding of byte strings
-   returned by the :func:`lgettext`, :func:`ldgettext`, :func:`lngettext`
-   and :func:`ldngettext` functions.
-   If *codeset* is omitted, then the current binding is returned.
-
-   .. deprecated-removed:: 3.8 3.10
-
-
 .. function:: textdomain(domain=None)
 
    Change or query the current global domain.  If *domain* is ``None``, then the
@@ -108,29 +98,6 @@ class-based API instead.
    .. versionadded:: 3.8
 
 
-.. function:: lgettext(message)
-.. function:: ldgettext(domain, message)
-.. function:: lngettext(singular, plural, n)
-.. function:: ldngettext(domain, singular, plural, n)
-
-   Equivalent to the corresponding functions without the ``l`` prefix
-   (:func:`.gettext`, :func:`dgettext`, :func:`ngettext` and :func:`dngettext`),
-   but the translation is returned as a byte string encoded in the preferred
-   system encoding if no other encoding was explicitly set with
-   :func:`bind_textdomain_codeset`.
-
-   .. warning::
-
-      These functions should be avoided in Python 3, because they return
-      encoded bytes.  It's much better to use alternatives which return
-      Unicode strings instead, since most Python applications will want to
-      manipulate human readable text as strings instead of bytes.  Further,
-      it's possible that you may get unexpected Unicode-related exceptions
-      if there are encoding problems with the translated strings.
-
-   .. deprecated-removed:: 3.8 3.10
-
-
 Note that GNU :program:`gettext` also defines a :func:`dcgettext` method, but
 this was deemed not useful and so it is currently unimplemented.
 
@@ -181,7 +148,7 @@ install themselves in the built-in namespace as the function :func:`_`.
    the environment variables.
 
 
-.. function:: translation(domain, localedir=None, languages=None, class_=None, fallback=False, codeset=None)
+.. function:: translation(domain, localedir=None, languages=None, class_=None, fallback=False)
 
    Return a :class:`*Translations` instance based on the *domain*, *localedir*,
    and *languages*, which are first passed to :func:`find` to get a list of the
@@ -205,15 +172,13 @@ install themselves in the built-in namespace as the function :func:`_`.
    .. versionchanged:: 3.3
       :exc:`IOError` used to be raised instead of :exc:`OSError`.
 
-   .. deprecated-removed:: 3.8 3.10
-      The *codeset* parameter.
+   .. versionchanged:: 3.11
+      *codeset* parameter is removed.
 
-
-.. function:: install(domain, localedir=None, codeset=None, names=None)
+.. function:: install(domain, localedir=None, *, names=None)
 
    This installs the function :func:`_` in Python's builtins namespace, based on
-   *domain*, *localedir*, and *codeset* which are passed to the function
-   :func:`translation`.
+   *domain* and *localedir* which are passed to the function :func:`translation`.
 
    For the *names* parameter, please see the description of the translation
    object's :meth:`~NullTranslations.install` method.
@@ -228,9 +193,8 @@ install themselves in the built-in namespace as the function :func:`_`.
    builtins namespace, so it is easily accessible in all modules of your
    application.
 
-   .. deprecated-removed:: 3.8 3.10
-      The *codeset* parameter.
-
+   .. versionchanged:: 3.11
+      *names* is now a keyword-only parameter.
 
 The :class:`NullTranslations` class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -294,22 +258,6 @@ are the methods of :class:`!NullTranslations`:
       .. versionadded:: 3.8
 
 
-   .. method:: lgettext(message)
-   .. method:: lngettext(singular, plural, n)
-
-      Equivalent to :meth:`.gettext` and :meth:`.ngettext`, but the translation
-      is returned as a byte string encoded in the preferred system encoding
-      if no encoding was explicitly set with :meth:`set_output_charset`.
-      Overridden in derived classes.
-
-      .. warning::
-
-         These methods should be avoided in Python 3.  See the warning for the
-         :func:`lgettext` function.
-
-      .. deprecated-removed:: 3.8 3.10
-
-
    .. method:: info()
 
       Return the "protected" :attr:`_info` variable, a dictionary containing
@@ -319,21 +267,6 @@ are the methods of :class:`!NullTranslations`:
    .. method:: charset()
 
       Return the encoding of the message catalog file.
-
-
-   .. method:: output_charset()
-
-      Return the encoding used to return translated messages in :meth:`.lgettext`
-      and :meth:`.lngettext`.
-
-      .. deprecated-removed:: 3.8 3.10
-
-
-   .. method:: set_output_charset(charset)
-
-      Change the encoding used to return translated messages.
-
-      .. deprecated-removed:: 3.8 3.10
 
 
    .. method:: install(names=None)
@@ -448,22 +381,6 @@ unexpected, or if other problems occur while reading the file, instantiating a
       returned, and *plural* is returned in all other cases.
 
       .. versionadded:: 3.8
-
-
-   .. method:: lgettext(message)
-   .. method:: lngettext(singular, plural, n)
-
-      Equivalent to :meth:`.gettext` and :meth:`.ngettext`, but the translation
-      is returned as a byte string encoded in the preferred system encoding
-      if no encoding  was explicitly set with
-      :meth:`~NullTranslations.set_output_charset`.
-
-      .. warning::
-
-         These methods should be avoided in Python 3.  See the warning for the
-         :func:`lgettext` function.
-
-      .. deprecated-removed:: 3.8 3.10
 
 
 Solaris message catalog support

@@ -249,7 +249,7 @@ class FormatTest(unittest.TestCase):
         # base marker shouldn't change the size
         testcommon("%0#35.33o", big, "0o012345670123456701234567012345670")
 
-        # Some small ints, in both Python int and flavors).
+        # Some small ints, in both Python int and flavors.
         testcommon("%d", 42, "42")
         testcommon("%d", -42, "-42")
         testcommon("%d", 42.0, "42")
@@ -275,9 +275,9 @@ class FormatTest(unittest.TestCase):
         test_exc_common('% %s', 1, ValueError,
                         "unsupported format character '%' (0x25) at index 2")
         test_exc_common('%d', '1', TypeError,
-                        "%d format: a number is required, not str")
+                        "%d format: a real number is required, not str")
         test_exc_common('%d', b'1', TypeError,
-                        "%d format: a number is required, not bytes")
+                        "%d format: a real number is required, not bytes")
         test_exc_common('%x', '1', TypeError,
                         "%x format: an integer is required, not str")
         test_exc_common('%x', 3.14, TypeError,
@@ -518,6 +518,108 @@ class FormatTest(unittest.TestCase):
         error_msg = re.escape("Cannot specify both ',' and '_'.")
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:_,}'.format(1)
+
+    def test_better_error_message_format(self):
+        # https://bugs.python.org/issue20524
+        for value in [12j, 12, 12.0, "12"]:
+            with self.subTest(value=value):
+                # The format spec must be invalid for all types we're testing.
+                # '%M' will suffice.
+                bad_format_spec = '%M'
+                err = re.escape("Invalid format specifier "
+                                f"'{bad_format_spec}' for object of type "
+                                f"'{type(value).__name__}'")
+                with self.assertRaisesRegex(ValueError, err):
+                    f"xx{{value:{bad_format_spec}}}yy".format(value=value)
+
+                # Also test the builtin format() function.
+                with self.assertRaisesRegex(ValueError, err):
+                    format(value, bad_format_spec)
+
+                # Also test f-strings.
+                with self.assertRaisesRegex(ValueError, err):
+                    eval("f'xx{value:{bad_format_spec}}yy'")
+
+    def test_unicode_in_error_message(self):
+        str_err = re.escape(
+            "Invalid format specifier '%ЫйЯЧ' for object of type 'str'")
+        with self.assertRaisesRegex(ValueError, str_err):
+            "{a:%ЫйЯЧ}".format(a='a')
+
+    def test_negative_zero(self):
+        ## default behavior
+        self.assertEqual(f"{-0.:.1f}", "-0.0")
+        self.assertEqual(f"{-.01:.1f}", "-0.0")
+        self.assertEqual(f"{-0:.1f}", "0.0")  # integers do not distinguish -0
+
+        ## z sign option
+        self.assertEqual(f"{0.:z.1f}", "0.0")
+        self.assertEqual(f"{0.:z6.1f}", "   0.0")
+        self.assertEqual(f"{-1.:z6.1f}", "  -1.0")
+        self.assertEqual(f"{-0.:z.1f}", "0.0")
+        self.assertEqual(f"{.01:z.1f}", "0.0")
+        self.assertEqual(f"{-0:z.1f}", "0.0")  # z is allowed for integer input
+        self.assertEqual(f"{-.01:z.1f}", "0.0")
+        self.assertEqual(f"{0.:z.2f}", "0.00")
+        self.assertEqual(f"{-0.:z.2f}", "0.00")
+        self.assertEqual(f"{.001:z.2f}", "0.00")
+        self.assertEqual(f"{-.001:z.2f}", "0.00")
+
+        self.assertEqual(f"{0.:z.1e}", "0.0e+00")
+        self.assertEqual(f"{-0.:z.1e}", "0.0e+00")
+        self.assertEqual(f"{0.:z.1E}", "0.0E+00")
+        self.assertEqual(f"{-0.:z.1E}", "0.0E+00")
+
+        self.assertEqual(f"{-0.001:z.2e}", "-1.00e-03")  # tests for mishandled
+                                                         # rounding
+        self.assertEqual(f"{-0.001:z.2g}", "-0.001")
+        self.assertEqual(f"{-0.001:z.2%}", "-0.10%")
+
+        self.assertEqual(f"{-00000.000001:z.1f}", "0.0")
+        self.assertEqual(f"{-00000.:z.1f}", "0.0")
+        self.assertEqual(f"{-.0000000000:z.1f}", "0.0")
+
+        self.assertEqual(f"{-00000.000001:z.2f}", "0.00")
+        self.assertEqual(f"{-00000.:z.2f}", "0.00")
+        self.assertEqual(f"{-.0000000000:z.2f}", "0.00")
+
+        self.assertEqual(f"{.09:z.1f}", "0.1")
+        self.assertEqual(f"{-.09:z.1f}", "-0.1")
+
+        self.assertEqual(f"{-0.: z.0f}", " 0")
+        self.assertEqual(f"{-0.:+z.0f}", "+0")
+        self.assertEqual(f"{-0.:-z.0f}", "0")
+        self.assertEqual(f"{-1.: z.0f}", "-1")
+        self.assertEqual(f"{-1.:+z.0f}", "-1")
+        self.assertEqual(f"{-1.:-z.0f}", "-1")
+
+        self.assertEqual(f"{0.j:z.1f}", "0.0+0.0j")
+        self.assertEqual(f"{-0.j:z.1f}", "0.0+0.0j")
+        self.assertEqual(f"{.01j:z.1f}", "0.0+0.0j")
+        self.assertEqual(f"{-.01j:z.1f}", "0.0+0.0j")
+
+        self.assertEqual(f"{-0.:z>6.1f}", "zz-0.0")  # test fill, esp. 'z' fill
+        self.assertEqual(f"{-0.:z>z6.1f}", "zzz0.0")
+        self.assertEqual(f"{-0.:x>z6.1f}", "xxx0.0")
+        self.assertEqual(f"{-0.:🖤>z6.1f}", "🖤🖤🖤0.0")  # multi-byte fill char
+
+    def test_specifier_z_error(self):
+        error_msg = re.compile("Invalid format specifier '.*z.*'")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f"{0:z+f}"  # wrong position
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f"{0:fz}"  # wrong position
+
+        error_msg = re.escape("Negative zero coercion (z) not allowed")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f"{0:zd}"  # can't apply to int presentation type
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f"{'x':zs}"  # can't apply to string
+
+        error_msg = re.escape("unsupported format character 'z'")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            "%z.1f" % 0  # not allowed in old style string interpolation
+
 
 if __name__ == "__main__":
     unittest.main()

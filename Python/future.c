@@ -1,9 +1,5 @@
 #include "Python.h"
-#include "Python-ast.h"
-#include "token.h"
-#include "code.h"
-#include "symtable.h"
-#include "ast.h"
+#include "pycore_ast.h"           // _PyAST_GetDocString()
 
 #define UNDEFINED_FUTURE_FEATURE "future feature %.100s is not defined"
 #define ERR_LATE_FUTURE \
@@ -41,7 +37,7 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
         } else if (strcmp(feature, FUTURE_GENERATOR_STOP) == 0) {
             continue;
         } else if (strcmp(feature, FUTURE_ANNOTATIONS) == 0) {
-            continue;
+            ff->ff_features |= CO_FUTURE_ANNOTATIONS;
         } else if (strcmp(feature, "braces") == 0) {
             PyErr_SetString(PyExc_SyntaxError,
                             "not a chance");
@@ -120,7 +116,7 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
 
 
 PyFutureFeatures *
-PyFuture_FromASTObject(mod_ty mod, PyObject *filename)
+_PyFuture_FromAST(mod_ty mod, PyObject *filename)
 {
     PyFutureFeatures *ff;
 
@@ -136,20 +132,5 @@ PyFuture_FromASTObject(mod_ty mod, PyObject *filename)
         PyObject_Free(ff);
         return NULL;
     }
-    return ff;
-}
-
-
-PyFutureFeatures *
-PyFuture_FromAST(mod_ty mod, const char *filename_str)
-{
-    PyFutureFeatures *ff;
-    PyObject *filename;
-
-    filename = PyUnicode_DecodeFSDefault(filename_str);
-    if (filename == NULL)
-        return NULL;
-    ff = PyFuture_FromASTObject(mod, filename);
-    Py_DECREF(filename);
     return ff;
 }

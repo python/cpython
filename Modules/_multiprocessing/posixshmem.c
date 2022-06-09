@@ -110,21 +110,17 @@ static PyMethodDef module_methods[ ] = {
 };
 
 
-static struct PyModuleDef this_module = {
-    PyModuleDef_HEAD_INIT,  // m_base
-    "_posixshmem",          // m_name
-    "POSIX shared memory module",     // m_doc
-    -1,                     // m_size (space allocated for module globals)
-    module_methods,         // m_methods
+static struct PyModuleDef _posixshmemmodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_posixshmem",
+    .m_doc = "POSIX shared memory module",
+    .m_size = 0,
+    .m_methods = module_methods,
 };
 
 /* Module init function */
 PyMODINIT_FUNC
-PyInit__posixshmem(void) {
-    PyObject *module;
-    module = PyModule_Create(&this_module);
-    if (!module) {
-        return NULL;
-    }
-    return module;
+PyInit__posixshmem(void)
+{
+    return PyModuleDef_Init(&_posixshmemmodule);
 }

@@ -51,6 +51,13 @@ class ReprTests(unittest.TestCase):
         expected = repr(t3)[:-2] + "...)"
         eq(r2.repr(t3), expected)
 
+        # modified fillvalue:
+        r3 = Repr()
+        r3.fillvalue = '+++'
+        r3.maxtuple = 2
+        expected = repr(t3)[:-2] + "+++)"
+        eq(r3.repr(t3), expected)
+
     def test_container(self):
         from array import array
         from collections import deque
@@ -203,9 +210,9 @@ class ReprTests(unittest.TestCase):
         class C:
             def foo(cls): pass
         x = staticmethod(C.foo)
-        self.assertTrue(repr(x).startswith('<staticmethod object at 0x'))
+        self.assertEqual(repr(x), f'<staticmethod({C.foo!r})>')
         x = classmethod(C.foo)
-        self.assertTrue(repr(x).startswith('<classmethod object at 0x'))
+        self.assertEqual(repr(x), f'<classmethod({C.foo!r})>')
 
     def test_unsortable(self):
         # Repr.repr() used to call sorted() on sets, frozensets and dicts

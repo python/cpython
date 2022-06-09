@@ -640,7 +640,7 @@ Adapted from a patch by Ethan Furman.
 .. nonce: CCtzy1
 .. section: Documentation
 
-Updated documentation of ``total`` flag of TypeDict.
+Updated documentation of ``total`` flag of ``TypedDict``.
 
 ..
 

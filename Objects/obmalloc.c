@@ -1,7 +1,9 @@
 #include "Python.h"
 #include "pycore_pymem.h"         // _PyTraceMalloc_Config
+#include "pycore_code.h"         // stats
 
 #include <stdbool.h>
+#include <stdlib.h>               // malloc()
 
 
 /* Defined in tracemalloc.c */
@@ -88,7 +90,7 @@ struct _PyTraceMalloc_Config _Py_tracemalloc_config = _PyTraceMalloc_Config_INIT
 
 
 static void *
-_PyMem_RawMalloc(void *ctx, size_t size)
+_PyMem_RawMalloc(void *Py_UNUSED(ctx), size_t size)
 {
     /* PyMem_RawMalloc(0) means malloc(1). Some systems would return NULL
        for malloc(0), which would be treated as an error. Some platforms would
@@ -100,7 +102,7 @@ _PyMem_RawMalloc(void *ctx, size_t size)
 }
 
 static void *
-_PyMem_RawCalloc(void *ctx, size_t nelem, size_t elsize)
+_PyMem_RawCalloc(void *Py_UNUSED(ctx), size_t nelem, size_t elsize)
 {
     /* PyMem_RawCalloc(0, 0) means calloc(1, 1). Some systems would return NULL
        for calloc(0, 0), which would be treated as an error. Some platforms
@@ -114,7 +116,7 @@ _PyMem_RawCalloc(void *ctx, size_t nelem, size_t elsize)
 }
 
 static void *
-_PyMem_RawRealloc(void *ctx, void *ptr, size_t size)
+_PyMem_RawRealloc(void *Py_UNUSED(ctx), void *ptr, size_t size)
 {
     if (size == 0)
         size = 1;
@@ -122,7 +124,7 @@ _PyMem_RawRealloc(void *ctx, void *ptr, size_t size)
 }
 
 static void
-_PyMem_RawFree(void *ctx, void *ptr)
+_PyMem_RawFree(void *Py_UNUSED(ctx), void *ptr)
 {
     free(ptr);
 }
@@ -130,21 +132,22 @@ _PyMem_RawFree(void *ctx, void *ptr)
 
 #ifdef MS_WINDOWS
 static void *
-_PyObject_ArenaVirtualAlloc(void *ctx, size_t size)
+_PyObject_ArenaVirtualAlloc(void *Py_UNUSED(ctx), size_t size)
 {
     return VirtualAlloc(NULL, size,
                         MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 }
 
 static void
-_PyObject_ArenaVirtualFree(void *ctx, void *ptr, size_t size)
+_PyObject_ArenaVirtualFree(void *Py_UNUSED(ctx), void *ptr,
+    size_t Py_UNUSED(size))
 {
     VirtualFree(ptr, 0, MEM_RELEASE);
 }
 
 #elif defined(ARENAS_USE_MMAP)
 static void *
-_PyObject_ArenaMmap(void *ctx, size_t size)
+_PyObject_ArenaMmap(void *Py_UNUSED(ctx), size_t size)
 {
     void *ptr;
     ptr = mmap(NULL, size, PROT_READ|PROT_WRITE,
@@ -156,20 +159,20 @@ _PyObject_ArenaMmap(void *ctx, size_t size)
 }
 
 static void
-_PyObject_ArenaMunmap(void *ctx, void *ptr, size_t size)
+_PyObject_ArenaMunmap(void *Py_UNUSED(ctx), void *ptr, size_t size)
 {
     munmap(ptr, size);
 }
 
 #else
 static void *
-_PyObject_ArenaMalloc(void *ctx, size_t size)
+_PyObject_ArenaMalloc(void *Py_UNUSED(ctx), size_t size)
 {
     return malloc(size);
 }
 
 static void
-_PyObject_ArenaFree(void *ctx, void *ptr, size_t size)
+_PyObject_ArenaFree(void *Py_UNUSED(ctx), void *ptr, size_t Py_UNUSED(size))
 {
     free(ptr);
 }
@@ -552,6 +555,18 @@ PyObject_GetArenaAllocator(PyObjectArenaAllocator *allocator)
     *allocator = _PyObject_Arena;
 }
 
+void *
+_PyObject_VirtualAlloc(size_t size)
+{
+    return _PyObject_Arena.alloc(_PyObject_Arena.ctx, size);
+}
+
+void
+_PyObject_VirtualFree(void *obj, size_t size)
+{
+    _PyObject_Arena.free(_PyObject_Arena.ctx, obj, size);
+}
+
 void
 PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator)
 {
@@ -602,6 +617,10 @@ PyMem_Malloc(size_t size)
     /* see PyMem_RawMalloc() */
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
+    OBJECT_STAT_INC_COND(allocations512, size < 512);
+    OBJECT_STAT_INC_COND(allocations4k, size >= 512 && size < 4094);
+    OBJECT_STAT_INC_COND(allocations_big, size >= 4094);
+    OBJECT_STAT_INC(allocations);
     return _PyMem.malloc(_PyMem.ctx, size);
 }
 
@@ -611,6 +630,10 @@ PyMem_Calloc(size_t nelem, size_t elsize)
     /* see PyMem_RawMalloc() */
     if (elsize != 0 && nelem > (size_t)PY_SSIZE_T_MAX / elsize)
         return NULL;
+    OBJECT_STAT_INC_COND(allocations512, elsize < 512);
+    OBJECT_STAT_INC_COND(allocations4k, elsize >= 512 && elsize < 4094);
+    OBJECT_STAT_INC_COND(allocations_big, elsize >= 4094);
+    OBJECT_STAT_INC(allocations);
     return _PyMem.calloc(_PyMem.ctx, nelem, elsize);
 }
 
@@ -626,6 +649,7 @@ PyMem_Realloc(void *ptr, size_t new_size)
 void
 PyMem_Free(void *ptr)
 {
+    OBJECT_STAT_INC(frees);
     _PyMem.free(_PyMem.ctx, ptr);
 }
 
@@ -682,6 +706,10 @@ PyObject_Malloc(size_t size)
     /* see PyMem_RawMalloc() */
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
+    OBJECT_STAT_INC_COND(allocations512, size < 512);
+    OBJECT_STAT_INC_COND(allocations4k, size >= 512 && size < 4094);
+    OBJECT_STAT_INC_COND(allocations_big, size >= 4094);
+    OBJECT_STAT_INC(allocations);
     return _PyObject.malloc(_PyObject.ctx, size);
 }
 
@@ -691,6 +719,10 @@ PyObject_Calloc(size_t nelem, size_t elsize)
     /* see PyMem_RawMalloc() */
     if (elsize != 0 && nelem > (size_t)PY_SSIZE_T_MAX / elsize)
         return NULL;
+    OBJECT_STAT_INC_COND(allocations512, elsize < 512);
+    OBJECT_STAT_INC_COND(allocations4k, elsize >= 512 && elsize < 4094);
+    OBJECT_STAT_INC_COND(allocations_big, elsize >= 4094);
+    OBJECT_STAT_INC(allocations);
     return _PyObject.calloc(_PyObject.ctx, nelem, elsize);
 }
 
@@ -706,6 +738,7 @@ PyObject_Realloc(void *ptr, size_t new_size)
 void
 PyObject_Free(void *ptr)
 {
+    OBJECT_STAT_INC(frees);
     _PyObject.free(_PyObject.ctx, ptr);
 }
 
@@ -836,7 +869,7 @@ static int running_on_valgrind = -1;
 
 /*
  * Alignment of addresses returned to the user. 8-bytes alignment works
- * on most current architectures (with 32-bit or 64-bit address busses).
+ * on most current architectures (with 32-bit or 64-bit address buses).
  * The alignment value is also used for grouping small requests in size
  * classes spaced ALIGNMENT bytes apart.
  *
@@ -883,7 +916,6 @@ static int running_on_valgrind = -1;
  * currently targets.
  */
 #define SYSTEM_PAGE_SIZE        (4 * 1024)
-#define SYSTEM_PAGE_SIZE_MASK   (SYSTEM_PAGE_SIZE - 1)
 
 /*
  * Maximum amount of memory managed by the allocator for small requests.
@@ -891,6 +923,22 @@ static int running_on_valgrind = -1;
 #ifdef WITH_MEMORY_LIMITS
 #ifndef SMALL_MEMORY_LIMIT
 #define SMALL_MEMORY_LIMIT      (64 * 1024 * 1024)      /* 64 MB -- more? */
+#endif
+#endif
+
+#if !defined(WITH_PYMALLOC_RADIX_TREE)
+/* Use radix-tree to track arena memory regions, for address_in_range().
+ * Enable by default since it allows larger pool sizes.  Can be disabled
+ * using -DWITH_PYMALLOC_RADIX_TREE=0 */
+#define WITH_PYMALLOC_RADIX_TREE 1
+#endif
+
+#if SIZEOF_VOID_P > 4
+/* on 64-bit platforms use larger pools and arenas if we can */
+#define USE_LARGE_ARENAS
+#if WITH_PYMALLOC_RADIX_TREE
+/* large pools only supported if radix-tree is enabled */
+#define USE_LARGE_POOLS
 #endif
 #endif
 
@@ -907,18 +955,34 @@ static int running_on_valgrind = -1;
  * Arenas are allocated with mmap() on systems supporting anonymous memory
  * mappings to reduce heap fragmentation.
  */
-#define ARENA_SIZE              (256 << 10)     /* 256KB */
+#ifdef USE_LARGE_ARENAS
+#define ARENA_BITS              20                    /* 1 MiB */
+#else
+#define ARENA_BITS              18                    /* 256 KiB */
+#endif
+#define ARENA_SIZE              (1 << ARENA_BITS)
+#define ARENA_SIZE_MASK         (ARENA_SIZE - 1)
 
 #ifdef WITH_MEMORY_LIMITS
 #define MAX_ARENAS              (SMALL_MEMORY_LIMIT / ARENA_SIZE)
 #endif
 
 /*
- * Size of the pools used for small blocks. Should be a power of 2,
- * between 1K and SYSTEM_PAGE_SIZE, that is: 1k, 2k, 4k.
+ * Size of the pools used for small blocks.  Must be a power of 2.
  */
-#define POOL_SIZE               SYSTEM_PAGE_SIZE        /* must be 2^N */
-#define POOL_SIZE_MASK          SYSTEM_PAGE_SIZE_MASK
+#ifdef USE_LARGE_POOLS
+#define POOL_BITS               14                  /* 16 KiB */
+#else
+#define POOL_BITS               12                  /* 4 KiB */
+#endif
+#define POOL_SIZE               (1 << POOL_BITS)
+#define POOL_SIZE_MASK          (POOL_SIZE - 1)
+
+#if !WITH_PYMALLOC_RADIX_TREE
+#if POOL_SIZE != SYSTEM_PAGE_SIZE
+#   error "pool size must be equal to system page size"
+#endif
+#endif
 
 #define MAX_POOLS_IN_ARENA  (ARENA_SIZE / POOL_SIZE)
 #if MAX_POOLS_IN_ARENA * POOL_SIZE != ARENA_SIZE
@@ -1233,6 +1297,279 @@ _Py_GetAllocatedBlocks(void)
     return n;
 }
 
+#if WITH_PYMALLOC_RADIX_TREE
+/*==========================================================================*/
+/* radix tree for tracking arena usage.  If enabled, used to implement
+   address_in_range().
+
+   memory address bit allocation for keys
+
+   64-bit pointers, IGNORE_BITS=0 and 2^20 arena size:
+     15 -> MAP_TOP_BITS
+     15 -> MAP_MID_BITS
+     14 -> MAP_BOT_BITS
+     20 -> ideal aligned arena
+   ----
+     64
+
+   64-bit pointers, IGNORE_BITS=16, and 2^20 arena size:
+     16 -> IGNORE_BITS
+     10 -> MAP_TOP_BITS
+     10 -> MAP_MID_BITS
+      8 -> MAP_BOT_BITS
+     20 -> ideal aligned arena
+   ----
+     64
+
+   32-bit pointers and 2^18 arena size:
+     14 -> MAP_BOT_BITS
+     18 -> ideal aligned arena
+   ----
+     32
+
+*/
+
+#if SIZEOF_VOID_P == 8
+
+/* number of bits in a pointer */
+#define POINTER_BITS 64
+
+/* High bits of memory addresses that will be ignored when indexing into the
+ * radix tree.  Setting this to zero is the safe default.  For most 64-bit
+ * machines, setting this to 16 would be safe.  The kernel would not give
+ * user-space virtual memory addresses that have significant information in
+ * those high bits.  The main advantage to setting IGNORE_BITS > 0 is that less
+ * virtual memory will be used for the top and middle radix tree arrays.  Those
+ * arrays are allocated in the BSS segment and so will typically consume real
+ * memory only if actually accessed.
+ */
+#define IGNORE_BITS 0
+
+/* use the top and mid layers of the radix tree */
+#define USE_INTERIOR_NODES
+
+#elif SIZEOF_VOID_P == 4
+
+#define POINTER_BITS 32
+#define IGNORE_BITS 0
+
+#else
+
+ /* Currently this code works for 64-bit or 32-bit pointers only.  */
+#error "obmalloc radix tree requires 64-bit or 32-bit pointers."
+
+#endif /* SIZEOF_VOID_P */
+
+/* arena_coverage_t members require this to be true  */
+#if ARENA_BITS >= 32
+#   error "arena size must be < 2^32"
+#endif
+
+/* the lower bits of the address that are not ignored */
+#define ADDRESS_BITS (POINTER_BITS - IGNORE_BITS)
+
+#ifdef USE_INTERIOR_NODES
+/* number of bits used for MAP_TOP and MAP_MID nodes */
+#define INTERIOR_BITS ((ADDRESS_BITS - ARENA_BITS + 2) / 3)
+#else
+#define INTERIOR_BITS 0
+#endif
+
+#define MAP_TOP_BITS INTERIOR_BITS
+#define MAP_TOP_LENGTH (1 << MAP_TOP_BITS)
+#define MAP_TOP_MASK (MAP_TOP_LENGTH - 1)
+
+#define MAP_MID_BITS INTERIOR_BITS
+#define MAP_MID_LENGTH (1 << MAP_MID_BITS)
+#define MAP_MID_MASK (MAP_MID_LENGTH - 1)
+
+#define MAP_BOT_BITS (ADDRESS_BITS - ARENA_BITS - 2*INTERIOR_BITS)
+#define MAP_BOT_LENGTH (1 << MAP_BOT_BITS)
+#define MAP_BOT_MASK (MAP_BOT_LENGTH - 1)
+
+#define MAP_BOT_SHIFT ARENA_BITS
+#define MAP_MID_SHIFT (MAP_BOT_BITS + MAP_BOT_SHIFT)
+#define MAP_TOP_SHIFT (MAP_MID_BITS + MAP_MID_SHIFT)
+
+#define AS_UINT(p) ((uintptr_t)(p))
+#define MAP_BOT_INDEX(p) ((AS_UINT(p) >> MAP_BOT_SHIFT) & MAP_BOT_MASK)
+#define MAP_MID_INDEX(p) ((AS_UINT(p) >> MAP_MID_SHIFT) & MAP_MID_MASK)
+#define MAP_TOP_INDEX(p) ((AS_UINT(p) >> MAP_TOP_SHIFT) & MAP_TOP_MASK)
+
+#if IGNORE_BITS > 0
+/* Return the ignored part of the pointer address.  Those bits should be same
+ * for all valid pointers if IGNORE_BITS is set correctly.
+ */
+#define HIGH_BITS(p) (AS_UINT(p) >> ADDRESS_BITS)
+#else
+#define HIGH_BITS(p) 0
+#endif
+
+
+/* This is the leaf of the radix tree.  See arena_map_mark_used() for the
+ * meaning of these members. */
+typedef struct {
+    int32_t tail_hi;
+    int32_t tail_lo;
+} arena_coverage_t;
+
+typedef struct arena_map_bot {
+    /* The members tail_hi and tail_lo are accessed together.  So, it
+     * better to have them as an array of structs, rather than two
+     * arrays.
+     */
+    arena_coverage_t arenas[MAP_BOT_LENGTH];
+} arena_map_bot_t;
+
+#ifdef USE_INTERIOR_NODES
+typedef struct arena_map_mid {
+    struct arena_map_bot *ptrs[MAP_MID_LENGTH];
+} arena_map_mid_t;
+
+typedef struct arena_map_top {
+    struct arena_map_mid *ptrs[MAP_TOP_LENGTH];
+} arena_map_top_t;
+#endif
+
+/* The root of radix tree.  Note that by initializing like this, the memory
+ * should be in the BSS.  The OS will only memory map pages as the MAP_MID
+ * nodes get used (OS pages are demand loaded as needed).
+ */
+#ifdef USE_INTERIOR_NODES
+static arena_map_top_t arena_map_root;
+/* accounting for number of used interior nodes */
+static int arena_map_mid_count;
+static int arena_map_bot_count;
+#else
+static arena_map_bot_t arena_map_root;
+#endif
+
+/* Return a pointer to a bottom tree node, return NULL if it doesn't exist or
+ * it cannot be created */
+static arena_map_bot_t *
+arena_map_get(block *p, int create)
+{
+#ifdef USE_INTERIOR_NODES
+    /* sanity check that IGNORE_BITS is correct */
+    assert(HIGH_BITS(p) == HIGH_BITS(&arena_map_root));
+    int i1 = MAP_TOP_INDEX(p);
+    if (arena_map_root.ptrs[i1] == NULL) {
+        if (!create) {
+            return NULL;
+        }
+        arena_map_mid_t *n = PyMem_RawCalloc(1, sizeof(arena_map_mid_t));
+        if (n == NULL) {
+            return NULL;
+        }
+        arena_map_root.ptrs[i1] = n;
+        arena_map_mid_count++;
+    }
+    int i2 = MAP_MID_INDEX(p);
+    if (arena_map_root.ptrs[i1]->ptrs[i2] == NULL) {
+        if (!create) {
+            return NULL;
+        }
+        arena_map_bot_t *n = PyMem_RawCalloc(1, sizeof(arena_map_bot_t));
+        if (n == NULL) {
+            return NULL;
+        }
+        arena_map_root.ptrs[i1]->ptrs[i2] = n;
+        arena_map_bot_count++;
+    }
+    return arena_map_root.ptrs[i1]->ptrs[i2];
+#else
+    return &arena_map_root;
+#endif
+}
+
+
+/* The radix tree only tracks arenas.  So, for 16 MiB arenas, we throw
+ * away 24 bits of the address.  That reduces the space requirement of
+ * the tree compared to similar radix tree page-map schemes.  In
+ * exchange for slashing the space requirement, it needs more
+ * computation to check an address.
+ *
+ * Tracking coverage is done by "ideal" arena address.  It is easier to
+ * explain in decimal so let's say that the arena size is 100 bytes.
+ * Then, ideal addresses are 100, 200, 300, etc.  For checking if a
+ * pointer address is inside an actual arena, we have to check two ideal
+ * arena addresses.  E.g. if pointer is 357, we need to check 200 and
+ * 300.  In the rare case that an arena is aligned in the ideal way
+ * (e.g. base address of arena is 200) then we only have to check one
+ * ideal address.
+ *
+ * The tree nodes for 200 and 300 both store the address of arena.
+ * There are two cases: the arena starts at a lower ideal arena and
+ * extends to this one, or the arena starts in this arena and extends to
+ * the next ideal arena.  The tail_lo and tail_hi members correspond to
+ * these two cases.
+ */
+
+
+/* mark or unmark addresses covered by arena */
+static int
+arena_map_mark_used(uintptr_t arena_base, int is_used)
+{
+    /* sanity check that IGNORE_BITS is correct */
+    assert(HIGH_BITS(arena_base) == HIGH_BITS(&arena_map_root));
+    arena_map_bot_t *n_hi = arena_map_get((block *)arena_base, is_used);
+    if (n_hi == NULL) {
+        assert(is_used); /* otherwise node should already exist */
+        return 0; /* failed to allocate space for node */
+    }
+    int i3 = MAP_BOT_INDEX((block *)arena_base);
+    int32_t tail = (int32_t)(arena_base & ARENA_SIZE_MASK);
+    if (tail == 0) {
+        /* is ideal arena address */
+        n_hi->arenas[i3].tail_hi = is_used ? -1 : 0;
+    }
+    else {
+        /* arena_base address is not ideal (aligned to arena size) and
+         * so it potentially covers two MAP_BOT nodes.  Get the MAP_BOT node
+         * for the next arena.  Note that it might be in different MAP_TOP
+         * and MAP_MID nodes as well so we need to call arena_map_get()
+         * again (do the full tree traversal).
+         */
+        n_hi->arenas[i3].tail_hi = is_used ? tail : 0;
+        uintptr_t arena_base_next = arena_base + ARENA_SIZE;
+        /* If arena_base is a legit arena address, so is arena_base_next - 1
+         * (last address in arena).  If arena_base_next overflows then it
+         * must overflow to 0.  However, that would mean arena_base was
+         * "ideal" and we should not be in this case. */
+        assert(arena_base < arena_base_next);
+        arena_map_bot_t *n_lo = arena_map_get((block *)arena_base_next, is_used);
+        if (n_lo == NULL) {
+            assert(is_used); /* otherwise should already exist */
+            n_hi->arenas[i3].tail_hi = 0;
+            return 0; /* failed to allocate space for node */
+        }
+        int i3_next = MAP_BOT_INDEX(arena_base_next);
+        n_lo->arenas[i3_next].tail_lo = is_used ? tail : 0;
+    }
+    return 1;
+}
+
+/* Return true if 'p' is a pointer inside an obmalloc arena.
+ * _PyObject_Free() calls this so it needs to be very fast. */
+static int
+arena_map_is_used(block *p)
+{
+    arena_map_bot_t *n = arena_map_get(p, 0);
+    if (n == NULL) {
+        return 0;
+    }
+    int i3 = MAP_BOT_INDEX(p);
+    /* ARENA_BITS must be < 32 so that the tail is a non-negative int32_t. */
+    int32_t hi = n->arenas[i3].tail_hi;
+    int32_t lo = n->arenas[i3].tail_lo;
+    int32_t tail = (int32_t)(AS_UINT(p) & ARENA_SIZE_MASK);
+    return (tail < lo) || (tail >= hi && hi != 0);
+}
+
+/* end of radix tree logic */
+/*==========================================================================*/
+#endif /* WITH_PYMALLOC_RADIX_TREE */
+
 
 /* Allocate a new arena.  If we run out of memory, return NULL.  Else
  * allocate a new arena, and return the address of an arena_object
@@ -1251,8 +1588,9 @@ new_arena(void)
         const char *opt = Py_GETENV("PYTHONMALLOCSTATS");
         debug_stats = (opt != NULL && *opt != '\0');
     }
-    if (debug_stats)
+    if (debug_stats) {
         _PyObject_DebugMallocStats(stderr);
+    }
 
     if (unused_arena_objects == NULL) {
         uint i;
@@ -1302,6 +1640,15 @@ new_arena(void)
     unused_arena_objects = arenaobj->nextarena;
     assert(arenaobj->address == 0);
     address = _PyObject_Arena.alloc(_PyObject_Arena.ctx, ARENA_SIZE);
+#if WITH_PYMALLOC_RADIX_TREE
+    if (address != NULL) {
+        if (!arena_map_mark_used((uintptr_t)address, 1)) {
+            /* marking arena in radix tree failed, abort */
+            _PyObject_Arena.free(_PyObject_Arena.ctx, address, ARENA_SIZE);
+            address = NULL;
+        }
+    }
+#endif
     if (address == NULL) {
         /* The allocation failed: return NULL after putting the
          * arenaobj back.
@@ -1332,6 +1679,17 @@ new_arena(void)
 }
 
 
+
+#if WITH_PYMALLOC_RADIX_TREE
+/* Return true if and only if P is an address that was allocated by
+   pymalloc.  When the radix tree is used, 'poolp' is unused.
+ */
+static bool
+address_in_range(void *p, poolp Py_UNUSED(pool))
+{
+    return arena_map_is_used(p);
+}
+#else
 /*
 address_in_range(P, POOL)
 
@@ -1423,6 +1781,7 @@ address_in_range(void *p, poolp pool)
         arenas[arenaindex].address != 0;
 }
 
+#endif /* !WITH_PYMALLOC_RADIX_TREE */
 
 /*==========================================================================*/
 
@@ -1587,7 +1946,7 @@ allocate_from_new_pool(uint size)
    or when the max memory limit has been reached.
 */
 static inline void*
-pymalloc_alloc(void *ctx, size_t nbytes)
+pymalloc_alloc(void *Py_UNUSED(ctx), size_t nbytes)
 {
 #ifdef WITH_VALGRIND
     if (UNLIKELY(running_on_valgrind == -1)) {
@@ -1768,6 +2127,11 @@ insert_to_freepool(poolp pool)
         ao->nextarena = unused_arena_objects;
         unused_arena_objects = ao;
 
+#if WITH_PYMALLOC_RADIX_TREE
+        /* mark arena region as not under control of obmalloc */
+        arena_map_mark_used(ao->address, 0);
+#endif
+
         /* Free the entire arena. */
         _PyObject_Arena.free(_PyObject_Arena.ctx,
                              (void *)ao->address, ARENA_SIZE);
@@ -1852,7 +2216,7 @@ insert_to_freepool(poolp pool)
    Return 1 if it was freed.
    Return 0 if the block was not allocated by pymalloc_alloc(). */
 static inline int
-pymalloc_free(void *ctx, void *p)
+pymalloc_free(void *Py_UNUSED(ctx), void *p)
 {
     assert(p != NULL);
 
@@ -2719,6 +3083,7 @@ _PyObject_DebugMallocStats(FILE *out)
 
     fputc('\n', out);
 
+    /* Account for what all of those arena bytes are being used for. */
     total = printone(out, "# bytes in allocated blocks", allocated_bytes);
     total += printone(out, "# bytes in available blocks", available_bytes);
 
@@ -2730,6 +3095,25 @@ _PyObject_DebugMallocStats(FILE *out)
     total += printone(out, "# bytes lost to quantization", quantization);
     total += printone(out, "# bytes lost to arena alignment", arena_alignment);
     (void)printone(out, "Total", total);
+    assert(narenas * ARENA_SIZE == total);
+
+#if WITH_PYMALLOC_RADIX_TREE
+    fputs("\narena map counts\n", out);
+#ifdef USE_INTERIOR_NODES
+    (void)printone(out, "# arena map mid nodes", arena_map_mid_count);
+    (void)printone(out, "# arena map bot nodes", arena_map_bot_count);
+    fputc('\n', out);
+#endif
+    total = printone(out, "# bytes lost to arena map root", sizeof(arena_map_root));
+#ifdef USE_INTERIOR_NODES
+    total += printone(out, "# bytes lost to arena map mid",
+                      sizeof(arena_map_mid_t) * arena_map_mid_count);
+    total += printone(out, "# bytes lost to arena map bot",
+                      sizeof(arena_map_bot_t) * arena_map_bot_count);
+    (void)printone(out, "Total", total);
+#endif
+#endif
+
     return 1;
 }
 

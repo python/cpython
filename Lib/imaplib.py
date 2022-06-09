@@ -145,7 +145,7 @@ class IMAP4:
                       the global default socket timeout is used
 
     All IMAP4rev1 commands are supported by methods of the same
-    name (in lower-case).
+    name (in lowercase).
 
     All arguments to commands are converted to strings, except for
     AUTHENTICATE, and the last argument to APPEND which is passed as

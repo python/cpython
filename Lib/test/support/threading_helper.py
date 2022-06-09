@@ -4,6 +4,7 @@ import functools
 import sys
 import threading
 import time
+import unittest
 
 from test import support
 
@@ -157,7 +158,7 @@ class catch_threading_exception:
     Context manager catching threading.Thread exception using
     threading.excepthook.
 
-    Attributes set when an exception is catched:
+    Attributes set when an exception is caught:
 
     * exc_type
     * exc_value
@@ -207,3 +208,37 @@ class catch_threading_exception:
         del self.exc_value
         del self.exc_traceback
         del self.thread
+
+
+def _can_start_thread() -> bool:
+    """Detect whether Python can start new threads.
+
+    Some WebAssembly platforms do not provide a working pthread
+    implementation. Thread support is stubbed and any attempt
+    to create a new thread fails.
+
+    - wasm32-wasi does not have threading.
+    - wasm32-emscripten can be compiled with or without pthread
+      support (-s USE_PTHREADS / __EMSCRIPTEN_PTHREADS__).
+    """
+    if sys.platform == "emscripten":
+        return sys._emscripten_info.pthreads
+    elif sys.platform == "wasi":
+        return False
+    else:
+        # assume all other platforms have working thread support.
+        return True
+
+can_start_thread = _can_start_thread()
+
+def requires_working_threading(*, module=False):
+    """Skip tests or modules that require working threading.
+
+    Can be used as a function/class decorator or to skip an entire module.
+    """
+    msg = "requires threading support"
+    if module:
+        if not can_start_thread:
+            raise unittest.SkipTest(msg)
+    else:
+        return unittest.skipUnless(can_start_thread, msg)

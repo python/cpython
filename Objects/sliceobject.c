@@ -97,9 +97,8 @@ PyObject _Py_EllipsisObject = {
 /* Slice object implementation */
 
 
-void _PySlice_Fini(PyThreadState *tstate)
+void _PySlice_Fini(PyInterpreterState *interp)
 {
-    PyInterpreterState *interp = tstate->interp;
     PySliceObject *obj = interp->slice_cache;
     if (obj != NULL) {
         interp->slice_cache = NULL;
@@ -207,7 +206,8 @@ PySlice_Unpack(PyObject *_r,
     PySliceObject *r = (PySliceObject*)_r;
     /* this is harder to get right than you might think */
 
-    Py_BUILD_ASSERT(PY_SSIZE_T_MIN + 1 <= -PY_SSIZE_T_MAX);
+    static_assert(PY_SSIZE_T_MIN + 1 <= -PY_SSIZE_T_MAX,
+                  "-PY_SSIZE_T_MAX < PY_SSIZE_T_MIN + 1");
 
     if (r->step == Py_None) {
         *step = 1;
