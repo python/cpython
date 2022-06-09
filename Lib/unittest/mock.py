@@ -495,8 +495,13 @@ class NonCallableMock(Base):
         _spec_class = None
         _spec_signature = None
         _spec_asyncs = []
+        try:
+            _members = inspect.getmembers(spec)
+        except Exception:
+            # Fallback to dir if for some reason we cannot inspect members
+            _members = [(elem, None) for elem in dir(spec)]
 
-        for attr in dir(spec):
+        for attr, _ in _members:
             if iscoroutinefunction(getattr(spec, attr, None)):
                 _spec_asyncs.append(attr)
 
@@ -509,7 +514,11 @@ class NonCallableMock(Base):
                                         _spec_as_instance, _eat_self)
             _spec_signature = res and res[1]
 
-            spec = dir(spec)
+            spec = []
+            for member_k, member_v in _members:
+                spec.append(member_k)
+                if member_k == '__init__' and hasattr(member_v, '__code__'):
+                    spec.extend(member_v.__code__.co_names)
 
         __dict__ = self.__dict__
         __dict__['_spec_class'] = _spec_class
