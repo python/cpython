@@ -843,6 +843,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
 class PyShell(OutputWindow):
     from idlelib.squeezer import Squeezer
+    from idlelib.clearwindow import clearwindow
 
     shell_title = "IDLE Shell " + python_version()
 
@@ -917,6 +918,8 @@ class PyShell(OutputWindow):
             text.bind("<<view-restart>>", self.view_restart_mark)
             text.bind("<<restart-shell>>", self.restart_shell)
         self.squeezer = self.Squeezer(self)
+        self.ClearWindow = self.clearwindow(self)
+        text.bind("<<clear-window>>", self.clear_window)
         text.bind("<<squeeze-current-text>>",
                   self.squeeze_current_text_event)
 
@@ -1446,6 +1449,9 @@ class PyShell(OutputWindow):
     def squeeze_current_text_event(self, event=None):
         self.squeezer.squeeze_current_text()
         self.shell_sidebar.update_sidebar()
+
+    def clear_window(self, event):
+        self.ClearWindow.clear_window_event()
 
     def on_squeezed_expand(self, index, text, tags):
         self.shell_sidebar.update_sidebar()
