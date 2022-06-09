@@ -1,8 +1,8 @@
-:mod:`importlib.resources.abc` -- Base classes for resources
-------------------------------------------------------------
+:mod:`importlib.resources.abc` -- Abstract base classes for resources
+---------------------------------------------------------------------
 
 .. module:: importlib.resources.abc
-    :synopsis: Base classes for package resource reading, opening, and access
+    :synopsis: Abstract base classes for resources
 
 **Source code:** :source:`Lib/importlib/resources/abc.py`
 

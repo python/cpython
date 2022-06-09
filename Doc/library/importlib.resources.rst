@@ -18,7 +18,7 @@ text mode.
 Resources are roughly akin to files inside directories, though it's important
 to keep in mind that this is just a metaphor.  Resources and packages **do
 not** have to exist as physical files and directories on the file system:
-for example, a package and its resources can be imported from a Zip file using
+for example, a package and its resources can be imported from a zip file using
 :py:mod:`zipimport`.
 
 .. note::
@@ -53,7 +53,7 @@ for example, a package and its resources can be imported from a Zip file using
 
 .. function:: files(package)
 
-    Returns an :class:`~importlib.resources.abc.Traversable` object
+    Returns a :class:`~importlib.resources.abc.Traversable` object
     representing the resource container for the package (think directory)
     and its resources (think files). A Traversable may contain other
     containers (think subdirectories).
@@ -84,7 +84,7 @@ Deprecated functions
 
 An older, deprecated set of functions is still available, but is
 scheduled for removal in a future version of Python.
-The main drawback of these function is that they do not support
+The main drawback of these functions is that they do not support
 directories: they assume all resources are located directly within a *package*.
 
 .. data:: Resource
@@ -219,4 +219,4 @@ directories: they assume all resources are located directly within a *package*.
 
        Calls to this function can be replaced by::
 
-          (resource for resource in files(package).iterdir() if resource.is_file())
+          (resource.name for resource in files(package).iterdir() if resource.is_file())
