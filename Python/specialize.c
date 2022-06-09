@@ -986,7 +986,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             }
         }
     }
-    if (dictkind == MANAGED_VALUES || dictkind == MANAGED_DICT || dictkind == OFFSET_DICT) {
+    if (dictkind == MANAGED_VALUES || dictkind == OFFSET_DICT) {
         Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
         if (index != DKIX_EMPTY) {
             SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_LOAD_METHOD_IS_ATTR);
@@ -1007,17 +1007,14 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             _Py_SET_OPCODE(*instr, LOAD_METHOD_WITH_VALUES);
             break;
         case MANAGED_DICT:
-            *(int16_t *)&cache->dict_offset = (int16_t)MANAGED_DICT_OFFSET;
-            _Py_SET_OPCODE(*instr, LOAD_METHOD_WITH_DICT);
-            break;
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_LOAD_METHOD_HAS_MANAGED_DICT);
+            goto fail;
         case OFFSET_DICT:
             assert(owner_cls->tp_dictoffset > 0 && owner_cls->tp_dictoffset <= INT16_MAX);
-            cache->dict_offset = (uint16_t)owner_cls->tp_dictoffset;
             _Py_SET_OPCODE(*instr, LOAD_METHOD_WITH_DICT);
             break;
         case LAZY_DICT:
             assert(owner_cls->tp_dictoffset > 0 && owner_cls->tp_dictoffset <= INT16_MAX);
-            cache->dict_offset = (uint16_t)owner_cls->tp_dictoffset;
             _Py_SET_OPCODE(*instr, LOAD_METHOD_LAZY_DICT);
             break;
     }

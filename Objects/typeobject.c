@@ -3361,13 +3361,51 @@ static const PySlot_Offset pyslot_offsets[] = {
 #include "typeslots.inc"
 };
 
+/* Given a PyType_FromMetaclass `bases` argument (NULL, type, or tuple of
+ * types), return a tuple of types.
+ */
+inline static PyObject *
+get_bases_tuple(PyObject *bases_in, PyType_Spec *spec)
+{
+    if (!bases_in) {
+        /* Default: look in the spec, fall back to (type,). */
+        PyTypeObject *base = &PyBaseObject_Type;  // borrowed ref
+        PyObject *bases = NULL;  // borrowed ref
+        const PyType_Slot *slot;
+        for (slot = spec->slots; slot->slot; slot++) {
+            switch (slot->slot) {
+                case Py_tp_base:
+                    base = slot->pfunc;
+                    break;
+                case Py_tp_bases:
+                    bases = slot->pfunc;
+                    break;
+            }
+        }
+        if (!bases) {
+            return PyTuple_Pack(1, base);
+        }
+        if (PyTuple_Check(bases)) {
+            return Py_NewRef(bases);
+        }
+        PyErr_SetString(PyExc_SystemError, "Py_tp_bases is not a tuple");
+        return NULL;
+    }
+    if (PyTuple_Check(bases_in)) {
+        return Py_NewRef(bases_in);
+    }
+    // Not a tuple, should be a single type
+    return PyTuple_Pack(1, bases_in);
+}
+
 PyObject *
 PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
-                     PyType_Spec *spec, PyObject *bases)
+                     PyType_Spec *spec, PyObject *bases_in)
 {
-    PyHeapTypeObject *res;
-    PyObject *modname;
-    PyTypeObject *type, *base;
+    PyHeapTypeObject *res = NULL;
+    PyObject *modname = NULL;
+    PyTypeObject *type;
+    PyObject *bases = NULL;
     int r;
 
     const PyType_Slot *slot;
@@ -3375,16 +3413,6 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     Py_ssize_t weaklistoffset, dictoffset, vectorcalloffset;
     char *res_start;
     short slot_offset, subslot_offset;
-
-    if (!metaclass) {
-        metaclass = &PyType_Type;
-    }
-
-    if (metaclass->tp_new != PyType_Type.tp_new) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Metaclasses with custom tp_new are not supported.");
-        return NULL;
-    }
 
     nmembers = weaklistoffset = dictoffset = vectorcalloffset = 0;
     for (slot = spec->slots; slot->slot; slot++) {
@@ -3419,16 +3447,57 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
         }
     }
 
-    res = (PyHeapTypeObject*)metaclass->tp_alloc(metaclass, nmembers);
-    if (res == NULL)
-        return NULL;
-    res_start = (char*)res;
-
     if (spec->name == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "Type spec does not define the name field.");
-        goto fail;
+        goto finally;
     }
+
+    /* Get a tuple of bases.
+     * bases is a strong reference (unlike bases_in).
+     */
+    bases = get_bases_tuple(bases_in, spec);
+    if (!bases) {
+        goto finally;
+    }
+
+    /* Calculate the metaclass */
+
+    if (!metaclass) {
+        metaclass = &PyType_Type;
+    }
+    metaclass = _PyType_CalculateMetaclass(metaclass, bases);
+    if (metaclass == NULL) {
+        goto finally;
+    }
+    if (!PyType_Check(metaclass)) {
+        PyErr_Format(PyExc_TypeError,
+                     "Metaclass '%R' is not a subclass of 'type'.",
+                     metaclass);
+        goto finally;
+    }
+    if (metaclass->tp_new != PyType_Type.tp_new) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Metaclasses with custom tp_new are not supported.");
+        goto finally;
+    }
+
+    /* Calculate best base, and check that all bases are type objects */
+    PyTypeObject *base = best_base(bases);  // borrowed ref
+    if (base == NULL) {
+        goto finally;
+    }
+    // best_base should check Py_TPFLAGS_BASETYPE & raise a proper exception,
+    // here we just check its work
+    assert(_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE));
+
+    /* Allocate the new type */
+
+    res = (PyHeapTypeObject*)metaclass->tp_alloc(metaclass, nmembers);
+    if (res == NULL) {
+        goto finally;
+    }
+    res_start = (char*)res;
 
     type = &res->ht_type;
     /* The flags must be initialized early, before the GC traverses us */
@@ -3445,7 +3514,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
 
     res->ht_name = PyUnicode_FromString(s);
     if (!res->ht_name) {
-        goto fail;
+        goto finally;
     }
     res->ht_qualname = Py_NewRef(res->ht_name);
 
@@ -3461,58 +3530,11 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     Py_ssize_t name_buf_len = strlen(spec->name) + 1;
     res->_ht_tpname = PyMem_Malloc(name_buf_len);
     if (res->_ht_tpname == NULL) {
-        goto fail;
+        goto finally;
     }
     type->tp_name = memcpy(res->_ht_tpname, spec->name, name_buf_len);
 
     res->ht_module = Py_XNewRef(module);
-
-    /* Adjust for empty tuple bases */
-    if (!bases) {
-        base = &PyBaseObject_Type;
-        /* See whether Py_tp_base(s) was specified */
-        for (slot = spec->slots; slot->slot; slot++) {
-            if (slot->slot == Py_tp_base)
-                base = slot->pfunc;
-            else if (slot->slot == Py_tp_bases) {
-                bases = slot->pfunc;
-            }
-        }
-        if (!bases) {
-            bases = PyTuple_Pack(1, base);
-            if (!bases)
-                goto fail;
-        }
-        else if (!PyTuple_Check(bases)) {
-            PyErr_SetString(PyExc_SystemError, "Py_tp_bases is not a tuple");
-            goto fail;
-        }
-        else {
-            Py_INCREF(bases);
-        }
-    }
-    else if (!PyTuple_Check(bases)) {
-        bases = PyTuple_Pack(1, bases);
-        if (!bases)
-            goto fail;
-    }
-    else {
-        Py_INCREF(bases);
-    }
-
-    /* Calculate best base, and check that all bases are type objects */
-    base = best_base(bases);
-    if (base == NULL) {
-        Py_DECREF(bases);
-        goto fail;
-    }
-    if (!_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE)) {
-        PyErr_Format(PyExc_TypeError,
-                     "type '%.100s' is not an acceptable base type",
-                     base->tp_name);
-        Py_DECREF(bases);
-        goto fail;
-    }
 
     /* Initialize essential fields */
     type->tp_as_async = &res->as_async;
@@ -3520,11 +3542,13 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     type->tp_as_sequence = &res->as_sequence;
     type->tp_as_mapping = &res->as_mapping;
     type->tp_as_buffer = &res->as_buffer;
-    /* Set tp_base and tp_bases */
-    type->tp_bases = bases;
-    Py_INCREF(base);
-    type->tp_base = base;
 
+    /* Set tp_base and tp_bases */
+    type->tp_base = (PyTypeObject *)Py_NewRef(base);
+    type->tp_bases = bases;
+    bases = NULL;  // We give our reference to bases to the type
+
+    /* Copy the sizes */
     type->tp_basicsize = spec->basicsize;
     type->tp_itemsize = spec->itemsize;
 
@@ -3532,7 +3556,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
         if (slot->slot < 0
             || (size_t)slot->slot >= Py_ARRAY_LENGTH(pyslot_offsets)) {
             PyErr_SetString(PyExc_RuntimeError, "invalid slot offset");
-            goto fail;
+            goto finally;
         }
         else if (slot->slot == Py_tp_base || slot->slot == Py_tp_bases) {
             /* Processed above */
@@ -3556,7 +3580,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
             if (tp_doc == NULL) {
                 type->tp_doc = NULL;
                 PyErr_NoMemory();
-                goto fail;
+                goto finally;
             }
             memcpy(tp_doc, slot->pfunc, len);
             type->tp_doc = tp_doc;
@@ -3591,8 +3615,9 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
         type->tp_vectorcall_offset = vectorcalloffset;
     }
 
-    if (PyType_Ready(type) < 0)
-        goto fail;
+    if (PyType_Ready(type) < 0) {
+        goto finally;
+    }
 
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
         res->ht_cached_keys = _PyDict_NewKeysForClass();
@@ -3600,29 +3625,33 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
 
     if (type->tp_doc) {
         PyObject *__doc__ = PyUnicode_FromString(_PyType_DocWithoutSignature(type->tp_name, type->tp_doc));
-        if (!__doc__)
-            goto fail;
+        if (!__doc__) {
+            goto finally;
+        }
         r = PyDict_SetItem(type->tp_dict, &_Py_ID(__doc__), __doc__);
         Py_DECREF(__doc__);
-        if (r < 0)
-            goto fail;
+        if (r < 0) {
+            goto finally;
+        }
     }
 
     if (weaklistoffset) {
         type->tp_weaklistoffset = weaklistoffset;
-        if (PyDict_DelItemString((PyObject *)type->tp_dict, "__weaklistoffset__") < 0)
-            goto fail;
+        if (PyDict_DelItemString((PyObject *)type->tp_dict, "__weaklistoffset__") < 0) {
+            goto finally;
+        }
     }
     if (dictoffset) {
         type->tp_dictoffset = dictoffset;
-        if (PyDict_DelItemString((PyObject *)type->tp_dict, "__dictoffset__") < 0)
-            goto fail;
+        if (PyDict_DelItemString((PyObject *)type->tp_dict, "__dictoffset__") < 0) {
+            goto finally;
+        }
     }
 
     /* Set type.__module__ */
     r = PyDict_Contains(type->tp_dict, &_Py_ID(__module__));
     if (r < 0) {
-        goto fail;
+        goto finally;
     }
     if (r == 0) {
         s = strrchr(spec->name, '.');
@@ -3630,26 +3659,30 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
             modname = PyUnicode_FromStringAndSize(
                     spec->name, (Py_ssize_t)(s - spec->name));
             if (modname == NULL) {
-                goto fail;
+                goto finally;
             }
             r = PyDict_SetItem(type->tp_dict, &_Py_ID(__module__), modname);
-            Py_DECREF(modname);
-            if (r != 0)
-                goto fail;
-        } else {
+            if (r != 0) {
+                goto finally;
+            }
+        }
+        else {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                     "builtin type %.200s has no __module__ attribute",
                     spec->name))
-                goto fail;
+                goto finally;
         }
     }
 
     assert(_PyType_CheckConsistency(type));
-    return (PyObject*)res;
 
- fail:
-    Py_DECREF(res);
-    return NULL;
+ finally:
+    if (PyErr_Occurred()) {
+        Py_CLEAR(res);
+    }
+    Py_XDECREF(bases);
+    Py_XDECREF(modname);
+    return (PyObject*)res;
 }
 
 PyObject *
