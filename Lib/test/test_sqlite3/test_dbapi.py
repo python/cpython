@@ -914,7 +914,7 @@ class CursorTests(unittest.TestCase):
         """)
         self.assertEqual(self.cu.rowcount, 1)
         self.cu.execute("""
-            /* -- messy /* /* ** *- *--
+            /* -- messy *r /* /* ** *- *--
             */
             /* one more */ insert into test(name) values ('messy')
         """)
