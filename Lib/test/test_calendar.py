@@ -615,6 +615,20 @@ class CalendarTestCase(unittest.TestCase):
         # For long widths, the full day name is used.
         self.assertEqual(cal.formatweekday(0, 10), "  Monday  ")
 
+    def test_locale_calendar_formatmonthname(self):
+        try:
+            # formatmonthname uses the same month names regardless of the width argument.
+            cal = calendar.LocaleTextCalendar(locale='en_US')
+        except locale.Error:
+            # cannot set the system default locale -- skip rest of test
+            raise unittest.SkipTest('cannot set the en_US locale')
+        # For too short widths, a full name (with year) is used.
+        self.assertEqual(cal.formatmonthname(2022, 6, 2, withyear=False), "June")
+        self.assertEqual(cal.formatmonthname(2022, 6, 2, withyear=True), "June 2022")
+        # For long widths, a centered name is used.
+        self.assertEqual(cal.formatmonthname(2022, 6, 10, withyear=False), "   June   ")
+        self.assertEqual(cal.formatmonthname(2022, 6, 15, withyear=True), "   June 2022   ")
+
     def test_locale_html_calendar_custom_css_class_month_name(self):
         try:
             cal = calendar.LocaleHTMLCalendar(locale='')
