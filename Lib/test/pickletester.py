@@ -3087,8 +3087,8 @@ class AbstractPickleTests:
         for proto in protocols:
             check([Clearer()])
             check([Clearer(), Clearer()])
-            check([Clearer(), Clearer()])
             check({Clearer()})
+            check({Clearer(), Clearer()})
             check({Clearer(): 1})
             check({Clearer(): 1, Clearer(): 2})
             check({1: Clearer(), 2: Clearer()})
