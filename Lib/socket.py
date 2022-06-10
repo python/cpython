@@ -28,6 +28,7 @@ socket.getdefaulttimeout() -- get the default timeout value
 socket.setdefaulttimeout() -- set the default timeout value
 create_connection() -- connects to an address, with an optional timeout and
                        optional source address.
+create_server() -- create a TCP socket and bind it to a specified address.
 
  [*] not available on all platforms!
 
@@ -122,7 +123,7 @@ if sys.platform.lower().startswith("win"):
     errorTab[10014] = "A fault occurred on the network??"  # WSAEFAULT
     errorTab[10022] = "An invalid operation was attempted."
     errorTab[10024] = "Too many open files."
-    errorTab[10035] = "The socket operation would block"
+    errorTab[10035] = "The socket operation would block."
     errorTab[10036] = "A blocking operation is already in progress."
     errorTab[10037] = "Operation already in progress."
     errorTab[10038] = "Socket operation on nonsocket."
@@ -806,7 +807,7 @@ def getfqdn(name=''):
 _GLOBAL_DEFAULT_TIMEOUT = object()
 
 def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
-                      source_address=None):
+                      source_address=None, *, all_errors=False):
     """Connect to *address* and return the socket object.
 
     Convenience function.  Connect to *address* (a 2-tuple ``(host,
@@ -816,11 +817,13 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
     global default timeout setting returned by :func:`getdefaulttimeout`
     is used.  If *source_address* is set it must be a tuple of (host, port)
     for the socket to bind as a source address before making the connection.
-    A host of '' or port 0 tells the OS to use the default.
+    A host of '' or port 0 tells the OS to use the default. When a connection
+    cannot be created, raises the last error if *all_errors* is False,
+    and an ExceptionGroup of all errors if *all_errors* is True.
     """
 
     host, port = address
-    err = None
+    exceptions = []
     for res in getaddrinfo(host, port, 0, SOCK_STREAM):
         af, socktype, proto, canonname, sa = res
         sock = None
@@ -832,20 +835,24 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
                 sock.bind(source_address)
             sock.connect(sa)
             # Break explicitly a reference cycle
-            err = None
+            exceptions.clear()
             return sock
 
-        except error as _:
-            err = _
+        except error as exc:
+            if not all_errors:
+                exceptions.clear()  # raise only the last error
+            exceptions.append(exc)
             if sock is not None:
                 sock.close()
 
-    if err is not None:
+    if len(exceptions):
         try:
-            raise err
+            if not all_errors:
+                raise exceptions[0]
+            raise ExceptionGroup("create_connection failed", exceptions)
         finally:
             # Break explicitly a reference cycle
-            err = None
+            exceptions.clear()
     else:
         raise error("getaddrinfo returns an empty list")
 

@@ -353,7 +353,7 @@ module:
 
 The new functions return the number of nanoseconds as an integer value.
 
-`Measurements <https://www.python.org/dev/peps/pep-0564/#annex-clocks-resolution-in-python>`_
+`Measurements <https://peps.python.org/pep-0564/#annex-clocks-resolution-in-python>`_
 show that on Linux and Windows the resolution of :func:`time.time_ns` is
 approximately 3 times better than that of :func:`time.time`.
 
@@ -2474,7 +2474,7 @@ Windows-only Changes
 
 The file used to override :data:`sys.path` is now called
 ``<python-executable>._pth`` instead of ``'sys.path'``.
-See :ref:`finding_modules` for more information.
+See :ref:`windows_finding_modules` for more information.
 (Contributed by Steve Dower in :issue:`28137`.)
 
 

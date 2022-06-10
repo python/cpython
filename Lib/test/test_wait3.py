@@ -9,8 +9,8 @@ import unittest
 from test.fork_wait import ForkWait
 from test import support
 
-if not hasattr(os, 'fork'):
-    raise unittest.SkipTest("os.fork not defined")
+if not support.has_fork_support:
+    raise unittest.SkipTest("requires working os.fork()")
 
 if not hasattr(os, 'wait3'):
     raise unittest.SkipTest("os.wait3 not defined")

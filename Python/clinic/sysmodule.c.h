@@ -9,7 +9,7 @@ PyDoc_STRVAR(sys_addaudithook__doc__,
 "Adds a new audit hook callback.");
 
 #define SYS_ADDAUDITHOOK_METHODDEF    \
-    {"addaudithook", (PyCFunction)(void(*)(void))sys_addaudithook, METH_FASTCALL|METH_KEYWORDS, sys_addaudithook__doc__},
+    {"addaudithook", _PyCFunction_CAST(sys_addaudithook), METH_FASTCALL|METH_KEYWORDS, sys_addaudithook__doc__},
 
 static PyObject *
 sys_addaudithook_impl(PyObject *module, PyObject *hook);
@@ -50,7 +50,7 @@ PyDoc_STRVAR(sys_excepthook__doc__,
 "Handle an exception by displaying it with a traceback on sys.stderr.");
 
 #define SYS_EXCEPTHOOK_METHODDEF    \
-    {"excepthook", (PyCFunction)(void(*)(void))sys_excepthook, METH_FASTCALL, sys_excepthook__doc__},
+    {"excepthook", _PyCFunction_CAST(sys_excepthook), METH_FASTCALL, sys_excepthook__doc__},
 
 static PyObject *
 sys_excepthook_impl(PyObject *module, PyObject *exctype, PyObject *value,
@@ -148,7 +148,7 @@ PyDoc_STRVAR(sys_exit__doc__,
 "exit status will be one (i.e., failure).");
 
 #define SYS_EXIT_METHODDEF    \
-    {"exit", (PyCFunction)(void(*)(void))sys_exit, METH_FASTCALL, sys_exit__doc__},
+    {"exit", _PyCFunction_CAST(sys_exit), METH_FASTCALL, sys_exit__doc__},
 
 static PyObject *
 sys_exit_impl(PyObject *module, PyObject *status);
@@ -416,7 +416,7 @@ PyDoc_STRVAR(sys_set_coroutine_origin_tracking_depth__doc__,
 "Set a depth of 0 to disable.");
 
 #define SYS_SET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF    \
-    {"set_coroutine_origin_tracking_depth", (PyCFunction)(void(*)(void))sys_set_coroutine_origin_tracking_depth, METH_FASTCALL|METH_KEYWORDS, sys_set_coroutine_origin_tracking_depth__doc__},
+    {"set_coroutine_origin_tracking_depth", _PyCFunction_CAST(sys_set_coroutine_origin_tracking_depth), METH_FASTCALL|METH_KEYWORDS, sys_set_coroutine_origin_tracking_depth__doc__},
 
 static PyObject *
 sys_set_coroutine_origin_tracking_depth_impl(PyObject *module, int depth);
@@ -802,7 +802,7 @@ PyDoc_STRVAR(sys__getframe__doc__,
 "only.");
 
 #define SYS__GETFRAME_METHODDEF    \
-    {"_getframe", (PyCFunction)(void(*)(void))sys__getframe, METH_FASTCALL, sys__getframe__doc__},
+    {"_getframe", _PyCFunction_CAST(sys__getframe), METH_FASTCALL, sys__getframe__doc__},
 
 static PyObject *
 sys__getframe_impl(PyObject *module, int depth);
@@ -881,7 +881,7 @@ PyDoc_STRVAR(sys_call_tracing__doc__,
 "some other code.");
 
 #define SYS_CALL_TRACING_METHODDEF    \
-    {"call_tracing", (PyCFunction)(void(*)(void))sys_call_tracing, METH_FASTCALL, sys_call_tracing__doc__},
+    {"call_tracing", _PyCFunction_CAST(sys_call_tracing), METH_FASTCALL, sys_call_tracing__doc__},
 
 static PyObject *
 sys_call_tracing_impl(PyObject *module, PyObject *func, PyObject *funcargs);
@@ -1014,4 +1014,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=60756bc6f683e0c8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=98efd34fd9b9b6ab input=a9049054013a1b77]*/

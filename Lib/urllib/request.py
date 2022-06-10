@@ -1579,8 +1579,7 @@ class FTPHandler(BaseHandler):
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, req.full_url)
         except ftplib.all_errors as exp:
-            exc = URLError('ftp error: %r' % exp)
-            raise exc.with_traceback(sys.exc_info()[2])
+            raise URLError(f'ftp error: {exp}') from exp
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         return ftpwrapper(user, passwd, host, port, dirs, timeout,
@@ -1791,7 +1790,7 @@ class URLopener:
         except (HTTPError, URLError):
             raise
         except OSError as msg:
-            raise OSError('socket error', msg).with_traceback(sys.exc_info()[2])
+            raise OSError('socket error', msg) from msg
 
     def open_unknown(self, fullurl, data=None):
         """Overridable interface to open unknown URL type."""
@@ -2093,7 +2092,7 @@ class URLopener:
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, "ftp:" + url)
         except ftperrors() as exp:
-            raise URLError('ftp error %r' % exp).with_traceback(sys.exc_info()[2])
+            raise URLError(f'ftp error: {exp}') from exp
 
     def open_data(self, url, data=None):
         """Use "data" URL."""
@@ -2443,8 +2442,7 @@ class ftpwrapper:
                 conn, retrlen = self.ftp.ntransfercmd(cmd)
             except ftplib.error_perm as reason:
                 if str(reason)[:3] != '550':
-                    raise URLError('ftp error: %r' % reason).with_traceback(
-                        sys.exc_info()[2])
+                    raise URLError(f'ftp error: {reason}') from reason
         if not conn:
             # Set transfer mode to ASCII!
             self.ftp.voidcmd('TYPE A')
@@ -2681,22 +2679,26 @@ elif os.name == 'nt':
                 # Returned as Unicode but problems if not converted to ASCII
                 proxyServer = str(winreg.QueryValueEx(internetSettings,
                                                        'ProxyServer')[0])
-                if '=' in proxyServer:
-                    # Per-protocol settings
-                    for p in proxyServer.split(';'):
-                        protocol, address = p.split('=', 1)
-                        # See if address has a type:// prefix
-                        if not re.match('(?:[^/:]+)://', address):
-                            address = '%s://%s' % (protocol, address)
-                        proxies[protocol] = address
-                else:
-                    # Use one setting for all protocols
-                    if proxyServer[:5] == 'http:':
-                        proxies['http'] = proxyServer
-                    else:
-                        proxies['http'] = 'http://%s' % proxyServer
-                        proxies['https'] = 'https://%s' % proxyServer
-                        proxies['ftp'] = 'ftp://%s' % proxyServer
+                if '=' not in proxyServer and ';' not in proxyServer:
+                    # Use one setting for all protocols.
+                    proxyServer = 'http={0};https={0};ftp={0}'.format(proxyServer)
+                for p in proxyServer.split(';'):
+                    protocol, address = p.split('=', 1)
+                    # See if address has a type:// prefix
+                    if not re.match('(?:[^/:]+)://', address):
+                        # Add type:// prefix to address without specifying type
+                        if protocol in ('http', 'https', 'ftp'):
+                            # The default proxy type of Windows is HTTP
+                            address = 'http://' + address
+                        elif protocol == 'socks':
+                            address = 'socks://' + address
+                    proxies[protocol] = address
+                # Use SOCKS proxy for HTTP(S) protocols
+                if proxies.get('socks'):
+                    # The default SOCKS proxy type of Windows is SOCKS4
+                    address = re.sub(r'^socks://', 'socks4://', proxies['socks'])
+                    proxies['http'] = proxies.get('http') or address
+                    proxies['https'] = proxies.get('https') or address
             internetSettings.Close()
         except (OSError, ValueError, TypeError):
             # Either registry key not found etc, or the value in an

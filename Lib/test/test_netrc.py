@@ -1,6 +1,11 @@
 import netrc, os, unittest, sys, textwrap
 from test.support import os_helper, run_unittest
 
+try:
+    import pwd
+except ImportError:
+    pwd = None
+
 temp_filename = os_helper.TESTFN
 
 class NetrcTestCase(unittest.TestCase):
@@ -10,7 +15,7 @@ class NetrcTestCase(unittest.TestCase):
         mode = 'w'
         if sys.platform != 'cygwin':
             mode += 't'
-        with open(temp_filename, mode) as fp:
+        with open(temp_filename, mode, encoding="utf-8") as fp:
             fp.write(test_data)
         try:
             nrc = netrc.netrc(temp_filename)
@@ -266,6 +271,8 @@ class NetrcTestCase(unittest.TestCase):
 
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX only test')
+    @unittest.skipIf(pwd is None, 'security check requires pwd module')
+    @os_helper.skip_unless_working_chmod
     def test_security(self):
         # This test is incomplete since we are normally not run as root and
         # therefore can't test the file ownership being wrong.

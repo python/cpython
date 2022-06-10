@@ -24,6 +24,8 @@ from urllib.parse import urlparse
 import urllib.error
 import http.client
 
+support.requires_working_socket(module=True)
+
 # XXX
 # Request
 # CacheFTPHandler (hard to write)

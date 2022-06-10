@@ -496,6 +496,7 @@ class BZ2FileTest(BaseTest):
         else:
             self.fail("1/0 didn't raise an exception")
 
+    @threading_helper.requires_working_threading()
     def testThreading(self):
         # Issue #7205: Using a BZ2File from several threads shouldn't deadlock.
         data = b"1" * 2**20

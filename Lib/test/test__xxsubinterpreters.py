@@ -818,7 +818,7 @@ class RunStringTests(TestBase):
 
         self.assertEqual(out, 'it worked!')
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @support.requires_fork()
     def test_fork(self):
         import tempfile
         with tempfile.NamedTemporaryFile('w+', encoding="utf-8") as file:

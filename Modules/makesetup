@@ -117,6 +117,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	BUILT=
 	BUILT_SHARED=
 	DISABLED=
+	CONFIGURED=
 	MODS=
 	SHAREDMODS=
 	OBJS=
@@ -206,12 +207,17 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			cpps="\$(MODULE_${mods_upper}_CFLAGS)"
 			libs="\$(MODULE_${mods_upper}_LDFLAGS)"
 		fi
-		case $DISABLED in
-		*$mods*)
-			# disabled by previous rule / Setup file
-			continue
-			;;
-		esac
+		for mod in $mods
+		do
+			case $CONFIGURED in
+			*,${mod},*)
+				# Detected multiple rules for a module, first rule wins. This
+				# allows users to disable modules in Setup.local.
+				echo 1>&2 "maksetup: '$mod' was handled by previous rule."
+				continue 2;;
+			esac
+			CONFIGURED="$CONFIGURED,${mod},"
+		done
 		case $doconfig in
 		yes)
 			LIBS="$LIBS $libs"

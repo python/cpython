@@ -27,7 +27,7 @@ extern "C" {
     char prefix##_closed;                                                   \
     char prefix##_running_async;                                            \
     /* The frame */                                                         \
-    char prefix##_frame_valid;                                              \
+    int8_t prefix##_frame_state;                                            \
     PyObject *prefix##_iframe[1];
 
 typedef struct {

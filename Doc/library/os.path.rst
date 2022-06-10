@@ -5,22 +5,16 @@
    :synopsis: Operations on pathnames.
 
 **Source code:** :source:`Lib/posixpath.py` (for POSIX) and
-:source:`Lib/ntpath.py` (for Windows NT).
+:source:`Lib/ntpath.py` (for Windows).
 
 .. index:: single: path; operations
 
 --------------
 
-This module implements some useful functions on pathnames. To read or
-write files see :func:`open`, and for accessing the filesystem see the
-:mod:`os` module. The path parameters can be passed as either strings,
-or bytes. Applications are encouraged to represent file names as
-(Unicode) character strings. Unfortunately, some file names may not be
-representable as strings on Unix, so applications that need to support
-arbitrary file names on Unix should use bytes objects to represent
-path names. Vice versa, using bytes objects cannot represent all file
-names on Windows (in the standard ``mbcs`` encoding), hence Windows
-applications should use string objects to access all files.
+This module implements some useful functions on pathnames. To read or write
+files see :func:`open`, and for accessing the filesystem see the :mod:`os`
+module. The path parameters can be passed as strings, or bytes, or any object
+implementing the :class:`os.PathLike` protocol.
 
 Unlike a unix shell, Python does not do any *automatic* path expansions.
 Functions such as :func:`expanduser` and :func:`expandvars` can be invoked
@@ -37,7 +31,6 @@ the :mod:`glob` module.)
    All of these functions accept either only bytes or only string objects as
    their parameters.  The result is an object of the same type, if a path or
    file name is returned.
-
 
 .. note::
 
@@ -476,7 +469,7 @@ the :mod:`glob` module.)
       ("c:", "/dir")
 
    If the path contains a UNC path, drive will contain the host name
-   and share, up to but not including the fourth separator::
+   and share::
 
       >>> splitdrive("//host/computer/dir")
       ("//host/computer", "/dir")
