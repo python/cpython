@@ -1181,7 +1181,7 @@ are always available.  They are listed here in alphabetical order.
    *buffering* is an optional integer used to set the buffering policy.  Pass 0
    to switch buffering off (only allowed in binary mode), 1 to select line
    buffering (only usable in text mode), an integer > 1 to indicate the size
-   in bytes of a fixed-size chunk buffer, or -1 to use the default buffer size.
+   in bytes of a fixed-size chunk buffer, or -1 to use the default buffering policy.
    Note that specifying a buffer size this way applies for binary buffered I/O,
    but ``TextIOWrapper`` (i.e., files opened with ``mode='r+'``) would have
    another buffering. To disable buffering in ``TextIOWrapper``, consider using
