@@ -105,6 +105,11 @@
         (IS_VIRTUAL_JUMP_OPCODE(opcode) || \
          is_bit_set_in_table(_PyOpcode_Jump, opcode))
 
+#define IS_BLOCK_PUSH_OPCODE(opcode) \
+        ((opcode) == SETUP_FINALLY || \
+         (opcode) == SETUP_WITH || \
+         (opcode) == SETUP_CLEANUP)
+
 /* opcodes which are not emitted in codegen stage, only by the assembler */
 #define IS_ASSEMBLER_OPCODE(opcode) \
         ((opcode) == JUMP_FORWARD || \
@@ -191,7 +196,7 @@ static inline int
 is_block_push(struct instr *instr)
 {
     int opcode = instr->i_opcode;
-    return opcode == SETUP_FINALLY || opcode == SETUP_WITH || opcode == SETUP_CLEANUP;
+    return IS_BLOCK_PUSH_OPCODE(opcode);
 }
 
 static inline int
@@ -1287,11 +1292,17 @@ compiler_use_new_implicit_block_if_needed(struct compiler *c)
 */
 
 static int
-basicblock_addop(basicblock *b, int opcode, struct location loc)
+basicblock_addop(basicblock *b, int opcode, int oparg,
+                 basicblock *target, struct location loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    assert(!HAS_ARG(opcode) || IS_ARTIFICIAL(opcode));
+    assert(HAS_ARG(opcode) || oparg == 0);
+    assert(0 <= oparg && oparg <= 2147483647);
+    assert((target == NULL) ||
+           IS_JUMP_OPCODE(opcode) ||
+           IS_BLOCK_PUSH_OPCODE(opcode));
+    assert(oparg == 0 || target == NULL);
 
     int off = basicblock_next_instr(b);
     if (off < 0) {
@@ -1299,7 +1310,8 @@ basicblock_addop(basicblock *b, int opcode, struct location loc)
     }
     struct instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
-    i->i_oparg = 0;
+    i->i_oparg = oparg;
+    i->i_target = target;
     i->i_lineno = loc.lineno;
     i->i_end_lineno = loc.end_lineno;
     i->i_col_offset = loc.col_offset;
@@ -1311,12 +1323,13 @@ basicblock_addop(basicblock *b, int opcode, struct location loc)
 static int
 compiler_addop(struct compiler *c, int opcode, bool line)
 {
+    assert(!HAS_ARG(opcode) || IS_ARTIFICIAL(opcode));
     if (compiler_use_new_implicit_block_if_needed(c) < 0) {
         return -1;
     }
 
     struct location loc = line ? CU_LOCATION(c->u) : NO_LOCATION;
-    return basicblock_addop(c->u->u_curblock, opcode, loc);
+    return basicblock_addop(c->u->u_curblock, opcode, 0, NULL, loc);
 }
 
 static Py_ssize_t
@@ -1507,11 +1520,12 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
 /* Add an opcode with an integer argument.
    Returns 0 on failure, 1 on success.
 */
-
 static int
-basicblock_addop_i(basicblock *b, int opcode, Py_ssize_t oparg,
-                   struct location loc)
+compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg, bool line)
 {
+    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
+        return -1;
+    }
     /* oparg value is unsigned, but a signed C int is usually used to store
        it in the C code (like Python/ceval.c).
 
@@ -1520,57 +1534,10 @@ basicblock_addop_i(basicblock *b, int opcode, Py_ssize_t oparg,
        The argument of a concrete bytecode instruction is limited to 8-bit.
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
-    assert(IS_WITHIN_OPCODE_RANGE(opcode));
-    assert(!IS_ASSEMBLER_OPCODE(opcode));
-    assert(0 <= oparg && oparg <= 2147483647);
+    int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
 
-    int off = basicblock_next_instr(b);
-    if (off < 0) {
-        return 0;
-    }
-    struct instr *i = &b->b_instr[off];
-    i->i_opcode = opcode;
-    i->i_oparg = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    i->i_lineno = loc.lineno;
-    i->i_end_lineno = loc.end_lineno;
-    i->i_col_offset = loc.col_offset;
-    i->i_end_col_offset = loc.end_col_offset;
-
-    return 1;
-}
-
-static int
-compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg, bool line)
-{
-    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
-        return -1;
-    }
     struct location loc = line ? CU_LOCATION(c->u) : NO_LOCATION;
-    return basicblock_addop_i(c->u->u_curblock, opcode, oparg, loc);
-}
-
-static int
-basicblock_add_jump(basicblock *b, int opcode,
-                    struct location loc, basicblock *target)
-{
-    assert(IS_WITHIN_OPCODE_RANGE(opcode));
-    assert(!IS_ASSEMBLER_OPCODE(opcode));
-    assert(HAS_ARG(opcode) || IS_VIRTUAL_OPCODE(opcode));
-    assert(target != NULL);
-
-    int off = basicblock_next_instr(b);
-    struct instr *i = &b->b_instr[off];
-    if (off < 0) {
-        return 0;
-    }
-    i->i_opcode = opcode;
-    i->i_target = target;
-    i->i_lineno = loc.lineno;
-    i->i_end_lineno = loc.end_lineno;
-    i->i_col_offset = loc.col_offset;
-    i->i_end_col_offset = loc.end_col_offset;
-
-    return 1;
+    return basicblock_addop(c->u->u_curblock, opcode, oparg_, NULL, loc);
 }
 
 static int
@@ -1580,7 +1547,9 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *target, bool line)
         return -1;
     }
     struct location loc = line ? CU_LOCATION(c->u) : NO_LOCATION;
-    return basicblock_add_jump(c->u->u_curblock, opcode, loc, target);
+    assert(target != NULL);
+    assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
+    return basicblock_addop(c->u->u_curblock, opcode, 0, target, loc);
 }
 
 #define ADDOP(C, OP) { \
@@ -7455,7 +7424,7 @@ push_cold_blocks_to_end(struct compiler *c, basicblock *entry, int code_flags) {
             if (explicit_jump == NULL) {
                 return -1;
             }
-            basicblock_add_jump(explicit_jump, JUMP, NO_LOCATION, b->b_next);
+            basicblock_addop(explicit_jump, JUMP, 0, b->b_next, NO_LOCATION);
 
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
