@@ -9,6 +9,7 @@ import pickle
 import inspect
 import builtins
 import types
+import weakref
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol
@@ -3038,6 +3039,125 @@ class TestSlots(unittest.TestCase):
         self.assertEqual(obj.a, 'a')
         self.assertEqual(obj.b, 'b')
 
+    def test_slots_no_weakref(self):
+        @dataclass(slots=True)
+        class A:
+            # No weakref.
+            pass
+
+        self.assertNotIn("__weakref__", A.__slots__)
+        a = A()
+        with self.assertRaisesRegex(TypeError,
+                                    "cannot create weak reference"):
+            weakref.ref(a)
+
+    def test_slots_weakref(self):
+        @dataclass(slots=True, weakref_slot=True)
+        class A:
+            a: int
+
+        self.assertIn("__weakref__", A.__slots__)
+        a = A(1)
+        weakref.ref(a)
+
+    def test_slots_weakref_base_str(self):
+        class Base:
+            __slots__ = '__weakref__'
+
+        @dataclass(slots=True)
+        class A(Base):
+            a: int
+
+        # __weakref__ is in the base class, not A.  But an A is still weakref-able.
+        self.assertIn("__weakref__", Base.__slots__)
+        self.assertNotIn("__weakref__", A.__slots__)
+        a = A(1)
+        weakref.ref(a)
+
+    def test_slots_weakref_base_tuple(self):
+        # Same as test_slots_weakref_base, but use a tuple instead of a string
+        # in the base class.
+        class Base:
+            __slots__ = ('__weakref__',)
+
+        @dataclass(slots=True)
+        class A(Base):
+            a: int
+
+        # __weakref__ is in the base class, not A.  But an A is still
+        # weakref-able.
+        self.assertIn("__weakref__", Base.__slots__)
+        self.assertNotIn("__weakref__", A.__slots__)
+        a = A(1)
+        weakref.ref(a)
+
+    def test_weakref_slot_without_slot(self):
+        with self.assertRaisesRegex(TypeError,
+                                    "weakref_slot is True but slots is False"):
+            @dataclass(weakref_slot=True)
+            class A:
+                a: int
+
+    def test_weakref_slot_make_dataclass(self):
+        A = make_dataclass('A', [('a', int),], slots=True, weakref_slot=True)
+        self.assertIn("__weakref__", A.__slots__)
+        a = A(1)
+        weakref.ref(a)
+
+        # And make sure if raises if slots=True is not given.
+        with self.assertRaisesRegex(TypeError,
+                                    "weakref_slot is True but slots is False"):
+            B = make_dataclass('B', [('a', int),], weakref_slot=True)
+
+    def test_weakref_slot_subclass_weakref_slot(self):
+        @dataclass(slots=True, weakref_slot=True)
+        class Base:
+            field: int
+
+        # A *can* also specify weakref_slot=True if it wants to (gh-93521)
+        @dataclass(slots=True, weakref_slot=True)
+        class A(Base):
+            ...
+
+        # __weakref__ is in the base class, not A.  But an instance of A
+        # is still weakref-able.
+        self.assertIn("__weakref__", Base.__slots__)
+        self.assertNotIn("__weakref__", A.__slots__)
+        a = A(1)
+        weakref.ref(a)
+
+    def test_weakref_slot_subclass_no_weakref_slot(self):
+        @dataclass(slots=True, weakref_slot=True)
+        class Base:
+            field: int
+
+        @dataclass(slots=True)
+        class A(Base):
+            ...
+
+        # __weakref__ is in the base class, not A.  Even though A doesn't
+        # specify weakref_slot, it should still be weakref-able.
+        self.assertIn("__weakref__", Base.__slots__)
+        self.assertNotIn("__weakref__", A.__slots__)
+        a = A(1)
+        weakref.ref(a)
+
+    def test_weakref_slot_normal_base_weakref_slot(self):
+        class Base:
+            __slots__ = ('__weakref__',)
+
+        @dataclass(slots=True, weakref_slot=True)
+        class A(Base):
+            field: int
+
+        # __weakref__ is in the base class, not A.  But an instance of
+        # A is still weakref-able.
+        self.assertIn("__weakref__", Base.__slots__)
+        self.assertNotIn("__weakref__", A.__slots__)
+        a = A(1)
+        weakref.ref(a)
+
+
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
         # See bpo-33141.
@@ -3690,7 +3810,7 @@ class TestAbstract(unittest.TestCase):
             day: 'int'
 
         self.assertTrue(inspect.isabstract(Date))
-        msg = 'class Date with abstract method foo'
+        msg = 'class Date without an implementation for abstract method foo'
         self.assertRaisesRegex(TypeError, msg, Date)
 
 

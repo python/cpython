@@ -46,6 +46,29 @@ def cleanup(ordering, blowUp=False):
         raise Exception('CleanUpExc')
 
 
+class TestCM:
+    def __init__(self, ordering, enter_result=None):
+        self.ordering = ordering
+        self.enter_result = enter_result
+
+    def __enter__(self):
+        self.ordering.append('enter')
+        return self.enter_result
+
+    def __exit__(self, *exc_info):
+        self.ordering.append('exit')
+
+
+class LacksEnterAndExit:
+    pass
+class LacksEnter:
+    def __exit__(self, *exc_info):
+        pass
+class LacksExit:
+    def __enter__(self):
+        pass
+
+
 class TestCleanUp(unittest.TestCase):
     def testCleanUp(self):
         class TestableTest(unittest.TestCase):
@@ -171,6 +194,39 @@ class TestCleanUp(unittest.TestCase):
 
         test.debug()
         self.assertEqual(ordering, ['setUp', 'test', 'tearDown', 'cleanup1', 'cleanup2'])
+
+
+    def test_enterContext(self):
+        class TestableTest(unittest.TestCase):
+            def testNothing(self):
+                pass
+
+        test = TestableTest('testNothing')
+        cleanups = []
+
+        test.addCleanup(cleanups.append, 'cleanup1')
+        cm = TestCM(cleanups, 42)
+        self.assertEqual(test.enterContext(cm), 42)
+        test.addCleanup(cleanups.append, 'cleanup2')
+
+        self.assertTrue(test.doCleanups())
+        self.assertEqual(cleanups, ['enter', 'cleanup2', 'exit', 'cleanup1'])
+
+    def test_enterContext_arg_errors(self):
+        class TestableTest(unittest.TestCase):
+            def testNothing(self):
+                pass
+
+        test = TestableTest('testNothing')
+
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            test.enterContext(LacksEnterAndExit())
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            test.enterContext(LacksEnter())
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            test.enterContext(LacksExit())
+
+        self.assertEqual(test._cleanups, [])
 
 
 class TestClassCleanup(unittest.TestCase):
@@ -450,6 +506,35 @@ class TestClassCleanup(unittest.TestCase):
                          'Exception: TearDownExc')
         self.assertEqual(ordering,
                          ['setUpClass', 'test', 'tearDownClass', 'cleanup_good'])
+
+    def test_enterClassContext(self):
+        class TestableTest(unittest.TestCase):
+            def testNothing(self):
+                pass
+
+        cleanups = []
+
+        TestableTest.addClassCleanup(cleanups.append, 'cleanup1')
+        cm = TestCM(cleanups, 42)
+        self.assertEqual(TestableTest.enterClassContext(cm), 42)
+        TestableTest.addClassCleanup(cleanups.append, 'cleanup2')
+
+        TestableTest.doClassCleanups()
+        self.assertEqual(cleanups, ['enter', 'cleanup2', 'exit', 'cleanup1'])
+
+    def test_enterClassContext_arg_errors(self):
+        class TestableTest(unittest.TestCase):
+            def testNothing(self):
+                pass
+
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            TestableTest.enterClassContext(LacksEnterAndExit())
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            TestableTest.enterClassContext(LacksEnter())
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            TestableTest.enterClassContext(LacksExit())
+
+        self.assertEqual(TestableTest._class_cleanups, [])
 
 
 class TestModuleCleanUp(unittest.TestCase):
@@ -999,6 +1084,31 @@ class TestModuleCleanUp(unittest.TestCase):
                          ['setUpModule', 'setUp', 'test', 'tearDown',
                           'cleanup2',  'setUp2', 'test2', 'tearDown2',
                           'cleanup3', 'tearDownModule', 'cleanup1'])
+
+    def test_enterModuleContext(self):
+        cleanups = []
+
+        unittest.addModuleCleanup(cleanups.append, 'cleanup1')
+        cm = TestCM(cleanups, 42)
+        self.assertEqual(unittest.enterModuleContext(cm), 42)
+        unittest.addModuleCleanup(cleanups.append, 'cleanup2')
+
+        unittest.case.doModuleCleanups()
+        self.assertEqual(cleanups, ['enter', 'cleanup2', 'exit', 'cleanup1'])
+
+    def test_enterModuleContext_arg_errors(self):
+        class TestableTest(unittest.TestCase):
+            def testNothing(self):
+                pass
+
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            unittest.enterModuleContext(LacksEnterAndExit())
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            unittest.enterModuleContext(LacksEnter())
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            unittest.enterModuleContext(LacksExit())
+
+        self.assertEqual(unittest.case._module_cleanups, [])
 
 
 class Test_TextTestRunner(unittest.TestCase):

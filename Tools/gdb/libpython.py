@@ -634,6 +634,63 @@ class PyCFunctionObjectPtr(PyObjectPtr):
         else:
             return BuiltInMethodProxy(ml_name, pyop_m_self)
 
+# Python implementation of location table parsing algorithm
+def read(it):
+    return ord(next(it))
+
+def read_varint(it):
+    b = read(it)
+    val = b & 63;
+    shift = 0;
+    while b & 64:
+        b = read(it)
+        shift += 6
+        val |= (b&63) << shift
+    return val
+
+def read_signed_varint(it):
+    uval = read_varint(it)
+    if uval & 1:
+        return -(uval >> 1)
+    else:
+        return uval >> 1
+
+def parse_location_table(firstlineno, linetable):
+    line = firstlineno
+    addr = 0
+    it = iter(linetable)
+    while True:
+        try:
+            first_byte = read(it)
+        except StopIteration:
+            return
+        code = (first_byte >> 3) & 15
+        length = (first_byte & 7) + 1
+        end_addr = addr + length
+        if code == 15:
+            yield addr, end_addr, None
+            addr = end_addr
+            continue
+        elif code == 14: # Long form
+            line_delta = read_signed_varint(it)
+            line += line_delta
+            end_line = line + read_varint(it)
+            col = read_varint(it)
+            end_col = read_varint(it)
+        elif code == 13: # No column
+            line_delta = read_signed_varint(it)
+            line += line_delta
+        elif code in (10, 11, 12): # new line
+            line_delta = code - 10
+            line += line_delta
+            column = read(it)
+            end_column = read(it)
+        else:
+            assert (0 <= code < 10)
+            second_byte = read(it)
+            column = code << 3 | (second_byte >> 4)
+        yield addr, end_addr, line
+        addr = end_addr
 
 class PyCodeObjectPtr(PyObjectPtr):
     """
@@ -658,18 +715,9 @@ class PyCodeObjectPtr(PyObjectPtr):
         if addrq < 0:
             return lineno
         addr = 0
-        for addr_incr, line_incr in zip(co_linetable[::2], co_linetable[1::2]):
-            if addr_incr == 255:
-                break
-            addr += ord(addr_incr)
-            line_delta = ord(line_incr)
-            if line_delta == 128:
-                line_delta = 0
-            elif line_delta > 128:
-                line_delta -= 256
-            lineno += line_delta
-            if addr > addrq:
-                return lineno
+        for addr, end_addr, line in parse_location_table(lineno, co_linetable):
+            if addr <= addrq and end_addr > addrq:
+                return line
         assert False, "Unreachable"
 
 
@@ -1082,8 +1130,8 @@ class PyFramePtr:
         if self.is_optimized_out():
             return None
         try:
-            return self.co.addr2line(self.f_lasti*2)
-        except Exception:
+            return self.co.addr2line(self.f_lasti)
+        except Exception as ex:
             # bpo-34989: addr2line() is a complex function, it can fail in many
             # ways. For example, it fails with a TypeError on "FakeRepr" if
             # gdb fails to load debug symbols. Use a catch-all "except
@@ -1328,57 +1376,28 @@ class PyUnicodeObjectPtr(PyObjectPtr):
         return _type_Py_UNICODE.sizeof
 
     def proxyval(self, visited):
-        may_have_surrogates = False
         compact = self.field('_base')
         ascii = compact['_base']
         state = ascii['state']
         is_compact_ascii = (int(state['ascii']) and int(state['compact']))
-        if not int(state['ready']):
-            # string is not ready
-            field_length = int(compact['wstr_length'])
-            may_have_surrogates = True
-            field_str = ascii['wstr']
+        field_length = int(ascii['length'])
+        if is_compact_ascii:
+            field_str = ascii.address + 1
+        elif int(state['compact']):
+            field_str = compact.address + 1
         else:
-            field_length = int(ascii['length'])
-            if is_compact_ascii:
-                field_str = ascii.address + 1
-            elif int(state['compact']):
-                field_str = compact.address + 1
-            else:
-                field_str = self.field('data')['any']
-            repr_kind = int(state['kind'])
-            if repr_kind == 1:
-                field_str = field_str.cast(_type_unsigned_char_ptr())
-            elif repr_kind == 2:
-                field_str = field_str.cast(_type_unsigned_short_ptr())
-            elif repr_kind == 4:
-                field_str = field_str.cast(_type_unsigned_int_ptr())
+            field_str = self.field('data')['any']
+        repr_kind = int(state['kind'])
+        if repr_kind == 1:
+            field_str = field_str.cast(_type_unsigned_char_ptr())
+        elif repr_kind == 2:
+            field_str = field_str.cast(_type_unsigned_short_ptr())
+        elif repr_kind == 4:
+            field_str = field_str.cast(_type_unsigned_int_ptr())
 
         # Gather a list of ints from the Py_UNICODE array; these are either
         # UCS-1, UCS-2 or UCS-4 code points:
-        if not may_have_surrogates:
-            Py_UNICODEs = [int(field_str[i]) for i in safe_range(field_length)]
-        else:
-            # A more elaborate routine if sizeof(Py_UNICODE) is 2 in the
-            # inferior process: we must join surrogate pairs.
-            Py_UNICODEs = []
-            i = 0
-            limit = safety_limit(field_length)
-            while i < limit:
-                ucs = int(field_str[i])
-                i += 1
-                if ucs < 0xD800 or ucs >= 0xDC00 or i == field_length:
-                    Py_UNICODEs.append(ucs)
-                    continue
-                # This could be a surrogate pair.
-                ucs2 = int(field_str[i])
-                if ucs2 < 0xDC00 or ucs2 > 0xDFFF:
-                    continue
-                code = (ucs & 0x03FF) << 10
-                code |= ucs2 & 0x03FF
-                code += 0x00010000
-                Py_UNICODEs.append(code)
-                i += 1
+        Py_UNICODEs = [int(field_str[i]) for i in safe_range(field_length)]
 
         # Convert the int code points to unicode characters, and generate a
         # local unicode instance.

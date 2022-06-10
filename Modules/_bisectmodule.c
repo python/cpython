@@ -13,6 +13,18 @@ module _bisect
 
 #include "clinic/_bisectmodule.c.h"
 
+typedef struct {
+    PyObject *str_insert;
+} bisect_state;
+
+static inline bisect_state*
+get_bisect_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (bisect_state *)state;
+}
+
 static inline Py_ssize_t
 internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi,
                       PyObject* key)
@@ -116,7 +128,7 @@ _bisect_insort_right_impl(PyObject *module, PyObject *a, PyObject *x,
         index = internal_bisect_right(a, x, lo, hi, key);
     } else {
         key_x = PyObject_CallOneArg(key, x);
-        if (x == NULL) {
+        if (key_x == NULL) {
             return NULL;
         }
         index = internal_bisect_right(a, key_x, lo, hi, key);
@@ -129,7 +141,8 @@ _bisect_insort_right_impl(PyObject *module, PyObject *a, PyObject *x,
             return NULL;
     }
     else {
-        result = PyObject_CallMethod(a, "insert", "nO", index, x);
+        bisect_state *state = get_bisect_state(module);
+        result = _PyObject_CallMethod(a, state->str_insert, "nO", index, x);
         if (result == NULL)
             return NULL;
         Py_DECREF(result);
@@ -243,7 +256,7 @@ _bisect_insort_left_impl(PyObject *module, PyObject *a, PyObject *x,
         index = internal_bisect_left(a, x, lo, hi, key);
     } else {
         key_x = PyObject_CallOneArg(key, x);
-        if (x == NULL) {
+        if (key_x == NULL) {
             return NULL;
         }
         index = internal_bisect_left(a, key_x, lo, hi, key);
@@ -255,7 +268,8 @@ _bisect_insort_left_impl(PyObject *module, PyObject *a, PyObject *x,
         if (PyList_Insert(a, index, x) < 0)
             return NULL;
     } else {
-        result = PyObject_CallMethod(a, "insert", "nO", index, x);
+        bisect_state *state = get_bisect_state(module);
+        result = _PyObject_CallMethod(a, state->str_insert, "nO", index, x);
         if (result == NULL)
             return NULL;
         Py_DECREF(result);
@@ -280,13 +294,45 @@ having to sort the list after each insertion. For long lists of items with\n\
 expensive comparison operations, this can be an improvement over the more\n\
 common approach.\n");
 
+static int
+bisect_clear(PyObject *module)
+{
+    bisect_state *state = get_bisect_state(module);
+    Py_CLEAR(state->str_insert);
+    return 0;
+}
+
+static void
+bisect_free(void *module)
+{
+    bisect_clear((PyObject *)module);
+}
+
+static int
+bisect_modexec(PyObject *m)
+{
+    bisect_state *state = get_bisect_state(m);
+    state->str_insert = PyUnicode_InternFromString("insert");
+    if (state->str_insert == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot bisect_slots[] = {
+    {Py_mod_exec, bisect_modexec},
+    {0, NULL}
+};
 
 static struct PyModuleDef _bisectmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_bisect",
+    .m_size = sizeof(bisect_state),
     .m_doc = module_doc,
     .m_methods = bisect_methods,
-    .m_size = 0
+    .m_slots = bisect_slots,
+    .m_clear = bisect_clear,
+    .m_free = bisect_free,
 };
 
 PyMODINIT_FUNC

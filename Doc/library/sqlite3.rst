@@ -142,11 +142,21 @@ Module functions and constants
    The version number of this module, as a string. This is not the version of
    the SQLite library.
 
+   .. deprecated-removed:: 3.12 3.14
+      This constant used to reflect the version number of the ``pysqlite``
+      package, a third-party library which used to upstream changes to
+      ``sqlite3``. Today, it carries no meaning or practical value.
+
 
 .. data:: version_info
 
    The version number of this module, as a tuple of integers. This is not the
    version of the SQLite library.
+
+   .. deprecated-removed:: 3.12 3.14
+      This constant used to reflect the version number of the ``pysqlite``
+      package, a third-party library which used to upstream changes to
+      ``sqlite3``. Today, it carries no meaning or practical value.
 
 
 .. data:: sqlite_version
@@ -431,24 +441,21 @@ Connection Objects
 
    .. method:: execute(sql[, parameters])
 
-      This is a nonstandard shortcut that creates a cursor object by calling
-      the :meth:`~Connection.cursor` method, calls the cursor's
-      :meth:`~Cursor.execute` method with the *parameters* given, and returns
-      the cursor.
+      Create a new :class:`Cursor` object and call
+      :meth:`~Cursor.execute` on it with the given *sql* and *parameters*.
+      Return the new cursor object.
 
    .. method:: executemany(sql[, parameters])
 
-      This is a nonstandard shortcut that creates a cursor object by
-      calling the :meth:`~Connection.cursor` method, calls the cursor's
-      :meth:`~Cursor.executemany` method with the *parameters* given, and
-      returns the cursor.
+      Create a new :class:`Cursor` object and call
+      :meth:`~Cursor.executemany` on it with the given *sql* and *parameters*.
+      Return the new cursor object.
 
    .. method:: executescript(sql_script)
 
-      This is a nonstandard shortcut that creates a cursor object by
-      calling the :meth:`~Connection.cursor` method, calls the cursor's
-      :meth:`~Cursor.executescript` method with the given *sql_script*, and
-      returns the cursor.
+      Create a new :class:`Cursor` object and call
+      :meth:`~Cursor.executescript` on it with the given *sql_script*.
+      Return the new cursor object.
 
    .. method:: create_function(name, num_params, func, *, deterministic=False)
 
@@ -521,22 +528,19 @@ Connection Objects
 
    .. method:: create_collation(name, callable)
 
-      Creates a collation with the specified *name* and *callable*. The callable will
-      be passed two string arguments. It should return -1 if the first is ordered
-      lower than the second, 0 if they are ordered equal and 1 if the first is ordered
-      higher than the second.  Note that this controls sorting (ORDER BY in SQL) so
-      your comparisons don't affect other SQL operations.
+      Create a collation named *name* using the collating function *callable*.
+      *callable* is passed two :class:`string <str>` arguments,
+      and it should return an :class:`integer <int>`:
 
-      Note that the callable will get its parameters as Python bytestrings, which will
-      normally be encoded in UTF-8.
+      * ``1`` if the first is ordered higher than the second
+      * ``-1`` if the first is ordered lower than the second
+      * ``0`` if they are ordered equal
 
-      The following example shows a custom collation that sorts "the wrong way":
+      The following example shows a reverse sorting collation:
 
       .. literalinclude:: ../includes/sqlite3/collation_reverse.py
 
-      To remove a collation, call ``create_collation`` with ``None`` as callable::
-
-         con.create_collation("reverse", None)
+      Remove a collation function by setting *callable* to :const:`None`.
 
       .. versionchanged:: 3.11
          The collation name can contain any Unicode character.  Earlier, only
@@ -587,7 +591,7 @@ Connection Objects
       method with :const:`None` for *handler*.
 
       Returning a non-zero value from the handler function will terminate the
-      currently executing query and cause it to raise an :exc:`OperationalError`
+      currently executing query and cause it to raise a :exc:`DatabaseError`
       exception.
 
 
@@ -819,7 +823,7 @@ Connection Objects
       *name*, and reopen *name* as an in-memory database based on the
       serialization contained in *data*.  Deserialization will raise
       :exc:`OperationalError` if the database connection is currently involved
-      in a read transaction or a backup operation.  :exc:`DataError` will be
+      in a read transaction or a backup operation.  :exc:`OverflowError` will be
       raised if ``len(data)`` is larger than ``2**63 - 1``, and
       :exc:`DatabaseError` will be raised if *data* does not contain a valid
       SQLite database.
@@ -850,7 +854,7 @@ Cursor Objects
       :ref:`placeholders <sqlite3-placeholders>`.
 
       :meth:`execute` will only execute a single SQL statement. If you try to execute
-      more than one statement with it, it will raise a :exc:`.Warning`. Use
+      more than one statement with it, it will raise a :exc:`ProgrammingError`. Use
       :meth:`executescript` if you want to execute multiple SQL statements with one
       call.
 
@@ -1054,9 +1058,10 @@ Blob Objects
 
 .. class:: Blob
 
-   A :class:`Blob` instance is a :term:`file-like object` that can read and write
-   data in an SQLite :abbr:`BLOB (Binary Large OBject)`.  Call ``len(blob)`` to
-   get the size (number of bytes) of the blob.
+   A :class:`Blob` instance is a :term:`file-like object`
+   that can read and write data in an SQLite :abbr:`BLOB (Binary Large OBject)`.
+   Call :func:`len(blob) <len>` to get the size (number of bytes) of the blob.
+   Use indices and :term:`slices <slice>` for direct access to the blob data.
 
    Use the :class:`Blob` as a :term:`context manager` to ensure that the blob
    handle is closed after use.
@@ -1103,14 +1108,20 @@ Blob Objects
 Exceptions
 ----------
 
+The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
+
 .. exception:: Warning
 
-   A subclass of :exc:`Exception`.
+   This exception is not currently raised by the ``sqlite3`` module,
+   but may be raised by applications using ``sqlite3``,
+   for example if a user-defined function truncates data while inserting.
+   ``Warning`` is a subclass of :exc:`Exception`.
 
 .. exception:: Error
 
-   The base class of the other exceptions in this module.  It is a subclass
-   of :exc:`Exception`.
+   The base class of the other exceptions in this module.
+   Use this to catch all errors with one single :keyword:`except` statement.
+   ``Error`` is a subclass of :exc:`Exception`.
 
    .. attribute:: sqlite_errorcode
 
@@ -1126,34 +1137,60 @@ Exceptions
 
       .. versionadded:: 3.11
 
+.. exception:: InterfaceError
+
+   Exception raised for misuse of the low-level SQLite C API.
+   In other words, if this exception is raised, it probably indicates a bug in the
+   ``sqlite3`` module.
+   ``InterfaceError`` is a subclass of :exc:`Error`.
+
 .. exception:: DatabaseError
 
    Exception raised for errors that are related to the database.
+   This serves as the base exception for several types of database errors.
+   It is only raised implicitly through the specialised subclasses.
+   ``DatabaseError`` is a subclass of :exc:`Error`.
+
+.. exception:: DataError
+
+   Exception raised for errors caused by problems with the processed data,
+   like numeric values out of range, and strings which are too long.
+   ``DataError`` is a subclass of :exc:`DatabaseError`.
+
+.. exception:: OperationalError
+
+   Exception raised for errors that are related to the database's operation,
+   and not necessarily under the control of the programmer.
+   For example, the database path is not found,
+   or a transaction could not be processed.
+   ``OperationalError`` is a subclass of :exc:`DatabaseError`.
 
 .. exception:: IntegrityError
 
    Exception raised when the relational integrity of the database is affected,
    e.g. a foreign key check fails.  It is a subclass of :exc:`DatabaseError`.
 
+.. exception:: InternalError
+
+   Exception raised when SQLite encounters an internal error.
+   If this is raised, it may indicate that there is a problem with the runtime
+   SQLite library.
+   ``InternalError`` is a subclass of :exc:`DatabaseError`.
+
 .. exception:: ProgrammingError
 
-   Exception raised for programming errors, e.g. table not found or already
-   exists, syntax error in the SQL statement, wrong number of parameters
-   specified, etc.  It is a subclass of :exc:`DatabaseError`.
-
-.. exception:: OperationalError
-
-   Exception raised for errors that are related to the database's operation
-   and not necessarily under the control of the programmer, e.g. an unexpected
-   disconnect occurs, the data source name is not found, a transaction could
-   not be processed, etc.  It is a subclass of :exc:`DatabaseError`.
+   Exception raised for ``sqlite3`` API programming errors,
+   for example supplying the wrong number of bindings to a query,
+   or trying to operate on a closed :class:`Connection`.
+   ``ProgrammingError`` is a subclass of :exc:`DatabaseError`.
 
 .. exception:: NotSupportedError
 
-   Exception raised in case a method or database API was used which is not
-   supported by the database, e.g. calling the :meth:`~Connection.rollback`
-   method on a connection that does not support transaction or has
-   transactions turned off.  It is a subclass of :exc:`DatabaseError`.
+   Exception raised in case a method or database API is not supported by the
+   underlying SQLite library. For example, setting *deterministic* to
+   :const:`True` in :meth:`~Connection.create_function`, if the underlying SQLite library
+   does not support deterministic functions.
+   ``NotSupportedError`` is a subclass of :exc:`DatabaseError`.
 
 
 .. _sqlite3-blob-objects:

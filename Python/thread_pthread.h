@@ -23,6 +23,8 @@
 #   include <sys/thread.h>      /* thread_self() */
 #elif defined(__NetBSD__)
 #   include <lwp.h>             /* _lwp_self() */
+#elif defined(__DragonFly__)
+#   include <sys/lwp.h>         /* lwp_gettid() */
 #endif
 
 /* The POSIX spec requires that use of pthread_attr_setstacksize
@@ -252,7 +254,6 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
     size_t      tss;
 #endif
 
-    dprintf(("PyThread_start_new_thread called\n"));
     if (!initialized)
         PyThread_init_thread();
 
@@ -350,6 +351,9 @@ PyThread_get_thread_native_id(void)
 #elif defined(__NetBSD__)
     lwpid_t native_id;
     native_id = _lwp_self();
+#elif defined(__DragonFly__)
+    lwpid_t native_id;
+    native_id = lwp_gettid();
 #endif
     return (unsigned long) native_id;
 }
@@ -358,7 +362,6 @@ PyThread_get_thread_native_id(void)
 void _Py_NO_RETURN
 PyThread_exit_thread(void)
 {
-    dprintf(("PyThread_exit_thread called\n"));
     if (!initialized)
         exit(0);
     pthread_exit(0);
@@ -376,7 +379,6 @@ PyThread_allocate_lock(void)
     sem_t *lock;
     int status, error = 0;
 
-    dprintf(("PyThread_allocate_lock called\n"));
     if (!initialized)
         PyThread_init_thread();
 
@@ -392,7 +394,6 @@ PyThread_allocate_lock(void)
         }
     }
 
-    dprintf(("PyThread_allocate_lock() -> %p\n", (void *)lock));
     return (PyThread_type_lock)lock;
 }
 
@@ -403,7 +404,6 @@ PyThread_free_lock(PyThread_type_lock lock)
     int status, error = 0;
 
     (void) error; /* silence unused-but-set-variable warning */
-    dprintf(("PyThread_free_lock(%p) called\n", lock));
 
     if (!thelock)
         return;
@@ -435,8 +435,6 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     int status, error = 0;
 
     (void) error; /* silence unused-but-set-variable warning */
-    dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
-             lock, microseconds, intr_flag));
 
     _PyTime_t timeout;  // relative timeout
     if (microseconds >= 0) {
@@ -544,8 +542,6 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
         success = PY_LOCK_FAILURE;
     }
 
-    dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) -> %d\n",
-             lock, microseconds, intr_flag, success));
     return success;
 }
 
@@ -556,7 +552,6 @@ PyThread_release_lock(PyThread_type_lock lock)
     int status, error = 0;
 
     (void) error; /* silence unused-but-set-variable warning */
-    dprintf(("PyThread_release_lock(%p) called\n", lock));
 
     status = sem_post(thelock);
     CHECK_STATUS("sem_post");
@@ -573,7 +568,6 @@ PyThread_allocate_lock(void)
     pthread_lock *lock;
     int status, error = 0;
 
-    dprintf(("PyThread_allocate_lock called\n"));
     if (!initialized)
         PyThread_init_thread();
 
@@ -599,7 +593,6 @@ PyThread_allocate_lock(void)
         }
     }
 
-    dprintf(("PyThread_allocate_lock() -> %p\n", (void *)lock));
     return (PyThread_type_lock) lock;
 }
 
@@ -610,7 +603,6 @@ PyThread_free_lock(PyThread_type_lock lock)
     int status, error = 0;
 
     (void) error; /* silence unused-but-set-variable warning */
-    dprintf(("PyThread_free_lock(%p) called\n", lock));
 
     /* some pthread-like implementations tie the mutex to the cond
      * and must have the cond destroyed first.
@@ -631,9 +623,6 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     PyLockStatus success = PY_LOCK_FAILURE;
     pthread_lock *thelock = (pthread_lock *)lock;
     int status, error = 0;
-
-    dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
-             lock, microseconds, intr_flag));
 
     if (microseconds == 0) {
         status = pthread_mutex_trylock( &thelock->mut );
@@ -694,8 +683,6 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     }
 
     if (error) success = PY_LOCK_FAILURE;
-    dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) -> %d\n",
-             lock, microseconds, intr_flag, success));
     return success;
 }
 
@@ -706,7 +693,6 @@ PyThread_release_lock(PyThread_type_lock lock)
     int status, error = 0;
 
     (void) error; /* silence unused-but-set-variable warning */
-    dprintf(("PyThread_release_lock(%p) called\n", lock));
 
     status = pthread_mutex_lock( &thelock->mut );
     CHECK_STATUS_PTHREAD("pthread_mutex_lock[3]");

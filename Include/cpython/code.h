@@ -86,16 +86,9 @@ typedef uint16_t _Py_CODEUNIT;
     PyObject *co_filename;        /* unicode (where it was loaded from) */     \
     PyObject *co_name;            /* unicode (name, for reference) */          \
     PyObject *co_qualname;        /* unicode (qualname, for reference) */      \
-    PyObject *co_linetable;       /* bytes (encoding addr<->lineno mapping)    \
-                                     See Objects/lnotab_notes.txt for details. \
-                                  */                                           \
-    PyObject *co_endlinetable;    /* bytes object that holds end lineno for    \
-                                     instructions separated across different   \
-                                     lines */                                  \
-    PyObject *co_columntable;     /* bytes object that holds start/end column  \
-                                     offset each instruction */                \
-                                                                               \
+    PyObject *co_linetable;       /* bytes object that holds location info */  \
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
+    void *_co_code;               /* cached co_code object/attribute */        \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \
        people to go through the proper APIs. */                                \
@@ -153,13 +146,13 @@ PyAPI_FUNC(PyCodeObject *) PyCode_New(
         int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, int, PyObject *,
-        PyObject *, PyObject *, PyObject *);
+        PyObject *);
 
 PyAPI_FUNC(PyCodeObject *) PyCode_NewWithPosOnlyArgs(
         int, int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, int, PyObject *,
-        PyObject *, PyObject *, PyObject *);
+        PyObject *);
         /* same as struct above */
 
 /* Creates a new empty code object with the specified source location. */
@@ -176,8 +169,8 @@ PyAPI_FUNC(int) PyCode_Addr2Location(PyCodeObject *, int, int *, int *, int *, i
 /* for internal use only */
 struct _opaque {
     int computed_line;
-    const char *lo_next;
-    const char *limit;
+    const uint8_t *lo_next;
+    const uint8_t *limit;
 };
 
 typedef struct _line_offsets {
@@ -209,6 +202,23 @@ PyAPI_FUNC(int) _PyCode_GetExtra(PyObject *code, Py_ssize_t index,
                                  void **extra);
 PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
                                  void *extra);
+
+/* Equivalent to getattr(code, 'co_code') in Python.
+   Returns a strong reference to a bytes object. */
+PyAPI_FUNC(PyObject *) PyCode_GetCode(PyCodeObject *code);
+
+typedef enum _PyCodeLocationInfoKind {
+    /* short forms are 0 to 9 */
+    PY_CODE_LOCATION_INFO_SHORT0 = 0,
+    /* one lineforms are 10 to 12 */
+    PY_CODE_LOCATION_INFO_ONE_LINE0 = 10,
+    PY_CODE_LOCATION_INFO_ONE_LINE1 = 11,
+    PY_CODE_LOCATION_INFO_ONE_LINE2 = 12,
+
+    PY_CODE_LOCATION_INFO_NO_COLUMNS = 13,
+    PY_CODE_LOCATION_INFO_LONG = 14,
+    PY_CODE_LOCATION_INFO_NONE = 15
+} _PyCodeLocationInfoKind;
 
 #ifdef __cplusplus
 }

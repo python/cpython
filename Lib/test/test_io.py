@@ -68,7 +68,7 @@ else:
 
 # Does io.IOBase finalizer log the exception if the close() method fails?
 # The exception is ignored silently by default in release build.
-IOBASE_EMITS_UNRAISABLE = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mode)
+IOBASE_EMITS_UNRAISABLE = (support.Py_DEBUG or sys.flags.dev_mode)
 
 
 def _default_chunk_size():
@@ -429,6 +429,7 @@ class IOTest(unittest.TestCase):
     @unittest.skipIf(
         support.is_emscripten, "fstat() of a pipe fd is not supported"
     )
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_optional_abilities(self):
         # Test for OSError when optional APIs are not supported
         # The purpose of this test is to try fileno(), reading, writing and
@@ -2726,7 +2727,7 @@ class TextIOWrapperTest(unittest.TestCase):
                 if key in os.environ:
                     del os.environ[key]
 
-            current_locale_encoding = locale.getpreferredencoding(False)
+            current_locale_encoding = locale.getencoding()
             b = self.BytesIO()
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", EncodingWarning)
@@ -2735,18 +2736,6 @@ class TextIOWrapperTest(unittest.TestCase):
         finally:
             os.environ.clear()
             os.environ.update(old_environ)
-
-    @support.cpython_only
-    @unittest.skipIf(sys.platform != "win32", "Windows-only test")
-    @unittest.skipIf(sys.flags.utf8_mode, "utf-8 mode is enabled")
-    def test_device_encoding(self):
-        # Issue 15989
-        import _testcapi
-        b = self.BytesIO()
-        b.fileno = lambda: _testcapi.INT_MAX + 1
-        self.assertRaises(OverflowError, self.TextIOWrapper, b, encoding="locale")
-        b.fileno = lambda: _testcapi.UINT_MAX + 1
-        self.assertRaises(OverflowError, self.TextIOWrapper, b, encoding="locale")
 
     def test_encoding(self):
         # Check the encoding attribute is always set, and valid
@@ -3581,6 +3570,10 @@ class TextIOWrapperTest(unittest.TestCase):
         F.tell = lambda x: 0
         t = self.TextIOWrapper(F(), encoding='utf-8')
 
+    def test_reconfigure_locale(self):
+        wrapper = io.TextIOWrapper(io.BytesIO(b"test"))
+        wrapper.reconfigure(encoding="locale")
+
     def test_reconfigure_encoding_read(self):
         # latin1 -> utf8
         # (latin1 can decode utf-8 encoded string)
@@ -3982,6 +3975,7 @@ class MiscIOTest(unittest.TestCase):
     @unittest.skipIf(
         support.is_emscripten, "fstat() of a pipe fd is not supported"
     )
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_open_pipe_with_append(self):
         # bpo-27805: Ignore ESPIPE from lseek() in open().
         r, w = os.pipe()
@@ -4120,6 +4114,7 @@ class MiscIOTest(unittest.TestCase):
         with warnings_helper.check_no_resource_warning(self):
             open(r, *args, closefd=False, **kwargs)
 
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_warn_on_dealloc_fd(self):
         self._check_warn_on_dealloc_fd("rb", buffering=0)
         self._check_warn_on_dealloc_fd("rb")
@@ -4159,6 +4154,7 @@ class MiscIOTest(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'set_blocking'),
                          'os.set_blocking() required for this test')
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def _test_nonblock_pipe_write(self, bufsize):
         sent = []
         received = []
@@ -4470,14 +4466,17 @@ class SignalsTest(unittest.TestCase):
                     raise
 
     @requires_alarm
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_interrupted_write_unbuffered(self):
         self.check_interrupted_write(b"xy", b"xy", mode="wb", buffering=0)
 
     @requires_alarm
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_interrupted_write_buffered(self):
         self.check_interrupted_write(b"xy", b"xy", mode="wb")
 
     @requires_alarm
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_interrupted_write_text(self):
         self.check_interrupted_write("xy", b"xy", mode="w", encoding="ascii")
 

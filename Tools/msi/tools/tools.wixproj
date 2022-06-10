@@ -15,18 +15,12 @@
         <EmbeddedResource Include="*.wxl" />
     </ItemGroup>
     <ItemGroup>
-        <ToolDirectories Include="scripts;i18n;pynche;pynche\X;demo" />
-    </ItemGroup>
-    <ItemGroup>
         <InstallFiles Include="$(PySourcePath)Tools\scripts\**\*.py;
                                $(PySourcePath)Tools\scripts\**\*.pyw;
                                $(PySourcePath)Tools\scripts\**\*.txt;
                                $(PySourcePath)Tools\i18n\**\*.py;
                                $(PySourcePath)Tools\i18n\**\*.pyw;
                                $(PySourcePath)Tools\i18n\**\*.txt;
-                               $(PySourcePath)Tools\pynche\**\*.py;
-                               $(PySourcePath)Tools\pynche\**\*.pyw;
-                               $(PySourcePath)Tools\pynche\**\*.txt;
                                $(PySourcePath)Tools\demo\**\*.py;
                                $(PySourcePath)Tools\demo\**\*.pyw;
                                $(PySourcePath)Tools\demo\**\*.txt;

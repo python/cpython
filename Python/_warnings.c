@@ -1136,11 +1136,7 @@ PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level,
     int res;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     res = _PyErr_WarnFormatV(NULL, category, stack_level, format, vargs);
     va_end(vargs);
     return res;
@@ -1153,11 +1149,7 @@ _PyErr_WarnFormat(PyObject *source, PyObject *category, Py_ssize_t stack_level,
     int res;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     res = _PyErr_WarnFormatV(source, category, stack_level, format, vargs);
     va_end(vargs);
     return res;
@@ -1170,11 +1162,7 @@ PyErr_ResourceWarning(PyObject *source, Py_ssize_t stack_level,
     int res;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     res = _PyErr_WarnFormatV(source, PyExc_ResourceWarning,
                              stack_level, format, vargs);
     va_end(vargs);
@@ -1274,11 +1262,7 @@ PyErr_WarnExplicitFormat(PyObject *category,
             goto exit;
     }
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     message = PyUnicode_FromFormatV(format, vargs);
     if (message != NULL) {
         PyObject *res;

@@ -99,7 +99,7 @@ def _parse_struct_next(m, srcinfo, anon_name, parent):
                 name = anon_name('struct-field-')
             if size:
 #                data = (data, size)
-                data['size'] = int(size)
+                data['size'] = int(size) if size.isdigit() else size
         else:
             # This shouldn't happen (we expect each field to have a name).
             raise NotImplementedError
