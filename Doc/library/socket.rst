@@ -242,7 +242,7 @@ created.  Socket addresses are represented as follows:
     child partitions.
   - ``HV_GUID_LOOPBACK`` - Used as a target to itself.
   - ``HV_GUID_PARENT`` - When used as a bind accepts connection from the parent
-    partition. When used as an address target it will connect to the parent parition.
+    partition. When used as an address target it will connect to the parent partition.
 
   The ``service_id`` is the service identifier of the registered service.
 
