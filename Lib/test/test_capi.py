@@ -621,7 +621,7 @@ class CAPITest(unittest.TestCase):
     def test_pytype_fromspec_with_repeated_slots(self):
         for variant in range(2):
             with self.subTest(variant=variant):
-                with self.assertRaises(RuntimeError):
+                with self.assertRaises(SystemError):
                     _testcapi.create_type_from_repeated_slots(variant)
 
     def test_pynumber_tobase(self):

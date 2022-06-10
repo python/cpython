@@ -3419,7 +3419,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
         if (slot->slot == Py_tp_members) {
             if (nmembers != 0) {
                 PyErr_SetString(
-                    PyExc_RuntimeError,
+                    PyExc_SystemError,
                     "Multiple Py_tp_members slots are not supported.");
                 return NULL;
             }
@@ -3567,7 +3567,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
                literal, we need to make a copy */
             if (type->tp_doc != NULL) {
                 PyErr_SetString(
-                    PyExc_RuntimeError,
+                    PyExc_SystemError,
                     "Multiple Py_tp_doc slots are not supported.");
                 return NULL;
             }
