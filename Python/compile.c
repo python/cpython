@@ -5551,20 +5551,26 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
 static int
 compiler_with_except_finish(struct compiler *c, basicblock * cleanup) {
     UNSET_LOC(c);
-    basicblock *exit;
-    exit = compiler_new_block(c);
-    if (exit == NULL)
+    basicblock *suppress = compiler_new_block(c);
+    if (suppress == NULL) {
         return 0;
-    ADDOP_JUMP(c, POP_JUMP_IF_TRUE, exit);
+    }
+    ADDOP_JUMP(c, POP_JUMP_IF_TRUE, suppress);
     ADDOP_I(c, RERAISE, 2);
-    compiler_use_next_block(c, cleanup);
-    POP_EXCEPT_AND_RERAISE(c);
-    compiler_use_next_block(c, exit);
+    compiler_use_next_block(c, suppress);
     ADDOP(c, POP_TOP); /* exc_value */
     ADDOP(c, POP_BLOCK);
     ADDOP(c, POP_EXCEPT);
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
+    basicblock *exit = compiler_new_block(c);
+    if (exit == NULL) {
+        return 0;
+    }
+    ADDOP_JUMP(c, JUMP, exit);
+    compiler_use_next_block(c, cleanup);
+    POP_EXCEPT_AND_RERAISE(c);
+    compiler_use_next_block(c, exit);
     return 1;
 }
 
