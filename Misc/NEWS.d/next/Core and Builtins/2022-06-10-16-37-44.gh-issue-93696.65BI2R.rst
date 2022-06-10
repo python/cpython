@@ -1,0 +1,1 @@
+Allow ``pdb`` to locate source for frozen modules in the standard library.
