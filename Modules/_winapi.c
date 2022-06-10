@@ -1535,13 +1535,19 @@ _winapi_LCMapStringEx_impl(PyObject *module, PyObject *locale, DWORD flags,
     if (!locale_) {
         return NULL;
     }
-    wchar_t *src_ = PyUnicode_AsWideCharString(src, NULL);
+    Py_ssize_t srcLenAsSsize;
+    int srcLen;
+    wchar_t *src_ = PyUnicode_AsWideCharString(src, &srcLenAsSsize);
     if (!src_) {
         PyMem_Free(locale_);
         return NULL;
     }
+    srcLen = (int)srcLenAsSsize;
+    if (srcLen != srcLenAsSsize) {
+        srcLen = -1;
+    }
 
-    int dest_size = LCMapStringEx(locale_, flags, src_, -1, NULL, 0,
+    int dest_size = LCMapStringEx(locale_, flags, src_, srcLen, NULL, 0,
                                   NULL, NULL, 0);
     if (dest_size == 0) {
         PyMem_Free(locale_);
@@ -1556,7 +1562,7 @@ _winapi_LCMapStringEx_impl(PyObject *module, PyObject *locale, DWORD flags,
         return PyErr_NoMemory();
     }
 
-    int nmapped = LCMapStringEx(locale_, flags, src_, -1, dest, dest_size,
+    int nmapped = LCMapStringEx(locale_, flags, src_, srcLen, dest, dest_size,
                                 NULL, NULL, 0);
     if (nmapped == 0) {
         DWORD error = GetLastError();
@@ -1566,7 +1572,7 @@ _winapi_LCMapStringEx_impl(PyObject *module, PyObject *locale, DWORD flags,
         return PyErr_SetFromWindowsErr(error);
     }
 
-    PyObject *ret = PyUnicode_FromWideChar(dest, dest_size - 1);
+    PyObject *ret = PyUnicode_FromWideChar(dest, dest_size);
     PyMem_Free(locale_);
     PyMem_Free(src_);
     PyMem_DEL(dest);
