@@ -966,6 +966,25 @@ basicblock_next_instr(basicblock *b)
     (new).i_end_lineno = (old).i_end_lineno;             \
     (new).i_end_col_offset = (old).i_end_col_offset;
 
+
+struct location {
+    int lineno;
+    int end_lineno;
+    int col_offset;
+    int end_col_offset;
+};
+
+#define NO_LOCATION ((struct location){-1, 0, 0, 0})
+
+/* current compiler unit's location */
+#define CU_LOCATION(CU)         \
+    ((struct location){         \
+        (CU)->u_lineno,         \
+        (CU)->u_end_lineno,     \
+        (CU)->u_col_offset,     \
+        (CU)->u_end_col_offset, \
+    })
+
 /* Return the stack effect of opcode with argument oparg.
 
    Some opcodes have different stack effect when jump to the target and
@@ -1268,8 +1287,7 @@ compiler_use_new_implicit_block_if_needed(struct compiler *c)
 */
 
 static int
-basicblock_addop(basicblock *b, int opcode, int lineno,
-                 int end_lineno, int col_offset, int end_col_offset)
+basicblock_addop(basicblock *b, int opcode, struct location loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
@@ -1282,10 +1300,10 @@ basicblock_addop(basicblock *b, int opcode, int lineno,
     struct instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = 0;
-    i->i_lineno = lineno;
-    i->i_end_lineno = end_lineno;
-    i->i_col_offset = col_offset;
-    i->i_end_col_offset = end_col_offset;
+    i->i_lineno = loc.lineno;
+    i->i_end_lineno = loc.end_lineno;
+    i->i_col_offset = loc.col_offset;
+    i->i_end_col_offset = loc.end_col_offset;
 
     return 1;
 }
@@ -1296,13 +1314,9 @@ compiler_addop(struct compiler *c, int opcode, bool line)
     if (compiler_use_new_implicit_block_if_needed(c) < 0) {
         return -1;
     }
-    int lineno = line ? c->u->u_lineno : -1;
-    int end_lineno = line ? c->u->u_end_lineno : 0;
-    int col_offset = line ? c->u->u_col_offset : 0;
-    int end_col_offset = line ? c->u->u_end_col_offset : 0;
 
-    return basicblock_addop(c->u->u_curblock, opcode,
-                            lineno, end_lineno, col_offset, end_col_offset);
+    struct location loc = line ? CU_LOCATION(c->u) : NO_LOCATION;
+    return basicblock_addop(c->u->u_curblock, opcode, loc);
 }
 
 static Py_ssize_t
@@ -1496,8 +1510,7 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
 
 static int
 basicblock_addop_i(basicblock *b, int opcode, Py_ssize_t oparg,
-                   int lineno, int end_lineno,
-                   int col_offset, int end_col_offset)
+                   struct location loc)
 {
     /* oparg value is unsigned, but a signed C int is usually used to store
        it in the C code (like Python/ceval.c).
@@ -1518,10 +1531,10 @@ basicblock_addop_i(basicblock *b, int opcode, Py_ssize_t oparg,
     struct instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    i->i_lineno = lineno;
-    i->i_end_lineno = end_lineno;
-    i->i_col_offset = col_offset;
-    i->i_end_col_offset = end_col_offset;
+    i->i_lineno = loc.lineno;
+    i->i_end_lineno = loc.end_lineno;
+    i->i_col_offset = loc.col_offset;
+    i->i_end_col_offset = loc.end_col_offset;
 
     return 1;
 }
@@ -1532,20 +1545,13 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg, bool line)
     if (compiler_use_new_implicit_block_if_needed(c) < 0) {
         return -1;
     }
-    int lineno = line ? c->u->u_lineno : -1;
-    int end_lineno = line ? c->u->u_end_lineno : 0;
-    int col_offset = line ? c->u->u_col_offset : 0;
-    int end_col_offset = line ? c->u->u_end_col_offset : 0;
-
-    return basicblock_addop_i(c->u->u_curblock, opcode, oparg,
-                              lineno, end_lineno, col_offset, end_col_offset);
+    struct location loc = line ? CU_LOCATION(c->u) : NO_LOCATION;
+    return basicblock_addop_i(c->u->u_curblock, opcode, oparg, loc);
 }
 
 static int
 basicblock_add_jump(basicblock *b, int opcode,
-                    int lineno, int end_lineno,
-                    int col_offset, int end_col_offset,
-                    basicblock *target)
+                    struct location loc, basicblock *target)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
@@ -1559,10 +1565,10 @@ basicblock_add_jump(basicblock *b, int opcode,
     }
     i->i_opcode = opcode;
     i->i_target = target;
-    i->i_lineno = lineno;
-    i->i_end_lineno = end_lineno;
-    i->i_col_offset = col_offset;
-    i->i_end_col_offset = end_col_offset;
+    i->i_lineno = loc.lineno;
+    i->i_end_lineno = loc.end_lineno;
+    i->i_col_offset = loc.col_offset;
+    i->i_end_col_offset = loc.end_col_offset;
 
     return 1;
 }
@@ -1573,14 +1579,8 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *target, bool line)
     if (compiler_use_new_implicit_block_if_needed(c) < 0) {
         return -1;
     }
-    int lineno = line ? c->u->u_lineno : -1;
-    int end_lineno = line ? c->u->u_end_lineno : 0;
-    int col_offset = line ? c->u->u_col_offset : 0;
-    int end_col_offset = line ? c->u->u_end_col_offset : 0;
-
-    return basicblock_add_jump(c->u->u_curblock, opcode,
-                               lineno, end_lineno, col_offset, end_col_offset,
-                               target);
+    struct location loc = line ? CU_LOCATION(c->u) : NO_LOCATION;
+    return basicblock_add_jump(c->u->u_curblock, opcode, loc, target);
 }
 
 #define ADDOP(C, OP) { \
@@ -7455,7 +7455,7 @@ push_cold_blocks_to_end(struct compiler *c, basicblock *entry, int code_flags) {
             if (explicit_jump == NULL) {
                 return -1;
             }
-            basicblock_add_jump(explicit_jump, JUMP, -1, 0, 0, 0, b->b_next);
+            basicblock_add_jump(explicit_jump, JUMP, NO_LOCATION, b->b_next);
 
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
