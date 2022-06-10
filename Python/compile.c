@@ -202,10 +202,9 @@ is_relative_jump(struct instr *i)
 }
 
 static inline int
-is_block_push(struct instr *instr)
+is_block_push(struct instr *i)
 {
-    int opcode = instr->i_opcode;
-    return IS_BLOCK_PUSH_OPCODE(opcode);
+    return IS_BLOCK_PUSH_OPCODE(i->i_opcode);
 }
 
 static inline int
@@ -384,7 +383,6 @@ struct compiler_unit {
     int u_firstlineno; /* the first lineno of the block */
     struct location u_loc;  /* line/column info of the current stmt */
 };
-
 
 /* This struct captures the global state of a compilation.
 

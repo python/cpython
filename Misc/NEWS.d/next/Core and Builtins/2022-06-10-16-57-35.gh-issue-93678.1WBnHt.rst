@@ -1,2 +1,1 @@
-Refactor the compiler's code-gen functions to reduce boilerplate and
-repetition.
+Refactor the compiler to reduce boilerplate and repetition.
