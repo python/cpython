@@ -23,6 +23,7 @@ import stat
 import genericpath
 from genericpath import *
 
+
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime", "islink","exists","lexists","isdir","isfile",
@@ -41,14 +42,39 @@ def _get_bothseps(path):
 # Other normalizations (such as optimizing '../' away) are not done
 # (this is done by normpath).
 
-def normcase(s):
-    """Normalize case of pathname.
+try:
+    from _winapi import (
+        LCMapStringEx as _LCMapStringEx,
+        LOCALE_NAME_INVARIANT as _LOCALE_NAME_INVARIANT,
+        LCMAP_LOWERCASE as _LCMAP_LOWERCASE)
 
-    Makes all characters lowercase and all slashes into backslashes."""
-    s = os.fspath(s)
-    if isinstance(s, bytes):
-        return s.replace(b'/', b'\\').lower()
-    else:
+    def normcase(s):
+        """Normalize case of pathname.
+
+        Makes all characters lowercase and all slashes into backslashes.
+        """
+        s = os.fspath(s)
+        if not s:
+            return s
+        if isinstance(s, bytes):
+            encoding = sys.getfilesystemencoding()
+            s = s.decode(encoding, 'surrogateescape').replace('/', '\\')
+            s = _LCMapStringEx(_LOCALE_NAME_INVARIANT,
+                               _LCMAP_LOWERCASE, s)
+            return s.encode(encoding, 'surrogateescape')
+        else:
+            return _LCMapStringEx(_LOCALE_NAME_INVARIANT,
+                                  _LCMAP_LOWERCASE,
+                                  s.replace('/', '\\'))
+except ImportError:
+    def normcase(s):
+        """Normalize case of pathname.
+
+        Makes all characters lowercase and all slashes into backslashes.
+        """
+        s = os.fspath(s)
+        if isinstance(s, bytes):
+            return os.fsencode(os.fsdecode(s).replace('/', '\\').lower())
         return s.replace('/', '\\').lower()
 
 
