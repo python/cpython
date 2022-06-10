@@ -219,7 +219,7 @@ check:
 	$(SPHINXLINT) --enable default-role ../Misc/NEWS.d/next/
 
 serve:
-	@echo "The serve target was removed, use htmlview instead (see bpo-36329)"
+	@echo "The serve target was removed, use `make htmlview` instead (see bpo-36329)"
 
 # Targets for daily automated doc build
 # By default, Sphinx only rebuilds pages where the page content has changed.
