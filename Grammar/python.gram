@@ -248,7 +248,8 @@ as_pattern[pattern_ty]:
 or_pattern[pattern_ty]:
     | patterns[asdl_pattern_seq*]='|'.closed_pattern+ {
         asdl_seq_LEN(patterns) == 1 ? asdl_seq_GET(patterns, 0) : _PyAST_MatchOr(patterns, EXTRA) }
-closed_pattern[pattern_ty]:
+
+closed_pattern[pattern_ty] (memo):
     | literal_pattern
     | capture_pattern
     | wildcard_pattern
@@ -329,7 +330,8 @@ maybe_sequence_pattern[asdl_seq*]:
 maybe_star_pattern[pattern_ty]:
     | star_pattern
     | pattern
-star_pattern[pattern_ty]:
+
+star_pattern[pattern_ty] (memo):
     | '*' target=pattern_capture_target {
         _PyAST_MatchStar(target->v.Name.id, EXTRA) }
     | '*' wildcard_pattern {
