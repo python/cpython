@@ -3064,21 +3064,34 @@ class AbstractPickleTests:
                     expected = "changed size during iteration"
                     self.assertIn(expected, str(e))
 
-    def test_evil_class_mutating_list(self):
+    def test_evil_class_mutating_container(self):
         if not hasattr(self, "pickler"):
             raise self.skipTest(f"{type(self)} has no associated pickler type")
 
-        global P
-        class P(self.pickler):
-            def persistent_id(self, obj):
-                if obj is a[0]:
-                    a.clear()
-                return None
+        global Clearer
+        class Clearer:
+            pass
+
+        def check(a):
+            class P(self.pickler):
+                def persistent_id(self, obj):
+                    if isinstance(obj, Clearer):
+                        a.clear()
+                    return None
+            try:
+                P(io.BytesIO(), proto).dump(a)
+            except RuntimeError:
+                # Don't care if this raises, just don't segfault.
+                pass
 
         for proto in protocols:
-            a = [[[[]]]]
-            with self.assertRaises(IndexError):
-                P(io.BytesIO(), proto).dump(a)
+            check([Clearer()])
+            check([Clearer(), Clearer()])
+            check([Clearer(), Clearer()])
+            check({Clearer()})
+            check({Clearer(): 1})
+            check({Clearer(): 1, Clearer(): 2})
+            check({1: Clearer(), 2: Clearer()})
 
 
 class BigmemPickleTests:
