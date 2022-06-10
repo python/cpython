@@ -3,9 +3,9 @@ preserve
 [clinic start generated code]*/
 
 static int
-pysqlite_connection_init_impl(pysqlite_Connection *self,
-                              const char *database, double timeout,
-                              int detect_types, const char *isolation_level,
+pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
+                              double timeout, int detect_types,
+                              const char *isolation_level,
                               int check_same_thread, PyObject *factory,
                               int cache_size, int uri);
 
@@ -19,7 +19,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
-    const char *database = NULL;
+    PyObject *database;
     double timeout = 5.0;
     int detect_types = 0;
     const char *isolation_level = "";
@@ -32,9 +32,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!fastargs) {
         goto exit;
     }
-    if (!clinic_fsconverter(fastargs[0], &database)) {
-        goto exit;
-    }
+    database = fastargs[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
@@ -102,9 +100,6 @@ skip_optional_pos:
     return_value = pysqlite_connection_init_impl((pysqlite_Connection *)self, database, timeout, detect_types, isolation_level, check_same_thread, factory, cache_size, uri);
 
 exit:
-    /* Cleanup for database */
-    PyMem_Free((void *)database);
-
     return return_value;
 }
 
@@ -1236,4 +1231,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=d21767843c480a10 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fb8908674e9f25ff input=a9049054013a1b77]*/

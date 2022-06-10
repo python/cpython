@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import patch
 from test import support
 from test.support import os_helper
+from test.support import socket_helper
 from test.support import warnings_helper
 import os
 try:
@@ -22,6 +23,10 @@ from nturl2path import url2pathname, pathname2url
 
 from base64 import b64encode
 import collections
+
+
+if not socket_helper.has_gethostname:
+    raise unittest.SkipTest("test requires gethostname()")
 
 
 def hexescape(char):

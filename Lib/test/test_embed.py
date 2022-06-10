@@ -22,7 +22,6 @@ if not support.has_subprocess_support:
 
 MS_WINDOWS = (os.name == 'nt')
 MACOS = (sys.platform == 'darwin')
-Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 PYMEM_ALLOCATOR_NOT_SET = 0
 PYMEM_ALLOCATOR_DEBUG = 2
 PYMEM_ALLOCATOR_MALLOC = 3
@@ -498,7 +497,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'pathconfig_warnings': 1,
         '_init_main': 1,
         '_isolated_interpreter': 0,
-        'use_frozen_modules': not Py_DEBUG,
+        'use_frozen_modules': not support.Py_DEBUG,
         'safe_path': 0,
         '_is_python_build': IGNORE_CONFIG,
     }
@@ -1206,7 +1205,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
              # The current getpath.c doesn't determine the stdlib dir
              # in this case.
             'stdlib_dir': '',
-            'use_frozen_modules': not Py_DEBUG,
+            'use_frozen_modules': not support.Py_DEBUG,
             # overridden by PyConfig
             'program_name': 'conf_program_name',
             'base_executable': 'conf_executable',
@@ -1445,12 +1444,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 config['base_prefix'] = pyvenv_home
                 config['prefix'] = pyvenv_home
                 config['stdlib_dir'] = os.path.join(pyvenv_home, 'Lib')
-                config['use_frozen_modules'] = not Py_DEBUG
+                config['use_frozen_modules'] = not support.Py_DEBUG
             else:
                 # cannot reliably assume stdlib_dir here because it
                 # depends too much on our build. But it ought to be found
                 config['stdlib_dir'] = self.IGNORE_CONFIG
-                config['use_frozen_modules'] = not Py_DEBUG
+                config['use_frozen_modules'] = not support.Py_DEBUG
 
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
@@ -1680,7 +1679,7 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
         """).lstrip()
         self.assertEqual(out, expected)
 
-    @unittest.skipUnless(hasattr(sys, 'gettotalrefcount'),
+    @unittest.skipUnless(support.Py_DEBUG,
                          '-X showrefcount requires a Python debug build')
     def test_no_memleak(self):
         # bpo-1635741: Python must release all memory at exit

@@ -25,7 +25,6 @@ from test.libregrtest import utils, setup
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
 ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
 LOG_PREFIX = r'[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?'
@@ -665,7 +664,7 @@ class ProgramsTestCase(BaseTestCase):
             test_args.append('-arm32')   # 32-bit ARM build
         elif platform.architecture()[0] == '64bit':
             test_args.append('-x64')   # 64-bit build
-        if not Py_DEBUG:
+        if not support.Py_DEBUG:
             test_args.append('+d')     # Release build, use python.exe
         self.run_batch(script, *test_args, *self.tests)
 
@@ -682,7 +681,7 @@ class ProgramsTestCase(BaseTestCase):
             rt_args.append('-arm32')   # 32-bit ARM build
         elif platform.architecture()[0] == '64bit':
             rt_args.append('-x64')   # 64-bit build
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             rt_args.append('-d')     # Debug build, use python_d.exe
         self.run_batch(script, *rt_args, *self.regrtest_args, *self.tests)
 
@@ -903,7 +902,7 @@ class ArgsTestCase(BaseTestCase):
             reflog = fp.read()
             self.assertIn(line2, reflog)
 
-    @unittest.skipUnless(Py_DEBUG, 'need a debug build')
+    @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
     def test_huntrleaks(self):
         # test --huntrleaks
         code = textwrap.dedent("""
@@ -917,7 +916,7 @@ class ArgsTestCase(BaseTestCase):
         """)
         self.check_leak(code, 'references')
 
-    @unittest.skipUnless(Py_DEBUG, 'need a debug build')
+    @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
     def test_huntrleaks_fd_leak(self):
         # test --huntrleaks for file descriptor leak
         code = textwrap.dedent("""

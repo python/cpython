@@ -46,7 +46,7 @@ module _sqlite3
 /*[clinic input]
 _sqlite3.connect as pysqlite_connect
 
-    database: object(converter='PyUnicode_FSConverter')
+    database: object
     timeout: double = 5.0
     detect_types: int = 0
     isolation_level: object = NULL
@@ -66,7 +66,7 @@ pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
                       int detect_types, PyObject *isolation_level,
                       int check_same_thread, PyObject *factory,
                       int cached_statements, int uri)
-/*[clinic end generated code: output=450ac9078b4868bb input=ea6355ba55a78e12]*/
+/*[clinic end generated code: output=450ac9078b4868bb input=e16914663ddf93ce]*/
 {
     if (isolation_level == NULL) {
         isolation_level = PyUnicode_FromString("");
@@ -81,7 +81,6 @@ pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
                                           timeout, detect_types,
                                           isolation_level, check_same_thread,
                                           factory, cached_statements, uri);
-    Py_DECREF(database);  // needed bco. the AC FSConverter
     Py_DECREF(isolation_level);
     return res;
 }
@@ -708,7 +707,7 @@ module_exec(PyObject *module)
         goto error;
     }
 
-    if (PyModule_AddStringConstant(module, "version", PYSQLITE_VERSION) < 0) {
+    if (PyModule_AddStringConstant(module, "_deprecated_version", PYSQLITE_VERSION) < 0) {
         goto error;
     }
 
