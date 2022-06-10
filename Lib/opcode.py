@@ -98,7 +98,7 @@ def_op('LIST_TO_TUPLE', 82)
 def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
 def_op('SETUP_ANNOTATIONS', 85)
-def_op('YIELD_VALUE', 86)
+
 def_op('ASYNC_GEN_WRAP', 87)
 def_op('PREP_RERAISE_STAR', 88)
 def_op('POP_EXCEPT', 89)
@@ -139,12 +139,14 @@ def_op('RERAISE', 119)
 def_op('COPY', 120)
 def_op('BINARY_OP', 122)
 jrel_op('SEND', 123) # Number of bytes to skip
-def_op('LOAD_FAST', 124)        # Local variable number
+def_op('LOAD_FAST', 124)        # Local variable number, no null check
 haslocal.append(124)
 def_op('STORE_FAST', 125)       # Local variable number
 haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
+def_op('LOAD_FAST_CHECK', 127)  # Local variable number
+haslocal.append(127)
 jrel_op('POP_JUMP_FORWARD_IF_NOT_NONE', 128)
 jrel_op('POP_JUMP_FORWARD_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
@@ -174,7 +176,7 @@ def_op('MAP_ADD', 147)
 def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
 def_op('COPY_FREE_VARS', 149)
-
+def_op('YIELD_VALUE', 150)
 def_op('RESUME', 151)
 def_op('MATCH_CLASS', 152)
 
@@ -188,7 +190,6 @@ def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
-def_op('PRECALL', 166)
 
 def_op('CALL', 171)
 def_op('KW_NAMES', 172)
@@ -254,6 +255,21 @@ _specializations = {
         "CALL_ADAPTIVE",
         "CALL_PY_EXACT_ARGS",
         "CALL_PY_WITH_DEFAULTS",
+        "CALL_BOUND_METHOD_EXACT_ARGS",
+        "CALL_BUILTIN_CLASS",
+        "CALL_BUILTIN_FAST_WITH_KEYWORDS",
+        "CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS",
+        "CALL_NO_KW_BUILTIN_FAST",
+        "CALL_NO_KW_BUILTIN_O",
+        "CALL_NO_KW_ISINSTANCE",
+        "CALL_NO_KW_LEN",
+        "CALL_NO_KW_LIST_APPEND",
+        "CALL_NO_KW_METHOD_DESCRIPTOR_FAST",
+        "CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS",
+        "CALL_NO_KW_METHOD_DESCRIPTOR_O",
+        "CALL_NO_KW_STR_1",
+        "CALL_NO_KW_TUPLE_1",
+        "CALL_NO_KW_TYPE_1",
     ],
     "COMPARE_OP": [
         "COMPARE_OP_ADAPTIVE",
@@ -289,29 +305,11 @@ _specializations = {
     "LOAD_METHOD": [
         "LOAD_METHOD_ADAPTIVE",
         "LOAD_METHOD_CLASS",
+        "LOAD_METHOD_LAZY_DICT",
         "LOAD_METHOD_MODULE",
         "LOAD_METHOD_NO_DICT",
         "LOAD_METHOD_WITH_DICT",
         "LOAD_METHOD_WITH_VALUES",
-    ],
-    "PRECALL": [
-        "PRECALL_ADAPTIVE",
-        "PRECALL_BOUND_METHOD",
-        "PRECALL_BUILTIN_CLASS",
-        "PRECALL_BUILTIN_FAST_WITH_KEYWORDS",
-        "PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS",
-        "PRECALL_NO_KW_BUILTIN_FAST",
-        "PRECALL_NO_KW_BUILTIN_O",
-        "PRECALL_NO_KW_ISINSTANCE",
-        "PRECALL_NO_KW_LEN",
-        "PRECALL_NO_KW_LIST_APPEND",
-        "PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST",
-        "PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS",
-        "PRECALL_NO_KW_METHOD_DESCRIPTOR_O",
-        "PRECALL_NO_KW_STR_1",
-        "PRECALL_NO_KW_TUPLE_1",
-        "PRECALL_NO_KW_TYPE_1",
-        "PRECALL_PYFUNC",
     ],
     "RESUME": [
         "RESUME_QUICK",
@@ -385,7 +383,6 @@ _cache_format = {
     "LOAD_METHOD": {
         "counter": 1,
         "type_version": 2,
-        "dict_offset": 1,
         "keys_version": 2,
         "descr": 4,
     },
@@ -393,9 +390,6 @@ _cache_format = {
         "counter": 1,
         "func_version": 2,
         "min_args": 1,
-    },
-    "PRECALL": {
-        "counter": 1,
     },
     "STORE_SUBSCR": {
         "counter": 1,

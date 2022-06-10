@@ -54,11 +54,6 @@ typedef struct PySlot_Offset {
 } PySlot_Offset;
 
 
-/* bpo-40521: Interned strings are shared by all subinterpreters */
-#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-#  define INTERN_NAME_STRINGS
-#endif
-
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
@@ -1653,6 +1648,7 @@ vectorcall_unbound(PyThreadState *tstate, int unbound, PyObject *func,
         args++;
         nargsf = nargsf - 1 + PY_VECTORCALL_ARGUMENTS_OFFSET;
     }
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_SLOT, func);
     return _PyObject_VectorcallTstate(tstate, func, args, nargsf, NULL);
 }
 
@@ -3365,18 +3361,51 @@ static const PySlot_Offset pyslot_offsets[] = {
 #include "typeslots.inc"
 };
 
-PyObject *
-PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
+/* Given a PyType_FromMetaclass `bases` argument (NULL, type, or tuple of
+ * types), return a tuple of types.
+ */
+inline static PyObject *
+get_bases_tuple(PyObject *bases_in, PyType_Spec *spec)
 {
-    return PyType_FromModuleAndSpec(NULL, spec, bases);
+    if (!bases_in) {
+        /* Default: look in the spec, fall back to (type,). */
+        PyTypeObject *base = &PyBaseObject_Type;  // borrowed ref
+        PyObject *bases = NULL;  // borrowed ref
+        const PyType_Slot *slot;
+        for (slot = spec->slots; slot->slot; slot++) {
+            switch (slot->slot) {
+                case Py_tp_base:
+                    base = slot->pfunc;
+                    break;
+                case Py_tp_bases:
+                    bases = slot->pfunc;
+                    break;
+            }
+        }
+        if (!bases) {
+            return PyTuple_Pack(1, base);
+        }
+        if (PyTuple_Check(bases)) {
+            return Py_NewRef(bases);
+        }
+        PyErr_SetString(PyExc_SystemError, "Py_tp_bases is not a tuple");
+        return NULL;
+    }
+    if (PyTuple_Check(bases_in)) {
+        return Py_NewRef(bases_in);
+    }
+    // Not a tuple, should be a single type
+    return PyTuple_Pack(1, bases_in);
 }
 
 PyObject *
-PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
+PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
+                     PyType_Spec *spec, PyObject *bases_in)
 {
-    PyHeapTypeObject *res;
-    PyObject *modname;
-    PyTypeObject *type, *base;
+    PyHeapTypeObject *res = NULL;
+    PyObject *modname = NULL;
+    PyTypeObject *type;
+    PyObject *bases = NULL;
     int r;
 
     const PyType_Slot *slot;
@@ -3412,16 +3441,57 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         }
     }
 
-    res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, nmembers);
-    if (res == NULL)
-        return NULL;
-    res_start = (char*)res;
-
     if (spec->name == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "Type spec does not define the name field.");
-        goto fail;
+        goto finally;
     }
+
+    /* Get a tuple of bases.
+     * bases is a strong reference (unlike bases_in).
+     */
+    bases = get_bases_tuple(bases_in, spec);
+    if (!bases) {
+        goto finally;
+    }
+
+    /* Calculate the metaclass */
+
+    if (!metaclass) {
+        metaclass = &PyType_Type;
+    }
+    metaclass = _PyType_CalculateMetaclass(metaclass, bases);
+    if (metaclass == NULL) {
+        goto finally;
+    }
+    if (!PyType_Check(metaclass)) {
+        PyErr_Format(PyExc_TypeError,
+                     "Metaclass '%R' is not a subclass of 'type'.",
+                     metaclass);
+        goto finally;
+    }
+    if (metaclass->tp_new != PyType_Type.tp_new) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Metaclasses with custom tp_new are not supported.");
+        goto finally;
+    }
+
+    /* Calculate best base, and check that all bases are type objects */
+    PyTypeObject *base = best_base(bases);  // borrowed ref
+    if (base == NULL) {
+        goto finally;
+    }
+    // best_base should check Py_TPFLAGS_BASETYPE & raise a proper exception,
+    // here we just check its work
+    assert(_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE));
+
+    /* Allocate the new type */
+
+    res = (PyHeapTypeObject*)metaclass->tp_alloc(metaclass, nmembers);
+    if (res == NULL) {
+        goto finally;
+    }
+    res_start = (char*)res;
 
     type = &res->ht_type;
     /* The flags must be initialized early, before the GC traverses us */
@@ -3438,7 +3508,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 
     res->ht_name = PyUnicode_FromString(s);
     if (!res->ht_name) {
-        goto fail;
+        goto finally;
     }
     res->ht_qualname = Py_NewRef(res->ht_name);
 
@@ -3454,58 +3524,11 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     Py_ssize_t name_buf_len = strlen(spec->name) + 1;
     res->_ht_tpname = PyMem_Malloc(name_buf_len);
     if (res->_ht_tpname == NULL) {
-        goto fail;
+        goto finally;
     }
     type->tp_name = memcpy(res->_ht_tpname, spec->name, name_buf_len);
 
     res->ht_module = Py_XNewRef(module);
-
-    /* Adjust for empty tuple bases */
-    if (!bases) {
-        base = &PyBaseObject_Type;
-        /* See whether Py_tp_base(s) was specified */
-        for (slot = spec->slots; slot->slot; slot++) {
-            if (slot->slot == Py_tp_base)
-                base = slot->pfunc;
-            else if (slot->slot == Py_tp_bases) {
-                bases = slot->pfunc;
-            }
-        }
-        if (!bases) {
-            bases = PyTuple_Pack(1, base);
-            if (!bases)
-                goto fail;
-        }
-        else if (!PyTuple_Check(bases)) {
-            PyErr_SetString(PyExc_SystemError, "Py_tp_bases is not a tuple");
-            goto fail;
-        }
-        else {
-            Py_INCREF(bases);
-        }
-    }
-    else if (!PyTuple_Check(bases)) {
-        bases = PyTuple_Pack(1, bases);
-        if (!bases)
-            goto fail;
-    }
-    else {
-        Py_INCREF(bases);
-    }
-
-    /* Calculate best base, and check that all bases are type objects */
-    base = best_base(bases);
-    if (base == NULL) {
-        Py_DECREF(bases);
-        goto fail;
-    }
-    if (!_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE)) {
-        PyErr_Format(PyExc_TypeError,
-                     "type '%.100s' is not an acceptable base type",
-                     base->tp_name);
-        Py_DECREF(bases);
-        goto fail;
-    }
 
     /* Initialize essential fields */
     type->tp_as_async = &res->as_async;
@@ -3513,11 +3536,13 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     type->tp_as_sequence = &res->as_sequence;
     type->tp_as_mapping = &res->as_mapping;
     type->tp_as_buffer = &res->as_buffer;
-    /* Set tp_base and tp_bases */
-    type->tp_bases = bases;
-    Py_INCREF(base);
-    type->tp_base = base;
 
+    /* Set tp_base and tp_bases */
+    type->tp_base = (PyTypeObject *)Py_NewRef(base);
+    type->tp_bases = bases;
+    bases = NULL;  // We give our reference to bases to the type
+
+    /* Copy the sizes */
     type->tp_basicsize = spec->basicsize;
     type->tp_itemsize = spec->itemsize;
 
@@ -3525,7 +3550,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         if (slot->slot < 0
             || (size_t)slot->slot >= Py_ARRAY_LENGTH(pyslot_offsets)) {
             PyErr_SetString(PyExc_RuntimeError, "invalid slot offset");
-            goto fail;
+            goto finally;
         }
         else if (slot->slot == Py_tp_base || slot->slot == Py_tp_bases) {
             /* Processed above */
@@ -3543,7 +3568,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
             if (tp_doc == NULL) {
                 type->tp_doc = NULL;
                 PyErr_NoMemory();
-                goto fail;
+                goto finally;
             }
             memcpy(tp_doc, slot->pfunc, len);
             type->tp_doc = tp_doc;
@@ -3578,8 +3603,9 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         type->tp_vectorcall_offset = vectorcalloffset;
     }
 
-    if (PyType_Ready(type) < 0)
-        goto fail;
+    if (PyType_Ready(type) < 0) {
+        goto finally;
+    }
 
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
         res->ht_cached_keys = _PyDict_NewKeysForClass();
@@ -3587,29 +3613,33 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 
     if (type->tp_doc) {
         PyObject *__doc__ = PyUnicode_FromString(_PyType_DocWithoutSignature(type->tp_name, type->tp_doc));
-        if (!__doc__)
-            goto fail;
+        if (!__doc__) {
+            goto finally;
+        }
         r = PyDict_SetItem(type->tp_dict, &_Py_ID(__doc__), __doc__);
         Py_DECREF(__doc__);
-        if (r < 0)
-            goto fail;
+        if (r < 0) {
+            goto finally;
+        }
     }
 
     if (weaklistoffset) {
         type->tp_weaklistoffset = weaklistoffset;
-        if (PyDict_DelItemString((PyObject *)type->tp_dict, "__weaklistoffset__") < 0)
-            goto fail;
+        if (PyDict_DelItemString((PyObject *)type->tp_dict, "__weaklistoffset__") < 0) {
+            goto finally;
+        }
     }
     if (dictoffset) {
         type->tp_dictoffset = dictoffset;
-        if (PyDict_DelItemString((PyObject *)type->tp_dict, "__dictoffset__") < 0)
-            goto fail;
+        if (PyDict_DelItemString((PyObject *)type->tp_dict, "__dictoffset__") < 0) {
+            goto finally;
+        }
     }
 
     /* Set type.__module__ */
     r = PyDict_Contains(type->tp_dict, &_Py_ID(__module__));
     if (r < 0) {
-        goto fail;
+        goto finally;
     }
     if (r == 0) {
         s = strrchr(spec->name, '.');
@@ -3617,32 +3647,48 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
             modname = PyUnicode_FromStringAndSize(
                     spec->name, (Py_ssize_t)(s - spec->name));
             if (modname == NULL) {
-                goto fail;
+                goto finally;
             }
             r = PyDict_SetItem(type->tp_dict, &_Py_ID(__module__), modname);
-            Py_DECREF(modname);
-            if (r != 0)
-                goto fail;
-        } else {
+            if (r != 0) {
+                goto finally;
+            }
+        }
+        else {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                     "builtin type %.200s has no __module__ attribute",
                     spec->name))
-                goto fail;
+                goto finally;
         }
     }
 
     assert(_PyType_CheckConsistency(type));
-    return (PyObject*)res;
 
- fail:
-    Py_DECREF(res);
-    return NULL;
+ finally:
+    if (PyErr_Occurred()) {
+        Py_CLEAR(res);
+    }
+    Py_XDECREF(bases);
+    Py_XDECREF(modname);
+    return (PyObject*)res;
+}
+
+PyObject *
+PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
+{
+    return PyType_FromMetaclass(NULL, module, spec, bases);
+}
+
+PyObject *
+PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
+{
+    return PyType_FromMetaclass(NULL, NULL, spec, bases);
 }
 
 PyObject *
 PyType_FromSpec(PyType_Spec *spec)
 {
-    return PyType_FromSpecWithBases(spec, NULL);
+    return PyType_FromMetaclass(NULL, NULL, spec, NULL);
 }
 
 PyObject *
@@ -4009,7 +4055,7 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
             if (name == NULL)
                 return -1;
         }
-#ifdef INTERN_NAME_STRINGS
+        /* bpo-40521: Interned strings are shared by all subinterpreters */
         if (!PyUnicode_CHECK_INTERNED(name)) {
             PyUnicode_InternInPlace(&name);
             if (!PyUnicode_CHECK_INTERNED(name)) {
@@ -4019,7 +4065,6 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
                 return -1;
             }
         }
-#endif
     }
     else {
         /* Will fail in _PyObject_GenericSetAttrWithDict. */
@@ -8456,17 +8501,11 @@ _PyTypes_InitSlotDefs(void)
     for (slotdef *p = slotdefs; p->name; p++) {
         /* Slots must be ordered by their offset in the PyHeapTypeObject. */
         assert(!p[1].name || p->offset <= p[1].offset);
-#ifdef INTERN_NAME_STRINGS
+        /* bpo-40521: Interned strings are shared by all subinterpreters */
         p->name_strobj = PyUnicode_InternFromString(p->name);
         if (!p->name_strobj || !PyUnicode_CHECK_INTERNED(p->name_strobj)) {
             return _PyStatus_NO_MEMORY();
         }
-#else
-        p->name_strobj = PyUnicode_FromString(p->name);
-        if (!p->name_strobj) {
-            return _PyStatus_NO_MEMORY();
-        }
-#endif
     }
     slotdefs_initialized = 1;
     return _PyStatus_OK();
@@ -8491,24 +8530,17 @@ update_slot(PyTypeObject *type, PyObject *name)
     int offset;
 
     assert(PyUnicode_CheckExact(name));
-#ifdef INTERN_NAME_STRINGS
     assert(PyUnicode_CHECK_INTERNED(name));
-#endif
 
     assert(slotdefs_initialized);
     pp = ptrs;
     for (p = slotdefs; p->name; p++) {
         assert(PyUnicode_CheckExact(p->name_strobj));
         assert(PyUnicode_CheckExact(name));
-#ifdef INTERN_NAME_STRINGS
+        /* bpo-40521: Using interned strings. */
         if (p->name_strobj == name) {
             *pp++ = p;
         }
-#else
-        if (p->name_strobj == name || _PyUnicode_EQ(p->name_strobj, name)) {
-            *pp++ = p;
-        }
-#endif
     }
     *pp = NULL;
     for (pp = ptrs; *pp; pp++) {

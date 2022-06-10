@@ -59,6 +59,7 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
+    "Py_DEBUG",
     ]
 
 
@@ -199,6 +200,11 @@ def get_original_stdout():
 def _force_run(path, func, *args):
     try:
         return func(*args)
+    except FileNotFoundError as err:
+        # chmod() won't fix a missing file.
+        if verbose >= 2:
+            print('%s: %s' % (err.__class__.__name__, err))
+        raise
     except OSError as err:
         if verbose >= 2:
             print('%s: %s' % (err.__class__.__name__, err))
@@ -299,6 +305,8 @@ def requires(resource, msg=None):
         if msg is None:
             msg = "Use of the %r resource not enabled" % resource
         raise ResourceDenied(msg)
+    if resource in {"network", "urlfetch"} and not has_socket_support:
+        raise ResourceDenied("No socket support")
     if resource == 'gui' and not _is_gui_available():
         raise ResourceDenied(_is_gui_available.reason)
 
@@ -2200,3 +2208,8 @@ def requires_venv_with_pip():
     except ImportError:
         ctypes = None
     return unittest.skipUnless(ctypes, 'venv: pip requires ctypes')
+
+
+# True if Python is built with the Py_DEBUG macro defined: if
+# Python is built in debug mode (./configure --with-pydebug).
+Py_DEBUG = hasattr(sys, 'gettotalrefcount')

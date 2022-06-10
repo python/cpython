@@ -664,6 +664,7 @@ class TestSupport(unittest.TestCase):
             self.assertTrue(support.match_test(test_chdir))
 
     @unittest.skipIf(support.is_emscripten, "Unstable in Emscripten")
+    @unittest.skipIf(support.is_wasi, "Unavailable on WASI")
     def test_fd_count(self):
         # We cannot test the absolute value of fd_count(): on old Linux
         # kernel or glibc versions, os.urandom() keeps a FD open on

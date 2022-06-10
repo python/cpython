@@ -1,4 +1,4 @@
-# Copyright 2001-2019 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2022 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 Logging package for Python. Based on PEP 282 and comments thereto in
 comp.lang.python.
 
-Copyright (C) 2001-2019 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -38,7 +38,8 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'exception', 'fatal', 'getLevelName', 'getLogger', 'getLoggerClass',
            'info', 'log', 'makeLogRecord', 'setLoggerClass', 'shutdown',
            'warn', 'warning', 'getLogRecordFactory', 'setLogRecordFactory',
-           'lastResort', 'raiseExceptions', 'getLevelNamesMapping']
+           'lastResort', 'raiseExceptions', 'getLevelNamesMapping',
+           'getHandlerByName', 'getHandlerNames']
 
 import threading
 
@@ -64,19 +65,24 @@ _startTime = time.time()
 raiseExceptions = True
 
 #
-# If you don't want threading information in the log, set this to zero
+# If you don't want threading information in the log, set this to False
 #
 logThreads = True
 
 #
-# If you don't want multiprocessing information in the log, set this to zero
+# If you don't want multiprocessing information in the log, set this to False
 #
 logMultiprocessing = True
 
 #
-# If you don't want process information in the log, set this to zero
+# If you don't want process information in the log, set this to False
 #
 logProcesses = True
+
+#
+# If you don't want asyncio task information in the log, set this to False
+#
+logAsyncioTasks = True
 
 #---------------------------------------------------------------------------
 #   Level related stuff
@@ -361,6 +367,15 @@ class LogRecord(object):
         else:
             self.process = None
 
+        self.taskName = None
+        if logAsyncioTasks:
+            asyncio = sys.modules.get('asyncio')
+            if asyncio:
+                try:
+                    self.taskName = asyncio.current_task().get_name()
+                except Exception:
+                    pass
+
     def __repr__(self):
         return '<LogRecord: %s, %s, %s, %s, "%s">'%(self.name, self.levelno,
             self.pathname, self.lineno, self.msg)
@@ -566,6 +581,7 @@ class Formatter(object):
                         (typically at application startup time)
     %(thread)d          Thread ID (if available)
     %(threadName)s      Thread name (if available)
+    %(taskName)s        Task name (if available)
     %(process)d         Process ID (if available)
     %(message)s         The result of record.getMessage(), computed just as
                         the record is emitted
@@ -817,23 +833,36 @@ class Filterer(object):
         Determine if a record is loggable by consulting all the filters.
 
         The default is to allow the record to be logged; any filter can veto
-        this and the record is then dropped. Returns a zero value if a record
-        is to be dropped, else non-zero.
+        this by returning a falsy value.
+        If a filter attached to a handler returns a log record instance,
+        then that instance is used in place of the original log record in
+        any further processing of the event by that handler.
+        If a filter returns any other truthy value, the original log record
+        is used in any further processing of the event by that handler.
+
+        If none of the filters return falsy values, this method returns
+        a log record.
+        If any of the filters return a falsy value, this method returns
+        a falsy value.
 
         .. versionchanged:: 3.2
 
            Allow filters to be just callables.
+
+        .. versionchanged:: 3.12
+           Allow filters to return a LogRecord instead of
+           modifying it in place.
         """
-        rv = True
         for f in self.filters:
             if hasattr(f, 'filter'):
                 result = f.filter(record)
             else:
                 result = f(record) # assume callable - will raise if not
             if not result:
-                rv = False
-                break
-        return rv
+                return False
+            if isinstance(result, LogRecord):
+                record = result
+        return record
 
 #---------------------------------------------------------------------------
 #   Handler classes and functions
@@ -869,6 +898,23 @@ def _addHandlerRef(handler):
         _handlerList.append(weakref.ref(handler, _removeHandlerRef))
     finally:
         _releaseLock()
+
+
+def getHandlerByName(name):
+    """
+    Get a handler with the specified *name*, or None if there isn't one with
+    that name.
+    """
+    return _handlers.get(name)
+
+
+def getHandlerNames():
+    """
+    Return all known handler names as an immutable set.
+    """
+    result = set(_handlers.keys())
+    return frozenset(result)
+
 
 class Handler(Filterer):
     """
@@ -968,10 +1014,14 @@ class Handler(Filterer):
 
         Emission depends on filters which may have been added to the handler.
         Wrap the actual emission of the record with acquisition/release of
-        the I/O thread lock. Returns whether the filter passed the record for
-        emission.
+        the I/O thread lock.
+
+        Returns an instance of the log record that was emitted
+        if it passed all filters, otherwise a falsy value is returned.
         """
         rv = self.filter(record)
+        if isinstance(rv, LogRecord):
+            record = rv
         if rv:
             self.acquire()
             try:
@@ -1483,7 +1533,7 @@ class Logger(Filterer):
         To pass exception information, use the keyword argument exc_info with
         a true value, e.g.
 
-        logger.info("Houston, we have a %s", "interesting problem", exc_info=1)
+        logger.info("Houston, we have a %s", "notable problem", exc_info=1)
         """
         if self.isEnabledFor(INFO):
             self._log(INFO, msg, args, **kwargs)
@@ -1640,8 +1690,14 @@ class Logger(Filterer):
         This method is used for unpickled records received from a socket, as
         well as those created locally. Logger-level filtering is applied.
         """
-        if (not self.disabled) and self.filter(record):
-            self.callHandlers(record)
+        if self.disabled:
+            return
+        maybe_record = self.filter(record)
+        if not maybe_record:
+            return
+        if isinstance(maybe_record, LogRecord):
+            record = maybe_record
+        self.callHandlers(record)
 
     def addHandler(self, hdlr):
         """

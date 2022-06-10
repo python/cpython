@@ -1021,8 +1021,9 @@ call fails (for example because the path doesn't exist).
 
    Rename this file or directory to the given *target*, and return a new Path
    instance pointing to *target*.  On Unix, if *target* exists and is a file,
-   it will be replaced silently if the user has permission.  *target* can be
-   either a string or another path object::
+   it will be replaced silently if the user has permission.
+   On Windows, if *target* exists, :exc:`FileExistsError` will be raised.
+   *target* can be either a string or another path object::
 
       >>> p = Path('foo')
       >>> p.open('w').write('some text')
@@ -1264,7 +1265,7 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :func:`os.link`                        :meth:`Path.hardlink_to`
 :func:`os.symlink`                     :meth:`Path.symlink_to`
 :func:`os.readlink`                    :meth:`Path.readlink`
-:func:`os.path.relpath`                :meth:`Path.relative_to` [#]_
+:func:`os.path.relpath`                :meth:`PurePath.relative_to` [#]_
 :func:`os.stat`                        :meth:`Path.stat`,
                                        :meth:`Path.owner`,
                                        :meth:`Path.group`
@@ -1279,4 +1280,4 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 .. rubric:: Footnotes
 
 .. [#] :func:`os.path.abspath` normalizes the resulting path, which may change its meaning in the presence of symlinks, while :meth:`Path.absolute` does not.
-.. [#] :meth:`Path.relative_to` requires ``self`` to be the subpath of the argument, but :func:`os.path.relpath` does not.
+.. [#] :meth:`PurePath.relative_to` requires ``self`` to be the subpath of the argument, but :func:`os.path.relpath` does not.
