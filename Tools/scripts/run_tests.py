@@ -33,8 +33,7 @@ def main(regrtest_args):
             ]
 
     cross_compile = '_PYTHON_HOST_PLATFORM' in os.environ
-    hostrunner = os.environ.get("_PYTHON_HOSTRUNNER")
-    if hostrunner is None:
+    if (hostrunner := os.environ.get("_PYTHON_HOSTRUNNER")) is None:
         hostrunner = sysconfig.get_config_var("HOSTRUNNER")
     if cross_compile:
         # emulate -E, but keep PYTHONPATH + cross compile env vars, so
@@ -64,7 +63,7 @@ def main(regrtest_args):
         args.append('-n')         # Silence alerts under Windows
     if not any(is_multiprocess_flag(arg) for arg in regrtest_args):
         if cross_compile and hostrunner:
-            # For now use only one core for cross compiled builds.
+            # For now use only one core for cross-compiled builds;
             # hostrunner can be expensive.
             args.extend(['-j', '1'])
         else:
