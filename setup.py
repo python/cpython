@@ -536,9 +536,13 @@ class PyBuildExt(build_ext):
                 print("%-*s   %-*s   %-*s" % (longest, e, longest, f,
                                               longest, g))
 
-        if self.missing:
+        if not self.failed:
             print()
             print("Python build finished successfully!")
+            print()
+
+        if self.missing:
+            print()
             print("The necessary bits to build these optional modules were not "
                   "found:")
             print_three_column(self.missing)
