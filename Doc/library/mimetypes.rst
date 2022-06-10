@@ -288,7 +288,7 @@ It is as simple as:
 
 The following options are accepted:
 
-.. program:: filecmp
+.. program:: mimetypes
 
 .. cmdoption:: -h, --help
 
