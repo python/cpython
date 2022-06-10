@@ -2091,9 +2091,6 @@ serialize_impl(pysqlite_Connection *self, const char *name)
                      name);
         return NULL;
     }
-#if PY_SSIZE_T_MAX < 9223372036854775807
-    size = Py_MIN(size, INT_MAX);
-#endif
     PyObject *res = PyBytes_FromStringAndSize(data, (Py_ssize_t)size);
     if (!(flags & SQLITE_SERIALIZE_NOCOPY)) {
         sqlite3_free((void *)data);
