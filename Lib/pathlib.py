@@ -274,11 +274,15 @@ class PurePath(object):
             if altsep:
                 part = part.replace(altsep, sep)
             drv, rel = cls._flavour.splitdrive(part)
-            if drv[:1] == sep or rel[:1] == sep:
-                root = sep
-                if cls._flavour is posixpath and len(rel) - len(rel.lstrip(sep)) == 2:
-                    root = sep * 2
-                rel = rel.lstrip(sep)
+            # According to POSIX path resolution:
+            # http://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap04.html#tag_04_11
+            # "A pathname that begins with two successive slashes may be
+            # interpreted in an implementation-defined manner, although more
+            # than two leading slashes shall be treated as a single slash".
+            if cls._flavour is posixpath and rel[:2] == sep * 2 and rel[2:3] != sep:
+                root, rel = sep * 2, rel[2:]
+            elif rel[:1] == sep or drv[:1] == sep:
+                root, rel = sep, rel.lstrip(sep)
             if sep in rel:
                 for x in reversed(rel.split(sep)):
                     if x and x != '.':
