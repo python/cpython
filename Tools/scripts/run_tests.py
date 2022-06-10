@@ -33,7 +33,9 @@ def main(regrtest_args):
             ]
 
     cross_compile = '_PYTHON_HOST_PLATFORM' in os.environ
-    hostrunner = sysconfig.get_config_var("HOSTRUNNER")
+    hostrunner = os.environ.get("_PYTHON_HOSTRUNNER")
+    if hostrunner is None:
+        hostrunner = sysconfig.get_config_var("HOSTRUNNER")
     if cross_compile:
         # emulate -E, but keep PYTHONPATH + cross compile env vars, so
         # test executable can load correct sysconfigdata file.
