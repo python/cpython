@@ -33,9 +33,6 @@ threading_helper.requires_working_threading(module=True)
 # on platforms known to behave badly.
 platforms_to_skip = ('netbsd5', 'hp-ux11')
 
-# Is Python built with Py_DEBUG macro defined?
-Py_DEBUG = hasattr(sys, 'gettotalrefcount')
-
 
 def restore_default_excepthook(testcase):
     testcase.addCleanup(setattr, threading, 'excepthook', threading.excepthook)
@@ -149,6 +146,7 @@ class ThreadTests(BaseTestCase):
             with self.subTest(target=target, args=args):
                 t = threading.Thread(target=target, args=args)
                 t.start()
+                t.join()
 
     @cpython_only
     def test_disallow_instantiation(self):
@@ -944,16 +942,6 @@ class ThreadTests(BaseTestCase):
         with threading_helper.wait_threads_exit():
             threading.Thread(target=noop).start()
             # Thread.join() is not called
-
-    @unittest.skipUnless(Py_DEBUG, 'need debug build (Py_DEBUG)')
-    def test_debug_deprecation(self):
-        # bpo-44584: The PYTHONTHREADDEBUG environment variable is deprecated
-        rc, out, err = assert_python_ok("-Wdefault", "-c", "pass",
-                                        PYTHONTHREADDEBUG="1")
-        msg = (b'DeprecationWarning: The threading debug '
-               b'(PYTHONTHREADDEBUG environment variable) '
-               b'is deprecated and will be removed in Python 3.12')
-        self.assertIn(msg, err)
 
     def test_import_from_another_thread(self):
         # bpo-1596321: If the threading module is first import from a thread

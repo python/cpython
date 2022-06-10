@@ -13,7 +13,7 @@ import unittest
 from unittest import mock
 
 from test.support import import_helper
-from test.support import is_emscripten
+from test.support import is_emscripten, is_wasi
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 
@@ -366,6 +366,9 @@ class _BasePurePathTest(object):
         self.assertEqual(par[0], P('/a/b'))
         self.assertEqual(par[1], P('/a'))
         self.assertEqual(par[2], P('/'))
+        self.assertEqual(par[-1], P('/'))
+        self.assertEqual(par[-2], P('/a'))
+        self.assertEqual(par[-3], P('/a/b'))
         self.assertEqual(par[0:1], (P('/a/b'),))
         self.assertEqual(par[:2], (P('/a/b'), P('/a')))
         self.assertEqual(par[:-1], (P('/a/b'), P('/a')))
@@ -373,6 +376,8 @@ class _BasePurePathTest(object):
         self.assertEqual(par[::2], (P('/a/b'), P('/')))
         self.assertEqual(par[::-1], (P('/'), P('/a'), P('/a/b')))
         self.assertEqual(list(par), [P('/a/b'), P('/a'), P('/')])
+        with self.assertRaises(IndexError):
+            par[-4]
         with self.assertRaises(IndexError):
             par[3]
 
@@ -616,26 +621,6 @@ class PurePosixPathTest(_BasePurePathTest, unittest.TestCase):
         check(['c:\\a'],                ('', '', ['c:\\a']))
         check(['\\a'],                  ('', '', ['\\a']))
 
-    def test_splitroot(self):
-        f = self.cls._splitroot
-        self.assertEqual(f(''), ('', '', ''))
-        self.assertEqual(f('a'), ('', '', 'a'))
-        self.assertEqual(f('a/b'), ('', '', 'a/b'))
-        self.assertEqual(f('a/b/'), ('', '', 'a/b/'))
-        self.assertEqual(f('/a'), ('', '/', 'a'))
-        self.assertEqual(f('/a/b'), ('', '/', 'a/b'))
-        self.assertEqual(f('/a/b/'), ('', '/', 'a/b/'))
-        # The root is collapsed when there are redundant slashes
-        # except when there are exactly two leading slashes, which
-        # is a special case in POSIX.
-        self.assertEqual(f('//a'), ('', '//', 'a'))
-        self.assertEqual(f('///a'), ('', '/', 'a'))
-        self.assertEqual(f('///a/b'), ('', '/', 'a/b'))
-        # Paths which look like NT paths aren't treated specially.
-        self.assertEqual(f('c:/a/b'), ('', '', 'c:/a/b'))
-        self.assertEqual(f('\\/a/b'), ('', '', '\\/a/b'))
-        self.assertEqual(f('\\a\\b'), ('', '', '\\a\\b'))
-
     def test_root(self):
         P = self.cls
         self.assertEqual(P('/a/b').root, '/')
@@ -758,30 +743,6 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         check(['a', '/b', 'c'],         ('', '\\', ['\\', 'b', 'c']))
         check(['Z:/a', '/b', 'c'],      ('Z:', '\\', ['Z:\\', 'b', 'c']))
         check(['//?/Z:/a', '/b', 'c'],  ('\\\\?\\Z:', '\\', ['\\\\?\\Z:\\', 'b', 'c']))
-
-    def test_splitroot(self):
-        f = self.cls._splitroot
-        self.assertEqual(f(''), ('', '', ''))
-        self.assertEqual(f('a'), ('', '', 'a'))
-        self.assertEqual(f('a\\b'), ('', '', 'a\\b'))
-        self.assertEqual(f('\\a'), ('', '\\', 'a'))
-        self.assertEqual(f('\\a\\b'), ('', '\\', 'a\\b'))
-        self.assertEqual(f('c:a\\b'), ('c:', '', 'a\\b'))
-        self.assertEqual(f('c:\\a\\b'), ('c:', '\\', 'a\\b'))
-        # Redundant slashes in the root are collapsed.
-        self.assertEqual(f('\\\\a'), ('', '\\', 'a'))
-        self.assertEqual(f('\\\\\\a/b'), ('', '\\', 'a/b'))
-        self.assertEqual(f('c:\\\\a'), ('c:', '\\', 'a'))
-        self.assertEqual(f('c:\\\\\\a/b'), ('c:', '\\', 'a/b'))
-        # Valid UNC paths.
-        self.assertEqual(f('\\\\a\\b'), ('\\\\a\\b', '\\', ''))
-        self.assertEqual(f('\\\\a\\b\\'), ('\\\\a\\b', '\\', ''))
-        self.assertEqual(f('\\\\a\\b\\c\\d'), ('\\\\a\\b', '\\', 'c\\d'))
-        # These are non-UNC paths (according to ntpath.py and test_ntpath).
-        # However, command.com says such paths are invalid, so it's
-        # difficult to know what the right semantics are.
-        self.assertEqual(f('\\\\\\a\\b'), ('', '\\', 'a\\b'))
-        self.assertEqual(f('\\\\a'), ('', '\\', 'a'))
 
     def test_str(self):
         p = self.cls('a/b/c')
@@ -1521,6 +1482,7 @@ class _BasePathTest(object):
         p = self.cls('')
         self.assertEqual(p.stat(), os.stat('.'))
 
+    @unittest.skipIf(is_wasi, "WASI has no user accounts.")
     def test_expanduser_common(self):
         P = self.cls
         p = P('~')
@@ -1684,10 +1646,15 @@ class _BasePathTest(object):
                 "dirA", "dirA/linkC", "dirB", "dirB/linkD", "dirC",
                 "dirC/dirD", "dirE", "linkB",
             ])
+        _check(p.rglob(""), ["", "dirA", "dirB", "dirC", "dirE", "dirC/dirD"])
 
         p = P(BASE, "dirC")
+        _check(p.rglob("*"), ["dirC/fileC", "dirC/novel.txt",
+                              "dirC/dirD", "dirC/dirD/fileD"])
         _check(p.rglob("file*"), ["dirC/fileC", "dirC/dirD/fileD"])
         _check(p.rglob("*/*"), ["dirC/dirD/fileD"])
+        _check(p.rglob("*/"), ["dirC/dirD"])
+        _check(p.rglob(""), ["dirC", "dirC/dirD"])
         # gh-91616, a re module regression
         _check(p.rglob("*.txt"), ["dirC/novel.txt"])
         _check(p.rglob("*.*"), ["dirC/novel.txt"])
@@ -1882,6 +1849,7 @@ class _BasePathTest(object):
             with p:
                 pass
 
+    @os_helper.skip_unless_working_chmod
     def test_chmod(self):
         p = self.cls(BASE) / 'fileA'
         mode = p.stat().st_mode
@@ -1896,6 +1864,7 @@ class _BasePathTest(object):
 
     # On Windows, os.chmod does not follow symlinks (issue #15411)
     @only_posix
+    @os_helper.skip_unless_working_chmod
     def test_chmod_follow_symlinks_true(self):
         p = self.cls(BASE) / 'linkA'
         q = p.resolve()
@@ -1911,6 +1880,7 @@ class _BasePathTest(object):
 
     # XXX also need a test for lchmod.
 
+    @os_helper.skip_unless_working_chmod
     def test_stat(self):
         p = self.cls(BASE) / 'fileA'
         st = p.stat()
@@ -1984,28 +1954,6 @@ class _BasePathTest(object):
         self.assertFileNotFound(p.unlink)
 
     @unittest.skipUnless(hasattr(os, "link"), "os.link() is not present")
-    def test_link_to(self):
-        P = self.cls(BASE)
-        p = P / 'fileA'
-        size = p.stat().st_size
-        # linking to another path.
-        q = P / 'dirA' / 'fileAA'
-        try:
-            with self.assertWarns(DeprecationWarning):
-                p.link_to(q)
-        except PermissionError as e:
-            self.skipTest('os.link(): %s' % e)
-        self.assertEqual(q.stat().st_size, size)
-        self.assertEqual(os.path.samefile(p, q), True)
-        self.assertTrue(p.stat)
-        # Linking to a str of a relative path.
-        r = rel_join('fileAAA')
-        with self.assertWarns(DeprecationWarning):
-            q.link_to(r)
-        self.assertEqual(os.stat(r).st_size, size)
-        self.assertTrue(q.stat)
-
-    @unittest.skipUnless(hasattr(os, "link"), "os.link() is not present")
     def test_hardlink_to(self):
         P = self.cls(BASE)
         target = P / 'fileA'
@@ -2030,7 +1978,7 @@ class _BasePathTest(object):
         # linking to another path.
         q = P / 'dirA' / 'fileAA'
         with self.assertRaises(NotImplementedError):
-            p.link_to(q)
+            q.hardlink_to(p)
 
     def test_rename(self):
         P = self.cls(BASE)
@@ -2360,6 +2308,9 @@ class _BasePathTest(object):
     @unittest.skipIf(
         is_emscripten, "Unix sockets are not implemented on Emscripten."
     )
+    @unittest.skipIf(
+        is_wasi, "Cannot create socket on WASI."
+    )
     def test_is_socket_true(self):
         P = self.cls(BASE, 'mysock')
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -2516,7 +2467,8 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             print(path.resolve(strict))
 
     @unittest.skipIf(
-        is_emscripten, "umask is not implemented on Emscripten."
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
     )
     def test_open_mode(self):
         old_mask = os.umask(0)
@@ -2542,7 +2494,8 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             os.chdir(current_directory)
 
     @unittest.skipIf(
-        is_emscripten, "umask is not implemented on Emscripten."
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
     )
     def test_touch_mode(self):
         old_mask = os.umask(0)

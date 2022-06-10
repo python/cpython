@@ -19,24 +19,25 @@ import email
 import email.policy
 
 from email.charset import Charset
-from email.header import Header, decode_header, make_header
-from email.parser import Parser, HeaderParser
 from email.generator import Generator, DecodedGenerator, BytesGenerator
+from email.header import Header, decode_header, make_header
+from email.headerregistry import HeaderRegistry
 from email.message import Message
 from email.mime.application import MIMEApplication
 from email.mime.audio import MIMEAudio
-from email.mime.text import MIMEText
-from email.mime.image import MIMEImage
 from email.mime.base import MIMEBase
+from email.mime.image import MIMEImage
 from email.mime.message import MIMEMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.nonmultipart import MIMENonMultipart
-from email import utils
-from email import errors
-from email import encoders
-from email import iterators
+from email.mime.text import MIMEText
+from email.parser import Parser, HeaderParser
 from email import base64mime
+from email import encoders
+from email import errors
+from email import iterators
 from email import quoprimime
+from email import utils
 
 from test.support import threading_helper
 from test.support.os_helper import unlink
@@ -5541,7 +5542,12 @@ class TestSigned(TestEmailBase):
         result = fp.getvalue()
         self._signed_parts_eq(original, result)
 
-
+class TestHeaderRegistry(TestEmailBase):
+    # See issue gh-93010.
+    def test_HeaderRegistry(self):
+        reg = HeaderRegistry()
+        a = reg('Content-Disposition', 'attachment; 0*00="foo"')
+        self.assertIsInstance(a.defects[0], errors.InvalidHeaderDefect)
 
 if __name__ == '__main__':
     unittest.main()

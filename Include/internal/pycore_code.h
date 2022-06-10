@@ -65,7 +65,6 @@ typedef struct {
 typedef struct {
     _Py_CODEUNIT counter;
     _Py_CODEUNIT type_version[2];
-    _Py_CODEUNIT dict_offset;
     _Py_CODEUNIT keys_version[2];
     _Py_CODEUNIT descr[4];
 } _PyLoadMethodCache;
@@ -79,12 +78,6 @@ typedef struct {
 } _PyCallCache;
 
 #define INLINE_CACHE_ENTRIES_CALL CACHE_ENTRIES(_PyCallCache)
-
-typedef struct {
-    _Py_CODEUNIT counter;
-} _PyPrecallCache;
-
-#define INLINE_CACHE_ENTRIES_PRECALL CACHE_ENTRIES(_PyPrecallCache)
 
 typedef struct {
     _Py_CODEUNIT counter;
@@ -233,9 +226,6 @@ extern void _PyLineTable_InitAddressRange(
 extern int _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
-
-#define ADAPTIVE_CACHE_BACKOFF 64
-
 /* Specialization functions */
 
 extern int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
@@ -249,8 +239,6 @@ extern int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_C
 extern int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr);
 extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
                                int nargs, PyObject *kwnames);
-extern int _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr,
-                                  int nargs, PyObject *kwnames, int oparg);
 extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                                     int oparg, PyObject **locals);
 extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
@@ -265,56 +253,17 @@ extern int _PyStaticCode_InternStrings(PyCodeObject *co);
 
 #ifdef Py_STATS
 
-#define SPECIALIZATION_FAILURE_KINDS 30
-
-typedef struct _specialization_stats {
-    uint64_t success;
-    uint64_t failure;
-    uint64_t hit;
-    uint64_t deferred;
-    uint64_t miss;
-    uint64_t deopt;
-    uint64_t failure_kinds[SPECIALIZATION_FAILURE_KINDS];
-} SpecializationStats;
-
-typedef struct _opcode_stats {
-    SpecializationStats specialization;
-    uint64_t execution_count;
-    uint64_t pair_count[256];
-} OpcodeStats;
-
-typedef struct _call_stats {
-    uint64_t inlined_py_calls;
-    uint64_t pyeval_calls;
-    uint64_t frames_pushed;
-    uint64_t frame_objects_created;
-} CallStats;
-
-typedef struct _object_stats {
-    uint64_t allocations;
-    uint64_t frees;
-    uint64_t new_values;
-    uint64_t dict_materialized_on_request;
-    uint64_t dict_materialized_new_key;
-    uint64_t dict_materialized_too_big;
-    uint64_t dict_materialized_str_subclass;
-} ObjectStats;
-
-typedef struct _stats {
-    OpcodeStats opcode_stats[256];
-    CallStats call_stats;
-    ObjectStats object_stats;
-} PyStats;
-
-extern PyStats _py_stats;
 
 #define STAT_INC(opname, name) _py_stats.opcode_stats[opname].specialization.name++
 #define STAT_DEC(opname, name) _py_stats.opcode_stats[opname].specialization.name--
 #define OPCODE_EXE_INC(opname) _py_stats.opcode_stats[opname].execution_count++
 #define CALL_STAT_INC(name) _py_stats.call_stats.name++
 #define OBJECT_STAT_INC(name) _py_stats.object_stats.name++
-
-extern void _Py_PrintSpecializationStats(int to_file);
+#define OBJECT_STAT_INC_COND(name, cond) \
+    do { if (cond) _py_stats.object_stats.name++; } while (0)
+#define EVAL_CALL_STAT_INC(name) _py_stats.call_stats.eval_calls[name]++
+#define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) \
+    do { if (PyFunction_Check(callable)) _py_stats.call_stats.eval_calls[name]++; } while (0)
 
 // Used by the _opcode extension which is built as a shared library
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
@@ -325,6 +274,9 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define OPCODE_EXE_INC(opname) ((void)0)
 #define CALL_STAT_INC(name) ((void)0)
 #define OBJECT_STAT_INC(name) ((void)0)
+#define OBJECT_STAT_INC_COND(name, cond) ((void)0)
+#define EVAL_CALL_STAT_INC(name) ((void)0)
+#define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) ((void)0)
 #endif  // !Py_STATS
 
 // Cache values are only valid in memory, so use native endianness.
@@ -464,6 +416,50 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
     assert((code & 15) == code);
     *ptr = 128 | (code << 3) | (length - 1);
     return 1;
+}
+
+
+/** Counters
+ * The first 16-bit value in each inline cache is a counter.
+ * When counting misses, the counter is treated as a simple unsigned value.
+ *
+ * When counting executions until the next specialization attempt,
+ * exponential backoff is used to reduce the number of specialization failures.
+ * The high 12 bits store the counter, the low 4 bits store the backoff exponent.
+ * On a specialization failure, the backoff exponent is incremented and the
+ * counter set to (2**backoff - 1).
+ * Backoff == 6 -> starting counter == 63, backoff == 10 -> starting counter == 1023.
+ */
+
+/* With a 16-bit counter, we have 12 bits for the counter value, and 4 bits for the backoff */
+#define ADAPTIVE_BACKOFF_BITS 4
+/* The initial counter value is 31 == 2**ADAPTIVE_BACKOFF_START - 1 */
+#define ADAPTIVE_BACKOFF_START 5
+
+#define MAX_BACKOFF_VALUE (16 - ADAPTIVE_BACKOFF_BITS)
+
+
+static inline uint16_t
+adaptive_counter_bits(int value, int backoff) {
+    return (value << ADAPTIVE_BACKOFF_BITS) |
+           (backoff & ((1<<ADAPTIVE_BACKOFF_BITS)-1));
+}
+
+static inline uint16_t
+adaptive_counter_start(void) {
+    unsigned int value = (1 << ADAPTIVE_BACKOFF_START) - 1;
+    return adaptive_counter_bits(value, ADAPTIVE_BACKOFF_START);
+}
+
+static inline uint16_t
+adaptive_counter_backoff(uint16_t counter) {
+    unsigned int backoff = counter & ((1<<ADAPTIVE_BACKOFF_BITS)-1);
+    backoff++;
+    if (backoff > MAX_BACKOFF_VALUE) {
+        backoff = MAX_BACKOFF_VALUE;
+    }
+    unsigned int value = (1 << backoff) - 1;
+    return adaptive_counter_bits(value, backoff);
 }
 
 

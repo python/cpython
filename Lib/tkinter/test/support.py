@@ -101,15 +101,7 @@ def get_tk_patchlevel():
     global _tk_patchlevel
     if _tk_patchlevel is None:
         tcl = tkinter.Tcl()
-        patchlevel = tcl.call('info', 'patchlevel')
-        m = re.fullmatch(r'(\d+)\.(\d+)([ab.])(\d+)', patchlevel)
-        major, minor, releaselevel, serial = m.groups()
-        major, minor, serial = int(major), int(minor), int(serial)
-        releaselevel = {'a': 'alpha', 'b': 'beta', '.': 'final'}[releaselevel]
-        if releaselevel == 'final':
-            _tk_patchlevel = major, minor, serial, releaselevel, 0
-        else:
-            _tk_patchlevel = major, minor, 0, releaselevel, serial
+        _tk_patchlevel = tcl.info_patchlevel()
     return _tk_patchlevel
 
 units = {

@@ -199,7 +199,7 @@ class _PlistParser:
 
     def add_object(self, value):
         if self.current_key is not None:
-            if not isinstance(self.stack[-1], type({})):
+            if not isinstance(self.stack[-1], dict):
                 raise ValueError("unexpected element at line %d" %
                                  self.parser.CurrentLineNumber)
             self.stack[-1][self.current_key] = value
@@ -208,7 +208,7 @@ class _PlistParser:
             # this is the root object
             self.root = value
         else:
-            if not isinstance(self.stack[-1], type([])):
+            if not isinstance(self.stack[-1], list):
                 raise ValueError("unexpected element at line %d" %
                                  self.parser.CurrentLineNumber)
             self.stack[-1].append(value)
@@ -232,7 +232,7 @@ class _PlistParser:
         self.stack.pop()
 
     def end_key(self):
-        if self.current_key or not isinstance(self.stack[-1], type({})):
+        if self.current_key or not isinstance(self.stack[-1], dict):
             raise ValueError("unexpected key at line %d" %
                              self.parser.CurrentLineNumber)
         self.current_key = self.get_data()

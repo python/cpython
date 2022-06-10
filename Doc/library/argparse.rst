@@ -22,8 +22,8 @@
 The :mod:`argparse` module makes it easy to write user-friendly command-line
 interfaces. The program defines what arguments it requires, and :mod:`argparse`
 will figure out how to parse those out of :data:`sys.argv`.  The :mod:`argparse`
-module also automatically generates help and usage messages and issues errors
-when users give the program invalid arguments.
+module also automatically generates help and usage messages.  The module
+will also issue errors when users give the program invalid arguments.
 
 
 Core Functionality
@@ -91,8 +91,8 @@ produces either the sum or the max::
    args = parser.parse_args()
    print(args.accumulate(args.integers))
 
-Assuming the Python code above is saved into a file called ``prog.py``, it can
-be run at the command line and provides useful help messages:
+Assuming the above Python code is saved into a file called ``prog.py``, it can
+be run at the command line and it provides useful help messages:
 
 .. code-block:: shell-session
 
@@ -119,7 +119,7 @@ the command-line integers:
    $ python prog.py 1 2 3 4 --sum
    10
 
-If invalid arguments are passed in, it will issue an error:
+If invalid arguments are passed in, an error will be displayed:
 
 .. code-block:: shell-session
 
@@ -159,7 +159,7 @@ used when :meth:`~ArgumentParser.parse_args` is called. For example::
 
 Later, calling :meth:`~ArgumentParser.parse_args` will return an object with
 two attributes, ``integers`` and ``accumulate``.  The ``integers`` attribute
-will be a list of one or more ints, and the ``accumulate`` attribute will be
+will be a list of one or more integers, and the ``accumulate`` attribute will be
 either the :func:`sum` function, if ``--sum`` was specified at the command line,
 or the :func:`max` function if it was not.
 
@@ -555,7 +555,7 @@ disallowed.
 fromfile_prefix_chars
 ^^^^^^^^^^^^^^^^^^^^^
 
-Sometimes, for example when dealing with a particularly long argument lists, it
+Sometimes, when dealing with a particularly long argument list, it
 may make sense to keep the list of arguments in a file rather than typing it out
 at the command line.  If the ``fromfile_prefix_chars=`` argument is given to the
 :class:`ArgumentParser` constructor, then arguments that start with any of the
@@ -846,8 +846,10 @@ how the command-line arguments should be handled. The supplied actions are:
     Namespace(foo=True, bar=False, baz=True)
 
 * ``'append'`` - This stores a list, and appends each argument value to the
-  list.  This is useful to allow an option to be specified multiple times.
-  Example usage::
+  list. It is useful to allow an option to be specified multiple times.
+  If the default value is non-empty, the default elements will be present
+  in the parsed value for the option, with any values from the
+  command line appended after those default values. Example usage::
 
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action='append')
@@ -949,8 +951,8 @@ nargs
 
 ArgumentParser objects usually associate a single command-line argument with a
 single action to be taken.  The ``nargs`` keyword argument associates a
-different number of command-line arguments with a single action.  The supported
-values are:
+different number of command-line arguments with a single action.
+See also :ref:`specifying-ambiguous-arguments`. The supported values are:
 
 * ``N`` (an integer).  ``N`` arguments from the command line will be gathered
   together into a list.  For example::
@@ -1228,7 +1230,7 @@ Any container can be passed as the *choices* value, so :class:`list` objects,
 Use of :class:`enum.Enum` is not recommended because it is difficult to
 control its appearance in usage, help, and error messages.
 
-Formatted choices overrides the default *metavar* which is normally derived
+Formatted choices override the default *metavar* which is normally derived
 from *dest*.  This is usually what you want because the user never sees the
 *dest* parameter.  If this display isn't desirable (perhaps because there are
 many choices), just specify an explicit metavar_.
@@ -1608,6 +1610,9 @@ argument::
    >>> parser.parse_args(['--', '-f'])
    Namespace(foo='-f', one=None)
 
+See also :ref:`the argparse howto on ambiguous arguments <specifying-ambiguous-arguments>`
+for more details.
+
 .. _prefix-matching:
 
 Argument abbreviations (prefix matching)
@@ -1696,7 +1701,7 @@ Sub-commands
 
 .. method:: ArgumentParser.add_subparsers([title], [description], [prog], \
                                           [parser_class], [action], \
-                                          [option_string], [dest], [required], \
+                                          [option_strings], [dest], [required], \
                                           [help], [metavar])
 
    Many programs split up their functionality into a number of sub-commands,

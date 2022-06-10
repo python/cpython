@@ -305,8 +305,8 @@ To convert to a key function, just wrap the old comparison function:
 In Python 3.2, the :func:`functools.cmp_to_key` function was added to the
 :mod:`functools` module in the standard library.
 
-Odd and Ends
-============
+Odds and Ends
+=============
 
 * For locale aware sorting, use :func:`locale.strxfrm` for a key function or
   :func:`locale.strcoll` for a comparison function.

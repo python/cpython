@@ -43,8 +43,7 @@ typedef PyObject *(*PyCMethod)(PyObject *, PyTypeObject *, PyObject *const *,
 // it triggers an undefined behavior when Python calls it with 2 parameters
 // (bpo-33012).
 #define _PyCFunction_CAST(func) \
-    _Py_reinterpret_cast(PyCFunction, \
-        _Py_reinterpret_cast(void(*)(void), (func)))
+    _Py_CAST(PyCFunction, _Py_CAST(void(*)(void), (func)))
 
 PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);
 PyAPI_FUNC(PyObject *) PyCFunction_GetSelf(PyObject *);

@@ -1735,13 +1735,13 @@ set_issubset(PySetObject *so, PyObject *other)
     int rv;
 
     if (!PyAnySet_Check(other)) {
-        PyObject *tmp, *result;
-        tmp = make_new_set(&PySet_Type, other);
-        if (tmp == NULL)
+        PyObject *tmp = set_intersection(so, other);
+        if (tmp == NULL) {
             return NULL;
-        result = set_issubset(so, tmp);
+        }
+        int result = (PySet_GET_SIZE(tmp) == PySet_GET_SIZE(so));
         Py_DECREF(tmp);
-        return result;
+        return PyBool_FromLong(result);
     }
     if (PySet_GET_SIZE(so) > PySet_GET_SIZE(other))
         Py_RETURN_FALSE;

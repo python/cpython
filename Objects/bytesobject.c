@@ -377,11 +377,7 @@ PyBytes_FromFormat(const char *format, ...)
     PyObject* ret;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     ret = PyBytes_FromFormatV(format, vargs);
     va_end(vargs);
     return ret;
@@ -2396,7 +2392,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
 
     if (!PyUnicode_IS_ASCII(string)) {
         const void *data = PyUnicode_DATA(string);
-        unsigned int kind = PyUnicode_KIND(string);
+        int kind = PyUnicode_KIND(string);
         Py_ssize_t i;
 
         /* search for the first non-ASCII character */
@@ -3489,7 +3485,7 @@ _PyBytesWriter_Alloc(_PyBytesWriter *writer, Py_ssize_t size)
        Don't modify the _PyBytesWriter structure (use a shorter small buffer)
        in debug mode to also be able to detect stack overflow when running
        tests in debug mode. The _PyBytesWriter is large (more than 512 bytes),
-       if Py_EnterRecursiveCall() is not used in deep C callback, we may hit a
+       if _Py_EnterRecursiveCall() is not used in deep C callback, we may hit a
        stack overflow. */
     writer->allocated = Py_MIN(writer->allocated, 10);
     /* _PyBytesWriter_CheckConsistency() requires the last byte to be 0,

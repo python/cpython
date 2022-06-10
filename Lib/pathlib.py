@@ -24,7 +24,6 @@ __all__ = [
 # Internals
 #
 
-_WIN_DRIVE_LETTERS = frozenset(string.ascii_letters)
 _WIN_RESERVED_NAMES = frozenset(
     {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
     {'COM%s' % c for c in '123456789\xb9\xb2\xb3'} |
@@ -223,6 +222,8 @@ class _PathParents(Sequence):
 
         if idx >= len(self) or idx < -len(self):
             raise IndexError(idx)
+        if idx < 0:
+            idx += len(self)
         return self._pathcls._from_parsed_parts(self._drv, self._root,
                                                 self._parts[:-idx - 1])
 
@@ -261,73 +262,6 @@ class PurePath(object):
         return (self.__class__, tuple(self._parts))
 
     @classmethod
-    def _split_extended_path(cls, s):
-        prefix = ''
-        if s.startswith('\\\\?\\'):
-            prefix = s[:4]
-            s = s[4:]
-            if s.startswith('UNC\\'):
-                prefix += s[:3]
-                s = '\\' + s[3:]
-        return prefix, s
-
-    @classmethod
-    def _splitroot(cls, part):
-        sep = cls._flavour.sep
-        if cls._flavour is posixpath:
-            if part and part[0] == sep:
-                stripped_part = part.lstrip(sep)
-                # According to POSIX path resolution:
-                # http://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap04.html#tag_04_11
-                # "A pathname that begins with two successive slashes may be
-                # interpreted in an implementation-defined manner, although more
-                # than two leading slashes shall be treated as a single slash".
-                if len(part) - len(stripped_part) == 2:
-                    return '', sep * 2, stripped_part
-                else:
-                    return '', sep, stripped_part
-            else:
-                return '', '', part
-
-        first = part[0:1]
-        second = part[1:2]
-        if (second == sep and first == sep):
-            # XXX extended paths should also disable the collapsing of "."
-            # components (according to MSDN docs).
-            prefix, part = cls._split_extended_path(part)
-            first = part[0:1]
-            second = part[1:2]
-        else:
-            prefix = ''
-        third = part[2:3]
-        if second == sep and first == sep and third != sep:
-            # is a UNC path:
-            # vvvvvvvvvvvvvvvvvvvvv root
-            # \\machine\mountpoint\directory\etc\...
-            #            directory ^^^^^^^^^^^^^^
-            index = part.find(sep, 2)
-            if index != -1:
-                index2 = part.find(sep, index + 1)
-                # a UNC path can't have two slashes in a row
-                # (after the initial two)
-                if index2 != index + 1:
-                    if index2 == -1:
-                        index2 = len(part)
-                    if prefix:
-                        return prefix + part[1:index2], sep, part[index2 + 1:]
-                    else:
-                        return part[:index2], sep, part[index2 + 1:]
-        drv = root = ''
-        if second == ':' and first in _WIN_DRIVE_LETTERS:
-            drv = part[:2]
-            part = part[2:]
-            first = third
-        if first == sep:
-            root = first
-            part = part.lstrip(sep)
-        return prefix + drv, root, part
-
-    @classmethod
     def _parse_parts(cls, parts):
         parsed = []
         sep = cls._flavour.sep
@@ -339,7 +273,12 @@ class PurePath(object):
                 continue
             if altsep:
                 part = part.replace(altsep, sep)
-            drv, root, rel = cls._splitroot(part)
+            drv, rel = cls._flavour.splitdrive(part)
+            if drv[:1] == sep or rel[:1] == sep:
+                root = sep
+                if cls._flavour is posixpath and len(rel) - len(rel.lstrip(sep)) == 2:
+                    root = sep * 2
+                rel = rel.lstrip(sep)
             if sep in rel:
                 for x in reversed(rel.split(sep)):
                     if x and x != '.':
@@ -357,7 +296,7 @@ class PurePath(object):
                             continue
                         if altsep:
                             part = part.replace(altsep, sep)
-                        drv = cls._splitroot(part)[0]
+                        drv = cls._flavour.splitdrive(part)[0]
                         if drv:
                             break
                 break
@@ -890,7 +829,7 @@ class Path(PurePath):
         drv, root, pattern_parts = self._parse_parts((pattern,))
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        if pattern[-1] in (self._flavour.sep, self._flavour.altsep):
+        if pattern and pattern[-1] in (self._flavour.sep, self._flavour.altsep):
             pattern_parts.append('')
         selector = _make_selector(("**",) + tuple(pattern_parts), self._flavour)
         for p in selector.select_from(self):
@@ -1135,23 +1074,6 @@ class Path(PurePath):
             raise NotImplementedError("os.link() not available on this system")
         os.link(target, self)
 
-    def link_to(self, target):
-        """
-        Make the target path a hard link pointing to this path.
-
-        Note this function does not make this path a hard link to *target*,
-        despite the implication of the function and argument names. The order
-        of arguments (target, link) is the reverse of Path.symlink_to, but
-        matches that of os.link.
-
-        Deprecated since Python 3.10 and scheduled for removal in Python 3.12.
-        Use `hardlink_to()` instead.
-        """
-        warnings.warn("pathlib.Path.link_to() is deprecated and is scheduled "
-                      "for removal in Python 3.12. "
-                      "Use pathlib.Path.hardlink_to() instead.",
-                      DeprecationWarning, stacklevel=2)
-        self.__class__(target).hardlink_to(self)
 
     # Convenience functions for querying the stat results
 

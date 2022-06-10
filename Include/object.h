@@ -51,6 +51,8 @@ A standard interface exists for objects that contain an array of items
 whose size is determined when the object is allocated.
 */
 
+#include "pystats.h"
+
 /* Py_DEBUG implies Py_REF_DEBUG. */
 #if defined(Py_DEBUG) && !defined(Py_REF_DEBUG)
 #  define Py_REF_DEBUG
@@ -66,7 +68,7 @@ whose size is determined when the object is allocated.
     PyObject *_ob_next;           \
     PyObject *_ob_prev;
 
-#define _PyObject_EXTRA_INIT 0, 0,
+#define _PyObject_EXTRA_INIT _Py_NULL, _Py_NULL,
 
 #else
 #  define _PyObject_HEAD_EXTRA
@@ -104,7 +106,7 @@ struct _object {
 };
 
 /* Cast argument to PyObject* type. */
-#define _PyObject_CAST(op) _Py_reinterpret_cast(PyObject*, (op))
+#define _PyObject_CAST(op) _Py_CAST(PyObject*, (op))
 
 typedef struct {
     PyObject ob_base;
@@ -112,7 +114,7 @@ typedef struct {
 } PyVarObject;
 
 /* Cast argument to PyVarObject* type. */
-#define _PyVarObject_CAST(op) _Py_reinterpret_cast(PyVarObject*, (op))
+#define _PyVarObject_CAST(op) _Py_CAST(PyVarObject*, (op))
 
 
 // Test if the 'x' object is the 'y' object, the same as "x is y" in Python.
@@ -137,11 +139,12 @@ static inline PyTypeObject* Py_TYPE(PyObject *ob) {
 #endif
 
 // bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
-static inline Py_ssize_t Py_SIZE(PyVarObject *ob) {
-    return ob->ob_size;
+static inline Py_ssize_t Py_SIZE(PyObject *ob) {
+    PyVarObject *var_ob = _PyVarObject_CAST(ob);
+    return var_ob->ob_size;
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_SIZE(ob) Py_SIZE(_PyVarObject_CAST(ob))
+#  define Py_SIZE(ob) Py_SIZE(_PyObject_CAST(ob))
 #endif
 
 
@@ -253,6 +256,9 @@ PyAPI_FUNC(void *) PyType_GetModuleState(PyTypeObject *);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
 PyAPI_FUNC(PyObject *) PyType_GetName(PyTypeObject *);
 PyAPI_FUNC(PyObject *) PyType_GetQualName(PyTypeObject *);
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
+PyAPI_FUNC(PyObject *) PyType_FromMetaclass(PyTypeObject*, PyObject*, PyType_Spec*, PyObject*);
 #endif
 
 /* Generic type check */
@@ -489,6 +495,7 @@ PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
 static inline void Py_INCREF(PyObject *op)
 {
+    _Py_INCREF_STAT_INC();
 #if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
     // Stable ABI for Python 3.10 built in debug mode.
     _Py_IncRef(op);
@@ -505,7 +512,6 @@ static inline void Py_INCREF(PyObject *op)
 #  define Py_INCREF(op) Py_INCREF(_PyObject_CAST(op))
 #endif
 
-
 #if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
 // Stable ABI for limited C API version 3.10 of Python debug build
 static inline void Py_DECREF(PyObject *op) {
@@ -516,6 +522,7 @@ static inline void Py_DECREF(PyObject *op) {
 #elif defined(Py_REF_DEBUG)
 static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
+    _Py_DECREF_STAT_INC();
     _Py_RefTotal--;
     if (--op->ob_refcnt != 0) {
         if (op->ob_refcnt < 0) {
@@ -531,6 +538,7 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 #else
 static inline void Py_DECREF(PyObject *op)
 {
+    _Py_DECREF_STAT_INC();
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
     if (--op->ob_refcnt == 0) {
@@ -587,7 +595,7 @@ static inline void Py_DECREF(PyObject *op)
 /* Function to use in case the object pointer can be NULL: */
 static inline void Py_XINCREF(PyObject *op)
 {
-    if (op != NULL) {
+    if (op != _Py_NULL) {
         Py_INCREF(op);
     }
 }
@@ -597,7 +605,7 @@ static inline void Py_XINCREF(PyObject *op)
 
 static inline void Py_XDECREF(PyObject *op)
 {
-    if (op != NULL) {
+    if (op != _Py_NULL) {
         Py_DECREF(op);
     }
 }
@@ -781,7 +789,7 @@ static inline int PyType_Check(PyObject *op) {
 #endif
 
 #define _PyType_CAST(op) \
-    (assert(PyType_Check(op)), _Py_reinterpret_cast(PyTypeObject*, (op)))
+    (assert(PyType_Check(op)), _Py_CAST(PyTypeObject*, (op)))
 
 static inline int PyType_CheckExact(PyObject *op) {
     return Py_IS_TYPE(op, &PyType_Type);
