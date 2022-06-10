@@ -3006,7 +3006,10 @@ batch_list_exact(PicklerObject *self, PyObject *obj)
 
     if (PyList_GET_SIZE(obj) == 1) {
         item = PyList_GET_ITEM(obj, 0);
-        if (save(self, item, 0) < 0)
+        Py_INCREF(item);
+        int err = save(self, item, 0);
+        Py_DECREF(item);
+        if (err < 0)
             return -1;
         if (_Pickler_Write(self, &append_op, 1) < 0)
             return -1;
@@ -3021,7 +3024,10 @@ batch_list_exact(PicklerObject *self, PyObject *obj)
             return -1;
         while (total < PyList_GET_SIZE(obj)) {
             item = PyList_GET_ITEM(obj, total);
-            if (save(self, item, 0) < 0)
+            Py_INCREF(item);
+            int err = save(self, item, 0);
+            Py_DECREF(item);
+            if (err < 0)
                 return -1;
             total++;
             if (++this_batch == BATCHSIZE)
