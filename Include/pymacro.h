@@ -14,7 +14,7 @@
 // compiler support (gcc >= 4.6) and is called _Static_assert.
 #if (defined(__GLIBC__) \
      && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ <= 16)) \
-     && !defined(static_assert))
+     && !defined(static_assert) && !(defined(__cplusplus) && __cplusplus >= 201103L))
 #  define static_assert _Static_assert
 #endif
 
