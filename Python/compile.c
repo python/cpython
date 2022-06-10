@@ -159,7 +159,7 @@ struct location {
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((const struct location){(LNO), (END_LNO), (COL), (END_COL)})
 
-#define NO_LOCATION  (LOCATION(-1, -1, -1, -1))
+#define NO_LOCATION {-1, -1, -1, -1}
 
 struct instr {
     int i_opcode;
@@ -959,14 +959,18 @@ basicblock_next_instr(basicblock *b)
    - before the "except" and "finally" clauses
 */
 
-#define SET_LOC(c, x)                             \
-    (c)->u->u_loc = LOCATION((x)->lineno,         \
-                             (x)->end_lineno,     \
-                             (x)->col_offset,     \
-                             (x)->end_col_offset)
+#define SET_LOC(c, x)                                   \
+    (c)->u->u_loc.lineno = (x)->lineno;                 \
+    (c)->u->u_loc.end_lineno = (x)->end_lineno;         \
+    (c)->u->u_loc.col_offset = (x)->col_offset;         \
+    (c)->u->u_loc.end_col_offset = (x)->end_col_offset;
 
 // Artificial instructions
-#define UNSET_LOC(c) (c)->u->u_loc = NO_LOCATION
+#define UNSET_LOC(c) \
+    (c)->u->u_loc.lineno = -1;             \
+    (c)->u->u_loc.end_lineno = -1;         \
+    (c)->u->u_loc.col_offset = -1;         \
+    (c)->u->u_loc.end_col_offset = -1;
 
 
 /* Return the stack effect of opcode with argument oparg.
