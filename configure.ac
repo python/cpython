@@ -770,6 +770,35 @@ AC_PROG_GREP
 AC_PROG_SED
 AC_PROG_EGREP
 
+dnl detect compiler name
+dnl check for xlc before clang, newer xlc's can use clang as frontend.
+dnl check for GCC last, other compilers set __GNUC__, too.
+dnl msvc is listed for completeness.
+AC_CACHE_CHECK([for CC compiler name], [ac_cv_cc_name], [
+cat > conftest.c <<EOF
+#if defined(__INTEL_COMPILER) || defined(__ICC)
+  icc
+#elif defined(__ibmxl__) || defined(__xlc__) || defined(__xlC__)
+  xlc
+#elif defined(_MSC_VER)
+  msvc
+#elif defined(__clang__)
+  clang
+#elif defined(__GNUC__)
+  gcc
+#else
+#  error unknown compiler
+#endif
+EOF
+
+if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
+  ac_cv_cc_name=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
+else
+  ac_cv_cc_name="unknown"
+fi
+rm -f conftest.c conftest.out
+])
+
 # checks for UNIX variants that set C preprocessor variables
 # may set _GNU_SOURCE, __EXTENSIONS__, _POSIX_PTHREAD_SEMANTICS,
 # _POSIX_SOURCE, _POSIX_1_SOURCE, and more
@@ -1030,6 +1059,42 @@ if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""
 fi
 AC_SUBST(MULTIARCH_CPPFLAGS)
+
+dnl Support tiers according to https://peps.python.org/pep-0011/
+dnl
+dnl NOTE: Windows support tiers are defined in PC/pyconfig.h.
+dnl
+AC_MSG_CHECKING([for PEP 11 support tier])
+AS_CASE([$host/$ac_cv_cc_name],
+  [x86_64-*-linux-gnu/gcc],          [PY_SUPPORT_TIER=1], dnl Linux on AMD64, any vendor, glibc, gcc
+  [x86_64-apple-darwin*/clang],      [PY_SUPPORT_TIER=1], dnl macOS on Intel, any version
+  [i686-pc-windows-msvc/msvc],       [PY_SUPPORT_TIER=1], dnl 32bit Windows on Intel, MSVC
+  [x86_64-pc-windows-msvc/msvc],     [PY_SUPPORT_TIER=1], dnl 64bit Windows on AMD64, MSVC
+
+  [aarch64-apple-darwin*/clang],     [PY_SUPPORT_TIER=2], dnl macOS on M1, any version
+  [aarch64-*-linux-gnu/gcc],         [PY_SUPPORT_TIER=2], dnl Linux ARM64, glibc, gcc+clang
+  [aarch64-*-linux-gnu/clang],       [PY_SUPPORT_TIER=2],
+  [powerpc64le-*-linux-gnu/gcc],     [PY_SUPPORT_TIER=2], dnl Linux on PPC64 little endian, glibc, gcc
+  [x86_64-*-linux-gnu/clang],        [PY_SUPPORT_TIER=2], dnl Linux on AMD64, any vendor, glibc, clang
+
+  [aarch64-pc-windows-msvc/msvc],    [PY_SUPPORT_TIER=3], dnl Windows ARM64, MSVC
+  [armv7l-*-linux-gnueabihf/gcc],    [PY_SUPPORT_TIER=3], dnl ARMv7 LE with hardware floats, any vendor, glibc, gcc
+  [powerpc64le-*-linux-gnu/clang],   [PY_SUPPORT_TIER=3], dnl Linux on PPC64 little endian, glibc, clang
+  [s390x-*-linux-gnu/gcc],           [PY_SUPPORT_TIER=3], dnl Linux on 64bit s390x (big endian), glibc, gcc
+  dnl [wasm32-unknown-emscripten/clang], [PY_SUPPORT_TIER=3], dnl WebAssembly Emscripten
+  dnl [wasm32-unknown-wasi/clang],       [PY_SUPPORT_TIER=3], dnl WebAssembly System Interface
+  [x86_64-*-freebsd/clang],          [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
+  [PY_SUPPORT_TIER=0]
+)
+
+AS_CASE([$PY_SUPPORT_TIER],
+  [1], [AC_MSG_RESULT([$host/$ac_cv_cc_name has tier 1 (supported)])],
+  [2], [AC_MSG_RESULT([$host/$ac_cv_cc_name has tier 2 (supported)])],
+  [3], [AC_MSG_RESULT([$host/$ac_cv_cc_name has tier 3 (partially supported)])],
+  [AC_MSG_WARN([$host/$ac_cv_cc_name is not supported])]
+)
+
+AC_DEFINE_UNQUOTED([PY_SUPPORT_TIER], [$PY_SUPPORT_TIER], [PEP 11 Support tier (1, 2, 3 or 0 for unsupported)])
 
 AC_CACHE_CHECK([for -Wl,--no-as-needed], [ac_cv_wl_no_as_needed], [
   save_LDFLAGS="$LDFLAGS"
@@ -6878,3 +6943,9 @@ If you want a release build with all stable optimizations active (PGO, etc),
 please run ./configure --enable-optimizations
 ])
 fi
+
+AS_VAR_IF([PY_SUPPORT_TIER], [0], [AC_MSG_WARN([
+
+Platform "$host" with compiler "$ac_cv_cc_name" is not supported by the
+CPython core team, see https://peps.python.org/pep-0011/ for more information.
+])])
