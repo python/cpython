@@ -159,7 +159,7 @@ struct location {
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((const struct location){(LNO), (END_LNO), (COL), (END_COL)})
 
-static struct location NO_LOCATION = (LOCATION(-1, -1, -1, -1));
+#define NO_LOCATION  (LOCATION(-1, -1, -1, -1))
 
 struct instr {
     int i_opcode;
@@ -1283,6 +1283,8 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
            IS_BLOCK_PUSH_OPCODE(opcode));
     assert(oparg == 0 || target == NULL);
 
+    static struct location no_location = NO_LOCATION;
+
     int off = basicblock_next_instr(b);
     if (off < 0) {
         return 0;
@@ -1291,7 +1293,7 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
     i->i_opcode = opcode;
     i->i_oparg = oparg;
     i->i_target = target;
-    i->i_loc = *loc;
+    i->i_loc = loc ? *loc : no_location;
 
     return 1;
 }
@@ -1304,7 +1306,7 @@ compiler_addop(struct compiler *c, int opcode, bool line)
         return -1;
     }
 
-    const struct location *loc = line ? &c->u->u_loc : &NO_LOCATION;
+    const struct location *loc = line ? &c->u->u_loc : NULL;
     return basicblock_addop(c->u->u_curblock, opcode, 0, NULL, loc);
 }
 
@@ -1512,7 +1514,7 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg, bool line)
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
 
-    const struct location *loc = line ? &c->u->u_loc : &NO_LOCATION;
+    const struct location *loc = line ? &c->u->u_loc : NULL;
     return basicblock_addop(c->u->u_curblock, opcode, oparg_, NULL, loc);
 }
 
@@ -1522,7 +1524,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *target, bool line)
     if (compiler_use_new_implicit_block_if_needed(c) < 0) {
         return -1;
     }
-    const struct location *loc = line ? &c->u->u_loc : &NO_LOCATION;
+    const struct location *loc = line ? &c->u->u_loc : NULL;
     assert(target != NULL);
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
     return basicblock_addop(c->u->u_curblock, opcode, 0, target, loc);
@@ -7386,7 +7388,8 @@ push_cold_blocks_to_end(struct compiler *c, basicblock *entry, int code_flags) {
             if (explicit_jump == NULL) {
                 return -1;
             }
-            basicblock_addop(explicit_jump, JUMP, 0, b->b_next, &NO_LOCATION);
+            static struct location no_location = NO_LOCATION;
+            basicblock_addop(explicit_jump, JUMP, 0, b->b_next, &no_location);
 
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
@@ -8289,8 +8292,9 @@ static int
 insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
                            int *fixed, int nfreevars, int code_flags)
 {
-
     assert(c->u->u_firstlineno > 0);
+
+    static struct location no_location = NO_LOCATION;
 
     /* Add the generator prefix instructions. */
     if (code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
@@ -8306,7 +8310,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
         struct instr pop_top = {
             .i_opcode = POP_TOP,
             .i_oparg = 0,
-            .i_loc = NO_LOCATION,
+            .i_loc = no_location,
             .i_target = NULL,
         };
         if (insert_instruction(entryblock, 1, &pop_top) < 0) {
@@ -8338,7 +8342,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
                 .i_opcode = MAKE_CELL,
                 // This will get fixed in offset_derefs().
                 .i_oparg = oldindex,
-                .i_loc = NO_LOCATION,
+                .i_loc = no_location,
                 .i_target = NULL,
             };
             if (insert_instruction(entryblock, ncellsused, &make_cell) < 0) {
@@ -8353,7 +8357,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
         struct instr copy_frees = {
             .i_opcode = COPY_FREE_VARS,
             .i_oparg = nfreevars,
-            .i_loc = NO_LOCATION,
+            .i_loc = no_location,
             .i_target = NULL,
         };
         if (insert_instruction(entryblock, 0, &copy_frees) < 0) {
@@ -9359,7 +9363,8 @@ propagate_line_numbers(struct assembler *a) {
             continue;
         }
 
-        struct location prev_location  = NO_LOCATION;
+        static struct location no_location = NO_LOCATION;
+        struct location prev_location = no_location;
         for (int i = 0; i < b->b_iused; i++) {
             if (b->b_instr[i].i_loc.lineno < 0) {
                 b->b_instr[i].i_loc = prev_location;
