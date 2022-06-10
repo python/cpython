@@ -3431,7 +3431,10 @@ save_set(PicklerObject *self, PyObject *obj)
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
         while (_PySet_NextEntry(obj, &ppos, &item, &hash)) {
-            if (save(self, item, 0) < 0)
+            Py_INCREF(item);
+            int err = save(self, item, 0);
+            Py_CLEAR(item);
+            if (err < 0)
                 return -1;
             if (++i == BATCHSIZE)
                 break;
