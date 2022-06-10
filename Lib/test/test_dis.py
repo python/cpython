@@ -1601,7 +1601,7 @@ class InstructionTests(InstructionTestCase):
                 self.assertIsNone(positions.end_lineno)
                 self.assertIsNone(positions.col_offset)
                 self.assertIsNone(positions.end_col_offset)
-    
+
     @requires_debug_ranges()
     def test_co_positions_with_lots_of_caches(self):
         def roots(a, b, c):
@@ -1627,7 +1627,7 @@ class InstructionTests(InstructionTestCase):
                         )
                     ]
                     self.assertEqual(co_positions, dis_positions)
-    
+
 # get_instructions has its own tests above, so can rely on it to validate
 # the object oriented API
 class BytecodeTests(InstructionTestCase, DisTestBase):
