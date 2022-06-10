@@ -3151,7 +3151,7 @@ class TestTracing(unittest.TestCase):
         self.assertListEqual(self._trace(f, "go x"), [1, 2, 3])
         self.assertListEqual(self._trace(f, "spam"), [1, 2, 3])
 
-    def test_parser_deeply_nested_patters(self):
+    def test_parser_deeply_nested_patterns(self):
         # Deeply nested patterns can cause exponential backtracking when parsing.
         # See gh-93671 for more information.
 
