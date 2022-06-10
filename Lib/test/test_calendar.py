@@ -936,7 +936,7 @@ class CommandLineTestCase(unittest.TestCase):
         finally:
             sys.stderr.flush()
             sys.stderr.buffer.seek(0, 0)
-            sys.stderr= orig_stderr
+            sys.stderr = orig_stderr
 
     def run_cli_ok(self, *args):
         with self.captured_stdout_with_buffer() as stdout:
