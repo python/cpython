@@ -1,0 +1,1 @@
+``importlib.abc.Traversable.name`` is an attribute, not a method.
