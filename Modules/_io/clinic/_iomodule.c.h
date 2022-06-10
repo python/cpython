@@ -53,10 +53,10 @@ PyDoc_STRVAR(_io_open__doc__,
 "\n"
 "buffering is an optional integer used to set the buffering policy.\n"
 "Pass 0 to switch buffering off (only allowed in binary mode), 1 to select\n"
-"line buffering (only usable in text mode), and an integer > 1 to indicate\n"
-"the size of a fixed-size chunk buffer, or -1 to use the default buffer size.\n"
-"When no buffering argument is given, the default buffering policy works as\n"
-"follows:\n"
+"line buffering (only usable in text mode), an integer > 1 to indicate\n"
+"the size of a fixed-size chunk buffer, or -1 to use the default buffering\n"
+"policy.  When no buffering argument is given, the default buffering policy\n"
+"works as follows:\n"
 "\n"
 "* Binary files are buffered in fixed-size chunks; the size of the buffer\n"
 "  is chosen using a heuristic trying to determine the underlying device\'s\n"
@@ -356,4 +356,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c4d7e4ef878985f8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=262fbd17bd4cc08b input=a9049054013a1b77]*/
