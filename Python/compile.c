@@ -7748,7 +7748,7 @@ write_location_info_entry(struct assembler* a, struct instr* i, int isize)
         }
     }
     else if (i->i_end_lineno == i->i_lineno) {
-        if (line_delta == 0 && column < 80 && end_column - column < 16) {
+        if (line_delta == 0 && column < 80 && end_column - column < 16 && end_column >= column) {
             write_location_info_short_form(a, isize, column, end_column);
             return 1;
         }
