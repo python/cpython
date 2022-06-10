@@ -339,6 +339,19 @@ enum {
     COMPILER_SCOPE_COMPREHENSION,
 };
 
+struct location {
+    int lineno;
+    int end_lineno;
+    int col_offset;
+    int end_col_offset;
+};
+
+#define LOCATION(LNO, END_LNO, COL, END_COL) \
+    ((struct location){(LNO), (END_LNO), (COL), (END_COL)})
+
+#define NO_LOCATION (LOCATION(-1, -1, -1, -1))
+
+
 /* The following items change on entry and exit of code blocks.
    They must be saved and restored when returning to a block.
 */
@@ -373,11 +386,9 @@ struct compiler_unit {
     struct fblockinfo u_fblock[CO_MAXBLOCKS];
 
     int u_firstlineno; /* the first lineno of the block */
-    int u_lineno;          /* the lineno for the current stmt */
-    int u_col_offset;      /* the offset of the current stmt */
-    int u_end_lineno;      /* the end line of the current stmt */
-    int u_end_col_offset;  /* the end offset of the current stmt */
+    struct location u_loc;  /* line/column info of the current stmt */
 };
+
 
 /* This struct captures the global state of a compilation.
 
@@ -952,18 +963,14 @@ basicblock_next_instr(basicblock *b)
    - before the "except" and "finally" clauses
 */
 
-#define SET_LOC(c, x)                           \
-    (c)->u->u_lineno = (x)->lineno;             \
-    (c)->u->u_col_offset = (x)->col_offset;     \
-    (c)->u->u_end_lineno = (x)->end_lineno;     \
-    (c)->u->u_end_col_offset = (x)->end_col_offset;
+#define SET_LOC(c, x)                             \
+    (c)->u->u_loc = LOCATION((x)->lineno,         \
+                             (x)->end_lineno,     \
+                             (x)->col_offset,     \
+                             (x)->end_col_offset)
 
 // Artificial instructions
-#define UNSET_LOC(c)                            \
-    (c)->u->u_lineno = -1;                      \
-    (c)->u->u_col_offset = -1;                  \
-    (c)->u->u_end_lineno = -1;                  \
-    (c)->u->u_end_col_offset = -1;
+#define UNSET_LOC(c) (c)->u->u_loc = NO_LOCATION
 
 #define COPY_INSTR_LOC(old, new)                         \
     (new).i_lineno = (old).i_lineno;                     \
@@ -971,24 +978,6 @@ basicblock_next_instr(basicblock *b)
     (new).i_end_lineno = (old).i_end_lineno;             \
     (new).i_end_col_offset = (old).i_end_col_offset;
 
-
-struct location {
-    int lineno;
-    int end_lineno;
-    int col_offset;
-    int end_col_offset;
-};
-
-#define NO_LOCATION ((struct location){-1, 0, 0, 0})
-
-/* current compiler unit's location */
-#define CU_LOCATION(CU)         \
-    ((struct location){         \
-        (CU)->u_lineno,         \
-        (CU)->u_end_lineno,     \
-        (CU)->u_col_offset,     \
-        (CU)->u_end_col_offset, \
-    })
 
 /* Return the stack effect of opcode with argument oparg.
 
@@ -1328,7 +1317,7 @@ compiler_addop(struct compiler *c, int opcode, bool line)
         return -1;
     }
 
-    struct location loc = line ? CU_LOCATION(c->u) : NO_LOCATION;
+    struct location loc = line ? c->u->u_loc : NO_LOCATION;
     return basicblock_addop(c->u->u_curblock, opcode, 0, NULL, loc);
 }
 
@@ -1536,7 +1525,7 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg, bool line)
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
 
-    struct location loc = line ? CU_LOCATION(c->u) : NO_LOCATION;
+    struct location loc = line ? c->u->u_loc : NO_LOCATION;
     return basicblock_addop(c->u->u_curblock, opcode, oparg_, NULL, loc);
 }
 
@@ -1546,7 +1535,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *target, bool line)
     if (compiler_use_new_implicit_block_if_needed(c) < 0) {
         return -1;
     }
-    struct location loc = line ? CU_LOCATION(c->u) : NO_LOCATION;
+    struct location loc = line ? c->u->u_loc : NO_LOCATION;
     assert(target != NULL);
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
     return basicblock_addop(c->u->u_curblock, opcode, 0, target, loc);
@@ -1740,10 +1729,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_blocks = NULL;
     u->u_nfblocks = 0;
     u->u_firstlineno = lineno;
-    u->u_lineno = lineno;
-    u->u_col_offset = 0;
-    u->u_end_lineno = lineno;
-    u->u_end_col_offset = 0;
+    u->u_loc = LOCATION(lineno, lineno, 0, 0);
     u->u_consts = PyDict_New();
     if (!u->u_consts) {
         compiler_unit_free(u);
@@ -1779,7 +1765,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     c->u->u_curblock = block;
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
-        c->u->u_lineno = -1;
+        c->u->u_loc.lineno = -1;
     }
     else {
         if (!compiler_set_qualname(c))
@@ -2150,7 +2136,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
                               mod, 1)) {
         return NULL;
     }
-    c->u->u_lineno = 1;
+    c->u->u_loc.lineno = 1;
     switch (mod->kind) {
     case Module_kind:
         if (!compiler_body(c, mod->v.Module.body)) {
@@ -2294,18 +2280,12 @@ compiler_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
     if (!decos)
         return 1;
 
-    int old_lineno = c->u->u_lineno;
-    int old_end_lineno = c->u->u_end_lineno;
-    int old_col_offset = c->u->u_col_offset;
-    int old_end_col_offset = c->u->u_end_col_offset;
+    struct location old_loc = c->u->u_loc;
     for (Py_ssize_t i = asdl_seq_LEN(decos) - 1; i > -1; i--) {
         SET_LOC(c, (expr_ty)asdl_seq_GET(decos, i));
         ADDOP_I(c, CALL, 0);
     }
-    c->u->u_lineno = old_lineno;
-    c->u->u_end_lineno = old_end_lineno;
-    c->u->u_col_offset = old_col_offset;
-    c->u->u_end_col_offset = old_end_col_offset;
+    c->u->u_loc = old_loc;
     return 1;
 }
 
@@ -4795,8 +4775,8 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     }
     /* Alright, we can optimize the code. */
     VISIT(c, expr, meth->v.Attribute.value);
-    int old_lineno = c->u->u_lineno;
-    c->u->u_lineno = meth->end_lineno;
+    int old_lineno = c->u->u_loc.lineno;
+    c->u->u_loc.lineno = meth->end_lineno;
     ADDOP_NAME(c, LOAD_METHOD, meth->v.Attribute.attr, names);
     VISIT_SEQ(c, expr, e->v.Call.args);
 
@@ -4807,7 +4787,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
         };
     }
     ADDOP_I(c, CALL, argsl + kwdsl);
-    c->u->u_lineno = old_lineno;
+    c->u->u_loc.lineno = old_lineno;
     return 1;
 }
 
@@ -5821,20 +5801,20 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         switch (e->v.Attribute.ctx) {
         case Load:
         {
-            int old_lineno = c->u->u_lineno;
-            c->u->u_lineno = e->end_lineno;
+            int old_lineno = c->u->u_loc.lineno;
+            c->u->u_loc.lineno = e->end_lineno;
             ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
-            c->u->u_lineno = old_lineno;
+            c->u->u_loc.lineno = old_lineno;
             break;
         }
         case Store:
             if (forbidden_name(c, e->v.Attribute.attr, e->v.Attribute.ctx)) {
                 return 0;
             }
-            int old_lineno = c->u->u_lineno;
-            c->u->u_lineno = e->end_lineno;
+            int old_lineno = c->u->u_loc.lineno;
+            c->u->u_loc.lineno = e->end_lineno;
             ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
-            c->u->u_lineno = old_lineno;
+            c->u->u_loc.lineno = old_lineno;
             break;
         case Del:
             ADDOP_NAME(c, DELETE_ATTR, e->v.Attribute.attr, names);
@@ -5871,16 +5851,10 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
 static int
 compiler_visit_expr(struct compiler *c, expr_ty e)
 {
-    int old_lineno = c->u->u_lineno;
-    int old_end_lineno = c->u->u_end_lineno;
-    int old_col_offset = c->u->u_col_offset;
-    int old_end_col_offset = c->u->u_end_col_offset;
+    struct location old_loc = c->u->u_loc;
     SET_LOC(c, e);
     int res = compiler_visit_expr1(c, e);
-    c->u->u_lineno = old_lineno;
-    c->u->u_end_lineno = old_end_lineno;
-    c->u->u_col_offset = old_col_offset;
-    c->u->u_end_col_offset = old_end_col_offset;
+    c->u->u_loc = old_loc;
     return res;
 }
 
@@ -5890,20 +5864,17 @@ compiler_augassign(struct compiler *c, stmt_ty s)
     assert(s->kind == AugAssign_kind);
     expr_ty e = s->v.AugAssign.target;
 
-    int old_lineno = c->u->u_lineno;
-    int old_end_lineno = c->u->u_end_lineno;
-    int old_col_offset = c->u->u_col_offset;
-    int old_end_col_offset = c->u->u_end_col_offset;
+    struct location old_loc = c->u->u_loc;
     SET_LOC(c, e);
 
     switch (e->kind) {
     case Attribute_kind:
         VISIT(c, expr, e->v.Attribute.value);
         ADDOP_I(c, COPY, 1);
-        int old_lineno = c->u->u_lineno;
-        c->u->u_lineno = e->end_lineno;
+        int old_lineno = c->u->u_loc.lineno;
+        c->u->u_loc.lineno = e->end_lineno;
         ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
-        c->u->u_lineno = old_lineno;
+        c->u->u_loc.lineno = old_lineno;
         break;
     case Subscript_kind:
         VISIT(c, expr, e->v.Subscript.value);
@@ -5923,10 +5894,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
         return 0;
     }
 
-    c->u->u_lineno = old_lineno;
-    c->u->u_end_lineno = old_end_lineno;
-    c->u->u_col_offset = old_col_offset;
-    c->u->u_end_col_offset = old_end_col_offset;
+    c->u->u_loc = old_loc;
 
     VISIT(c, expr, s->v.AugAssign.value);
     ADDOP_INPLACE(c, s->v.AugAssign.op);
@@ -5935,7 +5903,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
 
     switch (e->kind) {
     case Attribute_kind:
-        c->u->u_lineno = e->end_lineno;
+        c->u->u_loc.lineno = e->end_lineno;
         ADDOP_I(c, SWAP, 2);
         ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
         break;
@@ -6084,14 +6052,15 @@ compiler_error(struct compiler *c, const char *format, ...)
     if (msg == NULL) {
         return 0;
     }
-    PyObject *loc = PyErr_ProgramTextObject(c->c_filename, c->u->u_lineno);
+    PyObject *loc = PyErr_ProgramTextObject(c->c_filename, c->u->u_loc.lineno);
     if (loc == NULL) {
         Py_INCREF(Py_None);
         loc = Py_None;
     }
+    struct location u_loc = c->u->u_loc;
     PyObject *args = Py_BuildValue("O(OiiOii)", msg, c->c_filename,
-                                   c->u->u_lineno, c->u->u_col_offset + 1, loc,
-                                   c->u->u_end_lineno, c->u->u_end_col_offset + 1);
+                                   u_loc.lineno, u_loc.col_offset + 1, loc,
+                                   u_loc.end_lineno, u_loc.end_col_offset + 1);
     Py_DECREF(msg);
     if (args == NULL) {
         goto exit;
@@ -6118,7 +6087,7 @@ compiler_warn(struct compiler *c, const char *format, ...)
         return 0;
     }
     if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, c->c_filename,
-                                 c->u->u_lineno, NULL, NULL) < 0)
+                                 c->u->u_loc.lineno, NULL, NULL) < 0)
     {
         if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
             /* Replace the SyntaxWarning exception with a SyntaxError
