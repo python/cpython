@@ -157,7 +157,7 @@ struct location {
 };
 
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
-    ((struct location){(LNO), (END_LNO), (COL), (END_COL)})
+    ((const struct location){(LNO), (END_LNO), (COL), (END_COL)})
 
 static struct location NO_LOCATION = (LOCATION(-1, -1, -1, -1));
 
