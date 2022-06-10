@@ -258,7 +258,7 @@ def _keep_alive(x, memo):
 
 def _reconstruct(x, memo, func, args,
                  state=None, listiter=None, dictiter=None,
-                 deepcopy=deepcopy):
+                 *, deepcopy=deepcopy):
     deep = memo is not None
     if deep and args:
         args = (deepcopy(arg, memo) for arg in args)

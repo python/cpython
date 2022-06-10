@@ -30,9 +30,17 @@ is that all Python modules can participate in logging, so your application log
 can include your own messages integrated with messages from third-party
 modules.
 
+The simplest example:
+
+.. code-block:: none
+
+    >>> import logging
+    >>> logging.warning('Watch out!')
+    WARNING:root:Watch out!
+
 The module provides a lot of functionality and flexibility.  If you are
-unfamiliar with logging, the best way to get to grips with it is to see the
-tutorials (see the links on the right).
+unfamiliar with logging, the best way to get to grips with it is to view the
+tutorials (**see the links above and on the right**).
 
 The basic classes defined by the module, together with their functions, are
 listed below.
