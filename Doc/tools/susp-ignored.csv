@@ -171,6 +171,8 @@ library/ipaddress,,::,2001:db00::0/ffff:ff00::
 library/itertools,,:step,elements from seq[start:stop:step]
 library/itertools,,::,kernel = tuple(kernel)[::-1]
 library/itertools,,:stop,elements from seq[start:stop:step]
+library/logging,,:root,WARNING:root:Watch out!
+library/logging,,:Watch,WARNING:root:Watch out!
 library/logging.handlers,,:port,host:port
 library/mmap,,:i2,obj[i1:i2]
 library/multiprocessing,,`,# Add more tasks using `put()`
