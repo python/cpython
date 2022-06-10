@@ -159,7 +159,7 @@ struct location {
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((struct location){(LNO), (END_LNO), (COL), (END_COL)})
 
-#define NO_LOCATION (LOCATION(-1, -1, -1, -1))
+static struct location NO_LOCATION = (LOCATION(-1, -1, -1, -1));
 
 struct instr {
     int i_opcode;
@@ -347,7 +347,6 @@ enum {
     COMPILER_SCOPE_LAMBDA,
     COMPILER_SCOPE_COMPREHENSION,
 };
-
 
 /* The following items change on entry and exit of code blocks.
    They must be saved and restored when returning to a block.
@@ -1273,7 +1272,7 @@ compiler_use_new_implicit_block_if_needed(struct compiler *c)
 
 static int
 basicblock_addop(basicblock *b, int opcode, int oparg,
-                 basicblock *target, struct location loc)
+                 basicblock *target, const struct location *loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
@@ -1292,7 +1291,7 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
     i->i_opcode = opcode;
     i->i_oparg = oparg;
     i->i_target = target;
-    i->i_loc = loc;
+    i->i_loc = *loc;
 
     return 1;
 }
@@ -1305,7 +1304,7 @@ compiler_addop(struct compiler *c, int opcode, bool line)
         return -1;
     }
 
-    struct location loc = line ? c->u->u_loc : NO_LOCATION;
+    const struct location *loc = line ? &c->u->u_loc : &NO_LOCATION;
     return basicblock_addop(c->u->u_curblock, opcode, 0, NULL, loc);
 }
 
@@ -1513,7 +1512,7 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg, bool line)
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
 
-    struct location loc = line ? c->u->u_loc : NO_LOCATION;
+    const struct location *loc = line ? &c->u->u_loc : &NO_LOCATION;
     return basicblock_addop(c->u->u_curblock, opcode, oparg_, NULL, loc);
 }
 
@@ -1523,7 +1522,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *target, bool line)
     if (compiler_use_new_implicit_block_if_needed(c) < 0) {
         return -1;
     }
-    struct location loc = line ? c->u->u_loc : NO_LOCATION;
+    const struct location *loc = line ? &c->u->u_loc : &NO_LOCATION;
     assert(target != NULL);
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
     return basicblock_addop(c->u->u_curblock, opcode, 0, target, loc);
@@ -7387,7 +7386,7 @@ push_cold_blocks_to_end(struct compiler *c, basicblock *entry, int code_flags) {
             if (explicit_jump == NULL) {
                 return -1;
             }
-            basicblock_addop(explicit_jump, JUMP, 0, b->b_next, NO_LOCATION);
+            basicblock_addop(explicit_jump, JUMP, 0, b->b_next, &NO_LOCATION);
 
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
