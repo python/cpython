@@ -746,22 +746,33 @@ class CursorTests(unittest.TestCase):
         with self.assertRaises(sqlite.OperationalError):
             self.cu.execute("select asdf")
 
-    def test_execute_too_much_sql(self):
-        self.assertRaisesRegex(sqlite.ProgrammingError,
-                               "You can only execute one statement at a time",
-                               self.cu.execute, "select 5+4; select 4+5")
+    def test_execute_multiple_statements(self):
+        msg = "You can only execute one statement at a time"
+        dataset = (
+            "select 5+4; select 4+5",
+            "select 1; //c++ comment",
+            "select 1; *notsql",
+            "select 1; -*not a comment",
+        )
+        for query in dataset:
+            with self.subTest(query=query):
+                with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+                    self.cu.execute(query)
 
-    def test_execute_too_much_sql2(self):
-        self.cu.execute("select 5+4; -- foo bar")
-
-    def test_execute_too_much_sql3(self):
-        self.cu.execute("""
+    def test_execute_with_appended_comments(self):
+        dataset = (
+            "select 5+4; -- foo bar",
+            """
             select 5+4;
 
             /*
             foo
             */
-            """)
+            """,
+        )
+        for query in dataset:
+            with self.subTest(query=query):
+                self.cu.execute(query)
 
     def test_execute_wrong_sql_arg(self):
         with self.assertRaises(TypeError):

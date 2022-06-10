@@ -142,14 +142,10 @@ stmt_traverse(pysqlite_Statement *self, visitproc visit, void *arg)
 static inline const char *
 lstrip_sql(const char *sql)
 {
-    const char *pos = sql;
-
     parse_remaining_sql_state state = NORMAL;
 
-    for (;;) {
+    for (const char *pos = sql; *pos; pos++) {
         switch (*pos) {
-            case 0:
-                return NULL;
             case '-':
                 if (state == NORMAL) {
                     state  = LINECOMMENT_1;
@@ -198,8 +194,6 @@ lstrip_sql(const char *sql)
                     return pos;
                 }
         }
-
-        pos++;
     }
 
     return NULL;
