@@ -2091,7 +2091,7 @@ serialize_impl(pysqlite_Connection *self, const char *name)
                      name);
         return NULL;
     }
-    PyObject *res = PyBytes_FromStringAndSize(data, size);
+    PyObject *res = PyBytes_FromStringAndSize(data, (Py_ssize_t)size);
     if (!(flags & SQLITE_SERIALIZE_NOCOPY)) {
         sqlite3_free((void *)data);
     }
