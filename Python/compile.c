@@ -432,10 +432,9 @@ static int basicblock_next_instr(basicblock *);
 static int compiler_enter_scope(struct compiler *, identifier, int, void *, int);
 static void compiler_free(struct compiler *);
 static basicblock *compiler_new_block(struct compiler *);
-static int compiler_addop(struct compiler *, int);
-static int compiler_addop_i(struct compiler *, int, Py_ssize_t);
-static int compiler_addop_j(struct compiler *, int, basicblock *);
-static int compiler_addop_j_noline(struct compiler *, int, basicblock *);
+static int compiler_addop(struct compiler *, int, bool);
+static int compiler_addop_i(struct compiler *, int, Py_ssize_t, bool);
+static int compiler_addop_j(struct compiler *, int, basicblock *, bool);
 static int compiler_error(struct compiler *, const char *, ...);
 static int compiler_warn(struct compiler *, const char *, ...);
 static int compiler_nameop(struct compiler *, identifier, expr_context_ty);
@@ -1269,8 +1268,8 @@ compiler_use_new_implicit_block_if_needed(struct compiler *c)
 */
 
 static int
-basicblock_addop_line(basicblock *b, int opcode, int line,
-                      int end_line, int col_offset, int end_col_offset)
+basicblock_addop(basicblock *b, int opcode, int lineno,
+                 int end_lineno, int col_offset, int end_col_offset)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
@@ -1283,8 +1282,8 @@ basicblock_addop_line(basicblock *b, int opcode, int line,
     struct instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = 0;
-    i->i_lineno = line;
-    i->i_end_lineno = end_line;
+    i->i_lineno = lineno;
+    i->i_end_lineno = end_lineno;
     i->i_col_offset = col_offset;
     i->i_end_col_offset = end_col_offset;
 
@@ -1292,24 +1291,19 @@ basicblock_addop_line(basicblock *b, int opcode, int line,
 }
 
 static int
-compiler_addop(struct compiler *c, int opcode)
+compiler_addop(struct compiler *c, int opcode, bool line)
 {
     if (compiler_use_new_implicit_block_if_needed(c) < 0) {
         return -1;
     }
-    return basicblock_addop_line(c->u->u_curblock, opcode, c->u->u_lineno, c->u->u_end_lineno,
-                                 c->u->u_col_offset, c->u->u_end_col_offset);
-}
+    int lineno = line ? c->u->u_lineno : -1;
+    int end_lineno = line ? c->u->u_end_lineno : 0;
+    int col_offset = line ? c->u->u_col_offset : 0;
+    int end_col_offset = line ? c->u->u_end_col_offset : 0;
 
-static int
-compiler_addop_noline(struct compiler *c, int opcode)
-{
-    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
-        return -1;
-    }
-    return basicblock_addop_line(c->u->u_curblock, opcode, -1, 0, 0, 0);
+    return basicblock_addop(c->u->u_curblock, opcode,
+                            lineno, end_lineno, col_offset, end_col_offset);
 }
-
 
 static Py_ssize_t
 compiler_add_o(PyObject *dict, PyObject *o)
@@ -1467,7 +1461,7 @@ compiler_addop_load_const(struct compiler *c, PyObject *o)
     Py_ssize_t arg = compiler_add_const(c, o);
     if (arg < 0)
         return 0;
-    return compiler_addop_i(c, LOAD_CONST, arg);
+    return compiler_addop_i(c, LOAD_CONST, arg, true);
 }
 
 static int
@@ -1477,7 +1471,7 @@ compiler_addop_o(struct compiler *c, int opcode, PyObject *dict,
     Py_ssize_t arg = compiler_add_o(dict, o);
     if (arg < 0)
         return 0;
-    return compiler_addop_i(c, opcode, arg);
+    return compiler_addop_i(c, opcode, arg, true);
 }
 
 static int
@@ -1493,7 +1487,7 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
     Py_DECREF(mangled);
     if (arg < 0)
         return 0;
-    return compiler_addop_i(c, opcode, arg);
+    return compiler_addop_i(c, opcode, arg, true);
 }
 
 /* Add an opcode with an integer argument.
@@ -1501,9 +1495,9 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
 */
 
 static int
-basicblock_addop_i_line(basicblock *b, int opcode, Py_ssize_t oparg,
-                        int lineno, int end_lineno,
-                        int col_offset, int end_col_offset)
+basicblock_addop_i(basicblock *b, int opcode, Py_ssize_t oparg,
+                   int lineno, int end_lineno,
+                   int col_offset, int end_col_offset)
 {
     /* oparg value is unsigned, but a signed C int is usually used to store
        it in the C code (like Python/ceval.c).
@@ -1515,7 +1509,6 @@ basicblock_addop_i_line(basicblock *b, int opcode, Py_ssize_t oparg,
 
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    assert(HAS_ARG(opcode));
     assert(0 <= oparg && oparg <= 2147483647);
 
     int off = basicblock_next_instr(b);
@@ -1534,23 +1527,18 @@ basicblock_addop_i_line(basicblock *b, int opcode, Py_ssize_t oparg,
 }
 
 static int
-compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
+compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg, bool line)
 {
     if (compiler_use_new_implicit_block_if_needed(c) < 0) {
         return -1;
     }
-    return basicblock_addop_i_line(c->u->u_curblock, opcode, oparg,
-                                   c->u->u_lineno, c->u->u_end_lineno,
-                                   c->u->u_col_offset, c->u->u_end_col_offset);
-}
+    int lineno = line ? c->u->u_lineno : -1;
+    int end_lineno = line ? c->u->u_end_lineno : 0;
+    int col_offset = line ? c->u->u_col_offset : 0;
+    int end_col_offset = line ? c->u->u_end_col_offset : 0;
 
-static int
-compiler_addop_i_noline(struct compiler *c, int opcode, Py_ssize_t oparg)
-{
-    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
-        return -1;
-    }
-    return basicblock_addop_i_line(c->u->u_curblock, opcode, oparg, -1, 0, 0, 0);
+    return basicblock_addop_i(c->u->u_curblock, opcode, oparg,
+                              lineno, end_lineno, col_offset, end_col_offset);
 }
 
 static int
@@ -1580,37 +1568,33 @@ basicblock_add_jump(basicblock *b, int opcode,
 }
 
 static int
-compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
+compiler_addop_j(struct compiler *c, int opcode, basicblock *target, bool line)
 {
     if (compiler_use_new_implicit_block_if_needed(c) < 0) {
         return -1;
     }
-    return basicblock_add_jump(c->u->u_curblock, opcode, c->u->u_lineno,
-                               c->u->u_end_lineno, c->u->u_col_offset,
-                               c->u->u_end_col_offset, b);
-}
+    int lineno = line ? c->u->u_lineno : -1;
+    int end_lineno = line ? c->u->u_end_lineno : 0;
+    int col_offset = line ? c->u->u_col_offset : 0;
+    int end_col_offset = line ? c->u->u_end_col_offset : 0;
 
-static int
-compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
-{
-    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
-        return -1;
-    }
-    return basicblock_add_jump(c->u->u_curblock, opcode, -1, 0, 0, 0, b);
+    return basicblock_add_jump(c->u->u_curblock, opcode,
+                               lineno, end_lineno, col_offset, end_col_offset,
+                               target);
 }
 
 #define ADDOP(C, OP) { \
-    if (!compiler_addop((C), (OP))) \
+    if (!compiler_addop((C), (OP), true)) \
         return 0; \
 }
 
 #define ADDOP_NOLINE(C, OP) { \
-    if (!compiler_addop_noline((C), (OP))) \
+    if (!compiler_addop((C), (OP), false)) \
         return 0; \
 }
 
 #define ADDOP_IN_SCOPE(C, OP) { \
-    if (!compiler_addop((C), (OP))) { \
+    if (!compiler_addop((C), (OP), true)) { \
         compiler_exit_scope(c); \
         return 0; \
     } \
@@ -1649,17 +1633,17 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 }
 
 #define ADDOP_I(C, OP, O) { \
-    if (!compiler_addop_i((C), (OP), (O))) \
+    if (!compiler_addop_i((C), (OP), (O), true)) \
         return 0; \
 }
 
 #define ADDOP_I_NOLINE(C, OP, O) { \
-    if (!compiler_addop_i_noline((C), (OP), (O))) \
+    if (!compiler_addop_i((C), (OP), (O), false)) \
         return 0; \
 }
 
 #define ADDOP_JUMP(C, OP, O) { \
-    if (!compiler_addop_j((C), (OP), (O))) \
+    if (!compiler_addop_j((C), (OP), (O), true)) \
         return 0; \
 }
 
@@ -1667,7 +1651,7 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
  * Used for artificial jumps that have no corresponding
  * token in the source code. */
 #define ADDOP_JUMP_NOLINE(C, OP, O) { \
-    if (!compiler_addop_j_noline((C), (OP), (O))) \
+    if (!compiler_addop_j((C), (OP), (O), false)) \
         return 0; \
 }
 
@@ -4320,7 +4304,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     if (op == LOAD_GLOBAL) {
         arg <<= 1;
     }
-    return compiler_addop_i(c, op, arg);
+    return compiler_addop_i(c, op, arg, true);
 }
 
 static int
@@ -6299,7 +6283,7 @@ emit_and_reset_fail_pop(struct compiler *c, pattern_context *pc)
     }
     while (--pc->fail_pop_size) {
         compiler_use_next_block(c, pc->fail_pop[pc->fail_pop_size]);
-        if (!compiler_addop(c, POP_TOP)) {
+        if (!compiler_addop(c, POP_TOP, true)) {
             pc->fail_pop_size = 0;
             PyObject_Free(pc->fail_pop);
             pc->fail_pop = NULL;
@@ -6733,7 +6717,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
         pc->fail_pop = NULL;
         pc->fail_pop_size = 0;
         pc->on_top = 0;
-        if (!compiler_addop_i(c, COPY, 1) || !compiler_pattern(c, alt, pc)) {
+        if (!compiler_addop_i(c, COPY, 1, true) || !compiler_pattern(c, alt, pc)) {
             goto error;
         }
         // Success!
@@ -6796,7 +6780,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
             }
         }
         assert(control);
-        if (!compiler_addop_j(c, JUMP, end) ||
+        if (!compiler_addop_j(c, JUMP, end, true) ||
             !emit_and_reset_fail_pop(c, pc))
         {
             goto error;
@@ -6808,7 +6792,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     // Need to NULL this for the PyObject_Free call in the error block.
     old_pc.fail_pop = NULL;
     // No match. Pop the remaining copy of the subject and fail:
-    if (!compiler_addop(c, POP_TOP) || !jump_to_fail_pop(c, pc, JUMP)) {
+    if (!compiler_addop(c, POP_TOP, true) || !jump_to_fail_pop(c, pc, JUMP)) {
         goto error;
     }
     compiler_use_next_block(c, end);
