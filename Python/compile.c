@@ -1298,7 +1298,7 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     assert(HAS_ARG(opcode) || oparg == 0);
-    assert(0 <= oparg && oparg <= 2147483647);
+    assert(0 <= oparg && oparg < (1 << 30));
     assert((target == NULL) ||
            IS_JUMP_OPCODE(opcode) ||
            IS_BLOCK_PUSH_OPCODE(opcode));
