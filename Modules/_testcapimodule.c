@@ -1482,6 +1482,63 @@ test_type_from_ephemeral_spec(PyObject *self, PyObject *Py_UNUSED(ignored))
     return result;
 }
 
+PyType_Slot repeated_doc_slots[] = {
+    {Py_tp_doc, "A class used for tests·"},
+    {Py_tp_doc, "A class used for tests"},
+    {0, 0},
+};
+
+PyType_Spec repeated_doc_slots_spec = {
+    .name = "RepeatedDocSlotClass",
+    .basicsize = sizeof(PyObject),
+    .slots = repeated_doc_slots,
+};
+
+typedef struct {
+    PyObject_HEAD
+    int data;
+} HeapCTypeWithDataObject;
+
+
+static struct PyMemberDef members_to_repeat[] = {
+    {"T_INT", T_INT, offsetof(HeapCTypeWithDataObject, data), 0, NULL},
+    {NULL}
+};
+
+PyType_Slot repeated_members_slots[] = {
+    {Py_tp_members, members_to_repeat},
+    {Py_tp_members, members_to_repeat},
+    {0, 0},
+};
+
+PyType_Spec repeated_members_slots_spec = {
+    .name = "RepeatedMembersSlotClass",
+    .basicsize = sizeof(HeapCTypeWithDataObject),
+    .slots = repeated_members_slots,
+};
+
+static PyObject *
+create_type_from_repeated_slots(PyObject *self, PyObject *variant_obj)
+{
+    PyObject *class = NULL;
+    int variant = PyLong_AsLong(variant_obj);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+    switch (variant) {
+        case 0:
+            class = PyType_FromSpec(&repeated_doc_slots_spec);
+            break;
+        case 1:
+            class = PyType_FromSpec(&repeated_members_slots_spec);
+            break;
+        default:
+            PyErr_SetString(PyExc_ValueError, "bad test variant");
+            break;
+        }
+    return class;
+}
+
 
 static PyObject *
 test_get_type_qualname(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -6107,6 +6164,8 @@ static PyMethodDef TestMethods[] = {
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
     {"test_type_from_ephemeral_spec", test_type_from_ephemeral_spec, METH_NOARGS},
+    {"create_type_from_repeated_slots",
+        create_type_from_repeated_slots, METH_O},
     {"test_from_spec_metatype_inheritance", test_from_spec_metatype_inheritance,
      METH_NOARGS},
     {"test_from_spec_invalid_metatype_inheritance",
