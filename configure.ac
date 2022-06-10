@@ -1091,7 +1091,7 @@ AS_CASE([$PY_SUPPORT_TIER],
   [1], [AC_MSG_RESULT([$host/$ac_cv_cc_name has tier 1 (supported)])],
   [2], [AC_MSG_RESULT([$host/$ac_cv_cc_name has tier 2 (supported)])],
   [3], [AC_MSG_RESULT([$host/$ac_cv_cc_name has tier 3 (partially supported)])],
-  [AC_MSG_RESULT([$host/$ac_cv_cc_name is not supported])]
+  [AC_MSG_WARN([$host/$ac_cv_cc_name is not supported])]
 )
 
 AC_DEFINE_UNQUOTED([PY_SUPPORT_TIER], [$PY_SUPPORT_TIER], [PEP 11 Support tier (1, 2, 3 or 0 for unsupported)])
@@ -6944,7 +6944,7 @@ please run ./configure --enable-optimizations
 ])
 fi
 
-AS_VAR_IF([PY_SUPPORT_TIER], [0], [AC_MSG_NOTICE([
+AS_VAR_IF([PY_SUPPORT_TIER], [0], [AC_MSG_WARN([
 
 Platform "$host" with compiler "$ac_cv_cc_name" is not yet supported by the
 CPython core team, see https://peps.python.org/pep-0011/ for more information.
