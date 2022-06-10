@@ -1569,9 +1569,12 @@ class FileFinder:
             loaders.extend((suffix, loader) for suffix in suffixes)
         self._loaders = loaders
         # Base (directory) path
-        self.path = path or '.'
-        if not _path_isabs(self.path):
-            self.path = _path_join(_os.getcwd(), self.path)
+        if not path or path == '.':
+            self.path = _os.getcwd()
+        elif not _path_isabs(path):
+            self.path = _path_join(_os.getcwd(), path)
+        else:
+            self.path = path
         self._path_mtime = -1
         self._path_cache = set()
         self._relaxed_path_cache = set()
