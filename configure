@@ -6254,8 +6254,8 @@ $as_echo "$host/$ac_cv_cc_name has tier 2 (supported)" >&6; } ;; #(
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $host/$ac_cv_cc_name has tier 3 (partially supported)" >&5
 $as_echo "$host/$ac_cv_cc_name has tier 3 (partially supported)" >&6; } ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $host/$ac_cv_cc_name is not supported" >&5
-$as_echo "$host/$ac_cv_cc_name is not supported" >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $host/$ac_cv_cc_name is not supported" >&5
+$as_echo "$as_me: WARNING: $host/$ac_cv_cc_name is not supported" >&2;}
  ;;
 esac
 
@@ -26391,14 +26391,14 @@ please run ./configure --enable-optimizations
 fi
 
 if test "x$PY_SUPPORT_TIER" = x0; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}:
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
 
 Platform \"$host\" with compiler \"$ac_cv_cc_name\" is not yet supported by the
 CPython core team, see https://peps.python.org/pep-0011/ for more information.
 " >&5
-$as_echo "$as_me:
+$as_echo "$as_me: WARNING:
 
 Platform \"$host\" with compiler \"$ac_cv_cc_name\" is not yet supported by the
 CPython core team, see https://peps.python.org/pep-0011/ for more information.
-" >&6;}
+" >&2;}
 fi
