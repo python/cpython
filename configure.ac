@@ -6946,6 +6946,6 @@ fi
 
 AS_VAR_IF([PY_SUPPORT_TIER], [0], [AC_MSG_WARN([
 
-Platform "$host" with compiler "$ac_cv_cc_name" is not yet supported by the
+Platform "$host" with compiler "$ac_cv_cc_name" is not supported by the
 CPython core team, see https://peps.python.org/pep-0011/ for more information.
 ])])
