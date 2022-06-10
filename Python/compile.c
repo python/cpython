@@ -4846,7 +4846,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     if (meth->lineno != meth->end_lineno) {
         // Make start location match attribute
         c->u->u_lineno = meth->end_lineno;
-        c->u->u_col_offset = meth->end_col_offset - PyUnicode_GetLength(meth->v.Attribute.attr)-1;
+        c->u->u_col_offset = meth->end_col_offset - (int)PyUnicode_GetLength(meth->v.Attribute.attr)-1;
     }
     ADDOP_NAME(c, LOAD_METHOD, meth->v.Attribute.attr, names);
     VISIT_SEQ(c, expr, e->v.Call.args);
@@ -4861,7 +4861,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     if (meth->lineno != meth->end_lineno) {
         // Make start location match attribute
         c->u->u_lineno = meth->end_lineno;
-        c->u->u_col_offset = meth->end_col_offset - PyUnicode_GetLength(meth->v.Attribute.attr)-1;
+        c->u->u_col_offset = meth->end_col_offset - (int)PyUnicode_GetLength(meth->v.Attribute.attr)-1;
     }
     ADDOP_I(c, CALL, argsl + kwdsl);
     return 1;
