@@ -26393,12 +26393,12 @@ fi
 if test "x$PY_SUPPORT_TIER" = x0; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
 
-Platform \"$host\" with compiler \"$ac_cv_cc_name\" is not yet supported by the
+Platform \"$host\" with compiler \"$ac_cv_cc_name\" is not supported by the
 CPython core team, see https://peps.python.org/pep-0011/ for more information.
 " >&5
 $as_echo "$as_me: WARNING:
 
-Platform \"$host\" with compiler \"$ac_cv_cc_name\" is not yet supported by the
+Platform \"$host\" with compiler \"$ac_cv_cc_name\" is not supported by the
 CPython core team, see https://peps.python.org/pep-0011/ for more information.
 " >&2;}
 fi
