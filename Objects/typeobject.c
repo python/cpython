@@ -3450,6 +3450,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     char *_ht_tpname = NULL;
 
     int r;
+    size_t len;
 
     /* Prepare slots that need special handling.
      * Keep in mind that a slot can be given multiple times:
@@ -3513,7 +3514,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
                 tp_doc = NULL;
             }
             else {
-                size_t len = strlen(slot->pfunc)+1;
+                len = strlen(slot->pfunc)+1;
                 tp_doc = PyObject_Malloc(len);
                 if (tp_doc == NULL) {
                     PyErr_NoMemory();
@@ -3653,6 +3654,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     /* Copy all the ordinary slots */
 
     for (slot = spec->slots; slot->slot; slot++) {
+        PySlot_Offset slotoffsets;
         switch (slot->slot) {
         case Py_tp_base:
         case Py_tp_bases:
@@ -3661,13 +3663,13 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
             break;
         case Py_tp_members:
             /* Move the slots to the heap type itself */
-            size_t len = Py_TYPE(type)->tp_itemsize * nmembers;
+            len = Py_TYPE(type)->tp_itemsize * nmembers;
             memcpy(_PyHeapType_GET_MEMBERS(res), slot->pfunc, len);
             type->tp_members = _PyHeapType_GET_MEMBERS(res);
             break;
         default:
             /* Copy other slots directly */
-            PySlot_Offset slotoffsets = pyslot_offsets[slot->slot];
+            slotoffsets = pyslot_offsets[slot->slot];
             slot_offset = slotoffsets.slot_offset;
             if (slotoffsets.subslot_offset == -1) {
                 *(void**)((char*)res_start + slot_offset) = slot->pfunc;
