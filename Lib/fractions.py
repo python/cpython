@@ -57,6 +57,7 @@ class Fraction(numbers.Rational):
     """
 
     __slots__ = ('_numerator', '_denominator')
+    __match_args__ = ('numerator', 'denominator')
 
     # We're immutable, so use __new__ not __init__
     def __new__(cls, numerator=0, denominator=None, *, _normalize=True):
