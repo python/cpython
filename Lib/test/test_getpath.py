@@ -249,21 +249,23 @@ class MockGetPathTests(unittest.TestCase):
             if config[attr] > 0:
                 _Py_path_config[attr] = config[attr]
 
-        for edges in [(0,-1), (-1, 0), (-1,-1), (1, 0)]:
+        for edges in [(0,-1), (-1, 0), (-1,-1)]:
             _Py_path_config = dict(
                 _is_python_build=edges[0],
             )
             ns = MockNTNamespace(
                 argv0=r"C:\CPython\PCbuild\amd64\python.exe",
             )
+            ns.add_known_file(r"C:\CPython\PCbuild\amd64\pybuilddir.txt", [""])
             ns['config'].update(
+                home=r"C:\CPython",       # turn on 'home_was_set'
                 _is_python_build=edges[1],
             )
             # _PyConfig_InitPathConfig emulation
             read_pathconfig(ns['config'], '_is_python_build')
             expected = dict(
                 _is_python_build=ns['config']['_is_python_build'],
-                build_prefix=None,  # no build-landmark
+                build_prefix=None,        # landmarks must not be checked
             )
             actual = getpath(ns, expected)
             self.assertEqual(actual, expected)
