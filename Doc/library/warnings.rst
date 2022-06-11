@@ -154,14 +154,19 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
   +---------------+----------------------------------------------+
 
 * *message* is a string containing a regular expression that the start of
-  the warning message must match.  The expression is compiled to always be
-  case-insensitive.
+  the warning message must match, case-insensitively.  In :option:`-W` and
+  :envvar:`PYTHONWARNINGS`, *message* is a literal string that the start of the
+  warning message must contain (case-insensitively), ignoring any whitespace at
+  the start or end of *message*.
 
 * *category* is a class (a subclass of :exc:`Warning`) of which the warning
   category must be a subclass in order to match.
 
-* *module* is a string containing a regular expression that the module name must
-  match.  The expression is compiled to be case-sensitive.
+* *module* is a string containing a regular expression that the start of the
+  fully-qualified module name must match, case-sensitively.  In :option:`-W` and
+  :envvar:`PYTHONWARNINGS`, *module* is a literal string that the
+  fully-qualified module name must be equal to (case-sensitively), ignoring any
+  whitespace at the start or end of *module*.
 
 * *lineno* is an integer that the line number where the warning occurred must
   match, or ``0`` to match all line numbers.
@@ -207,8 +212,7 @@ Some examples::
    error::ResourceWarning       # Treat ResourceWarning messages as errors
    default::DeprecationWarning  # Show DeprecationWarning messages
    ignore,default:::mymodule    # Only report warnings triggered by "mymodule"
-   error:::mymodule[.*]         # Convert warnings to errors in "mymodule"
-                                # and any subpackages of "mymodule"
+   error:::mymodule             # Convert warnings to errors in "mymodule"
 
 
 .. _default-warning-filter:
@@ -491,7 +495,7 @@ Available Functions
 Available Context Managers
 --------------------------
 
-.. class:: catch_warnings(*, record=False, module=None)
+.. class:: catch_warnings(*, record=False, module=None, action=None, category=Warning, lineno=0, append=False)
 
     A context manager that copies and, upon exit, restores the warnings filter
     and the :func:`showwarning` function.
@@ -507,6 +511,10 @@ Available Context Managers
     protected. This argument exists primarily for testing the :mod:`warnings`
     module itself.
 
+    If the *action* argument is not ``None``, the remaining arguments are
+    passed to :func:`simplefilter` as if it were called immediately on
+    entering the context.
+
     .. note::
 
         The :class:`catch_warnings` manager works by replacing and
@@ -514,3 +522,7 @@ Available Context Managers
         :func:`showwarning` function and internal list of filter
         specifications.  This means the context manager is modifying
         global state and therefore is not thread-safe.
+
+    .. versionchanged:: 3.11
+
+        Added the *action*, *category*, *lineno*, and *append* parameters.

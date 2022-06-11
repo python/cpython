@@ -7,10 +7,10 @@ Please read this comment in its entirety. It's quite important.
 It should be in the following format:
 
 ```
-bpo-NNNN: Summary of the changes made
+gh-NNNNN: Summary of the changes made
 ```
 
-Where: bpo-NNNN refers to the issue number in the https://bugs.python.org.
+Where: gh-NNNNN refers to the GitHub issue number.
 
 Most PRs will require an issue number. Trivial changes, like fixing a typo, do not need an issue.
 

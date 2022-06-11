@@ -1,1 +1,0 @@
-Update OpenSSL to 1.1.1n for macOS installers and all Windows builds.

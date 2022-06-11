@@ -33,7 +33,6 @@ __all__ = ["ref", "proxy", "getweakrefcount", "getweakrefs",
            "WeakSet", "WeakMethod", "finalize"]
 
 
-_collections_abc.Set.register(WeakSet)
 _collections_abc.MutableSet.register(WeakSet)
 
 class WeakMethod(ref):

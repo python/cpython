@@ -1,1 +1,0 @@
-Use FASTCALL convention for ``FutureIter.throw()``

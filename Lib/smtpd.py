@@ -77,19 +77,18 @@ import getopt
 import time
 import socket
 import collections
-from warnings import warn
+from warnings import _deprecated, warn
 from email._header_value_parser import get_addr_spec, get_angle_addr
 
 __all__ = [
     "SMTPChannel", "SMTPServer", "DebuggingServer", "PureProxy",
 ]
 
-warn(
-    'The smtpd module is deprecated and unmaintained and will be removed '
-    'in Python 3.12.  Please see aiosmtpd '
-    '(https://aiosmtpd.readthedocs.io/) for the recommended replacement.',
-    DeprecationWarning,
-    stacklevel=2)
+_DEPRECATION_MSG = ('The {name} module is deprecated and unmaintained and will '
+                    'be removed in Python {remove}.  Please see aiosmtpd '
+                    '(https://aiosmtpd.readthedocs.io/) for the recommended '
+                    'replacement.')
+_deprecated(__name__, _DEPRECATION_MSG, remove=(3, 12))
 
 
 # These are imported after the above warning so that users get the correct

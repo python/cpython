@@ -62,6 +62,8 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.11.
    Brevity is key.
 
+- Python 3.11 is up to 10-60% faster than Python 3.10. On average, we measured a
+  1.25x speedup on the standard benchmark suite. See `Faster CPython`_ for details.
 
 .. PEP-sized items next.
 
@@ -72,8 +74,17 @@ New syntax features:
 
 New typing features:
 
-* :pep:`673`: ``Self`` Type.
-  (Contributed by James Hilton-Balfe and Pradeep Kumar in :issue:`30924`.)
+* :pep:`646`: Variadic generics.
+* :pep:`655`: Marking individual TypedDict items as required or potentially-missing.
+* :pep:`673`: ``Self`` type.
+* :pep:`675`: Arbitrary literal string type.
+
+Security improvements:
+
+* New :option:`-P` command line option and :envvar:`PYTHONSAFEPATH` environment
+  variable to not prepend a potentially unsafe path to :data:`sys.path` such as
+  the current directory, the script's directory or an empty string.
+
 
 New Features
 ============
@@ -155,12 +166,175 @@ The :option:`-X` ``no_debug_ranges`` option and the environment variable
 See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
 and Ammar Askar in :issue:`43950`.)
 
-Exceptions can be enriched with a string ``__note__``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Exceptions can be enriched with notes (PEP 678)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``__note__`` field was added to :exc:`BaseException`. It is ``None``
-by default but can be set to a string which is added to the exception's
-traceback. (Contributed by Irit Katriel in :issue:`45607`.)
+The :meth:`add_note` method was added to :exc:`BaseException`. It can be
+used to enrich exceptions with context information which is not available
+at the time when the exception is raised. The notes added appear in the
+default traceback. See :pep:`678` for more details. (Contributed by
+Irit Katriel in :issue:`45607`.)
+
+
+.. _new-feat-related-type-hints-311:
+
+New Features Related to Type Hints
+==================================
+
+This section covers major changes affecting :pep:`484` type hints and
+the :mod:`typing` module.
+
+PEP 646: Variadic generics
+--------------------------
+
+:pep:`484` introduced :data:`~typing.TypeVar`, enabling creation
+of generics parameterised with a single type. :pep:`646` introduces
+:data:`~typing.TypeVarTuple`, enabling parameterisation
+with an *arbitrary* number of types. In other words,
+a :data:`~typing.TypeVarTuple` is a *variadic* type variable,
+enabling *variadic* generics. This enables a wide variety of use cases.
+In particular, it allows the type of array-like structures
+in numerical computing libraries such as NumPy and TensorFlow to be
+parameterised with the array *shape*. Static type checkers will now
+be able to catch shape-related bugs in code that uses these libraries.
+
+See :pep:`646` for more details.
+
+(Contributed by Matthew Rahtz in :issue:`43224`, with contributions by
+Serhiy Storchaka and Jelle Zijlstra. PEP written by Mark Mendoza, Matthew
+Rahtz, Pradeep Kumar Srinivasan, and Vincent Siles.)
+
+PEP 655: Marking individual ``TypedDict`` items as required or not-required
+---------------------------------------------------------------------------
+
+:data:`~typing.Required` and :data:`~typing.NotRequired` provide a
+straightforward way to mark whether individual items in a
+:data:`~typing.TypedDict` must be present. Previously this was only possible
+using inheritance.
+
+Fields are still required by default, unless the ``total=False``
+parameter is set.
+For example, the following specifies a dictionary with one required and
+one not-required key::
+
+   class Movie(TypedDict):
+      title: str
+      year: NotRequired[int]
+
+   m1: Movie = {"title": "Black Panther", "year": 2018}  # ok
+   m2: Movie = {"title": "Star Wars"}  # ok (year is not required)
+   m3: Movie = {"year": 2022}  # error (missing required field title)
+
+The following definition is equivalent::
+
+   class Movie(TypedDict, total=False):
+      title: Required[str]
+      year: int
+
+See :pep:`655` for more details.
+
+(Contributed by David Foster and Jelle Zijlstra in :issue:`47087`. PEP
+written by David Foster.)
+
+PEP 673: ``Self`` type
+----------------------
+
+The new :data:`~typing.Self` annotation provides a simple and intuitive
+way to annotate methods that return an instance of their class. This
+behaves the same as the :data:`~typing.TypeVar`-based approach specified
+in :pep:`484` but is more concise and easier to follow.
+
+Common use cases include alternative constructors provided as classmethods
+and :meth:`~object.__enter__` methods that return ``self``::
+
+   class MyLock:
+       def __enter__(self) -> Self:
+           self.lock()
+           return self
+
+       ...
+
+   class MyInt:
+       @classmethod
+       def fromhex(cls, s: str) -> Self:
+           return cls(int(s, 16))
+
+       ...
+
+:data:`~typing.Self` can also be used to annotate method parameters
+or attributes of the same type as their enclosing class.
+
+See :pep:`673` for more details.
+
+(Contributed by James Hilton-Balfe in :issue:`46534`. PEP written by
+Pradeep Kumar Srinivasan and James Hilton-Balfe.)
+
+PEP 675: Arbitrary literal string type
+--------------------------------------
+
+The new :data:`~typing.LiteralString` annotation may be used to indicate
+that a function parameter can be of any literal string type. This allows
+a function to accept arbitrary literal string types, as well as strings
+created from other literal strings. Type checkers can then
+enforce that sensitive functions, such as those that execute SQL
+statements or shell commands, are called only with static arguments,
+providing protection against injection attacks.
+
+For example, a SQL query function could be annotated as follows::
+
+   def run_query(sql: LiteralString) -> ...
+       ...
+
+   def caller(
+       arbitrary_string: str,
+       query_string: LiteralString,
+       table_name: LiteralString,
+   ) -> None:
+       run_query("SELECT * FROM students")       # ok
+       run_query(query_string)                   # ok
+       run_query("SELECT * FROM " + table_name)  # ok
+       run_query(arbitrary_string)               # type checker error
+       run_query(                                # type checker error
+           f"SELECT * FROM students WHERE name = {arbitrary_string}"
+       )
+
+See :pep:`675` for more details.
+
+(Contributed by Jelle Zijlstra in :issue:`47088`. PEP written by Pradeep
+Kumar Srinivasan and Graham Bleaney.)
+
+PEP 681: Data Class Transforms
+------------------------------
+
+:data:`~typing.dataclass_transform` may be used to
+decorate a class, metaclass, or a function that is itself a decorator.
+The presence of ``@dataclass_transform()`` tells a static type checker that the
+decorated object performs runtime "magic" that
+transforms a class, giving it :func:`dataclasses.dataclass`-like behaviors.
+
+For example::
+
+    # The create_model decorator is defined by a library.
+    @typing.dataclass_transform()
+    def create_model(cls: Type[T]) -> Type[T]:
+        cls.__init__ = ...
+        cls.__eq__ = ...
+        cls.__ne__ = ...
+        return cls
+
+    # The create_model decorator can now be used to create new model
+    # classes, like this:
+    @create_model
+    class CustomerModel:
+        id: int
+        name: str
+
+    c = CustomerModel(id=327, name="John Smith")
+
+See :pep:`681` for more details.
+
+(Contributed by Jelle Zijlstra in :gh:`91860`. PEP written by
+Erik De Bonte and Eric Traut.)
 
 Other Language Changes
 ======================
@@ -184,6 +358,20 @@ Other Language Changes
   support the :term:`context manager` or :term:`asynchronous context manager`
   protocols correspondingly.
   (Contributed by Serhiy Storchaka in :issue:`12022`.)
+
+* Added :meth:`object.__getstate__` which provides the default
+  implementation of the ``__getstate__()`` method.  :mod:`Copying <copy>`
+  and :mod:`pickling <pickle>` instances of subclasses of builtin types
+  :class:`bytearray`, :class:`set`, :class:`frozenset`,
+  :class:`collections.OrderedDict`, :class:`collections.deque`,
+  :class:`weakref.WeakSet`, and :class:`datetime.tzinfo` now copies and
+  pickles instance attributes implemented as :term:`slots <__slots__>`.
+  (Contributed by Serhiy Storchaka in :issue:`26579`.)
+
+* Add :option:`-P` command line option and :envvar:`PYTHONSAFEPATH` environment
+  variable to not prepend a potentially unsafe path to :data:`sys.path` such as
+  the current directory, the script's directory or an empty string.
+  (Contributed by Victor Stinner in :gh:`57684`.)
 
 
 Other CPython Implementation Changes
@@ -215,12 +403,21 @@ Other CPython Implementation Changes
   instead of prepending them.
   (Contributed by Bastian Neuburger in :issue:`44934`.)
 
+* The :c:member:`PyConfig.module_search_paths_set` field must now be set to 1 for
+  initialization to use :c:member:`PyConfig.module_search_paths` to initialize
+  :data:`sys.path`. Otherwise, initialization will recalculate the path and replace
+  any values added to ``module_search_paths``.
+
 
 New Modules
 ===========
 
 * A new module, :mod:`tomllib`, was added for parsing TOML.
   (Contributed by Taneli Hukkinen in :issue:`40059`.)
+
+* :mod:`wsgiref.types`, containing WSGI-specific types for static type
+  checking, was added.
+  (Contributed by Sebastian Rittau in :issue:`42012`.)
 
 
 Improved Modules
@@ -235,6 +432,24 @@ asyncio
   :meth:`~asyncio.AbstractEventLoop.sock_recvfrom_into`.
   (Contributed by Alex Grönholm in :issue:`46805`.)
 
+* Add :meth:`~asyncio.streams.StreamWriter.start_tls` method for upgrading
+  existing stream-based connections to TLS. (Contributed by Ian Good in
+  :issue:`34975`.)
+
+* Add :class:`~asyncio.Barrier` class to the synchronization primitives of
+  the asyncio library. (Contributed by Yves Duprat and Andrew Svetlov in
+  :gh:`87518`.)
+
+datetime
+--------
+
+* Add :attr:`datetime.UTC`, a convenience alias for
+  :attr:`datetime.timezone.utc`. (Contributed by Kabir Kwatra in :gh:`91973`.)
+* :meth:`datetime.date.fromisoformat`, :meth:`datetime.time.fromisoformat` and
+  :meth:`datetime.datetime.fromisoformat` can now be used to parse most ISO 8601
+  formats (barring only those that support fractional hours and minutes).
+  (Contributed by Paul Ganssle in :gh:`80010`.)
+
 fractions
 ---------
 
@@ -244,6 +459,36 @@ fractions
 * :class:`~fractions.Fraction` now implements an ``__int__`` method, so
   that an ``isinstance(some_fraction, typing.SupportsInt)`` check passes.
   (Contributed by Mark Dickinson in :issue:`44547`.)
+
+functools
+---------
+
+* :func:`functools.singledispatch` now supports :data:`types.UnionType`
+  and :data:`typing.Union` as annotations to the dispatch argument.::
+
+    >>> from functools import singledispatch
+    >>> @singledispatch
+    ... def fun(arg, verbose=False):
+    ...     if verbose:
+    ...         print("Let me just say,", end=" ")
+    ...     print(arg)
+    ...
+    >>> @fun.register
+    ... def _(arg: int | float, verbose=False):
+    ...     if verbose:
+    ...         print("Strength in numbers, eh?", end=" ")
+    ...     print(arg)
+    ...
+    >>> from typing import Union
+    >>> @fun.register
+    ... def _(arg: Union[list, set], verbose=False):
+    ...     if verbose:
+    ...         print("Enumerate this:")
+    ...     for i, elem in enumerate(arg):
+    ...         print(i, elem)
+    ...
+
+  (Contributed by Yurii Karabas in :issue:`46014`.)
 
 hashlib
 -------
@@ -273,6 +518,21 @@ inspect
 
 * Add :func:`inspect.ismethodwrapper` for checking if the type of an object is a
   :class:`~types.MethodWrapperType`. (Contributed by Hakan Çelik in :issue:`29418`.)
+
+* Change the frame-related functions in the :mod:`inspect` module to return a
+  regular object (that is backwards compatible with the old tuple-like
+  interface) that include the extended :pep:`657` position information (end
+  line number, column and end column). The affected functions are:
+  :func:`inspect.getframeinfo`, :func:`inspect.getouterframes`, :func:`inspect.getinnerframes`,
+  :func:`inspect.stack` and :func:`inspect.trace`. (Contributed by Pablo Galindo in
+  :gh:`88116`)
+
+locale
+------
+
+* Add :func:`locale.getencoding` to get the current locale encoding. It is similar to
+  ``locale.getpreferredencoding(False)`` but ignores the
+  :ref:`Python UTF-8 Mode <utf8-mode>`.
 
 math
 ----
@@ -308,6 +568,15 @@ os
   instead of ``CryptGenRandom()`` which is deprecated.
   (Contributed by Dong-hee Na in :issue:`44611`.)
 
+
+pathlib
+-------
+
+* :meth:`~pathlib.Path.glob` and :meth:`~pathlib.Path.rglob` return only
+  directories if *pattern* ends with a pathname components separator:
+  :data:`~os.sep` or :data:`~os.altsep`.
+  (Contributed by Eisuke Kawasima in :issue:`22276` and :issue:`33392`.)
+
 re
 --
 
@@ -328,6 +597,10 @@ socket
 * Add CAN Socket support for NetBSD.
   (Contributed by Thomas Klausner in :issue:`30512`.)
 
+* :meth:`~socket.create_connection` has an option to raise, in case of
+  failure to connect, an :exc:`ExceptionGroup` containing all errors
+  instead of only raising the last error.
+  (Contributed by Irit Katriel in :issue:`29980`).
 
 sqlite3
 -------
@@ -366,6 +639,19 @@ sqlite3
   Instead we leave it to the SQLite library to handle these cases.
   (Contributed by Erlend E. Aasland in :issue:`44092`.)
 
+* Add :meth:`~sqlite3.Connection.serialize` and
+  :meth:`~sqlite3.Connection.deserialize` to :class:`sqlite3.Connection` for
+  serializing and deserializing databases.
+  (Contributed by Erlend E. Aasland in :issue:`41930`.)
+
+* Add :meth:`~sqlite3.Connection.create_window_function` to
+  :class:`sqlite3.Connection` for creating aggregate window functions.
+  (Contributed by Erlend E. Aasland in :issue:`34916`.)
+
+* Add :meth:`~sqlite3.Connection.blobopen` to :class:`sqlite3.Connection`.
+  :class:`sqlite3.Blob` allows incremental I/O operations on blobs.
+  (Contributed by Aviv Palivoda and Erlend E. Aasland in :issue:`24905`)
+
 
 sys
 ---
@@ -379,6 +665,9 @@ sys
 * Add :func:`sys.exception` which returns the active exception instance
   (equivalent to ``sys.exc_info()[1]``).
   (Contributed by Irit Katriel in :issue:`46328`.)
+
+* Add the :data:`sys.flags.safe_path <sys.flags>` flag.
+  (Contributed by Victor Stinner in :gh:`57684`.)
 
 
 sysconfig
@@ -425,11 +714,99 @@ time
   it had a resolution of 1 millisecond (10\ :sup:`-3` seconds).
   (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
 
+typing
+------
+
+For major changes, see :ref:`new-feat-related-type-hints-311`.
+
+* Add :func:`typing.assert_never` and :class:`typing.Never`.
+  :func:`typing.assert_never` is useful for asking a type checker to confirm
+  that a line of code is not reachable. At runtime, it raises an
+  :exc:`AssertionError`.
+  (Contributed by Jelle Zijlstra in :gh:`90633`.)
+
+* Add :func:`typing.reveal_type`. This is useful for asking a type checker
+  what type it has inferred for a given expression. At runtime it prints
+  the type of the received value.
+  (Contributed by Jelle Zijlstra in :gh:`90572`.)
+
+* Add :func:`typing.assert_type`. This is useful for asking a type checker
+  to confirm that the type it has inferred for a given expression matches
+  the given type. At runtime it simply returns the received value.
+  (Contributed by Jelle Zijlstra in :gh:`90638`.)
+
+* :data:`typing.TypedDict` types can now be generic. (Contributed by
+  Samodya Abeysiriwardane in :gh:`89026`.)
+
+* :class:`~typing.NamedTuple` types can now be generic.
+  (Contributed by Serhiy Storchaka in :issue:`43923`.)
+
+* Allow subclassing of :class:`typing.Any`. This is useful for avoiding
+  type checker errors related to highly dynamic class, such as mocks.
+  (Contributed by Shantanu Jain in :gh:`91154`.)
+
+* The :func:`typing.final` decorator now sets the ``__final__`` attributed on
+  the decorated object.
+  (Contributed by Jelle Zijlstra in :gh:`90500`.)
+
+* The :func:`typing.get_overloads` function can be used for introspecting
+  the overloads of a function. :func:`typing.clear_overloads` can be used
+  to clear all registered overloads of a function.
+  (Contributed by Jelle Zijlstra in :gh:`89263`.)
+
+* The :meth:`__init__` method of :class:`~typing.Protocol` subclasses
+  is now preserved. (Contributed by Adrian Garcia Badarasco in :gh:`88970`.)
+
+* The representation of empty tuple types (``Tuple[()]``) is simplified.
+  This affects introspection, e.g. ``get_args(Tuple[()])`` now evaluates
+  to ``()`` instead of ``((),)``.
+  (Contributed by Serhiy Storchaka in :gh:`91137`.)
+
+* Loosen runtime requirements for type annotations by removing the callable
+  check in the private ``typing._type_check`` function. (Contributed by
+  Gregory Beauregard in :gh:`90802`.)
+
+* :func:`typing.get_type_hints` now supports evaluating strings as forward
+  references in :ref:`PEP 585 generic aliases <types-genericalias>`.
+  (Contributed by Niklas Rosenstein in :gh:`85542`.)
+
+* :func:`typing.get_type_hints` no longer adds :data:`~typing.Optional`
+  to parameters with ``None`` as a default. (Contributed by Nikita Sobolev
+  in :gh:`90353`.)
+
+* :func:`typing.get_type_hints` now supports evaluating bare stringified
+  :data:`~typing.ClassVar` annotations. (Contributed by Gregory Beauregard
+  in :gh:`90711`.)
+
+* :func:`typing.no_type_check` no longer modifies external classes and functions.
+  It also now correctly marks classmethods as not to be type checked. (Contributed
+  by Nikita Sobolev in :gh:`90729`.)
+
+
+tkinter
+-------
+
+* Added method ``info_patchlevel()`` which returns the exact version of
+  the Tcl library as a named tuple similar to :data:`sys.version_info`.
+  (Contributed by Serhiy Storchaka in :gh:`91827`.)
+
 
 unicodedata
 -----------
 
 * The Unicode database has been updated to version 14.0.0. (:issue:`45190`).
+
+
+unittest
+--------
+
+* Added methods :meth:`~unittest.TestCase.enterContext` and
+  :meth:`~unittest.TestCase.enterClassContext` of class
+  :class:`~unittest.TestCase`, method
+  :meth:`~unittest.IsolatedAsyncioTestCase.enterAsyncContext` of
+  class :class:`~unittest.IsolatedAsyncioTestCase` and function
+  :func:`unittest.enterModuleContext`.
+  (Contributed by Serhiy Storchaka in :issue:`45046`.)
 
 
 venv
@@ -444,6 +821,13 @@ venv
   scheme without changing behavior of virtual environments.
   Third party code that also creates new virtual environments should do the same.
   (Contributed by Miro Hrončok in :issue:`45413`.)
+
+warnings
+--------
+
+* :func:`warnings.catch_warnings` now accepts arguments for :func:`warnings.simplefilter`,
+  providing a more concise way to locally ignore warnings or convert them to errors.
+  (Contributed by Zac Hatfield-Dodds in :issue:`47074`.)
 
 zipfile
 -------
@@ -472,13 +856,6 @@ Optimizations
   almost eliminated when no exception is raised.
   (Contributed by Mark Shannon in :issue:`40222`.)
 
-* Method calls with keywords are now faster due to bytecode
-  changes which avoid creating bound method instances. Previously, this
-  optimization was applied only to method calls with purely positional
-  arguments.
-  (Contributed by Ken Jin and Mark Shannon in :issue:`26110`, based on ideas
-  implemented in PyPy.)
-
 * Pure ASCII strings are now normalized in constant time by :func:`unicodedata.normalize`.
   (Contributed by Dong-hee Na in :issue:`44987`.)
 
@@ -491,6 +868,231 @@ Optimizations
   This reduces dict size. For example, ``sys.getsizeof(dict.fromkeys("abcdefg"))``
   becomes 272 bytes from 352 bytes on 64bit platform.
   (Contributed by Inada Naoki in :issue:`46845`.)
+
+* :mod:`re`'s regular expression matching engine has been partially refactored,
+  and now uses computed gotos (or "threaded code") on supported platforms. As a
+  result, Python 3.11 executes the `pyperformance regular expression benchmarks
+  <https://pyperformance.readthedocs.io/benchmarks.html#regex-dna>`_ up to 10%
+  faster than Python 3.10.
+
+
+Faster CPython
+==============
+
+CPython 3.11 is on average `25% faster <https://github.com/faster-cpython/ideas/blob/main/main-vs-310.rst>`_
+than CPython 3.10 when measured with the
+`pyperformance <https://github.com/python/pyperformance>`_ benchmark suite,
+and compiled with GCC on Ubuntu Linux. Depending on your workload, the speedup
+could be up to 10-60% faster.
+
+This project focuses on two major areas in Python: faster startup and faster
+runtime. Other optimizations not under this project are listed in `Optimizations`_.
+
+Faster Startup
+--------------
+
+Frozen imports / Static code objects
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Python caches bytecode in the :ref:`__pycache__<tut-pycache>` directory to
+speed up module loading.
+
+Previously in 3.10, Python module execution looked like this:
+
+.. code-block:: text
+
+   Read __pycache__ -> Unmarshal -> Heap allocated code object -> Evaluate
+
+In Python 3.11, the core modules essential for Python startup are "frozen".
+This means that their code objects (and bytecode) are statically allocated
+by the interpreter. This reduces the steps in module execution process to this:
+
+.. code-block:: text
+
+   Statically allocated code object -> Evaluate
+
+Interpreter startup is now 10-15% faster in Python 3.11. This has a big
+impact for short-running programs using Python.
+
+(Contributed by Eric Snow, Guido van Rossum and Kumar Aditya in numerous issues.)
+
+
+Faster Runtime
+--------------
+
+Cheaper, lazy Python frames
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Python frames are created whenever Python calls a Python function. This frame
+holds execution information. The following are new frame optimizations:
+
+- Streamlined the frame creation process.
+- Avoided memory allocation by generously re-using frame space on the C stack.
+- Streamlined the internal frame struct to contain only essential information.
+  Frames previously held extra debugging and memory management information.
+
+Old-style frame objects are now created only when requested by debuggers or
+by Python introspection functions such as ``sys._getframe`` or
+``inspect.currentframe``. For most user code, no frame objects are
+created at all. As a result, nearly all Python functions calls have sped
+up significantly. We measured a 3-7% speedup in pyperformance.
+
+(Contributed by Mark Shannon in :issue:`44590`.)
+
+.. _inline-calls:
+
+Inlined Python function calls
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+During a Python function call, Python will call an evaluating C function to
+interpret that function's code. This effectively limits pure Python recursion to
+what's safe for the C stack.
+
+In 3.11, when CPython detects Python code calling another Python function,
+it sets up a new frame, and "jumps" to the new code inside the new frame. This
+avoids calling the C interpreting function altogether.
+
+Most Python function calls now consume no C stack space. This speeds up
+most of such calls. In simple recursive functions like fibonacci or
+factorial, a 1.7x speedup was observed. This also means recursive functions
+can recurse significantly deeper (if the user increases the recursion limit).
+We measured a 1-3% improvement in pyperformance.
+
+(Contributed by Pablo Galindo and Mark Shannon in :issue:`45256`.)
+
+PEP 659: Specializing Adaptive Interpreter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:pep:`659` is one of the key parts of the faster CPython project. The general
+idea is that while Python is a dynamic language, most code has regions where
+objects and types rarely change. This concept is known as *type stability*.
+
+At runtime, Python will try to look for common patterns and type stability
+in the executing code. Python will then replace the current operation with a
+more specialized one. This specialized operation uses fast paths available only
+to those use cases/types, which generally outperform their generic
+counterparts. This also brings in another concept called *inline caching*, where
+Python caches the results of expensive operations directly in the bytecode.
+
+The specializer will also combine certain common instruction pairs into one
+superinstruction. This reduces the overhead during execution.
+
+Python will only specialize
+when it sees code that is "hot" (executed multiple times). This prevents Python
+from wasting time for run-once code. Python can also de-specialize when code is
+too dynamic or when the use changes. Specialization is attempted periodically,
+and specialization attempts are not too expensive. This allows specialization
+to adapt to new circumstances.
+
+(PEP written by Mark Shannon, with ideas inspired by Stefan Brunthaler.
+See :pep:`659` for more information. Implementation by Mark Shannon and Brandt
+Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
+
+..
+   If I missed out anyone, please add them.
+
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+| Operation     | Form               | Specialization                                        | Operation speedup | Contributor(s)    |
+|               |                    |                                                       | (up to)           |                   |
++===============+====================+=======================================================+===================+===================+
+| Binary        | ``x+x; x*x; x-x;`` | Binary add, multiply and subtract for common types    | 10%               | Mark Shannon,     |
+| operations    |                    | such as ``int``, ``float``, and ``str`` take custom   |                   | Dong-hee Na,      |
+|               |                    | fast paths for their underlying types.                |                   | Brandt Bucher,    |
+|               |                    |                                                       |                   | Dennis Sweeney    |
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+| Subscript     | ``a[i]``           | Subscripting container types such as ``list``,        | 10-25%            | Irit Katriel,     |
+|               |                    | ``tuple`` and ``dict`` directly index the underlying  |                   | Mark Shannon      |
+|               |                    | data structures.                                      |                   |                   |
+|               |                    |                                                       |                   |                   |
+|               |                    | Subscripting custom ``__getitem__``                   |                   |                   |
+|               |                    | is also inlined similar to :ref:`inline-calls`.       |                   |                   |
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+| Store         | ``a[i] = z``       | Similar to subscripting specialization above.         | 10-25%            | Dennis Sweeney    |
+| subscript     |                    |                                                       |                   |                   |
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+| Calls         | ``f(arg)``         | Calls to common builtin (C) functions and types such  | 20%               | Mark Shannon,     |
+|               | ``C(arg)``         | as ``len`` and ``str`` directly call their underlying |                   | Ken Jin           |
+|               |                    | C version. This avoids going through the internal     |                   |                   |
+|               |                    | calling convention.                                   |                   |                   |
+|               |                    |                                                       |                   |                   |
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+| Load          | ``print``          | The object's index in the globals/builtins namespace  | [1]_              | Mark Shannon      |
+| global        | ``len``            | is cached. Loading globals and builtins require       |                   |                   |
+| variable      |                    | zero namespace lookups.                               |                   |                   |
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+| Load          | ``o.attr``         | Similar to loading global variables. The attribute's  | [2]_              | Mark Shannon      |
+| attribute     |                    | index inside the class/object's namespace is cached.  |                   |                   |
+|               |                    | In most cases, attribute loading will require zero    |                   |                   |
+|               |                    | namespace lookups.                                    |                   |                   |
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+| Load          | ``o.meth()``       | The actual address of the method is cached. Method    | 10-20%            | Ken Jin,          |
+| methods for   |                    | loading now has no namespace lookups -- even for      |                   | Mark Shannon      |
+| call          |                    | classes with long inheritance chains.                 |                   |                   |
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+| Store         | ``o.attr = z``     | Similar to load attribute optimization.               | 2%                | Mark Shannon      |
+| attribute     |                    |                                                       | in pyperformance  |                   |
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+| Unpack        | ``*seq``           | Specialized for common containers such as ``list``    | 8%                | Brandt Bucher     |
+| Sequence      |                    | and ``tuple``. Avoids internal calling convention.    |                   |                   |
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+
+.. [1] A similar optimization already existed since Python 3.8.  3.11
+       specializes for more forms and reduces some overhead.
+
+.. [2] A similar optimization already existed since Python 3.10.
+       3.11 specializes for more forms. Furthermore, all attribute loads should
+       be sped up by :issue:`45947`.
+
+
+Misc
+----
+
+* Objects now require less memory due to lazily created object namespaces. Their
+  namespace dictionaries now also share keys more freely.
+  (Contributed Mark Shannon in :issue:`45340` and :issue:`40116`.)
+
+* A more concise representation of exceptions in the interpreter reduced the
+  time required for catching an exception by about 10%.
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
+FAQ
+---
+
+| Q: How should I write my code to utilize these speedups?
+|
+| A: You don't have to change your code. Write Pythonic code that follows common
+  best practices. The Faster CPython project optimizes for common code
+  patterns we observe.
+|
+|
+| Q: Will CPython 3.11 use more memory?
+|
+| A: Maybe not. We don't expect memory use to exceed 20% more than 3.10.
+  This is offset by memory optimizations for frame objects and object
+  dictionaries as mentioned above.
+|
+|
+| Q: I don't see any speedups in my workload. Why?
+|
+| A: Certain code won't have noticeable benefits. If your code spends most of
+  its time on I/O operations, or already does most of its
+  computation in a C extension library like numpy, there won't be significant
+  speedup. This project currently benefits pure-Python workloads the most.
+|
+| Furthermore, the pyperformance figures are a geometric mean. Even within the
+  pyperformance benchmarks, certain benchmarks have slowed down slightly, while
+  others have sped up by nearly 2x!
+|
+|
+| Q: Is there a JIT compiler?
+|
+| A: No. We're still exploring other optimizations.
+
+
+About
+-----
+
+Faster CPython explores optimizations for :term:`CPython`. The main team is
+funded by Microsoft to work on this full-time. Pablo Galindo Salgado is also
+funded by Bloomberg LP to work on the project part-time. Finally, many
+contributors are volunteers from the community.
 
 
 CPython bytecode changes
@@ -517,18 +1119,53 @@ CPython bytecode changes
   ``ROT_TWO``, ``ROT_THREE``, ``ROT_FOUR``, and ``ROT_N``) with new
   :opcode:`COPY` and :opcode:`SWAP` instructions.
 
-* Add :opcode:`POP_JUMP_IF_NOT_NONE` and :opcode:`POP_JUMP_IF_NONE` opcodes to
-  speed up conditional jumps.
+* Replaced :opcode:`JUMP_IF_NOT_EXC_MATCH` by :opcode:`CHECK_EXC_MATCH` which
+  performs the check but does not jump.
 
-* :opcode:`JUMP_IF_NOT_EXC_MATCH` no longer pops the active exception.
+* Replaced :opcode:`JUMP_IF_NOT_EG_MATCH` by :opcode:`CHECK_EG_MATCH` which
+  performs the check but does not jump.
+
+* Replaced :opcode:`JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
+
+* Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`, which is used in certain loops where it
+  is undesirable to handle interrupts.
+
+* Replaced :opcode:`POP_JUMP_IF_TRUE` and :opcode:`POP_JUMP_IF_FALSE` by
+  the relative :opcode:`POP_JUMP_FORWARD_IF_TRUE`, :opcode:`POP_JUMP_BACKWARD_IF_TRUE`,
+  :opcode:`POP_JUMP_FORWARD_IF_FALSE` and :opcode:`POP_JUMP_BACKWARD_IF_FALSE`.
+
+* Added :opcode:`POP_JUMP_FORWARD_IF_NOT_NONE`, :opcode:`POP_JUMP_BACKWARD_IF_NOT_NONE`,
+  :opcode:`POP_JUMP_FORWARD_IF_NONE` and :opcode:`POP_JUMP_BACKWARD_IF_NONE`
+  opcodes to speed up conditional jumps.
+
+* :opcode:`JUMP_IF_TRUE_OR_POP` and :opcode:`JUMP_IF_FALSE_OR_POP` are now
+  relative rather than absolute.
 
 
 Deprecated
 ==========
 
+* Chaining :class:`classmethod` descriptors (introduced in :issue:`19072`)
+  is now deprecated.  It can no longer be used to wrap other descriptors
+  such as :class:`property`.  The core design of this feature was flawed
+  and caused a number of downstream problems.  To "pass-through" a
+  :class:`classmethod`, consider using the ``__wrapped__`` attribute
+  that was added in Python 3.10.
+  (Contributed by Raymond Hettinger in :gh:`89519`.)
+
+* Octal escapes in string and bytes literals with value larger than ``0o377`` now
+  produce :exc:`DeprecationWarning`.
+  In a future Python version they will be a :exc:`SyntaxWarning` and
+  eventually a :exc:`SyntaxError`.
+  (Contributed by Serhiy Storchaka in :gh:`81548`.)
+
 * The :mod:`lib2to3` package and ``2to3`` tool are now deprecated and may not
   be able to parse Python 3.10 or newer. See the :pep:`617` (New PEG parser for
   CPython).  (Contributed by Victor Stinner in :issue:`40360`.)
+
+* Undocumented modules ``sre_compile``, ``sre_constants`` and ``sre_parse``
+  are now deprecated.
+  (Contributed by Serhiy Storchaka in :issue:`47152`.)
 
 * :class:`webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
   It is untested and undocumented and also not used by webbrowser itself.
@@ -570,21 +1207,136 @@ Deprecated
 
   * the :class:`configparser.SafeConfigParser` class
   * the :attr:`configparser.ParsingError.filename` property
-  * the :meth:`configparser.ParsingError.readfp` method
+  * the :meth:`configparser.RawConfigParser.readfp` method
 
   (Contributed by Hugo van Kemenade in :issue:`45173`.)
+
+* :class:`configparser.LegacyInterpolation` has been deprecated in the docstring
+  since Python 3.2. It now emits a :exc:`DeprecationWarning` and will be removed
+  in Python 3.13. Use :class:`configparser.BasicInterpolation` or
+  :class:`configparser.ExtendedInterpolation` instead.
+  (Contributed by Hugo van Kemenade in :issue:`46607`.)
 
 * The :func:`locale.getdefaultlocale` function is deprecated and will be
   removed in Python 3.13. Use :func:`locale.setlocale`,
   :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
   :func:`locale.getlocale` functions instead.
-  (Contributed by Victor Stinner in :issue:`46659`.)
+  (Contributed by Victor Stinner in :gh:`90817`.)
+
+* The :func:`locale.resetlocale` function is deprecated and will be
+  removed in Python 3.13. Use ``locale.setlocale(locale.LC_ALL, "")`` instead.
+  (Contributed by Victor Stinner in :gh:`90817`.)
 
 * The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
   deprecated since at least Python 3.6. Their documentation and deprecation
   warnings have now been updated to note they will removed in Python 3.12
   (:pep:`594`).
   (Contributed by Hugo van Kemenade in :issue:`47022`.)
+
+* :pep:`594` led to the deprecations of the following modules which are
+  slated for removal in Python 3.13:
+
+  * :mod:`aifc`
+  * :mod:`audioop`
+  * :mod:`cgi`
+  * :mod:`cgitb`
+  * :mod:`chunk`
+  * :mod:`crypt`
+  * :mod:`imghdr`
+  * :mod:`mailcap`
+  * :mod:`msilib`
+  * :mod:`nis`
+  * :mod:`nntplib`
+  * :mod:`ossaudiodev`
+  * :mod:`pipes`
+  * :mod:`sndhdr`
+  * :mod:`spwd`
+  * :mod:`sunau`
+  * :mod:`telnetlib`
+  * :mod:`uu`
+  * :mod:`xdrlib`
+
+  (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
+  :gh:`68966`.)
+
+* More strict rules will be applied now applied for numerical group references
+  and group names in regular expressions in future Python versions.
+  Only sequence of ASCII digits will be now accepted as a numerical reference.
+  The group name in bytes patterns and replacement strings could only
+  contain ASCII letters and digits and underscore.
+  For now, a deprecation warning is raised for such syntax.
+  (Contributed by Serhiy Storchaka in :gh:`91760`.)
+
+* :class:`typing.Text`, which exists solely to provide compatibility support
+  between Python 2 and Python 3 code, is now deprecated. Its removal is
+  currently unplanned, but users are encouraged to use :class:`str` instead
+  wherever possible.
+  (Contributed by Alex Waygood in :gh:`92332`.)
+
+* The keyword argument syntax for constructing :data:`~typing.TypedDict` types
+  is now deprecated. Support will be removed in Python 3.13. (Contributed by
+  Jingchen Ye in :gh:`90224`.)
+
+* The :func:`re.template` function and the corresponding :const:`re.TEMPLATE`
+  and :const:`re.T` flags are deprecated, as they were undocumented and
+  lacked an obvious purpose. They will be removed in Python 3.13.
+  (Contributed by Serhiy Storchaka and Miro Hrončok in :gh:`92728`.)
+
+
+Pending Removal in Python 3.12
+==============================
+
+The following APIs have been deprecated in earlier Python releases,
+and will be removed in Python 3.12.
+
+Python API:
+
+* :class:`pkgutil.ImpImporter`
+* :class:`pkgutil.ImpLoader`
+* :envvar:`PYTHONTHREADDEBUG`
+* :func:`importlib.find_loader`
+* :func:`importlib.util.module_for_loader`
+* :func:`importlib.util.set_loader_wrapper`
+* :func:`importlib.util.set_package_wrapper`
+* :meth:`importlib.abc.Loader.module_repr`
+* :meth:`importlib.abc.Loadermodule_repr`
+* :meth:`importlib.abc.MetaPathFinder.find_module`
+* :meth:`importlib.abc.MetaPathFinder.find_module`
+* :meth:`importlib.abc.PathEntryFinder.find_loader`
+* :meth:`importlib.abc.PathEntryFinder.find_module`
+* :meth:`importlib.machinery.BuiltinImporter.find_module`
+* :meth:`importlib.machinery.BuiltinLoader.module_repr`
+* :meth:`importlib.machinery.FileFinder.find_loader`
+* :meth:`importlib.machinery.FileFinder.find_module`
+* :meth:`importlib.machinery.FrozenImporter.find_module`
+* :meth:`importlib.machinery.FrozenLoader.module_repr`
+* :meth:`importlib.machinery.PathFinder.find_module`
+* :meth:`importlib.machinery.WindowsRegistryFinder.find_module`
+* :meth:`pathlib.Path.link_to`
+* The entire :ref:`distutils namespace <distutils-deprecated>`
+* :func:`cgi.log`
+* :func:`sqlite3.OptimizedUnicode`
+* :func:`sqlite3.enable_shared_cache`
+
+C API:
+
+* :c:func:`PyUnicode_AS_DATA`
+* :c:func:`PyUnicode_AS_UNICODE`
+* :c:func:`PyUnicode_AsUnicodeAndSize`
+* :c:func:`PyUnicode_AsUnicode`
+* :c:func:`PyUnicode_FromUnicode`
+* :c:func:`PyUnicode_GET_DATA_SIZE`
+* :c:func:`PyUnicode_GET_SIZE`
+* :c:func:`PyUnicode_GetSize`
+* :c:func:`PyUnicode_IS_COMPACT`
+* :c:func:`PyUnicode_IS_READY`
+* :c:func:`PyUnicode_READY`
+* :c:func:`Py_UNICODE_WSTR_LENGTH`
+* :c:func:`_PyUnicode_AsUnicode`
+* :c:macro:`PyUnicode_WCHAR_KIND`
+* :c:type:`PyUnicodeObject`
+* :c:func:`PyUnicode_InternImmortal()`
+
 
 Removed
 =======
@@ -770,10 +1522,16 @@ Build Changes
 
 * Build dependencies, compiler flags, and linker flags for most stdlib
   extension modules are now detected by :program:`configure`. libffi, libnsl,
-  libsqlite3, zlib, bzip2, liblzma, libcrypt, and uuid flags are detected by
-  ``pkg-config`` (when available).
+  libsqlite3, zlib, bzip2, liblzma, libcrypt, Tcl/Tk libs, and uuid flags
+  are detected by ``pkg-config`` (when available).
   (Contributed by Christian Heimes and Erlend Egeberg Aasland in
-  :issue:`bpo-45847`, :issue:`45747`, and :issue:`45763`.)
+  :issue:`45847`, :issue:`45747`, and :issue:`45763`.)
+
+  .. note::
+     Use the environment variables ``TCLTK_CFLAGS`` and ``TCLTK_LIBS`` to
+     manually specify the location of Tcl/Tk headers and libraries.
+     The :program:`configure` options ``--with-tcltk-includes`` and
+     ``--with-tcltk-libs`` have been removed.
 
 * CPython now has experimental support for cross compiling to WebAssembly
   platform ``wasm32-emscripten``. The effort is inspired by previous work
@@ -795,22 +1553,6 @@ Build Changes
 
 C API Changes
 =============
-
-* :c:func:`PyErr_SetExcInfo()` no longer uses the ``type`` and ``traceback``
-  arguments, the interpreter now derives those values from the exception
-  instance (the ``value`` argument). The function still steals references
-  of all three arguments.
-  (Contributed by Irit Katriel in :issue:`45711`.)
-
-* :c:func:`PyErr_GetExcInfo()` now derives the ``type`` and ``traceback``
-  fields of the result from the exception instance (the ``value`` field).
-  (Contributed by Irit Katriel in :issue:`45711`.)
-
-* :c:struct:`_frozen` has a new ``is_package`` field to indicate whether
-  or not the frozen module is a package.  Previously, a negative value
-  in the ``size`` field was the indicator.  Now only non-negative values
-  be used for ``size``.
-  (Contributed by Kumar Aditya in :issue:`46608`.)
 
 New Features
 ------------
@@ -861,9 +1603,53 @@ New Features
   :c:func:`PyFloat_Unpack8`.
   (Contributed by Victor Stinner in :issue:`46906`.)
 
+* Add new functions to get frame object attributes:
+  :c:func:`PyFrame_GetBuiltins`, :c:func:`PyFrame_GetGenerator`,
+  :c:func:`PyFrame_GetGlobals`, :c:func:`PyFrame_GetLasti`.
+
+* Added two new functions to get and set the active exception instance:
+  :c:func:`PyErr_GetHandledException` and :c:func:`PyErr_SetHandledException`.
+  These are alternatives to :c:func:`PyErr_SetExcInfo()` and
+  :c:func:`PyErr_GetExcInfo()` which work with the legacy 3-tuple
+  representation of exceptions.
+  (Contributed by Irit Katriel in :issue:`46343`.)
+
+* Added the :c:member:`PyConfig.safe_path` member.
+  (Contributed by Victor Stinner in :gh:`57684`.)
 
 Porting to Python 3.11
 ----------------------
+
+* :c:func:`PyErr_SetExcInfo()` no longer uses the ``type`` and ``traceback``
+  arguments, the interpreter now derives those values from the exception
+  instance (the ``value`` argument). The function still steals references
+  of all three arguments.
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
+* :c:func:`PyErr_GetExcInfo()` now derives the ``type`` and ``traceback``
+  fields of the result from the exception instance (the ``value`` field).
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
+* :c:type:`_frozen` has a new ``is_package`` field to indicate whether
+  or not the frozen module is a package.  Previously, a negative value
+  in the ``size`` field was the indicator.  Now only non-negative values
+  be used for ``size``.
+  (Contributed by Kumar Aditya in :issue:`46608`.)
+
+* :c:func:`_PyFrameEvalFunction` now takes ``_PyInterpreterFrame*``
+  as its second parameter, instead of ``PyFrameObject*``.
+  See :pep:`523` for more details of how to use this function pointer type.
+
+* :c:func:`PyCode_New` and :c:func:`PyCode_NewWithPosOnlyArgs` now take
+  an additional ``exception_table`` argument.
+  Using these functions should be avoided, if at all possible.
+  To get a custom code object: create a code object using the compiler,
+  then get a modified version with the ``replace`` method.
+
+* :c:type:`PyCodeObject` no longer has a ``co_code`` field.  Instead,
+  use ``PyObject_GetAttrString(code_object, "co_code")`` or
+  :c:func:`PyCode_GetCode` to get the underlying bytes object.
+  (Contributed by Brandt Bucher in :issue:`46841` and Ken Jin in :gh:`92154`.)
 
 * The old trashcan macros (``Py_TRASHCAN_SAFE_BEGIN``/``Py_TRASHCAN_SAFE_END``)
   are now deprecated. They should be replaced by the new macros
@@ -950,7 +1736,7 @@ Porting to Python 3.11
   explicitly include the header files after ``#include <Python.h>``.
   (Contributed by Victor Stinner in :issue:`45434`.)
 
-* The non-limited API files ``cellobject.h``, ``classobject.h``, ``context.h``,
+* The non-limited API files ``cellobject.h``, ``classobject.h``, ``code.h``, ``context.h``,
   ``funcobject.h``, ``genobject.h`` and ``longintrepr.h`` have been moved to
   the ``Include/cpython`` directory. Moreover, the ``eval.h`` header file was
   removed. These files must not be included directly, as they are already
@@ -963,8 +1749,10 @@ Porting to Python 3.11
   which are not available in the limited C API.
   (Contributed by Victor Stinner in :issue:`46007`.)
 
-* The :c:type:`PyFrameObject` structure member has been moved to the internal C
-  API headers.
+.. _pyframeobject-3.11-hiding:
+
+* The :c:type:`PyFrameObject` structure members have been removed from the
+  public C API.
 
   While the documentation notes that the :c:type:`PyFrameObject` fields are
   subject to change at any time, they have been stable for a long time and were
@@ -978,14 +1766,14 @@ Porting to Python 3.11
 
   * ``f_back``: use :c:func:`PyFrame_GetBack`.
   * ``f_blockstack``: removed.
-  * ``f_builtins``: use ``PyObject_GetAttrString((PyObject*)frame, "f_builtins")``.
+  * ``f_builtins``: use :c:func:`PyFrame_GetBuiltins`.
   * ``f_code``: use :c:func:`PyFrame_GetCode`.
-  * ``f_gen``: removed.
-  * ``f_globals``: use ``PyObject_GetAttrString((PyObject*)frame, "f_globals")``.
+  * ``f_gen``: use :c:func:`PyFrame_GetGenerator`.
+  * ``f_globals``: use :c:func:`PyFrame_GetGlobals`.
   * ``f_iblock``: removed.
-  * ``f_lasti``: use ``PyObject_GetAttrString((PyObject*)frame, "f_lasti")``.
-    Code using ``f_lasti`` with ``PyCode_Addr2Line()`` must use
-    :c:func:`PyFrame_GetLineNumber` instead.
+  * ``f_lasti``: use :c:func:`PyFrame_GetLasti`.
+    Code using ``f_lasti`` with ``PyCode_Addr2Line()`` should use
+    :c:func:`PyFrame_GetLineNumber` instead; it may be faster.
   * ``f_lineno``: use :c:func:`PyFrame_GetLineNumber`
   * ``f_locals``: use :c:func:`PyFrame_GetLocals`.
   * ``f_stackdepth``: removed.
@@ -1002,8 +1790,8 @@ Porting to Python 3.11
   instead.
 
   Debuggers that accessed the ``f_locals`` directly *must* call
-  `:c:func:`PyFrame_GetLocals` instead. They no longer need to call
-  `:c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
+  :c:func:`PyFrame_GetLocals` instead. They no longer need to call
+  :c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
   in fact they should not call those functions. The necessary updating of the
   frame is now managed by the virtual machine.
 
@@ -1087,6 +1875,16 @@ Porting to Python 3.11
 * Distributors are encouraged to build Python with the optimized Blake2
   library `libb2`_.
 
+* The :c:member:`PyConfig.module_search_paths_set` field must now be set to 1 for
+  initialization to use :c:member:`PyConfig.module_search_paths` to initialize
+  :data:`sys.path`. Otherwise, initialization will recalculate the path and replace
+  any values added to ``module_search_paths``.
+
+* :c:func:`PyConfig_Read` no longer calculates the initial search path, and will not
+  fill any values into :c:member:`PyConfig.module_search_paths`. To calculate default
+  paths and then modify them, finish initialization and use :c:func:`PySys_GetObject`
+  to retrieve :data:`sys.path` as a Python list object and modify it directly.
+
 
 Deprecated
 ----------
@@ -1097,6 +1895,9 @@ Deprecated
   * :c:func:`PySys_AddWarnOption`
   * :c:func:`PySys_AddXOption`
   * :c:func:`PySys_HasWarnOptions`
+  * :c:func:`PySys_SetArgvEx`
+  * :c:func:`PySys_SetArgv`
+  * :c:func:`PySys_SetPath`
   * :c:func:`Py_SetPath`
   * :c:func:`Py_SetProgramName`
   * :c:func:`Py_SetPythonHome`
@@ -1105,7 +1906,7 @@ Deprecated
 
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
   <init-config>` instead (:pep:`587`).
-  (Contributed by Victor Stinner in :issue:`44113`.)
+  (Contributed by Victor Stinner in :gh:`88279`.)
 
 * Deprecate the ``ob_shash`` member of the :c:type:`PyBytesObject`. Use :c:func:`PyObject_Hash` instead.
   (Contributed by Inada Naoki in :issue:`46864`.)

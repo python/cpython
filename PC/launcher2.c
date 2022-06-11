@@ -196,9 +196,9 @@ int
 _compare(const wchar_t *x, int xLen, const wchar_t *y, int yLen)
 {
     // Empty strings sort first
-    if (xLen == 0) {
-        return yLen == 0 ? 0 : -1;
-    } else if (yLen == 0) {
+    if (!x || !xLen) {
+        return (!y || !yLen) ? 0 : -1;
+    } else if (!y || !yLen) {
         return 1;
     }
     switch (CompareStringEx(
@@ -223,9 +223,9 @@ int
 _compareArgument(const wchar_t *x, int xLen, const wchar_t *y, int yLen)
 {
     // Empty strings sort first
-    if (xLen == 0) {
-        return yLen == 0 ? 0 : -1;
-    } else if (yLen == 0) {
+    if (!x || !xLen) {
+        return (!y || !yLen) ? 0 : -1;
+    } else if (!y || !yLen) {
         return 1;
     }
     switch (CompareStringEx(
@@ -249,9 +249,9 @@ int
 _comparePath(const wchar_t *x, int xLen, const wchar_t *y, int yLen)
 {
     // Empty strings sort first
-    if (xLen == 0) {
-        return yLen == 0 ? 0 : -1;
-    } else if (yLen == 0) {
+    if (!x || !xLen) {
+        return !y || !yLen ? 0 : -1;
+    } else if (!y || !yLen) {
         return 1;
     }
     switch (CompareStringOrdinal(x, xLen, y, yLen, TRUE)) {
@@ -271,6 +271,9 @@ _comparePath(const wchar_t *x, int xLen, const wchar_t *y, int yLen)
 bool
 _startsWith(const wchar_t *x, int xLen, const wchar_t *y, int yLen)
 {
+    if (!x || !y) {
+        return false;
+    }
     yLen = yLen < 0 ? (int)wcsnlen_s(y, MAXLEN) : yLen;
     xLen = xLen < 0 ? (int)wcsnlen_s(x, MAXLEN) : xLen;
     return xLen >= yLen && 0 == _compare(x, yLen, y, yLen);
@@ -280,6 +283,9 @@ _startsWith(const wchar_t *x, int xLen, const wchar_t *y, int yLen)
 bool
 _startsWithArgument(const wchar_t *x, int xLen, const wchar_t *y, int yLen)
 {
+    if (!x || !y) {
+        return false;
+    }
     yLen = yLen < 0 ? (int)wcsnlen_s(y, MAXLEN) : yLen;
     xLen = xLen < 0 ? (int)wcsnlen_s(x, MAXLEN) : xLen;
     return xLen >= yLen && 0 == _compareArgument(x, yLen, y, yLen);
@@ -380,6 +386,12 @@ typedef struct {
     int tagLength;
     // if true, treats 'tag' as a non-PEP 514 filter
     bool oldStyleTag;
+    // if true, ignores 'tag' when a high priority environment is found
+    // gh-92817: This is currently set when a tag is read from configuration or
+    // the environment, rather than the command line or a shebang line, and the
+    // only currently possible high priority environment is an active virtual
+    // environment
+    bool lowPriorityTag;
     // if true, we had an old-style tag with '-64' suffix, and so do not
     // want to match tags like '3.x-32'
     bool exclude32Bit;
@@ -469,6 +481,7 @@ dumpSearchInfo(SearchInfo *search)
     DEBUG_2(company, companyLength);
     DEBUG_2(tag, tagLength);
     DEBUG_BOOL(oldStyleTag);
+    DEBUG_BOOL(lowPriorityTag);
     DEBUG_BOOL(exclude32Bit);
     DEBUG_BOOL(only32Bit);
     DEBUG_BOOL(allowDefaults);
@@ -895,8 +908,13 @@ checkShebang(SearchInfo *search)
                 search->oldStyleTag = true;
                 search->executableArgs = &command[commandLength];
                 search->executableArgsLength = shebangLength - commandLength;
-                debug(L"# Treating shebang command '%.*s' as 'py -%.*s'\n",
-                    commandLength, command, search->tagLength, search->tag);
+                if (search->tag && search->tagLength) {
+                    debug(L"# Treating shebang command '%.*s' as 'py -%.*s'\n",
+                        commandLength, command, search->tagLength, search->tag);
+                } else {
+                    debug(L"# Treating shebang command '%.*s' as 'py'\n",
+                        commandLength, command);
+                }
             } else {
                 debug(L"# Found shebang command but could not execute it: %.*s\n",
                     commandLength, command);
@@ -912,30 +930,8 @@ checkShebang(SearchInfo *search)
 int
 checkDefaults(SearchInfo *search)
 {
-    if (!search->allowDefaults || search->list || search->listPaths) {
+    if (!search->allowDefaults) {
         return 0;
-    }
-
-    wchar_t buffer[MAXLEN];
-    int n;
-
-    // If no tag was provided at all, look for an active virtual environment
-    if (!search->tag || !search->tagLength) {
-        n = GetEnvironmentVariableW(L"VIRTUAL_ENV", buffer, MAXLEN);
-        if (n && join(buffer, MAXLEN, L"Scripts") && join(buffer, MAXLEN, search->executable)) {
-            if (INVALID_FILE_ATTRIBUTES != GetFileAttributesW(buffer)) {
-                n = (int)wcsnlen_s(buffer, MAXLEN) + 1;
-                wchar_t *path = allocSearchInfoBuffer(search, n);
-                if (!path) {
-                    return RC_NO_MEMORY;
-                }
-                search->executablePath = path;
-                wcscpy_s(path, n, buffer);
-                return 0;
-            } else {
-                debug(L"Python executable %s missing from virtual env\n", buffer);
-            }
-        }
     }
 
     // Only resolve old-style (or absent) tags to defaults
@@ -958,7 +954,8 @@ checkDefaults(SearchInfo *search)
     }
 
     // First, try to read an environment variable
-    n = GetEnvironmentVariableW(settingName, buffer, MAXLEN);
+    wchar_t buffer[MAXLEN];
+    int n = GetEnvironmentVariableW(settingName, buffer, MAXLEN);
 
     // If none found, check in our two .ini files instead
     if (!n) {
@@ -982,6 +979,9 @@ checkDefaults(SearchInfo *search)
             search->tagLength = n - (search->companyLength + 1);
             search->oldStyleTag = false;
         }
+        // gh-92817: allow a high priority env to be selected even if it
+        // doesn't match the tag
+        search->lowPriorityTag = true;
     }
 
     return 0;
@@ -1005,6 +1005,7 @@ typedef struct EnvironmentInfo {
     const wchar_t *executableArgs;
     const wchar_t *architecture;
     const wchar_t *displayName;
+    bool highPriority;
 } EnvironmentInfo;
 
 
@@ -1076,6 +1077,14 @@ freeEnvironmentInfo(EnvironmentInfo *env)
 int
 _compareCompany(const wchar_t *x, const wchar_t *y)
 {
+    if (!x && !y) {
+        return 0;
+    } else if (!x) {
+        return -1;
+    } else if (!y) {
+        return 1;
+    }
+
     bool coreX = 0 == _compare(x, -1, L"PythonCore", -1);
     bool coreY = 0 == _compare(y, -1, L"PythonCore", -1);
     if (coreX) {
@@ -1090,6 +1099,14 @@ _compareCompany(const wchar_t *x, const wchar_t *y)
 int
 _compareTag(const wchar_t *x, const wchar_t *y)
 {
+    if (!x && !y) {
+        return 0;
+    } else if (!x) {
+        return -1;
+    } else if (!y) {
+        return 1;
+    }
+
     // Compare up to the first dash. If not equal, that's our sort order
     const wchar_t *xDash = wcschr(x, L'-');
     const wchar_t *yDash = wcschr(y, L'-');
@@ -1162,7 +1179,6 @@ addEnvironmentInfo(EnvironmentInfo **root, EnvironmentInfo *node)
         node->prev = r->prev;
     } else {
         debug(L"# not adding %s/%s/%i to tree\n", node->company, node->tag, node->internalSortKey);
-        freeEnvironmentInfo(node);
         return RC_DUPLICATE_ITEM;
     }
     return 0;
@@ -1311,10 +1327,11 @@ _registrySearchTags(const SearchInfo *search, EnvironmentInfo **result, HKEY roo
                 exitCode = 0;
             } else if (!exitCode) {
                 exitCode = addEnvironmentInfo(result, env);
-                if (exitCode == RC_DUPLICATE_ITEM) {
-                    exitCode = 0;
-                } else if (exitCode) {
+                if (exitCode) {
                     freeEnvironmentInfo(env);
+                    if (exitCode == RC_DUPLICATE_ITEM) {
+                        exitCode = 0;
+                    }
                 }
             }
         }
@@ -1398,16 +1415,105 @@ appxSearch(const SearchInfo *search, EnvironmentInfo **result, const wchar_t *pa
     }
 
     int exitCode = addEnvironmentInfo(result, env);
-    if (exitCode == RC_DUPLICATE_ITEM) {
-        exitCode = 0;
-    } else if (exitCode) {
+    if (exitCode) {
         freeEnvironmentInfo(env);
+        if (exitCode == RC_DUPLICATE_ITEM) {
+            exitCode = 0;
+        }
     }
 
 
     return exitCode;
 }
 
+
+/******************************************************************************\
+ ***                      OVERRIDDEN EXECUTABLE PATH                        ***
+\******************************************************************************/
+
+
+int
+explicitOverrideSearch(const SearchInfo *search, EnvironmentInfo **result)
+{
+    if (!search->executablePath) {
+        return 0;
+    }
+
+    EnvironmentInfo *env = newEnvironmentInfo(NULL, NULL);
+    if (!env) {
+        return RC_NO_MEMORY;
+    }
+    env->internalSortKey = 10;
+    int exitCode = copyWstr(&env->executablePath, search->executablePath);
+    if (exitCode) {
+        goto abort;
+    }
+    exitCode = copyWstr(&env->displayName, L"Explicit override");
+    if (exitCode) {
+        goto abort;
+    }
+    exitCode = addEnvironmentInfo(result, env);
+    if (exitCode) {
+        goto abort;
+    }
+    return 0;
+
+abort:
+    freeEnvironmentInfo(env);
+    if (exitCode == RC_DUPLICATE_ITEM) {
+        exitCode = 0;
+    }
+    return exitCode;
+}
+
+
+/******************************************************************************\
+ ***                   ACTIVE VIRTUAL ENVIRONMENT SEARCH                    ***
+\******************************************************************************/
+
+int
+virtualenvSearch(const SearchInfo *search, EnvironmentInfo **result)
+{
+    int exitCode = 0;
+    EnvironmentInfo *env = NULL;
+    wchar_t buffer[MAXLEN];
+    int n = GetEnvironmentVariableW(L"VIRTUAL_ENV", buffer, MAXLEN);
+    if (!n || !join(buffer, MAXLEN, L"Scripts") || !join(buffer, MAXLEN, search->executable)) {
+        return 0;
+    }
+
+    if (INVALID_FILE_ATTRIBUTES == GetFileAttributesW(buffer)) {
+        debug(L"Python executable %s missing from virtual env\n", buffer);
+        return 0;
+    }
+
+    env = newEnvironmentInfo(NULL, NULL);
+    if (!env) {
+        return RC_NO_MEMORY;
+    }
+    env->highPriority = true;
+    env->internalSortKey = 20;
+    exitCode = copyWstr(&env->displayName, L"Active venv");
+    if (exitCode) {
+        goto abort;
+    }
+    exitCode = copyWstr(&env->executablePath, buffer);
+    if (exitCode) {
+        goto abort;
+    }
+    exitCode = addEnvironmentInfo(result, env);
+    if (exitCode) {
+        goto abort;
+    }
+    return 0;
+
+abort:
+    freeEnvironmentInfo(env);
+    if (exitCode == RC_DUPLICATE_ITEM) {
+        return 0;
+    }
+    return exitCode;
+}
 
 /******************************************************************************\
  ***                           COLLECT ENVIRONMENTS                         ***
@@ -1492,18 +1598,28 @@ int
 collectEnvironments(const SearchInfo *search, EnvironmentInfo **result)
 {
     int exitCode = 0;
+    HKEY root;
     EnvironmentInfo *env = NULL;
+
     if (!result) {
         return RC_INTERNAL_ERROR;
     }
     *result = NULL;
 
-    if (search->executablePath) {
-        env = newEnvironmentInfo(NULL, NULL);
-        return copyWstr(&env->executablePath, search->executablePath);
+    exitCode = explicitOverrideSearch(search, result);
+    if (exitCode) {
+        return exitCode;
     }
 
-    HKEY root;
+    exitCode = virtualenvSearch(search, result);
+    if (exitCode) {
+        return exitCode;
+    }
+
+    // If we aren't collecting all items to list them, we can exit now.
+    if (env && !(search->list || search->listPaths)) {
+        return 0;
+    }
 
     for (struct RegistrySearchInfo *info = REGISTRY_SEARCH; info->subkey; ++info) {
         if (ERROR_SUCCESS == RegOpenKeyExW(info->hive, info->subkey, 0, info->flags, &root)) {
@@ -1715,6 +1831,15 @@ _selectEnvironment(const SearchInfo *search, EnvironmentInfo *env, EnvironmentIn
             return 0;
         }
 
+        if (env->highPriority && search->lowPriorityTag) {
+            // This environment is marked high priority, and the search allows
+            // it to be selected even though a tag is specified, so select it
+            // gh-92817: this allows an active venv to be selected even when a
+            // default tag has been found in py.ini or the environment
+            *best = env;
+            return 0;
+        }
+
         if (!search->oldStyleTag) {
             if (_companyMatches(search, env) && _tagMatches(search, env)) {
                 // Because of how our sort tree is set up, we will walk up the
@@ -1799,11 +1924,12 @@ _printEnvironment(const EnvironmentInfo *env, FILE *out, bool showPath, const wc
 
 
 int
-_listAllEnvironments(EnvironmentInfo *env, FILE * out, bool showPath, bool *isDefault)
+_listAllEnvironments(EnvironmentInfo *env, FILE * out, bool showPath, EnvironmentInfo *defaultEnv)
 {
     wchar_t buffer[256];
+    const int bufferSize = 256;
     while (env) {
-        int exitCode = _listAllEnvironments(env->prev, out, showPath, isDefault);
+        int exitCode = _listAllEnvironments(env->prev, out, showPath, defaultEnv);
         if (exitCode) {
             return exitCode;
         }
@@ -1811,15 +1937,16 @@ _listAllEnvironments(EnvironmentInfo *env, FILE * out, bool showPath, bool *isDe
         if (!env->company || !env->tag) {
             buffer[0] = L'\0';
         } else if (0 == _compare(env->company, -1, L"PythonCore", -1)) {
-            swprintf_s(buffer, sizeof(buffer) / sizeof(buffer[0]), L"-V:%s", env->tag);
+            swprintf_s(buffer, bufferSize, L"-V:%s", env->tag);
         } else {
-            swprintf_s(buffer, sizeof(buffer) / sizeof(buffer[0]), L"-V:%s/%s", env->company, env->tag);
+            swprintf_s(buffer, bufferSize, L"-V:%s/%s", env->company, env->tag);
         }
+
+        if (env == defaultEnv) {
+            wcscat_s(buffer, bufferSize, L" *");
+        }
+
         if (buffer[0]) {
-            if (*isDefault) {
-                wcscat_s(buffer, sizeof(buffer) / sizeof(buffer[0]), L" *");
-                *isDefault = false;
-            }
             exitCode = _printEnvironment(env, out, showPath, buffer);
             if (exitCode) {
                 return exitCode;
@@ -1833,10 +1960,8 @@ _listAllEnvironments(EnvironmentInfo *env, FILE * out, bool showPath, bool *isDe
 
 
 int
-listEnvironments(EnvironmentInfo *env, FILE * out, bool showPath)
+listEnvironments(EnvironmentInfo *env, FILE * out, bool showPath, EnvironmentInfo *defaultEnv)
 {
-    bool isDefault = true;
-
     if (!env) {
         fwprintf_s(stdout, L"No installed Pythons found!\n");
         return 0;
@@ -1878,7 +2003,7 @@ listEnvironments(EnvironmentInfo *env, FILE * out, bool showPath)
     */
 
     int mode = _setmode(_fileno(out), _O_U8TEXT);
-    int exitCode = _listAllEnvironments(env, out, showPath, &isDefault);
+    int exitCode = _listAllEnvironments(env, out, showPath, defaultEnv);
     fflush(out);
     if (mode >= 0) {
         _setmode(_fileno(out), mode);
@@ -2147,6 +2272,7 @@ int
 process(int argc, wchar_t ** argv)
 {
     int exitCode = 0;
+    int searchExitCode = 0;
     SearchInfo search = {0};
     EnvironmentInfo *envs = NULL;
     EnvironmentInfo *env = NULL;
@@ -2175,60 +2301,62 @@ process(int argc, wchar_t ** argv)
         }
     }
 
+    // Select best environment
+    // This is early so that we can show the default when listing, but all
+    // responses to any errors occur later.
+    searchExitCode = selectEnvironment(&search, envs, &env);
+
     // List all environments, then exit
     if (search.list || search.listPaths) {
-        exitCode = listEnvironments(envs, stdout, search.listPaths);
+        exitCode = listEnvironments(envs, stdout, search.listPaths, env);
         goto abort;
     }
 
     // When debugging, list all discovered environments anyway
     if (log_fp) {
-        exitCode = listEnvironments(envs, log_fp, true);
+        exitCode = listEnvironments(envs, log_fp, true, NULL);
         if (exitCode) {
             goto abort;
         }
     }
 
-    // Select best environment
-    env = NULL;
-    if (search.executablePath == NULL) {
-        exitCode = selectEnvironment(&search, envs, &env);
-        // If none found, and if permitted, install it
-        if (exitCode == RC_NO_PYTHON && isEnvVarSet(L"PYLAUNCHER_ALLOW_INSTALL") ||
-            isEnvVarSet(L"PYLAUNCHER_ALWAYS_INSTALL")) {
-            exitCode = installEnvironment(&search);
-            if (!exitCode) {
-                // Successful install, so we need to re-scan and select again
-                exitCode = performSearch(&search, &envs);
-                if (exitCode) {
-                    goto abort;
-                }
-                env = NULL;
-                exitCode = selectEnvironment(&search, envs, &env);
+    // We searched earlier, so if we didn't find anything, now we react
+    exitCode = searchExitCode;
+    // If none found, and if permitted, install it
+    if (exitCode == RC_NO_PYTHON && isEnvVarSet(L"PYLAUNCHER_ALLOW_INSTALL") ||
+        isEnvVarSet(L"PYLAUNCHER_ALWAYS_INSTALL")) {
+        exitCode = installEnvironment(&search);
+        if (!exitCode) {
+            // Successful install, so we need to re-scan and select again
+            env = NULL;
+            exitCode = performSearch(&search, &envs);
+            if (exitCode) {
+                goto abort;
             }
+            exitCode = selectEnvironment(&search, envs, &env);
         }
-        if (exitCode == RC_NO_PYTHON) {
-            fputws(L"No suitable Python runtime found\n", stderr);
-            fputws(L"Pass --list (-0) to see all detected environments on your machine\n", stderr);
-            if (!isEnvVarSet(L"PYLAUNCHER_ALLOW_INSTALL") && search.oldStyleTag) {
-                fputws(L"or set environment variable PYLAUNCHER_ALLOW_INSTALL to use winget\n"
-                       L"or open the Microsoft Store to the requested version.\n", stderr);
-            }
-            goto abort;
+    }
+    if (exitCode == RC_NO_PYTHON) {
+        fputws(L"No suitable Python runtime found\n", stderr);
+        fputws(L"Pass --list (-0) to see all detected environments on your machine\n", stderr);
+        if (!isEnvVarSet(L"PYLAUNCHER_ALLOW_INSTALL") && search.oldStyleTag) {
+            fputws(L"or set environment variable PYLAUNCHER_ALLOW_INSTALL to use winget\n"
+                   L"or open the Microsoft Store to the requested version.\n", stderr);
         }
-        if (exitCode == RC_NO_PYTHON_AT_ALL) {
-            fputws(L"No installed Python found!\n", stderr);
-            goto abort;
-        }
-        if (exitCode) {
-            goto abort;
-        }
+        goto abort;
+    }
+    if (exitCode == RC_NO_PYTHON_AT_ALL) {
+        fputws(L"No installed Python found!\n", stderr);
+        goto abort;
+    }
+    if (exitCode) {
+        goto abort;
+    }
 
-        if (env) {
-            debug(L"env.company: %s\nenv.tag: %s\n", env->company, env->tag);
-        } else {
-            debug(L"env.company: (null)\nenv.tag: (null)\n");
-        }
+    if (env) {
+        debug(L"env.company: %s\nenv.tag: %s\n", env->company, env->tag);
+    } else {
+        debug(L"env.company: (null)\nenv.tag: (null)\n");
     }
 
     exitCode = calculateCommandLine(&search, env, launchCommand, sizeof(launchCommand) / sizeof(launchCommand[0]));

@@ -1,4 +1,6 @@
 
+#define _PY_INTERPRETER
+
 #include "Python.h"
 #include "frameobject.h"
 #include "pycore_code.h"           // stats
@@ -126,4 +128,11 @@ _PyFrame_Push(PyThreadState *tstate, PyFunctionObject *func)
     }
     _PyFrame_InitializeSpecials(new_frame, func, NULL, code->co_nlocalsplus);
     return new_frame;
+}
+
+int
+_PyInterpreterFrame_GetLine(_PyInterpreterFrame *frame)
+{
+    int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
+    return PyCode_Addr2Line(frame->f_code, addr);
 }

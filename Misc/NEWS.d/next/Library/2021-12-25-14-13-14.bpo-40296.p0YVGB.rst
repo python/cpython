@@ -1,1 +1,0 @@
-Fix supporting generic aliases in :mod:`pydoc`.
