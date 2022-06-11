@@ -103,7 +103,7 @@ the definition of all other Python objects.
 
    .. versionchanged:: 3.11
       :c:func:`Py_TYPE()` is changed to an inline static function.
-      The parameter type is no longer :c:type:`const PyObject*`.
+      The parameter type is no longer :c:expr:`const PyObject*`.
 
 
 .. c:function:: int Py_IS_TYPE(PyObject *o, PyTypeObject *type)
@@ -128,7 +128,7 @@ the definition of all other Python objects.
    Use the :c:func:`Py_SET_REFCNT()` function to set an object reference count.
 
    .. versionchanged:: 3.11
-      The parameter type is no longer :c:type:`const PyObject*`.
+      The parameter type is no longer :c:expr:`const PyObject*`.
 
    .. versionchanged:: 3.10
       :c:func:`Py_REFCNT()` is changed to the inline static function.
@@ -149,7 +149,7 @@ the definition of all other Python objects.
 
    .. versionchanged:: 3.11
       :c:func:`Py_SIZE()` is changed to an inline static function.
-      The parameter type is no longer :c:type:`const PyVarObject*`.
+      The parameter type is no longer :c:expr:`const PyVarObject*`.
 
 
 .. c:function:: void Py_SET_SIZE(PyVarObject *o, Py_ssize_t size)
