@@ -2281,7 +2281,7 @@ These are the fundamental ctypes data types:
 
    Represents the C :c:type:`time_t` datatype.
 
-   .. versionadded:: 3.X
+   .. versionadded:: 3.12
 
 
 .. class:: c_ubyte
