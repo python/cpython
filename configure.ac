@@ -1492,12 +1492,17 @@ then
     dnl TODO: support other WASI runtimes
     dnl wasmtime starts the proces with "/" as CWD. For OOT builds add the
     dnl directory containing _sysconfigdata to PYTHONPATH.
-    [WASI/*], [HOSTRUNNER='wasmtime run --env PYTHONPATH=$$(realpath --relative-to $(abs_srcdir) $(abs_builddir))/$$(cat pybuilddir.txt) --mapdir /::$(srcdir) --'],
+    [WASI/*], [HOSTRUNNER='wasmtime run --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt) --mapdir /::$(srcdir) --'],
     [HOSTRUNNER='']
   )
 fi
 AC_SUBST([HOSTRUNNER])
 AC_MSG_RESULT([$HOSTRUNNER])
+
+if test -n "$HOSTRUNNER"; then
+  dnl Pass hostrunner variable as env var in order to expand shell expressions.
+  PYTHON_FOR_BUILD="_PYTHON_HOSTRUNNER='$HOSTRUNNER' $PYTHON_FOR_BUILD"
+fi
 
 AC_MSG_RESULT($LDLIBRARY)
 
