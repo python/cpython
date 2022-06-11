@@ -482,6 +482,7 @@ miss_counter_start(void) {
 #define SPEC_FAIL_FOR_ITER_SEQ_ITER 26
 #define SPEC_FAIL_FOR_ITER_REVERSED_LIST 27
 #define SPEC_FAIL_FOR_ITER_CALLABLE 28
+#define SPEC_FAIL_FOR_ITER_ASCII_STRING 29
 
 // UNPACK_SEQUENCE
 
@@ -2067,6 +2068,9 @@ int
     }
     if (t == &PyListRevIter_Type) {
         return SPEC_FAIL_FOR_ITER_REVERSED_LIST;
+    }
+    if (t == &_PyUnicodeASCIIIter_Type) {
+        return SPEC_FAIL_FOR_ITER_ASCII_STRING;
     }
     const char *name = t->tp_name;
     if (strncmp(name, "itertools", 9) == 0) {
