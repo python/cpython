@@ -2270,9 +2270,9 @@ code:
   earlier section :ref:`pep-353` for a discussion of this change.
 
 * C API:  The obmalloc changes mean that  you must be careful to not mix usage
-  of the :c:func:`PyMem_\*` and :c:func:`PyObject_\*` families of functions. Memory
-  allocated with  one family's :c:func:`\*_Malloc` must be  freed with the
-  corresponding family's :c:func:`\*_Free` function.
+  of the ``PyMem_\*`` and ``PyObject_\*`` families of functions. Memory
+  allocated with  one family's ``*_Malloc`` must be  freed with the
+  corresponding family's ``\*_Free`` function.
 
 .. ======================================================================
 
