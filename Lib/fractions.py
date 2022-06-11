@@ -247,8 +247,8 @@ class Fraction(numbers.Rational):
             n, d = d, n-a*d
 
         k = (max_denominator-q0)//q1
-        bound1 = Fraction(p0+k*p1, q0+k*q1)
-        bound2 = Fraction(p1, q1)
+        bound1 = Fraction(p0+k*p1, q0+k*q1, _normalize=False)
+        bound2 = Fraction(p1, q1, _normalize=False)
         if abs(bound2 - self) <= abs(bound1-self):
             return bound2
         else:
