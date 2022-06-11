@@ -373,6 +373,9 @@ Other Language Changes
   the current directory, the script's directory or an empty string.
   (Contributed by Victor Stinner in :gh:`57684`.)
 
+* A ``"z"`` option was added to the format specification mini-language that
+  coerces negative zero to zero after rounding to the format precision.  See
+  :pep:`682` for more details.  (Contributed by John Belmonte in :gh:`90153`.)
 
 Other CPython Implementation Changes
 ====================================
