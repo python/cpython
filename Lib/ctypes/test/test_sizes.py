@@ -28,6 +28,9 @@ class SizesTestCase(unittest.TestCase):
     def test_ssize_t(self):
         self.assertEqual(sizeof(c_void_p), sizeof(c_ssize_t))
 
+    def test_time_t(self):
+        self.assertIn(sizeof(c_time_t), (4, 8))
+
 
 if __name__ == "__main__":
     unittest.main()
