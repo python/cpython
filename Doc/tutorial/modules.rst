@@ -225,17 +225,18 @@ version of spam.py would be cached as ``__pycache__/spam.cpython-33.pyc``.  This
 naming convention allows compiled modules from different releases and different
 versions of Python to coexist.
 
-Python checks the modification date of the source against the compiled version
-to see if it's out of date and needs to be recompiled.  This is a completely
-automatic process.  Also, the compiled modules are platform-independent, so the
-same library can be shared among systems with different architectures.
+Python checks the modification date of the source (``.py``) against the compiled
+(``.pyc``) version to see if it's out of date and needs to be recompiled.  This
+is a completely automatic process.  Also, the compiled modules are
+platform-independent, so the same library can be shared among systems with
+different architectures.
 
 Python does not check the cache in two circumstances.  First, it always
 recompiles and does not store the result for the module that's loaded directly
 from the command line.  Second, it does not check the cache if there is no
-source module.  To support a non-source (compiled only) distribution, the
-compiled module must be in the source directory, and there must not be a source
-module.
+corresponding source module.  To support a non-source (compiled only)
+distribution, the compiled module must be in the source directory, and there
+must not be a source module.
 
 Some tips for experts:
 
