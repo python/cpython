@@ -647,6 +647,8 @@ class CalendarTestCase(unittest.TestCase):
             # For too short widths, a full name (with year) is used.
             self.assertEqual(cal.formatmonthname(2022, 6, 2, withyear=False), "June")
             self.assertEqual(cal.formatmonthname(2022, 6, 2, withyear=True), "June 2022")
+            self.assertEqual(cal.formatmonthname(2022, 6, 3, withyear=False), "June")
+            self.assertEqual(cal.formatmonthname(2022, 6, 3, withyear=True), "June 2022")
             # For long widths, a centered name is used.
             self.assertEqual(cal.formatmonthname(2022, 6, 10, withyear=False), "   June   ")
             self.assertEqual(cal.formatmonthname(2022, 6, 15, withyear=True), "   June 2022   ")
