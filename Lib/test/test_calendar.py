@@ -980,6 +980,9 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertFailure('-z')
         self.assertFailure('spam')
         self.assertFailure('2004', 'spam')
+        self.assertFailure('2004', '1', 'spam')
+        self.assertFailure('2004', '1', '1')
+        self.assertFailure('2004', '1', '1', 'spam')
         self.assertFailure('-t', 'html', '2004', '1')
 
     def test_too_many_arguments(self):
