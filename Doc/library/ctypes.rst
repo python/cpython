@@ -151,7 +151,7 @@ You can call these functions like any other Python callable. This example uses
 the ``time()`` function, which returns system time in seconds since the Unix
 epoch.
 
-The C prototype or ``time()`` is ``time_t time(time_t *)``. Because ``time_t``
+The C prototype of ``time()`` is ``time_t time(time_t *)``. Because ``time_t``
 might be of a different type than the default return type ``int``, you should
 specify the ``restype``::
 
