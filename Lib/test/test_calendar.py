@@ -985,15 +985,6 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertFailure('2004', '1', '1', 'spam')
         self.assertFailure('-t', 'html', '2004', '1')
 
-    def test_too_many_arguments(self):
-        stderr = self.assertCmdFails('--type', 'html', '2004', '5')[2]
-        self.assertIn(b'error', stderr)
-        self.assertIn(b'incorrect number of arguments', stderr)
-
-        stderr = self.assertCLIFails('--type', 'html', '2004', '5')
-        self.assertIn(b'error', stderr)
-        self.assertIn(b'incorrect number of arguments', stderr)
-
     def test_output_current_year(self):
         for run in self.runners:
             output = run()
