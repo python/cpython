@@ -239,6 +239,43 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_run_in_tree_build_win32(self):
+        "Test _is_python_build fields with edge cases.(gh-91985)"
+        def read_pathconfig(config, attr):
+            if _Py_path_config[attr] >= 0 and config[attr] <= 0:
+                config[attr] = _Py_path_config[attr]
+
+        def update_pathconfig(config, attr):
+            if config[attr] > 0:
+                _Py_path_config[attr] = config[attr]
+
+        edges = {
+            ( 0, -1) :  0,
+            (-1,  0) : -1,
+            (-1, -1) : -1,
+            ( 1,  0) :  1,
+        }
+        for key in edges:
+            _Py_path_config = dict(
+                _is_python_build=key[0],
+            )
+            ns = MockNTNamespace(
+                argv0=r"C:\CPython\PCbuild\amd64\python.exe",
+            )
+            ns['config'].update(
+                _is_python_build=key[1],
+            )
+            # _PyConfig_InitPathConfig emulation
+            read_pathconfig(ns['config'], '_is_python_build')
+            expected = dict(
+                _is_python_build=ns['config']['_is_python_build'],
+                build_prefix=None,  # no build-landmark
+            )
+            actual = getpath(ns, expected)
+            self.assertEqual(actual, expected)
+            update_pathconfig(actual, '_is_python_build')
+            self.assertEqual(_Py_path_config['_is_python_build'], edges[key])
+
     def test_normal_posix(self):
         "Test a 'standard' install layout on *nix"
         ns = MockPosixNamespace(
