@@ -149,14 +149,26 @@ Calling functions
 
 You can call these functions like any other Python callable. This example uses
 the ``time()`` function, which returns system time in seconds since the Unix
-epoch, and the ``GetModuleHandleA()`` function, which returns a win32 module
-handle.
+epoch.
 
-This example calls both functions with a ``NULL`` pointer (``None`` should be used
-as the ``NULL`` pointer)::
+The C prototype or ``time()`` is ``time_t time(time_t *)``. Because ``time_t``
+might be of a different type than the default return type ``int``, you should
+specify the ``restype``::
+
+   >>> libc.time.restype = c_time_t
+
+The argument types can be specified using ``argtypes``::
+
+   >>> libc.time.argtypes = (POINTER(c_time_t),)
+
+To call the function with a ``NULL`` pointer as first argument, use ``None``::
 
    >>> print(libc.time(None))  # doctest: +SKIP
    1150640792
+
+On Windows, you can call the ``GetModuleHandleA()`` function, which returns a win32 module
+handle (again, passing ``None`` as single argument to call it with a ``NULL`` pointer)::
+
    >>> print(hex(windll.kernel32.GetModuleHandleA(None)))  # doctest: +WINDOWS
    0x1d000000
    >>>
