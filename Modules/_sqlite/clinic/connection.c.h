@@ -7,15 +7,16 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
                               double timeout, int detect_types,
                               const char *isolation_level,
                               int check_same_thread, PyObject *factory,
-                              int cache_size, int uri);
+                              int cache_size, int uri,
+                              enum autocommit_mode autocommit);
 
 static int
 pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static const char * const _keywords[] = {"database", "timeout", "detect_types", "isolation_level", "check_same_thread", "factory", "cached_statements", "uri", NULL};
+    static const char * const _keywords[] = {"database", "timeout", "detect_types", "isolation_level", "check_same_thread", "factory", "cached_statements", "uri", "autocommit", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "Connection", 0};
-    PyObject *argsbuf[8];
+    PyObject *argsbuf[9];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
@@ -27,8 +28,9 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *factory = (PyObject*)clinic_state()->ConnectionType;
     int cache_size = 128;
     int uri = 0;
+    enum autocommit_mode autocommit = -1;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 8, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 9, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -92,12 +94,20 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
             goto skip_optional_pos;
         }
     }
-    uri = PyObject_IsTrue(fastargs[7]);
-    if (uri < 0) {
+    if (fastargs[7]) {
+        uri = PyObject_IsTrue(fastargs[7]);
+        if (uri < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (!autocommit_converter(fastargs[8], &autocommit)) {
         goto exit;
     }
 skip_optional_pos:
-    return_value = pysqlite_connection_init_impl((pysqlite_Connection *)self, database, timeout, detect_types, isolation_level, check_same_thread, factory, cache_size, uri);
+    return_value = pysqlite_connection_init_impl((pysqlite_Connection *)self, database, timeout, detect_types, isolation_level, check_same_thread, factory, cache_size, uri, autocommit);
 
 exit:
     return return_value;
@@ -1231,4 +1241,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=fb8908674e9f25ff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fa33ca7eb96cabdf input=a9049054013a1b77]*/

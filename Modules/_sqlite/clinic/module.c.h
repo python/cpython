@@ -5,7 +5,8 @@ preserve
 PyDoc_STRVAR(pysqlite_connect__doc__,
 "connect($module, /, database, timeout=5.0, detect_types=0,\n"
 "        isolation_level=<unrepresentable>, check_same_thread=True,\n"
-"        factory=ConnectionType, cached_statements=128, uri=False)\n"
+"        factory=ConnectionType, cached_statements=128, uri=False,\n"
+"        autocommit=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Opens a connection to the SQLite database file database.\n"
@@ -20,15 +21,15 @@ static PyObject *
 pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
                       int detect_types, PyObject *isolation_level,
                       int check_same_thread, PyObject *factory,
-                      int cached_statements, int uri);
+                      int cached_statements, int uri, PyObject *autocommit);
 
 static PyObject *
 pysqlite_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"database", "timeout", "detect_types", "isolation_level", "check_same_thread", "factory", "cached_statements", "uri", NULL};
+    static const char * const _keywords[] = {"database", "timeout", "detect_types", "isolation_level", "check_same_thread", "factory", "cached_statements", "uri", "autocommit", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "connect", 0};
-    PyObject *argsbuf[8];
+    PyObject *argsbuf[9];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *database;
     double timeout = 5.0;
@@ -38,8 +39,9 @@ pysqlite_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     PyObject *factory = (PyObject*)clinic_state()->ConnectionType;
     int cached_statements = 128;
     int uri = 0;
+    PyObject *autocommit = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 8, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 9, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -101,12 +103,18 @@ pysqlite_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    uri = PyObject_IsTrue(args[7]);
-    if (uri < 0) {
-        goto exit;
+    if (args[7]) {
+        uri = PyObject_IsTrue(args[7]);
+        if (uri < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
     }
+    autocommit = args[8];
 skip_optional_pos:
-    return_value = pysqlite_connect_impl(module, database, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri);
+    return_value = pysqlite_connect_impl(module, database, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri, autocommit);
 
 exit:
     return return_value;
@@ -292,4 +300,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a7cfa6dc9d54273c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=592ef17c0e421e90 input=a9049054013a1b77]*/

@@ -92,6 +92,30 @@ isolation_level_converter(PyObject *str_or_none, const char **result)
     return 1;
 }
 
+static int
+autocommit_converter(PyObject *val, enum autocommit_mode *result)
+{
+    if (Py_IsTrue(val)) {
+        *result = AUTOCOMMIT_ENABLED;
+        return 1;
+    }
+    if (Py_IsFalse(val)) {
+        *result = AUTOCOMMIT_DISABLED;
+        return 1;
+    }
+    if (PyLong_Check(val) &&
+        PyLong_AsLong(val) == DEPRECATED_TRANSACTION_CONTROL)
+    {
+        *result = AUTOCOMMIT_COMPAT;
+        return 1;
+    }
+
+    PyErr_SetString(PyExc_ValueError,
+        "autocommit must be True, False, or "
+        "sqlite3.DEPRECATED_TRANSACTION_CONTROL");
+    return 0;
+}
+
 #define clinic_state() (pysqlite_get_state_by_type(Py_TYPE(self)))
 #include "clinic/connection.c.h"
 #undef clinic_state
@@ -132,13 +156,37 @@ new_statement_cache(pysqlite_Connection *self, pysqlite_state *state,
     return res;
 }
 
+static inline int
+connection_txn_stmt(pysqlite_Connection *self, const char *sql)
+{
+    int rc;
+    Py_BEGIN_ALLOW_THREADS
+    sqlite3_stmt *stmt;
+    rc = sqlite3_prepare_v2(self->db, sql, -1, &stmt, NULL);
+    if (rc == SQLITE_OK) {
+        (void)sqlite3_step(stmt);
+        rc = sqlite3_finalize(stmt);
+    }
+    Py_END_ALLOW_THREADS
+
+    if (rc != SQLITE_OK) {
+        (void)_pysqlite_seterror(self->state, self->db);
+        return -1;
+    }
+    return 0;
+}
+
 /*[python input]
 class IsolationLevel_converter(CConverter):
     type = "const char *"
     converter = "isolation_level_converter"
 
+class Autocommit_converter(CConverter):
+    type = "enum autocommit_mode"
+    converter = "autocommit_converter"
+
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=cbcfe85b253061c2]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=bc2aa6c7ba0c5f8f]*/
 
 /*[clinic input]
 _sqlite3.Connection.__init__ as pysqlite_connection_init
@@ -151,6 +199,7 @@ _sqlite3.Connection.__init__ as pysqlite_connection_init
     factory: object(c_default='(PyObject*)clinic_state()->ConnectionType') = ConnectionType
     cached_statements as cache_size: int = 128
     uri: bool = False
+    autocommit: Autocommit(c_default='-1') = sqlite3.DEPRECATED_TRANSACTION_CONTROL
 [clinic start generated code]*/
 
 static int
@@ -158,8 +207,9 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
                               double timeout, int detect_types,
                               const char *isolation_level,
                               int check_same_thread, PyObject *factory,
-                              int cache_size, int uri)
-/*[clinic end generated code: output=839eb2fee4293bda input=b8ce63dc6f70a383]*/
+                              int cache_size, int uri,
+                              enum autocommit_mode autocommit)
+/*[clinic end generated code: output=cba057313ea7712f input=82b8f749d645f63d]*/
 {
     if (PySys_Audit("sqlite3.connect", "O", database) < 0) {
         return -1;
@@ -226,6 +276,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     self->state = state;
     self->detect_types = detect_types;
     self->isolation_level = isolation_level;
+    self->autocommit = autocommit;
     self->check_same_thread = check_same_thread;
     self->thread_ident = PyThread_get_thread_ident();
     self->statement_cache = statement_cache;
@@ -255,6 +306,10 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     }
 
     self->initialized = 1;
+
+    if (autocommit == AUTOCOMMIT_DISABLED) {
+        (void)connection_txn_stmt(self, "BEGIN");
+    }
     return 0;
 
 error:
@@ -324,6 +379,12 @@ static void
 connection_close(pysqlite_Connection *self)
 {
     if (self->db) {
+        if (self->autocommit == AUTOCOMMIT_DISABLED &&
+            !sqlite3_get_autocommit(self->db))
+        {
+            (void)connection_txn_stmt(self, "ROLLBACK");
+        }
+
         free_callback_contexts(self);
 
         sqlite3 *db = self->db;
@@ -533,24 +594,21 @@ pysqlite_connection_commit_impl(pysqlite_Connection *self)
         return NULL;
     }
 
-    if (!sqlite3_get_autocommit(self->db)) {
-        int rc;
-
-        Py_BEGIN_ALLOW_THREADS
-        sqlite3_stmt *statement;
-        rc = sqlite3_prepare_v2(self->db, "COMMIT", 7, &statement, NULL);
-        if (rc == SQLITE_OK) {
-            (void)sqlite3_step(statement);
-            rc = sqlite3_finalize(statement);
+    if (self->autocommit == AUTOCOMMIT_COMPAT) {
+        if (!sqlite3_get_autocommit(self->db)) {
+            if (connection_txn_stmt(self, "COMMIT") < 0) {
+                return NULL;
+            }
         }
-        Py_END_ALLOW_THREADS
-
-        if (rc != SQLITE_OK) {
-            (void)_pysqlite_seterror(self->state, self->db);
+    }
+    else if (self->autocommit == AUTOCOMMIT_DISABLED) {
+        if (connection_txn_stmt(self, "COMMIT") < 0) {
+            return NULL;
+        }
+        if (connection_txn_stmt(self, "BEGIN") < 0) {
             return NULL;
         }
     }
-
     Py_RETURN_NONE;
 }
 
@@ -568,25 +626,21 @@ pysqlite_connection_rollback_impl(pysqlite_Connection *self)
         return NULL;
     }
 
-    if (!sqlite3_get_autocommit(self->db)) {
-        int rc;
-
-        Py_BEGIN_ALLOW_THREADS
-        sqlite3_stmt *statement;
-        rc = sqlite3_prepare_v2(self->db, "ROLLBACK", 9, &statement, NULL);
-        if (rc == SQLITE_OK) {
-            (void)sqlite3_step(statement);
-            rc = sqlite3_finalize(statement);
+    if (self->autocommit == AUTOCOMMIT_COMPAT) {
+        if (!sqlite3_get_autocommit(self->db)) {
+            if (connection_txn_stmt(self, "ROLLBACK") < 0) {
+                return NULL;
+            }
         }
-        Py_END_ALLOW_THREADS
-
-        if (rc != SQLITE_OK) {
-            (void)_pysqlite_seterror(self->state, self->db);
+    }
+    else if (self->autocommit == AUTOCOMMIT_DISABLED) {
+        if (connection_txn_stmt(self, "ROLLBACK") < 0) {
             return NULL;
         }
-
+        if (connection_txn_stmt(self, "BEGIN") < 0) {
+            return NULL;
+        }
     }
-
     Py_RETURN_NONE;
 }
 
@@ -2264,6 +2318,34 @@ getlimit_impl(pysqlite_Connection *self, int category)
 }
 
 
+static PyObject *
+get_autocommit(pysqlite_Connection *self, void *Py_UNUSED(ctx))
+{
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+    if (self->autocommit == AUTOCOMMIT_ENABLED) {
+        Py_RETURN_TRUE;
+    }
+    if (self->autocommit == AUTOCOMMIT_DISABLED) {
+        Py_RETURN_FALSE;
+    }
+    return PyLong_FromLong(DEPRECATED_TRANSACTION_CONTROL);
+}
+
+static int
+set_autocommit(pysqlite_Connection *self, PyObject *val, void *Py_UNUSED(ctx))
+{
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return -1;
+    }
+    if (!autocommit_converter(val, &self->autocommit)) {
+        return -1;
+    }
+    return 0;
+}
+
+
 static const char connection_doc[] =
 PyDoc_STR("SQLite database connection object.");
 
@@ -2271,6 +2353,7 @@ static PyGetSetDef connection_getset[] = {
     {"isolation_level",  (getter)pysqlite_connection_get_isolation_level, (setter)pysqlite_connection_set_isolation_level},
     {"total_changes",  (getter)pysqlite_connection_get_total_changes, (setter)0},
     {"in_transaction",  (getter)pysqlite_connection_get_in_transaction, (setter)0},
+    {"autocommit",  (getter)get_autocommit, (setter)set_autocommit},
     {NULL}
 };
 

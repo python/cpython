@@ -54,6 +54,7 @@ _sqlite3.connect as pysqlite_connect
     factory: object(c_default='(PyObject*)clinic_state()->ConnectionType') = ConnectionType
     cached_statements: int = 128
     uri: bool = False
+    autocommit: object = NULL
 
 Opens a connection to the SQLite database file database.
 
@@ -65,8 +66,8 @@ static PyObject *
 pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
                       int detect_types, PyObject *isolation_level,
                       int check_same_thread, PyObject *factory,
-                      int cached_statements, int uri)
-/*[clinic end generated code: output=450ac9078b4868bb input=e16914663ddf93ce]*/
+                      int cached_statements, int uri, PyObject *autocommit)
+/*[clinic end generated code: output=4b77f986d8f15727 input=98e9bff671a5e098]*/
 {
     if (isolation_level == NULL) {
         isolation_level = PyUnicode_FromString("");
@@ -77,11 +78,23 @@ pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
     else {
         Py_INCREF(isolation_level);
     }
-    PyObject *res = PyObject_CallFunction(factory, "OdiOiOii", database,
+    if (autocommit == NULL) {
+        autocommit = PyLong_FromLong(-1);
+        if (autocommit == NULL) {
+            Py_DECREF(isolation_level);
+            return NULL;
+        }
+    }
+    else {
+        Py_INCREF(autocommit);
+    }
+    PyObject *res = PyObject_CallFunction(factory, "OdiOiOiiO", database,
                                           timeout, detect_types,
                                           isolation_level, check_same_thread,
-                                          factory, cached_statements, uri);
+                                          factory, cached_statements, uri,
+                                          autocommit);
     Py_DECREF(isolation_level);
+    Py_DECREF(autocommit);
     return res;
 }
 
@@ -706,6 +719,10 @@ module_exec(PyObject *module)
     }
 
     if (PyModule_AddStringConstant(module, "sqlite_version", sqlite3_libversion())) {
+        goto error;
+    }
+
+    if (PyModule_AddIntMacro(module, DEPRECATED_TRANSACTION_CONTROL) < 0) {
         goto error;
     }
 

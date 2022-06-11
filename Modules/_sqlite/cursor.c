@@ -872,6 +872,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
        SELECT is the only exception. See #9924. */
     if (self->connection->isolation_level
         && self->statement->is_dml
+        && self->connection->autocommit == AUTOCOMMIT_COMPAT
         && sqlite3_get_autocommit(self->connection->db))
     {
         if (begin_transaction(self->connection) < 0) {
@@ -1052,7 +1053,7 @@ pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
 
     // Commit if needed
     sqlite3 *db = self->connection->db;
-    if (!sqlite3_get_autocommit(db)) {
+    if (!sqlite3_get_autocommit(db) && self->connection->autocommit == AUTOCOMMIT_COMPAT) {
         int rc = SQLITE_OK;
 
         Py_BEGIN_ALLOW_THREADS
