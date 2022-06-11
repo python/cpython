@@ -3036,6 +3036,7 @@ class AbstractPickleTests:
         check_array(arr[::2])
 
     def test_evil_class_mutating_dict(self):
+        # https://github.com/python/cpython/issues/92930
         from random import getrandbits
 
         global Bad
@@ -3064,7 +3065,8 @@ class AbstractPickleTests:
                     expected = "changed size during iteration"
                     self.assertIn(expected, str(e))
 
-    def test_evil_class_mutating_container(self):
+    def test_evil_pickler_mutating_collection(self):
+        # https://github.com/python/cpython/issues/92930
         if not hasattr(self, "pickler"):
             raise self.skipTest(f"{type(self)} has no associated pickler type")
 
@@ -3072,17 +3074,18 @@ class AbstractPickleTests:
         class Clearer:
             pass
 
-        def check(a):
-            class P(self.pickler):
+        def check(collection):
+            class EvilPickler(self.pickler):
                 def persistent_id(self, obj):
                     if isinstance(obj, Clearer):
-                        a.clear()
+                        collection.clear()
                     return None
+            pickler = EvilPickler(io.BytesIO(), proto)
             try:
-                P(io.BytesIO(), proto).dump(a)
-            except RuntimeError:
-                # Don't care if this raises, just don't segfault.
-                pass
+                pickler.dump(collection)
+            except RuntimeError as e:
+                expected = "changed size during iteration"
+                self.assertIn(expected, str(e))
 
         for proto in protocols:
             check([Clearer()])
