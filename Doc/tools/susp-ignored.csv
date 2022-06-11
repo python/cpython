@@ -174,6 +174,8 @@ library/itertools,,:stop,elements from seq[start:stop:step]
 library/logging,,:root,WARNING:root:Watch out!
 library/logging,,:Watch,WARNING:root:Watch out!
 library/logging.handlers,,:port,host:port
+library/logging,,:root,WARNING:root:Watch out!
+library/logging,,:Watch,WARNING:root:Watch out!
 library/mmap,,:i2,obj[i1:i2]
 library/multiprocessing,,`,# Add more tasks using `put()`
 library/multiprocessing,,:queue,">>> QueueManager.register('get_queue', callable=lambda:queue)"
