@@ -3005,7 +3005,10 @@ batch_list_exact(PicklerObject *self, PyObject *obj)
 
     if (PyList_GET_SIZE(obj) == 1) {
         item = PyList_GET_ITEM(obj, 0);
-        if (save(self, item, 0) < 0)
+        Py_INCREF(item);
+        int err = save(self, item, 0);
+        Py_DECREF(item);
+        if (err < 0)
             return -1;
         if (_Pickler_Write(self, &append_op, 1) < 0)
             return -1;
@@ -3020,7 +3023,10 @@ batch_list_exact(PicklerObject *self, PyObject *obj)
             return -1;
         while (total < PyList_GET_SIZE(obj)) {
             item = PyList_GET_ITEM(obj, total);
-            if (save(self, item, 0) < 0)
+            Py_INCREF(item);
+            int err = save(self, item, 0);
+            Py_DECREF(item);
+            if (err < 0)
                 return -1;
             total++;
             if (++this_batch == BATCHSIZE)
@@ -3258,10 +3264,16 @@ batch_dict_exact(PicklerObject *self, PyObject *obj)
     /* Special-case len(d) == 1 to save space. */
     if (dict_size == 1) {
         PyDict_Next(obj, &ppos, &key, &value);
-        if (save(self, key, 0) < 0)
-            return -1;
-        if (save(self, value, 0) < 0)
-            return -1;
+        Py_INCREF(key);
+        Py_INCREF(value);
+        if (save(self, key, 0) < 0) {
+            goto error;
+        }
+        if (save(self, value, 0) < 0) {
+            goto error;
+        }
+        Py_CLEAR(key);
+        Py_CLEAR(value);
         if (_Pickler_Write(self, &setitem_op, 1) < 0)
             return -1;
         return 0;
@@ -3273,10 +3285,16 @@ batch_dict_exact(PicklerObject *self, PyObject *obj)
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
         while (PyDict_Next(obj, &ppos, &key, &value)) {
-            if (save(self, key, 0) < 0)
-                return -1;
-            if (save(self, value, 0) < 0)
-                return -1;
+            Py_INCREF(key);
+            Py_INCREF(value);
+            if (save(self, key, 0) < 0) {
+                goto error;
+            }
+            if (save(self, value, 0) < 0) {
+                goto error;
+            }
+            Py_CLEAR(key);
+            Py_CLEAR(value);
             if (++i == BATCHSIZE)
                 break;
         }
@@ -3291,6 +3309,10 @@ batch_dict_exact(PicklerObject *self, PyObject *obj)
 
     } while (i == BATCHSIZE);
     return 0;
+error:
+    Py_XDECREF(key);
+    Py_XDECREF(value);
+    return -1;
 }
 
 static int
@@ -3410,7 +3432,10 @@ save_set(PicklerObject *self, PyObject *obj)
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
         while (_PySet_NextEntry(obj, &ppos, &item, &hash)) {
-            if (save(self, item, 0) < 0)
+            Py_INCREF(item);
+            int err = save(self, item, 0);
+            Py_CLEAR(item);
+            if (err < 0)
                 return -1;
             if (++i == BATCHSIZE)
                 break;
