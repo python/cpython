@@ -1,1 +1,2 @@
-Added ``c_time_t`` to ``ctypes``, which has the same size as the ``time_t`` type in C (either 32-bit or 64-bit, depending on platform and ABI)
+Added :class:`~ctypes.c_time_t` to :mod:`ctypes`, which has the same size as
+the :c:type:`time_t` type in C (either 32-bit or 64-bit)
