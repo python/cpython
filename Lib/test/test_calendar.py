@@ -543,7 +543,7 @@ class CalendarTestCase(unittest.TestCase):
             # verify it "acts like a sequence" in two forms of iteration
             self.assertEqual(value[::-1], list(reversed(value)))
 
-    def test_locale_calendars(self):
+    def test_locale_text_calendar(self):
         try:
             cal = calendar.LocaleTextCalendar(locale='')
             local_weekday = cal.formatweekday(1, 10)
@@ -581,9 +581,14 @@ class CalendarTestCase(unittest.TestCase):
         self.assertEqual(len(local_weekday_abbr), 3)
         self.assertGreaterEqual(len(local_month), 10)
 
-        cal = calendar.LocaleHTMLCalendar(locale='')
-        local_weekday = cal.formatweekday(1)
-        local_month = cal.formatmonthname(2010, 10)
+    def test_locale_html_calendar(self):
+        try:
+            cal = calendar.LocaleHTMLCalendar(locale='')
+            local_weekday = cal.formatweekday(1)
+            local_month = cal.formatmonthname(2010, 10)
+        except locale.Error:
+            # cannot set the system default locale -- skip rest of test
+            raise unittest.SkipTest('cannot set the system default locale')
         self.assertIsInstance(local_weekday, str)
         self.assertIsInstance(local_month, str)
 
