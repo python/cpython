@@ -923,7 +923,7 @@ class CommandLineTestCase(unittest.TestCase):
             yield sys.stdout
         finally:
             sys.stdout.flush()
-            sys.stdout.buffer.seek(0, 0)
+            sys.stdout.buffer.seek(0)
             sys.stdout = orig_stdout
 
     @contextlib.contextmanager
@@ -935,7 +935,7 @@ class CommandLineTestCase(unittest.TestCase):
             yield sys.stderr
         finally:
             sys.stderr.flush()
-            sys.stderr.buffer.seek(0, 0)
+            sys.stderr.buffer.seek(0)
             sys.stderr = orig_stderr
 
     def run_cli_ok(self, *args):
