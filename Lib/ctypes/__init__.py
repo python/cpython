@@ -569,6 +569,6 @@ if SIZEOF_TIME_T == 8:
 elif SIZEOF_TIME_T == 4:
     c_time_t = c_int32
 else:
-    raise SystemError("Unexpected sizeof(time_t): %d" % (SIZEOF_TIME_T,))
+    raise SystemError(f"Unexpected sizeof(time_t): {SIZEOF_TIME_T:d}")
 
 _reset_cache()
