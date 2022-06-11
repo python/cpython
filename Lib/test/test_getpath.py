@@ -249,21 +249,15 @@ class MockGetPathTests(unittest.TestCase):
             if config[attr] > 0:
                 _Py_path_config[attr] = config[attr]
 
-        edges = {
-            ( 0, -1) :  0,
-            (-1,  0) : -1,
-            (-1, -1) : -1,
-            ( 1,  0) :  1,
-        }
-        for key in edges:
+        for edges in [(0,-1), (-1, 0), (-1,-1), (1, 0)]:
             _Py_path_config = dict(
-                _is_python_build=key[0],
+                _is_python_build=edges[0],
             )
             ns = MockNTNamespace(
                 argv0=r"C:\CPython\PCbuild\amd64\python.exe",
             )
             ns['config'].update(
-                _is_python_build=key[1],
+                _is_python_build=edges[1],
             )
             # _PyConfig_InitPathConfig emulation
             read_pathconfig(ns['config'], '_is_python_build')
@@ -274,7 +268,7 @@ class MockGetPathTests(unittest.TestCase):
             actual = getpath(ns, expected)
             self.assertEqual(actual, expected)
             update_pathconfig(actual, '_is_python_build')
-            self.assertEqual(_Py_path_config['_is_python_build'], edges[key])
+            self.assertEqual(_Py_path_config['_is_python_build'], edges[0])
 
     def test_normal_posix(self):
         "Test a 'standard' install layout on *nix"
