@@ -387,9 +387,12 @@ class LogRecord(object):
         Return the message for this LogRecord after merging any user-supplied
         arguments with the message.
         """
+        if hasattr(self, "message"):
+            return str(self.message)
         msg = str(self.msg)
         if self.args:
             msg = msg % self.args
+        self.message = msg
         return msg
 
 #
@@ -700,7 +703,7 @@ class Formatter(object):
         called to format the event time. If there is exception information,
         it is formatted using formatException() and appended to the message.
         """
-        record.message = record.getMessage()
+        record.getMessage()
         if self.usesTime():
             record.asctime = self.formatTime(record, self.datefmt)
         s = self.formatMessage(record)
