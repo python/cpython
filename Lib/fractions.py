@@ -247,12 +247,11 @@ class Fraction(numbers.Rational):
             n, d = d, n-a*d
         k = (max_denominator-q0)//q1
 
-        # Determine which of the candidate fractions (p0+k*p1)/(q0+k*q1) and
-        # p1/q1 is closer to self. The distance between the two candidates is
-        # 1/(q1*(q0+k*q1)), while the distance from p1/q1 to self is
-        # 1/(q1*(q0+n/d*q1)). So we need to compare 2*(q0+k*q1) with q0+n/d*q1.
-        # That translates to the following comparison in integers.
-        if (q0+2*k*q1)*d <= q1*n:
+        # Determine which of the candidates (p0+k*p1)/(q0+k*q1) and p1/q1 is
+        # closer to self. The distance between them is 1/(q1*(q0+k*q1)), while
+        # the distance from p1/q1 to self is d/(q1*self._denominator). So we
+        # need to compare 2*(q0+k*q1) with self._denominator/d.
+        if 2*d*(q0+k*q1) <= self._denominator:
             return Fraction(p1, q1, _normalize=False)
         else:
             return Fraction(p0+k*p1, q0+k*q1, _normalize=False)
