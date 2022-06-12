@@ -3109,6 +3109,54 @@ class TestSlots(unittest.TestCase):
                                     "weakref_slot is True but slots is False"):
             B = make_dataclass('B', [('a', int),], weakref_slot=True)
 
+    def test_weakref_slot_subclass_weakref_slot(self):
+        @dataclass(slots=True, weakref_slot=True)
+        class Base:
+            field: int
+
+        # A *can* also specify weakref_slot=True if it wants to (gh-93521)
+        @dataclass(slots=True, weakref_slot=True)
+        class A(Base):
+            ...
+
+        # __weakref__ is in the base class, not A.  But an instance of A
+        # is still weakref-able.
+        self.assertIn("__weakref__", Base.__slots__)
+        self.assertNotIn("__weakref__", A.__slots__)
+        a = A(1)
+        weakref.ref(a)
+
+    def test_weakref_slot_subclass_no_weakref_slot(self):
+        @dataclass(slots=True, weakref_slot=True)
+        class Base:
+            field: int
+
+        @dataclass(slots=True)
+        class A(Base):
+            ...
+
+        # __weakref__ is in the base class, not A.  Even though A doesn't
+        # specify weakref_slot, it should still be weakref-able.
+        self.assertIn("__weakref__", Base.__slots__)
+        self.assertNotIn("__weakref__", A.__slots__)
+        a = A(1)
+        weakref.ref(a)
+
+    def test_weakref_slot_normal_base_weakref_slot(self):
+        class Base:
+            __slots__ = ('__weakref__',)
+
+        @dataclass(slots=True, weakref_slot=True)
+        class A(Base):
+            field: int
+
+        # __weakref__ is in the base class, not A.  But an instance of
+        # A is still weakref-able.
+        self.assertIn("__weakref__", Base.__slots__)
+        self.assertNotIn("__weakref__", A.__slots__)
+        a = A(1)
+        weakref.ref(a)
+
 
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
