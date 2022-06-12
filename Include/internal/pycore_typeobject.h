@@ -11,7 +11,6 @@ extern "C" {
 
 /* runtime lifecycle */
 
-extern PyStatus _PyTypes_InitState(PyInterpreterState *);
 extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
 extern void _PyTypes_FiniTypes(PyInterpreterState *);
 extern void _PyTypes_Fini(PyInterpreterState *);
@@ -38,8 +37,6 @@ struct type_cache {
     size_t collisions;
 #endif
 };
-
-extern PyStatus _PyTypes_InitSlotDefs(void);
 
 extern void _PyStaticType_Dealloc(PyTypeObject *type);
 
