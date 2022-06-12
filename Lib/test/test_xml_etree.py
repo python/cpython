@@ -3739,13 +3739,7 @@ class IOTest(unittest.TestCase):
         tree = ET.ElementTree(ET.XML('''<site>\xf8</site>'''))
         tree.write(TESTFN, encoding='unicode')
         with open(TESTFN, 'rb') as f:
-            data = f.read()
-            expected = "<site>\xf8</site>".encode(encoding, 'xmlcharrefreplace')
-            if encoding.lower() in ('utf-8', 'ascii'):
-                self.assertEqual(data, expected)
-            else:
-                self.assertIn(b"<?xml version='1.0' encoding=", data)
-                self.assertIn(expected, data)
+            self.assertEqual(f.read(), b"<site>\xc3\xb8</site>")
 
     def test_write_to_text_file(self):
         self.addCleanup(os_helper.unlink, TESTFN)
