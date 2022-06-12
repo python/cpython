@@ -311,6 +311,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
                      "This test can't be run on Cygwin (issue #1071513).")
     @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
                      "This test can't be run reliably as root (issue #1076467).")
+    @os_helper.skip_unless_working_chmod
     def test_on_error(self):
         self.errorState = 0
         os.mkdir(TESTFN)
@@ -2652,6 +2653,7 @@ class TestGetTerminalSize(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
+    @unittest.skipIf(support.is_wasi, "WASI has no /dev/null")
     def test_fallback(self):
         with os_helper.EnvironmentVarGuard() as env:
             del env['LINES']

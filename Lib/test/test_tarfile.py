@@ -630,6 +630,7 @@ class MiscReadTestBase(CommonReadTest):
                 data = f.read()
             self.assertEqual(sha256sum(data), sha256_regtype)
 
+    @os_helper.skip_unless_working_chmod
     def test_extractall(self):
         # Test if extractall() correctly restores directory permissions
         # and times (see issue1735).
@@ -660,6 +661,7 @@ class MiscReadTestBase(CommonReadTest):
             tar.close()
             os_helper.rmtree(DIR)
 
+    @os_helper.skip_unless_working_chmod
     def test_extract_directory(self):
         dirtype = "ustar/dirtype"
         DIR = os.path.join(TEMPDIR, "extractdir")
