@@ -265,7 +265,7 @@ class MockGetPathTests(unittest.TestCase):
             read_pathconfig(ns['config'], '_is_python_build')
             expected = dict(
                 _is_python_build=ns['config']['_is_python_build'],
-                build_prefix=None,        # landmarks must not be checked
+                build_prefix=None,        # landmarks must not be checked for
             )
             actual = getpath(ns, expected)
             self.assertEqual(actual, expected)

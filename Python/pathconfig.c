@@ -103,6 +103,7 @@ _PyPathConfig_ReadGlobal(PyConfig *config)
 
 #define COPY_INT(ATTR) \
     do { \
+        assert(_Py_path_config.ATTR >= 0); \
         if ((_Py_path_config.ATTR >= 0) && (config->ATTR <= 0)) { \
             config->ATTR = _Py_path_config.ATTR; \
         } \
