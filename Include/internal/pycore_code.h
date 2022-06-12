@@ -65,7 +65,6 @@ typedef struct {
 typedef struct {
     _Py_CODEUNIT counter;
     _Py_CODEUNIT type_version[2];
-    _Py_CODEUNIT dict_offset;
     _Py_CODEUNIT keys_version[2];
     _Py_CODEUNIT descr[4];
 } _PyLoadMethodCache;
@@ -226,9 +225,6 @@ extern void _PyLineTable_InitAddressRange(
 /** API for traversing the line number table. */
 extern int _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
-
-
-#define ADAPTIVE_CACHE_BACKOFF 64
 
 /* Specialization functions */
 
@@ -420,6 +416,50 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
     assert((code & 15) == code);
     *ptr = 128 | (code << 3) | (length - 1);
     return 1;
+}
+
+
+/** Counters
+ * The first 16-bit value in each inline cache is a counter.
+ * When counting misses, the counter is treated as a simple unsigned value.
+ *
+ * When counting executions until the next specialization attempt,
+ * exponential backoff is used to reduce the number of specialization failures.
+ * The high 12 bits store the counter, the low 4 bits store the backoff exponent.
+ * On a specialization failure, the backoff exponent is incremented and the
+ * counter set to (2**backoff - 1).
+ * Backoff == 6 -> starting counter == 63, backoff == 10 -> starting counter == 1023.
+ */
+
+/* With a 16-bit counter, we have 12 bits for the counter value, and 4 bits for the backoff */
+#define ADAPTIVE_BACKOFF_BITS 4
+/* The initial counter value is 31 == 2**ADAPTIVE_BACKOFF_START - 1 */
+#define ADAPTIVE_BACKOFF_START 5
+
+#define MAX_BACKOFF_VALUE (16 - ADAPTIVE_BACKOFF_BITS)
+
+
+static inline uint16_t
+adaptive_counter_bits(int value, int backoff) {
+    return (value << ADAPTIVE_BACKOFF_BITS) |
+           (backoff & ((1<<ADAPTIVE_BACKOFF_BITS)-1));
+}
+
+static inline uint16_t
+adaptive_counter_start(void) {
+    unsigned int value = (1 << ADAPTIVE_BACKOFF_START) - 1;
+    return adaptive_counter_bits(value, ADAPTIVE_BACKOFF_START);
+}
+
+static inline uint16_t
+adaptive_counter_backoff(uint16_t counter) {
+    unsigned int backoff = counter & ((1<<ADAPTIVE_BACKOFF_BITS)-1);
+    backoff++;
+    if (backoff > MAX_BACKOFF_VALUE) {
+        backoff = MAX_BACKOFF_VALUE;
+    }
+    unsigned int value = (1 << backoff) - 1;
+    return adaptive_counter_bits(value, backoff);
 }
 
 

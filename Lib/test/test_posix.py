@@ -31,8 +31,8 @@ _DUMMY_SYMLINK = os.path.join(tempfile.gettempdir(),
                               os_helper.TESTFN + '-dummy-symlink')
 
 requires_32b = unittest.skipUnless(
-    # Emscripten has 32 bits pointers, but support 64 bits syscall args.
-    sys.maxsize < 2**32 and not support.is_emscripten,
+    # Emscripten/WASI have 32 bits pointers, but support 64 bits syscall args.
+    sys.maxsize < 2**32 and not (support.is_emscripten or support.is_wasi),
     'test is only meaningful on 32-bit builds'
 )
 
@@ -547,6 +547,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'dup'),
                          'test needs posix.dup()')
+    @unittest.skipIf(support.is_wasi, "WASI does not have dup()")
     def test_dup(self):
         fp = open(os_helper.TESTFN)
         try:
@@ -564,6 +565,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'dup2'),
                          'test needs posix.dup2()')
+    @unittest.skipIf(support.is_wasi, "WASI does not have dup2()")
     def test_dup2(self):
         fp1 = open(os_helper.TESTFN)
         fp2 = open(os_helper.TESTFN)
@@ -784,7 +786,7 @@ class PosixTester(unittest.TestCase):
             self.assertRaises(TypeError, chown_func, first_param, uid, t(gid))
             check_stat(uid, gid)
 
-    @unittest.skipUnless(hasattr(posix, 'chown'), "test needs os.chown()")
+    @os_helper.skip_unless_working_chmod
     def test_chown(self):
         # raise an OSError if the file does not exist
         os.unlink(os_helper.TESTFN)
@@ -794,6 +796,7 @@ class PosixTester(unittest.TestCase):
         os_helper.create_empty_file(os_helper.TESTFN)
         self._test_all_chown_common(posix.chown, os_helper.TESTFN, posix.stat)
 
+    @os_helper.skip_unless_working_chmod
     @unittest.skipUnless(hasattr(posix, 'fchown'), "test needs os.fchown()")
     def test_fchown(self):
         os.unlink(os_helper.TESTFN)
@@ -807,6 +810,7 @@ class PosixTester(unittest.TestCase):
         finally:
             test_file.close()
 
+    @os_helper.skip_unless_working_chmod
     @unittest.skipUnless(hasattr(posix, 'lchown'), "test needs os.lchown()")
     def test_lchown(self):
         os.unlink(os_helper.TESTFN)
@@ -1212,6 +1216,7 @@ class PosixTester(unittest.TestCase):
             # bpo-47205: does not raise OSError on FreeBSD
             self.assertRaises(OSError, posix.sched_setaffinity, -1, mask)
 
+    @unittest.skipIf(support.is_wasi, "No dynamic linking on WASI")
     def test_rtld_constants(self):
         # check presence of major RTLD_* constants
         posix.RTLD_LAZY
@@ -1406,6 +1411,10 @@ class TestPosixDirFd(unittest.TestCase):
                     # whoops!  using both together not supported on this platform.
                     pass
 
+    @unittest.skipIf(
+        support.is_wasi,
+        "WASI: symlink following on path_link is not supported"
+    )
     @unittest.skipUnless(
         hasattr(os, "link") and os.link in os.supports_dir_fd,
         "test needs dir_fd support in os.link()"

@@ -334,6 +334,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     /* not set */
     co->co_weakreflist = NULL;
     co->co_extra = NULL;
+    co->_co_code = NULL;
 
     co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
@@ -1367,12 +1368,17 @@ deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
 PyObject *
 _PyCode_GetCode(PyCodeObject *co)
 {
+    if (co->_co_code != NULL) {
+        return Py_NewRef(co->_co_code);
+    }
     PyObject *code = PyBytes_FromStringAndSize((const char *)_PyCode_CODE(co),
                                                _PyCode_NBYTES(co));
     if (code == NULL) {
         return NULL;
     }
     deopt_code((_Py_CODEUNIT *)PyBytes_AS_STRING(code), Py_SIZE(co));
+    assert(co->_co_code == NULL);
+    co->_co_code = (void *)Py_NewRef(code);
     return code;
 }
 
@@ -1531,6 +1537,7 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_qualname);
     Py_XDECREF(co->co_linetable);
     Py_XDECREF(co->co_exceptiontable);
+    Py_XDECREF(co->_co_code);
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)co);
     }
@@ -2085,6 +2092,7 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
     deopt_code(_PyCode_CODE(co), Py_SIZE(co));
     co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
     PyMem_Free(co->co_extra);
+    Py_CLEAR(co->_co_code);
     co->co_extra = NULL;
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *)co);
