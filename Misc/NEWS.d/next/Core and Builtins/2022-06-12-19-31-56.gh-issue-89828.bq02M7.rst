@@ -1,0 +1,1 @@
+:class:`types.GenericAlias` no longer relay the ``__class__`` attribute.
