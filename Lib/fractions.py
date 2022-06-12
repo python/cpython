@@ -250,7 +250,7 @@ class Fraction(numbers.Rational):
         # Determine which of the candidate fractions (p0+k*p1)/(q0+k*q1) and
         # p1/q1 is closer to self. The distance between the two candidates is
         # 1/(q1*(q0+k*q1)), while the distance from p1/q1 to self is
-        # 1/(q1*(q0+n/d*q1)). So we need to compare q0+k*q1 with 2*(q0+n/d*q1).
+        # 1/(q1*(q0+n/d*q1)). So we need to compare 2*(q0+k*q1) with q0+n/d*q1.
         # That translates to the following comparison in integers.
         if (q0+2*k*q1)*d <= q1*n:
             return Fraction(p1, q1, _normalize=False)
