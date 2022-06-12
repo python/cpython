@@ -249,7 +249,7 @@ class MockGetPathTests(unittest.TestCase):
             if config[attr] > 0:
                 _Py_path_config[attr] = config[attr]
 
-        for edges in [(0,-1), (-1, 0), (-1,-1)]:
+        for edges in [(0,-1), (-1, 0), (-1,-1), (-10, 0), [-10, 5], [5, -10]]:
             _Py_path_config = dict(
                 _is_python_build=edges[0],
             )
@@ -263,10 +263,17 @@ class MockGetPathTests(unittest.TestCase):
             )
             # _PyConfig_InitPathConfig emulation
             read_pathconfig(ns['config'], '_is_python_build')
-            expected = dict(
-                _is_python_build=ns['config']['_is_python_build'],
-                build_prefix=None,        # landmarks must not be checked for
-            )
+            if isinstance(edges, tuple):
+                expected = dict(
+                    _is_python_build=ns['config']['_is_python_build'],
+                    build_prefix=None,
+                )
+            else:
+                edges = (1, 1)
+                expected = dict(
+                    _is_python_build=edges[1],
+                    build_prefix=r"C:\CPython",
+                )
             actual = getpath(ns, expected)
             self.assertEqual(actual, expected)
             update_pathconfig(actual, '_is_python_build')
