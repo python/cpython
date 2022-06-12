@@ -33,7 +33,7 @@ The functions supplied by this module are actually bound methods of a hidden
 instance of the :class:`random.Random` class, and thus share state – in 
 particular, calls to :meth:`random.set_seed` anywhere in application code 
 or any libraries will affect the sequence of random values produced by calls 
-to `random.*` methods in the same process, which can lead to unexpected results 
+to `random.*` methods in the same process, which can lead to unexpected results.
 You should consider instantiating your own instance or instances of :class:`Random` 
 to get generators that don't share state. 
 
