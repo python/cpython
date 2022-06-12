@@ -249,7 +249,7 @@ class MockGetPathTests(unittest.TestCase):
             if config[attr] > 0:
                 _Py_path_config[attr] = config[attr]
 
-        for edges in [(0,-1), (-1, 0), (-1,-1), (-10, 0), [-10, 5], [5, -10]]:
+        for edges in [(0,-1), (-1, 0), (-1,-1), (-10, 0), [-10, 5], [5,-10]]:
             _Py_path_config = dict(
                 _is_python_build=edges[0],
             )
@@ -258,7 +258,7 @@ class MockGetPathTests(unittest.TestCase):
             )
             ns.add_known_file(r"C:\CPython\PCbuild\amd64\pybuilddir.txt", [""])
             ns['config'].update(
-                home=r"C:\CPython",       # turn on 'home_was_set'
+                home=r"C:\CPython",  # turn on 'home_was_set'
                 _is_python_build=edges[1],
             )
             # _PyConfig_InitPathConfig emulation
@@ -267,12 +267,14 @@ class MockGetPathTests(unittest.TestCase):
                 expected = dict(
                     _is_python_build=ns['config']['_is_python_build'],
                     build_prefix=None,
+                    platstdlib_dir=r"C:\CPython\DLLs",
                 )
             else:
                 edges = (1, 1)
                 expected = dict(
                     _is_python_build=edges[1],
                     build_prefix=r"C:\CPython",
+                    platstdlib_dir=r"C:\CPython\PCbuild\amd64",
                 )
             actual = getpath(ns, expected)
             self.assertEqual(actual, expected)
