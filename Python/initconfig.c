@@ -78,18 +78,18 @@ The following implementation-specific options are available:\n\
 -X faulthandler: enable faulthandler\n\
 -X showrefcount: output the total reference count and number of used\n\
          memory blocks when the program finishes or after each statement in\n\
-         the interactive interpreter. This only works on debug builds\n\
+         the interactive interpreter.  This only works on debug builds\n\
 -X tracemalloc: start tracing Python memory allocations using the\n\
-         tracemalloc module. By default, only the most recent frame is stored\n\
-         in a traceback of a trace. Use -X tracemalloc=NFRAME to start tracing\n\
-         with a traceback limit of NFRAME frames\n\
--X importtime: show how long each import takes. It shows module name,\n\
+         tracemalloc module.  By default, only the most recent frame is stored\n\
+         in a traceback of a trace.  Use -X tracemalloc=NFRAME to start\n\
+         tracing with a traceback limit of NFRAME frames\n\
+-X importtime: show how long each import takes.  It shows module name,\n\
          cumulative time (including nested imports) and self time (excluding\n\
-         nested imports). Note that its output may be broken in multi-threaded\n\
-         application.\n\
+         nested imports).  Note that its output may be broken in\n\
+         multi-threaded application.\n\
          Typical usage is python3 -X importtime -c 'import asyncio'\n\
 -X dev : enable CPython's \"development mode\", introducing additional runtime\n\
-         checks which are too expensive to be enabled by default. Effect of\n\
+         checks which are too expensive to be enabled by default.  Effect of\n\
          the developer mode:\n\
           * Add default warning filter, as -W default\n\
           * Install debug hooks on memory allocators: see the\n\
@@ -100,14 +100,14 @@ The following implementation-specific options are available:\n\
           * Set the dev_mode attribute of sys.flags to True\n\
           * io.IOBase destructor logs close() exceptions\n\
 -X utf8: enable UTF-8 mode for operating system interfaces, overriding the\n\
-         default locale-aware mode. -X utf8=0 explicitly disables UTF-8 mode\n\
+         default locale-aware mode.  -X utf8=0 explicitly disables UTF-8 mode\n\
          (even when it would otherwise activate automatically)\n\
 -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted\n\
          at the given directory instead of to the code tree\n\
 -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None'\n\
 -X no_debug_ranges: disable the inclusion of the tables mapping extra location\n\
          information (end line, start column offset and end column offset) to\n\
-         every instruction in code objects. This is useful when smaller code\n\
+         every instruction in code objects.  This is useful when smaller code\n\
          objects and pyc files are desired as well as suppressing the extra\n\
          visual location indicators when the interpreter displays tracebacks.\n\
 -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
@@ -132,13 +132,13 @@ static const char usage_envvars[] =
 "         an integer in the range [0,4294967295] to get hash values with a\n"
 "         predictable seed.\n"
 "PYTHONMALLOC: set the Python memory allocators and/or install debug hooks\n"
-"         on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
-"         hooks.\n"
+"         on Python memory allocators.  Use PYTHONMALLOC=debug to install\n"
+"         debug hooks.\n"
 "PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
-"         coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display\n"
+"         coercion behavior.  Use PYTHONCOERCECLOCALE=warn to request display\n"
 "         of locale coercion and locale compatibility warnings on stderr.\n"
 "PYTHONBREAKPOINT: if this variable is set to 0, it disables the default\n"
-"         debugger. It can be set to the callable of your debugger of choice.\n"
+"         debugger.  It can be set to the callable of your debugger of choice.\n"
 "PYTHONDEVMODE: enable the development mode.\n"
 "PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files.\n"
 "PYTHONWARNDEFAULTENCODING: enable opt-in EncodingWarning for 'encoding=None'.\n"
