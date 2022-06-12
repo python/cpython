@@ -57,6 +57,17 @@ class ModuleTests(unittest.TestCase):
         self.assertEqual(sqlite.apilevel, "2.0",
                          "apilevel is %s, should be 2.0" % sqlite.apilevel)
 
+    def test_deprecated_version(self):
+        msg = "deprecated and will be removed in Python 3.14"
+        for attr in "version", "version_info":
+            with self.subTest(attr=attr):
+                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                    getattr(sqlite, attr)
+                self.assertEqual(cm.filename,  __file__)
+                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                    getattr(sqlite.dbapi2, attr)
+                self.assertEqual(cm.filename,  __file__)
+
     def test_thread_safety(self):
         self.assertIn(sqlite.threadsafety, {0, 1, 3},
                       "threadsafety is %d, should be 0, 1 or 3" %
@@ -886,6 +897,14 @@ class CursorTests(unittest.TestCase):
         self.cu.execute("delete from test")
         self.cu.executemany("insert into test(name) values (?)", [(1,), (2,), (3,)])
         self.assertEqual(self.cu.rowcount, 3)
+
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 35, 0),
+                     "Requires SQLite 3.35.0 or newer")
+    def test_rowcount_update_returning(self):
+        # gh-93421: rowcount is updated correctly for UPDATE...RETURNING queries
+        self.cu.execute("update test set name='bar' where name='foo' returning 1")
+        self.assertEqual(self.cu.fetchone()[0], 1)
+        self.assertEqual(self.cu.rowcount, 1)
 
     def test_total_changes(self):
         self.cu.execute("insert into test(name) values ('foo')")

@@ -383,7 +383,6 @@ _cache_format = {
     "LOAD_METHOD": {
         "counter": 1,
         "type_version": 2,
-        "dict_offset": 1,
         "keys_version": 2,
         "descr": 4,
     },
