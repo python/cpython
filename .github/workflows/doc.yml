@@ -42,9 +42,9 @@ jobs:
     - name: 'Install build dependencies'
       run: make -C Doc/ venv
     - name: 'Check documentation'
-      run: make -C Doc/ SPHINXOPTS="-q -W --keep-going" check
+      run: make -C Doc/ check
     - name: 'Build HTML documentation'
-      run: make -C Doc/ SPHINXOPTS="-q -W --keep-going" html
+      run: make -C Doc/ SPHINXOPTS="-q" SPHINXERRORHANDLING="-W --keep-going" html
     - name: 'Upload'
       uses: actions/upload-artifact@v3
       with:
@@ -75,4 +75,4 @@ jobs:
       run: make -C Doc/ PYTHON=../python venv
     # Use "xvfb-run" since some doctest tests open GUI windows
     - name: 'Run documentation doctest'
-      run: xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W --keep-going" doctest
+      run: xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q" SPHINXERRORHANDLING="-W --keep-going" doctest
