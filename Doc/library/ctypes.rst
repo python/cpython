@@ -148,23 +148,10 @@ Calling functions
 ^^^^^^^^^^^^^^^^^
 
 You can call these functions like any other Python callable. This example uses
-the ``time()`` function, which returns system time in seconds since the Unix
-epoch.
+the ``rand()`` function, which takes no arguments and returns a pseudo-random integer::
 
-The C prototype of ``time()`` is ``time_t time(time_t *)``. Because ``time_t``
-might be of a different type than the default return type ``int``, you should
-specify the ``restype``::
-
-   >>> libc.time.restype = c_time_t
-
-The argument types can be specified using ``argtypes``::
-
-   >>> libc.time.argtypes = (POINTER(c_time_t),)
-
-To call the function with a ``NULL`` pointer as first argument, use ``None``::
-
-   >>> print(libc.time(None))  # doctest: +SKIP
-   1150640792
+   >>> print(libc.rand())  # doctest: +SKIP
+   1804289383
 
 On Windows, you can call the ``GetModuleHandleA()`` function, which returns a win32 module
 handle (again, passing ``None`` as single argument to call it with a ``NULL`` pointer)::
@@ -460,6 +447,21 @@ Return types
 By default functions are assumed to return the C :c:type:`int` type.  Other
 return types can be specified by setting the :attr:`restype` attribute of the
 function object.
+
+The C prototype of ``time()`` is ``time_t time(time_t *)``. Because ``time_t``
+might be of a different type than the default return type ``int``, you should
+specify the ``restype``::
+
+   >>> libc.time.restype = c_time_t
+
+The argument types can be specified using ``argtypes``::
+
+   >>> libc.time.argtypes = (POINTER(c_time_t),)
+
+To call the function with a ``NULL`` pointer as first argument, use ``None``::
+
+   >>> print(libc.time(None))  # doctest: +SKIP
+   1150640792
 
 Here is a more advanced example, it uses the ``strchr`` function, which expects
 a string pointer and a char, and returns a pointer to a string::
