@@ -906,6 +906,58 @@ static const binaryfunc binary_ops[] = {
 // PEP 634: Structural Pattern Matching
 
 
+// Faster version of match_keys (below) that works on a dict instead of
+// a generic mapping
+static PyObject*
+match_keys_exactdict(PyThreadState *tstate, PyObject *map, PyObject *keys, Py_ssize_t nkeys)
+{
+    PyObject *seen = NULL;
+    PyObject *values = NULL;
+    seen = PySet_New(NULL);
+    if (seen == NULL) {
+        goto fail;
+    }
+    values = PyTuple_New(nkeys);
+    if (values == NULL) {
+        goto fail;
+    }
+    for (Py_ssize_t i = 0; i < nkeys; i++) {
+        PyObject *key = PyTuple_GET_ITEM(keys, i);
+        if (PySet_Contains(seen, key) || PySet_Add(seen, key)) {
+            if (!_PyErr_Occurred(tstate)) {
+                // Seen it before!
+                _PyErr_Format(tstate, PyExc_ValueError,
+                              "mapping pattern checks duplicate key (%R)", key);
+            }
+            goto fail;
+        }
+        PyObject *value = PyDict_GetItemWithError(map, key);
+        if (value == NULL) {
+            if (_PyErr_Occurred(tstate)) {
+                goto fail;
+            } else {
+                // key not in map!
+                Py_DECREF(values);
+                // Return None:
+                Py_INCREF(Py_None);
+                values = Py_None;
+                goto done;
+            }
+        }
+        Py_INCREF(value);
+        PyTuple_SET_ITEM(values, i, value);
+    }
+    // Success:
+done:
+    Py_DECREF(seen);
+    return values;
+fail:
+    Py_XDECREF(seen);
+    Py_XDECREF(values);
+    return NULL;
+}
+
+
 // Return a tuple of values corresponding to keys, with error checks for
 // duplicate/missing keys.
 static PyObject*
@@ -916,6 +968,9 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     if (!nkeys) {
         // No keys means no items.
         return PyTuple_New(0);
+    }
+    if (PyDict_CheckExact(map)) {
+        return match_keys_exactdict(tstate, map, keys, nkeys);
     }
     PyObject *seen = NULL;
     PyObject *dummy = NULL;
