@@ -3569,7 +3569,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
                 PyErr_SetString(
                     PyExc_SystemError,
                     "Multiple Py_tp_doc slots are not supported.");
-                return NULL;
+                goto finally;
             }
             if (slot->pfunc == NULL) {
                 type->tp_doc = NULL;
