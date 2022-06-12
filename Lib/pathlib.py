@@ -355,28 +355,6 @@ class PurePath(object):
         else:
             return cls._flavour.sep.join(parts)
 
-    def _join_parsed_parts(self, drv2, root2, parts2):
-        """Join the two paths represented by the respective
-        (drive, root, parts) tuples.  Return a new (drive, root, parts) tuple.
-        """
-        drv, root, parts = self._drv, self._root, self._parts
-        if root2:
-            if not drv2 and drv:
-                return drv, root2, [drv + root2] + parts2[1:]
-        elif drv2:
-            if drv2 == drv or self._flavour.normcase(drv2) == self._flavour.normcase(drv):
-                # Same drive => second path is relative to the first
-                return drv, root, parts + parts2[1:]
-        else:
-            # Second path is non-anchored (common case)
-            return drv, root, parts + parts2
-        return drv2, root2, parts2
-
-    def _make_child(self, args):
-        drv, root, parts = self._parse_args(args)
-        drv, root, parts = self._join_parsed_parts(drv, root, parts)
-        return self._from_parsed_parts(drv, root, parts)
-
     def __str__(self):
         """Return the string representation of the path, suitable for
         passing to system calls."""
@@ -620,11 +598,23 @@ class PurePath(object):
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        return self._make_child(args)
+        drv1, root1, parts1 = self._drv, self._root, self._parts
+        drv2, root2, parts2 = self._parse_args(args)
+        if root2:
+            if not drv2 and drv1:
+                return self._from_parsed_parts(drv1, root2, [drv1 + root2] + parts2[1:])
+        elif drv2:
+            if drv2 == drv1 or self._flavour.normcase(drv2) == self._flavour.normcase(drv1):
+                # Same drive => second path is relative to the first
+                return self._from_parsed_parts(drv1, root1, parts1 + parts2[1:])
+        else:
+            # Second path is non-anchored (common case)
+            return self._from_parsed_parts(drv1, root1, parts1 + parts2)
+        return self._from_parsed_parts(drv2, root2, parts2)
 
     def __truediv__(self, key):
         try:
-            return self._make_child((key,))
+            return self.joinpath(key)
         except TypeError:
             return NotImplemented
 
