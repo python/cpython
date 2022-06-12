@@ -1963,6 +1963,52 @@ def bœr():
             expected = '(Pdb) The correct file was executed'
             self.assertEqual(stdout.split('\n')[6].rstrip('\r'), expected)
 
+    def test_frozen_list(self):
+        frozen_src = """
+        def func():
+            x = "Sentinel string for gh-93696"
+            print(x)
+        """
+        host_program = """
+        import os
+        import sys
+
+        def _create_fake_frozen_module():
+            with open('gh93696.py') as f:
+                src = f.read()
+
+            # this function has a co_filename as if it were in a frozen module
+            dummy_mod = compile(src, "<frozen gh93696>", "exec")
+            func_code = dummy_mod.co_consts[0]
+
+            mod = type(sys)("gh93696")
+            mod.func = type(lambda: None)(func_code, mod.__dict__)
+            mod.__file__ = 'gh93696.py'
+
+            return mod
+
+        mod = _create_fake_frozen_module()
+        mod.func()
+        """
+        commands = """
+            break 20
+            continue
+            step
+            list
+            quit
+        """
+        with open('gh93696.py', 'w') as f:
+            f.write(textwrap.dedent(frozen_src))
+
+        with open('gh93696_host.py', 'w') as f:
+            f.write(textwrap.dedent(host_program))
+
+        self.addCleanup(os_helper.unlink, 'gh93696.py')
+        self.addCleanup(os_helper.unlink, 'gh93696_host.py')
+        stdout, stderr = self._run_pdb(["gh93696_host.py"], commands)
+        # verify that pdb found the source of the "frozen" function
+        self.assertTrue('x = "Sentinel string for gh-93696"' in stdout, "Sentinel statement not found")
+
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):
