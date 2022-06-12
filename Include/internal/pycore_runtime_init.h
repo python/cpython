@@ -845,7 +845,6 @@ extern "C" {
                 INIT_ID(_showwarnmsg), \
                 INIT_ID(_shutdown), \
                 INIT_ID(_slotnames), \
-                INIT_ID(_strptime_time), \
                 INIT_ID(_uninitialized_submodules), \
                 INIT_ID(_warn_unawaited_coroutine), \
                 INIT_ID(_xoptions), \
@@ -871,7 +870,6 @@ extern "C" {
                 INIT_ID(difference_update), \
                 INIT_ID(dispatch_table), \
                 INIT_ID(displayhook), \
-                INIT_ID(enable), \
                 INIT_ID(encode), \
                 INIT_ID(encoding), \
                 INIT_ID(end_lineno), \
@@ -930,7 +928,6 @@ extern "C" {
                 INIT_ID(opcode), \
                 INIT_ID(open), \
                 INIT_ID(parent), \
-                INIT_ID(partial), \
                 INIT_ID(path), \
                 INIT_ID(peek), \
                 INIT_ID(persistent_id), \
