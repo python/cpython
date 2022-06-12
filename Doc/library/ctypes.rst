@@ -154,7 +154,7 @@ the ``rand()`` function, which takes no arguments and returns a pseudo-random in
    1804289383
 
 On Windows, you can call the ``GetModuleHandleA()`` function, which returns a win32 module
-handle (again, passing ``None`` as single argument to call it with a ``NULL`` pointer)::
+handle (passing ``None`` as single argument to call it with a ``NULL`` pointer)::
 
    >>> print(hex(windll.kernel32.GetModuleHandleA(None)))  # doctest: +WINDOWS
    0x1d000000
