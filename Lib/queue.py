@@ -216,6 +216,10 @@ class Queue:
     # Get an item from the queue
     def _get(self):
         return self.queue.popleft()
+    
+    # Resize maxsize of queue
+    def resize(self, size):
+        self.maxsize = size
 
     __class_getitem__ = classmethod(types.GenericAlias)
 
