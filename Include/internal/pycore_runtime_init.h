@@ -712,6 +712,7 @@ extern "C" {
                 INIT_ID(__delete__), \
                 INIT_ID(__delitem__), \
                 INIT_ID(__dict__), \
+                INIT_ID(__dictoffset__), \
                 INIT_ID(__dir__), \
                 INIT_ID(__divmod__), \
                 INIT_ID(__doc__), \
@@ -828,6 +829,7 @@ extern "C" {
                 INIT_ID(__typing_subst__), \
                 INIT_ID(__typing_unpacked_tuple_args__), \
                 INIT_ID(__warningregistry__), \
+                INIT_ID(__weaklistoffset__), \
                 INIT_ID(__weakref__), \
                 INIT_ID(__xor__), \
                 INIT_ID(_abc_impl), \
