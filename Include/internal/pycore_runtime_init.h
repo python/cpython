@@ -973,7 +973,6 @@ extern "C" {
                 INIT_ID(warnoptions), \
                 INIT_ID(writable), \
                 INIT_ID(write), \
-                INIT_ID(zipimporter), \
             }, \
             .ascii = { \
                 _PyASCIIObject_INIT("\x00"), \
