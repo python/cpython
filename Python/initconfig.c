@@ -91,14 +91,14 @@ The following implementation-specific options are available:\n\
 -X dev : enable CPython's \"development mode\", introducing additional runtime\n\
          checks which are too expensive to be enabled by default. Effect of\n\
          the developer mode:\n\
-            * Add default warning filter, as -W default\n\
-            * Install debug hooks on memory allocators: see the\n\
-              PyMem_SetupDebugHooks() C function\n\
-            * Enable the faulthandler module to dump the Python traceback on\n\
-              a crash\n\
-            * Enable asyncio debug mode\n\
-            * Set the dev_mode attribute of sys.flags to True\n\
-            * io.IOBase destructor logs close() exceptions\n\
+          * Add default warning filter, as -W default\n\
+          * Install debug hooks on memory allocators: see the\n\
+            PyMem_SetupDebugHooks() C function\n\
+          * Enable the faulthandler module to dump the Python traceback on\n\
+            a crash\n\
+          * Enable asyncio debug mode\n\
+          * Set the dev_mode attribute of sys.flags to True\n\
+          * io.IOBase destructor logs close() exceptions\n\
 -X utf8: enable UTF-8 mode for operating system interfaces, overriding the\n\
          default locale-aware mode. -X utf8=0 explicitly disables UTF-8 mode\n\
          (even when it would otherwise activate automatically)\n\
