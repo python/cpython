@@ -20,7 +20,7 @@ Coroutines
 
 :term:`Coroutines <coroutine>` declared with the async/await syntax is the
 preferred way of writing asyncio applications.  For example, the following
-snippet of code (requires Python 3.7+) prints "hello", waits 1 second,
+snippet of code prints "hello", waits 1 second,
 and then prints "world"::
 
     >>> import asyncio
@@ -204,47 +204,10 @@ A good example of a low-level function that returns a Future object
 is :meth:`loop.run_in_executor`.
 
 
-Running an asyncio Program
-==========================
-
-.. function:: run(coro, *, debug=False)
-
-    Execute the :term:`coroutine` *coro* and return the result.
-
-    This function runs the passed coroutine, taking care of
-    managing the asyncio event loop, *finalizing asynchronous
-    generators*, and closing the threadpool.
-
-    This function cannot be called when another asyncio event loop is
-    running in the same thread.
-
-    If *debug* is ``True``, the event loop will be run in debug mode.
-
-    This function always creates a new event loop and closes it at
-    the end.  It should be used as a main entry point for asyncio
-    programs, and should ideally only be called once.
-
-    Example::
-
-        async def main():
-            await asyncio.sleep(1)
-            print('hello')
-
-        asyncio.run(main())
-
-    .. versionadded:: 3.7
-
-    .. versionchanged:: 3.9
-       Updated to use :meth:`loop.shutdown_default_executor`.
-
-    .. note::
-       The source code for ``asyncio.run()`` can be found in
-       :source:`Lib/asyncio/runners.py`.
-
 Creating Tasks
 ==============
 
-.. function:: create_task(coro, *, name=None)
+.. function:: create_task(coro, *, name=None, context=None)
 
    Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
    and schedule its execution.  Return the Task object.
@@ -252,34 +215,43 @@ Creating Tasks
    If *name* is not ``None``, it is set as the name of the task using
    :meth:`Task.set_name`.
 
+   An optional keyword-only *context* argument allows specifying a
+   custom :class:`contextvars.Context` for the *coro* to run in.
+   The current context copy is created when no *context* is provided.
+
    The task is executed in the loop returned by :func:`get_running_loop`,
    :exc:`RuntimeError` is raised if there is no running loop in
    current thread.
 
-   This function has been **added in Python 3.7**.  Prior to
-   Python 3.7, the low-level :func:`asyncio.ensure_future` function
-   can be used instead::
-
-       async def coro():
-           ...
-
-       # In Python 3.7+
-       task = asyncio.create_task(coro())
-       ...
-
-       # This works in all Python versions but is less readable
-       task = asyncio.ensure_future(coro())
-       ...
-
    .. important::
 
       Save a reference to the result of this function, to avoid
-      a task disappearing mid execution.
+      a task disappearing mid execution. The event loop only keeps
+      weak references to tasks. A task that isn't referenced elsewhere
+      may get garbage-collected at any time, even before it's done.
+      For reliable "fire-and-forget" background tasks, gather them in
+      a collection::
+
+          background_tasks = set()
+
+          for i in range(10):
+              task = asyncio.create_task(some_coro(param=i))
+
+              # Add task to the set. This creates a strong reference.
+              background_tasks.add(task)
+
+              # To prevent keeping references to finished tasks forever,
+              # make each task remove its own reference from the set after
+              # completion:
+              task.add_done_callback(background_tasks.discard)
 
    .. versionadded:: 3.7
 
    .. versionchanged:: 3.8
-      Added the ``name`` parameter.
+      Added the *name* parameter.
+
+   .. versionchanged:: 3.11
+      Added the *context* parameter.
 
 
 Sleeping
@@ -319,12 +291,8 @@ Sleeping
     asyncio.run(display_date())
 
 
-   .. deprecated-removed:: 3.8 3.10
-
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
 
 Running Tasks Concurrently
@@ -359,11 +327,8 @@ Running Tasks Concurrently
    cancellation of one submitted Task/Future to cause other
    Tasks/Futures to be cancelled.
 
-   .. deprecated-removed:: 3.8 3.10
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
    .. _asyncio_example_gather:
 
@@ -416,11 +381,8 @@ Running Tasks Concurrently
       If the *gather* itself is cancelled, the cancellation is
       propagated regardless of *return_exceptions*.
 
-   .. deprecated-removed:: 3.8 3.10
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
    .. deprecated:: 3.10
       Deprecation warning is emitted if no positional arguments are provided
@@ -464,11 +426,8 @@ Shielding From Cancellation
        except CancelledError:
            res = None
 
-   .. deprecated-removed:: 3.8 3.10
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
    .. deprecated:: 3.10
       Deprecation warning is emitted if *aw* is not Future-like object
@@ -501,11 +460,8 @@ Timeouts
 
    If the wait is cancelled, the future *aw* is also cancelled.
 
-   .. deprecated-removed:: 3.8 3.10
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
    .. _asyncio_example_waitfor:
 
@@ -534,11 +490,8 @@ Timeouts
       for *aw* to be cancelled.  Previously, it raised
       :exc:`TimeoutError` immediately.
 
-   .. deprecated-removed:: 3.8 3.10
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
 
 Waiting Primitives
@@ -546,7 +499,7 @@ Waiting Primitives
 
 .. coroutinefunction:: wait(aws, *, timeout=None, return_when=ALL_COMPLETED)
 
-   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
+   Run :class:`~asyncio.Future` and :class:`~asyncio.Task` instances in the *aws*
    iterable concurrently and block until the condition specified
    by *return_when*.
 
@@ -589,58 +542,11 @@ Waiting Primitives
    Unlike :func:`~asyncio.wait_for`, ``wait()`` does not cancel the
    futures when a timeout occurs.
 
-   .. deprecated:: 3.8
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
-      If any awaitable in *aws* is a coroutine, it is automatically
-      scheduled as a Task.  Passing coroutines objects to
-      ``wait()`` directly is deprecated as it leads to
-      :ref:`confusing behavior <asyncio_example_wait_coroutine>`.
-
-   .. deprecated-removed:: 3.8 3.10
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
-
-   .. _asyncio_example_wait_coroutine:
-   .. note::
-
-      ``wait()`` schedules coroutines as Tasks automatically and later
-      returns those implicitly created Task objects in ``(done, pending)``
-      sets.  Therefore the following code won't work as expected::
-
-          async def foo():
-              return 42
-
-          coro = foo()
-          done, pending = await asyncio.wait({coro})
-
-          if coro in done:
-              # This branch will never be run!
-
-      Here is how the above snippet can be fixed::
-
-          async def foo():
-              return 42
-
-          task = asyncio.create_task(foo())
-          done, pending = await asyncio.wait({task})
-
-          if task in done:
-              # Everything will work as expected now.
-
-   .. deprecated-removed:: 3.8 3.10
-
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
-
-   .. deprecated-removed:: 3.8 3.11
-
-      Passing coroutine objects to ``wait()`` directly is
-      deprecated.
-
+   .. versionchanged:: 3.11
+      Passing coroutine objects to ``wait()`` directly is forbidden.
 
 .. function:: as_completed(aws, *, timeout=None)
 
@@ -652,11 +558,8 @@ Waiting Primitives
    Raises :exc:`TimeoutError` if the timeout occurs before
    all Futures are done.
 
-   .. deprecated-removed:: 3.8 3.10
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
    Example::
 
@@ -664,11 +567,8 @@ Waiting Primitives
            earliest_result = await coro
            # ...
 
-   .. deprecated-removed:: 3.8 3.10
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
    .. deprecated:: 3.10
       Deprecation warning is emitted if not all awaitable objects in the *aws*
@@ -851,10 +751,7 @@ Task Object
       Added support for the :mod:`contextvars` module.
 
    .. versionchanged:: 3.8
-      Added the ``name`` parameter.
-
-   .. deprecated-removed:: 3.8 3.10
-      The *loop* parameter.
+      Added the *name* parameter.
 
    .. deprecated:: 3.10
       Deprecation warning is emitted if *loop* is not specified
@@ -876,7 +773,12 @@ Task Object
       discouraged.
 
       .. versionchanged:: 3.9
-         Added the ``msg`` parameter.
+         Added the *msg* parameter.
+
+      .. deprecated-removed:: 3.11 3.14
+         *msg* parameter is ambiguous when multiple :meth:`cancel`
+         are called with different cancellation messages.
+         The argument will be removed.
 
       .. _asyncio_example_task_cancel:
 

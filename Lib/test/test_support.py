@@ -123,15 +123,18 @@ class TestSupport(unittest.TestCase):
             os_helper.unlink(mod_filename)
             os_helper.rmtree('__pycache__')
 
+    @support.requires_working_socket()
     def test_HOST(self):
         s = socket.create_server((socket_helper.HOST, 0))
         s.close()
 
+    @support.requires_working_socket()
     def test_find_unused_port(self):
         port = socket_helper.find_unused_port()
         s = socket.create_server((socket_helper.HOST, port))
         s.close()
 
+    @support.requires_working_socket()
     def test_bind_port(self):
         s = socket.socket()
         socket_helper.bind_port(s)
@@ -519,6 +522,7 @@ class TestSupport(unittest.TestCase):
             ['-E'],
             ['-v'],
             ['-b'],
+            ['-P'],
             ['-q'],
             ['-I'],
             # same option multiple times
@@ -538,7 +542,8 @@ class TestSupport(unittest.TestCase):
             with self.subTest(opts=opts):
                 self.check_options(opts, 'args_from_interpreter_flags')
 
-        self.check_options(['-I', '-E', '-s'], 'args_from_interpreter_flags',
+        self.check_options(['-I', '-E', '-s', '-P'],
+                           'args_from_interpreter_flags',
                            ['-I'])
 
     def test_optim_args_from_interpreter_flags(self):
@@ -658,10 +663,14 @@ class TestSupport(unittest.TestCase):
             self.assertFalse(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
+    @unittest.skipIf(support.is_emscripten, "Unstable in Emscripten")
+    @unittest.skipIf(support.is_wasi, "Unavailable on WASI")
     def test_fd_count(self):
         # We cannot test the absolute value of fd_count(): on old Linux
         # kernel or glibc versions, os.urandom() keeps a FD open on
         # /dev/urandom device and Python has 4 FD opens instead of 3.
+        # Test is unstable on Emscripten. The platform starts and stops
+        # background threads that use pipes and epoll fds.
         start = os_helper.fd_count()
         fd = os.open(__file__, os.O_RDONLY)
         try:
@@ -681,6 +690,12 @@ class TestSupport(unittest.TestCase):
                                  "Warning -- msg\n")
         self.check_print_warning("a\nb",
                                  'Warning -- a\nWarning -- b\n')
+
+    def test_has_strftime_extensions(self):
+        if support.is_emscripten or sys.platform == "win32":
+            self.assertFalse(support.has_strftime_extensions)
+        else:
+            self.assertTrue(support.has_strftime_extensions)
 
     # XXX -follows a list of untested API
     # make_legacy_pyc

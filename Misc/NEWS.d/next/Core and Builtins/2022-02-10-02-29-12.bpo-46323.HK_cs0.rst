@@ -1,3 +1,0 @@
-:mod:`ctypes` now allocates memory on the stack instead of on the heap
-to pass arguments while calling a Python callback function.
-Patch by Dong-hee Na.

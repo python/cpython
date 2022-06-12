@@ -38,6 +38,8 @@
 #include "Python.h"
 #include "pycore_import.h"
 
+#include <stdbool.h>
+
 /* Includes for frozen modules: */
 /* End includes */
 

@@ -15,7 +15,6 @@ import signal
 import time
 import os
 import platform
-import pwd
 import stat
 import tempfile
 import unittest
@@ -23,11 +22,19 @@ import warnings
 import textwrap
 from contextlib import contextmanager
 
+try:
+    import pwd
+except ImportError:
+    pwd = None
+
 _DUMMY_SYMLINK = os.path.join(tempfile.gettempdir(),
                               os_helper.TESTFN + '-dummy-symlink')
 
-requires_32b = unittest.skipUnless(sys.maxsize < 2**32,
-        'test is only meaningful on 32-bit builds')
+requires_32b = unittest.skipUnless(
+    # Emscripten/WASI have 32 bits pointers, but support 64 bits syscall args.
+    sys.maxsize < 2**32 and not (support.is_emscripten or support.is_wasi),
+    'test is only meaningful on 32-bit builds'
+)
 
 def _supports_sched():
     if not hasattr(posix, 'sched_getscheduler'):
@@ -46,18 +53,12 @@ class PosixTester(unittest.TestCase):
 
     def setUp(self):
         # create empty file
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         with open(os_helper.TESTFN, "wb"):
             pass
-        self.teardown_files = [ os_helper.TESTFN ]
-        self._warnings_manager = warnings_helper.check_warnings()
-        self._warnings_manager.__enter__()
+        self.enterContext(warnings_helper.check_warnings())
         warnings.filterwarnings('ignore', '.* potential security risk .*',
                                 RuntimeWarning)
-
-    def tearDown(self):
-        for teardown_file in self.teardown_files:
-            os_helper.unlink(teardown_file)
-        self._warnings_manager.__exit__(None, None, None)
 
     def testNoArgFunctions(self):
         # test posix functions which take no arguments and have
@@ -71,8 +72,9 @@ class PosixTester(unittest.TestCase):
         for name in NO_ARG_FUNCTIONS:
             posix_func = getattr(posix, name, None)
             if posix_func is not None:
-                posix_func()
-                self.assertRaises(TypeError, posix_func, 1)
+                with self.subTest(name):
+                    posix_func()
+                    self.assertRaises(TypeError, posix_func, 1)
 
     @unittest.skipUnless(hasattr(posix, 'getresuid'),
                          'test needs posix.getresuid()')
@@ -126,6 +128,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'initgroups'),
                          "test needs os.initgroups()")
+    @unittest.skipUnless(hasattr(pwd, 'getpwuid'), "test needs pwd.getpwuid()")
     def test_initgroups(self):
         # It takes a string and an integer; check that it raises a TypeError
         # for other argument lists.
@@ -544,6 +547,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'dup'),
                          'test needs posix.dup()')
+    @unittest.skipIf(support.is_wasi, "WASI does not have dup()")
     def test_dup(self):
         fp = open(os_helper.TESTFN)
         try:
@@ -561,6 +565,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'dup2'),
                          'test needs posix.dup2()')
+    @unittest.skipIf(support.is_wasi, "WASI does not have dup2()")
     def test_dup2(self):
         fp1 = open(os_helper.TESTFN)
         fp2 = open(os_helper.TESTFN)
@@ -572,6 +577,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'O_CLOEXEC'), "needs os.O_CLOEXEC")
     @support.requires_linux_version(2, 6, 23)
+    @support.requires_subprocess()
     def test_oscloexec(self):
         fd = os.open(os_helper.TESTFN, os.O_RDONLY|os.O_CLOEXEC)
         self.addCleanup(os.close, fd)
@@ -731,7 +737,11 @@ class PosixTester(unittest.TestCase):
             is_root = (uid in (0, 1))
         else:
             is_root = (uid == 0)
-        if is_root:
+        if support.is_emscripten:
+            # Emscripten getuid() / geteuid() always return 0 (root), but
+            # cannot chown uid/gid to random value.
+            pass
+        elif is_root:
             # Try an amusingly large uid/gid to make sure we handle
             # large unsigned values.  (chown lets you use any
             # uid/gid you like, even if they aren't defined.)
@@ -776,7 +786,7 @@ class PosixTester(unittest.TestCase):
             self.assertRaises(TypeError, chown_func, first_param, uid, t(gid))
             check_stat(uid, gid)
 
-    @unittest.skipUnless(hasattr(posix, 'chown'), "test needs os.chown()")
+    @os_helper.skip_unless_working_chmod
     def test_chown(self):
         # raise an OSError if the file does not exist
         os.unlink(os_helper.TESTFN)
@@ -786,6 +796,7 @@ class PosixTester(unittest.TestCase):
         os_helper.create_empty_file(os_helper.TESTFN)
         self._test_all_chown_common(posix.chown, os_helper.TESTFN, posix.stat)
 
+    @os_helper.skip_unless_working_chmod
     @unittest.skipUnless(hasattr(posix, 'fchown'), "test needs os.fchown()")
     def test_fchown(self):
         os.unlink(os_helper.TESTFN)
@@ -799,6 +810,7 @@ class PosixTester(unittest.TestCase):
         finally:
             test_file.close()
 
+    @os_helper.skip_unless_working_chmod
     @unittest.skipUnless(hasattr(posix, 'lchown'), "test needs os.lchown()")
     def test_lchown(self):
         os.unlink(os_helper.TESTFN)
@@ -959,8 +971,8 @@ class PosixTester(unittest.TestCase):
 
         self.assertTrue(hasattr(testfn_st, 'st_flags'))
 
+        self.addCleanup(os_helper.unlink, _DUMMY_SYMLINK)
         os.symlink(os_helper.TESTFN, _DUMMY_SYMLINK)
-        self.teardown_files.append(_DUMMY_SYMLINK)
         dummy_symlink_st = os.lstat(_DUMMY_SYMLINK)
 
         def chflags_nofollow(path, flags):
@@ -1180,7 +1192,9 @@ class PosixTester(unittest.TestCase):
         mask = posix.sched_getaffinity(0)
         self.assertIsInstance(mask, set)
         self.assertGreaterEqual(len(mask), 1)
-        self.assertRaises(OSError, posix.sched_getaffinity, -1)
+        if not sys.platform.startswith("freebsd"):
+            # bpo-47205: does not raise OSError on FreeBSD
+            self.assertRaises(OSError, posix.sched_getaffinity, -1)
         for cpu in mask:
             self.assertIsInstance(cpu, int)
             self.assertGreaterEqual(cpu, 0)
@@ -1198,8 +1212,11 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(ValueError, posix.sched_setaffinity, 0, [-10])
         self.assertRaises(ValueError, posix.sched_setaffinity, 0, map(int, "0X"))
         self.assertRaises(OverflowError, posix.sched_setaffinity, 0, [1<<128])
-        self.assertRaises(OSError, posix.sched_setaffinity, -1, mask)
+        if not sys.platform.startswith("freebsd"):
+            # bpo-47205: does not raise OSError on FreeBSD
+            self.assertRaises(OSError, posix.sched_setaffinity, -1, mask)
 
+    @unittest.skipIf(support.is_wasi, "No dynamic linking on WASI")
     def test_rtld_constants(self):
         # check presence of major RTLD_* constants
         posix.RTLD_LAZY
@@ -1394,7 +1411,14 @@ class TestPosixDirFd(unittest.TestCase):
                     # whoops!  using both together not supported on this platform.
                     pass
 
-    @unittest.skipUnless(os.link in os.supports_dir_fd, "test needs dir_fd support in os.link()")
+    @unittest.skipIf(
+        support.is_wasi,
+        "WASI: symlink following on path_link is not supported"
+    )
+    @unittest.skipUnless(
+        hasattr(os, "link") and os.link in os.supports_dir_fd,
+        "test needs dir_fd support in os.link()"
+    )
     def test_link_dir_fd(self):
         with self.prepare_file() as (dir_fd, name, fullname), \
              self.prepare() as (dir_fd2, linkname, fulllinkname):

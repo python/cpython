@@ -3,7 +3,6 @@
 
 
 #define PY_SSIZE_T_CLEAN
-#define NEEDS_PY_IDENTIFIER
 #include "Python.h"
 
 #include <sys/types.h>
@@ -13,10 +12,7 @@
 /* Some Linux systems install gdbm/ndbm.h, but not ndbm.h.  This supports
  * whichever configure was able to locate.
  */
-#if defined(USE_NDBM)
-  #include <ndbm.h>
-  static const char which_dbm[] = "GNU gdbm";  /* EMX port of GDBM */
-#elif defined(USE_GDBM_COMPAT)
+#if defined(USE_GDBM_COMPAT)
   #ifdef HAVE_GDBM_NDBM_H
     #include <gdbm/ndbm.h>
   #elif HAVE_GDBM_DASH_NDBM_H
@@ -24,6 +20,9 @@
   #else
     #error "No gdbm/ndbm.h or gdbm-ndbm.h available"
   #endif
+  static const char which_dbm[] = "GNU gdbm";
+#elif defined(USE_NDBM)
+  #include <ndbm.h>
   static const char which_dbm[] = "GNU gdbm";
 #elif defined(USE_BERKDB)
   #ifndef DB_DBM_HSEARCH
@@ -396,8 +395,7 @@ dbm__enter__(PyObject *self, PyObject *args)
 static PyObject *
 dbm__exit__(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(close);
-    return _PyObject_CallMethodIdNoArgs(self, &PyId_close);
+    return _dbm_dbm_close_impl((dbmobject *)self);
 }
 
 static PyMethodDef dbm_methods[] = {

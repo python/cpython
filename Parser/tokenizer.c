@@ -88,6 +88,9 @@ tok_new(void)
     tok->async_def_nl = 0;
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
     tok->str = NULL;
+#ifdef Py_DEBUG
+    tok->debug = _Py_GetConfig()->parser_debug;
+#endif
     return tok;
 }
 
@@ -282,30 +285,6 @@ check_bom(int get_char(struct tok_state *),
             unget_char(ch1, tok);
             return 1;
         }
-#if 0
-    /* Disable support for UTF-16 BOMs until a decision
-       is made whether this needs to be supported.  */
-    } else if (ch1 == 0xFE) {
-        ch2 = get_char(tok);
-        if (ch2 != 0xFF) {
-            unget_char(ch2, tok);
-            unget_char(ch1, tok);
-            return 1;
-        }
-        if (!set_readline(tok, "utf-16-be"))
-            return 0;
-        tok->decoding_state = STATE_NORMAL;
-    } else if (ch1 == 0xFF) {
-        ch2 = get_char(tok);
-        if (ch2 != 0xFE) {
-            unget_char(ch2, tok);
-            unget_char(ch1, tok);
-            return 1;
-        }
-        if (!set_readline(tok, "utf-16-le"))
-            return 0;
-        tok->decoding_state = STATE_NORMAL;
-#endif
     } else {
         unget_char(ch1, tok);
         return 1;
@@ -547,7 +526,7 @@ ensure_utf8(char *line, struct tok_state *tok)
                      "Non-UTF-8 code starting with '\\x%.2x' "
                      "in file %U on line %i, "
                      "but no encoding declared; "
-                     "see https://python.org/dev/peps/pep-0263/ for details",
+                     "see https://peps.python.org/pep-0263/ for details",
                      badchar, tok->filename, tok->lineno + 1);
         return 0;
     }
@@ -1045,7 +1024,7 @@ tok_nextc(struct tok_state *tok)
             rc = tok_underflow_file(tok);
         }
 #if defined(Py_DEBUG)
-        if (Py_DebugFlag) {
+        if (tok->debug) {
             fprintf(stderr, "line[%d] = ", tok->lineno);
             print_escape(stderr, tok->cur, tok->inp - tok->cur);
             fprintf(stderr, "  tok->done = %d\n", tok->done);
@@ -1126,11 +1105,7 @@ static int
 syntaxerror(struct tok_state *tok, const char *format, ...)
 {
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     int ret = _syntaxerror_range(tok, format, -1, -1, vargs);
     va_end(vargs);
     return ret;
@@ -1142,11 +1117,7 @@ syntaxerror_known_range(struct tok_state *tok,
                         const char *format, ...)
 {
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     int ret = _syntaxerror_range(tok, format, col_offset, end_col_offset, vargs);
     va_end(vargs);
     return ret;
@@ -1163,24 +1134,20 @@ indenterror(struct tok_state *tok)
 }
 
 static int
-parser_warn(struct tok_state *tok, const char *format, ...)
+parser_warn(struct tok_state *tok, PyObject *category, const char *format, ...)
 {
     PyObject *errmsg;
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     errmsg = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
     if (!errmsg) {
         goto error;
     }
 
-    if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, errmsg, tok->filename,
+    if (PyErr_WarnExplicitObject(category, errmsg, tok->filename,
                                  tok->lineno, NULL, NULL) < 0) {
-        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+        if (PyErr_ExceptionMatches(category)) {
             /* Replace the DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
@@ -1253,9 +1220,14 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind)
     else if (c == 'o') {
         r = lookahead(tok, "r");
     }
+    else if (c == 'n') {
+        r = lookahead(tok, "ot");
+    }
     if (r) {
         tok_backup(tok, c);
-        if (parser_warn(tok, "invalid %s literal", kind)) {
+        if (parser_warn(tok, PyExc_SyntaxWarning,
+                "invalid %s literal", kind))
+        {
             return 0;
         }
         tok_nextc(tok);
@@ -2011,10 +1983,10 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
     /* Check for two-character token */
     {
         int c2 = tok_nextc(tok);
-        int token = PyToken_TwoChars(c, c2);
+        int token = _PyToken_TwoChars(c, c2);
         if (token != OP) {
             int c3 = tok_nextc(tok);
-            int token3 = PyToken_ThreeChars(c, c2, c3);
+            int token3 = _PyToken_ThreeChars(c, c2, c3);
             if (token3 != OP) {
                 token = token3;
             }
@@ -2078,7 +2050,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
     /* Punctuation character */
     *p_start = tok->start;
     *p_end = tok->cur;
-    return PyToken_OneChar(c);
+    return _PyToken_OneChar(c);
 }
 
 int
@@ -2092,6 +2064,39 @@ _PyTokenizer_Get(struct tok_state *tok,
     }
     return result;
 }
+
+#if defined(__wasi__) || (defined(__EMSCRIPTEN__) && (__EMSCRIPTEN_major__ >= 3))
+// fdopen() with borrowed fd. WASI does not provide dup() and Emscripten's
+// dup() emulation with open() is slow.
+typedef union {
+    void *cookie;
+    int fd;
+} borrowed;
+
+static ssize_t
+borrow_read(void *cookie, char *buf, size_t size)
+{
+    borrowed b = {.cookie = cookie};
+    return read(b.fd, (void *)buf, size);
+}
+
+static FILE *
+fdopen_borrow(int fd) {
+    // supports only reading. seek fails. close and write are no-ops.
+    cookie_io_functions_t io_cb = {borrow_read, NULL, NULL, NULL};
+    borrowed b = {.fd = fd};
+    return fopencookie(b.cookie, "r", io_cb);
+}
+#else
+static FILE *
+fdopen_borrow(int fd) {
+    fd = _Py_dup(fd);
+    if (fd < 0) {
+        return NULL;
+    }
+    return fdopen(fd, "r");
+}
+#endif
 
 /* Get the encoding of a Python file. Check for the coding cookie and check if
    the file starts with a BOM.
@@ -2112,12 +2117,7 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
     const char *p_end = NULL;
     char *encoding = NULL;
 
-    fd = _Py_dup(fd);
-    if (fd < 0) {
-        return NULL;
-    }
-
-    fp = fdopen(fd, "r");
+    fp = fdopen_borrow(fd);
     if (fp == NULL) {
         return NULL;
     }

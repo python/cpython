@@ -153,6 +153,7 @@ def _copy_items(items):
 # Formatting Help
 # ===============
 
+
 class HelpFormatter(object):
     """Formatter for generating usage messages and argument help strings.
 
@@ -695,13 +696,25 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
     """
 
     def _get_help_string(self, action):
+        """
+        Add the default value to the option help message.
+
+        ArgumentDefaultsHelpFormatter and BooleanOptionalAction when it isn't
+        already present. This code will do that, detecting cornercases to
+        prevent duplicates or cases where it wouldn't make sense to the end
+        user.
+        """
         help = action.help
-        if '%(default)' not in action.help:
+        if help is None:
+            help = ''
+
+        if '%(default)' not in help:
             if action.default is not SUPPRESS:
                 defaulting_nargs = [OPTIONAL, ZERO_OR_MORE]
                 if action.option_strings or action.nargs in defaulting_nargs:
                     help += ' (default: %(default)s)'
         return help
+
 
 
 class MetavarTypeHelpFormatter(HelpFormatter):
@@ -719,7 +732,6 @@ class MetavarTypeHelpFormatter(HelpFormatter):
         return action.type.__name__
 
 
-
 # =====================
 # Options and Arguments
 # =====================
@@ -728,7 +740,7 @@ def _get_action_name(argument):
     if argument is None:
         return None
     elif argument.option_strings:
-        return  '/'.join(argument.option_strings)
+        return '/'.join(argument.option_strings)
     elif argument.metavar not in (None, SUPPRESS):
         return argument.metavar
     elif argument.dest not in (None, SUPPRESS):
@@ -754,7 +766,7 @@ class ArgumentError(Exception):
         if self.argument_name is None:
             format = '%(message)s'
         else:
-            format = 'argument %(argument_name)s: %(message)s'
+            format = _('argument %(argument_name)s: %(message)s')
         return format % dict(message=self.message,
                              argument_name=self.argument_name)
 
@@ -850,6 +862,7 @@ class Action(_AttributeHolder):
             'default',
             'type',
             'choices',
+            'required',
             'help',
             'metavar',
         ]
@@ -881,9 +894,6 @@ class BooleanOptionalAction(Action):
                 option_string = '--no-' + option_string[2:]
                 _option_strings.append(option_string)
 
-        if help is not None and default is not None and default is not SUPPRESS:
-            help += " (default: %(default)s)"
-
         super().__init__(
             option_strings=_option_strings,
             dest=dest,
@@ -894,6 +904,7 @@ class BooleanOptionalAction(Action):
             required=required,
             help=help,
             metavar=metavar)
+
 
     def __call__(self, parser, namespace, values, option_string=None):
         if option_string in self.option_strings:
@@ -1170,6 +1181,13 @@ class _SubParsersAction(Action):
 
         aliases = kwargs.pop('aliases', ())
 
+        if name in self._name_parser_map:
+            raise ArgumentError(self, _('conflicting subparser: %s') % name)
+        for alias in aliases:
+            if alias in self._name_parser_map:
+                raise ArgumentError(
+                    self, _('conflicting subparser alias: %s') % alias)
+
         # create a pseudo-action to hold the choice help
         if 'help' in kwargs:
             help = kwargs.pop('help')
@@ -1259,9 +1277,9 @@ class FileType(object):
         # the special argument "-" means sys.std{in,out}
         if string == '-':
             if 'r' in self._mode:
-                return _sys.stdin
-            elif 'w' in self._mode:
-                return _sys.stdout
+                return _sys.stdin.buffer if 'b' in self._mode else _sys.stdin
+            elif any(c in self._mode for c in 'wax'):
+                return _sys.stdout.buffer if 'b' in self._mode else _sys.stdout
             else:
                 msg = _('argument "-" with mode %r') % self._mode
                 raise ValueError(msg)

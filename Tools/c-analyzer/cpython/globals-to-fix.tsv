@@ -18,8 +18,8 @@ Objects/capsule.c	-	PyCapsule_Type	-
 Objects/cellobject.c	-	PyCell_Type	-
 Objects/classobject.c	-	PyInstanceMethod_Type	-
 Objects/classobject.c	-	PyMethod_Type	-
-Objects/codeobject.c	-	LineIterator	-
-Objects/codeobject.c	-	PositionsIterator	-
+Objects/codeobject.c	-	_PyLineIterator	-
+Objects/codeobject.c	-	_PyPositionsIterator	-
 Objects/codeobject.c	-	PyCode_Type	-
 Objects/complexobject.c	-	PyComplex_Type	-
 Objects/descrobject.c	-	PyClassMethodDescr_Type	-
@@ -51,6 +51,7 @@ Objects/frameobject.c	-	PyFrame_Type	-
 Objects/funcobject.c	-	PyClassMethod_Type	-
 Objects/funcobject.c	-	PyFunction_Type	-
 Objects/funcobject.c	-	PyStaticMethod_Type	-
+Objects/genericaliasobject.c	-	_Py_GenericAliasIterType	-
 Objects/genericaliasobject.c	-	Py_GenericAliasType	-
 Objects/genobject.c	-	PyAsyncGen_Type	-
 Objects/genobject.c	-	PyCoro_Type	-
@@ -68,7 +69,7 @@ Objects/listobject.c	-	PyListRevIter_Type	-
 Objects/listobject.c	-	PyList_Type	-
 Objects/longobject.c	-	Int_InfoType	-
 Objects/longobject.c	-	PyLong_Type	-
-Objects/memoryobject.c	-	PyMemoryIter_Type	-
+Objects/memoryobject.c	-	_PyMemoryIter_Type	-
 Objects/memoryobject.c	-	PyMemoryView_Type	-
 Objects/memoryobject.c	-	_PyManagedBuffer_Type	-
 Objects/methodobject.c	-	PyCFunction_Type	-
@@ -280,66 +281,8 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 # cached - initialized once
 
 # manually cached PyUnicodeObject
-Objects/boolobject.c	-	false_str	-
-Objects/boolobject.c	-	true_str	-
-Objects/classobject.c	method_get_doc	docstr	-
-Objects/classobject.c	instancemethod_get_doc	docstr	-
-Objects/codeobject.c	PyCode_NewEmpty	emptystring	-
-Objects/exceptions.c	_check_for_legacy_statements	print_prefix	-
-Objects/exceptions.c	_check_for_legacy_statements	exec_prefix	-
-Objects/funcobject.c	PyFunction_NewWithQualName	__name__	-
-Objects/listobject.c	-	indexerr	-
-Objects/typeobject.c	object___reduce_ex___impl	objreduce	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/_warnings.c	is_internal_frame	bootstrap_string	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/_warnings.c	is_internal_frame	importlib_string	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/ast_unparse.c	-	_str_close_br	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/ast_unparse.c	-	_str_dbl_close_br	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/ast_unparse.c	-	_str_dbl_open_br	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/ast_unparse.c	-	_str_inf	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/ast_unparse.c	-	_str_open_br	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/ast_unparse.c	-	_str_replace_inf	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/compile.c	-	__annotations__	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/compile.c	-	__doc__	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/compile.c	compiler_dictcomp	name	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/compile.c	compiler_from_import	empty_string	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/compile.c	compiler_genexp	name	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/compile.c	compiler_lambda	name	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/compile.c	compiler_listcomp	name	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/compile.c	compiler_setcomp	name	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/compile.c	compiler_visit_annotations	return_str	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/import.c	PyImport_Import	builtins_str	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/import.c	PyImport_Import	import_str	-
-Python/symtable.c	-	__class__	-
-Python/symtable.c	-	_annotation	-
-Python/symtable.c	-	dictcomp	-
-Python/symtable.c	-	genexpr	-
-Python/symtable.c	-	lambda	-
-Python/symtable.c	-	listcomp	-
-Python/symtable.c	-	setcomp	-
-Python/symtable.c	-	top	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/sysmodule.c	-	whatstrings	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/sysmodule.c	sys_displayhook	newline	-
 
 # _PyArg_Parser (holds tuple of strings)
 Objects/clinic/bytearrayobject.c.h	bytearray___init__	_parser	-
@@ -402,6 +345,7 @@ Objects/typeobject.c	-	slotdefs	-
 
 # other
 Objects/typeobject.c	-	method_cache	-
+Objects/typeobject.c	object___reduce_ex___impl	objreduce	-
 Objects/unicodeobject.c	-	_string_module	-
 Objects/unicodeobject.c	-	interned	-
 Objects/unicodeobject.c	-	static_strings	-
@@ -665,37 +609,6 @@ Modules/signalmodule.c	-	ItimerError	-
 
 #-----------------------
 # cached - initialized once
-
-# manually cached PyUnicodeOjbect
-Modules/_io/_iomodule.c	-	_PyIO_str_close	-
-Modules/_io/_iomodule.c	-	_PyIO_str_closed	-
-Modules/_io/_iomodule.c	-	_PyIO_str_decode	-
-Modules/_io/_iomodule.c	-	_PyIO_str_encode	-
-Modules/_io/_iomodule.c	-	_PyIO_str_fileno	-
-Modules/_io/_iomodule.c	-	_PyIO_str_flush	-
-Modules/_io/_iomodule.c	-	_PyIO_str_getstate	-
-Modules/_io/_iomodule.c	-	_PyIO_str_isatty	-
-Modules/_io/_iomodule.c	-	_PyIO_str_locale	-
-Modules/_io/_iomodule.c	-	_PyIO_str_newlines	-
-Modules/_io/_iomodule.c	-	_PyIO_str_nl	-
-Modules/_io/_iomodule.c	-	_PyIO_str_peek	-
-Modules/_io/_iomodule.c	-	_PyIO_str_read	-
-Modules/_io/_iomodule.c	-	_PyIO_str_read1	-
-Modules/_io/_iomodule.c	-	_PyIO_str_readable	-
-Modules/_io/_iomodule.c	-	_PyIO_str_readall	-
-Modules/_io/_iomodule.c	-	_PyIO_str_readinto	-
-Modules/_io/_iomodule.c	-	_PyIO_str_readline	-
-Modules/_io/_iomodule.c	-	_PyIO_str_reset	-
-Modules/_io/_iomodule.c	-	_PyIO_str_seek	-
-Modules/_io/_iomodule.c	-	_PyIO_str_seekable	-
-Modules/_io/_iomodule.c	-	_PyIO_str_setstate	-
-Modules/_io/_iomodule.c	-	_PyIO_str_tell	-
-Modules/_io/_iomodule.c	-	_PyIO_str_truncate	-
-Modules/_io/_iomodule.c	-	_PyIO_str_writable	-
-Modules/_io/_iomodule.c	-	_PyIO_str_write	-
-Modules/_io/_iomodule.c	-	_PyIO_empty_str	-
-Modules/_threadmodule.c	-	str_dict	-
-Modules/_tracemalloc.c	-	unknown_filename	-
 
 # _PyArg_Parser
 Modules/clinic/_codecsmodule.c.h	_codecs_decode	_parser	-

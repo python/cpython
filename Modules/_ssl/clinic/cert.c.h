@@ -8,7 +8,7 @@ PyDoc_STRVAR(_ssl_Certificate_public_bytes__doc__,
 "\n");
 
 #define _SSL_CERTIFICATE_PUBLIC_BYTES_METHODDEF    \
-    {"public_bytes", (PyCFunction)(void(*)(void))_ssl_Certificate_public_bytes, METH_FASTCALL|METH_KEYWORDS, _ssl_Certificate_public_bytes__doc__},
+    {"public_bytes", _PyCFunction_CAST(_ssl_Certificate_public_bytes), METH_FASTCALL|METH_KEYWORDS, _ssl_Certificate_public_bytes__doc__},
 
 static PyObject *
 _ssl_Certificate_public_bytes_impl(PySSLCertificate *self, int format);
@@ -57,4 +57,4 @@ _ssl_Certificate_get_info(PySSLCertificate *self, PyObject *Py_UNUSED(ignored))
 {
     return _ssl_Certificate_get_info_impl(self);
 }
-/*[clinic end generated code: output=569d161749ead2da input=a9049054013a1b77]*/
+/*[clinic end generated code: output=18885c4d167d5244 input=a9049054013a1b77]*/

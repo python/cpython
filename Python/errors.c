@@ -10,12 +10,6 @@
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
 
-#ifndef __STDC__
-#ifndef MS_WINDOWS
-extern char *strerror(int);
-#endif
-#endif
-
 #include <ctype.h>
 #ifdef MS_WINDOWS
 #  include <windows.h>
@@ -505,6 +499,36 @@ _PyErr_GetExcInfo(PyThreadState *tstate,
     Py_XINCREF(*p_traceback);
 }
 
+PyObject*
+_PyErr_GetHandledException(PyThreadState *tstate)
+{
+    _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
+    PyObject *exc = exc_info->exc_value;
+    if (exc == NULL || exc == Py_None) {
+        return NULL;
+    }
+    return Py_NewRef(exc);
+}
+
+PyObject*
+PyErr_GetHandledException(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyErr_GetHandledException(tstate);
+}
+
+void
+_PyErr_SetHandledException(PyThreadState *tstate, PyObject *exc)
+{
+    Py_XSETREF(tstate->exc_info->exc_value, Py_XNewRef(exc));
+}
+
+void
+PyErr_SetHandledException(PyObject *exc)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_SetHandledException(tstate, exc);
+}
 
 void
 PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
@@ -516,17 +540,11 @@ PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
 void
 PyErr_SetExcInfo(PyObject *type, PyObject *value, PyObject *traceback)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-
-    PyObject *oldvalue = tstate->exc_info->exc_value;
-
-    tstate->exc_info->exc_value = value;
-
+    PyErr_SetHandledException(value);
+    Py_XDECREF(value);
     /* These args are no longer used, but we still need to steal a ref */
     Py_XDECREF(type);
     Py_XDECREF(traceback);
-
-    Py_XDECREF(oldvalue);
 }
 
 
@@ -670,11 +688,7 @@ _PyErr_FormatFromCauseTstate(PyThreadState *tstate, PyObject *exception,
                              const char *format, ...)
 {
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     _PyErr_FormatVFromCause(tstate, exception, format, vargs);
     va_end(vargs);
     return NULL;
@@ -685,11 +699,7 @@ _PyErr_FormatFromCause(PyObject *exception, const char *format, ...)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     _PyErr_FormatVFromCause(tstate, exception, format, vargs);
     va_end(vargs);
     return NULL;
@@ -1078,11 +1088,7 @@ _PyErr_Format(PyThreadState *tstate, PyObject *exception,
               const char *format, ...)
 {
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     _PyErr_FormatV(tstate, exception, format, vargs);
     va_end(vargs);
     return NULL;
@@ -1094,11 +1100,7 @@ PyErr_Format(PyObject *exception, const char *format, ...)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     _PyErr_FormatV(tstate, exception, format, vargs);
     va_end(vargs);
     return NULL;

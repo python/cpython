@@ -109,11 +109,10 @@ from http import HTTPStatus
 
 # Default error message template
 DEFAULT_ERROR_MESSAGE = """\
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
-        "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE HTML>
+<html lang="en">
     <head>
-        <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+        <meta charset="utf-8">
         <title>Error response</title>
     </head>
     <body>
@@ -777,14 +776,13 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             displaypath = urllib.parse.unquote(path)
         displaypath = html.escape(displaypath, quote=False)
         enc = sys.getfilesystemencoding()
-        title = 'Directory listing for %s' % displaypath
-        r.append('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" '
-                 '"http://www.w3.org/TR/html4/strict.dtd">')
-        r.append('<html>\n<head>')
-        r.append('<meta http-equiv="Content-Type" '
-                 'content="text/html; charset=%s">' % enc)
-        r.append('<title>%s</title>\n</head>' % title)
-        r.append('<body>\n<h1>%s</h1>' % title)
+        title = f'Directory listing for {displaypath}'
+        r.append('<!DOCTYPE HTML>')
+        r.append('<html lang="en">')
+        r.append('<head>')
+        r.append(f'<meta charset="{enc}">')
+        r.append(f'<title>{title}</title>\n</head>')
+        r.append(f'<body>\n<h1>{title}</h1>')
         r.append('<hr>\n<ul>')
         for name in list:
             fullname = os.path.join(path, name)
@@ -1258,15 +1256,19 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--cgi', action='store_true',
                         help='run as CGI server')
-    parser.add_argument('--bind', '-b', metavar='ADDRESS',
-                        help='specify alternate bind address '
+    parser.add_argument('-b', '--bind', metavar='ADDRESS',
+                        help='bind to this address '
                              '(default: all interfaces)')
-    parser.add_argument('--directory', '-d', default=os.getcwd(),
-                        help='specify alternate directory '
+    parser.add_argument('-d', '--directory', default=os.getcwd(),
+                        help='serve this directory '
                              '(default: current directory)')
-    parser.add_argument('port', action='store', default=8000, type=int,
-                        nargs='?',
-                        help='specify alternate port (default: 8000)')
+    parser.add_argument('-p', '--protocol', metavar='VERSION',
+                        default='HTTP/1.0',
+                        help='conform to this HTTP version '
+                             '(default: %(default)s)')
+    parser.add_argument('port', default=8000, type=int, nargs='?',
+                        help='bind to this port '
+                             '(default: %(default)s)')
     args = parser.parse_args()
     if args.cgi:
         handler_class = CGIHTTPRequestHandler
@@ -1292,4 +1294,5 @@ if __name__ == '__main__':
         ServerClass=DualStackServer,
         port=args.port,
         bind=args.bind,
+        protocol=args.protocol,
     )

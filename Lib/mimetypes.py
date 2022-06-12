@@ -141,25 +141,23 @@ class MimeTypes:
                 type = 'text/plain'
             return type, None           # never compressed, so encoding is None
         base, ext = posixpath.splitext(url)
-        while ext in self.suffix_map:
-            base, ext = posixpath.splitext(base + self.suffix_map[ext])
+        while (ext_lower := ext.lower()) in self.suffix_map:
+            base, ext = posixpath.splitext(base + self.suffix_map[ext_lower])
+        # encodings_map is case sensitive
         if ext in self.encodings_map:
             encoding = self.encodings_map[ext]
             base, ext = posixpath.splitext(base)
         else:
             encoding = None
+        ext = ext.lower()
         types_map = self.types_map[True]
         if ext in types_map:
             return types_map[ext], encoding
-        elif ext.lower() in types_map:
-            return types_map[ext.lower()], encoding
         elif strict:
             return None, encoding
         types_map = self.types_map[False]
         if ext in types_map:
             return types_map[ext], encoding
-        elif ext.lower() in types_map:
-            return types_map[ext.lower()], encoding
         else:
             return None, encoding
 
@@ -519,6 +517,7 @@ def _default_mime_types():
         '.aiff'   : 'audio/x-aiff',
         '.ra'     : 'audio/x-pn-realaudio',
         '.wav'    : 'audio/x-wav',
+        '.avif'   : 'image/avif',
         '.bmp'    : 'image/bmp',
         '.gif'    : 'image/gif',
         '.ief'    : 'image/ief',
@@ -591,6 +590,7 @@ def _default_mime_types():
         '.pict': 'image/pict',
         '.pct' : 'image/pict',
         '.pic' : 'image/pict',
+        '.webp': 'image/webp',
         '.xul' : 'text/xul',
         }
 

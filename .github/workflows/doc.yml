@@ -5,6 +5,7 @@ on:
   #push:
   #  branches:
   #  - 'main'
+  #  - '3.11'
   #  - '3.10'
   #  - '3.9'
   #  - '3.8'
@@ -14,6 +15,7 @@ on:
   pull_request:
     branches:
     - 'main'
+    - '3.11'
     - '3.10'
     - '3.9'
     - '3.8'
@@ -22,12 +24,15 @@ on:
     - 'Doc/**'
     - 'Misc/**'
 
+permissions:
+  contents: read
+
 jobs:
   build_doc:
     name: 'Docs'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Register Sphinx problem matcher
       run: echo "::add-matcher::.github/problem-matchers/sphinx.json"
     - name: 'Install Dependencies'
@@ -41,14 +46,14 @@ jobs:
     # Run "check doctest html" as 3 steps to get a more readable output
     # in the web UI
     - name: 'Check documentation'
-      run: make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W --keep-going -j4" check
+      run: make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W --keep-going" check
     # Use "xvfb-run" since some doctest tests open GUI windows
     - name: 'Run documentation doctest'
-      run: xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W --keep-going -j4" doctest
+      run: xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W --keep-going" doctest
     - name: 'Build HTML documentation'
-      run: make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W --keep-going -j4" html
+      run: make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W --keep-going" html
     - name: 'Upload'
-      uses: actions/upload-artifact@v2.2.4
+      uses: actions/upload-artifact@v3
       with:
         name: doc-html
         path: Doc/build/html

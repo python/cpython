@@ -1,2 +1,0 @@
-Fix a bug in the :mod:`codeop` module that was incorrectly identifying
-invalid code involving string quotes as valid code.

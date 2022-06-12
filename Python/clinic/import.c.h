@@ -75,7 +75,7 @@ PyDoc_STRVAR(_imp__fix_co_filename__doc__,
 "    File path to use.");
 
 #define _IMP__FIX_CO_FILENAME_METHODDEF    \
-    {"_fix_co_filename", (PyCFunction)(void(*)(void))_imp__fix_co_filename, METH_FASTCALL, _imp__fix_co_filename__doc__},
+    {"_fix_co_filename", _PyCFunction_CAST(_imp__fix_co_filename), METH_FASTCALL, _imp__fix_co_filename__doc__},
 
 static PyObject *
 _imp__fix_co_filename_impl(PyObject *module, PyCodeObject *code,
@@ -184,7 +184,7 @@ PyDoc_STRVAR(_imp_find_frozen__doc__,
 "                the module\'s current name)");
 
 #define _IMP_FIND_FROZEN_METHODDEF    \
-    {"find_frozen", (PyCFunction)(void(*)(void))_imp_find_frozen, METH_FASTCALL|METH_KEYWORDS, _imp_find_frozen__doc__},
+    {"find_frozen", _PyCFunction_CAST(_imp_find_frozen), METH_FASTCALL|METH_KEYWORDS, _imp_find_frozen__doc__},
 
 static PyObject *
 _imp_find_frozen_impl(PyObject *module, PyObject *name, int withdata);
@@ -233,7 +233,7 @@ PyDoc_STRVAR(_imp_get_frozen_object__doc__,
 "Create a code object for a frozen module.");
 
 #define _IMP_GET_FROZEN_OBJECT_METHODDEF    \
-    {"get_frozen_object", (PyCFunction)(void(*)(void))_imp_get_frozen_object, METH_FASTCALL, _imp_get_frozen_object__doc__},
+    {"get_frozen_object", _PyCFunction_CAST(_imp_get_frozen_object), METH_FASTCALL, _imp_get_frozen_object__doc__},
 
 static PyObject *
 _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
@@ -422,7 +422,7 @@ PyDoc_STRVAR(_imp_create_dynamic__doc__,
 "Create an extension module.");
 
 #define _IMP_CREATE_DYNAMIC_METHODDEF    \
-    {"create_dynamic", (PyCFunction)(void(*)(void))_imp_create_dynamic, METH_FASTCALL, _imp_create_dynamic__doc__},
+    {"create_dynamic", _PyCFunction_CAST(_imp_create_dynamic), METH_FASTCALL, _imp_create_dynamic__doc__},
 
 static PyObject *
 _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file);
@@ -517,7 +517,7 @@ PyDoc_STRVAR(_imp_source_hash__doc__,
 "\n");
 
 #define _IMP_SOURCE_HASH_METHODDEF    \
-    {"source_hash", (PyCFunction)(void(*)(void))_imp_source_hash, METH_FASTCALL|METH_KEYWORDS, _imp_source_hash__doc__},
+    {"source_hash", _PyCFunction_CAST(_imp_source_hash), METH_FASTCALL|METH_KEYWORDS, _imp_source_hash__doc__},
 
 static PyObject *
 _imp_source_hash_impl(PyObject *module, long key, Py_buffer *source);
@@ -565,4 +565,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=adcf787969a11353 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8d0f4305b1d0714b input=a9049054013a1b77]*/

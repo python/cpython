@@ -76,8 +76,8 @@ class AboutDialog(Toplevel):
                        bg=self.bg, font=('courier', 24, 'bold'))
         header.grid(row=0, column=0, sticky=E, padx=10, pady=10)
 
-        tk_patchlevel = self.tk.call('info', 'patchlevel')
-        ext = '.png' if tk_patchlevel >= '8.6' else '.gif'
+        tk_patchlevel = self.info_patchlevel()
+        ext = '.png' if tk_patchlevel >= (8, 6) else '.gif'
         icon = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                             'Icons', f'idle_48{ext}')
         self.icon_image = PhotoImage(master=self._root(), file=icon)
@@ -105,7 +105,7 @@ class AboutDialog(Toplevel):
                       text='Python version:  ' + version,
                       fg=self.fg, bg=self.bg)
         pyver.grid(row=9, column=0, sticky=W, padx=10, pady=0)
-        tkver = Label(frame_background, text='Tk version:  ' + tk_patchlevel,
+        tkver = Label(frame_background, text=f'Tk version:  {tk_patchlevel}',
                       fg=self.fg, bg=self.bg)
         tkver.grid(row=9, column=1, sticky=W, padx=2, pady=0)
         py_buttons = Frame(frame_background, bg=self.bg)

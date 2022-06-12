@@ -81,27 +81,28 @@ if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable &
 if "%SKIPBUILD%" EQU "1" goto skipdoc
 if "%SKIPDOC%" EQU "1" goto skipdoc
 
-call "%D%..\..\doc\make.bat" htmlhelp
-if errorlevel 1 goto :eof
+call "%D%..\..\doc\make.bat" html
+if errorlevel 1 exit /B %ERRORLEVEL%
 :skipdoc
 
 if defined BUILDX86 (
     call :build x86
-    if errorlevel 1 exit /B
+    if errorlevel 1 exit /B %ERRORLEVEL%
 )
 
 if defined BUILDX64 (
     call :build x64 "%PGO%"
-    if errorlevel 1 exit /B
+    if errorlevel 1 exit /B %ERRORLEVEL%
 )
 
 if defined BUILDARM64 (
     call :build ARM64
-    if errorlevel 1 exit /B
+    if errorlevel 1 exit /B %ERRORLEVEL%
 )
 
 if defined TESTTARGETDIR (
     call "%D%testrelease.bat" -t "%TESTTARGETDIR%"
+    if errorlevel 1 exit /B %ERRORLEVEL%
 )
 
 exit /B 0
@@ -136,19 +137,19 @@ if "%1" EQU "x86" (
 if exist "%BUILD%en-us" (
     echo Deleting %BUILD%en-us
     rmdir /q/s "%BUILD%en-us"
-    if errorlevel 1 exit /B
+    if errorlevel 1 exit /B %ERRORLEVEL%
 )
 
 if exist "%D%obj\Debug_%OBJDIR_PLAT%" (
     echo Deleting "%D%obj\Debug_%OBJDIR_PLAT%"
     rmdir /q/s "%D%obj\Debug_%OBJDIR_PLAT%"
-    if errorlevel 1 exit /B
+    if errorlevel 1 exit /B %ERRORLEVEL%
 )
 
 if exist "%D%obj\Release_%OBJDIR_PLAT%" (
     echo Deleting "%D%obj\Release_%OBJDIR_PLAT%"
     rmdir /q/s "%D%obj\Release_%OBJDIR_PLAT%"
-    if errorlevel 1 exit /B
+    if errorlevel 1 exit /B %ERRORLEVEL%
 )
 
 if not "%CERTNAME%" EQU "" (
@@ -164,29 +165,29 @@ if not "%PGO%" EQU "" (
 if not "%SKIPBUILD%" EQU "1" (
     @echo call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -t %TARGET% %PGOOPTS% %CERTOPTS%
     @call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -t %TARGET% %PGOOPTS% %CERTOPTS%
-    @if errorlevel 1 exit /B
+    @if errorlevel 1 exit /B %ERRORLEVEL%
     @rem build.bat turns echo back on, so we disable it again
     @echo off
 
     @echo call "%PCBUILD%build.bat" -d -e -p %BUILD_PLAT% -t %TARGET%
     @call "%PCBUILD%build.bat" -d -e -p %BUILD_PLAT% -t %TARGET%
-    @if errorlevel 1 exit /B
+    @if errorlevel 1 exit /B %ERRORLEVEL%
     @rem build.bat turns echo back on, so we disable it again
     @echo off
 )
 
 if "%OUTDIR_PLAT%" EQU "win32" (
     %MSBUILD% "%D%launcher\launcher.wixproj" /p:Platform=x86 %CERTOPTS% /p:ReleaseUri=%RELEASE_URI%
-    if errorlevel 1 exit /B
+    if errorlevel 1 exit /B %ERRORLEVEL%
 ) else if not exist "%Py_OutDir%win32\en-us\launcher.msi" (
     %MSBUILD% "%D%launcher\launcher.wixproj" /p:Platform=x86 %CERTOPTS% /p:ReleaseUri=%RELEASE_URI%
-    if errorlevel 1 exit /B
+    if errorlevel 1 exit /B %ERRORLEVEL%
 )
 
 set BUILDOPTS=/p:Platform=%1 /p:BuildForRelease=true /p:DownloadUrl=%DOWNLOAD_URL% /p:DownloadUrlBase=%DOWNLOAD_URL_BASE% /p:ReleaseUri=%RELEASE_URI%
 if defined BUILDMSI (
     %MSBUILD% "%D%bundle\releaselocal.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=true
-    if errorlevel 1 exit /B
+    if errorlevel 1 exit /B %ERRORLEVEL%
 )
 
 if defined BUILDZIP (
@@ -194,7 +195,7 @@ if defined BUILDZIP (
         echo Skipping embeddable ZIP generation for ARM64 platform
     ) else (
         %MSBUILD% "%D%make_zip.proj" /t:Build %BUILDOPTS% %CERTOPTS% /p:OutputPath="%BUILD%en-us"
-        if errorlevel 1 exit /B
+        if errorlevel 1 exit /B %ERRORLEVEL%
     )
 )
 
@@ -203,7 +204,7 @@ if defined BUILDNUGET (
         echo Skipping Nuget package generation for ARM64 platform
     ) else (
         %MSBUILD% "%D%..\nuget\make_pkg.proj" /t:Build /p:Configuration=Release /p:Platform=%1 /p:OutputPath="%BUILD%en-us"
-        if errorlevel 1 exit /B
+        if errorlevel 1 exit /B %ERRORLEVEL%
     )
 )
 

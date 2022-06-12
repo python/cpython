@@ -9,7 +9,7 @@
 #endif
 
 #include "Python.h"
-#include "pycore_floatobject.h"   // _PyFloat_Pack8()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -965,7 +965,7 @@ _write_size64(char *out, size_t value)
 {
     size_t i;
 
-    Py_BUILD_ASSERT(sizeof(size_t) <= 8);
+    static_assert(sizeof(size_t) <= 8, "size_t is larger than 64-bit");
 
     for (i = 0; i < sizeof(size_t); i++) {
         out[i] = (unsigned char)((value >> (8 * i)) & 0xff);
@@ -1813,7 +1813,7 @@ get_dotted_path(PyObject *obj, PyObject *name)
 {
     PyObject *dotted_path;
     Py_ssize_t i, n;
-
+    _Py_DECLARE_STR(dot, ".");
     dotted_path = PyUnicode_Split(name, &_Py_STR(dot), -1);
     if (dotted_path == NULL)
         return NULL;
@@ -2244,7 +2244,7 @@ save_float(PicklerObject *self, PyObject *obj)
     if (self->bin) {
         char pdata[9];
         pdata[0] = BINFLOAT;
-        if (_PyFloat_Pack8(x, (unsigned char *)&pdata[1], 0) < 0)
+        if (PyFloat_Pack8(x, &pdata[1], 0) < 0)
             return -1;
         if (_Pickler_Write(self, pdata, 9) < 0)
             return -1;
@@ -2579,7 +2579,7 @@ raw_unicode_escape(PyObject *obj)
     char *p;
     Py_ssize_t i, size;
     const void *data;
-    unsigned int kind;
+    int kind;
     _PyBytesWriter writer;
 
     if (PyUnicode_READY(obj))
@@ -3069,21 +3069,21 @@ save_list(PicklerObject *self, PyObject *obj)
     if (len != 0) {
         /* Materialize the list elements. */
         if (PyList_CheckExact(obj) && self->proto > 0) {
-            if (Py_EnterRecursiveCall(" while pickling an object"))
+            if (_Py_EnterRecursiveCall(" while pickling an object"))
                 goto error;
             status = batch_list_exact(self, obj);
-            Py_LeaveRecursiveCall();
+            _Py_LeaveRecursiveCall();
         } else {
             PyObject *iter = PyObject_GetIter(obj);
             if (iter == NULL)
                 goto error;
 
-            if (Py_EnterRecursiveCall(" while pickling an object")) {
+            if (_Py_EnterRecursiveCall(" while pickling an object")) {
                 Py_DECREF(iter);
                 goto error;
             }
             status = batch_list(self, iter);
-            Py_LeaveRecursiveCall();
+            _Py_LeaveRecursiveCall();
             Py_DECREF(iter);
         }
     }
@@ -3328,10 +3328,10 @@ save_dict(PicklerObject *self, PyObject *obj)
         if (PyDict_CheckExact(obj) && self->proto > 0) {
             /* We can take certain shortcuts if we know this is a dict and
                not a dict subclass. */
-            if (Py_EnterRecursiveCall(" while pickling an object"))
+            if (_Py_EnterRecursiveCall(" while pickling an object"))
                 goto error;
             status = batch_dict_exact(self, obj);
-            Py_LeaveRecursiveCall();
+            _Py_LeaveRecursiveCall();
         } else {
             items = PyObject_CallMethodNoArgs(obj, &_Py_ID(items));
             if (items == NULL)
@@ -3340,12 +3340,12 @@ save_dict(PicklerObject *self, PyObject *obj)
             Py_DECREF(items);
             if (iter == NULL)
                 goto error;
-            if (Py_EnterRecursiveCall(" while pickling an object")) {
+            if (_Py_EnterRecursiveCall(" while pickling an object")) {
                 Py_DECREF(iter);
                 goto error;
             }
             status = batch_dict(self, iter);
-            Py_LeaveRecursiveCall();
+            _Py_LeaveRecursiveCall();
             Py_DECREF(iter);
         }
     }
@@ -4301,9 +4301,9 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         return save_unicode(self, obj);
     }
 
-    /* We're only calling Py_EnterRecursiveCall here so that atomic
+    /* We're only calling _Py_EnterRecursiveCall here so that atomic
        types above are pickled faster. */
-    if (Py_EnterRecursiveCall(" while pickling an object")) {
+    if (_Py_EnterRecursiveCall(" while pickling an object")) {
         return -1;
     }
 
@@ -4461,7 +4461,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
     }
   done:
 
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall();
     Py_XDECREF(reduce_func);
     Py_XDECREF(reduce_value);
 
@@ -5395,7 +5395,7 @@ load_binfloat(UnpicklerObject *self)
     if (_Unpickler_Read(self, &s, 8) < 0)
         return -1;
 
-    x = _PyFloat_Unpack8((unsigned char *)s, 0);
+    x = PyFloat_Unpack8(s, 0);
     if (x == -1.0 && PyErr_Occurred())
         return -1;
 

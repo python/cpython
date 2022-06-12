@@ -15,7 +15,7 @@ typedef struct PyStructSequence_Field {
 typedef struct PyStructSequence_Desc {
     const char *name;
     const char *doc;
-    struct PyStructSequence_Field *fields;
+    PyStructSequence_Field *fields;
     int n_in_sequence;
 } PyStructSequence_Desc;
 

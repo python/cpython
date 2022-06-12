@@ -458,12 +458,12 @@ proxy_checkref(PyWeakReference *proxy)
         return res; \
     }
 
-#define WRAP_METHOD(method, special) \
+#define WRAP_METHOD(method, SPECIAL) \
     static PyObject * \
     method(PyObject *proxy, PyObject *Py_UNUSED(ignored)) { \
             UNWRAP(proxy); \
             Py_INCREF(proxy); \
-            PyObject* res = PyObject_CallMethodNoArgs(proxy, &_Py_ID(special)); \
+            PyObject* res = PyObject_CallMethodNoArgs(proxy, &_Py_ID(SPECIAL)); \
             Py_DECREF(proxy); \
             return res; \
         }

@@ -29,6 +29,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_signal.h"        // Py_NSIG
 
 #include "structmember.h"         // PyMemberDef
 #ifndef MS_WINDOWS
@@ -1097,11 +1098,9 @@ typedef struct {
 static void
 path_cleanup(path_t *path)
 {
-#if !USE_UNICODE_WCHAR_CACHE
     wchar_t *wide = (wchar_t *)path->wide;
     path->wide = NULL;
     PyMem_Free(wide);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     Py_CLEAR(path->object);
     Py_CLEAR(path->cleanup);
 }
@@ -1189,14 +1188,7 @@ path_converter(PyObject *o, void *p)
 
     if (is_unicode) {
 #ifdef MS_WINDOWS
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-        wide = PyUnicode_AsUnicodeAndSize(o, &length);
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
         wide = PyUnicode_AsWideCharString(o, &length);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         if (!wide) {
             goto error_exit;
         }
@@ -1212,9 +1204,7 @@ _Py_COMP_DIAG_POP
         path->wide = wide;
         path->narrow = FALSE;
         path->fd = -1;
-#if !USE_UNICODE_WCHAR_CACHE
         wide = NULL;
-#endif /* USE_UNICODE_WCHAR_CACHE */
         goto success_exit;
 #else
         if (!PyUnicode_FSConverter(o, &bytes)) {
@@ -1290,15 +1280,8 @@ _Py_COMP_DIAG_POP
         goto error_exit;
     }
 
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    wide = PyUnicode_AsUnicodeAndSize(wo, &length);
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
     wide = PyUnicode_AsWideCharString(wo, &length);
     Py_DECREF(wo);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     if (!wide) {
         goto error_exit;
     }
@@ -1313,11 +1296,7 @@ _Py_COMP_DIAG_POP
     path->wide = wide;
     path->narrow = TRUE;
     Py_DECREF(bytes);
-#if USE_UNICODE_WCHAR_CACHE
-    path->cleanup = wo;
-#else /* USE_UNICODE_WCHAR_CACHE */
     wide = NULL;
-#endif /* USE_UNICODE_WCHAR_CACHE */
 #else
     path->wide = NULL;
     path->narrow = narrow;
@@ -1341,11 +1320,7 @@ _Py_COMP_DIAG_POP
     Py_XDECREF(o);
     Py_XDECREF(bytes);
 #ifdef MS_WINDOWS
-#if USE_UNICODE_WCHAR_CACHE
-    Py_XDECREF(wo);
-#else /* USE_UNICODE_WCHAR_CACHE */
     PyMem_Free(wide);
-#endif /* USE_UNICODE_WCHAR_CACHE */
 #endif
     return 0;
 }
@@ -1503,10 +1478,11 @@ _Py_Sigset_Converter(PyObject *obj, void *addr)
     while ((item = PyIter_Next(iterator)) != NULL) {
         signum = PyLong_AsLongAndOverflow(item, &overflow);
         Py_DECREF(item);
-        if (signum <= 0 || signum >= NSIG) {
+        if (signum <= 0 || signum >= Py_NSIG) {
             if (overflow || signum != -1 || !PyErr_Occurred()) {
                 PyErr_Format(PyExc_ValueError,
-                             "signal number %ld out of range", signum);
+                             "signal number %ld out of range [1; %i]",
+                             signum, Py_NSIG - 1);
             }
             goto error;
         }
@@ -1888,7 +1864,17 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             /* Try reading the parent directory. */
             if (!attributes_from_dir(path, &fileInfo, &tagInfo.ReparseTag)) {
                 /* Cannot read the parent directory. */
-                SetLastError(error);
+                switch (GetLastError()) {
+                case ERROR_FILE_NOT_FOUND: /* File cannot be found */
+                case ERROR_PATH_NOT_FOUND: /* File parent directory cannot be found */
+                case ERROR_NOT_READY: /* Drive exists but unavailable */
+                case ERROR_BAD_NET_NAME: /* Remote drive unavailable */
+                    break;
+                /* Restore the error from CreateFileW(). */
+                default:
+                    SetLastError(error);
+                }
+
                 return -1;
             }
             if (fileInfo.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
@@ -2381,7 +2367,8 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
         return NULL;
 
     PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long)st->st_mode));
-    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(st->st_ino));
+    static_assert(sizeof(unsigned long long) >= sizeof(st->st_ino),
+                  "stat.st_ino is larger than unsigned long long");
     PyStructSequence_SET_ITEM(v, 1, PyLong_FromUnsignedLongLong(st->st_ino));
 #ifdef MS_WINDOWS
     PyStructSequence_SET_ITEM(v, 2, PyLong_FromUnsignedLong(st->st_dev));
@@ -2396,7 +2383,8 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
     PyStructSequence_SET_ITEM(v, 4, _PyLong_FromUid(st->st_uid));
     PyStructSequence_SET_ITEM(v, 5, _PyLong_FromGid(st->st_gid));
 #endif
-    Py_BUILD_ASSERT(sizeof(long long) >= sizeof(st->st_size));
+    static_assert(sizeof(long long) >= sizeof(st->st_size),
+                  "stat.st_size is larger than long long");
     PyStructSequence_SET_ITEM(v, 6, PyLong_FromLongLong(st->st_size));
 
 #if defined(HAVE_STAT_TV_NSEC)
@@ -3294,6 +3282,10 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
     {
 #ifdef HAVE_CHMOD
         result = chmod(path->narrow, mode);
+#elif defined(__wasi__)
+        // WASI SDK 15.0 does not support chmod.
+        // Ignore missing syscall for now.
+        result = 0;
 #else
         result = -1;
         errno = ENOSYS;
@@ -7260,22 +7252,21 @@ error:
 #  define DEV_PTY_FILE "/dev/ptmx"
 #endif
 
-#if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX)
+#if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_LOGIN_TTY) || defined(HAVE_DEV_PTMX)
 #ifdef HAVE_PTY_H
 #include <pty.h>
-#else
-#ifdef HAVE_LIBUTIL_H
+#ifdef HAVE_UTMP_H
+#include <utmp.h>
+#endif /* HAVE_UTMP_H */
+#elif defined(HAVE_LIBUTIL_H)
 #include <libutil.h>
-#else
-#ifdef HAVE_UTIL_H
+#elif defined(HAVE_UTIL_H)
 #include <util.h>
-#endif /* HAVE_UTIL_H */
-#endif /* HAVE_LIBUTIL_H */
 #endif /* HAVE_PTY_H */
 #ifdef HAVE_STROPTS_H
 #include <stropts.h>
 #endif
-#endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX) */
+#endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_LOGIN_TTY) || defined(HAVE_DEV_PTMX) */
 
 
 #if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)
@@ -7378,6 +7369,56 @@ error:
 #endif /* defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX) */
 
 
+#if defined(HAVE_SETSID) && defined(TIOCSCTTY)
+#define HAVE_FALLBACK_LOGIN_TTY 1
+#endif /* defined(HAVE_SETSID) && defined(TIOCSCTTY) */
+
+#if defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY)
+/*[clinic input]
+os.login_tty
+
+    fd: fildes
+    /
+
+Prepare the tty of which fd is a file descriptor for a new login session.
+
+Make the calling process a session leader; make the tty the
+controlling tty, the stdin, the stdout, and the stderr of the
+calling process; close fd.
+[clinic start generated code]*/
+
+static PyObject *
+os_login_tty_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=495a79911b4cc1bc input=5f298565099903a2]*/
+{
+#ifdef HAVE_LOGIN_TTY
+    if (login_tty(fd) == -1) {
+        return posix_error();
+    }
+#else /* defined(HAVE_FALLBACK_LOGIN_TTY) */
+    /* Establish a new session. */
+    if (setsid() == -1) {
+        return posix_error();
+    }
+
+    /* The tty becomes the controlling terminal. */
+    if (ioctl(fd, TIOCSCTTY, (char *)NULL) == -1) {
+        return posix_error();
+    }
+
+    /* The tty becomes stdin/stdout/stderr */
+    if (dup2(fd, 0) == -1 || dup2(fd, 1) == -1 || dup2(fd, 2) == -1) {
+        return posix_error();
+    }
+    if (fd > 2) {
+        close(fd);
+    }
+#endif /* HAVE_LOGIN_TTY */
+    Py_RETURN_NONE;
+}
+#endif /* defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY) */
+
+
 #ifdef HAVE_FORKPTY
 /*[clinic input]
 os.forkpty
@@ -7413,8 +7454,9 @@ os_forkpty_impl(PyObject *module)
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
     }
-    if (pid == -1)
+    if (pid == -1) {
         return posix_error();
+    }
     return Py_BuildValue("(Ni)", PyLong_FromPid(pid), master_fd);
 }
 #endif /* HAVE_FORKPTY */
@@ -7623,93 +7665,47 @@ static PyObject *
 os_getgroups_impl(PyObject *module)
 /*[clinic end generated code: output=42b0c17758561b56 input=d3f109412e6a155c]*/
 {
-    PyObject *result = NULL;
-    gid_t grouplist[MAX_GROUPS];
-
-    /* On MacOSX getgroups(2) can return more than MAX_GROUPS results
-     * This is a helper variable to store the intermediate result when
-     * that happens.
-     *
-     * To keep the code readable the OSX behaviour is unconditional,
-     * according to the POSIX spec this should be safe on all unix-y
-     * systems.
-     */
-    gid_t* alt_grouplist = grouplist;
-    int n;
-
-#ifdef __APPLE__
-    /* Issue #17557: As of OS X 10.8, getgroups(2) no longer raises EINVAL if
-     * there are more groups than can fit in grouplist.  Therefore, on OS X
-     * always first call getgroups with length 0 to get the actual number
-     * of groups.
-     */
-    n = getgroups(0, NULL);
+    // Call getgroups with length 0 to get the actual number of groups
+    int n = getgroups(0, NULL);
     if (n < 0) {
         return posix_error();
-    } else if (n <= MAX_GROUPS) {
-        /* groups will fit in existing array */
-        alt_grouplist = grouplist;
-    } else {
-        alt_grouplist = PyMem_New(gid_t, n);
-        if (alt_grouplist == NULL) {
-            return PyErr_NoMemory();
-        }
     }
 
-    n = getgroups(n, alt_grouplist);
+    if (n == 0) {
+        return PyList_New(0);
+    }
+
+    gid_t *grouplist = PyMem_New(gid_t, n);
+    if (grouplist == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    n = getgroups(n, grouplist);
     if (n == -1) {
-        if (alt_grouplist != grouplist) {
-            PyMem_Free(alt_grouplist);
-        }
+        PyMem_Free(grouplist);
         return posix_error();
     }
-#else
-    n = getgroups(MAX_GROUPS, grouplist);
-    if (n < 0) {
-        if (errno == EINVAL) {
-            n = getgroups(0, NULL);
-            if (n == -1) {
-                return posix_error();
-            }
-            if (n == 0) {
-                /* Avoid malloc(0) */
-                alt_grouplist = grouplist;
-            } else {
-                alt_grouplist = PyMem_New(gid_t, n);
-                if (alt_grouplist == NULL) {
-                    return PyErr_NoMemory();
-                }
-                n = getgroups(n, alt_grouplist);
-                if (n == -1) {
-                    PyMem_Free(alt_grouplist);
-                    return posix_error();
-                }
-            }
-        } else {
-            return posix_error();
-        }
-    }
-#endif
 
-    result = PyList_New(n);
-    if (result != NULL) {
-        int i;
-        for (i = 0; i < n; ++i) {
-            PyObject *o = _PyLong_FromGid(alt_grouplist[i]);
-            if (o == NULL) {
-                Py_DECREF(result);
-                result = NULL;
-                break;
-            }
-            PyList_SET_ITEM(result, i, o);
-        }
+    PyObject *result = PyList_New(n);
+    if (result == NULL) {
+        goto error;
     }
 
-    if (alt_grouplist != grouplist) {
-        PyMem_Free(alt_grouplist);
+    for (int i = 0; i < n; ++i) {
+        PyObject *group = _PyLong_FromGid(grouplist[i]);
+        if (group == NULL) {
+            goto error;
+        }
+        PyList_SET_ITEM(result, i, group);
     }
+    PyMem_Free(grouplist);
 
     return result;
+
+error:
+    PyMem_Free(grouplist);
+    Py_XDECREF(result);
+    return NULL;
 }
 #endif /* HAVE_GETGROUPS */
 
@@ -7973,8 +7969,17 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
         return NULL;
     }
 #ifndef MS_WINDOWS
-    if (kill(pid, (int)signal) == -1)
+    if (kill(pid, (int)signal) == -1) {
         return posix_error();
+    }
+
+    // Check immediately if the signal was sent to the current process.
+    // Don't micro-optimize pid == getpid(), since PyErr_SetString() check
+    // is cheap.
+    if (PyErr_CheckSignals()) {
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 #else /* !MS_WINDOWS */
     PyObject *result;
@@ -8212,14 +8217,11 @@ static PyObject *
 os_setgroups(PyObject *module, PyObject *groups)
 /*[clinic end generated code: output=3fcb32aad58c5ecd input=fa742ca3daf85a7e]*/
 {
-    Py_ssize_t i, len;
-    gid_t grouplist[MAX_GROUPS];
-
     if (!PySequence_Check(groups)) {
         PyErr_SetString(PyExc_TypeError, "setgroups argument must be a sequence");
         return NULL;
     }
-    len = PySequence_Size(groups);
+    Py_ssize_t len = PySequence_Size(groups);
     if (len < 0) {
         return NULL;
     }
@@ -8227,27 +8229,36 @@ os_setgroups(PyObject *module, PyObject *groups)
         PyErr_SetString(PyExc_ValueError, "too many groups");
         return NULL;
     }
-    for(i = 0; i < len; i++) {
+
+    gid_t *grouplist = PyMem_New(gid_t, len);
+    for (Py_ssize_t i = 0; i < len; i++) {
         PyObject *elem;
         elem = PySequence_GetItem(groups, i);
-        if (!elem)
+        if (!elem) {
+            PyMem_Free(grouplist);
             return NULL;
+        }
         if (!PyLong_Check(elem)) {
             PyErr_SetString(PyExc_TypeError,
                             "groups must be integers");
             Py_DECREF(elem);
+            PyMem_Free(grouplist);
             return NULL;
         } else {
             if (!_Py_Gid_Converter(elem, &grouplist[i])) {
                 Py_DECREF(elem);
+                PyMem_Free(grouplist);
                 return NULL;
             }
         }
         Py_DECREF(elem);
     }
 
-    if (setgroups(len, grouplist) < 0)
+    if (setgroups(len, grouplist) < 0) {
+        PyMem_Free(grouplist);
         return posix_error();
+    }
+    PyMem_Free(grouplist);
     Py_RETURN_NONE;
 }
 #endif /* HAVE_SETGROUPS */
@@ -12386,6 +12397,9 @@ static struct constdef posix_constants_sysconf[] = {
 #ifdef _SC_XOPEN_XPG4
     {"SC_XOPEN_XPG4",   _SC_XOPEN_XPG4},
 #endif
+#ifdef _SC_MINSIGSTKSZ
+    {"SC_MINSIGSTKSZ",   _SC_MINSIGSTKSZ},
+#endif
 };
 
 static int
@@ -13539,15 +13553,8 @@ DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
 #ifdef MS_WINDOWS
     if (!PyUnicode_FSDecoder(self->path, &ub))
         return NULL;
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    const wchar_t *path = PyUnicode_AsUnicode(ub);
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
     wchar_t *path = PyUnicode_AsWideCharString(ub, NULL);
     Py_DECREF(ub);
-#endif /* USE_UNICODE_WCHAR_CACHE */
 #else /* POSIX */
     if (!PyUnicode_FSConverter(self->path, &ub))
         return NULL;
@@ -13580,11 +13587,11 @@ _Py_COMP_DIAG_POP
         }
         Py_END_ALLOW_THREADS
     }
-#if defined(MS_WINDOWS) && !USE_UNICODE_WCHAR_CACHE
+#if defined(MS_WINDOWS)
     PyMem_Free(path);
-#else /* USE_UNICODE_WCHAR_CACHE */
+#else
     Py_DECREF(ub);
-#endif /* USE_UNICODE_WCHAR_CACHE */
+#endif
 
     if (result != 0)
         return path_object_error(self->path);
@@ -13778,19 +13785,10 @@ os_DirEntry_inode_impl(DirEntry *self)
 
         if (!PyUnicode_FSDecoder(self->path, &unicode))
             return NULL;
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-        const wchar_t *path = PyUnicode_AsUnicode(unicode);
-        result = LSTAT(path, &stat);
-        Py_DECREF(unicode);
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
         wchar_t *path = PyUnicode_AsWideCharString(unicode, NULL);
         Py_DECREF(unicode);
         result = LSTAT(path, &stat);
         PyMem_Free(path);
-#endif /* USE_UNICODE_WCHAR_CACHE */
 
         if (result != 0)
             return path_object_error(self->path);
@@ -13798,10 +13796,12 @@ _Py_COMP_DIAG_POP
         self->win32_file_index = stat.st_ino;
         self->got_file_index = 1;
     }
-    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(self->win32_file_index));
+    static_assert(sizeof(unsigned long long) >= sizeof(self->win32_file_index),
+                  "DirEntry.win32_file_index is larger than unsigned long long");
     return PyLong_FromUnsignedLongLong(self->win32_file_index);
 #else /* POSIX */
-    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(self->d_ino));
+    static_assert(sizeof(unsigned long long) >= sizeof(self->d_ino),
+                  "DirEntry.d_ino is larger than unsigned long long");
     return PyLong_FromUnsignedLongLong(self->d_ino);
 #endif
 }
@@ -14809,6 +14809,7 @@ static PyMethodDef posix_methods[] = {
     OS_SCHED_SETAFFINITY_METHODDEF
     OS_SCHED_GETAFFINITY_METHODDEF
     OS_OPENPTY_METHODDEF
+    OS_LOGIN_TTY_METHODDEF
     OS_FORKPTY_METHODDEF
     OS_GETEGID_METHODDEF
     OS_GETEUID_METHODDEF
@@ -15258,6 +15259,9 @@ all_ins(PyObject *m)
 #ifdef P_PIDFD
     if (PyModule_AddIntMacro(m, P_PIDFD)) return -1;
 #endif
+#ifdef PIDFD_NONBLOCK
+    if (PyModule_AddIntMacro(m, PIDFD_NONBLOCK)) return -1;
+#endif
 #endif
 #ifdef WEXITED
     if (PyModule_AddIntMacro(m, WEXITED)) return -1;
@@ -15470,6 +15474,9 @@ all_ins(PyObject *m)
 
 #if defined(__APPLE__)
     if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
+    if (PyModule_AddIntConstant(m, "_COPYFILE_STAT", COPYFILE_STAT)) return -1;
+    if (PyModule_AddIntConstant(m, "_COPYFILE_ACL", COPYFILE_ACL)) return -1;
+    if (PyModule_AddIntConstant(m, "_COPYFILE_XATTR", COPYFILE_XATTR)) return -1;
 #endif
 
 #ifdef MS_WINDOWS

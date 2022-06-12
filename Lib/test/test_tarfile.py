@@ -630,6 +630,7 @@ class MiscReadTestBase(CommonReadTest):
                 data = f.read()
             self.assertEqual(sha256sum(data), sha256_regtype)
 
+    @os_helper.skip_unless_working_chmod
     def test_extractall(self):
         # Test if extractall() correctly restores directory permissions
         # and times (see issue1735).
@@ -660,6 +661,7 @@ class MiscReadTestBase(CommonReadTest):
             tar.close()
             os_helper.rmtree(DIR)
 
+    @os_helper.skip_unless_working_chmod
     def test_extract_directory(self):
         dirtype = "ustar/dirtype"
         DIR = os.path.join(TEMPDIR, "extractdir")
@@ -1498,6 +1500,10 @@ class StreamWriteTest(WriteTestBase, unittest.TestCase):
 
     @unittest.skipUnless(sys.platform != "win32" and hasattr(os, "umask"),
                          "Missing umask implementation")
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "Emscripten's/WASI's umask is a stub."
+    )
     def test_file_mode(self):
         # Test for issue #8464: Create files with correct
         # permissions.

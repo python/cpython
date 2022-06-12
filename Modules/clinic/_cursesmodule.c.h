@@ -233,7 +233,7 @@ PyDoc_STRVAR(_curses_window_bkgd__doc__,
 "    Background attributes.");
 
 #define _CURSES_WINDOW_BKGD_METHODDEF    \
-    {"bkgd", (PyCFunction)(void(*)(void))_curses_window_bkgd, METH_FASTCALL, _curses_window_bkgd__doc__},
+    {"bkgd", _PyCFunction_CAST(_curses_window_bkgd), METH_FASTCALL, _curses_window_bkgd__doc__},
 
 static PyObject *
 _curses_window_bkgd_impl(PyCursesWindowObject *self, PyObject *ch, long attr);
@@ -359,7 +359,7 @@ PyDoc_STRVAR(_curses_window_bkgdset__doc__,
 "    Background attributes.");
 
 #define _CURSES_WINDOW_BKGDSET_METHODDEF    \
-    {"bkgdset", (PyCFunction)(void(*)(void))_curses_window_bkgdset, METH_FASTCALL, _curses_window_bkgdset__doc__},
+    {"bkgdset", _PyCFunction_CAST(_curses_window_bkgdset), METH_FASTCALL, _curses_window_bkgdset__doc__},
 
 static PyObject *
 _curses_window_bkgdset_impl(PyCursesWindowObject *self, PyObject *ch,
@@ -422,7 +422,7 @@ PyDoc_STRVAR(_curses_window_border__doc__,
 "used for that parameter.");
 
 #define _CURSES_WINDOW_BORDER_METHODDEF    \
-    {"border", (PyCFunction)(void(*)(void))_curses_window_border, METH_FASTCALL, _curses_window_border__doc__},
+    {"border", _PyCFunction_CAST(_curses_window_border), METH_FASTCALL, _curses_window_border__doc__},
 
 static PyObject *
 _curses_window_border_impl(PyCursesWindowObject *self, PyObject *ls,
@@ -642,7 +642,7 @@ PyDoc_STRVAR(_curses_window_echochar__doc__,
 "    Attributes for the character.");
 
 #define _CURSES_WINDOW_ECHOCHAR_METHODDEF    \
-    {"echochar", (PyCFunction)(void(*)(void))_curses_window_echochar, METH_FASTCALL, _curses_window_echochar__doc__},
+    {"echochar", _PyCFunction_CAST(_curses_window_echochar), METH_FASTCALL, _curses_window_echochar__doc__},
 
 static PyObject *
 _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
@@ -687,7 +687,7 @@ PyDoc_STRVAR(_curses_window_enclose__doc__,
 "    X-coordinate.");
 
 #define _CURSES_WINDOW_ENCLOSE_METHODDEF    \
-    {"enclose", (PyCFunction)(void(*)(void))_curses_window_enclose, METH_FASTCALL, _curses_window_enclose__doc__},
+    {"enclose", _PyCFunction_CAST(_curses_window_enclose), METH_FASTCALL, _curses_window_enclose__doc__},
 
 static PyObject *
 _curses_window_enclose_impl(PyCursesWindowObject *self, int y, int x);
@@ -1487,7 +1487,7 @@ PyDoc_STRVAR(_curses_window_redrawln__doc__,
 "They should be completely redrawn on the next refresh() call.");
 
 #define _CURSES_WINDOW_REDRAWLN_METHODDEF    \
-    {"redrawln", (PyCFunction)(void(*)(void))_curses_window_redrawln, METH_FASTCALL, _curses_window_redrawln__doc__},
+    {"redrawln", _PyCFunction_CAST(_curses_window_redrawln), METH_FASTCALL, _curses_window_redrawln__doc__},
 
 static PyObject *
 _curses_window_redrawln_impl(PyCursesWindowObject *self, int beg, int num);
@@ -1585,7 +1585,7 @@ PyDoc_STRVAR(_curses_window_setscrreg__doc__,
 "All scrolling actions will take place in this region.");
 
 #define _CURSES_WINDOW_SETSCRREG_METHODDEF    \
-    {"setscrreg", (PyCFunction)(void(*)(void))_curses_window_setscrreg, METH_FASTCALL, _curses_window_setscrreg__doc__},
+    {"setscrreg", _PyCFunction_CAST(_curses_window_setscrreg), METH_FASTCALL, _curses_window_setscrreg__doc__},
 
 static PyObject *
 _curses_window_setscrreg_impl(PyCursesWindowObject *self, int top,
@@ -1918,7 +1918,7 @@ PyDoc_STRVAR(_curses_cbreak__doc__,
 "Calling first raw() then cbreak() leaves the terminal in cbreak mode.");
 
 #define _CURSES_CBREAK_METHODDEF    \
-    {"cbreak", (PyCFunction)(void(*)(void))_curses_cbreak, METH_FASTCALL, _curses_cbreak__doc__},
+    {"cbreak", _PyCFunction_CAST(_curses_cbreak), METH_FASTCALL, _curses_cbreak__doc__},
 
 static PyObject *
 _curses_cbreak_impl(PyObject *module, int flag);
@@ -2154,7 +2154,7 @@ PyDoc_STRVAR(_curses_echo__doc__,
 "In echo mode, each character input is echoed to the screen as it is entered.");
 
 #define _CURSES_ECHO_METHODDEF    \
-    {"echo", (PyCFunction)(void(*)(void))_curses_echo, METH_FASTCALL, _curses_echo__doc__},
+    {"echo", _PyCFunction_CAST(_curses_echo), METH_FASTCALL, _curses_echo__doc__},
 
 static PyObject *
 _curses_echo_impl(PyObject *module, int flag);
@@ -2319,7 +2319,7 @@ PyDoc_STRVAR(_curses_ungetmouse__doc__,
 "The following getmouse() will return the given state data.");
 
 #define _CURSES_UNGETMOUSE_METHODDEF    \
-    {"ungetmouse", (PyCFunction)(void(*)(void))_curses_ungetmouse, METH_FASTCALL, _curses_ungetmouse__doc__},
+    {"ungetmouse", _PyCFunction_CAST(_curses_ungetmouse), METH_FASTCALL, _curses_ungetmouse__doc__},
 
 static PyObject *
 _curses_ungetmouse_impl(PyObject *module, short id, int x, int y, int z,
@@ -2551,7 +2551,7 @@ PyDoc_STRVAR(_curses_init_color__doc__,
 "most terminals; it is active only if can_change_color() returns true.");
 
 #define _CURSES_INIT_COLOR_METHODDEF    \
-    {"init_color", (PyCFunction)(void(*)(void))_curses_init_color, METH_FASTCALL, _curses_init_color__doc__},
+    {"init_color", _PyCFunction_CAST(_curses_init_color), METH_FASTCALL, _curses_init_color__doc__},
 
 static PyObject *
 _curses_init_color_impl(PyObject *module, int color_number, short r, short g,
@@ -2604,7 +2604,7 @@ PyDoc_STRVAR(_curses_init_pair__doc__,
 "all occurrences of that color-pair are changed to the new definition.");
 
 #define _CURSES_INIT_PAIR_METHODDEF    \
-    {"init_pair", (PyCFunction)(void(*)(void))_curses_init_pair, METH_FASTCALL, _curses_init_pair__doc__},
+    {"init_pair", _PyCFunction_CAST(_curses_init_pair), METH_FASTCALL, _curses_init_pair__doc__},
 
 static PyObject *
 _curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg);
@@ -2669,7 +2669,7 @@ PyDoc_STRVAR(_curses_setupterm__doc__,
 "    If not supplied, the file descriptor for sys.stdout will be used.");
 
 #define _CURSES_SETUPTERM_METHODDEF    \
-    {"setupterm", (PyCFunction)(void(*)(void))_curses_setupterm, METH_FASTCALL|METH_KEYWORDS, _curses_setupterm__doc__},
+    {"setupterm", _PyCFunction_CAST(_curses_setupterm), METH_FASTCALL|METH_KEYWORDS, _curses_setupterm__doc__},
 
 static PyObject *
 _curses_setupterm_impl(PyObject *module, const char *term, int fd);
@@ -2913,7 +2913,7 @@ PyDoc_STRVAR(_curses_is_term_resized__doc__,
 "    Width.");
 
 #define _CURSES_IS_TERM_RESIZED_METHODDEF    \
-    {"is_term_resized", (PyCFunction)(void(*)(void))_curses_is_term_resized, METH_FASTCALL, _curses_is_term_resized__doc__},
+    {"is_term_resized", _PyCFunction_CAST(_curses_is_term_resized), METH_FASTCALL, _curses_is_term_resized__doc__},
 
 static PyObject *
 _curses_is_term_resized_impl(PyObject *module, int nlines, int ncols);
@@ -3165,7 +3165,7 @@ PyDoc_STRVAR(_curses_newpad__doc__,
 "    Width.");
 
 #define _CURSES_NEWPAD_METHODDEF    \
-    {"newpad", (PyCFunction)(void(*)(void))_curses_newpad, METH_FASTCALL, _curses_newpad__doc__},
+    {"newpad", _PyCFunction_CAST(_curses_newpad), METH_FASTCALL, _curses_newpad__doc__},
 
 static PyObject *
 _curses_newpad_impl(PyObject *module, int nlines, int ncols);
@@ -3262,7 +3262,7 @@ PyDoc_STRVAR(_curses_nl__doc__,
 "newline into return and line-feed on output.  Newline mode is initially on.");
 
 #define _CURSES_NL_METHODDEF    \
-    {"nl", (PyCFunction)(void(*)(void))_curses_nl, METH_FASTCALL, _curses_nl__doc__},
+    {"nl", _PyCFunction_CAST(_curses_nl), METH_FASTCALL, _curses_nl__doc__},
 
 static PyObject *
 _curses_nl_impl(PyObject *module, int flag);
@@ -3494,7 +3494,7 @@ PyDoc_STRVAR(_curses_qiflush__doc__,
 "will be flushed when the INTR, QUIT and SUSP characters are read.");
 
 #define _CURSES_QIFLUSH_METHODDEF    \
-    {"qiflush", (PyCFunction)(void(*)(void))_curses_qiflush, METH_FASTCALL, _curses_qiflush__doc__},
+    {"qiflush", _PyCFunction_CAST(_curses_qiflush), METH_FASTCALL, _curses_qiflush__doc__},
 
 static PyObject *
 _curses_qiflush_impl(PyObject *module, int flag);
@@ -3557,7 +3557,7 @@ PyDoc_STRVAR(_curses_raw__doc__,
 "curses input functions one by one.");
 
 #define _CURSES_RAW_METHODDEF    \
-    {"raw", (PyCFunction)(void(*)(void))_curses_raw, METH_FASTCALL, _curses_raw__doc__},
+    {"raw", _PyCFunction_CAST(_curses_raw), METH_FASTCALL, _curses_raw__doc__},
 
 static PyObject *
 _curses_raw_impl(PyObject *module, int flag);
@@ -3656,7 +3656,7 @@ PyDoc_STRVAR(_curses_resizeterm__doc__,
 "window dimensions (in particular the SIGWINCH handler).");
 
 #define _CURSES_RESIZETERM_METHODDEF    \
-    {"resizeterm", (PyCFunction)(void(*)(void))_curses_resizeterm, METH_FASTCALL, _curses_resizeterm__doc__},
+    {"resizeterm", _PyCFunction_CAST(_curses_resizeterm), METH_FASTCALL, _curses_resizeterm__doc__},
 
 static PyObject *
 _curses_resizeterm_impl(PyObject *module, int nlines, int ncols);
@@ -3707,7 +3707,7 @@ PyDoc_STRVAR(_curses_resize_term__doc__,
 "without additional interaction with the application.");
 
 #define _CURSES_RESIZE_TERM_METHODDEF    \
-    {"resize_term", (PyCFunction)(void(*)(void))_curses_resize_term, METH_FASTCALL, _curses_resize_term__doc__},
+    {"resize_term", _PyCFunction_CAST(_curses_resize_term), METH_FASTCALL, _curses_resize_term__doc__},
 
 static PyObject *
 _curses_resize_term_impl(PyObject *module, int nlines, int ncols);
@@ -3772,7 +3772,7 @@ PyDoc_STRVAR(_curses_setsyx__doc__,
 "If y and x are both -1, then leaveok is set.");
 
 #define _CURSES_SETSYX_METHODDEF    \
-    {"setsyx", (PyCFunction)(void(*)(void))_curses_setsyx, METH_FASTCALL, _curses_setsyx__doc__},
+    {"setsyx", _PyCFunction_CAST(_curses_setsyx), METH_FASTCALL, _curses_setsyx__doc__},
 
 static PyObject *
 _curses_setsyx_impl(PyObject *module, int y, int x);
@@ -4004,7 +4004,7 @@ PyDoc_STRVAR(_curses_tparm__doc__,
 "    Parameterized byte string obtained from the terminfo database.");
 
 #define _CURSES_TPARM_METHODDEF    \
-    {"tparm", (PyCFunction)(void(*)(void))_curses_tparm, METH_FASTCALL, _curses_tparm__doc__},
+    {"tparm", _PyCFunction_CAST(_curses_tparm), METH_FASTCALL, _curses_tparm__doc__},
 
 static PyObject *
 _curses_tparm_impl(PyObject *module, const char *str, int i1, int i2, int i3,
@@ -4284,4 +4284,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=9efc9943a3ac3741 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1e2a8a160a0fe811 input=a9049054013a1b77]*/
