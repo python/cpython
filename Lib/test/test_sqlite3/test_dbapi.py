@@ -757,12 +757,10 @@ class CursorTests(unittest.TestCase):
             "select 1; /**/a",
             "select 1; -",
             "select 1; /",
+            "select 1; -\n- select 2",
             """select 1;
                -- comment
                select 2
-            """,
-            """select 1; -
-               - select 2
             """,
         )
         for query in dataset:
