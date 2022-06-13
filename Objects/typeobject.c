@@ -3454,7 +3454,6 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     char *_ht_tpname = NULL;
 
     int r;
-    size_t len;
 
     /* Prepare slots that need special handling.
      * Keep in mind that a slot can be given multiple times:
@@ -3465,7 +3464,6 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     Py_ssize_t nmembers = 0;
     Py_ssize_t weaklistoffset, dictoffset, vectorcalloffset;
     char *res_start;
-    short slot_offset, subslot_offset;
 
     nmembers = weaklistoffset = dictoffset = vectorcalloffset = 0;
     for (slot = spec->slots; slot->slot; slot++) {
@@ -3518,7 +3516,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
                 tp_doc = NULL;
             }
             else {
-                len = strlen(slot->pfunc)+1;
+                size_t len = strlen(slot->pfunc)+1;
                 tp_doc = PyObject_Malloc(len);
                 if (tp_doc == NULL) {
                     PyErr_NoMemory();
@@ -3658,7 +3656,6 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     /* Copy all the ordinary slots */
 
     for (slot = spec->slots; slot->slot; slot++) {
-        PySlot_Offset slotoffsets;
         switch (slot->slot) {
         case Py_tp_base:
         case Py_tp_bases:
@@ -3666,21 +3663,25 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
             /* Processed above */
             break;
         case Py_tp_members:
-            /* Move the slots to the heap type itself */
-            len = Py_TYPE(type)->tp_itemsize * nmembers;
-            memcpy(_PyHeapType_GET_MEMBERS(res), slot->pfunc, len);
-            type->tp_members = _PyHeapType_GET_MEMBERS(res);
+            {
+                /* Move the slots to the heap type itself */
+                size_t len = Py_TYPE(type)->tp_itemsize * nmembers;
+                memcpy(_PyHeapType_GET_MEMBERS(res), slot->pfunc, len);
+                type->tp_members = _PyHeapType_GET_MEMBERS(res);
+            }
             break;
         default:
-            /* Copy other slots directly */
-            slotoffsets = pyslot_offsets[slot->slot];
-            slot_offset = slotoffsets.slot_offset;
-            if (slotoffsets.subslot_offset == -1) {
-                *(void**)((char*)res_start + slot_offset) = slot->pfunc;
-            } else {
-                void *parent_slot = *(void**)((char*)res_start + slot_offset);
-                subslot_offset = slotoffsets.subslot_offset;
-                *(void**)((char*)parent_slot + subslot_offset) = slot->pfunc;
+            {
+                /* Copy other slots directly */
+                PySlot_Offset slotoffsets = pyslot_offsets[slot->slot];
+                short slot_offset = slotoffsets.slot_offset;
+                if (slotoffsets.subslot_offset == -1) {
+                    *(void**)((char*)res_start + slot_offset) = slot->pfunc;
+                } else {
+                    void *procs = *(void**)((char*)res_start + slot_offset);
+                    short subslot_offset = slotoffsets.subslot_offset;
+                    *(void**)((char*)procs + subslot_offset) = slot->pfunc;
+                }
             }
             break;
         }
