@@ -145,9 +145,6 @@ lstrip_sql(const char *sql)
                 // Skip whitespace.
                 break;
             case '-':
-                if (pos[1] && pos[1] != '-') {
-                    return pos;
-                }
                 // Skip line comments.
                 if (pos[1] == '-') {
                     pos += 2;
@@ -161,9 +158,6 @@ lstrip_sql(const char *sql)
                 }
                 return pos;
             case '/':
-                if (pos[1] && pos[1] != '*') {
-                    return pos;
-                }
                 // Skip C style comments.
                 if (pos[1] == '*') {
                     pos += 2;
