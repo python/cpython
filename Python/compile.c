@@ -6991,8 +6991,6 @@ struct assembler {
     basicblock *a_entry;
     int a_offset;              /* offset into bytecode */
     int a_except_table_off;    /* offset into exception table */
-    int a_prevlineno;     /* lineno of last emitted line in line table */
-    int a_prev_end_lineno; /* end_lineno of last emitted line in line table */
     int a_lineno;          /* lineno of last emitted instruction */
     int a_end_lineno;      /* end_lineno of last emitted instruction */
     int a_lineno_start;    /* bytecode start offset of current lineno */
@@ -7104,8 +7102,8 @@ static int
 assemble_init(struct assembler *a, int nblocks, int firstlineno)
 {
     memset(a, 0, sizeof(struct assembler));
-    a->a_prevlineno = a->a_lineno = firstlineno;
-    a->a_prev_end_lineno = a->a_end_lineno = firstlineno;
+    a->a_lineno = firstlineno;
+    a->a_end_lineno = firstlineno;
     a->a_linetable = NULL;
     a->a_location_off = 0;
     a->a_except_table = NULL;
