@@ -4801,6 +4801,16 @@ is_import_originated(struct compiler *c, expr_ty e)
     return flags & DEF_IMPORT;
 }
 
+static void
+update_location_to_match_attr(struct compiler *c, expr_ty meth)
+{
+    if (meth->lineno != meth->end_lineno) {
+        // Make start location match attribute
+        c->u->u_lineno = meth->end_lineno;
+        c->u->u_col_offset = meth->end_col_offset - (int)PyUnicode_GetLength(meth->v.Attribute.attr)-1;
+    }
+}
+
 // Return 1 if the method call was optimized, -1 if not, and 0 on error.
 static int
 maybe_optimize_method_call(struct compiler *c, expr_ty e)
@@ -4843,11 +4853,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     /* Alright, we can optimize the code. */
     VISIT(c, expr, meth->v.Attribute.value);
     SET_LOC(c, meth);
-    if (meth->lineno != meth->end_lineno) {
-        // Make start location match attribute
-        c->u->u_lineno = meth->end_lineno;
-        c->u->u_col_offset = meth->end_col_offset - (int)PyUnicode_GetLength(meth->v.Attribute.attr)-1;
-    }
+    update_location_to_match_attr(c, meth);
     ADDOP_NAME(c, LOAD_METHOD, meth->v.Attribute.attr, names);
     VISIT_SEQ(c, expr, e->v.Call.args);
 
@@ -4858,11 +4864,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
         };
     }
     SET_LOC(c, e);
-    if (meth->lineno != meth->end_lineno) {
-        // Make start location match attribute
-        c->u->u_lineno = meth->end_lineno;
-        c->u->u_col_offset = meth->end_col_offset - (int)PyUnicode_GetLength(meth->v.Attribute.attr)-1;
-    }
+    update_location_to_match_attr(c, meth);
     ADDOP_I(c, CALL, argsl + kwdsl);
     return 1;
 }
