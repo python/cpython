@@ -3447,7 +3447,6 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
      * These get decrefed/freed/returned at the end, on both success and error.
      */
     PyHeapTypeObject *res = NULL;
-    PyObject *modname = NULL;
     PyTypeObject *type;
     PyObject *bases = NULL;
     char *tp_doc = NULL;
@@ -3748,12 +3747,13 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     if (r == 0) {
         s = strrchr(spec->name, '.');
         if (s != NULL) {
-            modname = PyUnicode_FromStringAndSize(
+            PyObject *modname = PyUnicode_FromStringAndSize(
                     spec->name, (Py_ssize_t)(s - spec->name));
             if (modname == NULL) {
                 goto finally;
             }
             r = PyDict_SetItem(type->tp_dict, &_Py_ID(__module__), modname);
+            Py_DECREF(modname);
             if (r != 0) {
                 goto finally;
             }
@@ -3773,7 +3773,6 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
         Py_CLEAR(res);
     }
     Py_XDECREF(bases);
-    Py_XDECREF(modname);
     PyObject_Free(tp_doc);
     Py_XDECREF(ht_name);
     PyMem_Free(_ht_tpname);
