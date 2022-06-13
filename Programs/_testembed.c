@@ -1574,7 +1574,7 @@ static int test_init_is_python_build(void)
     config._is_python_build = INT_MAX;
     env = getenv("NEGATIVE_ISPYTHONBUILD");
     if (env) {
-        if (strcmp(env, "1") == 0) {
+        if (strcmp(env, "0") != 0) {
             config._is_python_build++;
         }
         putenv("NEGATIVE_ISPYTHONBUILD=");
