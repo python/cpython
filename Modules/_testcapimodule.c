@@ -1245,7 +1245,7 @@ test_from_spec_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(ignored)
         goto finally;
     }
 
-    MinimalType_spec.basicsize = ((PyTypeObject*)class)->tp_basicsize;
+    MinimalType_spec.basicsize = (int)(((PyTypeObject*)class)->tp_basicsize);
     new = PyType_FromSpecWithBases(&MinimalType_spec, class);
     if (new == NULL) {
         goto finally;
