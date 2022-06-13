@@ -88,37 +88,37 @@ PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
 /* Static inline functions for direct access to these values.
    Type checks are *not* done, so use with care. */
 static inline PyObject* PyFunction_GET_CODE(PyObject *func) {
-    return _PyFunction_CAST(func) -> func_code;
+    return _PyFunction_CAST(func)->func_code;
 }
 #define PyFunction_GET_CODE(func) PyFunction_GET_CODE(_PyObject_CAST(func))
 
 static inline PyObject* PyFunction_GET_GLOBALS(PyObject *func) {
-    return _PyFunction_CAST(func) -> func_globals;
+    return _PyFunction_CAST(func)->func_globals;
 }
 #define PyFunction_GET_GLOBALS(func) PyFunction_GET_GLOBALS(_PyObject_CAST(func))
 
 static inline PyObject* PyFunction_GET_MODULE(PyObject *func) {
-    return _PyFunction_CAST(func) -> func_module;
+    return _PyFunction_CAST(func)->func_module;
 }
 #define PyFunction_GET_MODULE(func) PyFunction_GET_MODULE(_PyObject_CAST(func))
 
 static inline PyObject* PyFunction_GET_DEFAULTS(PyObject *func) {
-    return _PyFunction_CAST(func) -> func_defaults;
+    return _PyFunction_CAST(func)->func_defaults;
 }
 #define PyFunction_GET_DEFAULTS(func) PyFunction_GET_DEFAULTS(_PyObject_CAST(func))
 
 static inline PyObject* PyFunction_GET_KW_DEFAULTS(PyObject *func) {
-    return _PyFunction_CAST(func) -> func_kwdefaults;
+    return _PyFunction_CAST(func)->func_kwdefaults;
 }
 #define PyFunction_GET_KW_DEFAULTS(func) PyFunction_GET_KW_DEFAULTS(_PyObject_CAST(func))
 
 static inline PyObject* PyFunction_GET_CLOSURE(PyObject *func) {
-    return _PyFunction_CAST(func) -> func_closure;
+    return _PyFunction_CAST(func)->func_closure;
 }
 #define PyFunction_GET_CLOSURE(func) PyFunction_GET_CLOSURE(_PyObject_CAST(func))
 
 static inline PyObject* PyFunction_GET_ANNOTATIONS(PyObject *func) {
-    return _PyFunction_CAST(func) -> func_annotations;
+    return _PyFunction_CAST(func)->func_annotations;
 }
 #define PyFunction_GET_ANNOTATIONS(func) PyFunction_GET_ANNOTATIONS(_PyObject_CAST(func))
 
