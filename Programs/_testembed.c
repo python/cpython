@@ -1572,12 +1572,12 @@ static int test_init_is_python_build(void)
     putenv("TESTHOME=");
 
     config._is_python_build = INT_MAX;
-    env = getenv("INVALID_ISPYTHONBUILD");
+    env = getenv("NEGATIVE_ISPYTHONBUILD");
     if (env) {
         if (strcmp(env, "1") == 0) {
             config._is_python_build++;
         }
-        putenv("INVALID_ISPYTHONBUILD=");
+        putenv("NEGATIVE_ISPYTHONBUILD=");
     }
     init_from_config_clear(&config);
     Py_Finalize();

@@ -1334,12 +1334,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         env = {'TESTHOME': home, 'PYTHONPATH': paths_str}
 
-        env['INVALID_ISPYTHONBUILD'] = '1'
+        env['NEGATIVE_ISPYTHONBUILD'] = '1'
         config['_is_python_build'] = 0
         self.check_all_configs("test_init_is_python_build", config,
                                api=API_COMPAT, env=env)
 
-        env['INVALID_ISPYTHONBUILD'] = '0'
+        env['NEGATIVE_ISPYTHONBUILD'] = '0'
         config['_is_python_build'] = 1
         config['module_search_paths'][-1] = os.path.dirname(self.test_exe)
         self.check_all_configs("test_init_is_python_build", config,
