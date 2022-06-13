@@ -271,6 +271,9 @@ class TestWorkerProcess(threading.Thread):
             self.current_test_name = None
 
     def _runtest(self, test_name: str) -> MultiprocessResult:
+        # gh-93353: Check for leaked temporary files in the parent process,
+        # since the deletion of temporary files can happen late during
+        # Python finalization: too late for libregrtest.
         tmp_dir = os.getcwd() + '_tmpdir'
         tmp_dir = os.path.abspath(tmp_dir)
         try:
