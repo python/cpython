@@ -26,8 +26,8 @@ __all__ = [
 
 _WIN_RESERVED_NAMES = frozenset(
     {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
-    {'COM%s' % c for c in '123456789\xb9\xb2\xb3'} |
-    {'LPT%s' % c for c in '123456789\xb9\xb2\xb3'}
+    {f'COM{c}' for c in '123456789\xb9\xb2\xb3'} |
+    {f'LPT{c}' for c in '123456789\xb9\xb2\xb3'}
 )
 
 _WINERROR_NOT_READY = 21  # drive exists but is not accessible
