@@ -477,6 +477,12 @@ miss_counter_start(void) {
 #define SPEC_FAIL_FOR_ITER_DICT_ITEMS 21
 #define SPEC_FAIL_FOR_ITER_DICT_VALUES 22
 #define SPEC_FAIL_FOR_ITER_ENUMERATE 23
+#define SPEC_FAIL_FOR_ITER_MAP 24
+#define SPEC_FAIL_FOR_ITER_ZIP 25
+#define SPEC_FAIL_FOR_ITER_SEQ_ITER 26
+#define SPEC_FAIL_FOR_ITER_REVERSED_LIST 27
+#define SPEC_FAIL_FOR_ITER_CALLABLE 28
+#define SPEC_FAIL_FOR_ITER_ASCII_STRING 29
 
 // UNPACK_SEQUENCE
 
@@ -2051,9 +2057,27 @@ int
     if (t == &PyEnum_Type) {
         return SPEC_FAIL_FOR_ITER_ENUMERATE;
     }
-
-    if (strncmp(t->tp_name, "itertools", 8) == 0) {
+    if (t == &PyMap_Type) {
+        return SPEC_FAIL_FOR_ITER_MAP;
+    }
+    if (t == &PyZip_Type) {
+        return SPEC_FAIL_FOR_ITER_ZIP;
+    }
+    if (t == &PySeqIter_Type) {
+        return SPEC_FAIL_FOR_ITER_SEQ_ITER;
+    }
+    if (t == &PyListRevIter_Type) {
+        return SPEC_FAIL_FOR_ITER_REVERSED_LIST;
+    }
+    if (t == &_PyUnicodeASCIIIter_Type) {
+        return SPEC_FAIL_FOR_ITER_ASCII_STRING;
+    }
+    const char *name = t->tp_name;
+    if (strncmp(name, "itertools", 9) == 0) {
         return SPEC_FAIL_FOR_ITER_ITERTOOLS;
+    }
+    if (strncmp(name, "callable_iterator", 17) == 0) {
+        return SPEC_FAIL_FOR_ITER_CALLABLE;
     }
     return SPEC_FAIL_OTHER;
 }
