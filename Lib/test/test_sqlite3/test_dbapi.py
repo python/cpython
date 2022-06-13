@@ -772,9 +772,9 @@ class CursorTests(unittest.TestCase):
 
     def test_execute_with_appended_comments(self):
         dataset = (
-            "select 5+4; -- foo bar",
-            "select 5+4; --",
-            "select 5+4; /*",  # Unclosed comments ending in \0 are skipped.
+            "select 1; -- foo bar",
+            "select 1; --",
+            "select 1; /*",  # Unclosed comments ending in \0 are skipped.
             """
             select 5+4;
 
