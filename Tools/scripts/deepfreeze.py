@@ -9,6 +9,7 @@ import builtins
 import collections
 import contextlib
 import os
+import opcode
 import re
 import time
 import types
@@ -19,6 +20,9 @@ from generate_global_objects import get_identifiers_and_strings
 
 verbose = False
 identifiers, strings = get_identifiers_and_strings()
+
+RESUME = opcode.opmap["RESUME"]
+del opcode
 
 def isprintable(b: bytes) -> bool:
     return all(0x20 <= c < 0x7f for c in b)
@@ -267,6 +271,10 @@ class Printer:
             self.write(f".co_qualname = {co_qualname},")
             self.write(f".co_linetable = {co_linetable},")
             self.write(f".co_code_adaptive = {co_code_adaptive},")
+            for i, op in enumerate(code.co_code[::2]):
+                if op == RESUME:
+                    self.write(f"._co_firsttraceable = {i},")
+                    break
         name_as_code = f"(PyCodeObject *)&{name}"
         self.deallocs.append(f"_PyStaticCode_Dealloc({name_as_code});")
         self.interns.append(f"_PyStaticCode_InternStrings({name_as_code})")
