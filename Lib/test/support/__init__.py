@@ -2244,8 +2244,9 @@ def late_deletion(obj):
     search_func.reference = ref_cycle
     codecs.register(search_func)
 
-    # Store a reference in PyInterpreterState.before_forkers
-    def atfork_func():
-        pass
-    atfork_func.reference = ref_cycle
-    os.register_at_fork(before=atfork_func)
+    if hasattr(os, 'register_at_fork'):
+        # Store a reference in PyInterpreterState.before_forkers
+        def atfork_func():
+            pass
+        atfork_func.reference = ref_cycle
+        os.register_at_fork(before=atfork_func)
