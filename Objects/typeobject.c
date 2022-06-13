@@ -3478,7 +3478,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
                 PyErr_SetString(
                     PyExc_SystemError,
                     "Multiple Py_tp_members slots are not supported.");
-                return NULL;
+                goto finally;
             }
             for (const PyMemberDef *memb = slot->pfunc; memb->name != NULL; memb++) {
                 nmembers++;
@@ -3509,7 +3509,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
                 PyErr_SetString(
                     PyExc_SystemError,
                     "Multiple Py_tp_doc slots are not supported.");
-                return NULL;
+                goto finally;
             }
             if (slot->pfunc == NULL) {
                 PyObject_Free(tp_doc);
@@ -3730,12 +3730,12 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     }
 
     if (weaklistoffset) {
-        if (PyDict_DelItemString((PyObject *)type->tp_dict, "__weaklistoffset__") < 0) {
+        if (PyDict_DelItem((PyObject *)type->tp_dict, &_Py_ID(__weaklistoffset__)) < 0) {
             goto finally;
         }
     }
     if (dictoffset) {
-        if (PyDict_DelItemString((PyObject *)type->tp_dict, "__dictoffset__") < 0) {
+        if (PyDict_DelItem((PyObject *)type->tp_dict, &_Py_ID(__dictoffset__)) < 0) {
             goto finally;
         }
     }

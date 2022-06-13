@@ -6782,7 +6782,7 @@ else
 fi
      ;; #(
               WASI/*) :
-    HOSTRUNNER='wasmtime run --env PYTHONPATH=$$(realpath --relative-to $(abs_srcdir) $(abs_builddir))/$$(cat pybuilddir.txt) --mapdir /::$(srcdir) --' ;; #(
+    HOSTRUNNER='wasmtime run --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt) --mapdir /::$(srcdir) --' ;; #(
   *) :
     HOSTRUNNER=''
    ;;
@@ -6791,6 +6791,10 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HOSTRUNNER" >&5
 $as_echo "$HOSTRUNNER" >&6; }
+
+if test -n "$HOSTRUNNER"; then
+    PYTHON_FOR_BUILD="_PYTHON_HOSTRUNNER='$HOSTRUNNER' $PYTHON_FOR_BUILD"
+fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
 $as_echo "$LDLIBRARY" >&6; }
