@@ -2229,21 +2229,22 @@ def late_deletion(obj):
 
     # Late CPython finalization:
     # - finalize_interp_clear()
-    # - _PyInterpreterState_Clear()
+    # - _PyInterpreterState_Clear(): Clear PyInterpreterState members
+    #   (ex: codec_search_path, before_forkers)
     # - clear os.register_at_fork() callbacks
     # - clear codecs.register() callbacks
 
     ref_cycle = [obj]
     ref_cycle.append(ref_cycle)
 
-    # PyInterpreterState.codec_search_path
+    # Store a reference in PyInterpreterState.codec_search_path
     import codecs
     def search_func(encoding):
         return None
     search_func.reference = ref_cycle
     codecs.register(search_func)
 
-    # PyInterpreterState.before_forkers
+    # Store a reference in PyInterpreterState.before_forkers
     def atfork_func():
         pass
     atfork_func.reference = ref_cycle
