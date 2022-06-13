@@ -7,7 +7,6 @@ running time.
 
 # Python imports
 import os.path
-import sys
 import test.support
 import unittest
 
