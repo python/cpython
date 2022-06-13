@@ -36,7 +36,7 @@ parse_qsl_test_cases = [
     ("a=a+b;b=b+c", [('a', 'a b;b=b c')]),
     (b";a=b", [(b';a', b'b')]),
     (b"a=a+b;b=b+c", [(b'a', b'a b;b=b c')]),
-    (b"a=a\xe2\x80\x99b", [(b'a', b'a\xe2\x80\x99b')]),
+    (b"a=a%E2%80%99b", [(b'a', b'a\xe2\x80\x99b')]),
 ]
 
 # Each parse_qs testcase is a two-tuple that contains
@@ -67,7 +67,7 @@ parse_qs_test_cases = [
     ("a=a+b;b=b+c", {'a': ['a b;b=b c']}),
     (b";a=b", {b';a': [b'b']}),
     (b"a=a+b;b=b+c", {b'a':[ b'a b;b=b c']}),
-    (b"a=a\xe2\x80\x99b", {b'a': [b'a\xe2\x80\x99b']}),
+    (b"a=a%E2%80%99b", {b'a': [b'a\xe2\x80\x99b']}),
 ]
 
 class UrlParseTestCase(unittest.TestCase):
