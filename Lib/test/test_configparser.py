@@ -1028,7 +1028,9 @@ class ConfigParserTestCaseNoInterpolation(BasicTestCase, unittest.TestCase):
 
 class ConfigParserTestCaseLegacyInterpolation(ConfigParserTestCase):
     config_class = configparser.ConfigParser
-    interpolation = configparser.LegacyInterpolation()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        interpolation = configparser.LegacyInterpolation()
 
     def test_set_malformatted_interpolation(self):
         cf = self.fromstring("[sect]\n"
@@ -1665,6 +1667,14 @@ class CoverageOneHundredTestCase(unittest.TestCase):
             parser = configparser.SafeConfigParser()
         for warning in w:
             self.assertTrue(warning.category is DeprecationWarning)
+
+    def test_legacyinterpolation_deprecation(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", DeprecationWarning)
+            configparser.LegacyInterpolation()
+        self.assertGreaterEqual(len(w), 1)
+        for warning in w:
+            self.assertIs(warning.category, DeprecationWarning)
 
     def test_sectionproxy_repr(self):
         parser = configparser.ConfigParser()

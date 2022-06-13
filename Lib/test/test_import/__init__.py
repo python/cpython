@@ -20,7 +20,8 @@ from unittest import mock
 
 from test.support import os_helper
 from test.support import (
-    STDLIB_DIR, is_jython, swap_attr, swap_item, cpython_only)
+    STDLIB_DIR, is_jython, swap_attr, swap_item, cpython_only, is_emscripten,
+    is_wasi)
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, DirsOnSysPath, CleanImport)
 from test.support.os_helper import (
@@ -101,8 +102,17 @@ class ImportTests(unittest.TestCase):
         with self.assertRaises(ImportError) as cm:
             from _testcapi import i_dont_exist
         self.assertEqual(cm.exception.name, '_testcapi')
-        self.assertEqual(cm.exception.path, _testcapi.__file__)
-        self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|pyd)\)")
+        if hasattr(_testcapi, "__file__"):
+            self.assertEqual(cm.exception.path, _testcapi.__file__)
+            self.assertRegex(
+                str(cm.exception),
+                r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|pyd)\)"
+            )
+        else:
+            self.assertEqual(
+                str(cm.exception),
+                "cannot import name 'i_dont_exist' from '_testcapi' (unknown location)"
+            )
 
     def test_from_import_missing_attr_has_name(self):
         with self.assertRaises(ImportError) as cm:
@@ -439,6 +449,7 @@ class ImportTests(unittest.TestCase):
             with self.assertRaises(AttributeError):
                 os.does_not_exist
 
+    @threading_helper.requires_working_threading()
     def test_concurrency(self):
         # bpo 38091: this is a hack to slow down the code that calls
         # has_deadlock(); the logic was itself sometimes deadlocking.
@@ -525,6 +536,10 @@ class FilePermissionTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "Emscripten's/WASI's umask is a stub."
+    )
     def test_creation_mode(self):
         mask = 0o022
         with temp_umask(mask), _ready_to_import() as (name, path):
@@ -542,6 +557,7 @@ class FilePermissionTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
+    @os_helper.skip_unless_working_chmod
     def test_cached_mode_issue_2051(self):
         # permissions of .pyc should match those of .py, regardless of mask
         mode = 0o600
@@ -558,6 +574,7 @@ class FilePermissionTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
+    @os_helper.skip_unless_working_chmod
     def test_cached_readonly(self):
         mode = 0o400
         with temp_umask(0o022), _ready_to_import() as (name, path):
@@ -871,6 +888,7 @@ class PycacheTests(unittest.TestCase):
     @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
             "due to varying filesystem permission semantics (issue #11956)")
     @skip_if_dont_write_bytecode
+    @os_helper.skip_unless_working_chmod
     def test_unwritable_directory(self):
         # When the umask causes the new __pycache__ directory to be
         # unwritable, the import still succeeds but no .pyc file is written.
@@ -909,7 +927,7 @@ class PycacheTests(unittest.TestCase):
         m = __import__(TESTFN)
         try:
             self.assertEqual(m.__file__,
-                             os.path.join(os.getcwd(), os.curdir, os.path.relpath(pyc_file)))
+                             os.path.join(os.getcwd(), os.path.relpath(pyc_file)))
         finally:
             os.remove(pyc_file)
 
@@ -917,7 +935,7 @@ class PycacheTests(unittest.TestCase):
         # Modules now also have an __cached__ that points to the pyc file.
         m = __import__(TESTFN)
         pyc_file = importlib.util.cache_from_source(TESTFN + '.py')
-        self.assertEqual(m.__cached__, os.path.join(os.getcwd(), os.curdir, pyc_file))
+        self.assertEqual(m.__cached__, os.path.join(os.getcwd(), pyc_file))
 
     @skip_if_dont_write_bytecode
     def test___cached___legacy_pyc(self):
@@ -933,7 +951,7 @@ class PycacheTests(unittest.TestCase):
         importlib.invalidate_caches()
         m = __import__(TESTFN)
         self.assertEqual(m.__cached__,
-                         os.path.join(os.getcwd(), os.curdir, os.path.relpath(pyc_file)))
+                         os.path.join(os.getcwd(), os.path.relpath(pyc_file)))
 
     @skip_if_dont_write_bytecode
     def test_package___cached__(self):
@@ -953,10 +971,10 @@ class PycacheTests(unittest.TestCase):
         m = __import__('pep3147.foo')
         init_pyc = importlib.util.cache_from_source(
             os.path.join('pep3147', '__init__.py'))
-        self.assertEqual(m.__cached__, os.path.join(os.getcwd(), os.curdir, init_pyc))
+        self.assertEqual(m.__cached__, os.path.join(os.getcwd(), init_pyc))
         foo_pyc = importlib.util.cache_from_source(os.path.join('pep3147', 'foo.py'))
         self.assertEqual(sys.modules['pep3147.foo'].__cached__,
-                         os.path.join(os.getcwd(), os.curdir, foo_pyc))
+                         os.path.join(os.getcwd(), foo_pyc))
 
     def test_package___cached___from_pyc(self):
         # Like test___cached__ but ensuring __cached__ when imported from a
@@ -980,10 +998,10 @@ class PycacheTests(unittest.TestCase):
         m = __import__('pep3147.foo')
         init_pyc = importlib.util.cache_from_source(
             os.path.join('pep3147', '__init__.py'))
-        self.assertEqual(m.__cached__, os.path.join(os.getcwd(), os.curdir, init_pyc))
+        self.assertEqual(m.__cached__, os.path.join(os.getcwd(), init_pyc))
         foo_pyc = importlib.util.cache_from_source(os.path.join('pep3147', 'foo.py'))
         self.assertEqual(sys.modules['pep3147.foo'].__cached__,
-                         os.path.join(os.getcwd(), os.curdir, foo_pyc))
+                         os.path.join(os.getcwd(), foo_pyc))
 
     def test_recompute_pyc_same_second(self):
         # Even when the source file doesn't change timestamp, a change in

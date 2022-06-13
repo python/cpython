@@ -143,18 +143,17 @@
 # needs -lncurses and -lpanel
 #@MODULE__CURSES_PANEL_TRUE@_curses_panel _curses_panel.c
 
-@MODULE__SQLITE3_TRUE@_sqlite3 _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c
+@MODULE__SQLITE3_TRUE@_sqlite3 _sqlite/blob.c _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c
 
 # needs -lssl and -lcrypt
 @MODULE__SSL_TRUE@_ssl _ssl.c
 # needs -lcrypt
 @MODULE__HASHLIB_TRUE@_hashlib _hashopenssl.c
 
-# needs -ltk, -ltcl, and sometimes -lX11
-#@MODULE__TKINTER_TRUE@_tkinter _tkinter.c tkappinit.c
-
 # Linux: -luuid, BSD/AIX: libc's uuid_create()
 @MODULE__UUID_TRUE@_uuid _uuidmodule.c
+
+@MODULE__TKINTER_TRUE@_tkinter _tkinter.c tkappinit.c
 
 ############################################################################
 # macOS specific modules

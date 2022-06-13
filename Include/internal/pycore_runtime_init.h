@@ -102,7 +102,6 @@ extern "C" {
             .kind = 1, \
             .compact = 1, \
             .ascii = ASCII, \
-            .ready = 1, \
         }, \
     }
 #define _PyASCIIObject_INIT(LITERAL) \
@@ -672,6 +671,7 @@ extern "C" {
                 INIT_STR(newline, "\n"), \
                 INIT_STR(open_br, "{"), \
                 INIT_STR(percent, "%"), \
+                INIT_STR(utf_8, "utf-8"), \
             }, \
             .identifiers = { \
                 INIT_ID(False), \
@@ -712,6 +712,7 @@ extern "C" {
                 INIT_ID(__delete__), \
                 INIT_ID(__delitem__), \
                 INIT_ID(__dict__), \
+                INIT_ID(__dictoffset__), \
                 INIT_ID(__dir__), \
                 INIT_ID(__divmod__), \
                 INIT_ID(__doc__), \
@@ -759,10 +760,10 @@ extern "C" {
                 INIT_ID(__le__), \
                 INIT_ID(__len__), \
                 INIT_ID(__length_hint__), \
+                INIT_ID(__lltrace__), \
                 INIT_ID(__loader__), \
                 INIT_ID(__lshift__), \
                 INIT_ID(__lt__), \
-                INIT_ID(__ltrace__), \
                 INIT_ID(__main__), \
                 INIT_ID(__matmul__), \
                 INIT_ID(__missing__), \
@@ -777,8 +778,9 @@ extern "C" {
                 INIT_ID(__newobj__), \
                 INIT_ID(__newobj_ex__), \
                 INIT_ID(__next__), \
-                INIT_ID(__note__), \
+                INIT_ID(__notes__), \
                 INIT_ID(__or__), \
+                INIT_ID(__orig_class__), \
                 INIT_ID(__origin__), \
                 INIT_ID(__package__), \
                 INIT_ID(__parameters__), \
@@ -822,7 +824,11 @@ extern "C" {
                 INIT_ID(__subclasshook__), \
                 INIT_ID(__truediv__), \
                 INIT_ID(__trunc__), \
+                INIT_ID(__typing_is_unpacked_typevartuple__), \
+                INIT_ID(__typing_prepare_subst__), \
+                INIT_ID(__typing_unpacked_tuple_args__), \
                 INIT_ID(__warningregistry__), \
+                INIT_ID(__weaklistoffset__), \
                 INIT_ID(__weakref__), \
                 INIT_ID(__xor__), \
                 INIT_ID(_abc_impl), \
@@ -919,6 +925,7 @@ extern "C" {
                 INIT_ID(n_unnamed_fields), \
                 INIT_ID(name), \
                 INIT_ID(newlines), \
+                INIT_ID(next), \
                 INIT_ID(obj), \
                 INIT_ID(offset), \
                 INIT_ID(onceregistry), \

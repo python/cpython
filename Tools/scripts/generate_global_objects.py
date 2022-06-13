@@ -1,19 +1,13 @@
 import contextlib
-import glob
+import io
 import os.path
 import re
-import sys
-
 
 __file__ = os.path.abspath(__file__)
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 INTERNAL = os.path.join(ROOT, 'Include', 'internal')
 
 
-STRING_LITERALS = {
-    'empty': '',
-    'dot': '.',
-}
 IGNORED = {
     'ACTION',  # Python/_warnings.c
     'ATTR',  # Python/_warnings.c and Objects/funcobject.c
@@ -114,7 +108,12 @@ def iter_global_strings():
     id_regex = re.compile(r'\b_Py_ID\((\w+)\)')
     str_regex = re.compile(r'\b_Py_DECLARE_STR\((\w+), "(.*?)"\)')
     for filename in iter_files():
-        with open(filename, encoding='utf-8') as infile:
+        try:
+            infile = open(filename, encoding='utf-8')
+        except FileNotFoundError:
+            # The file must have been a temporary file.
+            continue
+        with infile:
             for lno, line in enumerate(infile, 1):
                 for m in id_regex.finditer(line):
                     identifier, = m.groups()
@@ -122,6 +121,7 @@ def iter_global_strings():
                 for m in str_regex.finditer(line):
                     varname, string = m.groups()
                     yield varname, string, filename, lno, line
+
 
 def iter_to_marker(lines, marker):
     for line in lines:
@@ -165,6 +165,19 @@ class Printer:
         self.write("}" + suffix)
 
 
+@contextlib.contextmanager
+def open_for_changes(filename, orig):
+    """Like open() but only write to the file if it changed."""
+    outfile = io.StringIO()
+    yield outfile
+    text = outfile.getvalue()
+    if text != orig:
+        with open(filename, 'w', encoding='utf-8') as outfile:
+            outfile.write(text)
+    else:
+        print(f'# not changed: {filename}')
+
+
 #######################################
 # the global objects
 
@@ -177,19 +190,21 @@ def generate_global_strings(identifiers, strings):
 
     # Read the non-generated part of the file.
     with open(filename) as infile:
-        before = ''.join(iter_to_marker(infile, START))[:-1]
-        for _ in iter_to_marker(infile, END):
-            pass
-        after = infile.read()[:-1]
+        orig = infile.read()
+    lines = iter(orig.rstrip().splitlines())
+    before = '\n'.join(iter_to_marker(lines, START))
+    for _ in iter_to_marker(lines, END):
+        pass
+    after = '\n'.join(lines)
 
     # Generate the file.
-    with open(filename, 'w', encoding='utf-8') as outfile:
+    with open_for_changes(filename, orig) as outfile:
         printer = Printer(outfile)
         printer.write(before)
         printer.write(START)
         with printer.block('struct _Py_global_strings', ';'):
             with printer.block('struct', ' literals;'):
-                for name, literal in sorted(strings.items()):
+                for literal, name in sorted(strings.items(), key=lambda x: x[1]):
                     printer.write(f'STRUCT_FOR_STR({name}, "{literal}")')
             outfile.write('\n')
             with printer.block('struct', ' identifiers;'):
@@ -202,7 +217,6 @@ def generate_global_strings(identifiers, strings):
             with printer.block('struct', ' latin1[128];'):
                 printer.write("PyCompactUnicodeObject _latin1;")
                 printer.write("uint8_t _data[2];")
-
         printer.write(END)
         printer.write(after)
 
@@ -227,13 +241,15 @@ def generate_runtime_init(identifiers, strings):
 
     # Read the non-generated part of the file.
     with open(filename) as infile:
-        before = ''.join(iter_to_marker(infile, START))[:-1]
-        for _ in iter_to_marker(infile, END):
-            pass
-        after = infile.read()[:-1]
+        orig = infile.read()
+    lines = iter(orig.rstrip().splitlines())
+    before = '\n'.join(iter_to_marker(lines, START))
+    for _ in iter_to_marker(lines, END):
+        pass
+    after = '\n'.join(lines)
 
     # Generate the file.
-    with open(filename, 'w', encoding='utf-8') as outfile:
+    with open_for_changes(filename, orig) as outfile:
         printer = Printer(outfile)
         printer.write(before)
         printer.write(START)
@@ -253,7 +269,7 @@ def generate_runtime_init(identifiers, strings):
                 # Global strings.
                 with printer.block('.strings =', ','):
                     with printer.block('.literals =', ','):
-                        for name, literal in sorted(strings.items()):
+                        for literal, name in sorted(strings.items(), key=lambda x: x[1]):
                             printer.write(f'INIT_STR({name}, "{literal}"),')
                     with printer.block('.identifiers =', ','):
                         for name in sorted(identifiers):
@@ -274,17 +290,18 @@ def generate_runtime_init(identifiers, strings):
 
 def get_identifiers_and_strings() -> 'tuple[set[str], dict[str, str]]':
     identifiers = set(IDENTIFIERS)
-    strings = dict(STRING_LITERALS)
+    strings = {}
     for name, string, *_ in iter_global_strings():
         if string is None:
             if name not in IGNORED:
                 identifiers.add(name)
         else:
-            if name not in strings:
-                strings[name] = string
-            elif string != strings[name]:
+            if string not in strings:
+                strings[string] = name
+            elif name != strings[string]:
                 raise ValueError(f'string mismatch for {name!r} ({string!r} != {strings[name]!r}')
     return identifiers, strings
+
 
 #######################################
 # the script

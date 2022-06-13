@@ -132,9 +132,6 @@
     <ClInclude Include="..\Include\objimpl.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\opcode.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\osdefs.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -177,6 +174,9 @@
     <ClInclude Include="..\Include\pystate.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\pystats.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\pystrcmp.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -216,9 +216,6 @@
     <ClInclude Include="..\Include\sysmodule.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\token.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\traceback.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -238,15 +235,6 @@
       <Filter>Modules</Filter>
     </ClInclude>
     <ClInclude Include="..\Modules\rotatingtree.h">
-      <Filter>Modules</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\sre.h">
-      <Filter>Modules</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\sre_constants.h">
-      <Filter>Modules</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\sre_lib.h">
       <Filter>Modules</Filter>
     </ClInclude>
     <ClInclude Include="..\Modules\_io\_iomodule.h">
@@ -366,6 +354,9 @@
     <ClInclude Include="..\Include\cpython\compile.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\complexobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\context.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
@@ -409,6 +400,9 @@
       <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\methodobject.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\modsupport.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\objimpl.h">
@@ -463,6 +457,12 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\pythonrun.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\pythread.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\setobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\sysmodule.h">
@@ -618,6 +618,9 @@
     <ClInclude Include="..\Include\internal\pycore_runtime_init.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_signal.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_sliceobject.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -628,6 +631,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_symtable.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_token.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_traceback.h">
@@ -731,9 +737,18 @@
     <ClCompile Include="..\Modules\_sha3\sha3module.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_sre.c">
+    <ClCompile Include="..\Modules\_sre\sre.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClInclude Include="..\Modules\_sre\sre.h">
+      <Filter>Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_sre\sre_constants.h">
+      <Filter>Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_sre\sre_lib.h">
+      <Filter>Modules</Filter>
+    </ClInclude>
     <ClCompile Include="..\Modules\_statisticsmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>

@@ -20,6 +20,7 @@ from test.libregrtest.pgo import setup_pgo_tests
 from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
 from test.support import os_helper
+from test.support import threading_helper
 
 
 # bpo-38203: Maximum delay in seconds to exit Python (call Py_Finalize()).
@@ -481,8 +482,7 @@ class Regrtest:
         if cpu_count:
             print("== CPU count:", cpu_count)
         print("== encodings: locale=%s, FS=%s"
-              % (locale.getpreferredencoding(False),
-                 sys.getfilesystemencoding()))
+              % (locale.getencoding(), sys.getfilesystemencoding()))
 
     def get_tests_result(self):
         result = []
@@ -533,7 +533,24 @@ class Regrtest:
 
         if self.ns.use_mp:
             from test.libregrtest.runtest_mp import run_tests_multiprocess
-            run_tests_multiprocess(self)
+            # If we're on windows and this is the parent runner (not a worker),
+            # track the load average.
+            if sys.platform == 'win32' and self.worker_test_name is None:
+                from test.libregrtest.win_utils import WindowsLoadTracker
+
+                try:
+                    self.win_load_tracker = WindowsLoadTracker()
+                except PermissionError as error:
+                    # Standard accounts may not have access to the performance
+                    # counters.
+                    print(f'Failed to create WindowsLoadTracker: {error}')
+
+            try:
+                run_tests_multiprocess(self)
+            finally:
+                if self.win_load_tracker is not None:
+                    self.win_load_tracker.close()
+                    self.win_load_tracker = None
         else:
             self.run_tests_sequential()
 
@@ -611,11 +628,16 @@ class Regrtest:
         # Define a writable temp dir that will be used as cwd while running
         # the tests. The name of the dir includes the pid to allow parallel
         # testing (see the -j option).
-        pid = os.getpid()
-        if self.worker_test_name is not None:
-            test_cwd = 'test_python_worker_{}'.format(pid)
+        # Emscripten and WASI have stubbed getpid(), Emscripten has only
+        # milisecond clock resolution. Use randint() instead.
+        if sys.platform in {"emscripten", "wasi"}:
+            nounce = random.randint(0, 1_000_000)
         else:
-            test_cwd = 'test_python_{}'.format(pid)
+            nounce = os.getpid()
+        if self.worker_test_name is not None:
+            test_cwd = 'test_python_worker_{}'.format(nounce)
+        else:
+            test_cwd = 'test_python_{}'.format(nounce)
         test_cwd += os_helper.FS_NONASCII
         test_cwd = os.path.join(self.tmp_dir, test_cwd)
         return test_cwd
@@ -659,7 +681,8 @@ class Regrtest:
         except SystemExit as exc:
             # bpo-38203: Python can hang at exit in Py_Finalize(), especially
             # on threading._shutdown() call: put a timeout
-            faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
+            if threading_helper.can_start_thread:
+                faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
 
             sys.exit(exc.code)
 
@@ -695,28 +718,11 @@ class Regrtest:
             self.list_cases()
             sys.exit(0)
 
-        # If we're on windows and this is the parent runner (not a worker),
-        # track the load average.
-        if sys.platform == 'win32' and self.worker_test_name is None:
-            from test.libregrtest.win_utils import WindowsLoadTracker
+        self.run_tests()
+        self.display_result()
 
-            try:
-                self.win_load_tracker = WindowsLoadTracker()
-            except FileNotFoundError as error:
-                # Windows IoT Core and Windows Nano Server do not provide
-                # typeperf.exe for x64, x86 or ARM
-                print(f'Failed to create WindowsLoadTracker: {error}')
-
-        try:
-            self.run_tests()
-            self.display_result()
-
-            if self.ns.verbose2 and self.bad:
-                self.rerun_failed_tests()
-        finally:
-            if self.win_load_tracker is not None:
-                self.win_load_tracker.close()
-                self.win_load_tracker = None
+        if self.ns.verbose2 and self.bad:
+            self.rerun_failed_tests()
 
         self.finalize()
 

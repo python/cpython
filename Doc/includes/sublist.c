@@ -31,7 +31,7 @@ SubList_init(SubListObject *self, PyObject *args, PyObject *kwds)
 static PyTypeObject SubListType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "sublist.SubList",
-    .tp_doc = "SubList objects",
+    .tp_doc = PyDoc_STR("SubList objects"),
     .tp_basicsize = sizeof(SubListObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,

@@ -1,6 +1,7 @@
 import doctest
 import unittest
 from test import support
+from test.support import threading_helper
 from itertools import *
 import weakref
 from decimal import Decimal
@@ -1533,6 +1534,7 @@ class TestBasicOps(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "tee"):
             next(a)
 
+    @threading_helper.requires_working_threading()
     def test_tee_concurrent(self):
         start = threading.Event()
         finish = threading.Event()

@@ -1,14 +1,17 @@
 from test.support import findfile
 from test.support.os_helper import TESTFN, unlink
-from test.support.warnings_helper import check_no_resource_warning
+from test.support.warnings_helper import check_no_resource_warning, import_deprecated
 import unittest
 from unittest import mock
 from test import audiotests
-from audioop import byteswap
 import io
 import sys
 import struct
-import aifc
+
+
+aifc = import_deprecated("aifc")
+audioop = import_deprecated("audioop")
+
 
 class AifcTest(audiotests.AudioWriteTests,
                audiotests.AudioTestsWithSourceFile):
@@ -121,7 +124,7 @@ class AifcULAWTest(AifcTest, unittest.TestCase):
       E5040CBC 617C0A3C 08BC0A3C 2C7C0B3C 517C0E3C 8A8410FC B6840EBC 457C0A3C \
       """)
     if sys.byteorder != 'big':
-        frames = byteswap(frames, 2)
+        frames = audioop.byteswap(frames, 2)
 
 
 class AifcALAWTest(AifcTest, unittest.TestCase):
@@ -142,7 +145,7 @@ class AifcALAWTest(AifcTest, unittest.TestCase):
       E4800CC0 62000A40 08C00A40 2B000B40 52000E40 8A001180 B6000EC0 46000A40 \
       """)
     if sys.byteorder != 'big':
-        frames = byteswap(frames, 2)
+        frames = audioop.byteswap(frames, 2)
 
 
 class AifcMiscTest(unittest.TestCase):

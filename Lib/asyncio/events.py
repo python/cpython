@@ -274,7 +274,7 @@ class AbstractEventLoop:
 
     # Method scheduling a coroutine object: create a task.
 
-    def create_task(self, coro, *, name=None):
+    def create_task(self, coro, *, name=None, context=None):
         raise NotImplementedError
 
     # Methods for interacting with threads.
@@ -546,7 +546,16 @@ class AbstractEventLoop:
     async def sock_recv_into(self, sock, buf):
         raise NotImplementedError
 
+    async def sock_recvfrom(self, sock, bufsize):
+        raise NotImplementedError
+
+    async def sock_recvfrom_into(self, sock, buf, nbytes=0):
+        raise NotImplementedError
+
     async def sock_sendall(self, sock, data):
+        raise NotImplementedError
+
+    async def sock_sendto(self, sock, data, address):
         raise NotImplementedError
 
     async def sock_connect(self, sock, address):

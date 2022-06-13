@@ -645,19 +645,9 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                     t = PyList_GET_ITEM(value, j);
                     if (!PyUnicode_Check(t))
                         return FALSE;
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-                    len = PyUnicode_GetSize(t);
-                    if (len < 0)
-                        return FALSE;
-                    len++;
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
                     len = PyUnicode_AsWideChar(t, NULL, 0);
                     if (len < 0)
                         return FALSE;
-#endif /* USE_UNICODE_WCHAR_CACHE */
                     size += Py_SAFE_DOWNCAST(len * sizeof(wchar_t),
                                              size_t, DWORD);
                 }
@@ -1709,40 +1699,27 @@ winreg_SetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
         return NULL;
     }
 
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    const wchar_t *value = PyUnicode_AsUnicodeAndSize(value_obj, &value_length);
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
     wchar_t *value = PyUnicode_AsWideCharString(value_obj, &value_length);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     if (value == NULL) {
         return NULL;
     }
     if ((Py_ssize_t)(DWORD)value_length != value_length) {
         PyErr_SetString(PyExc_OverflowError, "value is too long");
-#if !USE_UNICODE_WCHAR_CACHE
         PyMem_Free(value);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         return NULL;
     }
 
     if (PySys_Audit("winreg.SetValue", "nunu#",
                     (Py_ssize_t)key, sub_key, (Py_ssize_t)type,
                     value, value_length) < 0) {
-#if !USE_UNICODE_WCHAR_CACHE
         PyMem_Free(value);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         return NULL;
     }
 
     Py_BEGIN_ALLOW_THREADS
     rc = RegSetValueW(key, sub_key, REG_SZ, value, (DWORD)(value_length + 1));
     Py_END_ALLOW_THREADS
-#if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free(value);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegSetValue");
     Py_RETURN_NONE;

@@ -63,7 +63,7 @@ class TestPgen2Caching(support.TestCase):
 
     @unittest.skipIf(sys.executable is None, 'sys.executable required')
     @unittest.skipIf(
-        sys.platform == 'emscripten', 'requires working subprocess'
+        sys.platform in {'emscripten', 'wasi'}, 'requires working subprocess'
     )
     def test_load_grammar_from_subprocess(self):
         tmpdir = tempfile.mkdtemp()
@@ -92,10 +92,8 @@ class TestPgen2Caching(support.TestCase):
 from lib2to3.pgen2 import driver as pgen2_driver
 pgen2_driver.load_grammar(%r, save=True, force=True)
             """ % (grammar_sub_copy,)
-            msg = ("lib2to3 package is deprecated and may not be able "
-                   "to parse Python 3.10+")
             cmd = [sys.executable,
-                   f'-Wignore:{msg}:PendingDeprecationWarning',
+                   '-Wignore:lib2to3:DeprecationWarning',
                    '-c', code]
             subprocess.check_call( cmd, env=sub_env)
             self.assertTrue(os.path.exists(pickle_sub_name))
