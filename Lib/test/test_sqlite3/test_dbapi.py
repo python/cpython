@@ -749,10 +749,21 @@ class CursorTests(unittest.TestCase):
     def test_execute_multiple_statements(self):
         msg = "You can only execute one statement at a time"
         dataset = (
-            "select 5+4; select 4+5",
-            "select 1; //c++ comment",
-            "select 1; *notsql",
+            "select 1; select 2",
+            "select 1; // c++ comments are not allowed",
+            "select 1; *not a comment",
             "select 1; -*not a comment",
+            "select 1; /* */ a",
+            "select 1; /**/a",
+            "select 1; -",
+            "select 1; /",
+            """select 1;
+               -- comment
+               select 2
+            """,
+            """select 1; -
+               - select 2
+            """,
         )
         for query in dataset:
             with self.subTest(query=query):
@@ -762,6 +773,8 @@ class CursorTests(unittest.TestCase):
     def test_execute_with_appended_comments(self):
         dataset = (
             "select 5+4; -- foo bar",
+            "select 5+4; --",
+            "select 5+4; /*",  # Unclosed comments ending in \0 are skipped.
             """
             select 5+4;
 

@@ -28,15 +28,6 @@
 /* prototypes */
 static const char *lstrip_sql(const char *sql);
 
-typedef enum {
-    LINECOMMENT_1,
-    IN_LINECOMMENT,
-    COMMENTSTART_1,
-    IN_COMMENT,
-    COMMENTEND_1,
-    NORMAL
-} parse_remaining_sql_state;
-
 pysqlite_Statement *
 pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
 {
@@ -131,8 +122,9 @@ stmt_traverse(pysqlite_Statement *self, visitproc visit, void *arg)
 }
 
 /*
- * Strip leading whitespace and comments from SQL string and return a
- * pointer to the first non-whitespace, non-comment character.
+ * Strip leading whitespace and comments from incoming SQL (null terminated C
+ * string) and return a pointer to the first non-whitespace, non-comment
+ * character.
  *
  * This is used to check if somebody tries to execute more than one SQL query
  * with one execute()/executemany() command, which the DB-API don't allow.
@@ -142,57 +134,51 @@ stmt_traverse(pysqlite_Statement *self, visitproc visit, void *arg)
 static inline const char *
 lstrip_sql(const char *sql)
 {
-    parse_remaining_sql_state state = NORMAL;
-
+    // This loop is borrowed from the SQLite source code.
     for (const char *pos = sql; *pos; pos++) {
         switch (*pos) {
-            case '-':
-                if (state == NORMAL) {
-                    state  = LINECOMMENT_1;
-                } else if (state == LINECOMMENT_1) {
-                    state = IN_LINECOMMENT;
-                }
-                break;
             case ' ':
             case '\t':
-                if (state == COMMENTEND_1) {
-                    state = IN_COMMENT;
-                }
-                break;
+            case '\f':
             case '\n':
             case '\r':
-                if (state == IN_LINECOMMENT) {
-                    state = NORMAL;
-                }
+                // Skip whitespace.
                 break;
+            case '-':
+                if (pos[1] && pos[1] != '-') {
+                    return &pos[1];
+                }
+                // Skip line comments.
+                if (pos[1] == '-') {
+                    pos += 2;
+                    while (pos[0] && pos[0] != '\n') {
+                        pos++;
+                    }
+                    if (pos[0] == '\0') {
+                        return NULL;
+                    }
+                    continue;
+                }
+                return pos;
             case '/':
-                if (state == NORMAL) {
-                    state = COMMENTSTART_1;
-                } else if (state == COMMENTEND_1) {
-                    state = NORMAL;
-                } else if (state == COMMENTSTART_1) {
-                    return pos;
+                if (pos[1] && pos[1] != '*') {
+                    return &pos[1];
                 }
-                break;
-            case '*':
-                if (state == NORMAL) {
-                    return pos;
-                } else if (state == LINECOMMENT_1) {
-                    return pos;
-                } else if (state == COMMENTSTART_1) {
-                    state = IN_COMMENT;
-                } else if (state == IN_COMMENT) {
-                    state = COMMENTEND_1;
+                // Skip C style comments.
+                if (pos[1] == '*') {
+                    pos += 2;
+                    while (pos[0] && (pos[0] != '*' || pos[1] != '/')) {
+                        pos++;
+                    }
+                    if (pos[0] == '\0') {
+                        return NULL;
+                    }
+                    pos++;
+                    continue;
                 }
-                break;
+                return pos;
             default:
-                if (state == COMMENTEND_1) {
-                    state = IN_COMMENT;
-                } else if (state == IN_LINECOMMENT) {
-                } else if (state == IN_COMMENT) {
-                } else {
-                    return pos;
-                }
+                return pos;
         }
     }
 
