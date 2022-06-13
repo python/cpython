@@ -239,48 +239,6 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
-    def test_run_in_tree_build_win32(self):
-        "Test _is_python_build fields with invalid cases.(gh-91985)"
-        def read_pathconfig(config, attr):
-            if _Py_path_config[attr] >= 0 and config[attr] <= 0:
-                config[attr] = _Py_path_config[attr]
-
-        def update_pathconfig(config, attr):
-            if config[attr] > 0:
-                _Py_path_config[attr] = config[attr]
-
-        for flags in [(0,-1), (-1, 0), (-1,-1), (-10, 0), [-10, 5], [5,-10]]:
-            _Py_path_config = dict(
-                _is_python_build=flags[0],
-            )
-            ns = MockNTNamespace(
-                argv0=r"C:\CPython\PCbuild\amd64\python.exe",
-            )
-            ns.add_known_file(r"C:\CPython\PCbuild\amd64\pybuilddir.txt", [""])
-            ns['config'].update(
-                home=r"C:\CPython",  # turn on 'home_was_set'
-                _is_python_build=flags[1],
-            )
-            # _PyConfig_InitPathConfig emulation
-            read_pathconfig(ns['config'], '_is_python_build')
-            if isinstance(flags, tuple):
-                expected = dict(
-                    _is_python_build=ns['config']['_is_python_build'],
-                    build_prefix=None,
-                    platstdlib_dir=r"C:\CPython\DLLs",
-                )
-            else:
-                flags = (1, 1)
-                expected = dict(
-                    _is_python_build=flags[1],
-                    build_prefix=r"C:\CPython",
-                    platstdlib_dir=r"C:\CPython\PCbuild\amd64",
-                )
-            actual = getpath(ns, expected)
-            self.assertEqual(actual, expected)
-            update_pathconfig(actual, '_is_python_build')
-            self.assertEqual(_Py_path_config['_is_python_build'], flags[0])
-
     def test_normal_posix(self):
         "Test a 'standard' install layout on *nix"
         ns = MockPosixNamespace(
