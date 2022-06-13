@@ -5,7 +5,6 @@ import enum
 import functools
 import threading
 import signal
-import sys
 from . import coroutines
 from . import events
 from . import exceptions
