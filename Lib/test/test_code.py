@@ -574,20 +574,14 @@ def positions_from_location_table(code):
         for _ in range(length):
             yield (line, end_line, col, end_col)
 
-def lines_from_postions(positions):
-    last = None
-    res = []
-    for l, _, _, _ in positions:
-        if l != last:
-            res.append(l)
-            last = l
-    return res
-
 def dedup(lst, prev=object()):
     for item in lst:
         if item != prev:
             yield item
             prev = item
+
+def lines_from_postions(positions):
+    return dedup(l for (l, _, _, _) in positions)
 
 def misshappen():
     """
@@ -646,7 +640,7 @@ class CodeLocationTest(unittest.TestCase):
     def check_lines(self, func):
         co = func.__code__
         lines1 = list(dedup(l for (_, _, l) in co.co_lines()))
-        lines2 = lines_from_postions(positions_from_location_table(co))
+        lines2 = list(lines_from_postions(positions_from_location_table(co)))
         for l1, l2 in zip(lines1, lines2):
             self.assertEqual(l1, l2)
         self.assertEqual(len(lines1), len(lines2))
