@@ -2102,6 +2102,9 @@ python-config: $(srcdir)/Misc/python-config.in Misc/python-config.sh
 	@ # Substitution happens here, as the completely-expanded BINDIR
 	@ # is not available in configure
 	sed -e "s,@EXENAME@,$(BINDIR)/python$(LDVERSION)$(EXE)," < $(srcdir)/Misc/python-config.in >python-config.py
+	@ # BINDIR might be bigger than the max shebang size and lead to failures. Let us assume we have
+	@ # python in the $PATH and let env resolve it
+	sed -i -e '1s|^#!.*|#!/usr/bin/env python3|' python-config.py
 	@ # Replace makefile compat. variable references with shell script compat. ones; $(VAR) -> ${VAR}
 	LC_ALL=C sed -e 's,\$$(\([A-Za-z0-9_]*\)),\$$\{\1\},g' < Misc/python-config.sh >python-config
 	@ # On Darwin, always use the python version of the script, the shell
