@@ -3399,35 +3399,40 @@ get_bases_tuple(PyObject *bases_in, PyType_Spec *spec)
 }
 
 static inline int
-check_basicsize_includes_size_and_offsets(PyTypeObject* type) {
+check_basicsize_includes_size_and_offsets(PyTypeObject* type)
+{
     if (type->tp_alloc != PyType_GenericAlloc) {
         // Custom allocators can ignore tp_basicsize
         return 1;
     }
+    Py_ssize_t max = (Py_ssize_t)type->tp_basicsize;
 
     if (type->tp_base && type->tp_base->tp_basicsize > type->tp_basicsize) {
         PyErr_Format(PyExc_TypeError,
-                    "tp_basicsize for type '%s' (%d) is too small for base '%s' (%d)",
-                    type->tp_name, type->tp_basicsize,
-                    type->tp_base->tp_name, type->tp_base->tp_basicsize);
+                     "tp_basicsize for type '%s' (%d) is too small for base '%s' (%d)",
+                     type->tp_name, type->tp_basicsize,
+                     type->tp_base->tp_name, type->tp_base->tp_basicsize);
         return 0;
     }
-    if (type->tp_weaklistoffset + (Py_ssize_t)sizeof(PyObject*) > (Py_ssize_t)type->tp_basicsize) {
+    if (type->tp_weaklistoffset + (Py_ssize_t)sizeof(PyObject*) > max) {
         PyErr_Format(PyExc_TypeError,
-                    "tp_basicsize for type '%s' (%d) is too small for weaklist offset %d",
-                    type->tp_name, type->tp_basicsize, type->tp_weaklistoffset);
+                     "tp_basicsize for type '%s' (%d) is too small for weaklist offset %d",
+                     type->tp_name, type->tp_basicsize,
+                     type->tp_weaklistoffset);
         return 0;
     }
-    if (type->tp_dictoffset + (Py_ssize_t)sizeof(PyObject*) > (Py_ssize_t)type->tp_basicsize) {
+    if (type->tp_dictoffset + (Py_ssize_t)sizeof(PyObject*) > max) {
         PyErr_Format(PyExc_TypeError,
-                    "tp_basicsize for type '%s' (%d) is too small for dict offset %d",
-                    type->tp_name, type->tp_basicsize, type->tp_dictoffset);
+                     "tp_basicsize for type '%s' (%d) is too small for dict offset %d",
+                     type->tp_name, type->tp_basicsize,
+                     type->tp_dictoffset);
         return 0;
     }
-    if (type->tp_vectorcall_offset + (Py_ssize_t)sizeof(vectorcallfunc*) > (Py_ssize_t)type->tp_basicsize) {
+    if (type->tp_vectorcall_offset + (Py_ssize_t)sizeof(vectorcallfunc*) > max) {
         PyErr_Format(PyExc_TypeError,
-                    "tp_basicsize for type '%s' (%d) is too small for vectorcall offset %d",
-                    type->tp_name, type->tp_basicsize, type->tp_vectorcall_offset);
+                     "tp_basicsize for type '%s' (%d) is too small for vectorcall offset %d",
+                     type->tp_name, type->tp_basicsize,
+                     type->tp_vectorcall_offset);
         return 0;
     }
     return 1;
