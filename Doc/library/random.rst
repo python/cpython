@@ -31,7 +31,8 @@ for cryptographic purposes.
 
 The functions supplied by this module are actually bound methods of a hidden
 instance of the :class:`random.Random` class.  You can instantiate your own
-instances of :class:`Random` to get generators that don't share state.
+instances of :class:`Random` to get generators that don't share global state
+(which includes the seed value).
 
 Class :class:`Random` can also be subclassed if you want to use a different
 basic generator of your own devising: in that case, override the :meth:`~Random.random`,
