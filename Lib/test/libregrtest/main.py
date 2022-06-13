@@ -629,15 +629,15 @@ class Regrtest:
         # the tests. The name of the dir includes the pid to allow parallel
         # testing (see the -j option).
         # Emscripten and WASI have stubbed getpid(), Emscripten has only
-        # milisecond clock resolution. Use time_ns() + randint() instead.
+        # milisecond clock resolution. Use randint() instead.
         if sys.platform in {"emscripten", "wasi"}:
-            pid = time.time_ns() + random.randint(0, 1000000)
+            nounce = random.randint(0, 1_000_000)
         else:
-            pid = os.getpid()
+            nounce = os.getpid()
         if self.worker_test_name is not None:
-            test_cwd = 'test_python_worker_{}'.format(pid)
+            test_cwd = 'test_python_worker_{}'.format(nounce)
         else:
-            test_cwd = 'test_python_{}'.format(pid)
+            test_cwd = 'test_python_{}'.format(nounce)
         test_cwd += os_helper.FS_NONASCII
         test_cwd = os.path.join(self.tmp_dir, test_cwd)
         return test_cwd
