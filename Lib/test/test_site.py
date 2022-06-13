@@ -10,10 +10,9 @@ from test import support
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import captured_stderr
-from test.support.os_helper import TESTFN, EnvironmentVarGuard, change_cwd
+from test.support.os_helper import TESTFN, EnvironmentVarGuard
 import ast
 import builtins
-import encodings
 import glob
 import io
 import os
