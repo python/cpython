@@ -1303,6 +1303,48 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_setpythonhome", config,
                                api=API_COMPAT, env=env)
 
+    @unittest.skipUnless(MS_WINDOWS, 'Windows only')
+    def test_init_is_python_build_win32(self):
+        # Test _Py_path_config._is_python_build field (gh-91985)
+        config = self._get_expected_config()
+        paths = config['config']['module_search_paths']
+        paths_str = os.path.pathsep.join(paths)
+
+        for path in paths:
+            if not os.path.isdir(path):
+                continue
+            if os.path.exists(os.path.join(path, 'os.py')):
+                home = os.path.dirname(path)
+                break
+        else:
+            self.fail(f"Unable to find home in {paths!r}")
+
+        prefix = exec_prefix = home
+        stdlib = os.path.join(home, "Lib")
+        expected_paths = [paths[0], stdlib, os.path.join(home, 'DLLs')]
+        config = {
+            'home': home,
+            'module_search_paths': expected_paths,
+            'prefix': prefix,
+            'base_prefix': prefix,
+            'exec_prefix': exec_prefix,
+            'base_exec_prefix': exec_prefix,
+            'pythonpath_env': paths_str,
+            'stdlib_dir': stdlib,
+        }
+        env = {'TESTHOME': home, 'PYTHONPATH': paths_str}
+
+        env['INVALID_ISPYTHONBUILD'] = '1'
+        config['_is_python_build'] = 0
+        self.check_all_configs("test_init_is_python_build", config,
+                               api=API_COMPAT, env=env)
+
+        env['INVALID_ISPYTHONBUILD'] = '0'
+        config['_is_python_build'] = 1
+        config['module_search_paths'][-1] = os.path.dirname(self.test_exe)
+        self.check_all_configs("test_init_is_python_build", config,
+                               api=API_COMPAT, env=env)
+
     def copy_paths_by_env(self, config):
         all_configs = self._get_expected_config()
         paths = all_configs['config']['module_search_paths']
