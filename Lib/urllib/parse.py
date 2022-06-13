@@ -107,7 +107,7 @@ def _decode_args(args, encoding=_implicit_encoding,
                        errors=_implicit_errors):
     return tuple(x.decode(encoding, errors) if x else '' for x in args)
 
-def _coerce_args(*args):
+def _coerce_args(*args, encoding=_implicit_encoding):
     # Invokes decode if necessary to create str args
     # and returns the coerced inputs along with
     # an appropriate result coercion function
@@ -121,7 +121,7 @@ def _coerce_args(*args):
             raise TypeError("Cannot mix str and non-str arguments")
     if str_input:
         return args + (_noop,)
-    return _decode_args(args) + (_encode_result,)
+    return _decode_args(args, encoding=encoding) + (functools.partial(_encode_result, encoding=encoding),)
 
 # Result objects are more helpful than simple tuples
 class _ResultMixinStr(object):
@@ -730,8 +730,8 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
 
         Returns a list, as G-d intended.
     """
-    qs, _coerce_result = _coerce_args(qs)
-    separator, _ = _coerce_args(separator)
+    qs, _coerce_result = _coerce_args(qs, encoding=encoding)
+    separator, _ = _coerce_args(separator, encoding=encoding)
 
     if not separator or (not isinstance(separator, (str, bytes))):
         raise ValueError("Separator must be of type string or bytes.")
