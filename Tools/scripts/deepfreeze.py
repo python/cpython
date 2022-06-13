@@ -11,7 +11,6 @@ import builtins
 import collections
 import contextlib
 import os
-import opcode
 import re
 import time
 import types
@@ -23,8 +22,8 @@ from generate_global_objects import get_identifiers_and_strings
 verbose = False
 identifiers, strings = get_identifiers_and_strings()
 
-RESUME = opcode.opmap["RESUME"]
-del opcode
+# This must be kept in sync with opcode.py
+RESUME = 151
 
 def isprintable(b: bytes) -> bool:
     return all(0x20 <= c < 0x7f for c in b)
