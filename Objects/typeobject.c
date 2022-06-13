@@ -3409,14 +3409,20 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     int r;
 
     const PyType_Slot *slot;
-    Py_ssize_t nmembers, weaklistoffset, dictoffset, vectorcalloffset;
+    Py_ssize_t nmembers = 0;
+    Py_ssize_t weaklistoffset, dictoffset, vectorcalloffset;
     char *res_start;
     short slot_offset, subslot_offset;
 
     nmembers = weaklistoffset = dictoffset = vectorcalloffset = 0;
     for (slot = spec->slots; slot->slot; slot++) {
         if (slot->slot == Py_tp_members) {
-            nmembers = 0;
+            if (nmembers != 0) {
+                PyErr_SetString(
+                    PyExc_SystemError,
+                    "Multiple Py_tp_members slots are not supported.");
+                return NULL;
+            }
             for (const PyMemberDef *memb = slot->pfunc; memb->name != NULL; memb++) {
                 nmembers++;
                 if (strcmp(memb->name, "__weaklistoffset__") == 0) {
@@ -3559,6 +3565,12 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
         else if (slot->slot == Py_tp_doc) {
             /* For the docstring slot, which usually points to a static string
                literal, we need to make a copy */
+            if (type->tp_doc != NULL) {
+                PyErr_SetString(
+                    PyExc_SystemError,
+                    "Multiple Py_tp_doc slots are not supported.");
+                goto finally;
+            }
             if (slot->pfunc == NULL) {
                 type->tp_doc = NULL;
                 continue;
@@ -3625,13 +3637,13 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
 
     if (weaklistoffset) {
         type->tp_weaklistoffset = weaklistoffset;
-        if (PyDict_DelItemString((PyObject *)type->tp_dict, "__weaklistoffset__") < 0) {
+        if (PyDict_DelItem((PyObject *)type->tp_dict, &_Py_ID(__weaklistoffset__)) < 0) {
             goto finally;
         }
     }
     if (dictoffset) {
         type->tp_dictoffset = dictoffset;
-        if (PyDict_DelItemString((PyObject *)type->tp_dict, "__dictoffset__") < 0) {
+        if (PyDict_DelItem((PyObject *)type->tp_dict, &_Py_ID(__dictoffset__)) < 0) {
             goto finally;
         }
     }

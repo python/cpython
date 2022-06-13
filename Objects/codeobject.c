@@ -731,8 +731,10 @@ _PyCode_CreateLineArray(PyCodeObject *co)
         if (!_PyLineTable_NextAddressRange(&bounds)) {
             break;
         }
-        int index = bounds.ar_start;
-        while (index < bounds.ar_end && index < Py_SIZE(co)) {
+        int addr = bounds.ar_start;
+        while (addr < bounds.ar_end) {
+            assert(addr < (int)(Py_SIZE(co) * sizeof(_Py_CODEUNIT)));
+            int index = addr / sizeof(_Py_CODEUNIT);
             if (size == 2) {
                 assert(((int16_t)bounds.ar_line) == bounds.ar_line);
                 ((int16_t *)co->_co_linearray)[index] = bounds.ar_line;
@@ -741,7 +743,7 @@ _PyCode_CreateLineArray(PyCodeObject *co)
                 assert(size == 4);
                 ((int32_t *)co->_co_linearray)[index] = bounds.ar_line;
             }
-            index++;
+            addr += sizeof(_Py_CODEUNIT);
         }
     }
     return 0;
@@ -753,10 +755,10 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
     if (addrq < 0) {
         return co->co_firstlineno;
     }
+    assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
     if (co->_co_linearray) {
         return _PyCode_LineNumberFromArray(co, addrq / sizeof(_Py_CODEUNIT));
     }
-    assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
     PyCodeAddressRange bounds;
     _PyCode_InitAddressRange(co, &bounds);
     return _PyCode_CheckLineNumber(addrq, &bounds);
@@ -1596,6 +1598,9 @@ code_dealloc(PyCodeObject *co)
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)co);
     }
+    if (co->_co_linearray) {
+        PyMem_Free(co->_co_linearray);
+    }
     if (co->co_warmup == 0) {
         _Py_QuickenedCount--;
     }
@@ -2147,10 +2152,15 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
     deopt_code(_PyCode_CODE(co), Py_SIZE(co));
     co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
     PyMem_Free(co->co_extra);
+    Py_CLEAR(co->_co_code);
     co->co_extra = NULL;
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *)co);
         co->co_weakreflist = NULL;
+    }
+    if (co->_co_linearray) {
+        PyMem_Free(co->_co_linearray);
+        co->_co_linearray = NULL;
     }
 }
 

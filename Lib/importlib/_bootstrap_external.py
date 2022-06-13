@@ -1399,7 +1399,9 @@ class PathFinder:
         """Call the invalidate_caches() method on all path entry finders
         stored in sys.path_importer_caches (where implemented)."""
         for name, finder in list(sys.path_importer_cache.items()):
-            if finder is None:
+            # Drop entry if finder name is a relative path. The current
+            # working directory may have changed.
+            if finder is None or not _path_isabs(name):
                 del sys.path_importer_cache[name]
             elif hasattr(finder, 'invalidate_caches'):
                 finder.invalidate_caches()
@@ -1567,9 +1569,12 @@ class FileFinder:
             loaders.extend((suffix, loader) for suffix in suffixes)
         self._loaders = loaders
         # Base (directory) path
-        self.path = path or '.'
-        if not _path_isabs(self.path):
-            self.path = _path_join(_os.getcwd(), self.path)
+        if not path or path == '.':
+            self.path = _os.getcwd()
+        elif not _path_isabs(path):
+            self.path = _path_join(_os.getcwd(), path)
+        else:
+            self.path = path
         self._path_mtime = -1
         self._path_cache = set()
         self._relaxed_path_cache = set()
