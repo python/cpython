@@ -80,6 +80,11 @@ class EnvChanged(Failed):
     def __str__(self) -> str:
         return f"{self.name} failed (env changed)"
 
+    @staticmethod
+    # Convert Passed to EnvChanged
+    def from_passed(other):
+        return EnvChanged(other.name, other.duration_sec, other.xml_data)
+
 
 class RefLeak(Failed):
     def __str__(self) -> str:
