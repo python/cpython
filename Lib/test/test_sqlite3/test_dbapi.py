@@ -934,9 +934,9 @@ class CursorTests(unittest.TestCase):
         # gh-79579: rowcount is updated even if query is prefixed with comments
         self.cu.execute("""
             -- foo
-            insert into test(name) values ('foo')
+            insert into test(name) values ('foo'), ('foo')
         """)
-        self.assertEqual(self.cu.rowcount, 1)
+        self.assertEqual(self.cu.rowcount, 2)
         self.cu.execute("""
             /* -- messy *r /* /* ** *- *--
             */
@@ -944,7 +944,7 @@ class CursorTests(unittest.TestCase):
         """)
         self.assertEqual(self.cu.rowcount, 1)
         self.cu.execute("/* bar */ update test set name='bar' where name='foo'")
-        self.assertEqual(self.cu.rowcount, 2)
+        self.assertEqual(self.cu.rowcount, 3)
 
     def test_rowcount_vaccuum(self):
         data = ((1,), (2,), (3,))
