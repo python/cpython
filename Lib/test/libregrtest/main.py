@@ -628,7 +628,12 @@ class Regrtest:
         # Define a writable temp dir that will be used as cwd while running
         # the tests. The name of the dir includes the pid to allow parallel
         # testing (see the -j option).
-        pid = os.getpid()
+        # Emscripten and WASI have stubbed getpid(), Emscripten has only
+        # milisecond clock resolution. Use time_ns() + randint() instead.
+        if sys.platform in {"emscripten", "wasi"}:
+            pid = time.time_ns() + random.randint(0, 1000000)
+        else:
+            pid = os.getpid()
         if self.worker_test_name is not None:
             test_cwd = 'test_python_worker_{}'.format(pid)
         else:
