@@ -159,7 +159,7 @@ struct location {
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((const struct location){(LNO), (END_LNO), (COL), (END_COL)})
 
-#define NO_LOCATION {-1, -1, -1, -1}
+static struct location NO_LOCATION = {-1, -1, -1, -1};
 
 struct instr {
     int i_opcode;
@@ -1285,8 +1285,6 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
            IS_BLOCK_PUSH_OPCODE(opcode));
     assert(oparg == 0 || target == NULL);
 
-    static struct location no_location = NO_LOCATION;
-
     int off = basicblock_next_instr(b);
     if (off < 0) {
         return 0;
@@ -1295,7 +1293,7 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
     i->i_opcode = opcode;
     i->i_oparg = oparg;
     i->i_target = target;
-    i->i_loc = loc ? *loc : no_location;
+    i->i_loc = loc ? *loc : NO_LOCATION;
 
     return 1;
 }
@@ -7388,8 +7386,7 @@ push_cold_blocks_to_end(struct compiler *c, basicblock *entry, int code_flags) {
             if (explicit_jump == NULL) {
                 return -1;
             }
-            static struct location no_location = NO_LOCATION;
-            basicblock_addop(explicit_jump, JUMP, 0, b->b_next, &no_location);
+            basicblock_addop(explicit_jump, JUMP, 0, b->b_next, &NO_LOCATION);
 
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
@@ -8294,8 +8291,6 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
 {
     assert(c->u->u_firstlineno > 0);
 
-    static struct location no_location = NO_LOCATION;
-
     /* Add the generator prefix instructions. */
     if (code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
         struct instr make_gen = {
@@ -8310,7 +8305,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
         struct instr pop_top = {
             .i_opcode = POP_TOP,
             .i_oparg = 0,
-            .i_loc = no_location,
+            .i_loc = NO_LOCATION,
             .i_target = NULL,
         };
         if (insert_instruction(entryblock, 1, &pop_top) < 0) {
@@ -8342,7 +8337,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
                 .i_opcode = MAKE_CELL,
                 // This will get fixed in offset_derefs().
                 .i_oparg = oldindex,
-                .i_loc = no_location,
+                .i_loc = NO_LOCATION,
                 .i_target = NULL,
             };
             if (insert_instruction(entryblock, ncellsused, &make_cell) < 0) {
@@ -8357,7 +8352,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
         struct instr copy_frees = {
             .i_opcode = COPY_FREE_VARS,
             .i_oparg = nfreevars,
-            .i_loc = no_location,
+            .i_loc = NO_LOCATION,
             .i_target = NULL,
         };
         if (insert_instruction(entryblock, 0, &copy_frees) < 0) {
@@ -9363,8 +9358,7 @@ propagate_line_numbers(struct assembler *a) {
             continue;
         }
 
-        static struct location no_location = NO_LOCATION;
-        struct location prev_location = no_location;
+        struct location prev_location = NO_LOCATION;
         for (int i = 0; i < b->b_iused; i++) {
             if (b->b_instr[i].i_loc.lineno < 0) {
                 b->b_instr[i].i_loc = prev_location;
