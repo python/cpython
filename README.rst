@@ -111,7 +111,7 @@ binary resulting from this step is not good for real-life workloads as it has
 profiling instructions embedded inside.
 
 After the instrumented interpreter is built, the Makefile will run a training
-workload.  This is necessary in order to profile the interpreter's execution.
+workload.  This is necessary to profile the interpreter's execution.
 Note also that any output, both stdout and stderr, that may appear at this step
 is suppressed.
 
@@ -161,7 +161,7 @@ For information about building Python's documentation, refer to `Doc/README.rst
 Converting From Python 2.x to 3.x
 ---------------------------------
 
-Significant backward incompatible changes were made for the release of Python
+Significant backward-incompatible changes were made for the release of Python
 3.0, which may cause programs written for Python 2 to fail when run with Python
 3.  For more information about porting your code from Python 2 to Python 3, see
 the `Porting HOWTO <https://docs.python.org/3/howto/pyporting.html>`_.
@@ -200,7 +200,7 @@ using the same installation prefix (``--prefix`` argument to the configure
 script) you must take care that your primary python executable is not
 overwritten by the installation of a different version.  All files and
 directories installed using ``make altinstall`` contain the major and minor
-version and can thus live side-by-side.  ``make install`` also creates
+versions and can thus live side-by-side.  ``make install`` also creates
 ``${prefix}/bin/python3`` which refers to ``${prefix}/bin/pythonX.Y``.  If you
 intend to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using ``make
@@ -218,7 +218,7 @@ Bug reports are welcome!  You can use Github to `report bugs
 <https://github.com/python/cpython/issues>`_, and/or `submit pull requests
 <https://github.com/python/cpython/pulls>`_.
 
-You can also follow development discussion on the `python-dev mailing list
+You can also follow the development discussion on the `python-dev mailing list
 <https://mail.python.org/mailman/listinfo/python-dev/>`_.
 
 
