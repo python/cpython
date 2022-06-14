@@ -8251,7 +8251,7 @@ trim_unused_consts(basicblock *entryblock, PyObject *consts);
 
 /* Duplicates exit BBs, so that line numbers can be propagated to them */
 static int
-duplicate_exits_without_lineno(struct compiler *c);
+duplicate_exits_without_lineno(basicblock *entryblock, struct compiler *c);
 
 static int
 extend_block(basicblock *bb);
@@ -8576,7 +8576,7 @@ assemble(struct compiler *c, int addNone)
     if (optimize_cfg(entryblock, consts, c->c_const_cache)) {
         goto error;
     }
-    if (duplicate_exits_without_lineno(c)) {
+    if (duplicate_exits_without_lineno(entryblock, c)) {
         return NULL;
     }
     if (trim_unused_consts(entryblock, consts)) {
@@ -9495,11 +9495,11 @@ is_exit_without_lineno(basicblock *b) {
  * copy the line number from the sole predecessor block.
  */
 static int
-duplicate_exits_without_lineno(struct compiler *c)
+duplicate_exits_without_lineno(basicblock *entryblock, struct compiler *c)
 {
     /* Copy all exit blocks without line number that are targets of a jump.
      */
-    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (b->b_iused > 0 && is_jump(&b->b_instr[b->b_iused-1])) {
             basicblock *target = b->b_instr[b->b_iused-1].i_target;
             if (is_exit_without_lineno(target) && target->b_predecessors > 1) {
@@ -9517,14 +9517,14 @@ duplicate_exits_without_lineno(struct compiler *c)
         }
     }
     /* Eliminate empty blocks */
-    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         while (b->b_next && b->b_next->b_iused == 0) {
             b->b_next = b->b_next->b_next;
         }
     }
     /* Any remaining reachable exit blocks without line number can only be reached by
      * fall through, and thus can only have a single predecessor */
-    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (BB_HAS_FALLTHROUGH(b) && b->b_next && b->b_iused > 0) {
             if (is_exit_without_lineno(b->b_next)) {
                 assert(b->b_next->b_iused > 0);
