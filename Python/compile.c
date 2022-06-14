@@ -7782,11 +7782,9 @@ normalize_jumps(basicblock *entryblock)
 }
 
 static void
-assemble_jump_offsets(basicblock *entryblock, struct compiler *c)
+assemble_jump_offsets(basicblock *entryblock)
 {
-    basicblock *b;
     int bsize, totsize, extended_arg_recompile;
-    int i;
 
     /* Compute the size of each block and fixup jump args.
        Replace block pointer with position in bytecode. */
@@ -7798,9 +7796,9 @@ assemble_jump_offsets(basicblock *entryblock, struct compiler *c)
             totsize += bsize;
         }
         extended_arg_recompile = 0;
-        for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
             bsize = b->b_offset;
-            for (i = 0; i < b->b_iused; i++) {
+            for (int i = 0; i < b->b_iused; i++) {
                 struct instr *instr = &b->b_instr[i];
                 int isize = instr_size(instr);
                 /* Relative jumps are computed relative to
@@ -8619,7 +8617,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     /* Can't modify the bytecode after computing jump offsets. */
-    assemble_jump_offsets(entryblock, c);
+    assemble_jump_offsets(entryblock);
 
 
     /* Create assembler */
