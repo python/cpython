@@ -235,6 +235,12 @@ Module functions and constants
    everything until the first ``'['`` for the column name and strip
    the preceding space: the column name would simply be "Expiration date".
 
+.. data:: DEPRECATED_TRANSACTION_CONTROL
+
+   Set :attr:`~Connection.autocommit` to this constant to select deprecated
+   (pre Python 3.12) transaction control.
+   See :ref:`sqlite3-deprecated-transaction-control` for more information.
+
 
 .. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri, autocommit])
 
