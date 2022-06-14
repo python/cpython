@@ -1,0 +1,2 @@
+Add :attr:`sqlite3.Connection.autocommit` for :pep:`249` compliant
+transaction control. Patch by Erlend E. Aasland.
