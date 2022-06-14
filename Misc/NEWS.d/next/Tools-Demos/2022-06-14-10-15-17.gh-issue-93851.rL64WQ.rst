@@ -1,0 +1,4 @@
+Added :source:`Tools/scripts/checkhtmllinks.py` for on-mood searching for
+dead and redirected (potentially soon-to-be-dead; use ``-r`` to allow) links.
+Note that a full run through the whole rendered documentation takes more than
+an hour.
