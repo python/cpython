@@ -32,7 +32,8 @@ uint8_t _PyOpcode_Adaptive[256] = {
 
 Py_ssize_t _Py_QuickenedCount = 0;
 #ifdef Py_STATS
-PyStats _py_stats = { 0 };
+PyStats _py_stats_struct = { 0 };
+PyStats *_py_stats = &_py_stats_struct;
 
 #define ADD_STAT_TO_DICT(res, field) \
     do { \
@@ -92,7 +93,7 @@ add_stat_dict(
     int opcode,
     const char *name) {
 
-    SpecializationStats *stats = &_py_stats.opcode_stats[opcode].specialization;
+    SpecializationStats *stats = &_py_stats_struct.opcode_stats[opcode].specialization;
     PyObject *d = stats_to_dict(stats);
     if (d == NULL) {
         return -1;
@@ -250,8 +251,12 @@ _Py_PrintSpecializationStats(int to_file)
 
 #ifdef Py_STATS
 
-#define SPECIALIZATION_FAIL(opcode, kind) _py_stats.opcode_stats[opcode].specialization.failure_kinds[kind]++
-
+#define SPECIALIZATION_FAIL(opcode, kind) \
+do { \
+    if (_py_stats) { \
+        _py_stats->opcode_stats[opcode].specialization.failure_kinds[kind]++; \
+    } \
+} while (0)
 
 #endif
 #endif
