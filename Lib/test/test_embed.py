@@ -1358,10 +1358,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected_paths = [paths[0], stdlib, platstdlib]
         else:
             prefix = exec_prefix = sys.prefix
-            expected_paths = [self.module_search_paths(prefix=prefix)[0],
-                              stdlib, platstdlib]
             # stdlib calculation (/Lib) is not yet supported.
             stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
+            expected_paths = [self.module_search_paths(prefix=prefix)[0],
+                              stdlib, platstdlib]
 
         config.update(module_search_paths=expected_paths,
                       prefix=prefix, base_prefix=prefix,
