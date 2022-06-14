@@ -1328,6 +1328,8 @@ _Py_StaticStrings_Intern(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__dict__);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(__dictoffset__);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__dir__);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__divmod__);
@@ -1552,11 +1554,15 @@ _Py_StaticStrings_Intern(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__typing_is_unpacked_typevartuple__);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(__typing_prepare_subst__);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__typing_subst__);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__typing_unpacked_tuple_args__);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__warningregistry__);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(__weaklistoffset__);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__weakref__);
     PyUnicode_InternInPlace(&string);
