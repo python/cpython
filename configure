@@ -6782,7 +6782,7 @@ else
 fi
      ;; #(
               WASI/*) :
-    HOSTRUNNER='wasmtime run --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt) --mapdir /::$(srcdir) --' ;; #(
+    HOSTRUNNER='wasmtime run --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --mapdir /::$(srcdir) --' ;; #(
   *) :
     HOSTRUNNER=''
    ;;
