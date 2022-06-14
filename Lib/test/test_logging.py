@@ -3609,13 +3609,15 @@ class ConfigDictTest(BaseTest):
             self.assertEqual(sorted(logging.getHandlerNames()), ['ah', 'h1'])
             self.assertIsNotNone(qh.listener)
             qh.listener.start()
-            # Need to let the listener thread get started
-            time.sleep(delay)
             logging.debug('foo')
             logging.info('bar')
             logging.warning('baz')
             # Need to let the listener thread finish its work
-            time.sleep(delay)
+            deadline = time.monotonic() + support.LONG_TIMEOUT
+            while not qh.listener.queue.empty():
+                time.sleep(delay)
+                if time.monotonic() > deadline:
+                    self.fail("queue not empty")
             with open(fn, encoding='utf-8') as f:
                 data = f.read().splitlines()
             self.assertEqual(data, ['foo', 'bar', 'baz'])

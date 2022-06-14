@@ -771,22 +771,12 @@ _sre_SRE_Pattern_search_impl(PatternObject *self, PyTypeObject *cls,
 static PyObject*
 call(const char* module, const char* function, PyObject* args)
 {
-    PyObject* name;
-    PyObject* mod;
     PyObject* func;
     PyObject* result;
 
     if (!args)
         return NULL;
-    name = PyUnicode_FromString(module);
-    if (!name)
-        return NULL;
-    mod = PyImport_Import(name);
-    Py_DECREF(name);
-    if (!mod)
-        return NULL;
-    func = PyObject_GetAttrString(mod, function);
-    Py_DECREF(mod);
+    func = _PyImport_GetModuleAttrString(module, function);
     if (!func)
         return NULL;
     result = PyObject_CallObject(func, args);

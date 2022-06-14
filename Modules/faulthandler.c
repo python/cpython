@@ -1340,13 +1340,13 @@ PyInit_faulthandler(void)
 static int
 faulthandler_init_enable(void)
 {
-    PyObject *module = PyImport_ImportModule("faulthandler");
-    if (module == NULL) {
+    PyObject *enable = _PyImport_GetModuleAttrString("faulthandler", "enable");
+    if (enable == NULL) {
         return -1;
     }
 
-    PyObject *res = PyObject_CallMethodNoArgs(module, &_Py_ID(enable));
-    Py_DECREF(module);
+    PyObject *res = PyObject_CallNoArgs(enable);
+    Py_DECREF(enable);
     if (res == NULL) {
         return -1;
     }
