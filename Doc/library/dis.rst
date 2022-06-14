@@ -891,7 +891,7 @@ iterations of the loop.
    ``getattr(TOS, co_names[namei>>1])``.
 
    If the low bit of ``namei`` is set, this will attempt to load a method named
-   ``co_names[namei>>i]`` from the TOS object. TOS is popped.
+   ``co_names[namei>>1]`` from the TOS object. TOS is popped.
    This bytecode distinguishes two cases: if TOS has a method with the correct
    name, the bytecode pushes the unbound method and TOS. TOS will be used as
    the first argument (``self``) by :opcode:`CALL` when calling the
