@@ -1,7 +1,6 @@
 import _thread
 import asyncio
 import contextvars
-import gc
 import re
 import signal
 import threading

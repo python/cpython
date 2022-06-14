@@ -36,10 +36,12 @@ extern "C++" {
         inline type _Py_CAST_impl(int ptr) {
             return reinterpret_cast<type>(ptr);
         }
+#if __cplusplus >= 201103
         template <typename type>
         inline type _Py_CAST_impl(std::nullptr_t) {
             return static_cast<type>(nullptr);
         }
+#endif
 
         template <typename type, typename expr_type>
             inline type _Py_CAST_impl(expr_type *expr) {
@@ -70,8 +72,9 @@ extern "C++" {
 #endif
 
 // Static inline functions should use _Py_NULL rather than using directly NULL
-// to prevent C++ compiler warnings. In C++, _Py_NULL uses nullptr.
-#ifdef __cplusplus
+// to prevent C++ compiler warnings. On C++11 and newer, _Py_NULL is defined as
+// nullptr.
+#if defined(__cplusplus) && __cplusplus >= 201103
 #  define _Py_NULL nullptr
 #else
 #  define _Py_NULL NULL

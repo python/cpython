@@ -4723,6 +4723,16 @@ is_import_originated(struct compiler *c, expr_ty e)
     return flags & DEF_IMPORT;
 }
 
+static void
+update_location_to_match_attr(struct compiler *c, expr_ty meth)
+{
+    if (meth->lineno != meth->end_lineno) {
+        // Make start location match attribute
+        c->u->u_loc.lineno = meth->end_lineno;
+        c->u->u_loc.col_offset = meth->end_col_offset - (int)PyUnicode_GetLength(meth->v.Attribute.attr)-1;
+    }
+}
+
 // Return 1 if the method call was optimized, -1 if not, and 0 on error.
 static int
 maybe_optimize_method_call(struct compiler *c, expr_ty e)
@@ -4764,8 +4774,8 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     }
     /* Alright, we can optimize the code. */
     VISIT(c, expr, meth->v.Attribute.value);
-    int old_lineno = c->u->u_loc.lineno;
-    c->u->u_loc.lineno = meth->end_lineno;
+    SET_LOC(c, meth);
+    update_location_to_match_attr(c, meth);
     ADDOP_NAME(c, LOAD_METHOD, meth->v.Attribute.attr, names);
     VISIT_SEQ(c, expr, e->v.Call.args);
 
@@ -4775,8 +4785,9 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
             return 0;
         };
     }
+    SET_LOC(c, e);
+    update_location_to_match_attr(c, meth);
     ADDOP_I(c, CALL, argsl + kwdsl);
-    c->u->u_loc.lineno = old_lineno;
     return 1;
 }
 
@@ -7582,6 +7593,7 @@ write_location_info_short_form(struct assembler* a, int length, int column, int 
     int column_low_bits = column & 7;
     int column_group = column >> 3;
     assert(column < 80);
+    assert(end_column >= column);
     assert(end_column - column < 16);
     write_location_first_byte(a, PY_CODE_LOCATION_INFO_SHORT0 + column_group, length);
     write_location_byte(a, (column_low_bits << 4) | (end_column - column));
@@ -7653,7 +7665,7 @@ write_location_info_entry(struct assembler* a, struct instr* i, int isize)
         }
     }
     else if (i->i_loc.end_lineno == i->i_loc.lineno) {
-        if (line_delta == 0 && column < 80 && end_column - column < 16) {
+        if (line_delta == 0 && column < 80 && end_column - column < 16 && end_column >= column) {
             write_location_info_short_form(a, isize, column, end_column);
             return 1;
         }
