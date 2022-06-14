@@ -80,9 +80,9 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     const char *p = lstrip_sql(sql_cstr);
     if (p != NULL) {
         self->is_dml = (PyOS_strnicmp(p, "insert", 6) == 0)
-                  || (PyOS_strnicmp(p, "update", 6) == 0)
-                  || (PyOS_strnicmp(p, "delete", 6) == 0)
-                  || (PyOS_strnicmp(p, "replace", 7) == 0);
+                    || (PyOS_strnicmp(p, "update", 6) == 0)
+                    || (PyOS_strnicmp(p, "delete", 6) == 0)
+                    || (PyOS_strnicmp(p, "replace", 7) == 0);
     }
 
     Py_BEGIN_ALLOW_THREADS
