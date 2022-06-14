@@ -14,7 +14,6 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
-import os
 import textwrap
 import traceback
 from functools import partial

@@ -37,8 +37,6 @@ PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
 PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
 
 
-#define ANY_VARARGS(n) (n == PY_SSIZE_T_MAX)
-
 PyAPI_FUNC(PyObject *) Py_VaBuildValue(const char *, va_list);
 
 // Add an attribute with name 'name' and value 'obj' to the module 'mod.

@@ -2,7 +2,6 @@ import io
 import marshal
 import os
 import sys
-from test import support
 from test.support import import_helper
 import types
 import unittest
