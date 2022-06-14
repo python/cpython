@@ -7728,12 +7728,12 @@ assemble_emit(struct assembler *a, struct instr *i)
 }
 
 static void
-normalize_jumps(struct assembler *a)
+normalize_jumps(basicblock *entryblock)
 {
-    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         b->b_visited = 0;
     }
-    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         b->b_visited = 1;
         if (b->b_iused == 0) {
             continue;
@@ -7787,7 +7787,7 @@ normalize_jumps(struct assembler *a)
 }
 
 static void
-assemble_jump_offsets(struct assembler *a, struct compiler *c)
+assemble_jump_offsets(basicblock *entryblock, struct compiler *c)
 {
     basicblock *b;
     int bsize, totsize, extended_arg_recompile;
@@ -7797,7 +7797,7 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
        Replace block pointer with position in bytecode. */
     do {
         totsize = 0;
-        for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
             bsize = blocksize(b);
             b->b_offset = totsize;
             totsize += bsize;
@@ -7918,17 +7918,17 @@ scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
 #undef MAYBE_PUSH
 
 static int
-add_checks_for_loads_of_unknown_variables(struct assembler *a,
+add_checks_for_loads_of_unknown_variables(basicblock *entryblock,
                                           struct compiler *c)
 {
-    basicblock **stack = make_cfg_traversal_stack(a->a_entry);
+    basicblock **stack = make_cfg_traversal_stack(entryblock);
     if (stack == NULL) {
         return -1;
     }
     Py_ssize_t nparams = PyList_GET_SIZE(c->u->u_ste->ste_varnames);
     int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
     for (int target = 0; target < nlocals; target++) {
-        for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
             b->b_visited = 0;
         }
         basicblock **stack_top = stack;
@@ -7938,10 +7938,10 @@ add_checks_for_loads_of_unknown_variables(struct assembler *a,
         // which are the entry block and any DELETE_FAST statements.
         if (target >= nparams) {
             // only non-parameter locals start out uninitialized.
-            *(stack_top++) = a->a_entry;
-            a->a_entry->b_visited = 1;
+            *(stack_top++) = entryblock;
+            entryblock->b_visited = 1;
         }
-        for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
             scan_block_for_local(target, b, false, &stack_top);
         }
 
@@ -8392,10 +8392,10 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
  * The resulting line number may not be correct according to PEP 626,
  * but should be "good enough", and no worse than in older versions. */
 static void
-guarantee_lineno_for_exits(struct assembler *a, int firstlineno) {
+guarantee_lineno_for_exits(basicblock *entryblock, int firstlineno) {
     int lineno = firstlineno;
     assert(lineno > 0);
-    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (b->b_iused == 0) {
             continue;
         }
@@ -8594,7 +8594,7 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
     propagate_line_numbers(entryblock);
-    guarantee_lineno_for_exits(&a, c->u->u_firstlineno);
+    guarantee_lineno_for_exits(entryblock, c->u->u_firstlineno);
     int maxdepth = stackdepth(c, entryblock);
     if (maxdepth < 0) {
         goto error;
@@ -8616,20 +8616,19 @@ assemble(struct compiler *c, int addNone)
     }
 
     remove_redundant_jumps(entryblock);
-    assert(a.a_entry == entryblock);
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         clean_basic_block(b);
     }
 
     /* Order of basic blocks must have been determined by now */
-    normalize_jumps(&a);
+    normalize_jumps(entryblock);
 
-    if (add_checks_for_loads_of_unknown_variables(&a, c) < 0) {
+    if (add_checks_for_loads_of_unknown_variables(entryblock, c) < 0) {
         goto error;
     }
 
     /* Can't modify the bytecode after computing jump offsets. */
-    assemble_jump_offsets(&a, c);
+    assemble_jump_offsets(entryblock, c);
 
     /* Emit code. */
     for(b = entryblock; b != NULL; b = b->b_next) {
