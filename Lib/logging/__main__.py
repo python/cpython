@@ -78,9 +78,9 @@ if __name__ == "__main__":
 
     args.level = args.level * 10
 
-    if args.remap_print and args.level != 0 :
+    if args.remap_print:
         print = logging.info
-    elif args.double_print and args.level != 0:
+    elif args.double_print:
         ## write to stdout and log file
         print = lambda *args, **kwargs: sys.stdout.write(f"{args[0]}\n") and logging.info(*args, **kwargs)
 
