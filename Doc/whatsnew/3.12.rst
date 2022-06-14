@@ -98,6 +98,14 @@ os
   (Contributed by Kumar Aditya in :gh:`93312`.)
 
 
+sqlite3
+-------
+
+* Add :attr:`~sqlite3.Connection.autocommit` parameter for :pep:`249` compliant
+  transaction handling.
+  (Contributed by Erlend E. Aasland in :gh:`83638`.)
+
+
 Optimizations
 =============
 
