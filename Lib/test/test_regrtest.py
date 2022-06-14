@@ -1375,7 +1375,7 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, [testname],
                                   env_changed=[testname],
                                   fail_env_changed=True)
-        self.assertIn("Test leaked temporary files (1): mytmpfile", output)
+        self.assertIn("Warning -- Test leaked temporary files (1): mytmpfile", output)
 
 
 class TestUtils(unittest.TestCase):
