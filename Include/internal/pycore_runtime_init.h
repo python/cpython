@@ -976,6 +976,7 @@ extern "C" {
                 INIT_ID(warnoptions), \
                 INIT_ID(writable), \
                 INIT_ID(write), \
+                INIT_ID(zipimporter), \
             }, \
             .ascii = { \
                 _PyASCIIObject_INIT("\x00"), \
@@ -1596,8 +1597,6 @@ _Py_StaticStrings_Intern(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_slotnames);
     PyUnicode_InternInPlace(&string);
-    string = &_Py_ID(_strptime_time);
-    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_uninitialized_submodules);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_warn_unawaited_coroutine);
@@ -1647,8 +1646,6 @@ _Py_StaticStrings_Intern(void) {
     string = &_Py_ID(dispatch_table);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(displayhook);
-    PyUnicode_InternInPlace(&string);
-    string = &_Py_ID(enable);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(encode);
     PyUnicode_InternInPlace(&string);
@@ -1765,8 +1762,6 @@ _Py_StaticStrings_Intern(void) {
     string = &_Py_ID(open);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(parent);
-    PyUnicode_InternInPlace(&string);
-    string = &_Py_ID(partial);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(path);
     PyUnicode_InternInPlace(&string);

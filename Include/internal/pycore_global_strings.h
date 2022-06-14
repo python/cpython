@@ -354,6 +354,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(warnoptions)
         STRUCT_FOR_ID(writable)
         STRUCT_FOR_ID(write)
+        STRUCT_FOR_ID(zipimporter)
     } identifiers;
     struct {
         PyASCIIObject _ascii;
