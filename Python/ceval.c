@@ -4362,14 +4362,14 @@ handle_eval_breaker:
         TARGET(FOR_ITER_ADAPTIVE) {
             assert(cframe.use_tracing == 0);
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
-            if (cache->counter == 0) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 next_instr--;
                 _Py_Specialize_ForIter(TOP(), next_instr);
                 NOTRACE_DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(FOR_ITER, deferred);
-                cache->counter--;
+                DECREMENT_ADAPTIVE_COUNTER(cache);
                 JUMP_TO_INSTRUCTION(FOR_ITER);
             }
         }
