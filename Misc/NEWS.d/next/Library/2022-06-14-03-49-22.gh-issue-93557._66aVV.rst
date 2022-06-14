@@ -1,0 +1,1 @@
+Added a way to use the logging module from the command line, and can work with any python script not designed for logging in mind. It can with command line arguments replace the print function with logging.info or a function to both log and print to command line. It will also capture errors and track that as well in logs.
