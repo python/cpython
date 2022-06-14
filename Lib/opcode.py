@@ -177,7 +177,7 @@ def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
 def_op('COPY_FREE_VARS', 149)
 def_op('YIELD_VALUE', 150)
-def_op('RESUME', 151)
+def_op('RESUME', 151)   # This must be kept in sync with deepfreeze.py
 def_op('MATCH_CLASS', 152)
 
 def_op('FORMAT_VALUE', 155)
