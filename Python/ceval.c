@@ -5568,57 +5568,47 @@ handle_eval_breaker:
         case DO_TRACING:
 #endif
     {
-        if (tstate->tracing == 0) {
+        if (tstate->tracing == 0 &&
+            INSTR_OFFSET() >= frame->f_code->_co_firsttraceable
+        ) {
             int instr_prev = _PyInterpreterFrame_LASTI(frame);
             frame->prev_instr = next_instr;
             TRACING_NEXTOPARG();
-            switch(opcode) {
-                case COPY_FREE_VARS:
-                case MAKE_CELL:
-                case RETURN_GENERATOR:
-                    /* Frame not fully initialized */
-                    break;
-                case RESUME:
-                    if (oparg < 2) {
-                        CHECK_EVAL_BREAKER();
-                    }
-                    /* Call tracing */
-                    TRACE_FUNCTION_ENTRY();
-                    DTRACE_FUNCTION_ENTRY();
-                    break;
-                case POP_TOP:
-                    if (_Py_OPCODE(next_instr[-1]) == RETURN_GENERATOR) {
-                        /* Frame not fully initialized */
-                        break;
-                    }
-                    /* fall through */
-                default:
-                    /* line-by-line tracing support */
-                    if (PyDTrace_LINE_ENABLED()) {
-                        maybe_dtrace_line(frame, &tstate->trace_info, instr_prev);
-                    }
+            if (opcode == RESUME) {
+                if (oparg < 2) {
+                    CHECK_EVAL_BREAKER();
+                }
+                /* Call tracing */
+                TRACE_FUNCTION_ENTRY();
+                DTRACE_FUNCTION_ENTRY();
+            }
+            else {
+                /* line-by-line tracing support */
+                if (PyDTrace_LINE_ENABLED()) {
+                    maybe_dtrace_line(frame, &tstate->trace_info, instr_prev);
+                }
 
-                    if (cframe.use_tracing &&
-                        tstate->c_tracefunc != NULL && !tstate->tracing) {
-                        int err;
-                        /* see maybe_call_line_trace()
-                        for expository comments */
-                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                if (cframe.use_tracing &&
+                    tstate->c_tracefunc != NULL && !tstate->tracing) {
+                    int err;
+                    /* see maybe_call_line_trace()
+                    for expository comments */
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
 
-                        err = maybe_call_line_trace(tstate->c_tracefunc,
-                                                    tstate->c_traceobj,
-                                                    tstate, frame, instr_prev);
-                        if (err) {
-                            /* trace function raised an exception */
-                            next_instr++;
-                            goto error;
-                        }
-                        /* Reload possibly changed frame fields */
-                        next_instr = frame->prev_instr;
-
-                        stack_pointer = _PyFrame_GetStackPointer(frame);
-                        frame->stacktop = -1;
+                    err = maybe_call_line_trace(tstate->c_tracefunc,
+                                                tstate->c_traceobj,
+                                                tstate, frame, instr_prev);
+                    if (err) {
+                        /* trace function raised an exception */
+                        next_instr++;
+                        goto error;
                     }
+                    /* Reload possibly changed frame fields */
+                    next_instr = frame->prev_instr;
+
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    frame->stacktop = -1;
+                }
             }
         }
         TRACING_NEXTOPARG();
@@ -6858,13 +6848,8 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
     if (_PyCode_InitLineArray(frame->f_code)) {
         return -1;
     }
-    int entry_point = 0;
-    _Py_CODEUNIT *code = _PyCode_CODE(frame->f_code);
-    while (_PyOpcode_Deopt[_Py_OPCODE(code[entry_point])] != RESUME) {
-        entry_point++;
-    }
     int lastline;
-    if (instr_prev <= entry_point) {
+    if (instr_prev <= frame->f_code->_co_firsttraceable) {
         lastline = -1;
     }
     else {
