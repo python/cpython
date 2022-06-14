@@ -51,10 +51,8 @@ def log_file(script:str) -> None:
         if script:
             with open(script, "r") as f:
                 exec(f.read())
-        else:
-            exec(input(">> "))
+        ## just a conformation that the script finished
         logging.info(f"Script \"{script}\" has ran successfully!")
-        sys.exit(0)
 
 
 if __name__ == "__main__":
