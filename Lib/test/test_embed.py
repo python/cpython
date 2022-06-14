@@ -1303,8 +1303,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_setpythonhome", config,
                                api=API_COMPAT, env=env)
 
-    @unittest.skipUnless(MS_WINDOWS, 'Windows only')
-    def test_init_is_python_build_win32(self):
+    def test_init_is_python_build_with_home(self):
         # Test _Py_path_config._is_python_build field (gh-91985)
         config = self._get_expected_config()
         paths = config['config']['module_search_paths']
@@ -1320,8 +1319,16 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             self.fail(f"Unable to find home in {paths!r}")
 
         prefix = exec_prefix = home
-        stdlib = os.path.join(home, "Lib")
-        expected_paths = [paths[0], stdlib, os.path.join(home, 'DLLs')]
+        if MS_WINDOWS:
+            stdlib = os.path.join(home, "Lib")
+            # Because we are specifying 'home', module search paths
+            # are fairly static
+            expected_paths = [paths[0], stdlib, os.path.join(home, 'DLLs')]
+        else:
+            version = f'{sys.version_info.major}.{sys.version_info.minor}'
+            stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
+            expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
+
         config = {
             'home': home,
             'module_search_paths': expected_paths,
@@ -1341,7 +1348,24 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         env['NEGATIVE_ISPYTHONBUILD'] = '0'
         config['_is_python_build'] = 1
-        config['module_search_paths'][-1] = os.path.dirname(self.test_exe)
+
+        exedir = os.path.dirname(sys.executable)
+        with open(os.path.join(exedir, 'pybuilddir.txt'), encoding='utf8') as f:
+            platstdlib = os.path.join(exedir, f'{f.read()}\n$'.splitlines()[0])
+        platstdlib = os.path.normpath(platstdlib)
+
+        if MS_WINDOWS:
+            expected_paths = [paths[0], stdlib, platstdlib]
+        else:
+            prefix = exec_prefix = sys.prefix
+            expected_paths = [self.module_search_paths(prefix=prefix)[0],
+                              stdlib, platstdlib]
+            # stdlib calculation (/Lib) is not yet supported.
+            stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
+
+        config.update(module_search_paths=expected_paths,
+                      prefix=prefix, base_prefix=prefix,
+                      exec_prefix=exec_prefix, base_exec_prefix=exec_prefix)
         self.check_all_configs("test_init_is_python_build", config,
                                api=API_COMPAT, env=env)
 

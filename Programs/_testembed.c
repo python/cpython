@@ -1566,25 +1566,24 @@ static int test_init_is_python_build(void)
     PyConfig config;
     _PyConfig_InitCompatConfig(&config);
     config_set_program_name(&config);
-    // Ensure 'home_was_set' is turned on in getpath.py
+    // gh-91985: in-tree builds fail to check for build directory landmarks
+    // under the effect of 'home' or PYTHONHOME environment variable.
     config_set_string(&config, &config.home, home);
     PyMem_RawFree(home);
-    putenv("TESTHOME=");
 
+    // Use an impossible value so we can detect whether it isn't updated
+    // during initialization.
     config._is_python_build = INT_MAX;
     env = getenv("NEGATIVE_ISPYTHONBUILD");
-    if (env) {
-        if (strcmp(env, "0") != 0) {
-            config._is_python_build++;
-        }
-        putenv("NEGATIVE_ISPYTHONBUILD=");
+    if (env && strcmp(env, "0") != 0) {
+        config._is_python_build++;
     }
     init_from_config_clear(&config);
     Py_Finalize();
     // Second initialization
     config._is_python_build = -1;
     init_from_config_clear(&config);
-    dump_config();  // home and _is_python_build are from _Py_path_config
+    dump_config();  // home and _is_python_build are cached in _Py_path_config
     Py_Finalize();
     return 0;
 }
