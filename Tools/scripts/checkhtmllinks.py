@@ -4,7 +4,7 @@
 
 Call this script on HTML files of the rendered documentation.
 
-A full run through the whole rendered documentation takes about thirty minutes.
+A full run through the whole rendered documentation takes about an hour.
 
 Copyright © 2022 by Oleg Iarygin <oleg@arhadthedev.net>
 Licensed to PSF under a Contributor Agreement.
@@ -293,8 +293,8 @@ HELP_EPILOG = """
 Call this script on HTML files of the rendered documentation.
 
 Eventhough the script does is multithreaded and caches the findings for already
-processed pages, a full run through the whole rendered documentation takes more
-than an hour.
+processed pages, a full run through the whole rendered documentation takes
+about an hour.
 """
 
 
