@@ -7047,22 +7047,22 @@ stackdepth_push(basicblock ***sp, basicblock *b, int depth)
  * cycles in the flow graph have no net effect on the stack depth.
  */
 static int
-stackdepth(struct compiler *c, basicblock *entry)
+stackdepth(basicblock *entryblock, int code_flags)
 {
-    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         b->b_startdepth = INT_MIN;
     }
-    basicblock **stack = make_cfg_traversal_stack(entry);
+    basicblock **stack = make_cfg_traversal_stack(entryblock);
     if (!stack) {
         return -1;
     }
 
     int maxdepth = 0;
     basicblock **sp = stack;
-    if (c->u->u_ste->ste_generator || c->u->u_ste->ste_coroutine) {
-        stackdepth_push(&sp, entry, 1);
+    if (code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
+        stackdepth_push(&sp, entryblock, 1);
     } else {
-        stackdepth_push(&sp, entry, 0);
+        stackdepth_push(&sp, entryblock, 0);
     }
 
     while (sp != stack) {
@@ -8584,7 +8584,8 @@ assemble(struct compiler *c, int addNone)
     }
     propagate_line_numbers(entryblock);
     guarantee_lineno_for_exits(entryblock, c->u->u_firstlineno);
-    int maxdepth = stackdepth(c, entryblock);
+
+    int maxdepth = stackdepth(entryblock, code_flags);
     if (maxdepth < 0) {
         goto error;
     }
