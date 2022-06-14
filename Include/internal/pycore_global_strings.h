@@ -225,7 +225,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(_showwarnmsg)
         STRUCT_FOR_ID(_shutdown)
         STRUCT_FOR_ID(_slotnames)
-        STRUCT_FOR_ID(_strptime_time)
         STRUCT_FOR_ID(_uninitialized_submodules)
         STRUCT_FOR_ID(_warn_unawaited_coroutine)
         STRUCT_FOR_ID(_xoptions)
@@ -251,7 +250,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(difference_update)
         STRUCT_FOR_ID(dispatch_table)
         STRUCT_FOR_ID(displayhook)
-        STRUCT_FOR_ID(enable)
         STRUCT_FOR_ID(encode)
         STRUCT_FOR_ID(encoding)
         STRUCT_FOR_ID(end_lineno)
@@ -310,7 +308,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(opcode)
         STRUCT_FOR_ID(open)
         STRUCT_FOR_ID(parent)
-        STRUCT_FOR_ID(partial)
         STRUCT_FOR_ID(path)
         STRUCT_FOR_ID(peek)
         STRUCT_FOR_ID(persistent_id)
@@ -356,7 +353,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(warnoptions)
         STRUCT_FOR_ID(writable)
         STRUCT_FOR_ID(write)
-        STRUCT_FOR_ID(zipimporter)
     } identifiers;
     struct {
         PyASCIIObject _ascii;
