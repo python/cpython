@@ -227,14 +227,8 @@ static int converters_init(PyObject* module)
 static int
 load_functools_lru_cache(PyObject *module)
 {
-    PyObject *functools = PyImport_ImportModule("functools");
-    if (functools == NULL) {
-        return -1;
-    }
-
     pysqlite_state *state = pysqlite_get_state(module);
-    state->lru_cache = PyObject_GetAttrString(functools, "lru_cache");
-    Py_DECREF(functools);
+    state->lru_cache = _PyImport_GetModuleAttrString("functools", "lru_cache");
     if (state->lru_cache == NULL) {
         return -1;
     }

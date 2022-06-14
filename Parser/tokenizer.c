@@ -421,7 +421,7 @@ error:
 static int
 fp_setreadl(struct tok_state *tok, const char* enc)
 {
-    PyObject *readline, *io, *stream;
+    PyObject *readline, *open, *stream;
     int fd;
     long pos;
 
@@ -438,13 +438,13 @@ fp_setreadl(struct tok_state *tok, const char* enc)
         return 0;
     }
 
-    io = PyImport_ImportModule("io");
-    if (io == NULL) {
+    open = _PyImport_GetModuleAttrString("io", "open");
+    if (open == NULL) {
         return 0;
     }
-    stream = _PyObject_CallMethod(io, &_Py_ID(open), "isisOOO",
+    stream = PyObject_CallFunction(open, "isisOOO",
                     fd, "r", -1, enc, Py_None, Py_None, Py_False);
-    Py_DECREF(io);
+    Py_DECREF(open);
     if (stream == NULL) {
         return 0;
     }
