@@ -277,8 +277,8 @@ def emit_call_stats(stats):
 
 def emit_object_stats(stats):
     with Section("Object stats", summary="allocations, frees and dict materializatons"):
-        total_materializations = stats.get("Object new values")
-        total_allocations = stats.get("Object allocations")
+        total_materializations = stats.get("Object new values") + stats.get("materializations")
+        total_allocations = stats.get("Object allocations") + stats.get("Object allocations")
         total_increfs = stats.get("Object interpreter increfs") + stats.get("Object increfs")
         total_decrefs = stats.get("Object interpreter decrefs") + stats.get("Object decrefs")
         rows = []
