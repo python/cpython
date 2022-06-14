@@ -7007,7 +7007,6 @@ compiler_match(struct compiler *c, stmt_ty s)
 struct assembler {
     PyObject *a_bytecode;  /* bytes containing bytecode */
     PyObject *a_except_table;  /* bytes containing exception table */
-    basicblock *a_entry;
     int a_offset;              /* offset into bytecode */
     int a_except_table_off;    /* offset into exception table */
     int a_lineno;          /* lineno of last emitted instruction */
@@ -7118,7 +7117,7 @@ stackdepth(struct compiler *c, basicblock *entry)
 }
 
 static int
-assemble_init(struct assembler *a, int nblocks, int firstlineno)
+assemble_init(struct assembler *a, int firstlineno)
 {
     memset(a, 0, sizeof(struct assembler));
     a->a_lineno = firstlineno;
@@ -7136,10 +7135,6 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
     }
     a->a_except_table = PyBytes_FromStringAndSize(NULL, DEFAULT_LNOTAB_SIZE);
     if (a->a_except_table == NULL) {
-        goto error;
-    }
-    if ((size_t)nblocks > SIZE_MAX / sizeof(basicblock *)) {
-        PyErr_NoMemory();
         goto error;
     }
     return 1;
@@ -7529,13 +7524,13 @@ assemble_emit_exception_table_entry(struct assembler *a, int start, int end, bas
 }
 
 static int
-assemble_exception_table(struct assembler *a)
+assemble_exception_table(struct assembler *a, basicblock *entryblock)
 {
     basicblock *b;
     int ioffset = 0;
     basicblock *handler = NULL;
     int start = -1;
-    for (b = a->a_entry; b != NULL; b = b->b_next) {
+    for (b = entryblock; b != NULL; b = b->b_next) {
         ioffset = b->b_offset;
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
@@ -8498,9 +8493,6 @@ remove_redundant_jumps(basicblock *entryblock) {
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
 {
-    basicblock *b, *entryblock;
-    struct assembler a;
-    int j, nblocks;
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
 
@@ -8529,15 +8521,6 @@ assemble(struct compiler *c, int addNone)
         }
     }
 
-    nblocks = 0;
-    entryblock = NULL;
-    for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
-        nblocks++;
-        entryblock = b;
-        assert(b->b_warm == 0 && b->b_cold == 0);
-    }
-    assert(entryblock != NULL);
-
     assert(PyDict_GET_SIZE(c->u->u_varnames) < INT_MAX);
     assert(PyDict_GET_SIZE(c->u->u_cellvars) < INT_MAX);
     assert(PyDict_GET_SIZE(c->u->u_freevars) < INT_MAX);
@@ -8549,6 +8532,18 @@ assemble(struct compiler *c, int addNone)
     int nlocalsplus = nlocals + ncellvars + nfreevars;
     int *cellfixedoffsets = build_cellfixedoffsets(c);
     if (cellfixedoffsets == NULL) {
+        goto error;
+    }
+
+    int nblocks = 0;
+    basicblock *entryblock = NULL;
+    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        nblocks++;
+        entryblock = b;
+    }
+    assert(entryblock != NULL);
+    if ((size_t)nblocks > SIZE_MAX / sizeof(basicblock *)) {
+        PyErr_NoMemory();
         goto error;
     }
 
@@ -8566,10 +8561,6 @@ assemble(struct compiler *c, int addNone)
     if (insert_prefix_instructions(c, entryblock, cellfixedoffsets, nfreevars, code_flags)) {
         goto error;
     }
-
-    if (!assemble_init(&a, nblocks, c->u->u_firstlineno))
-        goto error;
-    a.a_entry = entryblock;
 
     int numdropped = fix_cell_offsets(c, entryblock, cellfixedoffsets);
     PyMem_Free(cellfixedoffsets);  // At this point we're done with it.
@@ -8630,22 +8621,28 @@ assemble(struct compiler *c, int addNone)
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(entryblock, c);
 
+
+    /* Create assembler */
+    struct assembler a;
+    if (!assemble_init(&a, c->u->u_firstlineno))
+        goto error;
+
     /* Emit code. */
-    for(b = entryblock; b != NULL; b = b->b_next) {
-        for (j = 0; j < b->b_iused; j++)
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        for (int j = 0; j < b->b_iused; j++)
             if (!assemble_emit(&a, &b->b_instr[j]))
                 goto error;
     }
 
     /* Emit location info */
     a.a_lineno = c->u->u_firstlineno;
-    for(b = entryblock; b != NULL; b = b->b_next) {
-        for (j = 0; j < b->b_iused; j++)
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        for (int j = 0; j < b->b_iused; j++)
             if (!assemble_emit_location(&a, &b->b_instr[j]))
                 goto error;
     }
 
-    if (!assemble_exception_table(&a)) {
+    if (!assemble_exception_table(&a, entryblock)) {
         goto error;
     }
     if (_PyBytes_Resize(&a.a_except_table, a.a_except_table_off) < 0) {
