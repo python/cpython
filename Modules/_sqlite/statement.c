@@ -46,7 +46,6 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     int rc;
     const char* sql_cstr;
     Py_ssize_t sql_cstr_len;
-    const char* p;
 
     assert(PyUnicode_Check(sql));
 
