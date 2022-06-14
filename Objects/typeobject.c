@@ -3677,7 +3677,8 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
                 short slot_offset = slotoffsets.slot_offset;
                 if (slotoffsets.subslot_offset == -1) {
                     *(void**)((char*)res_start + slot_offset) = slot->pfunc;
-                } else {
+                }
+                else {
                     void *procs = *(void**)((char*)res_start + slot_offset);
                     short subslot_offset = slotoffsets.subslot_offset;
                     *(void**)((char*)procs + subslot_offset) = slot->pfunc;
