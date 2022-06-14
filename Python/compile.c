@@ -8251,10 +8251,10 @@ static int
 normalize_basic_block(basicblock *bb);
 
 static int
-optimize_cfg(PyObject *const_cache, struct assembler *a, PyObject *consts);
+optimize_cfg(basicblock *entryblock, PyObject *consts, PyObject *const_cache);
 
 static int
-trim_unused_consts(struct assembler *a, PyObject *consts);
+trim_unused_consts(basicblock *entryblock, PyObject *consts);
 
 /* Duplicates exit BBs, so that line numbers can be propagated to them */
 static int
@@ -8462,21 +8462,21 @@ fix_cell_offsets(struct compiler *c, basicblock *entryblock, int *fixedmap)
 }
 
 static void
-propagate_line_numbers(struct assembler *a);
+propagate_line_numbers(basicblock *entryblock);
 
 static void
-eliminate_empty_basic_blocks(basicblock *entry);
+eliminate_empty_basic_blocks(basicblock *entryblock);
 
 
 static void
-remove_redundant_jumps(basicblock *entry) {
+remove_redundant_jumps(basicblock *entryblock) {
     /* If a non-empty block ends with a jump instruction, check if the next
      * non-empty block reached through normal flow control is the target
      * of that jump. If it is, then the jump instruction is redundant and
      * can be deleted.
      */
     int removed = 0;
-    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (b->b_iused > 0) {
             struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
             assert(!IS_ASSEMBLER_OPCODE(b_last_instr->i_opcode));
@@ -8491,7 +8491,7 @@ remove_redundant_jumps(basicblock *entry) {
         }
     }
     if (removed) {
-        eliminate_empty_basic_blocks(entry);
+        eliminate_empty_basic_blocks(entryblock);
     }
 }
 
@@ -8584,16 +8584,16 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    if (optimize_cfg(c->c_const_cache, &a, consts)) {
+    if (optimize_cfg(entryblock, consts, c->c_const_cache)) {
         goto error;
     }
     if (duplicate_exits_without_lineno(c)) {
         return NULL;
     }
-    if (trim_unused_consts(&a, consts)) {
+    if (trim_unused_consts(entryblock, consts)) {
         goto error;
     }
-    propagate_line_numbers(&a);
+    propagate_line_numbers(entryblock);
     guarantee_lineno_for_exits(&a, c->u->u_firstlineno);
     int maxdepth = stackdepth(c, entryblock);
     if (maxdepth < 0) {
@@ -9299,14 +9299,14 @@ normalize_basic_block(basicblock *bb) {
 }
 
 static int
-mark_reachable(struct assembler *a) {
-    basicblock **stack = make_cfg_traversal_stack(a->a_entry);
+mark_reachable(basicblock *entryblock) {
+    basicblock **stack = make_cfg_traversal_stack(entryblock);
     if (stack == NULL) {
         return -1;
     }
     basicblock **sp = stack;
-    a->a_entry->b_predecessors = 1;
-    *sp++ = a->a_entry;
+    entryblock->b_predecessors = 1;
+    *sp++ = entryblock;
     while (sp > stack) {
         basicblock *b = *(--sp);
         b->b_visited = 1;
@@ -9340,9 +9340,9 @@ mark_reachable(struct assembler *a) {
 }
 
 static void
-eliminate_empty_basic_blocks(basicblock *entry) {
+eliminate_empty_basic_blocks(basicblock *entryblock) {
     /* Eliminate empty blocks */
-    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         basicblock *next = b->b_next;
         if (next) {
             while (next->b_iused == 0 && next->b_next) {
@@ -9351,7 +9351,7 @@ eliminate_empty_basic_blocks(basicblock *entry) {
             b->b_next = next;
         }
     }
-    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (b->b_iused == 0) {
             continue;
         }
@@ -9377,8 +9377,8 @@ eliminate_empty_basic_blocks(basicblock *entry) {
  * but has no impact on the generated line number events.
  */
 static void
-propagate_line_numbers(struct assembler *a) {
-    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+propagate_line_numbers(basicblock *entryblock) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (b->b_iused == 0) {
             continue;
         }
@@ -9419,32 +9419,32 @@ propagate_line_numbers(struct assembler *a) {
 */
 
 static int
-optimize_cfg(PyObject *const_cache, struct assembler *a, PyObject *consts)
+optimize_cfg(basicblock *entryblock, PyObject *consts, PyObject *const_cache)
 {
     assert(PyDict_CheckExact(const_cache));
-    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (optimize_basic_block(const_cache, b, consts)) {
             return -1;
         }
         clean_basic_block(b);
         assert(b->b_predecessors == 0);
     }
-    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (extend_block(b)) {
             return -1;
         }
     }
-    if (mark_reachable(a)) {
+    if (mark_reachable(entryblock)) {
         return -1;
     }
     /* Delete unreachable instructions */
-    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
        if (b->b_predecessors == 0) {
             b->b_iused = 0;
        }
     }
-    eliminate_empty_basic_blocks(a->a_entry);
-    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+    eliminate_empty_basic_blocks(entryblock);
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         clean_basic_block(b);
     }
     return 0;
@@ -9452,13 +9452,13 @@ optimize_cfg(PyObject *const_cache, struct assembler *a, PyObject *consts)
 
 // Remove trailing unused constants.
 static int
-trim_unused_consts(struct assembler *a, PyObject *consts)
+trim_unused_consts(basicblock *entryblock, PyObject *consts)
 {
     assert(PyList_CheckExact(consts));
 
     // The first constant may be docstring; keep it always.
     int max_const_index = 0;
-    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             if ((b->b_instr[i].i_opcode == LOAD_CONST ||
                 b->b_instr[i].i_opcode == KW_NAMES) &&
