@@ -2,6 +2,7 @@ import faulthandler
 import json
 import os.path
 import queue
+import random
 import shlex
 import signal
 import subprocess
@@ -53,7 +54,8 @@ def parse_worker_args(worker_args) -> tuple[Namespace, str]:
     return (ns, test_name)
 
 
-def run_test_in_subprocess(testname: str, ns: Namespace, tmp_dir: str) -> subprocess.Popen:
+def run_test_in_subprocess(testname: str, ns: Namespace,
+                           work_dir: str, tmp_dir: str) -> subprocess.Popen:
     ns_dict = vars(ns)
     worker_args = (ns_dict, testname)
     worker_args = json.dumps(worker_args)
@@ -86,7 +88,7 @@ def run_test_in_subprocess(testname: str, ns: Namespace, tmp_dir: str) -> subpro
                             stderr=subprocess.STDOUT,
                             universal_newlines=True,
                             close_fds=(os.name != 'nt'),
-                            cwd=os_helper.SAVEDCWD,
+                            cwd=work_dir,
                             **kw)
 
 
@@ -213,12 +215,12 @@ class TestWorkerProcess(threading.Thread):
         test_result.duration_sec = time.monotonic() - self.start_time
         return MultiprocessResult(test_result, stdout, err_msg)
 
-    def _run_process(self, test_name: str, tmp_dir: str) -> tuple[int, str, str]:
+    def _run_process(self, test_name: str, work_dir: str, tmp_dir: str) -> tuple[int, str, str]:
         self.start_time = time.monotonic()
 
         self.current_test_name = test_name
         try:
-            popen = run_test_in_subprocess(test_name, self.ns, tmp_dir)
+            popen = run_test_in_subprocess(test_name, self.ns, work_dir, tmp_dir)
 
             self._killed = False
             self._popen = popen
@@ -272,22 +274,39 @@ class TestWorkerProcess(threading.Thread):
             self._popen = None
             self.current_test_name = None
 
+    def create_work_dir(self):
+        # Generate an unique directory name: 6 random decimal digits gives
+        # almost 20 bits of entropy. It's rare to run more than 100 processes
+        # in parallel.
+        nounce = random.randint(0, 1_000_000)
+        # create a non-ASCII name to detect issues with non-ASCII characters
+        path = f'test_python_worker_{nounce}_{os_helper.FS_NONASCII}'
+        return os.path.join(os.getcwd(), path)
+
     def _runtest(self, test_name: str) -> MultiprocessResult:
-        if self.ns.use_mp == 1:
-            # gh-93353: Check for leaked temporary files in the parent process,
-            # since the deletion of temporary files can happen late during
-            # Python finalization: too late for libregrtest.
-            tmp_dir = os.getcwd() + '_tmpdir'
-            tmp_dir = os.path.abspath(tmp_dir)
-            try:
+        # The working directory of the worker process is a sub-directory of the
+        # main process. So when the main process exits, it removes also
+        # sub-directories of worker processes.
+        work_dir = self.create_work_dir()
+        tmp_dir = None
+        tmp_files = None
+        try:
+            os.mkdir(work_dir)
+            if not support.is_wasi:
+                tmp_dir = work_dir + '_tmpdir'
                 os.mkdir(tmp_dir)
-                retcode, stdout = self._run_process(test_name, tmp_dir)
-            finally:
+
+            retcode, stdout = self._run_process(test_name, work_dir, tmp_dir)
+
+            if tmp_dir is not None:
+                # gh-93353: Check for leaked temporary files in the parent
+                # process, since the deletion of temporary files can happen
+                # late during Python finalization: too late for libregrtest.
                 tmp_files = os.listdir(tmp_dir)
+        finally:
+            os_helper.rmtree(work_dir)
+            if tmp_dir is not None:
                 os_helper.rmtree(tmp_dir)
-        else:
-            retcode, stdout = self._run_process(test_name, None)
-            tmp_files = ()
 
         if retcode is None:
             return self.mp_result_error(Timeout(test_name), stdout)

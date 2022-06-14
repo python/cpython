@@ -605,9 +605,9 @@ class Regrtest:
             self.tmp_dir = self.ns.tempdir
 
         if not self.tmp_dir:
-            # When tests are run from the Python build directory, it is best practice
-            # to keep the test files in a subfolder.  This eases the cleanup of leftover
-            # files using the "make distclean" command.
+            # When tests are run from the Python build directory, it is best
+            # practice to keep the test files in a subfolder.  This eases the
+            # cleanup of leftover files using the "make distclean" command.
             if sysconfig.is_python_build():
                 self.tmp_dir = sysconfig.get_config_var('abs_builddir')
                 if self.tmp_dir is None:
@@ -634,11 +634,7 @@ class Regrtest:
             nounce = random.randint(0, 1_000_000)
         else:
             nounce = os.getpid()
-        if self.worker_test_name is not None:
-            test_cwd = 'test_python_worker_{}'.format(nounce)
-        else:
-            test_cwd = 'test_python_{}'.format(nounce)
-        test_cwd += os_helper.FS_NONASCII
+        test_cwd = f'test_python_{nounce}_{os_helper.FS_NONASCII}'
         test_cwd = os.path.join(self.tmp_dir, test_cwd)
         return test_cwd
 
@@ -658,25 +654,26 @@ class Regrtest:
     def main(self, tests=None, **kwargs):
         self.parse_args(kwargs)
 
-        self.set_temp_dir()
+        if self.worker_test_name is None:
+            self.set_temp_dir()
+        else:
+            self.tmp_dir = os.getcwd()
 
         if self.ns.cleanup:
             self.cleanup()
             sys.exit(0)
 
-        test_cwd = self.create_temp_dir()
-
         try:
-            # Run the tests in a context manager that temporarily changes the CWD
-            # to a temporary and writable directory. If it's not possible to
-            # create or change the CWD, the original CWD will be used.
+            # Run the tests in a context manager that temporarily changes the
+            # CWD to a temporary and writable directory. If it's not possible
+            # to create or change the CWD, the original CWD will be used.
             # The original CWD is available from os_helper.SAVEDCWD.
-            with os_helper.temp_cwd(test_cwd, quiet=True):
-                # When using multiprocessing, worker processes will use test_cwd
-                # as their parent temporary directory. So when the main process
-                # exit, it removes also subdirectories of worker processes.
-                self.ns.tempdir = test_cwd
-
+            if self.worker_test_name is None:
+                test_cwd = self.create_temp_dir()
+                with os_helper.temp_cwd(test_cwd, quiet=True):
+                    self._main(tests, kwargs)
+            else:
+                # Worker process
                 self._main(tests, kwargs)
         except SystemExit as exc:
             # bpo-38203: Python can hang at exit in Py_Finalize(), especially
