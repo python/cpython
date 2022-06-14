@@ -68,8 +68,10 @@ def run_test_in_subprocess(testname: str, ns: Namespace, tmp_dir: str) -> subpro
            '--worker-args', worker_args]
 
     env = dict(os.environ)
-    env['TMPDIR'] = tmp_dir
-    env['TEMPDIR'] = tmp_dir
+    if tmp_dir is not None:
+        env['TMPDIR'] = tmp_dir
+        env['TEMP'] = tmp_dir
+        env['TMP'] = tmp_dir
 
     # Running the child from the same working directory as regrtest's original
     # invocation ensures that TEMPDIR for the child is the same when
@@ -271,17 +273,21 @@ class TestWorkerProcess(threading.Thread):
             self.current_test_name = None
 
     def _runtest(self, test_name: str) -> MultiprocessResult:
-        # gh-93353: Check for leaked temporary files in the parent process,
-        # since the deletion of temporary files can happen late during
-        # Python finalization: too late for libregrtest.
-        tmp_dir = os.getcwd() + '_tmpdir'
-        tmp_dir = os.path.abspath(tmp_dir)
-        try:
-            os.mkdir(tmp_dir)
-            retcode, stdout = self._run_process(test_name, tmp_dir)
-        finally:
-            tmp_files = os.listdir(tmp_dir)
-            os_helper.rmtree(tmp_dir)
+        if self.ns.use_mp == 1:
+            # gh-93353: Check for leaked temporary files in the parent process,
+            # since the deletion of temporary files can happen late during
+            # Python finalization: too late for libregrtest.
+            tmp_dir = os.getcwd() + '_tmpdir'
+            tmp_dir = os.path.abspath(tmp_dir)
+            try:
+                os.mkdir(tmp_dir)
+                retcode, stdout = self._run_process(test_name, tmp_dir)
+            finally:
+                tmp_files = os.listdir(tmp_dir)
+                os_helper.rmtree(tmp_dir)
+        else:
+            retcode, stdout = self._run_process(test_name, None)
+            tmp_files = ()
 
         if retcode is None:
             return self.mp_result_error(Timeout(test_name), stdout)
@@ -306,8 +312,8 @@ class TestWorkerProcess(threading.Thread):
 
         if tmp_files:
             msg = (f'\n\n'
-                   f'Warning -- Test leaked temporary files ({len(tmp_files)}): '
-                   f'{", ".join(sorted(tmp_files))}')
+                   f'Warning -- {test_name} leaked temporary files '
+                   f'({len(tmp_files)}): {", ".join(sorted(tmp_files))}')
             stdout += msg
             if isinstance(result, Passed):
                 result = EnvChanged.from_passed(result)
