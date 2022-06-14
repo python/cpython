@@ -306,7 +306,7 @@ class TestWorkerProcess(threading.Thread):
 
         if tmp_files:
             msg = (f'\n\n'
-                   f'Test leaked temporary files ({len(tmp_files)}): '
+                   f'Warning -- Test leaked temporary files ({len(tmp_files)}): '
                    f'{", ".join(sorted(tmp_files))}')
             stdout += msg
             if isinstance(result, Passed):
