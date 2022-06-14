@@ -84,8 +84,9 @@
 #define POP_JUMP_IF_TRUE -8
 #define POP_JUMP_IF_NONE -9
 #define POP_JUMP_IF_NOT_NONE -10
+#define LOAD_METHOD -11
 
-#define MIN_VIRTUAL_OPCODE -10
+#define MIN_VIRTUAL_OPCODE -11
 #define MAX_ALLOWED_OPCODE 254
 
 #define IS_WITHIN_OPCODE_RANGE(opcode) \
@@ -1069,7 +1070,7 @@ stack_effect(int opcode, int oparg, int jump)
         case BUILD_CONST_KEY_MAP:
             return -oparg;
         case LOAD_ATTR:
-            return 0;
+            return (oparg & 1);
         case COMPARE_OP:
         case IS_OP:
         case CONTAINS_OP:
@@ -1493,6 +1494,14 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
     Py_DECREF(mangled);
     if (arg < 0)
         return 0;
+    if (opcode == LOAD_ATTR) {
+        arg <<= 1;
+    }
+    if (opcode == LOAD_METHOD) {
+        opcode = LOAD_ATTR;
+        arg <<= 1;
+        arg |= 1;
+    }
     return compiler_addop_i(c, opcode, arg);
 }
 

@@ -366,11 +366,11 @@ dis_traceback = """\
 
 %3d        LOAD_GLOBAL              0 (Exception)
            CHECK_EXC_MATCH
-           POP_JUMP_FORWARD_IF_FALSE    18 (to 72)
+           POP_JUMP_FORWARD_IF_FALSE    23 (to 82)
            STORE_FAST               0 (e)
 
 %3d        LOAD_FAST                0 (e)
-           LOAD_ATTR                1 (__traceback__)
+           LOAD_ATTR                2 (__traceback__)
            STORE_FAST               1 (tb)
            POP_EXCEPT
            LOAD_CONST               0 (None)
@@ -1134,7 +1134,7 @@ class DisTests(DisTestBase):
 
   1           2 LOAD_CONST               0 ('a')
               4 LOAD_ATTR_SLOT           0 (__class__)
-             14 RETURN_VALUE
+             24 RETURN_VALUE
 """
         co = compile("'a'.__class__", "", "eval")
         self.code_quicken(lambda: exec(co, {}, {}))
