@@ -15,7 +15,6 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
-import time
 import unittest
 from test import libregrtest
 from test import support
