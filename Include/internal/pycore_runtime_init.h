@@ -976,7 +976,6 @@ extern "C" {
                 INIT_ID(warnoptions), \
                 INIT_ID(writable), \
                 INIT_ID(write), \
-                INIT_ID(zipimporter), \
             }, \
             .ascii = { \
                 _PyASCIIObject_INIT("\x00"), \
@@ -1852,8 +1851,6 @@ _Py_StaticStrings_Intern(void) {
     string = &_Py_ID(writable);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(write);
-    PyUnicode_InternInPlace(&string);
-    string = &_Py_ID(zipimporter);
     PyUnicode_InternInPlace(&string);
 }
 /* End auto-generated code */
