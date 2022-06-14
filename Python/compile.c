@@ -1340,8 +1340,9 @@ compiler_add_o(PyObject *dict, PyObject *o)
 
 // Merge const *o* recursively and return constant key object.
 static PyObject*
-merge_consts_recursive(struct compiler *c, PyObject *o)
+merge_consts_recursive(PyObject *const_cache, PyObject *o)
 {
+    PyDict_CheckExact(const_cache);
     // None and Ellipsis are singleton, and key is the singleton.
     // No need to merge object and key.
     if (o == Py_None || o == Py_Ellipsis) {
@@ -1355,22 +1356,22 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
     }
 
     // t is borrowed reference
-    PyObject *t = PyDict_SetDefault(c->c_const_cache, key, key);
+    PyObject *t = PyDict_SetDefault(const_cache, key, key);
     if (t != key) {
-        // o is registered in c_const_cache.  Just use it.
+        // o is registered in const_cache.  Just use it.
         Py_XINCREF(t);
         Py_DECREF(key);
         return t;
     }
 
-    // We registered o in c_const_cache.
+    // We registered o in const_cache.
     // When o is a tuple or frozenset, we want to merge its
     // items too.
     if (PyTuple_CheckExact(o)) {
         Py_ssize_t len = PyTuple_GET_SIZE(o);
         for (Py_ssize_t i = 0; i < len; i++) {
             PyObject *item = PyTuple_GET_ITEM(o, i);
-            PyObject *u = merge_consts_recursive(c, item);
+            PyObject *u = merge_consts_recursive(const_cache, item);
             if (u == NULL) {
                 Py_DECREF(key);
                 return NULL;
@@ -1413,7 +1414,7 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
         PyObject *item;
         Py_hash_t hash;
         while (_PySet_NextEntry(o, &pos, &item, &hash)) {
-            PyObject *k = merge_consts_recursive(c, item);
+            PyObject *k = merge_consts_recursive(const_cache, item);
             if (k == NULL) {
                 Py_DECREF(tuple);
                 Py_DECREF(key);
@@ -1451,7 +1452,7 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
 static Py_ssize_t
 compiler_add_const(struct compiler *c, PyObject *o)
 {
-    PyObject *key = merge_consts_recursive(c, o);
+    PyObject *key = merge_consts_recursive(c->c_const_cache, o);
     if (key == NULL) {
         return -1;
     }
@@ -8034,15 +8035,16 @@ compute_code_flags(struct compiler *c)
 // Merge *obj* with constant cache.
 // Unlike merge_consts_recursive(), this function doesn't work recursively.
 static int
-merge_const_one(struct compiler *c, PyObject **obj)
+merge_const_one(PyObject *const_cache, PyObject **obj)
 {
+    PyDict_CheckExact(const_cache);
     PyObject *key = _PyCode_ConstantKey(*obj);
     if (key == NULL) {
         return 0;
     }
 
     // t is borrowed reference
-    PyObject *t = PyDict_SetDefault(c->c_const_cache, key, key);
+    PyObject *t = PyDict_SetDefault(const_cache, key, key);
     Py_DECREF(key);
     if (t == NULL) {
         return 0;
@@ -8125,7 +8127,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     if (!names) {
         goto error;
     }
-    if (!merge_const_one(c, &names)) {
+    if (!merge_const_one(c->c_const_cache, &names)) {
         goto error;
     }
 
@@ -8133,7 +8135,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     if (consts == NULL) {
         goto error;
     }
-    if (!merge_const_one(c, &consts)) {
+    if (!merge_const_one(c->c_const_cache, &consts)) {
         goto error;
     }
 
@@ -8184,7 +8186,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         goto error;
     }
 
-    if (!merge_const_one(c, &localsplusnames)) {
+    if (!merge_const_one(c->c_const_cache, &localsplusnames)) {
         goto error;
     }
     con.localsplusnames = localsplusnames;
@@ -8249,7 +8251,7 @@ static int
 normalize_basic_block(basicblock *bb);
 
 static int
-optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts);
+optimize_cfg(PyObject *const_cache, struct assembler *a, PyObject *consts);
 
 static int
 trim_unused_consts(struct assembler *a, PyObject *consts);
@@ -8582,7 +8584,7 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    if (optimize_cfg(c, &a, consts)) {
+    if (optimize_cfg(c->c_const_cache, &a, consts)) {
         goto error;
     }
     if (duplicate_exits_without_lineno(c)) {
@@ -8650,21 +8652,21 @@ assemble(struct compiler *c, int addNone)
     if (_PyBytes_Resize(&a.a_except_table, a.a_except_table_off) < 0) {
         goto error;
     }
-    if (!merge_const_one(c, &a.a_except_table)) {
+    if (!merge_const_one(c->c_const_cache, &a.a_except_table)) {
         goto error;
     }
 
     if (_PyBytes_Resize(&a.a_linetable, a.a_location_off) < 0) {
         goto error;
     }
-    if (!merge_const_one(c, &a.a_linetable)) {
+    if (!merge_const_one(c->c_const_cache, &a.a_linetable)) {
         goto error;
     }
 
     if (_PyBytes_Resize(&a.a_bytecode, a.a_offset * sizeof(_Py_CODEUNIT)) < 0) {
         goto error;
     }
-    if (!merge_const_one(c, &a.a_bytecode)) {
+    if (!merge_const_one(c->c_const_cache, &a.a_bytecode)) {
         goto error;
     }
 
@@ -8703,11 +8705,12 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
    Called with codestr pointing to the first LOAD_CONST.
 */
 static int
-fold_tuple_on_constants(struct compiler *c,
+fold_tuple_on_constants(PyObject *const_cache,
                         struct instr *inst,
                         int n, PyObject *consts)
 {
     /* Pre-conditions */
+    assert(PyDict_CheckExact(const_cache));
     assert(PyList_CheckExact(consts));
     assert(inst[n].i_opcode == BUILD_TUPLE);
     assert(inst[n].i_oparg == n);
@@ -8732,7 +8735,7 @@ fold_tuple_on_constants(struct compiler *c,
         }
         PyTuple_SET_ITEM(newconst, i, constant);
     }
-    if (merge_const_one(c, &newconst) == 0) {
+    if (merge_const_one(const_cache, &newconst) == 0) {
         Py_DECREF(newconst);
         return -1;
     }
@@ -8955,8 +8958,9 @@ jump_thread(struct instr *inst, struct instr *target, int opcode)
 
 /* Optimization */
 static int
-optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
+optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
 {
+    assert(PyDict_CheckExact(const_cache));
     assert(PyList_CheckExact(consts));
     struct instr nop;
     nop.i_opcode = NOP;
@@ -9063,7 +9067,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                     }
                 }
                 if (i >= oparg) {
-                    if (fold_tuple_on_constants(c, inst-oparg, oparg, consts)) {
+                    if (fold_tuple_on_constants(const_cache, inst-oparg, oparg, consts)) {
                         goto error;
                     }
                 }
@@ -9415,16 +9419,17 @@ propagate_line_numbers(struct assembler *a) {
 */
 
 static int
-optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
+optimize_cfg(PyObject *const_cache, struct assembler *a, PyObject *consts)
 {
+    assert(PyDict_CheckExact(const_cache));
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
-        if (optimize_basic_block(c, b, consts)) {
+        if (optimize_basic_block(const_cache, b, consts)) {
             return -1;
         }
         clean_basic_block(b);
         assert(b->b_predecessors == 0);
     }
-    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         if (extend_block(b)) {
             return -1;
         }
