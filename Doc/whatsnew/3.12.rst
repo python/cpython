@@ -106,6 +106,15 @@ Optimizations
   (Contributed by Inada Naoki in :gh:`92536`.)
 
 
+CPython bytecode changes
+========================
+
+* Removed the :opcode:`LOAD_METHOD` instruction. It has been merged into
+  :opcode:`LOAD_ATTR`. :opcode:`LOAD_ATTR` will now behave like the old
+  :opcode:`LOAD_METHOD` instruction if the low bit of its oparg is set.
+  (Contributed by Ken Jin in :gh:`93429`.)
+
+
 Deprecated
 ==========
 

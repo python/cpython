@@ -1357,6 +1357,26 @@ class ArgsTestCase(BaseTestCase):
         for name in names:
             self.assertFalse(os.path.exists(name), name)
 
+    def test_leak_tmp_file(self):
+        code = textwrap.dedent(r"""
+            import os.path
+            import tempfile
+            import unittest
+
+            class FileTests(unittest.TestCase):
+                def test_leak_tmp_file(self):
+                    filename = os.path.join(tempfile.gettempdir(), 'mytmpfile')
+                    with open(filename, "wb") as fp:
+                        fp.write(b'content')
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("--fail-env-changed", "-v", "-j1", testname, exitcode=3)
+        self.check_executed_tests(output, [testname],
+                                  env_changed=[testname],
+                                  fail_env_changed=True)
+        self.assertIn("Warning -- Test leaked temporary files (1): mytmpfile", output)
+
 
 class TestUtils(unittest.TestCase):
     def test_format_duration(self):

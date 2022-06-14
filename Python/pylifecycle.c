@@ -2342,19 +2342,15 @@ error:
 static PyStatus
 init_set_builtins_open(void)
 {
-    PyObject *iomod = NULL, *wrapper;
+    PyObject *wrapper;
     PyObject *bimod = NULL;
     PyStatus res = _PyStatus_OK();
-
-    if (!(iomod = PyImport_ImportModule("io"))) {
-        goto error;
-    }
 
     if (!(bimod = PyImport_ImportModule("builtins"))) {
         goto error;
     }
 
-    if (!(wrapper = PyObject_GetAttrString(iomod, "open"))) {
+    if (!(wrapper = _PyImport_GetModuleAttrString("io", "open"))) {
         goto error;
     }
 
@@ -2371,7 +2367,6 @@ error:
 
 done:
     Py_XDECREF(bimod);
-    Py_XDECREF(iomod);
     return res;
 }
 
