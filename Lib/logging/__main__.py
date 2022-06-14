@@ -28,6 +28,8 @@ def log_exception(logger:logging.Logger) -> None:
     except Exception as e:
         logger.exception(e)
         logger.critical("Script ended on an unhandled exception!")
+        ## re-raise error
+        raise e
 
 def log_file(script:str) -> None:
     """
