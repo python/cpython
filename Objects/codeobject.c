@@ -340,8 +340,8 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
            PyBytes_GET_SIZE(con->code));
     int entry_point = 0;
-    while (_Py_OPCODE(_PyCode_CODE(co)[entry_point]) != RESUME &&
-        entry_point < Py_SIZE(co)) {
+    while (entry_point < Py_SIZE(co) &&
+        _Py_OPCODE(_PyCode_CODE(co)[entry_point]) != RESUME) {
         entry_point++;
     }
     co->_co_firsttraceable = entry_point;
