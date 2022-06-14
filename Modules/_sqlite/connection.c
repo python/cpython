@@ -2342,6 +2342,23 @@ set_autocommit(pysqlite_Connection *self, PyObject *val, void *Py_UNUSED(ctx))
     if (!autocommit_converter(val, &self->autocommit)) {
         return -1;
     }
+    if (self->autocommit == AUTOCOMMIT_ENABLED &&
+        !sqlite3_get_autocommit(self->db))
+    {
+        if (connection_txn_stmt(self, "COMMIT") < 0) {
+            return -1;
+        }
+    }
+    else if (self->autocommit == AUTOCOMMIT_DISABLED) {
+        if (!sqlite3_get_autocommit(self->db)) {
+            if (connection_txn_stmt(self, "COMMIT") < 0) {
+                return -1;
+            }
+        }
+        if (connection_txn_stmt(self, "BEGIN") < 0) {
+            return -1;
+        }
+    }
     return 0;
 }
 

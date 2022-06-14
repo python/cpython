@@ -398,6 +398,32 @@ class AutocommitPEP249(unittest.TestCase):
             with self.check_stmt_trace(cx, expected):
                 cx.execute("SELECT 1")
                 cx.commit()  # expect this to pass silently
+                self.assertFalse(cx.in_transaction)
+
+    def test_autocommit_disabled_then_enabled(self):
+        expected = ["COMMIT"]
+        with memory_database(autocommit=False) as cx:
+            self.assertTrue(cx.in_transaction)
+            with self.check_stmt_trace(cx, expected):
+                cx.autocommit = True  # should commit
+                self.assertFalse(cx.in_transaction)
+
+    def test_autocommit_enabled_then_disabled(self):
+        expected = ["BEGIN"]
+        with memory_database(autocommit=True) as cx:
+            self.assertFalse(cx.in_transaction)
+            with self.check_stmt_trace(cx, expected):
+                cx.autocommit = False  # should begin
+                self.assertTrue(cx.in_transaction)
+
+    def test_autocommit_explicit_then_disabled(self):
+        expected = ["BEGIN DEFERRED", "COMMIT", "BEGIN"]
+        with memory_database(autocommit=True) as cx:
+            self.assertFalse(cx.in_transaction)
+            with self.check_stmt_trace(cx, expected):
+                cx.execute("BEGIN DEFERRED")
+                cx.autocommit = False  # should commit, then begin
+                self.assertTrue(cx.in_transaction)
 
 
 if __name__ == "__main__":
