@@ -22,6 +22,7 @@
 
 import os, unittest
 import sqlite3 as sqlite
+from contextlib import contextmanager
 
 from test.support import LOOPBACK_TIMEOUT
 from test.support.os_helper import TESTFN, unlink
@@ -325,6 +326,78 @@ class IsolationLevelPostInit(unittest.TestCase):
         with self.cx:
             self.cx.execute(self.QUERY)
         self.assertEqual(self.traced, [self.QUERY])
+
+
+class AutocommitPEP249(unittest.TestCase):
+    """Test PEP-249 compliant autocommit behaviour."""
+    @contextmanager
+    def check_stmt_trace(self, cx, expected):
+        try:
+            traced = []
+            cx.set_trace_callback(lambda stmt: traced.append(stmt))
+            yield
+        finally:
+            self.assertEqual(traced, expected)
+            cx.set_trace_callback(None)
+
+    def test_autocommit_default(self):
+        with memory_database() as cx:
+            self.assertEqual(cx.autocommit,
+                             sqlite.DEPRECATED_TRANSACTION_CONTROL)
+
+    def test_autocommit_setget(self):
+        dataset = (
+            True,
+            False,
+            sqlite.DEPRECATED_TRANSACTION_CONTROL,
+        )
+        for mode in dataset:
+            with self.subTest(mode=mode):
+                with memory_database(autocommit=mode) as cx:
+                    self.assertEqual(cx.autocommit, mode)
+                with memory_database() as cx:
+                    cx.autocommit = mode
+                    self.assertEqual(cx.autocommit, mode)
+
+    def test_autocommit_setget_invalid(self):
+        msg = "autocommit must be True, False, or.*DEPRECATED"
+        for mode in "a", 12, (), None:
+            with self.subTest(mode=mode):
+                with self.assertRaisesRegex(ValueError, msg):
+                    with memory_database(autocommit=mode) as cx:
+                        self.assertEqual(cx.autocommit, mode)
+
+    def test_autocommit_disabled(self):
+        expected = [
+            "SELECT 1",
+            "COMMIT",
+            "BEGIN",
+            "ROLLBACK",
+            "BEGIN",
+        ]
+        with memory_database(autocommit=False) as cx:
+            self.assertTrue(cx.in_transaction)
+            with self.check_stmt_trace(cx, expected):
+                cx.execute("SELECT 1")
+                cx.commit()
+                cx.rollback()
+
+    def test_autocommit_disabled_implicit_rollback(self):
+        expected = ["ROLLBACK"]
+        actual = []
+        with memory_database(autocommit=False) as cx:
+            self.assertTrue(cx.in_transaction)
+            cx.set_trace_callback(lambda stmt: actual.append(stmt))
+            cx.close()
+            self.assertEqual(actual, expected)
+
+    def test_autocommit_enabled(self):
+        expected = ["SELECT 1"]
+        with memory_database(autocommit=True) as cx:
+            self.assertFalse(cx.in_transaction)
+            with self.check_stmt_trace(cx, expected):
+                cx.execute("SELECT 1")
+                cx.commit()  # expect this to pass silently
 
 
 if __name__ == "__main__":
