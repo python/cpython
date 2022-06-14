@@ -1,6 +1,6 @@
 import faulthandler
 import json
-import os
+import os.path
 import queue
 import shlex
 import signal
@@ -17,7 +17,8 @@ from test.support import os_helper
 from test.libregrtest.cmdline import Namespace
 from test.libregrtest.main import Regrtest
 from test.libregrtest.runtest import (
-    runtest, is_failed, TestResult, Interrupted, Timeout, ChildError, PROGRESS_MIN_TIME)
+    runtest, is_failed, TestResult, Interrupted, Timeout, ChildError,
+    PROGRESS_MIN_TIME, Passed, EnvChanged)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import format_duration, print_warning
 
@@ -52,7 +53,7 @@ def parse_worker_args(worker_args) -> tuple[Namespace, str]:
     return (ns, test_name)
 
 
-def run_test_in_subprocess(testname: str, ns: Namespace) -> subprocess.Popen:
+def run_test_in_subprocess(testname: str, ns: Namespace, tmp_dir: str) -> subprocess.Popen:
     ns_dict = vars(ns)
     worker_args = (ns_dict, testname)
     worker_args = json.dumps(worker_args)
@@ -66,10 +67,14 @@ def run_test_in_subprocess(testname: str, ns: Namespace) -> subprocess.Popen:
            '-m', 'test.regrtest',
            '--worker-args', worker_args]
 
+    env = dict(os.environ)
+    env['TMPDIR'] = tmp_dir
+    env['TEMPDIR'] = tmp_dir
+
     # Running the child from the same working directory as regrtest's original
     # invocation ensures that TEMPDIR for the child is the same when
     # sysconfig.is_python_build() is true. See issue 15300.
-    kw = {}
+    kw = {'env': env}
     if USE_PROCESS_GROUP:
         kw['start_new_session'] = True
     return subprocess.Popen(cmd,
@@ -206,12 +211,12 @@ class TestWorkerProcess(threading.Thread):
         test_result.duration_sec = time.monotonic() - self.start_time
         return MultiprocessResult(test_result, stdout, err_msg)
 
-    def _run_process(self, test_name: str) -> tuple[int, str, str]:
+    def _run_process(self, test_name: str, tmp_dir: str) -> tuple[int, str, str]:
         self.start_time = time.monotonic()
 
         self.current_test_name = test_name
         try:
-            popen = run_test_in_subprocess(test_name, self.ns)
+            popen = run_test_in_subprocess(test_name, self.ns, tmp_dir)
 
             self._killed = False
             self._popen = popen
@@ -266,7 +271,17 @@ class TestWorkerProcess(threading.Thread):
             self.current_test_name = None
 
     def _runtest(self, test_name: str) -> MultiprocessResult:
-        retcode, stdout = self._run_process(test_name)
+        # gh-93353: Check for leaked temporary files in the parent process,
+        # since the deletion of temporary files can happen late during
+        # Python finalization: too late for libregrtest.
+        tmp_dir = os.getcwd() + '_tmpdir'
+        tmp_dir = os.path.abspath(tmp_dir)
+        try:
+            os.mkdir(tmp_dir)
+            retcode, stdout = self._run_process(test_name, tmp_dir)
+        finally:
+            tmp_files = os.listdir(tmp_dir)
+            os_helper.rmtree(tmp_dir)
 
         if retcode is None:
             return self.mp_result_error(Timeout(test_name), stdout)
@@ -288,6 +303,14 @@ class TestWorkerProcess(threading.Thread):
 
         if err_msg is not None:
             return self.mp_result_error(ChildError(test_name), stdout, err_msg)
+
+        if tmp_files:
+            msg = (f'\n\n'
+                   f'Warning -- Test leaked temporary files ({len(tmp_files)}): '
+                   f'{", ".join(sorted(tmp_files))}')
+            stdout += msg
+            if isinstance(result, Passed):
+                result = EnvChanged.from_passed(result)
 
         return MultiprocessResult(result, stdout, err_msg)
 
