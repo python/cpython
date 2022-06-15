@@ -889,7 +889,7 @@ compiler_use_next_block(struct compiler *c, basicblock *block)
 }
 
 static basicblock *
-new_basicblock_after(basicblock *prev)
+basicblock_new_b_list_successor(basicblock *prev)
 {
     basicblock *result = new_basicblock();
     if (result == NULL) {
@@ -907,7 +907,7 @@ copy_basicblock(basicblock *block)
      * a block can only have one fallthrough predecessor.
      */
     assert(BB_NO_FALLTHROUGH(block));
-    basicblock *result = new_basicblock_after(block);
+    basicblock *result = basicblock_new_b_list_successor(block);
     if (result == NULL) {
         return NULL;
     }
@@ -1360,7 +1360,7 @@ compiler_add_o(PyObject *dict, PyObject *o)
 static PyObject*
 merge_consts_recursive(PyObject *const_cache, PyObject *o)
 {
-    PyDict_CheckExact(const_cache);
+    assert(PyDict_CheckExact(const_cache));
     // None and Ellipsis are singleton, and key is the singleton.
     // No need to merge object and key.
     if (o == Py_None || o == Py_Ellipsis) {
@@ -7407,7 +7407,7 @@ push_cold_blocks_to_end(basicblock *entry, int code_flags) {
     /* an explicit jump instead of fallthrough */
     for (basicblock *b = entry; b != NULL; b = b->b_next) {
         if (b->b_cold && BB_HAS_FALLTHROUGH(b) && b->b_next && b->b_next->b_warm) {
-            basicblock *explicit_jump = new_basicblock_after(b);
+            basicblock *explicit_jump = basicblock_new_b_list_successor(b);
             if (explicit_jump == NULL) {
                 return -1;
             }
