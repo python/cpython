@@ -1053,7 +1053,9 @@ pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
 
     // Commit if needed
     sqlite3 *db = self->connection->db;
-    if (!sqlite3_get_autocommit(db) && self->connection->autocommit == AUTOCOMMIT_COMPAT) {
+    if (self->connection->autocommit == AUTOCOMMIT_COMPAT
+        && !sqlite3_get_autocommit(db))
+    {
         int rc = SQLITE_OK;
 
         Py_BEGIN_ALLOW_THREADS

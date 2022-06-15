@@ -328,8 +328,10 @@ class IsolationLevelPostInit(unittest.TestCase):
         self.assertEqual(self.traced, [self.QUERY])
 
 
-class AutocommitPEP249(unittest.TestCase):
+class AutocommitAttribute(unittest.TestCase):
     """Test PEP-249 compliant autocommit behaviour."""
+    compat = sqlite.DEPRECATED_TRANSACTION_CONTROL
+
     @contextmanager
     def check_stmt_trace(self, cx, expected, reset=True):
         try:
@@ -432,7 +434,7 @@ class AutocommitPEP249(unittest.TestCase):
                     self.assertFalse(cx.in_transaction)
                 self.assertFalse(cx.in_transaction)
 
-    def test_autocommit_false_ctx_mgr(self):
+    def test_autocommit_disabled_ctx_mgr(self):
         expected = ["COMMIT", "BEGIN"]
         with memory_database(autocommit=False) as cx:
             with self.check_stmt_trace(cx, expected):
@@ -442,14 +444,39 @@ class AutocommitPEP249(unittest.TestCase):
 
     def test_autocommit_compat_ctx_mgr(self):
         expected = ["BEGIN ", "INSERT INTO T VALUES(1)", "COMMIT"]
-        compat = sqlite.DEPRECATED_TRANSACTION_CONTROL
-        with memory_database(autocommit=compat) as cx:
+        with memory_database(autocommit=self.compat) as cx:
             cx.execute("create table t(t)")
             with self.check_stmt_trace(cx, expected):
                 with cx:
                     self.assertFalse(cx.in_transaction)
                     cx.execute("INSERT INTO T VALUES(1)")
                     self.assertTrue(cx.in_transaction)
+                self.assertFalse(cx.in_transaction)
+
+    def test_autocommit_enabled_executescript(self):
+        expected = ["BEGIN", "SELECT 1"]
+        with memory_database(autocommit=True) as cx:
+            with self.check_stmt_trace(cx, expected):
+                self.assertFalse(cx.in_transaction)
+                cx.execute("BEGIN")
+                cx.executescript("SELECT 1")
+                self.assertTrue(cx.in_transaction)
+
+    def test_autocommit_disabled_executescript(self):
+        expected = ["SELECT 1"]
+        with memory_database(autocommit=False) as cx:
+            with self.check_stmt_trace(cx, expected):
+                self.assertTrue(cx.in_transaction)
+                cx.executescript("SELECT 1")
+                self.assertTrue(cx.in_transaction)
+
+    def test_autocommit_compat_executescript(self):
+        expected = ["BEGIN", "COMMIT", "SELECT 1"]
+        with memory_database(autocommit=self.compat) as cx:
+            with self.check_stmt_trace(cx, expected):
+                self.assertFalse(cx.in_transaction)
+                cx.execute("BEGIN")
+                cx.executescript("SELECT 1")
                 self.assertFalse(cx.in_transaction)
 
 
