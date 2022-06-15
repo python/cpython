@@ -60,7 +60,7 @@ standard.  However, mailcap files are supported on most Unix systems.
    use) to determine whether or not the mailcap line applies.  :func:`findmatch`
    will automatically check such conditions and skip the entry if the check fails.
 
-   .. versionchanged:: 3.11
+   .. versionchanged:: 3.10.6
 
       To prevent security issues with shell metacharacters (symbols that have
       special effects in a shell command line), ``findmatch`` will refuse
