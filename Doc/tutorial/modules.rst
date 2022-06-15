@@ -47,9 +47,9 @@ command::
 
    >>> import fibo
 
-This does not enter the names of the functions defined in ``fibo``  directly in
+This does not add the names of the functions defined in ``fibo``  directly to
 the current :term:`namespace` (see :ref:`tut-scopes` for more details);
-it only enters the module name ``fibo`` there. Using
+it only adds the module name ``fibo`` there. Using
 the module name you can access the functions::
 
    >>> fibo.fib(1000)
@@ -581,5 +581,5 @@ modules found in a package.
 .. rubric:: Footnotes
 
 .. [#] In fact function definitions are also 'statements' that are 'executed'; the
-   execution of a module-level function definition enters the function name in
+   execution of a module-level function definition adds the function name to
    the module's global namespace.
