@@ -374,7 +374,7 @@ Emscripten SDK provides static builds of core libraries without PIC
 (position-independent code). Python builds with ``dlopen`` support require
 PIC. To populate the build cache, run:
 
-```
+```shell
 . /opt/emsdk/emsdk_env.sh
 embuilder build --force zlib bzip2
 embuilder build --force --pic \
@@ -413,9 +413,6 @@ ln -srf -t /usr/local/bin/ ~/.wasmtime/bin/wasmtime
 ### Install [WASIX](https://github.com/singlestore-labs/wasix)
 
 ```shell
-git clone https://github.com/singlestore-labs/wasix.git ~/wasix
-make -C ~/wasix
-mkdir -p /opt/wasix/include /opt/wasix/lib
-cp -R ~/wasix/include/* /opt/wasix/include/
-cp ~/wasix/libwasix.a /opt/wasix/lib/
+git clone -b cpython https://github.com/tiran/wasix.git ~/wasix
+make install -C ~/wasix
 ```
