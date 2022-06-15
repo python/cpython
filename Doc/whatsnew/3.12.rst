@@ -126,6 +126,9 @@ CPython bytecode changes
 Deprecated
 ==========
 
+* The :attr:`sqlite3.Connection.isolation_level` parameter is deprecated.
+  Please use the new :attr:`sqlite3.Connection.autocommit` parameter instead.
+
 
 Pending Removal in Python 3.13
 ==============================

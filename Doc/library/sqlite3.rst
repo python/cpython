@@ -264,7 +264,7 @@ Module functions and constants
    For the *autocommit* parameter, please see the
    :attr:`~Connection.autocommit` property. *autocommit* currently defaults to
    :data:`~Connection.DEPRECATED_TRANSACTION_CONTROL`.
-   The default will change to :const:`False` in a future Python release.
+   The default will change to :const:`False` in Python 3.14.
 
    SQLite natively supports only the types TEXT, INTEGER, REAL, BLOB and NULL. If
    you want to use other types you must add support for them yourself. The
@@ -331,6 +331,7 @@ Module functions and constants
 
    .. versionchanged:: 3.12
       Added the *autocommit* parameter.
+      Deprecated the *isolation_level* parameter.
 
 
 .. function:: register_converter(typename, callable)
@@ -408,8 +409,7 @@ Connection Objects
         implying that a transaction is always open.
         Use :meth:`commit` and :meth:`rollback` to close transactions.
         Closing a transaction immediately opens a new one.
-        This will be the default value of *autocommit* in a future Python
-        release.
+        This will be the default value of *autocommit* in Python 3.14.
 
       * :const:`True`: Use SQLite's autocommit behaviour.
         You are also free to :meth:`execute` custom transaction statements.
@@ -1412,7 +1412,7 @@ which means transaction control is selected using the
 :attr:`~Connection.isolation_level` property.
 See :ref:`sqlite3-deprecated-transaction-control` for more information.
 
-In a future Python release, *autocommit* will default to :const:`False`,
+Starting with Python 3.14, *autocommit* will default to :const:`False`,
 which will imply :pep:`249` compliant transaction control. This means:
 
 * A transaction is always open.
