@@ -2041,7 +2041,7 @@ order (MRO) for bases """
         def return_true(self, thing=None):
             return True
         def do_isinstance(obj):
-            return isinstance(int, obj)
+            return isinstance(obj, int)
         def do_issubclass(obj):
             return issubclass(int, obj)
         def do_dict_missing(checker):
