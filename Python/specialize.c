@@ -211,6 +211,12 @@ print_stats(FILE *out, PyStats *stats) {
 }
 
 void
+_Py_StatsClear(void)
+{
+    _Py_stat_struct = { 0 };
+}
+
+void
 _Py_PrintSpecializationStats(int to_file)
 {
     FILE *out = stderr;

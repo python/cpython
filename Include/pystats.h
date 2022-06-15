@@ -77,6 +77,7 @@ typedef struct _stats {
 PyAPI_DATA(PyStats) _py_stats_struct;
 PyAPI_DATA(PyStats *) _py_stats;
 
+extern void _Py_StatsClear(void);
 extern void _Py_PrintSpecializationStats(int to_file);
 
 #ifdef _PY_INTERPRETER
