@@ -109,10 +109,12 @@ def run_briefly(loop):
 
 
 def run_until(loop, pred, timeout=support.SHORT_TIMEOUT):
+    delay = 0.001
     for _ in support.busy_retry(timeout, error=False):
         if pred():
             break
-        loop.run_until_complete(tasks.sleep(0.001))
+        loop.run_until_complete(tasks.sleep(delay))
+        delay = max(delay * 2, 1.0)
     else:
         raise futures.TimeoutError()
 
