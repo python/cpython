@@ -971,7 +971,7 @@ PyDoc_STRVAR(sys__stats_on__doc__,
 "_stats_on($module, /)\n"
 "--\n"
 "\n"
-"Turns on stats gathering (stats gathering is on by default)");
+"Turns on stats gathering (stats gathering is on by default).");
 
 #define SYS__STATS_ON_METHODDEF    \
     {"_stats_on", (PyCFunction)sys__stats_on, METH_NOARGS, sys__stats_on__doc__},
@@ -993,7 +993,7 @@ PyDoc_STRVAR(sys__stats_off__doc__,
 "_stats_off($module, /)\n"
 "--\n"
 "\n"
-"Turns off stats gathering (stats gathering is on by default)");
+"Turns off stats gathering (stats gathering is on by default).");
 
 #define SYS__STATS_OFF_METHODDEF    \
     {"_stats_off", (PyCFunction)sys__stats_off, METH_NOARGS, sys__stats_off__doc__},
@@ -1015,7 +1015,7 @@ PyDoc_STRVAR(sys__stats_clear__doc__,
 "_stats_clear($module, /)\n"
 "--\n"
 "\n"
-"Clears stats");
+"Clears the stats.");
 
 #define SYS__STATS_CLEAR_METHODDEF    \
     {"_stats_clear", (PyCFunction)sys__stats_clear, METH_NOARGS, sys__stats_clear__doc__},
@@ -1037,7 +1037,7 @@ PyDoc_STRVAR(sys__stats_dump__doc__,
 "_stats_dump($module, /)\n"
 "--\n"
 "\n"
-"Dump stats to file, and clear current stats.");
+"Dump stats to file, and clears the stats.");
 
 #define SYS__STATS_DUMP_METHODDEF    \
     {"_stats_dump", (PyCFunction)sys__stats_dump, METH_NOARGS, sys__stats_dump__doc__},
@@ -1118,4 +1118,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=90fd2f93225ab5ee input=a9049054013a1b77]*/
+/*[clinic end generated code: output=41122dae1bb7158c input=a9049054013a1b77]*/

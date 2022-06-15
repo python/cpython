@@ -1913,12 +1913,12 @@ sys_is_finalizing_impl(PyObject *module)
 /*[clinic input]
 sys._stats_on
 
-Turns on stats gathering (stats gathering is on by default)
+Turns on stats gathering (stats gathering is on by default).
 [clinic start generated code]*/
 
 static PyObject *
 sys__stats_on_impl(PyObject *module)
-/*[clinic end generated code: output=aca53eafcbb4d9fe input=f4bef5763c4387b8]*/
+/*[clinic end generated code: output=aca53eafcbb4d9fe input=8ddc6df94e484f3a]*/
 {
     _py_stats = &_py_stats_struct;
     Py_RETURN_NONE;
@@ -1927,12 +1927,12 @@ sys__stats_on_impl(PyObject *module)
 /*[clinic input]
 sys._stats_off
 
-Turns off stats gathering (stats gathering is on by default)
+Turns off stats gathering (stats gathering is on by default).
 [clinic start generated code]*/
 
 static PyObject *
 sys__stats_off_impl(PyObject *module)
-/*[clinic end generated code: output=1534c1ee63812214 input=ec6e593e39b12b4a]*/
+/*[clinic end generated code: output=1534c1ee63812214 input=b3e50e71ecf29f66]*/
 {
     _py_stats = NULL;
     Py_RETURN_NONE;
@@ -1941,12 +1941,12 @@ sys__stats_off_impl(PyObject *module)
 /*[clinic input]
 sys._stats_clear
 
-Clears stats
+Clears the stats.
 [clinic start generated code]*/
 
 static PyObject *
 sys__stats_clear_impl(PyObject *module)
-/*[clinic end generated code: output=fb65a2525ee50604 input=0bd23b30a48f67ab]*/
+/*[clinic end generated code: output=fb65a2525ee50604 input=3e03f2654f44da96]*/
 {
     _Py_StatsClear();
     Py_RETURN_NONE;
@@ -1955,12 +1955,12 @@ sys__stats_clear_impl(PyObject *module)
 /*[clinic input]
 sys._stats_dump
 
-Dump stats to file, and clear current stats.
+Dump stats to file, and clears the stats.
 [clinic start generated code]*/
 
 static PyObject *
 sys__stats_dump_impl(PyObject *module)
-/*[clinic end generated code: output=79f796fb2b4ddf05 input=b2e51dae2fe969b1]*/
+/*[clinic end generated code: output=79f796fb2b4ddf05 input=92346f16d64f6f95]*/
 {
     _Py_PrintSpecializationStats(1);
     _Py_StatsClear();
