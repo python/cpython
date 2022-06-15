@@ -333,7 +333,7 @@ Pure paths provide the following methods and properties:
 
       *"A pathname that begins with two successive slashes may be interpreted in
       an implementation-defined manner, although more than two leading slashes
-      shall be treated as a single slash."* 
+      shall be treated as a single slash."*
 
 .. data:: PurePath.anchor
 

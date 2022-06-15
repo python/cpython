@@ -513,7 +513,7 @@ key features:
     Popular scientific modules (such as numpy, scipy and pandas) and the
     ``conda`` package manager.
 
-`Enthought Deployment Manager <https://www.enthought.com/edm/>`_ 
+`Enthought Deployment Manager <https://www.enthought.com/edm/>`_
     "The Next Generation Python Environment and Package Manager".
 
     Previously Enthought provided Canopy, but it `reached end of life in 2016
