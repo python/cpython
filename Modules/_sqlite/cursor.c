@@ -870,9 +870,9 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
     /* We start a transaction implicitly before a DML statement.
        SELECT is the only exception. See #9924. */
-    if (self->connection->isolation_level
+    if (self->connection->autocommit == AUTOCOMMIT_COMPAT
+        && self->connection->isolation_level
         && self->statement->is_dml
-        && self->connection->autocommit == AUTOCOMMIT_COMPAT
         && sqlite3_get_autocommit(self->connection->db))
     {
         if (begin_transaction(self->connection) < 0) {
