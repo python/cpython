@@ -5614,13 +5614,14 @@ miss:
         opcode = _PyOpcode_Deopt[opcode];
         STAT_INC(opcode, miss);
         /* The counter is always the first cache entry: */
-        DECREMENT_ADAPTIVE_COUNTER_CODE(next_instr);
-        if (ADAPTIVE_COUNTER_CODE_IS_ZERO(next_instr)) {
+        _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr;
+        DECREMENT_ADAPTIVE_COUNTER_CODE(counter);
+        if (ADAPTIVE_COUNTER_CODE_IS_ZERO(counter)) {
             int adaptive_opcode = _PyOpcode_Adaptive[opcode];
             assert(adaptive_opcode);
             _Py_SET_OPCODE(next_instr[-1], adaptive_opcode);
             STAT_INC(opcode, deopt);
-            *next_instr = adaptive_counter_start();
+            *counter = adaptive_counter_start();
         }
         next_instr--;
         DISPATCH_GOTO();
