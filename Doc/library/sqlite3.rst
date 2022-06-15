@@ -326,9 +326,9 @@ Module functions and constants
    float, str or bytes.
 
 
-.. function:: complete_statement(sql)
+.. function:: complete_statement(statement)
 
-   Returns :const:`True` if the string *sql* contains one or more complete SQL
+   Returns :const:`True` if the string *statement* contains one or more complete SQL
    statements terminated by semicolons. It does not verify that the SQL is
    syntactically correct, only that there are no unclosed string literals and the
    statement is terminated by a semicolon.
@@ -447,11 +447,11 @@ Connection Objects
       :meth:`~Cursor.executescript` on it with the given *sql_script*.
       Return the new cursor object.
 
-   .. method:: create_function(name, num_params, func, *, deterministic=False)
+   .. method:: create_function(name, narg, func, *, deterministic=False)
 
       Creates a user-defined function that you can later use from within SQL
-      statements under the function name *name*. *num_params* is the number of
-      parameters the function accepts (if *num_params* is -1, the function may
+      statements under the function name *name*. *narg* is the number of
+      parameters the function accepts (if *narg* is -1, the function may
       take any number of arguments), and *func* is a Python callable that is
       called as the SQL function. If *deterministic* is true, the created function
       is marked as `deterministic <https://sqlite.org/deterministic.html>`_, which
@@ -470,12 +470,12 @@ Connection Objects
       .. literalinclude:: ../includes/sqlite3/md5func.py
 
 
-   .. method:: create_aggregate(name, num_params, aggregate_class)
+   .. method:: create_aggregate(name, n_arg, aggregate_class)
 
       Creates a user-defined aggregate function.
 
       The aggregate class must implement a ``step`` method, which accepts the number
-      of parameters *num_params* (if *num_params* is -1, the function may take
+      of parameters *n_arg* (if *n_arg* is -1, the function may take
       any number of arguments), and a ``finalize`` method which will return the
       final result of the aggregate.
 
@@ -570,7 +570,7 @@ Connection Objects
          Added support for disabling the authorizer using :const:`None`.
 
 
-   .. method:: set_progress_handler(handler, n)
+   .. method:: set_progress_handler(progress_handler, n)
 
       This routine registers a callback. The callback is invoked for every *n*
       instructions of the SQLite virtual machine. This is useful if you want to
@@ -578,7 +578,7 @@ Connection Objects
       a GUI.
 
       If you want to clear any previously installed progress handler, call the
-      method with :const:`None` for *handler*.
+      method with :const:`None` for *progress_handler*.
 
       Returning a non-zero value from the handler function will terminate the
       currently executing query and cause it to raise an :exc:`OperationalError`
