@@ -6,6 +6,12 @@
 
 #include "Python.h"
 
+#if __cplusplus >= 201103
+#  define NAME _testcpp11ext
+#else
+#  define NAME _testcpp03ext
+#endif
+
 PyDoc_STRVAR(_testcppext_add_doc,
 "add(x, y)\n"
 "\n"
@@ -16,7 +22,7 @@ _testcppext_add(PyObject *Py_UNUSED(module), PyObject *args)
 {
     long i, j;
     if (!PyArg_ParseTuple(args, "ll:foo", &i, &j)) {
-        return nullptr;
+        return _Py_NULL;
     }
     long res = i + j;
     return PyLong_FromLong(res);
@@ -47,8 +53,8 @@ static PyObject *
 test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
     PyObject *obj = Py_BuildValue("(ii)", 1, 2);
-    if (obj == nullptr) {
-        return nullptr;
+    if (obj == _Py_NULL) {
+        return _Py_NULL;
     }
     Py_ssize_t refcnt = Py_REFCNT(obj);
     assert(refcnt >= 1);
@@ -77,9 +83,11 @@ test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     // gh-93442: Pass 0 as NULL for PyObject*
     Py_XINCREF(0);
     Py_XDECREF(0);
-    // ensure that nullptr works too
+#if _cplusplus >= 201103
+    // Test nullptr passed as PyObject*
     Py_XINCREF(nullptr);
     Py_XDECREF(nullptr);
+#endif
 
     Py_DECREF(obj);
     Py_RETURN_NONE;
@@ -90,8 +98,8 @@ static PyObject *
 test_unicode(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
     PyObject *str = PyUnicode_FromString("abc");
-    if (str == nullptr) {
-        return nullptr;
+    if (str == _Py_NULL) {
+        return _Py_NULL;
     }
 
     assert(PyUnicode_Check(str));
@@ -99,7 +107,7 @@ test_unicode(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 
     // gh-92800: test PyUnicode_READ()
     const void* data = PyUnicode_DATA(str);
-    assert(data != nullptr);
+    assert(data != _Py_NULL);
     int kind = PyUnicode_KIND(str);
     assert(kind == PyUnicode_1BYTE_KIND);
     assert(PyUnicode_READ(kind, data, 0) == 'a');
@@ -118,9 +126,9 @@ test_unicode(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 
 static PyMethodDef _testcppext_methods[] = {
     {"add", _testcppext_add, METH_VARARGS, _testcppext_add_doc},
-    {"test_api_casts", test_api_casts, METH_NOARGS, nullptr},
-    {"test_unicode", test_unicode, METH_NOARGS, nullptr},
-    {nullptr, nullptr, 0, nullptr}  /* sentinel */
+    {"test_api_casts", test_api_casts, METH_NOARGS, _Py_NULL},
+    {"test_unicode", test_unicode, METH_NOARGS, _Py_NULL},
+    {_Py_NULL, _Py_NULL, 0, _Py_NULL}  /* sentinel */
 };
 
 
@@ -135,26 +143,32 @@ _testcppext_exec(PyObject *module)
 
 static PyModuleDef_Slot _testcppext_slots[] = {
     {Py_mod_exec, reinterpret_cast<void*>(_testcppext_exec)},
-    {0, nullptr}
+    {0, _Py_NULL}
 };
 
 
 PyDoc_STRVAR(_testcppext_doc, "C++ test extension.");
 
+#define _STR(NAME) #NAME
+#define STR(NAME) _STR(NAME)
+
 static struct PyModuleDef _testcppext_module = {
     PyModuleDef_HEAD_INIT,  // m_base
-    "_testcppext",  // m_name
+    STR(NAME),  // m_name
     _testcppext_doc,  // m_doc
     0,  // m_size
     _testcppext_methods,  // m_methods
     _testcppext_slots,  // m_slots
-    nullptr,  // m_traverse
-    nullptr,  // m_clear
-    nullptr,  // m_free
+    _Py_NULL,  // m_traverse
+    _Py_NULL,  // m_clear
+    _Py_NULL,  // m_free
 };
 
+#define _FUNC_NAME(NAME) PyInit_ ## NAME
+#define FUNC_NAME(NAME) _FUNC_NAME(NAME)
+
 PyMODINIT_FUNC
-PyInit__testcppext(void)
+FUNC_NAME(NAME)(void)
 {
     return PyModuleDef_Init(&_testcppext_module);
 }

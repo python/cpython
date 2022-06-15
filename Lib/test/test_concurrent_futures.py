@@ -256,12 +256,12 @@ class FailingInitializerMixin(ExecutorMixin):
             else:
                 with self.assertRaises(BrokenExecutor):
                     future.result()
+
             # At some point, the executor should break
-            t1 = time.monotonic()
-            while not self.executor._broken:
-                if time.monotonic() - t1 > 5:
-                    self.fail("executor not broken after 5 s.")
-                time.sleep(0.01)
+            for _ in support.sleeping_retry(5, "executor not broken"):
+                if self.executor._broken:
+                    break
+
             # ... and from this point submit() is guaranteed to fail
             with self.assertRaises(BrokenExecutor):
                 self.executor.submit(get_init_status)

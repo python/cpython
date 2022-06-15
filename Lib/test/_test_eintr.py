@@ -403,11 +403,9 @@ class SignalEINTRTest(EINTRBaseTest):
         old_mask = signal.pthread_sigmask(signal.SIG_BLOCK, [signum])
         self.addCleanup(signal.pthread_sigmask, signal.SIG_UNBLOCK, [signum])
 
-        t0 = time.monotonic()
         proc = self.subprocess(code)
         with kill_on_error(proc):
             wait_func(signum)
-            dt = time.monotonic() - t0
 
         self.assertEqual(proc.wait(), 0)
 
@@ -497,16 +495,18 @@ class FNTLEINTRTest(EINTRBaseTest):
         proc = self.subprocess(code)
         with kill_on_error(proc):
             with open(os_helper.TESTFN, 'wb') as f:
-                while True:  # synchronize the subprocess
-                    dt = time.monotonic() - start_time
-                    if dt > 60.0:
-                        raise Exception("failed to sync child in %.1f sec" % dt)
+                # synchronize the subprocess
+                start_time = time.monotonic()
+                for _ in support.sleeping_retry(60.0, error=False):
                     try:
                         lock_func(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
                         lock_func(f, fcntl.LOCK_UN)
-                        time.sleep(0.01)
                     except BlockingIOError:
                         break
+                else:
+                    dt = time.monotonic() - start_time
+                    raise Exception("failed to sync child in %.1f sec" % dt)
+
                 # the child locked the file just a moment ago for 'sleep_time' seconds
                 # that means that the lock below will block for 'sleep_time' minus some
                 # potential context switch delay

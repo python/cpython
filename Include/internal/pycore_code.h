@@ -58,10 +58,6 @@ typedef struct {
     _Py_CODEUNIT index;
 } _PyAttrCache;
 
-#define INLINE_CACHE_ENTRIES_LOAD_ATTR CACHE_ENTRIES(_PyAttrCache)
-
-#define INLINE_CACHE_ENTRIES_STORE_ATTR CACHE_ENTRIES(_PyAttrCache)
-
 typedef struct {
     _Py_CODEUNIT counter;
     _Py_CODEUNIT type_version[2];
@@ -69,7 +65,11 @@ typedef struct {
     _Py_CODEUNIT descr[4];
 } _PyLoadMethodCache;
 
-#define INLINE_CACHE_ENTRIES_LOAD_METHOD CACHE_ENTRIES(_PyLoadMethodCache)
+
+// MUST be the max(_PyAttrCache, _PyLoadMethodCache)
+#define INLINE_CACHE_ENTRIES_LOAD_ATTR CACHE_ENTRIES(_PyLoadMethodCache)
+
+#define INLINE_CACHE_ENTRIES_STORE_ATTR CACHE_ENTRIES(_PyAttrCache)
 
 typedef struct {
     _Py_CODEUNIT counter;
@@ -233,8 +233,6 @@ extern int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
 extern int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr,
                                     PyObject *name);
 extern int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name);
-extern int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr,
-                                     PyObject *name);
 extern int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
 extern int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr);
 extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
