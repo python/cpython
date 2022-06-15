@@ -40,14 +40,14 @@ class LinkAnalyzer(HTMLParser):
         self.referers = set()
 
     @staticmethod
-    def _get_attribute(attribute_name: str, container: list[tuple[str, str]]):
+    def _get_tag_attr(attribute_name: str, container: list[tuple[str, str]]):
         return (value for name, value in container if name == attribute_name)
 
     def handle_starttag(self, tag, attrs):
         if tag == 'a':
-            self.referers.update(self._get_attribute('href', attrs))
-            self.targets.update(self._get_attribute('name', attrs))
-        self.targets.update(self._get_attribute('id', attrs))
+            self.referers.update(self._get_tag_attr('href', attrs))
+            self.targets.update(self._get_tag_attr('name', attrs))
+        self.targets.update(self._get_tag_attr('id', attrs))
 
 
 class _NoRedirectHandler(HTTPRedirectHandler):
@@ -56,6 +56,8 @@ class _NoRedirectHandler(HTTPRedirectHandler):
         raise HTTPError(req.full_url, code, msg, headers, fp)
 
 
+# Sites love to return HTTP 403 Forbidden to unknown user agents (crawlers,
+# rare browsers, etc.) so we have no choise but to pretend to be Chrome.
 UA = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, ' +
       'like Gecko) Chrome/102.0.5005.63 Safari/537.36')
 
@@ -73,11 +75,7 @@ def get_link_targets_and_referers(url: str, allow_redirects: bool):
       - a tuple of targets (hyperlink lannding points) and referers (links).
     """
     try:
-        # Sites love to return HTTP 403 Forbidden to unknown user agents
-        # (crawlers, rare browsers, etc.) so we have no choise but to pretend
-        # to be Chrome.
         request = Request(url, headers={'User-Agent': UA})
-
         opener = build_opener(
             HTTPRedirectHandler if allow_redirects else _NoRedirectHandler,
         )
