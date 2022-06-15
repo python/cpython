@@ -1350,16 +1350,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config['_is_python_build'] = 1
         exedir = os.path.dirname(sys.executable)
         with open(os.path.join(exedir, 'pybuilddir.txt'), encoding='utf8') as f:
-            platstdlib = os.path.normpath(os.path.join(exedir,
-                                          f'{f.read()}\n$'.splitlines()[0]))
-        if MS_WINDOWS:
-            expected_paths[2] = platstdlib
-        else:
+            expected_paths[2] = os.path.normpath(
+                os.path.join(exedir, f'{f.read()}\n$'.splitlines()[0]))
+        if not MS_WINDOWS:
             # PREFIX (default) is set when running in build directory
             prefix = exec_prefix = sys.prefix
             # stdlib calculation (/Lib) is not yet supported
             expected_paths[0] = self.module_search_paths(prefix=prefix)[0]
-            expected_paths[2] = platstdlib
             config.update(prefix=prefix, base_prefix=prefix,
                           exec_prefix=exec_prefix, base_exec_prefix=exec_prefix)
         self.check_all_configs("test_init_is_python_build", config,
