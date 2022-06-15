@@ -1304,7 +1304,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                api=API_COMPAT, env=env)
 
     def test_init_is_python_build_with_home(self):
-        # Test _Py_path_config._is_python_build field (gh-91985)
+        # Test _Py_path_config._is_python_build configuration (gh-91985)
         config = self._get_expected_config()
         paths = config['config']['module_search_paths']
         paths_str = os.path.pathsep.join(paths)
@@ -1348,24 +1348,20 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         env['NEGATIVE_ISPYTHONBUILD'] = '0'
         config['_is_python_build'] = 1
-
         exedir = os.path.dirname(sys.executable)
         with open(os.path.join(exedir, 'pybuilddir.txt'), encoding='utf8') as f:
-            platstdlib = os.path.join(exedir, f'{f.read()}\n$'.splitlines()[0])
-        platstdlib = os.path.normpath(platstdlib)
-
+            platstdlib = os.path.normpath(os.path.join(exedir,
+                                          f'{f.read()}\n$'.splitlines()[0]))
         if MS_WINDOWS:
-            expected_paths = [paths[0], stdlib, platstdlib]
+            expected_paths[2] = platstdlib
         else:
+            # PREFIX (default) is set when running in build directory
             prefix = exec_prefix = sys.prefix
-            # stdlib calculation (/Lib) is not yet supported.
-            stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
-            expected_paths = [self.module_search_paths(prefix=prefix)[0],
-                              stdlib, platstdlib]
-
-        config.update(module_search_paths=expected_paths,
-                      prefix=prefix, base_prefix=prefix,
-                      exec_prefix=exec_prefix, base_exec_prefix=exec_prefix)
+            # stdlib calculation (/Lib) is not yet supported
+            expected_paths[0] = self.module_search_paths(prefix=prefix)[0]
+            expected_paths[2] = platstdlib
+            config.update(prefix=prefix, base_prefix=prefix,
+                          exec_prefix=exec_prefix, base_exec_prefix=exec_prefix)
         self.check_all_configs("test_init_is_python_build", config,
                                api=API_COMPAT, env=env)
 
