@@ -798,7 +798,7 @@ of applications in statistics.
        Compute the inverse cumulative distribution function, also known as the
        `quantile function <https://en.wikipedia.org/wiki/Quantile_function>`_
        or the `percent-point
-       <https://www.statisticshowto.datasciencecentral.com/inverse-distribution-function/>`_
+       <http://web.archive.org/web/20190203145224/https://www.statisticshowto.datasciencecentral.com/inverse-distribution-function/>`_
        function.  Mathematically, it is written ``x : P(X <= x) = p``.
 
        Finds the value *x* of the random variable *X* such that the
@@ -947,7 +947,7 @@ probability that the Python room will stay within its capacity limits?
 Normal distributions commonly arise in machine learning problems.
 
 Wikipedia has a `nice example of a Naive Bayesian Classifier
-<https://en.wikipedia.org/wiki/Naive_Bayes_classifier#Sex_classification>`_.
+<https://en.wikipedia.org/wiki/Naive_Bayes_classifier#Person_classification>`_.
 The challenge is to predict a person's gender from measurements of normally
 distributed features including height, weight, and foot size.
 

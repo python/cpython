@@ -2603,7 +2603,7 @@ Notes:
        many other calendar systems.
 
 .. [#] See R. H. van Gent's `guide to the mathematics of the ISO 8601 calendar
-       <https://www.staff.science.uu.nl/~gent0113/calendar/isocalendar.htm>`_
+       <http://web.archive.org/web/20220531051136/https://webspace.science.uu.nl/~gent0113/calendar/isocalendar.htm>`_
        for a good explanation.
 
 .. [#] Passing ``datetime.strptime('Feb 29', '%b %d')`` will fail since ``1900`` is not a leap year.

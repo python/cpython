@@ -513,9 +513,11 @@ key features:
     Popular scientific modules (such as numpy, scipy and pandas) and the
     ``conda`` package manager.
 
-`Canopy <https://www.enthought.com/product/canopy/>`_
-    A "comprehensive Python analysis environment" with editors and other
-    development tools.
+`Enthought Deployment Manager <https://www.enthought.com/edm/>`_ 
+    "The Next Generation Python Environment and Package Manager".
+
+    Previously Enthought provided Canopy, but it `reached end of life in 2016
+    <https://support.enthought.com/hc/en-us/articles/360038600051-Canopy-GUI-end-of-life-transition-to-the-Enthought-Deployment-Manager-EDM-and-Visual-Studio-Code>`_.
 
 `WinPython <https://winpython.github.io/>`_
     Windows-specific distribution with prebuilt scientific packages and
@@ -1170,7 +1172,7 @@ Compiling Python on Windows
 If you want to compile CPython yourself, first thing you should do is get the
 `source <https://www.python.org/downloads/source/>`_. You can download either the
 latest release's source or just grab a fresh `checkout
-<https://devguide.python.org/setup/#getting-the-source-code>`_.
+<https://devguide.python.org/setup/#get-the-source-code>`_.
 
 The source tree contains a build solution and project files for Microsoft
 Visual Studio, which is the compiler used to build the official Python

@@ -542,8 +542,11 @@ PEP 241: Metadata in Python Packages
 
 A common complaint from Python users is that there's no single catalog of all
 the Python modules in existence.  T. Middleton's Vaults of Parnassus at
-http://www.vex.net/parnassus/ are the largest catalog of Python modules, but
-registering software at the Vaults is optional, and many people don't bother.
+``www.vex.net/parnassus/`` (retired in February 2009, `available in the
+Internet Archive Wayback Machine
+<http://web.archive.org/web/20090130140102/http://www.vex.net/parnassus/>`_)
+was the largest catalog of Python modules, but
+registering software at the Vaults is optional, and many people did not bother.
 
 As a first small step toward fixing the problem, Python software packaged using
 the Distutils :command:`sdist` command will include a file named

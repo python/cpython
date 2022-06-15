@@ -1,10 +1,6 @@
 {% extends "layout.html" %}
 {% set title = 'Download' %}
-{% if daily is defined %}
-  {% set dlbase = pathto('archives', 1) %}
-{% else %}
-  {% set dlbase = 'https://docs.python.org/ftp/python/doc/' + release %}
-{% endif %}
+{% set dlbase = pathto('archives', 1) %}
 
 {% block body %}
 <h1>Download Python {{ release }} Documentation</h1>

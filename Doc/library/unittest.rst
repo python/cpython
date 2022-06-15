@@ -64,10 +64,6 @@ test runner
       An extensive list of Python testing tools including functional testing
       frameworks and mock object libraries.
 
-   `Testing in Python Mailing List <http://lists.idyll.org/listinfo/testing-in-python>`_
-      A special-interest-group for discussion of testing, and testing tools,
-      in Python.
-
    The script :file:`Tools/unittestgui/unittestgui.py` in the Python source distribution is
    a GUI tool for test discovery and execution.  This is intended largely for ease of use
    for those new to unit testing.  For production environments it is
