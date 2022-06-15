@@ -331,14 +331,15 @@ class IsolationLevelPostInit(unittest.TestCase):
 class AutocommitPEP249(unittest.TestCase):
     """Test PEP-249 compliant autocommit behaviour."""
     @contextmanager
-    def check_stmt_trace(self, cx, expected):
+    def check_stmt_trace(self, cx, expected, reset=True):
         try:
             traced = []
             cx.set_trace_callback(lambda stmt: traced.append(stmt))
             yield
         finally:
             self.assertEqual(traced, expected)
-            cx.set_trace_callback(None)
+            if reset:
+                cx.set_trace_callback(None)
 
     def test_autocommit_default(self):
         with memory_database() as cx:
@@ -384,12 +385,10 @@ class AutocommitPEP249(unittest.TestCase):
 
     def test_autocommit_disabled_implicit_rollback(self):
         expected = ["ROLLBACK"]
-        actual = []
         with memory_database(autocommit=False) as cx:
             self.assertTrue(cx.in_transaction)
-            cx.set_trace_callback(lambda stmt: actual.append(stmt))
-            cx.close()
-            self.assertEqual(actual, expected)
+            with self.check_stmt_trace(cx, expected, reset=False):
+                cx.close()
 
     def test_autocommit_enabled(self):
         expected = ["SELECT 1"]
