@@ -76,8 +76,7 @@ def capture_server(evt, buf, serv):
         pass
     else:
         n = 200
-        start = time.monotonic()
-        while n > 0 and time.monotonic() - start < 3.0:
+        for _ in support.busy_retry(3.0, error=False):
             r, w, e = select.select([conn], [], [], 0.1)
             if r:
                 n -= 1
@@ -86,6 +85,8 @@ def capture_server(evt, buf, serv):
                 buf.write(data.replace(b'\n', b''))
                 if b'\n' in data:
                     break
+            if n <= 0:
+                break
             time.sleep(0.01)
 
         conn.close()
