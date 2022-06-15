@@ -434,8 +434,8 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
         location = response.getheader('Location')
         self.assertFalse(location.startswith('//'), msg=location)
-        self.assertEqual(location, attack_url[1:] + '/',
-                msg='Expected Location: to start with a single / and '
+        self.assertEqual(location, f'/{attack_url.lstrip("/")}/',
+                msg='Expected Location header to start with a single / and '
                 'end with a / as this is a directory redirect.')
 
     def test_get(self):
