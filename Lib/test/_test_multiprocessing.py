@@ -124,6 +124,8 @@ else:
 # BaseManager.shutdown_timeout
 SHUTDOWN_TIMEOUT = support.SHORT_TIMEOUT
 
+WAIT_ACTIVE_CHILDREN_TIMEOUT = 5.0
+
 HAVE_GETVALUE = not getattr(_multiprocessing,
                             'HAVE_BROKEN_SEM_GETVALUE', False)
 
@@ -5569,8 +5571,9 @@ class TestSyncManagerTypes(unittest.TestCase):
         # if there are other children too (see #17395).
         join_process(self.proc)
 
+        timeout = WAIT_ACTIVE_CHILDREN_TIMEOUT
         start_time = time.monotonic()
-        for _ in support.sleeping_retry(5.0, error=False):
+        for _ in support.sleeping_retry(timeout, error=False):
             if len(multiprocessing.active_children()) <= 1:
                 break
         else:
@@ -5875,8 +5878,9 @@ class ManagerMixin(BaseMixin):
         # only the manager process should be returned by active_children()
         # but this can take a bit on slow machines, so wait a few seconds
         # if there are other children too (see #17395)
+        timeout = WAIT_ACTIVE_CHILDREN_TIMEOUT
         start_time = time.monotonic()
-        for _ in support.sleeping_retry(5.0, error=False):
+        for _ in support.sleeping_retry(timeout, error=False):
             if len(multiprocessing.active_children()) <= 1:
                 break
         else:
