@@ -430,6 +430,7 @@ class AutocommitPEP249(unittest.TestCase):
             with self.check_stmt_trace(cx, []):
                 with cx:
                     self.assertFalse(cx.in_transaction)
+                self.assertFalse(cx.in_transaction)
 
     def test_autocommit_false_ctx_mgr(self):
         expected = ["COMMIT", "BEGIN"]
