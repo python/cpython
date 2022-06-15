@@ -413,6 +413,6 @@ ln -srf -t /usr/local/bin/ ~/.wasmtime/bin/wasmtime
 ### Install [WASIX](https://github.com/singlestore-labs/wasix)
 
 ```shell
-git clone -b cpython https://github.com/tiran/wasix.git ~/wasix
+git clone https://github.com/singlestore-labs/wasix.git ~/wasix
 make install -C ~/wasix
 ```
