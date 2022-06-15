@@ -101,7 +101,7 @@ os
 sqlite3
 -------
 
-* Add :attr:`~sqlite3.Connection.autocommit` parameter for :pep:`249` compliant
+* Add :attr:`~sqlite3.Connection.autocommit` attribute for :pep:`249`-compliant
   transaction handling.
   (Contributed by Erlend E. Aasland in :gh:`83638`.)
 
@@ -126,8 +126,8 @@ CPython bytecode changes
 Deprecated
 ==========
 
-* The :attr:`sqlite3.Connection.isolation_level` parameter is deprecated.
-  Please use the new :attr:`sqlite3.Connection.autocommit` parameter instead.
+* The :attr:`sqlite3.Connection.isolation_level` attribute is deprecated.
+  Please use the new :attr:`sqlite3.Connection.autocommit` attribute instead.
 
 
 Pending Removal in Python 3.13

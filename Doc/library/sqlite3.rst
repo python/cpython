@@ -238,7 +238,7 @@ Module functions and constants
 .. data:: DEPRECATED_TRANSACTION_CONTROL
 
    Set :attr:`~Connection.autocommit` to this constant to select deprecated
-   (pre Python 3.12) transaction control.
+   (pre-Python 3.12) transaction control.
    See :ref:`sqlite3-deprecated-transaction-control` for more information.
 
 
@@ -403,9 +403,9 @@ Connection Objects
    .. attribute:: autocommit
 
       Get or set the :pep:`249` transaction behaviour.
-      *autocommit* has tree allowed values:
+      *autocommit* has three allowed values:
 
-      * :const:`False`: PEP 249 compliant transaction behaviour,
+      * :const:`False`: PEP 249-compliant transaction behaviour,
         implying that a transaction is always open.
         Use :meth:`commit` and :meth:`rollback` to close transactions.
         Closing a transaction immediately opens a new one.
@@ -414,7 +414,7 @@ Connection Objects
       * :const:`True`: Use SQLite's autocommit behaviour.
         You are also free to :meth:`execute` custom transaction statements.
 
-      * :data:`DEPRECATED_TRANSACTION_CONTROL`: Pre Python 3.12 compliant
+      * :data:`DEPRECATED_TRANSACTION_CONTROL`: Pre-Python 3.12 compliant
         transaction control. See :attr:`isolation_level`.
         This is currently the default value of *autocommit*.
 
@@ -1398,32 +1398,32 @@ timestamp converter.
 
 .. _sqlite3-controlling-transactions:
 
-Controlling Transactions Using the Autocommit Property
-------------------------------------------------------
+Controlling Transactions Using the Autocommit Attribute
+-------------------------------------------------------
 
 The underlying ``sqlite3`` library operates in ``autocommit`` mode by default,
 but the Python :mod:`sqlite3` module by default does not.
 
-Use the :attr:`~Connection.autocommit` property to select transaction mode.
+Use the :attr:`~Connection.autocommit` attribute to select transaction mode.
 This attribute can also be set when :meth:`connecting <~Connection.connect>`.
 
 Currently, *autocommit* defaults to :const:`DEPRECATED_TRANSACTION_CONTROL`,
 which means transaction control is selected using the
-:attr:`~Connection.isolation_level` property.
+:attr:`~Connection.isolation_level` attribute.
 See :ref:`sqlite3-deprecated-transaction-control` for more information.
 
-Starting with Python 3.14, *autocommit* will default to :const:`False`,
-which will imply :pep:`249` compliant transaction control. This means:
+Starting in Python 3.14, *autocommit* will default to :const:`False`,
+which will imply :pep:`249`-compliant transaction control. This means:
 
 * A transaction is always open.
-* Commit transactions using :meth:`~Connection.commit`.
-* Roll back transactions using :meth:`~Connection.rollback`.
-* Commit and rollback will open a new transaction immediately after execution.
+* Transactions can be committed using :meth:`~Connection.commit`.
+* Transactions can be rolled back using :meth:`~Connection.rollback`.
+* ``commit()`` and ``rollback`` will open a new transaction immediately after execution.
 * An implicit rollback is performed if the database is closed with pending
   changes.
 
 Set *autocommit* to :const:`True` to enable SQLite's autocommit mode.
-This mode is equal to setting :attr:`~Connection.isolation_level` to
+This mode is equivalent to setting :attr:`~Connection.isolation_level` to
 :const:`None`.
 
 ``autocommit=True`` means that statements that modify the database take effect
@@ -1439,7 +1439,7 @@ Controlling Transactions Using the Isolation Level Property
 
 .. note::
 
-   The recommended way of controlling transactions, is via the
+   The recommended way of controlling transactions is via the
    :attr:`~Connection.autocommit` parameter.
 
 If :attr:`~Connection.autocommit` is set to
@@ -1471,9 +1471,9 @@ Note that :meth:`~Cursor.executescript` disregards
    ``sqlite3`` used to implicitly commit an open transaction before DDL
    statements.  This is no longer the case.
 
-.. versionchanged: 3.12
+.. versionchanged:: 3.12
    The recommended way of controlling transactions is now via the
-   :attr:`~Connection.autocommit` parameter.
+   :attr:`~Connection.autocommit` attribute.
 
 
 Using :mod:`sqlite3` efficiently
