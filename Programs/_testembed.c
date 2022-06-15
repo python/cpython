@@ -1570,6 +1570,7 @@ static int test_init_is_python_build(void)
     // under the effect of 'home' or PYTHONHOME environment variable.
     config_set_string(&config, &config.home, home);
     PyMem_RawFree(home);
+    putenv("TESTHOME=");
 
     // Use an impossible value so we can detect whether it isn't updated
     // during initialization.
