@@ -1919,10 +1919,6 @@ Turns on stats gathering (stats gathering is on by default)
 static PyObject *
 sys__stats_on_impl(PyObject *module)
 /*[clinic end generated code: output=aca53eafcbb4d9fe input=f4bef5763c4387b8]*/
-
-static PyObject *
-sys__stats_on(PyObject *module)
-/*[clinic end generated code]*/
 {
     _py_stats = &_py_stats_struct;
     Py_RETURN_NONE;
@@ -1937,10 +1933,6 @@ Turns off stats gathering (stats gathering is on by default)
 static PyObject *
 sys__stats_off_impl(PyObject *module)
 /*[clinic end generated code: output=1534c1ee63812214 input=ec6e593e39b12b4a]*/
-
-static PyObject *
-sys__stats_off(PyObject *module)
-/*[clinic end generated code]*/
 {
     _py_stats = NULL;
     Py_RETURN_NONE;
@@ -1955,11 +1947,22 @@ Clears stats
 static PyObject *
 sys__stats_clear_impl(PyObject *module)
 /*[clinic end generated code: output=fb65a2525ee50604 input=0bd23b30a48f67ab]*/
+{
+    _Py_StatsClear();
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys._stats_dump
+
+Dump stats to file, and clear current stats.
+[clinic start generated code]*/
 
 static PyObject *
-sys__stats_clear(PyObject *module)
-/*[clinic end generated code]*/
+sys__stats_dump_impl(PyObject *module)
+/*[clinic end generated code: output=79f796fb2b4ddf05 input=b2e51dae2fe969b1]*/
 {
+    _Py_PrintSpecializationStats(1);
     _Py_StatsClear();
     Py_RETURN_NONE;
 }
@@ -2039,6 +2042,7 @@ static PyMethodDef sys_methods[] = {
     SYS__STATS_ON_METHODDEF
     SYS__STATS_OFF_METHODDEF
     SYS__STATS_CLEAR_METHODDEF
+    SYS__STATS_DUMP_METHODDEF
 #endif
     {NULL, NULL}  // sentinel
 };

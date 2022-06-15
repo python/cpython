@@ -1031,6 +1031,28 @@ sys__stats_clear(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(Py_STATS) */
 
+#if defined(Py_STATS)
+
+PyDoc_STRVAR(sys__stats_dump__doc__,
+"_stats_dump($module, /)\n"
+"--\n"
+"\n"
+"Dump stats to file, and clear current stats.");
+
+#define SYS__STATS_DUMP_METHODDEF    \
+    {"_stats_dump", (PyCFunction)sys__stats_dump, METH_NOARGS, sys__stats_dump__doc__},
+
+static PyObject *
+sys__stats_dump_impl(PyObject *module);
+
+static PyObject *
+sys__stats_dump(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__stats_dump_impl(module);
+}
+
+#endif /* defined(Py_STATS) */
+
 #if defined(ANDROID_API_LEVEL)
 
 PyDoc_STRVAR(sys_getandroidapilevel__doc__,
@@ -1089,7 +1111,11 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define SYS__STATS_CLEAR_METHODDEF
 #endif /* !defined(SYS__STATS_CLEAR_METHODDEF) */
 
+#ifndef SYS__STATS_DUMP_METHODDEF
+    #define SYS__STATS_DUMP_METHODDEF
+#endif /* !defined(SYS__STATS_DUMP_METHODDEF) */
+
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=fcca2f667fc0b0f0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=90fd2f93225ab5ee input=a9049054013a1b77]*/

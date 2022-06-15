@@ -213,12 +213,15 @@ print_stats(FILE *out, PyStats *stats) {
 void
 _Py_StatsClear(void)
 {
-    _Py_stat_struct = { 0 };
+    _py_stats_struct = (PyStats) { 0 };
 }
 
 void
 _Py_PrintSpecializationStats(int to_file)
 {
+    if (_py_stats == NULL) {
+        return;
+    }
     FILE *out = stderr;
     if (to_file) {
         /* Write to a file instead of stderr. */
@@ -249,7 +252,7 @@ _Py_PrintSpecializationStats(int to_file)
     else {
         fprintf(out, "Specialization stats:\n");
     }
-    print_stats(out, &_py_stats);
+    print_stats(out, _py_stats);
     if (out != stderr) {
         fclose(out);
     }
