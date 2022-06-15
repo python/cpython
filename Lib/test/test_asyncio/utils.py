@@ -109,13 +109,12 @@ def run_briefly(loop):
 
 
 def run_until(loop, pred, timeout=support.SHORT_TIMEOUT):
-    deadline = time.monotonic() + timeout
-    while not pred():
-        if timeout is not None:
-            timeout = deadline - time.monotonic()
-            if timeout <= 0:
-                raise futures.TimeoutError()
+    for _ in support.busy_retry(timeout, error=False):
+        if pred():
+            break
         loop.run_until_complete(tasks.sleep(0.001))
+    else:
+        raise futures.TimeoutError()
 
 
 def run_once(loop):
