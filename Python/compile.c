@@ -7024,14 +7024,11 @@ compiler_match(struct compiler *c, stmt_ty s)
 
 struct assembler {
     PyObject *a_bytecode;  /* bytes containing bytecode */
-    PyObject *a_except_table;  /* bytes containing exception table */
     int a_offset;              /* offset into bytecode */
+    PyObject *a_except_table;  /* bytes containing exception table */
     int a_except_table_off;    /* offset into exception table */
-    int a_lineno;          /* lineno of last emitted instruction */
-    int a_end_lineno;      /* end_lineno of last emitted instruction */
-    int a_lineno_start;    /* bytecode start offset of current lineno */
-    int a_end_lineno_start; /* bytecode start offset of current end_lineno */
     /* Location Info */
+    int a_lineno;          /* lineno of last emitted instruction */
     PyObject* a_linetable; /* bytes containing location info */
     int a_location_off;    /* offset of last written location info frame */
 };
@@ -7139,7 +7136,6 @@ assemble_init(struct assembler *a, int firstlineno)
 {
     memset(a, 0, sizeof(struct assembler));
     a->a_lineno = firstlineno;
-    a->a_end_lineno = firstlineno;
     a->a_linetable = NULL;
     a->a_location_off = 0;
     a->a_except_table = NULL;
