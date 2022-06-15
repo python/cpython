@@ -73,6 +73,7 @@ extern PyObject* PyInit__string(void);
 extern PyObject* PyInit__stat(void);
 extern PyObject* PyInit__opcode(void);
 extern PyObject* PyInit__contextvars(void);
+extern PyObject* PyInit__copy(void);
 extern PyObject* PyInit__tokenize(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
@@ -168,6 +169,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_stat", PyInit__stat},
     {"_opcode", PyInit__opcode},
 
+    {"_copy", PyInit__copy},
     {"_contextvars", PyInit__contextvars},
 
     /* Sentinel */

@@ -1,36 +1,40 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+#define NEEDS_PY_IDENTIFIER
+
 #include "Python.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "clinic/_copy.c.h"
 
 /*[clinic input]
 module _copy
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b34c1b75f49dbfff]*/
 
-/*
- * Duplicate of builtin_id. Looking around the CPython code base, it seems to
- * be quite common to just open-code this as PyLong_FromVoidPtr, though I'm
- * not sure those cases actually need to interoperate with Python code that
- * uses id(). We do, however, so it would be nicer there was an official
- * public API (e.g. PyObject_Id, maybe just a macro to avoid extra
- * indirection) providing this..
- */
-static PyObject*
-object_id(PyObject* v)
+#define object_id PyLong_FromVoidPtr
+
+typedef struct {
+    PyObject *python_copy_module;
+} copy_module_state;
+
+static inline copy_module_state*
+get_copy_module_state(PyObject *module)
 {
-    return PyLong_FromVoidPtr(v);
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (copy_module_state *)state;
 }
 
 static int
 memo_keepalive(PyObject* x, PyObject* memo)
 {
-    PyObject* memoid, * list;
-    int ret;
-
-    memoid = object_id(memo);
+    PyObject *memoid = object_id(memo);
     if (memoid == NULL)
         return -1;
 
     /* try: memo[id(memo)].append(x) */
-    list = PyDict_GetItem(memo, memoid);
+    PyObject *list = PyDict_GetItem(memo, memoid);
     if (list != NULL) {
         Py_DECREF(memoid);
         return PyList_Append(list, x);
@@ -44,25 +48,27 @@ memo_keepalive(PyObject* x, PyObject* memo)
     }
     Py_INCREF(x);
     PyList_SET_ITEM(list, 0, x);
-    ret = PyDict_SetItem(memo, memoid, list);
+    int ret = PyDict_SetItem(memo, memoid, list);
     Py_DECREF(memoid);
     Py_DECREF(list);
     return ret;
 }
 
 /* Forward declaration. */
-static PyObject* do_deepcopy(PyObject* x, PyObject* memo);
+static PyObject* do_deepcopy(PyObject *module, PyObject* x, PyObject* memo);
 
 static PyObject*
-do_deepcopy_fallback(PyObject* x, PyObject* memo)
+do_deepcopy_fallback(PyObject* module, PyObject* x, PyObject* memo)
 {
-    static PyObject* copymodule;
+    copy_module_state *state = PyModule_GetState(module);
+    PyObject *copymodule = state->python_copy_module;
     _Py_IDENTIFIER(_deepcopy_fallback);
 
     if (copymodule == NULL) {
         copymodule = PyImport_ImportModule("copy");
         if (copymodule == NULL)
             return NULL;
+        state->python_copy_module = copymodule;
     }
 
     assert(copymodule != NULL);
@@ -72,13 +78,10 @@ do_deepcopy_fallback(PyObject* x, PyObject* memo)
 }
 
 static PyObject*
-deepcopy_list(PyObject* x, PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x)
+deepcopy_list(PyObject* module, PyObject* x, PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x)
 {
-    PyObject* y, * elem;
-    Py_ssize_t i, size;
-
     assert(PyList_CheckExact(x));
-    size = PyList_GET_SIZE(x);
+    Py_ssize_t size = PyList_GET_SIZE(x);
 
     /*
      * Make a copy of x, then replace each element with its deepcopy. This
@@ -89,7 +92,7 @@ deepcopy_list(PyObject* x, PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x)
      * so we're still careful to check 'i < PyList_GET_SIZE(y)' before
      * getting/setting in the loop below.
      */
-    y = PyList_GetSlice(x, 0, size);
+    PyObject *y = PyList_GetSlice(x, 0, size);
     if (y == NULL)
         return NULL;
     assert(PyList_CheckExact(y));
@@ -99,10 +102,10 @@ deepcopy_list(PyObject* x, PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x)
         return NULL;
     }
 
-    for (i = 0; i < PyList_GET_SIZE(y); ++i) {
-        elem = PyList_GET_ITEM(y, i);
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(y); ++i) {
+        PyObject *elem = PyList_GET_ITEM(y, i);
         Py_INCREF(elem);
-        Py_SETREF(elem, do_deepcopy(elem, memo));
+        Py_SETREF(elem, do_deepcopy(module, elem, memo));
         if (elem == NULL) {
             Py_DECREF(y);
             return NULL;
@@ -138,6 +141,7 @@ dict_iter_init(struct dict_iter* di, PyObject* x)
     di->tag = ((PyDictObject*)x)->ma_version_tag;
     di->pos = 0;
 }
+
 static int
 dict_iter_next(struct dict_iter* di, PyObject** key, PyObject** val)
 {
@@ -151,7 +155,7 @@ dict_iter_next(struct dict_iter* di, PyObject** key, PyObject** val)
 }
 
 static PyObject*
-deepcopy_dict(PyObject* x, PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x)
+deepcopy_dict(PyObject* module, PyObject* x, PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x)
 {
     PyObject* y, * key, * val;
     Py_ssize_t size;
@@ -175,12 +179,12 @@ deepcopy_dict(PyObject* x, PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x)
         Py_INCREF(key);
         Py_INCREF(val);
 
-        Py_SETREF(key, do_deepcopy(key, memo));
+        Py_SETREF(key, do_deepcopy(module, key, memo));
         if (key == NULL) {
             Py_DECREF(val);
             break;
         }
-        Py_SETREF(val, do_deepcopy(val, memo));
+        Py_SETREF(val, do_deepcopy(module, val, memo));
         if (val == NULL) {
             Py_DECREF(key);
             break;
@@ -205,14 +209,13 @@ deepcopy_dict(PyObject* x, PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x)
 }
 
 static PyObject*
-deepcopy_tuple(PyObject* x, PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x)
+deepcopy_tuple(PyObject* module, PyObject* x, PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x)
 {
-    PyObject* y, * z, * elem, * copy;
-    Py_ssize_t i, size;
+    PyObject* y, * z;
     int all_identical = 1; /* are all members their own deepcopy? */
 
     assert(PyTuple_CheckExact(x));
-    size = PyTuple_GET_SIZE(x);
+    Py_ssize_t size = PyTuple_GET_SIZE(x);
 
     y = PyTuple_New(size);
     if (y == NULL)
@@ -224,9 +227,9 @@ deepcopy_tuple(PyObject* x, PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x)
      * advantage over the Python implementation in that we can actually build
      * the tuple directly instead of using an intermediate list object.
      */
-    for (i = 0; i < size; ++i) {
-        elem = PyTuple_GET_ITEM(x, i);
-        copy = do_deepcopy(elem, memo);
+    for (Py_ssize_t i = 0; i < size; ++i) {
+        PyObject *elem = PyTuple_GET_ITEM(x, i);
+        PyObject *copy = do_deepcopy(module, elem, memo);
         if (copy == NULL) {
             Py_DECREF(y);
             return NULL;
@@ -259,6 +262,7 @@ deepcopy_tuple(PyObject* x, PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x)
     return y;
 }
 
+
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 
 /*
@@ -281,7 +285,7 @@ static PyTypeObject* const atomic_type[] = {
 
 struct deepcopy_dispatcher {
     PyTypeObject* type;
-    PyObject* (*handler)(PyObject* x, PyObject* memo,
+    PyObject* (*handler)(PyObject *module, PyObject* x, PyObject* memo,
         PyObject* id_x, Py_hash_t hash_id_x);
 };
 
@@ -292,7 +296,7 @@ static const struct deepcopy_dispatcher deepcopy_dispatch[] = {
 };
 #define N_DISPATCHERS ARRAY_SIZE(deepcopy_dispatch)
 
-static PyObject* do_deepcopy(PyObject* x, PyObject* memo)
+static PyObject* do_deepcopy(PyObject *module, PyObject* x, PyObject* memo)
 {
     unsigned i;
     PyObject* y, * id_x;
@@ -308,8 +312,7 @@ static PyObject* do_deepcopy(PyObject* x, PyObject* memo)
      */
     for (i = 0; i < N_ATOMIC_TYPES; ++i) {
         if (Py_TYPE(x) == atomic_type[i]) {
-            Py_INCREF(x);
-            return x;
+            return Py_NewRef(x);
         }
     }
 
@@ -334,7 +337,7 @@ static PyObject* do_deepcopy(PyObject* x, PyObject* memo)
         if (Py_TYPE(x) != dd->type)
             continue;
 
-        y = dd->handler(x, memo, id_x, hash_id_x);
+        y = dd->handler(module, x, memo, id_x, hash_id_x);
         Py_DECREF(id_x);
         if (y == NULL)
             return NULL;
@@ -347,7 +350,7 @@ static PyObject* do_deepcopy(PyObject* x, PyObject* memo)
 
     Py_DECREF(id_x);
 
-    return do_deepcopy_fallback(x, memo);
+    return do_deepcopy_fallback(module, x, memo);
 }
 
 /*
@@ -357,7 +360,7 @@ static PyObject* do_deepcopy(PyObject* x, PyObject* memo)
  * will then call back to us.
  */
 
- /*[clinic input]
+/*[clinic input]
  _copy.deepcopy
 
    x: object
@@ -368,11 +371,11 @@ static PyObject* do_deepcopy(PyObject* x, PyObject* memo)
 
  See the documentation for the copy module for details.
 
- [clinic start generated code]*/
+[clinic start generated code]*/
 
-static PyObject*
-_copy_deepcopy_impl(PyObject* module, PyObject* x, PyObject* memo)
-/*[clinic end generated code: output=825a9c8dd4bfc002 input=24ec531bf0923156]*/
+static PyObject *
+_copy_deepcopy_impl(PyObject *module, PyObject *x, PyObject *memo)
+/*[clinic end generated code: output=825a9c8dd4bfc002 input=519bbb0201ae2a5c]*/
 {
     PyObject* result;
 
@@ -389,37 +392,44 @@ _copy_deepcopy_impl(PyObject* module, PyObject* x, PyObject* memo)
         Py_INCREF(memo);
     }
 
-    result = do_deepcopy(x, memo);
+    result = do_deepcopy(module, x, memo);
 
     Py_DECREF(memo);
     return result;
 }
 
-#include "clinic/_copy.c.h"
-
-static PyMethodDef functions[] = {
+static PyMethodDef copy_functions[] = {
     _COPY_DEEPCOPY_METHODDEF
     {NULL, NULL}
 };
 
-static struct PyModuleDef moduledef = {
+static int
+copy_clear(PyObject *module)
+{
+    copy_module_state *state = get_copy_module_state(module);
+    Py_CLEAR(state->python_copy_module);
+    return 0;
+}
+
+static void
+copy_free(void *module)
+{
+    copy_clear((PyObject *)module);
+}
+
+static struct PyModuleDef copy_moduledef = {
     PyModuleDef_HEAD_INIT,
-    "_copy",
-    "C implementation of deepcopy",
-    -1,
-    functions,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "_copy",
+    .m_doc = "C implementation of deepcopy",
+    .m_size = sizeof(copy_module_state),
+    .m_methods = copy_functions,
+    .m_clear = copy_clear,
+    .m_free = copy_free,
 };
+
 
 PyMODINIT_FUNC
 PyInit__copy(void)
 {
-    PyObject* module = PyModule_Create(&moduledef);
-    if (module == NULL)
-        return NULL;
-
-    return module;
+    return PyModuleDef_Init(&copy_moduledef);
 }

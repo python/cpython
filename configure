@@ -764,6 +764,8 @@ MODULE__HEAPQ_FALSE
 MODULE__HEAPQ_TRUE
 MODULE__CSV_FALSE
 MODULE__CSV_TRUE
+MODULE__COPY_FALSE
+MODULE__COPY_TRUE
 MODULE__CONTEXTVARS_FALSE
 MODULE__CONTEXTVARS_TRUE
 MODULE__BISECT_FALSE
@@ -22746,6 +22748,26 @@ fi
 fi
 
 
+        if test "$py_cv_module__copy" != "n/a"; then :
+  py_cv_module__copy=yes
+fi
+   if test "$py_cv_module__copy" = yes; then
+  MODULE__COPY_TRUE=
+  MODULE__COPY_FALSE='#'
+else
+  MODULE__COPY_TRUE='#'
+  MODULE__COPY_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__COPY=$py_cv_module__copy$as_nl"
+  if test "x$py_cv_module__copy" = xyes; then :
+
+
+
+
+fi
+
+
         if test "$py_cv_module__csv" != "n/a"; then :
   py_cv_module__csv=yes
 fi
@@ -24888,6 +24910,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__CONTEXTVARS_TRUE}" && test -z "${MODULE__CONTEXTVARS_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__CONTEXTVARS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__COPY_TRUE}" && test -z "${MODULE__COPY_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__COPY\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__CSV_TRUE}" && test -z "${MODULE__CSV_FALSE}"; then

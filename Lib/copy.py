@@ -127,9 +127,9 @@ del d, t
 
 def _deepcopy_fallback(x, memo=None, _nil=[]):
     """Deep copy operation on arbitrary Python objects.
-    
+
     This is the fallback from the C implementation
-    
+
     See the module's __doc__ string for more info.
     """
 
@@ -181,8 +181,10 @@ def _deepcopy_fallback(x, memo=None, _nil=[]):
 
 try:
     from _copy import deepcopy
-except ImportError as ex:
+except ImportError:
+    # the fallback is for projects like PyPy that reuse the stdlib
     deepcopy = _deepcopy_fallback
+    deepcopy.__name__ = 'deepcopy'
 
 _deepcopy_dispatch = d = {}
 

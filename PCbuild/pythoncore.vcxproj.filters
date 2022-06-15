@@ -1208,6 +1208,9 @@
     <ClCompile Include="..\Modules\_contextvarsmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_copy.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="$(zlibDir)\adler32.c">
       <Filter>Modules\zlib</Filter>
     </ClCompile>

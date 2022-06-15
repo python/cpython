@@ -311,7 +311,7 @@ class CAPITest(unittest.TestCase):
                     r'Current thread .* \(most recent call first\):\n'
                     r'  File .*, line 6 in <module>\n'
                     r'\n'
-                    r'Extension modules: _testcapi \(total: 1\)\n')
+                    r'Extension modules: .* \(total: 1\)\n')
         else:
             # Python built with NDEBUG macro defined:
             # test _Py_CheckFunctionResult() instead.
