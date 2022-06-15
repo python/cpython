@@ -1552,6 +1552,8 @@ static int test_init_setpythonhome(void)
 
 static int test_init_is_python_build(void)
 {
+    // gh-91985: in-tree builds fail to check for build directory landmarks
+    // under the effect of 'home' or PYTHONHOME environment variable.
     char *env = getenv("TESTHOME");
     if (!env) {
         error("missing TESTHOME env var");
@@ -1566,8 +1568,6 @@ static int test_init_is_python_build(void)
     PyConfig config;
     _PyConfig_InitCompatConfig(&config);
     config_set_program_name(&config);
-    // gh-91985: in-tree builds fail to check for build directory landmarks
-    // under the effect of 'home' or PYTHONHOME environment variable.
     config_set_string(&config, &config.home, home);
     PyMem_RawFree(home);
     putenv("TESTHOME=");
