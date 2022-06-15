@@ -1551,6 +1551,12 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define DECREMENT_ADAPTIVE_COUNTER(cache) \
     (cache)->counter -= (1<<ADAPTIVE_BACKOFF_BITS)
 
+#define ADAPTIVE_COUNTER_CODE_IS_ZERO(codeunit) \
+    *codeunit < (1<<ADAPTIVE_BACKOFF_BITS)
+
+#define DECREMENT_ADAPTIVE_COUNTER_CODE(codeunit) \
+    *codeunit -= (1<<ADAPTIVE_BACKOFF_BITS)
+
 static int
 trace_function_entry(PyThreadState *tstate, _PyInterpreterFrame *frame)
 {
@@ -5608,14 +5614,13 @@ miss:
         opcode = _PyOpcode_Deopt[opcode];
         STAT_INC(opcode, miss);
         /* The counter is always the first cache entry: */
-        _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr;
-        *counter -= 1;
-        if (*counter == 0) {
+        DECREMENT_ADAPTIVE_COUNTER_CODE(next_instr);
+        if (ADAPTIVE_COUNTER_CODE_IS_ZERO(next_instr)) {
             int adaptive_opcode = _PyOpcode_Adaptive[opcode];
             assert(adaptive_opcode);
             _Py_SET_OPCODE(next_instr[-1], adaptive_opcode);
             STAT_INC(opcode, deopt);
-            *counter = adaptive_counter_start();
+            *next_instr = adaptive_counter_start();
         }
         next_instr--;
         DISPATCH_GOTO();
