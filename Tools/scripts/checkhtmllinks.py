@@ -283,31 +283,31 @@ def main(options) -> None:
         sys.exit(readable_report)
 
 
-HELP_PROLOG = 'Check if specified HTML files have dead or redirected links'
+HELP_PROLOG = 'Check if specified HTML files have dead or redirected links.'
 
 
 HELP_EPILOG = """
 Call this script on HTML files of the rendered documentation.
 
-Eventhough the script does is multithreaded and caches the findings for already
-processed pages, a full run through the whole rendered documentation takes
+Eventhough the script is multithreaded and findings for already processed
+pages are cached, a full run through the whole rendered documentation takes
 about an hour.
 """
 
 
 if __name__ == '__main__':
     parser = ArgumentParser(description=HELP_PROLOG, epilog=HELP_EPILOG)
-    parser.add_argument('path', help='A glob pattern of file paths to scan')
+    parser.add_argument('path', help='a glob pattern of file paths to scan')
     parser.add_argument(
         '-r',
         '--allow-redirects',
         action='store_true',
-        help='Do not report HTTP 3xx links as kind-of-broken',
+        help='do not report HTTP 3xx links as kind-of-broken',
     )
     parser.add_argument(
         '-l',
         '--limit',
         type=int,
-        help='Skip files that contain more hyperlinks than specified',
+        help='skip files that contain more links than specified',
     )
     main(parser.parse_args())
