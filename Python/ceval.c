@@ -1546,16 +1546,16 @@ eval_frame_handle_pending(PyThreadState *tstate)
     }
 
 #define ADAPTIVE_COUNTER_IS_ZERO(cache) \
-    (cache)->counter < (1<<ADAPTIVE_BACKOFF_BITS)
+    ((cache)->counter < (1<<ADAPTIVE_BACKOFF_BITS))
 
 #define DECREMENT_ADAPTIVE_COUNTER(cache) \
-    (cache)->counter -= (1<<ADAPTIVE_BACKOFF_BITS)
+    ((cache)->counter -= (1<<ADAPTIVE_BACKOFF_BITS))
 
 #define ADAPTIVE_COUNTER_CODE_IS_ZERO(codeunit) \
-    *codeunit < (1<<ADAPTIVE_BACKOFF_BITS)
+    (*(codeunit) < (1<<ADAPTIVE_BACKOFF_BITS))
 
 #define DECREMENT_ADAPTIVE_COUNTER_CODE(codeunit) \
-    *codeunit -= (1<<ADAPTIVE_BACKOFF_BITS)
+    (*(codeunit) -= (1<<ADAPTIVE_BACKOFF_BITS))
 
 static int
 trace_function_entry(PyThreadState *tstate, _PyInterpreterFrame *frame)
