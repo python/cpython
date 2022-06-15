@@ -305,13 +305,15 @@ static PyObject* do_deepcopy(PyObject *module, PyObject* x, PyObject* memo)
 
     assert(PyDict_CheckExact(memo));
 
+    PyTypeObject *type_x = Py_TYPE(x);
+
     /*
      * No need to have a separate dispatch function for this. Also, the
      * array would have to be quite a lot larger before a smarter data
      * structure is worthwhile.
      */
     for (i = 0; i < N_ATOMIC_TYPES; ++i) {
-        if (Py_TYPE(x) == atomic_type[i]) {
+        if (type_x == atomic_type[i]) {
             return Py_NewRef(x);
         }
     }
@@ -334,7 +336,7 @@ static PyObject* do_deepcopy(PyObject *module, PyObject* x, PyObject* memo)
      */
     for (i = 0; i < N_DISPATCHERS; ++i) {
         dd = &deepcopy_dispatch[i];
-        if (Py_TYPE(x) != dd->type)
+        if (type_x != dd->type)
             continue;
 
         y = dd->handler(module, x, memo, id_x, hash_id_x);

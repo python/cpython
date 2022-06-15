@@ -128,7 +128,7 @@ del d, t
 def _deepcopy_fallback(x, memo=None, _nil=[]):
     """Deep copy operation on arbitrary Python objects.
 
-    This is the fallback from the C implementation
+    This is the fallback from the C accelerator, and the main implementation if the C accelerator is not available.
 
     See the module's __doc__ string for more info.
     """
