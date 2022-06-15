@@ -854,20 +854,26 @@ compiler_set_qualname(struct compiler *c)
 /* Allocate a new block and return a pointer to it.
    Returns NULL on error.
 */
-
 static basicblock *
-compiler_new_block(struct compiler *c)
+new_basicblock()
 {
-    basicblock *b;
-    struct compiler_unit *u;
-
-    u = c->u;
-    b = (basicblock *)PyObject_Calloc(1, sizeof(basicblock));
+    basicblock *b = (basicblock *)PyObject_Calloc(1, sizeof(basicblock));
     if (b == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
+    return b;
+}
+
+static basicblock *
+compiler_new_block(struct compiler *c)
+{
+    basicblock *b = new_basicblock();
+    if (b == NULL) {
+        return NULL;
+    }
     /* Extend the singly linked list of blocks with new block. */
+    struct compiler_unit *u = c->u;
     b->b_list = u->u_blocks;
     u->u_blocks = b;
     return b;
@@ -883,13 +889,25 @@ compiler_use_next_block(struct compiler *c, basicblock *block)
 }
 
 static basicblock *
-compiler_copy_block(struct compiler *c, basicblock *block)
+new_basicblock_after(basicblock *prev)
+{
+    basicblock *result = new_basicblock();
+    if (result == NULL) {
+        return NULL;
+    }
+    result->b_list = prev->b_list;
+    prev->b_list = result;
+    return result;
+}
+
+static basicblock *
+copy_basicblock(basicblock *block)
 {
     /* Cannot copy a block if it has a fallthrough, since
      * a block can only have one fallthrough predecessor.
      */
     assert(BB_NO_FALLTHROUGH(block));
-    basicblock *result = compiler_new_block(c);
+    basicblock *result = new_basicblock_after(block);
     if (result == NULL) {
         return NULL;
     }
@@ -7385,7 +7403,7 @@ mark_cold(basicblock *entry) {
 }
 
 static int
-push_cold_blocks_to_end(struct compiler *c, basicblock *entry, int code_flags) {
+push_cold_blocks_to_end(basicblock *entry, int code_flags) {
     if (entry->b_next == NULL) {
         /* single basicblock, no need to reorder */
         return 0;
@@ -7398,7 +7416,7 @@ push_cold_blocks_to_end(struct compiler *c, basicblock *entry, int code_flags) {
     /* an explicit jump instead of fallthrough */
     for (basicblock *b = entry; b != NULL; b = b->b_next) {
         if (b->b_cold && BB_HAS_FALLTHROUGH(b) && b->b_next && b->b_next->b_warm) {
-            basicblock *explicit_jump = compiler_new_block(c);
+            basicblock *explicit_jump = new_basicblock_after(b);
             if (explicit_jump == NULL) {
                 return -1;
             }
@@ -8251,7 +8269,7 @@ trim_unused_consts(basicblock *entryblock, PyObject *consts);
 
 /* Duplicates exit BBs, so that line numbers can be propagated to them */
 static int
-duplicate_exits_without_lineno(basicblock *entryblock, struct compiler *c);
+duplicate_exits_without_lineno(basicblock *entryblock);
 
 static int
 extend_block(basicblock *bb);
@@ -8576,7 +8594,7 @@ assemble(struct compiler *c, int addNone)
     if (optimize_cfg(entryblock, consts, c->c_const_cache)) {
         goto error;
     }
-    if (duplicate_exits_without_lineno(entryblock, c)) {
+    if (duplicate_exits_without_lineno(entryblock)) {
         return NULL;
     }
     if (trim_unused_consts(entryblock, consts)) {
@@ -8601,7 +8619,7 @@ assemble(struct compiler *c, int addNone)
     }
     convert_exception_handlers_to_nops(entryblock);
 
-    if (push_cold_blocks_to_end(c, entryblock, code_flags) < 0) {
+    if (push_cold_blocks_to_end(entryblock, code_flags) < 0) {
         goto error;
     }
 
@@ -9496,7 +9514,7 @@ is_exit_without_lineno(basicblock *b) {
  * copy the line number from the sole predecessor block.
  */
 static int
-duplicate_exits_without_lineno(basicblock *entryblock, struct compiler *c)
+duplicate_exits_without_lineno(basicblock *entryblock)
 {
     /* Copy all exit blocks without line number that are targets of a jump.
      */
@@ -9504,7 +9522,7 @@ duplicate_exits_without_lineno(basicblock *entryblock, struct compiler *c)
         if (b->b_iused > 0 && is_jump(&b->b_instr[b->b_iused-1])) {
             basicblock *target = b->b_instr[b->b_iused-1].i_target;
             if (is_exit_without_lineno(target) && target->b_predecessors > 1) {
-                basicblock *new_target = compiler_copy_block(c, target);
+                basicblock *new_target = copy_basicblock(target);
                 if (new_target == NULL) {
                     return -1;
                 }
