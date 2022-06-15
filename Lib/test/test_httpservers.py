@@ -429,6 +429,8 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         directory in question exists on the Referrer server.
         """
         os.mkdir(os.path.join(self.tempdir, 'existing_directory'))
+        # Canonicalizes to /tmp/tempdir_name/existing_directory which does
+        # exist and is a dir, triggering the 301 redirect and former bug.
         attack_url = f'//python.org/..%2f..%2f..%2f..%2f..%2f../%0a%0d/../{self.tempdir_name}/existing_directory'
         response = self.request(attack_url)
         self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
