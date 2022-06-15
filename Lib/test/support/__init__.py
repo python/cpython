@@ -2072,31 +2072,26 @@ def wait_process(pid, *, exitcode, timeout=None):
 
         if timeout is None:
             timeout = SHORT_TIMEOUT
-        t0 = time.monotonic()
-        sleep = 0.001
-        max_sleep = 0.1
-        while True:
+
+        start_time = time.monotonic()
+        for _ in sleeping_retry(timeout, error=False):
             pid2, status = os.waitpid(pid, os.WNOHANG)
             if pid2 != 0:
                 break
-            # process is still running
+            # rety: the process is still running
+        else:
+            try:
+                os.kill(pid, signal.SIGKILL)
+                os.waitpid(pid, 0)
+            except OSError:
+                # Ignore errors like ChildProcessError or PermissionError
+                pass
 
-            dt = time.monotonic() - t0
-            if dt > SHORT_TIMEOUT:
-                try:
-                    os.kill(pid, signal.SIGKILL)
-                    os.waitpid(pid, 0)
-                except OSError:
-                    # Ignore errors like ChildProcessError or PermissionError
-                    pass
-
-                raise AssertionError(f"process {pid} is still running "
-                                     f"after {dt:.1f} seconds")
-
-            sleep = min(sleep * 2, max_sleep)
-            time.sleep(sleep)
+            dt = time.monotonic() - start_time
+            raise AssertionError(f"process {pid} is still running "
+                                 f"after {dt:.1f} seconds")
     else:
-        # Windows implementation
+        # Windows implementation: don't support timeout :-(
         pid2, status = os.waitpid(pid, 0)
 
     exitcode2 = os.waitstatus_to_exitcode(status)
