@@ -7029,9 +7029,9 @@ struct assembler {
 };
 
 static basicblock**
-make_cfg_traversal_stack(basicblock *entry) {
+make_cfg_traversal_stack(basicblock *entryblock) {
     int nblocks = 0;
-    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         b->b_visited = 0;
         nblocks++;
     }
@@ -7221,8 +7221,8 @@ copy_except_stack(ExceptStack *stack) {
 }
 
 static int
-label_exception_targets(basicblock *entry) {
-    basicblock **todo_stack = make_cfg_traversal_stack(entry);
+label_exception_targets(basicblock *entryblock) {
+    basicblock **todo_stack = make_cfg_traversal_stack(entryblock);
     if (todo_stack == NULL) {
         return -1;
     }
@@ -7233,9 +7233,9 @@ label_exception_targets(basicblock *entry) {
         return -1;
     }
     except_stack->depth = 0;
-    todo_stack[0] = entry;
-    entry->b_visited = 1;
-    entry->b_exceptstack = except_stack;
+    todo_stack[0] = entryblock;
+    entryblock->b_visited = 1;
+    entryblock->b_exceptstack = except_stack;
     basicblock **todo = &todo_stack[1];
     basicblock *handler = NULL;
     while (todo > todo_stack) {
@@ -7300,7 +7300,7 @@ label_exception_targets(basicblock *entry) {
         }
     }
 #ifdef Py_DEBUG
-    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         assert(b->b_exceptstack == NULL);
     }
 #endif
@@ -7313,15 +7313,15 @@ error:
 }
 
 static int
-mark_warm(basicblock *entry) {
-    basicblock **stack = make_cfg_traversal_stack(entry);
+mark_warm(basicblock *entryblock) {
+    basicblock **stack = make_cfg_traversal_stack(entryblock);
     if (stack == NULL) {
         return -1;
     }
     basicblock **sp = stack;
 
-    *sp++ = entry;
-    entry->b_visited = 1;
+    *sp++ = entryblock;
+    entryblock->b_visited = 1;
     while (sp > stack) {
         basicblock *b = *(--sp);
         assert(!b->b_except_predecessors);
@@ -7344,21 +7344,21 @@ mark_warm(basicblock *entry) {
 }
 
 static int
-mark_cold(basicblock *entry) {
-    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+mark_cold(basicblock *entryblock) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         assert(!b->b_cold && !b->b_warm);
     }
-    if (mark_warm(entry) < 0) {
+    if (mark_warm(entryblock) < 0) {
         return -1;
     }
 
-    basicblock **stack = make_cfg_traversal_stack(entry);
+    basicblock **stack = make_cfg_traversal_stack(entryblock);
     if (stack == NULL) {
         return -1;
     }
 
     basicblock **sp = stack;
-    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (b->b_except_predecessors) {
             assert(b->b_except_predecessors == b->b_predecessors);
             assert(!b->b_warm);
@@ -7394,18 +7394,18 @@ mark_cold(basicblock *entry) {
 }
 
 static int
-push_cold_blocks_to_end(basicblock *entry, int code_flags) {
-    if (entry->b_next == NULL) {
+push_cold_blocks_to_end(basicblock *entryblock, int code_flags) {
+    if (entryblock->b_next == NULL) {
         /* single basicblock, no need to reorder */
         return 0;
     }
-    if (mark_cold(entry) < 0) {
+    if (mark_cold(entryblock) < 0) {
         return -1;
     }
 
     /* If we have a cold block with fallthrough to a warm block, add */
     /* an explicit jump instead of fallthrough */
-    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (b->b_cold && BB_HAS_FALLTHROUGH(b) && b->b_next && b->b_next->b_warm) {
             basicblock *explicit_jump = basicblock_new_b_list_successor(b);
             if (explicit_jump == NULL) {
@@ -7419,11 +7419,11 @@ push_cold_blocks_to_end(basicblock *entry, int code_flags) {
         }
     }
 
-    assert(!entry->b_cold);  /* First block can't be cold */
+    assert(!entryblock->b_cold);  /* First block can't be cold */
     basicblock *cold_blocks = NULL;
     basicblock *cold_blocks_tail = NULL;
 
-    basicblock *b = entry;
+    basicblock *b = entryblock;
     while(b->b_next) {
         assert(!b->b_cold);
         while (b->b_next && !b->b_next->b_cold) {
@@ -7462,8 +7462,8 @@ push_cold_blocks_to_end(basicblock *entry, int code_flags) {
 }
 
 static void
-convert_exception_handlers_to_nops(basicblock *entry) {
-    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+convert_exception_handlers_to_nops(basicblock *entryblock) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             if (is_block_push(instr) || instr->i_opcode == POP_BLOCK) {
