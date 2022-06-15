@@ -87,7 +87,6 @@ def capture_server(evt, buf, serv):
                     break
             if n <= 0:
                 break
-            time.sleep(0.01)
 
         conn.close()
     finally:
