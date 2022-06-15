@@ -329,6 +329,13 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                 return False
         self.command, self.path = command, path
 
+        # gh-87389: The purpose of replacing '//' with '/' is to protect against
+        # open redirect attacks module which could be triggered if the path
+        # starts with '//' because web clients treat //path as an absolute url
+        # without scheme (similar to http://path) rather than a relative path.
+        if self.path.startswith('//'):
+            self.path = '/' + self.path.lstrip('/')  # Reduce to a single /
+
         # Examine the headers and look for a Connection directive.
         try:
             self.headers = http.client.parse_headers(self.rfile,
@@ -682,8 +689,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             if not parts.path.endswith('/'):
                 # redirect browser - doing basically what apache does
                 self.send_response(HTTPStatus.MOVED_PERMANENTLY)
-                new_parts = (parts[0], parts[1], parts[2] + '/',
-                             parts[3], parts[4])
+                # scheme[0] and netloc[1] are intentionally blanked out as we
+                # are only processing a path. They could allow injection into
+                # Location header if self.path wound up containing
+                # more than it was supposed to. See gh-87389.
+                new_parts = ('', '', parts[2] + '/', parts[3], parts[4])
                 new_url = urllib.parse.urlunsplit(new_parts)
                 self.send_header("Location", new_url)
                 self.send_header("Content-Length", "0")
