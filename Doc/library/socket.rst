@@ -2028,10 +2028,10 @@ the interface::
    # Include IP headers
    s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
 
-   # receive all packages
+   # receive all packets
    s.ioctl(socket.SIO_RCVALL, socket.RCVALL_ON)
 
-   # receive a package
+   # receive a packet
    print(s.recvfrom(65565))
 
    # disabled promiscuous mode
