@@ -262,7 +262,7 @@ Module functions and constants
    :attr:`~Connection.isolation_level` property of :class:`Connection` objects.
 
    For the *autocommit* parameter, please see the
-   :attr:`~Connection.autocommit` property. *autocommit* currently defaults to
+   :attr:`~Connection.autocommit` attribute. *autocommit* currently defaults to
    :data:`~Connection.DEPRECATED_TRANSACTION_CONTROL`.
    The default will change to :const:`False` in Python 3.14.
 
@@ -407,22 +407,27 @@ Connection Objects
 
       * :const:`False`: PEP 249-compliant transaction behaviour,
         implying that a transaction is always open.
-        Use :meth:`commit` and :meth:`rollback` to close transactions.
+        Use :meth:`~Connection.commit` and :meth:`~Connection.rollback` to
+        close transactions.
         Closing a transaction immediately opens a new one.
         This will be the default value of *autocommit* in Python 3.14.
 
       * :const:`True`: Use SQLite's autocommit behaviour.
         You are also free to :meth:`execute` custom transaction statements.
+        :meth:`~Connection.commit` and :meth:`~Connection.rollback` are silent
+        no-ops.
 
       * :data:`DEPRECATED_TRANSACTION_CONTROL`: Pre-Python 3.12 compliant
         transaction control. See :attr:`isolation_level`.
         This is currently the default value of *autocommit*.
 
+      See :ref:`sqlite3-controlling-transactions` for more details.
+
    .. attribute:: isolation_level
 
       Get or set the current default isolation level. :const:`None` for autocommit mode or
-      one of "DEFERRED", "IMMEDIATE" or "EXCLUSIVE". See section
-      :ref:`sqlite3-controlling-transactions` for a more detailed explanation.
+      one of "DEFERRED", "IMMEDIATE" or "EXCLUSIVE".
+      See :ref:`sqlite3-deprecated-transaction-control` for more details.
 
    .. attribute:: in_transaction
 
@@ -909,7 +914,10 @@ Cursor Objects
    .. method:: executescript(sql_script)
 
       This is a nonstandard convenience method for executing multiple SQL statements
-      at once. It issues a ``COMMIT`` statement first, then executes the SQL script it
+      at once.
+      If :attr:`~Connection.autocommit` is
+      :data:`DEPRECATED_TRANSACTION_CONTROL`, it issues a ``COMMIT`` statement
+      first, then executes the SQL script it
       gets as a parameter.  This method disregards :attr:`isolation_level`; any
       transaction control must be added to *sql_script*.
 
@@ -1418,29 +1426,30 @@ which will imply :pep:`249`-compliant transaction control. This means:
 * A transaction is always open.
 * Transactions can be committed using :meth:`~Connection.commit`.
 * Transactions can be rolled back using :meth:`~Connection.rollback`.
-* ``commit()`` and ``rollback`` will open a new transaction immediately after execution.
+* ``commit()`` and ``rollback()`` will implicitly open a new transaction
+  immediately after execution.
 * An implicit rollback is performed if the database is closed with pending
   changes.
 
 Set *autocommit* to :const:`True` to enable SQLite's autocommit mode.
-This mode is equivalent to setting :attr:`~Connection.isolation_level` to
-:const:`None`.
+In this mode, ``commit()`` and ``rollback()`` are silent no-ops.
 
-``autocommit=True`` means that statements that modify the database take effect
-immediately.  A ``BEGIN`` or ``SAVEPOINT`` statement disables ``autocommit``
-mode, and a ``COMMIT``, a ``ROLLBACK``, or a ``RELEASE`` that ends the
-outermost transaction, turns ``autocommit`` mode back on.
+.. note::
+
+   :attr:`~Connection.autocommit` and SQLite's autocommit mode are not linked.
+   For example, Explicitly issuing a BEGIN statement when ``autocommit=True``,
+   will not change the value of the *autocommit* attribute.
 
 
 .. _sqlite3-deprecated-transaction-control:
 
-Controlling Transactions Using the Isolation Level Property
------------------------------------------------------------
+Controlling Transactions Using the Isolation Level Attribute
+------------------------------------------------------------
 
 .. note::
 
    The recommended way of controlling transactions is via the
-   :attr:`~Connection.autocommit` parameter.
+   :attr:`~Connection.autocommit` attribute.
 
 If :attr:`~Connection.autocommit` is set to
 :data:`DEPRECATED_TRANSACTION_CONTROL`, transaction control is selected using
@@ -1463,6 +1472,8 @@ setting :attr:`isolation_level` to ``None``.  This will leave the underlying
 ``sqlite3`` library operating in ``autocommit`` mode.  You can then completely
 control transactions by explicitly executing ``BEGIN``, ``ROLLBACK``,
 ``SAVEPOINT``, and ``RELEASE`` statements in your code.
+This mode is equivalent to setting :attr:`~Connection.autocommit` to
+:const:`True`.
 
 Note that :meth:`~Cursor.executescript` disregards
 :attr:`isolation_level`; any transaction control must be added explicitly.
@@ -1519,6 +1530,13 @@ committed:
 .. note::
 
    The context manager does not implicitly begin a new transaction.
+
+.. note::
+
+   If :attr:`~Connection.autocommit` is :const:`True`,
+   the context manager is a no-op.
+   If :attr:`~Connection.autocommit` is :const:`False`,
+   a new transaction is implicitly opened upon context manager exit.
 
 
 .. rubric:: Footnotes
