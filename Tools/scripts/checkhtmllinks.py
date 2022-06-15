@@ -28,11 +28,6 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 from urllib.response import addinfourl
 
 
-def get_attribute(attribute_name: str, container: list[tuple[str, str]]):
-    """Scan a list of (name, value) tuples collecting requested values."""
-    return (value for name, value in container if name == attribute_name)
-
-
 class LinkAnalyzer(HTMLParser):
     """Scanner for hyperlink referers and targets.
 
@@ -44,11 +39,15 @@ class LinkAnalyzer(HTMLParser):
         self.targets = set()
         self.referers = set()
 
+    @staticmethod
+    def _get_attribute(attribute_name: str, container: list[tuple[str, str]]):
+        return (value for name, value in container if name == attribute_name)
+
     def handle_starttag(self, tag, attrs):
         if tag == 'a':
-            self.referers.update(get_attribute('href', attrs))
-            self.targets.update(get_attribute('name', attrs))
-        self.targets.update(get_attribute('id', attrs))
+            self.referers.update(self._get_attribute('href', attrs))
+            self.targets.update(self._get_attribute('name', attrs))
+        self.targets.update(self._get_attribute('id', attrs))
 
 
 class _NoRedirectHandler(HTTPRedirectHandler):
