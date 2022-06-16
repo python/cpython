@@ -1237,7 +1237,7 @@ class Enum(metaclass=EnumType):
         return None
 
     def __repr__(self):
-        v_repr = self.__class__._value_repr_ or self._value_.__class__.__repr__
+        v_repr = self.__class__._value_repr_ or repr
         return "<%s.%s: %s>" % (self.__class__.__name__, self._name_, v_repr(self._value_))
 
     def __str__(self):
@@ -1512,7 +1512,7 @@ class Flag(Enum, boundary=STRICT):
 
     def __repr__(self):
         cls_name = self.__class__.__name__
-        v_repr = self.__class__._value_repr_ or self._value_.__class__.__repr__
+        v_repr = self.__class__._value_repr_ or repr
         if self._name_ is None:
             return "<%s: %s>" % (cls_name, v_repr(self._value_))
         else:
