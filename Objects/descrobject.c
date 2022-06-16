@@ -1893,6 +1893,13 @@ property_clear(PyObject *self)
     return 0;
 }
 
+PyObject *
+_PyProperty_PropGet(PyObject *self)
+{
+    propertyobject *pp = (propertyobject *)self;
+    return pp->prop_get;
+}
+
 #include "clinic/descrobject.c.h"
 
 PyTypeObject PyDictProxy_Type = {

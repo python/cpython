@@ -331,6 +331,8 @@ miss_counter_start(void) {
     return 53;
 }
 
+#define SIMPLE_FUNCTION 0
+
 /* Common */
 
 #define SPEC_FAIL_OTHER 0
@@ -532,7 +534,8 @@ typedef enum {
     BUILTIN_CLASSMETHOD, /* Builtin methods with METH_CLASS */
     PYTHON_CLASSMETHOD, /* Python classmethod(func) object */
     NON_DESCRIPTOR, /* Is not a descriptor, and is an instance of an immutable class */
-    MUTABLE,   /* Instance of a mutable class; might, or might not, be a descriptor */
+    MUTABLE_DESCRIPTOR,   /* Instance of a mutable class; with __set__/__get__ */
+    MUTABLE, /* Instance of a mutable class, but the descriptor doesn't match the operation*/
     ABSENT, /* Attribute is not present on the class */
     DUNDER_CLASS, /* __class__ attribute */
     GETSET_OVERRIDDEN /* __getattribute__ or __setattr__ has been overridden */
@@ -561,6 +564,12 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
     }
     PyTypeObject *desc_cls = Py_TYPE(descriptor);
     if (!(desc_cls->tp_flags & Py_TPFLAGS_IMMUTABLETYPE)) {
+        if (!store && desc_cls->tp_descr_get) {
+            return MUTABLE_DESCRIPTOR;
+        }
+        if (store && desc_cls->tp_descr_set) {
+            return MUTABLE_DESCRIPTOR;
+        }
         return MUTABLE;
     }
     if (desc_cls->tp_descr_set) {
@@ -580,7 +589,9 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
                 return DUNDER_CLASS;
             }
         }
-        return OVERRIDING;
+        if (store) {
+            return OVERRIDING;
+        }
     }
     if (desc_cls->tp_descr_get) {
         if (desc_cls->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR) {
@@ -650,6 +661,7 @@ specialize_dict_access(
 static int specialize_attr_loadmethod(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name,
     PyObject* descr, DescriptorClassification kind);
 static int specialize_class_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name);
+static int function_kind(PyCodeObject *code);
 
 int
 _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
@@ -696,8 +708,38 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             goto fail;
         }
         case PROPERTY:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_PROPERTY);
-            goto fail;
+        {
+            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)(instr + 1);
+            assert(Py_TYPE(descr) == &PyProperty_Type);
+            PyObject *fget = _PyProperty_PropGet(descr);
+            if (fget == NULL || Py_TYPE(fget) != &PyFunction_Type) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR);
+                goto fail;
+            }
+            PyFunctionObject *func = (PyFunctionObject *)fget;
+            PyCodeObject *fcode = (PyCodeObject *)func->func_code;
+            int kind = function_kind(fcode);
+            if (kind != SIMPLE_FUNCTION) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, kind);
+                goto fail;
+            }
+            if (fcode->co_argcount != 1) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
+                goto fail;
+            }
+            int version = _PyFunction_GetVersionForCurrentState(func);
+            if (version == 0 || version != (uint16_t)version) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
+                goto fail;
+            }
+            cache->keys_version[0] = version;
+            assert(type->tp_version_tag != 0);
+            write_u32(cache->type_version, type->tp_version_tag);
+            /* borrowed */
+            write_obj(cache->descr, descr);
+            _Py_SET_OPCODE(*instr, LOAD_ATTR_PROPERTY);
+            goto success;
+        }
         case OBJECT_SLOT:
         {
             PyMemberDescrObject *member = (PyMemberDescrObject *)descr;
@@ -731,6 +773,9 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NON_OBJECT_SLOT);
             goto fail;
         case MUTABLE:
+        case MUTABLE_DESCRIPTOR:
+            //_PyObject_Dump(owner);
+            //_PyObject_Dump(descr);
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_MUTABLE_CLASS);
             goto fail;
         case GETSET_OVERRIDDEN:
@@ -812,6 +857,7 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_ATTR_NON_OBJECT_SLOT);
             goto fail;
         case MUTABLE:
+        case MUTABLE_DESCRIPTOR:
             SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_ATTR_MUTABLE_CLASS);
             goto fail;
         case GETSET_OVERRIDDEN:
@@ -866,6 +912,7 @@ load_attr_fail_kind(DescriptorClassification kind)
         case DUNDER_CLASS:
             return SPEC_FAIL_OTHER;
         case MUTABLE:
+        case MUTABLE_DESCRIPTOR:
             return SPEC_FAIL_ATTR_MUTABLE_CLASS;
         case GETSET_OVERRIDDEN:
             return SPEC_FAIL_OVERRIDDEN;
@@ -895,9 +942,16 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
     switch (kind) {
         case METHOD:
         case NON_DESCRIPTOR:
+        case MUTABLE:
             write_u32(cache->type_version, ((PyTypeObject *)owner)->tp_version_tag);
             write_obj(cache->descr, descr);
             _Py_SET_OPCODE(*instr, LOAD_ATTR_CLASS);
+            return 0;
+        case MUTABLE_DESCRIPTOR:
+            return -1;
+            write_u32(cache->type_version, ((PyTypeObject *)owner)->tp_version_tag);
+            write_obj(cache->descr, descr);
+            _Py_SET_OPCODE(*instr, LOAD_ATTR_CLASS_MUTABLE_DESCRIPTOR);
             return 0;
 #ifdef Py_STATS
         case ABSENT:
@@ -1144,9 +1198,6 @@ binary_subscr_fail_kind(PyTypeObject *container_type, PyObject *sub)
     return SPEC_FAIL_OTHER;
 }
 #endif
-
-
-#define SIMPLE_FUNCTION 0
 
 static int
 function_kind(PyCodeObject *code) {
