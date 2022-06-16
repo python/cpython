@@ -1622,11 +1622,6 @@ New Features
 * Added the :c:member:`PyConfig.safe_path` member.
   (Contributed by Victor Stinner in :gh:`57684`.)
 
-* Add new function :c:func:`PyFunction_SetVectorcall` to the C API
-  which sets the vectorcall field of a given PyFunctionObject
-  (Contributed by Andrew Frost in :issue:`91049`.)
-
-
 Porting to Python 3.11
 ----------------------
 
