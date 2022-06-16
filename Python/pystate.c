@@ -2167,7 +2167,7 @@ push_chunk(PyThreadState *tstate, int size)
 }
 
 _PyInterpreterFrame *
-_PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size)
+_PyThreadState_PushFrame(PyThreadState *tstate, size_t size)
 {
     assert(size < INT_MAX/sizeof(PyObject *));
     PyObject **base = tstate->datastack_top;

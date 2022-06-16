@@ -73,8 +73,8 @@ typedef uint16_t _Py_CODEUNIT;
                                                                                \
     /* redundant values (derived from co_localsplusnames and                   \
        co_localspluskinds) */                                                  \
-    int co_nlocalsplus;           /* number of local + cell + free variables   \
-                                  */                                           \
+    int co_nlocalsplus;           /* number of local + cell + free variables */ \
+    int co_framesize;             /* Size of frame in words */                 \
     int co_nlocals;               /* number of local variables */              \
     int co_nplaincellvars;        /* number of non-arg cell variables */       \
     int co_ncellvars;             /* total number of cell variables */         \

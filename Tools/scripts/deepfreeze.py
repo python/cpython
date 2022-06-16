@@ -118,6 +118,7 @@ class Printer:
         self.write('#include "Python.h"')
         self.write('#include "internal/pycore_gc.h"')
         self.write('#include "internal/pycore_code.h"')
+        self.write('#include "internal/pycore_frame.h"')
         self.write('#include "internal/pycore_long.h"')
         self.write("")
 
@@ -256,6 +257,7 @@ class Printer:
             self.field(code, "co_argcount")
             self.field(code, "co_posonlyargcount")
             self.field(code, "co_kwonlyargcount")
+            self.write(f".co_framesize = {code.co_stacksize + len(localsplusnames)} + FRAME_SPECIALS_SIZE,")
             self.field(code, "co_stacksize")
             self.field(code, "co_firstlineno")
             self.write(f".co_nlocalsplus = {len(localsplusnames)},")

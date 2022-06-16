@@ -2240,16 +2240,12 @@ handle_eval_breaker:
             PyFunctionObject *getitem = (PyFunctionObject *)cached;
             DEOPT_IF(getitem->func_version != cache->func_version, BINARY_SUBSCR);
             PyCodeObject *code = (PyCodeObject *)getitem->func_code;
-            size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
             assert(code->co_argcount == 2);
-            _PyInterpreterFrame *new_frame = _PyThreadState_BumpFramePointer(tstate, size);
-            if (new_frame == NULL) {
-                goto error;
-            }
-            CALL_STAT_INC(frames_pushed);
+            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code), BINARY_SUBSCR);
             Py_INCREF(getitem);
-            _PyFrame_InitializeSpecials(new_frame, getitem,
-                                        NULL, code->co_nlocalsplus);
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, getitem);
+            CALL_STAT_INC(frames_pushed);
+            CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(2);
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
@@ -4774,11 +4770,10 @@ handle_eval_breaker:
             DEOPT_IF(func->func_version != read_u32(cache->func_version), CALL);
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(code->co_argcount != argcount, CALL);
+            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code), call);
             STAT_INC(CALL, hit);
-            _PyInterpreterFrame *new_frame = _PyFrame_Push(tstate, func);
-            if (new_frame == NULL) {
-                goto error;
-            }
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func);
+            CALL_STAT_INC(frames_pushed);
             CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
@@ -4810,11 +4805,10 @@ handle_eval_breaker:
             DEOPT_IF(argcount > code->co_argcount, CALL);
             int minargs = cache->min_args;
             DEOPT_IF(argcount < minargs, CALL);
+            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code), call);
             STAT_INC(CALL, hit);
-            _PyInterpreterFrame *new_frame = _PyFrame_Push(tstate, func);
-            if (new_frame == NULL) {
-                goto error;
-            }
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func);
+            CALL_STAT_INC(frames_pushed);
             CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
@@ -6269,13 +6263,12 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         size_t argcount, PyObject *kwnames)
 {
     PyCodeObject * code = (PyCodeObject *)func->func_code;
-    size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
     CALL_STAT_INC(frames_pushed);
-    _PyInterpreterFrame *frame = _PyThreadState_BumpFramePointer(tstate, size);
+    _PyInterpreterFrame *frame = _PyThreadState_PushFrame(tstate, code->co_framesize);
     if (frame == NULL) {
         goto fail;
     }
-    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
+    _PyFrame_InitializeSpecials(frame, func, locals, code);
     PyObject **localsarray = &frame->localsplus[0];
     for (int i = 0; i < code->co_nlocalsplus; i++) {
         localsarray[i] = NULL;
