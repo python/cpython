@@ -1449,8 +1449,8 @@ the context manager is a no-op.
 
 .. note::
 
-   The context manager does not implicitly open a new transaction.
-   The context manager does not implicitly close the connection.
+   The context manager does not implicitly open a new transaction
+   or close the connection.
 
 .. literalinclude:: ../includes/sqlite3/ctx_manager.py
 
