@@ -6,6 +6,7 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stddef.h>
+#include "pycore_code.h"         // STATS
 
 /* See Objects/frame_layout.md for an explanation of the frame stack
  * including explanation of the PyFrameObject and _PyInterpreterFrame
@@ -190,6 +191,7 @@ void _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
 static inline _PyInterpreterFrame *
 _PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func)
 {
+    CALL_STAT_INC(frames_pushed);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     _PyInterpreterFrame *new_frame = (_PyInterpreterFrame *)tstate->datastack_top;
     tstate->datastack_top += code->co_framesize;

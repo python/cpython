@@ -2244,7 +2244,6 @@ handle_eval_breaker:
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), BINARY_SUBSCR);
             Py_INCREF(getitem);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, getitem);
-            CALL_STAT_INC(frames_pushed);
             CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(2);
             new_frame->localsplus[0] = container;
@@ -4773,7 +4772,6 @@ handle_eval_breaker:
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func);
-            CALL_STAT_INC(frames_pushed);
             CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
@@ -4808,7 +4806,6 @@ handle_eval_breaker:
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func);
-            CALL_STAT_INC(frames_pushed);
             CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
