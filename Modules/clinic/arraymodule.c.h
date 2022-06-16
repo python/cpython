@@ -47,7 +47,7 @@ PyDoc_STRVAR(array_array_index__doc__,
 "Raise ValueError if the value is not present.");
 
 #define ARRAY_ARRAY_INDEX_METHODDEF    \
-    {"index", (PyCFunction)(void(*)(void))array_array_index, METH_FASTCALL, array_array_index__doc__},
+    {"index", _PyCFunction_CAST(array_array_index), METH_FASTCALL, array_array_index__doc__},
 
 static PyObject *
 array_array_index_impl(arrayobject *self, PyObject *v, Py_ssize_t start,
@@ -102,7 +102,7 @@ PyDoc_STRVAR(array_array_pop__doc__,
 "i defaults to -1.");
 
 #define ARRAY_ARRAY_POP_METHODDEF    \
-    {"pop", (PyCFunction)(void(*)(void))array_array_pop, METH_FASTCALL, array_array_pop__doc__},
+    {"pop", _PyCFunction_CAST(array_array_pop), METH_FASTCALL, array_array_pop__doc__},
 
 static PyObject *
 array_array_pop_impl(arrayobject *self, Py_ssize_t i);
@@ -145,7 +145,7 @@ PyDoc_STRVAR(array_array_extend__doc__,
 "Append items to the end of the array.");
 
 #define ARRAY_ARRAY_EXTEND_METHODDEF    \
-    {"extend", (PyCFunction)(void(*)(void))array_array_extend, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array_extend__doc__},
+    {"extend", _PyCFunction_CAST(array_array_extend), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array_extend__doc__},
 
 static PyObject *
 array_array_extend_impl(arrayobject *self, PyTypeObject *cls, PyObject *bb);
@@ -177,7 +177,7 @@ PyDoc_STRVAR(array_array_insert__doc__,
 "Insert a new item v into the array before position i.");
 
 #define ARRAY_ARRAY_INSERT_METHODDEF    \
-    {"insert", (PyCFunction)(void(*)(void))array_array_insert, METH_FASTCALL, array_array_insert__doc__},
+    {"insert", _PyCFunction_CAST(array_array_insert), METH_FASTCALL, array_array_insert__doc__},
 
 static PyObject *
 array_array_insert_impl(arrayobject *self, Py_ssize_t i, PyObject *v);
@@ -287,7 +287,7 @@ PyDoc_STRVAR(array_array_fromfile__doc__,
 "Read n objects from the file object f and append them to the end of the array.");
 
 #define ARRAY_ARRAY_FROMFILE_METHODDEF    \
-    {"fromfile", (PyCFunction)(void(*)(void))array_array_fromfile, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array_fromfile__doc__},
+    {"fromfile", _PyCFunction_CAST(array_array_fromfile), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array_fromfile__doc__},
 
 static PyObject *
 array_array_fromfile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f,
@@ -333,7 +333,7 @@ PyDoc_STRVAR(array_array_tofile__doc__,
 "Write all items (as machine values) to the file object f.");
 
 #define ARRAY_ARRAY_TOFILE_METHODDEF    \
-    {"tofile", (PyCFunction)(void(*)(void))array_array_tofile, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array_tofile__doc__},
+    {"tofile", _PyCFunction_CAST(array_array_tofile), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array_tofile__doc__},
 
 static PyObject *
 array_array_tofile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f);
@@ -523,7 +523,7 @@ PyDoc_STRVAR(array__array_reconstructor__doc__,
 "Internal. Used for pickling support.");
 
 #define ARRAY__ARRAY_RECONSTRUCTOR_METHODDEF    \
-    {"_array_reconstructor", (PyCFunction)(void(*)(void))array__array_reconstructor, METH_FASTCALL, array__array_reconstructor__doc__},
+    {"_array_reconstructor", _PyCFunction_CAST(array__array_reconstructor), METH_FASTCALL, array__array_reconstructor__doc__},
 
 static PyObject *
 array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
@@ -574,7 +574,7 @@ PyDoc_STRVAR(array_array___reduce_ex____doc__,
 "Return state information for pickling.");
 
 #define ARRAY_ARRAY___REDUCE_EX___METHODDEF    \
-    {"__reduce_ex__", (PyCFunction)(void(*)(void))array_array___reduce_ex__, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array___reduce_ex____doc__},
+    {"__reduce_ex__", _PyCFunction_CAST(array_array___reduce_ex__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array___reduce_ex____doc__},
 
 static PyObject *
 array_array___reduce_ex___impl(arrayobject *self, PyTypeObject *cls,
@@ -607,7 +607,7 @@ PyDoc_STRVAR(array_arrayiterator___reduce____doc__,
 "Return state information for pickling.");
 
 #define ARRAY_ARRAYITERATOR___REDUCE___METHODDEF    \
-    {"__reduce__", (PyCFunction)(void(*)(void))array_arrayiterator___reduce__, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_arrayiterator___reduce____doc__},
+    {"__reduce__", _PyCFunction_CAST(array_arrayiterator___reduce__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_arrayiterator___reduce____doc__},
 
 static PyObject *
 array_arrayiterator___reduce___impl(arrayiterobject *self, PyTypeObject *cls);
@@ -630,4 +630,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=7f48d1691fa27442 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=85a5fec90d9615b9 input=a9049054013a1b77]*/

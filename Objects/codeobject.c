@@ -334,10 +334,17 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     /* not set */
     co->co_weakreflist = NULL;
     co->co_extra = NULL;
+    co->_co_code = NULL;
 
     co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
            PyBytes_GET_SIZE(con->code));
+    int entry_point = 0;
+    while (entry_point < Py_SIZE(co) &&
+        _Py_OPCODE(_PyCode_CODE(co)[entry_point]) != RESUME) {
+        entry_point++;
+    }
+    co->_co_firsttraceable = entry_point;
 }
 
 static int
@@ -1096,7 +1103,7 @@ error:
     return result;
 }
 
-static PyTypeObject LineIterator = {
+PyTypeObject _PyLineIterator = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "line_iterator",                    /* tp_name */
     sizeof(lineiterator),               /* tp_basicsize */
@@ -1142,7 +1149,7 @@ static PyTypeObject LineIterator = {
 static lineiterator *
 new_linesiterator(PyCodeObject *code)
 {
-    lineiterator *li = (lineiterator *)PyType_GenericAlloc(&LineIterator, 0);
+    lineiterator *li = (lineiterator *)PyType_GenericAlloc(&_PyLineIterator, 0);
     if (li == NULL) {
         return NULL;
     }
@@ -1196,7 +1203,7 @@ positionsiter_next(positionsiterator* pi)
         _source_offset_converter, &pi->pi_endcolumn);
 }
 
-static PyTypeObject PositionsIterator = {
+PyTypeObject _PyPositionsIterator = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "positions_iterator",               /* tp_name */
     sizeof(positionsiterator),          /* tp_basicsize */
@@ -1242,7 +1249,7 @@ static PyTypeObject PositionsIterator = {
 static PyObject*
 code_positionsiterator(PyCodeObject* code, PyObject* Py_UNUSED(args))
 {
-    positionsiterator* pi = (positionsiterator*)PyType_GenericAlloc(&PositionsIterator, 0);
+    positionsiterator* pi = (positionsiterator*)PyType_GenericAlloc(&_PyPositionsIterator, 0);
     if (pi == NULL) {
         return NULL;
     }
@@ -1350,26 +1357,42 @@ _PyCode_GetFreevars(PyCodeObject *co)
     return get_localsplus_names(co, CO_FAST_FREE, co->co_nfreevars);
 }
 
-PyObject *
-_PyCode_GetCode(PyCodeObject *co)
+static void
+deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
 {
-    PyObject *code = PyBytes_FromStringAndSize(NULL, _PyCode_NBYTES(co));
-    if (code == NULL) {
-        return NULL;
-    }
-    _Py_CODEUNIT *instructions = (_Py_CODEUNIT *)PyBytes_AS_STRING(code);
-    for (int i = 0; i < Py_SIZE(co); i++) {
-        _Py_CODEUNIT instruction = _PyCode_CODE(co)[i];
-        int opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
+    for (int i = 0; i < len; i++) {
+        _Py_CODEUNIT instruction = instructions[i];
+        int opcode = _PyOpcode_Original[_Py_OPCODE(instruction)];
         int caches = _PyOpcode_Caches[opcode];
         instructions[i] = _Py_MAKECODEUNIT(opcode, _Py_OPARG(instruction));
         while (caches--) {
             instructions[++i] = _Py_MAKECODEUNIT(CACHE, 0);
         }
     }
+}
+
+PyObject *
+_PyCode_GetCode(PyCodeObject *co)
+{
+    if (co->_co_code != NULL) {
+        return Py_NewRef(co->_co_code);
+    }
+    PyObject *code = PyBytes_FromStringAndSize((const char *)_PyCode_CODE(co),
+                                               _PyCode_NBYTES(co));
+    if (code == NULL) {
+        return NULL;
+    }
+    deopt_code((_Py_CODEUNIT *)PyBytes_AS_STRING(code), Py_SIZE(co));
+    assert(co->_co_code == NULL);
+    co->_co_code = (void *)Py_NewRef(code);
     return code;
 }
 
+PyObject *
+PyCode_GetCode(PyCodeObject *co)
+{
+    return _PyCode_GetCode(co);
+}
 
 /******************
  * PyCode_Type
@@ -1520,6 +1543,7 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_qualname);
     Py_XDECREF(co->co_linetable);
     Py_XDECREF(co->co_exceptiontable);
+    Py_XDECREF(co->_co_code);
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)co);
     }
@@ -2071,8 +2095,10 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
     if (co->co_warmup == 0) {
          _Py_QuickenedCount--;
     }
+    deopt_code(_PyCode_CODE(co), Py_SIZE(co));
     co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
     PyMem_Free(co->co_extra);
+    Py_CLEAR(co->_co_code);
     co->co_extra = NULL;
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *)co);

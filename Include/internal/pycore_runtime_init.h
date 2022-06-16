@@ -102,7 +102,6 @@ extern "C" {
             .kind = 1, \
             .compact = 1, \
             .ascii = ASCII, \
-            .ready = 1, \
         }, \
     }
 #define _PyASCIIObject_INIT(LITERAL) \
@@ -713,6 +712,7 @@ extern "C" {
                 INIT_ID(__delete__), \
                 INIT_ID(__delitem__), \
                 INIT_ID(__dict__), \
+                INIT_ID(__dictoffset__), \
                 INIT_ID(__dir__), \
                 INIT_ID(__divmod__), \
                 INIT_ID(__doc__), \
@@ -824,9 +824,12 @@ extern "C" {
                 INIT_ID(__subclasshook__), \
                 INIT_ID(__truediv__), \
                 INIT_ID(__trunc__), \
+                INIT_ID(__typing_is_unpacked_typevartuple__), \
+                INIT_ID(__typing_prepare_subst__), \
                 INIT_ID(__typing_subst__), \
-                INIT_ID(__typing_unpacked__), \
+                INIT_ID(__typing_unpacked_tuple_args__), \
                 INIT_ID(__warningregistry__), \
+                INIT_ID(__weaklistoffset__), \
                 INIT_ID(__weakref__), \
                 INIT_ID(__xor__), \
                 INIT_ID(_abc_impl), \
@@ -845,7 +848,6 @@ extern "C" {
                 INIT_ID(_showwarnmsg), \
                 INIT_ID(_shutdown), \
                 INIT_ID(_slotnames), \
-                INIT_ID(_strptime_time), \
                 INIT_ID(_uninitialized_submodules), \
                 INIT_ID(_warn_unawaited_coroutine), \
                 INIT_ID(_xoptions), \
@@ -871,7 +873,6 @@ extern "C" {
                 INIT_ID(difference_update), \
                 INIT_ID(dispatch_table), \
                 INIT_ID(displayhook), \
-                INIT_ID(enable), \
                 INIT_ID(encode), \
                 INIT_ID(encoding), \
                 INIT_ID(end_lineno), \
@@ -923,13 +924,13 @@ extern "C" {
                 INIT_ID(n_unnamed_fields), \
                 INIT_ID(name), \
                 INIT_ID(newlines), \
+                INIT_ID(next), \
                 INIT_ID(obj), \
                 INIT_ID(offset), \
                 INIT_ID(onceregistry), \
                 INIT_ID(opcode), \
                 INIT_ID(open), \
                 INIT_ID(parent), \
-                INIT_ID(partial), \
                 INIT_ID(path), \
                 INIT_ID(peek), \
                 INIT_ID(persistent_id), \
@@ -975,7 +976,6 @@ extern "C" {
                 INIT_ID(warnoptions), \
                 INIT_ID(writable), \
                 INIT_ID(write), \
-                INIT_ID(zipimporter), \
             }, \
             .ascii = { \
                 _PyASCIIObject_INIT("\x00"), \

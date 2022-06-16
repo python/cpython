@@ -8,7 +8,7 @@ from functools import reduce
 __all__ = [
         'EnumType', 'EnumMeta',
         'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag', 'ReprEnum',
-        'auto', 'unique', 'property', 'verify',
+        'auto', 'unique', 'property', 'verify', 'member', 'nonmember',
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
         'global_flag_repr', 'global_enum_repr', 'global_str', 'global_enum',
         'EnumCheck', 'CONTINUOUS', 'NAMED_FLAGS', 'UNIQUE',
@@ -19,6 +19,20 @@ __all__ = [
 # before they have been created.
 # This is also why there are checks in EnumType like `if Enum is not None`
 Enum = Flag = EJECT = _stdlib_enums = ReprEnum = None
+
+class nonmember(object):
+    """
+    Protects item from becaming an Enum member during class creation.
+    """
+    def __init__(self, value):
+        self.value = value
+
+class member(object):
+    """
+    Forces item to became an Enum member during class creation.
+    """
+    def __init__(self, value):
+        self.value = value
 
 def _is_descriptor(obj):
     """
@@ -51,6 +65,15 @@ def _is_sunder(name):
             name[1:2] != '_' and
             name[-2:-1] != '_'
             )
+
+def _is_internal_class(cls_name, obj):
+    # do not use `re` as `re` imports `enum`
+    if not isinstance(obj, type):
+        return False
+    qualname = getattr(obj, '__qualname__', '')
+    s_pattern = cls_name + '.' + getattr(obj, '__name__', '')
+    e_pattern = '.' + s_pattern
+    return qualname == s_pattern or qualname.endswith(e_pattern)
 
 def _is_private(cls_name, name):
     # do not use `re` as `re` imports `enum`
@@ -139,13 +162,19 @@ def _dedent(text):
         lines[j] = l[i:]
     return '\n'.join(lines)
 
+class _auto_null:
+    def __repr__(self):
+        return '_auto_null'
+_auto_null = _auto_null()
 
-_auto_null = object()
 class auto:
     """
     Instances are replaced with an appropriate value in Enum class suites.
     """
     value = _auto_null
+
+    def __repr__(self):
+        return "auto(%r)" % self.value
 
 class property(DynamicClassAttribute):
     """
@@ -325,8 +354,16 @@ class _EnumDict(dict):
 
         Single underscore (sunder) names are reserved.
         """
+        if _is_internal_class(self._cls_name, value):
+            import warnings
+            warnings.warn(
+                    "In 3.13 classes created inside an enum will not become a member.  "
+                    "Use the `member` decorator to keep the current behavior.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                    )
         if _is_private(self._cls_name, key):
-            # do nothing, name will be a normal attribute
+            # also do nothing, name will be a normal attribute
             pass
         elif _is_sunder(key):
             if key not in (
@@ -364,10 +401,22 @@ class _EnumDict(dict):
             raise TypeError('%r already defined as %r' % (key, self[key]))
         elif key in self._ignore:
             pass
-        elif not _is_descriptor(value):
+        elif isinstance(value, nonmember):
+            # unwrap value here; it won't be processed by the below `else`
+            value = value.value
+        elif _is_descriptor(value):
+            pass
+        # TODO: uncomment next three lines in 3.12
+        # elif _is_internal_class(self._cls_name, value):
+        #     # do nothing, name will be a normal attribute
+        #     pass
+        else:
             if key in self:
                 # enum overwriting a descriptor?
                 raise TypeError('%r already defined as %r' % (key, self[key]))
+            elif isinstance(value, member):
+                # unwrap value here -- it will become a member
+                value = value.value
             if isinstance(value, auto):
                 if value.value == _auto_null:
                     value.value = self._generate_next_value(
@@ -431,8 +480,9 @@ class EnumType(type):
         # check for illegal enum names (any others?)
         invalid_names = set(member_names) & {'mro', ''}
         if invalid_names:
-            raise ValueError('invalid enum member name(s) '.format(
-                ','.join(repr(n) for n in invalid_names)))
+            raise ValueError('invalid enum member name(s) %s'  % (
+                    ','.join(repr(n) for n in invalid_names)
+                    ))
         #
         # adjust the sunders
         _order_ = classdict.pop('_order_', None)
@@ -488,7 +538,7 @@ class EnumType(type):
         #
         # create a default docstring if one has not been provided
         if enum_class.__doc__ is None:
-            if not member_names:
+            if not member_names or not list(enum_class):
                 enum_class.__doc__ = classdict['__doc__'] = _dedent("""\
                         Create a collection of name/value pairs.
 
@@ -975,9 +1025,6 @@ class EnumType(type):
         """
         if not bases:
             return object, Enum
-
-        mcls._check_for_existing_members_(class_name, bases)
-
         # ensure final parent class is an Enum derivative, find any concrete
         # data type, and check that Enum has no members
         first_enum = bases[-1]
@@ -1525,7 +1572,7 @@ class Flag(Enum, boundary=STRICT):
     __rxor__ = __xor__
 
 
-class IntFlag(int, ReprEnum, Flag, boundary=EJECT):
+class IntFlag(int, ReprEnum, Flag, boundary=KEEP):
     """
     Support for integer-based Flags
     """
@@ -1594,6 +1641,7 @@ def global_str(self):
     use enum_name instead of class.enum_name
     """
     if self._name_ is None:
+        cls_name = self.__class__.__name__
         return "%s(%r)" % (cls_name, self._value_)
     else:
         return self._name_

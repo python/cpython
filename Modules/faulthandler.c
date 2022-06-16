@@ -1229,7 +1229,7 @@ PyDoc_STRVAR(module_doc,
 
 static PyMethodDef module_methods[] = {
     {"enable",
-     (PyCFunction)(void(*)(void))faulthandler_py_enable, METH_VARARGS|METH_KEYWORDS,
+     _PyCFunction_CAST(faulthandler_py_enable), METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("enable(file=sys.stderr, all_threads=True): "
                "enable the fault handler")},
     {"disable", faulthandler_disable_py, METH_NOARGS,
@@ -1237,12 +1237,12 @@ static PyMethodDef module_methods[] = {
     {"is_enabled", faulthandler_is_enabled, METH_NOARGS,
      PyDoc_STR("is_enabled()->bool: check if the handler is enabled")},
     {"dump_traceback",
-     (PyCFunction)(void(*)(void))faulthandler_dump_traceback_py, METH_VARARGS|METH_KEYWORDS,
+     _PyCFunction_CAST(faulthandler_dump_traceback_py), METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("dump_traceback(file=sys.stderr, all_threads=True): "
                "dump the traceback of the current thread, or of all threads "
                "if all_threads is True, into file")},
     {"dump_traceback_later",
-     (PyCFunction)(void(*)(void))faulthandler_dump_traceback_later, METH_VARARGS|METH_KEYWORDS,
+     _PyCFunction_CAST(faulthandler_dump_traceback_later), METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("dump_traceback_later(timeout, repeat=False, file=sys.stderrn, exit=False):\n"
                "dump the traceback of all threads in timeout seconds,\n"
                "or each timeout seconds if repeat is True. If exit is True, "
@@ -1253,13 +1253,13 @@ static PyMethodDef module_methods[] = {
                "to dump_traceback_later().")},
 #ifdef FAULTHANDLER_USER
     {"register",
-     (PyCFunction)(void(*)(void))faulthandler_register_py, METH_VARARGS|METH_KEYWORDS,
+     _PyCFunction_CAST(faulthandler_register_py), METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("register(signum, file=sys.stderr, all_threads=True, chain=False): "
                "register a handler for the signal 'signum': dump the "
                "traceback of the current thread, or of all threads if "
                "all_threads is True, into file")},
     {"unregister",
-     (PyCFunction)(void(*)(void))faulthandler_unregister_py, METH_VARARGS|METH_KEYWORDS,
+     _PyCFunction_CAST(faulthandler_unregister_py), METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("unregister(signum): unregister the handler of the signal "
                 "'signum' registered by register()")},
 #endif
@@ -1340,13 +1340,13 @@ PyInit_faulthandler(void)
 static int
 faulthandler_init_enable(void)
 {
-    PyObject *module = PyImport_ImportModule("faulthandler");
-    if (module == NULL) {
+    PyObject *enable = _PyImport_GetModuleAttrString("faulthandler", "enable");
+    if (enable == NULL) {
         return -1;
     }
 
-    PyObject *res = PyObject_CallMethodNoArgs(module, &_Py_ID(enable));
-    Py_DECREF(module);
+    PyObject *res = PyObject_CallNoArgs(enable);
+    Py_DECREF(enable);
     if (res == NULL) {
         return -1;
     }

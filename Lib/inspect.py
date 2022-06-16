@@ -149,6 +149,7 @@ import token
 import types
 import functools
 import builtins
+from keyword import iskeyword
 from operator import attrgetter
 from collections import namedtuple, OrderedDict
 
@@ -1645,7 +1646,7 @@ class Traceback(_Traceback):
         instance = super().__new__(cls, filename, lineno, function, code_context, index)
         instance.positions = positions
         return instance
-    
+
     def __repr__(self):
         return ('Traceback(filename={!r}, lineno={!r}, function={!r}, '
                'code_context={!r}, index={!r}, positions={!r})'.format(
@@ -1683,7 +1684,7 @@ def getframeinfo(frame, context=1):
         frame, *positions = (frame, lineno, *positions[1:])
     else:
         frame, *positions = (frame, *positions)
-    
+
     lineno = positions[0]
 
     if not isframe(frame):
@@ -2707,7 +2708,10 @@ class Parameter:
             self._kind = _POSITIONAL_ONLY
             name = 'implicit{}'.format(name[1:])
 
-        if not name.isidentifier():
+        # It's possible for C functions to have a positional-only parameter
+        # where the name is a keyword, so for compatibility we'll allow it.
+        is_keyword = iskeyword(name) and self._kind is not _POSITIONAL_ONLY
+        if is_keyword or not name.isidentifier():
             raise ValueError('{!r} is not a valid parameter name'.format(name))
 
         self._name = name

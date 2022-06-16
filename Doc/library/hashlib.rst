@@ -91,8 +91,8 @@ library that Python uses on your platform. On most platforms the
 
    Hashlib now uses SHA3 and SHAKE from OpenSSL 1.1.1 and newer.
 
-For example, to obtain the digest of the byte string ``b'Nobody inspects the
-spammish repetition'``::
+For example, to obtain the digest of the byte string ``b"Nobody inspects the
+spammish repetition"``::
 
    >>> import hashlib
    >>> m = hashlib.sha256()
@@ -100,15 +100,13 @@ spammish repetition'``::
    >>> m.update(b" the spammish repetition")
    >>> m.digest()
    b'\x03\x1e\xdd}Ae\x15\x93\xc5\xfe\\\x00o\xa5u+7\xfd\xdf\xf7\xbcN\x84:\xa6\xaf\x0c\x95\x0fK\x94\x06'
-   >>> m.digest_size
-   32
-   >>> m.block_size
-   64
+   >>> m.hexdigest()
+   '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
 More condensed:
 
-   >>> hashlib.sha224(b"Nobody inspects the spammish repetition").hexdigest()
-   'a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2'
+   >>> hashlib.sha256(b"Nobody inspects the spammish repetition").hexdigest()
+   '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
 .. function:: new(name[, data], *, usedforsecurity=True)
 

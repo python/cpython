@@ -89,7 +89,7 @@ PyDoc_STRVAR(unicode_center__doc__,
 "Padding is done using the specified fill character (default is a space).");
 
 #define UNICODE_CENTER_METHODDEF    \
-    {"center", (PyCFunction)(void(*)(void))unicode_center, METH_FASTCALL, unicode_center__doc__},
+    {"center", _PyCFunction_CAST(unicode_center), METH_FASTCALL, unicode_center__doc__},
 
 static PyObject *
 unicode_center_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar);
@@ -145,7 +145,7 @@ PyDoc_STRVAR(unicode_encode__doc__,
 "    codecs.register_error that can handle UnicodeEncodeErrors.");
 
 #define UNICODE_ENCODE_METHODDEF    \
-    {"encode", (PyCFunction)(void(*)(void))unicode_encode, METH_FASTCALL|METH_KEYWORDS, unicode_encode__doc__},
+    {"encode", _PyCFunction_CAST(unicode_encode), METH_FASTCALL|METH_KEYWORDS, unicode_encode__doc__},
 
 static PyObject *
 unicode_encode_impl(PyObject *self, const char *encoding, const char *errors);
@@ -215,7 +215,7 @@ PyDoc_STRVAR(unicode_expandtabs__doc__,
 "If tabsize is not given, a tab size of 8 characters is assumed.");
 
 #define UNICODE_EXPANDTABS_METHODDEF    \
-    {"expandtabs", (PyCFunction)(void(*)(void))unicode_expandtabs, METH_FASTCALL|METH_KEYWORDS, unicode_expandtabs__doc__},
+    {"expandtabs", _PyCFunction_CAST(unicode_expandtabs), METH_FASTCALL|METH_KEYWORDS, unicode_expandtabs__doc__},
 
 static PyObject *
 unicode_expandtabs_impl(PyObject *self, int tabsize);
@@ -523,7 +523,7 @@ PyDoc_STRVAR(unicode_ljust__doc__,
 "Padding is done using the specified fill character (default is a space).");
 
 #define UNICODE_LJUST_METHODDEF    \
-    {"ljust", (PyCFunction)(void(*)(void))unicode_ljust, METH_FASTCALL, unicode_ljust__doc__},
+    {"ljust", _PyCFunction_CAST(unicode_ljust), METH_FASTCALL, unicode_ljust__doc__},
 
 static PyObject *
 unicode_ljust_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar);
@@ -590,7 +590,7 @@ PyDoc_STRVAR(unicode_strip__doc__,
 "If chars is given and not None, remove characters in chars instead.");
 
 #define UNICODE_STRIP_METHODDEF    \
-    {"strip", (PyCFunction)(void(*)(void))unicode_strip, METH_FASTCALL, unicode_strip__doc__},
+    {"strip", _PyCFunction_CAST(unicode_strip), METH_FASTCALL, unicode_strip__doc__},
 
 static PyObject *
 unicode_strip_impl(PyObject *self, PyObject *chars);
@@ -624,7 +624,7 @@ PyDoc_STRVAR(unicode_lstrip__doc__,
 "If chars is given and not None, remove characters in chars instead.");
 
 #define UNICODE_LSTRIP_METHODDEF    \
-    {"lstrip", (PyCFunction)(void(*)(void))unicode_lstrip, METH_FASTCALL, unicode_lstrip__doc__},
+    {"lstrip", _PyCFunction_CAST(unicode_lstrip), METH_FASTCALL, unicode_lstrip__doc__},
 
 static PyObject *
 unicode_lstrip_impl(PyObject *self, PyObject *chars);
@@ -658,7 +658,7 @@ PyDoc_STRVAR(unicode_rstrip__doc__,
 "If chars is given and not None, remove characters in chars instead.");
 
 #define UNICODE_RSTRIP_METHODDEF    \
-    {"rstrip", (PyCFunction)(void(*)(void))unicode_rstrip, METH_FASTCALL, unicode_rstrip__doc__},
+    {"rstrip", _PyCFunction_CAST(unicode_rstrip), METH_FASTCALL, unicode_rstrip__doc__},
 
 static PyObject *
 unicode_rstrip_impl(PyObject *self, PyObject *chars);
@@ -697,7 +697,7 @@ PyDoc_STRVAR(unicode_replace__doc__,
 "replaced.");
 
 #define UNICODE_REPLACE_METHODDEF    \
-    {"replace", (PyCFunction)(void(*)(void))unicode_replace, METH_FASTCALL, unicode_replace__doc__},
+    {"replace", _PyCFunction_CAST(unicode_replace), METH_FASTCALL, unicode_replace__doc__},
 
 static PyObject *
 unicode_replace_impl(PyObject *self, PyObject *old, PyObject *new,
@@ -832,7 +832,7 @@ PyDoc_STRVAR(unicode_rjust__doc__,
 "Padding is done using the specified fill character (default is a space).");
 
 #define UNICODE_RJUST_METHODDEF    \
-    {"rjust", (PyCFunction)(void(*)(void))unicode_rjust, METH_FASTCALL, unicode_rjust__doc__},
+    {"rjust", _PyCFunction_CAST(unicode_rjust), METH_FASTCALL, unicode_rjust__doc__},
 
 static PyObject *
 unicode_rjust_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar);
@@ -893,7 +893,7 @@ PyDoc_STRVAR(unicode_split__doc__,
 "the regular expression module.");
 
 #define UNICODE_SPLIT_METHODDEF    \
-    {"split", (PyCFunction)(void(*)(void))unicode_split, METH_FASTCALL|METH_KEYWORDS, unicode_split__doc__},
+    {"split", _PyCFunction_CAST(unicode_split), METH_FASTCALL|METH_KEYWORDS, unicode_split__doc__},
 
 static PyObject *
 unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit);
@@ -992,7 +992,7 @@ PyDoc_STRVAR(unicode_rsplit__doc__,
 "Splitting starts at the end of the string and works to the front.");
 
 #define UNICODE_RSPLIT_METHODDEF    \
-    {"rsplit", (PyCFunction)(void(*)(void))unicode_rsplit, METH_FASTCALL|METH_KEYWORDS, unicode_rsplit__doc__},
+    {"rsplit", _PyCFunction_CAST(unicode_rsplit), METH_FASTCALL|METH_KEYWORDS, unicode_rsplit__doc__},
 
 static PyObject *
 unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit);
@@ -1050,7 +1050,7 @@ PyDoc_STRVAR(unicode_splitlines__doc__,
 "true.");
 
 #define UNICODE_SPLITLINES_METHODDEF    \
-    {"splitlines", (PyCFunction)(void(*)(void))unicode_splitlines, METH_FASTCALL|METH_KEYWORDS, unicode_splitlines__doc__},
+    {"splitlines", _PyCFunction_CAST(unicode_splitlines), METH_FASTCALL|METH_KEYWORDS, unicode_splitlines__doc__},
 
 static PyObject *
 unicode_splitlines_impl(PyObject *self, int keepends);
@@ -1116,7 +1116,7 @@ PyDoc_STRVAR(unicode_maketrans__doc__,
 "must be a string, whose characters will be mapped to None in the result.");
 
 #define UNICODE_MAKETRANS_METHODDEF    \
-    {"maketrans", (PyCFunction)(void(*)(void))unicode_maketrans, METH_FASTCALL|METH_STATIC, unicode_maketrans__doc__},
+    {"maketrans", _PyCFunction_CAST(unicode_maketrans), METH_FASTCALL|METH_STATIC, unicode_maketrans__doc__},
 
 static PyObject *
 unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z);
@@ -1353,4 +1353,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e8566b060f558f72 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b5dd7cefead9a8e7 input=a9049054013a1b77]*/

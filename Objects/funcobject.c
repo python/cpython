@@ -29,7 +29,8 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->func_code = constr->fc_code;
     op->func_defaults = NULL;
     op->func_kwdefaults = NULL;
-    op->func_closure = NULL;
+    Py_XINCREF(constr->fc_closure);
+    op->func_closure = constr->fc_closure;
     Py_INCREF(Py_None);
     op->func_doc = Py_None;
     op->func_dict = NULL;

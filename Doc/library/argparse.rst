@@ -555,7 +555,7 @@ disallowed.
 fromfile_prefix_chars
 ^^^^^^^^^^^^^^^^^^^^^
 
-Sometimes, when dealing with a particularly long argument lists, it
+Sometimes, when dealing with a particularly long argument list, it
 may make sense to keep the list of arguments in a file rather than typing it out
 at the command line.  If the ``fromfile_prefix_chars=`` argument is given to the
 :class:`ArgumentParser` constructor, then arguments that start with any of the
@@ -846,8 +846,10 @@ how the command-line arguments should be handled. The supplied actions are:
     Namespace(foo=True, bar=False, baz=True)
 
 * ``'append'`` - This stores a list, and appends each argument value to the
-  list.  This is useful to allow an option to be specified multiple times.
-  Example usage::
+  list. It is useful to allow an option to be specified multiple times.
+  If the default value is non-empty, the default elements will be present
+  in the parsed value for the option, with any values from the
+  command line appended after those default values. Example usage::
 
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action='append')
@@ -949,8 +951,8 @@ nargs
 
 ArgumentParser objects usually associate a single command-line argument with a
 single action to be taken.  The ``nargs`` keyword argument associates a
-different number of command-line arguments with a single action.  The supported
-values are:
+different number of command-line arguments with a single action.
+See also :ref:`specifying-ambiguous-arguments`. The supported values are:
 
 * ``N`` (an integer).  ``N`` arguments from the command line will be gathered
   together into a list.  For example::
@@ -1608,6 +1610,9 @@ argument::
    >>> parser.parse_args(['--', '-f'])
    Namespace(foo='-f', one=None)
 
+See also :ref:`the argparse howto on ambiguous arguments <specifying-ambiguous-arguments>`
+for more details.
+
 .. _prefix-matching:
 
 Argument abbreviations (prefix matching)
@@ -1696,7 +1701,7 @@ Sub-commands
 
 .. method:: ArgumentParser.add_subparsers([title], [description], [prog], \
                                           [parser_class], [action], \
-                                          [option_string], [dest], [required], \
+                                          [option_strings], [dest], [required], \
                                           [help], [metavar])
 
    Many programs split up their functionality into a number of sub-commands,

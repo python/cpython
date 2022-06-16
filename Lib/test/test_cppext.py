@@ -1,86 +1,73 @@
 # gh-91321: Build a basic C++ test extension to check that the Python C API is
 # compatible with C++ and does not emit C++ compiler warnings.
-import contextlib
-import os
+import os.path
 import sys
 import unittest
-import warnings
+import subprocess
 from test import support
 from test.support import os_helper
-
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    from distutils.core import setup, Extension
-    import distutils.sysconfig
 
 
 MS_WINDOWS = (sys.platform == 'win32')
 
 
-SOURCE = support.findfile('_testcppext.cpp')
-if not MS_WINDOWS:
-    # C++ compiler flags for GCC and clang
-    CPPFLAGS = [
-        # Python currently targets C++11
-        '-std=c++11',
-        # gh-91321: The purpose of _testcppext extension is to check that building
-        # a C++ extension using the Python C API does not emit C++ compiler
-        # warnings
-        '-Werror',
-    ]
-else:
-    # Don't pass any compiler flag to MSVC
-    CPPFLAGS = []
+SETUP_TESTCPPEXT = support.findfile('setup_testcppext.py')
 
 
+@support.requires_subprocess()
 class TestCPPExt(unittest.TestCase):
-    def build(self):
-        cpp_ext = Extension(
-            '_testcppext',
-            sources=[SOURCE],
-            language='c++',
-            extra_compile_args=CPPFLAGS)
-        capture_stdout = (not support.verbose)
+    def test_build_cpp11(self):
+        self.check_build(False)
 
-        try:
-            try:
-                if capture_stdout:
-                    stdout = support.captured_stdout()
-                else:
-                    print()
-                    stdout = contextlib.nullcontext()
-                with (stdout,
-                      support.swap_attr(sys, 'argv', ['setup.py', 'build_ext', '--verbose'])):
-                    setup(name="_testcppext", ext_modules=[cpp_ext])
-                    return
-            except:
-                if capture_stdout:
-                    # Show output on error
-                    print()
-                    print(stdout.getvalue())
-                raise
-        except SystemExit:
-            self.fail("Build failed")
+    def test_build_cpp03(self):
+        self.check_build(True)
 
     # With MSVC, the linker fails with: cannot open file 'python311.lib'
     # https://github.com/python/cpython/pull/32175#issuecomment-1111175897
     @unittest.skipIf(MS_WINDOWS, 'test fails on Windows')
-    def test_build(self):
-        # save/restore os.environ
-        def restore_env(old_env):
-            os.environ.clear()
-            os.environ.update(old_env)
-        self.addCleanup(restore_env, dict(os.environ))
-
-        def restore_sysconfig_vars(old_config_vars):
-            distutils.sysconfig._config_vars.clear()
-            distutils.sysconfig._config_vars.update(old_config_vars)
-        self.addCleanup(restore_sysconfig_vars,
-                        dict(distutils.sysconfig._config_vars))
-
+    # the test uses venv+pip: skip if it's not available
+    @support.requires_venv_with_pip()
+    def check_build(self, std_cpp03):
         # Build in a temporary directory
         with os_helper.temp_cwd():
-            self.build()
+            self._check_build(std_cpp03)
+
+    def _check_build(self, std_cpp03):
+        venv_dir = 'env'
+        verbose = support.verbose
+
+        # Create virtual environment to get setuptools
+        cmd = [sys.executable, '-X', 'dev', '-m', 'venv', venv_dir]
+        if verbose:
+            print()
+            print('Run:', ' '.join(cmd))
+        subprocess.run(cmd, check=True)
+
+        # Get the Python executable of the venv
+        python_exe = 'python'
+        if sys.executable.endswith('.exe'):
+            python_exe += '.exe'
+        if MS_WINDOWS:
+            python = os.path.join(venv_dir, 'Scripts', python_exe)
+        else:
+            python = os.path.join(venv_dir, 'bin', python_exe)
+
+        # Build the C++ extension
+        cmd = [python, '-X', 'dev',
+               SETUP_TESTCPPEXT, 'build_ext', '--verbose']
+        if std_cpp03:
+            cmd.append('-std=c++03')
+        if verbose:
+            print('Run:', ' '.join(cmd))
+            subprocess.run(cmd, check=True)
+        else:
+            proc = subprocess.run(cmd,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT,
+                                  text=True)
+            if proc.returncode:
+                print(proc.stdout, end='')
+                self.fail(f"Build failed with exit code {proc.returncode}")
 
 
 if __name__ == "__main__":

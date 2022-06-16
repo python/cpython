@@ -1098,11 +1098,9 @@ typedef struct {
 static void
 path_cleanup(path_t *path)
 {
-#if !USE_UNICODE_WCHAR_CACHE
     wchar_t *wide = (wchar_t *)path->wide;
     path->wide = NULL;
     PyMem_Free(wide);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     Py_CLEAR(path->object);
     Py_CLEAR(path->cleanup);
 }
@@ -1190,14 +1188,7 @@ path_converter(PyObject *o, void *p)
 
     if (is_unicode) {
 #ifdef MS_WINDOWS
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-        wide = PyUnicode_AsUnicodeAndSize(o, &length);
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
         wide = PyUnicode_AsWideCharString(o, &length);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         if (!wide) {
             goto error_exit;
         }
@@ -1213,9 +1204,7 @@ _Py_COMP_DIAG_POP
         path->wide = wide;
         path->narrow = FALSE;
         path->fd = -1;
-#if !USE_UNICODE_WCHAR_CACHE
         wide = NULL;
-#endif /* USE_UNICODE_WCHAR_CACHE */
         goto success_exit;
 #else
         if (!PyUnicode_FSConverter(o, &bytes)) {
@@ -1291,15 +1280,8 @@ _Py_COMP_DIAG_POP
         goto error_exit;
     }
 
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    wide = PyUnicode_AsUnicodeAndSize(wo, &length);
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
     wide = PyUnicode_AsWideCharString(wo, &length);
     Py_DECREF(wo);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     if (!wide) {
         goto error_exit;
     }
@@ -1314,11 +1296,7 @@ _Py_COMP_DIAG_POP
     path->wide = wide;
     path->narrow = TRUE;
     Py_DECREF(bytes);
-#if USE_UNICODE_WCHAR_CACHE
-    path->cleanup = wo;
-#else /* USE_UNICODE_WCHAR_CACHE */
     wide = NULL;
-#endif /* USE_UNICODE_WCHAR_CACHE */
 #else
     path->wide = NULL;
     path->narrow = narrow;
@@ -1342,11 +1320,7 @@ _Py_COMP_DIAG_POP
     Py_XDECREF(o);
     Py_XDECREF(bytes);
 #ifdef MS_WINDOWS
-#if USE_UNICODE_WCHAR_CACHE
-    Py_XDECREF(wo);
-#else /* USE_UNICODE_WCHAR_CACHE */
     PyMem_Free(wide);
-#endif /* USE_UNICODE_WCHAR_CACHE */
 #endif
     return 0;
 }
@@ -1890,7 +1864,17 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             /* Try reading the parent directory. */
             if (!attributes_from_dir(path, &fileInfo, &tagInfo.ReparseTag)) {
                 /* Cannot read the parent directory. */
-                SetLastError(error);
+                switch (GetLastError()) {
+                case ERROR_FILE_NOT_FOUND: /* File cannot be found */
+                case ERROR_PATH_NOT_FOUND: /* File parent directory cannot be found */
+                case ERROR_NOT_READY: /* Drive exists but unavailable */
+                case ERROR_BAD_NET_NAME: /* Remote drive unavailable */
+                    break;
+                /* Restore the error from CreateFileW(). */
+                default:
+                    SetLastError(error);
+                }
+
                 return -1;
             }
             if (fileInfo.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
@@ -3298,6 +3282,10 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
     {
 #ifdef HAVE_CHMOD
         result = chmod(path->narrow, mode);
+#elif defined(__wasi__)
+        // WASI SDK 15.0 does not support chmod.
+        // Ignore missing syscall for now.
+        result = 0;
 #else
         result = -1;
         errno = ENOSYS;
@@ -7264,22 +7252,21 @@ error:
 #  define DEV_PTY_FILE "/dev/ptmx"
 #endif
 
-#if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX)
+#if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_LOGIN_TTY) || defined(HAVE_DEV_PTMX)
 #ifdef HAVE_PTY_H
 #include <pty.h>
-#else
-#ifdef HAVE_LIBUTIL_H
+#ifdef HAVE_UTMP_H
+#include <utmp.h>
+#endif /* HAVE_UTMP_H */
+#elif defined(HAVE_LIBUTIL_H)
 #include <libutil.h>
-#else
-#ifdef HAVE_UTIL_H
+#elif defined(HAVE_UTIL_H)
 #include <util.h>
-#endif /* HAVE_UTIL_H */
-#endif /* HAVE_LIBUTIL_H */
 #endif /* HAVE_PTY_H */
 #ifdef HAVE_STROPTS_H
 #include <stropts.h>
 #endif
-#endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX) */
+#endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_LOGIN_TTY) || defined(HAVE_DEV_PTMX) */
 
 
 #if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)
@@ -7382,6 +7369,56 @@ error:
 #endif /* defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX) */
 
 
+#if defined(HAVE_SETSID) && defined(TIOCSCTTY)
+#define HAVE_FALLBACK_LOGIN_TTY 1
+#endif /* defined(HAVE_SETSID) && defined(TIOCSCTTY) */
+
+#if defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY)
+/*[clinic input]
+os.login_tty
+
+    fd: fildes
+    /
+
+Prepare the tty of which fd is a file descriptor for a new login session.
+
+Make the calling process a session leader; make the tty the
+controlling tty, the stdin, the stdout, and the stderr of the
+calling process; close fd.
+[clinic start generated code]*/
+
+static PyObject *
+os_login_tty_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=495a79911b4cc1bc input=5f298565099903a2]*/
+{
+#ifdef HAVE_LOGIN_TTY
+    if (login_tty(fd) == -1) {
+        return posix_error();
+    }
+#else /* defined(HAVE_FALLBACK_LOGIN_TTY) */
+    /* Establish a new session. */
+    if (setsid() == -1) {
+        return posix_error();
+    }
+
+    /* The tty becomes the controlling terminal. */
+    if (ioctl(fd, TIOCSCTTY, (char *)NULL) == -1) {
+        return posix_error();
+    }
+
+    /* The tty becomes stdin/stdout/stderr */
+    if (dup2(fd, 0) == -1 || dup2(fd, 1) == -1 || dup2(fd, 2) == -1) {
+        return posix_error();
+    }
+    if (fd > 2) {
+        close(fd);
+    }
+#endif /* HAVE_LOGIN_TTY */
+    Py_RETURN_NONE;
+}
+#endif /* defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY) */
+
+
 #ifdef HAVE_FORKPTY
 /*[clinic input]
 os.forkpty
@@ -7417,8 +7454,9 @@ os_forkpty_impl(PyObject *module)
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
     }
-    if (pid == -1)
+    if (pid == -1) {
         return posix_error();
+    }
     return Py_BuildValue("(Ni)", PyLong_FromPid(pid), master_fd);
 }
 #endif /* HAVE_FORKPTY */
@@ -8241,11 +8279,7 @@ wait_helper(PyObject *module, pid_t pid, int status, struct rusage *ru)
         memset(ru, 0, sizeof(*ru));
     }
 
-    PyObject *m = PyImport_ImportModule("resource");
-    if (m == NULL)
-        return NULL;
-    struct_rusage = PyObject_GetAttr(m, get_posix_state(module)->struct_rusage);
-    Py_DECREF(m);
+    struct_rusage = _PyImport_GetModuleAttrString("resource", "struct_rusage");
     if (struct_rusage == NULL)
         return NULL;
 
@@ -13515,15 +13549,8 @@ DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
 #ifdef MS_WINDOWS
     if (!PyUnicode_FSDecoder(self->path, &ub))
         return NULL;
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    const wchar_t *path = PyUnicode_AsUnicode(ub);
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
     wchar_t *path = PyUnicode_AsWideCharString(ub, NULL);
     Py_DECREF(ub);
-#endif /* USE_UNICODE_WCHAR_CACHE */
 #else /* POSIX */
     if (!PyUnicode_FSConverter(self->path, &ub))
         return NULL;
@@ -13556,11 +13583,11 @@ _Py_COMP_DIAG_POP
         }
         Py_END_ALLOW_THREADS
     }
-#if defined(MS_WINDOWS) && !USE_UNICODE_WCHAR_CACHE
+#if defined(MS_WINDOWS)
     PyMem_Free(path);
-#else /* USE_UNICODE_WCHAR_CACHE */
+#else
     Py_DECREF(ub);
-#endif /* USE_UNICODE_WCHAR_CACHE */
+#endif
 
     if (result != 0)
         return path_object_error(self->path);
@@ -13754,19 +13781,10 @@ os_DirEntry_inode_impl(DirEntry *self)
 
         if (!PyUnicode_FSDecoder(self->path, &unicode))
             return NULL;
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-        const wchar_t *path = PyUnicode_AsUnicode(unicode);
-        result = LSTAT(path, &stat);
-        Py_DECREF(unicode);
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
         wchar_t *path = PyUnicode_AsWideCharString(unicode, NULL);
         Py_DECREF(unicode);
         result = LSTAT(path, &stat);
         PyMem_Free(path);
-#endif /* USE_UNICODE_WCHAR_CACHE */
 
         if (result != 0)
             return path_object_error(self->path);
@@ -14787,6 +14805,7 @@ static PyMethodDef posix_methods[] = {
     OS_SCHED_SETAFFINITY_METHODDEF
     OS_SCHED_GETAFFINITY_METHODDEF
     OS_OPENPTY_METHODDEF
+    OS_LOGIN_TTY_METHODDEF
     OS_FORKPTY_METHODDEF
     OS_GETEGID_METHODDEF
     OS_GETEUID_METHODDEF
@@ -15236,6 +15255,9 @@ all_ins(PyObject *m)
 #ifdef P_PIDFD
     if (PyModule_AddIntMacro(m, P_PIDFD)) return -1;
 #endif
+#ifdef PIDFD_NONBLOCK
+    if (PyModule_AddIntMacro(m, PIDFD_NONBLOCK)) return -1;
+#endif
 #endif
 #ifdef WEXITED
     if (PyModule_AddIntMacro(m, WEXITED)) return -1;
@@ -15448,6 +15470,9 @@ all_ins(PyObject *m)
 
 #if defined(__APPLE__)
     if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
+    if (PyModule_AddIntConstant(m, "_COPYFILE_STAT", COPYFILE_STAT)) return -1;
+    if (PyModule_AddIntConstant(m, "_COPYFILE_ACL", COPYFILE_ACL)) return -1;
+    if (PyModule_AddIntConstant(m, "_COPYFILE_XATTR", COPYFILE_XATTR)) return -1;
 #endif
 
 #ifdef MS_WINDOWS
