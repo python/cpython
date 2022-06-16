@@ -60,7 +60,7 @@ static PyObject* do_deepcopy(PyObject *module, PyObject* x, PyObject* memo);
 static PyObject*
 do_deepcopy_fallback(PyObject* module, PyObject* x, PyObject* memo)
 {
-    copy_module_state *state = PyModule_GetState(module);
+    copy_module_state *state = get_copy_module_state(module);
     PyObject *copymodule = state->python_copy_module;
     assert(copymodule != NULL);
 
@@ -253,7 +253,6 @@ deepcopy_tuple(PyObject* module, PyObject* x, PyObject* memo, PyObject* id_x, Py
 }
 
 
-#define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 
 /*
  * Using the private _PyNone_Type and _PyNotImplemented_Type avoids
@@ -271,7 +270,7 @@ static PyTypeObject* const atomic_type[] = {
     &PyEllipsis_Type, /* type(Ellipsis) */
     &_PyNotImplemented_Type, /* type(NotImplemented) */
 };
-#define N_ATOMIC_TYPES ARRAY_SIZE(atomic_type)
+#define N_ATOMIC_TYPES Py_ARRAY_LENGTH(atomic_type)
 
 struct deepcopy_dispatcher {
     PyTypeObject* type;
@@ -284,7 +283,7 @@ static const struct deepcopy_dispatcher deepcopy_dispatch[] = {
     {&PyDict_Type, deepcopy_dict},
     {&PyTuple_Type, deepcopy_tuple},
 };
-#define N_DISPATCHERS ARRAY_SIZE(deepcopy_dispatch)
+#define N_DISPATCHERS Py_ARRAY_LENGTH(deepcopy_dispatch)
 
 static PyObject* do_deepcopy(PyObject *module, PyObject* x, PyObject* memo)
 {
@@ -433,7 +432,7 @@ static PyModuleDef_Slot copy_slots[] = {
 static struct PyModuleDef copy_moduledef = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_copy",
-    .m_doc = "C implementation of deepcopy",
+    .m_doc = PyDoc_STR("C implementation of deepcopy"),
     .m_size = sizeof(copy_module_state),
     .m_methods = copy_functions,
     .m_slots = copy_slots,
