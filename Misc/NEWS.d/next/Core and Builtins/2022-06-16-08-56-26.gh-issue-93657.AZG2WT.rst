@@ -1,1 +1,1 @@
-Specialize `LOAD_ATTR` for mutable class attribute descriptors and ``property()`` attributes.
+Specialize ``LOAD_ATTR`` for mutable class attribute descriptors and ``property()`` attributes.
