@@ -423,6 +423,8 @@ Connection Objects
 
       See :ref:`sqlite3-controlling-transactions` for more details.
 
+      .. versionadded:: 3.12
+
    .. attribute:: isolation_level
 
       Get or set the current default isolation level. :const:`None` for autocommit mode or
