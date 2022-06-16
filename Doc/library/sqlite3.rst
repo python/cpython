@@ -1436,7 +1436,7 @@ case-insensitively by name:
 Using the connection as a context manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Connection objects can be used as context managers that automatically commit or
+:class:`Connection` objects can be used as context managers that automatically commit or
 rollback open transactions when leaving the body of the context manager.
 If the body of the :keyword:`with` statement finishes without exceptions,
 the transaction is committed.
