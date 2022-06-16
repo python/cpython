@@ -1465,8 +1465,8 @@ eval_frame_handle_pending(PyThreadState *tstate)
                             assert(STACK_LEVEL() <= STACK_SIZE()); \
                         } while (0)
 #define STACK_SHRINK(n) do { \
-                            assert(n >= 0); \
-                            assert(STACK_LEVEL() >= n); \
+                            assert((n) >= 0); \
+                            assert(STACK_LEVEL() >= (n)); \
                             BASIC_STACKADJ(-(n)); \
                         } while (0)
 #else
@@ -5595,7 +5595,6 @@ handle_eval_breaker:
         }
 
         TARGET(CACHE) {
-            printf("cache\n");
             Py_UNREACHABLE();
         }
 
