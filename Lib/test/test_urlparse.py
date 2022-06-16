@@ -1103,7 +1103,7 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_urlunsplit_relative(self):
         cases = [
-            # expected result is a scheme/netloc relative URL
+            # expected result is a relative URL without netloc and scheme
             (('', 'a', '', '', ''), '//a'),
             # extra leading slashes need to be stripped to avoid confusion
             # with a relative URL
@@ -1111,7 +1111,9 @@ class UrlParseTestCase(unittest.TestCase):
             (('', '', '///a', '', ''), '/a'),
             # not relative so extra leading slashes don't need stripping since
             # they don't cause confusion
-            (('http', 'x.y', '//a', '', ''), 'http://x.y//a')
+            (('http', 'x.y', '//a', '', ''), 'http://x.y//a'),
+            # avoid confusion with path containing colon
+            (('', '', 'a:b', '', ''), './a:b'),
         ]
         for parts, result in cases:
             self.assertEqual(urllib.parse.urlunsplit(parts), result)
