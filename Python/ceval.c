@@ -3649,33 +3649,6 @@ handle_eval_breaker:
             NOTRACE_DISPATCH();
         }
 
-        TARGET(LOAD_ATTR_CLASS_MUTABLE_DESCRIPTOR) {
-            assert(cframe.use_tracing == 0);
-            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
-
-            PyObject *cls = TOP();
-            DEOPT_IF(!PyType_Check(cls), LOAD_ATTR);
-            uint32_t type_version = read_u32(cache->type_version);
-            DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != type_version,
-                LOAD_ATTR);
-            assert(type_version != 0);
-            PyObject *descr = read_obj(cache->descr);
-            descrgetfunc get = Py_TYPE(descr)->tp_descr_get;
-            DEOPT_IF(get == NULL, LOAD_ATTR);
-            STAT_INC(LOAD_ATTR, hit);
-            PyObject *res = get(descr, NULL, cls);
-            if (res == NULL) {
-                goto error;
-            }
-            assert(res != NULL);
-            SET_TOP(NULL);
-            STACK_GROW((oparg & 1));
-            SET_TOP(res);
-            Py_DECREF(cls);
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            NOTRACE_DISPATCH();
-        }
-
         TARGET(LOAD_ATTR_PROPERTY) {
             assert(cframe.use_tracing == 0);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
