@@ -1,7 +1,6 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
-#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
@@ -16,6 +15,7 @@ module _copy
 
 typedef struct {
     PyObject *python_copy_module;
+    PyObject *str_deepcopy_fallback;
 } copy_module_state;
 
 static inline copy_module_state*
@@ -62,19 +62,9 @@ do_deepcopy_fallback(PyObject* module, PyObject* x, PyObject* memo)
 {
     copy_module_state *state = PyModule_GetState(module);
     PyObject *copymodule = state->python_copy_module;
-    _Py_IDENTIFIER(_deepcopy_fallback);
-
-    if (copymodule == NULL) {
-        copymodule = PyImport_ImportModule("copy");
-        if (copymodule == NULL)
-            return NULL;
-        state->python_copy_module = copymodule;
-    }
-
     assert(copymodule != NULL);
 
-    return _PyObject_CallMethodIdObjArgs(copymodule, &PyId__deepcopy_fallback,
-        x, memo, NULL);
+    return _PyObject_CallMethod(copymodule, state->str_deepcopy_fallback, x, memo, NULL);
 }
 
 static PyObject*
@@ -419,12 +409,34 @@ copy_free(void *module)
     copy_clear((PyObject *)module);
 }
 
+static int copy_module_exec(PyObject *module)
+{
+    copy_module_state *state = get_copy_module_state(module);
+    state->str_deepcopy_fallback = PyUnicode_InternFromString("_deepcopy_fallback");
+    if (state->str_deepcopy_fallback == NULL) {
+        return -1;
+    }
+
+    PyObject *copymodule = PyImport_ImportModule("copy");
+    if (copymodule == NULL)
+        return -1;
+    state->python_copy_module = copymodule;
+
+    return 0;
+}
+
+static PyModuleDef_Slot copy_slots[] = {
+    {Py_mod_exec, copy_module_exec},
+    {0, NULL}
+};
+
 static struct PyModuleDef copy_moduledef = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_copy",
     .m_doc = "C implementation of deepcopy",
     .m_size = sizeof(copy_module_state),
     .m_methods = copy_functions,
+    .m_slots = copy_slots,
     .m_clear = copy_clear,
     .m_free = copy_free,
 };
