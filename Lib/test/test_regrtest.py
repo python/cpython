@@ -1357,6 +1357,8 @@ class ArgsTestCase(BaseTestCase):
         for name in names:
             self.assertFalse(os.path.exists(name), name)
 
+    @unittest.skipIf(support.is_wasi,
+                     'checking temp files is not implemented on WASI')
     def test_leak_tmp_file(self):
         code = textwrap.dedent(r"""
             import os.path
@@ -1369,15 +1371,17 @@ class ArgsTestCase(BaseTestCase):
                     with open(filename, "wb") as fp:
                         fp.write(b'content')
         """)
-        testname = self.create_test(code=code)
+        testnames = [self.create_test(code=code) for _ in range(3)]
 
-        output = self.run_tests("--fail-env-changed", "-v", "-j1", testname, exitcode=3)
-        self.check_executed_tests(output, [testname],
-                                  env_changed=[testname],
-                                  fail_env_changed=True)
-        self.assertIn(f"Warning -- {testname} leaked temporary "
-                      f"files (1): mytmpfile",
-                      output)
+        output = self.run_tests("--fail-env-changed", "-v", "-j2", *testnames, exitcode=3)
+        self.check_executed_tests(output, testnames,
+                                  env_changed=testnames,
+                                  fail_env_changed=True,
+                                  randomize=True)
+        for testname in testnames:
+            self.assertIn(f"Warning -- {testname} leaked temporary "
+                          f"files (1): mytmpfile",
+                          output)
 
 
 class TestUtils(unittest.TestCase):
