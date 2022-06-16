@@ -132,7 +132,6 @@ def _deepcopy_fallback(x, memo=None, _nil=[]):
 
     See the module's __doc__ string for more info.
     """
-
     if memo is None:
         memo = {}
 

@@ -64,7 +64,7 @@ do_deepcopy_fallback(PyObject* module, PyObject* x, PyObject* memo)
     PyObject *copymodule = state->python_copy_module;
     assert(copymodule != NULL);
 
-    return _PyObject_CallMethod(copymodule, state->str_deepcopy_fallback, x, memo, NULL);
+    return PyObject_CallMethodObjArgs(copymodule, state->str_deepcopy_fallback, x, memo, NULL);
 }
 
 static PyObject*
@@ -272,10 +272,11 @@ static PyTypeObject* const atomic_type[] = {
 };
 #define N_ATOMIC_TYPES Py_ARRAY_LENGTH(atomic_type)
 
+typedef  PyObject* (deepcopy_dispatcher_handler)(PyObject *module, PyObject* x, PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x) ;
+
 struct deepcopy_dispatcher {
     PyTypeObject* type;
-    PyObject* (*handler)(PyObject *module, PyObject* x, PyObject* memo,
-        PyObject* id_x, Py_hash_t hash_id_x);
+    deepcopy_dispatcher_handler *handler;
 };
 
 static const struct deepcopy_dispatcher deepcopy_dispatch[] = {
@@ -398,6 +399,7 @@ static int
 copy_clear(PyObject *module)
 {
     copy_module_state *state = get_copy_module_state(module);
+    Py_CLEAR(state->str_deepcopy_fallback);
     Py_CLEAR(state->python_copy_module);
     return 0;
 }

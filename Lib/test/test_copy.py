@@ -924,25 +924,20 @@ class TestCopyPy(TestCopy, unittest.TestCase):
 class TestDeepcopyPy(TestDeepcopy, unittest.TestCase):
     copy_module = py_copy
 
-    def test_deepcopy_standard_types_no_fallback(self):
-        # TODO: not longer working with the new style testing?
-        with unittest.mock.patch('copy._deepcopy_fallback') as _deepcopy_fallback_mock:
-            _=self.copy_module.deepcopy({'str': 's', 'int': 0, 'list': [1,(1,2)]})
-        _deepcopy_fallback_mock.assert_not_called()
 
 @unittest.skipUnless(c_copy, 'requires _copy')
 class TestDeepcopyC(TestDeepcopy, unittest.TestCase):
     copy_module = c_copy
 
     def test_deepcopy_standard_types_no_fallback(self):
-        with unittest.mock.patch('copy._deepcopy_fallback') as _deepcopy_fallback_mock:
+        with unittest.mock.patch.object(self.copy_module, '_deepcopy_fallback') as _deepcopy_fallback_mock:
             _=self.copy_module.deepcopy({'str': 's', 'int': 0, 'list': [1,(1,2)]})
         _deepcopy_fallback_mock.assert_not_called()
 
         class C:
             pass
 
-        with unittest.mock.patch('copy._deepcopy_fallback') as _deepcopy_fallback_mock:
+        with unittest.mock.patch.object(self.copy_module, '_deepcopy_fallback') as _deepcopy_fallback_mock:
             _=self.copy_module.deepcopy(C())
         _deepcopy_fallback_mock.assert_called()
 
