@@ -1762,10 +1762,10 @@ class InstructionTests(InstructionTestCase):
                 yield (-b + cmath.sqrt(d)) / (2 * a)
         code = roots.__code__
         ops = code.co_code[::2]
-        cache = opcode.opmap["CACHE"]
-        caches = sum(op == cache for op in ops)
+        cache_opcode = opcode.opmap["CACHE"]
+        caches = sum(op == cache_opcode for op in ops)
         non_caches = len(ops) - caches
-        # Make sure we have "lots of caches". If not, roots should be updated:
+        # Make sure we have "lots of caches". If not, roots should be changed:
         assert 1 / 3 <= caches / non_caches, "this test needs more caches!"
         for show_caches in (False, True):
             for adaptive in (False, True):
@@ -1773,7 +1773,7 @@ class InstructionTests(InstructionTestCase):
                     co_positions = [
                         positions
                         for op, positions in zip(ops, code.co_positions(), strict=True)
-                        if show_caches or op != cache
+                        if show_caches or op != cache_opcode
                     ]
                     dis_positions = [
                         instruction.positions
