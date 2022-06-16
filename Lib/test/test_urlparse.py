@@ -1118,6 +1118,17 @@ class UrlParseTestCase(unittest.TestCase):
         for parts, result in cases:
             self.assertEqual(urllib.parse.urlunsplit(parts), result)
 
+    def test_pathsplit(self):
+        cases = [
+            ('//a', ('', '', '//a', '', '')),
+            ('a:b', ('', '', 'a:b', '', '')),
+            ('/a/b?x#y', ('', '', '/a/b', 'x', 'y')),
+            ('/a/b#y', ('', '', '/a/b', '', 'y')),
+            ('/a/b?x', ('', '', '/a/b', 'x', '')),
+        ]
+        for uri, result in cases:
+            self.assertEqual(urllib.parse.pathsplit(uri), result)
+
 
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""
