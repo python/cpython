@@ -1434,13 +1434,21 @@ case-insensitively by name:
 Using the connection as a context manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-With an open transaction, connection objects can be used as context managers
-that automatically commit or rollback transactions.
-If the body of the ``with`` statement finishes without exceptions,
+Connection objects can be used as context managers that automatically commit or
+rollback open transactions when leaving the body of the context manager.
+If the body of the :keyword:`with` statement finishes without exceptions,
 the transaction is committed.
-If an exception is raised and not caught, the transaction is rolled back.
+If this commit fails, the transaction is rolled back.
+If the body of the ``with`` statement raise an exception which is not caught,
+the transaction is rolled back.
 
-If there is no open transaction, the context manager is a no-op.
+If there is no open transaction upon leaving the body of the ``with`` statement,
+the context manager is a no-op.
+
+.. note::
+
+   The context manager does not implicitly open a new transaction.
+   The context manager does not close the connection.
 
 .. literalinclude:: ../includes/sqlite3/ctx_manager.py
 
