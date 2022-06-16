@@ -678,7 +678,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         path = self.translate_path(self.path)
         f = None
         if os.path.isdir(path):
-            new_url = _add_trailing_slash(self.path)
+            new_url = _get_redirect_url(self.path)
             if new_url:
                 # redirect browser - doing basically what apache does
                 self.send_response(HTTPStatus.MOVED_PERMANENTLY)
@@ -878,10 +878,16 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         return 'application/octet-stream'
 
 
-def _add_trailing_slash(path):
+def _get_redirect_url(path):
     """Returns URL with trailing slash on path, if required.  If not required,
     returns None.
     """
+    # It would be simpler to use urllib.parse.urlsplit() here.  However, the
+    # 'path' is not truly a URI in that it can't have a scheme or netloc.  We
+    # need to avoid parsing it incorrectly.  For example, as reported in
+    # gh-87389, a path starting with a double slash should not be treated as a
+    # relative URI.  Also, a path with a colon in the first component could
+    # also be parsed wrongly.
     path, _, fragment = path.partition('#')
     path, _, query = path.partition('?')
     if path.endswith('/'):
