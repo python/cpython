@@ -36,7 +36,7 @@ import warnings
 __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
            "urlsplit", "urlunsplit", "urlencode", "parse_qs",
            "parse_qsl", "quote", "quote_plus", "quote_from_bytes",
-           "unquote", "unquote_plus", "unquote_to_bytes", "pathsplit",
+           "unquote", "unquote_plus", "unquote_to_bytes",
            "DefragResult", "ParseResult", "SplitResult",
            "DefragResultBytes", "ParseResultBytes", "SplitResultBytes"]
 
@@ -478,29 +478,6 @@ def urlsplit(url, scheme='', allow_fragments=True):
         url, query = url.split('?', 1)
     _checknetloc(netloc)
     v = SplitResult(scheme, netloc, url, query, fragment)
-    return _coerce_result(v)
-
-# typed=True avoids BytesWarnings being emitted during cache key
-# comparison since this API supports both bytes and str input.
-@functools.lru_cache(typed=True)
-def pathsplit(path):
-    """Parse a path that includes an optional query and fragment.
-    The full syntax is:
-
-    <path>?<query>#<fragment>
-
-    The result is a named 5-tuple with fields set corresponding to the above.
-    It is either a SplitResult or SplitResultBytes object, depending on the
-    type of the url parameter.
-
-    Note that % escapes are not expanded.
-    """
-    path, _coerce_result = _coerce_args(path)
-    for b in _UNSAFE_URL_BYTES_TO_REMOVE:
-        path = path.replace(b, "")
-    path, _, fragment = path.partition('#')
-    path, _, query = path.partition('?')
-    v = SplitResult('', '', path, query, fragment)
     return _coerce_result(v)
 
 def urlunparse(components):

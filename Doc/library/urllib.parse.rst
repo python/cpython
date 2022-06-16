@@ -339,18 +339,6 @@ or on combining URL components into a URL string.
 
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
 
-.. function:: pathsplit(path)
-
-   Parse a path that includes an optional query and fragment. Like
-   :func:`urlsplit`, this function returns a 5-item :term:`named tuple`::
-
-      (addressing scheme, network location, path, query, fragment identifier).
-
-   The scheme and network location components will always be empty.
-
-   .. versionadded:: 3.11
-
-
 .. function:: urlunsplit(parts)
 
    Combine the elements of a tuple as returned by :func:`urlsplit` into a

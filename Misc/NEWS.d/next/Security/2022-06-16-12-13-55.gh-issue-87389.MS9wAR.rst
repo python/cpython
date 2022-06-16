@@ -2,7 +2,6 @@
 when an URI path starts with ``//``.  Vulnerability discovered, and initial
 fix proposed, by Hamza Avvan.  Change :func:`urllib.parse.urlunsplit` to
 sanitize ``path`` argument in order to avoid confusing the first component of
-the path as a net location or scheme.  Add :func:`urllib.parse.pathsplit`
-function.
+the path as a net location or scheme.
 
-Co-authored-by: Gregory P. Smith <gps@google.com>
+Co-authored-by: Gregory P. Smith [Google LLC] <gps@google.com>

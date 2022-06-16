@@ -664,6 +664,16 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if f:
             f.close()
 
+    def _request_path_split(self, path):
+        """Parse a path that can include an optional query and fragment.
+        """
+        # We only handle the 'abs_path' case for the Request-URI part of the
+        # request line (the second word).  We don't handle the case of a URL
+        # containing a scheme or netloc.
+        path, _, query = path.partition('?')
+        path, _, fragment = path.partition('#')
+        return urllib.parse.SplitResult('', '', path, query, fragment)
+
     def _get_redirect_url_for_dir(self):
         """Returns URL with trailing slash on path, if required.  If not
         required, returns None.
@@ -675,7 +685,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         # with a double slash should not be treated as a relative URI.  Also, a
         # path with a colon in the first component could also be parsed
         # wrongly.
-        parts = urllib.parse.pathsplit(self.path)
+        parts = self._request_path_split(self.path)
         if parts.path.endswith('/'):
             return None  # already has slash, no redirect needed
         return urllib.parse.urlunsplit(('', '', parts.path + '/', parts.query,
@@ -832,7 +842,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
         """
         # extract only path, abandon query parameters and fragment
-        path = urllib.parse.pathsplit(path).path
+        path = self._request_path_split(path).path
         # Don't forget explicit trailing slash when normalizing. Issue17324
         trailing_slash = path.rstrip().endswith('/')
         try:
