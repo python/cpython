@@ -8,7 +8,7 @@
 
 PyAPI_DATA(PyTypeObject) PyFrame_Type;
 
-#define PyFrame_Check(op) Py_IS_TYPE(op, &PyFrame_Type)
+#define PyFrame_Check(op) Py_IS_TYPE((op), &PyFrame_Type)
 
 PyAPI_FUNC(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
                                         PyObject *, PyObject *);
