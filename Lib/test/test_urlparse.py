@@ -1101,6 +1101,22 @@ class UrlParseTestCase(unittest.TestCase):
                         with self.assertRaises(ValueError):
                             urllib.parse.urlsplit(url)
 
+    def test_urlunsplit_relative(self):
+        cases = [
+            # expected result is a scheme/netloc relative URL
+            (('', 'a', '', '', ''), '//a'),
+            # extra leading slashes need to be stripped to avoid confusion
+            # with a relative URL
+            (('', '', '//a', '', ''), '/a'),
+            (('', '', '///a', '', ''), '/a'),
+            # not relative so extra leading slashes don't need stripping since
+            # they don't cause confusion
+            (('http', 'x.y', '//a', '', ''), 'http://x.y//a')
+        ]
+        for parts, result in cases:
+            self.assertEqual(urllib.parse.urlunsplit(parts), result)
+
+
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""
     # In Python 2 this test class was in test_urllib.
