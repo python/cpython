@@ -447,6 +447,17 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
         self.assertEqual(response.getheader('Location'), expected_location)
 
+        # If the second word in the http request (Request-URI for the http
+        # method) is a full URI, we don't worry about it, as that'll be parsed
+        # and reassembled as a full URI within BaseHTTPRequestHandler.send_head
+        # so no errant scheme-less //netloc//evil.co/ domain mixup can happen.
+        attack_scheme_netloc_2slash_url = f'https://pypi.org/{url}'
+        expected_scheme_netloc_location = f'{attack_scheme_netloc_2slash_url}/'
+        response = self.request(attack_scheme_netloc_2slash_url)
+        self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
+        location = response.getheader('Location')
+        self.assertEqual(location, expected_scheme_netloc_location)
+
     def test_get(self):
         #constructs the path relative to the root directory of the HTTPServer
         response = self.request(self.base_url + '/test')

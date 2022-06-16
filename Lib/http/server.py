@@ -689,11 +689,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             if not parts.path.endswith('/'):
                 # redirect browser - doing basically what apache does
                 self.send_response(HTTPStatus.MOVED_PERMANENTLY)
-                # scheme[0] and netloc[1] are intentionally blanked out as we
-                # are only processing a path. They could allow injection into
-                # the Location header if self.path wound up containing
-                # more than it was supposed to. See gh-87389.
-                new_parts = ('', '', parts[2] + '/', parts[3], parts[4])
+                new_parts = (parts[0], parts[1], parts[2] + '/',
+                             parts[3], parts[4])
                 new_url = urllib.parse.urlunsplit(new_parts)
                 self.send_header("Location", new_url)
                 self.send_header("Content-Length", "0")
