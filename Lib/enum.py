@@ -1370,7 +1370,16 @@ class Flag(Enum, boundary=STRICT):
     """
 
     def __reduce_ex__(self, proto):
-        return self.__class__, (self._value_, )
+        for m in self:
+            rest = self._value_ & ~m._value_
+            if rest:
+                return _or_, (m, self.__class__(rest))
+            else:
+                break
+        if self._name_ is None:
+            return self.__class__, (self._value_,)
+        else:
+            return getattr, (self.__class__, self._name_)
 
     _numeric_repr_ = repr
 
