@@ -236,6 +236,11 @@ New Features
   an additional metaclass argument.
   (Contributed by Wenzel Jakob in :gh:`93012`.)
 
+
+* Add new function :c:func:`PyFunction_SetVectorcall` to the C API
+  which sets the vectorcall field of a given PyFunctionObject
+  (Contributed by Andrew Frost in :gh:`92257`.)
+
 Porting to Python 3.12
 ----------------------
 
