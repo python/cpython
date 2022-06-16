@@ -2240,16 +2240,15 @@ handle_eval_breaker:
             PyFunctionObject *getitem = (PyFunctionObject *)cached;
             DEOPT_IF(getitem->func_version != cache->func_version, BINARY_SUBSCR);
             PyCodeObject *code = (PyCodeObject *)getitem->func_code;
-            size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
             assert(code->co_argcount == 2);
-            _PyInterpreterFrame *new_frame = _PyThreadState_BumpFramePointer(tstate, size);
+            STAT_INC(BINARY_SUBSCR, hit);
+
+            Py_INCREF(getitem);
+            _PyInterpreterFrame *new_frame = _PyFrame_Push(tstate, getitem);
             if (new_frame == NULL) {
                 goto error;
             }
-            CALL_STAT_INC(frames_pushed);
-            Py_INCREF(getitem);
-            _PyFrame_InitializeSpecials(new_frame, getitem,
-                                        NULL, code->co_nlocalsplus);
+            CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(2);
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
