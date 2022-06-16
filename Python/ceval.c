@@ -2241,7 +2241,7 @@ handle_eval_breaker:
             DEOPT_IF(getitem->func_version != cache->func_version, BINARY_SUBSCR);
             PyCodeObject *code = (PyCodeObject *)getitem->func_code;
             assert(code->co_argcount == 2);
-            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code), BINARY_SUBSCR);
+            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), BINARY_SUBSCR);
             Py_INCREF(getitem);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, getitem);
             CALL_STAT_INC(frames_pushed);
@@ -4770,7 +4770,7 @@ handle_eval_breaker:
             DEOPT_IF(func->func_version != read_u32(cache->func_version), CALL);
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(code->co_argcount != argcount, CALL);
-            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code), call);
+            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func);
             CALL_STAT_INC(frames_pushed);
@@ -4805,7 +4805,7 @@ handle_eval_breaker:
             DEOPT_IF(argcount > code->co_argcount, CALL);
             int minargs = cache->min_args;
             DEOPT_IF(argcount < minargs, CALL);
-            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code), call);
+            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func);
             CALL_STAT_INC(frames_pushed);

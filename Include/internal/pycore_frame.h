@@ -174,9 +174,9 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear);
 
 
 static inline bool
-_PyThreadState_HasStackSpace(PyThreadState *tstate, PyCodeObject *code)
+_PyThreadState_HasStackSpace(PyThreadState *tstate, int size)
 {
-    return tstate->datastack_top + code->co_framesize < tstate->datastack_limit;
+    return tstate->datastack_top + size < tstate->datastack_limit;
 }
 
 extern _PyInterpreterFrame *
