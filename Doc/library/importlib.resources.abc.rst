@@ -136,8 +136,8 @@
 
     An abstract base class for resource readers capable of serving
     the :meth:`importlib.resources.files` interface. Subclasses
-    :class:`importlib.abc.ResourceReader` and provides
-    concrete implementations of the :class:`importlib.abc.ResourceReader`'s
+    :class:`importlib.resources.abc.ResourceReader` and provides
+    concrete implementations of the :class:`importlib.resources.abc.ResourceReader`'s
     abstract methods. Therefore, any loader supplying
     :class:`importlib.abc.TraversableReader` also supplies ResourceReader.
 
@@ -148,5 +148,5 @@
 
     .. abstractmethod:: files()
 
-       Returns a :class:`importlib.abc.Traversable` object for the loaded
+       Returns a :class:`importlib.resources.abc.Traversable` object for the loaded
        package.
