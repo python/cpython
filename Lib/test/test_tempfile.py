@@ -1034,9 +1034,9 @@ class TestNamedTemporaryFile(BaseTestCase):
         self.addCleanup(os_helper.rmtree, dir)
         with mock.patch('tempfile._TemporaryFileWrapper') as mock_ntf, \
              mock.patch('io.open', mock.mock_open()) as mock_open:
-                mock_ntf.side_effect = KeyboardInterrupt()
-                with self.assertRaises(KeyboardInterrupt):
-                    tempfile.NamedTemporaryFile(dir=dir)
+            mock_ntf.side_effect = KeyboardInterrupt()
+            with self.assertRaises(KeyboardInterrupt):
+                tempfile.NamedTemporaryFile(dir=dir)
         mock_open().close.assert_called()
         self.assertEqual(os.listdir(dir), [])
 
@@ -1437,9 +1437,9 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
                  mock.patch('os.unlink') as mock_unlink, \
                  mock.patch('os.open') as mock_open, \
                  mock.patch('os.close') as mock_close:
-                    mock_unlink.side_effect = KeyboardInterrupt()
-                    with self.assertRaises(KeyboardInterrupt):
-                        tempfile.TemporaryFile(dir=dir)
+                mock_unlink.side_effect = KeyboardInterrupt()
+                with self.assertRaises(KeyboardInterrupt):
+                    tempfile.TemporaryFile(dir=dir)
             mock_close.assert_called()
             self.assertEqual(os.listdir(dir), [])
 
