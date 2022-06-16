@@ -19,7 +19,7 @@ class Wait3Test(ForkWait):
         # This many iterations can be required, since some previously run
         # tests (e.g. test_ctypes) could have spawned a lot of children
         # very quickly.
-        for _ in support.sleeping_retry(support.SHORT_TIMEOUT, error=False):
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
             # wait3() shouldn't hang, but some of the buildbots seem to hang
             # in the forking tests.  This is an attempt to fix the problem.
             spid, status, rusage = os.wait3(os.WNOHANG)
