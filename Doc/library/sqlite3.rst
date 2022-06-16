@@ -402,7 +402,7 @@ Connection Objects
 
    .. attribute:: autocommit
 
-      Get or set the :pep:`249` transaction behaviour.
+      Get or set :pep:`249`-compliant transaction behaviour.
       *autocommit* has three allowed values:
 
       * :const:`False`: PEP 249-compliant transaction behaviour,
@@ -410,6 +410,8 @@ Connection Objects
         Use :meth:`~Connection.commit` and :meth:`~Connection.rollback` to
         close transactions.
         Closing a transaction immediately opens a new one.
+        Transactions are opened by a BEGIN (DEFERRED) statement.
+
         This will be the default value of *autocommit* in Python 3.14.
 
       * :const:`True`: Use SQLite's autocommit behaviour.
@@ -421,7 +423,20 @@ Connection Objects
         transaction control. See :attr:`isolation_level`.
         This is currently the default value of *autocommit*.
 
+      Changing to :const:`False` when there is an open transaction will
+      implicitly commit the transaction and open a new one.
+
+      Changing to :const:`True` when there is an open transaction will
+      implicitly commit the transaction.
+
       See :ref:`sqlite3-controlling-transactions` for more details.
+
+      .. note::
+
+         The PEP 249-compliant autocommit feature and the SQLite autocommit
+         feature are two related, but different concepts.
+         To query the SQLite autocommit mode, use :attr:`in_transaction`.
+         To query the sqlite3 autocommit mode, use the *autocommit* attribute.
 
       .. versionadded:: 3.12
 
@@ -434,7 +449,9 @@ Connection Objects
    .. attribute:: in_transaction
 
       :const:`True` if a transaction is active (there are uncommitted changes),
-      :const:`False` otherwise.  Read-only attribute.
+      :const:`False` otherwise.
+
+      This read-only attribute corresponds to the low-level SQLite autocommit mode.
 
       .. versionadded:: 3.2
 
@@ -1441,6 +1458,9 @@ In this mode, ``commit()`` and ``rollback()`` are silent no-ops.
    :attr:`~Connection.autocommit` and SQLite's autocommit mode are not linked.
    For example, Explicitly issuing a BEGIN statement when ``autocommit=True``,
    will not change the value of the *autocommit* attribute.
+
+   Use :attr:`~Connection.in_transaction` to query the low-level SQLite
+   autocommit mode.
 
 
 .. _sqlite3-deprecated-transaction-control:
