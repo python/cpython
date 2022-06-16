@@ -429,11 +429,16 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         """
         os.mkdir(os.path.join(self.tempdir, 'existing_directory'))
         url = f'/python.org/..%2f..%2f..%2f..%2f..%2f../%0a%0d/../{self.tempdir_name}/existing_directory'
-        # Canonicalizes to /tmp/tempdir_name/existing_directory which does
-        # exist and is a dir, triggering the 301 redirect and former bug.
-        attack_url = f'/{url}'  # //python.org... multi-slash prefix, no trailing slash
         expected_location = f'{url}/'  # /python.org.../ single slash single prefix, trailing slash
+        # Canonicalizes to /tmp/tempdir_name/existing_directory which does
+        # exist and is a dir, triggering the 301 redirect logic.
+        response = self.request(url)
+        self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
+        location = response.getheader('Location')
+        self.assertEqual(location, expected_location, msg='non-attack failed!')
 
+        # //python.org... multi-slash prefix, no trailing slash
+        attack_url = f'/{url}'
         response = self.request(attack_url)
         self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
         location = response.getheader('Location')
@@ -442,7 +447,8 @@ class SimpleHTTPServerTestCase(BaseTestCase):
                 msg='Expected Location header to start with a single / and '
                 'end with a / as this is a directory redirect.')
 
-        attack3_url = f'//{url}'  # ///python.org... triple-slash prefix, no trailing slash
+        # ///python.org... triple-slash prefix, no trailing slash
+        attack3_url = f'//{url}'
         response = self.request(attack3_url)
         self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
         self.assertEqual(response.getheader('Location'), expected_location)
@@ -456,7 +462,10 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         response = self.request(attack_scheme_netloc_2slash_url)
         self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
         location = response.getheader('Location')
-        self.assertEqual(location, expected_scheme_netloc_location)
+        # We're just ensuring that the scheme and domain make it through, if
+        # there are or aren't multiple slashes at the start of the path that
+        # follows that isn't important in this Location: header.
+        self.assertTrue(location.startswith('https://pypi.org/'), msg=location)
 
     def test_get(self):
         #constructs the path relative to the root directory of the HTTPServer
