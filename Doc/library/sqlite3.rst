@@ -1443,7 +1443,7 @@ otherwise, the transaction is committed:
 
 .. note::
 
-    The context manager does not implicitly start a new transaction.
+    The context manager does not implicitly open a new transaction.
 
 .. literalinclude:: ../includes/sqlite3/ctx_manager.py
 
