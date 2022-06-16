@@ -664,6 +664,23 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if f:
             f.close()
 
+    def _get_redirect_url_for_dir(self):
+        """Returns URL with trailing slash on path, if required.  If not
+        required, returns None.
+        """
+        # Previous versions of this class used urllib.parse.urlsplit() here.
+        # However, the 'path' is being treated as a local filesystem path and
+        # it can't have a scheme or netloc.  We need to avoid parsing it
+        # incorrectly.  For example, as reported in gh-87389, a path starting
+        # with a double slash should not be treated as a relative URI.  Also, a
+        # path with a colon in the first component could also be parsed
+        # wrongly.
+        parts = urllib.parse.pathsplit(self.path)
+        if parts.path.endswith('/'):
+            return None  # already has slash, no redirect needed
+        return urllib.parse.urlunsplit(('', '', parts.path + '/', parts.query,
+                                        parts.fragment))
+
     def send_head(self):
         """Common code for GET and HEAD commands.
 
@@ -678,7 +695,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         path = self.translate_path(self.path)
         f = None
         if os.path.isdir(path):
-            new_url = _get_redirect_url(self.path)
+            new_url = self._get_redirect_url_for_dir()
             if new_url:
                 # redirect browser - doing basically what apache does
                 self.send_response(HTTPStatus.MOVED_PERMANENTLY)
@@ -875,23 +892,6 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if guess:
             return guess
         return 'application/octet-stream'
-
-
-def _get_redirect_url(path):
-    """Returns URL with trailing slash on path, if required.  If not required,
-    returns None.
-    """
-    # Previous versions of this module used urllib.parse.urlsplit() here.
-    # However, the 'path' is not truly a URI in that it can't have a scheme or
-    # netloc.  We need to avoid parsing it incorrectly.  For example, as
-    # reported in gh-87389, a path starting with a double slash should not be
-    # treated as a relative URI.  Also, a path with a colon in the first
-    # component could also be parsed wrongly.
-    parts = urllib.parse.pathsplit(path)
-    if parts.path.endswith('/'):
-        return None  # already has slash, no redirect needed
-    return urllib.parse.urlunsplit(('', '', parts.path + '/', parts.query,
-                                    parts.fragment))
 
 
 # Utilities for CGIHTTPRequestHandler
