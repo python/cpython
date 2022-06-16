@@ -3,6 +3,10 @@
 {% if daily is defined %}
   {% set dlbase = pathto('archives', 1) %}
 {% else %}
+  {%- comment -%}
+    The link below returns HTTP 404 until the first related alpha release.
+    This is expected; use daily documentation builds for CPython development.
+  {%- endcomment -%}
   {% set dlbase = 'https://docs.python.org/ftp/python/doc/' + release %}
 {% endif %}
 
