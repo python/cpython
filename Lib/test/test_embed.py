@@ -704,7 +704,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         if MS_WINDOWS:
             value = config.get('program_name')
             if value and isinstance(value, str):
-                ptn = '_d.exe$' if debug_build(sys.executable) else '.exe$'
+                ptn = r'_d\.exe$' if debug_build(sys.executable) else r'\.exe$'
                 config['program_name'] = re.sub(ptn, '', value, 1, re.IGNORECASE)
         for key, value in list(expected.items()):
             if value is self.IGNORE_CONFIG:
