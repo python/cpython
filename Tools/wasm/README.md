@@ -338,3 +338,81 @@ Feature detection flags:
 * ``__wasm_bulk_memory__``
 * ``__wasm_atomics__``
 * ``__wasm_mutable_globals__``
+
+## Install SDKs and dependencies manually
+
+In some cases (e.g. build bots) you may prefer to install build dependencies
+directly on the system instead of using the container image. Total disk size
+of SDKs and cached libraries is about 1.6 GB.
+
+### Install OS dependencies
+
+```shell
+# Debian/Ubuntu
+apt update
+apt install -y git make xz-utils bzip2 curl python3-minimal ccache
+```
+
+```shell
+# Fedora
+dnf install -y git make xz bzip2 which ccache
+```
+
+### Install [Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html)
+
+**NOTE**: Follow the on-screen instructions how to add the SDK to ``PATH``.
+
+```shell
+git clone https://github.com/emscripten-core/emsdk.git /opt/emsdk
+/opt/emsdk/emsdk install latest
+/opt/emsdk/emsdk activate latest
+```
+
+### Optionally: pre-build and cache static libraries
+
+Emscripten SDK provides static builds of core libraries without PIC
+(position-independent code). Python builds with ``dlopen`` support require
+PIC. To populate the build cache, run:
+
+```shell
+. /opt/emsdk/emsdk_env.sh
+embuilder build --force zlib bzip2
+embuilder build --force --pic \
+    zlib bzip2 libc-mt libdlmalloc-mt libsockets-mt \
+    libstubs libcompiler_rt libcompiler_rt-mt crtbegin libhtml5 \
+    libc++-mt-noexcept libc++abi-mt-noexcept \
+    libal libGL-mt libstubs-debug libc-mt-debug
+```
+
+### Install [WASI-SDK](https://github.com/WebAssembly/wasi-sdk)
+
+**NOTE**: WASI-SDK's clang may show a warning on Fedora:
+``/lib64/libtinfo.so.6: no version information available``,
+[RHBZ#1875587](https://bugzilla.redhat.com/show_bug.cgi?id=1875587).
+
+```shell
+export WASI_VERSION=16
+export WASI_VERSION_FULL=${WASI_VERSION}.0
+curl -sSf -L -O https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_VERSION}/wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
+mkdir -p /opt/wasi-sdk
+tar --strip-components=1 -C /opt/wasi-sdk -xvf wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
+rm -f wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
+```
+
+### Install [wasmtime](https://github.com/bytecodealliance/wasmtime) WASI runtime
+
+**NOTE**: wasmtime 0.37 has a bug. Newer versions should be fine again.
+
+```shell
+curl -sSf -L -o ~/install-wasmtime.sh https://wasmtime.dev/install.sh
+chmod +x ~/install-wasmtime.sh
+~/install-wasmtime.sh --version v0.36.0
+ln -srf -t /usr/local/bin/ ~/.wasmtime/bin/wasmtime
+```
+
+### Install [WASIX](https://github.com/singlestore-labs/wasix)
+
+```shell
+git clone https://github.com/singlestore-labs/wasix.git ~/wasix
+make install -C ~/wasix
+```

@@ -898,7 +898,7 @@ iterations of the loop.
    unbound method. Otherwise, ``NULL`` and the object return by the attribute
    lookup are pushed.
 
-   .. versionchanged:: 3.11
+   .. versionchanged:: 3.12
       If the low bit of ``namei`` is set, then a ``NULL`` or ``self`` is
       pushed to the stack before the attribute or unbound method respectively.
 
