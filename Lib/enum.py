@@ -1369,6 +1369,9 @@ class Flag(Enum, boundary=STRICT):
     Support for flags
     """
 
+    def __reduce_ex__(self, proto):
+        return self.__class__, (self._value_, )
+
     _numeric_repr_ = repr
 
     def _generate_next_value_(name, start, count, last_values):
