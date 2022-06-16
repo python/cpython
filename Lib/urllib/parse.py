@@ -499,7 +499,7 @@ def urlunsplit(components):
     empty query; the RFC states that these are equivalent)."""
     scheme, netloc, path, query, fragment, _coerce_result = (
                                           _coerce_args(*components))
-    if scheme in uses_netloc and path.startswith('//'):
+    if not scheme and not netloc and path.startswith('//'):
         # gh-87389: avoid confusing a path with multiple leading slashes
         # as a URI relative reference.
         url = '/' + path.lstrip('/')
