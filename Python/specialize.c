@@ -8,6 +8,7 @@
 #include "pycore_object.h"
 #include "pycore_opcode.h"        // _PyOpcode_Caches
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
+#include "pycore_descrobject.h"
 
 #include <stdlib.h> // rand()
 
@@ -709,9 +710,9 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         }
         case PROPERTY:
         {
-            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)(instr + 1);
+            _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + 1);
             assert(Py_TYPE(descr) == &PyProperty_Type);
-            PyObject *fget = _PyProperty_PropGet(descr);
+            PyObject *fget = ((_PyPropertyObject *)descr)->prop_get;
             if (fget == NULL || Py_TYPE(fget) != &PyFunction_Type) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR);
                 goto fail;
@@ -729,14 +730,16 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             }
             int version = _PyFunction_GetVersionForCurrentState(func);
             if (version == 0 || version != (uint16_t)version) {
-                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
+                SPECIALIZATION_FAIL(LOAD_ATTR,
+                    version == 0 ?
+                    SPEC_FAIL_OUT_OF_VERSIONS : SPEC_FAIL_OUT_OF_RANGE);
                 goto fail;
             }
-            cache->keys_version[0] = version;
+            lm_cache->keys_version[0] = version;
             assert(type->tp_version_tag != 0);
-            write_u32(cache->type_version, type->tp_version_tag);
+            write_u32(lm_cache->type_version, type->tp_version_tag);
             /* borrowed */
-            write_obj(cache->descr, descr);
+            write_obj(lm_cache->descr, fget);
             _Py_SET_OPCODE(*instr, LOAD_ATTR_PROPERTY);
             goto success;
         }
@@ -774,8 +777,6 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             goto fail;
         case MUTABLE:
         case MUTABLE_DESCRIPTOR:
-            //_PyObject_Dump(owner);
-            //_PyObject_Dump(descr);
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_MUTABLE_CLASS);
             goto fail;
         case GETSET_OVERRIDDEN:

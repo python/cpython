@@ -6,6 +6,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "structmember.h"         // PyMemberDef
+#include "pycore_descrobject.h"
 
 /*[clinic input]
 class mappingproxy "mappingproxyobject *" "&PyDictProxy_Type"
@@ -1501,16 +1502,6 @@ class property(object):
 
 */
 
-typedef struct {
-    PyObject_HEAD
-    PyObject *prop_get;
-    PyObject *prop_set;
-    PyObject *prop_del;
-    PyObject *prop_doc;
-    PyObject *prop_name;
-    int getter_doc;
-} propertyobject;
-
 static PyObject * property_copy(PyObject *, PyObject *, PyObject *,
                                   PyObject *);
 
@@ -1891,13 +1882,6 @@ property_clear(PyObject *self)
     propertyobject *pp = (propertyobject *)self;
     Py_CLEAR(pp->prop_doc);
     return 0;
-}
-
-PyObject *
-_PyProperty_PropGet(PyObject *self)
-{
-    propertyobject *pp = (propertyobject *)self;
-    return pp->prop_get;
 }
 
 #include "clinic/descrobject.c.h"
