@@ -1,3 +1,4 @@
+import copy
 import enum
 import doctest
 import inspect
@@ -733,6 +734,13 @@ class _MinimalOutputTests:
             self.assertFormatIsValue('{:n}', TE.third)
             self.assertFormatIsValue('{:5.2}', TE.third)
             self.assertFormatIsValue('{:f}', TE.third)
+
+    def test_copy(self):
+        TE = self.MainEnum
+        copied = copy.copy(TE)
+        self.assertEqual(copied, TE)
+        deep = copy.deepcopy(TE)
+        self.assertEqual(deep, TE)
 
 
 class _FlagTests:
@@ -2653,6 +2661,26 @@ class TestSpecial(unittest.TestCase):
             FOUR = 4
         self.assertTrue(isinstance(MyIntFlag.ONE | MyIntFlag.TWO, MyIntFlag), MyIntFlag.ONE | MyIntFlag.TWO)
         self.assertTrue(isinstance(MyIntFlag.ONE | 2, MyIntFlag))
+
+    def test_int_flags_copy(self):
+        class MyIntFlag(IntFlag):
+            ONE = 1
+            TWO = 2
+            FOUR = 4
+
+        flags = MyIntFlag.ONE | MyIntFlag.TWO
+        copied = copy.copy(flags)
+        deep = copy.deepcopy(flags)
+        self.assertEqual(copied, flags)
+        self.assertEqual(deep, flags)
+
+        flags = MyIntFlag.ONE | MyIntFlag.TWO | 8
+        copied = copy.copy(flags)
+        deep = copy.deepcopy(flags)
+        self.assertEqual(copied, flags)
+        self.assertEqual(deep, flags)
+        self.assertEqual(copied.value, 1 | 2 | 8)
+
 
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
