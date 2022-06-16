@@ -334,7 +334,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         pass
 
     def setUp(self):
-        BaseTestCase.setUp(self)
+        super().setUp()
         self.cwd = os.getcwd()
         basetempdir = tempfile.gettempdir()
         os.chdir(basetempdir)
@@ -362,7 +362,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             except:
                 pass
         finally:
-            BaseTestCase.tearDown(self)
+            super().tearDown()
 
     def check_status_and_reason(self, response, status, data=None):
         def close_conn():
@@ -417,6 +417,26 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         response = self.request(self.base_url + '/' + quotedname)
         self.check_status_and_reason(response, HTTPStatus.OK,
                                      data=os_helper.TESTFN_UNDECODABLE)
+
+    def test_get_dir_redirect_location_domain_injection_bug(self):
+        """Ensure //evil.co/..%2f../../X does not put //evil.co/ in Location.
+
+        //domain/ in a Location header is a redirect to a new domain name.
+        https://github.com/python/cpython/issues/87389
+
+        This checks that a path resolving to a directory on our server cannot
+        resolve into a redirect to another server telling it that the
+        directory in question exists on the Referrer server.
+        """
+        os.mkdir(os.path.join(self.tempdir, 'existing_directory'))
+        attack_url = f'//python.org/..%2f..%2f..%2f..%2f..%2f../%0a%0d/../{self.tempdir_name}/existing_directory'
+        response = self.request(attack_url)
+        self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
+        location = response.getheader('Location')
+        self.assertFalse(location.startswith('//'), msg=location)
+        self.assertEqual(location, attack_url[1:] + '/',
+                msg='Expected Location: to start with a single / and '
+                'end with a / as this is a directory redirect.')
 
     def test_get(self):
         #constructs the path relative to the root directory of the HTTPServer

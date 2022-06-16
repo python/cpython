@@ -497,9 +497,15 @@ def urlunsplit(components):
     This may result in a slightly different, but equivalent URL, if the URL that
     was parsed originally had unnecessary delimiters (for example, a ? with an
     empty query; the RFC states that these are equivalent)."""
-    scheme, netloc, url, query, fragment, _coerce_result = (
+    scheme, netloc, path, query, fragment, _coerce_result = (
                                           _coerce_args(*components))
-    if netloc or (scheme and scheme in uses_netloc and url[:2] != '//'):
+    if scheme in uses_netloc and path.startswith('//'):
+        # gh-87389: avoid confusing a path with multiple leading slashes
+        # as a URI relative reference.
+        url = '/' + path.lstrip('/')
+    else:
+        url = path
+    if netloc or (scheme and scheme in uses_netloc):
         if url and url[:1] != '/': url = '/' + url
         url = '//' + (netloc or '') + url
     if scheme:

@@ -678,13 +678,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         path = self.translate_path(self.path)
         f = None
         if os.path.isdir(path):
-            parts = urllib.parse.urlsplit(self.path)
-            if not parts.path.endswith('/'):
+            new_url = _add_trailing_slash(self.path)
+            if new_url:
                 # redirect browser - doing basically what apache does
                 self.send_response(HTTPStatus.MOVED_PERMANENTLY)
-                new_parts = (parts[0], parts[1], parts[2] + '/',
-                             parts[3], parts[4])
-                new_url = urllib.parse.urlunsplit(new_parts)
                 self.send_header("Location", new_url)
                 self.send_header("Content-Length", "0")
                 self.end_headers()
@@ -879,6 +876,17 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if guess:
             return guess
         return 'application/octet-stream'
+
+
+def _add_trailing_slash(path):
+    """Returns URL with trailing slash on path, if required.  If not required,
+    returns None.
+    """
+    path, _, fragment = path.partition('#')
+    path, _, query = path.partition('?')
+    if path.endswith('/'):
+        return None  # already has slash, no redirect needed
+    return urllib.parse.urlunsplit(('', '', path + '/', query, fragment))
 
 
 # Utilities for CGIHTTPRequestHandler
