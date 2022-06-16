@@ -1965,7 +1965,7 @@ class SysLogHandlerTest(BaseTest):
             self.sl_hdlr = hcls((server.server_address[0], server.port))
         else:
             self.sl_hdlr = hcls(server.server_address)
-        self.log_output = ''
+        self.log_output = b''
         self.root_logger.removeHandler(self.root_logger.handlers[0])
         self.root_logger.addHandler(self.sl_hdlr)
         self.handled = threading.Event()
