@@ -1065,6 +1065,42 @@ class TypeVarTuple(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
     def __typing_subst__(self, arg):
         raise TypeError("Substitution of bare TypeVarTuple is not supported")
 
+    def __typing_prepare_subst__(self, alias, args):
+        params = alias.__parameters__
+        typevartuple_index = params.index(self)
+        for param in enumerate(params[typevartuple_index + 1:]):
+            if isinstance(param, TypeVarTuple):
+                raise TypeError(f"More than one TypeVarTuple parameter in {alias}")
+
+        alen = len(args)
+        plen = len(params)
+        left = typevartuple_index
+        right = plen - typevartuple_index - 1
+        var_tuple_index = None
+        fillarg = None
+        for k, arg in enumerate(args):
+            if not (isinstance(arg, type) and not isinstance(arg, GenericAlias)):
+                subargs = getattr(arg, '__typing_unpacked_tuple_args__', None)
+                if subargs and len(subargs) == 2 and subargs[-1] is ...:
+                    if var_tuple_index is not None:
+                        raise TypeError("More than one unpacked arbitrary-length tuple argument")
+                    var_tuple_index = k
+                    fillarg = subargs[0]
+        if var_tuple_index is not None:
+            left = min(left, var_tuple_index)
+            right = min(right, alen - var_tuple_index - 1)
+        elif left + right > alen:
+            raise TypeError(f"Too few arguments for {alias};"
+                            f" actual {alen}, expected at least {plen-1}")
+
+        return (
+            *args[:left],
+            *([fillarg]*(typevartuple_index - left)),
+            tuple(args[left: alen - right]),
+            *([fillarg]*(plen - right - left - typevartuple_index - 1)),
+            *args[alen - right:],
+        )
+
 
 class ParamSpecArgs(_Final, _Immutable, _root=True):
     """The args for a ParamSpec object.
@@ -1184,6 +1220,8 @@ class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
                             f"ParamSpec, or Concatenate. Got {arg}")
         return arg
 
+    def __typing_prepare_subst__(self, alias, args):
+        return _prepare_paramspec_params(alias, args)
 
 def _is_dunder(attr):
     return attr.startswith('__') and attr.endswith('__')
@@ -1253,44 +1291,6 @@ class _BaseGenericAlias(_Final, _root=True):
     def __dir__(self):
         return list(set(super().__dir__()
                 + [attr for attr in dir(self.__origin__) if not _is_dunder(attr)]))
-
-
-def _is_unpacked_tuple(x: Any) -> bool:
-    # Is `x` something like `*tuple[int]` or `*tuple[int, ...]`?
-    if not isinstance(x, _UnpackGenericAlias):
-        return False
-    # Alright, `x` is `Unpack[something]`.
-
-    # `x` will always have `__args__`, because Unpack[] and Unpack[()]
-    # aren't legal.
-    unpacked_type = x.__args__[0]
-
-    return getattr(unpacked_type, '__origin__', None) is tuple
-
-
-def _is_unpacked_arbitrary_length_tuple(x: Any) -> bool:
-    if not _is_unpacked_tuple(x):
-        return False
-    unpacked_tuple = x.__args__[0]
-
-    if not hasattr(unpacked_tuple, '__args__'):
-        # It's `Unpack[tuple]`. We can't make any assumptions about the length
-        # of the tuple, so it's effectively an arbitrary-length tuple.
-        return True
-
-    tuple_args = unpacked_tuple.__args__
-    if not tuple_args:
-        # It's `Unpack[tuple[()]]`.
-        return False
-
-    last_arg = tuple_args[-1]
-    if last_arg is Ellipsis:
-        # It's `Unpack[tuple[something, ...]]`, which is arbitrary-length.
-        return True
-
-    # If the arguments didn't end with an ellipsis, then it's not an
-    # arbitrary-length tuple.
-    return False
 
 
 # Special typing constructs Union, Optional, Generic, Callable and Tuple
@@ -1385,10 +1385,6 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             args = (args,)
         args = tuple(_type_convert(p) for p in args)
         args = _unpack_args(args)
-        if (self._paramspec_tvars
-                and any(isinstance(t, ParamSpec) for t in self.__parameters__)):
-            args = _prepare_paramspec_params(self, args)
-
         new_args = self._determine_new_args(args)
         r = self.copy_with(new_args)
         return r
@@ -1410,30 +1406,16 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
 
         params = self.__parameters__
         # In the example above, this would be {T3: str}
-        new_arg_by_param = {}
-        typevartuple_index = None
-        for i, param in enumerate(params):
-            if isinstance(param, TypeVarTuple):
-                if typevartuple_index is not None:
-                    raise TypeError(f"More than one TypeVarTuple parameter in {self}")
-                typevartuple_index = i
-
+        for param in params:
+            prepare = getattr(param, '__typing_prepare_subst__', None)
+            if prepare is not None:
+                args = prepare(self, args)
         alen = len(args)
         plen = len(params)
-        if typevartuple_index is not None:
-            i = typevartuple_index
-            j = alen - (plen - i - 1)
-            if j < i:
-                raise TypeError(f"Too few arguments for {self};"
-                                f" actual {alen}, expected at least {plen-1}")
-            new_arg_by_param.update(zip(params[:i], args[:i]))
-            new_arg_by_param[params[i]] = tuple(args[i: j])
-            new_arg_by_param.update(zip(params[i + 1:], args[j:]))
-        else:
-            if alen != plen:
-                raise TypeError(f"Too {'many' if alen > plen else 'few'} arguments for {self};"
-                                f" actual {alen}, expected {plen}")
-            new_arg_by_param.update(zip(params, args))
+        if alen != plen:
+            raise TypeError(f"Too {'many' if alen > plen else 'few'} arguments for {self};"
+                            f" actual {alen}, expected {plen}")
+        new_arg_by_param = dict(zip(params, args))
 
         new_args = []
         for old_arg in self.__args__:

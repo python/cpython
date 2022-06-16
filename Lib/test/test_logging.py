@@ -3602,20 +3602,23 @@ class ConfigDictTest(BaseTest):
         if lspec is not None:
             cd['handlers']['ah']['listener'] = lspec
         qh = None
-        delay = 0.01
         try:
             self.apply_config(cd)
             qh = logging.getHandlerByName('ah')
             self.assertEqual(sorted(logging.getHandlerNames()), ['ah', 'h1'])
             self.assertIsNotNone(qh.listener)
             qh.listener.start()
-            # Need to let the listener thread get started
-            time.sleep(delay)
             logging.debug('foo')
             logging.info('bar')
             logging.warning('baz')
+
             # Need to let the listener thread finish its work
-            time.sleep(delay)
+            while support.sleeping_retry(support.LONG_TIMEOUT, error=False):
+                if qh.listener.queue.empty():
+                    break
+            else:
+                self.fail("queue not empty")
+
             with open(fn, encoding='utf-8') as f:
                 data = f.read().splitlines()
             self.assertEqual(data, ['foo', 'bar', 'baz'])

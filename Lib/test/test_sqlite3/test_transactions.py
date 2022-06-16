@@ -23,35 +23,33 @@
 import os, unittest
 import sqlite3 as sqlite
 
+from test.support import LOOPBACK_TIMEOUT
+from test.support.os_helper import TESTFN, unlink
+
 from test.test_sqlite3.test_dbapi import memory_database
 
-def get_db_path():
-    return "sqlite_testdb"
+
+TIMEOUT = LOOPBACK_TIMEOUT / 10
+
 
 class TransactionTests(unittest.TestCase):
     def setUp(self):
-        try:
-            os.remove(get_db_path())
-        except OSError:
-            pass
-
-        self.con1 = sqlite.connect(get_db_path(), timeout=0.1)
+        self.con1 = sqlite.connect(TESTFN, timeout=TIMEOUT)
         self.cur1 = self.con1.cursor()
 
-        self.con2 = sqlite.connect(get_db_path(), timeout=0.1)
+        self.con2 = sqlite.connect(TESTFN, timeout=TIMEOUT)
         self.cur2 = self.con2.cursor()
 
     def tearDown(self):
-        self.cur1.close()
-        self.con1.close()
-
-        self.cur2.close()
-        self.con2.close()
-
         try:
-            os.unlink(get_db_path())
-        except OSError:
-            pass
+            self.cur1.close()
+            self.con1.close()
+
+            self.cur2.close()
+            self.con2.close()
+
+        finally:
+            unlink(TESTFN)
 
     def test_dml_does_not_auto_commit_before(self):
         self.cur1.execute("create table test(i)")
