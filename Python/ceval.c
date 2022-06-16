@@ -3697,7 +3697,6 @@ handle_eval_breaker:
             if (new_frame == NULL) {
                 goto error;
             }
-            CALL_STAT_INC(inlined_py_calls);
             SET_TOP(NULL);
             int push_null = !(oparg & 1);
             STACK_SHRINK(push_null);
