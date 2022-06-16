@@ -814,9 +814,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         probably be diagnosed.)
 
         """
-        # abandon query parameters
-        path = path.split('?',1)[0]
-        path = path.split('#',1)[0]
+        # extract only path, abandon query parameters and fragment
+        path = urllib.parse.pathsplit(path).path
         # Don't forget explicit trailing slash when normalizing. Issue17324
         trailing_slash = path.rstrip().endswith('/')
         try:
