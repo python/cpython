@@ -2242,6 +2242,7 @@ handle_eval_breaker:
             PyCodeObject *code = (PyCodeObject *)getitem->func_code;
             assert(code->co_argcount == 2);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), BINARY_SUBSCR);
+            STAT_INC(BINARY_SUBSCR, hit);
             Py_INCREF(getitem);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, getitem);
             CALL_STAT_INC(inlined_py_calls);
