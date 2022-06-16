@@ -1440,8 +1440,8 @@ Connection objects can be used as context managers that automatically commit or
 rollback open transactions when leaving the body of the context manager.
 If the body of the :keyword:`with` statement finishes without exceptions,
 the transaction is committed.
-If this commit fails, the transaction is rolled back.
-If the body of the ``with`` statement raise an exception which is not caught,
+If this commit fails,
+or the body of the ``with`` statement raise an exception which is not caught,
 the transaction is rolled back.
 
 If there is no open transaction upon leaving the body of the ``with`` statement,
