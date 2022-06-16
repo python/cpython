@@ -53,6 +53,19 @@ jobs:
     - name: 'Build HTML documentation'
       run: make -C Doc/ SPHINXOPTS="-q" SPHINXERRORHANDLING="-W --keep-going" html
 
+    # Add pull request annotations for Sphinx nitpicks (missing references)
+    - name: Get list of changed files
+      id: changed_files
+      uses: jitterbit/get-changed-files@v1
+    - name: 'Build with nitpicks'
+      continue-on-error: true
+      run: |
+        # Mark files the pull request modified
+        touch ${{ steps.changed_files.outputs.added_modified }}
+        # Build docs with the '-n' (nitpicky) option, convert warnings
+        make -C Doc/ PYTHON=../python SPHINXOPTS="-q --keep-going -n" html 2>&1 |
+            python Doc/tools/warnings-to-gh-actions.py
+
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:
     name: 'Doctest'
