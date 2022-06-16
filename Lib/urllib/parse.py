@@ -483,8 +483,8 @@ def urlsplit(url, scheme='', allow_fragments=True):
 # typed=True avoids BytesWarnings being emitted during cache key
 # comparison since this API supports both bytes and str input.
 @functools.lru_cache(typed=True)
-def pathsplit(abs_path):
-    """Parse an absolute path that includes an optional query and fragment.
+def pathsplit(path):
+    """Parse a path that includes an optional query and fragment.
     The full syntax is:
 
     <path>?<query>#<fragment>
@@ -495,12 +495,12 @@ def pathsplit(abs_path):
 
     Note that % escapes are not expanded.
     """
-    abs_path, _coerce_result = _coerce_args(abs_path)
+    path, _coerce_result = _coerce_args(path)
     for b in _UNSAFE_URL_BYTES_TO_REMOVE:
-        abs_path = abs_path.replace(b, "")
-    abs_path, _, fragment = abs_path.partition('#')
-    abs_path, _, query = abs_path.partition('?')
-    v = SplitResult('', '', abs_path, query, fragment)
+        path = path.replace(b, "")
+    path, _, fragment = path.partition('#')
+    path, _, query = path.partition('?')
+    v = SplitResult('', '', path, query, fragment)
     return _coerce_result(v)
 
 def urlunparse(components):

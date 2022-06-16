@@ -882,12 +882,12 @@ def _get_redirect_url(path):
     """Returns URL with trailing slash on path, if required.  If not required,
     returns None.
     """
-    # It would be simpler to use urllib.parse.urlsplit() here.  However, the
-    # 'path' is not truly a URI in that it can't have a scheme or netloc.  We
-    # need to avoid parsing it incorrectly.  For example, as reported in
-    # gh-87389, a path starting with a double slash should not be treated as a
-    # relative URI.  Also, a path with a colon in the first component could
-    # also be parsed wrongly.
+    # Previous versions of this module used urllib.parse.urlsplit() here.
+    # However, the 'path' is not truly a URI in that it can't have a scheme or
+    # netloc.  We need to avoid parsing it incorrectly.  For example, as
+    # reported in gh-87389, a path starting with a double slash should not be
+    # treated as a relative URI.  Also, a path with a colon in the first
+    # component could also be parsed wrongly.
     parts = urllib.parse.pathsplit(path)
     if parts.path.endswith('/'):
         return None  # already has slash, no redirect needed

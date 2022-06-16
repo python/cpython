@@ -339,9 +339,9 @@ or on combining URL components into a URL string.
 
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
 
-.. function:: pathsplit(abs_path)
+.. function:: pathsplit(path)
 
-   Parse an absolute path that includes an optional query and fragment. Like
+   Parse a path that includes an optional query and fragment. Like
    :func:`urlsplit`, this function returns a 5-item :term:`named tuple`::
 
       (addressing scheme, network location, path, query, fragment identifier).
