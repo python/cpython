@@ -1,7 +1,8 @@
 :mod:`http.server`: Fix an open redirection vulnerability in the HTTP server
 when an URI path starts with ``//``.  Vulnerability discovered, and initial
-fix proposed, by Hamza Avvan.  Change `urllib.parse.urlunsplit()` to
-sanitize `path` argument in order to avoid confusing the first component of
-the path as a net location or scheme.  Add `urllib.parse.pathsplit()` function.
+fix proposed, by Hamza Avvan.  Change :func:`urllib.parse.urlunsplit` to
+sanitize ``path`` argument in order to avoid confusing the first component of
+the path as a net location or scheme.  Add :func:`urllib.parse.pathsplit`
+function.
 
 Co-authored-by: Gregory P. Smith <gps@google.com>
