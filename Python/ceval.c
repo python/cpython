@@ -2240,7 +2240,6 @@ handle_eval_breaker:
             PyFunctionObject *getitem = (PyFunctionObject *)cached;
             DEOPT_IF(getitem->func_version != cache->func_version, BINARY_SUBSCR);
             PyCodeObject *code = (PyCodeObject *)getitem->func_code;
-            size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
             assert(code->co_argcount == 2);
             STAT_INC(BINARY_SUBSCR, hit);
 
