@@ -1,0 +1,1 @@
+Fix for the compatibility problems with expat made more robust.
