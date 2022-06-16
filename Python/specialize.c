@@ -949,7 +949,6 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
             _Py_SET_OPCODE(*instr, LOAD_ATTR_CLASS);
             return 0;
         case MUTABLE_DESCRIPTOR:
-            return -1;
             write_u32(cache->type_version, ((PyTypeObject *)owner)->tp_version_tag);
             write_obj(cache->descr, descr);
             _Py_SET_OPCODE(*instr, LOAD_ATTR_CLASS_MUTABLE_DESCRIPTOR);
