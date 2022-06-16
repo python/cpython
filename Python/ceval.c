@@ -2248,8 +2248,7 @@ handle_eval_breaker:
             }
             CALL_STAT_INC(frames_pushed);
             Py_INCREF(getitem);
-            _PyFrame_InitializeSpecials(new_frame, getitem,
-                                        NULL, code->co_nlocalsplus);
+            _PyFrame_InitializeSpecials(new_frame, getitem, NULL);
             STACK_SHRINK(2);
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
@@ -4688,7 +4687,7 @@ handle_eval_breaker:
             // Check if the call can be inlined or not
             if (Py_TYPE(function) == &PyFunction_Type && tstate->interp->eval_frame == NULL) {
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
-                PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
+                PyObject *locals = (code_flags & CO_OPTIMIZED) ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(function));
                 STACK_SHRINK(total_args);
                 _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
                     tstate, (PyFunctionObject *)function, locals,
@@ -6262,7 +6261,7 @@ fail_post_args:
     return -1;
 }
 
-/* Consumes references to func and all the args */
+/* Consumes references to func, locals (if not NULL), and all the args */
 static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,
@@ -6275,7 +6274,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
     if (frame == NULL) {
         goto fail;
     }
-    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
+    _PyFrame_InitializeSpecials(frame, func, locals);
     PyObject **localsarray = &frame->localsplus[0];
     for (int i = 0; i < code->co_nlocalsplus; i++) {
         localsarray[i] = NULL;
@@ -6287,6 +6286,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
     }
     return frame;
 fail:
+    Py_XDECREF(locals);
     /* Consume the references */
     for (size_t i = 0; i < argcount; i++) {
         Py_DECREF(args[i]);
@@ -6330,6 +6330,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
             Py_INCREF(args[i+argcount]);
         }
     }
+    Py_XINCREF(locals);
     _PyInterpreterFrame *frame = _PyEvalFramePushAndInit(
         tstate, func, locals, args, argcount, kwnames);
     if (frame == NULL) {

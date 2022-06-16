@@ -126,7 +126,7 @@ _PyFrame_Push(PyThreadState *tstate, PyFunctionObject *func)
         Py_DECREF(func);
         return NULL;
     }
-    _PyFrame_InitializeSpecials(new_frame, func, NULL, code->co_nlocalsplus);
+    _PyFrame_InitializeSpecials(new_frame, func, NULL);
     return new_frame;
 }
 
