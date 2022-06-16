@@ -888,11 +888,11 @@ def _get_redirect_url(path):
     # gh-87389, a path starting with a double slash should not be treated as a
     # relative URI.  Also, a path with a colon in the first component could
     # also be parsed wrongly.
-    path, _, fragment = path.partition('#')
-    path, _, query = path.partition('?')
-    if path.endswith('/'):
+    parts = urllib.parse.pathsplit(path)
+    if parts.path.endswith('/'):
         return None  # already has slash, no redirect needed
-    return urllib.parse.urlunsplit(('', '', path + '/', query, fragment))
+    return urllib.parse.urlunsplit(('', '', parts.path + '/', parts.query,
+                                    parts.fragment))
 
 
 # Utilities for CGIHTTPRequestHandler
