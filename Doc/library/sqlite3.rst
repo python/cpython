@@ -1434,12 +1434,13 @@ case-insensitively by name:
 Using the connection as a context manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Connection objects can be used as context managers
-that automatically commit or rollback transactions,
-*if* there is an open transaction.
+With an open transaction, connection objects can be used as context managers
+that automatically commit or rollback transactions.
+If the body of the ``with`` statement finishes without exceptions,
+the transaction is committed.
+If an exception is raised and not caught, the transaction is rolled back.
+
 If there is no open transaction, the context manager is a no-op.
-In the event of an exception, the transaction is rolled back;
-otherwise, the transaction is committed:
 
 .. note::
 
