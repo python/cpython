@@ -1339,6 +1339,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'pythonpath_env': paths_str,
             'stdlib_dir': stdlib,
         }
+        # The code above is taken from test_init_setpythonhome()
         env = {'TESTHOME': home, 'PYTHONPATH': paths_str}
 
         env['NEGATIVE_ISPYTHONBUILD'] = '1'
