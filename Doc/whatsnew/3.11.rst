@@ -178,8 +178,6 @@ Irit Katriel in :issue:`45607`.)
 
 .. _new-feat-related-type-hints-311:
 
-
-
 New Features Related to Type Hints
 ==================================
 
