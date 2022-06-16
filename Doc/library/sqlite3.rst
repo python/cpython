@@ -1442,10 +1442,6 @@ If an exception is raised and not caught, the transaction is rolled back.
 
 If there is no open transaction, the context manager is a no-op.
 
-.. note::
-
-    The context manager does not implicitly open a new transaction.
-
 .. literalinclude:: ../includes/sqlite3/ctx_manager.py
 
 
