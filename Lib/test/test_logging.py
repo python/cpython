@@ -3613,11 +3613,10 @@ class ConfigDictTest(BaseTest):
             logging.warning('baz')
 
             # Need to let the listener thread finish its work
-            while support.sleeping_retry(support.LONG_TIMEOUT, error=False):
+            while support.sleeping_retry(support.LONG_TIMEOUT,
+                                         "queue not empty"):
                 if qh.listener.queue.empty():
                     break
-            else:
-                self.fail("queue not empty")
 
             with open(fn, encoding='utf-8') as f:
                 data = f.read().splitlines()
