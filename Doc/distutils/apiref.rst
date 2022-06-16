@@ -1230,8 +1230,8 @@ other utility module.
    Convert a string representation of truth to true (1) or false (0).
 
    True values are ``y``, ``yes``, ``t``, ``true``, ``on``  and ``1``; false values
-   are ``n``, ``no``, ``f``, ``false``,  ``off`` and ``0``.  Raises
-   :exc:`ValueError` if *val*  is anything else.
+   are ``n``, ``no``, ``f``, ``false``,  ``off`` and ``0``.  Matches case-insensitively
+   and raises :exc:`ValueError` if *val*  is anything else.
 
 
 .. function:: byte_compile(py_files[, optimize=0, force=0, prefix=None, base_dir=None, verbose=1, dry_run=0, direct=None])
