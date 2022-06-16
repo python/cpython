@@ -1213,7 +1213,7 @@ _Py_Specialize_BinarySubscr(
         int version = _PyFunction_GetVersionForCurrentState(func);
         if (version == 0 || version != (uint16_t)version) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, version == 0 ?
-                SPEC_FAIL_OUT_OF_VERSIONS: SPEC_FAIL_OUT_OF_RANGE);
+                SPEC_FAIL_OUT_OF_VERSIONS : SPEC_FAIL_OUT_OF_RANGE);
             goto fail;
         }
         cache->func_version = version;
