@@ -702,7 +702,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     def check_config(self, configs, expected):
         config = dict(configs['config'])
         if MS_WINDOWS and (value := config.get('program_name')):
-            ptn = '_d.exe$' if debug_build(sys.executable) else '.exe$'
+            ptn = r'_d\.exe$' if debug_build(sys.executable) else r'\.exe$'
             config['program_name'] = re.sub(ptn, '', value, 1, re.I)
         for key, value in list(expected.items()):
             if value is self.IGNORE_CONFIG:
