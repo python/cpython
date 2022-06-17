@@ -7783,24 +7783,6 @@ slot_tp_getattro(PyObject *self, PyObject *name)
 }
 
 static PyObject *
-call_attribute(PyObject *self, PyObject *attr, PyObject *name)
-{
-    PyObject *res, *descr = NULL;
-    descrgetfunc f = Py_TYPE(attr)->tp_descr_get;
-
-    if (f != NULL) {
-        descr = f(attr, self, (PyObject *)(Py_TYPE(self)));
-        if (descr == NULL)
-            return NULL;
-        else
-            attr = descr;
-    }
-    res = PyObject_CallOneArg(attr, name);
-    Py_XDECREF(descr);
-    return res;
-}
-
-static PyObject *
 slot_tp_getattr_hook(PyObject *self, PyObject *name)
 {
     PyTypeObject *tp = Py_TYPE(self);
