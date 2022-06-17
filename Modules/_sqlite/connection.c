@@ -161,8 +161,9 @@ connection_txn_stmt(pysqlite_Connection *self, const char *sql)
 {
     int rc;
     Py_BEGIN_ALLOW_THREADS
+    int len = (int)strlen(sql) + 1;
     sqlite3_stmt *stmt;
-    rc = sqlite3_prepare_v2(self->db, sql, strlen(sql) + 1, &stmt, NULL);
+    rc = sqlite3_prepare_v2(self->db, sql, len, &stmt, NULL);
     if (rc == SQLITE_OK) {
         (void)sqlite3_step(stmt);
         rc = sqlite3_finalize(stmt);
