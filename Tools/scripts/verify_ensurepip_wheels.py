@@ -18,7 +18,7 @@ PACKAGE_NAMES = ("pip", "setuptools")
 ENSURE_PIP_ROOT = Path(__file__).parent.parent.parent / "Lib/ensurepip"
 WHEEL_DIR = ENSURE_PIP_ROOT / "_bundled"
 ENSURE_PIP_INIT_PY_TEXT = (ENSURE_PIP_ROOT / "__init__.py").read_text(encoding="utf-8")
-GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS")
+GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 
 
 def print_notice(file_path: str, message: str) -> None:
