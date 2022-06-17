@@ -544,7 +544,7 @@ A common complaint from Python users is that there's no single catalog of all
 the Python modules in existence.  T. Middleton's Vaults of Parnassus at
 ``www.vex.net/parnassus/`` (retired in February 2009, `available in the
 Internet Archive Wayback Machine
-<http://web.archive.org/web/20090130140102/http://www.vex.net/parnassus/>`_)
+<https://web.archive.org/web/20090130140102/http://www.vex.net/parnassus/>`_)
 was the largest catalog of Python modules, but
 registering software at the Vaults is optional, and many people did not bother.
 

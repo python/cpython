@@ -670,7 +670,7 @@ A summary of available frameworks is maintained by Paul Boddie at
 https://wiki.python.org/moin/WebProgramming\ .
 
 Cameron Laird maintains a useful set of pages about Python web technologies at
-http://web.archive.org/web/20210224183619/http://phaseit.net/claird/comp.lang.python/web_python.
+https://web.archive.org/web/20210224183619/http://phaseit.net/claird/comp.lang.python/web_python.
 
 
 How can I mimic CGI form submission (METHOD=POST)?

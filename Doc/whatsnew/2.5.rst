@@ -551,7 +551,7 @@ exhausted.
    https://en.wikipedia.org/wiki/Coroutine
       The Wikipedia entry for  coroutines.
 
-   http://web.archive.org/web/20160321211320/http://www.sidhe.org/~dan/blog/archives/000178.html
+   https://web.archive.org/web/20160321211320/http://www.sidhe.org/~dan/blog/archives/000178.html
       An explanation of coroutines from a Perl point of view, written by Dan Sugalski.
 
 .. ======================================================================
@@ -1746,7 +1746,7 @@ modules, now that :mod:`ctypes` is included with core Python.
 
 .. seealso::
 
-   http://web.archive.org/web/20180410025338/http://starship.python.net/crew/theller/ctypes/
+   https://web.archive.org/web/20180410025338/http://starship.python.net/crew/theller/ctypes/
       The pre-stdlib ctypes web page, with a tutorial, reference, and FAQ.
 
    The documentation  for the :mod:`ctypes` module.
@@ -2065,7 +2065,7 @@ up a server takes only a few lines of code::
 
 .. seealso::
 
-   http://web.archive.org/web/20160331090247/http://wsgi.readthedocs.org/en/latest/
+   https://web.archive.org/web/20160331090247/http://wsgi.readthedocs.org/en/latest/
       A central web site for WSGI-related resources.
 
    :pep:`333` - Python Web Server Gateway Interface v1.0

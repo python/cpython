@@ -626,7 +626,7 @@ strtod and dtoa
 The file :file:`Python/dtoa.c`, which supplies C functions dtoa and
 strtod for conversion of C doubles to and from strings, is derived
 from the file of the same name by David M. Gay, currently available
-from http://web.archive.org/web/20220517033456/http://www.netlib.org/fp/dtoa.c.
+from https://web.archive.org/web/20220517033456/http://www.netlib.org/fp/dtoa.c.
 The original file, as retrieved on March 16, 2009, contains the following
 copyright and licensing notice::
 
