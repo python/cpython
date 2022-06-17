@@ -53,11 +53,9 @@ class DumpTests(unittest.TestCase):
 
     def test_dump_autoincrement(self):
         expected_sqls = [
-            "CREATE TABLE \"posts\" (id int primary key);",
-            "INSERT INTO \"posts\" VALUES(0);",
-            "CREATE TABLE \"tags\" (id integer primary key autoincrement, tag varchar(256), post int references posts);",
-            "INSERT INTO \"tags\" VALUES(NULL,'test',0);",
-            "CREATE TABLE \"tags2\" (id integer primary key autoincrement, tag varchar(256), post int references posts);"
+            "CREATE TABLE \"t1\" (id integer primary key autoincrement);",
+            "INSERT INTO \"t1\" VALUES(NULL);",
+            "CREATE TABLE \"t2\" (id integer primary key autoincrement);"
         ]
 
         for sql_statement in expected_sqls:
@@ -66,11 +64,11 @@ class DumpTests(unittest.TestCase):
         actual_sqls = [sql_statement for sql_statement in iterdump]
 
         # the NULL value should now be automatically be set to 1
-        expected_sqls[3] = expected_sqls[3].replace("NULL", "1")
+        expected_sqls[1] = expected_sqls[1].replace("NULL", "1")
         expected_sqls.insert(0, "BEGIN TRANSACTION;")
         expected_sqls.extend([
             "DELETE FROM \"sqlite_sequence\";",
-            "INSERT INTO \"sqlite_sequence\" VALUES('tags',1);",
+            "INSERT INTO \"sqlite_sequence\" VALUES('t1',1);",
             "COMMIT;"
         ])
 
@@ -79,15 +77,13 @@ class DumpTests(unittest.TestCase):
     def test_dump_autoincrement_create_new_db(self):
         old_db = [
             "BEGIN TRANSACTION ;",
-            "CREATE TABLE \"posts\" (id int primary key);",
-            "INSERT INTO \"posts\" VALUES(0);",
-            "CREATE TABLE \"tags\" (id integer primary key autoincrement, tag varchar(256), post int references posts);",
-            "CREATE TABLE \"tags2\" (id integer primary key autoincrement, tag varchar(256), post int references posts);"
+            "CREATE TABLE \"t1\" (id integer primary key autoincrement);",
+            "CREATE TABLE \"t2\" (id integer primary key autoincrement);"
         ]
         for i in range(1, 10):
-            old_db.append("INSERT INTO \"tags\" VALUES(NULL,'test{0}',0);".format(i))
+            old_db.append("INSERT INTO \"t1\" VALUES(NULL);".format(i))
         for i in range(1, 5):
-            old_db.append("INSERT INTO \"tags2\" VALUES(NULL,'test{0}',0);".format(i))
+            old_db.append("INSERT INTO \"t2\" VALUES(NULL);".format(i))
         old_db.append("COMMIT;")
 
         self.cu.executescript("".join(old_db))
@@ -97,12 +93,12 @@ class DumpTests(unittest.TestCase):
             cx2.executescript(query)
             cu2 = cx2.cursor()
 
-            self.assertEqual(cu2.execute("SELECT \"seq\""
+            self.assertEqual(cu2.execute("SELECT \"seq\" "
                                          "FROM \"sqlite_sequence\""
-                                         "WHERE \"name\" == \"tags\"").fetchall()[0][0], 9)
-            self.assertEqual(cu2.execute("SELECT \"seq\" FROM"
-                                         "\"sqlite_sequence\""
-                                         "WHERE \"name\" == \"tags2\"").fetchall()[0][0], 4)
+                                         "WHERE \"name\" == 't1'").fetchall()[0][0], 9)
+            self.assertEqual(cu2.execute("SELECT \"seq\" "
+                                         "FROM \"sqlite_sequence\""
+                                         "WHERE \"name\" == 't2'").fetchall()[0][0], 4)
 
     def test_unorderable_row(self):
         # iterdump() should be able to cope with unorderable row types (issue #15545)
