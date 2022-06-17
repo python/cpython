@@ -62,7 +62,8 @@ if __name__ == '__main__':
         pool.map_async(f, [1, 2, 3], callback=results.extend)
 
         # up to 1 min to report the results
-        for _ in support.sleeping_retry(60, "Timed out waiting for results"):
+        for _ in support.sleeping_retry(support.LONG_TIMEOUT,
+                                        "Timed out waiting for results"):
             if results:
                 break
 
@@ -93,7 +94,8 @@ results = []
 with Pool(5) as pool:
     pool.map_async(int, [1, 4, 9], callback=results.extend)
     # up to 1 min to report the results
-    for _ in support.sleeping_retry(60, "Timed out waiting for results"):
+    for _ in support.sleeping_retry(support.LONG_TIMEOUT,
+                                    "Timed out waiting for results"):
         if results:
             break
 

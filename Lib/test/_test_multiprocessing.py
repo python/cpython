@@ -124,6 +124,8 @@ else:
 # BaseManager.shutdown_timeout
 SHUTDOWN_TIMEOUT = support.SHORT_TIMEOUT
 
+WAIT_ACTIVE_CHILDREN_TIMEOUT = 5.0
+
 HAVE_GETVALUE = not getattr(_multiprocessing,
                             'HAVE_BROKEN_SEM_GETVALUE', False)
 
@@ -2861,6 +2863,11 @@ class _TestPoolWorkerLifetime(BaseTestCase):
         for (j, res) in enumerate(results):
             self.assertEqual(res.get(), sqr(j))
 
+    def test_pool_maxtasksperchild_invalid(self):
+        for value in [0, -1, 0.5, "12"]:
+            with self.assertRaises(ValueError):
+                multiprocessing.Pool(3, maxtasksperchild=value)
+
     def test_worker_finalization_via_atexit_handler_of_multiprocessing(self):
         # tests cases against bpo-38744 and bpo-39360
         cmd = '''if 1:
@@ -5569,8 +5576,9 @@ class TestSyncManagerTypes(unittest.TestCase):
         # if there are other children too (see #17395).
         join_process(self.proc)
 
+        timeout = WAIT_ACTIVE_CHILDREN_TIMEOUT
         start_time = time.monotonic()
-        for _ in support.sleeping_retry(5.0, error=False):
+        for _ in support.sleeping_retry(timeout, error=False):
             if len(multiprocessing.active_children()) <= 1:
                 break
         else:
@@ -5875,8 +5883,9 @@ class ManagerMixin(BaseMixin):
         # only the manager process should be returned by active_children()
         # but this can take a bit on slow machines, so wait a few seconds
         # if there are other children too (see #17395)
+        timeout = WAIT_ACTIVE_CHILDREN_TIMEOUT
         start_time = time.monotonic()
-        for _ in support.sleeping_retry(5.0, error=False):
+        for _ in support.sleeping_retry(timeout, error=False):
             if len(multiprocessing.active_children()) <= 1:
                 break
         else:

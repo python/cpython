@@ -497,17 +497,29 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         yield Instruction(_all_opname[op], op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target, positions)
-        if show_caches and _inline_cache_entries[deop]:
-            for name, caches in _cache_format[opname[deop]].items():
-                data = code[offset + 2: offset + 2 + caches * 2]
-                argrepr = f"{name}: {int.from_bytes(data, sys.byteorder)}"
-                for _ in range(caches):
-                    offset += 2
-                    yield Instruction(
-                        "CACHE", 0, 0, None, argrepr, offset, None, False, None
-                    )
-                    # Only show the actual value for the first cache entry:
+        caches = _inline_cache_entries[deop]
+        if not caches:
+            continue
+        if not show_caches:
+            # We still need to advance the co_positions iterator:
+            for _ in range(caches):
+                next(co_positions, ())
+            continue
+        for name, size in _cache_format[opname[deop]].items():
+            for i in range(size):
+                offset += 2
+                # Only show the fancy argrepr for a CACHE instruction when it's
+                # the first entry for a particular cache value and the
+                # instruction using it is actually quickened:
+                if i == 0 and op != deop:
+                    data = code[offset: offset + 2 * size]
+                    argrepr = f"{name}: {int.from_bytes(data, sys.byteorder)}"
+                else:
                     argrepr = ""
+                yield Instruction(
+                    "CACHE", CACHE, 0, None, argrepr, offset, None, False,
+                    Positions(*next(co_positions, ()))
+                )
 
 def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False):
     """Disassemble a code object."""

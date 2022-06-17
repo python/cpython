@@ -76,7 +76,7 @@ def capture_server(evt, buf, serv):
         pass
     else:
         n = 200
-        for _ in support.busy_retry(3.0, error=False):
+        for _ in support.busy_retry(support.SHORT_TIMEOUT):
             r, w, e = select.select([conn], [], [], 0.1)
             if r:
                 n -= 1
@@ -87,7 +87,6 @@ def capture_server(evt, buf, serv):
                     break
             if n <= 0:
                 break
-            time.sleep(0.01)
 
         conn.close()
     finally:

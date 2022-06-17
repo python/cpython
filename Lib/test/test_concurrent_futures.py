@@ -258,7 +258,8 @@ class FailingInitializerMixin(ExecutorMixin):
                     future.result()
 
             # At some point, the executor should break
-            for _ in support.sleeping_retry(5, "executor not broken"):
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT,
+                                            "executor not broken"):
                 if self.executor._broken:
                     break
 
