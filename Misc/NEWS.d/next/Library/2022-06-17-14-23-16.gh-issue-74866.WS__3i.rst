@@ -1,0 +1,1 @@
+Fix :meth:`utils.parsedate_to_datetime` raising exception on ``None``. It now returns ``None`` instead.
