@@ -3661,7 +3661,9 @@ handle_eval_breaker:
             assert(type_version != 0);
             PyObject *fget = read_obj(cache->descr);
             PyFunctionObject *f = (PyFunctionObject *)fget;
-            DEOPT_IF(f->func_version != cache->keys_version[0], LOAD_ATTR);
+            uint32_t func_version = read_u32(cache->keys_version);
+            assert(func_version != 0);
+            DEOPT_IF(f->func_version != func_version, LOAD_ATTR);
             PyCodeObject *code = (PyCodeObject *)f->func_code;
             assert(code->co_argcount == 1);
             STAT_INC(LOAD_ATTR, hit);
