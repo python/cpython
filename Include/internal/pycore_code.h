@@ -481,6 +481,7 @@ _PyCode_LineNumberFromArray(PyCodeObject *co, int index)
 {
     assert(co->_co_linearray != NULL);
     assert(index >= 0);
+    assert(index < Py_SIZE(co));
     if (co->_co_linearray_entry_size == 2) {
         return ((int16_t *)co->_co_linearray)[index];
     }

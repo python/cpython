@@ -703,7 +703,6 @@ failed:
    lnotab_notes.txt for the details of the lnotab representation.
 */
 
-
 int
 _PyCode_CreateLineArray(PyCodeObject *co)
 {
@@ -712,10 +711,7 @@ _PyCode_CreateLineArray(PyCodeObject *co)
     int size;
     int max_line = 0;
     _PyCode_InitAddressRange(co, &bounds);
-    while (1) {
-        if (!_PyLineTable_NextAddressRange(&bounds)) {
-            break;
-        }
+    while(_PyLineTable_NextAddressRange(&bounds)) {
         if (bounds.ar_line > max_line) {
             max_line = bounds.ar_line;
         }
@@ -733,14 +729,11 @@ _PyCode_CreateLineArray(PyCodeObject *co)
     }
     co->_co_linearray_entry_size = size;
     _PyCode_InitAddressRange(co, &bounds);
-    while (1) {
-        if (!_PyLineTable_NextAddressRange(&bounds)) {
-            break;
-        }
-        int addr = bounds.ar_start;
-        while (addr < bounds.ar_end) {
-            assert(addr < (int)(Py_SIZE(co) * sizeof(_Py_CODEUNIT)));
-            int index = addr / sizeof(_Py_CODEUNIT);
+    while(_PyLineTable_NextAddressRange(&bounds)) {
+        int start = bounds.ar_start / sizeof(_Py_CODEUNIT);
+        int end = bounds.ar_end / sizeof(_Py_CODEUNIT);
+        for (int index = start; index < end; index++) {
+            assert(index < (int)Py_SIZE(co));
             if (size == 2) {
                 assert(((int16_t)bounds.ar_line) == bounds.ar_line);
                 ((int16_t *)co->_co_linearray)[index] = bounds.ar_line;
@@ -749,7 +742,6 @@ _PyCode_CreateLineArray(PyCodeObject *co)
                 assert(size == 4);
                 ((int32_t *)co->_co_linearray)[index] = bounds.ar_line;
             }
-            addr += sizeof(_Py_CODEUNIT);
         }
     }
     return 0;
