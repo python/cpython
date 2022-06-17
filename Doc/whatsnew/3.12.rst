@@ -106,6 +106,15 @@ Optimizations
   (Contributed by Inada Naoki in :gh:`92536`.)
 
 
+CPython bytecode changes
+========================
+
+* Removed the :opcode:`LOAD_METHOD` instruction. It has been merged into
+  :opcode:`LOAD_ATTR`. :opcode:`LOAD_ATTR` will now behave like the old
+  :opcode:`LOAD_METHOD` instruction if the low bit of its oparg is set.
+  (Contributed by Ken Jin in :gh:`93429`.)
+
+
 Deprecated
 ==========
 
@@ -174,6 +183,14 @@ Removed
 
   * ``sqlite3.enable_shared_cache()``
   * ``sqlite3.OptimizedUnicode``
+
+  If a shared cache must be used, open the database in URI mode using the
+  ``cache=shared`` query parameter.
+
+  The ``sqlite3.OptimizedUnicode`` text factory has been an alias for
+  :class:`str` since Python 3.3. Code that previously set the text factory to
+  ``OptimizedUnicode`` can either use ``str`` explicitly, or rely on the
+  default value which is also ``str``.
 
   (Contributed by Erlend E. Aasland in :gh:`92548`)
 

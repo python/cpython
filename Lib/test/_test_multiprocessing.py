@@ -124,6 +124,8 @@ else:
 # BaseManager.shutdown_timeout
 SHUTDOWN_TIMEOUT = support.SHORT_TIMEOUT
 
+WAIT_ACTIVE_CHILDREN_TIMEOUT = 5.0
+
 HAVE_GETVALUE = not getattr(_multiprocessing,
                             'HAVE_BROKEN_SEM_GETVALUE', False)
 
@@ -2861,6 +2863,11 @@ class _TestPoolWorkerLifetime(BaseTestCase):
         for (j, res) in enumerate(results):
             self.assertEqual(res.get(), sqr(j))
 
+    def test_pool_maxtasksperchild_invalid(self):
+        for value in [0, -1, 0.5, "12"]:
+            with self.assertRaises(ValueError):
+                multiprocessing.Pool(3, maxtasksperchild=value)
+
     def test_worker_finalization_via_atexit_handler_of_multiprocessing(self):
         # tests cases against bpo-38744 and bpo-39360
         cmd = '''if 1:
@@ -4313,18 +4320,13 @@ class _TestSharedMemory(BaseTestCase):
             p.terminate()
             p.wait()
 
-            deadline = time.monotonic() + support.LONG_TIMEOUT
-            t = 0.1
-            while time.monotonic() < deadline:
-                time.sleep(t)
-                t = min(t*2, 5)
+            err_msg = ("A SharedMemory segment was leaked after "
+                       "a process was abruptly terminated")
+            for _ in support.sleeping_retry(support.LONG_TIMEOUT, err_msg):
                 try:
                     smm = shared_memory.SharedMemory(name, create=False)
                 except FileNotFoundError:
                     break
-            else:
-                raise AssertionError("A SharedMemory segment was leaked after"
-                                     " a process was abruptly terminated.")
 
             if os.name == 'posix':
                 # Without this line it was raising warnings like:
@@ -5334,9 +5336,10 @@ class TestResourceTracker(unittest.TestCase):
                 p.terminate()
                 p.wait()
 
-                deadline = time.monotonic() + support.LONG_TIMEOUT
-                while time.monotonic() < deadline:
-                    time.sleep(.5)
+                err_msg = (f"A {rtype} resource was leaked after a process was "
+                           f"abruptly terminated")
+                for _ in support.sleeping_retry(support.SHORT_TIMEOUT,
+                                                  err_msg):
                     try:
                         _resource_unlink(name2, rtype)
                     except OSError as e:
@@ -5344,10 +5347,7 @@ class TestResourceTracker(unittest.TestCase):
                         # EINVAL
                         self.assertIn(e.errno, (errno.ENOENT, errno.EINVAL))
                         break
-                else:
-                    raise AssertionError(
-                        f"A {rtype} resource was leaked after a process was "
-                        f"abruptly terminated.")
+
                 err = p.stderr.read().decode('utf-8')
                 p.stderr.close()
                 expected = ('resource_tracker: There appear to be 2 leaked {} '
@@ -5575,18 +5575,18 @@ class TestSyncManagerTypes(unittest.TestCase):
         # but this can take a bit on slow machines, so wait a few seconds
         # if there are other children too (see #17395).
         join_process(self.proc)
+
+        timeout = WAIT_ACTIVE_CHILDREN_TIMEOUT
         start_time = time.monotonic()
-        t = 0.01
-        while len(multiprocessing.active_children()) > 1:
-            time.sleep(t)
-            t *= 2
-            dt = time.monotonic() - start_time
-            if dt >= 5.0:
-                test.support.environment_altered = True
-                support.print_warning(f"multiprocessing.Manager still has "
-                                      f"{multiprocessing.active_children()} "
-                                      f"active children after {dt} seconds")
+        for _ in support.sleeping_retry(timeout, error=False):
+            if len(multiprocessing.active_children()) <= 1:
                 break
+        else:
+            dt = time.monotonic() - start_time
+            support.environment_altered = True
+            support.print_warning(f"multiprocessing.Manager still has "
+                                  f"{multiprocessing.active_children()} "
+                                  f"active children after {dt:.1f} seconds")
 
     def run_worker(self, worker, obj):
         self.proc = multiprocessing.Process(target=worker, args=(obj, ))
@@ -5883,18 +5883,17 @@ class ManagerMixin(BaseMixin):
         # only the manager process should be returned by active_children()
         # but this can take a bit on slow machines, so wait a few seconds
         # if there are other children too (see #17395)
+        timeout = WAIT_ACTIVE_CHILDREN_TIMEOUT
         start_time = time.monotonic()
-        t = 0.01
-        while len(multiprocessing.active_children()) > 1:
-            time.sleep(t)
-            t *= 2
-            dt = time.monotonic() - start_time
-            if dt >= 5.0:
-                test.support.environment_altered = True
-                support.print_warning(f"multiprocessing.Manager still has "
-                                      f"{multiprocessing.active_children()} "
-                                      f"active children after {dt} seconds")
+        for _ in support.sleeping_retry(timeout, error=False):
+            if len(multiprocessing.active_children()) <= 1:
                 break
+        else:
+            dt = time.monotonic() - start_time
+            support.environment_altered = True
+            support.print_warning(f"multiprocessing.Manager still has "
+                                  f"{multiprocessing.active_children()} "
+                                  f"active children after {dt:.1f} seconds")
 
         gc.collect()                       # do garbage collection
         if cls.manager._number_of_objects() != 0:

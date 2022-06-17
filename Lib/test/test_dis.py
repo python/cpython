@@ -366,11 +366,11 @@ dis_traceback = """\
 
 %3d        LOAD_GLOBAL              0 (Exception)
            CHECK_EXC_MATCH
-           POP_JUMP_FORWARD_IF_FALSE    18 (to 72)
+           POP_JUMP_FORWARD_IF_FALSE    23 (to 82)
            STORE_FAST               0 (e)
 
 %3d        LOAD_FAST                0 (e)
-           LOAD_ATTR                1 (__traceback__)
+           LOAD_ATTR                2 (__traceback__)
            STORE_FAST               1 (tb)
            POP_EXCEPT
            LOAD_CONST               0 (None)
@@ -389,6 +389,7 @@ dis_traceback = """\
            POP_EXCEPT
            RERAISE                  1
 ExceptionTable:
+4 rows
 """ % (TRACEBACK_CODE.co_firstlineno,
        TRACEBACK_CODE.co_firstlineno + 1,
        TRACEBACK_CODE.co_firstlineno + 2,
@@ -420,6 +421,133 @@ dis_fstring = """\
            BUILD_STRING             7
            RETURN_VALUE
 """ % (_fstring.__code__.co_firstlineno, _fstring.__code__.co_firstlineno + 1)
+
+def _with(c):
+    with c:
+        x = 1
+    y = 2
+
+dis_with = """\
+%3d        RESUME                   0
+
+%3d        LOAD_FAST                0 (c)
+           BEFORE_WITH
+           POP_TOP
+
+%3d        LOAD_CONST               1 (1)
+           STORE_FAST               1 (x)
+
+%3d        LOAD_CONST               0 (None)
+           LOAD_CONST               0 (None)
+           LOAD_CONST               0 (None)
+           CALL                     2
+           POP_TOP
+
+%3d        LOAD_CONST               2 (2)
+           STORE_FAST               2 (y)
+           LOAD_CONST               0 (None)
+           RETURN_VALUE
+
+%3d     >> PUSH_EXC_INFO
+           WITH_EXCEPT_START
+           POP_JUMP_FORWARD_IF_TRUE     1 (to 46)
+           RERAISE                  2
+        >> POP_TOP
+           POP_EXCEPT
+           POP_TOP
+           POP_TOP
+
+%3d        LOAD_CONST               2 (2)
+           STORE_FAST               2 (y)
+           LOAD_CONST               0 (None)
+           RETURN_VALUE
+        >> COPY                     3
+           POP_EXCEPT
+           RERAISE                  1
+ExceptionTable:
+2 rows
+""" % (_with.__code__.co_firstlineno,
+       _with.__code__.co_firstlineno + 1,
+       _with.__code__.co_firstlineno + 2,
+       _with.__code__.co_firstlineno + 1,
+       _with.__code__.co_firstlineno + 3,
+       _with.__code__.co_firstlineno + 1,
+       _with.__code__.co_firstlineno + 3,
+       )
+
+async def _asyncwith(c):
+    async with c:
+        x = 1
+    y = 2
+
+dis_asyncwith = """\
+%3d        RETURN_GENERATOR
+           POP_TOP
+           RESUME                   0
+
+%3d        LOAD_FAST                0 (c)
+           BEFORE_ASYNC_WITH
+           GET_AWAITABLE            1
+           LOAD_CONST               0 (None)
+        >> SEND                     3 (to 22)
+           YIELD_VALUE              3
+           RESUME                   3
+           JUMP_BACKWARD_NO_INTERRUPT     4 (to 14)
+        >> POP_TOP
+
+%3d        LOAD_CONST               1 (1)
+           STORE_FAST               1 (x)
+
+%3d        LOAD_CONST               0 (None)
+           LOAD_CONST               0 (None)
+           LOAD_CONST               0 (None)
+           CALL                     2
+           GET_AWAITABLE            2
+           LOAD_CONST               0 (None)
+        >> SEND                     3 (to 56)
+           YIELD_VALUE              2
+           RESUME                   3
+           JUMP_BACKWARD_NO_INTERRUPT     4 (to 48)
+        >> POP_TOP
+
+%3d        LOAD_CONST               2 (2)
+           STORE_FAST               2 (y)
+           LOAD_CONST               0 (None)
+           RETURN_VALUE
+
+%3d     >> PUSH_EXC_INFO
+           WITH_EXCEPT_START
+           GET_AWAITABLE            2
+           LOAD_CONST               0 (None)
+        >> SEND                     3 (to 82)
+           YIELD_VALUE              6
+           RESUME                   3
+           JUMP_BACKWARD_NO_INTERRUPT     4 (to 74)
+        >> POP_JUMP_FORWARD_IF_TRUE     1 (to 86)
+           RERAISE                  2
+        >> POP_TOP
+           POP_EXCEPT
+           POP_TOP
+           POP_TOP
+
+%3d        LOAD_CONST               2 (2)
+           STORE_FAST               2 (y)
+           LOAD_CONST               0 (None)
+           RETURN_VALUE
+        >> COPY                     3
+           POP_EXCEPT
+           RERAISE                  1
+ExceptionTable:
+2 rows
+""" % (_asyncwith.__code__.co_firstlineno,
+       _asyncwith.__code__.co_firstlineno + 1,
+       _asyncwith.__code__.co_firstlineno + 2,
+       _asyncwith.__code__.co_firstlineno + 1,
+       _asyncwith.__code__.co_firstlineno + 3,
+       _asyncwith.__code__.co_firstlineno + 1,
+       _asyncwith.__code__.co_firstlineno + 3,
+       )
+
 
 def _tryfinally(a, b):
     try:
@@ -455,6 +583,7 @@ dis_tryfinally = """\
            POP_EXCEPT
            RERAISE                  1
 ExceptionTable:
+2 rows
 """ % (_tryfinally.__code__.co_firstlineno,
        _tryfinally.__code__.co_firstlineno + 1,
        _tryfinally.__code__.co_firstlineno + 2,
@@ -484,6 +613,7 @@ dis_tryfinallyconst = """\
            POP_EXCEPT
            RERAISE                  1
 ExceptionTable:
+1 row
 """ % (_tryfinallyconst.__code__.co_firstlineno,
        _tryfinallyconst.__code__.co_firstlineno + 1,
        _tryfinallyconst.__code__.co_firstlineno + 2,
@@ -678,6 +808,18 @@ class DisTestBase(unittest.TestCase):
             self.assertGreaterEqual(offset, expected_offset, line)
             expected_offset = offset + delta
 
+    def assert_exception_table_increasing(self, lines):
+        prev_start, prev_end = -1, -1
+        count = 0
+        for line in lines:
+            m = re.match(r'  (\d+) to (\d+) -> \d+ \[\d+\]', line)
+            start, end = [int(g) for g in m.groups()]
+            self.assertGreaterEqual(end, start)
+            self.assertGreater(start, prev_end)
+            prev_start, prev_end = start, end
+            count += 1
+        return count
+
     def strip_offsets(self, text):
         lines = text.splitlines(True)
         start, end = self.find_offset_column(lines)
@@ -691,6 +833,9 @@ class DisTestBase(unittest.TestCase):
                 res.append(line)
             else:
                 res.append(line[:start] + line[end:])
+        num_rows = self.assert_exception_table_increasing(lines)
+        if num_rows:
+            res.append(f"{num_rows} row{'s' if num_rows > 1 else ''}\n")
         return "".join(res)
 
     def do_disassembly_compare(self, got, expected, with_offsets=False):
@@ -883,6 +1028,12 @@ class DisTests(DisTestBase):
     def test_disassemble_fstring(self):
         self.do_disassembly_test(_fstring, dis_fstring)
 
+    def test_disassemble_with(self):
+        self.do_disassembly_test(_with, dis_with)
+
+    def test_disassemble_asyncwith(self):
+        self.do_disassembly_test(_asyncwith, dis_asyncwith)
+
     def test_disassemble_try_finally(self):
         self.do_disassembly_test(_tryfinally, dis_tryfinally)
         self.do_disassembly_test(_tryfinallyconst, dis_tryfinallyconst)
@@ -983,7 +1134,7 @@ class DisTests(DisTestBase):
 
   1           2 LOAD_CONST               0 ('a')
               4 LOAD_ATTR_SLOT           0 (__class__)
-             14 RETURN_VALUE
+             24 RETURN_VALUE
 """
         co = compile("'a'.__class__", "", "eval")
         self.code_quicken(lambda: exec(co, {}, {}))
@@ -1046,8 +1197,10 @@ class DisTests(DisTestBase):
                     caches = list(self.get_cached_values(quickened, adaptive))
                     for cache in caches:
                         self.assertRegex(cache, pattern)
-                    self.assertEqual(caches.count(""), 8)
-                    self.assertEqual(len(caches), 22)
+                    total_caches = 22
+                    empty_caches = 8 if adaptive and quickened else total_caches
+                    self.assertEqual(caches.count(""), empty_caches)
+                    self.assertEqual(len(caches), total_caches)
 
 
 class DisWithFileTests(DisTests):
@@ -1471,16 +1624,16 @@ expected_opinfo_jumpy = [
   Instruction(opname='RETURN_VALUE', opcode=83, arg=None, argval=None, argrepr='', offset=302, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='PUSH_EXC_INFO', opcode=35, arg=None, argval=None, argrepr='', offset=304, starts_line=25, is_jump_target=False, positions=None),
   Instruction(opname='WITH_EXCEPT_START', opcode=49, arg=None, argval=None, argrepr='', offset=306, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_JUMP_FORWARD_IF_TRUE', opcode=115, arg=4, argval=318, argrepr='to 318', offset=308, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='POP_JUMP_FORWARD_IF_TRUE', opcode=115, arg=1, argval=312, argrepr='to 312', offset=308, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='RERAISE', opcode=119, arg=2, argval=2, argrepr='', offset=310, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='COPY', opcode=120, arg=3, argval=3, argrepr='', offset=312, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=312, starts_line=None, is_jump_target=True, positions=None),
   Instruction(opname='POP_EXCEPT', opcode=89, arg=None, argval=None, argrepr='', offset=314, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='RERAISE', opcode=119, arg=1, argval=1, argrepr='', offset=316, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=318, starts_line=None, is_jump_target=True, positions=None),
-  Instruction(opname='POP_EXCEPT', opcode=89, arg=None, argval=None, argrepr='', offset=320, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=322, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=324, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='JUMP_BACKWARD', opcode=140, arg=27, argval=274, argrepr='to 274', offset=326, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=316, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=318, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='JUMP_BACKWARD', opcode=140, arg=24, argval=274, argrepr='to 274', offset=320, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='COPY', opcode=120, arg=3, argval=3, argrepr='', offset=322, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='POP_EXCEPT', opcode=89, arg=None, argval=None, argrepr='', offset=324, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='RERAISE', opcode=119, arg=1, argval=1, argrepr='', offset=326, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='PUSH_EXC_INFO', opcode=35, arg=None, argval=None, argrepr='', offset=328, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='LOAD_GLOBAL', opcode=116, arg=4, argval='ZeroDivisionError', argrepr='ZeroDivisionError', offset=330, starts_line=22, is_jump_target=False, positions=None),
   Instruction(opname='CHECK_EXC_MATCH', opcode=36, arg=None, argval=None, argrepr='', offset=342, starts_line=None, is_jump_target=False, positions=None),
@@ -1599,6 +1752,36 @@ class InstructionTests(InstructionTestCase):
                 self.assertIsNone(positions.end_lineno)
                 self.assertIsNone(positions.col_offset)
                 self.assertIsNone(positions.end_col_offset)
+
+    @requires_debug_ranges()
+    def test_co_positions_with_lots_of_caches(self):
+        def roots(a, b, c):
+            d = b**2 - 4 * a * c
+            yield (-b - cmath.sqrt(d)) / (2 * a)
+            if d:
+                yield (-b + cmath.sqrt(d)) / (2 * a)
+        code = roots.__code__
+        ops = code.co_code[::2]
+        cache_opcode = opcode.opmap["CACHE"]
+        caches = sum(op == cache_opcode for op in ops)
+        non_caches = len(ops) - caches
+        # Make sure we have "lots of caches". If not, roots should be changed:
+        assert 1 / 3 <= caches / non_caches, "this test needs more caches!"
+        for show_caches in (False, True):
+            for adaptive in (False, True):
+                with self.subTest(f"{adaptive=}, {show_caches=}"):
+                    co_positions = [
+                        positions
+                        for op, positions in zip(ops, code.co_positions(), strict=True)
+                        if show_caches or op != cache_opcode
+                    ]
+                    dis_positions = [
+                        instruction.positions
+                        for instruction in dis.get_instructions(
+                            code, adaptive=adaptive, show_caches=show_caches
+                        )
+                    ]
+                    self.assertEqual(co_positions, dis_positions)
 
 # get_instructions has its own tests above, so can rely on it to validate
 # the object oriented API

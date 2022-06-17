@@ -3398,25 +3398,88 @@ get_bases_tuple(PyObject *bases_in, PyType_Spec *spec)
     return PyTuple_Pack(1, bases_in);
 }
 
+static inline int
+check_basicsize_includes_size_and_offsets(PyTypeObject* type)
+{
+    if (type->tp_alloc != PyType_GenericAlloc) {
+        // Custom allocators can ignore tp_basicsize
+        return 1;
+    }
+    Py_ssize_t max = (Py_ssize_t)type->tp_basicsize;
+
+    if (type->tp_base && type->tp_base->tp_basicsize > type->tp_basicsize) {
+        PyErr_Format(PyExc_TypeError,
+                     "tp_basicsize for type '%s' (%d) is too small for base '%s' (%d)",
+                     type->tp_name, type->tp_basicsize,
+                     type->tp_base->tp_name, type->tp_base->tp_basicsize);
+        return 0;
+    }
+    if (type->tp_weaklistoffset + (Py_ssize_t)sizeof(PyObject*) > max) {
+        PyErr_Format(PyExc_TypeError,
+                     "weaklist offset %d is out of bounds for type '%s' (tp_basicsize = %d)",
+                     type->tp_weaklistoffset,
+                     type->tp_name, type->tp_basicsize);
+        return 0;
+    }
+    if (type->tp_dictoffset + (Py_ssize_t)sizeof(PyObject*) > max) {
+        PyErr_Format(PyExc_TypeError,
+                     "dict offset %d is out of bounds for type '%s' (tp_basicsize = %d)",
+                     type->tp_dictoffset,
+                     type->tp_name, type->tp_basicsize);
+        return 0;
+    }
+    if (type->tp_vectorcall_offset + (Py_ssize_t)sizeof(vectorcallfunc*) > max) {
+        PyErr_Format(PyExc_TypeError,
+                     "vectorcall offset %d is out of bounds for type '%s' (tp_basicsize = %d)",
+                     type->tp_vectorcall_offset,
+                     type->tp_name, type->tp_basicsize);
+        return 0;
+    }
+    return 1;
+}
+
 PyObject *
 PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
                      PyType_Spec *spec, PyObject *bases_in)
 {
+    /* Invariant: A non-NULL value in one of these means this function holds
+     * a strong reference or owns allocated memory.
+     * These get decrefed/freed/returned at the end, on both success and error.
+     */
     PyHeapTypeObject *res = NULL;
-    PyObject *modname = NULL;
     PyTypeObject *type;
     PyObject *bases = NULL;
+    char *tp_doc = NULL;
+    PyObject *ht_name = NULL;
+    char *_ht_tpname = NULL;
+
     int r;
 
+    /* Prepare slots that need special handling.
+     * Keep in mind that a slot can be given multiple times:
+     * if that would cause trouble (leaks, UB, ...), raise an exception.
+     */
+
     const PyType_Slot *slot;
-    Py_ssize_t nmembers, weaklistoffset, dictoffset, vectorcalloffset;
+    Py_ssize_t nmembers = 0;
+    Py_ssize_t weaklistoffset, dictoffset, vectorcalloffset;
     char *res_start;
-    short slot_offset, subslot_offset;
 
     nmembers = weaklistoffset = dictoffset = vectorcalloffset = 0;
     for (slot = spec->slots; slot->slot; slot++) {
-        if (slot->slot == Py_tp_members) {
-            nmembers = 0;
+        if (slot->slot < 0
+            || (size_t)slot->slot >= Py_ARRAY_LENGTH(pyslot_offsets)) {
+            PyErr_SetString(PyExc_RuntimeError, "invalid slot offset");
+            goto finally;
+        }
+        switch (slot->slot) {
+        case Py_tp_members:
+            if (nmembers != 0) {
+                PyErr_SetString(
+                    PyExc_SystemError,
+                    "Multiple Py_tp_members slots are not supported.");
+                goto finally;
+            }
             for (const PyMemberDef *memb = slot->pfunc; memb->name != NULL; memb++) {
                 nmembers++;
                 if (strcmp(memb->name, "__weaklistoffset__") == 0) {
@@ -3438,14 +3501,69 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
                     vectorcalloffset = memb->offset;
                 }
             }
+            break;
+        case Py_tp_doc:
+            /* For the docstring slot, which usually points to a static string
+               literal, we need to make a copy */
+            if (tp_doc != NULL) {
+                PyErr_SetString(
+                    PyExc_SystemError,
+                    "Multiple Py_tp_doc slots are not supported.");
+                goto finally;
+            }
+            if (slot->pfunc == NULL) {
+                PyObject_Free(tp_doc);
+                tp_doc = NULL;
+            }
+            else {
+                size_t len = strlen(slot->pfunc)+1;
+                tp_doc = PyObject_Malloc(len);
+                if (tp_doc == NULL) {
+                    PyErr_NoMemory();
+                    goto finally;
+                }
+                memcpy(tp_doc, slot->pfunc, len);
+            }
+            break;
         }
     }
+
+    /* Prepare the type name and qualname */
 
     if (spec->name == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "Type spec does not define the name field.");
         goto finally;
     }
+
+    const char *s = strrchr(spec->name, '.');
+    if (s == NULL) {
+        s = spec->name;
+    }
+    else {
+        s++;
+    }
+
+    ht_name = PyUnicode_FromString(s);
+    if (!ht_name) {
+        goto finally;
+    }
+
+    /* Copy spec->name to a buffer we own.
+    *
+    * Unfortunately, we can't use tp_name directly (with some
+    * flag saying that it should be deallocated with the type),
+    * because tp_name is public API and may be set independently
+    * of any such flag.
+    * So, we use a separate buffer, _ht_tpname, that's always
+    * deallocated with the type (if it's non-NULL).
+    */
+    Py_ssize_t name_buf_len = strlen(spec->name) + 1;
+    _ht_tpname = PyMem_Malloc(name_buf_len);
+    if (_ht_tpname == NULL) {
+        goto finally;
+    }
+    memcpy(_ht_tpname, spec->name, name_buf_len);
 
     /* Get a tuple of bases.
      * bases is a strong reference (unlike bases_in).
@@ -3485,7 +3603,13 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     // here we just check its work
     assert(_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE));
 
-    /* Allocate the new type */
+    /* Allocate the new type
+     *
+     * Between here and PyType_Ready, we should limit:
+     * - calls to Python code
+     * - raising exceptions
+     * - memory allocations
+     */
 
     res = (PyHeapTypeObject*)metaclass->tp_alloc(metaclass, nmembers);
     if (res == NULL) {
@@ -3497,99 +3621,70 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     /* The flags must be initialized early, before the GC traverses us */
     type->tp_flags = spec->flags | Py_TPFLAGS_HEAPTYPE;
 
-    /* Set the type name and qualname */
-    const char *s = strrchr(spec->name, '.');
-    if (s == NULL) {
-        s = spec->name;
-    }
-    else {
-        s++;
-    }
-
-    res->ht_name = PyUnicode_FromString(s);
-    if (!res->ht_name) {
-        goto finally;
-    }
-    res->ht_qualname = Py_NewRef(res->ht_name);
-
-    /* Copy spec->name to a buffer we own.
-    *
-    * Unfortunately, we can't use tp_name directly (with some
-    * flag saying that it should be deallocated with the type),
-    * because tp_name is public API and may be set independently
-    * of any such flag.
-    * So, we use a separate buffer, _ht_tpname, that's always
-    * deallocated with the type (if it's non-NULL).
-    */
-    Py_ssize_t name_buf_len = strlen(spec->name) + 1;
-    res->_ht_tpname = PyMem_Malloc(name_buf_len);
-    if (res->_ht_tpname == NULL) {
-        goto finally;
-    }
-    type->tp_name = memcpy(res->_ht_tpname, spec->name, name_buf_len);
-
     res->ht_module = Py_XNewRef(module);
 
     /* Initialize essential fields */
+
     type->tp_as_async = &res->as_async;
     type->tp_as_number = &res->as_number;
     type->tp_as_sequence = &res->as_sequence;
     type->tp_as_mapping = &res->as_mapping;
     type->tp_as_buffer = &res->as_buffer;
 
-    /* Set tp_base and tp_bases */
+    /* Set slots we have prepared */
+
     type->tp_base = (PyTypeObject *)Py_NewRef(base);
     type->tp_bases = bases;
     bases = NULL;  // We give our reference to bases to the type
 
+    type->tp_doc = tp_doc;
+    tp_doc = NULL;  // Give ownership of the allocated memory to the type
+
+    res->ht_qualname = Py_NewRef(ht_name);
+    res->ht_name = ht_name;
+    ht_name = NULL;  // Give our reference to to the type
+
+    type->tp_name = _ht_tpname;
+    res->_ht_tpname = _ht_tpname;
+    _ht_tpname = NULL;  // Give ownership to to the type
+
     /* Copy the sizes */
+
     type->tp_basicsize = spec->basicsize;
     type->tp_itemsize = spec->itemsize;
 
+    /* Copy all the ordinary slots */
+
     for (slot = spec->slots; slot->slot; slot++) {
-        if (slot->slot < 0
-            || (size_t)slot->slot >= Py_ARRAY_LENGTH(pyslot_offsets)) {
-            PyErr_SetString(PyExc_RuntimeError, "invalid slot offset");
-            goto finally;
-        }
-        else if (slot->slot == Py_tp_base || slot->slot == Py_tp_bases) {
+        switch (slot->slot) {
+        case Py_tp_base:
+        case Py_tp_bases:
+        case Py_tp_doc:
             /* Processed above */
-            continue;
-        }
-        else if (slot->slot == Py_tp_doc) {
-            /* For the docstring slot, which usually points to a static string
-               literal, we need to make a copy */
-            if (slot->pfunc == NULL) {
-                type->tp_doc = NULL;
-                continue;
+            break;
+        case Py_tp_members:
+            {
+                /* Move the slots to the heap type itself */
+                size_t len = Py_TYPE(type)->tp_itemsize * nmembers;
+                memcpy(_PyHeapType_GET_MEMBERS(res), slot->pfunc, len);
+                type->tp_members = _PyHeapType_GET_MEMBERS(res);
             }
-            size_t len = strlen(slot->pfunc)+1;
-            char *tp_doc = PyObject_Malloc(len);
-            if (tp_doc == NULL) {
-                type->tp_doc = NULL;
-                PyErr_NoMemory();
-                goto finally;
+            break;
+        default:
+            {
+                /* Copy other slots directly */
+                PySlot_Offset slotoffsets = pyslot_offsets[slot->slot];
+                short slot_offset = slotoffsets.slot_offset;
+                if (slotoffsets.subslot_offset == -1) {
+                    *(void**)((char*)res_start + slot_offset) = slot->pfunc;
+                }
+                else {
+                    void *procs = *(void**)((char*)res_start + slot_offset);
+                    short subslot_offset = slotoffsets.subslot_offset;
+                    *(void**)((char*)procs + subslot_offset) = slot->pfunc;
+                }
             }
-            memcpy(tp_doc, slot->pfunc, len);
-            type->tp_doc = tp_doc;
-        }
-        else if (slot->slot == Py_tp_members) {
-            /* Move the slots to the heap type itself */
-            size_t len = Py_TYPE(type)->tp_itemsize * nmembers;
-            memcpy(_PyHeapType_GET_MEMBERS(res), slot->pfunc, len);
-            type->tp_members = _PyHeapType_GET_MEMBERS(res);
-        }
-        else {
-            /* Copy other slots directly */
-            PySlot_Offset slotoffsets = pyslot_offsets[slot->slot];
-            slot_offset = slotoffsets.slot_offset;
-            if (slotoffsets.subslot_offset == -1) {
-                *(void**)((char*)res_start + slot_offset) = slot->pfunc;
-            } else {
-                void *parent_slot = *(void**)((char*)res_start + slot_offset);
-                subslot_offset = slotoffsets.subslot_offset;
-                *(void**)((char*)parent_slot + subslot_offset) = slot->pfunc;
-            }
+            break;
         }
     }
     if (type->tp_dealloc == NULL) {
@@ -3599,11 +3694,23 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
         type->tp_dealloc = subtype_dealloc;
     }
 
-    if (vectorcalloffset) {
-        type->tp_vectorcall_offset = vectorcalloffset;
-    }
+    /* Set up offsets */
+
+    type->tp_vectorcall_offset = vectorcalloffset;
+    type->tp_weaklistoffset = weaklistoffset;
+    type->tp_dictoffset = dictoffset;
+
+    /* Ready the type (which includes inheritance).
+     *
+     * After this call we should generally only touch up what's
+     * accessible to Python code, like __dict__.
+     */
 
     if (PyType_Ready(type) < 0) {
+        goto finally;
+    }
+
+    if (!check_basicsize_includes_size_and_offsets(type)) {
         goto finally;
     }
 
@@ -3624,14 +3731,12 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     }
 
     if (weaklistoffset) {
-        type->tp_weaklistoffset = weaklistoffset;
-        if (PyDict_DelItemString((PyObject *)type->tp_dict, "__weaklistoffset__") < 0) {
+        if (PyDict_DelItem((PyObject *)type->tp_dict, &_Py_ID(__weaklistoffset__)) < 0) {
             goto finally;
         }
     }
     if (dictoffset) {
-        type->tp_dictoffset = dictoffset;
-        if (PyDict_DelItemString((PyObject *)type->tp_dict, "__dictoffset__") < 0) {
+        if (PyDict_DelItem((PyObject *)type->tp_dict, &_Py_ID(__dictoffset__)) < 0) {
             goto finally;
         }
     }
@@ -3644,12 +3749,13 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     if (r == 0) {
         s = strrchr(spec->name, '.');
         if (s != NULL) {
-            modname = PyUnicode_FromStringAndSize(
+            PyObject *modname = PyUnicode_FromStringAndSize(
                     spec->name, (Py_ssize_t)(s - spec->name));
             if (modname == NULL) {
                 goto finally;
             }
             r = PyDict_SetItem(type->tp_dict, &_Py_ID(__module__), modname);
+            Py_DECREF(modname);
             if (r != 0) {
                 goto finally;
             }
@@ -3669,7 +3775,9 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
         Py_CLEAR(res);
     }
     Py_XDECREF(bases);
-    Py_XDECREF(modname);
+    PyObject_Free(tp_doc);
+    Py_XDECREF(ht_name);
+    PyMem_Free(_ht_tpname);
     return (PyObject*)res;
 }
 

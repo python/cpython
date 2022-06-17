@@ -339,6 +339,12 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
            PyBytes_GET_SIZE(con->code));
+    int entry_point = 0;
+    while (entry_point < Py_SIZE(co) &&
+        _Py_OPCODE(_PyCode_CODE(co)[entry_point]) != RESUME) {
+        entry_point++;
+    }
+    co->_co_firsttraceable = entry_point;
 }
 
 static int
@@ -2092,6 +2098,7 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
     deopt_code(_PyCode_CODE(co), Py_SIZE(co));
     co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
     PyMem_Free(co->co_extra);
+    Py_CLEAR(co->_co_code);
     co->co_extra = NULL;
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *)co);

@@ -1,7 +1,6 @@
 import _thread
 import asyncio
 import contextvars
-import gc
 import re
 import signal
 import threading
@@ -45,6 +44,9 @@ class BaseTest(unittest.TestCase):
     def new_loop(self):
         loop = asyncio.BaseEventLoop()
         loop._process_events = mock.Mock()
+        # Mock waking event loop from select
+        loop._write_to_self = mock.Mock()
+        loop._write_to_self.return_value = None
         loop._selector = mock.Mock()
         loop._selector.select.return_value = ()
         loop.shutdown_ag_run = False

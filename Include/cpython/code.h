@@ -89,6 +89,7 @@ typedef uint16_t _Py_CODEUNIT;
     PyObject *co_linetable;       /* bytes object that holds location info */  \
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
     void *_co_code;               /* cached co_code object/attribute */        \
+    int _co_firsttraceable;       /* index of first traceable instruction */   \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \
        people to go through the proper APIs. */                                \
@@ -136,7 +137,7 @@ struct PyCodeObject _PyCode_DEF(1);
 
 PyAPI_DATA(PyTypeObject) PyCode_Type;
 
-#define PyCode_Check(op) Py_IS_TYPE(op, &PyCode_Type)
+#define PyCode_Check(op) Py_IS_TYPE((op), &PyCode_Type)
 #define PyCode_GetNumFree(op) ((op)->co_nfreevars)
 #define _PyCode_CODE(CO) ((_Py_CODEUNIT *)(CO)->co_code_adaptive)
 #define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
