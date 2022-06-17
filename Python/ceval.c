@@ -3626,7 +3626,6 @@ handle_eval_breaker:
         }
 
         TARGET(LOAD_ATTR_CLASS) {
-            /* LOAD_METHOD, for class methods */
             assert(cframe.use_tracing == 0);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
 
@@ -3647,6 +3646,46 @@ handle_eval_breaker:
             Py_DECREF(cls);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             NOTRACE_DISPATCH();
+        }
+
+        TARGET(LOAD_ATTR_PROPERTY) {
+            assert(cframe.use_tracing == 0);
+            DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
+            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
+
+            PyObject *owner = TOP();
+            PyTypeObject *cls = Py_TYPE(owner);
+            uint32_t type_version = read_u32(cache->type_version);
+            DEOPT_IF(cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(type_version != 0);
+            PyObject *fget = read_obj(cache->descr);
+            PyFunctionObject *f = (PyFunctionObject *)fget;
+            uint32_t func_version = read_u32(cache->keys_version);
+            assert(func_version != 0);
+            DEOPT_IF(f->func_version != func_version, LOAD_ATTR);
+            PyCodeObject *code = (PyCodeObject *)f->func_code;
+            assert(code->co_argcount == 1);
+            STAT_INC(LOAD_ATTR, hit);
+
+            Py_INCREF(fget);
+            _PyInterpreterFrame *new_frame = _PyFrame_Push(tstate, f);
+            if (new_frame == NULL) {
+                goto error;
+            }
+            SET_TOP(NULL);
+            int push_null = !(oparg & 1);
+            STACK_SHRINK(push_null);
+            new_frame->localsplus[0] = owner;
+            for (int i = 1; i < code->co_nlocalsplus; i++) {
+                new_frame->localsplus[i] = NULL;
+            }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
+            frame->prev_instr = next_instr - 1;
+            new_frame->previous = frame;
+            frame = cframe.current_frame = new_frame;
+            CALL_STAT_INC(inlined_py_calls);
+            goto start_frame;
         }
 
         TARGET(STORE_ATTR_ADAPTIVE) {
@@ -4548,7 +4587,7 @@ handle_eval_breaker:
         }
 
         TARGET(LOAD_ATTR_METHOD_WITH_VALUES) {
-            /* LOAD_METHOD, with cached method object */
+            /* Cached method object */
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
@@ -4574,8 +4613,7 @@ handle_eval_breaker:
         }
 
         TARGET(LOAD_ATTR_METHOD_WITH_DICT) {
-            /* LOAD_METHOD, with a dict
-             Can be either a managed dict, or a tp_dictoffset offset.*/
+            /* Can be either a managed dict, or a tp_dictoffset offset.*/
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
