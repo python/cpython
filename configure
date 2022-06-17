@@ -778,7 +778,6 @@ MODULE_TIME_FALSE
 MODULE_TIME_TRUE
 MODULE__IO_FALSE
 MODULE__IO_TRUE
-MODULES_SETUP_STDLIB
 MODULE_BUILDTYPE
 TEST_MODULES
 LIBB2_LIBS
@@ -799,6 +798,7 @@ LIBPYTHON
 EXT_SUFFIX
 ALT_SOABI
 SOABI
+MODULE__MULTIPROCESSING_SEMAPHORE_C
 LIBC
 LIBM
 HAVE_GETHOSTBYNAME
@@ -19752,6 +19752,11 @@ $as_echo "#define HAVE_BROKEN_SEM_GETVALUE 1" >>confdefs.h
 
 fi
 
+if test "$ac_cv_func_sem_open" = "yes" -a "$ac_cv_posix_semaphores_enabled" = "yes"; then
+  MODULE__MULTIPROCESSING_SEMAPHORE_C=_multiprocessing/semaphore.c
+fi
+
+
 ac_fn_c_check_decl "$LINENO" "RTLD_LAZY" "ac_cv_have_decl_RTLD_LAZY" "#include <dlfcn.h>
 "
 if test "x$ac_cv_have_decl_RTLD_LAZY" = xyes; then :
@@ -23087,22 +23092,6 @@ case $host_cpu in #(
     MODULE_BUILDTYPE=${MODULE_BUILDTYPE:-shared}
  ;;
 esac
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for additional Modules/Setup files" >&5
-$as_echo_n "checking for additional Modules/Setup files... " >&6; }
-case $ac_sys_system in #(
-  Emscripten) :
-    MODULES_SETUP_STDLIB=Modules/Setup.stdlib ;; #(
-  WASI) :
-    MODULES_SETUP_STDLIB=Modules/Setup.stdlib ;; #(
-  *) :
-    MODULES_SETUP_STDLIB=
- ;;
-esac
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MODULES_SETUP_STDLIB" >&5
-$as_echo "$MODULES_SETUP_STDLIB" >&6; }
-
 
 
 
@@ -26899,7 +26888,7 @@ fi
 $as_echo "$as_me: creating Makefile" >&6;}
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $MODULES_SETUP_STDLIB Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local Modules/Setup.stdlib Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then

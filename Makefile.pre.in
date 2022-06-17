@@ -917,6 +917,7 @@ oldsharedmods: $(SHAREDMODS) pybuilddir.txt
 			$(LN) -sf ../../$$mod $$target/`basename $$mod`; \
 		fi; \
 	done
+	@$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/check_shared_ext.py
 
 Modules/Setup.local:
 	@# Create empty Setup.local when file was deleted by user
@@ -938,7 +939,7 @@ Makefile Modules/config.c: Makefile.pre \
 	$(SHELL) $(MAKESETUP) -c $(srcdir)/Modules/config.c.in \
 				-s Modules \
 				Modules/Setup.local \
-				@MODULES_SETUP_STDLIB@ \
+				Modules/Setup.stdlib \
 				Modules/Setup.bootstrap \
 				$(srcdir)/Modules/Setup
 	@mv config.c Modules

@@ -5509,6 +5509,12 @@ AS_VAR_IF([ac_cv_broken_sem_getvalue], [yes], [
   )
 ])
 
+dnl Build _multiprocessing/semaphore.c when we have working semaphores.
+if test "$ac_cv_func_sem_open" = "yes" -a "$ac_cv_posix_semaphores_enabled" = "yes"; then
+  MODULE__MULTIPROCESSING_SEMAPHORE_C=_multiprocessing/semaphore.c
+fi
+AC_SUBST([MODULE__MULTIPROCESSING_SEMAPHORE_C])
+
 AC_CHECK_DECLS([RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL, RTLD_NODELETE, RTLD_NOLOAD, RTLD_DEEPBIND, RTLD_MEMBER], [], [], [[#include <dlfcn.h>]])
 
 # determine what size digit to use for Python's longs
@@ -6773,17 +6779,6 @@ AS_CASE([$host_cpu],
 )
 AC_SUBST([MODULE_BUILDTYPE])
 
-dnl Use Modules/Setup.stdlib as additional provider?
-AC_MSG_CHECKING([for additional Modules/Setup files])
-AS_CASE([$ac_sys_system],
-    [Emscripten], [MODULES_SETUP_STDLIB=Modules/Setup.stdlib],
-    [WASI], [MODULES_SETUP_STDLIB=Modules/Setup.stdlib],
-    [MODULES_SETUP_STDLIB=]
-)
-AC_MSG_RESULT([$MODULES_SETUP_STDLIB])
-AC_SUBST([MODULES_SETUP_STDLIB])
-
-
 dnl _MODULE_BLOCK_ADD([VAR], [VALUE])
 dnl internal: adds $1=quote($2) to MODULE_BLOCK
 AC_DEFUN([_MODULE_BLOCK_ADD], [AS_VAR_APPEND([MODULE_BLOCK], ["$1=_AS_QUOTE([$2])$as_nl"])])
@@ -7007,7 +7002,7 @@ fi
 AC_MSG_NOTICE([creating Makefile])
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $MODULES_SETUP_STDLIB Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local Modules/Setup.stdlib Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then

@@ -128,7 +128,7 @@
 
 # multiprocessing
 @MODULE__POSIXSHMEM_TRUE@_posixshmem _multiprocessing/posixshmem.c
-@MODULE__MULTIPROCESSING_TRUE@_multiprocessing _multiprocessing/multiprocessing.c _multiprocessing/semaphore.c
+@MODULE__MULTIPROCESSING_TRUE@_multiprocessing _multiprocessing/multiprocessing.c @MODULE__MULTIPROCESSING_SEMAPHORE_C@
 
 
 ############################################################################
