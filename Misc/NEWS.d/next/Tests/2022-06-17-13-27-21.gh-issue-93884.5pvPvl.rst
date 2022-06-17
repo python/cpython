@@ -1,1 +1,1 @@
-Add test cases for :c:func:`PyNumber_ToBase` functions that take large numbers or objects that are not `int` as arguments.
+Add test cases for :c:func:`PyNumber_ToBase` that take a large number or a non-int object as parameter.
