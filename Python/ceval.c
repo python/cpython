@@ -347,9 +347,9 @@ void _Py_NO_RETURN
 _Py_FatalError_TstateNULL(const char *func)
 {
     _Py_FatalErrorFunc(func,
-                       "the function must be called with the GIL held, "
-                       "but the GIL is released "
-                       "(the current Python thread state is NULL)");
+        "the function must be called with the GIL held, "
+        "after Python initialization and before Python finalization, "
+        "but the GIL is released (the current Python thread state is NULL)");
 }
 
 int
