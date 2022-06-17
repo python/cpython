@@ -818,7 +818,7 @@ static void
 retreat(PyCodeAddressRange *bounds)
 {
     ASSERT_VALID_BOUNDS(bounds);
-    assert(bounds->ar_start > 0);
+    assert(bounds->ar_start >= 0);
     do {
         bounds->opaque.lo_next--;
     } while (((*bounds->opaque.lo_next) & 128) == 0);
