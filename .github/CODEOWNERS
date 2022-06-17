@@ -60,6 +60,8 @@ Python/pythonrun.c            @iritkatriel
 # bytecode.
 **/*import*.c                 @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
 **/*import*.py                @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
+**/importlib/resources/*    @jaraco @warsaw @brettcannon
+**/importlib/metadata/*    @jaraco @warsaw
 
 # Dates and times
 **/*datetime*                 @pganssle @abalkin
