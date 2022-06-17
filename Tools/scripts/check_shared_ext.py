@@ -79,6 +79,8 @@ def get_makefile_modules(args: argparse.Namespace) -> list[ModuleInfo]:
             ("_CFLAGS", "_DEPS", "_LDFLAGS", "_OBJS", "CTYPES_MALLOC_CLOSURE")
         ):
             continue
+        if value not in {"yes", "disabled", "n/a"}:
+            raise ValueError(f"Unsupported {value} for {key}")
 
         modname = key[7:].lower()
         is_builtin = modname in modbuiltin

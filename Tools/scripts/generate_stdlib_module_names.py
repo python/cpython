@@ -10,7 +10,6 @@ import sysconfig
 
 SRC_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 STDLIB_PATH = os.path.join(SRC_DIR, 'Lib')
-MODULES_SETUP = os.path.join(SRC_DIR, 'Modules', 'Setup')
 SETUP_PY = os.path.join(SRC_DIR, 'setup.py')
 
 IGNORE = {
@@ -89,28 +88,19 @@ def list_setup_extensions(names):
     names |= set(extensions)
 
 
-# Built-in and extension modules built by Modules/Setup
+# Built-in and extension modules built by Modules/Setup*
 def list_modules_setup_extensions(names):
-    assign_var = re.compile("^[A-Z]+=")
-
-    with open(MODULES_SETUP, encoding="utf-8") as modules_fp:
-        for line in modules_fp:
-            # Strip comment
-            line = line.partition("#")[0]
-            line = line.rstrip()
-            if not line:
-                continue
-            if assign_var.match(line):
-                # Ignore "VAR=VALUE"
-                continue
-            if line in ("*disabled*", "*shared*"):
-                continue
-            parts = line.split()
-            if len(parts) < 2:
-                continue
-            # "errno errnomodule.c" => write "errno"
-            name = parts[0]
-            names.add(name)
+    """Get MODULE_{modname}={yes|disabled|n/a} entries from Makefile
+    """
+    for key, value in sysconfig.get_config_vars().items():
+        if not key.startswith("MODULE_"):
+            continue
+        if key.endswith(("_CFLAGS", "_DEPS", "_LDFLAGS", "_OBJS")):
+            continue
+        if value not in {"yes", "disabled", "n/a"}:
+            raise ValueError(f"Unsupported {value} for {key}")
+        name = key[7:].lower()
+        names.add(name)
 
 
 # List frozen modules of the PyImport_FrozenModules list (Python/frozen.c).
