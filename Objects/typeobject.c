@@ -7782,38 +7782,68 @@ slot_tp_getattro(PyObject *self, PyObject *name)
     return vectorcall_method(&_Py_ID(__getattribute__), stack, 2);
 }
 
+static inline PyObject *
+call_attribute(PyObject *self, PyObject *attr, PyObject *name)
+{
+    PyObject *res, *descr = NULL;
+
+    if (_PyType_HasFeature(Py_TYPE(attr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+        PyObject *args[] = { self, name };
+        res = PyObject_Vectorcall(attr, args, 2, NULL);
+        return res;
+    }
+
+    descrgetfunc f = Py_TYPE(attr)->tp_descr_get;
+
+    if (f != NULL) {
+        descr = f(attr, self, (PyObject *)(Py_TYPE(self)));
+        if (descr == NULL)
+            return NULL;
+        else
+            attr = descr;
+    }
+    res = PyObject_CallOneArg(attr, name);
+    Py_XDECREF(descr);
+    return res;
+}
+
 static PyObject *
 slot_tp_getattr_hook(PyObject *self, PyObject *name)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject *getattr, *getattribute, *res;
-    PyObject *args[] = { self, name };
-    PyThreadState *tstate = _PyThreadState_GET();
 
-    int unbound_getattr;
-    getattr = lookup_maybe_method(self, &_Py_ID(__getattr__), &unbound_getattr);
+    /* speed hack: we could use lookup_maybe, but that would resolve the
+       method fully for each attribute lookup for classes with
+       __getattr__, even when the attribute is present. So we use
+       _PyType_Lookup and create the method only when needed, with
+       call_attribute. */
+    getattr = _PyType_Lookup(tp, &_Py_ID(__getattr__));
     if (getattr == NULL) {
         /* No __getattr__ hook: use a simpler dispatcher */
         tp->tp_getattro = slot_tp_getattro;
         return slot_tp_getattro(self, name);
     }
-
-    int unbound_getattribute;
-    getattribute = lookup_maybe_method(self, &_Py_ID(__getattribute__),
-        &unbound_getattribute);
+    Py_INCREF(getattr);
+    /* speed hack: we could use lookup_maybe, but that would resolve the
+       method fully for each attribute lookup for classes with
+       __getattr__, even when the attribute is present. So we use
+       _PyType_Lookup and create the method only when needed, with
+       call_attribute. */
+    getattribute = _PyType_Lookup(tp, &_Py_ID(__getattribute__));
     if (getattribute == NULL ||
         (Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
          ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
          (void *)PyObject_GenericGetAttr))
         res = PyObject_GenericGetAttr(self, name);
     else {
-        res = vectorcall_unbound(tstate, unbound_getattribute, getattribute,
-            args, 2);
+        Py_INCREF(getattribute);
+        res = call_attribute(self, getattribute, name);
+        Py_DECREF(getattribute);
     }
-    Py_XDECREF(getattribute);
     if (res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
         PyErr_Clear();
-        res = vectorcall_unbound(tstate, unbound_getattr, getattr, args, 2);
+        res = call_attribute(self, getattr, name);
     }
     Py_DECREF(getattr);
     return res;
