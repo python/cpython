@@ -7827,9 +7827,9 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
     Py_INCREF(getattr);
     /* speed hack: we could use lookup_maybe, but that would resolve the
        method fully for each attribute lookup for classes with
-       __getattr__, even when the attribute is present. So we use
-       _PyType_Lookup and create the method only when needed, with
-       call_attribute. */
+       __getattr__, even when self has the default __getattribute__
+       method. So we use _PyType_Lookup and create the method only when
+       needed, with call_attribute. */
     getattribute = _PyType_Lookup(tp, &_Py_ID(__getattribute__));
     if (getattribute == NULL ||
         (Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
