@@ -2126,7 +2126,7 @@ class Wm:
         the bitmap if None is given.
 
         Under Windows, the DEFAULT parameter can be used to set the icon
-        for the widget and any descendents that don't have an icon set
+        for the widget and any descendants that don't have an icon set
         explicitly.  DEFAULT can be the relative path to a .ico file
         (example: root.iconbitmap(default='myicon.ico') ).  See Tk
         documentation for more information."""
@@ -2372,9 +2372,9 @@ class Tk(Misc, Wm):
             _default_root = None
 
     def readprofile(self, baseName, className):
-        """Internal function. It reads BASENAME.tcl and CLASSNAME.tcl into
-        the Tcl Interpreter and calls exec on the contents of BASENAME.py and
-        CLASSNAME.py if such a file exists in the home directory."""
+        """Internal function. It reads .BASENAME.tcl and .CLASSNAME.tcl into
+        the Tcl Interpreter and calls exec on the contents of .BASENAME.py and
+        .CLASSNAME.py if such a file exists in the home directory."""
         import os
         if 'HOME' in os.environ: home = os.environ['HOME']
         else: home = os.curdir

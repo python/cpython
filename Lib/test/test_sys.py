@@ -1432,9 +1432,10 @@ class SizeofTest(unittest.TestCase):
         import re
         check(re.finditer('',''), size('2P'))
         # list
-        samples = [[], [1,2,3], ['1', '2', '3']]
-        for sample in samples:
-            check(list(sample), vsize('Pn') + len(sample)*self.P)
+        check(list([]), vsize('Pn'))
+        check(list([1]), vsize('Pn') + 2*self.P)
+        check(list([1, 2]), vsize('Pn') + 2*self.P)
+        check(list([1, 2, 3]), vsize('Pn') + 4*self.P)
         # sortwrapper (list)
         # XXX
         # cmpwrapper (list)
@@ -1538,8 +1539,9 @@ class SizeofTest(unittest.TestCase):
         samples = ['1'*100, '\xff'*50,
                    '\u0100'*40, '\uffff'*100,
                    '\U00010000'*30, '\U0010ffff'*100]
-        asciifields = "nnbP"
-        compactfields = asciifields + "nPn"
+        # also update field definitions in test_unicode.test_raiseMemError
+        asciifields = "nnb"
+        compactfields = asciifields + "nP"
         unicodefields = compactfields + "P"
         for s in samples:
             maxchar = ord(max(s))

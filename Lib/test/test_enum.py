@@ -1,3 +1,4 @@
+import copy
 import enum
 import doctest
 import inspect
@@ -6,6 +7,7 @@ import pydoc
 import sys
 import unittest
 import threading
+import typing
 import builtins as bltns
 from collections import OrderedDict
 from datetime import date
@@ -187,6 +189,12 @@ class HeadlightsC(IntFlag, boundary=enum.CONFORM):
     LOW_BEAM_C = auto()
     HIGH_BEAM_C = auto()
     FOG_C = auto()
+
+
+@enum.global_enum
+class NoName(Flag):
+    ONE = 1
+    TWO = 2
 
 
 # tests
@@ -616,6 +624,7 @@ class _PlainOutputTests:
     def test_str(self):
         TE = self.MainEnum
         if self.is_flag:
+            self.assertEqual(str(TE(0)), "MainEnum(0)")
             self.assertEqual(str(TE.dupe), "MainEnum.dupe")
             self.assertEqual(str(self.dupe2), "MainEnum.first|third")
         else:
@@ -726,6 +735,13 @@ class _MinimalOutputTests:
             self.assertFormatIsValue('{:n}', TE.third)
             self.assertFormatIsValue('{:5.2}', TE.third)
             self.assertFormatIsValue('{:f}', TE.third)
+
+    def test_copy(self):
+        TE = self.MainEnum
+        copied = copy.copy(TE)
+        self.assertEqual(copied, TE)
+        deep = copy.deepcopy(TE)
+        self.assertEqual(deep, TE)
 
 
 class _FlagTests:
@@ -964,6 +980,15 @@ class TestSpecial(unittest.TestCase):
         class SpamEnum(Enum):
             spam = SpamEnumNotInner
         self.assertEqual(SpamEnum.spam.value, SpamEnumNotInner)
+
+    def test_enum_of_generic_aliases(self):
+        class E(Enum):
+            a = typing.List[int]
+            b = list[int]
+        self.assertEqual(E.a.value, typing.List[int])
+        self.assertEqual(E.b.value, list[int])
+        self.assertEqual(repr(E.a), '<E.a: typing.List[int]>')
+        self.assertEqual(repr(E.b), '<E.b: list[int]>')
 
     @unittest.skipIf(
             python_version >= (3, 13),
@@ -2647,6 +2672,26 @@ class TestSpecial(unittest.TestCase):
         self.assertTrue(isinstance(MyIntFlag.ONE | MyIntFlag.TWO, MyIntFlag), MyIntFlag.ONE | MyIntFlag.TWO)
         self.assertTrue(isinstance(MyIntFlag.ONE | 2, MyIntFlag))
 
+    def test_int_flags_copy(self):
+        class MyIntFlag(IntFlag):
+            ONE = 1
+            TWO = 2
+            FOUR = 4
+
+        flags = MyIntFlag.ONE | MyIntFlag.TWO
+        copied = copy.copy(flags)
+        deep = copy.deepcopy(flags)
+        self.assertEqual(copied, flags)
+        self.assertEqual(deep, flags)
+
+        flags = MyIntFlag.ONE | MyIntFlag.TWO | 8
+        copied = copy.copy(flags)
+        deep = copy.deepcopy(flags)
+        self.assertEqual(copied, flags)
+        self.assertEqual(deep, flags)
+        self.assertEqual(copied.value, 1 | 2 | 8)
+
+
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
 
@@ -3242,6 +3287,10 @@ class OldTestIntFlag(unittest.TestCase):
                 '%(m)s.OFF_C' % {'m': SHORT_MODULE},
                 )
 
+    def test_global_enum_str(self):
+        self.assertEqual(str(NoName.ONE & NoName.TWO), 'NoName(0)')
+        self.assertEqual(str(NoName(0)), 'NoName(0)')
+
     def test_format(self):
         Perm = self.Perm
         self.assertEqual(format(Perm.R, ''), '4')
@@ -3342,7 +3391,10 @@ class OldTestIntFlag(unittest.TestCase):
         self.assertIs((Open.WO|Open.CE) & ~Open.WO, Open.CE)
 
     def test_boundary(self):
-        self.assertIs(enum.IntFlag._boundary_, EJECT)
+        self.assertIs(enum.IntFlag._boundary_, KEEP)
+        class Simple(IntFlag, boundary=KEEP):
+            SINGLE = 1
+        #
         class Iron(IntFlag, boundary=STRICT):
             ONE = 1
             TWO = 2
@@ -3361,7 +3413,6 @@ class OldTestIntFlag(unittest.TestCase):
             EIGHT = 8
         self.assertIs(Space._boundary_, EJECT)
         #
-        #
         class Bizarre(IntFlag, boundary=KEEP):
             b = 3
             c = 4
@@ -3378,6 +3429,12 @@ class OldTestIntFlag(unittest.TestCase):
         self.assertEqual(list(Bizarre), [Bizarre.c])
         self.assertIs(Bizarre(3), Bizarre.b)
         self.assertIs(Bizarre(6), Bizarre.d)
+        #
+        simple = Simple.SINGLE | Iron.TWO
+        self.assertEqual(simple, 3)
+        self.assertIsInstance(simple, Simple)
+        self.assertEqual(repr(simple), '<Simple.SINGLE|<Iron.TWO: 2>: 3>')
+        self.assertEqual(str(simple), '3')
 
     def test_iter(self):
         Color = self.Color

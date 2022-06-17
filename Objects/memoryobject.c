@@ -1950,18 +1950,12 @@ unpacker_free(struct unpacker *x)
 static struct unpacker *
 struct_get_unpacker(const char *fmt, Py_ssize_t itemsize)
 {
-    PyObject *structmodule;     /* XXX cache these two */
-    PyObject *Struct = NULL;    /* XXX in globals?     */
+    PyObject *Struct = NULL;    /* XXX cache it in globals? */
     PyObject *structobj = NULL;
     PyObject *format = NULL;
     struct unpacker *x = NULL;
 
-    structmodule = PyImport_ImportModule("struct");
-    if (structmodule == NULL)
-        return NULL;
-
-    Struct = PyObject_GetAttrString(structmodule, "Struct");
-    Py_DECREF(structmodule);
+    Struct = _PyImport_GetModuleAttrString("struct", "Struct");
     if (Struct == NULL)
         return NULL;
 
@@ -3156,7 +3150,7 @@ static PyMethodDef memory_methods[] = {
 /*                          Memoryview Iterator                           */
 /**************************************************************************/
 
-static PyTypeObject PyMemoryIter_Type;
+PyTypeObject _PyMemoryIter_Type;
 
 typedef struct {
     PyObject_HEAD
@@ -3233,7 +3227,7 @@ memory_iter(PyObject *seq)
     }
 
     memoryiterobject *it;
-    it = PyObject_GC_New(memoryiterobject, &PyMemoryIter_Type);
+    it = PyObject_GC_New(memoryiterobject, &_PyMemoryIter_Type);
     if (it == NULL) {
         return NULL;
     }
@@ -3246,7 +3240,7 @@ memory_iter(PyObject *seq)
     return (PyObject *)it;
 }
 
-static PyTypeObject PyMemoryIter_Type = {
+PyTypeObject _PyMemoryIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "memory_iterator",
     .tp_basicsize = sizeof(memoryiterobject),

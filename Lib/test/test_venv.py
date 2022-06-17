@@ -8,15 +8,17 @@ Licensed to the PSF under a contributor agreement.
 import ensurepip
 import os
 import os.path
+import pathlib
 import re
 import shutil
 import struct
 import subprocess
 import sys
 import tempfile
-from test.support import (captured_stdout, captured_stderr, requires_zlib,
+from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
-                          requires_subprocess, is_emscripten)
+                          requires_subprocess, is_emscripten, is_wasi,
+                          requires_venv_with_pip)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
@@ -34,8 +36,8 @@ requireVenvCreate = unittest.skipUnless(
     or sys._base_executable != sys.executable,
     'cannot run venv.create from within a venv on this platform')
 
-if is_emscripten:
-    raise unittest.SkipTest("venv is not available on Emscripten.")
+if is_emscripten or is_wasi:
+    raise unittest.SkipTest("venv is not available on Emscripten/WASI.")
 
 @requires_subprocess()
 def check_output(cmd, encoding=None):
@@ -98,12 +100,23 @@ class BasicTest(BaseTest):
         fn = self.get_env_file(*args)
         self.assertTrue(os.path.isdir(fn))
 
-    def test_defaults(self):
+    def test_defaults_with_str_path(self):
         """
-        Test the create function with default arguments.
+        Test the create function with default arguments and a str path.
         """
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
+        self._check_output_of_default_create()
+
+    def test_defaults_with_pathlib_path(self):
+        """
+        Test the create function with default arguments and a pathlib.Path path.
+        """
+        rmtree(self.env_dir)
+        self.run_with_capture(venv.create, pathlib.Path(self.env_dir))
+        self._check_output_of_default_create()
+
+    def _check_output_of_default_create(self):
         self.isdir(self.bindir)
         self.isdir(self.include)
         self.isdir(*self.lib)
@@ -473,7 +486,9 @@ class BasicTest(BaseTest):
         the path separator.
         """
         rmtree(self.env_dir)
-        self.assertRaises(ValueError, venv.create, self.env_dir + os.pathsep)
+        bad_itempath = self.env_dir + os.pathsep
+        self.assertRaises(ValueError, venv.create, bad_itempath)
+        self.assertRaises(ValueError, venv.create, pathlib.Path(bad_itempath))
 
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
@@ -605,9 +620,7 @@ class EnsurePipTest(BaseTest):
         if not system_site_packages:
             self.assert_pip_not_installed()
 
-    # Issue #26610: pip/pep425tags.py requires ctypes
-    @unittest.skipUnless(ctypes, 'pip requires ctypes')
-    @requires_zlib()
+    @requires_venv_with_pip()
     def test_with_pip(self):
         self.do_test_with_pip(False)
         self.do_test_with_pip(True)

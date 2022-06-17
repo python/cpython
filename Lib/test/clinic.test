@@ -1819,17 +1819,11 @@ test_Py_UNICODE_converter(PyObject *module, PyObject *const *args, Py_ssize_t na
 
 exit:
     /* Cleanup for a */
-    #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)a);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
     /* Cleanup for b */
-    #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)b);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
     /* Cleanup for c */
-    #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)c);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
 
     return return_value;
 }
@@ -1839,7 +1833,7 @@ test_Py_UNICODE_converter_impl(PyObject *module, const Py_UNICODE *a,
                                const Py_UNICODE *b, const Py_UNICODE *c,
                                const Py_UNICODE *d, Py_ssize_t d_length,
                                const Py_UNICODE *e, Py_ssize_t e_length)
-/*[clinic end generated code: output=45e92604de227552 input=064a3b68ad7f04b0]*/
+/*[clinic end generated code: output=4d426808cdbb3ea3 input=064a3b68ad7f04b0]*/
 
 
 /*[clinic input]

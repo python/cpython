@@ -97,7 +97,7 @@ PyWideStringList
       If *index* is greater than or equal to *list* length, append *item* to
       *list*.
 
-      *index* must be greater than or equal to 0.
+      *index* must be greater than or equal to ``0``.
 
       Python must be preinitialized to call this function.
 
@@ -256,8 +256,8 @@ PyPreConfig
 
       Set the LC_CTYPE locale to the user preferred locale?
 
-      If equals to 0, set :c:member:`~PyPreConfig.coerce_c_locale` and
-      :c:member:`~PyPreConfig.coerce_c_locale_warn` members to 0.
+      If equals to ``0``, set :c:member:`~PyPreConfig.coerce_c_locale` and
+      :c:member:`~PyPreConfig.coerce_c_locale_warn` members to ``0``.
 
       See the :term:`locale encoding`.
 
@@ -265,9 +265,9 @@ PyPreConfig
 
    .. c:member:: int coerce_c_locale
 
-      If equals to 2, coerce the C locale.
+      If equals to ``2``, coerce the C locale.
 
-      If equals to 1, read the LC_CTYPE locale to decide if it should be
+      If equals to ``1``, read the LC_CTYPE locale to decide if it should be
       coerced.
 
       See the :term:`locale encoding`.
@@ -282,8 +282,8 @@ PyPreConfig
 
    .. c:member:: int dev_mode
 
-      If non-zero, enables the :ref:`Python Development Mode <devmode>`:
-      see :c:member:`PyConfig.dev_mode`.
+      :ref:`Python Development Mode <devmode>`: see
+      :c:member:`PyConfig.dev_mode`.
 
       Default: ``-1`` in Python mode, ``0`` in isolated mode.
 
@@ -329,8 +329,10 @@ PyPreConfig
 
       If non-zero, enable the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
-      Set by the :option:`-X utf8 <-X>` command line option and the
-      :envvar:`PYTHONUTF8` environment variable.
+      Set to ``0`` or ``1`` by the :option:`-X utf8 <-X>` command line option
+      and the :envvar:`PYTHONUTF8` environment variable.
+
+      Also set to ``1`` if the ``LC_CTYPE`` locale is ``C`` or ``POSIX``.
 
       Default: ``-1`` in Python config and ``0`` in isolated config.
 
@@ -555,7 +557,7 @@ PyConfig
       * Otherwise (``python -c code`` and ``python``), prepend an empty string,
         which means the current working directory.
 
-      Set to 1 by the :option:`-P` command line option and the
+      Set to ``1`` by the :option:`-P` command line option and the
       :envvar:`PYTHONSAFEPATH` environment variable.
 
       Default: ``0`` in Python config, ``1`` in isolated config.
@@ -592,10 +594,10 @@ PyConfig
 
    .. c:member:: int buffered_stdio
 
-      If equals to 0 and :c:member:`~PyConfig.configure_c_stdio` is non-zero,
+      If equals to ``0`` and :c:member:`~PyConfig.configure_c_stdio` is non-zero,
       disable buffering on the C streams stdout and stderr.
 
-      Set to 0 by the :option:`-u` command line option and the
+      Set to ``0`` by the :option:`-u` command line option and the
       :envvar:`PYTHONUNBUFFERED` environment variable.
 
       stdin is always opened in buffered mode.
@@ -604,11 +606,11 @@ PyConfig
 
    .. c:member:: int bytes_warning
 
-      If equals to 1, issue a warning when comparing :class:`bytes` or
+      If equals to ``1``, issue a warning when comparing :class:`bytes` or
       :class:`bytearray` with :class:`str`, or comparing :class:`bytes` with
       :class:`int`.
 
-      If equal or greater to 2, raise a :exc:`BytesWarning` exception in these
+      If equal or greater to ``2``, raise a :exc:`BytesWarning` exception in these
       cases.
 
       Incremented by the :option:`-b` command line option.
@@ -671,6 +673,9 @@ PyConfig
 
       If non-zero, enable the :ref:`Python Development Mode <devmode>`.
 
+      Set to ``1`` by the :option:`-X dev <-X>` option and the
+      :envvar:`PYTHONDEVMODE` environment variable.
+
       Default: ``-1`` in Python mode, ``0`` in isolated mode.
 
    .. c:member:: int dump_refs
@@ -730,9 +735,8 @@ PyConfig
 
       * ``"utf-8"`` if :c:member:`PyPreConfig.utf8_mode` is non-zero.
       * ``"ascii"`` if Python detects that ``nl_langinfo(CODESET)`` announces
-        the ASCII encoding (or Roman8 encoding on HP-UX), whereas the
-        ``mbstowcs()`` function decodes from a different encoding (usually
-        Latin1).
+        the ASCII encoding, whereas the ``mbstowcs()`` function
+        decodes from a different encoding (usually Latin1).
       * ``"utf-8"`` if ``nl_langinfo(CODESET)`` returns an empty string.
       * Otherwise, use the :term:`locale encoding`:
         ``nl_langinfo(CODESET)`` result.
@@ -800,7 +804,7 @@ PyConfig
 
       Enter interactive mode after executing a script or a command.
 
-      If greater than 0, enable inspect: when a script is passed as first
+      If greater than ``0``, enable inspect: when a script is passed as first
       argument or the -c option is used, enter interactive mode after executing
       the script or the command, even when :data:`sys.stdin` does not appear to
       be a terminal.
@@ -818,7 +822,7 @@ PyConfig
 
    .. c:member:: int interactive
 
-      If greater than 0, enable the interactive mode (REPL).
+      If greater than ``0``, enable the interactive mode (REPL).
 
       Incremented by the :option:`-i` command line option.
 
@@ -826,20 +830,25 @@ PyConfig
 
    .. c:member:: int isolated
 
-      If greater than 0, enable isolated mode:
+      If greater than ``0``, enable isolated mode:
 
-      * Set :c:member:`~PyConfig.safe_path` to 1:
+      * Set :c:member:`~PyConfig.safe_path` to ``1``:
         don't prepend a potentially unsafe path to :data:`sys.path` at Python
-        startup.
-      * Set :c:member:`~PyConfig.use_environment` to 0.
-      * Set :c:member:`~PyConfig.user_site_directory` to 0: don't add the user
+        startup, such as the current directory, the script's directory or an
+        empty string.
+      * Set :c:member:`~PyConfig.use_environment` to ``0``: ignore ``PYTHON``
+        environment variables.
+      * Set :c:member:`~PyConfig.user_site_directory` to ``0``: don't add the user
         site directory to :data:`sys.path`.
       * Python REPL doesn't import :mod:`readline` nor enable default readline
         configuration on interactive prompts.
 
+      Set to ``1`` by the :option:`-I` command line option.
+
       Default: ``0`` in Python mode, ``1`` in isolated mode.
 
-      See also :c:member:`PyPreConfig.isolated`.
+      See also the :ref:`Isolated Configuration <init-isolated-conf>` and
+      :c:member:`PyPreConfig.isolated`.
 
    .. c:member:: int legacy_windows_stdio
 
@@ -906,7 +915,7 @@ PyConfig
 
       Module search paths: :data:`sys.path`.
 
-      If :c:member:`~PyConfig.module_search_paths_set` is equal to 0,
+      If :c:member:`~PyConfig.module_search_paths_set` is equal to ``0``,
       :c:func:`Py_InitializeFromConfig` will replace
       :c:member:`~PyConfig.module_search_paths` and sets
       :c:member:`~PyConfig.module_search_paths_set` to ``1``.
@@ -970,18 +979,21 @@ PyConfig
 
    .. c:member:: int parser_debug
 
-      Parser debug mode. If greater than 0, turn on parser debugging output (for expert only, depending
+      Parser debug mode. If greater than ``0``, turn on parser debugging output (for expert only, depending
       on compilation options).
 
       Incremented by the :option:`-d` command line option. Set to the
       :envvar:`PYTHONDEBUG` environment variable value.
+
+      Need a :ref:`debug build of Python <debug-build>` (the ``Py_DEBUG`` macro
+      must be defined).
 
       Default: ``0``.
 
    .. c:member:: int pathconfig_warnings
 
       If non-zero, calculation of path configuration is allowed to log
-      warnings into ``stderr``. If equals to 0, suppress these warnings.
+      warnings into ``stderr``. If equals to ``0``, suppress these warnings.
 
       Default: ``1`` in Python mode, ``0`` in isolated mode.
 
@@ -1031,7 +1043,7 @@ PyConfig
 
    .. c:member:: int quiet
 
-      Quiet mode. If greater than 0, don't display the copyright and version at
+      Quiet mode. If greater than ``0``, don't display the copyright and version at
       Python startup in interactive mode.
 
       Incremented by the :option:`-q` command line option.
@@ -1071,7 +1083,7 @@ PyConfig
 
       Show total reference count at exit?
 
-      Set to 1 by :option:`-X showrefcount <-X>` command line option.
+      Set to ``1`` by :option:`-X showrefcount <-X>` command line option.
 
       Need a :ref:`debug build of Python <debug-build>` (the ``Py_REF_DEBUG``
       macro must be defined).
@@ -1150,6 +1162,8 @@ PyConfig
       If equals to zero, ignore the :ref:`environment variables
       <using-on-envvars>`.
 
+      Set to ``0`` by the :option:`-E` environment variable.
+
       Default: ``1`` in Python config and ``0`` in isolated config.
 
    .. c:member:: int user_site_directory
@@ -1164,17 +1178,17 @@ PyConfig
 
    .. c:member:: int verbose
 
-      Verbose mode. If greater than 0, print a message each time a module is
+      Verbose mode. If greater than ``0``, print a message each time a module is
       imported, showing the place (filename or built-in module) from which
       it is loaded.
 
-      If greater or equal to 2, print a message for each file that is checked
-      for when searching for a module. Also provides information on module
-      cleanup at exit.
+      If greater than or equal to ``2``, print a message for each file that is
+      checked for when searching for a module. Also provides information on
+      module cleanup at exit.
 
       Incremented by the :option:`-v` command line option.
 
-      Set to the :envvar:`PYTHONVERBOSE` environment variable value.
+      Set by the :envvar:`PYTHONVERBOSE` environment variable value.
 
       Default: ``0``.
 
@@ -1199,7 +1213,7 @@ PyConfig
 
    .. c:member:: int write_bytecode
 
-      If equal to 0, Python won't try to write ``.pyc`` files on the import of
+      If equal to ``0``, Python won't try to write ``.pyc`` files on the import of
       source modules.
 
       Set to ``0`` by the :option:`-B` command line option and the
@@ -1280,7 +1294,11 @@ Example setting the program name::
     }
 
 More complete example modifying the default configuration, read the
-configuration, and then override some parameters::
+configuration, and then override some parameters. Note that since
+3.11, many parameters are not calculated until initialization, and
+so values cannot be read from the configuration structure. Any values
+set before initialize is called will be left unchanged by
+initialization::
 
     PyStatus init_python(const char *program_name)
     {
@@ -1305,7 +1323,15 @@ configuration, and then override some parameters::
             goto done;
         }
 
-        /* Append our custom search path to sys.path */
+        /* Specify sys.path explicitly */
+        /* If you want to modify the default set of paths, finish
+           initialization first and then use PySys_GetObject("path") */
+        config.module_search_paths_set = 1;
+        status = PyWideStringList_Append(&config.module_search_paths,
+                                         L"/path/to/stdlib");
+        if (PyStatus_Exception(status)) {
+            goto done;
+        }
         status = PyWideStringList_Append(&config.module_search_paths,
                                          L"/path/to/more/modules");
         if (PyStatus_Exception(status)) {
@@ -1400,18 +1426,18 @@ Python Path Configuration
 
 If at least one "output field" is not set, Python calculates the path
 configuration to fill unset fields. If
-:c:member:`~PyConfig.module_search_paths_set` is equal to 0,
+:c:member:`~PyConfig.module_search_paths_set` is equal to ``0``,
 :c:member:`~PyConfig.module_search_paths` is overridden and
-:c:member:`~PyConfig.module_search_paths_set` is set to 1.
+:c:member:`~PyConfig.module_search_paths_set` is set to ``1``.
 
 It is possible to completely ignore the function calculating the default
 path configuration by setting explicitly all path configuration output
 fields listed above. A string is considered as set even if it is non-empty.
 ``module_search_paths`` is considered as set if
-``module_search_paths_set`` is set to 1. In this case, path
-configuration input fields are ignored as well.
+``module_search_paths_set`` is set to ``1``. In this case,
+``module_search_paths`` will be used without modification.
 
-Set :c:member:`~PyConfig.pathconfig_warnings` to 0 to suppress warnings when
+Set :c:member:`~PyConfig.pathconfig_warnings` to ``0`` to suppress warnings when
 calculating the path configuration (Unix only, Windows does not log any warning).
 
 If :c:member:`~PyConfig.base_prefix` or :c:member:`~PyConfig.base_exec_prefix`
@@ -1445,10 +1471,10 @@ The following configuration files are used by the path configuration:
 
 If a ``._pth`` file is present:
 
-* Set :c:member:`~PyConfig.isolated` to 1.
-* Set :c:member:`~PyConfig.use_environment` to 0.
-* Set :c:member:`~PyConfig.site_import` to 0.
-* Set :c:member:`~PyConfig.safe_path` to 1.
+* Set :c:member:`~PyConfig.isolated` to ``1``.
+* Set :c:member:`~PyConfig.use_environment` to ``0``.
+* Set :c:member:`~PyConfig.site_import` to ``0``.
+* Set :c:member:`~PyConfig.safe_path` to ``1``.
 
 The ``__PYVENV_LAUNCHER__`` environment variable is used to set
 :c:member:`PyConfig.base_executable`
@@ -1511,7 +1537,7 @@ initialization, the core feature of :pep:`432`:
 
 Private provisional API:
 
-* :c:member:`PyConfig._init_main`: if set to 0,
+* :c:member:`PyConfig._init_main`: if set to ``0``,
   :c:func:`Py_InitializeFromConfig` stops at the "Core" initialization phase.
 * :c:member:`PyConfig._isolated_interpreter`: if non-zero,
   disallow threads, subprocesses and fork.

@@ -386,6 +386,12 @@ typedef struct {
     int tagLength;
     // if true, treats 'tag' as a non-PEP 514 filter
     bool oldStyleTag;
+    // if true, ignores 'tag' when a high priority environment is found
+    // gh-92817: This is currently set when a tag is read from configuration or
+    // the environment, rather than the command line or a shebang line, and the
+    // only currently possible high priority environment is an active virtual
+    // environment
+    bool lowPriorityTag;
     // if true, we had an old-style tag with '-64' suffix, and so do not
     // want to match tags like '3.x-32'
     bool exclude32Bit;
@@ -475,6 +481,7 @@ dumpSearchInfo(SearchInfo *search)
     DEBUG_2(company, companyLength);
     DEBUG_2(tag, tagLength);
     DEBUG_BOOL(oldStyleTag);
+    DEBUG_BOOL(lowPriorityTag);
     DEBUG_BOOL(exclude32Bit);
     DEBUG_BOOL(only32Bit);
     DEBUG_BOOL(allowDefaults);
@@ -972,6 +979,9 @@ checkDefaults(SearchInfo *search)
             search->tagLength = n - (search->companyLength + 1);
             search->oldStyleTag = false;
         }
+        // gh-92817: allow a high priority env to be selected even if it
+        // doesn't match the tag
+        search->lowPriorityTag = true;
     }
 
     return 0;
@@ -995,7 +1005,7 @@ typedef struct EnvironmentInfo {
     const wchar_t *executableArgs;
     const wchar_t *architecture;
     const wchar_t *displayName;
-    bool isActiveVenv;
+    bool highPriority;
 } EnvironmentInfo;
 
 
@@ -1481,7 +1491,7 @@ virtualenvSearch(const SearchInfo *search, EnvironmentInfo **result)
     if (!env) {
         return RC_NO_MEMORY;
     }
-    env->isActiveVenv = true;
+    env->highPriority = true;
     env->internalSortKey = 20;
     exitCode = copyWstr(&env->displayName, L"Active venv");
     if (exitCode) {
@@ -1818,6 +1828,15 @@ _selectEnvironment(const SearchInfo *search, EnvironmentInfo *env, EnvironmentIn
         if (exitCode && exitCode != RC_NO_PYTHON) {
             return exitCode;
         } else if (!exitCode && *best) {
+            return 0;
+        }
+
+        if (env->highPriority && search->lowPriorityTag) {
+            // This environment is marked high priority, and the search allows
+            // it to be selected even though a tag is specified, so select it
+            // gh-92817: this allows an active venv to be selected even when a
+            // default tag has been found in py.ini or the environment
+            *best = env;
             return 0;
         }
 

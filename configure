@@ -654,10 +654,10 @@ MODULE_BINASCII_FALSE
 MODULE_BINASCII_TRUE
 MODULE_ZLIB_FALSE
 MODULE_ZLIB_TRUE
-MODULE__TKINTER_FALSE
-MODULE__TKINTER_TRUE
 MODULE__UUID_FALSE
 MODULE__UUID_TRUE
+MODULE__TKINTER_FALSE
+MODULE__TKINTER_TRUE
 MODULE__SQLITE3_FALSE
 MODULE__SQLITE3_TRUE
 MODULE_NIS_FALSE
@@ -1061,7 +1061,6 @@ with_openssl
 with_openssl_rpath
 with_ssl_default_suites
 with_builtin_hashlib_hashes
-with_experimental_isolated_subinterpreters
 enable_test_modules
 '
       ac_precious_vars='build_alias
@@ -1861,9 +1860,6 @@ Optional Packages:
   --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2
                           builtin hash modules, md5, sha1, sha256, sha512,
                           sha3 (with shake), blake2
-  --with-experimental-isolated-subinterpreters
-                          better isolate subinterpreters, experimental build
-                          mode (default is no)
 
 Some influential environment variables:
   PKG_CONFIG  path to pkg-config utility
@@ -5217,6 +5213,39 @@ $as_echo "$ac_cv_path_EGREP" >&6; }
 
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CC compiler name" >&5
+$as_echo_n "checking for CC compiler name... " >&6; }
+if ${ac_cv_cc_name+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+cat > conftest.c <<EOF
+#if defined(__INTEL_COMPILER) || defined(__ICC)
+  icc
+#elif defined(__ibmxl__) || defined(__xlc__) || defined(__xlC__)
+  xlc
+#elif defined(_MSC_VER)
+  msvc
+#elif defined(__clang__)
+  clang
+#elif defined(__GNUC__)
+  gcc
+#else
+#  error unknown compiler
+#endif
+EOF
+
+if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
+  ac_cv_cc_name=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
+else
+  ac_cv_cc_name="unknown"
+fi
+rm -f conftest.c conftest.out
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cc_name" >&5
+$as_echo "$ac_cv_cc_name" >&6; }
+
 # checks for UNIX variants that set C preprocessor variables
 # may set _GNU_SOURCE, __EXTENSIONS__, _POSIX_PTHREAD_SEMANTICS,
 # _POSIX_SOURCE, _POSIX_1_SOURCE, and more
@@ -6176,6 +6205,66 @@ if test x$MULTIARCH != x; then
 fi
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PEP 11 support tier" >&5
+$as_echo_n "checking for PEP 11 support tier... " >&6; }
+case $host/$ac_cv_cc_name in #(
+  x86_64-*-linux-gnu/gcc) :
+    PY_SUPPORT_TIER=1 ;; #(
+    x86_64-apple-darwin*/clang) :
+    PY_SUPPORT_TIER=1 ;; #(
+    i686-pc-windows-msvc/msvc) :
+    PY_SUPPORT_TIER=1 ;; #(
+    x86_64-pc-windows-msvc/msvc) :
+    PY_SUPPORT_TIER=1 ;; #(
+
+  aarch64-apple-darwin*/clang) :
+    PY_SUPPORT_TIER=2 ;; #(
+    aarch64-*-linux-gnu/gcc) :
+    PY_SUPPORT_TIER=2 ;; #(
+    aarch64-*-linux-gnu/clang) :
+    PY_SUPPORT_TIER=2 ;; #(
+  powerpc64le-*-linux-gnu/gcc) :
+    PY_SUPPORT_TIER=2 ;; #(
+    x86_64-*-linux-gnu/clang) :
+    PY_SUPPORT_TIER=2 ;; #(
+
+  aarch64-pc-windows-msvc/msvc) :
+    PY_SUPPORT_TIER=3 ;; #(
+    armv7l-*-linux-gnueabihf/gcc) :
+    PY_SUPPORT_TIER=3 ;; #(
+    powerpc64le-*-linux-gnu/clang) :
+    PY_SUPPORT_TIER=3 ;; #(
+    s390x-*-linux-gnu/gcc) :
+    PY_SUPPORT_TIER=3 ;; #(
+        x86_64-*-freebsd/clang) :
+    PY_SUPPORT_TIER=3 ;; #(
+  *) :
+      PY_SUPPORT_TIER=0
+ ;;
+esac
+
+case $PY_SUPPORT_TIER in #(
+  1) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $host/$ac_cv_cc_name has tier 1 (supported)" >&5
+$as_echo "$host/$ac_cv_cc_name has tier 1 (supported)" >&6; } ;; #(
+  2) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $host/$ac_cv_cc_name has tier 2 (supported)" >&5
+$as_echo "$host/$ac_cv_cc_name has tier 2 (supported)" >&6; } ;; #(
+  3) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $host/$ac_cv_cc_name has tier 3 (partially supported)" >&5
+$as_echo "$host/$ac_cv_cc_name has tier 3 (partially supported)" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $host/$ac_cv_cc_name is not supported" >&5
+$as_echo "$as_me: WARNING: $host/$ac_cv_cc_name is not supported" >&2;}
+ ;;
+esac
+
+
+cat >>confdefs.h <<_ACEOF
+#define PY_SUPPORT_TIER $PY_SUPPORT_TIER
+_ACEOF
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -Wl,--no-as-needed" >&5
 $as_echo_n "checking for -Wl,--no-as-needed... " >&6; }
 if ${ac_cv_wl_no_as_needed+:} false; then :
@@ -6692,6 +6781,8 @@ else
 
 fi
      ;; #(
+              WASI/*) :
+    HOSTRUNNER='wasmtime run --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --mapdir /::$(srcdir) --' ;; #(
   *) :
     HOSTRUNNER=''
    ;;
@@ -6700,6 +6791,10 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HOSTRUNNER" >&5
 $as_echo "$HOSTRUNNER" >&6; }
+
+if test -n "$HOSTRUNNER"; then
+    PYTHON_FOR_BUILD="_PYTHON_HOSTRUNNER='$HOSTRUNNER' $PYTHON_FOR_BUILD"
+fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
 $as_echo "$LDLIBRARY" >&6; }
@@ -7922,6 +8017,8 @@ $as_echo "#define _WASI_EMULATED_PROCESS_CLOCKS 1" >>confdefs.h
     LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
 
+            as_fn_append LDFLAGS_NODIST " -z stack-size=524288 -Wl,--stack-first -Wl,--initial-memory=10485760"
+
  ;; #(
   *) :
      ;;
@@ -8849,7 +8946,8 @@ $as_echo "#define STDC_HEADERS 1" >>confdefs.h
 # checks for header files
 for ac_header in  \
   alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
-  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/memfd.h linux/random.h linux/soundcard.h \
+  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/memfd.h \
+  linux/random.h linux/soundcard.h \
   linux/tipc.h linux/wait.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
@@ -14231,18 +14329,25 @@ int domain = AF_INET6;
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
   ipv6=yes
 
 else
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
   ipv6=no
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+case $ac_sys_system in #(
+  WASI) :
+    ipv6=no
+ ;; #(
+  *) :
+     ;;
+esac
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ipv6" >&5
+$as_echo "$ipv6" >&6; }
 
 if test "$ipv6" = "yes"; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if RFC2553 API is available" >&5
@@ -14556,6 +14661,8 @@ if test -z "$with_pymalloc"
 then
     case $ac_sys_system in #(
   Emscripten) :
+    with_pymalloc="no" ;; #(
+  WASI) :
     with_pymalloc="no" ;; #(
   *) :
     with_pymalloc="yes"
@@ -18407,52 +18514,6 @@ $as_echo "#define HAVE_PROTOTYPES 1" >>confdefs.h
 
 fi
 
-works=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for variable length prototypes and stdarg.h" >&5
-$as_echo_n "checking for variable length prototypes and stdarg.h... " >&6; }
-if ${ac_cv_stdarg_prototypes+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <stdarg.h>
-int foo(int x, ...) {
-	va_list va;
-	va_start(va, x);
-	va_arg(va, int);
-	va_arg(va, char *);
-	va_arg(va, double);
-	return 0;
-}
-
-int
-main ()
-{
-return foo(10, "", 3.14);
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_stdarg_prototypes=yes
-else
-  ac_cv_stdarg_prototypes=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_stdarg_prototypes" >&5
-$as_echo "$ac_cv_stdarg_prototypes" >&6; }
-if test "x$ac_cv_stdarg_prototypes" = xyes; then :
-
-
-$as_echo "#define HAVE_STDARG_PROTOTYPES 1" >>confdefs.h
-
-
-fi
-
 
 # check for socketpair
 
@@ -21139,72 +21200,6 @@ then
 	LIBS="$LIBS -framework CoreFoundation"
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for %zd printf() format support" >&5
-$as_echo_n "checking for %zd printf() format support... " >&6; }
-if ${ac_cv_have_size_t_format+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test "$cross_compiling" = yes; then :
-  ac_cv_have_size_t_format="cross -- assuming yes"
-
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <stdio.h>
-#include <stddef.h>
-#include <string.h>
-
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-
-#ifdef HAVE_SSIZE_T
-typedef ssize_t Py_ssize_t;
-#elif SIZEOF_VOID_P == SIZEOF_LONG
-typedef long Py_ssize_t;
-#else
-typedef int Py_ssize_t;
-#endif
-
-int main()
-{
-    char buffer[256];
-
-    if(sprintf(buffer, "%zd", (size_t)123) < 0)
-       	return 1;
-
-    if (strcmp(buffer, "123"))
-	return 1;
-
-    if (sprintf(buffer, "%zd", (Py_ssize_t)-123) < 0)
-       	return 1;
-
-    if (strcmp(buffer, "-123"))
-	return 1;
-
-    return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ac_cv_have_size_t_format=yes
-else
-  ac_cv_have_size_t_format=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have_size_t_format" >&5
-$as_echo "$ac_cv_have_size_t_format" >&6; }
-if test "$ac_cv_have_size_t_format" != no ; then
-
-$as_echo "#define PY_FORMAT_SIZE_T \"z\"" >>confdefs.h
-
-fi
-
 ac_fn_c_check_type "$LINENO" "socklen_t" "ac_cv_type_socklen_t" "
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -22464,30 +22459,6 @@ fi
 
 fi
 
-# --with-experimental-isolated-subinterpreters
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-experimental-isolated-subinterpreters" >&5
-$as_echo_n "checking for --with-experimental-isolated-subinterpreters... " >&6; }
-
-# Check whether --with-experimental-isolated-subinterpreters was given.
-if test "${with_experimental_isolated_subinterpreters+set}" = set; then :
-  withval=$with_experimental_isolated_subinterpreters;
-if test "$withval" != no
-then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; };
-  $as_echo "#define EXPERIMENTAL_ISOLATED_SUBINTERPRETERS 1" >>confdefs.h
-
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; };
-fi
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --disable-test-modules" >&5
@@ -22596,6 +22567,16 @@ case $ac_sys_system in #(
   Emscripten/node*) :
      ;; #(
   WASI/*) :
+
+
+
+    py_cv_module__ctypes_test=n/a
+    py_cv_module_fcntl=n/a
+    py_cv_module_mmap=n/a
+    py_cv_module_resource=n/a
+    py_cv_module_termios=n/a
+    py_cv_module_=n/a
+
 
      ;; #(
   *) :
@@ -24197,40 +24178,6 @@ fi
 $as_echo "$py_cv_module__sqlite3" >&6; }
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _uuid" >&5
-$as_echo_n "checking for stdlib extension module _uuid... " >&6; }
-        if test "$py_cv_module__uuid" != "n/a"; then :
-
-    if true; then :
-  if test "$have_uuid" = "yes"; then :
-  py_cv_module__uuid=yes
-else
-  py_cv_module__uuid=missing
-fi
-else
-  py_cv_module__uuid=disabled
-fi
-
-fi
-  as_fn_append MODULE_BLOCK "MODULE__UUID=$py_cv_module__uuid$as_nl"
-  if test "x$py_cv_module__uuid" = xyes; then :
-
-    as_fn_append MODULE_BLOCK "MODULE__UUID_CFLAGS=$LIBUUID_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__UUID_LDFLAGS=$LIBUUID_LIBS$as_nl"
-
-fi
-   if test "$py_cv_module__uuid" = yes; then
-  MODULE__UUID_TRUE=
-  MODULE__UUID_FALSE='#'
-else
-  MODULE__UUID_TRUE='#'
-  MODULE__UUID_FALSE=
-fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__uuid" >&5
-$as_echo "$py_cv_module__uuid" >&6; }
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _tkinter" >&5
 $as_echo_n "checking for stdlib extension module _tkinter... " >&6; }
         if test "$py_cv_module__tkinter" != "n/a"; then :
@@ -24263,6 +24210,40 @@ fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__tkinter" >&5
 $as_echo "$py_cv_module__tkinter" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _uuid" >&5
+$as_echo_n "checking for stdlib extension module _uuid... " >&6; }
+        if test "$py_cv_module__uuid" != "n/a"; then :
+
+    if true; then :
+  if test "$have_uuid" = "yes"; then :
+  py_cv_module__uuid=yes
+else
+  py_cv_module__uuid=missing
+fi
+else
+  py_cv_module__uuid=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__UUID=$py_cv_module__uuid$as_nl"
+  if test "x$py_cv_module__uuid" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__UUID_CFLAGS=$LIBUUID_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__UUID_LDFLAGS=$LIBUUID_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module__uuid" = yes; then
+  MODULE__UUID_TRUE=
+  MODULE__UUID_FALSE='#'
+else
+  MODULE__UUID_TRUE='#'
+  MODULE__UUID_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__uuid" >&5
+$as_echo "$py_cv_module__uuid" >&6; }
 
 
 
@@ -25121,12 +25102,12 @@ if test -z "${MODULE__SQLITE3_TRUE}" && test -z "${MODULE__SQLITE3_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__SQLITE3\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${MODULE__UUID_TRUE}" && test -z "${MODULE__UUID_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__UUID\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
 if test -z "${MODULE__TKINTER_TRUE}" && test -z "${MODULE__TKINTER_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TKINTER\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__UUID_TRUE}" && test -z "${MODULE__UUID_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__UUID\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_ZLIB_TRUE}" && test -z "${MODULE_ZLIB_FALSE}"; then
@@ -26411,4 +26392,17 @@ $as_echo "$as_me:
 If you want a release build with all stable optimizations active (PGO, etc),
 please run ./configure --enable-optimizations
 " >&6;}
+fi
+
+if test "x$PY_SUPPORT_TIER" = x0; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
+
+Platform \"$host\" with compiler \"$ac_cv_cc_name\" is not supported by the
+CPython core team, see https://peps.python.org/pep-0011/ for more information.
+" >&5
+$as_echo "$as_me: WARNING:
+
+Platform \"$host\" with compiler \"$ac_cv_cc_name\" is not supported by the
+CPython core team, see https://peps.python.org/pep-0011/ for more information.
+" >&2;}
 fi

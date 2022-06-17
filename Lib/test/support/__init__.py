@@ -36,7 +36,7 @@ __all__ = [
     "is_resource_enabled", "requires", "requires_freebsd_version",
     "requires_linux_version", "requires_mac_ver",
     "check_syntax_error",
-    "BasicTestRunner", "run_unittest", "run_doctest",
+    "run_unittest", "run_doctest",
     "requires_gzip", "requires_bz2", "requires_lzma",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "requires_zlib",
@@ -59,6 +59,7 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
+    "Py_DEBUG",
     ]
 
 
@@ -199,6 +200,11 @@ def get_original_stdout():
 def _force_run(path, func, *args):
     try:
         return func(*args)
+    except FileNotFoundError as err:
+        # chmod() won't fix a missing file.
+        if verbose >= 2:
+            print('%s: %s' % (err.__class__.__name__, err))
+        raise
     except OSError as err:
         if verbose >= 2:
             print('%s: %s' % (err.__class__.__name__, err))
@@ -299,6 +305,8 @@ def requires(resource, msg=None):
         if msg is None:
             msg = "Use of the %r resource not enabled" % resource
         raise ResourceDenied(msg)
+    if resource in {"network", "urlfetch"} and not has_socket_support:
+        raise ResourceDenied("No socket support")
     if resource == 'gui' and not _is_gui_available():
         raise ResourceDenied(_is_gui_available.reason)
 
@@ -521,7 +529,7 @@ def requires_subprocess():
     """Used for subprocess, os.spawn calls, fd inheritance"""
     return unittest.skipUnless(has_subprocess_support, "requires subprocess support")
 
-# Emscripten's socket emulation has limitation. WASI doesn't have sockets yet.
+# Emscripten's socket emulation and WASI sockets have limitations.
 has_socket_support = not is_emscripten and not is_wasi
 
 def requires_working_socket(*, module=False):
@@ -982,12 +990,6 @@ def bigaddrspacetest(f):
 
 #=======================================================================
 # unittest integration.
-
-class BasicTestRunner:
-    def run(self, test):
-        result = unittest.TestResult()
-        test(result)
-        return result
 
 def _id(obj):
     return obj
@@ -2070,31 +2072,26 @@ def wait_process(pid, *, exitcode, timeout=None):
 
         if timeout is None:
             timeout = SHORT_TIMEOUT
-        t0 = time.monotonic()
-        sleep = 0.001
-        max_sleep = 0.1
-        while True:
+
+        start_time = time.monotonic()
+        for _ in sleeping_retry(timeout, error=False):
             pid2, status = os.waitpid(pid, os.WNOHANG)
             if pid2 != 0:
                 break
-            # process is still running
+            # rety: the process is still running
+        else:
+            try:
+                os.kill(pid, signal.SIGKILL)
+                os.waitpid(pid, 0)
+            except OSError:
+                # Ignore errors like ChildProcessError or PermissionError
+                pass
 
-            dt = time.monotonic() - t0
-            if dt > SHORT_TIMEOUT:
-                try:
-                    os.kill(pid, signal.SIGKILL)
-                    os.waitpid(pid, 0)
-                except OSError:
-                    # Ignore errors like ChildProcessError or PermissionError
-                    pass
-
-                raise AssertionError(f"process {pid} is still running "
-                                     f"after {dt:.1f} seconds")
-
-            sleep = min(sleep * 2, max_sleep)
-            time.sleep(sleep)
+            dt = time.monotonic() - start_time
+            raise AssertionError(f"process {pid} is still running "
+                                 f"after {dt:.1f} seconds")
     else:
-        # Windows implementation
+        # Windows implementation: don't support timeout :-(
         pid2, status = os.waitpid(pid, 0)
 
     exitcode2 = os.waitstatus_to_exitcode(status)
@@ -2189,3 +2186,138 @@ def clear_ignored_deprecations(*tokens: object) -> None:
     if warnings.filters != new_filters:
         warnings.filters[:] = new_filters
         warnings._filters_mutated()
+
+
+# Skip a test if venv with pip is known to not work.
+def requires_venv_with_pip():
+    # ensurepip requires zlib to open ZIP archives (.whl binary wheel packages)
+    try:
+        import zlib
+    except ImportError:
+        return unittest.skipIf(True, "venv: ensurepip requires zlib")
+
+    # bpo-26610: pip/pep425tags.py requires ctypes.
+    # gh-92820: setuptools/windows_support.py uses ctypes (setuptools 58.1).
+    try:
+        import ctypes
+    except ImportError:
+        ctypes = None
+    return unittest.skipUnless(ctypes, 'venv: pip requires ctypes')
+
+
+# True if Python is built with the Py_DEBUG macro defined: if
+# Python is built in debug mode (./configure --with-pydebug).
+Py_DEBUG = hasattr(sys, 'gettotalrefcount')
+
+
+def late_deletion(obj):
+    """
+    Keep a Python alive as long as possible.
+
+    Create a reference cycle and store the cycle in an object deleted late in
+    Python finalization. Try to keep the object alive until the very last
+    garbage collection.
+
+    The function keeps a strong reference by design. It should be called in a
+    subprocess to not mark a test as "leaking a reference".
+    """
+
+    # Late CPython finalization:
+    # - finalize_interp_clear()
+    # - _PyInterpreterState_Clear(): Clear PyInterpreterState members
+    #   (ex: codec_search_path, before_forkers)
+    # - clear os.register_at_fork() callbacks
+    # - clear codecs.register() callbacks
+
+    ref_cycle = [obj]
+    ref_cycle.append(ref_cycle)
+
+    # Store a reference in PyInterpreterState.codec_search_path
+    import codecs
+    def search_func(encoding):
+        return None
+    search_func.reference = ref_cycle
+    codecs.register(search_func)
+
+    if hasattr(os, 'register_at_fork'):
+        # Store a reference in PyInterpreterState.before_forkers
+        def atfork_func():
+            pass
+        atfork_func.reference = ref_cycle
+        os.register_at_fork(before=atfork_func)
+
+
+def busy_retry(timeout, err_msg=None, /, *, error=True):
+    """
+    Run the loop body until "break" stops the loop.
+
+    After *timeout* seconds, raise an AssertionError if *error* is true,
+    or just stop if *error is false.
+
+    Example:
+
+        for _ in support.busy_retry(support.SHORT_TIMEOUT):
+            if check():
+                break
+
+    Example of error=False usage:
+
+        for _ in support.busy_retry(support.SHORT_TIMEOUT, error=False):
+            if check():
+                break
+        else:
+            raise RuntimeError('my custom error')
+
+    """
+    if timeout <= 0:
+        raise ValueError("timeout must be greater than zero")
+
+    start_time = time.monotonic()
+    deadline = start_time + timeout
+
+    while True:
+        yield
+
+        if time.monotonic() >= deadline:
+            break
+
+    if error:
+        dt = time.monotonic() - start_time
+        msg = f"timeout ({dt:.1f} seconds)"
+        if err_msg:
+            msg = f"{msg}: {err_msg}"
+        raise AssertionError(msg)
+
+
+def sleeping_retry(timeout, err_msg=None, /,
+                     *, init_delay=0.010, max_delay=1.0, error=True):
+    """
+    Wait strategy that applies exponential backoff.
+
+    Run the loop body until "break" stops the loop. Sleep at each loop
+    iteration, but not at the first iteration. The sleep delay is doubled at
+    each iteration (up to *max_delay* seconds).
+
+    See busy_retry() documentation for the parameters usage.
+
+    Example raising an exception after SHORT_TIMEOUT seconds:
+
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+            if check():
+                break
+
+    Example of error=False usage:
+
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT, error=False):
+            if check():
+                break
+        else:
+            raise RuntimeError('my custom error')
+    """
+
+    delay = init_delay
+    for _ in busy_retry(timeout, err_msg, error=error):
+        yield
+
+        time.sleep(delay)
+        delay = min(delay * 2, max_delay)

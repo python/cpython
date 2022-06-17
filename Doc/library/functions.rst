@@ -500,6 +500,7 @@ are always available.  They are listed here in alphabetical order.
               yield n, elem
               n += 1
 
+.. _func-eval:
 
 .. function:: eval(expression[, globals[, locals]])
 
@@ -859,8 +860,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. audit-event:: builtins.input/result result input
 
-      Raises an auditing event ``builtins.input/result`` with the result after
-      successfully reading input.
+      Raises an :ref:`auditing event <auditing>` ``builtins.input/result``
+      with the result after successfully reading input.
 
 
 .. class:: int([x])

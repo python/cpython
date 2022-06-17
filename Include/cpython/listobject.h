@@ -30,16 +30,18 @@ PyAPI_FUNC(void) _PyList_DebugMallocStats(FILE *out);
 
 // Macros and static inline functions, trading safety for speed
 
-static inline Py_ssize_t PyList_GET_SIZE(PyListObject *op) {
-    return Py_SIZE(op);
+static inline Py_ssize_t PyList_GET_SIZE(PyObject *op) {
+    PyListObject *list = _PyList_CAST(op);
+    return Py_SIZE(list);
 }
-#define PyList_GET_SIZE(op) PyList_GET_SIZE(_PyList_CAST(op))
+#define PyList_GET_SIZE(op) PyList_GET_SIZE(_PyObject_CAST(op))
 
 #define PyList_GET_ITEM(op, index) (_PyList_CAST(op)->ob_item[index])
 
 static inline void
-PyList_SET_ITEM(PyListObject *op, Py_ssize_t index, PyObject *value) {
-    op->ob_item[index] = value;
+PyList_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
+    PyListObject *list = _PyList_CAST(op);
+    list->ob_item[index] = value;
 }
 #define PyList_SET_ITEM(op, index, value) \
-    PyList_SET_ITEM(_PyList_CAST(op), index, _PyObject_CAST(value))
+    PyList_SET_ITEM(_PyObject_CAST(op), index, _PyObject_CAST(value))

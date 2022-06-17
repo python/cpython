@@ -661,6 +661,76 @@ it with :func:`staticmethod`. For example::
 You don't need to wrap with :func:`staticmethod` if you're setting the import
 callable on a configurator *instance*.
 
+.. _configure-queue:
+
+Configuring QueueHandler and QueueListener
+""""""""""""""""""""""""""""""""""""""""""
+
+If you want to configure a :class:`~logging.handlers.QueueHandler`, noting that this
+is normally used in conjunction with a :class:`~logging.handlers.QueueListener`, you
+can configure both together. After the configuration, the ``QueueListener`` instance
+will be available as the :attr:`~logging.handlers.QueueHandler.listener` attribute of
+the created handler, and that in turn will be available to you using
+:func:`~logging.getHandlerByName` and passing the name you have used for the
+``QueueHandler`` in your configuration. The dictionary schema for configuring the pair
+is shown in the example YAML snippet below.
+
+.. code-block:: yaml
+
+    handlers:
+      qhand:
+        class: logging.handlers.QueueHandler
+        queue: my.module.queue_factory
+        listener: my.package.CustomListener
+        handlers:
+          - hand_name_1
+          - hand_name_2
+          ...
+
+The ``queue`` and ``listener`` keys are optional.
+
+If the ``queue`` key is present, the corresponding value can be one of the following:
+
+* An actual instance of :class:`queue.Queue` or a subclass thereof. This is of course
+  only possible if you are constructing or modifying the configuration dictionary in
+  code.
+
+* A string that resolves to a callable which, when called with no arguments, returns
+  the :class:`queue.Queue` instance to use. That callable could be a
+  :class:`queue.Queue` subclass or a function which returns a suitable queue instance,
+  such as ``my.module.queue_factory()``.
+
+* A dict with a ``'()'`` key which is constructed in the usual way as discussed in
+  :ref:`logging-config-dict-userdef`. The result of this construction should be a
+  :class:`queue.Queue` instance.
+
+If the  ``queue`` key is absent, a standard unbounded :class:`queue.Queue` instance is
+created and used.
+
+If the ``listener`` key is present, the corresponding value can be one of the following:
+
+* A subclass of :class:`logging.handlers.QueueListener`. This is of course only
+  possible if you are constructing or modifying the configuration dictionary in
+  code.
+
+* A string which resolves to a class which is a subclass of ``QueueListener``, such as
+  ``'my.package.CustomListener'``.
+
+* A dict with a ``'()'`` key which is constructed in the usual way as discussed in
+  :ref:`logging-config-dict-userdef`. The result of this construction should be a
+  callable with the same signature as the ``QueueListener`` initializer.
+
+If the ``listener`` key is absent, :class:`logging.handlers.QueueListener` is used.
+
+The values under the ``handlers`` key are the names of other handlers in the
+configuration (not shown in the above snippet) which will be passed to the queue
+listener.
+
+Any custom queue handler and listener classes will need to be defined with the same
+initialization signatures as :class:`~logging.handlers.QueueHandler` and
+:class:`~logging.handlers.QueueListener`.
+
+.. versionadded:: 3.12
 
 .. _logging-config-fileformat:
 
@@ -716,7 +786,7 @@ root logger section is given below.
 
 The ``level`` entry can be one of ``DEBUG, INFO, WARNING, ERROR, CRITICAL`` or
 ``NOTSET``. For the root logger only, ``NOTSET`` means that all messages will be
-logged. Level values are :func:`eval`\ uated in the context of the ``logging``
+logged. Level values are :ref:`evaluated <func-eval>` in the context of the ``logging``
 package's namespace.
 
 The ``handlers`` entry is a comma-separated list of handler names, which must
@@ -763,13 +833,13 @@ handler. If blank, a default formatter (``logging._defaultFormatter``) is used.
 If a name is specified, it must appear in the ``[formatters]`` section and have
 a corresponding section in the configuration file.
 
-The ``args`` entry, when :func:`eval`\ uated in the context of the ``logging``
+The ``args`` entry, when :ref:`evaluated <func-eval>` in the context of the ``logging``
 package's namespace, is the list of arguments to the constructor for the handler
 class. Refer to the constructors for the relevant handlers, or to the examples
 below, to see how typical entries are constructed. If not provided, it defaults
 to ``()``.
 
-The optional ``kwargs`` entry, when :func:`eval`\ uated in the context of the
+The optional ``kwargs`` entry, when :ref:`evaluated <func-eval>` in the context of the
 ``logging`` package's namespace, is the keyword argument dict to the constructor
 for the handler class. If not provided, it defaults to ``{}``.
 
