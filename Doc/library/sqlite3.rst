@@ -480,21 +480,28 @@ Connection Objects
 
    .. method:: commit()
 
-      This method commits the current transaction. If you don't call this method,
-      anything you did since the last call to ``commit()`` is not visible from
-      other database connections. If you wonder why you don't see the data you've
-      written to the database, please check you didn't forget to call this method.
+      Commit any pending transaction to the database.
+      If there is no open transaction, this method is a no-op.
+
+      If :attr:`autocommit` is :const:`False`, a new transaction is implicitly
+      opened after the pending transaction was committed.
 
    .. method:: rollback()
 
-      This method rolls back any changes to the database since the last call to
-      :meth:`commit`.
+      Roll back to the start of any pending transaction.
+      If there is no open transaction, this method is a no-op.
+
+      If :attr:`autocommit` is :const:`False`, a new transaction is implicitly
+      opened after the pending transaction was rolled back.
 
    .. method:: close()
 
-      This closes the database connection. Note that this does not automatically
-      call :meth:`commit`. If you just close your database connection without
-      calling :meth:`commit` first, your changes will be lost!
+      Close the database connection.
+      If :attr:`autocommit` is :const:`False`,
+      any pending transaction is implicitly rolled back.
+      Else, no action is taken.
+      Make sure to :meth:`commit` before closing,
+      to avoid losing pending changes.
 
    .. method:: execute(sql[, parameters])
 
@@ -502,11 +509,19 @@ Connection Objects
       :meth:`~Cursor.execute` on it with the given *sql* and *parameters*.
       Return the new cursor object.
 
+      If :attr:`autocommit` is :data:`DEPRECATED_TRANSACTION_CONTROL`,
+      a transaction is implicitly started if *sql* is an INSERT, UPDATE,
+      DELETE, or REPLACE statement.
+
    .. method:: executemany(sql[, parameters])
 
       Create a new :class:`Cursor` object and call
       :meth:`~Cursor.executemany` on it with the given *sql* and *parameters*.
       Return the new cursor object.
+
+      If :attr:`autocommit` is :data:`DEPRECATED_TRANSACTION_CONTROL`,
+      a transaction is implicitly started if *sql* is an INSERT, UPDATE,
+      DELETE, or REPLACE statement.
 
    .. method:: executescript(sql_script)
 
