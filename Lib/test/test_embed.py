@@ -67,18 +67,16 @@ class EmbeddingTestsMixin:
             ext = ("_d" if debug_build(sys.executable) else "") + ".exe"
             exename += ext
             exepath = builddir
-            expecteddir = os.path.join(support.REPO_ROOT, builddir)
         else:
             exepath = os.path.join(builddir, 'Programs')
-            expecteddir = os.path.join(support.REPO_ROOT, 'Programs')
         self.test_exe = exe = os.path.join(exepath, exename)
-        if exepath != expecteddir or not os.path.exists(exe):
+        if not os.path.exists(exe):
             self.skipTest("%r doesn't exist" % exe)
         # This is needed otherwise we get a fatal error:
         # "Py_Initialize: Unable to get the locale encoding
         # LookupError: no codec search functions registered: can't find encoding"
         self.oldcwd = os.getcwd()
-        os.chdir(support.REPO_ROOT)
+        os.chdir(builddir)
 
     def tearDown(self):
         os.chdir(self.oldcwd)
@@ -1375,10 +1373,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         with self.tmpdir_with_python() as tmpdir:
             # pybuilddir.txt is a sub-directory relative to the current
             # directory (tmpdir)
+            vpath = sysconfig.get_config_var("VPATH") or ''
             subdir = 'libdir'
             libdir = os.path.join(tmpdir, subdir)
             # The stdlib dir is dirname(executable) + VPATH + 'Lib'
-            stdlibdir = os.path.join(tmpdir, 'Lib')
+            stdlibdir = os.path.normpath(os.path.join(tmpdir, vpath, 'Lib'))
             os.mkdir(libdir)
 
             filename = os.path.join(tmpdir, 'pybuilddir.txt')
