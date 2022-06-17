@@ -509,19 +509,11 @@ Connection Objects
       :meth:`~Cursor.execute` on it with the given *sql* and *parameters*.
       Return the new cursor object.
 
-      If :attr:`autocommit` is :data:`DEPRECATED_TRANSACTION_CONTROL`,
-      a transaction is implicitly started if *sql* is an INSERT, UPDATE,
-      DELETE, or REPLACE statement.
-
    .. method:: executemany(sql[, parameters])
 
       Create a new :class:`Cursor` object and call
       :meth:`~Cursor.executemany` on it with the given *sql* and *parameters*.
       Return the new cursor object.
-
-      If :attr:`autocommit` is :data:`DEPRECATED_TRANSACTION_CONTROL`,
-      a transaction is implicitly started if *sql* is an INSERT, UPDATE,
-      DELETE, or REPLACE statement.
 
    .. method:: executescript(sql_script)
 
@@ -922,7 +914,7 @@ Cursor Objects
 
    .. method:: execute(sql[, parameters])
 
-      Executes an SQL statement. Values may be bound to the statement using
+      Execute an SQL statement. Values may be bound to the statement using
       :ref:`placeholders <sqlite3-placeholders>`.
 
       :meth:`execute` will only execute a single SQL statement. If you try to execute
@@ -930,13 +922,26 @@ Cursor Objects
       :meth:`executescript` if you want to execute multiple SQL statements with one
       call.
 
+      If :attr:`~Connection.autocommit` is
+      :data:`DEPRECATED_TRANSACTION_CONTROL`,
+      :attr:`isolation_level` is not :const:`None`,
+      *sql* is an INSERT, UPDATE, DELETE, or REPLACE statement,
+      and there is no pending transaction,
+      a transaction is implicitly opened before executing *sql*.
+
 
    .. method:: executemany(sql, seq_of_parameters)
 
-      Executes a :ref:`parameterized <sqlite3-placeholders>` SQL command
+      Execute a :ref:`parameterized <sqlite3-placeholders>` SQL command
       against all parameter sequences or mappings found in the sequence
-      *seq_of_parameters*. The :mod:`sqlite3` module also allows using an
+      *seq_of_parameters*. It is also possible to use an
       :term:`iterator` yielding parameters instead of a sequence.
+
+      If :attr:`autocommit` is :data:`DEPRECATED_TRANSACTION_CONTROL`,
+      :attr:`isolation_level` is not :const:`None`,
+      *sql* is an INSERT, UPDATE, DELETE, or REPLACE statement,
+      and there is no pending transaction,
+      a transaction is implicitly opened before executing *sql*.
 
       .. literalinclude:: ../includes/sqlite3/executemany_1.py
 
@@ -947,13 +952,14 @@ Cursor Objects
 
    .. method:: executescript(sql_script)
 
-      This is a nonstandard convenience method for executing multiple SQL statements
-      at once.
-      If :attr:`~Connection.autocommit` is
-      :data:`DEPRECATED_TRANSACTION_CONTROL`, it issues a ``COMMIT`` statement
-      first, then executes the SQL script it
-      gets as a parameter.  This method disregards :attr:`isolation_level`; any
-      transaction control must be added to *sql_script*.
+      Execute multiple SQL statements at once.
+      If :attr:`autocommit` is :data:`DEPRECATED_TRANSACTION_CONTROL`
+      and there is a pending transaction,
+      it issues a ``COMMIT`` statement first,
+      then executes the SQL script it gets as a parameter.
+
+      This method disregards :attr:`isolation_level`;
+      any transaction control must be added to *sql_script*.
 
       *sql_script* can be an instance of :class:`str`.
 
