@@ -7827,8 +7827,8 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
     else {
         res = vectorcall_unbound(tstate, unbound_getattribute, getattribute,
             args, 2);
-        Py_DECREF(getattribute);
     }
+    Py_XDECREF(getattribute);
     if (res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
         PyErr_Clear();
         res = vectorcall_unbound(tstate, unbound_getattr, getattr, args, 2);
