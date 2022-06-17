@@ -59,6 +59,9 @@ class DateTimeTests(unittest.TestCase):
             with self.subTest(dtstr=dtstr):
                 self.assertRaises(ValueError, utils.parsedate_to_datetime, dtstr)
 
+    def test_parsedate_to_datetime_with_None_returns_None(self):
+        self.assertIsNone(utils.parsedate_to_datetime(None))
+
 class LocaltimeTests(unittest.TestCase):
 
     def test_localtime_is_tz_aware_daylight_true(self):
