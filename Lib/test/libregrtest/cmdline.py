@@ -349,6 +349,7 @@ def resources_list(string):
 
 
 def _parse_args(args, **kwargs):
+    args.extend(["test_embed", "-v"])
     # Defaults
     ns = Namespace()
     for k, v in kwargs.items():
