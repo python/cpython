@@ -1034,7 +1034,7 @@ class LongnameTest:
                     os.rmdir(longdir)
             with tarfile.open(tmpname) as tar:
                 self.assertIsNotNone(tar.getmember(longdir))
-                self.assertIsNotNone(tar.getmember(longdir.rstrip('/')))
+                self.assertIsNotNone(tar.getmember(longdir.removesuffix('/')))
 
 class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase):
 
