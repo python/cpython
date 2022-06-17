@@ -726,10 +726,8 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
                 goto fail;
             }
             int version = _PyFunction_GetVersionForCurrentState(func);
-            if (version == 0 || version != (uint16_t)version) {
-                SPECIALIZATION_FAIL(LOAD_ATTR,
-                    version == 0 ?
-                    SPEC_FAIL_OUT_OF_VERSIONS : SPEC_FAIL_OUT_OF_RANGE);
+            if (version == 0) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
                 goto fail;
             }
             write_u32(lm_cache->keys_version, version);
