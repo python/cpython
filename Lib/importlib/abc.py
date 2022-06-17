@@ -35,8 +35,8 @@ def __getattr__(name, canonical=_resources_abc):
         import warnings
         warnings.warn(
             f"Using or importing the ABCs from {__name__!r} instead "
-            f"of from {canonical.__name__!r} is deprecated since "
-            "Python 3.11, and in 3.13 it will stop working",
+            f"of from {canonical.__name__!r} is now deprecated, "
+            "scheduled for removal in Python 3.13",
             DeprecationWarning,
             stacklevel=2,
         )
