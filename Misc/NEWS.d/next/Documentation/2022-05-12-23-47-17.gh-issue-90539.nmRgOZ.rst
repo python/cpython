@@ -1,1 +1,0 @@
-Expand the documentation of the configure variables `CFLAGS_NODIST`, `LDFLAGS_NODIST`.
