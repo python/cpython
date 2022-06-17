@@ -72,7 +72,7 @@ __all__ = [
     "choices",
     "expovariate",
     "gammavariate",
-    "gauss",
+    "gaussvariate",
     "getrandbits",
     "getstate",
     "lognormvariate",
@@ -526,7 +526,7 @@ class Random(_random.Random):
                 break
         return mu + z * sigma
 
-    def gauss(self, mu=0.0, sigma=1.0):
+    def gaussvariate(self, mu=0.0, sigma=1.0):
         """Gaussian distribution.
 
         mu is the mean, and sigma is the standard deviation.  This is
@@ -808,7 +808,7 @@ lognormvariate = _inst.lognormvariate
 expovariate = _inst.expovariate
 vonmisesvariate = _inst.vonmisesvariate
 gammavariate = _inst.gammavariate
-gauss = _inst.gauss
+gaussvariate = _inst.gaussvariate
 betavariate = _inst.betavariate
 paretovariate = _inst.paretovariate
 weibullvariate = _inst.weibullvariate
@@ -852,7 +852,7 @@ def _test(N=2000):
     _test_generator(N, gammavariate, (2.0, 1.0))
     _test_generator(N, gammavariate, (20.0, 1.0))
     _test_generator(N, gammavariate, (200.0, 1.0))
-    _test_generator(N, gauss, (0.0, 1.0))
+    _test_generator(N, gaussvariate, (0.0, 1.0))
     _test_generator(N, betavariate, (3.0, 3.0))
     _test_generator(N, triangular, (0.0, 1.0, 1.0 / 3.0))
 
