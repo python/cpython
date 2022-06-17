@@ -629,7 +629,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         return configs
 
     def get_expected_config(self, expected_preconfig, expected,
-                            env, api, modify_path_cb=None, cwd=None):
+                            env, api, modify_path_cb=None):
         configs = self._get_expected_config()
 
         pre_config = configs['pre_config']
@@ -672,14 +672,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected['base_executable'] = default_executable
         if expected['program_name'] is self.GET_DEFAULT_CONFIG:
             expected['program_name'] = './_testembed'
-            if MS_WINDOWS:
-                # follow the calculation in getpath.py
-                tmpname = expected['program_name'] + '.exe'
-                if cwd:
-                    tmpname = os.path.join(cwd, tmpname)
-                if os.path.isfile(tmpname):
-                    expected['program_name'] += '.exe'
-                del tmpname
 
         config = configs['config']
         for key, value in expected.items():
@@ -709,6 +701,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def check_config(self, configs, expected):
         config = dict(configs['config'])
+        if MS_WINDOWS:
+            value = config.get(key := 'program_name')
+            if value and isinstance(value, str):
+                ext = '_d.exe' if debug_build(sys.executable) else '.exe'
+                config[key] = value[:len(value.lower().removesuffix(ext))]
         for key, value in list(expected.items()):
             if value is self.IGNORE_CONFIG:
                 config.pop(key, None)
@@ -773,7 +770,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.get_expected_config(expected_preconfig,
                                  expected_config,
                                  env,
-                                 api, modify_path_cb, cwd)
+                                 api, modify_path_cb)
 
         out, err = self.run_embedded_interpreter(testname,
                                                  env=env, cwd=cwd)
