@@ -2863,6 +2863,11 @@ class _TestPoolWorkerLifetime(BaseTestCase):
         for (j, res) in enumerate(results):
             self.assertEqual(res.get(), sqr(j))
 
+    def test_pool_maxtasksperchild_invalid(self):
+        for value in [0, -1, 0.5, "12"]:
+            with self.assertRaises(ValueError):
+                multiprocessing.Pool(3, maxtasksperchild=value)
+
     def test_worker_finalization_via_atexit_handler_of_multiprocessing(self):
         # tests cases against bpo-38744 and bpo-39360
         cmd = '''if 1:
