@@ -7805,38 +7805,33 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject *getattr, *getattribute, *res;
+    PyObject *args[] = { self, name };
+    PyThreadState *tstate = _PyThreadState_GET();
 
-    /* speed hack: we could use lookup_maybe, but that would resolve the
-       method fully for each attribute lookup for classes with
-       __getattr__, even when the attribute is present. So we use
-       _PyType_Lookup and create the method only when needed, with
-       call_attribute. */
-    getattr = _PyType_Lookup(tp, &_Py_ID(__getattr__));
+    int unbound_getattr;
+    getattr = lookup_maybe_method(self, &_Py_ID(__getattr__), &unbound_getattr);
     if (getattr == NULL) {
         /* No __getattr__ hook: use a simpler dispatcher */
         tp->tp_getattro = slot_tp_getattro;
         return slot_tp_getattro(self, name);
     }
-    Py_INCREF(getattr);
-    /* speed hack: we could use lookup_maybe, but that would resolve the
-       method fully for each attribute lookup for classes with
-       __getattr__, even when self has the default __getattribute__
-       method. So we use _PyType_Lookup and create the method only when
-       needed, with call_attribute. */
-    getattribute = _PyType_Lookup(tp, &_Py_ID(__getattribute__));
+
+    int unbound_getattribute;
+    getattribute = lookup_maybe_method(self, &_Py_ID(__getattribute__),
+        &unbound_getattribute);
     if (getattribute == NULL ||
         (Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
          ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
          (void *)PyObject_GenericGetAttr))
         res = PyObject_GenericGetAttr(self, name);
     else {
-        Py_INCREF(getattribute);
-        res = call_attribute(self, getattribute, name);
+        res = vectorcall_unbound(tstate, unbound_getattribute, getattribute,
+            args, 2);
         Py_DECREF(getattribute);
     }
     if (res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
         PyErr_Clear();
-        res = call_attribute(self, getattr, name);
+        res = vectorcall_unbound(tstate, unbound_getattr, getattr, args, 2);
     }
     Py_DECREF(getattr);
     return res;
