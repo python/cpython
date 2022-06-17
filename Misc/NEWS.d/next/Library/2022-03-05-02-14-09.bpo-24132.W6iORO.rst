@@ -1,2 +1,3 @@
-Make :class:`pathlib.Path` subclassable. Previously, attempting to subclass ``Path``
-resulted in an :exc:`AttributeError`. Patch by Barney Gale.
+Make :class:`pathlib.PurePath` and :class:`~pathlib.Path` subclassable.
+Previously, attempting to instantiate a subclass resulted in an
+:exc:`AttributeError` being raised. Patch by Barney Gale.
