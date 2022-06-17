@@ -1442,7 +1442,7 @@ context manager.
 If the body of the :keyword:`with` statement finishes without exceptions,
 the transaction is committed.
 If this commit fails,
-or the body of the ``with`` statement raise an exception which is not caught,
+or if the body of the ``with`` statement raises an uncaught exception,
 the transaction is rolled back.
 
 If there is no open transaction upon leaving the body of the ``with`` statement,
