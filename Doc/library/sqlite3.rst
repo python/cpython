@@ -1437,8 +1437,8 @@ Using the connection as a context manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A :class:`Connection` object can be used as a context manager that
-automatically commits or rolls back open transactions when leaving the body of the
-context manager.
+automatically commits or rolls back open transactions when leaving the body of
+the context manager.
 If the body of the :keyword:`with` statement finishes without exceptions,
 the transaction is committed.
 If this commit fails,
