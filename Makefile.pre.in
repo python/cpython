@@ -211,12 +211,6 @@ ENSUREPIP=      @ENSUREPIP@
 LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
 
-# OpenSSL options for setup.py so sysconfig can pick up AC_SUBST() vars.
-OPENSSL_INCLUDES=@OPENSSL_INCLUDES@
-OPENSSL_LIBS=@OPENSSL_LIBS@
-OPENSSL_LDFLAGS=@OPENSSL_LDFLAGS@
-OPENSSL_RPATH=@OPENSSL_RPATH@
-
 # Module state, compiler flags and linker flags
 # Empty CFLAGS and LDFLAGS are omitted.
 # states:
@@ -582,9 +576,10 @@ LIBEXPAT_HEADERS= \
 
 # Default target
 all:		@DEF_MAKE_ALL_RULE@
-build_all:	check-clean-src $(BUILDPYTHON) platform oldsharedmods sharedmods \
-		gdbhooks Programs/_testembed scripts
-build_wasm: check-clean-src $(BUILDPYTHON) platform oldsharedmods python-config
+build_all:	check-clean-src $(BUILDPYTHON) platform oldsharedmods \
+		gdbhooks Programs/_testembed scripts checksharedmods
+build_wasm: check-clean-src $(BUILDPYTHON) platform oldsharedmods \
+		python-config checksharedmods
 
 # Check that the source is clean when building out of source.
 check-clean-src:
@@ -726,22 +721,6 @@ $(srcdir)/Modules/_blake2/blake2s_impl.c: $(srcdir)/Modules/_blake2/blake2b_impl
 	$(PYTHON_FOR_REGEN) $(srcdir)/Modules/_blake2/blake2b2s.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py -f $@
 
-# Build the shared modules
-# Under GNU make, MAKEFLAGS are sorted and normalized; the 's' for
-# -s, --silent or --quiet is always the first char.
-# Under BSD make, MAKEFLAGS might be " -s -v x=y".
-# Ignore macros passed by GNU make, passed after --
-sharedmods: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt @LIBMPDEC_INTERNAL@ @LIBEXPAT_INTERNAL@
-	@case "`echo X $$MAKEFLAGS | sed 's/^X //;s/ -- .*//'`" in \
-	    *\ -s*|s*) quiet="-q";; \
-	    *) quiet="";; \
-	esac; \
-	echo "$(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' \
-		$(PYTHON_FOR_BUILD) $(srcdir)/setup.py $$quiet build"; \
-	$(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' \
-		$(PYTHON_FOR_BUILD) $(srcdir)/setup.py $$quiet build
-
-
 # Build static library
 $(LIBRARY): $(LIBRARY_OBJS)
 	-rm -f $@
@@ -832,10 +811,6 @@ python.worker.js: $(srcdir)/Tools/wasm/python.worker.js
 # Build static libmpdec.a
 LIBMPDEC_CFLAGS=@LIBMPDEC_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
-# for setup.py
-DECIMAL_CFLAGS=@LIBMPDEC_CFLAGS@
-DECIMAL_LDFLAGS=@LIBMPDEC_LDFLAGS@
-
 # "%.o: %c" is not portable
 Modules/_decimal/libmpdec/basearith.o: $(srcdir)/Modules/_decimal/libmpdec/basearith.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
 	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/basearith.c
@@ -890,10 +865,6 @@ $(LIBMPDEC_A): $(LIBMPDEC_OBJS)
 # Build static libexpat.a
 LIBEXPAT_CFLAGS=@LIBEXPAT_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
-# for setup.py
-EXPAT_CFLAGS=@LIBEXPAT_CFLAGS@
-EXPAT_LDFLAGS=@LIBEXPAT_LDFLAGS@
-
 Modules/expat/xmlparse.o: $(srcdir)/Modules/expat/xmlparse.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
 	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlparse.c
 
@@ -919,7 +890,8 @@ oldsharedmods: $(SHAREDMODS) pybuilddir.txt
 		fi; \
 	done
 
-checksharedmods: oldsharedmods sharedmods $(PYTHON_FOR_BUILD_DEPS)
+# dependency on BUILDPYTHON ensures that the target is run last
+checksharedmods: oldsharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
 	@$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/scripts/check_extension_modules.py
 
 Modules/Setup.local:
@@ -942,7 +914,7 @@ Makefile Modules/config.c: Makefile.pre \
 	$(SHELL) $(MAKESETUP) -c $(srcdir)/Modules/config.c.in \
 				-s Modules \
 				Modules/Setup.local \
-				@MODULES_SETUP_STDLIB@ \
+				Modules/Setup.stdlib \
 				Modules/Setup.bootstrap \
 				$(srcdir)/Modules/Setup
 	@mv config.c Modules
@@ -1762,7 +1734,7 @@ altinstall: commoninstall
 
 commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
 		altbininstall libinstall inclinstall libainstall \
-		sharedinstall oldsharedinstall altmaninstall \
+		oldsharedinstall altmaninstall \
 		@FRAMEWORKALTINSTALLLAST@
 
 # Install shared libraries enabled by Setup
@@ -2252,17 +2224,6 @@ libainstall: all scripts
 	else true; \
 	fi
 
-# Install the dynamically loadable modules
-# This goes into $(exec_prefix)
-sharedinstall: all
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/setup.py install \
-	   	--prefix=$(prefix) \
-		--install-scripts=$(BINDIR) \
-		--install-platlib=$(DESTSHARED) \
-		--root=$(DESTDIR)/
-	-rm $(DESTDIR)$(DESTSHARED)/_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).py
-	-rm -r $(DESTDIR)$(DESTSHARED)/__pycache__
-
 # Here are a couple of targets for MacOSX again, to install a full
 # framework-based Python. frameworkinstall installs everything, the
 # subtargets install specific parts. Much of the actual work is offloaded to
@@ -2536,10 +2497,10 @@ update-config:
 Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 
 # Declare targets that aren't real files
-.PHONY: all build_all build_wasm sharedmods check-clean-src
+.PHONY: all build_all build_wasm check-clean-src
 .PHONY: oldsharedmods checksharedmods test quicktest
 .PHONY: install altinstall oldsharedinstall bininstall altbininstall
-.PHONY: maninstall libinstall inclinstall libainstall sharedinstall
+.PHONY: maninstall libinstall inclinstall libainstall
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
 .PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
 .PHONY: frameworkaltinstallunixtools recheck clean clobber distclean
