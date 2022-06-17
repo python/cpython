@@ -3651,6 +3651,7 @@ handle_eval_breaker:
 
         TARGET(LOAD_ATTR_PROPERTY) {
             assert(cframe.use_tracing == 0);
+            DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
 
             PyObject *owner = TOP();

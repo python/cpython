@@ -706,8 +706,12 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + 1);
             assert(Py_TYPE(descr) == &PyProperty_Type);
             PyObject *fget = ((_PyPropertyObject *)descr)->prop_get;
-            if (fget == NULL || Py_TYPE(fget) != &PyFunction_Type) {
+            if (fget == NULL) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR);
+                goto fail;
+            }
+            if (Py_TYPE(fget) != &PyFunction_Type) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_PROPERTY);
                 goto fail;
             }
             PyFunctionObject *func = (PyFunctionObject *)fget;
