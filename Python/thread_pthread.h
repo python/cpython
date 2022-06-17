@@ -113,19 +113,6 @@
 #endif
 
 
-#define MICROSECONDS_TO_TIMESPEC(microseconds, ts) \
-do { \
-    struct timeval tv; \
-    gettimeofday(&tv, NULL); \
-    tv.tv_usec += microseconds % 1000000; \
-    tv.tv_sec += microseconds / 1000000; \
-    tv.tv_sec += tv.tv_usec / 1000000; \
-    tv.tv_usec %= 1000000; \
-    ts.tv_sec = tv.tv_sec; \
-    ts.tv_nsec = tv.tv_usec * 1000; \
-} while(0)
-
-
 /*
  * pthread_cond support
  */
@@ -157,22 +144,20 @@ _PyThread_cond_init(PyCOND_T *cond)
 }
 
 void
-_PyThread_cond_after(long long us, struct timespec *abs)
+_PyThread_cond_after(_PyTime_t timeout, struct timespec *abs)
 {
+    _PyTime_t t;
 #ifdef CONDATTR_MONOTONIC
     if (condattr_monotonic) {
-        clock_gettime(CLOCK_MONOTONIC, abs);
-        abs->tv_sec  += us / 1000000;
-        abs->tv_nsec += (us % 1000000) * 1000;
-        abs->tv_sec  += abs->tv_nsec / 1000000000;
-        abs->tv_nsec %= 1000000000;
-        return;
+        t = _PyTime_GetMonotonicClock();
     }
+    else
 #endif
-
-    struct timespec ts;
-    MICROSECONDS_TO_TIMESPEC(us, ts);
-    *abs = ts;
+    {
+        t = _PyTime_GetSystemClock();
+    }
+    t = _PyTime_Add(t, timeout);
+    _PyTime_AsTimespec_clamp(t, abs);
 }
 
 
@@ -627,7 +612,9 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
         status = pthread_mutex_lock( &thelock->mut );
         CHECK_STATUS_PTHREAD("pthread_mutex_lock[1]");
     }
+
     if (status != 0) {
+        // pthread_mutex_lock() or pthread_mutex_trylock() failed
         goto done;
     }
 
@@ -635,21 +622,43 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
         success = PY_LOCK_ACQUIRED;
         goto unlock;
     }
+
     if (microseconds == 0) {
         goto unlock;
     }
 
-    struct timespec abs;
+    _PyTime_t timeout;  // relative timeout
     if (microseconds > 0) {
-        _PyThread_cond_after(microseconds, &abs);
+        // bpo-41710: PyThread_acquire_lock_timed() cannot report
+        // timeout overflow to the caller, so clamp the timeout to
+        // [_PyTime_MIN, _PyTime_MAX].
+        //
+        // _PyTime_MAX nanoseconds is around 292.3 years.
+        //
+        // _thread.Lock.acquire() and _thread.RLock.acquire() raise an
+        // OverflowError if microseconds is greater than
+        // PY_TIMEOUT_MAX.
+        timeout = _PyTime_FromMicrosecondsClamp(microseconds);
     }
+    else {
+        timeout = _PyTime_FromNanoseconds(-1);
+    }
+
+    _PyTime_t deadline = 0;
+    if (timeout > 0) {
+        deadline = _PyDeadline_Init(timeout);
+    }
+
     // Continue trying until we get the lock
 
     // mut must be locked by me -- part of the condition protocol
     while (1) {
-        if (microseconds > 0) {
-            status = pthread_cond_timedwait(&thelock->lock_released,
-                                            &thelock->mut, &abs);
+        if (timeout > 0) {
+            struct timespec abs;
+            _PyThread_cond_after(timeout, &abs);
+            status = pthread_cond_timedwait(
+                &thelock->lock_released,
+                &thelock->mut, &abs);
             if (status == 1) {
                 break;
             }
@@ -676,6 +685,17 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
         if (status == 0 && !thelock->locked) {
             success = PY_LOCK_ACQUIRED;
             break;
+        }
+
+        assert(success == PY_LOCK_FAILURE);
+
+        if (timeout > 0) {
+            // Wait interrupted by a signal (EINTR): recompute the timeout
+            timeout = _PyDeadline_Get(deadline);
+            if (timeout < 0) {
+                status = ETIMEDOUT;
+                break;
+            }
         }
 
         // Wait got interrupted by a signal: retry

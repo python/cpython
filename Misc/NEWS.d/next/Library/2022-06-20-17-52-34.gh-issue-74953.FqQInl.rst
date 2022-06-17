@@ -1,0 +1,4 @@
+The mutex with conditional variable implementation of
+:class:`threading.Lock` now recomputes the timeout if
+``acquire(timeout=timeout)`` is interrupted by a signal. Patch by Victor
+Stinner.
