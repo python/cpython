@@ -86,7 +86,7 @@ __all__ = [
     "seed",
     "setstate",
     "shuffle",
-    "triangular",
+    "triangularvariate",
     "uniform",
     "vonmisesvariate",
     "weibullvariate",
@@ -485,7 +485,7 @@ class Random(_random.Random):
         "Get a random number in the range [a, b) or [a, b] depending on rounding."
         return a + (b - a) * self.random()
 
-    def triangular(self, low=0.0, high=1.0, mode=None):
+    def triangularvariate(self, low=0.0, high=1.0, mode=None):
         """Triangular distribution.
 
         Continuous distribution bounded by given lower and upper limits,
@@ -796,7 +796,7 @@ _inst = Random()
 seed = _inst.seed
 random = _inst.random
 uniform = _inst.uniform
-triangular = _inst.triangular
+triangular = _inst.triangularvariate
 randint = _inst.randint
 choice = _inst.choice
 randrange = _inst.randrange
@@ -854,7 +854,7 @@ def _test(N=2000):
     _test_generator(N, gammavariate, (200.0, 1.0))
     _test_generator(N, gaussvariate, (0.0, 1.0))
     _test_generator(N, betavariate, (3.0, 3.0))
-    _test_generator(N, triangular, (0.0, 1.0, 1.0 / 3.0))
+    _test_generator(N, triangularvariate, (0.0, 1.0, 1.0 / 3.0))
 
 
 ## ------------------------------------------------------
