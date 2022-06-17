@@ -377,7 +377,8 @@ Opening network connections
                           local_addr=None, server_hostname=None, \
                           ssl_handshake_timeout=None, \
                           ssl_shutdown_timeout=None, \
-                          happy_eyeballs_delay=None, interleave=None)
+                          happy_eyeballs_delay=None, interleave=None \
+                          all_errors=False)
 
    Open a streaming transport connection to a given
    address specified by *host* and *port*.
@@ -468,6 +469,14 @@ Opening network connections
      to complete before aborting the connection. ``30.0`` seconds if ``None``
      (default).
 
+   * *all_errors* determines what exceptions are raised when a connection cannot
+   be created. By default, only a single `Exception`` is raised: the first
+   exception if there is only one or all errors have same message, or a single
+   `OSError` with the error messages combined. When `all_errors`is `True`,
+   an `ExceptionGroup` will be raised containing all exceptions (even if there
+   is only one).
+
+
    .. versionchanged:: 3.5
 
       Added support for SSL/TLS in :class:`ProactorEventLoop`.
@@ -499,6 +508,9 @@ Opening network connections
    .. versionchanged:: 3.11
 
       Added the *ssl_shutdown_timeout* parameter.
+
+   .. versionchanged:: 3.12
+      *all_errors* was added.
 
    .. seealso::
 
