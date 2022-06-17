@@ -920,6 +920,13 @@ Constants
 
    .. versionadded:: 3.10
 
+.. data:: OP_LEGACY_SERVER_CONNECT
+
+   Allow legacy insecure renegotiation between OpenSSL and unpatched servers
+   only.
+
+   .. versionadded:: 3.12
+
 .. data:: HAS_ALPN
 
    Whether the OpenSSL library has built-in support for the *Application-Layer

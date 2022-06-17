@@ -5883,6 +5883,8 @@ sslmodule_init_constants(PyObject *m)
                             SSL_OP_CIPHER_SERVER_PREFERENCE);
     PyModule_AddIntConstant(m, "OP_SINGLE_DH_USE", SSL_OP_SINGLE_DH_USE);
     PyModule_AddIntConstant(m, "OP_NO_TICKET", SSL_OP_NO_TICKET);
+    PyModule_AddIntConstant(m, "OP_LEGACY_SERVER_CONNECT",
+                            SSL_OP_LEGACY_SERVER_CONNECT);
 #ifdef SSL_OP_SINGLE_ECDH_USE
     PyModule_AddIntConstant(m, "OP_SINGLE_ECDH_USE", SSL_OP_SINGLE_ECDH_USE);
 #endif
