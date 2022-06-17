@@ -15,18 +15,34 @@ from ._abc import Loader
 import abc
 import warnings
 
-# for compatibility with Python 3.10
-from .resources.abc import ResourceReader, Traversable, TraversableResources
+from .resources import abc as _resources_abc
 
 
 __all__ = [
     'Loader', 'Finder', 'MetaPathFinder', 'PathEntryFinder',
     'ResourceLoader', 'InspectLoader', 'ExecutionLoader',
     'FileLoader', 'SourceLoader',
-
-    # for compatibility with Python 3.10
-    'ResourceReader', 'Traversable', 'TraversableResources',
 ]
+
+
+def __getattr__(name, canonical=_resources_abc):
+    """
+    For backwards compatibility, continue to make names
+    from canonical available through this module.
+    """
+    if name in canonical.__all__:
+        obj = getattr(canonical, name)
+        import warnings
+        warnings.warn(
+            f"Using or importing the ABCs from {__name__!r} instead "
+            f"of from {canonical.__name__!r} is deprecated since "
+            "Python 3.11, and in 3.13 it will stop working",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        globals()[name] = obj
+        return obj
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
 
 
 def _register(abstract_cls, *classes):
