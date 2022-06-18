@@ -584,7 +584,7 @@ specialize_custom_getattribute(PyTypeObject *type, _Py_CODEUNIT *instr,
            or __getattr__ isn't a Python function*/
         write_u32(lm_cache->keys_version, func_version);
         /* borrowed */
-        ((PyHeapTypeObject *)type)->_spec_cache.getattr = func_version ? getattr : NULL;
+        ((PyHeapTypeObject *)type)->_spec_cache.getattr = getattr;
         assert(type->tp_version_tag != 0);
         write_u32(lm_cache->type_version, type->tp_version_tag);
         _Py_SET_OPCODE(*instr, func_version ? LOAD_ATTR_GETATTRIBUTE_GETATTR_PY_OVERRIDDEN : LOAD_ATTR_GETATTRIBUTE_GETATTR_OVERRIDDEN);
