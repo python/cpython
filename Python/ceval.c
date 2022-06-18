@@ -3659,6 +3659,7 @@ handle_eval_breaker:
             DEOPT_IF(cls->tp_version_tag != type_version, LOAD_ATTR);
             assert(type_version != 0);
             PyObject *fget = read_obj(cache->descr);
+            assert(Py_IS_TYPE(fget, &PyFunction_Type));
             PyFunctionObject *f = (PyFunctionObject *)fget;
             uint32_t func_version = read_u32(cache->keys_version);
             assert(func_version != 0);
@@ -3677,6 +3678,97 @@ handle_eval_breaker:
             STACK_SHRINK(push_null);
             new_frame->localsplus[0] = owner;
             for (int i = 1; i < code->co_nlocalsplus; i++) {
+                new_frame->localsplus[i] = NULL;
+            }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
+            frame->prev_instr = next_instr - 1;
+            new_frame->previous = frame;
+            frame = cframe.current_frame = new_frame;
+            CALL_STAT_INC(inlined_py_calls);
+            goto start_frame;
+        }
+
+        TARGET(LOAD_ATTR_GETATTRIBUTE_GETATTR_OVERRIDDEN) {
+            assert(cframe.use_tracing == 0);
+            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
+            PyObject *owner = TOP();
+            PyTypeObject *cls = Py_TYPE(owner);
+            uint32_t type_version = read_u32(cache->type_version);
+            DEOPT_IF(cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(type_version != 0);
+            STAT_INC(LOAD_ATTR, hit);
+
+            PyObject *name = GETITEM(names, oparg >> 1);
+            PyObject *getattribute = ((PyHeapTypeObject *)cls)->_spec_cache.getattribute;
+            PyObject *getattr = ((PyHeapTypeObject *)cls)->_spec_cache.getattr;
+            PyObject *res = getattribute ?
+                _Py_call_attribute(owner, getattribute, name)
+                : PyObject_GenericGetAttr(owner, name);
+            if (res == NULL &&
+                getattr &&
+                PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                PyErr_Clear();
+                res = _Py_call_attribute(owner, getattr, name);
+            }
+            if (res == NULL) {
+                goto error;
+            }
+            SET_TOP(NULL);
+            STACK_GROW((oparg & 1));
+            SET_TOP(res);
+            Py_DECREF(owner);
+            DISPATCH();
+        }
+
+        TARGET(LOAD_ATTR_GETATTRIBUTE_GETATTR_PY_OVERRIDDEN) {
+            assert(cframe.use_tracing == 0);
+            DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
+            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
+            PyObject *owner = TOP();
+            PyTypeObject *cls = Py_TYPE(owner);
+            uint32_t type_version = read_u32(cache->type_version);
+            DEOPT_IF(cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(type_version != 0);
+            PyObject *getattr = ((PyHeapTypeObject *)cls)->_spec_cache.getattr;
+            assert(Py_IS_TYPE(getattr, &PyFunction_Type));
+            PyFunctionObject *f = (PyFunctionObject *)getattr;
+            uint32_t func_version = read_u32(cache->keys_version);
+            assert(func_version != 0);
+            DEOPT_IF(f->func_version != func_version, LOAD_ATTR);
+            PyCodeObject *code = (PyCodeObject *)f->func_code;
+            assert(code->co_argcount == 2);
+            STAT_INC(LOAD_ATTR, hit);
+
+            PyObject *name = GETITEM(names, oparg >> 1);
+            PyObject *getattribute = ((PyHeapTypeObject *)cls)->_spec_cache.getattribute;
+            PyObject *res = getattribute ?
+                _Py_call_attribute(owner, getattribute, name)
+                : PyObject_GenericGetAttr(owner, name);
+            if (res) {
+                SET_TOP(NULL);
+                STACK_GROW((oparg & 1));
+                SET_TOP(res);
+                Py_DECREF(owner);
+                JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
+                DISPATCH();
+            }
+            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                goto error;
+            }
+            PyErr_Clear();
+            Py_INCREF(f);
+            _PyInterpreterFrame *new_frame = _PyFrame_Push(tstate, f);
+            if (new_frame == NULL) {
+                goto error;
+            }
+            SET_TOP(NULL);
+            int push_null = !(oparg & 1);
+            STACK_SHRINK(push_null);
+            Py_INCREF(name);
+            new_frame->localsplus[0] = owner;
+            new_frame->localsplus[1] = name;
+            for (int i = 2; i < code->co_nlocalsplus; i++) {
                 new_frame->localsplus[i] = NULL;
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
