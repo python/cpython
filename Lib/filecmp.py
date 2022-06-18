@@ -157,17 +157,17 @@ class dircmp:
             a_path = os.path.join(self.left, x)
             b_path = os.path.join(self.right, x)
 
-            ok = 1
+            ok = True
             try:
                 a_stat = os.stat(a_path)
             except OSError:
                 # print('Can\'t stat', a_path, ':', why.args[1])
-                ok = 0
+                ok = False
             try:
                 b_stat = os.stat(b_path)
             except OSError:
                 # print('Can\'t stat', b_path, ':', why.args[1])
-                ok = 0
+                ok = False
 
             if ok:
                 a_type = stat.S_IFMT(a_stat.st_mode)
