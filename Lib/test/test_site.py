@@ -205,7 +205,7 @@ class HelperFunctionsTests(unittest.TestCase):
             scheme = 'osx_framework_user'
         else:
             scheme = os.name + '_user'
-        self.assertEqual(site._get_path(site._getuserbase()),
+        self.assertEqual(os.path.normpath(site._get_path(site._getuserbase())),
                          sysconfig.get_path('purelib', scheme))
 
     @unittest.skipUnless(site.ENABLE_USER_SITE, "requires access to PEP 370 "
@@ -213,7 +213,7 @@ class HelperFunctionsTests(unittest.TestCase):
     @support.requires_subprocess()
     def test_s_option(self):
         # (ncoghlan) Change this to use script_helper...
-        usersite = site.USER_SITE
+        usersite = os.path.normpath(site.USER_SITE)
         self.assertIn(usersite, sys.path)
 
         env = os.environ.copy()
