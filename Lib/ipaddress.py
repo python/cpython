@@ -11,6 +11,7 @@ and networks.
 __version__ = '1.0'
 
 
+import contextlib
 import functools
 
 IPV4LENGTH = 32
@@ -41,15 +42,9 @@ def ip_address(address):
           address
 
     """
-    try:
-        return IPv4Address(address)
-    except (AddressValueError, NetmaskValueError):
-        pass
-
-    try:
-        return IPv6Address(address)
-    except (AddressValueError, NetmaskValueError):
-        pass
+    for ip_class in [IPv4Address, IPv6Address]:
+        with contextlib.suppress(AddressValueError, NetmaskValueError):
+            return ip_class(address)
 
     raise ValueError(f'{address!r} does not appear to be an IPv4 or IPv6 address')
 
@@ -70,15 +65,9 @@ def ip_network(address, strict=True):
           address. Or if the network has host bits set.
 
     """
-    try:
-        return IPv4Network(address, strict)
-    except (AddressValueError, NetmaskValueError):
-        pass
-
-    try:
-        return IPv6Network(address, strict)
-    except (AddressValueError, NetmaskValueError):
-        pass
+    for network_class in [IPv4Network, IPv6Network]:
+        with contextlib.suppress(AddressValueError, NetmaskValueError):
+            return network_class(address, strict)
 
     raise ValueError(f'{address!r} does not appear to be an IPv4 or IPv6 network')
 
@@ -104,15 +93,9 @@ def ip_interface(address):
         and Network classes.
 
     """
-    try:
-        return IPv4Interface(address)
-    except (AddressValueError, NetmaskValueError):
-        pass
-
-    try:
-        return IPv6Interface(address)
-    except (AddressValueError, NetmaskValueError):
-        pass
+    for ip_interface_class in [IPv4Interface, IPv6Interface]:
+        with contextlib.suppress(AddressValueError, NetmaskValueError):
+            return ip_interface_class(address)
 
     raise ValueError(f'{address!r} does not appear to be an IPv4 or IPv6 interface')
 
@@ -518,10 +501,8 @@ class _IPAddressBase:
         # Try matching a netmask (this would be /1*0*/ as a bitwise regexp).
         # Note that the two ambiguous cases (all-ones and all-zeroes) are
         # treated as netmasks.
-        try:
+        with contextlib.suppress(ValueError):
             return cls._prefix_from_ip_int(ip_int)
-        except ValueError:
-            pass
 
         # Invert the bits, and try matching a /0+1+/ hostmask instead.
         ip_int ^= cls._ALL_ONES
