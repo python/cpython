@@ -368,7 +368,7 @@ miss_counter_start(void) {
 #define SPEC_FAIL_ATTR_HAS_MANAGED_DICT 25
 #define SPEC_FAIL_ATTR_INSTANCE_ATTRIBUTE 26
 #define SPEC_FAIL_ATTR_METACLASS_ATTRIBUTE 27
-#define SPEC_FAIL_ATTR_GETATTRIBUTE_BUILTIN 28
+#define SPEC_FAIL_ATTR_CUSTOM_GETATTRO 28
 #define SPEC_FAIL_ATTR_NOT_HEAP_TYPE 29
 
 /* Binary subscr and store subscr */
@@ -547,7 +547,7 @@ specialize_custom_getattribute(PyTypeObject *type, _Py_CODEUNIT *instr,
     if (getattro_slot != _Py_slot_tp_getattro &&
         getattro_slot != _Py_slot_tp_getattr_hook) {
         /* E.g. the custom getattro for super() objects */
-        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_GETATTRIBUTE_BUILTIN);
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CUSTOM_GETATTRO);
         goto fail;
     }
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
