@@ -1,0 +1,1 @@
+Refactored ipaddress factory function to be more succinct
