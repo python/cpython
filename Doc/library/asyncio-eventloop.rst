@@ -470,11 +470,11 @@ Opening network connections
      (default).
 
    * *all_errors* determines what exceptions are raised when a connection cannot
-   be created. By default, only a single `Exception`` is raised: the first
-   exception if there is only one or all errors have same message, or a single
-   `OSError` with the error messages combined. When `all_errors`is `True`,
-   an `ExceptionGroup` will be raised containing all exceptions (even if there
-   is only one).
+     be created. By default, only a single ``Exception`` is raised: the first
+     exception if there is only one or all errors have same message, or a single
+     ``OSError`` with the error messages combined. When ``all_errors`` is ``True``,
+     an ``ExceptionGroup`` will be raised containing all exceptions (even if there
+     is only one).
 
 
    .. versionchanged:: 3.5
