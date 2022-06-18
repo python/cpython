@@ -377,7 +377,7 @@ Opening network connections
                           local_addr=None, server_hostname=None, \
                           ssl_handshake_timeout=None, \
                           ssl_shutdown_timeout=None, \
-                          happy_eyeballs_delay=None, interleave=None \
+                          happy_eyeballs_delay=None, interleave=None, \
                           all_errors=False)
 
    Open a streaming transport connection to a given
