@@ -70,7 +70,6 @@ import sys
 import sysconfig
 import time
 import tokenize
-import types
 import urllib.parse
 import warnings
 from collections import deque
@@ -92,16 +91,13 @@ def pathdirs():
             normdirs.append(normdir)
     return dirs
 
-def _isclass(object):
-    return inspect.isclass(object) and not isinstance(object, types.GenericAlias)
-
 def _findclass(func):
     cls = sys.modules.get(func.__module__)
     if cls is None:
         return None
     for name in func.__qualname__.split('.')[:-1]:
         cls = getattr(cls, name)
-    if not _isclass(cls):
+    if not inspect.isclass(cls):
         return None
     return cls
 
@@ -109,7 +105,7 @@ def _finddoc(obj):
     if inspect.ismethod(obj):
         name = obj.__func__.__name__
         self = obj.__self__
-        if (_isclass(self) and
+        if (inspect.isclass(self) and
             getattr(getattr(self, name, None), '__func__') is obj.__func__):
             # classmethod
             cls = self
@@ -123,7 +119,7 @@ def _finddoc(obj):
     elif inspect.isbuiltin(obj):
         name = obj.__name__
         self = obj.__self__
-        if (_isclass(self) and
+        if (inspect.isclass(self) and
             self.__qualname__ + '.' + name == obj.__qualname__):
             # classmethod
             cls = self
@@ -210,7 +206,7 @@ def classname(object, modname):
 
 def isdata(object):
     """Check if an object is of a type that probably means it's data."""
-    return not (inspect.ismodule(object) or _isclass(object) or
+    return not (inspect.ismodule(object) or inspect.isclass(object) or
                 inspect.isroutine(object) or inspect.isframe(object) or
                 inspect.istraceback(object) or inspect.iscode(object))
 
@@ -481,7 +477,7 @@ class Doc:
         # by lacking a __name__ attribute) and an instance.
         try:
             if inspect.ismodule(object): return self.docmodule(*args)
-            if _isclass(object): return self.docclass(*args)
+            if inspect.isclass(object): return self.docclass(*args)
             if inspect.isroutine(object): return self.docroutine(*args)
         except AttributeError:
             pass
@@ -783,7 +779,7 @@ class HTMLDoc(Doc):
         modules = inspect.getmembers(object, inspect.ismodule)
 
         classes, cdict = [], {}
-        for key, value in inspect.getmembers(object, _isclass):
+        for key, value in inspect.getmembers(object, inspect.isclass):
             # if __all__ exists, believe it.  Otherwise use old heuristic.
             if (all is not None or
                 (inspect.getmodule(value) or object) is object):
@@ -1223,7 +1219,7 @@ location listed above.
             result = result + self.section('DESCRIPTION', desc)
 
         classes = []
-        for key, value in inspect.getmembers(object, _isclass):
+        for key, value in inspect.getmembers(object, inspect.isclass):
             # if __all__ exists, believe it.  Otherwise use old heuristic.
             if (all is not None
                 or (inspect.getmodule(value) or object) is object):
@@ -1707,7 +1703,7 @@ def describe(thing):
         return 'member descriptor %s.%s.%s' % (
             thing.__objclass__.__module__, thing.__objclass__.__name__,
             thing.__name__)
-    if _isclass(thing):
+    if inspect.isclass(thing):
         return 'class ' + thing.__name__
     if inspect.isfunction(thing):
         return 'function ' + thing.__name__
@@ -1768,7 +1764,7 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
         desc += ' in module ' + module.__name__
 
     if not (inspect.ismodule(object) or
-              _isclass(object) or
+              inspect.isclass(object) or
               inspect.isroutine(object) or
               inspect.isdatadescriptor(object) or
               _getdoc(object)):

@@ -1079,7 +1079,7 @@ class TypeVarTuple(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
         var_tuple_index = None
         fillarg = None
         for k, arg in enumerate(args):
-            if not (isinstance(arg, type) and not isinstance(arg, GenericAlias)):
+            if not isinstance(arg, type):
                 subargs = getattr(arg, '__typing_unpacked_tuple_args__', None)
                 if subargs and len(subargs) == 2 and subargs[-1] is ...:
                     if var_tuple_index is not None:
