@@ -290,11 +290,11 @@ HOSTRUNNER= @HOSTRUNNER@
 PYTHON_FOR_REGEN?=@PYTHON_FOR_REGEN@
 UPDATE_FILE=$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/update_file.py
 PYTHON_FOR_BUILD=@PYTHON_FOR_BUILD@
-# Normal builds depend on $(BUILDPYTHON). Cross builds use an external
-# "build Python" and have an empty PYTHON_FOR_BUILD_DEPS.
+# Single-platform builds depend on $(BUILDPYTHON). Cross builds use an
+# external "build Python" and have an empty PYTHON_FOR_BUILD_DEPS.
 PYTHON_FOR_BUILD_DEPS=@PYTHON_FOR_BUILD_DEPS@
 
-# Normal builds use Programs/_freeze_module.c for bootstrapping and
+# Single-platform builds use Programs/_freeze_module.c for bootstrapping and
 # ./_bootstrap_python Programs/_freeze_module.py for remaining modules
 # Cross builds use an external "build Python" for all modules.
 PYTHON_FOR_FREEZE=@PYTHON_FOR_FREEZE@
