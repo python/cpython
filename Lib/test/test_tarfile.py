@@ -1020,6 +1020,21 @@ class LongnameTest:
                                               "iso8859-1", "strict")
             self.assertEqual(tarinfo.type, self.longnametype)
 
+    def test_longname_directory(self):
+        # Test reading a longlink directory. Issue #47231.
+        longdir = ('a' * 101) + '/'
+        with os_helper.temp_cwd():
+            with tarfile.open(tmpname, 'w') as tar:
+                tar.format = self.format
+                try:
+                    os.mkdir(longdir)
+                    tar.add(longdir)
+                finally:
+                    os.rmdir(longdir.rstrip("/"))
+            with tarfile.open(tmpname) as tar:
+                self.assertIsNotNone(tar.getmember(longdir))
+                self.assertIsNotNone(tar.getmember(longdir.removesuffix('/')))
+
 
 class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase):
 
