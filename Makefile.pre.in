@@ -247,8 +247,8 @@ SRCDIRS= 	@SRCDIRS@
 SUBDIRSTOO=	Include Lib Misc
 
 # assets for Emscripten browser builds
-WASM_ASSETS_DIR=".$(prefix)"
-WASM_STDLIB="$(WASM_ASSETS_DIR)/local/lib/python$(VERSION)/os.py"
+WASM_ASSETS_DIR=.$(prefix)
+WASM_STDLIB=$(WASM_ASSETS_DIR)/lib/python$(VERSION)/os.py
 
 # Files and directories to be distributed
 CONFIGFILES=	configure configure.ac acconfig.h pyconfig.h.in Makefile.pre.in
@@ -821,7 +821,7 @@ $(WASM_STDLIB): $(srcdir)/Lib/*.py $(srcdir)/Lib/*/*.py \
 	    Makefile pybuilddir.txt Modules/Setup.local \
 	    python.html python.worker.js
 	$(PYTHON_FOR_BUILD) $(srcdir)/Tools/wasm/wasm_assets.py \
-	    --builddir . --prefix $(prefix)
+	    --buildroot . --prefix $(prefix)
 
 python.html: $(srcdir)/Tools/wasm/python.html python.worker.js
 	@cp $(srcdir)/Tools/wasm/python.html $@
@@ -2391,7 +2391,7 @@ clean-retain-profile: pycremoval
 	-rm -f Lib/lib2to3/*Grammar*.pickle
 	-rm -f _bootstrap_python
 	-rm -f python.html python*.js python.data python*.symbols python*.map
-	-rm -rf $(WASM_STDLIB)
+	-rm -f $(WASM_STDLIB)
 	-rm -f Programs/_testembed Programs/_freeze_module
 	-rm -f Python/deepfreeze/*.[co]
 	-rm -f Python/frozen_modules/*.h
