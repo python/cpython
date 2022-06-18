@@ -147,15 +147,41 @@ Modules (see :pep:`594`):
 * :mod:`uu`
 * :mod:`xdrlib`
 
+Other modules:
+
+* :mod:`lib2to3`, and the ``2to3`` program (:gh:`84540`)
+
 APIs:
 
 * :class:`configparser.LegacyInterpolation` (:gh:`90765`)
 * :func:`locale.getdefaultlocale` (:gh:`90817`)
 * :meth:`turtle.RawTurtle.settiltangle` (:gh:`50096`)
 * :func:`unittest.findTestCases` (:gh:`50096`)
-* :func:`unittest.makeSuite` (:gh:`50096`)
 * :func:`unittest.getTestCaseNames` (:gh:`50096`)
+* :func:`unittest.makeSuite` (:gh:`50096`)
+* :meth:`unittest.TestProgram.usageExit` (:gh:`67048`)
 * :class:`webbrowser.MacOSX` (:gh:`86421`)
+
+Pending Removal in Python 3.14
+==============================
+
+The following modules and APIs have been deprecated in earlier Python releases,
+and will be removed in Python 3.14.
+
+APIs:
+
+*  :meth:`asyncio.Future.cancel`'s *msg* parameter (:gh:`90985`)
+*  :meth:`asyncio.Task.cancel`'s *msg* parameter (:gh:`90985`)
+
+Pending Removal in Python 4.0
+=============================
+
+The following modules and APIs have been deprecated in earlier Python releases,
+and will be removed in Python 4.0.
+
+APIs:
+
+* :mod:`array`'s ``'u'`` format code (:gh:`57281`)
 
 Pending Removal in Future Versions
 ==================================
@@ -174,6 +200,18 @@ although there is currently no date scheduled for their removal.
   :keyword:`for`, :keyword:`if`, :keyword:`in`, :keyword:`is` and :keyword:`or`.
   In a future release it will be changed to a syntax error. (:gh:`87999`)
 
+* :func:`asyncio.get_event_loop` emits a deprecation warning if there is
+  no running event loop. In the future it will be an alias of
+  :func:`~asyncio.get_running_loop`.
+  :mod:`asyncio` functions which implicitly create :class:`~asyncio.Future`
+  or :class:`~asyncio.Task` objects now emit
+  a deprecation warning if there is no running event loop and no explicit
+  *loop* argument is passed: :func:`~asyncio.ensure_future`,
+  :func:`~asyncio.wrap_future`, :func:`~asyncio.gather`,
+  :func:`~asyncio.shield`, :func:`~asyncio.as_completed` and constructors of
+  :class:`~asyncio.Future`, :class:`~asyncio.Task`,
+  :class:`~asyncio.StreamReader`, :class:`~asyncio.StreamReaderProtocol`.
+  (:gh:`83710`)
 
 Removed
 =======
