@@ -1031,7 +1031,7 @@ class LongnameTest:
                     os.mkdir(longdir)
                     tar.add(longdir)
                 finally:
-                    os.rmdir(longdir)
+                    os.rmdir(longdir.rstrip("/"))
             with tarfile.open(tmpname) as tar:
                 self.assertIsNotNone(tar.getmember(longdir))
                 self.assertIsNotNone(tar.getmember(longdir.removesuffix('/')))
