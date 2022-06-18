@@ -949,6 +949,7 @@ CONFIG_ARGS
 SOVERSION
 VERSION
 PYTHON_FOR_REGEN
+PYTHON_FOR_BUILD_DEPS
 FREEZE_MODULE_DEPS
 FREEZE_MODULE
 FREEZE_MODULE_BOOTSTRAP_DEPS
@@ -3282,6 +3283,7 @@ if test "x$cross_compiling" = xyes; then :
     FREEZE_MODULE_BOOTSTRAP_DEPS='$(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
     FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
+    PYTHON_FOR_BUILD_DEPS=''
 
 else
 
@@ -3289,9 +3291,11 @@ else
     FREEZE_MODULE_BOOTSTRAP_DEPS="Programs/_freeze_module"
     FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
+    PYTHON_FOR_BUILD_DEPS='$(BUILDPYTHON)'
 
 
 fi
+
 
 
 
