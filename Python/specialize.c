@@ -580,7 +580,8 @@ specialize_custom_getattribute(PyTypeObject *type, _Py_CODEUNIT *instr,
         if (getattr) {
             func_version = maybe_function_get_version(getattr, 2, LOAD_ATTR);
         }
-        /* func_version == 0 is OK if there's no __getattr__*/
+        /* func_version == 0 is OK if there's no __getattr__
+           or __getattr__ isn't a Python function*/
         write_u32(lm_cache->keys_version, func_version);
         /* borrowed */
         ((PyHeapTypeObject *)type)->_spec_cache.getattr = func_version ? getattr : NULL;

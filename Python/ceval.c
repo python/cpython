@@ -3718,6 +3718,7 @@ handle_eval_breaker:
             STACK_GROW((oparg & 1));
             SET_TOP(res);
             Py_DECREF(owner);
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             DISPATCH();
         }
 
@@ -3742,6 +3743,7 @@ handle_eval_breaker:
 
             PyObject *name = GETITEM(names, oparg >> 1);
             PyObject *getattribute = ((PyHeapTypeObject *)cls)->_spec_cache.getattribute;
+            /* Possible todo: inlining this call frame? */
             PyObject *res = getattribute ?
                 _Py_call_attribute(owner, getattribute, name)
                 : PyObject_GenericGetAttr(owner, name);
