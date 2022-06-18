@@ -1,0 +1,1 @@
+Specialize ``LOAD_ATTR`` for objects with custom ``__getattr__`` and ``__getattribute__``. Patch by Ken Jin.
