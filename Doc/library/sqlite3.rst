@@ -434,8 +434,8 @@ Connection Objects
    .. method:: close()
 
       Close the database connection.
-      Any pending transaction is not committed implicitly.
-      Make sure to :meth:`commit` before closing,
+      Any pending transaction is not committed implicitly;
+      make sure to :meth:`commit` before closing
       to avoid losing pending changes.
 
    .. method:: execute(sql[, parameters])
