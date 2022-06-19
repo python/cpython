@@ -600,6 +600,16 @@ class Regrtest:
             for s in ET.tostringlist(root):
                 f.write(s)
 
+    def fix_umask(self):
+        if support.is_emscripten:
+            # Emscripten has default umask 0o777, which breaks some tests.
+            # see https://github.com/emscripten-core/emscripten/issues/17269
+            old_mask = os.umask(0)
+            if old_mask == 0o777:
+                os.umask(0o027)
+            else:
+                os.umask(old_mask)
+
     def set_temp_dir(self):
         if self.ns.tempdir:
             self.tmp_dir = self.ns.tempdir
@@ -659,6 +669,8 @@ class Regrtest:
         self.parse_args(kwargs)
 
         self.set_temp_dir()
+
+        self.fix_umask()
 
         if self.ns.cleanup:
             self.cleanup()
