@@ -1561,8 +1561,6 @@ case-insensitively by name:
 
 .. _sqlite3-connection-context-manager:
 
-.. _sqlite3-connection-context-manager:
-
 Using the connection as a context manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
