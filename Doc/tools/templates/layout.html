@@ -16,9 +16,9 @@
       <img src="https://www.netlify.com/img/global/badges/netlify-color-accent.svg" alt="Deploys by Netlify" />
     </a>
   </div>
-  {% trans %}This is a deployment preview that was created from a <a href="{{ repository_url }}/pull/{{ pr_id }}">pull request</a>.
+  {% trans %}This is a deploy preview created from a <a href="{{ repository_url }}/pull/{{ pr_id }}">pull request</a>.
   For authoritative documentation, see the {% endtrans %}
-  <a href="/3/{{ pagename }}{{ file_suffix }}">{% trans %} Python documentation for the current stable release{% endtrans %}</a>.
+  <a href="/3/{{ pagename }}{{ file_suffix }}">{% trans %} the current stable release{% endtrans %}</a>.
 </div>
 {%- endif %}
 {% endblock %}
