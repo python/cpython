@@ -242,7 +242,7 @@ class dircmp:
 
     methodmap = dict(subdirs=phase4,
                      same_files=phase3, diff_files=phase3, funny_files=phase3,
-                     common_dirs = phase2, common_files=phase2, common_funny=phase2,
+                     common_dirs=phase2, common_files=phase2, common_funny=phase2,
                      common=phase1, left_only=phase1, right_only=phase1,
                      left_list=phase0, right_list=phase0)
 
