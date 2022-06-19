@@ -8,6 +8,7 @@
 #include "pycore_object.h"
 #include "pycore_opcode.h"        // _PyOpcode_Caches
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
+#include "pycore_descrobject.h"
 
 #include <stdlib.h> // rand()
 
@@ -331,6 +332,8 @@ miss_counter_start(void) {
     return 53;
 }
 
+#define SIMPLE_FUNCTION 0
+
 /* Common */
 
 #define SPEC_FAIL_OTHER 0
@@ -580,7 +583,9 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
                 return DUNDER_CLASS;
             }
         }
-        return OVERRIDING;
+        if (store) {
+            return OVERRIDING;
+        }
     }
     if (desc_cls->tp_descr_get) {
         if (desc_cls->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR) {
@@ -650,6 +655,7 @@ specialize_dict_access(
 static int specialize_attr_loadmethod(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name,
     PyObject* descr, DescriptorClassification kind);
 static int specialize_class_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name);
+static int function_kind(PyCodeObject *code);
 
 int
 _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
@@ -696,8 +702,42 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             goto fail;
         }
         case PROPERTY:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_PROPERTY);
-            goto fail;
+        {
+            _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + 1);
+            assert(Py_TYPE(descr) == &PyProperty_Type);
+            PyObject *fget = ((_PyPropertyObject *)descr)->prop_get;
+            if (fget == NULL) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR);
+                goto fail;
+            }
+            if (Py_TYPE(fget) != &PyFunction_Type) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_PROPERTY);
+                goto fail;
+            }
+            PyFunctionObject *func = (PyFunctionObject *)fget;
+            PyCodeObject *fcode = (PyCodeObject *)func->func_code;
+            int kind = function_kind(fcode);
+            if (kind != SIMPLE_FUNCTION) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, kind);
+                goto fail;
+            }
+            if (fcode->co_argcount != 1) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
+                goto fail;
+            }
+            int version = _PyFunction_GetVersionForCurrentState(func);
+            if (version == 0) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
+                goto fail;
+            }
+            write_u32(lm_cache->keys_version, version);
+            assert(type->tp_version_tag != 0);
+            write_u32(lm_cache->type_version, type->tp_version_tag);
+            /* borrowed */
+            write_obj(lm_cache->descr, fget);
+            _Py_SET_OPCODE(*instr, LOAD_ATTR_PROPERTY);
+            goto success;
+        }
         case OBJECT_SLOT:
         {
             PyMemberDescrObject *member = (PyMemberDescrObject *)descr;
@@ -1145,9 +1185,6 @@ binary_subscr_fail_kind(PyTypeObject *container_type, PyObject *sub)
 }
 #endif
 
-
-#define SIMPLE_FUNCTION 0
-
 static int
 function_kind(PyCodeObject *code) {
     int flags = code->co_flags;
@@ -1212,7 +1249,8 @@ _Py_Specialize_BinarySubscr(
         write_u32(cache->type_version, cls->tp_version_tag);
         int version = _PyFunction_GetVersionForCurrentState(func);
         if (version == 0 || version != (uint16_t)version) {
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_VERSIONS);
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, version == 0 ?
+                SPEC_FAIL_OUT_OF_VERSIONS : SPEC_FAIL_OUT_OF_RANGE);
             goto fail;
         }
         cache->func_version = version;

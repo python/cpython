@@ -258,7 +258,9 @@ PyDoc_STRVAR(pysqlite_connection_close__doc__,
 "close($self, /)\n"
 "--\n"
 "\n"
-"Closes the connection.");
+"Close the database connection.\n"
+"\n"
+"Any pending transaction is not committed implicitly.");
 
 #define PYSQLITE_CONNECTION_CLOSE_METHODDEF    \
     {"close", (PyCFunction)pysqlite_connection_close, METH_NOARGS, pysqlite_connection_close__doc__},
@@ -276,7 +278,9 @@ PyDoc_STRVAR(pysqlite_connection_commit__doc__,
 "commit($self, /)\n"
 "--\n"
 "\n"
-"Commit the current transaction.");
+"Commit any pending transaction to the database.\n"
+"\n"
+"If there is no open transaction, this method is a no-op.");
 
 #define PYSQLITE_CONNECTION_COMMIT_METHODDEF    \
     {"commit", (PyCFunction)pysqlite_connection_commit, METH_NOARGS, pysqlite_connection_commit__doc__},
@@ -294,7 +298,9 @@ PyDoc_STRVAR(pysqlite_connection_rollback__doc__,
 "rollback($self, /)\n"
 "--\n"
 "\n"
-"Roll back the current transaction.");
+"Roll back to the start of any pending transaction.\n"
+"\n"
+"If there is no open transaction, this method is a no-op.");
 
 #define PYSQLITE_CONNECTION_ROLLBACK_METHODDEF    \
     {"rollback", (PyCFunction)pysqlite_connection_rollback, METH_NOARGS, pysqlite_connection_rollback__doc__},
@@ -1241,4 +1247,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=fa33ca7eb96cabdf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e3512db370820810 input=a9049054013a1b77]*/
