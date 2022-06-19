@@ -3,7 +3,6 @@
 
 #include "Python.h"
 
-#include "frameobject.h"          // PyFrame_GetBack()
 #include "pycore_ast.h"           // asdl_seq_*
 #include "pycore_call.h"          // _PyObject_CallMethodFormat()
 #include "pycore_compile.h"       // _PyAST_Optimize
@@ -15,7 +14,9 @@
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
+
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
+#include "frameobject.h"          // PyFrame_New()
 #include "structmember.h"         // PyMemberDef
 #include "osdefs.h"               // SEP
 #ifdef HAVE_FCNTL_H
