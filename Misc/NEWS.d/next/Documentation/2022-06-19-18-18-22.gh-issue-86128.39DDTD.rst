@@ -1,0 +1,1 @@
+Document a limitation in ThreadPoolExecutor where its exit handler is executed before any handlers in atexit.
