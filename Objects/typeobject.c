@@ -6512,8 +6512,11 @@ add_subclass(PyTypeObject *base, PyTypeObject *type)
     PyObject *subclasses = base->tp_subclasses;
     if (subclasses == NULL) {
         base->tp_subclasses = subclasses = PyDict_New();
-        if (subclasses == NULL)
+        if (subclasses == NULL) {
+            Py_DECREF(key);
+            Py_DECREF(ref);
             return -1;
+        }
     }
     assert(PyDict_CheckExact(subclasses));
 
