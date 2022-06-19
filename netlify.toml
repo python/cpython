@@ -2,4 +2,7 @@
     base = "Doc/"
     command = "make html"
     publish = "build/html"
-    environment = { PYTHON_VERSION = "3.8" }
+
+[build.environment]
+  PYTHON_VERSION = "3.8"
+  IS_DEPLOYMENT_PREVIEW = "true"

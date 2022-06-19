@@ -77,6 +77,14 @@ html_theme_options = {
 # Short title used e.g. for <title> HTML tags.
 html_short_title = '%s Documentation' % release
 
+# Deployment preview information, from Netlify
+# (See netlify.toml and https://docs.netlify.com/configure-builds/environment-variables/#git-metadata)
+html_context = {
+    "is_deployment_preview": os.getenv("IS_DEPLOYMENT_PREVIEW"),
+    "repository_url": os.getenv("REPOSITORY_URL"),
+    "pr_id": os.getenv("REVIEW_ID")
+}
+
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
 html_last_updated_fmt = '%b %d, %Y'
