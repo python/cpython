@@ -484,7 +484,7 @@ Connection Objects
       If there is no open transaction, this method is a no-op.
 
       If :attr:`autocommit` is :const:`False`, a new transaction is implicitly
-      opened after the pending transaction was committed.
+      opened if a pending transaction was committed.
 
    .. method:: rollback()
 
@@ -492,7 +492,7 @@ Connection Objects
       If there is no open transaction, this method is a no-op.
 
       If :attr:`autocommit` is :const:`False`, a new transaction is implicitly
-      opened after the pending transaction was rolled back.
+      opened if a pending transaction was rolled back.
 
    .. method:: close()
 
