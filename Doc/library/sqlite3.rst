@@ -1430,13 +1430,27 @@ case-insensitively by name:
 .. literalinclude:: ../includes/sqlite3/rowclass.py
 
 
+.. _sqlite3-connection-context-manager:
+
 Using the connection as a context manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Connection objects can be used as context managers
-that automatically commit or rollback transactions.  In the event of an
-exception, the transaction is rolled back; otherwise, the transaction is
-committed:
+A :class:`Connection` object can be used as a context manager that
+automatically commits or rolls back open transactions when leaving the body of
+the context manager.
+If the body of the :keyword:`with` statement finishes without exceptions,
+the transaction is committed.
+If this commit fails,
+or if the body of the ``with`` statement raises an uncaught exception,
+the transaction is rolled back.
+
+If there is no open transaction upon leaving the body of the ``with`` statement,
+the context manager is a no-op.
+
+.. note::
+
+   The context manager neither implicitly opens a new transaction
+   nor closes the connection.
 
 .. literalinclude:: ../includes/sqlite3/ctx_manager.py
 
