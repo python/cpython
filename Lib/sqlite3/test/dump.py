@@ -2,7 +2,6 @@
 
 import unittest
 import sqlite3 as sqlite
-from .test_dbapi import memory_database
 
 
 class DumpTests(unittest.TestCase):
@@ -79,22 +78,22 @@ class DumpTests(unittest.TestCase):
         self.cu.executemany("INSERT INTO t2 VALUES(?)", ((None,) for _ in range(4)))
         self.cx.commit()
 
-        with memory_database() as cx2:
-            query = "".join(self.cx.iterdump())
-            cx2.executescript(query)
-            cu2 = cx2.cursor()
+        cx2 = sqlite.connect(":memory:")
+        query = "".join(self.cx.iterdump())
+        cx2.executescript(query)
+        cu2 = cx2.cursor()
 
-            dataset = (
-                ("t1", 9),
-                ("t2", 4),
-            )
-            for table, seq in dataset:
-                with self.subTest(table=table, seq=seq):
-                    res = cu2.execute("""
-                        SELECT "seq" FROM "sqlite_sequence" WHERE "name" == ?
-                    """, (table,))
-                    rows = res.fetchall()
-                    self.assertEqual(rows[0][0], seq)
+        dataset = (
+            ("t1", 9),
+            ("t2", 4),
+        )
+        for table, seq in dataset:
+            with self.subTest(table=table, seq=seq):
+                res = cu2.execute("""
+                    SELECT "seq" FROM "sqlite_sequence" WHERE "name" == ?
+                """, (table,))
+                rows = res.fetchall()
+                self.assertEqual(rows[0][0], seq)
 
     def test_unorderable_row(self):
         # iterdump() should be able to cope with unorderable row types (issue #15545)
