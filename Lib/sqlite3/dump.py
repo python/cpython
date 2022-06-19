@@ -30,12 +30,13 @@ def _iterdump(connection):
     schema_res = cu.execute(q)
     sqlite_sequence = []
     for table_name, type, sql in schema_res.fetchall():
-        if table_name == "sqlite_sequence":
-            sqlite_sequence = ["DELETE FROM \"sqlite_sequence\""]
-            rows = cu.execute("SELECT * FROM \"sqlite_sequence\";").fetchall()
-            sqlite_sequence.extend(["INSERT INTO \"sqlite_sequence\" VALUES('{0}',{1})"
-                                   .format(row[0], row[1]) for row in rows])
-            continue
+        if table_name == 'sqlite_sequence':
+            rows = cu.execute('SELECT * FROM "sqlite_sequence";').fetchall()
+            sqlite_sequence = ['DELETE FROM "sqlite_sequence"']
+            sqlite_sequence += [
+                f'INSERT INTO "sqlite_sequence" VALUES(\'{row[0]}\',{row[1]})'
+                for row in rows
+            ]
         elif table_name == 'sqlite_stat1':
             yield('ANALYZE "sqlite_master";')
         elif table_name.startswith('sqlite_'):
@@ -72,8 +73,9 @@ def _iterdump(connection):
     for name, type, sql in schema_res.fetchall():
         yield('{0};'.format(sql))
 
-    # Yield statements concerning the sqlite_sequence table at the end of the transaction: (bpo-34828)
+    # gh-79009: Yield statements concerning the sqlite_sequence table at the
+    # end of the transaction.
     for row in sqlite_sequence:
-        yield("{0};".format(row))
+        yield('{0};'.format(row))
 
     yield('COMMIT;')
