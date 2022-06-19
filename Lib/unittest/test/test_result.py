@@ -69,6 +69,11 @@ class Test_TestResult(unittest.TestCase):
         self.assertEqual(result.shouldStop, False)
         self.assertIsNone(result._stdout_buffer)
         self.assertIsNone(result._stderr_buffer)
+    
+    # "Called to make sure that the required parameters exist on
+    # TestResult. They are needed for multiple inheritance."
+    def test_initWithArguments(self):
+        unittest.TestResult(stream=None, descriptions=None, verbosity=None)
 
     # "This method can be called to signal that the set of tests being
     # run should be aborted by setting the TestResult's shouldStop

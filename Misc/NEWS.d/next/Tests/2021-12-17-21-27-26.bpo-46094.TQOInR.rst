@@ -1,0 +1,1 @@
+Add a test to explicitly check for TestResult parameters.
