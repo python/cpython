@@ -52,53 +52,49 @@ class DumpTests(unittest.TestCase):
             for i in range(len(expected_sqls))]
 
     def test_dump_autoincrement(self):
-        expected_sqls = [
-            "CREATE TABLE \"t1\" (id integer primary key autoincrement);",
-            "INSERT INTO \"t1\" VALUES(NULL);",
-            "CREATE TABLE \"t2\" (id integer primary key autoincrement);"
+        expected = [
+            'CREATE TABLE "t1" (id integer primary key autoincrement);',
+            'INSERT INTO "t1" VALUES(NULL);',
+            'CREATE TABLE "t2" (id integer primary key autoincrement);',
         ]
-
-        for sql_statement in expected_sqls:
-            self.cu.execute(sql_statement)
-        iterdump = self.cx.iterdump()
-        actual_sqls = [sql_statement for sql_statement in iterdump]
+        self.cu.executescript("".join(expected))
 
         # the NULL value should now be automatically be set to 1
-        expected_sqls[1] = expected_sqls[1].replace("NULL", "1")
-        expected_sqls.insert(0, "BEGIN TRANSACTION;")
-        expected_sqls.extend([
-            "DELETE FROM \"sqlite_sequence\";",
-            "INSERT INTO \"sqlite_sequence\" VALUES('t1',1);",
-            "COMMIT;"
+        expected[1] = expected[1].replace("NULL", "1")
+        expected.insert(0, "BEGIN TRANSACTION;")
+        expected.extend([
+            'DELETE FROM "sqlite_sequence";',
+            'INSERT INTO "sqlite_sequence" VALUES(\'t1\',1);',
+            'COMMIT;',
         ])
 
-        self.assertEqual(expected_sqls, actual_sqls)
+        actual = [stmt for stmt in self.cx.iterdump()]
+        self.assertEqual(expected, actual)
 
     def test_dump_autoincrement_create_new_db(self):
-        old_db = [
-            "BEGIN TRANSACTION ;",
-            "CREATE TABLE \"t1\" (id integer primary key autoincrement);",
-            "CREATE TABLE \"t2\" (id integer primary key autoincrement);"
-        ]
-        for i in range(1, 10):
-            old_db.append("INSERT INTO \"t1\" VALUES(NULL);".format(i))
-        for i in range(1, 5):
-            old_db.append("INSERT INTO \"t2\" VALUES(NULL);".format(i))
-        old_db.append("COMMIT;")
-
-        self.cu.executescript("".join(old_db))
-        query = "".join(self.cx.iterdump())
+        self.cu.execute("BEGIN TRANSACTION")
+        self.cu.execute("CREATE TABLE t1 (id integer primary key autoincrement)")
+        self.cu.execute("CREATE TABLE t2 (id integer primary key autoincrement)")
+        self.cu.executemany("INSERT INTO t1 VALUES(?)", ((None,) for _ in range(9)))
+        self.cu.executemany("INSERT INTO t2 VALUES(?)", ((None,) for _ in range(4)))
+        self.cx.commit()
 
         with memory_database() as cx2:
+            query = "".join(self.cx.iterdump())
             cx2.executescript(query)
             cu2 = cx2.cursor()
 
-            self.assertEqual(cu2.execute("SELECT \"seq\" "
-                                         "FROM \"sqlite_sequence\""
-                                         "WHERE \"name\" == 't1'").fetchall()[0][0], 9)
-            self.assertEqual(cu2.execute("SELECT \"seq\" "
-                                         "FROM \"sqlite_sequence\""
-                                         "WHERE \"name\" == 't2'").fetchall()[0][0], 4)
+            dataset = (
+                ("t1", 9),
+                ("t2", 4),
+            )
+            for table, seq in dataset:
+                with self.subTest(table=table, seq=seq):
+                    res = cu2.execute("""
+                        SELECT "seq" FROM "sqlite_sequence" WHERE "name" == ?
+                    """, (table,))
+                    rows = res.fetchall()
+                    self.assertEqual(rows[0][0], seq)
 
     def test_unorderable_row(self):
         # iterdump() should be able to cope with unorderable row types (issue #15545)
