@@ -37,6 +37,7 @@ def _iterdump(connection):
                 f'INSERT INTO "sqlite_sequence" VALUES(\'{row[0]}\',{row[1]})'
                 for row in rows
             ]
+            continue
         elif table_name == 'sqlite_stat1':
             yield('ANALYZE "sqlite_master";')
         elif table_name.startswith('sqlite_'):
