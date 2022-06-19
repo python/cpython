@@ -262,6 +262,35 @@ _PyLong_FromSTwoDigits(stwodigits x)
     return _PyLong_FromLarge(x);
 }
 
+int
+_PyLong_AssignValue(PyObject **target, long value)
+{
+    PyObject *old = *target;
+    if (IS_SMALL_INT(value)) {
+        *target = get_small_int(Py_SAFE_DOWNCAST(value, long, sdigit));
+        Py_XDECREF(old);
+        return 0;
+    }
+    else if (old != NULL && PyLong_CheckExact(old) &&
+             Py_REFCNT(old) == 1 && Py_SIZE(old) == 1 &&
+             (unsigned long)value <= PyLong_MASK)
+    {
+        // Mutate in place if there are no other references to the old object.
+        // This avoids an allocation in a common case.
+        ((PyLongObject *)old)->ob_digit[0]
+            = Py_SAFE_DOWNCAST(value, long, digit);
+        return 0;
+    }
+    else {
+        *target = PyLong_FromLong(value);
+        Py_XDECREF(old);
+        if (*target == NULL) {
+            return -1;
+        }
+        return 0;
+    }
+}
+
 /* If a freshly-allocated int is already shared, it must
    be a small integer, so negating it must go to PyLong_FromLong */
 Py_LOCAL_INLINE(void)

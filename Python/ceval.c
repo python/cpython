@@ -4502,44 +4502,15 @@ handle_eval_breaker:
             STAT_INC(FOR_ITER, hit);
             _Py_CODEUNIT next = next_instr[INLINE_CACHE_ENTRIES_FOR_ITER];
             assert(_PyOpcode_Deopt[_Py_OPCODE(next)] == STORE_FAST);
-            PyObject **local_ptr = &GETLOCAL(_Py_OPARG(next));
-            PyObject *local = *local_ptr;
             if (r->index >= r->len) {
                 goto iterator_exhausted_no_error;
             }
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + 1);
-            sdigit value = r->start + (digit)(r->index++) * r->step;
-            if (value < _PY_NSMALLPOSINTS && value >= -_PY_NSMALLNEGINTS) {
-                *local_ptr = Py_NewRef(&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+value]);
-                Py_XDECREF(local);
-                NOTRACE_DISPATCH();
-            }
-            if (local && PyLong_CheckExact(local) && Py_REFCNT(local) == 1) {
-                /* A value from a range iterator is to be stored in a
-                   local variable, and that local variable's existing
-                   value is a PyLongObject not referenced elsewhere.
-                   To avoid an allocation, re-use the existing
-                   PyLongObject for the new value. */
-                if (value > 0) {
-                    assert((digit)value <= PyLong_MASK);
-                    ((PyLongObject *)local)->ob_digit[0] = value;
-                    Py_SET_SIZE(local, 1);
-                }
-                else {
-                    assert(value >= -(sdigit)PyLong_MASK);
-                    ((PyLongObject *)local)->ob_digit[0] = -value;
-                    Py_SET_SIZE(local, (Py_ssize_t)-1);
-                }
-                NOTRACE_DISPATCH();
-            }
-            PyObject *res = PyLong_FromLong(value);
-            if (res == NULL) {
-                // undo the JUMPBY
-                next_instr -= INLINE_CACHE_ENTRIES_FOR_ITER + 1;
+            long value = (long)(r->start +
+                                (unsigned long)(r->index++) * r->step);
+            if (_PyLong_AssignValue(&GETLOCAL(_Py_OPARG(next)), value) < 0) {
                 goto error;
             }
-            *local_ptr = res;
-            Py_XDECREF(local);
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + 1);
             NOTRACE_DISPATCH();
         }
 

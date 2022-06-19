@@ -911,9 +911,9 @@ fast_range_iter(long start, long stop, long step, long len)
     _PyRangeIterObject *it = PyObject_New(_PyRangeIterObject, &PyRangeIter_Type);
     if (it == NULL)
         return NULL;
-    it->start = Py_SAFE_DOWNCAST(start, long, sdigit);
-    it->step = Py_SAFE_DOWNCAST(step, long, sdigit);
-    it->len = Py_SAFE_DOWNCAST(len, long, sdigit);
+    it->start = start;
+    it->step = step;
+    it->len = len;
     it->index = 0;
     return (PyObject *)it;
 }
@@ -1097,12 +1097,19 @@ range_iter(PyObject *seq)
         goto long_range;
     }
     ulen = get_len_of_range(lstart, lstop, lstep);
-    if (ulen > (long)PyLong_MASK ||
-        lstart > (long)PyLong_MASK || lstart < -(long)PyLong_MASK ||
-        lstop > (long)PyLong_MASK || lstop < -(long)PyLong_MASK ||
-        lstep > (long)PyLong_MASK || lstep < -(long)PyLong_MASK)
-    {
+    if (ulen > (unsigned long)LONG_MAX) {
         goto long_range;
+    }
+    /* check for potential overflow of lstart + ulen * lstep */
+    if (ulen) {
+        if (lstep > 0) {
+            if (lstop > LONG_MAX - (lstep - 1))
+                goto long_range;
+        }
+        else {
+            if (lstop < LONG_MIN + (-1 - lstep))
+                goto long_range;
+        }
     }
     return fast_range_iter(lstart, lstop, lstep, (long)ulen);
 
@@ -1190,13 +1197,6 @@ range_reverse(PyObject *seq, PyObject *Py_UNUSED(ignored))
 
     new_stop = lstart - lstep;
     new_start = (long)(new_stop + ulen * lstep);
-    if (ulen > (long)PyLong_MASK ||
-        new_start > (long)PyLong_MASK || new_start < -(long)PyLong_MASK ||
-        new_stop > (long)PyLong_MASK || new_stop < -(long)PyLong_MASK ||
-        lstep > (long)PyLong_MASK || lstep < -(long)PyLong_MASK)
-    {
-        goto long_range;
-    }
     return fast_range_iter(new_start, new_stop, -lstep, (long)ulen);
 
 long_range:
