@@ -423,21 +423,20 @@ Connection Objects
 
    .. method:: commit()
 
-      This method commits the current transaction. If you don't call this method,
-      anything you did since the last call to ``commit()`` is not visible from
-      other database connections. If you wonder why you don't see the data you've
-      written to the database, please check you didn't forget to call this method.
+      Commit any pending transaction to the database.
+      If there is no open transaction, this method is a no-op.
 
    .. method:: rollback()
 
-      This method rolls back any changes to the database since the last call to
-      :meth:`commit`.
+      Roll back to the start of any pending transaction.
+      If there is no open transaction, this method is a no-op.
 
    .. method:: close()
 
-      This closes the database connection. Note that this does not automatically
-      call :meth:`commit`. If you just close your database connection without
-      calling :meth:`commit` first, your changes will be lost!
+      Close the database connection.
+      Any pending transaction is not committed implicitly;
+      make sure to :meth:`commit` before closing
+      to avoid losing pending changes.
 
    .. method:: execute(sql[, parameters])
 
@@ -1431,13 +1430,27 @@ case-insensitively by name:
 .. literalinclude:: ../includes/sqlite3/rowclass.py
 
 
+.. _sqlite3-connection-context-manager:
+
 Using the connection as a context manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Connection objects can be used as context managers
-that automatically commit or rollback transactions.  In the event of an
-exception, the transaction is rolled back; otherwise, the transaction is
-committed:
+A :class:`Connection` object can be used as a context manager that
+automatically commits or rolls back open transactions when leaving the body of
+the context manager.
+If the body of the :keyword:`with` statement finishes without exceptions,
+the transaction is committed.
+If this commit fails,
+or if the body of the ``with`` statement raises an uncaught exception,
+the transaction is rolled back.
+
+If there is no open transaction upon leaving the body of the ``with`` statement,
+the context manager is a no-op.
+
+.. note::
+
+   The context manager neither implicitly opens a new transaction
+   nor closes the connection.
 
 .. literalinclude:: ../includes/sqlite3/ctx_manager.py
 

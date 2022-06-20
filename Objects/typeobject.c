@@ -11,7 +11,6 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unionobject.h"   // _Py_union_type_or
-#include "frameobject.h"          // PyFrameObject
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "opcode.h"               // MAKE_CELL
 #include "structmember.h"         // PyMemberDef
@@ -6671,8 +6670,11 @@ add_subclass(PyTypeObject *base, PyTypeObject *type)
     PyObject *subclasses = base->tp_subclasses;
     if (subclasses == NULL) {
         base->tp_subclasses = subclasses = PyDict_New();
-        if (subclasses == NULL)
+        if (subclasses == NULL) {
+            Py_DECREF(key);
+            Py_DECREF(ref);
             return -1;
+        }
     }
     assert(PyDict_CheckExact(subclasses));
 
@@ -7782,10 +7784,17 @@ slot_tp_getattro(PyObject *self, PyObject *name)
     return vectorcall_method(&_Py_ID(__getattribute__), stack, 2);
 }
 
-static PyObject *
+static inline PyObject *
 call_attribute(PyObject *self, PyObject *attr, PyObject *name)
 {
     PyObject *res, *descr = NULL;
+
+    if (_PyType_HasFeature(Py_TYPE(attr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+        PyObject *args[] = { self, name };
+        res = PyObject_Vectorcall(attr, args, 2, NULL);
+        return res;
+    }
+
     descrgetfunc f = Py_TYPE(attr)->tp_descr_get;
 
     if (f != NULL) {
