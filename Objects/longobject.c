@@ -263,26 +263,26 @@ _PyLong_FromSTwoDigits(stwodigits x)
 }
 
 int
-_PyLong_AssignValue(PyObject **target, long value)
+_PyLong_AssignValue(PyObject **target, Py_ssize_t value)
 {
     PyObject *old = *target;
     if (IS_SMALL_INT(value)) {
-        *target = get_small_int(Py_SAFE_DOWNCAST(value, long, sdigit));
+        *target = get_small_int(Py_SAFE_DOWNCAST(value, Py_ssize_t, sdigit));
         Py_XDECREF(old);
         return 0;
     }
     else if (old != NULL && PyLong_CheckExact(old) &&
              Py_REFCNT(old) == 1 && Py_SIZE(old) == 1 &&
-             (unsigned long)value <= PyLong_MASK)
+             (size_t)value <= PyLong_MASK)
     {
         // Mutate in place if there are no other references to the old object.
         // This avoids an allocation in a common case.
         ((PyLongObject *)old)->ob_digit[0]
-            = Py_SAFE_DOWNCAST(value, long, digit);
+            = Py_SAFE_DOWNCAST(value, Py_ssize_t, digit);
         return 0;
     }
     else {
-        *target = PyLong_FromLong(value);
+        *target = PyLong_FromSsize_t(value);
         Py_XDECREF(old);
         if (*target == NULL) {
             return -1;

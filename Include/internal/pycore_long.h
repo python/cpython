@@ -47,7 +47,7 @@ PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
 PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
 PyObject *_PyLong_Subtract(PyLongObject *left, PyLongObject *right);
 
-int _PyLong_AssignValue(PyObject **target, long value);
+int _PyLong_AssignValue(PyObject **target, Py_ssize_t value);
 
 /* Used by Python/mystrtoul.c, _PyBytes_FromHex(),
    _PyBytes_DecodeEscape(), etc. */

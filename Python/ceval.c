@@ -4510,6 +4510,7 @@ handle_eval_breaker:
             if (_PyLong_AssignValue(&GETLOCAL(_Py_OPARG(next)), value) < 0) {
                 goto error;
             }
+            // The STORE_FAST is already done.
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + 1);
             NOTRACE_DISPATCH();
         }
