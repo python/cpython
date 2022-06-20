@@ -19,7 +19,7 @@
 /*[clinic input]
 module _io
 class _io.IncrementalNewlineDecoder "nldecoder_object *" "&PyIncrementalNewlineDecoder_Type"
-class _io.TextIOWrapper "textio *" "&TextIOWrapper_TYpe"
+class _io.TextIOWrapper "textio *" "&TextIOWrapper_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=2097a4fc85670c26]*/
 
