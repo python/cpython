@@ -969,7 +969,7 @@ error:
 
     if (PyErr_Occurred()) {
         if (self->statement) {
-            (void)pysqlite_statement_reset(self->statement);
+            (void)stmt_reset(self->statement);
             Py_CLEAR(self->statement);
         }
         self->rowcount = -1L;
@@ -1118,7 +1118,7 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
         if (self->statement->is_dml) {
             self->rowcount = (long)sqlite3_changes(self->connection->db);
         }
-        (void)pysqlite_statement_reset(self->statement);
+        (void)stmt_reset(self->statement);
         Py_CLEAR(self->statement);
     }
     else if (rc != SQLITE_ROW) {
