@@ -275,10 +275,13 @@ _PyLong_AssignValue(PyObject **target, Py_ssize_t value)
              Py_REFCNT(old) == 1 && Py_SIZE(old) == 1 &&
              (size_t)value <= PyLong_MASK)
     {
-        // Mutate in place if there are no other references to the old object.
-        // This avoids an allocation in a common case.
-        ((PyLongObject *)old)->ob_digit[0]
-            = Py_SAFE_DOWNCAST(value, Py_ssize_t, digit);
+        // Mutate in place if there are no other references the old
+        // object.  This avoids an allocation in a common case.
+        // Since the primary use-case is iterating over ranges, which
+        // are typically positive, only do this optimization
+        // for positive integers (for now).
+        ((PyLongObject *)old)->ob_digit[0] =
+            Py_SAFE_DOWNCAST(value, Py_ssize_t, digit);
         return 0;
     }
     else {
