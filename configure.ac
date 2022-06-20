@@ -143,6 +143,7 @@ AS_VAR_IF([cross_compiling], [yes],
     FREEZE_MODULE_BOOTSTRAP_DEPS='$(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
     FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
+    PYTHON_FOR_BUILD_DEPS=''
   ],
   [
     dnl internal build tools also depend on Programs/_freeze_module and _bootstrap_python.
@@ -150,12 +151,14 @@ AS_VAR_IF([cross_compiling], [yes],
     FREEZE_MODULE_BOOTSTRAP_DEPS="Programs/_freeze_module"
     FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
+    PYTHON_FOR_BUILD_DEPS='$(BUILDPYTHON)'
   ]
 )
 AC_SUBST([FREEZE_MODULE_BOOTSTRAP])
 AC_SUBST([FREEZE_MODULE_BOOTSTRAP_DEPS])
 AC_SUBST([FREEZE_MODULE])
 AC_SUBST([FREEZE_MODULE_DEPS])
+AC_SUBST([PYTHON_FOR_BUILD_DEPS])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
   [python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python],
@@ -6908,7 +6911,7 @@ PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
-PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [], [], [-lm])
+PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes], [], [-lm])
 
 dnl Limited API template modules.
 dnl The limited C API is not compatible with the Py_TRACE_REFS macro.

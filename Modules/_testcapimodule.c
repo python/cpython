@@ -21,7 +21,6 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "frameobject.h"          // PyFrame_Check()
 #include "datetime.h"             // PyDateTimeAPI
 #include "marshal.h"              // PyMarshal_WriteLongToFile
 #include "structmember.h"         // PyMemberDef
