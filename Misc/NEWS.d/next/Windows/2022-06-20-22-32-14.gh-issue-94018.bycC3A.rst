@@ -1,1 +1,1 @@
-Remove trailing spaces in Lib.zipfile._sanitize_windows_name()
+Remove trailing spaces in :func:`Lib.zipfile._sanitize_windows_name`
