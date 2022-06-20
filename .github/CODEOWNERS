@@ -97,7 +97,7 @@ Lib/ast.py                    @isidentical
 
 # Mock
 /Lib/unittest/mock.py         @cjw296
-/Lib/unittest/test/testmock/* @cjw296
+/Lib/test/test_unittest/testmock/* @cjw296
 
 # SQLite 3
 **/*sqlite*                   @berkerpeksag @erlend-aasland

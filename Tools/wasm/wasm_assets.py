@@ -113,7 +113,6 @@ OMIT_MODULE_FILES = {
 OMIT_SUBDIRS = (
     "ctypes/test/",
     "tkinter/test/",
-    "unittest/test/",
 )
 
 def get_builddir(args: argparse.Namespace) -> pathlib.Path:
