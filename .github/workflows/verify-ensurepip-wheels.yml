@@ -5,9 +5,13 @@ on:
   push:
     paths:
       - 'Lib/ensurepip/_bundled/**'
+      - '.github/workflows/verify-ensurepip-wheels.yml'
+      - 'Tools/scripts/verify_ensurepip_wheels.py'
   pull_request:
     paths:
       - 'Lib/ensurepip/_bundled/**'
+      - '.github/workflows/verify-ensurepip-wheels.yml'
+      - 'Tools/scripts/verify_ensurepip_wheels.py'
 
 permissions:
   contents: read
