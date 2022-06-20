@@ -2,7 +2,7 @@ import sys
 from test import support
 import unittest
 from ctypes import *
-from ctypes.test import need_symbol
+from test.test_ctypes import need_symbol
 
 class MemFunctionsTest(unittest.TestCase):
     @unittest.skip('test disabled')
