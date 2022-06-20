@@ -826,6 +826,11 @@ next_code_delta(PyCodeAddressRange *bounds)
 static int
 previous_code_delta(PyCodeAddressRange *bounds)
 {
+    if (bounds->ar_start == 0) {
+        // If we looking at the first entry, the
+        // "previous" entry has an implicit length of 1.
+        return 1;
+    }
     const uint8_t *ptr = bounds->opaque.lo_next-1;
     while (((*ptr) & 128) == 0) {
         ptr--;
@@ -869,7 +874,7 @@ static void
 retreat(PyCodeAddressRange *bounds)
 {
     ASSERT_VALID_BOUNDS(bounds);
-    assert(bounds->ar_start > 0);
+    assert(bounds->ar_start >= 0);
     do {
         bounds->opaque.lo_next--;
     } while (((*bounds->opaque.lo_next) & 128) == 0);
