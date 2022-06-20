@@ -858,8 +858,9 @@ init_frame(_PyInterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 {
     /* _PyFrame_InitializeSpecials consumes reference to func */
     Py_INCREF(func);
+    Py_XINCREF(locals);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
-    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
+    _PyFrame_InitializeSpecials(frame, func, locals, code);
     for (Py_ssize_t i = 0; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
     }

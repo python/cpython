@@ -787,6 +787,7 @@ class PosixTester(unittest.TestCase):
             check_stat(uid, gid)
 
     @os_helper.skip_unless_working_chmod
+    @unittest.skipIf(support.is_emscripten, "getgid() is a stub")
     def test_chown(self):
         # raise an OSError if the file does not exist
         os.unlink(os_helper.TESTFN)
@@ -798,6 +799,7 @@ class PosixTester(unittest.TestCase):
 
     @os_helper.skip_unless_working_chmod
     @unittest.skipUnless(hasattr(posix, 'fchown'), "test needs os.fchown()")
+    @unittest.skipIf(support.is_emscripten, "getgid() is a stub")
     def test_fchown(self):
         os.unlink(os_helper.TESTFN)
 
@@ -1356,6 +1358,7 @@ class TestPosixDirFd(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'chown') and (os.chown in os.supports_dir_fd),
                          "test needs dir_fd support in os.chown()")
+    @unittest.skipIf(support.is_emscripten, "getgid() is a stub")
     def test_chown_dir_fd(self):
         with self.prepare_file() as (dir_fd, name, fullname):
             posix.chown(name, os.getuid(), os.getgid(), dir_fd=dir_fd)

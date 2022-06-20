@@ -600,6 +600,16 @@ class Regrtest:
             for s in ET.tostringlist(root):
                 f.write(s)
 
+    def fix_umask(self):
+        if support.is_emscripten:
+            # Emscripten has default umask 0o777, which breaks some tests.
+            # see https://github.com/emscripten-core/emscripten/issues/17269
+            old_mask = os.umask(0)
+            if old_mask == 0o777:
+                os.umask(0o027)
+            else:
+                os.umask(old_mask)
+
     def set_temp_dir(self):
         if self.ns.tempdir:
             self.tmp_dir = self.ns.tempdir
@@ -628,11 +638,16 @@ class Regrtest:
         # Define a writable temp dir that will be used as cwd while running
         # the tests. The name of the dir includes the pid to allow parallel
         # testing (see the -j option).
-        pid = os.getpid()
-        if self.worker_test_name is not None:
-            test_cwd = 'test_python_worker_{}'.format(pid)
+        # Emscripten and WASI have stubbed getpid(), Emscripten has only
+        # milisecond clock resolution. Use randint() instead.
+        if sys.platform in {"emscripten", "wasi"}:
+            nounce = random.randint(0, 1_000_000)
         else:
-            test_cwd = 'test_python_{}'.format(pid)
+            nounce = os.getpid()
+        if self.worker_test_name is not None:
+            test_cwd = 'test_python_worker_{}'.format(nounce)
+        else:
+            test_cwd = 'test_python_{}'.format(nounce)
         test_cwd += os_helper.FS_NONASCII
         test_cwd = os.path.join(self.tmp_dir, test_cwd)
         return test_cwd
@@ -654,6 +669,8 @@ class Regrtest:
         self.parse_args(kwargs)
 
         self.set_temp_dir()
+
+        self.fix_umask()
 
         if self.ns.cleanup:
             self.cleanup()
