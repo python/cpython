@@ -24763,7 +24763,7 @@ $as_echo_n "checking for stdlib extension module _ctypes_test... " >&6; }
         if test "$py_cv_module__ctypes_test" != "n/a"; then :
 
     if test "$TEST_MODULES" = yes; then :
-  if true; then :
+  if test "$ac_cv_func_dlopen" = yes; then :
   py_cv_module__ctypes_test=yes
 else
   py_cv_module__ctypes_test=missing
