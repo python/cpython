@@ -29,7 +29,8 @@ typedef uint16_t _Py_CODEUNIT;
 #endif
 
 // Use "unsigned char" instead of "uint8_t" here to avoid illegal aliasing:
-#define _Py_SET_OPCODE(word, opcode) (((unsigned char *)&(word))[0] = (opcode))
+#define _Py_SET_OPCODE(word, opcode) \
+    do { ((unsigned char *)&(word))[0] = (opcode); } while (0)
 
 // To avoid repeating ourselves in deepfreeze.py, all PyCodeObject members are
 // defined in this macro:
