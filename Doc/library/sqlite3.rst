@@ -1572,8 +1572,11 @@ the transaction is committed.
 If this commit fails,
 or if the body of the ``with`` statement raises an uncaught exception,
 the transaction is rolled back.
+If :attr:`~Connection.autocommit` is :const:`True`,
+a new transaction is implicitly opened after committing or rolling back.
 
 If there is no open transaction upon leaving the body of the ``with`` statement,
+or if :attr:`~Connection.autocommit` is :const:`False`,
 the context manager is a no-op.
 
 .. note::
@@ -1582,17 +1585,6 @@ the context manager is a no-op.
    nor closes the connection.
 
 .. literalinclude:: ../includes/sqlite3/ctx_manager.py
-
-.. note::
-
-   The context manager does not implicitly begin a new transaction.
-
-.. note::
-
-   If :attr:`~Connection.autocommit` is :const:`True`,
-   the context manager is a no-op.
-   If :attr:`~Connection.autocommit` is :const:`False`,
-   a new transaction is implicitly opened upon context manager exit.
 
 
 .. rubric:: Footnotes
