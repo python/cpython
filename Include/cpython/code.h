@@ -62,7 +62,8 @@ typedef uint16_t _Py_CODEUNIT;
     PyObject *co_exceptiontable;   /* Byte string encoding exception handling  \
                                       table */                                 \
     int co_flags;                  /* CO_..., see below */                     \
-    int co_warmup;                 /* Warmup counter for quickening */         \
+    short co_warmup;                 /* Warmup counter for quickening */       \
+    short _co_linearray_entry_size;  /* Size of each entry in _co_linearray */ \
                                                                                \
     /* The rest are not so impactful on performance. */                        \
     int co_argcount;              /* #arguments, except *args */               \
@@ -90,6 +91,7 @@ typedef uint16_t _Py_CODEUNIT;
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
     void *_co_code;               /* cached co_code object/attribute */        \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
+    char *_co_linearray;          /* array of line offsets */                  \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \
        people to go through the proper APIs. */                                \
