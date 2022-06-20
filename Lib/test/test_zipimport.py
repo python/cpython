@@ -654,7 +654,10 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         sys.path.insert(0, TEMP_ZIP)
         mod = importlib.import_module(TESTMOD)
         self.assertEqual(mod.test(1), 1)
-        self.assertRaises(AssertionError, mod.test, False)
+        if __debug__:
+            self.assertRaises(AssertionError, mod.test, False)
+        else:
+            self.assertEqual(mod.test(0), 0)
 
     def testImport_WithStuff(self):
         # try importing from a zipfile which contains additional
@@ -804,6 +807,7 @@ class BadFileZipImportTestCase(unittest.TestCase):
         os_helper.create_empty_file(TESTMOD)
         self.assertZipFailure(TESTMOD)
 
+    @unittest.skipIf(support.is_wasi, "mode 000 not supported.")
     def testFileUnreadable(self):
         os_helper.unlink(TESTMOD)
         fd = os.open(TESTMOD, os.O_CREAT, 000)

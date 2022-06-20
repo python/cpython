@@ -13,8 +13,8 @@ extern "C" {
 
 PyAPI_DATA(PyTypeObject) PyCFunction_Type;
 
-#define PyCFunction_CheckExact(op) Py_IS_TYPE(op, &PyCFunction_Type)
-#define PyCFunction_Check(op) PyObject_TypeCheck(op, &PyCFunction_Type)
+#define PyCFunction_CheckExact(op) Py_IS_TYPE((op), &PyCFunction_Type)
+#define PyCFunction_Check(op) PyObject_TypeCheck((op), &PyCFunction_Type)
 
 typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
 typedef PyObject *(*_PyCFunctionFast) (PyObject *, PyObject *const *, Py_ssize_t);
@@ -43,7 +43,7 @@ typedef PyObject *(*PyCMethod)(PyObject *, PyTypeObject *, PyObject *const *,
 // it triggers an undefined behavior when Python calls it with 2 parameters
 // (bpo-33012).
 #define _PyCFunction_CAST(func) \
-    _Py_reinterpret_cast(PyCFunction, _Py_reinterpret_cast(void(*)(void), (func)))
+    _Py_CAST(PyCFunction, _Py_CAST(void(*)(void), (func)))
 
 PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);
 PyAPI_FUNC(PyObject *) PyCFunction_GetSelf(PyObject *);

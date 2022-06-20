@@ -59,7 +59,6 @@ get_exception_class(pysqlite_state *state, int errorcode)
         case SQLITE_MISMATCH:
             return state->IntegrityError;
         case SQLITE_MISUSE:
-            return state->ProgrammingError;
         case SQLITE_RANGE:
             return state->InterfaceError;
         default:

@@ -21,9 +21,11 @@ Operating System Utilities
 
    Return true (nonzero) if the standard I/O file *fp* with name *filename* is
    deemed interactive.  This is the case for files for which ``isatty(fileno(fp))``
-   is true.  If the global flag :c:data:`Py_InteractiveFlag` is true, this function
+   is true.  If the :c:member:`PyConfig.interactive` is non-zero, this function
    also returns true if the *filename* pointer is ``NULL`` or if the name is equal to
    one of the strings ``'<stdin>'`` or ``'???'``.
+
+   This function must not be called before Python is initialized.
 
 
 .. c:function:: void PyOS_BeforeFork()
@@ -264,9 +266,16 @@ accessible to C code.  They all work with the current interpreter thread's
 
 .. c:function:: void PySys_SetPath(const wchar_t *path)
 
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.module_search_paths` and
+   :c:member:`PyConfig.module_search_paths_set` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
+
    Set :data:`sys.path` to a list object of paths found in *path* which should
    be a list of paths separated with the platform's search path delimiter
    (``:`` on Unix, ``;`` on Windows).
+
+   .. deprecated:: 3.11
 
 .. c:function:: void PySys_WriteStdout(const char *format, ...)
 
@@ -341,7 +350,7 @@ accessible to C code.  They all work with the current interpreter thread's
    leaks.)
 
    Note that ``#`` format characters should always be treated as
-   ``Py_ssize_t``, regardless of whether ``PY_SSIZE_T_CLEAN`` was defined.
+   :c:type:`Py_ssize_t`, regardless of whether ``PY_SSIZE_T_CLEAN`` was defined.
 
    :func:`sys.audit` performs the same function from Python code.
 
@@ -349,7 +358,7 @@ accessible to C code.  They all work with the current interpreter thread's
 
    .. versionchanged:: 3.8.2
 
-      Require ``Py_ssize_t`` for ``#`` format characters. Previously, an
+      Require :c:type:`Py_ssize_t` for ``#`` format characters. Previously, an
       unavoidable deprecation warning was raised.
 
 

@@ -46,6 +46,7 @@ def clean_lines(text):
 @end=sh@
 '''
 
+# XXX Handle these.
 EXCLUDED = clean_lines('''
 # @begin=conf@
 
@@ -69,6 +70,7 @@ Python/dynload_aix.c            # sys/ldr.h
 Python/dynload_dl.c             # dl.h
 Python/dynload_hpux.c           # dl.h
 Python/thread_pthread.h
+Python/emscripten_signal.c
 
 # only huge constants (safe but parsing is slow)
 Modules/_blake2/impl/blake2-kat.h
@@ -202,6 +204,7 @@ Include/cpython/sysmodule.h	Py_CPYTHON_SYSMODULE_H	1
 Include/cpython/traceback.h	Py_CPYTHON_TRACEBACK_H	1
 Include/cpython/tupleobject.h	Py_CPYTHON_TUPLEOBJECT_H	1
 Include/cpython/unicodeobject.h	Py_CPYTHON_UNICODEOBJECT_H	1
+Include/internal/pycore_code.h	SIZEOF_VOID_P	8
 
 # implied include of pyport.h
 Include/**/*.h	PyAPI_DATA(RTYPE)	extern RTYPE
@@ -297,8 +300,8 @@ MAX_SIZES = {
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
     _abs('Objects/typeobject.c'): (20_000, 200),
     _abs('Python/compile.c'): (20_000, 500),
-    _abs('Python/pylifecycle.c'): (200_000, 5000),
-    _abs('Python/pystate.c'): (200_000, 5000),
+    _abs('Python/pylifecycle.c'): (500_000, 5000),
+    _abs('Python/pystate.c'): (500_000, 5000),
 }
 
 

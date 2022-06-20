@@ -230,7 +230,7 @@ class InitVar:
         self.type = type
 
     def __repr__(self):
-        if isinstance(self.type, type) and not isinstance(self.type, GenericAlias):
+        if isinstance(self.type, type):
             type_name = self.type.__name__
         else:
             # typing objects, e.g. List[int]
@@ -1156,11 +1156,16 @@ def _add_slots(cls, is_frozen, weakref_slot):
         itertools.chain.from_iterable(map(_get_slots, cls.__mro__[1:-1]))
     )
     # The slots for our class.  Remove slots from our base classes.  Add
-    # '__weakref__' if weakref_slot was given.
+    # '__weakref__' if weakref_slot was given, unless it is already present.
     cls_dict["__slots__"] = tuple(
-        itertools.chain(
-            itertools.filterfalse(inherited_slots.__contains__, field_names),
-            ("__weakref__",) if weakref_slot else ())
+        itertools.filterfalse(
+            inherited_slots.__contains__,
+            itertools.chain(
+                # gh-93521: '__weakref__' also needs to be filtered out if
+                # already present in inherited_slots
+                field_names, ('__weakref__',) if weakref_slot else ()
+            )
+        ),
     )
 
     for field_name in field_names:
@@ -1243,7 +1248,7 @@ def _is_dataclass_instance(obj):
 def is_dataclass(obj):
     """Returns True if obj is a dataclass or an instance of a
     dataclass."""
-    cls = obj if isinstance(obj, type) and not isinstance(obj, GenericAlias) else type(obj)
+    cls = obj if isinstance(obj, type) else type(obj)
     return hasattr(cls, _FIELDS)
 
 

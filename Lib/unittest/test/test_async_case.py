@@ -14,6 +14,29 @@ def tearDownModule():
     asyncio.set_event_loop_policy(None)
 
 
+class TestCM:
+    def __init__(self, ordering, enter_result=None):
+        self.ordering = ordering
+        self.enter_result = enter_result
+
+    async def __aenter__(self):
+        self.ordering.append('enter')
+        return self.enter_result
+
+    async def __aexit__(self, *exc_info):
+        self.ordering.append('exit')
+
+
+class LacksEnterAndExit:
+    pass
+class LacksEnter:
+    async def __aexit__(self, *exc_info):
+        pass
+class LacksExit:
+    async def __aenter__(self):
+        pass
+
+
 VAR = contextvars.ContextVar('VAR', default=())
 
 
@@ -336,6 +359,36 @@ class TestAsyncCase(unittest.TestCase):
         test = Test("test_leaking_task")
         output = test.run()
         self.assertTrue(cancelled)
+
+    def test_enterAsyncContext(self):
+        events = []
+
+        class Test(unittest.IsolatedAsyncioTestCase):
+            async def test_func(slf):
+                slf.addAsyncCleanup(events.append, 'cleanup1')
+                cm = TestCM(events, 42)
+                self.assertEqual(await slf.enterAsyncContext(cm), 42)
+                slf.addAsyncCleanup(events.append, 'cleanup2')
+                events.append('test')
+
+        test = Test('test_func')
+        output = test.run()
+        self.assertTrue(output.wasSuccessful(), output)
+        self.assertEqual(events, ['enter', 'test', 'cleanup2', 'exit', 'cleanup1'])
+
+    def test_enterAsyncContext_arg_errors(self):
+        class Test(unittest.IsolatedAsyncioTestCase):
+            async def test_func(slf):
+                with self.assertRaisesRegex(TypeError, 'asynchronous context manager'):
+                    await slf.enterAsyncContext(LacksEnterAndExit())
+                with self.assertRaisesRegex(TypeError, 'asynchronous context manager'):
+                    await slf.enterAsyncContext(LacksEnter())
+                with self.assertRaisesRegex(TypeError, 'asynchronous context manager'):
+                    await slf.enterAsyncContext(LacksExit())
+
+        test = Test('test_func')
+        output = test.run()
+        self.assertTrue(output.wasSuccessful())
 
     def test_debug_cleanup_same_loop(self):
         class Test(unittest.IsolatedAsyncioTestCase):
