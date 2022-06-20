@@ -4,6 +4,7 @@
 #include "opcode.h"
 #include "structmember.h"         // PyMemberDef
 #include "pycore_code.h"          // _PyCodeConstructor
+#include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
 #include "pycore_opcode.h"        // _PyOpcode_Deopt
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -327,6 +328,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     /* derived values */
     co->co_nlocalsplus = nlocalsplus;
     co->co_nlocals = nlocals;
+    co->co_framesize = nlocalsplus + con->stacksize + FRAME_SPECIALS_SIZE;
     co->co_nplaincellvars = nplaincellvars;
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
