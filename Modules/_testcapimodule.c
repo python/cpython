@@ -6081,7 +6081,7 @@ test_macros(PyObject *self, PyObject *Py_UNUSED(args))
     wchar_t array[3];
 
     // static_assert(), Py_BUILD_ASSERT()
-    static_assert(1 == 1);
+    static_assert(1 == 1, "bug");
     Py_BUILD_ASSERT(1 == 1);
 
 
