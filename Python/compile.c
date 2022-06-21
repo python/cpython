@@ -6605,6 +6605,10 @@ static int
 assemble_emit_linetable_pair(struct assembler *a, int bdelta, int ldelta)
 {
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_lnotab);
+    if (a->a_lnotab_off > INT_MAX - 2) {
+        PyErr_NoMemory();
+        return 0;
+    }
     if (a->a_lnotab_off >= len - 2) {
         if (len > INT_MAX / 2) {
             PyErr_NoMemory();
