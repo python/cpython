@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_object.h"
+#include "pycore_runtime_generated.h"
 
 
 /* The static initializers defined here should only be used
@@ -121,10 +122,7 @@ extern "C" {
         ._data = LITERAL, \
     }
 
-#include "pycore_runtime_generated.h"
 
-#undef INIT_STR
-#undef INIT_ID
 #ifdef __cplusplus
 }
 #endif
