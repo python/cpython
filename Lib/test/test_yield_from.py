@@ -7,9 +7,6 @@ adapted from original tests written by Greg Ewing
 see <http://www.cosc.canterbury.ac.nz/greg.ewing/python/yield-from/YieldFrom-Python3.1.2-rev5.zip>
 """
 
-import doctest
-from email.generator import Generator
-from lib2to3.pytree import Base
 import unittest
 import inspect
 
