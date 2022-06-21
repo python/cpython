@@ -620,12 +620,14 @@ class CAPITest(unittest.TestCase):
 
     def test_pynumber_tobase(self):
         from _testcapi import pynumber_tobase
-        large_number = 2**64
         small_number = 123
-        # subclass of int
-        class TrapInt(int):
+        large_number = 2**64
+        class IDX:
+            def __init__(self, val):
+                self.val = val
             def __index__(self):
-                return int(self)
+                return self.val
+
         test_cases = ((2, '0b1111011', '0b10000000000000000000000000000000000000000000000000000000000000000'),
                       (8, '0o173', '0o2000000000000000000000'),
                       (10, '123', '18446744073709551616'),
@@ -635,15 +637,13 @@ class CAPITest(unittest.TestCase):
                 # Test for small number
                 self.assertEqual(pynumber_tobase(small_number, base), small_target)
                 self.assertEqual(pynumber_tobase(-small_number, base), '-' + small_target)
-                self.assertEqual(pynumber_tobase(TrapInt(small_number), base), small_target)
+                self.assertEqual(pynumber_tobase(IDX(small_number), base), small_target)
                 # Test for large number(out of range of a longlong,i.e.[-2**63, 2**63-1])
                 self.assertEqual(pynumber_tobase(large_number, base), large_target)
                 self.assertEqual(pynumber_tobase(-large_number, base), '-' + large_target)
-                self.assertEqual(pynumber_tobase(TrapInt(large_number), base), large_target)
-        class BadIndex:
-            def __index__(self):
-                return 123.0
-        self.assertRaises(TypeError, pynumber_tobase, BadIndex(), 10)
+                self.assertEqual(pynumber_tobase(IDX(large_number), base), large_target)
+        self.assertRaises(TypeError, pynumber_tobase, IDX(123.0), 10)
+        self.assertRaises(TypeError, pynumber_tobase, IDX('123'), 10)
         self.assertRaises(TypeError, pynumber_tobase, 123.0, 10)
         self.assertRaises(TypeError, pynumber_tobase, '123', 10)
         self.assertRaises(SystemError, pynumber_tobase, 123, 0)
