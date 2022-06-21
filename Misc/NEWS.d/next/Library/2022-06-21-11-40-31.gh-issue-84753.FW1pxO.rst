@@ -1,0 +1,1 @@
+inspect.iscoroutinefunction() now works with unittest.mock.AsyncMock
