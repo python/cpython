@@ -6692,14 +6692,19 @@ assemble_emit(struct assembler *a, struct instr *i)
     int size, arg = 0;
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_bytecode);
     _Py_CODEUNIT *code;
-
     arg = i->i_oparg;
     size = instrsize(arg);
     if (i->i_lineno && !assemble_lnotab(a, i))
         return 0;
+    if (a->a_offset > INT_MAX - size) {
+        PyErr_NoMemory();
+        return 0;
+    }
     if (a->a_offset + size >= len / (int)sizeof(_Py_CODEUNIT)) {
-        if (len > PY_SSIZE_T_MAX / 2)
+        if (len > PY_SSIZE_T_MAX / 2) {
+            PyErr_NoMemory();
             return 0;
+        }
         if (_PyBytes_Resize(&a->a_bytecode, len * 2) < 0)
             return 0;
     }
