@@ -8,7 +8,7 @@ from test import support
 import unittest
 from unittest.case import _Outcome
 
-from unittest.test.support import (LoggingResult,
+from test.test_unittest.support import (LoggingResult,
                                    ResultWithNoStartTestRunStopTestRun)
 
 

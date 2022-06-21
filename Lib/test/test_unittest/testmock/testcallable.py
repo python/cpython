@@ -3,7 +3,7 @@
 # http://www.voidspace.org.uk/python/mock/
 
 import unittest
-from unittest.test.testmock.support import is_instance, X, SomeClass
+from test.test_unittest.testmock.support import is_instance, X, SomeClass
 
 from unittest.mock import (
     Mock, MagicMock, NonCallableMagicMock,

@@ -716,7 +716,7 @@ class Test_TestLoader(unittest.TestCase):
         # We're going to try to load this module as a side-effect, so it
         # better not be loaded before we try.
         #
-        module_name = 'unittest.test.dummy'
+        module_name = 'test.test_unittest.dummy'
         sys.modules.pop(module_name, None)
 
         loader = unittest.TestLoader()
@@ -844,7 +844,7 @@ class Test_TestLoader(unittest.TestCase):
         loader = unittest.TestLoader()
 
         suite = loader.loadTestsFromNames(
-            ['unittest.loader.sdasfasfasdf', 'unittest.test.dummy'])
+            ['unittest.loader.sdasfasfasdf', 'test.test_unittest.dummy'])
         error, test = self.check_deferred_error(loader, list(suite)[0])
         expected = "module 'unittest.loader' has no attribute 'sdasfasfasdf'"
         self.assertIn(
@@ -1141,7 +1141,7 @@ class Test_TestLoader(unittest.TestCase):
         # We're going to try to load this module as a side-effect, so it
         # better not be loaded before we try.
         #
-        module_name = 'unittest.test.dummy'
+        module_name = 'test.test_unittest.dummy'
         sys.modules.pop(module_name, None)
 
         loader = unittest.TestLoader()

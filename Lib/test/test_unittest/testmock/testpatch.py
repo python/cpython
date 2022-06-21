@@ -7,8 +7,8 @@ import sys
 from collections import OrderedDict
 
 import unittest
-from unittest.test.testmock import support
-from unittest.test.testmock.support import SomeClass, is_instance
+from test.test_unittest.testmock import support
+from test.test_unittest.testmock.support import SomeClass, is_instance
 
 from test.test_importlib.util import uncache
 from unittest.mock import (
@@ -669,7 +669,7 @@ class PatchTest(unittest.TestCase):
         # the new dictionary during function call
         original = support.target.copy()
 
-        @patch.dict('unittest.test.testmock.support.target', {'bar': 'BAR'})
+        @patch.dict('test.test_unittest.testmock.support.target', {'bar': 'BAR'})
         def test():
             self.assertEqual(support.target, {'foo': 'BAZ', 'bar': 'BAR'})
 
@@ -1614,7 +1614,7 @@ class PatchTest(unittest.TestCase):
 
 
     def test_patch_nested_autospec_repr(self):
-        with patch('unittest.test.testmock.support', autospec=True) as m:
+        with patch('test.test_unittest.testmock.support', autospec=True) as m:
             self.assertIn(" name='support.SomeClass.wibble()'",
                           repr(m.SomeClass.wibble()))
             self.assertIn(" name='support.SomeClass().wibble()'",
@@ -1882,7 +1882,7 @@ class PatchTest(unittest.TestCase):
 
         with patch.object(foo, '__module__', "testpatch2"):
             self.assertEqual(foo.__module__, "testpatch2")
-        self.assertEqual(foo.__module__, 'unittest.test.testmock.testpatch')
+        self.assertEqual(foo.__module__, 'test.test_unittest.testmock.testpatch')
 
         with patch.object(foo, '__annotations__', dict([('s', 1, )])):
             self.assertEqual(foo.__annotations__, dict([('s', 1, )]))
@@ -1917,16 +1917,16 @@ class PatchTest(unittest.TestCase):
         # This exercises the AttributeError branch of _dot_lookup.
 
         # make sure it's there
-        import unittest.test.testmock.support
+        import test.test_unittest.testmock.support
         # now make sure it's not:
         with patch.dict('sys.modules'):
-            del sys.modules['unittest.test.testmock.support']
-            del sys.modules['unittest.test.testmock']
-            del sys.modules['unittest.test']
+            del sys.modules['test.test_unittest.testmock.support']
+            del sys.modules['test.test_unittest.testmock']
+            del sys.modules['test.test_unittest']
             del sys.modules['unittest']
 
             # now make sure we can patch based on a dotted path:
-            @patch('unittest.test.testmock.support.X')
+            @patch('test.test_unittest.testmock.support.X')
             def test(mock):
                 pass
             test()
@@ -1943,7 +1943,7 @@ class PatchTest(unittest.TestCase):
 
 
     def test_cant_set_kwargs_when_passing_a_mock(self):
-        @patch('unittest.test.testmock.support.X', new=object(), x=1)
+        @patch('test.test_unittest.testmock.support.X', new=object(), x=1)
         def test(): pass
         with self.assertRaises(TypeError):
             test()
