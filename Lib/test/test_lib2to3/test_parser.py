@@ -26,7 +26,7 @@ import unittest
 # Local imports
 from lib2to3.pgen2 import driver as pgen2_driver
 from lib2to3.pgen2 import tokenize
-from ..pgen2.parse import ParseError
+from lib2to3.pgen2.parse import ParseError
 from lib2to3.pygram import python_symbols as syms
 
 

@@ -8,12 +8,14 @@ import os.path
 from textwrap import dedent
 
 # Local imports
+import lib2to3
 from lib2to3 import pytree, refactor
 from lib2to3.pgen2 import driver as pgen2_driver
 
+lib2to3_dir = os.path.dirname(lib2to3.__file__)
 test_dir = os.path.dirname(__file__)
 proj_dir = os.path.normpath(os.path.join(test_dir, ".."))
-grammar_path = os.path.join(test_dir, "..", "Grammar.txt")
+grammar_path = os.path.join(lib2to3_dir, "Grammar.txt")
 grammar = pgen2_driver.load_grammar(grammar_path)
 grammar_no_print_statement = pgen2_driver.load_grammar(grammar_path)
 del grammar_no_print_statement.keywords["print"]
