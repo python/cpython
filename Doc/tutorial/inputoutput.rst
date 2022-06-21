@@ -179,7 +179,7 @@ square brackets ``'[]'`` to access the keys. ::
    ...       'Dcab: {0[Dcab]:d}'.format(table))
    Jack: 4098; Sjoerd: 4127; Dcab: 8637678
 
-This could also be done by passing the table as keyword arguments with the '**'
+This could also be done by passing the ``table`` dictionary as keyword arguments with the ``**``
 notation. ::
 
    >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
