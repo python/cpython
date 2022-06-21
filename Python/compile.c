@@ -85,6 +85,9 @@
          (opcode) == SETUP_WITH || \
          (opcode) == SETUP_CLEANUP)
 
+#define IS_END_OF_BASICBLOCK_OPCODE(opcode) \
+        (IS_JUMP_OPCODE(opcode) || IS_SCOPE_EXIT_OPCODE(opcode))
+
 /* opcodes which are not emitted in codegen stage, only by the assembler */
 #define IS_ASSEMBLER_OPCODE(opcode) \
         ((opcode) == JUMP_FORWARD || \
@@ -1244,17 +1247,11 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 }
 
 static int
-is_end_of_basic_block(struct instr *instr)
-{
-    int opcode = instr->i_opcode;
-    return IS_JUMP_OPCODE(opcode) || IS_SCOPE_EXIT_OPCODE(opcode);
-}
-
-static int
 compiler_use_new_implicit_block_if_needed(struct compiler *c)
 {
     basicblock *b = c->u->u_curblock;
-    if (b->b_iused && is_end_of_basic_block(basicblock_last_instr(b))) {
+    struct instr *last = basicblock_last_instr(b);
+    if (last && IS_END_OF_BASICBLOCK_OPCODE(last->i_opcode)) {
         basicblock *b = compiler_new_block(c);
         if (b == NULL) {
             return -1;
