@@ -7733,7 +7733,6 @@ assemble_emit_location(struct assembler* a, struct instr* i)
 static int
 assemble_emit(struct assembler *a, struct instr *i)
 {
-    Py_ssize_t len = PyBytes_GET_SIZE(a->a_bytecode);
     _Py_CODEUNIT *code;
     int size = instr_size(i);
     if (!bytes_make_room(&a->a_bytecode, a->a_offset,
