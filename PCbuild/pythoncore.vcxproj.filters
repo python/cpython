@@ -533,7 +533,7 @@
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_descrobject.h">
       <Filter>Include\internal</Filter>
-    </ClInclude>    
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_dtoa.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -619,6 +619,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_runtime.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_runtime_generated.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_runtime_init.h">
