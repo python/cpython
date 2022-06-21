@@ -32,12 +32,12 @@
 */
 
 #include "Python.h"
+#include "pycore_set.h"           // struct _PySetIterObject
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include <stddef.h>               // offsetof()
 
 /* Object used as dummy key to fill deleted entries */
 static PyObject _dummy_struct;
-
 #define dummy (&_dummy_struct)
 
 
@@ -730,16 +730,8 @@ frozenset_hash(PyObject *self)
 
 /***** Set iterator type ***********************************************/
 
-typedef struct {
-    PyObject_HEAD
-    PySetObject *si_set; /* Set to NULL when iterator is exhausted */
-    Py_ssize_t si_used;
-    Py_ssize_t si_pos;
-    Py_ssize_t len;
-} setiterobject;
-
 static void
-setiter_dealloc(setiterobject *si)
+setiter_dealloc(_PySetIterObject *si)
 {
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     _PyObject_GC_UNTRACK(si);
@@ -748,14 +740,14 @@ setiter_dealloc(setiterobject *si)
 }
 
 static int
-setiter_traverse(setiterobject *si, visitproc visit, void *arg)
+setiter_traverse(_PySetIterObject *si, visitproc visit, void *arg)
 {
     Py_VISIT(si->si_set);
     return 0;
 }
 
 static PyObject *
-setiter_len(setiterobject *si, PyObject *Py_UNUSED(ignored))
+setiter_len(_PySetIterObject *si, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t len = 0;
     if (si->si_set != NULL && si->si_used == si->si_set->used)
@@ -763,15 +755,15 @@ setiter_len(setiterobject *si, PyObject *Py_UNUSED(ignored))
     return PyLong_FromSsize_t(len);
 }
 
+static PyObject *setiter_iternext(_PySetIterObject *si);
+
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
-static PyObject *setiter_iternext(setiterobject *si);
-
 static PyObject *
-setiter_reduce(setiterobject *si, PyObject *Py_UNUSED(ignored))
+setiter_reduce(_PySetIterObject *si, PyObject *Py_UNUSED(ignored))
 {
     /* copy the iterator state */
-    setiterobject tmp = *si;
+    _PySetIterObject tmp = *si;
     Py_XINCREF(tmp.si_set);
 
     /* iterate the temporary into a list */
@@ -791,48 +783,60 @@ static PyMethodDef setiter_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-static PyObject *setiter_iternext(setiterobject *si)
+int _PySetIter_GetNext(_PySetIterObject *si, PyObject **stack)
 {
-    PyObject *key;
+    assert(Py_IS_TYPE((PyObject *)si, &PySetIter_Type));
     Py_ssize_t i, mask;
     setentry *entry;
     PySetObject *so = si->si_set;
 
-    if (so == NULL)
-        return NULL;
+    if (so == NULL) {
+        return 0;
+    }
     assert (PyAnySet_Check(so));
 
     if (si->si_used != so->used) {
         PyErr_SetString(PyExc_RuntimeError,
                         "Set changed size during iteration");
         si->si_used = -1; /* Make this state sticky */
-        return NULL;
+        return -1;
     }
 
     i = si->si_pos;
     assert(i>=0);
     entry = so->table;
     mask = so->mask;
-    while (i <= mask && (entry[i].key == NULL || entry[i].key == dummy))
+    while (i <= mask && (entry[i].key == NULL || entry[i].key == dummy)) {
         i++;
+    }
     si->si_pos = i+1;
-    if (i > mask)
+    if (i > mask) {
         goto fail;
+    }
     si->len--;
-    key = entry[i].key;
-    Py_INCREF(key);
-    return key;
-
+    stack[0] = entry[i].key;
+    Py_INCREF(stack[0]);
+    return 1;
 fail:
     si->si_set = NULL;
     Py_DECREF(so);
-    return NULL;
+    return 0;
+}
+
+static PyObject *setiter_iternext(_PySetIterObject *si) {
+    PyObject *key = NULL;
+    PyObject *stack[1];
+    int err = _PySetIter_GetNext(si, stack);
+    if (err <= 0) {
+        return NULL;
+    }
+    return stack[0];
 }
 
 PyTypeObject PySetIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "set_iterator",                             /* tp_name */
-    sizeof(setiterobject),                      /* tp_basicsize */
+    sizeof(_PySetIterObject),                   /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)setiter_dealloc,                /* tp_dealloc */
@@ -865,7 +869,7 @@ PyTypeObject PySetIter_Type = {
 static PyObject *
 set_iter(PySetObject *so)
 {
-    setiterobject *si = PyObject_GC_New(setiterobject, &PySetIter_Type);
+    _PySetIterObject *si = PyObject_GC_New(_PySetIterObject, &PySetIter_Type);
     if (si == NULL)
         return NULL;
     Py_INCREF(so);

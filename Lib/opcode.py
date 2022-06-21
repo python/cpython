@@ -282,6 +282,7 @@ _specializations = {
         "FOR_ITER_ADAPTIVE",
         "FOR_ITER_LIST",
         "FOR_ITER_RANGE",
+        "FOR_ITER_SET",
     ],
     "JUMP_BACKWARD": [
         "JUMP_BACKWARD_QUICK",

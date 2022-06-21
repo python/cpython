@@ -23,6 +23,7 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
+#include "pycore_set.h"           // _PySetIterObject()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
@@ -4486,6 +4487,25 @@ handle_eval_breaker:
             it->it_seq = NULL;
             Py_DECREF(seq);
             goto iterator_exhausted_no_error;
+        }
+
+        TARGET(FOR_ITER_SET) {
+            assert(cframe.use_tracing == 0);
+            _PySetIterObject *it = (_PySetIterObject *)TOP();
+            DEOPT_IF(Py_TYPE(it) != &PySetIter_Type, FOR_ITER);
+            STAT_INC(FOR_ITER, hit);
+            int res = _PySetIter_GetNext(it, stack_pointer);
+            if (res > 0) {
+                STACK_GROW(1);
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
+                NOTRACE_DISPATCH();
+            }
+            else if (res == 0) {
+                goto iterator_exhausted_no_error;
+            }
+            else {
+                goto error;
+            }
         }
 
         TARGET(FOR_ITER_RANGE) {
