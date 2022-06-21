@@ -39,6 +39,19 @@ class TestPolicy(asyncio.AbstractEventLoopPolicy):
             self.loop = loop
 
 
+class NullPolicy(asyncio.AbstractEventLoopPolicy):
+
+    def get_event_loop(self):
+        # shouldn't ever be called by asyncio.run()
+        raise RuntimeError
+
+    def new_event_loop(self):
+        raise RuntimeError
+
+    def set_event_loop(self, loop):
+        raise RuntimeError
+
+
 class BaseTest(unittest.TestCase):
 
     def new_loop(self):
@@ -60,7 +73,7 @@ class BaseTest(unittest.TestCase):
     def setUp(self):
         super().setUp()
 
-        policy = TestPolicy(self.new_loop)
+        policy = NullPolicy()
         asyncio.set_event_loop_policy(policy)
 
     def tearDown(self):
@@ -74,6 +87,12 @@ class BaseTest(unittest.TestCase):
 
 
 class RunTests(BaseTest):
+
+    def setUp(self):
+        super().setUp()
+
+        policy = TestPolicy(self.new_loop)
+        asyncio.set_event_loop_policy(policy)
 
     def test_asyncio_run_return(self):
         async def main():
