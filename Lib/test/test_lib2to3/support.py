@@ -51,10 +51,19 @@ def get_refactorer(fixer_pkg="lib2to3", fixers=None, options=None):
     options = options or {}
     return refactor.RefactoringTool(fixers, options, explicit=True)
 
-def all_project_files():
-    for dirpath, dirnames, filenames in os.walk(proj_dir):
+def _all_project_files(root, files):
+    for dirpath, dirnames, filenames in os.walk(root):
         for filename in filenames:
-            if filename.endswith(".py"):
-                yield os.path.join(dirpath, filename)
+            if not filename.endswith(".py"):
+                continue
+            files.append(os.path.join(dirpath, filename))
+
+def all_project_files():
+    files = []
+    _all_project_files(lib2to3_dir, files)
+    _all_project_files(test_dir, files)
+    # Sort to get more reproducible tests
+    files.sort()
+    return files
 
 TestCase = unittest.TestCase
