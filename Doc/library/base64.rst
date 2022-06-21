@@ -199,7 +199,7 @@ The modern interface provides:
    .. versionadded:: 3.4
 
 
-.. function:: a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \\t\\n\\r\\v')
+.. function:: a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v')
 
    Decode the Ascii85 encoded :term:`bytes-like object` or ASCII string *b* and
    return the decoded :class:`bytes`.
