@@ -77,11 +77,6 @@ class BaseTest(unittest.TestCase):
         asyncio.set_event_loop_policy(policy)
 
     def tearDown(self):
-        policy = asyncio.get_event_loop_policy()
-        if policy.loop is not None:
-            self.assertTrue(policy.loop.is_closed())
-            self.assertTrue(policy.loop.shutdown_ag_run)
-
         asyncio.set_event_loop_policy(None)
         super().tearDown()
 
@@ -93,6 +88,15 @@ class RunTests(BaseTest):
 
         policy = TestPolicy(self.new_loop)
         asyncio.set_event_loop_policy(policy)
+
+    def tearDown(self):
+        policy = asyncio.get_event_loop_policy()
+        if policy.loop is not None:
+            self.assertTrue(policy.loop.is_closed())
+            self.assertTrue(policy.loop.shutdown_ag_run)
+
+        super().tearDown()
+
 
     def test_asyncio_run_return(self):
         async def main():
