@@ -6605,9 +6605,14 @@ static int
 assemble_emit_linetable_pair(struct assembler *a, int bdelta, int ldelta)
 {
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_lnotab);
-    if (a->a_lnotab_off + 2 >= len) {
-        if (_PyBytes_Resize(&a->a_lnotab, len * 2) < 0)
+    if (a->a_lnotab_off >= len - 2) {
+        if (len > PY_SSIZE_T_MAX / 2) {
+            PyErr_NoMemory();
             return 0;
+        }
+        if (_PyBytes_Resize(&a->a_lnotab, len * 2) < 0) {
+            return 0;
+        }
     }
     unsigned char *lnotab = (unsigned char *) PyBytes_AS_STRING(a->a_lnotab);
     lnotab += a->a_lnotab_off;
