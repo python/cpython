@@ -9323,8 +9323,8 @@ clean_basic_block(basicblock *bb) {
 
 static int
 normalize_basic_block(basicblock *bb) {
-    /* Mark blocks as exit and/or nofallthrough.
-     Raise SystemError if CFG is malformed. */
+    /* Skip over empty blocks.
+     * Raise SystemError if jump or exit is not last instruction in the block. */
     for (int i = 0; i < bb->b_iused; i++) {
         int opcode = bb->b_instr[i].i_opcode;
         assert(!IS_ASSEMBLER_OPCODE(opcode));
@@ -9461,8 +9461,7 @@ propagate_line_numbers(basicblock *entryblock) {
    The consts object should still be in list form to allow new constants
    to be appended.
 
-   All transformations keep the code size the same or smaller.
-   For those that reduce size, the gaps are initially filled with
+   Code trasnformations that reduce code size initially fill the gaps with
    NOPs.  Later those NOPs are removed.
 */
 
