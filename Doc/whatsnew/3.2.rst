@@ -51,8 +51,7 @@
 This article explains the new features in Python 3.2 as compared to 3.1.
 Python 3.2 was released on February 20, 2011. It
 focuses on a few highlights and gives a few examples.  For full details, see the
-`Misc/NEWS
-<https://github.com/python/cpython/blob/076ca6c3c8df3030307e548d9be792ce3c1c6eea/Misc/NEWS>`_
+`Misc/NEWS <https://github.com/python/cpython/blob/v3.2.6/Misc/NEWS>`_
 file.
 
 .. seealso::
