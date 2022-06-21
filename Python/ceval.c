@@ -4488,6 +4488,35 @@ handle_eval_breaker:
             goto iterator_exhausted_no_error;
         }
 
+        TARGET(FOR_ITER_TUPLE) {
+            assert(cframe.use_tracing == 0);
+            _PyTupleIterObject *it = (_PyTupleIterObject *)TOP();
+            DEOPT_IF(Py_TYPE(it) != &PyTupleIter_Type, FOR_ITER);
+            STAT_INC(FOR_ITER, hit);
+            PyTupleObject *seq = it->it_seq;
+            if (seq == NULL) {
+                goto iterator_exhausted_no_error;
+            }
+            if (it->it_index < PyTuple_GET_SIZE(seq)) {
+                PyObject *next = PyTuple_GET_ITEM(seq, it->it_index++);
+                Py_INCREF(next);
+                PUSH(next);
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
+                NOTRACE_DISPATCH();
+            }
+            it->it_seq = NULL;
+            Py_DECREF(seq);
+            goto iterator_exhausted_no_error;
+        }
+
+        TARGET(FOR_ITER_DICT_ITEMS) {
+            Py_UNREACHABLE();
+        }
+
+        TARGET(FOR_ITER_ENUMERATE) {
+            Py_UNREACHABLE();
+        }
+
         TARGET(FOR_ITER_RANGE) {
             assert(cframe.use_tracing == 0);
             _PyRangeIterObject *r = (_PyRangeIterObject *)TOP();

@@ -67,6 +67,12 @@ struct _Py_tuple_state {
 extern PyObject *_PyTuple_FromArray(PyObject *const *, Py_ssize_t);
 extern PyObject *_PyTuple_FromArraySteal(PyObject *const *, Py_ssize_t);
 
+typedef struct {
+    PyObject_HEAD
+    Py_ssize_t it_index;
+    PyTupleObject *it_seq; /* Set to NULL when iterator is exhausted */
+} _PyTupleIterObject;
+
 #ifdef __cplusplus
 }
 #endif

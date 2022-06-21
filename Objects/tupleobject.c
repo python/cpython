@@ -1013,14 +1013,8 @@ _PyTuple_ClearFreeList(PyInterpreterState *interp)
 
 /*********************** Tuple Iterator **************************/
 
-typedef struct {
-    PyObject_HEAD
-    Py_ssize_t it_index;
-    PyTupleObject *it_seq; /* Set to NULL when iterator is exhausted */
-} tupleiterobject;
-
 static void
-tupleiter_dealloc(tupleiterobject *it)
+tupleiter_dealloc(_PyTupleIterObject *it)
 {
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
@@ -1028,14 +1022,14 @@ tupleiter_dealloc(tupleiterobject *it)
 }
 
 static int
-tupleiter_traverse(tupleiterobject *it, visitproc visit, void *arg)
+tupleiter_traverse(_PyTupleIterObject *it, visitproc visit, void *arg)
 {
     Py_VISIT(it->it_seq);
     return 0;
 }
 
 static PyObject *
-tupleiter_next(tupleiterobject *it)
+tupleiter_next(_PyTupleIterObject *it)
 {
     PyTupleObject *seq;
     PyObject *item;
@@ -1059,7 +1053,7 @@ tupleiter_next(tupleiterobject *it)
 }
 
 static PyObject *
-tupleiter_len(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
+tupleiter_len(_PyTupleIterObject *it, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t len = 0;
     if (it->it_seq)
@@ -1070,7 +1064,7 @@ tupleiter_len(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-tupleiter_reduce(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
+tupleiter_reduce(_PyTupleIterObject *it, PyObject *Py_UNUSED(ignored))
 {
     if (it->it_seq)
         return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
@@ -1080,7 +1074,7 @@ tupleiter_reduce(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-tupleiter_setstate(tupleiterobject *it, PyObject *state)
+tupleiter_setstate(_PyTupleIterObject *it, PyObject *state)
 {
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
@@ -1108,7 +1102,7 @@ static PyMethodDef tupleiter_methods[] = {
 PyTypeObject PyTupleIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "tuple_iterator",                           /* tp_name */
-    sizeof(tupleiterobject),                    /* tp_basicsize */
+    sizeof(_PyTupleIterObject),                    /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)tupleiter_dealloc,              /* tp_dealloc */
@@ -1141,13 +1135,13 @@ PyTypeObject PyTupleIter_Type = {
 static PyObject *
 tuple_iter(PyObject *seq)
 {
-    tupleiterobject *it;
+    _PyTupleIterObject *it;
 
     if (!PyTuple_Check(seq)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    it = PyObject_GC_New(tupleiterobject, &PyTupleIter_Type);
+    it = PyObject_GC_New(_PyTupleIterObject, &PyTupleIter_Type);
     if (it == NULL)
         return NULL;
     it->it_index = 0;
