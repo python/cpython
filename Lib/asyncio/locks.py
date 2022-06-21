@@ -1,94 +1,15 @@
 """Synchronization primitives."""
 
-__all__ = ('Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore')
+__all__ = ('Lock', 'Event', 'Condition', 'Semaphore',
+           'BoundedSemaphore', 'Barrier')
 
 import collections
-import warnings
+import enum
 
-from . import events
-from . import futures
 from . import exceptions
-from .coroutines import coroutine
-
-
-class _ContextManager:
-    """Context manager.
-
-    This enables the following idiom for acquiring and releasing a
-    lock around a block:
-
-        with (yield from lock):
-            <block>
-
-    while failing loudly when accidentally using:
-
-        with lock:
-            <block>
-
-    Deprecated, use 'async with' statement:
-        async with lock:
-            <block>
-    """
-
-    def __init__(self, lock):
-        self._lock = lock
-
-    def __enter__(self):
-        # We have no use for the "as ..."  clause in the with
-        # statement for locks.
-        return None
-
-    def __exit__(self, *args):
-        try:
-            self._lock.release()
-        finally:
-            self._lock = None  # Crudely prevent reuse.
-
+from . import mixins
 
 class _ContextManagerMixin:
-    def __enter__(self):
-        raise RuntimeError(
-            '"yield from" should be used as context manager expression')
-
-    def __exit__(self, *args):
-        # This must exist because __enter__ exists, even though that
-        # always raises; that's how the with-statement works.
-        pass
-
-    @coroutine
-    def __iter__(self):
-        # This is not a coroutine.  It is meant to enable the idiom:
-        #
-        #     with (yield from lock):
-        #         <block>
-        #
-        # as an alternative to:
-        #
-        #     yield from lock.acquire()
-        #     try:
-        #         <block>
-        #     finally:
-        #         lock.release()
-        # Deprecated, use 'async with' statement:
-        #     async with lock:
-        #         <block>
-        warnings.warn("'with (yield from lock)' is deprecated "
-                      "use 'async with lock' instead",
-                      DeprecationWarning, stacklevel=2)
-        yield from self.acquire()
-        return _ContextManager(self)
-
-    async def __acquire_ctx(self):
-        await self.acquire()
-        return _ContextManager(self)
-
-    def __await__(self):
-        warnings.warn("'with await lock' is deprecated "
-                      "use 'async with lock' instead",
-                      DeprecationWarning, stacklevel=2)
-        # To make "with await lock" work.
-        return self.__acquire_ctx().__await__()
-
     async def __aenter__(self):
         await self.acquire()
         # We have no use for the "as ..."  clause in the with
@@ -99,7 +20,7 @@ class _ContextManagerMixin:
         self.release()
 
 
-class Lock(_ContextManagerMixin):
+class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
     """Primitive lock objects.
 
     A primitive lock is a synchronization primitive that is not owned
@@ -153,13 +74,9 @@ class Lock(_ContextManagerMixin):
 
     """
 
-    def __init__(self, *, loop=None):
-        self._waiters = collections.deque()
+    def __init__(self):
+        self._waiters = None
         self._locked = False
-        if loop is not None:
-            self._loop = loop
-        else:
-            self._loop = events.get_event_loop()
 
     def __repr__(self):
         res = super().__repr__()
@@ -178,11 +95,14 @@ class Lock(_ContextManagerMixin):
         This method blocks until the lock is unlocked, then sets it to
         locked and returns True.
         """
-        if not self._locked and all(w.cancelled() for w in self._waiters):
+        if (not self._locked and (self._waiters is None or
+                all(w.cancelled() for w in self._waiters))):
             self._locked = True
             return True
 
-        fut = self._loop.create_future()
+        if self._waiters is None:
+            self._waiters = collections.deque()
+        fut = self._get_loop().create_future()
         self._waiters.append(fut)
 
         # Finally block should be called before the CancelledError
@@ -220,6 +140,8 @@ class Lock(_ContextManagerMixin):
 
     def _wake_up_first(self):
         """Wake up the first waiter if it isn't done."""
+        if not self._waiters:
+            return
         try:
             fut = next(iter(self._waiters))
         except StopIteration:
@@ -232,7 +154,7 @@ class Lock(_ContextManagerMixin):
             fut.set_result(True)
 
 
-class Event:
+class Event(mixins._LoopBoundMixin):
     """Asynchronous equivalent to threading.Event.
 
     Class implementing event objects. An event manages a flag that can be set
@@ -241,13 +163,9 @@ class Event:
     false.
     """
 
-    def __init__(self, *, loop=None):
+    def __init__(self):
         self._waiters = collections.deque()
         self._value = False
-        if loop is not None:
-            self._loop = loop
-        else:
-            self._loop = events.get_event_loop()
 
     def __repr__(self):
         res = super().__repr__()
@@ -288,7 +206,7 @@ class Event:
         if self._value:
             return True
 
-        fut = self._loop.create_future()
+        fut = self._get_loop().create_future()
         self._waiters.append(fut)
         try:
             await fut
@@ -297,7 +215,7 @@ class Event:
             self._waiters.remove(fut)
 
 
-class Condition(_ContextManagerMixin):
+class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
     """Asynchronous equivalent to threading.Condition.
 
     This class implements condition variable objects. A condition variable
@@ -307,16 +225,9 @@ class Condition(_ContextManagerMixin):
     A new Lock object is created and used as the underlying lock.
     """
 
-    def __init__(self, lock=None, *, loop=None):
-        if loop is not None:
-            self._loop = loop
-        else:
-            self._loop = events.get_event_loop()
-
+    def __init__(self, lock=None):
         if lock is None:
-            lock = Lock(loop=self._loop)
-        elif lock._loop is not self._loop:
-            raise ValueError("loop argument must agree with lock")
+            lock = Lock()
 
         self._lock = lock
         # Export the lock's locked(), acquire() and release() methods.
@@ -349,7 +260,7 @@ class Condition(_ContextManagerMixin):
 
         self.release()
         try:
-            fut = self._loop.create_future()
+            fut = self._get_loop().create_future()
             self._waiters.append(fut)
             try:
                 await fut
@@ -416,7 +327,7 @@ class Condition(_ContextManagerMixin):
         self.notify(len(self._waiters))
 
 
-class Semaphore(_ContextManagerMixin):
+class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
     """A Semaphore implementation.
 
     A semaphore manages an internal counter which is decremented by each
@@ -431,15 +342,12 @@ class Semaphore(_ContextManagerMixin):
     ValueError is raised.
     """
 
-    def __init__(self, value=1, *, loop=None):
+    def __init__(self, value=1):
         if value < 0:
             raise ValueError("Semaphore initial value must be >= 0")
         self._value = value
         self._waiters = collections.deque()
-        if loop is not None:
-            self._loop = loop
-        else:
-            self._loop = events.get_event_loop()
+        self._wakeup_scheduled = False
 
     def __repr__(self):
         res = super().__repr__()
@@ -453,6 +361,7 @@ class Semaphore(_ContextManagerMixin):
             waiter = self._waiters.popleft()
             if not waiter.done():
                 waiter.set_result(None)
+                self._wakeup_scheduled = True
                 return
 
     def locked(self):
@@ -468,16 +377,17 @@ class Semaphore(_ContextManagerMixin):
         called release() to make it larger than 0, and then return
         True.
         """
-        while self._value <= 0:
-            fut = self._loop.create_future()
+        # _wakeup_scheduled is set if *another* task is scheduled to wakeup
+        # but its acquire() is not resumed yet
+        while self._wakeup_scheduled or self._value <= 0:
+            fut = self._get_loop().create_future()
             self._waiters.append(fut)
             try:
                 await fut
-            except:
-                # See the similar code in Queue.get.
-                fut.cancel()
-                if self._value > 0 and not fut.cancelled():
-                    self._wake_up_next()
+                # reset _wakeup_scheduled *after* waiting for a future
+                self._wakeup_scheduled = False
+            except exceptions.CancelledError:
+                self._wake_up_next()
                 raise
         self._value -= 1
         return True
@@ -498,11 +408,163 @@ class BoundedSemaphore(Semaphore):
     above the initial value.
     """
 
-    def __init__(self, value=1, *, loop=None):
+    def __init__(self, value=1):
         self._bound_value = value
-        super().__init__(value, loop=loop)
+        super().__init__(value)
 
     def release(self):
         if self._value >= self._bound_value:
             raise ValueError('BoundedSemaphore released too many times')
         super().release()
+
+
+
+class _BarrierState(enum.Enum):
+    FILLING = 'filling'
+    DRAINING = 'draining'
+    RESETTING = 'resetting'
+    BROKEN = 'broken'
+
+
+class Barrier(mixins._LoopBoundMixin):
+    """Asyncio equivalent to threading.Barrier
+
+    Implements a Barrier primitive.
+    Useful for synchronizing a fixed number of tasks at known synchronization
+    points. Tasks block on 'wait()' and are simultaneously awoken once they
+    have all made their call.
+    """
+
+    def __init__(self, parties):
+        """Create a barrier, initialised to 'parties' tasks."""
+        if parties < 1:
+            raise ValueError('parties must be > 0')
+
+        self._cond = Condition() # notify all tasks when state changes
+
+        self._parties = parties
+        self._state = _BarrierState.FILLING
+        self._count = 0       # count tasks in Barrier
+
+    def __repr__(self):
+        res = super().__repr__()
+        extra = f'{self._state.value}'
+        if not self.broken:
+            extra += f', waiters:{self.n_waiting}/{self.parties}'
+        return f'<{res[1:-1]} [{extra}]>'
+
+    async def __aenter__(self):
+        # wait for the barrier reaches the parties number
+        # when start draining release and return index of waited task
+        return await self.wait()
+
+    async def __aexit__(self, *args):
+        pass
+
+    async def wait(self):
+        """Wait for the barrier.
+
+        When the specified number of tasks have started waiting, they are all
+        simultaneously awoken.
+        Returns an unique and individual index number from 0 to 'parties-1'.
+        """
+        async with self._cond:
+            await self._block() # Block while the barrier drains or resets.
+            try:
+                index = self._count
+                self._count += 1
+                if index + 1 == self._parties:
+                    # We release the barrier
+                    await self._release()
+                else:
+                    await self._wait()
+                return index
+            finally:
+                self._count -= 1
+                # Wake up any tasks waiting for barrier to drain.
+                self._exit()
+
+    async def _block(self):
+        # Block until the barrier is ready for us,
+        # or raise an exception if it is broken.
+        #
+        # It is draining or resetting, wait until done
+        # unless a CancelledError occurs
+        await self._cond.wait_for(
+            lambda: self._state not in (
+                _BarrierState.DRAINING, _BarrierState.RESETTING
+            )
+        )
+
+        # see if the barrier is in a broken state
+        if self._state is _BarrierState.BROKEN:
+            raise exceptions.BrokenBarrierError("Barrier aborted")
+
+    async def _release(self):
+        # Release the tasks waiting in the barrier.
+
+        # Enter draining state.
+        # Next waiting tasks will be blocked until the end of draining.
+        self._state = _BarrierState.DRAINING
+        self._cond.notify_all()
+
+    async def _wait(self):
+        # Wait in the barrier until we are released. Raise an exception
+        # if the barrier is reset or broken.
+
+        # wait for end of filling
+        # unless a CancelledError occurs
+        await self._cond.wait_for(lambda: self._state is not _BarrierState.FILLING)
+
+        if self._state in (_BarrierState.BROKEN, _BarrierState.RESETTING):
+            raise exceptions.BrokenBarrierError("Abort or reset of barrier")
+
+    def _exit(self):
+        # If we are the last tasks to exit the barrier, signal any tasks
+        # waiting for the barrier to drain.
+        if self._count == 0:
+            if self._state in (_BarrierState.RESETTING, _BarrierState.DRAINING):
+                self._state = _BarrierState.FILLING
+            self._cond.notify_all()
+
+    async def reset(self):
+        """Reset the barrier to the initial state.
+
+        Any tasks currently waiting will get the BrokenBarrier exception
+        raised.
+        """
+        async with self._cond:
+            if self._count > 0:
+                if self._state is not _BarrierState.RESETTING:
+                    #reset the barrier, waking up tasks
+                    self._state = _BarrierState.RESETTING
+            else:
+                self._state = _BarrierState.FILLING
+            self._cond.notify_all()
+
+    async def abort(self):
+        """Place the barrier into a 'broken' state.
+
+        Useful in case of error.  Any currently waiting tasks and tasks
+        attempting to 'wait()' will have BrokenBarrierError raised.
+        """
+        async with self._cond:
+            self._state = _BarrierState.BROKEN
+            self._cond.notify_all()
+
+    @property
+    def parties(self):
+        """Return the number of tasks required to trip the barrier."""
+        return self._parties
+
+    @property
+    def n_waiting(self):
+        """Return the number of tasks currently waiting at the barrier."""
+        if self._state is _BarrierState.FILLING:
+            return self._count
+        return 0
+
+    @property
+    def broken(self):
+        """Return True if the barrier is in a broken state."""
+        return self._state is _BarrierState.BROKEN

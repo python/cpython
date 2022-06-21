@@ -24,7 +24,7 @@ trailer = """\
 """
 
 def add_escapes(filename):
-    with open(filename) as fp:
+    with open(filename, encoding="utf-8") as fp:
         for line in fp:
             yield html.escape(line)
 
@@ -79,7 +79,7 @@ def main():
         filename = sys.argv[1]
     outputfilename = filename + ".html"
     input = add_escapes(filename)
-    with open(outputfilename, "w") as output:
+    with open(outputfilename, "w", encoding="utf-8") as output:
         gprof2html(input, output, filename)
     webbrowser.open("file:" + os.path.abspath(outputfilename))
 

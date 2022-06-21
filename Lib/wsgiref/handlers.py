@@ -183,7 +183,16 @@ class BaseHandler:
                 for data in self.result:
                     self.write(data)
                 self.finish_content()
-        finally:
+        except:
+            # Call close() on the iterable returned by the WSGI application
+            # in case of an exception.
+            if hasattr(self.result, 'close'):
+                self.result.close()
+            raise
+        else:
+            # We only call close() when no exception is raised, because it
+            # will set status, result, headers, and environ fields to None.
+            # See bpo-29183 for more details.
             self.close()
 
 
@@ -219,8 +228,7 @@ class BaseHandler:
         if exc_info:
             try:
                 if self.headers_sent:
-                    # Re-raise original exception if headers sent
-                    raise exc_info[0](exc_info[1]).with_traceback(exc_info[2])
+                    raise
             finally:
                 exc_info = None        # avoid dangling circular ref
         elif self.headers is not None:

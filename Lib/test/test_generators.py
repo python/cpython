@@ -2,8 +2,8 @@ import copy
 import gc
 import pickle
 import sys
+import doctest
 import unittest
-import warnings
 import weakref
 import inspect
 
@@ -162,6 +162,14 @@ class GeneratorTest(unittest.TestCase):
             with self.assertRaises((TypeError, pickle.PicklingError)):
                 pickle.dumps(g, proto)
 
+    def test_send_non_none_to_new_gen(self):
+        def f():
+            yield 1
+        g = f()
+        with self.assertRaises(TypeError):
+            g.send(0)
+        self.assertEqual(next(g), 1)
+
 
 class ExceptionTest(unittest.TestCase):
     # Tests for the issue #23353: check that the currently handled exception
@@ -271,6 +279,32 @@ class ExceptionTest(unittest.TestCase):
         self.assertEqual(next(g), "done")
         self.assertEqual(sys.exc_info(), (None, None, None))
 
+    def test_except_throw_bad_exception(self):
+        class E(Exception):
+            def __new__(cls, *args, **kwargs):
+                return cls
+
+        def boring_generator():
+            yield
+
+        gen = boring_generator()
+
+        err_msg = 'should have returned an instance of BaseException'
+
+        with self.assertRaisesRegex(TypeError, err_msg):
+            gen.throw(E)
+
+        self.assertRaises(StopIteration, next, gen)
+
+        def generator():
+            with self.assertRaisesRegex(TypeError, err_msg):
+                yield
+
+        gen = generator()
+        next(gen)
+        with self.assertRaises(StopIteration):
+            gen.throw(E)
+
     def test_stopiteration_error(self):
         # See also PEP 479.
 
@@ -315,6 +349,154 @@ class ExceptionTest(unittest.TestCase):
             gen.send(StopIteration(2))
         self.assertIsInstance(cm.exception.value, StopIteration)
         self.assertEqual(cm.exception.value.value, 2)
+
+
+class GeneratorThrowTest(unittest.TestCase):
+
+    def test_exception_context_with_yield(self):
+        def f():
+            try:
+                raise KeyError('a')
+            except Exception:
+                yield
+
+        gen = f()
+        gen.send(None)
+        with self.assertRaises(ValueError) as cm:
+            gen.throw(ValueError)
+        context = cm.exception.__context__
+        self.assertEqual((type(context), context.args), (KeyError, ('a',)))
+
+    def test_exception_context_with_yield_inside_generator(self):
+        # Check that the context is also available from inside the generator
+        # with yield, as opposed to outside.
+        def f():
+            try:
+                raise KeyError('a')
+            except Exception:
+                try:
+                    yield
+                except Exception as exc:
+                    self.assertEqual(type(exc), ValueError)
+                    context = exc.__context__
+                    self.assertEqual((type(context), context.args),
+                        (KeyError, ('a',)))
+                    yield 'b'
+
+        gen = f()
+        gen.send(None)
+        actual = gen.throw(ValueError)
+        # This ensures that the assertions inside were executed.
+        self.assertEqual(actual, 'b')
+
+    def test_exception_context_with_yield_from(self):
+        def f():
+            yield
+
+        def g():
+            try:
+                raise KeyError('a')
+            except Exception:
+                yield from f()
+
+        gen = g()
+        gen.send(None)
+        with self.assertRaises(ValueError) as cm:
+            gen.throw(ValueError)
+        context = cm.exception.__context__
+        self.assertEqual((type(context), context.args), (KeyError, ('a',)))
+
+    def test_exception_context_with_yield_from_with_context_cycle(self):
+        # Check trying to create an exception context cycle:
+        # https://bugs.python.org/issue40696
+        has_cycle = None
+
+        def f():
+            yield
+
+        def g(exc):
+            nonlocal has_cycle
+            try:
+                raise exc
+            except Exception:
+                try:
+                    yield from f()
+                except Exception as exc:
+                    has_cycle = (exc is exc.__context__)
+            yield
+
+        exc = KeyError('a')
+        gen = g(exc)
+        gen.send(None)
+        gen.throw(exc)
+        # This also distinguishes from the initial has_cycle=None.
+        self.assertEqual(has_cycle, False)
+
+    def test_throw_after_none_exc_type(self):
+        def g():
+            try:
+                raise KeyError
+            except KeyError:
+                pass
+
+            try:
+                yield
+            except Exception:
+                raise RuntimeError
+
+        gen = g()
+        gen.send(None)
+        with self.assertRaises(RuntimeError) as cm:
+            gen.throw(ValueError)
+
+
+class GeneratorStackTraceTest(unittest.TestCase):
+
+    def check_stack_names(self, frame, expected):
+        names = []
+        while frame:
+            name = frame.f_code.co_name
+            # Stop checking frames when we get to our test helper.
+            if name.startswith('check_') or name.startswith('call_'):
+                break
+
+            names.append(name)
+            frame = frame.f_back
+
+        self.assertEqual(names, expected)
+
+    def check_yield_from_example(self, call_method):
+        def f():
+            self.check_stack_names(sys._getframe(), ['f', 'g'])
+            try:
+                yield
+            except Exception:
+                pass
+            self.check_stack_names(sys._getframe(), ['f', 'g'])
+
+        def g():
+            self.check_stack_names(sys._getframe(), ['g'])
+            yield from f()
+            self.check_stack_names(sys._getframe(), ['g'])
+
+        gen = g()
+        gen.send(None)
+        try:
+            call_method(gen)
+        except StopIteration:
+            pass
+
+    def test_send_with_yield_from(self):
+        def call_send(gen):
+            gen.send(None)
+
+        self.check_yield_from_example(call_send)
+
+    def test_throw_with_yield_from(self):
+        def call_throw(gen):
+            gen.throw(RuntimeError)
+
+        self.check_yield_from_example(call_throw)
 
 
 class YieldFromTests(unittest.TestCase):
@@ -715,7 +897,7 @@ From the Iterators list, about the types of these things.
 >>> type(i)
 <class 'generator'>
 >>> [s for s in dir(i) if not s.startswith('_')]
-['close', 'gi_code', 'gi_frame', 'gi_running', 'gi_yieldfrom', 'send', 'throw']
+['close', 'gi_code', 'gi_frame', 'gi_running', 'gi_suspended', 'gi_yieldfrom', 'send', 'throw']
 >>> from test.support import HAVE_DOCSTRINGS
 >>> print(i.__next__.__doc__ if HAVE_DOCSTRINGS else 'Implement next(self).')
 Implement next(self).
@@ -734,7 +916,7 @@ And more, added later.
 >>> i.gi_running = 42
 Traceback (most recent call last):
   ...
-AttributeError: readonly attribute
+AttributeError: attribute 'gi_running' of 'generator' objects is not writable
 >>> def g():
 ...     yield me.gi_running
 >>> me = g()
@@ -1793,6 +1975,8 @@ True
 """
 
 coroutine_tests = """\
+>>> from test.support import gc_collect
+
 Sending a value into a started generator:
 
 >>> def f():
@@ -1857,20 +2041,21 @@ Traceback (most recent call last):
   ...
 SyntaxError: 'yield' outside function
 
->>> def f(): x = yield = y
-Traceback (most recent call last):
-  ...
-SyntaxError: assignment to yield expression not possible
+# Pegen does not produce this error message yet
+# >>> def f(): x = yield = y
+# Traceback (most recent call last):
+#   ...
+# SyntaxError: assignment to yield expression not possible
 
 >>> def f(): (yield bar) = y
 Traceback (most recent call last):
   ...
-SyntaxError: cannot assign to yield expression
+SyntaxError: cannot assign to yield expression here. Maybe you meant '==' instead of '='?
 
 >>> def f(): (yield bar) += y
 Traceback (most recent call last):
   ...
-SyntaxError: cannot assign to yield expression
+SyntaxError: 'yield expression' is an illegal expression for augmented assignment
 
 
 Now check some throw() conditions:
@@ -2015,7 +2200,7 @@ And finalization:
 
 >>> g = f()
 >>> next(g)
->>> del g
+>>> del g; gc_collect()  # For PyPy or other GCs.
 exiting
 
 
@@ -2030,7 +2215,7 @@ GeneratorExit is not caught by except Exception:
 
 >>> g = f()
 >>> next(g)
->>> del g
+>>> del g; gc_collect()  # For PyPy or other GCs.
 finally
 
 
@@ -2051,15 +2236,17 @@ RuntimeError: generator ignored GeneratorExit
 
 Our ill-behaved code should be invoked during GC:
 
->>> import sys, io
->>> old, sys.stderr = sys.stderr, io.StringIO()
->>> g = f()
->>> next(g)
->>> del g
->>> "RuntimeError: generator ignored GeneratorExit" in sys.stderr.getvalue()
+>>> with support.catch_unraisable_exception() as cm:
+...     g = f()
+...     next(g)
+...     del g
+...
+...     cm.unraisable.exc_type == RuntimeError
+...     "generator ignored GeneratorExit" in str(cm.unraisable.exc_value)
+...     cm.unraisable.exc_traceback is not None
 True
->>> sys.stderr = old
-
+True
+True
 
 And errors thrown during closing should propagate:
 
@@ -2156,25 +2343,21 @@ explicitly, without generators. We do have to redirect stderr to avoid
 printing warnings and to doublecheck that we actually tested what we wanted
 to test.
 
->>> import sys, io
->>> old = sys.stderr
->>> try:
-...     sys.stderr = io.StringIO()
-...     class Leaker:
-...         def __del__(self):
-...             def invoke(message):
-...                 raise RuntimeError(message)
-...             invoke("test")
+>>> from test import support
+>>> class Leaker:
+...     def __del__(self):
+...         def invoke(message):
+...             raise RuntimeError(message)
+...         invoke("del failed")
 ...
+>>> with support.catch_unraisable_exception() as cm:
 ...     l = Leaker()
 ...     del l
-...     err = sys.stderr.getvalue().strip()
-...     "Exception ignored in" in err
-...     "RuntimeError: test" in err
-...     "Traceback" in err
-...     "in invoke" in err
-... finally:
-...     sys.stderr = old
+...
+...     cm.unraisable.object == Leaker.__del__
+...     cm.unraisable.exc_type == RuntimeError
+...     str(cm.unraisable.exc_value) == "del failed"
+...     cm.unraisable.exc_traceback is not None
 True
 True
 True
@@ -2197,15 +2380,10 @@ __test__ = {"tut":      tutorial_tests,
             "refleaks": refleaks_tests,
             }
 
-# Magic test name that regrtest.py invokes *after* importing this module.
-# This worms around a bootstrap problem.
-# Note that doctest and regrtest both look in sys.argv for a "-v" argument,
-# so this works as expected in both ways of running regrtest.
-def test_main(verbose=None):
-    from test import support, test_generators
-    support.run_unittest(__name__)
-    support.run_doctest(test_generators, verbose)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
-# This part isn't needed for regrtest, but for running the test directly.
+
 if __name__ == "__main__":
-    test_main(1)
+    unittest.main()

@@ -8,6 +8,9 @@ Logging HOWTO
 
 .. currentmodule:: logging
 
+This page contains tutorial information. For links to reference information and a
+logging cookbook, please see :ref:`tutorial-ref-links`.
+
 Basic Logging Tutorial
 ----------------------
 
@@ -128,10 +131,18 @@ look at that next. Be sure to try the following in a newly-started Python
 interpreter, and don't just continue from the session described above::
 
    import logging
-   logging.basicConfig(filename='example.log',level=logging.DEBUG)
+   logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
    logging.debug('This message should go to the log file')
    logging.info('So should this')
    logging.warning('And this, too')
+   logging.error('And non-ASCII stuff, too, like Øresund and Malmö')
+
+.. versionchanged:: 3.9
+   The *encoding* argument was added. In earlier Python versions, or if not
+   specified, the encoding used is the default value used by :func:`open`. While
+   not shown in the above example, an *errors* argument can also now be passed,
+   which determines how encoding errors are handled. For available values and
+   the default, see the documentation for :func:`open`.
 
 And now if we open the file and look at what we have, we should find the log
 messages:
@@ -141,6 +152,7 @@ messages:
    DEBUG:root:This message should go to the log file
    INFO:root:So should this
    WARNING:root:And this, too
+   ERROR:root:And non-ASCII stuff, too, like Øresund and Malmö
 
 This example also shows how you can set the logging level which acts as the
 threshold for tracking. In this case, because we set the threshold to
@@ -169,10 +181,11 @@ following example::
        raise ValueError('Invalid log level: %s' % loglevel)
    logging.basicConfig(level=numeric_level, ...)
 
-The call to :func:`basicConfig` should come *before* any calls to :func:`debug`,
-:func:`info` etc. As it's intended as a one-off simple configuration facility,
-only the first call will actually do anything: subsequent calls are effectively
-no-ops.
+The call to :func:`basicConfig` should come *before* any calls to
+:func:`debug`, :func:`info`, etc. Otherwise, those functions will call
+:func:`basicConfig` for you with the default options. As it's intended as a
+one-off simple configuration facility, only the first call will actually do
+anything: subsequent calls are effectively no-ops.
 
 If you run the above script several times, the messages from successive runs
 are appended to the file *example.log*. If you want each run to start afresh,
@@ -326,7 +339,7 @@ favourite beverage and carry on.
 If your logging needs are simple, then use the above examples to incorporate
 logging into your own scripts, and if you run into problems or don't
 understand something, please post a question on the comp.lang.python Usenet
-group (available at https://groups.google.com/forum/#!forum/comp.lang.python) and you
+group (available at https://groups.google.com/g/comp.lang.python) and you
 should receive help before too long.
 
 Still here? You can carry on reading the next few sections, which provide a
@@ -675,7 +688,6 @@ Here is the logging.conf file:
 
     [formatter_simpleFormatter]
     format=%(asctime)s - %(name)s - %(levelname)s - %(message)s
-    datefmt=
 
 The output is nearly identical to that of the non-config-file-based example:
 
@@ -822,6 +834,13 @@ etc. then the code::
 should have the desired effect. If an organisation produces a number of
 libraries, then the logger name specified can be 'orgname.foo' rather than
 just 'foo'.
+
+.. note:: It is strongly advised that you *do not log to the root logger*
+   in your library. Instead, use a logger with a unique and easily
+   identifiable name, such as the ``__name__`` for your library's top-level package
+   or module. Logging to the root logger will make it difficult or impossible for
+   the application developer to configure the logging verbosity or handlers of
+   your library as they wish.
 
 .. note:: It is strongly advised that you *do not add any handlers other
    than* :class:`~logging.NullHandler` *to your library's loggers*. This is
@@ -1069,25 +1088,34 @@ need more precise control over what logging information is collected. Here's a
 list of things you can do to avoid processing during logging which you don't
 need:
 
-+-----------------------------------------------+----------------------------------------+
-| What you don't want to collect                | How to avoid collecting it             |
-+===============================================+========================================+
-| Information about where calls were made from. | Set ``logging._srcfile`` to ``None``.  |
-|                                               | This avoids calling                    |
-|                                               | :func:`sys._getframe`, which may help  |
-|                                               | to speed up your code in environments  |
-|                                               | like PyPy (which can't speed up code   |
-|                                               | that uses :func:`sys._getframe`), if   |
-|                                               | and when PyPy supports Python 3.x.     |
-+-----------------------------------------------+----------------------------------------+
-| Threading information.                        | Set ``logging.logThreads`` to ``0``.   |
-+-----------------------------------------------+----------------------------------------+
-| Process information.                          | Set ``logging.logProcesses`` to ``0``. |
-+-----------------------------------------------+----------------------------------------+
++-----------------------------------------------------+---------------------------------------------------+
+| What you don't want to collect                      | How to avoid collecting it                        |
++=====================================================+===================================================+
+| Information about where calls were made from.       | Set ``logging._srcfile`` to ``None``.             |
+|                                                     | This avoids calling :func:`sys._getframe`, which  |
+|                                                     | may help to speed up your code in environments    |
+|                                                     | like PyPy (which can't speed up code that uses    |
+|                                                     | :func:`sys._getframe`).                           |
++-----------------------------------------------------+---------------------------------------------------+
+| Threading information.                              | Set ``logging.logThreads`` to ``False``.          |
++-----------------------------------------------------+---------------------------------------------------+
+| Current process ID (:func:`os.getpid`)              | Set ``logging.logProcesses`` to ``False``.        |
++-----------------------------------------------------+---------------------------------------------------+
+| Current process name when using ``multiprocessing`` | Set ``logging.logMultiprocessing`` to ``False``.  |
+| to manage multiple processes.                       |                                                   |
++-----------------------------------------------------+---------------------------------------------------+
+| Current :class:`asyncio.Task` name when using       | Set ``logging.logAsyncioTasks`` to ``False``.     |
+| ``asyncio``.                                        |                                                   |
++-----------------------------------------------------+---------------------------------------------------+
 
 Also note that the core logging module only includes the basic handlers. If
 you don't import :mod:`logging.handlers` and :mod:`logging.config`, they won't
 take up any memory.
+
+.. _tutorial-ref-links:
+
+Other resources
+---------------
 
 .. seealso::
 

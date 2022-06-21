@@ -76,6 +76,14 @@ size limits for the representations of different object types,  and methods
 which format specific object types.
 
 
+.. attribute:: Repr.fillvalue
+
+   This string is displayed for recursive references. It defaults to
+   ``...``.
+
+   .. versionadded:: 3.11
+
+
 .. attribute:: Repr.maxlevel
 
    Depth limit on the creation of recursive representations.  The default is ``6``.

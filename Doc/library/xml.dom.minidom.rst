@@ -132,22 +132,34 @@ module documentation.  This section lists the differences between the API and
           ... # Work with dom.
 
 
-.. method:: Node.writexml(writer, indent="", addindent="", newl="")
+.. method:: Node.writexml(writer, indent="", addindent="", newl="", \
+                          encoding=None, standalone=None)
 
-   Write XML to the writer object.  The writer should have a :meth:`write` method
-   which matches that of the file object interface.  The *indent* parameter is the
-   indentation of the current node.  The *addindent* parameter is the incremental
-   indentation to use for subnodes of the current one.  The *newl* parameter
-   specifies the string to use to terminate newlines.
+   Write XML to the writer object.  The writer receives texts but not bytes as input,
+   it should have a :meth:`write` method which matches that of the file object
+   interface.  The *indent* parameter is the indentation of the current node.
+   The *addindent* parameter is the incremental indentation to use for subnodes
+   of the current one.  The *newl* parameter specifies the string to use to
+   terminate newlines.
 
    For the :class:`Document` node, an additional keyword argument *encoding* can
    be used to specify the encoding field of the XML header.
+
+   Similarly, explicitly stating the *standalone* argument causes the
+   standalone document declarations to be added to the prologue of the XML
+   document.
+   If the value is set to `True`, `standalone="yes"` is added,
+   otherwise it is set to `"no"`.
+   Not stating the argument will omit the declaration from the document.
 
    .. versionchanged:: 3.8
       The :meth:`writexml` method now preserves the attribute order specified
       by the user.
 
-.. method:: Node.toxml(encoding=None)
+   .. versionchanged:: 3.9
+      The *standalone* parameter was added.
+
+.. method:: Node.toxml(encoding=None, standalone=None)
 
    Return a string or byte string containing the XML represented by
    the DOM node.
@@ -159,11 +171,17 @@ module documentation.  This section lists the differences between the API and
    encoding. Encoding this string in an encoding other than UTF-8 is
    likely incorrect, since UTF-8 is the default encoding of XML.
 
+   The *standalone* argument behaves exactly as in :meth:`writexml`.
+
    .. versionchanged:: 3.8
       The :meth:`toxml` method now preserves the attribute order specified
       by the user.
 
-.. method:: Node.toprettyxml(indent="\\t", newl="\\n", encoding=None)
+   .. versionchanged:: 3.9
+      The *standalone* parameter was added.
+
+.. method:: Node.toprettyxml(indent="\t", newl="\n", encoding=None, \
+                             standalone=None)
 
    Return a pretty-printed version of the document. *indent* specifies the
    indentation string and defaults to a tabulator; *newl* specifies the string
@@ -172,10 +190,14 @@ module documentation.  This section lists the differences between the API and
    The *encoding* argument behaves like the corresponding argument of
    :meth:`toxml`.
 
+   The *standalone* argument behaves exactly as in :meth:`writexml`.
+
    .. versionchanged:: 3.8
       The :meth:`toprettyxml` method now preserves the attribute order specified
       by the user.
 
+   .. versionchanged:: 3.9
+      The *standalone* parameter was added.
 
 .. _dom-example:
 

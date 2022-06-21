@@ -75,7 +75,7 @@ PyDoc_STRVAR(_imp__fix_co_filename__doc__,
 "    File path to use.");
 
 #define _IMP__FIX_CO_FILENAME_METHODDEF    \
-    {"_fix_co_filename", (PyCFunction)(void(*)(void))_imp__fix_co_filename, METH_FASTCALL, _imp__fix_co_filename__doc__},
+    {"_fix_co_filename", _PyCFunction_CAST(_imp__fix_co_filename), METH_FASTCALL, _imp__fix_co_filename__doc__},
 
 static PyObject *
 _imp__fix_co_filename_impl(PyObject *module, PyCodeObject *code,
@@ -92,12 +92,12 @@ _imp__fix_co_filename(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyObject_TypeCheck(args[0], &PyCode_Type)) {
-        _PyArg_BadArgument("_fix_co_filename", 1, (&PyCode_Type)->tp_name, args[0]);
+        _PyArg_BadArgument("_fix_co_filename", "argument 1", (&PyCode_Type)->tp_name, args[0]);
         goto exit;
     }
     code = (PyCodeObject *)args[0];
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("_fix_co_filename", 2, "str", args[1]);
+        _PyArg_BadArgument("_fix_co_filename", "argument 2", "str", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1]) == -1) {
@@ -156,7 +156,7 @@ _imp_init_frozen(PyObject *module, PyObject *arg)
     PyObject *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("init_frozen", 0, "str", arg);
+        _PyArg_BadArgument("init_frozen", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -169,33 +169,100 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_imp_find_frozen__doc__,
+"find_frozen($module, name, /, *, withdata=False)\n"
+"--\n"
+"\n"
+"Return info about the corresponding frozen module (if there is one) or None.\n"
+"\n"
+"The returned info (a 2-tuple):\n"
+"\n"
+" * data         the raw marshalled bytes\n"
+" * is_package   whether or not it is a package\n"
+" * origname     the originally frozen module\'s name, or None if not\n"
+"                a stdlib module (this will usually be the same as\n"
+"                the module\'s current name)");
+
+#define _IMP_FIND_FROZEN_METHODDEF    \
+    {"find_frozen", _PyCFunction_CAST(_imp_find_frozen), METH_FASTCALL|METH_KEYWORDS, _imp_find_frozen__doc__},
+
+static PyObject *
+_imp_find_frozen_impl(PyObject *module, PyObject *name, int withdata);
+
+static PyObject *
+_imp_find_frozen(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "withdata", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "find_frozen", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *name;
+    int withdata = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("find_frozen", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    name = args[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    withdata = PyObject_IsTrue(args[1]);
+    if (withdata < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _imp_find_frozen_impl(module, name, withdata);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_imp_get_frozen_object__doc__,
-"get_frozen_object($module, name, /)\n"
+"get_frozen_object($module, name, data=None, /)\n"
 "--\n"
 "\n"
 "Create a code object for a frozen module.");
 
 #define _IMP_GET_FROZEN_OBJECT_METHODDEF    \
-    {"get_frozen_object", (PyCFunction)_imp_get_frozen_object, METH_O, _imp_get_frozen_object__doc__},
+    {"get_frozen_object", _PyCFunction_CAST(_imp_get_frozen_object), METH_FASTCALL, _imp_get_frozen_object__doc__},
 
 static PyObject *
-_imp_get_frozen_object_impl(PyObject *module, PyObject *name);
+_imp_get_frozen_object_impl(PyObject *module, PyObject *name,
+                            PyObject *dataobj);
 
 static PyObject *
-_imp_get_frozen_object(PyObject *module, PyObject *arg)
+_imp_get_frozen_object(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *name;
+    PyObject *dataobj = Py_None;
 
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("get_frozen_object", 0, "str", arg);
+    if (!_PyArg_CheckPositional("get_frozen_object", nargs, 1, 2)) {
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("get_frozen_object", "argument 1", "str", args[0]);
         goto exit;
     }
-    name = arg;
-    return_value = _imp_get_frozen_object_impl(module, name);
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    name = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    dataobj = args[1];
+skip_optional:
+    return_value = _imp_get_frozen_object_impl(module, name, dataobj);
 
 exit:
     return return_value;
@@ -220,7 +287,7 @@ _imp_is_frozen_package(PyObject *module, PyObject *arg)
     PyObject *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("is_frozen_package", 0, "str", arg);
+        _PyArg_BadArgument("is_frozen_package", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -252,7 +319,7 @@ _imp_is_builtin(PyObject *module, PyObject *arg)
     PyObject *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("is_builtin", 0, "str", arg);
+        _PyArg_BadArgument("is_builtin", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -284,7 +351,7 @@ _imp_is_frozen(PyObject *module, PyObject *arg)
     PyObject *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("is_frozen", 0, "str", arg);
+        _PyArg_BadArgument("is_frozen", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -297,16 +364,65 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_imp__frozen_module_names__doc__,
+"_frozen_module_names($module, /)\n"
+"--\n"
+"\n"
+"Returns the list of available frozen modules.");
+
+#define _IMP__FROZEN_MODULE_NAMES_METHODDEF    \
+    {"_frozen_module_names", (PyCFunction)_imp__frozen_module_names, METH_NOARGS, _imp__frozen_module_names__doc__},
+
+static PyObject *
+_imp__frozen_module_names_impl(PyObject *module);
+
+static PyObject *
+_imp__frozen_module_names(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _imp__frozen_module_names_impl(module);
+}
+
+PyDoc_STRVAR(_imp__override_frozen_modules_for_tests__doc__,
+"_override_frozen_modules_for_tests($module, override, /)\n"
+"--\n"
+"\n"
+"(internal-only) Override PyConfig.use_frozen_modules.\n"
+"\n"
+"(-1: \"off\", 1: \"on\", 0: no override)\n"
+"See frozen_modules() in Lib/test/support/import_helper.py.");
+
+#define _IMP__OVERRIDE_FROZEN_MODULES_FOR_TESTS_METHODDEF    \
+    {"_override_frozen_modules_for_tests", (PyCFunction)_imp__override_frozen_modules_for_tests, METH_O, _imp__override_frozen_modules_for_tests__doc__},
+
+static PyObject *
+_imp__override_frozen_modules_for_tests_impl(PyObject *module, int override);
+
+static PyObject *
+_imp__override_frozen_modules_for_tests(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int override;
+
+    override = _PyLong_AsInt(arg);
+    if (override == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _imp__override_frozen_modules_for_tests_impl(module, override);
+
+exit:
+    return return_value;
+}
+
 #if defined(HAVE_DYNAMIC_LOADING)
 
 PyDoc_STRVAR(_imp_create_dynamic__doc__,
-"create_dynamic($module, spec, file=None, /)\n"
+"create_dynamic($module, spec, file=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Create an extension module.");
 
 #define _IMP_CREATE_DYNAMIC_METHODDEF    \
-    {"create_dynamic", (PyCFunction)(void(*)(void))_imp_create_dynamic, METH_FASTCALL, _imp_create_dynamic__doc__},
+    {"create_dynamic", _PyCFunction_CAST(_imp_create_dynamic), METH_FASTCALL, _imp_create_dynamic__doc__},
 
 static PyObject *
 _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file);
@@ -401,7 +517,7 @@ PyDoc_STRVAR(_imp_source_hash__doc__,
 "\n");
 
 #define _IMP_SOURCE_HASH_METHODDEF    \
-    {"source_hash", (PyCFunction)(void(*)(void))_imp_source_hash, METH_FASTCALL|METH_KEYWORDS, _imp_source_hash__doc__},
+    {"source_hash", _PyCFunction_CAST(_imp_source_hash), METH_FASTCALL|METH_KEYWORDS, _imp_source_hash__doc__},
 
 static PyObject *
 _imp_source_hash_impl(PyObject *module, long key, Py_buffer *source);
@@ -420,11 +536,6 @@ _imp_source_hash(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (!args) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     key = PyLong_AsLong(args[0]);
     if (key == -1 && PyErr_Occurred()) {
         goto exit;
@@ -433,7 +544,7 @@ _imp_source_hash(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&source, 'C')) {
-        _PyArg_BadArgument("source_hash", 2, "contiguous buffer", args[1]);
+        _PyArg_BadArgument("source_hash", "argument 'source'", "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = _imp_source_hash_impl(module, key, &source);
@@ -454,4 +565,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=b51244770fdcf4b8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8d0f4305b1d0714b input=a9049054013a1b77]*/

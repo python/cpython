@@ -10,6 +10,8 @@ from asyncio import base_events
 from asyncio import constants
 from unittest import mock
 from test import support
+from test.support import os_helper
+from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
 
 try:
@@ -34,25 +36,29 @@ class MySendfileProto(asyncio.Protocol):
         self.data = bytearray()
         self.close_after = close_after
 
+    def _assert_state(self, *expected):
+        if self.state not in expected:
+            raise AssertionError(f'state: {self.state!r}, expected: {expected!r}')
+
     def connection_made(self, transport):
         self.transport = transport
-        assert self.state == 'INITIAL', self.state
+        self._assert_state('INITIAL')
         self.state = 'CONNECTED'
         if self.connected:
             self.connected.set_result(None)
 
     def eof_received(self):
-        assert self.state == 'CONNECTED', self.state
+        self._assert_state('CONNECTED')
         self.state = 'EOF'
 
     def connection_lost(self, exc):
-        assert self.state in ('CONNECTED', 'EOF'), self.state
+        self._assert_state('CONNECTED', 'EOF')
         self.state = 'CLOSED'
         if self.done:
             self.done.set_result(None)
 
     def data_received(self, data):
-        assert self.state == 'CONNECTED', self.state
+        self._assert_state('CONNECTED')
         self.nbytes += len(data)
         self.data.extend(data)
         super().data_received(data)
@@ -86,8 +92,13 @@ class MyProto(asyncio.Protocol):
 
 class SendfileBase:
 
-    DATA = b"SendfileBaseData" * (1024 * 8)  # 128 KiB
-
+    # 256 KiB plus small unaligned to buffer chunk
+    # Newer versions of Windows seems to have increased its internal
+    # buffer and tries to send as much of the data as it can as it
+    # has some form of buffering for this which is less than 256KiB
+    # on newer server versions and Windows 11.
+    # So DATA should be larger than 256 KiB to make this test reliable.
+    DATA = b"x" * (1024 * 256 + 1)
     # Reduce socket buffer size to test on relative small data sets.
     BUF_SIZE = 4 * 1024   # 4 KiB
 
@@ -96,17 +107,17 @@ class SendfileBase:
 
     @classmethod
     def setUpClass(cls):
-        with open(support.TESTFN, 'wb') as fp:
+        with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(cls.DATA)
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        support.unlink(support.TESTFN)
+        os_helper.unlink(os_helper.TESTFN)
         super().tearDownClass()
 
     def setUp(self):
-        self.file = open(support.TESTFN, 'rb')
+        self.file = open(os_helper.TESTFN, 'rb')
         self.addCleanup(self.file.close)
         self.loop = self.create_event_loop()
         self.set_event_loop(self.loop)
@@ -162,9 +173,9 @@ class SockSendfileMixin(SendfileBase):
 
     def prepare_socksendfile(self):
         proto = MyProto(self.loop)
-        port = support.find_unused_port()
+        port = socket_helper.find_unused_port()
         srv_sock = self.make_socket(cleanup=False)
-        srv_sock.bind((support.HOST, port))
+        srv_sock.bind((socket_helper.HOST, port))
         server = self.run_loop(self.loop.create_server(
             lambda: proto, sock=srv_sock))
         self.reduce_receive_buffer_size(srv_sock)
@@ -239,7 +250,7 @@ class SendfileMixin(SendfileBase):
     # Note: sendfile via SSL transport is equal to sendfile fallback
 
     def prepare_sendfile(self, *, is_ssl=False, close_after=0):
-        port = support.find_unused_port()
+        port = socket_helper.find_unused_port()
         srv_proto = MySendfileProto(loop=self.loop,
                                     close_after=close_after)
         if is_ssl:
@@ -251,17 +262,17 @@ class SendfileMixin(SendfileBase):
             srv_ctx = None
             cli_ctx = None
         srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        srv_sock.bind((support.HOST, port))
+        srv_sock.bind((socket_helper.HOST, port))
         server = self.run_loop(self.loop.create_server(
             lambda: srv_proto, sock=srv_sock, ssl=srv_ctx))
         self.reduce_receive_buffer_size(srv_sock)
 
         if is_ssl:
-            server_hostname = support.HOST
+            server_hostname = socket_helper.HOST
         else:
             server_hostname = None
         cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        cli_sock.connect((support.HOST, port))
+        cli_sock.connect((socket_helper.HOST, port))
 
         cli_proto = MySendfileProto(loop=self.loop)
         tr, pr = self.run_loop(self.loop.create_connection(
@@ -443,6 +454,12 @@ class SendfileMixin(SendfileBase):
         self.assertEqual(srv_proto.data, self.DATA)
         self.assertEqual(self.file.tell(), len(self.DATA))
 
+    # On Solaris, lowering SO_RCVBUF on a TCP connection after it has been
+    # established has no effect. Due to its age, this bug affects both Oracle
+    # Solaris as well as all other OpenSolaris forks (unless they fixed it
+    # themselves).
+    @unittest.skipIf(sys.platform.startswith('sunos'),
+                     "Doesn't work on Solaris")
     def test_sendfile_close_peer_in_the_middle_of_receiving(self):
         srv_proto, cli_proto = self.prepare_sendfile(close_after=1024)
         with self.assertRaises(ConnectionError):
@@ -552,3 +569,7 @@ else:
 
         def create_event_loop(self):
             return asyncio.SelectorEventLoop(selectors.SelectSelector())
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -43,18 +43,44 @@ This module defines the following constants and functions:
 
 .. function:: start_new_thread(function, args[, kwargs])
 
-   Start a new thread and return its identifier.  The thread executes the function
-   *function* with the argument list *args* (which must be a tuple).  The optional
-   *kwargs* argument specifies a dictionary of keyword arguments. When the function
-   returns, the thread silently exits.  When the function terminates with an
-   unhandled exception, a stack trace is printed and then the thread exits (but
-   other threads continue to run).
+   Start a new thread and return its identifier.  The thread executes the
+   function *function* with the argument list *args* (which must be a tuple).
+   The optional *kwargs* argument specifies a dictionary of keyword arguments.
+
+   When the function returns, the thread silently exits.
+
+   When the function terminates with an unhandled exception,
+   :func:`sys.unraisablehook` is called to handle the exception. The *object*
+   attribute of the hook argument is *function*. By default, a stack trace is
+   printed and then the thread exits (but other threads continue to run).
+
+   When the function raises a :exc:`SystemExit` exception, it is silently
+   ignored.
+
+   .. versionchanged:: 3.8
+      :func:`sys.unraisablehook` is now used to handle unhandled exceptions.
 
 
-.. function:: interrupt_main()
+.. function:: interrupt_main(signum=signal.SIGINT, /)
 
-   Raise a :exc:`KeyboardInterrupt` exception in the main thread.  A subthread can
-   use this function to interrupt the main thread.
+   Simulate the effect of a signal arriving in the main thread.
+   A thread can use this function to interrupt the main thread, though
+   there is no guarantee that the interruption will happen immediately.
+
+   If given, *signum* is the number of the signal to simulate.
+   If *signum* is not given, :data:`signal.SIGINT` is simulated.
+
+   If the given signal isn't handled by Python (it was set to
+   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), this function does
+   nothing.
+
+   .. versionchanged:: 3.10
+      The *signum* argument is added to customize the signal number.
+
+   .. note::
+      This does not emit the corresponding signal but schedules a call to
+      the associated handler (if it exists).
+      If you want to truly emit the signal, use :func:`signal.raise_signal`.
 
 
 .. function:: exit()
@@ -92,7 +118,7 @@ This module defines the following constants and functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD.
 
    .. versionadded:: 3.8
 

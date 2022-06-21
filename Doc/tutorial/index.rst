@@ -11,7 +11,7 @@ together with its interpreted nature, make it an ideal language for scripting
 and rapid application development in many areas on most platforms.
 
 The Python interpreter and the extensive standard library are freely available
-in source or binary form for all major platforms from the Python Web site,
+in source or binary form for all major platforms from the Python web site,
 https://www.python.org/, and may be freely distributed. The same site also
 contains distributions of and pointers to many free third party Python modules,
 programs and tools, and additional documentation.

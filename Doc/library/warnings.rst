@@ -19,10 +19,10 @@ Python programmers issue warnings by calling the :func:`warn` function defined
 in this module.  (C programmers use :c:func:`PyErr_WarnEx`; see
 :ref:`exceptionhandling` for details).
 
-Warning messages are normally written to ``sys.stderr``, but their disposition
+Warning messages are normally written to :data:`sys.stderr`, but their disposition
 can be changed flexibly, from ignoring all warnings to turning them into
-exceptions.  The disposition of warnings can vary based on the warning category
-(see below), the text of the warning message, and the source location where it
+exceptions.  The disposition of warnings can vary based on the :ref:`warning category
+<warning-categories>`, the text of the warning message, and the source location where it
 is issued.  Repetitions of a particular warning for the same source location are
 typically suppressed.
 
@@ -31,7 +31,7 @@ determination is made whether a message should be issued or not; next, if a
 message is to be issued, it is formatted and printed using a user-settable hook.
 
 The determination whether to issue a warning message is controlled by the
-warning filter, which is a sequence of matching rules and actions. Rules can be
+:ref:`warning filter <warning-filter>`, which is a sequence of matching rules and actions. Rules can be
 added to the filter by calling :func:`filterwarnings` and reset to its default
 state by calling :func:`resetwarnings`.
 
@@ -105,7 +105,7 @@ The following warnings category classes are currently defined:
 |                                  | :class:`bytes` and :class:`bytearray`.        |
 +----------------------------------+-----------------------------------------------+
 | :exc:`ResourceWarning`           | Base category for warnings related to         |
-|                                  | resource usage.                               |
+|                                  | resource usage (ignored by default).          |
 +----------------------------------+-----------------------------------------------+
 
 .. versionchanged:: 3.7
@@ -154,14 +154,19 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
   +---------------+----------------------------------------------+
 
 * *message* is a string containing a regular expression that the start of
-  the warning message must match.  The expression is compiled to always be
-  case-insensitive.
+  the warning message must match, case-insensitively.  In :option:`-W` and
+  :envvar:`PYTHONWARNINGS`, *message* is a literal string that the start of the
+  warning message must contain (case-insensitively), ignoring any whitespace at
+  the start or end of *message*.
 
 * *category* is a class (a subclass of :exc:`Warning`) of which the warning
   category must be a subclass in order to match.
 
-* *module* is a string containing a regular expression that the module name must
-  match.  The expression is compiled to be case-sensitive.
+* *module* is a string containing a regular expression that the start of the
+  fully-qualified module name must match, case-sensitively.  In :option:`-W` and
+  :envvar:`PYTHONWARNINGS`, *module* is a literal string that the
+  fully-qualified module name must be equal to (case-sensitively), ignoring any
+  whitespace at the start or end of *module*.
 
 * *lineno* is an integer that the line number where the warning occurred must
   match, or ``0`` to match all line numbers.
@@ -181,9 +186,9 @@ Describing Warning Filters
 The warnings filter is initialized by :option:`-W` options passed to the Python
 interpreter command line and the :envvar:`PYTHONWARNINGS` environment variable.
 The interpreter saves the arguments for all supplied entries without
-interpretation in ``sys.warnoptions``; the :mod:`warnings` module parses these
+interpretation in :data:`sys.warnoptions`; the :mod:`warnings` module parses these
 when it is first imported (invalid options are ignored, after printing a
-message to ``sys.stderr``).
+message to :data:`sys.stderr`).
 
 Individual warnings filters are specified as a sequence of fields separated by
 colons::
@@ -192,7 +197,7 @@ colons::
 
 The meaning of each of these fields is as described in :ref:`warning-filter`.
 When listing multiple filters on a single line (as for
-:envvar:`PYTHONWARNINGS`), the individual filters are separated by commas,and
+:envvar:`PYTHONWARNINGS`), the individual filters are separated by commas and
 the filters listed later take precedence over those listed before them (as
 they're applied left-to-right, and the most recently applied filters take
 precedence over earlier ones).
@@ -207,8 +212,7 @@ Some examples::
    error::ResourceWarning       # Treat ResourceWarning messages as errors
    default::DeprecationWarning  # Show DeprecationWarning messages
    ignore,default:::mymodule    # Only report warnings triggered by "mymodule"
-   error:::mymodule[.*]         # Convert warnings to errors in "mymodule"
-                                # and any subpackages of "mymodule"
+   error:::mymodule             # Convert warnings to errors in "mymodule"
 
 
 .. _default-warning-filter:
@@ -229,7 +233,7 @@ In regular release builds, the default warning filter has the following entries
     ignore::ImportWarning
     ignore::ResourceWarning
 
-In debug builds, the list of default warning filters is empty.
+In a :ref:`debug build <debug-build>`, the list of default warning filters is empty.
 
 .. versionchanged:: 3.2
    :exc:`DeprecationWarning` is now ignored by default in addition to
@@ -395,12 +399,12 @@ Available Functions
 .. function:: warn(message, category=None, stacklevel=1, source=None)
 
    Issue a warning, or maybe ignore it or raise an exception.  The *category*
-   argument, if given, must be a warning category class (see above); it defaults to
-   :exc:`UserWarning`.  Alternatively *message* can be a :exc:`Warning` instance,
+   argument, if given, must be a :ref:`warning category class <warning-categories>`; it
+   defaults to :exc:`UserWarning`.  Alternatively, *message* can be a :exc:`Warning` instance,
    in which case *category* will be ignored and ``message.__class__`` will be used.
-   In this case the message text will be ``str(message)``. This function raises an
+   In this case, the message text will be ``str(message)``. This function raises an
    exception if the particular warning issued is changed into an error by the
-   warnings filter see above.  The *stacklevel* argument can be used by wrapper
+   :ref:`warnings filter <warning-filter>`.  The *stacklevel* argument can be used by wrapper
    functions written in Python, like this::
 
       def deprecation(message):
@@ -444,7 +448,7 @@ Available Functions
 
    Write a warning to a file.  The default implementation calls
    ``formatwarning(message, category, filename, lineno, line)`` and writes the
-   resulting string to *file*, which defaults to ``sys.stderr``.  You may replace
+   resulting string to *file*, which defaults to :data:`sys.stderr`.  You may replace
    this function with any callable by assigning to ``warnings.showwarning``.
    *line* is a line of source code to be included in the warning
    message; if *line* is not supplied, :func:`showwarning` will
@@ -491,7 +495,7 @@ Available Functions
 Available Context Managers
 --------------------------
 
-.. class:: catch_warnings(\*, record=False, module=None)
+.. class:: catch_warnings(*, record=False, module=None, action=None, category=Warning, lineno=0, append=False)
 
     A context manager that copies and, upon exit, restores the warnings filter
     and the :func:`showwarning` function.
@@ -507,6 +511,10 @@ Available Context Managers
     protected. This argument exists primarily for testing the :mod:`warnings`
     module itself.
 
+    If the *action* argument is not ``None``, the remaining arguments are
+    passed to :func:`simplefilter` as if it were called immediately on
+    entering the context.
+
     .. note::
 
         The :class:`catch_warnings` manager works by replacing and
@@ -514,3 +522,7 @@ Available Context Managers
         :func:`showwarning` function and internal list of filter
         specifications.  This means the context manager is modifying
         global state and therefore is not thread-safe.
+
+    .. versionchanged:: 3.11
+
+        Added the *action*, *category*, *lineno*, and *append* parameters.

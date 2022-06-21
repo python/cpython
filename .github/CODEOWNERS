@@ -9,18 +9,51 @@
 
 # Core
 **/*context*                  @1st1
-**/*genobject*                @1st1
+**/*genobject*                @1st1 @markshannon
 **/*hamt*                     @1st1
-Objects/dict*                 @methane
+Objects/set*                  @rhettinger
+Objects/dict*                 @methane @markshannon
+Objects/type*                 @markshannon
+Objects/codeobject.c          @markshannon
+Objects/frameobject.c         @markshannon
+Objects/call.c                @markshannon
+Python/ceval.c                @markshannon
+Python/compile.c              @markshannon
+Python/ast_opt.c              @isidentical
+Lib/test/test_patma.py        @brandtbucher
+Lib/test/test_peepholer.py    @brandtbucher
+
+# Exceptions
+Lib/traceback.py              @iritkatriel
+Lib/test/test_except*.py      @iritkatriel
+Lib/test/test_traceback.py    @iritkatriel
+Objects/exceptions.c          @iritkatriel
+Python/traceback.c            @iritkatriel
+Python/pythonrun.c            @iritkatriel
 
 # Hashing
-**/*hashlib*                  @python/crypto-team
-**/*pyhash*                   @python/crypto-team
+**/*hashlib*                  @tiran
+**/*pyhash*                   @tiran
+**/*sha*                      @tiran
+**/*md5*                      @tiran
+**/*blake*                    @tiran
+/Modules/_blake2/**           @tiran
+/Modules/_sha3/**             @tiran
+
+# logging
+**/*logging*                  @vsajip
+
+# venv
+**/*venv*                     @vsajip
+
+# Launcher
+/PC/launcher.c                @vsajip
 
 # HTML
 /Lib/html/                    @ezio-melotti
 /Lib/_markupbase.py           @ezio-melotti
 /Lib/test/test_html*.py       @ezio-melotti
+/Tools/scripts/*html5*        @ezio-melotti
 
 # Import (including importlib).
 # Ignoring importlib.h so as to not get flagged on
@@ -28,13 +61,17 @@ Objects/dict*                 @methane
 # bytecode.
 **/*import*.c                 @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
 **/*import*.py                @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
+**/importlib/resources/*      @jaraco @warsaw @brettcannon
+**/importlib/metadata/*       @jaraco @warsaw
 
-
-# SSL
-**/*ssl*                      @python/crypto-team
-
-# CSPRNG
-Python/bootstrap_hash.c       @python/crypto-team
+# Dates and times
+**/*datetime*                 @pganssle @abalkin
+**/*str*time*                 @pganssle @abalkin
+Doc/library/time.rst          @pganssle @abalkin
+Lib/test/test_time.py         @pganssle @abalkin
+Modules/timemodule.c          @pganssle @abalkin
+Python/pytime.c               @pganssle @abalkin
+Include/pytime.h              @pganssle @abalkin
 
 # Email and related
 **/*mail*                     @python/email-team
@@ -43,14 +80,33 @@ Python/bootstrap_hash.c       @python/crypto-team
 **/*imap*                     @python/email-team
 **/*poplib*                   @python/email-team
 
-# Parser/Pgen
-/Parser/pgen/                 @pablogsal
+# Garbage collector
+/Modules/gcmodule.c           @pablogsal
+/Doc/library/gc.rst           @pablogsal
+
+# Parser
+/Parser/                      @pablogsal @lysnikolaou
+/Tools/peg_generator/         @pablogsal @lysnikolaou
+/Lib/test/test_peg_generator/ @pablogsal @lysnikolaou
+/Grammar/python.gram          @pablogsal @lysnikolaou
+
+# AST
+Python/ast.c                  @isidentical
+Parser/asdl.py                @isidentical
+Parser/asdl_c.py              @isidentical
+Lib/ast.py                    @isidentical
+
+# Mock
+/Lib/unittest/mock.py         @cjw296
+/Lib/test/test_unittest/testmock/* @cjw296
 
 # SQLite 3
-**/*sqlite*                   @berkerpeksag
+**/*sqlite*                   @berkerpeksag @erlend-aasland
 
 # subprocess
-**/*subprocess*               @gpshead
+/Lib/subprocess.py            @gpshead
+/Lib/test/test_subprocess.py  @gpshead
+/Modules/*subprocess*         @gpshead
 
 # Windows
 /PC/                          @python/windows-team
@@ -63,6 +119,7 @@ Python/bootstrap_hash.c       @python/crypto-team
 /Tools/msi/                   @python/windows-team
 /Tools/nuget/                 @python/windows-team
 
+# Misc
 **/*itertools*                @rhettinger
 **/*collections*              @rhettinger
 **/*random*                   @rhettinger
@@ -70,14 +127,28 @@ Python/bootstrap_hash.c       @python/crypto-team
 **/*bisect*                   @rhettinger
 **/*heapq*                    @rhettinger
 **/*functools*                @rhettinger
-**/*decimal*                  @rhettinger @skrah
+**/*decimal*                  @rhettinger
 
 **/*dataclasses*              @ericvsmith
 
 **/*idlelib*                  @terryjreedy
 
-**/*typing*                   @gvanrossum @ilevkivskyi
+**/*typing*                   @gvanrossum @Fidget-Spinner @JelleZijlstra
+
+**/*asyncore                  @giampaolo
+**/*asynchat                  @giampaolo
+**/*ftplib                    @giampaolo
+**/*shutil                    @giampaolo
+
+**/*enum*                     @ethanfurman
+**/*cgi*                      @ethanfurman
+**/*tarfile*                  @ethanfurman
+
+**/*tomllib*                  @encukou
 
 # macOS
 /Mac/                         @python/macos-team
 **/*osx_support*              @python/macos-team
+
+# pathlib
+**/*pathlib*                  @brettcannon

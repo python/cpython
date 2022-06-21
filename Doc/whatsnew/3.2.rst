@@ -48,9 +48,12 @@
    This saves the maintainer the effort of going through the SVN log
    when researching a change.
 
-This article explains the new features in Python 3.2 as compared to 3.1.  It
+This article explains the new features in Python 3.2 as compared to 3.1.
+Python 3.2 was released on February 20, 2011. It
 focuses on a few highlights and gives a few examples.  For full details, see the
-`Misc/NEWS <https://hg.python.org/cpython/file/3.2/Misc/NEWS>`_ file.
+`Misc/NEWS
+<https://github.com/python/cpython/blob/076ca6c3c8df3030307e548d9be792ce3c1c6eea/Misc/NEWS>`_
+file.
 
 .. seealso::
 
@@ -742,7 +745,8 @@ Two methods have been deprecated:
 * :meth:`xml.etree.ElementTree.getiterator` use ``Element.iter`` instead.
 
 For details of the update, see `Introducing ElementTree
-<http://effbot.org/zone/elementtree-13-intro.htm>`_ on Fredrik Lundh's website.
+<https://web.archive.org/web/20200703234532/http://effbot.org/zone/elementtree-13-intro.htm>`_
+on Fredrik Lundh's website.
 
 (Contributed by Florent Xicluna and Fredrik Lundh, :issue:`6472`.)
 
@@ -969,10 +973,10 @@ sites do not finish before midnight, the barrier times-out and the ballots are
 sealed and deposited in a queue for later handling.
 
 See `Barrier Synchronization Patterns
-<https://parlab.eecs.berkeley.edu/wiki/_media/patterns/paraplop_g1_3.pdf>`_ for
-more examples of how barriers can be used in parallel computing.  Also, there is
+<http://osl.cs.illinois.edu/media/papers/karmani-2009-barrier_synchronization_pattern.pdf>`_
+for more examples of how barriers can be used in parallel computing.  Also, there is
 a simple but thorough explanation of barriers in `The Little Book of Semaphores
-<http://greenteapress.com/semaphores/downey08semaphores.pdf>`_, *section 3.6*.
+<https://greenteapress.com/semaphores/LittleBookOfSemaphores.pdf>`_, *section 3.6*.
 
 (Contributed by Kristján Valur Jónsson with an API review by Jeffrey Yasskin in
 :issue:`8777`.)
@@ -1643,7 +1647,7 @@ for secure (encrypted, authenticated) internet connections:
 * The :func:`ssl.wrap_socket` constructor function now takes a *ciphers*
   argument.  The *ciphers* string lists the allowed encryption algorithms using
   the format described in the `OpenSSL documentation
-  <https://www.openssl.org/docs/manmaster/man1/ciphers.html#CIPHER-LIST-FORMAT>`__.
+  <https://www.openssl.org/docs/man1.0.2/man1/ciphers.html#CIPHER-LIST-FORMAT>`__.
 
 * When linked against recent versions of OpenSSL, the :mod:`ssl` module now
   supports the Server Name Indication extension to the TLS protocol, allowing
@@ -1919,7 +1923,7 @@ inspect
 pydoc
 -----
 
-The :mod:`pydoc` module now provides a much-improved Web server interface, as
+The :mod:`pydoc` module now provides a much-improved web server interface, as
 well as a new command-line option ``-b`` to automatically open a browser window
 to display that server:
 
@@ -2309,7 +2313,7 @@ Multi-threading
 ===============
 
 * The mechanism for serializing execution of concurrently running Python threads
-  (generally known as the :term:`GIL` or :term:`Global Interpreter Lock`) has
+  (generally known as the :term:`GIL` or Global Interpreter Lock) has
   been rewritten.  Among the objectives were more predictable switching
   intervals and reduced overhead due to lock contention and the number of
   ensuing system calls.  The notion of a "check interval" to allow thread
@@ -2512,9 +2516,9 @@ repository.  This distributed version control system should make it easier for
 members of the community to create and share external changesets.  See
 :pep:`385` for details.
 
-To learn to use the new version control system, see the `tutorial by Joel
-Spolsky <http://hginit.com>`_ or the `Guide to Mercurial Workflows
-<https://www.mercurial-scm.org/guide>`_.
+To learn to use the new version control system, see the `Quick Start
+<https://www.mercurial-scm.org/wiki/QuickStart>`_ or the `Guide to
+Mercurial Workflows <https://www.mercurial-scm.org/guide>`_.
 
 
 Build and C API Changes
@@ -2589,10 +2593,12 @@ Changes to Python's build process and to the C API include:
   longer used and it had never been documented (:issue:`8837`).
 
 There were a number of other small changes to the C-API.  See the
-:source:`Misc/NEWS` file for a complete list.
+Misc/NEWS <https://github.com/python/cpython/blob/v3.2.6/Misc/NEWS>`_
+file for a complete list.
 
 Also, there were a number of updates to the Mac OS X build, see
-:source:`Mac/BuildScript/README.txt` for details.  For users running a 32/64-bit
+`Mac/BuildScript/README.txt <https://github.com/python/cpython/blob/v3.2.6/Mac/BuildScript/README.txt>`_
+for details.  For users running a 32/64-bit
 build, there is a known problem with the default Tcl/Tk on Mac OS X 10.6.
 Accordingly, we recommend installing an updated alternative such as
 `ActiveState Tcl/Tk 8.5.9 <https://www.activestate.com/activetcl/downloads>`_\.

@@ -52,11 +52,9 @@ ModuleType = type(sys)
 
 try:
     raise TypeError
-except TypeError:
-    tb = sys.exc_info()[2]
-    TracebackType = type(tb)
-    FrameType = type(tb.tb_frame)
-    tb = None; del tb
+except TypeError as exc:
+    TracebackType = type(exc.__traceback__)
+    FrameType = type(exc.__traceback__.tb_frame)
 
 # For Jython, the following two types are identical
 GetSetDescriptorType = type(FunctionType.__code__)
@@ -155,7 +153,12 @@ class DynamicClassAttribute:
     class's __getattr__ method; this is done by raising AttributeError.
 
     This allows one to have properties active on an instance, and have virtual
-    attributes on the class with the same name (see Enum for an example).
+    attributes on the class with the same name.  (Enum used this between Python
+    versions 3.4 - 3.9 .)
+
+    Subclass from this to use a different method of accessing virtual attributes
+    and still be treated properly by the inspect module. (Enum uses this since
+    Python 3.10 .)
 
     """
     def __init__(self, fget=None, fset=None, fdel=None, doc=None):
@@ -262,14 +265,8 @@ def coroutine(func):
         if co_flags & 0x20:
             # TODO: Implement this in C.
             co = func.__code__
-            func.__code__ = CodeType(
-                co.co_argcount, co.co_posonlyargcount, co.co_kwonlyargcount, co.co_nlocals,
-                co.co_stacksize,
-                co.co_flags | 0x100,  # 0x100 == CO_ITERABLE_COROUTINE
-                co.co_code,
-                co.co_consts, co.co_names, co.co_varnames, co.co_filename,
-                co.co_name, co.co_firstlineno, co.co_lnotab, co.co_freevars,
-                co.co_cellvars)
+            # 0x100 == CO_ITERABLE_COROUTINE
+            func.__code__ = co.replace(co_flags=co.co_flags | 0x100)
             return func
 
     # The following code is primarily to support functions that
@@ -298,5 +295,11 @@ def coroutine(func):
 
     return wrapped
 
+GenericAlias = type(list[int])
+UnionType = type(int | str)
+
+EllipsisType = type(Ellipsis)
+NoneType = type(None)
+NotImplementedType = type(NotImplemented)
 
 __all__ = [n for n in globals() if n[:1] != '_']

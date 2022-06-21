@@ -3,12 +3,17 @@
 
 .. module:: telnetlib
    :synopsis: Telnet client class.
+   :deprecated:
 
 .. sectionauthor:: Skip Montanaro <skip@pobox.com>
 
 **Source code:** :source:`Lib/telnetlib.py`
 
 .. index:: single: protocol; Telnet
+
+.. deprecated-removed:: 3.11 3.13
+   The :mod:`telnetlib` module is deprecated
+   (see :pep:`PEP 594 <594#telnetlib>` for details and alternatives).
 
 --------------
 
@@ -29,7 +34,7 @@ Character), EL (Erase Line), GA (Go Ahead), SB (Subnegotiation Begin).
 .. class:: Telnet(host=None, port=0[, timeout])
 
    :class:`Telnet` represents a connection to a Telnet server. The instance is
-   initially not connected by default; the :meth:`open` method must be used to
+   initially not connected by default; the :meth:`~Telnet.open` method must be used to
    establish a connection.  Alternatively, the host name and optional port
    number can be passed to the constructor too, in which case the connection to
    the server will be established before the constructor returns.  The optional
@@ -141,6 +146,8 @@ Telnet Objects
 
    Do not try to reopen an already connected instance.
 
+   .. audit-event:: telnetlib.Telnet.open self,host,port telnetlib.Telnet.open
+
 
 .. method:: Telnet.msg(msg, *args)
 
@@ -175,6 +182,8 @@ Telnet Objects
    Write a byte string to the socket, doubling any IAC characters. This can
    block if the connection is blocked.  May raise :exc:`OSError` if the
    connection is closed.
+
+   .. audit-event:: telnetlib.Telnet.write self,buffer telnetlib.Telnet.write
 
    .. versionchanged:: 3.3
       This method used to raise :exc:`socket.error`, which is now an alias

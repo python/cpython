@@ -1,3 +1,4 @@
+import contextlib
 import collections.abc
 import io
 import os
@@ -11,8 +12,10 @@ import tempfile
 import unittest
 from unittest import mock
 
-from test import support
-from test.support import TESTFN, FakePath
+from test.support import import_helper
+from test.support import is_emscripten, is_wasi
+from test.support import os_helper
+from test.support.os_helper import TESTFN, FakePath
 
 try:
     import grp, pwd
@@ -323,7 +326,7 @@ class _BasePurePathTest(object):
         self.assertFalse(P('b/py').match('b.py'))
         self.assertFalse(P('/a.py').match('b.py'))
         self.assertFalse(P('b.py/c').match('b.py'))
-        # Wilcard relative pattern.
+        # Wildcard relative pattern.
         self.assertTrue(P('b.py').match('*.py'))
         self.assertTrue(P('a/b.py').match('*.py'))
         self.assertTrue(P('/a/b.py').match('*.py'))
@@ -439,9 +442,18 @@ class _BasePurePathTest(object):
         self.assertEqual(par[0], P('a/b'))
         self.assertEqual(par[1], P('a'))
         self.assertEqual(par[2], P('.'))
+        self.assertEqual(par[-1], P('.'))
+        self.assertEqual(par[-2], P('a'))
+        self.assertEqual(par[-3], P('a/b'))
+        self.assertEqual(par[0:1], (P('a/b'),))
+        self.assertEqual(par[:2], (P('a/b'), P('a')))
+        self.assertEqual(par[:-1], (P('a/b'), P('a')))
+        self.assertEqual(par[1:], (P('a'), P('.')))
+        self.assertEqual(par[::2], (P('a/b'), P('.')))
+        self.assertEqual(par[::-1], (P('.'), P('a'), P('a/b')))
         self.assertEqual(list(par), [P('a/b'), P('a'), P('.')])
         with self.assertRaises(IndexError):
-            par[-1]
+            par[-4]
         with self.assertRaises(IndexError):
             par[3]
         with self.assertRaises(TypeError):
@@ -453,7 +465,18 @@ class _BasePurePathTest(object):
         self.assertEqual(par[0], P('/a/b'))
         self.assertEqual(par[1], P('/a'))
         self.assertEqual(par[2], P('/'))
+        self.assertEqual(par[-1], P('/'))
+        self.assertEqual(par[-2], P('/a'))
+        self.assertEqual(par[-3], P('/a/b'))
+        self.assertEqual(par[0:1], (P('/a/b'),))
+        self.assertEqual(par[:2], (P('/a/b'), P('/a')))
+        self.assertEqual(par[:-1], (P('/a/b'), P('/a')))
+        self.assertEqual(par[1:], (P('/a'), P('/')))
+        self.assertEqual(par[::2], (P('/a/b'), P('/')))
+        self.assertEqual(par[::-1], (P('/'), P('/a'), P('/a/b')))
         self.assertEqual(list(par), [P('/a/b'), P('/a'), P('/')])
+        with self.assertRaises(IndexError):
+            par[-4]
         with self.assertRaises(IndexError):
             par[3]
 
@@ -559,6 +582,23 @@ class _BasePurePathTest(object):
         self.assertRaises(ValueError, P('a/b').with_name, 'c/')
         self.assertRaises(ValueError, P('a/b').with_name, 'c/d')
 
+    def test_with_stem_common(self):
+        P = self.cls
+        self.assertEqual(P('a/b').with_stem('d'), P('a/d'))
+        self.assertEqual(P('/a/b').with_stem('d'), P('/a/d'))
+        self.assertEqual(P('a/b.py').with_stem('d'), P('a/d.py'))
+        self.assertEqual(P('/a/b.py').with_stem('d'), P('/a/d.py'))
+        self.assertEqual(P('/a/b.tar.gz').with_stem('d'), P('/a/d.gz'))
+        self.assertEqual(P('a/Dot ending.').with_stem('d'), P('a/d'))
+        self.assertEqual(P('/a/Dot ending.').with_stem('d'), P('/a/d'))
+        self.assertRaises(ValueError, P('').with_stem, 'd')
+        self.assertRaises(ValueError, P('.').with_stem, 'd')
+        self.assertRaises(ValueError, P('/').with_stem, 'd')
+        self.assertRaises(ValueError, P('a/b').with_stem, '')
+        self.assertRaises(ValueError, P('a/b').with_stem, '/c')
+        self.assertRaises(ValueError, P('a/b').with_stem, 'c/')
+        self.assertRaises(ValueError, P('a/b').with_stem, 'c/d')
+
     def test_with_suffix_common(self):
         P = self.cls
         self.assertEqual(P('a/b').with_suffix('.gz'), P('a/b.gz'))
@@ -618,6 +658,40 @@ class _BasePurePathTest(object):
         self.assertRaises(ValueError, p.relative_to, P())
         self.assertRaises(ValueError, p.relative_to, '')
         self.assertRaises(ValueError, p.relative_to, P('a'))
+
+    def test_is_relative_to_common(self):
+        P = self.cls
+        p = P('a/b')
+        self.assertRaises(TypeError, p.is_relative_to)
+        self.assertRaises(TypeError, p.is_relative_to, b'a')
+        self.assertTrue(p.is_relative_to(P()))
+        self.assertTrue(p.is_relative_to(''))
+        self.assertTrue(p.is_relative_to(P('a')))
+        self.assertTrue(p.is_relative_to('a/'))
+        self.assertTrue(p.is_relative_to(P('a/b')))
+        self.assertTrue(p.is_relative_to('a/b'))
+        # With several args.
+        self.assertTrue(p.is_relative_to('a', 'b'))
+        # Unrelated paths.
+        self.assertFalse(p.is_relative_to(P('c')))
+        self.assertFalse(p.is_relative_to(P('a/b/c')))
+        self.assertFalse(p.is_relative_to(P('a/c')))
+        self.assertFalse(p.is_relative_to(P('/a')))
+        p = P('/a/b')
+        self.assertTrue(p.is_relative_to(P('/')))
+        self.assertTrue(p.is_relative_to('/'))
+        self.assertTrue(p.is_relative_to(P('/a')))
+        self.assertTrue(p.is_relative_to('/a'))
+        self.assertTrue(p.is_relative_to('/a/'))
+        self.assertTrue(p.is_relative_to(P('/a/b')))
+        self.assertTrue(p.is_relative_to('/a/b'))
+        # Unrelated paths.
+        self.assertFalse(p.is_relative_to(P('/c')))
+        self.assertFalse(p.is_relative_to(P('/a/b/c')))
+        self.assertFalse(p.is_relative_to(P('/a/c')))
+        self.assertFalse(p.is_relative_to(P()))
+        self.assertFalse(p.is_relative_to(''))
+        self.assertFalse(p.is_relative_to(P('a')))
 
     def test_pickling_common(self):
         P = self.cls
@@ -853,6 +927,12 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(len(par), 2)
         self.assertEqual(par[0], P('z:a'))
         self.assertEqual(par[1], P('z:'))
+        self.assertEqual(par[0:1], (P('z:a'),))
+        self.assertEqual(par[:-1], (P('z:a'),))
+        self.assertEqual(par[:2], (P('z:a'), P('z:')))
+        self.assertEqual(par[1:], (P('z:'),))
+        self.assertEqual(par[::2], (P('z:a'),))
+        self.assertEqual(par[::-1], (P('z:'), P('z:a')))
         self.assertEqual(list(par), [P('z:a'), P('z:')])
         with self.assertRaises(IndexError):
             par[2]
@@ -861,6 +941,12 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(len(par), 2)
         self.assertEqual(par[0], P('z:/a'))
         self.assertEqual(par[1], P('z:/'))
+        self.assertEqual(par[0:1], (P('z:/a'),))
+        self.assertEqual(par[0:-1], (P('z:/a'),))
+        self.assertEqual(par[:2], (P('z:/a'), P('z:/')))
+        self.assertEqual(par[1:], (P('z:/'),))
+        self.assertEqual(par[::2], (P('z:/a'),))
+        self.assertEqual(par[::-1], (P('z:/'), P('z:/a'),))
         self.assertEqual(list(par), [P('z:/a'), P('z:/')])
         with self.assertRaises(IndexError):
             par[2]
@@ -869,6 +955,12 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(len(par), 2)
         self.assertEqual(par[0], P('//a/b/c'))
         self.assertEqual(par[1], P('//a/b'))
+        self.assertEqual(par[0:1], (P('//a/b/c'),))
+        self.assertEqual(par[0:-1], (P('//a/b/c'),))
+        self.assertEqual(par[:2], (P('//a/b/c'), P('//a/b')))
+        self.assertEqual(par[1:], (P('//a/b'),))
+        self.assertEqual(par[::2], (P('//a/b/c'),))
+        self.assertEqual(par[::-1], (P('//a/b'), P('//a/b/c')))
         self.assertEqual(list(par), [P('//a/b/c'), P('//a/b')])
         with self.assertRaises(IndexError):
             par[2]
@@ -980,6 +1072,20 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertRaises(ValueError, P('c:a/b').with_name, 'd:/e')
         self.assertRaises(ValueError, P('c:a/b').with_name, '//My/Share')
 
+    def test_with_stem(self):
+        P = self.cls
+        self.assertEqual(P('c:a/b').with_stem('d'), P('c:a/d'))
+        self.assertEqual(P('c:/a/b').with_stem('d'), P('c:/a/d'))
+        self.assertEqual(P('c:a/Dot ending.').with_stem('d'), P('c:a/d'))
+        self.assertEqual(P('c:/a/Dot ending.').with_stem('d'), P('c:/a/d'))
+        self.assertRaises(ValueError, P('c:').with_stem, 'd')
+        self.assertRaises(ValueError, P('c:/').with_stem, 'd')
+        self.assertRaises(ValueError, P('//My/Share').with_stem, 'd')
+        self.assertRaises(ValueError, P('c:a/b').with_stem, 'd:')
+        self.assertRaises(ValueError, P('c:a/b').with_stem, 'd:e')
+        self.assertRaises(ValueError, P('c:a/b').with_stem, 'd:/e')
+        self.assertRaises(ValueError, P('c:a/b').with_stem, '//My/Share')
+
     def test_with_suffix(self):
         P = self.cls
         self.assertEqual(P('c:a/b').with_suffix('.gz'), P('c:a/b.gz'))
@@ -1062,6 +1168,59 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertRaises(ValueError, p.relative_to, P('//z/Share/Foo'))
         self.assertRaises(ValueError, p.relative_to, P('//Server/z/Foo'))
 
+    def test_is_relative_to(self):
+        P = self.cls
+        p = P('C:Foo/Bar')
+        self.assertTrue(p.is_relative_to(P('c:')))
+        self.assertTrue(p.is_relative_to('c:'))
+        self.assertTrue(p.is_relative_to(P('c:foO')))
+        self.assertTrue(p.is_relative_to('c:foO'))
+        self.assertTrue(p.is_relative_to('c:foO/'))
+        self.assertTrue(p.is_relative_to(P('c:foO/baR')))
+        self.assertTrue(p.is_relative_to('c:foO/baR'))
+        # Unrelated paths.
+        self.assertFalse(p.is_relative_to(P()))
+        self.assertFalse(p.is_relative_to(''))
+        self.assertFalse(p.is_relative_to(P('d:')))
+        self.assertFalse(p.is_relative_to(P('/')))
+        self.assertFalse(p.is_relative_to(P('Foo')))
+        self.assertFalse(p.is_relative_to(P('/Foo')))
+        self.assertFalse(p.is_relative_to(P('C:/Foo')))
+        self.assertFalse(p.is_relative_to(P('C:Foo/Bar/Baz')))
+        self.assertFalse(p.is_relative_to(P('C:Foo/Baz')))
+        p = P('C:/Foo/Bar')
+        self.assertTrue(p.is_relative_to('c:'))
+        self.assertTrue(p.is_relative_to(P('c:/')))
+        self.assertTrue(p.is_relative_to(P('c:/foO')))
+        self.assertTrue(p.is_relative_to('c:/foO/'))
+        self.assertTrue(p.is_relative_to(P('c:/foO/baR')))
+        self.assertTrue(p.is_relative_to('c:/foO/baR'))
+        # Unrelated paths.
+        self.assertFalse(p.is_relative_to(P('C:/Baz')))
+        self.assertFalse(p.is_relative_to(P('C:/Foo/Bar/Baz')))
+        self.assertFalse(p.is_relative_to(P('C:/Foo/Baz')))
+        self.assertFalse(p.is_relative_to(P('C:Foo')))
+        self.assertFalse(p.is_relative_to(P('d:')))
+        self.assertFalse(p.is_relative_to(P('d:/')))
+        self.assertFalse(p.is_relative_to(P('/')))
+        self.assertFalse(p.is_relative_to(P('/Foo')))
+        self.assertFalse(p.is_relative_to(P('//C/Foo')))
+        # UNC paths.
+        p = P('//Server/Share/Foo/Bar')
+        self.assertTrue(p.is_relative_to(P('//sErver/sHare')))
+        self.assertTrue(p.is_relative_to('//sErver/sHare'))
+        self.assertTrue(p.is_relative_to('//sErver/sHare/'))
+        self.assertTrue(p.is_relative_to(P('//sErver/sHare/Foo')))
+        self.assertTrue(p.is_relative_to('//sErver/sHare/Foo'))
+        self.assertTrue(p.is_relative_to('//sErver/sHare/Foo/'))
+        self.assertTrue(p.is_relative_to(P('//sErver/sHare/Foo/Bar')))
+        self.assertTrue(p.is_relative_to('//sErver/sHare/Foo/Bar'))
+        # Unrelated paths.
+        self.assertFalse(p.is_relative_to(P('/Server/Share/Foo')))
+        self.assertFalse(p.is_relative_to(P('c:/Server/Share/Foo')))
+        self.assertFalse(p.is_relative_to(P('//z/Share/Foo')))
+        self.assertFalse(p.is_relative_to(P('//Server/z/Foo')))
+
     def test_is_absolute(self):
         P = self.cls
         # Under NT, only paths with both a drive and a root are absolute.
@@ -1130,19 +1289,35 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertIs(False, P('').is_reserved())
         self.assertIs(False, P('/').is_reserved())
         self.assertIs(False, P('/foo/bar').is_reserved())
-        self.assertIs(True, P('con').is_reserved())
-        self.assertIs(True, P('NUL').is_reserved())
-        self.assertIs(True, P('NUL.txt').is_reserved())
-        self.assertIs(True, P('com1').is_reserved())
-        self.assertIs(True, P('com9.bar').is_reserved())
-        self.assertIs(False, P('bar.com9').is_reserved())
-        self.assertIs(True, P('lpt1').is_reserved())
-        self.assertIs(True, P('lpt9.bar').is_reserved())
-        self.assertIs(False, P('bar.lpt9').is_reserved())
-        # Only the last component matters.
-        self.assertIs(False, P('c:/NUL/con/baz').is_reserved())
         # UNC paths are never reserved.
         self.assertIs(False, P('//my/share/nul/con/aux').is_reserved())
+        # Case-insensitive DOS-device names are reserved.
+        self.assertIs(True, P('nul').is_reserved())
+        self.assertIs(True, P('aux').is_reserved())
+        self.assertIs(True, P('prn').is_reserved())
+        self.assertIs(True, P('con').is_reserved())
+        self.assertIs(True, P('conin$').is_reserved())
+        self.assertIs(True, P('conout$').is_reserved())
+        # COM/LPT + 1-9 or + superscript 1-3 are reserved.
+        self.assertIs(True, P('COM1').is_reserved())
+        self.assertIs(True, P('LPT9').is_reserved())
+        self.assertIs(True, P('com\xb9').is_reserved())
+        self.assertIs(True, P('com\xb2').is_reserved())
+        self.assertIs(True, P('lpt\xb3').is_reserved())
+        # DOS-device name mataching ignores characters after a dot or
+        # a colon and also ignores trailing spaces.
+        self.assertIs(True, P('NUL.txt').is_reserved())
+        self.assertIs(True, P('PRN  ').is_reserved())
+        self.assertIs(True, P('AUX  .txt').is_reserved())
+        self.assertIs(True, P('COM1:bar').is_reserved())
+        self.assertIs(True, P('LPT9   :bar').is_reserved())
+        # DOS-device names are only matched at the beginning
+        # of a path component.
+        self.assertIs(False, P('bar.com9').is_reserved())
+        self.assertIs(False, P('bar.lpt9').is_reserved())
+        # Only the last path component matters.
+        self.assertIs(True, P('c:/baz/con/NUL').is_reserved())
+        self.assertIs(False, P('c:/NUL/con/baz').is_reserved())
 
 class PurePathTest(_BasePurePathTest, unittest.TestCase):
     cls = pathlib.PurePath
@@ -1218,16 +1393,18 @@ class _BasePathTest(object):
     #  |   |-- dirD
     #  |   |   `-- fileD
     #  |   `-- fileC
+    #  |   `-- novel.txt
     #  |-- dirE  # No permissions
     #  |-- fileA
     #  |-- linkA -> fileA
-    #  `-- linkB -> dirB
+    #  |-- linkB -> dirB
+    #  `-- brokenLinkLoop -> brokenLinkLoop
     #
 
     def setUp(self):
         def cleanup():
             os.chmod(join('dirE'), 0o777)
-            support.rmtree(BASE)
+            os_helper.rmtree(BASE)
         self.addCleanup(cleanup)
         os.mkdir(BASE)
         os.mkdir(join('dirA'))
@@ -1241,10 +1418,12 @@ class _BasePathTest(object):
             f.write(b"this is file B\n")
         with open(join('dirC', 'fileC'), 'wb') as f:
             f.write(b"this is file C\n")
+        with open(join('dirC', 'novel.txt'), 'wb') as f:
+            f.write(b"this is a novel\n")
         with open(join('dirC', 'dirD', 'fileD'), 'wb') as f:
             f.write(b"this is file D\n")
         os.chmod(join('dirE'), 0)
-        if support.can_symlink():
+        if os_helper.can_symlink():
             # Relative symlinks.
             os.symlink('fileA', join('linkA'))
             os.symlink('non-existing', join('brokenLink'))
@@ -1252,6 +1431,8 @@ class _BasePathTest(object):
             self.dirlink(os.path.join('..', 'dirB'), join('dirA', 'linkC'))
             # This one goes upwards, creating a loop.
             self.dirlink(os.path.join('..', 'dirB'), join('dirB', 'linkD'))
+            # Broken symlink (pointing to itself).
+            os.symlink('brokenLinkLoop',  join('brokenLinkLoop'))
 
     if os.name == 'nt':
         # Workaround for http://bugs.python.org/issue13772.
@@ -1271,10 +1452,13 @@ class _BasePathTest(object):
             func(*args, **kwargs)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
 
+    def assertEqualNormCase(self, path_a, path_b):
+        self.assertEqual(os.path.normcase(path_a), os.path.normcase(path_b))
+
     def _test_cwd(self, p):
         q = self.cls(os.getcwd())
         self.assertEqual(p, q)
-        self.assertEqual(str(p), str(q))
+        self.assertEqualNormCase(str(p), str(q))
         self.assertIs(type(p), type(q))
         self.assertTrue(p.is_absolute())
 
@@ -1282,16 +1466,49 @@ class _BasePathTest(object):
         p = self.cls.cwd()
         self._test_cwd(p)
 
+    def test_absolute_common(self):
+        P = self.cls
+
+        with mock.patch("os.getcwd") as getcwd:
+            getcwd.return_value = BASE
+
+            # Simple relative paths.
+            self.assertEqual(str(P().absolute()), BASE)
+            self.assertEqual(str(P('.').absolute()), BASE)
+            self.assertEqual(str(P('a').absolute()), os.path.join(BASE, 'a'))
+            self.assertEqual(str(P('a', 'b', 'c').absolute()), os.path.join(BASE, 'a', 'b', 'c'))
+
+            # Symlinks should not be resolved.
+            self.assertEqual(str(P('linkB', 'fileB').absolute()), os.path.join(BASE, 'linkB', 'fileB'))
+            self.assertEqual(str(P('brokenLink').absolute()), os.path.join(BASE, 'brokenLink'))
+            self.assertEqual(str(P('brokenLinkLoop').absolute()), os.path.join(BASE, 'brokenLinkLoop'))
+
+            # '..' entries should be preserved and not normalised.
+            self.assertEqual(str(P('..').absolute()), os.path.join(BASE, '..'))
+            self.assertEqual(str(P('a', '..').absolute()), os.path.join(BASE, 'a', '..'))
+            self.assertEqual(str(P('..', 'b').absolute()), os.path.join(BASE, '..', 'b'))
+
     def _test_home(self, p):
         q = self.cls(os.path.expanduser('~'))
         self.assertEqual(p, q)
-        self.assertEqual(str(p), str(q))
+        self.assertEqualNormCase(str(p), str(q))
         self.assertIs(type(p), type(q))
         self.assertTrue(p.is_absolute())
 
+    @unittest.skipIf(
+        pwd is None, reason="Test requires pwd module to get homedir."
+    )
     def test_home(self):
-        p = self.cls.home()
-        self._test_home(p)
+        with os_helper.EnvironmentVarGuard() as env:
+            self._test_home(self.cls.home())
+
+            env.clear()
+            env['USERPROFILE'] = os.path.join(BASE, 'userprofile')
+            self._test_home(self.cls.home())
+
+            # bpo-38883: ignore `HOME` when set on windows
+            env['HOME'] = os.path.join(BASE, 'home')
+            self._test_home(self.cls.home())
 
     def test_samefile(self):
         fileA_path = os.path.join(BASE, 'fileA')
@@ -1318,6 +1535,7 @@ class _BasePathTest(object):
         p = self.cls('')
         self.assertEqual(p.stat(), os.stat('.'))
 
+    @unittest.skipIf(is_wasi, "WASI has no user accounts.")
     def test_expanduser_common(self):
         P = self.cls
         p = P('~')
@@ -1338,7 +1556,7 @@ class _BasePathTest(object):
         self.assertIs(True, (p / 'dirA').exists())
         self.assertIs(True, (p / 'fileA').exists())
         self.assertIs(False, (p / 'fileA' / 'bah').exists())
-        if support.can_symlink():
+        if os_helper.can_symlink():
             self.assertIs(True, (p / 'linkA').exists())
             self.assertIs(True, (p / 'linkB').exists())
             self.assertIs(True, (p / 'linkB' / 'fileB').exists())
@@ -1377,17 +1595,37 @@ class _BasePathTest(object):
         self.assertRaises(TypeError, (p / 'fileA').write_text, b'somebytes')
         self.assertEqual((p / 'fileA').read_text(encoding='latin-1'), 'äbcdefg')
 
+    def test_write_text_with_newlines(self):
+        p = self.cls(BASE)
+        # Check that `\n` character change nothing
+        (p / 'fileA').write_text('abcde\r\nfghlk\n\rmnopq', newline='\n')
+        self.assertEqual((p / 'fileA').read_bytes(),
+                         b'abcde\r\nfghlk\n\rmnopq')
+        # Check that `\r` character replaces `\n`
+        (p / 'fileA').write_text('abcde\r\nfghlk\n\rmnopq', newline='\r')
+        self.assertEqual((p / 'fileA').read_bytes(),
+                         b'abcde\r\rfghlk\r\rmnopq')
+        # Check that `\r\n` character replaces `\n`
+        (p / 'fileA').write_text('abcde\r\nfghlk\n\rmnopq', newline='\r\n')
+        self.assertEqual((p / 'fileA').read_bytes(),
+                         b'abcde\r\r\nfghlk\r\n\rmnopq')
+        # Check that no argument passed will change `\n` to `os.linesep`
+        os_linesep_byte = bytes(os.linesep, encoding='ascii')
+        (p / 'fileA').write_text('abcde\nfghlk\n\rmnopq')
+        self.assertEqual((p / 'fileA').read_bytes(),
+                          b'abcde' + os_linesep_byte + b'fghlk' + os_linesep_byte + b'\rmnopq')
+
     def test_iterdir(self):
         P = self.cls
         p = P(BASE)
         it = p.iterdir()
         paths = set(it)
         expected = ['dirA', 'dirB', 'dirC', 'dirE', 'fileA']
-        if support.can_symlink():
-            expected += ['linkA', 'linkB', 'brokenLink']
+        if os_helper.can_symlink():
+            expected += ['linkA', 'linkB', 'brokenLink', 'brokenLinkLoop']
         self.assertEqual(paths, { P(BASE, q) for q in expected })
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_iterdir_symlink(self):
         # __iter__ on a symlink to a directory.
         P = self.cls
@@ -1416,19 +1654,24 @@ class _BasePathTest(object):
         _check(it, ["fileA"])
         _check(p.glob("fileB"), [])
         _check(p.glob("dir*/file*"), ["dirB/fileB", "dirC/fileC"])
-        if not support.can_symlink():
+        if not os_helper.can_symlink():
             _check(p.glob("*A"), ['dirA', 'fileA'])
         else:
             _check(p.glob("*A"), ['dirA', 'fileA', 'linkA'])
-        if not support.can_symlink():
+        if not os_helper.can_symlink():
             _check(p.glob("*B/*"), ['dirB/fileB'])
         else:
             _check(p.glob("*B/*"), ['dirB/fileB', 'dirB/linkD',
                                     'linkB/fileB', 'linkB/linkD'])
-        if not support.can_symlink():
+        if not os_helper.can_symlink():
             _check(p.glob("*/fileB"), ['dirB/fileB'])
         else:
             _check(p.glob("*/fileB"), ['dirB/fileB', 'linkB/fileB'])
+
+        if not os_helper.can_symlink():
+            _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE"])
+        else:
+            _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE", "linkB"])
 
     def test_rglob_common(self):
         def _check(glob, expected):
@@ -1440,18 +1683,36 @@ class _BasePathTest(object):
         _check(it, ["fileA"])
         _check(p.rglob("fileB"), ["dirB/fileB"])
         _check(p.rglob("*/fileA"), [])
-        if not support.can_symlink():
+        if not os_helper.can_symlink():
             _check(p.rglob("*/fileB"), ["dirB/fileB"])
         else:
             _check(p.rglob("*/fileB"), ["dirB/fileB", "dirB/linkD/fileB",
                                         "linkB/fileB", "dirA/linkC/fileB"])
         _check(p.rglob("file*"), ["fileA", "dirB/fileB",
                                   "dirC/fileC", "dirC/dirD/fileD"])
+        if not os_helper.can_symlink():
+            _check(p.rglob("*/"), [
+                "dirA", "dirB", "dirC", "dirC/dirD", "dirE",
+            ])
+        else:
+            _check(p.rglob("*/"), [
+                "dirA", "dirA/linkC", "dirB", "dirB/linkD", "dirC",
+                "dirC/dirD", "dirE", "linkB",
+            ])
+        _check(p.rglob(""), ["", "dirA", "dirB", "dirC", "dirE", "dirC/dirD"])
+
         p = P(BASE, "dirC")
+        _check(p.rglob("*"), ["dirC/fileC", "dirC/novel.txt",
+                              "dirC/dirD", "dirC/dirD/fileD"])
         _check(p.rglob("file*"), ["dirC/fileC", "dirC/dirD/fileD"])
         _check(p.rglob("*/*"), ["dirC/dirD/fileD"])
+        _check(p.rglob("*/"), ["dirC/dirD"])
+        _check(p.rglob(""), ["dirC", "dirC/dirD"])
+        # gh-91616, a re module regression
+        _check(p.rglob("*.txt"), ["dirC/novel.txt"])
+        _check(p.rglob("*.*"), ["dirC/novel.txt"])
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_rglob_symlink_loop(self):
         # Don't get fooled by symlink loops (Issue #26012).
         P = self.cls
@@ -1460,13 +1721,32 @@ class _BasePathTest(object):
         expect = {'brokenLink',
                   'dirA', 'dirA/linkC',
                   'dirB', 'dirB/fileB', 'dirB/linkD',
-                  'dirC', 'dirC/dirD', 'dirC/dirD/fileD', 'dirC/fileC',
+                  'dirC', 'dirC/dirD', 'dirC/dirD/fileD',
+                  'dirC/fileC', 'dirC/novel.txt',
                   'dirE',
                   'fileA',
                   'linkA',
                   'linkB',
+                  'brokenLinkLoop',
                   }
         self.assertEqual(given, {p / x for x in expect})
+
+    def test_glob_many_open_files(self):
+        depth = 30
+        P = self.cls
+        base = P(BASE) / 'deep'
+        p = P(base, *(['d']*depth))
+        p.mkdir(parents=True)
+        pattern = '/'.join(['*'] * depth)
+        iters = [base.glob(pattern) for j in range(100)]
+        for it in iters:
+            self.assertEqual(next(it), p)
+        iters = [base.rglob('d') for j in range(100)]
+        p = base
+        for i in range(depth):
+            p = p / 'd'
+            for it in iters:
+                self.assertEqual(next(it), p)
 
     def test_glob_dotdot(self):
         # ".." is not special in globs.
@@ -1476,6 +1756,39 @@ class _BasePathTest(object):
         self.assertEqual(set(p.glob("dirA/../file*")), { P(BASE, "dirA/../fileA") })
         self.assertEqual(set(p.glob("../xyzzy")), set())
 
+    @os_helper.skip_unless_symlink
+    def test_glob_permissions(self):
+        # See bpo-38894
+        P = self.cls
+        base = P(BASE) / 'permissions'
+        base.mkdir()
+
+        file1 = base / "file1"
+        file1.touch()
+        file2 = base / "file2"
+        file2.touch()
+
+        subdir = base / "subdir"
+
+        file3 = base / "file3"
+        file3.symlink_to(subdir / "other")
+
+        # Patching is needed to avoid relying on the filesystem
+        # to return the order of the files as the error will not
+        # happen if the symlink is the last item.
+        real_scandir = os.scandir
+        def my_scandir(path):
+            with real_scandir(path) as scandir_it:
+                entries = list(scandir_it)
+            entries.sort(key=lambda entry: entry.name)
+            return contextlib.nullcontext(entries)
+
+        with mock.patch("os.scandir", my_scandir):
+            self.assertEqual(len(set(base.glob("*"))), 3)
+            subdir.mkdir()
+            self.assertEqual(len(set(base.glob("*"))), 4)
+            subdir.chmod(000)
+            self.assertEqual(len(set(base.glob("*"))), 4)
 
     def _check_resolve(self, p, expected, strict=True):
         q = p.resolve(strict)
@@ -1484,7 +1797,7 @@ class _BasePathTest(object):
     # This can be used to check both relative and absolute resolutions.
     _check_resolve_relative = _check_resolve_absolute = _check_resolve
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_resolve_common(self):
         P = self.cls
         p = P(BASE, 'foo')
@@ -1492,14 +1805,14 @@ class _BasePathTest(object):
             p.resolve(strict=True)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
         # Non-strict
-        self.assertEqual(str(p.resolve(strict=False)),
-                         os.path.join(BASE, 'foo'))
+        self.assertEqualNormCase(str(p.resolve(strict=False)),
+                                 os.path.join(BASE, 'foo'))
         p = P(BASE, 'foo', 'in', 'spam')
-        self.assertEqual(str(p.resolve(strict=False)),
-                         os.path.join(BASE, 'foo', 'in', 'spam'))
+        self.assertEqualNormCase(str(p.resolve(strict=False)),
+                                 os.path.join(BASE, 'foo', 'in', 'spam'))
         p = P(BASE, '..', 'foo', 'in', 'spam')
-        self.assertEqual(str(p.resolve(strict=False)),
-                         os.path.abspath(os.path.join('foo', 'in', 'spam')))
+        self.assertEqualNormCase(str(p.resolve(strict=False)),
+                                 os.path.abspath(os.path.join('foo', 'in', 'spam')))
         # These are all relative symlinks.
         p = P(BASE, 'dirB', 'fileB')
         self._check_resolve_relative(p, p)
@@ -1524,8 +1837,9 @@ class _BasePathTest(object):
             # resolves to 'dirB/..' first before resolving to parent of dirB.
             self._check_resolve_relative(p, P(BASE, 'foo', 'in', 'spam'), False)
         # Now create absolute symlinks.
-        d = support._longpath(tempfile.mkdtemp(suffix='-dirD', dir=os.getcwd()))
-        self.addCleanup(support.rmtree, d)
+        d = os_helper._longpath(tempfile.mkdtemp(suffix='-dirD',
+                                                 dir=os.getcwd()))
+        self.addCleanup(os_helper.rmtree, d)
         os.symlink(os.path.join(d), join('dirA', 'linkX'))
         os.symlink(join('dirB'), os.path.join(d, 'linkY'))
         p = P(BASE, 'dirA', 'linkX', 'linkY', 'fileB')
@@ -1544,7 +1858,7 @@ class _BasePathTest(object):
             # resolves to 'dirB/..' first before resolving to parent of dirB.
             self._check_resolve_relative(p, P(BASE, 'foo', 'in', 'spam'), False)
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_resolve_dot(self):
         # See https://bitbucket.org/pitrou/pathlib/issue/9/pathresolve-fails-on-complex-symlinks
         p = self.cls(BASE)
@@ -1558,21 +1872,37 @@ class _BasePathTest(object):
         # Non-strict
         self.assertEqual(r.resolve(strict=False), p / '3' / '4')
 
+    def test_resolve_nonexist_relative_issue38671(self):
+        p = self.cls('non', 'exist')
+
+        old_cwd = os.getcwd()
+        os.chdir(BASE)
+        try:
+            self.assertEqual(p.resolve(), self.cls(BASE, p))
+        finally:
+            os.chdir(old_cwd)
+
     def test_with(self):
         p = self.cls(BASE)
         it = p.iterdir()
         it2 = p.iterdir()
         next(it2)
-        with p:
-            pass
-        # I/O operation on closed path.
-        self.assertRaises(ValueError, next, it)
-        self.assertRaises(ValueError, next, it2)
-        self.assertRaises(ValueError, p.open)
-        self.assertRaises(ValueError, p.resolve)
-        self.assertRaises(ValueError, p.absolute)
-        self.assertRaises(ValueError, p.__enter__)
+        # bpo-46556: path context managers are deprecated in Python 3.11.
+        with self.assertWarns(DeprecationWarning):
+            with p:
+                pass
+        # Using a path as a context manager is a no-op, thus the following
+        # operations should still succeed after the context manage exits.
+        next(it)
+        next(it2)
+        p.exists()
+        p.resolve()
+        p.absolute()
+        with self.assertWarns(DeprecationWarning):
+            with p:
+                pass
 
+    @os_helper.skip_unless_working_chmod
     def test_chmod(self):
         p = self.cls(BASE) / 'fileA'
         mode = p.stat().st_mode
@@ -1585,8 +1915,25 @@ class _BasePathTest(object):
         p.chmod(new_mode)
         self.assertEqual(p.stat().st_mode, new_mode)
 
+    # On Windows, os.chmod does not follow symlinks (issue #15411)
+    @only_posix
+    @os_helper.skip_unless_working_chmod
+    def test_chmod_follow_symlinks_true(self):
+        p = self.cls(BASE) / 'linkA'
+        q = p.resolve()
+        mode = q.stat().st_mode
+        # Clear writable bit.
+        new_mode = mode & ~0o222
+        p.chmod(new_mode, follow_symlinks=True)
+        self.assertEqual(q.stat().st_mode, new_mode)
+        # Set writable bit
+        new_mode = mode | 0o222
+        p.chmod(new_mode, follow_symlinks=True)
+        self.assertEqual(q.stat().st_mode, new_mode)
+
     # XXX also need a test for lchmod.
 
+    @os_helper.skip_unless_working_chmod
     def test_stat(self):
         p = self.cls(BASE) / 'fileA'
         st = p.stat()
@@ -1596,7 +1943,18 @@ class _BasePathTest(object):
         self.addCleanup(p.chmod, st.st_mode)
         self.assertNotEqual(p.stat(), st)
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
+    def test_stat_no_follow_symlinks(self):
+        p = self.cls(BASE) / 'linkA'
+        st = p.stat()
+        self.assertNotEqual(st, p.stat(follow_symlinks=False))
+
+    def test_stat_no_follow_symlinks_nosymlink(self):
+        p = self.cls(BASE) / 'fileA'
+        st = p.stat()
+        self.assertEqual(st, p.stat(follow_symlinks=False))
+
+    @os_helper.skip_unless_symlink
     def test_lstat(self):
         p = self.cls(BASE)/ 'linkA'
         st = p.stat()
@@ -1635,6 +1993,11 @@ class _BasePathTest(object):
         self.assertFileNotFound(p.stat)
         self.assertFileNotFound(p.unlink)
 
+    def test_unlink_missing_ok(self):
+        p = self.cls(BASE) / 'fileAAA'
+        self.assertFileNotFound(p.unlink)
+        p.unlink(missing_ok=True)
+
     def test_rmdir(self):
         p = self.cls(BASE) / 'dirA'
         for q in p.iterdir():
@@ -1643,24 +2006,32 @@ class _BasePathTest(object):
         self.assertFileNotFound(p.stat)
         self.assertFileNotFound(p.unlink)
 
-    def test_link_to(self):
+    @unittest.skipUnless(hasattr(os, "link"), "os.link() is not present")
+    def test_hardlink_to(self):
+        P = self.cls(BASE)
+        target = P / 'fileA'
+        size = target.stat().st_size
+        # linking to another path.
+        link = P / 'dirA' / 'fileAA'
+        link.hardlink_to(target)
+        self.assertEqual(link.stat().st_size, size)
+        self.assertTrue(os.path.samefile(target, link))
+        self.assertTrue(target.exists())
+        # Linking to a str of a relative path.
+        link2 = P / 'dirA' / 'fileAAA'
+        target2 = rel_join('fileA')
+        link2.hardlink_to(target2)
+        self.assertEqual(os.stat(target2).st_size, size)
+        self.assertTrue(link2.exists())
+
+    @unittest.skipIf(hasattr(os, "link"), "os.link() is present")
+    def test_link_to_not_implemented(self):
         P = self.cls(BASE)
         p = P / 'fileA'
-        size = p.stat().st_size
         # linking to another path.
         q = P / 'dirA' / 'fileAA'
-        try:
-            p.link_to(q)
-        except PermissionError as e:
-            self.skipTest('os.link(): %s' % e)
-        self.assertEqual(q.stat().st_size, size)
-        self.assertEqual(os.path.samefile(p, q), True)
-        self.assertTrue(p.stat)
-        # Linking to a str of a relative path.
-        r = rel_join('fileAAA')
-        q.link_to(r)
-        self.assertEqual(os.stat(r).st_size, size)
-        self.assertTrue(q.stat)
+        with self.assertRaises(NotImplementedError):
+            q.hardlink_to(p)
 
     def test_rename(self):
         P = self.cls(BASE)
@@ -1668,12 +2039,14 @@ class _BasePathTest(object):
         size = p.stat().st_size
         # Renaming to another path.
         q = P / 'dirA' / 'fileAA'
-        p.rename(q)
+        renamed_p = p.rename(q)
+        self.assertEqual(renamed_p, q)
         self.assertEqual(q.stat().st_size, size)
         self.assertFileNotFound(p.stat)
         # Renaming to a str of a relative path.
         r = rel_join('fileAAA')
-        q.rename(r)
+        renamed_q = q.rename(r)
+        self.assertEqual(renamed_q, self.cls(r))
         self.assertEqual(os.stat(r).st_size, size)
         self.assertFileNotFound(q.stat)
 
@@ -1683,14 +2056,26 @@ class _BasePathTest(object):
         size = p.stat().st_size
         # Replacing a non-existing path.
         q = P / 'dirA' / 'fileAA'
-        p.replace(q)
+        replaced_p = p.replace(q)
+        self.assertEqual(replaced_p, q)
         self.assertEqual(q.stat().st_size, size)
         self.assertFileNotFound(p.stat)
         # Replacing another (existing) path.
         r = rel_join('dirB', 'fileB')
-        q.replace(r)
+        replaced_q = q.replace(r)
+        self.assertEqual(replaced_q, self.cls(r))
         self.assertEqual(os.stat(r).st_size, size)
         self.assertFileNotFound(q.stat)
+
+    @os_helper.skip_unless_symlink
+    def test_readlink(self):
+        P = self.cls(BASE)
+        self.assertEqual((P / 'linkA').readlink(), self.cls('fileA'))
+        self.assertEqual((P / 'brokenLink').readlink(),
+                         self.cls('non-existing'))
+        self.assertEqual((P / 'linkB').readlink(), self.cls('dirB'))
+        with self.assertRaises(OSError):
+            (P / 'fileA').readlink()
 
     def test_touch_common(self):
         P = self.cls(BASE)
@@ -1788,6 +2173,7 @@ class _BasePathTest(object):
         self.assertTrue(p.exists())
         self.assertEqual(p.stat().st_ctime, st_ctime_first)
 
+    @unittest.skipIf(is_emscripten, "FS root cannot be modified on Emscripten.")
     def test_mkdir_exist_ok_root(self):
         # Issue #25803: A drive root could raise PermissionError on Windows.
         self.cls('/').resolve().mkdir(exist_ok=True)
@@ -1833,6 +2219,7 @@ class _BasePathTest(object):
             p = self.cls(BASE, 'dirCPC%d' % pattern_num)
             self.assertFalse(p.exists())
 
+            real_mkdir = os.mkdir
             def my_mkdir(path, mode=0o777):
                 path = str(path)
                 # Emulate another process that would create the directory
@@ -1841,15 +2228,15 @@ class _BasePathTest(object):
                 # function is called at most 5 times (dirCPC/dir1/dir2,
                 # dirCPC/dir1, dirCPC, dirCPC/dir1, dirCPC/dir1/dir2).
                 if pattern.pop():
-                    os.mkdir(path, mode)  # From another process.
+                    real_mkdir(path, mode)  # From another process.
                     concurrently_created.add(path)
-                os.mkdir(path, mode)  # Our real call.
+                real_mkdir(path, mode)  # Our real call.
 
             pattern = [bool(pattern_num & (1 << n)) for n in range(5)]
             concurrently_created = set()
             p12 = p / 'dir1' / 'dir2'
             try:
-                with mock.patch("pathlib._normal_accessor.mkdir", my_mkdir):
+                with mock.patch("os.mkdir", my_mkdir):
                     p12.mkdir(parents=True, exist_ok=False)
             except FileExistsError:
                 self.assertIn(str(p12), concurrently_created)
@@ -1857,7 +2244,7 @@ class _BasePathTest(object):
                 self.assertNotIn(str(p12), concurrently_created)
             self.assertTrue(p.exists())
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_symlink_to(self):
         P = self.cls(BASE)
         target = P / 'fileA'
@@ -1887,7 +2274,7 @@ class _BasePathTest(object):
         self.assertFalse((P / 'fileA').is_dir())
         self.assertFalse((P / 'non-existing').is_dir())
         self.assertFalse((P / 'fileA' / 'bah').is_dir())
-        if support.can_symlink():
+        if os_helper.can_symlink():
             self.assertFalse((P / 'linkA').is_dir())
             self.assertTrue((P / 'linkB').is_dir())
             self.assertFalse((P/ 'brokenLink').is_dir(), False)
@@ -1900,7 +2287,7 @@ class _BasePathTest(object):
         self.assertFalse((P / 'dirA').is_file())
         self.assertFalse((P / 'non-existing').is_file())
         self.assertFalse((P / 'fileA' / 'bah').is_file())
-        if support.can_symlink():
+        if os_helper.can_symlink():
             self.assertTrue((P / 'linkA').is_file())
             self.assertFalse((P / 'linkB').is_file())
             self.assertFalse((P/ 'brokenLink').is_file())
@@ -1916,7 +2303,7 @@ class _BasePathTest(object):
         self.assertFalse((P / 'non-existing').is_mount())
         self.assertFalse((P / 'fileA' / 'bah').is_mount())
         self.assertTrue(R.is_mount())
-        if support.can_symlink():
+        if os_helper.can_symlink():
             self.assertFalse((P / 'linkA').is_mount())
         self.assertIs(self.cls('/\udfff').is_mount(), False)
         self.assertIs(self.cls('/\x00').is_mount(), False)
@@ -1927,13 +2314,13 @@ class _BasePathTest(object):
         self.assertFalse((P / 'dirA').is_symlink())
         self.assertFalse((P / 'non-existing').is_symlink())
         self.assertFalse((P / 'fileA' / 'bah').is_symlink())
-        if support.can_symlink():
+        if os_helper.can_symlink():
             self.assertTrue((P / 'linkA').is_symlink())
             self.assertTrue((P / 'linkB').is_symlink())
             self.assertTrue((P/ 'brokenLink').is_symlink())
         self.assertIs((P / 'fileA\udfff').is_file(), False)
         self.assertIs((P / 'fileA\x00').is_file(), False)
-        if support.can_symlink():
+        if os_helper.can_symlink():
             self.assertIs((P / 'linkA\udfff').is_file(), False)
             self.assertIs((P / 'linkA\x00').is_file(), False)
 
@@ -1947,6 +2334,8 @@ class _BasePathTest(object):
         self.assertIs((P / 'fileA\x00').is_fifo(), False)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), "os.mkfifo() required")
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
     def test_is_fifo_true(self):
         P = self.cls(BASE, 'myfifo')
         try:
@@ -1969,6 +2358,12 @@ class _BasePathTest(object):
         self.assertIs((P / 'fileA\x00').is_socket(), False)
 
     @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
+    @unittest.skipIf(
+        is_emscripten, "Unix sockets are not implemented on Emscripten."
+    )
+    @unittest.skipIf(
+        is_wasi, "Cannot create socket on WASI."
+    )
     def test_is_socket_true(self):
         P = self.cls(BASE, 'mysock')
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -2041,16 +2436,16 @@ class _BasePathTest(object):
         # Resolve absolute paths.
         p = (P / 'link0').resolve()
         self.assertEqual(p, P)
-        self.assertEqual(str(p), BASE)
+        self.assertEqualNormCase(str(p), BASE)
         p = (P / 'link1').resolve()
         self.assertEqual(p, P)
-        self.assertEqual(str(p), BASE)
+        self.assertEqualNormCase(str(p), BASE)
         p = (P / 'link2').resolve()
         self.assertEqual(p, P)
-        self.assertEqual(str(p), BASE)
+        self.assertEqualNormCase(str(p), BASE)
         p = (P / 'link3').resolve()
         self.assertEqual(p, P)
-        self.assertEqual(str(p), BASE)
+        self.assertEqualNormCase(str(p), BASE)
 
         # Resolve relative paths.
         old_path = os.getcwd()
@@ -2058,28 +2453,28 @@ class _BasePathTest(object):
         try:
             p = self.cls('link0').resolve()
             self.assertEqual(p, P)
-            self.assertEqual(str(p), BASE)
+            self.assertEqualNormCase(str(p), BASE)
             p = self.cls('link1').resolve()
             self.assertEqual(p, P)
-            self.assertEqual(str(p), BASE)
+            self.assertEqualNormCase(str(p), BASE)
             p = self.cls('link2').resolve()
             self.assertEqual(p, P)
-            self.assertEqual(str(p), BASE)
+            self.assertEqualNormCase(str(p), BASE)
             p = self.cls('link3').resolve()
             self.assertEqual(p, P)
-            self.assertEqual(str(p), BASE)
+            self.assertEqualNormCase(str(p), BASE)
         finally:
             os.chdir(old_path)
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_complex_symlinks_absolute(self):
         self._check_complex_symlinks(BASE)
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_complex_symlinks_relative(self):
         self._check_complex_symlinks('.')
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_complex_symlinks_relative_dot_dot(self):
         self._check_complex_symlinks(os.path.join('dirA', '..'))
 
@@ -2108,11 +2503,26 @@ class PathTest(_BasePathTest, unittest.TestCase):
 class PosixPathTest(_BasePathTest, unittest.TestCase):
     cls = pathlib.PosixPath
 
+    def test_absolute(self):
+        P = self.cls
+        self.assertEqual(str(P('/').absolute()), '/')
+        self.assertEqual(str(P('/a').absolute()), '/a')
+        self.assertEqual(str(P('/a/b').absolute()), '/a/b')
+
+        # '//'-prefixed absolute path (supported by POSIX).
+        self.assertEqual(str(P('//').absolute()), '//')
+        self.assertEqual(str(P('//a').absolute()), '//a')
+        self.assertEqual(str(P('//a/b').absolute()), '//a/b')
+
     def _check_symlink_loop(self, *args, strict=True):
         path = self.cls(*args)
         with self.assertRaises(RuntimeError):
             print(path.resolve(strict))
 
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
     def test_open_mode(self):
         old_mask = os.umask(0)
         self.addCleanup(os.umask, old_mask)
@@ -2127,6 +2537,19 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         st = os.stat(join('other_new_file'))
         self.assertEqual(stat.S_IMODE(st.st_mode), 0o644)
 
+    def test_resolve_root(self):
+        current_directory = os.getcwd()
+        try:
+            os.chdir('/')
+            p = self.cls('spam')
+            self.assertEqual(str(p.resolve()), '/spam')
+        finally:
+            os.chdir(current_directory)
+
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
     def test_touch_mode(self):
         old_mask = os.umask(0)
         self.addCleanup(os.umask, old_mask)
@@ -2142,7 +2565,7 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         st = os.stat(join('masked_new_file'))
         self.assertEqual(stat.S_IMODE(st.st_mode), 0o750)
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_resolve_loop(self):
         # Loops with relative symlinks.
         os.symlink('linkX/inside', join('linkX'))
@@ -2167,7 +2590,7 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         P = self.cls
         p = P(BASE)
         given = set(p.glob("FILEa"))
-        expect = set() if not support.fs_is_case_insensitive(BASE) else given
+        expect = set() if not os_helper.fs_is_case_insensitive(BASE) else given
         self.assertEqual(given, expect)
         self.assertEqual(set(p.glob("FILEa*")), set())
 
@@ -2175,15 +2598,17 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         P = self.cls
         p = P(BASE, "dirC")
         given = set(p.rglob("FILEd"))
-        expect = set() if not support.fs_is_case_insensitive(BASE) else given
+        expect = set() if not os_helper.fs_is_case_insensitive(BASE) else given
         self.assertEqual(given, expect)
         self.assertEqual(set(p.rglob("FILEd*")), set())
 
     @unittest.skipUnless(hasattr(pwd, 'getpwall'),
                          'pwd module does not expose getpwall()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                     "no home directory on VxWorks")
     def test_expanduser(self):
         P = self.cls
-        support.import_module('pwd')
+        import_helper.import_module('pwd')
         import pwd
         pwdent = pwd.getpwuid(os.getuid())
         username = pwdent.pw_name
@@ -2198,15 +2623,23 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             othername = username
             otherhome = userhome
 
-        p1 = P('~/Documents')
-        p2 = P('~' + username + '/Documents')
-        p3 = P('~' + othername + '/Documents')
-        p4 = P('../~' + username + '/Documents')
-        p5 = P('/~' + username + '/Documents')
-        p6 = P('')
-        p7 = P('~fakeuser/Documents')
+        fakename = 'fakeuser'
+        # This user can theoretically exist on a test runner. Create unique name:
+        try:
+            while pwd.getpwnam(fakename):
+                fakename += '1'
+        except KeyError:
+            pass  # Non-existent name found
 
-        with support.EnvironmentVarGuard() as env:
+        p1 = P('~/Documents')
+        p2 = P(f'~{username}/Documents')
+        p3 = P(f'~{othername}/Documents')
+        p4 = P(f'../~{username}/Documents')
+        p5 = P(f'/~{username}/Documents')
+        p6 = P('')
+        p7 = P(f'~{fakename}/Documents')
+
+        with os_helper.EnvironmentVarGuard() as env:
             env.pop('HOME', None)
 
             self.assertEqual(p1.expanduser(), P(userhome) / 'Documents')
@@ -2254,19 +2687,50 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
 class WindowsPathTest(_BasePathTest, unittest.TestCase):
     cls = pathlib.WindowsPath
 
+    def test_absolute(self):
+        P = self.cls
+
+        # Simple absolute paths.
+        self.assertEqual(str(P('c:\\').absolute()), 'c:\\')
+        self.assertEqual(str(P('c:\\a').absolute()), 'c:\\a')
+        self.assertEqual(str(P('c:\\a\\b').absolute()), 'c:\\a\\b')
+
+        # UNC absolute paths.
+        share = '\\\\server\\share\\'
+        self.assertEqual(str(P(share).absolute()), share)
+        self.assertEqual(str(P(share + 'a').absolute()), share + 'a')
+        self.assertEqual(str(P(share + 'a\\b').absolute()), share + 'a\\b')
+
+        # UNC relative paths.
+        with mock.patch("os.getcwd") as getcwd:
+            getcwd.return_value = share
+
+            self.assertEqual(str(P().absolute()), share)
+            self.assertEqual(str(P('.').absolute()), share)
+            self.assertEqual(str(P('a').absolute()), os.path.join(share, 'a'))
+            self.assertEqual(str(P('a', 'b', 'c').absolute()),
+                             os.path.join(share, 'a', 'b', 'c'))
+
+
     def test_glob(self):
         P = self.cls
         p = P(BASE)
         self.assertEqual(set(p.glob("FILEa")), { P(BASE, "fileA") })
+        self.assertEqual(set(p.glob("*a\\")), { P(BASE, "dirA") })
+        self.assertEqual(set(p.glob("F*a")), { P(BASE, "fileA") })
+        self.assertEqual(set(map(str, p.glob("FILEa"))), {f"{p}\\FILEa"})
+        self.assertEqual(set(map(str, p.glob("F*a"))), {f"{p}\\fileA"})
 
     def test_rglob(self):
         P = self.cls
         p = P(BASE, "dirC")
         self.assertEqual(set(p.rglob("FILEd")), { P(BASE, "dirC/dirD/fileD") })
+        self.assertEqual(set(p.rglob("*\\")), { P(BASE, "dirC/dirD") })
+        self.assertEqual(set(map(str, p.rglob("FILEd"))), {f"{p}\\dirD\\FILEd"})
 
     def test_expanduser(self):
         P = self.cls
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env.pop('HOME', None)
             env.pop('USERPROFILE', None)
             env.pop('HOMEPATH', None)
@@ -2291,7 +2755,7 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
                 env.pop('USERNAME', None)
                 self.assertEqual(p1.expanduser(),
                                  P('C:/Users/alice/My Documents'))
-                self.assertRaises(KeyError, p2.expanduser)
+                self.assertRaises(RuntimeError, p2.expanduser)
                 env['USERNAME'] = 'alice'
                 self.assertEqual(p2.expanduser(),
                                  P('C:/Users/alice/My Documents'))
@@ -2301,12 +2765,6 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
                 self.assertEqual(p5.expanduser(), p5)
                 self.assertEqual(p6.expanduser(), p6)
 
-            # Test the first lookup key in the env vars.
-            env['HOME'] = 'C:\\Users\\alice'
-            check()
-
-            # Test that HOMEPATH is available instead.
-            env.pop('HOME', None)
             env['HOMEPATH'] = 'C:\\Users\\alice'
             check()
 
@@ -2318,6 +2776,51 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
             env.pop('HOMEPATH', None)
             env['USERPROFILE'] = 'C:\\Users\\alice'
             check()
+
+            # bpo-38883: ignore `HOME` when set on windows
+            env['HOME'] = 'C:\\Users\\eve'
+            check()
+
+
+class CompatiblePathTest(unittest.TestCase):
+    """
+    Test that a type can be made compatible with PurePath
+    derivatives by implementing division operator overloads.
+    """
+
+    class CompatPath:
+        """
+        Minimum viable class to test PurePath compatibility.
+        Simply uses the division operator to join a given
+        string and the string value of another object with
+        a forward slash.
+        """
+        def __init__(self, string):
+            self.string = string
+
+        def __truediv__(self, other):
+            return type(self)(f"{self.string}/{other}")
+
+        def __rtruediv__(self, other):
+            return type(self)(f"{other}/{self.string}")
+
+    def test_truediv(self):
+        result = pathlib.PurePath("test") / self.CompatPath("right")
+        self.assertIsInstance(result, self.CompatPath)
+        self.assertEqual(result.string, "test/right")
+
+        with self.assertRaises(TypeError):
+            # Verify improper operations still raise a TypeError
+            pathlib.PurePath("test") / 10
+
+    def test_rtruediv(self):
+        result = self.CompatPath("left") / pathlib.PurePath("test")
+        self.assertIsInstance(result, self.CompatPath)
+        self.assertEqual(result.string, "left/test")
+
+        with self.assertRaises(TypeError):
+            # Verify improper operations still raise a TypeError
+            10 / pathlib.PurePath("test")
 
 
 if __name__ == "__main__":

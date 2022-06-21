@@ -1,0 +1,311 @@
+
+****************************
+  What's New In Python 3.12
+****************************
+
+:Release: |release|
+:Date: |today|
+
+.. Rules for maintenance:
+
+   * Anyone can add text to this document.  Do not spend very much time
+   on the wording of your changes, because your text will probably
+   get rewritten to some degree.
+
+   * The maintainer will go through Misc/NEWS periodically and add
+   changes; it's therefore more important to add your changes to
+   Misc/NEWS than to this file.
+
+   * This is not a complete list of every single change; completeness
+   is the purpose of Misc/NEWS.  Some changes I consider too small
+   or esoteric to include.  If such a change is added to the text,
+   I'll just remove it.  (This is another reason you shouldn't spend
+   too much time on writing your addition.)
+
+   * If you want to draw your new text to the attention of the
+   maintainer, add 'XXX' to the beginning of the paragraph or
+   section.
+
+   * It's OK to just add a fragmentary note about a change.  For
+   example: "XXX Describe the transmogrify() function added to the
+   socket module."  The maintainer will research the change and
+   write the necessary text.
+
+   * You can comment out your additions if you like, but it's not
+   necessary (especially when a final release is some months away).
+
+   * Credit the author of a patch or bugfix.   Just the name is
+   sufficient; the e-mail address isn't necessary.
+
+   * It's helpful to add the bug/patch number as a comment:
+
+   XXX Describe the transmogrify() function added to the socket
+   module.
+   (Contributed by P.Y. Developer in :issue:`12345`.)
+
+   This saves the maintainer the effort of going through the Mercurial log
+   when researching a change.
+
+This article explains the new features in Python 3.12, compared to 3.11.
+
+For full details, see the :ref:`changelog <changelog>`.
+
+.. note::
+
+   Prerelease users should be aware that this document is currently in draft
+   form. It will be updated substantially as Python 3.12 moves towards release,
+   so it's worth checking back even after reading earlier versions.
+
+
+Summary -- Release highlights
+=============================
+
+.. This section singles out the most important changes in Python 3.12.
+   Brevity is key.
+
+
+.. PEP-sized items next.
+
+Important deprecations, removals or restrictions:
+
+* :pep:`623`, Remove wstr from Unicode
+
+
+New Features
+============
+
+
+
+Other Language Changes
+======================
+
+
+
+New Modules
+===========
+
+* None yet.
+
+
+Improved Modules
+================
+
+os
+--
+
+* Add :data:`os.PIDFD_NONBLOCK` to open a file descriptor
+  for a process with :func:`os.pidfd_open` in non-blocking mode.
+  (Contributed by Kumar Aditya in :gh:`93312`.)
+
+
+Optimizations
+=============
+
+* Removed ``wstr`` and ``wstr_length`` members from Unicode objects.
+  It reduces object size by 8 or 16 bytes on 64bit platform. (:pep:`623`)
+  (Contributed by Inada Naoki in :gh:`92536`.)
+
+
+CPython bytecode changes
+========================
+
+* Removed the :opcode:`LOAD_METHOD` instruction. It has been merged into
+  :opcode:`LOAD_ATTR`. :opcode:`LOAD_ATTR` will now behave like the old
+  :opcode:`LOAD_METHOD` instruction if the low bit of its oparg is set.
+  (Contributed by Ken Jin in :gh:`93429`.)
+
+
+Deprecated
+==========
+
+
+Pending Removal in Python 3.13
+==============================
+
+The following modules and APIs have been deprecated in earlier Python releases,
+and will be removed in Python 3.13.
+
+Modules (see :pep:`594`):
+
+* :mod:`aifc`
+* :mod:`audioop`
+* :mod:`cgi`
+* :mod:`cgitb`
+* :mod:`chunk`
+* :mod:`crypt`
+* :mod:`imghdr`
+* :mod:`mailcap`
+* :mod:`msilib`
+* :mod:`nis`
+* :mod:`nntplib`
+* :mod:`ossaudiodev`
+* :mod:`pipes`
+* :mod:`sndhdr`
+* :mod:`spwd`
+* :mod:`sunau`
+* :mod:`telnetlib`
+* :mod:`uu`
+* :mod:`xdrlib`
+
+APIs:
+
+* :class:`configparser.LegacyInterpolation` (:gh:`90765`)
+* :func:`locale.getdefaultlocale` (:gh:`90817`)
+* :meth:`turtle.RawTurtle.settiltangle` (:gh:`50096`)
+* :func:`unittest.findTestCases` (:gh:`50096`)
+* :func:`unittest.makeSuite` (:gh:`50096`)
+* :func:`unittest.getTestCaseNames` (:gh:`50096`)
+* :class:`webbrowser.MacOSX` (:gh:`86421`)
+
+Pending Removal in Future Versions
+==================================
+
+The following APIs were deprecated in earlier Python versions and will be removed,
+although there is currently no date scheduled for their removal.
+
+* :class:`typing.Text` (:gh:`92332`)
+
+* Currently Python accepts numeric literals immediately followed by keywords,
+  for example ``0in x``, ``1or x``, ``0if 1else 2``.  It allows confusing
+  and ambiguous expressions like ``[0x1for x in y]`` (which can be
+  interpreted as ``[0x1 for x in y]`` or ``[0x1f or x in y]``).
+  A syntax warning is raised if the numeric literal is
+  immediately followed by one of keywords :keyword:`and`, :keyword:`else`,
+  :keyword:`for`, :keyword:`if`, :keyword:`in`, :keyword:`is` and :keyword:`or`.
+  In a future release it will be changed to a syntax error. (:gh:`87999`)
+
+
+Removed
+=======
+
+* The following undocumented :mod:`sqlite3` features, deprecated in Python
+  3.10, are now removed:
+
+  * ``sqlite3.enable_shared_cache()``
+  * ``sqlite3.OptimizedUnicode``
+
+  If a shared cache must be used, open the database in URI mode using the
+  ``cache=shared`` query parameter.
+
+  The ``sqlite3.OptimizedUnicode`` text factory has been an alias for
+  :class:`str` since Python 3.3. Code that previously set the text factory to
+  ``OptimizedUnicode`` can either use ``str`` explicitly, or rely on the
+  default value which is also ``str``.
+
+  (Contributed by Erlend E. Aasland in :gh:`92548`)
+
+* The ``--experimental-isolated-subinterpreters`` configure flag
+  (and corresponding ``EXPERIMENTAL_ISOLATED_SUBINTERPRETERS``)
+  have been removed.
+
+
+Porting to Python 3.12
+======================
+
+This section lists previously described changes and other bugfixes
+that may require changes to your code.
+
+Changes in the Python API
+-------------------------
+
+* More strict rules are now applied for numerical group references and
+  group names in regular expressions.
+  Only sequence of ASCII digits is now accepted as a numerical reference.
+  The group name in bytes patterns and replacement strings can now only
+  contain ASCII letters and digits and underscore.
+  (Contributed by Serhiy Storchaka in :gh:`91760`.)
+
+* Removed randrange() functionality deprecated since Python 3.10.  Formerly,
+  randrange(10.0) losslessly converted to randrange(10). Now, it raises a
+  TypeError. Also, the exception raised for non-integral values such as
+  randrange(10.5) or randrange('10') has been changed from ValueError to
+  TypeError.  This also prevents bugs where ``randrange(1e25)`` would silently
+  select from a larger range than ``randrange(10**25)``.
+  (Originally suggested by Serhiy Storchaka gh-86388.)
+
+
+Build Changes
+=============
+
+* ``va_start()`` with two parameters, like ``va_start(args, format),``
+  is now required to build Python.
+  ``va_start()`` is no longer called with a single parameter.
+  (Contributed by Kumar Aditya in :gh:`93207`.)
+
+
+C API Changes
+=============
+
+New Features
+------------
+
+* Added the new limited C API function :c:func:`PyType_FromMetaclass`,
+  which generalizes the existing :c:func:`PyType_FromModuleAndSpec` using
+  an additional metaclass argument.
+  (Contributed by Wenzel Jakob in :gh:`93012`.)
+
+Porting to Python 3.12
+----------------------
+
+* Legacy Unicode APIs based on ``Py_UNICODE*`` representation has been removed.
+  Please migrate to APIs based on UTF-8 or ``wchar_t*``.
+
+* Argument parsing functions like :c:func:`PyArg_ParseTuple` doesn't support
+  ``Py_UNICODE*`` based format (e.g. ``u``, ``Z``) anymore. Please migrate
+  to other formats for Unicode like ``s``, ``z``, ``es``, and ``U``.
+
+Deprecated
+----------
+
+* Deprecate global configuration variable:
+
+  * :c:var:`Py_DebugFlag`: use :c:member:`PyConfig.parser_debug`
+  * :c:var:`Py_VerboseFlag`: use :c:member:`PyConfig.verbose`
+  * :c:var:`Py_QuietFlag`: use :c:member:`PyConfig.quiet`
+  * :c:var:`Py_InteractiveFlag`: use :c:member:`PyConfig.interactive`
+  * :c:var:`Py_InspectFlag`: use :c:member:`PyConfig.inspect`
+  * :c:var:`Py_OptimizeFlag`: use :c:member:`PyConfig.optimization_level`
+  * :c:var:`Py_NoSiteFlag`: use :c:member:`PyConfig.site_import`
+  * :c:var:`Py_BytesWarningFlag`: use :c:member:`PyConfig.bytes_warning`
+  * :c:var:`Py_FrozenFlag`: use :c:member:`PyConfig.pathconfig_warnings`
+  * :c:var:`Py_IgnoreEnvironmentFlag`: use :c:member:`PyConfig.use_environment`
+  * :c:var:`Py_DontWriteBytecodeFlag`: use :c:member:`PyConfig.write_bytecode`
+  * :c:var:`Py_NoUserSiteDirectory`: use :c:member:`PyConfig.user_site_directory`
+  * :c:var:`Py_UnbufferedStdioFlag`: use :c:member:`PyConfig.buffered_stdio`
+  * :c:var:`Py_HashRandomizationFlag`: use :c:member:`PyConfig.use_hash_seed`
+    and :c:member:`PyConfig.hash_seed`
+  * :c:var:`Py_IsolatedFlag`: use :c:member:`PyConfig.isolated`
+  * :c:var:`Py_LegacyWindowsFSEncodingFlag`: use :c:member:`PyConfig.legacy_windows_fs_encoding`
+  * :c:var:`Py_LegacyWindowsStdioFlag`: use :c:member:`PyConfig.legacy_windows_stdio`
+  * :c:var:`Py_FileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`
+  * :c:var:`Py_FileSystemDefaultEncodeErrors`: use :c:member:`PyConfig.filesystem_errors`
+  * :c:var:`Py_UTF8Mode`: use :c:member:`PyPreConfig.utf8_mode` (see :c:func:`Py_PreInitialize`)
+
+  The :c:func:`Py_InitializeFromConfig` API should be used with
+  :c:type:`PyConfig` instead.
+  (Contributed by Victor Stinner in :gh:`77782`.)
+
+
+Removed
+-------
+
+* Remove the ``token.h`` header file. There was never any public tokenizer C
+  API. The ``token.h`` header file was only designed to be used by Python
+  internals.
+  (Contributed by Victor Stinner in :gh:`92651`.)
+
+* Leagcy Unicode APIs has been removed. See :pep:`623` for detail.
+
+   * :c:macro:`PyUnicode_WCHAR_KIND`
+   * :c:func:`PyUnicode_AS_UNICODE`
+   * :c:func:`PyUnicode_AsUnicode`
+   * :c:func:`PyUnicode_AsUnicodeAndSize`
+   * :c:func:`PyUnicode_AS_DATA`
+   * :c:func:`PyUnicode_FromUnicode`
+   * :c:func:`PyUnicode_GET_SIZE`
+   * :c:func:`PyUnicode_GetSize`
+   * :c:func:`PyUnicode_GET_DATA_SIZE`
+
+* Remove the ``PyUnicode_InternImmortal()`` function and the
+  ``SSTATE_INTERNED_IMMORTAL`` macro.
+  (Contributed by Victor Stinner in :gh:`85858`.)

@@ -8,7 +8,7 @@ PyDoc_STRVAR(select_select__doc__,
 "\n"
 "Wait until one or more file descriptors are ready for some kind of I/O.\n"
 "\n"
-"The first three arguments are sequences of file descriptors to be waited for:\n"
+"The first three arguments are iterables of file descriptors to be waited for:\n"
 "rlist -- wait until ready for reading\n"
 "wlist -- wait until ready for writing\n"
 "xlist -- wait for an \"exceptional condition\"\n"
@@ -30,7 +30,7 @@ PyDoc_STRVAR(select_select__doc__,
 "descriptors can be used.");
 
 #define SELECT_SELECT_METHODDEF    \
-    {"select", (PyCFunction)(void(*)(void))select_select, METH_FASTCALL, select_select__doc__},
+    {"select", _PyCFunction_CAST(select_select), METH_FASTCALL, select_select__doc__},
 
 static PyObject *
 select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
@@ -65,7 +65,8 @@ exit:
 #if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL))
 
 PyDoc_STRVAR(select_poll_register__doc__,
-"register($self, fd, eventmask=POLLIN | POLLPRI | POLLOUT, /)\n"
+"register($self, fd,\n"
+"         eventmask=select.POLLIN | select.POLLPRI | select.POLLOUT, /)\n"
 "--\n"
 "\n"
 "Register a file descriptor with the polling object.\n"
@@ -76,7 +77,7 @@ PyDoc_STRVAR(select_poll_register__doc__,
 "    an optional bitmask describing the type of events to check for");
 
 #define SELECT_POLL_REGISTER_METHODDEF    \
-    {"register", (PyCFunction)(void(*)(void))select_poll_register, METH_FASTCALL, select_poll_register__doc__},
+    {"register", _PyCFunction_CAST(select_poll_register), METH_FASTCALL, select_poll_register__doc__},
 
 static PyObject *
 select_poll_register_impl(pollObject *self, int fd, unsigned short eventmask);
@@ -91,7 +92,7 @@ select_poll_register(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("register", nargs, 1, 2)) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     if (nargs < 2) {
@@ -124,7 +125,7 @@ PyDoc_STRVAR(select_poll_modify__doc__,
 "    a bitmask describing the type of events to check for");
 
 #define SELECT_POLL_MODIFY_METHODDEF    \
-    {"modify", (PyCFunction)(void(*)(void))select_poll_modify, METH_FASTCALL, select_poll_modify__doc__},
+    {"modify", _PyCFunction_CAST(select_poll_modify), METH_FASTCALL, select_poll_modify__doc__},
 
 static PyObject *
 select_poll_modify_impl(pollObject *self, int fd, unsigned short eventmask);
@@ -139,7 +140,7 @@ select_poll_modify(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("modify", nargs, 2, 2)) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     if (!_PyLong_UnsignedShort_Converter(args[1], &eventmask)) {
@@ -173,7 +174,7 @@ select_poll_unregister(pollObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!fildes_converter(arg, &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
         goto exit;
     }
     return_value = select_poll_unregister_impl(self, fd);
@@ -192,11 +193,15 @@ PyDoc_STRVAR(select_poll_poll__doc__,
 "\n"
 "Polls the set of registered file descriptors.\n"
 "\n"
+"  timeout\n"
+"    The maximum time to wait in milliseconds, or else None (or a negative\n"
+"    value) to wait indefinitely.\n"
+"\n"
 "Returns a list containing any descriptors that have events or errors to\n"
 "report, as a list of (fd, event) 2-tuples.");
 
 #define SELECT_POLL_POLL_METHODDEF    \
-    {"poll", (PyCFunction)(void(*)(void))select_poll_poll, METH_FASTCALL, select_poll_poll__doc__},
+    {"poll", _PyCFunction_CAST(select_poll_poll), METH_FASTCALL, select_poll_poll__doc__},
 
 static PyObject *
 select_poll_poll_impl(pollObject *self, PyObject *timeout_obj);
@@ -226,7 +231,8 @@ exit:
 #if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_register__doc__,
-"register($self, fd, eventmask=POLLIN | POLLPRI | POLLOUT, /)\n"
+"register($self, fd,\n"
+"         eventmask=select.POLLIN | select.POLLPRI | select.POLLOUT, /)\n"
 "--\n"
 "\n"
 "Register a file descriptor with the polling object.\n"
@@ -238,7 +244,7 @@ PyDoc_STRVAR(select_devpoll_register__doc__,
 "    an optional bitmask describing the type of events to check for");
 
 #define SELECT_DEVPOLL_REGISTER_METHODDEF    \
-    {"register", (PyCFunction)(void(*)(void))select_devpoll_register, METH_FASTCALL, select_devpoll_register__doc__},
+    {"register", _PyCFunction_CAST(select_devpoll_register), METH_FASTCALL, select_devpoll_register__doc__},
 
 static PyObject *
 select_devpoll_register_impl(devpollObject *self, int fd,
@@ -254,7 +260,7 @@ select_devpoll_register(devpollObject *self, PyObject *const *args, Py_ssize_t n
     if (!_PyArg_CheckPositional("register", nargs, 1, 2)) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     if (nargs < 2) {
@@ -275,7 +281,8 @@ exit:
 #if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_modify__doc__,
-"modify($self, fd, eventmask=POLLIN | POLLPRI | POLLOUT, /)\n"
+"modify($self, fd,\n"
+"       eventmask=select.POLLIN | select.POLLPRI | select.POLLOUT, /)\n"
 "--\n"
 "\n"
 "Modify a possible already registered file descriptor.\n"
@@ -287,7 +294,7 @@ PyDoc_STRVAR(select_devpoll_modify__doc__,
 "    an optional bitmask describing the type of events to check for");
 
 #define SELECT_DEVPOLL_MODIFY_METHODDEF    \
-    {"modify", (PyCFunction)(void(*)(void))select_devpoll_modify, METH_FASTCALL, select_devpoll_modify__doc__},
+    {"modify", _PyCFunction_CAST(select_devpoll_modify), METH_FASTCALL, select_devpoll_modify__doc__},
 
 static PyObject *
 select_devpoll_modify_impl(devpollObject *self, int fd,
@@ -303,7 +310,7 @@ select_devpoll_modify(devpollObject *self, PyObject *const *args, Py_ssize_t nar
     if (!_PyArg_CheckPositional("modify", nargs, 1, 2)) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     if (nargs < 2) {
@@ -341,7 +348,7 @@ select_devpoll_unregister(devpollObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!fildes_converter(arg, &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
         goto exit;
     }
     return_value = select_devpoll_unregister_impl(self, fd);
@@ -360,11 +367,15 @@ PyDoc_STRVAR(select_devpoll_poll__doc__,
 "\n"
 "Polls the set of registered file descriptors.\n"
 "\n"
+"  timeout\n"
+"    The maximum time to wait in milliseconds, or else None (or a negative\n"
+"    value) to wait indefinitely.\n"
+"\n"
 "Returns a list containing any descriptors that have events or errors to\n"
 "report, as a list of (fd, event) 2-tuples.");
 
 #define SELECT_DEVPOLL_POLL_METHODDEF    \
-    {"poll", (PyCFunction)(void(*)(void))select_devpoll_poll, METH_FASTCALL, select_devpoll_poll__doc__},
+    {"poll", _PyCFunction_CAST(select_devpoll_poll), METH_FASTCALL, select_devpoll_poll__doc__},
 
 static PyObject *
 select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj);
@@ -528,11 +539,6 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto skip_optional_pos;
     }
     if (fastargs[0]) {
-        if (PyFloat_Check(fastargs[0])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         sizehint = _PyLong_AsInt(fastargs[0]);
         if (sizehint == -1 && PyErr_Occurred()) {
             goto exit;
@@ -540,11 +546,6 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         if (!--noptargs) {
             goto skip_optional_pos;
         }
-    }
-    if (PyFloat_Check(fastargs[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     flags = _PyLong_AsInt(fastargs[1]);
     if (flags == -1 && PyErr_Occurred()) {
@@ -625,11 +626,6 @@ select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     fd = _PyLong_AsInt(arg);
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
@@ -645,7 +641,8 @@ exit:
 #if defined(HAVE_EPOLL)
 
 PyDoc_STRVAR(select_epoll_register__doc__,
-"register($self, /, fd, eventmask=EPOLLIN | EPOLLPRI | EPOLLOUT)\n"
+"register($self, /, fd,\n"
+"         eventmask=select.EPOLLIN | select.EPOLLPRI | select.EPOLLOUT)\n"
 "--\n"
 "\n"
 "Registers a new fd or raises an OSError if the fd is already registered.\n"
@@ -658,7 +655,7 @@ PyDoc_STRVAR(select_epoll_register__doc__,
 "The epoll interface supports all file descriptors that support poll.");
 
 #define SELECT_EPOLL_REGISTER_METHODDEF    \
-    {"register", (PyCFunction)(void(*)(void))select_epoll_register, METH_FASTCALL|METH_KEYWORDS, select_epoll_register__doc__},
+    {"register", _PyCFunction_CAST(select_epoll_register), METH_FASTCALL|METH_KEYWORDS, select_epoll_register__doc__},
 
 static PyObject *
 select_epoll_register_impl(pyEpoll_Object *self, int fd,
@@ -679,16 +676,11 @@ select_epoll_register(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t na
     if (!args) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
     if (eventmask == (unsigned int)-1 && PyErr_Occurred()) {
@@ -717,7 +709,7 @@ PyDoc_STRVAR(select_epoll_modify__doc__,
 "    a bit set composed of the various EPOLL constants");
 
 #define SELECT_EPOLL_MODIFY_METHODDEF    \
-    {"modify", (PyCFunction)(void(*)(void))select_epoll_modify, METH_FASTCALL|METH_KEYWORDS, select_epoll_modify__doc__},
+    {"modify", _PyCFunction_CAST(select_epoll_modify), METH_FASTCALL|METH_KEYWORDS, select_epoll_modify__doc__},
 
 static PyObject *
 select_epoll_modify_impl(pyEpoll_Object *self, int fd,
@@ -737,12 +729,7 @@ select_epoll_modify(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t narg
     if (!args) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
@@ -769,7 +756,7 @@ PyDoc_STRVAR(select_epoll_unregister__doc__,
 "    the target file descriptor of the operation");
 
 #define SELECT_EPOLL_UNREGISTER_METHODDEF    \
-    {"unregister", (PyCFunction)(void(*)(void))select_epoll_unregister, METH_FASTCALL|METH_KEYWORDS, select_epoll_unregister__doc__},
+    {"unregister", _PyCFunction_CAST(select_epoll_unregister), METH_FASTCALL|METH_KEYWORDS, select_epoll_unregister__doc__},
 
 static PyObject *
 select_epoll_unregister_impl(pyEpoll_Object *self, int fd);
@@ -787,7 +774,7 @@ select_epoll_unregister(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t 
     if (!args) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     return_value = select_epoll_unregister_impl(self, fd);
@@ -816,7 +803,7 @@ PyDoc_STRVAR(select_epoll_poll__doc__,
 "as a list of (fd, events) 2-tuples.");
 
 #define SELECT_EPOLL_POLL_METHODDEF    \
-    {"poll", (PyCFunction)(void(*)(void))select_epoll_poll, METH_FASTCALL|METH_KEYWORDS, select_epoll_poll__doc__},
+    {"poll", _PyCFunction_CAST(select_epoll_poll), METH_FASTCALL|METH_KEYWORDS, select_epoll_poll__doc__},
 
 static PyObject *
 select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
@@ -845,11 +832,6 @@ select_epoll_poll(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs,
         if (!--noptargs) {
             goto skip_optional_pos;
         }
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     maxevents = _PyLong_AsInt(args[1]);
     if (maxevents == -1 && PyErr_Occurred()) {
@@ -893,7 +875,7 @@ PyDoc_STRVAR(select_epoll___exit____doc__,
 "\n");
 
 #define SELECT_EPOLL___EXIT___METHODDEF    \
-    {"__exit__", (PyCFunction)(void(*)(void))select_epoll___exit__, METH_FASTCALL, select_epoll___exit____doc__},
+    {"__exit__", _PyCFunction_CAST(select_epoll___exit__), METH_FASTCALL, select_epoll___exit____doc__},
 
 static PyObject *
 select_epoll___exit___impl(pyEpoll_Object *self, PyObject *exc_type,
@@ -959,11 +941,13 @@ select_kqueue(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
 
-    if ((type == &kqueue_queue_Type) &&
+    if ((type == _selectstate_by_type(type)->kqueue_queue_Type ||
+         type->tp_init == _selectstate_by_type(type)->kqueue_queue_Type->tp_init) &&
         !_PyArg_NoPositional("kqueue", args)) {
         goto exit;
     }
-    if ((type == &kqueue_queue_Type) &&
+    if ((type == _selectstate_by_type(type)->kqueue_queue_Type ||
+         type->tp_init == _selectstate_by_type(type)->kqueue_queue_Type->tp_init) &&
         !_PyArg_NoKeywords("kqueue", kwargs)) {
         goto exit;
     }
@@ -1041,11 +1025,6 @@ select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     fd = _PyLong_AsInt(arg);
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
@@ -1076,7 +1055,7 @@ PyDoc_STRVAR(select_kqueue_control__doc__,
 "    This accepts floats for smaller timeouts, too.");
 
 #define SELECT_KQUEUE_CONTROL_METHODDEF    \
-    {"control", (PyCFunction)(void(*)(void))select_kqueue_control, METH_FASTCALL, select_kqueue_control__doc__},
+    {"control", _PyCFunction_CAST(select_kqueue_control), METH_FASTCALL, select_kqueue_control__doc__},
 
 static PyObject *
 select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
@@ -1094,11 +1073,6 @@ select_kqueue_control(kqueue_queue_Object *self, PyObject *const *args, Py_ssize
         goto exit;
     }
     changelist = args[0];
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     maxevents = _PyLong_AsInt(args[1]);
     if (maxevents == -1 && PyErr_Occurred()) {
         goto exit;
@@ -1215,4 +1189,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=03041f3d09b04a3d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e77cc5c8a6c77860 input=a9049054013a1b77]*/

@@ -5,7 +5,7 @@ import sys
 import types
 import unittest
 
-from . import util as test_util
+from test.test_importlib import util as test_util
 
 
 class CollectInit:

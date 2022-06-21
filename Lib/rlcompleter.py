@@ -31,6 +31,9 @@ Notes:
 
 import atexit
 import builtins
+import inspect
+import keyword
+import re
 import __main__
 
 __all__ = ["Completer"]
@@ -96,7 +99,13 @@ class Completer:
 
     def _callable_postfix(self, val, word):
         if callable(val):
-            word = word + "("
+            word += "("
+            try:
+                if not inspect.signature(val).parameters:
+                    word += ")"
+            except ValueError:
+                pass
+
         return word
 
     def global_matches(self, text):
@@ -106,18 +115,17 @@ class Completer:
         defined in self.namespace that match.
 
         """
-        import keyword
         matches = []
         seen = {"__builtins__"}
         n = len(text)
-        for word in keyword.kwlist:
+        for word in keyword.kwlist + keyword.softkwlist:
             if word[:n] == text:
                 seen.add(word)
                 if word in {'finally', 'try'}:
                     word = word + ':'
                 elif word not in {'False', 'None', 'True',
                                   'break', 'continue', 'pass',
-                                  'else'}:
+                                  'else', '_'}:
                     word = word + ' '
                 matches.append(word)
         for nspace in [self.namespace, builtins.__dict__]:
@@ -139,7 +147,6 @@ class Completer:
         with a __getattr__ hook is evaluated.
 
         """
-        import re
         m = re.match(r"(\w+(\.\w+)*)\.(\w*)", text)
         if not m:
             return []
@@ -169,13 +176,20 @@ class Completer:
                 if (word[:n] == attr and
                     not (noprefix and word[:n+1] == noprefix)):
                     match = "%s.%s" % (expr, word)
-                    try:
-                        val = getattr(thisobject, word)
-                    except Exception:
-                        pass  # Include even if attribute not set
+                    if isinstance(getattr(type(thisobject), word, None),
+                                  property):
+                        # bpo-44752: thisobject.word is a method decorated by
+                        # `@property`. What follows applies a postfix if
+                        # thisobject.word is callable, but know we know that
+                        # this is not callable (because it is a property).
+                        # Also, getattr(thisobject, word) will evaluate the
+                        # property method, which is not desirable.
+                        matches.append(match)
+                        continue
+                    if (value := getattr(thisobject, word, None)) is not None:
+                        matches.append(self._callable_postfix(value, match))
                     else:
-                        match = self._callable_postfix(val, match)
-                    matches.append(match)
+                        matches.append(match)
             if matches or not noprefix:
                 break
             if noprefix == '_':

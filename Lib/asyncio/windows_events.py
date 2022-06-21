@@ -1,5 +1,10 @@
 """Selector and proactor event loops for Windows."""
 
+import sys
+
+if sys.platform != 'win32':  # pragma: no cover
+    raise ImportError('win32 only')
+
 import _overlapped
 import _winapi
 import errno
@@ -28,8 +33,8 @@ __all__ = (
 )
 
 
-NULL = 0
-INFINITE = 0xffffffff
+NULL = _winapi.NULL
+INFINITE = _winapi.INFINITE
 ERROR_CONNECTION_REFUSED = 1225
 ERROR_CONNECTION_ABORTED = 1236
 
@@ -75,9 +80,9 @@ class _OverlappedFuture(futures.Future):
             self._loop.call_exception_handler(context)
         self._ov = None
 
-    def cancel(self):
+    def cancel(self, msg=None):
         self._cancel_overlapped()
-        return super().cancel()
+        return super().cancel(msg=msg)
 
     def set_exception(self, exception):
         super().set_exception(exception)
@@ -149,9 +154,9 @@ class _BaseWaitHandleFuture(futures.Future):
 
         self._unregister_wait_cb(None)
 
-    def cancel(self):
+    def cancel(self, msg=None):
         self._unregister_wait()
-        return super().cancel()
+        return super().cancel(msg=msg)
 
     def set_exception(self, exception):
         self._unregister_wait()
@@ -318,8 +323,12 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
             if self._self_reading_future is not None:
                 ov = self._self_reading_future._ov
                 self._self_reading_future.cancel()
-                # self_reading_future was just cancelled so it will never be signalled
-                # Unregister it otherwise IocpProactor.close will wait for it forever
+                # self_reading_future was just cancelled so if it hasn't been
+                # finished yet, it never will be (it's possible that it has
+                # already finished and its callback is waiting in the queue,
+                # where it could still happen if the event loop is restarted).
+                # Unregister it otherwise IocpProactor.close will wait for it
+                # forever
                 if ov is not None:
                     self._proactor._unregister(ov)
                 self._self_reading_future = None
@@ -388,7 +397,9 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
                                              **kwargs)
         try:
             await waiter
-        except Exception:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException:
             transp.close()
             await transp._wait()
             raise
@@ -399,7 +410,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
 class IocpProactor:
     """Proactor implementation using IOCP."""
 
-    def __init__(self, concurrency=0xffffffff):
+    def __init__(self, concurrency=INFINITE):
         self._loop = None
         self._results = []
         self._iocp = _overlapped.CreateIoCompletionPort(
@@ -467,7 +478,7 @@ class IocpProactor:
             else:
                 ov.ReadFileInto(conn.fileno(), buf)
         except BrokenPipeError:
-            return self._result(b'')
+            return self._result(0)
 
         def finish_recv(trans, key, ov):
             try:
@@ -480,6 +491,64 @@ class IocpProactor:
                     raise
 
         return self._register(ov, conn, finish_recv)
+
+    def recvfrom(self, conn, nbytes, flags=0):
+        self._register_with_iocp(conn)
+        ov = _overlapped.Overlapped(NULL)
+        try:
+            ov.WSARecvFrom(conn.fileno(), nbytes, flags)
+        except BrokenPipeError:
+            return self._result((b'', None))
+
+        def finish_recv(trans, key, ov):
+            try:
+                return ov.getresult()
+            except OSError as exc:
+                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
+                                    _overlapped.ERROR_OPERATION_ABORTED):
+                    raise ConnectionResetError(*exc.args)
+                else:
+                    raise
+
+        return self._register(ov, conn, finish_recv)
+
+    def recvfrom_into(self, conn, buf, flags=0):
+        self._register_with_iocp(conn)
+        ov = _overlapped.Overlapped(NULL)
+        try:
+            ov.WSARecvFromInto(conn.fileno(), buf, flags)
+        except BrokenPipeError:
+            return self._result((0, None))
+
+        def finish_recv(trans, key, ov):
+            try:
+                return ov.getresult()
+            except OSError as exc:
+                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
+                                    _overlapped.ERROR_OPERATION_ABORTED):
+                    raise ConnectionResetError(*exc.args)
+                else:
+                    raise
+
+        return self._register(ov, conn, finish_recv)
+
+    def sendto(self, conn, buf, flags=0, addr=None):
+        self._register_with_iocp(conn)
+        ov = _overlapped.Overlapped(NULL)
+
+        ov.WSASendTo(conn.fileno(), buf, flags, addr)
+
+        def finish_send(trans, key, ov):
+            try:
+                return ov.getresult()
+            except OSError as exc:
+                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
+                                    _overlapped.ERROR_OPERATION_ABORTED):
+                    raise ConnectionResetError(*exc.args)
+                else:
+                    raise
+
+        return self._register(ov, conn, finish_send)
 
     def send(self, conn, buf, flags=0):
         self._register_with_iocp(conn)
@@ -530,6 +599,14 @@ class IocpProactor:
         return future
 
     def connect(self, conn, address):
+        if conn.type == socket.SOCK_DGRAM:
+            # WSAConnect will complete immediately for UDP sockets so we don't
+            # need to register any IOCP operation
+            _overlapped.WSAConnect(conn.fileno(), address)
+            fut = self._loop.create_future()
+            fut.set_result(None)
+            return fut
+
         self._register_with_iocp(conn)
         # The socket needs to be locally bound before we call ConnectEx().
         try:
@@ -605,7 +682,7 @@ class IocpProactor:
 
             # ConnectPipe() failed with ERROR_PIPE_BUSY: retry later
             delay = min(delay * 2, CONNECT_PIPE_MAX_DELAY)
-            await tasks.sleep(delay, loop=self._loop)
+            await tasks.sleep(delay)
 
         return windows_utils.PipeHandle(handle)
 
@@ -782,7 +859,7 @@ class IocpProactor:
             return
 
         # Cancel remaining registered operations.
-        for address, (fut, ov, obj, callback) in list(self._cache.items()):
+        for fut, ov, obj, callback in list(self._cache.values()):
             if fut.cancelled():
                 # Nothing to do with cancelled futures
                 pass

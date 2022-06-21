@@ -2,6 +2,24 @@
 """
 This script is used to build "official" universal installers on macOS.
 
+NEW for 3.10 and backports:
+- support universal2 variant with arm64 and x86_64 archs
+- enable clang optimizations when building on 10.15+
+
+NEW for 3.9.0 and backports:
+- 2.7 end-of-life issues:
+    - Python 3 installs now update the Current version link
+      in /Library/Frameworks/Python.framework/Versions
+- fully support running under Python 3 as well as 2.7
+- support building on newer macOS systems with SIP
+- fully support building on macOS 10.9+
+- support 10.6+ on best effort
+- support bypassing docs build by supplying a prebuilt
+    docs html tarball in the third-party source library,
+    in the format and filename conventional of those
+    downloadable from python.org:
+        python-3.x.y-docs-html.tar.bz2
+
 NEW for 3.7.0:
 - support Intel 64-bit-only () and 32-bit-only installer builds
 - build and use internal Tcl/Tk 8.6 for 10.6+ builds
@@ -14,28 +32,7 @@ NEW for 3.7.0:
 - use generic "gcc" as compiler (CC env var) rather than "gcc-4.2"
 
 TODO:
-- support SDKROOT and DEVELOPER_DIR xcrun env variables
-- test with 10.5 and 10.4 and determine support status
-
-Please ensure that this script keeps working with Python 2.5, to avoid
-bootstrap issues (/usr/bin/python is Python 2.5 on OSX 10.5).  Doc builds
-use current versions of Sphinx and require a reasonably current python3.
-Sphinx and dependencies are installed into a venv using the python3's pip
-so will fetch them from PyPI if necessary.  Since python3 is now used for
-Sphinx, build-installer.py should also be converted to use python3!
-
-For 3.7.0, when building for a 10.6 or higher deployment target,
-build-installer builds and links with its own copy of Tcl/Tk 8.6.
-Otherwise, it requires an installed third-party version of
-Tcl/Tk 8.4 (for OS X 10.4 and 10.5 deployment targets), Tcl/TK 8.5
-(for 10.6 or later), or Tcl/TK 8.6 (for 10.9 or later)
-installed in /Library/Frameworks.  When installed,
-the Python built by this script will attempt to dynamically link first to
-Tcl and Tk frameworks in /Library/Frameworks if available otherwise fall
-back to the ones in /System/Library/Framework.  For the build, we recommend
-installing the most recent ActiveTcl 8.6. 8.5, or 8.4 version, depending
-on the deployment target.  The actual version linked to depends on the
-path of /Library/Frameworks/{Tcl,Tk}.framework/Versions/Current.
+- test building with SDKROOT and DEVELOPER_DIR xcrun env variables
 
 Usage: see USAGE variable in the script.
 """
@@ -56,14 +53,15 @@ STAT_0o775 = ( stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
 INCLUDE_TIMESTAMP = 1
 VERBOSE = 1
 
-from plistlib import Plist
+RUNNING_ON_PYTHON2 = sys.version_info.major == 2
 
-try:
+if RUNNING_ON_PYTHON2:
     from plistlib import writePlist
-except ImportError:
-    # We're run using python2.3
-    def writePlist(plist, path):
-        plist.write(path)
+else:
+    from plistlib import dump
+    def writePlist(path, plist):
+        with open(plist, 'wb') as fp:
+            dump(path, fp)
 
 def shellQuote(value):
     """
@@ -122,7 +120,8 @@ WORKDIR = "/tmp/_py"
 DEPSRC = os.path.join(WORKDIR, 'third-party')
 DEPSRC = os.path.expanduser('~/Universal/other-sources')
 
-universal_opts_map = { '32-bit': ('i386', 'ppc',),
+universal_opts_map = { 'universal2': ('arm64', 'x86_64'),
+                       '32-bit': ('i386', 'ppc',),
                        '64-bit': ('x86_64', 'ppc64',),
                        'intel':  ('i386', 'x86_64'),
                        'intel-32':  ('i386',),
@@ -130,6 +129,7 @@ universal_opts_map = { '32-bit': ('i386', 'ppc',),
                        '3-way':  ('ppc', 'i386', 'x86_64'),
                        'all':    ('i386', 'ppc', 'x86_64', 'ppc64',) }
 default_target_map = {
+        'universal2': '10.9',
         '64-bit': '10.5',
         '3-way': '10.5',
         'intel': '10.5',
@@ -157,13 +157,18 @@ DEPTARGET = '10.5'
 def getDeptargetTuple():
     return tuple([int(n) for n in DEPTARGET.split('.')[0:2]])
 
+def getBuildTuple():
+    return tuple([int(n) for n in platform.mac_ver()[0].split('.')[0:2]])
+
 def getTargetCompilers():
     target_cc_map = {
         '10.4': ('gcc-4.0', 'g++-4.0'),
         '10.5': ('gcc', 'g++'),
         '10.6': ('gcc', 'g++'),
+        '10.7': ('gcc', 'g++'),
+        '10.8': ('gcc', 'g++'),
     }
-    return target_cc_map.get(DEPTARGET, ('gcc', 'g++') )
+    return target_cc_map.get(DEPTARGET, ('clang', 'clang++') )
 
 CC, CXX = getTargetCompilers()
 
@@ -196,6 +201,34 @@ EXPECTED_SHARED_LIBS = {}
 def internalTk():
     return getDeptargetTuple() >= (10, 6)
 
+# Do we use 8.6.8 when building our own copy
+# of Tcl/Tk or a modern version.
+#   We use the old version when buildin on
+#   old versions of macOS due to build issues.
+def useOldTk():
+    return getBuildTuple() < (10, 15)
+
+
+def tweak_tcl_build(basedir, archList):
+    with open("Makefile", "r") as fp:
+        contents = fp.readlines()
+
+    # For reasons I don't understand the tcl configure script
+    # decides that some stdlib symbols aren't present, before
+    # deciding that strtod is broken.
+    new_contents = []
+    for line in contents:
+        if line.startswith("COMPAT_OBJS"):
+            # note: the space before strtod.o is intentional,
+            # the detection of a broken strtod results in
+            # "fixstrod.o" on this line.
+            for nm in ("strstr.o", "strtoul.o", " strtod.o"):
+                line = line.replace(nm, "")
+        new_contents.append(line)
+
+    with open("Makefile", "w") as fp:
+        fp.writelines(new_contents)
+
 # List of names of third party software built with this installer.
 # The names will be inserted into the rtf version of the License.
 THIRD_PARTY_LIBS = []
@@ -207,17 +240,15 @@ THIRD_PARTY_LIBS = []
 def library_recipes():
     result = []
 
-    LT_10_5 = bool(getDeptargetTuple() < (10, 5))
-
     # Since Apple removed the header files for the deprecated system
     # OpenSSL as of the Xcode 7 release (for OS X 10.10+), we do not
     # have much choice but to build our own copy here, too.
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.0j",
-              url="https://www.openssl.org/source/openssl-1.1.0j.tar.gz",
-              checksum='b4ca5b78ae6ae79da80790b30dbedbdc',
+              name="OpenSSL 1.1.1n",
+              url="https://www.openssl.org/source/openssl-1.1.1n.tar.gz",
+              checksum='2aad5635f9bb338bc2c6b7d19cbc9676',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -225,11 +256,27 @@ def library_recipes():
     ])
 
     if internalTk():
+        if useOldTk():
+            tcl_tk_ver='8.6.8'
+            tcl_checksum='81656d3367af032e0ae6157eff134f89'
+
+            tk_checksum='5e0faecba458ee1386078fb228d008ba'
+            tk_patches = ['tk868_on_10_8_10_9.patch']
+
+        else:
+            tcl_tk_ver='8.6.12'
+            tcl_checksum='87ea890821d2221f2ab5157bc5eb885f'
+
+            tk_checksum='1d6dcf6120356e3d211e056dff5e462a'
+            tk_patches = [ ]
+
+
+        base_url = "https://prdownloads.sourceforge.net/tcl/{what}{version}-src.tar.gz"
         result.extend([
           dict(
-              name="Tcl 8.6.8",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl8.6.8-src.tar.gz",
-              checksum='81656d3367af032e0ae6157eff134f89',
+              name="Tcl %s"%(tcl_tk_ver,),
+              url=base_url.format(what="tcl", version=tcl_tk_ver),
+              checksum=tcl_checksum,
               buildDir="unix",
               configure_pre=[
                     '--enable-shared',
@@ -237,18 +284,17 @@ def library_recipes():
                     '--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib'%(getVersion(),),
               ],
               useLDFlags=False,
+              buildrecipe=tweak_tcl_build,
               install='make TCL_LIBRARY=%(TCL_LIBRARY)s && make install TCL_LIBRARY=%(TCL_LIBRARY)s DESTDIR=%(DESTDIR)s'%{
                   "DESTDIR": shellQuote(os.path.join(WORKDIR, 'libraries')),
                   "TCL_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tcl8.6'%(getVersion())),
                   },
               ),
           dict(
-              name="Tk 8.6.8",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk8.6.8-src.tar.gz",
-              checksum='5e0faecba458ee1386078fb228d008ba',
-              patches=[
-                  "tk868_on_10_8_10_9.patch",
-                   ],
+              name="Tk %s"%(tcl_tk_ver,),
+              url=base_url.format(what="tk", version=tcl_tk_ver),
+              checksum=tk_checksum,
+              patches=tk_patches,
               buildDir="unix",
               configure_pre=[
                     '--enable-aqua',
@@ -302,7 +348,7 @@ def library_recipes():
                   "--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib"%(getVersion(),),
               ],
               patchscripts=[
-                  ("ftp://invisible-island.net/ncurses//5.9/ncurses-5.9-20120616-patch.sh.bz2",
+                  ("ftp://ftp.invisible-island.net/ncurses//5.9/ncurses-5.9-20120616-patch.sh.bz2",
                    "f54bf02a349f96a7c4f0d00922f3a0d4"),
                    ],
               useLDFlags=False,
@@ -313,64 +359,23 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.22.0",
-              url="https://www.sqlite.org/2018/sqlite-autoconf-3220000.tar.gz",
-              checksum='96b5648d542e8afa6ab7ffb8db8ddc3d',
+              name="SQLite 3.38.4",
+              url="https://sqlite.org/2022/sqlite-autoconf-3380400.tar.gz",
+              checksum="34c0b92a0609ed4ce78582e8dc1ed45a",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
                             '-DSQLITE_ENABLE_FTS3_PARENTHESIS '
-                            '-DSQLITE_ENABLE_JSON1 '
                             '-DSQLITE_ENABLE_RTREE '
+                            '-DSQLITE_OMIT_AUTOINIT '
                             '-DSQLITE_TCL=0 '
-                 '%s' % ('','-DSQLITE_WITHOUT_ZONEMALLOC ')[LT_10_5]),
+                            ),
               configure_pre=[
                   '--enable-threadsafe',
                   '--enable-shared=no',
                   '--enable-static=yes',
                   '--disable-readline',
                   '--disable-dependency-tracking',
-              ]
-          ),
-        ])
-
-    if getDeptargetTuple() < (10, 5):
-        result.extend([
-          dict(
-              name="Bzip2 1.0.6",
-              url="http://bzip.org/1.0.6/bzip2-1.0.6.tar.gz",
-              checksum='00b516f4704d4a7cb50a1d97e6e8e15b',
-              configure=None,
-              install='make install CC=%s CXX=%s, PREFIX=%s/usr/local/ CFLAGS="-arch %s"'%(
-                  CC, CXX,
-                  shellQuote(os.path.join(WORKDIR, 'libraries')),
-                  ' -arch '.join(ARCHLIST),
-              ),
-          ),
-          dict(
-              name="ZLib 1.2.3",
-              url="http://www.gzip.org/zlib/zlib-1.2.3.tar.gz",
-              checksum='debc62758716a169df9f62e6ab2bc634',
-              configure=None,
-              install='make install CC=%s CXX=%s, prefix=%s/usr/local/ CFLAGS="-arch %s"'%(
-                  CC, CXX,
-                  shellQuote(os.path.join(WORKDIR, 'libraries')),
-                  ' -arch '.join(ARCHLIST),
-              ),
-          ),
-          dict(
-              # Note that GNU readline is GPL'd software
-              name="GNU Readline 6.1.2",
-              url="http://ftp.gnu.org/pub/gnu/readline/readline-6.1.tar.gz" ,
-              checksum='fc2f7e714fe792db1ce6ddc4c9fb4ef3',
-              patchlevel='0',
-              patches=[
-                  # The readline maintainers don't do actual micro releases, but
-                  # just ship a set of patches.
-                  ('http://ftp.gnu.org/pub/gnu/readline/readline-6.1-patches/readline61-001',
-                   'c642f2e84d820884b0bf9fd176bc6c3f'),
-                  ('http://ftp.gnu.org/pub/gnu/readline/readline-6.1-patches/readline61-002',
-                   '1a76781a1ea734e831588285db7ec9b1'),
               ]
           ),
         ])
@@ -391,6 +396,14 @@ def library_recipes():
 
     return result
 
+def compilerCanOptimize():
+    """
+    Return True iff the default Xcode version can use PGO and LTO
+    """
+    # bpo-42235: The version check is pretty conservative, can be
+    # adjusted after testing
+    mac_ver = tuple(map(int, platform.mac_ver()[0].split('.')))
+    return mac_ver >= (10, 15)
 
 # Instructions for building packages inside the .mpkg.
 def pkg_recipes():
@@ -440,7 +453,7 @@ def pkg_recipes():
             source="/pydocs",
             readme="""\
                 This package installs the python documentation at a location
-                that is useable for pydoc and IDLE.
+                that is usable for pydoc and IDLE.
                 """,
             postflight="scripts/postflight.documentation",
             required=False,
@@ -543,8 +556,8 @@ def checkEnvironment():
     Check that we're running on a supported system.
     """
 
-    if sys.version_info[0:2] < (2, 5):
-        fatal("This script must be run with Python 2.5 (or later)")
+    if sys.version_info[0:2] < (2, 7):
+        fatal("This script must be run with Python 2.7 (or later)")
 
     if platform.system() != 'Darwin':
         fatal("This script should be run on a macOS 10.5 (or later) system")
@@ -612,9 +625,6 @@ def checkEnvironment():
         base_path = base_path + ':' + OLD_DEVELOPER_TOOLS
     os.environ['PATH'] = base_path
     print("Setting default PATH: %s"%(os.environ['PATH']))
-    # Ensure we have access to sphinx-build.
-    # You may have to create a link in /usr/bin for it.
-    runCommand('sphinx-build --version')
 
 def parseOptions(args=None):
     """
@@ -718,6 +728,10 @@ def extractArchive(builddir, archiveName):
             if ((retval.startswith('tcl') or retval.startswith('tk'))
                     and retval.endswith('-src')):
                 retval = retval[:-4]
+                # Strip rcxx suffix from Tcl/Tk release candidates
+                retval_rc = retval.find('rc')
+                if retval_rc > 0:
+                    retval = retval[:retval_rc]
             if os.path.exists(retval):
                 shutil.rmtree(retval)
             fp = os.popen("tar zxf %s 2>&1"%(shellQuote(archiveName),), 'r')
@@ -807,9 +821,20 @@ def build_universal_openssl(basedir, archList):
         arch_opts = {
             "i386": ["darwin-i386-cc"],
             "x86_64": ["darwin64-x86_64-cc", "enable-ec_nistp_64_gcc_128"],
+            "arm64": ["darwin64-arm64-cc"],
             "ppc": ["darwin-ppc-cc"],
             "ppc64": ["darwin64-ppc-cc"],
         }
+
+        # Somewhere between OpenSSL 1.1.0j and 1.1.1c, changes cause the
+        # "enable-ec_nistp_64_gcc_128" option to get compile errors when
+        # building on our 10.6 gcc-4.2 environment.  There have been other
+        # reports of projects running into this when using older compilers.
+        # So, for now, do not try to use "enable-ec_nistp_64_gcc_128" when
+        # building for 10.6.
+        if getDeptargetTuple() == (10, 6):
+            arch_opts['x86_64'].remove('enable-ec_nistp_64_gcc_128')
+
         configure_opts = [
             "no-idea",
             "no-mdc2",
@@ -1056,13 +1081,39 @@ def buildPythonDocs():
     curDir = os.getcwd()
     os.chdir(buildDir)
     runCommand('make clean')
-    # Create virtual environment for docs builds with blurb and sphinx
-    runCommand('make venv')
-    runCommand('make html PYTHON=venv/bin/python')
+
+    # Search third-party source directory for a pre-built version of the docs.
+    #   Use the naming convention of the docs.python.org html downloads:
+    #       python-3.9.0b1-docs-html.tar.bz2
+    doctarfiles = [ f for f in os.listdir(DEPSRC)
+        if f.startswith('python-'+getFullVersion())
+        if f.endswith('-docs-html.tar.bz2') ]
+    if doctarfiles:
+        doctarfile = doctarfiles[0]
+        if not os.path.exists('build'):
+            os.mkdir('build')
+        # if build directory existed, it was emptied by make clean, above
+        os.chdir('build')
+        # Extract the first archive found for this version into build
+        runCommand('tar xjf %s'%shellQuote(os.path.join(DEPSRC, doctarfile)))
+        # see if tar extracted a directory ending in -docs-html
+        archivefiles = [ f for f in os.listdir('.')
+            if f.endswith('-docs-html')
+            if os.path.isdir(f) ]
+        if archivefiles:
+            archivefile = archivefiles[0]
+            # make it our 'Docs/build/html' directory
+            print(' -- using pre-built python documentation from %s'%archivefile)
+            os.rename(archivefile, 'html')
+        os.chdir(buildDir)
+
+    htmlDir = os.path.join('build', 'html')
+    if not os.path.exists(htmlDir):
+        # Create virtual environment for docs builds with blurb and sphinx
+        runCommand('make venv')
+        runCommand('make html PYTHON=venv/bin/python')
+    os.rename(htmlDir, docdir)
     os.chdir(curDir)
-    if not os.path.exists(docdir):
-        os.mkdir(docdir)
-    os.rename(os.path.join(buildDir, 'build', 'html'), docdir)
 
 
 def buildPython():
@@ -1088,11 +1139,12 @@ def buildPython():
     # Since the extra libs are not in their installed framework location
     # during the build, augment the library path so that the interpreter
     # will find them during its extension import sanity checks.
-    os.environ['DYLD_LIBRARY_PATH'] = os.path.join(WORKDIR,
-                                        'libraries', 'usr', 'local', 'lib')
+
     print("Running configure...")
     runCommand("%s -C --enable-framework --enable-universalsdk=/ "
                "--with-universal-archs=%s "
+               "%s "
+               "%s "
                "%s "
                "%s "
                "%s "
@@ -1103,12 +1155,33 @@ def buildPython():
         UNIVERSALARCHS,
         (' ', '--with-computed-gotos ')[PYTHON_3],
         (' ', '--without-ensurepip ')[PYTHON_3],
-        (' ', "--with-tcltk-includes='-I%s/libraries/usr/local/include'"%(
+        (' ', "--with-openssl='%s/libraries/usr/local'"%(
+                            shellQuote(WORKDIR)[1:-1],))[PYTHON_3],
+        (' ', "--enable-optimizations --with-lto")[compilerCanOptimize()],
+        (' ', "TCLTK_CFLAGS='-I%s/libraries/usr/local/include'"%(
                             shellQuote(WORKDIR)[1:-1],))[internalTk()],
-        (' ', "--with-tcltk-libs='-L%s/libraries/usr/local/lib -ltcl8.6 -ltk8.6'"%(
+        (' ', "TCLTK_LIBS='-L%s/libraries/usr/local/lib -ltcl8.6 -ltk8.6'"%(
                             shellQuote(WORKDIR)[1:-1],))[internalTk()],
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
+
+    # As of macOS 10.11 with SYSTEM INTEGRITY PROTECTION, DYLD_*
+    # environment variables are no longer automatically inherited
+    # by child processes from their parents. We used to just set
+    # DYLD_LIBRARY_PATH, pointing to the third-party libs,
+    # in build-installer.py's process environment and it was
+    # passed through the make utility into the environment of
+    # setup.py. Instead, we now append DYLD_LIBRARY_PATH to
+    # the existing RUNSHARED configuration value when we call
+    # make for extension module builds.
+
+    runshared_for_make = "".join([
+            " RUNSHARED=",
+            "'",
+            grepValue("Makefile", "RUNSHARED"),
+            ' DYLD_LIBRARY_PATH=',
+            os.path.join(WORKDIR, 'libraries', 'usr', 'local', 'lib'),
+            "'" ])
 
     # Look for environment value BUILDINSTALLER_BUILDPYTHON_MAKE_EXTRAS
     # and, if defined, append its value to the make command.  This allows
@@ -1124,21 +1197,24 @@ def buildPython():
 
     make_extras = os.getenv("BUILDINSTALLER_BUILDPYTHON_MAKE_EXTRAS")
     if make_extras:
-        make_cmd = "make " + make_extras
+        make_cmd = "make " + make_extras + runshared_for_make
     else:
-        make_cmd = "make"
+        make_cmd = "make" + runshared_for_make
     print("Running " + make_cmd)
     runCommand(make_cmd)
 
-    print("Running make install")
-    runCommand("make install DESTDIR=%s"%(
-        shellQuote(rootDir)))
+    make_cmd = "make install DESTDIR=%s %s"%(
+        shellQuote(rootDir),
+        runshared_for_make)
+    print("Running " + make_cmd)
+    runCommand(make_cmd)
 
-    print("Running make frameworkinstallextras")
-    runCommand("make frameworkinstallextras DESTDIR=%s"%(
-        shellQuote(rootDir)))
+    make_cmd = "make frameworkinstallextras DESTDIR=%s %s"%(
+        shellQuote(rootDir),
+        runshared_for_make)
+    print("Running " + make_cmd)
+    runCommand(make_cmd)
 
-    del os.environ['DYLD_LIBRARY_PATH']
     print("Copying required shared libraries")
     if os.path.exists(os.path.join(WORKDIR, 'libraries', 'Library')):
         build_lib_dir = os.path.join(
@@ -1267,10 +1343,16 @@ def buildPython():
     data = fp.read()
     fp.close()
     # create build_time_vars dict
-    exec(data)
+    if RUNNING_ON_PYTHON2:
+        exec(data)
+    else:
+        g_dict = {}
+        l_dict = {}
+        exec(data, g_dict, l_dict)
+        build_time_vars = l_dict['build_time_vars']
     vars = {}
     for k, v in build_time_vars.items():
-        if type(v) == type(''):
+        if isinstance(v, str):
             for p in (include_path, lib_path):
                 v = v.replace(' ' + p, '')
                 v = v.replace(p + ' ', '')
@@ -1297,12 +1379,6 @@ def buildPython():
                    os.path.join(usr_local_bin, fn))
 
     os.chdir(curdir)
-
-    if PYTHON_3:
-        # Remove the 'Current' link, that way we don't accidentally mess
-        # with an already installed version of python 2
-        os.unlink(os.path.join(rootDir, 'Library', 'Frameworks',
-                            'Python.framework', 'Versions', 'Current'))
 
 def patchFile(inPath, outPath):
     data = fileContents(inPath)
@@ -1390,7 +1466,7 @@ def packageFromRecipe(targetDir, recipe):
 
         vers = getFullVersion()
         major, minor = getVersionMajorMinor()
-        pl = Plist(
+        pl = dict(
                 CFBundleGetInfoString="Python.%s %s"%(pkgname, vers,),
                 CFBundleIdentifier='org.python.Python.%s'%(pkgname,),
                 CFBundleName='Python.%s'%(pkgname,),
@@ -1412,7 +1488,7 @@ def packageFromRecipe(targetDir, recipe):
             )
         writePlist(pl, os.path.join(packageContents, 'Info.plist'))
 
-        pl = Plist(
+        pl = dict(
                     IFPkgDescriptionDescription=readme,
                     IFPkgDescriptionTitle=recipe.get('long_name', "Python.%s"%(pkgname,)),
                     IFPkgDescriptionVersion=vers,
@@ -1428,7 +1504,7 @@ def makeMpkgPlist(path):
     vers = getFullVersion()
     major, minor = getVersionMajorMinor()
 
-    pl = Plist(
+    pl = dict(
             CFBundleGetInfoString="Python %s"%(vers,),
             CFBundleIdentifier='org.python.Python',
             CFBundleName='Python',
@@ -1481,7 +1557,7 @@ def buildInstaller():
     os.mkdir(rsrcDir)
 
     makeMpkgPlist(os.path.join(pkgroot, 'Info.plist'))
-    pl = Plist(
+    pl = dict(
                 IFPkgDescriptionTitle="Python",
                 IFPkgDescriptionVersion=getVersion(),
             )
@@ -1513,8 +1589,39 @@ def buildDMG():
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
 
+    # We used to use the deployment target as the last characters of the
+    # installer file name. With the introduction of weaklinked installer
+    # variants, we may have two variants with the same file name, i.e.
+    # both ending in '10.9'.  To avoid this, we now use the major/minor
+    # version numbers of the macOS version we are building on.
+    # Also, as of macOS 11, operating system version numbering has
+    # changed from three components to two, i.e.
+    #   10.14.1, 10.14.2, ...
+    #   10.15.1, 10.15.2, ...
+    #   11.1, 11.2, ...
+    #   12.1, 12.2, ...
+    # (A further twist is that, when running on macOS 11, binaries built
+    # on older systems may be shown an operating system version of 10.16
+    # instead of 11.  We should not run into that situation here.)
+    # Also we should use "macos" instead of "macosx" going forward.
+    #
+    # To maintain compatibility for legacy variants, the file name for
+    # builds on macOS 10.15 and earlier remains:
+    #   python-3.x.y-macosx10.z.{dmg->pkg}
+    #   e.g. python-3.9.4-macosx10.9.{dmg->pkg}
+    # and for builds on macOS 11+:
+    #   python-3.x.y-macosz.{dmg->pkg}
+    #   e.g. python-3.9.4-macos11.{dmg->pkg}
+
+    build_tuple = getBuildTuple()
+    if build_tuple[0] < 11:
+        os_name = 'macosx'
+        build_system_version = '%s.%s' % build_tuple
+    else:
+        os_name = 'macos'
+        build_system_version = str(build_tuple[0])
     imagepath = os.path.join(outdir,
-                    'python-%s-macosx%s'%(getFullVersion(),DEPTARGET))
+                    'python-%s-%s%s'%(getFullVersion(),os_name,build_system_version))
     if INCLUDE_TIMESTAMP:
         imagepath = imagepath + '-%04d-%02d-%02d'%(time.localtime()[:3])
     imagepath = imagepath + '.dmg'
@@ -1540,7 +1647,7 @@ def buildDMG():
         print(" -- retrying hdiutil create")
         time.sleep(5)
     else:
-        raise RuntimeError("command failed: %s"%(commandline,))
+        raise RuntimeError("command failed: %s"%(cmd,))
 
     if not os.path.exists(os.path.join(WORKDIR, "mnt")):
         os.mkdir(os.path.join(WORKDIR, "mnt"))

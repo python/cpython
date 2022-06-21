@@ -31,11 +31,9 @@ from .support.logging import *
 from .support.options import *
 from .support.pip import *
 from .support.props import *
+from .support.nuspec import *
 
-BDIST_WININST_FILES_ONLY = FileNameSet("wininst-*", "bdist_wininst.py")
-BDIST_WININST_STUB = "PC/layout/support/distutils.command.bdist_wininst.py"
-
-TEST_PYDS_ONLY = FileStemSet("xxlimited", "_ctypes_test", "_test*")
+TEST_PYDS_ONLY = FileStemSet("xxlimited", "xxlimited_35", "_ctypes_test", "_test*")
 TEST_DIRS_ONLY = FileNameSet("test", "tests")
 
 IDLE_DIRS_ONLY = FileNameSet("idlelib")
@@ -63,8 +61,9 @@ CDF_FILES = FileSuffixSet(".cdf")
 
 DATA_DIRS = FileNameSet("data")
 
-TOOLS_DIRS = FileNameSet("scripts", "i18n", "pynche", "demo", "parser")
+TOOLS_DIRS = FileNameSet("scripts", "i18n", "demo", "parser")
 TOOLS_FILES = FileSuffixSet(".py", ".pyw", ".txt")
+
 
 def copy_if_modified(src, dest):
     try:
@@ -73,11 +72,14 @@ def copy_if_modified(src, dest):
         do_copy = True
     else:
         src_stat = os.stat(src)
-        do_copy = (src_stat.st_mtime != dest_stat.st_mtime or
-                   src_stat.st_size != dest_stat.st_size)
+        do_copy = (
+            src_stat.st_mtime != dest_stat.st_mtime
+            or src_stat.st_size != dest_stat.st_size
+        )
 
     if do_copy:
         shutil.copy2(src, dest)
+
 
 def get_lib_layout(ns):
     def _c(f):
@@ -95,16 +97,10 @@ def get_lib_layout(ns):
         else:
             if f in TCLTK_FILES_ONLY:
                 return ns.include_tcltk
-            if f in BDIST_WININST_FILES_ONLY:
-                return ns.include_bdist_wininst
         return True
 
     for dest, src in rglob(ns.source / "Lib", "**/*", _c):
         yield dest, src
-
-    if not ns.include_bdist_wininst:
-        src = ns.source / BDIST_WININST_STUB
-        yield Path("distutils/command/bdist_wininst.py"), src
 
 
 def get_tcltk_lib(ns):
@@ -119,7 +115,7 @@ def get_tcltk_lib(ns):
         except FileNotFoundError:
             pass
         if not tcl_lib or not os.path.isdir(tcl_lib):
-            warn("Failed to find TCL_LIBRARY")
+            log_warning("Failed to find TCL_LIBRARY")
             return
 
     for dest, src in rglob(Path(tcl_lib).parent, "**/*"):
@@ -148,6 +144,9 @@ def get_layout(ns):
                 yield "libs/" + n + ".lib", lib
 
     if ns.include_appxmanifest:
+        yield from in_build("python_uwp.exe", new_name="python{}".format(VER_DOT))
+        yield from in_build("pythonw_uwp.exe", new_name="pythonw{}".format(VER_DOT))
+        # For backwards compatibility, but we don't reference these ourselves.
         yield from in_build("python_uwp.exe", new_name="python")
         yield from in_build("pythonw_uwp.exe", new_name="pythonw")
     else:
@@ -158,17 +157,21 @@ def get_layout(ns):
 
     if ns.include_launchers and ns.include_appxmanifest:
         if ns.include_pip:
-            yield from in_build("python_uwp.exe", new_name="pip")
+            yield from in_build("python_uwp.exe", new_name="pip{}".format(VER_DOT))
         if ns.include_idle:
-            yield from in_build("pythonw_uwp.exe", new_name="idle")
+            yield from in_build("pythonw_uwp.exe", new_name="idle{}".format(VER_DOT))
 
     if ns.include_stable:
         yield from in_build(PYTHON_STABLE_DLL_NAME)
 
+    found_any = False
     for dest, src in rglob(ns.build, "vcruntime*.dll"):
+        found_any = True
         yield dest, src
+    if not found_any:
+        log_error("Failed to locate vcruntime DLL in the build.")
 
-    yield "LICENSE.txt", ns.source / "LICENSE"
+    yield "LICENSE.txt", ns.build / "LICENSE.txt"
 
     for dest, src in rglob(ns.build, ("*.pyd", "*.dll")):
         if src.stem.endswith("_d") != bool(ns.debug) and src not in REQUIRED_DLLS:
@@ -208,12 +211,7 @@ def get_layout(ns):
 
     if ns.include_dev:
 
-        def _c(d):
-            if d.is_dir():
-                return d.name != "internal"
-            return True
-
-        for dest, src in rglob(ns.source / "Include", "**/*.h", _c):
+        for dest, src in rglob(ns.source / "Include", "**/*.h"):
             yield "include/{}".format(dest), src
         src = ns.source / "PC" / "pyconfig.h"
         yield "include/pyconfig.h", src
@@ -222,15 +220,12 @@ def get_layout(ns):
         yield dest, src
 
     if ns.include_pip:
-        pip_dir = get_pip_dir(ns)
-        if not pip_dir.is_dir():
-            log_warning("Failed to find {} - pip will not be included", pip_dir)
-        else:
-            pkg_root = "packages/{}" if ns.zip_lib else "Lib/site-packages/{}"
-            for dest, src in rglob(pip_dir, "**/*"):
-                if src in EXCLUDE_FROM_LIB or src in EXCLUDE_FROM_PACKAGED_LIB:
-                    continue
-                yield pkg_root.format(dest), src
+        for dest, src in get_pip_layout(ns):
+            if not isinstance(src, tuple) and (
+                src in EXCLUDE_FROM_LIB or src in EXCLUDE_FROM_PACKAGED_LIB
+            ):
+                continue
+            yield dest, src
 
     if ns.include_chm:
         for dest, src in rglob(ns.doc_build / "htmlhelp", PYTHON_CHM_NAME):
@@ -242,6 +237,10 @@ def get_layout(ns):
 
     if ns.include_props:
         for dest, src in get_props_layout(ns):
+            yield dest, src
+
+    if ns.include_nuspec:
+        for dest, src in get_nuspec_layout(ns):
             yield dest, src
 
     for dest, src in get_appx_layout(ns):
@@ -282,16 +281,16 @@ def _compile_one_py(src, dest, name, optimize, checked=True):
         return None
 
 
-def _py_temp_compile(src, ns, dest_dir=None, checked=True):
+# name argument added to address bpo-37641
+def _py_temp_compile(src, name, ns, dest_dir=None, checked=True):
     if not ns.precompile or src not in PY_FILES or src.parent in DATA_DIRS:
         return None
-
-    dest = (dest_dir or ns.temp) / (src.stem + ".py")
-    return _compile_one_py(src, dest.with_suffix(".pyc"), dest, optimize=2, checked=checked)
+    dest = (dest_dir or ns.temp) / (src.stem + ".pyc")
+    return _compile_one_py(src, dest, name, optimize=2, checked=checked)
 
 
 def _write_to_zip(zf, dest, src, ns, checked=True):
-    pyc = _py_temp_compile(src, ns, checked=checked)
+    pyc = _py_temp_compile(src, dest, ns, checked=checked)
     if pyc:
         try:
             zf.write(str(pyc), dest.with_suffix(".pyc"))
@@ -361,28 +360,9 @@ def generate_source_files(ns):
             print("# Uncomment to run site.main() automatically", file=f)
             print("#import site", file=f)
 
-    if ns.include_appxmanifest:
-        log_info("Generating AppxManifest.xml in {}", ns.temp)
-        ns.temp.mkdir(parents=True, exist_ok=True)
-
-        with open(ns.temp / "AppxManifest.xml", "wb") as f:
-            f.write(get_appxmanifest(ns))
-
-        with open(ns.temp / "_resources.xml", "wb") as f:
-            f.write(get_resources_xml(ns))
-
     if ns.include_pip:
-        pip_dir = get_pip_dir(ns)
-        if not (pip_dir / "pip").is_dir():
-            log_info("Extracting pip to {}", pip_dir)
-            pip_dir.mkdir(parents=True, exist_ok=True)
-            extract_pip_files(ns)
-
-    if ns.include_props:
-        log_info("Generating {} in {}", PYTHON_PROPS_NAME, ns.temp)
-        ns.temp.mkdir(parents=True, exist_ok=True)
-        with open(ns.temp / PYTHON_PROPS_NAME, "wb") as f:
-            f.write(get_props(ns))
+        log_info("Extracting pip")
+        extract_pip_files(ns)
 
 
 def _create_zip_file(ns):
@@ -426,6 +406,18 @@ def copy_files(files, ns):
                 else:
                     log_info("Processed {} files", count)
             log_debug("Processing {!s}", src)
+
+            if isinstance(src, tuple):
+                src, content = src
+                if ns.copy:
+                    log_debug("Copy {} -> {}", src, ns.copy / dest)
+                    (ns.copy / dest).parent.mkdir(parents=True, exist_ok=True)
+                    with open(ns.copy / dest, "wb") as f:
+                        f.write(content)
+                if ns.zip:
+                    log_debug("Zip {} into {}", src, ns.zip)
+                    zip_file.writestr(str(dest), content)
+                continue
 
             if (
                 ns.precompile
@@ -497,6 +489,13 @@ def main():
     )
     parser.add_argument(
         "-b", "--build", metavar="dir", help="Specify the build directory", type=Path
+    )
+    parser.add_argument(
+        "--arch",
+        metavar="architecture",
+        help="Specify the target architecture",
+        type=str,
+        default=None,
     )
     parser.add_argument(
         "--doc-build",
@@ -589,6 +588,8 @@ def main():
         ns.doc_build = (Path.cwd() / ns.doc_build).resolve()
     if ns.include_cat and not ns.include_cat.is_absolute():
         ns.include_cat = (Path.cwd() / ns.include_cat).resolve()
+    if not ns.arch:
+        ns.arch = "amd64" if sys.maxsize > 2 ** 32 else "win32"
 
     if ns.copy and not ns.copy.is_absolute():
         ns.copy = (Path.cwd() / ns.copy).resolve()
@@ -604,12 +605,22 @@ def main():
 Source: {ns.source}
 Build:  {ns.build}
 Temp:   {ns.temp}
+Arch:   {ns.arch}
 
 Copy to: {ns.copy}
 Zip to:  {ns.zip}
 Catalog: {ns.catalog}""",
         ns=ns,
     )
+
+    if ns.arch not in ("win32", "amd64", "arm32", "arm64"):
+        log_error("--arch is not a valid value (win32, amd64, arm32, arm64)")
+        return 4
+    if ns.arch in ("arm32", "arm64"):
+        for n in ("include_idle", "include_tcltk"):
+            if getattr(ns, n):
+                log_warning(f"Disabling --{n.replace('_', '-')} on unsupported platform")
+                setattr(ns, n, False)
 
     if ns.include_idle and not ns.include_tcltk:
         log_warning("Assuming --include-tcltk to support --include-idle")

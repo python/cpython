@@ -1,105 +1,124 @@
+import _overlapped
+import _thread
 import _winapi
-import msvcrt
-import os
-import subprocess
-import uuid
-from test import support
+import math
+import struct
+import winreg
 
 
-# Max size of asynchronous reads
-BUFSIZE = 8192
-# Exponential damping factor (see below)
-LOAD_FACTOR_1 = 0.9200444146293232478931553241
 # Seconds per measurement
-SAMPLING_INTERVAL = 5
-COUNTER_NAME = r'\System\Processor Queue Length'
+SAMPLING_INTERVAL = 1
+# Exponential damping factor to compute exponentially weighted moving average
+# on 1 minute (60 seconds)
+LOAD_FACTOR_1 = 1 / math.exp(SAMPLING_INTERVAL / 60)
+# Initialize the load using the arithmetic mean of the first NVALUE values
+# of the Processor Queue Length
+NVALUE = 5
 
 
 class WindowsLoadTracker():
     """
-    This class asynchronously interacts with the `typeperf` command to read
-    the system load on Windows. Mulitprocessing and threads can't be used
-    here because they interfere with the test suite's cases for those
-    modules.
+    This class asynchronously reads the performance counters to calculate
+    the system load on Windows.  A "raw" thread is used here to prevent
+    interference with the test suite's cases for the threading module.
     """
 
     def __init__(self):
-        self.load = 0.0
-        self.start()
+        # Pre-flight test for access to the performance data;
+        # `PermissionError` will be raised if not allowed
+        winreg.QueryInfoKey(winreg.HKEY_PERFORMANCE_DATA)
 
-    def start(self):
-        # Create a named pipe which allows for asynchronous IO in Windows
-        pipe_name =  r'\\.\pipe\typeperf_output_' + str(uuid.uuid4())
+        self._values = []
+        self._load = None
+        self._running = _overlapped.CreateEvent(None, True, False, None)
+        self._stopped = _overlapped.CreateEvent(None, True, False, None)
 
-        open_mode =  _winapi.PIPE_ACCESS_INBOUND
-        open_mode |= _winapi.FILE_FLAG_FIRST_PIPE_INSTANCE
-        open_mode |= _winapi.FILE_FLAG_OVERLAPPED
+        _thread.start_new_thread(self._update_load, (), {})
 
-        # This is the read end of the pipe, where we will be grabbing output
-        self.pipe = _winapi.CreateNamedPipe(
-            pipe_name, open_mode, _winapi.PIPE_WAIT,
-            1, BUFSIZE, BUFSIZE, _winapi.NMPWAIT_WAIT_FOREVER, _winapi.NULL
-        )
-        # The write end of the pipe which is passed to the created process
-        pipe_write_end = _winapi.CreateFile(
-            pipe_name, _winapi.GENERIC_WRITE, 0, _winapi.NULL,
-            _winapi.OPEN_EXISTING, 0, _winapi.NULL
-        )
-        # Open up the handle as a python file object so we can pass it to
-        # subprocess
-        command_stdout = msvcrt.open_osfhandle(pipe_write_end, 0)
+    def _update_load(self,
+                    # localize module access to prevent shutdown errors
+                     _wait=_winapi.WaitForSingleObject,
+                     _signal=_overlapped.SetEvent):
+        # run until signaled to stop
+        while _wait(self._running, 1000):
+            self._calculate_load()
+        # notify stopped
+        _signal(self._stopped)
 
-        # Connect to the read end of the pipe in overlap/async mode
-        overlap = _winapi.ConnectNamedPipe(self.pipe, overlapped=True)
-        overlap.GetOverlappedResult(True)
-
-        # Spawn off the load monitor
-        command = ['typeperf', COUNTER_NAME, '-si', str(SAMPLING_INTERVAL)]
-        self.p = subprocess.Popen(command, stdout=command_stdout, cwd=support.SAVEDCWD)
-
-        # Close our copy of the write end of the pipe
-        os.close(command_stdout)
-
-    def close(self):
-        if self.p is None:
+    def _calculate_load(self,
+                        # localize module access to prevent shutdown errors
+                        _query=winreg.QueryValueEx,
+                        _hkey=winreg.HKEY_PERFORMANCE_DATA,
+                        _unpack=struct.unpack_from):
+        # get the 'System' object
+        data, _ = _query(_hkey, '2')
+        # PERF_DATA_BLOCK {
+        #   WCHAR Signature[4]      8 +
+        #   DWOWD LittleEndian      4 +
+        #   DWORD Version           4 +
+        #   DWORD Revision          4 +
+        #   DWORD TotalByteLength   4 +
+        #   DWORD HeaderLength      = 24 byte offset
+        #   ...
+        # }
+        obj_start, = _unpack('L', data, 24)
+        # PERF_OBJECT_TYPE {
+        #   DWORD TotalByteLength
+        #   DWORD DefinitionLength
+        #   DWORD HeaderLength
+        #   ...
+        # }
+        data_start, defn_start = _unpack('4xLL', data, obj_start)
+        data_base = obj_start + data_start
+        defn_base = obj_start + defn_start
+        # find the 'Processor Queue Length' counter (index=44)
+        while defn_base < data_base:
+            # PERF_COUNTER_DEFINITION {
+            #   DWORD ByteLength
+            #   DWORD CounterNameTitleIndex
+            #   ... [7 DWORDs/28 bytes]
+            #   DWORD CounterOffset
+            # }
+            size, idx, offset = _unpack('LL28xL', data, defn_base)
+            defn_base += size
+            if idx == 44:
+                counter_offset = data_base + offset
+                # the counter is known to be PERF_COUNTER_RAWCOUNT (DWORD)
+                processor_queue_length, = _unpack('L', data, counter_offset)
+                break
+        else:
             return
-        self.p.kill()
-        self.p.wait()
-        self.p = None
 
-    def __del__(self):
-        self.close()
+        # We use an exponentially weighted moving average, imitating the
+        # load calculation on Unix systems.
+        # https://en.wikipedia.org/wiki/Load_(computing)#Unix-style_load_calculation
+        # https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
+        if self._load is not None:
+            self._load = (self._load * LOAD_FACTOR_1
+                            + processor_queue_length  * (1.0 - LOAD_FACTOR_1))
+        elif len(self._values) < NVALUE:
+            self._values.append(processor_queue_length)
+        else:
+            self._load = sum(self._values) / len(self._values)
 
-    def read_output(self):
-        import _winapi
+    def close(self, kill=True):
+        self.__del__()
+        return
 
-        overlapped, _ = _winapi.ReadFile(self.pipe, BUFSIZE, True)
-        bytes_read, res = overlapped.GetOverlappedResult(False)
-        if res != 0:
-            return
-
-        return overlapped.getbuffer().decode()
+    def __del__(self,
+                # localize module access to prevent shutdown errors
+                _wait=_winapi.WaitForSingleObject,
+                _close=_winapi.CloseHandle,
+                _signal=_overlapped.SetEvent):
+        if self._running is not None:
+            # tell the update thread to quit
+            _signal(self._running)
+            # wait for the update thread to signal done
+            _wait(self._stopped, -1)
+            # cleanup events
+            _close(self._running)
+            _close(self._stopped)
+            self._running = self._stopped = None
 
     def getloadavg(self):
-        typeperf_output = self.read_output()
-        # Nothing to update, just return the current load
-        if not typeperf_output:
-            return self.load
-
-        # Process the backlog of load values
-        for line in typeperf_output.splitlines():
-            # typeperf outputs in a CSV format like this:
-            # "07/19/2018 01:32:26.605","3.000000"
-            toks = line.split(',')
-            # Ignore blank lines and the initial header
-            if line.strip() == '' or (COUNTER_NAME in line) or len(toks) != 2:
-                continue
-
-            load = float(toks[1].replace('"', ''))
-            # We use an exponentially weighted moving average, imitating the
-            # load calculation on Unix systems.
-            # https://en.wikipedia.org/wiki/Load_(computing)#Unix-style_load_calculation
-            new_load = self.load * LOAD_FACTOR_1 + load * (1.0 - LOAD_FACTOR_1)
-            self.load = new_load
-
-        return self.load
+        return self._load

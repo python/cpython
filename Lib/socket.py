@@ -12,6 +12,8 @@ Functions:
 socket() -- create a new socket object
 socketpair() -- create a pair of new socket objects [*]
 fromfd() -- create a socket object from an open file descriptor [*]
+send_fds() -- Send file descriptor to the socket.
+recv_fds() -- Receive file descriptors from the socket.
 fromshare() -- create a socket object from data received from socket.share() [*]
 gethostname() -- return the current hostname
 gethostbyname() -- map a hostname to its IP number
@@ -26,6 +28,7 @@ socket.getdefaulttimeout() -- get the default timeout value
 socket.setdefaulttimeout() -- set the default timeout value
 create_connection() -- connects to an address, with an optional timeout and
                        optional source address.
+create_server() -- create a TCP socket and bind it to a specified address.
 
  [*] not available on all platforms!
 
@@ -104,26 +107,105 @@ def _intenum_converter(value, enum_klass):
     except ValueError:
         return value
 
-_realsocket = socket
 
 # WSA error codes
 if sys.platform.lower().startswith("win"):
     errorTab = {}
+    errorTab[6] = "Specified event object handle is invalid."
+    errorTab[8] = "Insufficient memory available."
+    errorTab[87] = "One or more parameters are invalid."
+    errorTab[995] = "Overlapped operation aborted."
+    errorTab[996] = "Overlapped I/O event object not in signaled state."
+    errorTab[997] = "Overlapped operation will complete later."
     errorTab[10004] = "The operation was interrupted."
     errorTab[10009] = "A bad file handle was passed."
     errorTab[10013] = "Permission denied."
-    errorTab[10014] = "A fault occurred on the network??" # WSAEFAULT
+    errorTab[10014] = "A fault occurred on the network??"  # WSAEFAULT
     errorTab[10022] = "An invalid operation was attempted."
-    errorTab[10035] = "The socket operation would block"
+    errorTab[10024] = "Too many open files."
+    errorTab[10035] = "The socket operation would block."
     errorTab[10036] = "A blocking operation is already in progress."
+    errorTab[10037] = "Operation already in progress."
+    errorTab[10038] = "Socket operation on nonsocket."
+    errorTab[10039] = "Destination address required."
+    errorTab[10040] = "Message too long."
+    errorTab[10041] = "Protocol wrong type for socket."
+    errorTab[10042] = "Bad protocol option."
+    errorTab[10043] = "Protocol not supported."
+    errorTab[10044] = "Socket type not supported."
+    errorTab[10045] = "Operation not supported."
+    errorTab[10046] = "Protocol family not supported."
+    errorTab[10047] = "Address family not supported by protocol family."
     errorTab[10048] = "The network address is in use."
+    errorTab[10049] = "Cannot assign requested address."
+    errorTab[10050] = "Network is down."
+    errorTab[10051] = "Network is unreachable."
+    errorTab[10052] = "Network dropped connection on reset."
+    errorTab[10053] = "Software caused connection abort."
     errorTab[10054] = "The connection has been reset."
+    errorTab[10055] = "No buffer space available."
+    errorTab[10056] = "Socket is already connected."
+    errorTab[10057] = "Socket is not connected."
     errorTab[10058] = "The network has been shut down."
+    errorTab[10059] = "Too many references."
     errorTab[10060] = "The operation timed out."
     errorTab[10061] = "Connection refused."
+    errorTab[10062] = "Cannot translate name."
     errorTab[10063] = "The name is too long."
     errorTab[10064] = "The host is down."
     errorTab[10065] = "The host is unreachable."
+    errorTab[10066] = "Directory not empty."
+    errorTab[10067] = "Too many processes."
+    errorTab[10068] = "User quota exceeded."
+    errorTab[10069] = "Disk quota exceeded."
+    errorTab[10070] = "Stale file handle reference."
+    errorTab[10071] = "Item is remote."
+    errorTab[10091] = "Network subsystem is unavailable."
+    errorTab[10092] = "Winsock.dll version out of range."
+    errorTab[10093] = "Successful WSAStartup not yet performed."
+    errorTab[10101] = "Graceful shutdown in progress."
+    errorTab[10102] = "No more results from WSALookupServiceNext."
+    errorTab[10103] = "Call has been canceled."
+    errorTab[10104] = "Procedure call table is invalid."
+    errorTab[10105] = "Service provider is invalid."
+    errorTab[10106] = "Service provider failed to initialize."
+    errorTab[10107] = "System call failure."
+    errorTab[10108] = "Service not found."
+    errorTab[10109] = "Class type not found."
+    errorTab[10110] = "No more results from WSALookupServiceNext."
+    errorTab[10111] = "Call was canceled."
+    errorTab[10112] = "Database query was refused."
+    errorTab[11001] = "Host not found."
+    errorTab[11002] = "Nonauthoritative host not found."
+    errorTab[11003] = "This is a nonrecoverable error."
+    errorTab[11004] = "Valid name, no data record requested type."
+    errorTab[11005] = "QoS receivers."
+    errorTab[11006] = "QoS senders."
+    errorTab[11007] = "No QoS senders."
+    errorTab[11008] = "QoS no receivers."
+    errorTab[11009] = "QoS request confirmed."
+    errorTab[11010] = "QoS admission error."
+    errorTab[11011] = "QoS policy failure."
+    errorTab[11012] = "QoS bad style."
+    errorTab[11013] = "QoS bad object."
+    errorTab[11014] = "QoS traffic control error."
+    errorTab[11015] = "QoS generic error."
+    errorTab[11016] = "QoS service type error."
+    errorTab[11017] = "QoS flowspec error."
+    errorTab[11018] = "Invalid QoS provider buffer."
+    errorTab[11019] = "Invalid QoS filter style."
+    errorTab[11020] = "Invalid QoS filter style."
+    errorTab[11021] = "Incorrect QoS filter count."
+    errorTab[11022] = "Invalid QoS object length."
+    errorTab[11023] = "Incorrect QoS flow count."
+    errorTab[11024] = "Unrecognized QoS object."
+    errorTab[11025] = "Invalid QoS policy object."
+    errorTab[11026] = "Invalid QoS flow descriptor."
+    errorTab[11027] = "Invalid QoS provider-specific flowspec."
+    errorTab[11028] = "Invalid QoS provider-specific filterspec."
+    errorTab[11029] = "Invalid QoS shape discard mode object."
+    errorTab[11030] = "Invalid QoS shaping rate object."
+    errorTab[11031] = "Reserved policy QoS element type."
     __all__.append("errorTab")
 
 
@@ -256,6 +338,7 @@ class socket(_socket.socket):
             buffer = io.BufferedWriter(raw, buffering)
         if binary:
             return buffer
+        encoding = io.text_encoding(encoding)
         text = io.TextIOWrapper(buffer, encoding, errors, newline)
         text.mode = mode
         return text
@@ -275,8 +358,8 @@ class socket(_socket.socket):
                 raise _GiveupOnSendfile(err)  # not a regular file
             if not fsize:
                 return 0  # empty file
-            blocksize = fsize if not count else count
-
+            # Truncate to 1GiB to avoid OverflowError, see bpo-38319.
+            blocksize = min(count or fsize, 2 ** 30)
             timeout = self.gettimeout()
             if timeout == 0:
                 raise ValueError("non-blocking sockets are not supported")
@@ -296,7 +379,7 @@ class socket(_socket.socket):
             try:
                 while True:
                     if timeout and not selector_select(timeout):
-                        raise _socket.timeout('timed out')
+                        raise TimeoutError('timed out')
                     if count:
                         blocksize = count - total_sent
                         if blocksize <= 0:
@@ -463,6 +546,40 @@ def fromfd(fd, family, type, proto=0):
     nfd = dup(fd)
     return socket(family, type, proto, nfd)
 
+if hasattr(_socket.socket, "sendmsg"):
+    import array
+
+    def send_fds(sock, buffers, fds, flags=0, address=None):
+        """ send_fds(sock, buffers, fds[, flags[, address]]) -> integer
+
+        Send the list of file descriptors fds over an AF_UNIX socket.
+        """
+        return sock.sendmsg(buffers, [(_socket.SOL_SOCKET,
+            _socket.SCM_RIGHTS, array.array("i", fds))])
+    __all__.append("send_fds")
+
+if hasattr(_socket.socket, "recvmsg"):
+    import array
+
+    def recv_fds(sock, bufsize, maxfds, flags=0):
+        """ recv_fds(sock, bufsize, maxfds[, flags]) -> (data, list of file
+        descriptors, msg_flags, address)
+
+        Receive up to maxfds file descriptors returning the message
+        data and a list containing the descriptors.
+        """
+        # Array of ints
+        fds = array.array("i")
+        msg, ancdata, flags, addr = sock.recvmsg(bufsize,
+            _socket.CMSG_LEN(maxfds * fds.itemsize))
+        for cmsg_level, cmsg_type, cmsg_data in ancdata:
+            if (cmsg_level == _socket.SOL_SOCKET and cmsg_type == _socket.SCM_RIGHTS):
+                fds.frombytes(cmsg_data[:
+                        len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
+
+        return msg, list(fds), flags, addr
+    __all__.append("recv_fds")
+
 if hasattr(_socket.socket, "share"):
     def fromshare(info):
         """ fromshare(info) -> socket object
@@ -591,7 +708,7 @@ class SocketIO(io.RawIOBase):
                 self._timeout_occurred = True
                 raise
             except error as e:
-                if e.args[0] in _blocking_errnos:
+                if e.errno in _blocking_errnos:
                     return None
                 raise
 
@@ -607,7 +724,7 @@ class SocketIO(io.RawIOBase):
             return self._sock.send(b)
         except error as e:
             # XXX what about EINTR?
-            if e.args[0] in _blocking_errnos:
+            if e.errno in _blocking_errnos:
                 return None
             raise
 
@@ -666,8 +783,9 @@ def getfqdn(name=''):
     An empty argument is interpreted as meaning the local host.
 
     First the hostname returned by gethostbyaddr() is checked, then
-    possibly existing aliases. In case no FQDN is available, hostname
-    from gethostname() is returned.
+    possibly existing aliases. In case no FQDN is available and `name`
+    was given, it is returned unchanged. If `name` was empty or '0.0.0.0',
+    hostname from gethostname() is returned.
     """
     name = name.strip()
     if not name or name == '0.0.0.0':
@@ -689,7 +807,7 @@ def getfqdn(name=''):
 _GLOBAL_DEFAULT_TIMEOUT = object()
 
 def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
-                      source_address=None):
+                      source_address=None, *, all_errors=False):
     """Connect to *address* and return the socket object.
 
     Convenience function.  Connect to *address* (a 2-tuple ``(host,
@@ -699,11 +817,13 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
     global default timeout setting returned by :func:`getdefaulttimeout`
     is used.  If *source_address* is set it must be a tuple of (host, port)
     for the socket to bind as a source address before making the connection.
-    A host of '' or port 0 tells the OS to use the default.
+    A host of '' or port 0 tells the OS to use the default. When a connection
+    cannot be created, raises the last error if *all_errors* is False,
+    and an ExceptionGroup of all errors if *all_errors* is True.
     """
 
     host, port = address
-    err = None
+    exceptions = []
     for res in getaddrinfo(host, port, 0, SOCK_STREAM):
         af, socktype, proto, canonname, sa = res
         sock = None
@@ -715,16 +835,24 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
                 sock.bind(source_address)
             sock.connect(sa)
             # Break explicitly a reference cycle
-            err = None
+            exceptions.clear()
             return sock
 
-        except error as _:
-            err = _
+        except error as exc:
+            if not all_errors:
+                exceptions.clear()  # raise only the last error
+            exceptions.append(exc)
             if sock is not None:
                 sock.close()
 
-    if err is not None:
-        raise err
+    if len(exceptions):
+        try:
+            if not all_errors:
+                raise exceptions[0]
+            raise ExceptionGroup("create_connection failed", exceptions)
+        finally:
+            # Break explicitly a reference cycle
+            exceptions.clear()
     else:
         raise error("getaddrinfo returns an empty list")
 
@@ -759,7 +887,7 @@ def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
     connections. When false it will explicitly disable this option on
     platforms that enable it by default (e.g. Linux).
 
-    >>> with create_server((None, 8000)) as server:
+    >>> with create_server(('', 8000)) as server:
     ...     while True:
     ...         conn, addr = server.accept()
     ...         # handle new connection

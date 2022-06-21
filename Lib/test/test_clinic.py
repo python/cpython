@@ -2,7 +2,8 @@
 # Copyright 2012-2013 by Larry Hastings.
 # Licensed to the PSF under a contributor agreement.
 
-from test import support
+from test import support, test_tools
+from test.support import os_helper
 from unittest import TestCase
 import collections
 import inspect
@@ -10,17 +11,10 @@ import os.path
 import sys
 import unittest
 
-
-clinic_path = os.path.join(os.path.dirname(__file__), '..', '..', 'Tools', 'clinic')
-clinic_path = os.path.normpath(clinic_path)
-if not os.path.exists(clinic_path):
-    raise unittest.SkipTest(f'{clinic_path!r} path does not exist')
-sys.path.append(clinic_path)
-try:
+test_tools.skip_if_missing('clinic')
+with test_tools.imports_under_tool('clinic'):
     import clinic
     from clinic import DSLParser
-finally:
-    del sys.path[-1]
 
 
 class FakeConverter:
@@ -801,17 +795,29 @@ class ClinicExternalTest(TestCase):
     maxDiff = None
 
     def test_external(self):
+        # bpo-42398: Test that the destination file is left unchanged if the
+        # content does not change. Moreover, check also that the file
+        # modification time does not change in this case.
         source = support.findfile('clinic.test')
         with open(source, 'r', encoding='utf-8') as f:
-            original = f.read()
-        with support.temp_dir() as testdir:
-            testfile = os.path.join(testdir, 'clinic.test.c')
+            orig_contents = f.read()
+
+        with os_helper.temp_dir() as tmp_dir:
+            testfile = os.path.join(tmp_dir, 'clinic.test.c')
             with open(testfile, 'w', encoding='utf-8') as f:
-                f.write(original)
-            clinic.parse_file(testfile, force=True)
+                f.write(orig_contents)
+            old_mtime_ns = os.stat(testfile).st_mtime_ns
+
+            clinic.parse_file(testfile)
+
             with open(testfile, 'r', encoding='utf-8') as f:
-                result = f.read()
-            self.assertEqual(result, original)
+                new_contents = f.read()
+            new_mtime_ns = os.stat(testfile).st_mtime_ns
+
+        self.assertEqual(new_contents, orig_contents)
+        # Don't change the file modification time
+        # if the content does not change
+        self.assertEqual(new_mtime_ns, old_mtime_ns)
 
 
 if __name__ == "__main__":

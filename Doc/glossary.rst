@@ -57,6 +57,8 @@ Glossary
 
       See :term:`variable annotation`, :term:`function annotation`, :pep:`484`
       and :pep:`526`, which describe this functionality.
+      Also see :ref:`annotations-howto`
+      for best practices on working with annotations.
 
    argument
       A value passed to a :term:`function` (or :term:`method`) when calling the
@@ -158,6 +160,18 @@ Glossary
       See also :term:`text file` for a file object able to read and write
       :class:`str` objects.
 
+   borrowed reference
+      In Python's C API, a borrowed reference is a reference to an object.
+      It does not modify the object reference count. It becomes a dangling
+      pointer if the object is destroyed. For example, a garbage collection can
+      remove the last :term:`strong reference` to the object and so destroy it.
+
+      Calling :c:func:`Py_INCREF` on the :term:`borrowed reference` is
+      recommended to convert it to a :term:`strong reference` in-place, except
+      when the object cannot be destroyed before the last usage of the borrowed
+      reference. The :c:func:`Py_NewRef` function can be used to create a new
+      :term:`strong reference`.
+
    bytes-like object
       An object that supports the :ref:`bufferobjects` and can
       export a C-:term:`contiguous` buffer. This includes all :class:`bytes`,
@@ -189,6 +203,10 @@ Glossary
       A list of bytecode instructions can be found in the documentation for
       :ref:`the dis module <bytecodes>`.
 
+   callback
+      A subroutine function which is passed as an argument to be executed at
+      some point in the future.
+
    class
       A template for creating user-defined objects. Class definitions
       normally contain method definitions which operate on instances of the
@@ -197,16 +215,6 @@ Glossary
    class variable
       A variable defined in a class and intended to be modified only at
       class level (i.e., not in an instance of the class).
-
-   coercion
-      The implicit conversion of an instance of one type to another during an
-      operation which involves two arguments of the same type.  For example,
-      ``int(3.15)`` converts the floating point number to the integer ``3``, but
-      in ``3+4.5``, each argument is of a different type (one int, one float),
-      and both must be converted to the same type before they can be added or it
-      will raise a :exc:`TypeError`.  Without coercion, all arguments of even
-      compatible types would have to be normalized to the same value by the
-      programmer, e.g., ``float(3)+4.5`` rather than just ``3+4.5``.
 
    complex number
       An extension of the familiar real number system in which all numbers are
@@ -225,6 +233,15 @@ Glossary
       statement by defining :meth:`__enter__` and :meth:`__exit__` methods.
       See :pep:`343`.
 
+   context variable
+      A variable which can have different values depending on its context.
+      This is similar to Thread-Local Storage in which each execution
+      thread may have a different value for a variable. However, with context
+      variables, there may be several contexts in one execution thread and the
+      main usage for context variables is to keep track of variables in
+      concurrent asynchronous tasks.
+      See :mod:`contextvars`.
+
    contiguous
       .. index:: C-contiguous, Fortran contiguous
 
@@ -238,7 +255,7 @@ Glossary
       Fortran contiguous arrays, the first index varies the fastest.
 
    coroutine
-      Coroutines is a more generalized form of subroutines. Subroutines are
+      Coroutines are a more generalized form of subroutines. Subroutines are
       entered at one point and exited at another point.  Coroutines can be
       entered, exited, and resumed at many different points.  They can be
       implemented with the :keyword:`async def` statement.  See also
@@ -265,12 +282,12 @@ Glossary
       The decorator syntax is merely syntactic sugar, the following two
       function definitions are semantically equivalent::
 
-         def f(...):
+         def f(arg):
              ...
          f = staticmethod(f)
 
          @staticmethod
-         def f(...):
+         def f(arg):
              ...
 
       The same concept exists for classes, but is less commonly used there.  See
@@ -288,12 +305,19 @@ Glossary
       including functions, methods, properties, class methods, static methods,
       and reference to super classes.
 
-      For more information about descriptors' methods, see :ref:`descriptors`.
+      For more information about descriptors' methods, see :ref:`descriptors`
+      or the :ref:`Descriptor How To Guide <descriptorhowto>`.
 
    dictionary
       An associative array, where arbitrary keys are mapped to values.  The
       keys can be any object with :meth:`__hash__` and :meth:`__eq__` methods.
       Called a hash in Perl.
+
+   dictionary comprehension
+      A compact way to process all or part of the elements in an iterable and
+      return a dictionary with the results. ``results = {n: n ** 2 for n in
+      range(10)}`` generates a dictionary containing key ``n`` mapped to
+      value ``n ** 2``. See :ref:`comprehensions`.
 
    dictionary view
       The objects returned from :meth:`dict.keys`, :meth:`dict.values`, and
@@ -366,6 +390,25 @@ Glossary
    file-like object
       A synonym for :term:`file object`.
 
+   filesystem encoding and error handler
+      Encoding and error handler used by Python to decode bytes from the
+      operating system and encode Unicode to the operating system.
+
+      The filesystem encoding must guarantee to successfully decode all bytes
+      below 128. If the file system encoding fails to provide this guarantee,
+      API functions can raise :exc:`UnicodeError`.
+
+      The :func:`sys.getfilesystemencoding` and
+      :func:`sys.getfilesystemencodeerrors` functions can be used to get the
+      filesystem encoding and error handler.
+
+      The :term:`filesystem encoding and error handler` are configured at
+      Python startup by the :c:func:`PyConfig_Read` function: see
+      :c:member:`~PyConfig.filesystem_encoding` and
+      :c:member:`~PyConfig.filesystem_errors` members of :c:type:`PyConfig`.
+
+      See also the :term:`locale encoding`.
+
    finder
       An object that tries to find the :term:`loader` for a module that is
       being imported.
@@ -404,14 +447,17 @@ Glossary
 
       See :term:`variable annotation` and :pep:`484`,
       which describe this functionality.
+      Also see :ref:`annotations-howto`
+      for best practices on working with annotations.
 
    __future__
-      A pseudo-module which programmers can use to enable new language features
-      which are not compatible with the current interpreter.
-
-      By importing the :mod:`__future__` module and evaluating its variables,
-      you can see when a new feature was first added to the language and when it
-      becomes the default::
+      A :ref:`future statement <future>`, ``from __future__ import <feature>``,
+      directs the compiler to compile the current module using syntax or
+      semantics that will become standard in a future release of Python.
+      The :mod:`__future__` module documents the possible values of
+      *feature*.  By importing this module and evaluating its variables,
+      you can see when a new feature was first added to the language and
+      when it will (or did) become the default::
 
          >>> import __future__
          >>> __future__.division
@@ -463,6 +509,14 @@ Glossary
       See also the :term:`single dispatch` glossary entry, the
       :func:`functools.singledispatch` decorator, and :pep:`443`.
 
+   generic type
+      A :term:`type` that can be parameterized; typically a
+      :ref:`container class<sequence-types>` such as :class:`list` or
+      :class:`dict`. Used for :term:`type hints <type hint>` and
+      :term:`annotations <annotation>`.
+
+      For more details, see :ref:`generic alias types<types-genericalias>`,
+      :pep:`483`, :pep:`484`, :pep:`585`, and the :mod:`typing` module.
 
    GIL
       See :term:`global interpreter lock`.
@@ -503,8 +557,10 @@ Glossary
       Hashability makes an object usable as a dictionary key and a set member,
       because these data structures use the hash value internally.
 
-      All of Python's immutable built-in objects are hashable; mutable
-      containers (such as lists or dictionaries) are not.  Objects which are
+      Most of Python's immutable built-in objects are hashable; mutable
+      containers (such as lists or dictionaries) are not; immutable
+      containers (such as tuples and frozensets) are only hashable if
+      their elements are hashable.  Objects which are
       instances of user-defined classes are hashable by default.  They all
       compare unequal (except with themselves), and their hash value is derived
       from their :func:`id`.
@@ -572,7 +628,7 @@ Glossary
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
       with an :meth:`__iter__` method or with a :meth:`__getitem__` method
-      that implements :term:`Sequence` semantics.
+      that implements :term:`sequence` semantics.
 
       Iterables can be
       used in a :keyword:`for` loop and in many other places where a sequence is
@@ -603,6 +659,11 @@ Glossary
 
       More information can be found in :ref:`typeiter`.
 
+      .. impl-detail::
+
+         CPython does not consistently apply the requirement that an iterator
+         define :meth:`__iter__`.
+
    key function
       A key function or collation function is a callable that returns a value
       used for sorting or ordering.  For example, :func:`locale.strxfrm` is
@@ -619,9 +680,8 @@ Glossary
       :meth:`str.lower` method can serve as a key function for case insensitive
       sorts.  Alternatively, a key function can be built from a
       :keyword:`lambda` expression such as ``lambda r: (r[0], r[2])``.  Also,
-      the :mod:`operator` module provides three key function constructors:
-      :func:`~operator.attrgetter`, :func:`~operator.itemgetter`, and
-      :func:`~operator.methodcaller`.  See the :ref:`Sorting HOW TO
+      :func:`operator.attrgetter`, :func:`operator.itemgetter`, and
+      :func:`operator.methodcaller` are three key function constructors.  See the :ref:`Sorting HOW TO
       <sortinghowto>` for examples of how to create and use key functions.
 
    keyword argument
@@ -643,6 +703,18 @@ Glossary
       code, ``if key in mapping: return mapping[key]`` can fail if another
       thread removes *key* from *mapping* after the test, but before the lookup.
       This issue can be solved with locks or by using the EAFP approach.
+
+   locale encoding
+      On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
+      :func:`locale.setlocale(locale.LC_CTYPE, new_locale) <locale.setlocale>`.
+
+      On Windows, it is the ANSI code page (ex: ``"cp1252"``).
+
+      On Android and VxWorks, Python uses ``"utf-8"`` as the locale encoding.
+
+      ``locale.getencoding()`` can be used to get the locale encoding.
+
+      See also the :term:`filesystem encoding and error handler`.
 
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
@@ -670,8 +742,8 @@ Glossary
 
    mapping
       A container object that supports arbitrary key lookups and implements the
-      methods specified in the :class:`~collections.abc.Mapping` or
-      :class:`~collections.abc.MutableMapping`
+      methods specified in the :class:`collections.abc.Mapping` or
+      :class:`collections.abc.MutableMapping`
       :ref:`abstract base classes <collections-abstract-base-classes>`.  Examples
       include :class:`dict`, :class:`collections.defaultdict`,
       :class:`collections.OrderedDict` and :class:`collections.Counter`.
@@ -728,17 +800,28 @@ Glossary
       also :term:`immutable`.
 
    named tuple
-      Any tuple-like class whose indexable elements are also accessible using
-      named attributes (for example, :func:`time.localtime` returns a
-      tuple-like object where the *year* is accessible either with an
-      index such as ``t[0]`` or with a named attribute like ``t.tm_year``).
+      The term "named tuple" applies to any type or class that inherits from
+      tuple and whose indexable elements are also accessible using named
+      attributes.  The type or class may have other features as well.
 
-      A named tuple can be a built-in type such as :class:`time.struct_time`,
-      or it can be created with a regular class definition.  A full featured
-      named tuple can also be created with the factory function
-      :func:`collections.namedtuple`.  The latter approach automatically
-      provides extra features such as a self-documenting representation like
-      ``Employee(name='jones', title='programmer')``.
+      Several built-in types are named tuples, including the values returned
+      by :func:`time.localtime` and :func:`os.stat`.  Another example is
+      :data:`sys.float_info`::
+
+           >>> sys.float_info[1]                   # indexed access
+           1024
+           >>> sys.float_info.max_exp              # named field access
+           1024
+           >>> isinstance(sys.float_info, tuple)   # kind of tuple
+           True
+
+      Some named tuples are built-in types (such as the above examples).
+      Alternatively, a named tuple can be created from a regular class
+      definition that inherits from :class:`tuple` and that defines named
+      fields.  Such a class can be written by hand or it can be created with
+      the factory function :func:`collections.namedtuple`.  The latter
+      technique also adds some extra methods that may not be found in
+      hand-written or built-in named tuples.
 
    namespace
       The place where a variable is stored.  Namespaces are implemented as
@@ -802,9 +885,11 @@ Glossary
       .. _positional-only_parameter:
 
       * :dfn:`positional-only`: specifies an argument that can be supplied only
-        by position.  Python has no syntax for defining positional-only
-        parameters.  However, some built-in functions have positional-only
-        parameters (e.g. :func:`abs`).
+        by position. Positional-only parameters can be defined by including a
+        ``/`` character in the parameter list of the function definition after
+        them, for example *posonly1* and *posonly2* in the following::
+
+           def func(posonly1, posonly2, /, positional_or_keyword): ...
 
       .. _keyword-only_parameter:
 
@@ -963,8 +1048,8 @@ Glossary
       The number of references to an object.  When the reference count of an
       object drops to zero, it is deallocated.  Reference counting is
       generally not visible to Python code, but it is a key element of the
-      :term:`CPython` implementation.  The :mod:`sys` module defines a
-      :func:`~sys.getrefcount` function that programmers can call to return the
+      :term:`CPython` implementation.  Programmers can call the
+      :func:`sys.getrefcount` function to return the
       reference count for a particular object.
 
    regular package
@@ -996,7 +1081,13 @@ Glossary
       :meth:`index`, :meth:`__contains__`, and
       :meth:`__reversed__`. Types that implement this expanded
       interface can be registered explicitly using
-      :func:`~abc.register`.
+      :func:`~abc.ABCMeta.register`.
+
+   set comprehension
+      A compact way to process all or part of the elements in an iterable and
+      return a set with the results. ``results = {c for c in 'abracadabra' if
+      c not in 'abc'}`` generates the set of strings ``{'r', 'd'}``.  See
+      :ref:`comprehensions`.
 
    single dispatch
       A form of :term:`generic function` dispatch where the implementation is
@@ -1021,16 +1112,29 @@ Glossary
       an :term:`expression` or one of several constructs with a keyword, such
       as :keyword:`if`, :keyword:`while` or :keyword:`for`.
 
-   struct sequence
-      A tuple with named elements. Struct sequences expose an interface similar
-      to :term:`named tuple` in that elements can be accessed either by
-      index or as an attribute. However, they do not have any of the named tuple
-      methods like :meth:`~collections.somenamedtuple._make` or
-      :meth:`~collections.somenamedtuple._asdict`. Examples of struct sequences
-      include :data:`sys.float_info` and the return value of :func:`os.stat`.
+   strong reference
+      In Python's C API, a strong reference is a reference to an object
+      which increments the object's reference count when it is created and
+      decrements the object's reference count when it is deleted.
+
+      The :c:func:`Py_NewRef` function can be used to create a strong reference
+      to an object. Usually, the :c:func:`Py_DECREF` function must be called on
+      the strong reference before exiting the scope of the strong reference, to
+      avoid leaking one reference.
+
+      See also :term:`borrowed reference`.
 
    text encoding
-      A codec which encodes Unicode strings to bytes.
+      A string in Python is a sequence of Unicode code points (in range
+      ``U+0000``--``U+10FFFF``). To store or transfer a string, it needs to be
+      serialized as a sequence of bytes.
+
+      Serializing a string into a sequence of bytes is known as "encoding", and
+      recreating the string from the sequence of bytes is known as "decoding".
+
+      There are a variety of different text serialization
+      :ref:`codecs <standard-encodings>`, which are collectively referred to as
+      "text encodings".
 
    text file
       A :term:`file object` able to read and write :class:`str` objects.
@@ -1064,19 +1168,15 @@ Glossary
       Type aliases are useful for simplifying :term:`type hints <type hint>`.
       For example::
 
-         from typing import List, Tuple
-
          def remove_gray_shades(
-                 colors: List[Tuple[int, int, int]]) -> List[Tuple[int, int, int]]:
+                 colors: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
              pass
 
       could be made more readable like this::
 
-         from typing import List, Tuple
+         Color = tuple[int, int, int]
 
-         Color = Tuple[int, int, int]
-
-         def remove_gray_shades(colors: List[Color]) -> List[Color]:
+         def remove_gray_shades(colors: list[Color]) -> list[Color]:
              pass
 
       See :mod:`typing` and :pep:`484`, which describe this functionality.
@@ -1120,6 +1220,8 @@ Glossary
 
       See :term:`function annotation`, :pep:`484`
       and :pep:`526`, which describe this functionality.
+      Also see :ref:`annotations-howto`
+      for best practices on working with annotations.
 
    virtual environment
       A cooperatively isolated runtime environment that allows Python users

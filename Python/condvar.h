@@ -68,9 +68,9 @@ void _PyThread_cond_after(long long us, struct timespec *abs);
 Py_LOCAL_INLINE(int)
 PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, long long us)
 {
-    struct timespec abs;
-    _PyThread_cond_after(us, &abs);
-    int ret = pthread_cond_timedwait(cond, mut, &abs);
+    struct timespec abs_timeout;
+    _PyThread_cond_after(us, &abs_timeout);
+    int ret = pthread_cond_timedwait(cond, mut, &abs_timeout);
     if (ret == ETIMEDOUT) {
         return 1;
     }
@@ -99,7 +99,7 @@ PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, long long us)
    http://birrell.org/andrew/papers/ImplementingCVs.pdf
 
    Generic emulations of the pthread_cond_* API using
-   earlier Win32 functions can be found on the Web.
+   earlier Win32 functions can be found on the web.
    The following read can be give background information to these issues,
    but the implementations are all broken in some way.
    http://www.cse.wustl.edu/~schmidt/win32-cv-1.html
@@ -178,7 +178,7 @@ _PyCOND_WAIT_MS(PyCOND_T *cv, PyMUTEX_T *cs, DWORD ms)
          * just means an extra spurious wakeup for a waiting thread.
          * ('waiting' corresponds to the semaphore's "negative" count and
          * we may end up with e.g. (waiting == -1 && sem.count == 1).  When
-         * a new thread comes along, it will pass right throuhgh, having
+         * a new thread comes along, it will pass right through, having
          * adjusted it to (waiting == 0 && sem.count == 0).
          */
 

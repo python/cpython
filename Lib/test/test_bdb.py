@@ -57,7 +57,9 @@ import importlib
 import linecache
 from contextlib import contextmanager
 from itertools import islice, repeat
-import test.support
+from test.support import import_helper
+from test.support import os_helper
+
 
 class BdbException(Exception): pass
 class BdbError(BdbException): """Error raised by the Bdb instance."""
@@ -71,9 +73,7 @@ class BdbNotExpectedError(BdbException): """Unexpected result."""
 dry_run = 0
 
 def reset_Breakpoint():
-    _bdb.Breakpoint.next = 1
-    _bdb.Breakpoint.bplist = {}
-    _bdb.Breakpoint.bpbynumber = [None]
+    _bdb.Breakpoint.clearBreakpoints()
 
 def info_breakpoints():
     bp_list = [bp for  bp in _bdb.Breakpoint.bpbynumber if bp]
@@ -531,19 +531,19 @@ def run_test(modules, set_list, skip=None):
 
 @contextmanager
 def create_modules(modules):
-    with test.support.temp_cwd():
+    with os_helper.temp_cwd():
         sys.path.append(os.getcwd())
         try:
             for m in modules:
                 fname = m + '.py'
-                with open(fname, 'w') as f:
+                with open(fname, 'w', encoding="utf-8") as f:
                     f.write(textwrap.dedent(modules[m]))
                 linecache.checkcache(fname)
             importlib.invalidate_caches()
             yield
         finally:
             for m in modules:
-                test.support.forget(m)
+                import_helper.forget(m)
             sys.path.pop()
 
 def break_in_func(funcname, fname=__file__, temporary=False, cond=None):
@@ -726,7 +726,7 @@ class StateTestCase(BaseTestCase):
                 ('line', 2, 'tfunc_import'), ('step', ),
                 ('line', 3, 'tfunc_import'), ('quit', ),
             ]
-            skip = ('importlib*', 'zipimport', TEST_MODULE)
+            skip = ('importlib*', 'zipimport', 'encodings.*', TEST_MODULE)
             with TracerRun(self, skip=skip) as tracer:
                 tracer.runcall(tfunc_import)
 
@@ -948,6 +948,49 @@ class BreakpointTestCase(BaseTestCase):
         with TracerRun(self) as tracer:
             self.assertRaises(BdbError, tracer.runcall, tfunc_import)
 
+    def test_load_bps_from_previous_Bdb_instance(self):
+        reset_Breakpoint()
+        db1 = Bdb()
+        fname = db1.canonic(__file__)
+        db1.set_break(__file__, 1)
+        self.assertEqual(db1.get_all_breaks(), {fname: [1]})
+
+        db2 = Bdb()
+        db2.set_break(__file__, 2)
+        db2.set_break(__file__, 3)
+        db2.set_break(__file__, 4)
+        self.assertEqual(db1.get_all_breaks(), {fname: [1]})
+        self.assertEqual(db2.get_all_breaks(), {fname: [1, 2, 3, 4]})
+        db2.clear_break(__file__, 1)
+        self.assertEqual(db1.get_all_breaks(), {fname: [1]})
+        self.assertEqual(db2.get_all_breaks(), {fname: [2, 3, 4]})
+
+        db3 = Bdb()
+        self.assertEqual(db1.get_all_breaks(), {fname: [1]})
+        self.assertEqual(db2.get_all_breaks(), {fname: [2, 3, 4]})
+        self.assertEqual(db3.get_all_breaks(), {fname: [2, 3, 4]})
+        db2.clear_break(__file__, 2)
+        self.assertEqual(db1.get_all_breaks(), {fname: [1]})
+        self.assertEqual(db2.get_all_breaks(), {fname: [3, 4]})
+        self.assertEqual(db3.get_all_breaks(), {fname: [2, 3, 4]})
+
+        db4 = Bdb()
+        db4.set_break(__file__, 5)
+        self.assertEqual(db1.get_all_breaks(), {fname: [1]})
+        self.assertEqual(db2.get_all_breaks(), {fname: [3, 4]})
+        self.assertEqual(db3.get_all_breaks(), {fname: [2, 3, 4]})
+        self.assertEqual(db4.get_all_breaks(), {fname: [3, 4, 5]})
+        reset_Breakpoint()
+
+        db5 = Bdb()
+        db5.set_break(__file__, 6)
+        self.assertEqual(db1.get_all_breaks(), {fname: [1]})
+        self.assertEqual(db2.get_all_breaks(), {fname: [3, 4]})
+        self.assertEqual(db3.get_all_breaks(), {fname: [2, 3, 4]})
+        self.assertEqual(db4.get_all_breaks(), {fname: [3, 4, 5]})
+        self.assertEqual(db5.get_all_breaks(), {fname: [6]})
+
+
 class RunTestCase(BaseTestCase):
     """Test run, runeval and set_trace."""
 
@@ -1149,13 +1192,6 @@ class IssuesTestCase(BaseTestCase):
             with TracerRun(self) as tracer:
                 tracer.runcall(tfunc_import)
 
-def test_main():
-    test.support.run_unittest(
-        StateTestCase,
-        RunTestCase,
-        BreakpointTestCase,
-        IssuesTestCase,
-    )
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
