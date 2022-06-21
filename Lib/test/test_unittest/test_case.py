@@ -15,7 +15,7 @@ from test import support
 
 import unittest
 
-from unittest.test.support import (
+from test.test_unittest.support import (
     TestEquality, TestHashing, LoggingResult, LegacyLoggingResult,
     ResultWithNoStartTestRunStopTestRun
 )
