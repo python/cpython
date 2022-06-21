@@ -8553,18 +8553,6 @@ assemble(struct compiler *c, int addNone)
         ADDOP(c, RETURN_VALUE);
     }
 
-    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
-        if (normalize_basic_block(b)) {
-            return NULL;
-        }
-    }
-
-    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
-        if (extend_block(b)) {
-            return NULL;
-        }
-    }
-
     assert(PyDict_GET_SIZE(c->u->u_varnames) < INT_MAX);
     assert(PyDict_GET_SIZE(c->u->u_cellvars) < INT_MAX);
     assert(PyDict_GET_SIZE(c->u->u_freevars) < INT_MAX);
@@ -8622,11 +8610,11 @@ assemble(struct compiler *c, int addNone)
     if (optimize_cfg(entryblock, consts, c->c_const_cache)) {
         goto error;
     }
-    if (duplicate_exits_without_lineno(entryblock)) {
-        return NULL;
-    }
     if (trim_unused_consts(entryblock, consts)) {
         goto error;
+    }
+    if (duplicate_exits_without_lineno(entryblock)) {
+        return NULL;
     }
     propagate_line_numbers(entryblock);
     guarantee_lineno_for_exits(entryblock, c->u->u_firstlineno);
@@ -9469,6 +9457,16 @@ static int
 optimize_cfg(basicblock *entryblock, PyObject *consts, PyObject *const_cache)
 {
     assert(PyDict_CheckExact(const_cache));
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        if (normalize_basic_block(b)) {
+            return -1;
+        }
+    }
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        if (extend_block(b)) {
+            return -1;
+        }
+    }
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (optimize_basic_block(const_cache, b, consts)) {
             return -1;
