@@ -5359,7 +5359,7 @@ test_pyobject_vectorcall(PyObject *self, PyObject *args)
 static PyObject *
 override_vectorcall(
     PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames) {
-    Py_RETURN_NONE;
+    return PyUnicode_FromString("overridden");
 }
 
 static PyObject *

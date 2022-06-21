@@ -87,6 +87,7 @@ There are a few functions specific to Python functions.
 
    Set the vectorcall field of a given function object *func*
 
+   .. versionadded:: 3.12
 
 .. c:function:: PyObject* PyFunction_GetClosure(PyObject *op)
 

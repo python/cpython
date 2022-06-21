@@ -1,6 +1,5 @@
-CPython extensions providing optimized execution of Python bytecode (like Cinder JIT and Pyjion)
-can benefit from being able to modify the vectorcall field on instances of PyFunctionObject to allow calling the optimized path (e.g. JIT-compiled) directly.
+Add new function :c:func:`PyFunction_SetVectorcall` to the C API
+which sets the vectorcall field of a given :c:type:`PyFunctionObject`
 
-This PR introduces an API call where vectorcall field can be modified like so:
-
-`void PyFunction_SetVectorcall(PyFunctionObject *func, vectorcallfunc vectorcall);`
+Warning: extensions using this API must preserve the behavior
+of the unaltered function!

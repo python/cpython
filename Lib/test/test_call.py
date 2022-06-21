@@ -673,7 +673,7 @@ class TestPEP590(unittest.TestCase):
         function_setvectorcall(f)
         # make sure specializer is triggered by running > 50 times
         for _ in range(51):
-            self.assertIsNone(f(num))
+            self.assertEqual("overridden", f(num))
 
 class A:
     def method_two_args(self, x, y):
