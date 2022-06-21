@@ -1,1 +1,1 @@
-Remove trailing spaces in :func:`zipfile._sanitize_windows_name`
+:mod:`zipfile` will now remove trailing spaces from path components on extraction.
