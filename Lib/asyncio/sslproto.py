@@ -460,7 +460,8 @@ class SSLProtocol(protocols.BufferedProtocol):
                 logger.debug("%r received EOF", self)
 
             if self._state == SSLProtocolState.DO_HANDSHAKE:
-                self._on_handshake_complete(ConnectionResetError)
+                self._on_handshake_complete(
+                    ConnectionResetError("SSL Connection reset by peer"))
 
             elif self._state == SSLProtocolState.WRAPPED:
                 self._set_state(SSLProtocolState.FLUSHING)
