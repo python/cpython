@@ -95,7 +95,7 @@ The signal module defines three enums:
 
    :class:`enum.IntEnum` collection the constants :const:`SIG_BLOCK`, :const:`SIG_UNBLOCK` and :const:`SIG_SETMASK`.
 
-   Availability: Unix. See the man page :manpage:`sigprocmask(3)` and
+   Availability: Unix. See the man page :manpage:`sigprocmask(2)` and
    :manpage:`pthread_sigmask(3)` for further information.
 
    .. versionadded:: 3.5
