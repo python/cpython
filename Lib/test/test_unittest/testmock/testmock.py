@@ -5,7 +5,7 @@ import tempfile
 
 from test.support import ALWAYS_EQ
 import unittest
-from unittest.test.testmock.support import is_instance
+from test.test_unittest.testmock.support import is_instance
 from unittest import mock
 from unittest.mock import (
     call, DEFAULT, patch, sentinel,

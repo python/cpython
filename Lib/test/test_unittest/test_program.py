@@ -5,8 +5,8 @@ import sys
 import subprocess
 from test import support
 import unittest
-import unittest.test
-from unittest.test.test_result import BufferedWriter
+import test.test_unittest
+from test.test_unittest.test_result import BufferedWriter
 
 
 class Test_TestProgram(unittest.TestCase):
@@ -15,7 +15,7 @@ class Test_TestProgram(unittest.TestCase):
         loader = unittest.TestLoader()
 
         tests = [self]
-        expectedPath = os.path.abspath(os.path.dirname(unittest.test.__file__))
+        expectedPath = os.path.abspath(os.path.dirname(test.test_unittest.__file__))
 
         self.wasRun = False
         def _find_tests(start_dir, pattern):
@@ -23,7 +23,7 @@ class Test_TestProgram(unittest.TestCase):
             self.assertEqual(start_dir, expectedPath)
             return tests
         loader._find_tests = _find_tests
-        suite = loader.discover('unittest.test')
+        suite = loader.discover('test.test_unittest')
         self.assertTrue(self.wasRun)
         self.assertEqual(suite._tests, tests)
 
@@ -93,10 +93,10 @@ class Test_TestProgram(unittest.TestCase):
         sys.argv = ['faketest']
         runner = FakeRunner()
         program = unittest.TestProgram(testRunner=runner, exit=False,
-                                       defaultTest='unittest.test',
+                                       defaultTest='test.test_unittest',
                                        testLoader=self.FooBarLoader())
         sys.argv = old_argv
-        self.assertEqual(('unittest.test',), program.testNames)
+        self.assertEqual(('test.test_unittest',), program.testNames)
 
     def test_defaultTest_with_iterable(self):
         class FakeRunner(object):
@@ -109,10 +109,10 @@ class Test_TestProgram(unittest.TestCase):
         runner = FakeRunner()
         program = unittest.TestProgram(
             testRunner=runner, exit=False,
-            defaultTest=['unittest.test', 'unittest.test2'],
+            defaultTest=['test.test_unittest', 'test.test_unittest2'],
             testLoader=self.FooBarLoader())
         sys.argv = old_argv
-        self.assertEqual(['unittest.test', 'unittest.test2'],
+        self.assertEqual(['test.test_unittest', 'test.test_unittest2'],
                           program.testNames)
 
     def test_NonExit(self):
