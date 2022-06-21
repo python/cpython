@@ -139,6 +139,45 @@ class TransactionTests(unittest.TestCase):
         con.rollback()
         self.assertEqual(cur.fetchall(), [(1,), (2,), (3,)])
 
+    def test_multiple_cursors_and_iternext(self):
+        # gh-94028: statements are cleared and reset in cursor iternext.
+
+        # Provoke the gh-94028 by using a cursor cache.
+        CURSORS = {}
+        def sql(cx, sql, *args):
+            cu = cx.cursor()
+            cu.execute(sql, args)
+            CURSORS[id(sql)] = cu
+            return cu
+
+        self.con1.execute("create table t(t)")
+        sql(self.con1, "insert into t values (?), (?), (?)", "u1", "u2", "u3")
+        self.con1.commit()
+
+        # On second connection, verify rows are visible, then delete them.
+        count = sql(self.con2, "select count(*) from t").fetchone()[0]
+        self.assertEqual(count, 3)
+        changes = sql(self.con2, "delete from t").rowcount
+        self.assertEqual(changes, 3)
+        self.con2.commit()
+
+        # Back in original connection, create 2 new users.
+        sql(self.con1, "insert into t values (?)", "u4")
+        sql(self.con1, "insert into t values (?)", "u5")
+
+        # The second connection cannot see uncommitted changes.
+        count = sql(self.con2, "select count(*) from t").fetchone()[0]
+        self.assertEqual(count, 0)
+
+        # First connection can see its own changes.
+        count = sql(self.con1, "select count(*) from t").fetchone()[0]
+        self.assertEqual(count, 2)
+
+        # The second connection can now see the changes.
+        self.con1.commit()
+        count = sql(self.con2, "select count(*) from t").fetchone()[0]
+        self.assertEqual(count, 2)
+
 
 class RollbackTests(unittest.TestCase):
     """bpo-44092: sqlite3 now leaves it to SQLite to resolve rollback issues"""
