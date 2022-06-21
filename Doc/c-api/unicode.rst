@@ -819,7 +819,7 @@ wchar_t Support
    most C functions. If *size* is ``NULL`` and the :c:type:`wchar_t*` string
    contains null characters a :exc:`ValueError` is raised.
 
-   Returns a buffer allocated by :c:func:`PyMem_Alloc` (use
+   Returns a buffer allocated by :c:func:`PyMem_New` (use
    :c:func:`PyMem_Free` to free it) on success. On error, returns ``NULL``
    and *\*size* is undefined. Raises a :exc:`MemoryError` if memory allocation
    is failed.
