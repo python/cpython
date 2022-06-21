@@ -2115,7 +2115,8 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr)
     _PyForIterCache *cache = (_PyForIterCache *)(instr + 1);
     PyTypeObject *tp = Py_TYPE(iter);
     _Py_CODEUNIT next = instr[1+INLINE_CACHE_ENTRIES_FOR_ITER];
-    int next_op = _PyOpcode_Deopt[_Py_OPCODE(next)];
+    int next_opcode = _PyOpcode_Deopt[_Py_OPCODE(next)];
+    int next_oparg = _Py_OPARG(next);
     if (tp == &PyListIter_Type) {
         _Py_SET_OPCODE(*instr, FOR_ITER_LIST);
         goto success;
@@ -2124,8 +2125,13 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr)
         _Py_SET_OPCODE(*instr, FOR_ITER_TUPLE);
         goto success;
     }
-    else if (tp == &PyRangeIter_Type && next_op == STORE_FAST) {
+    else if (tp == &PyRangeIter_Type && next_opcode == STORE_FAST) {
         _Py_SET_OPCODE(*instr, FOR_ITER_RANGE);
+        goto success;
+    }
+    else if (tp == &PyDictIterItem_Type && next_opcode == UNPACK_SEQUENCE
+                                        && next_oparg == 2) {
+        _Py_SET_OPCODE(*instr, FOR_ITER_DICT_ITEMS);
         goto success;
     }
     else {

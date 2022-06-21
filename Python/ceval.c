@@ -4510,7 +4510,26 @@ handle_eval_breaker:
         }
 
         TARGET(FOR_ITER_DICT_ITEMS) {
-            Py_UNREACHABLE();
+            assert(cframe.use_tracing == 0);
+            _PyDictIterObject *it = (_PyDictIterObject *)TOP();
+            DEOPT_IF(Py_TYPE(it) != &PyDictIterItem_Type, FOR_ITER);
+            _Py_CODEUNIT next = next_instr[INLINE_CACHE_ENTRIES_FOR_ITER];
+            assert(_PyOpcode_Deopt[_Py_OPCODE(next)] == UNPACK_SEQUENCE);
+            assert(_Py_OPARG(next) == 2);
+            int res = _PyDictItemsIter_GetNext(it, stack_pointer);
+            if (res > 0) {
+                STACK_GROW(2);
+                assert(TOP() != NULL && SECOND() != NULL);
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + 1 +
+                       INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
+                NOTRACE_DISPATCH();
+            }
+            else if (res == 0) {
+                goto iterator_exhausted_no_error;
+            }
+            else {
+                goto error;
+            }
         }
 
         TARGET(FOR_ITER_ENUMERATE) {

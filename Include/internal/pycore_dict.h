@@ -183,6 +183,17 @@ _PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)
     *size_ptr = size;
 }
 
+typedef struct {
+    PyObject_HEAD
+    PyDictObject *di_dict; /* Set to NULL when iterator is exhausted */
+    Py_ssize_t di_used;
+    Py_ssize_t di_pos;
+    PyObject* di_result; /* reusable result tuple for iteritems */
+    Py_ssize_t len;
+} _PyDictIterObject;
+
+extern int _PyDictItemsIter_GetNext(_PyDictIterObject *, PyObject **);
+
 #ifdef __cplusplus
 }
 #endif
