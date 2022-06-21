@@ -58,10 +58,6 @@ typedef struct {
     _Py_CODEUNIT index;
 } _PyAttrCache;
 
-#define INLINE_CACHE_ENTRIES_LOAD_ATTR CACHE_ENTRIES(_PyAttrCache)
-
-#define INLINE_CACHE_ENTRIES_STORE_ATTR CACHE_ENTRIES(_PyAttrCache)
-
 typedef struct {
     _Py_CODEUNIT counter;
     _Py_CODEUNIT type_version[2];
@@ -69,7 +65,11 @@ typedef struct {
     _Py_CODEUNIT descr[4];
 } _PyLoadMethodCache;
 
-#define INLINE_CACHE_ENTRIES_LOAD_METHOD CACHE_ENTRIES(_PyLoadMethodCache)
+
+// MUST be the max(_PyAttrCache, _PyLoadMethodCache)
+#define INLINE_CACHE_ENTRIES_LOAD_ATTR CACHE_ENTRIES(_PyLoadMethodCache)
+
+#define INLINE_CACHE_ENTRIES_STORE_ATTR CACHE_ENTRIES(_PyAttrCache)
 
 typedef struct {
     _Py_CODEUNIT counter;
@@ -84,6 +84,12 @@ typedef struct {
 } _PyStoreSubscrCache;
 
 #define INLINE_CACHE_ENTRIES_STORE_SUBSCR CACHE_ENTRIES(_PyStoreSubscrCache)
+
+typedef struct {
+    _Py_CODEUNIT counter;
+} _PyForIterCache;
+
+#define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
 
 #define QUICKENING_WARMUP_DELAY 8
 
@@ -233,8 +239,6 @@ extern int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
 extern int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr,
                                     PyObject *name);
 extern int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name);
-extern int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr,
-                                     PyObject *name);
 extern int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
 extern int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr);
 extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
@@ -245,6 +249,7 @@ extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
                                      _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
+extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr);
 
 /* Deallocator function for static codeobjects used in deepfreeze.py */
 extern void _PyStaticCode_Dealloc(PyCodeObject *co);
@@ -460,6 +465,35 @@ adaptive_counter_backoff(uint16_t counter) {
     }
     unsigned int value = (1 << backoff) - 1;
     return adaptive_counter_bits(value, backoff);
+}
+
+
+/* Line array cache for tracing */
+
+extern int _PyCode_CreateLineArray(PyCodeObject *co);
+
+static inline int
+_PyCode_InitLineArray(PyCodeObject *co)
+{
+    if (co->_co_linearray) {
+        return 0;
+    }
+    return _PyCode_CreateLineArray(co);
+}
+
+static inline int
+_PyCode_LineNumberFromArray(PyCodeObject *co, int index)
+{
+    assert(co->_co_linearray != NULL);
+    assert(index >= 0);
+    assert(index < Py_SIZE(co));
+    if (co->_co_linearray_entry_size == 2) {
+        return ((int16_t *)co->_co_linearray)[index];
+    }
+    else {
+        assert(co->_co_linearray_entry_size == 4);
+        return ((int32_t *)co->_co_linearray)[index];
+    }
 }
 
 
