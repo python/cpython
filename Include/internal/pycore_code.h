@@ -85,6 +85,12 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_STORE_SUBSCR CACHE_ENTRIES(_PyStoreSubscrCache)
 
+typedef struct {
+    _Py_CODEUNIT counter;
+} _PyForIterCache;
+
+#define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
+
 #define QUICKENING_WARMUP_DELAY 8
 
 /* We want to compare to zero for efficiency, so we offset values accordingly */
@@ -243,6 +249,7 @@ extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
                                      _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
+extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr);
 
 /* Deallocator function for static codeobjects used in deepfreeze.py */
 extern void _PyStaticCode_Dealloc(PyCodeObject *co);

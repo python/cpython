@@ -28,6 +28,7 @@ uint8_t _PyOpcode_Adaptive[256] = {
     [BINARY_OP] = BINARY_OP_ADAPTIVE,
     [COMPARE_OP] = COMPARE_OP_ADAPTIVE,
     [UNPACK_SEQUENCE] = UNPACK_SEQUENCE_ADAPTIVE,
+    [FOR_ITER] = FOR_ITER_ADAPTIVE,
 };
 
 Py_ssize_t _Py_QuickenedCount = 0;
@@ -2092,3 +2093,33 @@ int
 }
 
 #endif
+
+void
+_Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr)
+{
+    assert(_PyOpcode_Caches[FOR_ITER] == INLINE_CACHE_ENTRIES_FOR_ITER);
+    _PyForIterCache *cache = (_PyForIterCache *)(instr + 1);
+    PyTypeObject *tp = Py_TYPE(iter);
+    _Py_CODEUNIT next = instr[1+INLINE_CACHE_ENTRIES_FOR_ITER];
+    int next_op = _PyOpcode_Deopt[_Py_OPCODE(next)];
+    if (tp == &PyListIter_Type) {
+        _Py_SET_OPCODE(*instr, FOR_ITER_LIST);
+        goto success;
+    }
+    else if (tp == &PyRangeIter_Type && next_op == STORE_FAST) {
+        _Py_SET_OPCODE(*instr, FOR_ITER_RANGE);
+        goto success;
+    }
+    else {
+        SPECIALIZATION_FAIL(FOR_ITER,
+                            _PySpecialization_ClassifyIterator(iter));
+        goto failure;
+    }
+failure:
+    STAT_INC(FOR_ITER, failure);
+    cache->counter = adaptive_counter_backoff(cache->counter);
+    return;
+success:
+    STAT_INC(FOR_ITER, success);
+    cache->counter = miss_counter_start();
+}
