@@ -1,5 +1,5 @@
 import unittest
-from ctypes.test import need_symbol
+from test.test_ctypes import need_symbol
 import test.support
 
 class SimpleTypesTestCase(unittest.TestCase):
