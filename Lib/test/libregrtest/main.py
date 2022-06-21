@@ -306,13 +306,22 @@ class Regrtest:
             printlist(self.skipped, file=sys.stderr)
 
     def rerun_failed_tests(self):
+        self.log()
+
+        if self.ns.python:
+            # Temp patch for https://github.com/python/cpython/issues/94052
+            self.log(
+                "Re-running failed tests is not supported with --python "
+                "host runner option."
+            )
+            return
+
         self.ns.verbose = True
         self.ns.failfast = False
         self.ns.verbose3 = False
 
         self.first_result = self.get_tests_result()
 
-        self.log()
         self.log("Re-running failed tests in verbose mode")
         rerun_list = list(self.need_rerun)
         self.need_rerun.clear()
