@@ -238,7 +238,7 @@ All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 Release Schedule
 ----------------
 
-See :pep:`697` for Python 3.12 release details.
+See :pep:`693` for Python 3.12 release details.
 
 
 Copyright and License Information
