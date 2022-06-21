@@ -4512,12 +4512,15 @@ handle_eval_breaker:
         }
 
         TARGET(FOR_ITER_DICT_ITEMS) {
+            // FOR_ITER + UNPACK_SEQUENCE(2)
             assert(cframe.use_tracing == 0);
             _PyDictIterObject *it = (_PyDictIterObject *)TOP();
             DEOPT_IF(Py_TYPE(it) != &PyDictIterItem_Type, FOR_ITER);
+        #ifndef NDEBUG
             _Py_CODEUNIT next = next_instr[INLINE_CACHE_ENTRIES_FOR_ITER];
             assert(_PyOpcode_Deopt[_Py_OPCODE(next)] == UNPACK_SEQUENCE);
             assert(_Py_OPARG(next) == 2);
+        #endif
             int res = _PyDictItemsIter_GetNext(it, stack_pointer);
             if (res > 0) {
                 STACK_GROW(2);
@@ -4539,9 +4542,11 @@ handle_eval_breaker:
             assert(cframe.use_tracing == 0);
             _PyEnumObject *it = (_PyEnumObject *)TOP();
             DEOPT_IF(Py_TYPE(it) != &PyEnum_Type, FOR_ITER);
+        #ifndef NDEBUG
             _Py_CODEUNIT next = next_instr[INLINE_CACHE_ENTRIES_FOR_ITER];
             assert(_PyOpcode_Deopt[_Py_OPCODE(next)] == UNPACK_SEQUENCE);
             assert(_Py_OPARG(next) == 2);
+        #endif
             _Py_CODEUNIT nextnext =
                 next_instr[INLINE_CACHE_ENTRIES_FOR_ITER +
                            1 + INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE];
@@ -4558,6 +4563,7 @@ handle_eval_breaker:
         }
 
         TARGET(FOR_ITER_RANGE) {
+            // FOR_ITER + STORE_FAST
             assert(cframe.use_tracing == 0);
             _PyRangeIterObject *r = (_PyRangeIterObject *)TOP();
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
