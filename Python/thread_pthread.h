@@ -156,23 +156,23 @@ _PyThread_cond_init(PyCOND_T *cond)
     return pthread_cond_init(cond, condattr_monotonic);
 }
 
+
 void
 _PyThread_cond_after(long long us, struct timespec *abs)
 {
+    _PyTime_t timeout = _PyTime_FromMicrosecondsClamp(us);
+    _PyTime_t t;
 #ifdef CONDATTR_MONOTONIC
     if (condattr_monotonic) {
-        clock_gettime(CLOCK_MONOTONIC, abs);
-        abs->tv_sec  += us / 1000000;
-        abs->tv_nsec += (us % 1000000) * 1000;
-        abs->tv_sec  += abs->tv_nsec / 1000000000;
-        abs->tv_nsec %= 1000000000;
-        return;
+        t = _PyTime_GetMonotonicClock();
     }
+    else
 #endif
-
-    struct timespec ts;
-    MICROSECONDS_TO_TIMESPEC(us, ts);
-    *abs = ts;
+    {
+        t = _PyTime_GetSystemClock();
+    }
+    t = _PyTime_Add(t, timeout);
+    _PyTime_AsTimespec_clamp(t, abs);
 }
 
 
@@ -639,9 +639,9 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
         goto unlock;
     }
 
-    struct timespec abs;
+    struct timespec abs_timeout;
     if (microseconds > 0) {
-        _PyThread_cond_after(microseconds, &abs);
+        _PyThread_cond_after(microseconds, &abs_timeout);
     }
     // Continue trying until we get the lock
 
@@ -649,7 +649,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     while (1) {
         if (microseconds > 0) {
             status = pthread_cond_timedwait(&thelock->lock_released,
-                                            &thelock->mut, &abs);
+                                            &thelock->mut, &abs_timeout);
             if (status == 1) {
                 break;
             }
