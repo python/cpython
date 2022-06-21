@@ -113,19 +113,6 @@
 #endif
 
 
-#define MICROSECONDS_TO_TIMESPEC(microseconds, ts) \
-do { \
-    struct timeval tv; \
-    gettimeofday(&tv, NULL); \
-    tv.tv_usec += microseconds % 1000000; \
-    tv.tv_sec += microseconds / 1000000; \
-    tv.tv_sec += tv.tv_usec / 1000000; \
-    tv.tv_usec %= 1000000; \
-    ts.tv_sec = tv.tv_sec; \
-    ts.tv_nsec = tv.tv_usec * 1000; \
-} while(0)
-
-
 /*
  * pthread_cond support
  */
