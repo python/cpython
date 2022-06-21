@@ -41,12 +41,6 @@ General Options
 
    See :data:`sys.int_info.bits_per_digit <sys.int_info>`.
 
-.. cmdoption:: --with-cxx-main
-.. cmdoption:: --with-cxx-main=COMPILER
-
-   Compile the Python ``main()`` function and link Python executable with C++
-   compiler: ``$CXX``, or *COMPILER* if specified.
-
 .. cmdoption:: --with-suffix=SUFFIX
 
    Set the Python executable suffix to *SUFFIX*.
@@ -721,24 +715,6 @@ Compiler flags
 
    Example: ``gcc -pthread``.
 
-.. envvar:: MAINCC
-
-   C compiler command used to build the ``main()`` function of programs like
-   ``python``.
-
-   Variable set by the :option:`--with-cxx-main` option of the configure
-   script.
-
-   Default: ``$(CC)``.
-
-.. envvar:: CXX
-
-   C++ compiler command.
-
-   Used if the :option:`--with-cxx-main` option is used.
-
-   Example: ``g++ -pthread``.
-
 .. envvar:: CFLAGS
 
    C compiler flags.
@@ -854,7 +830,7 @@ Linker flags
 
    Linker command used to build programs like ``python`` and ``_testembed``.
 
-   Default: ``$(PURIFY) $(MAINCC)``.
+   Default: ``$(PURIFY) $(CC)``.
 
 .. envvar:: CONFIGURE_LDFLAGS
 

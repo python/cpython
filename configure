@@ -848,7 +848,6 @@ CFLAGSFORSHARED
 LINKFORSHARED
 CCSHARED
 BLDSHARED
-LDCXXSHARED
 LDSHARED
 SHLIB_SUFFIX
 LIBTOOL_CRUFT
@@ -908,9 +907,6 @@ NO_AS_NEEDED
 MULTIARCH_CPPFLAGS
 PLATFORM_TRIPLET
 MULTIARCH
-ac_ct_CXX
-MAINCC
-CXX
 EGREP
 SED
 GREP
@@ -1017,7 +1013,6 @@ enable_universalsdk
 with_universal_archs
 with_framework_name
 enable_framework
-with_cxx_main
 with_emscripten_target
 enable_wasm_dynamic_linking
 enable_wasm_pthreads
@@ -1776,9 +1771,6 @@ Optional Packages:
                           specify the name for the python framework on macOS
                           only valid when --enable-framework is set. see
                           Mac/README.rst (default is 'Python')
-  --with-cxx-main[=COMPILER]
-                          compile main() and link Python executable with C++
-                          compiler specified in COMPILER (default is $CXX)
   --with-emscripten-target=[browser|node]
                           Emscripten platform
   --with-suffix=SUFFIX    set executable suffix to SUFFIX (default is empty,
@@ -4065,7 +4057,6 @@ then
 				{ $as_echo "$as_me:${as_lineno-$LINENO}: Detected llvm-gcc, falling back to clang" >&5
 $as_echo "$as_me: Detected llvm-gcc, falling back to clang" >&6;}
 				CC="$found_clang"
-				CXX="$found_clang++"
 			fi
 
 
@@ -4074,7 +4065,6 @@ $as_echo "$as_me: Detected llvm-gcc, falling back to clang" >&6;}
 			{ $as_echo "$as_me:${as_lineno-$LINENO}: No GCC found, use CLANG" >&5
 $as_echo "$as_me: No GCC found, use CLANG" >&6;}
 			CC="$found_clang"
-			CXX="$found_clang++"
 
 		elif test -z "$found_gcc" -a -z "$found_clang"
 		then
@@ -4084,7 +4074,6 @@ $as_echo "$as_me: No GCC found, use CLANG" >&6;}
 				{ $as_echo "$as_me:${as_lineno-$LINENO}: Using clang from Xcode.app" >&5
 $as_echo "$as_me: Using clang from Xcode.app" >&6;}
 				CC="${found_clang}"
-				CXX="`/usr/bin/xcrun -find clang++`"
 
 			# else: use default behaviour
 			fi
@@ -5447,560 +5436,6 @@ $as_echo "$ac_cv_safe_to_define___extensions__" >&6; }
 
 
 
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-cxx-main=<compiler>" >&5
-$as_echo_n "checking for --with-cxx-main=<compiler>... " >&6; }
-
-# Check whether --with-cxx_main was given.
-if test "${with_cxx_main+set}" = set; then :
-  withval=$with_cxx_main;
-
-	case $withval in
-	no)	with_cxx_main=no
-		MAINCC='$(CC)';;
-	yes)	with_cxx_main=yes
-		MAINCC='$(CXX)';;
-	*)	with_cxx_main=yes
-		MAINCC=$withval
-		if test -z "$CXX"
-		then
-			CXX=$withval
-		fi;;
-	esac
-else
-
-	with_cxx_main=no
-	MAINCC='$(CC)'
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_cxx_main" >&5
-$as_echo "$with_cxx_main" >&6; }
-
-preset_cxx="$CXX"
-if test -z "$CXX"
-then
-        case "$CC" in
-        gcc)    if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}g++", so it can be a program name with args.
-set dummy ${ac_tool_prefix}g++; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_CXX+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $CXX in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_CXX="$CXX" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_CXX="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-CXX=$ac_cv_path_CXX
-if test -n "$CXX"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CXX" >&5
-$as_echo "$CXX" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_path_CXX"; then
-  ac_pt_CXX=$CXX
-  # Extract the first word of "g++", so it can be a program name with args.
-set dummy g++; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_ac_pt_CXX+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $ac_pt_CXX in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_ac_pt_CXX="$ac_pt_CXX" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_ac_pt_CXX="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-ac_pt_CXX=$ac_cv_path_ac_pt_CXX
-if test -n "$ac_pt_CXX"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_CXX" >&5
-$as_echo "$ac_pt_CXX" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-  if test "x$ac_pt_CXX" = x; then
-    CXX="g++"
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    CXX=$ac_pt_CXX
-  fi
-else
-  CXX="$ac_cv_path_CXX"
-fi
- ;;
-        cc)     if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}c++", so it can be a program name with args.
-set dummy ${ac_tool_prefix}c++; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_CXX+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $CXX in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_CXX="$CXX" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_CXX="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-CXX=$ac_cv_path_CXX
-if test -n "$CXX"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CXX" >&5
-$as_echo "$CXX" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_path_CXX"; then
-  ac_pt_CXX=$CXX
-  # Extract the first word of "c++", so it can be a program name with args.
-set dummy c++; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_ac_pt_CXX+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $ac_pt_CXX in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_ac_pt_CXX="$ac_pt_CXX" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_ac_pt_CXX="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-ac_pt_CXX=$ac_cv_path_ac_pt_CXX
-if test -n "$ac_pt_CXX"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_CXX" >&5
-$as_echo "$ac_pt_CXX" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-  if test "x$ac_pt_CXX" = x; then
-    CXX="c++"
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    CXX=$ac_pt_CXX
-  fi
-else
-  CXX="$ac_cv_path_CXX"
-fi
- ;;
-        clang|*/clang)     if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}clang++", so it can be a program name with args.
-set dummy ${ac_tool_prefix}clang++; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_CXX+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $CXX in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_CXX="$CXX" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_CXX="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-CXX=$ac_cv_path_CXX
-if test -n "$CXX"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CXX" >&5
-$as_echo "$CXX" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_path_CXX"; then
-  ac_pt_CXX=$CXX
-  # Extract the first word of "clang++", so it can be a program name with args.
-set dummy clang++; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_ac_pt_CXX+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $ac_pt_CXX in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_ac_pt_CXX="$ac_pt_CXX" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_ac_pt_CXX="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-ac_pt_CXX=$ac_cv_path_ac_pt_CXX
-if test -n "$ac_pt_CXX"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_CXX" >&5
-$as_echo "$ac_pt_CXX" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-  if test "x$ac_pt_CXX" = x; then
-    CXX="clang++"
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    CXX=$ac_pt_CXX
-  fi
-else
-  CXX="$ac_cv_path_CXX"
-fi
- ;;
-        icc|*/icc)         if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}icpc", so it can be a program name with args.
-set dummy ${ac_tool_prefix}icpc; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_CXX+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $CXX in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_CXX="$CXX" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_CXX="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-CXX=$ac_cv_path_CXX
-if test -n "$CXX"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CXX" >&5
-$as_echo "$CXX" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_path_CXX"; then
-  ac_pt_CXX=$CXX
-  # Extract the first word of "icpc", so it can be a program name with args.
-set dummy icpc; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_ac_pt_CXX+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $ac_pt_CXX in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_ac_pt_CXX="$ac_pt_CXX" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_ac_pt_CXX="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-ac_pt_CXX=$ac_cv_path_ac_pt_CXX
-if test -n "$ac_pt_CXX"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_CXX" >&5
-$as_echo "$ac_pt_CXX" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-  if test "x$ac_pt_CXX" = x; then
-    CXX="icpc"
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    CXX=$ac_pt_CXX
-  fi
-else
-  CXX="$ac_cv_path_CXX"
-fi
- ;;
-        esac
-	if test "$CXX" = "notfound"
-	then
-		CXX=""
-	fi
-fi
-if test -z "$CXX"
-then
-	if test -n "$ac_tool_prefix"; then
-  for ac_prog in $CCC c++ g++ gcc CC cxx cc++ cl
-  do
-    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
-set dummy $ac_tool_prefix$ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_CXX+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$CXX"; then
-  ac_cv_prog_CXX="$CXX" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_CXX="$ac_tool_prefix$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-CXX=$ac_cv_prog_CXX
-if test -n "$CXX"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CXX" >&5
-$as_echo "$CXX" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-    test -n "$CXX" && break
-  done
-fi
-if test -z "$CXX"; then
-  ac_ct_CXX=$CXX
-  for ac_prog in $CCC c++ g++ gcc CC cxx cc++ cl
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_ac_ct_CXX+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_CXX"; then
-  ac_cv_prog_ac_ct_CXX="$ac_ct_CXX" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_CXX="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_CXX=$ac_cv_prog_ac_ct_CXX
-if test -n "$ac_ct_CXX"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_CXX" >&5
-$as_echo "$ac_ct_CXX" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$ac_ct_CXX" && break
-done
-
-  if test "x$ac_ct_CXX" = x; then
-    CXX="notfound"
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    CXX=$ac_ct_CXX
-  fi
-fi
-
-	if test "$CXX" = "notfound"
-	then
-		CXX=""
-	fi
-fi
-if test "$preset_cxx" != "$CXX"
-then
-        { $as_echo "$as_me:${as_lineno-$LINENO}:
-
-  By default, distutils will build C++ extension modules with \"$CXX\".
-  If this is not intended, then set CXX on the configure command line.
-  " >&5
-$as_echo "$as_me:
-
-  By default, distutils will build C++ extension modules with \"$CXX\".
-  If this is not intended, then set CXX on the configure command line.
-  " >&6;}
-fi
-
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the platform triplet based on compiler characteristics" >&5
 $as_echo_n "checking for the platform triplet based on compiler characteristics... " >&6; }
 cat > conftest.c <<EOF
@@ -6547,15 +5982,12 @@ RUNSHARED=''
 LDVERSION="$VERSION"
 
 # LINKCC is the command that links the python executable -- default is $(CC).
-# If CXX is set, and if it is needed to link a main function that was
-# compiled with CXX, LINKCC is CXX instead. Always using CXX is undesirable:
-# python might then depend on the C++ runtime
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking LINKCC" >&5
 $as_echo_n "checking LINKCC... " >&6; }
 if test -z "$LINKCC"
 then
-	LINKCC='$(PURIFY) $(MAINCC)'
+	LINKCC='$(PURIFY) $(CC)'
 	case $ac_sys_system in
 	QNX*)
 	   # qcc must be used because the other compilers do not
@@ -8901,46 +8333,6 @@ fi
 $as_echo "$ac_cv_pthread" >&6; }
 fi
 
-# If we have set a CC compiler flag for thread support then
-# check if it works for CXX, too.
-ac_cv_cxx_thread=no
-if test ! -z "$CXX"
-then
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CXX also accepts flags for thread support" >&5
-$as_echo_n "checking whether $CXX also accepts flags for thread support... " >&6; }
-ac_save_cxx="$CXX"
-
-if test "$ac_cv_kpthread" = "yes"
-then
-  CXX="$CXX -Kpthread"
-  ac_cv_cxx_thread=yes
-elif test "$ac_cv_kthread" = "yes"
-then
-  CXX="$CXX -Kthread"
-  ac_cv_cxx_thread=yes
-elif test "$ac_cv_pthread" = "yes"
-then
-  CXX="$CXX -pthread"
-  ac_cv_cxx_thread=yes
-fi
-
-if test $ac_cv_cxx_thread = yes
-then
-  echo 'void foo();int main(){foo();}void foo(){}' > conftest.$ac_ext
-  $CXX -c conftest.$ac_ext 2>&5
-  if $CXX -o conftest$ac_exeext conftest.$ac_objext 2>&5 \
-     && test -s conftest$ac_exeext && ./conftest$ac_exeext
-  then
-    ac_cv_cxx_thread=yes
-  else
-    ac_cv_cxx_thread=no
-  fi
-  rm -fr conftest*
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cxx_thread" >&5
-$as_echo "$ac_cv_cxx_thread" >&6; }
-fi
-CXX="$ac_save_cxx"
 
 
 
@@ -10603,7 +9995,6 @@ fi
 
 
 
-
 # SHLIB_SUFFIX is the extension of shared libraries `(including the dot!)
 # -- usually .so, .sl on HP-UX, .dll on Cygwin
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking the extension of shared libraries" >&5
@@ -10639,45 +10030,35 @@ then
 	SunOS/5*)
 		if test "$GCC" = "yes" ; then
 			LDSHARED='$(CC) -shared'
-			LDCXXSHARED='$(CXX) -shared'
 		else
 			LDSHARED='$(CC) -G'
-			LDCXXSHARED='$(CXX) -G'
 		fi ;;
 	hp*|HP*)
 		if test "$GCC" = "yes" ; then
 			LDSHARED='$(CC) -shared'
-			LDCXXSHARED='$(CXX) -shared'
 		else
 			LDSHARED='$(CC) -b'
-			LDCXXSHARED='$(CXX) -b'
 		fi ;;
 	Darwin/1.3*)
 		LDSHARED='$(CC) -bundle'
-		LDCXXSHARED='$(CXX) -bundle'
 		if test "$enable_framework" ; then
 			# Link against the framework. All externals should be defined.
 			BLDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 			LDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-			LDCXXSHARED="$LDCXXSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 		else
 			# No framework. Ignore undefined symbols, assuming they come from Python
 			LDSHARED="$LDSHARED -undefined suppress"
-			LDCXXSHARED="$LDCXXSHARED -undefined suppress"
 		fi ;;
 	Darwin/1.4*|Darwin/5.*|Darwin/6.*)
 		LDSHARED='$(CC) -bundle'
-		LDCXXSHARED='$(CXX) -bundle'
 		if test "$enable_framework" ; then
 			# Link against the framework. All externals should be defined.
 			BLDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 			LDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-			LDCXXSHARED="$LDCXXSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 		else
 			# No framework, use the Python app as bundle-loader
 			BLDSHARED="$LDSHARED "'-bundle_loader $(BUILDPYTHON)'
 			LDSHARED="$LDSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
-			LDCXXSHARED="$LDCXXSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
 		fi ;;
 	Darwin/*)
 		# Use -undefined dynamic_lookup whenever possible (10.3 and later).
@@ -10695,21 +10076,17 @@ then
 		else
 			# building for OS X 10.3 and later
 			LDSHARED='$(CC) -bundle -undefined dynamic_lookup'
-			LDCXXSHARED='$(CXX) -bundle -undefined dynamic_lookup'
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
 	Emscripten|WASI)
-		LDSHARED='$(CC) -shared'
-		LDCXXSHARED='$(CXX) -shared';;
+		LDSHARED='$(CC) -shared';;
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
-		LDSHARED='$(CC) -shared'
-		LDCXXSHARED='$(CXX) -shared';;
+		LDSHARED='$(CC) -shared';;
 	FreeBSD*)
 		if [ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]
 		then
 			LDSHARED='$(CC) -shared'
-			LDCXXSHARED='$(CXX) -shared'
 		else
 			LDSHARED="ld -Bshareable"
 		fi;;
@@ -10717,7 +10094,6 @@ then
 		if [ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]
 		then
 				LDSHARED='$(CC) -shared $(CCSHARED)'
-				LDCXXSHARED='$(CXX) -shared $(CCSHARED)'
 		else
 				case `uname -r` in
 				[01].* | 2.[0-7] | 2.[0-7].*)
@@ -10725,32 +10101,26 @@ then
 				   ;;
 				*)
 				   LDSHARED='$(CC) -shared $(CCSHARED)'
-				   LDCXXSHARED='$(CXX) -shared $(CCSHARED)'
 				   ;;
 				esac
 		fi;;
 	NetBSD*|DragonFly*)
-		LDSHARED='$(CC) -shared'
-		LDCXXSHARED='$(CXX) -shared';;
+		LDSHARED='$(CC) -shared';;
 	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes" ; then
 			LDSHARED='$(CC) -shared'
-			LDCXXSHARED='$(CXX) -shared'
 		else
 			LDSHARED='$(CC) -G'
-			LDCXXSHARED='$(CXX) -G'
 		fi;;
 	SCO_SV*)
-		LDSHARED='$(CC) -Wl,-G,-Bexport'
-		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
+		LDSHARED='$(CC) -Wl,-G,-Bexport';;
 	WASI*)
 		if test "x$enable_wasm_dynamic_linking" = xyes; then :
 
 
 fi;;
 	CYGWIN*)
-		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
-		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
+		LDSHARED="gcc -shared -Wl,--enable-auto-image-base";;
 	*)	LDSHARED="ld";;
 	esac
 fi
@@ -10761,7 +10131,6 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDSHARED" >&5
 $as_echo "$LDSHARED" >&6; }
-LDCXXSHARED=${LDCXXSHARED-$LDSHARED}
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking BLDSHARED flags" >&5
 $as_echo_n "checking BLDSHARED flags... " >&6; }
@@ -13873,23 +13242,14 @@ then
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
-    if test "$ac_cv_cxx_thread" = "yes"; then
-        CXX="$CXX -Kpthread"
-    fi
     posix_threads=yes
 elif test "$ac_cv_kthread" = "yes"
 then
     CC="$CC -Kthread"
-    if test "$ac_cv_cxx_thread" = "yes"; then
-        CXX="$CXX -Kthread"
-    fi
     posix_threads=yes
 elif test "$ac_cv_pthread" = "yes"
 then
     CC="$CC -pthread"
-    if test "$ac_cv_cxx_thread" = "yes"; then
-        CXX="$CXX -pthread"
-    fi
     posix_threads=yes
 else
     if test ! -z "$withval" -a -d "$withval"

@@ -57,8 +57,8 @@ Example of usage::
    0
    >>> sysconfig.get_config_var('LIBDIR')
    '/usr/local/lib'
-   >>> sysconfig.get_config_vars('AR', 'CXX')
-   ['ar', 'g++']
+   >>> sysconfig.get_config_vars('AR', 'CC')
+   ['ar', 'gcc']
 
 .. _installation_paths:
 

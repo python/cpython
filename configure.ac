@@ -743,7 +743,6 @@ then
 			then
 				AC_MSG_NOTICE([Detected llvm-gcc, falling back to clang])
 				CC="$found_clang"
-				CXX="$found_clang++"
 			fi
 
 
@@ -751,7 +750,6 @@ then
 		then
 			AC_MSG_NOTICE([No GCC found, use CLANG])
 			CC="$found_clang"
-			CXX="$found_clang++"
 
 		elif test -z "$found_gcc" -a -z "$found_clang"
 		then
@@ -760,7 +758,6 @@ then
 			then
 				AC_MSG_NOTICE([Using clang from Xcode.app])
 				CC="${found_clang}"
-				CXX="`/usr/bin/xcrun -find clang++`"
 
 			# else: use default behaviour
 			fi
@@ -806,62 +803,6 @@ rm -f conftest.c conftest.out
 # may set _GNU_SOURCE, __EXTENSIONS__, _POSIX_PTHREAD_SEMANTICS,
 # _POSIX_SOURCE, _POSIX_1_SOURCE, and more
 AC_USE_SYSTEM_EXTENSIONS
-
-AC_SUBST(CXX)
-AC_SUBST(MAINCC)
-AC_MSG_CHECKING(for --with-cxx-main=<compiler>)
-AC_ARG_WITH(cxx_main,
-            AS_HELP_STRING([--with-cxx-main@<:@=COMPILER@:>@],
-                           [compile main() and link Python executable with C++ compiler specified in COMPILER (default is $CXX)]),
-[
-
-	case $withval in
-	no)	with_cxx_main=no
-		MAINCC='$(CC)';;
-	yes)	with_cxx_main=yes
-		MAINCC='$(CXX)';;
-	*)	with_cxx_main=yes
-		MAINCC=$withval
-		if test -z "$CXX"
-		then
-			CXX=$withval
-		fi;;
-	esac], [
-	with_cxx_main=no
-	MAINCC='$(CC)'
-])
-AC_MSG_RESULT($with_cxx_main)
-
-preset_cxx="$CXX"
-if test -z "$CXX"
-then
-        case "$CC" in
-        gcc)    AC_PATH_TOOL(CXX, [g++], [g++], [notfound]) ;;
-        cc)     AC_PATH_TOOL(CXX, [c++], [c++], [notfound]) ;;
-        clang|*/clang)     AC_PATH_TOOL(CXX, [clang++], [clang++], [notfound]) ;;
-        icc|*/icc)         AC_PATH_TOOL(CXX, [icpc], [icpc], [notfound]) ;;
-        esac
-	if test "$CXX" = "notfound"
-	then
-		CXX=""
-	fi
-fi
-if test -z "$CXX"
-then
-	AC_CHECK_TOOLS(CXX, $CCC c++ g++ gcc CC cxx cc++ cl, notfound)
-	if test "$CXX" = "notfound"
-	then
-		CXX=""
-	fi
-fi
-if test "$preset_cxx" != "$CXX"
-then
-        AC_MSG_NOTICE([
-
-  By default, distutils will build C++ extension modules with "$CXX".
-  If this is not intended, then set CXX on the configure command line.
-  ])
-fi
 
 
 AC_MSG_CHECKING([for the platform triplet based on compiler characteristics])
@@ -1294,14 +1235,11 @@ RUNSHARED=''
 LDVERSION="$VERSION"
 
 # LINKCC is the command that links the python executable -- default is $(CC).
-# If CXX is set, and if it is needed to link a main function that was
-# compiled with CXX, LINKCC is CXX instead. Always using CXX is undesirable:
-# python might then depend on the C++ runtime
 AC_SUBST(LINKCC)
 AC_MSG_CHECKING(LINKCC)
 if test -z "$LINKCC"
 then
-	LINKCC='$(PURIFY) $(MAINCC)'
+	LINKCC='$(PURIFY) $(CC)'
 	case $ac_sys_system in
 	QNX*)
 	   # qcc must be used because the other compilers do not
@@ -2526,44 +2464,6 @@ int main(){
 CC="$ac_save_cc"])
 fi
 
-# If we have set a CC compiler flag for thread support then
-# check if it works for CXX, too.
-ac_cv_cxx_thread=no
-if test ! -z "$CXX"
-then
-AC_MSG_CHECKING(whether $CXX also accepts flags for thread support)
-ac_save_cxx="$CXX"
-
-if test "$ac_cv_kpthread" = "yes"
-then
-  CXX="$CXX -Kpthread"
-  ac_cv_cxx_thread=yes
-elif test "$ac_cv_kthread" = "yes"
-then
-  CXX="$CXX -Kthread"
-  ac_cv_cxx_thread=yes
-elif test "$ac_cv_pthread" = "yes"
-then
-  CXX="$CXX -pthread"
-  ac_cv_cxx_thread=yes
-fi
-
-if test $ac_cv_cxx_thread = yes
-then
-  echo 'void foo();int main(){foo();}void foo(){}' > conftest.$ac_ext
-  $CXX -c conftest.$ac_ext 2>&5
-  if $CXX -o conftest$ac_exeext conftest.$ac_objext 2>&5 \
-     && test -s conftest$ac_exeext && ./conftest$ac_exeext
-  then
-    ac_cv_cxx_thread=yes
-  else
-    ac_cv_cxx_thread=no
-  fi
-  rm -fr conftest*
-fi
-AC_MSG_RESULT($ac_cv_cxx_thread)
-fi
-CXX="$ac_save_cxx"
 
 dnl # check for ANSI or K&R ("traditional") preprocessor
 dnl AC_MSG_CHECKING(for C preprocessor type)
@@ -2987,7 +2887,6 @@ with_ubsan="no"
 # Set info about shared libraries.
 AC_SUBST(SHLIB_SUFFIX)
 AC_SUBST(LDSHARED)
-AC_SUBST(LDCXXSHARED)
 AC_SUBST(BLDSHARED)
 AC_SUBST(CCSHARED)
 AC_SUBST(LINKFORSHARED)
@@ -3024,45 +2923,35 @@ then
 	SunOS/5*)
 		if test "$GCC" = "yes" ; then
 			LDSHARED='$(CC) -shared'
-			LDCXXSHARED='$(CXX) -shared'
 		else
 			LDSHARED='$(CC) -G'
-			LDCXXSHARED='$(CXX) -G'
 		fi ;;
 	hp*|HP*)
 		if test "$GCC" = "yes" ; then
 			LDSHARED='$(CC) -shared'
-			LDCXXSHARED='$(CXX) -shared'
 		else
 			LDSHARED='$(CC) -b'
-			LDCXXSHARED='$(CXX) -b'
 		fi ;;
 	Darwin/1.3*)
 		LDSHARED='$(CC) -bundle'
-		LDCXXSHARED='$(CXX) -bundle'
 		if test "$enable_framework" ; then
 			# Link against the framework. All externals should be defined.
 			BLDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 			LDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-			LDCXXSHARED="$LDCXXSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 		else
 			# No framework. Ignore undefined symbols, assuming they come from Python
 			LDSHARED="$LDSHARED -undefined suppress"
-			LDCXXSHARED="$LDCXXSHARED -undefined suppress"
 		fi ;;
 	Darwin/1.4*|Darwin/5.*|Darwin/6.*)
 		LDSHARED='$(CC) -bundle'
-		LDCXXSHARED='$(CXX) -bundle'
 		if test "$enable_framework" ; then
 			# Link against the framework. All externals should be defined.
 			BLDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 			LDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-			LDCXXSHARED="$LDCXXSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 		else
 			# No framework, use the Python app as bundle-loader
 			BLDSHARED="$LDSHARED "'-bundle_loader $(BUILDPYTHON)'
 			LDSHARED="$LDSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
-			LDCXXSHARED="$LDCXXSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
 		fi ;;
 	Darwin/*)
 		# Use -undefined dynamic_lookup whenever possible (10.3 and later).
@@ -3080,21 +2969,17 @@ then
 		else
 			# building for OS X 10.3 and later
 			LDSHARED='$(CC) -bundle -undefined dynamic_lookup'
-			LDCXXSHARED='$(CXX) -bundle -undefined dynamic_lookup'
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
 	Emscripten|WASI)
-		LDSHARED='$(CC) -shared'
-		LDCXXSHARED='$(CXX) -shared';;
+		LDSHARED='$(CC) -shared';;
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
-		LDSHARED='$(CC) -shared'
-		LDCXXSHARED='$(CXX) -shared';;
+		LDSHARED='$(CC) -shared';;
 	FreeBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
 			LDSHARED='$(CC) -shared'
-			LDCXXSHARED='$(CXX) -shared'
 		else
 			LDSHARED="ld -Bshareable"
 		fi;;
@@ -3102,7 +2987,6 @@ then
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
 				LDSHARED='$(CC) -shared $(CCSHARED)'
-				LDCXXSHARED='$(CXX) -shared $(CCSHARED)'
 		else
 				case `uname -r` in
 				[[01]].* | 2.[[0-7]] | 2.[[0-7]].*)
@@ -3110,31 +2994,25 @@ then
 				   ;;
 				*)
 				   LDSHARED='$(CC) -shared $(CCSHARED)'
-				   LDCXXSHARED='$(CXX) -shared $(CCSHARED)'
 				   ;;
 				esac
 		fi;;
 	NetBSD*|DragonFly*)
-		LDSHARED='$(CC) -shared'
-		LDCXXSHARED='$(CXX) -shared';;
+		LDSHARED='$(CC) -shared';;
 	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes" ; then
 			LDSHARED='$(CC) -shared'
-			LDCXXSHARED='$(CXX) -shared'
 		else
 			LDSHARED='$(CC) -G'
-			LDCXXSHARED='$(CXX) -G'
 		fi;;
 	SCO_SV*)
-		LDSHARED='$(CC) -Wl,-G,-Bexport'
-		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
+		LDSHARED='$(CC) -Wl,-G,-Bexport';;
 	WASI*)
 		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
 			dnl not iplemented yet
 		]);;
 	CYGWIN*)
-		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
-		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
+		LDSHARED="gcc -shared -Wl,--enable-auto-image-base";;
 	*)	LDSHARED="ld";;
 	esac
 fi
@@ -3146,7 +3024,6 @@ if test "$enable_wasm_dynamic_linking" = "yes" -a "$ac_sys_system" = "Emscripten
 fi
 
 AC_MSG_RESULT($LDSHARED)
-LDCXXSHARED=${LDCXXSHARED-$LDSHARED}
 
 AC_MSG_CHECKING([BLDSHARED flags])
 BLDSHARED=${BLDSHARED-$LDSHARED}
@@ -3967,23 +3844,14 @@ then
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
-    if test "$ac_cv_cxx_thread" = "yes"; then
-        CXX="$CXX -Kpthread"
-    fi
     posix_threads=yes
 elif test "$ac_cv_kthread" = "yes"
 then
     CC="$CC -Kthread"
-    if test "$ac_cv_cxx_thread" = "yes"; then
-        CXX="$CXX -Kthread"
-    fi
     posix_threads=yes
 elif test "$ac_cv_pthread" = "yes"
 then
     CC="$CC -pthread"
-    if test "$ac_cv_cxx_thread" = "yes"; then
-        CXX="$CXX -pthread"
-    fi
     posix_threads=yes
 else
     if test ! -z "$withval" -a -d "$withval"

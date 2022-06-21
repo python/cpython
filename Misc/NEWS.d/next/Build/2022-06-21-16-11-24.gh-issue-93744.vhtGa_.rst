@@ -1,0 +1,3 @@
+Remove ``configure --with-cxx-main`` option: it didn't work for many years.
+Remove the following configure and Makefile variables: ``CXX``,
+``LDCXXSHARED``, ``MAINCC``. Patch by Victor Stinner.
