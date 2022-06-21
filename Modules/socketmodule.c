@@ -7472,7 +7472,6 @@ PyInit__socket(void)
     /* for setsockopt() */
     PyModule_AddIntMacro(m, HVSOCKET_CONNECT_TIMEOUT);
     PyModule_AddIntMacro(m, HVSOCKET_CONNECT_TIMEOUT_MAX);
-    PyModule_AddIntMacro(m, HVSOCKET_CONTAINER_PASSTHRU);
     PyModule_AddIntMacro(m, HVSOCKET_CONNECTED_SUSPEND);
     PyModule_AddIntMacro(m, HVSOCKET_ADDRESS_FLAG_PASSTHRU);
 
