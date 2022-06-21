@@ -1918,8 +1918,7 @@ LIBSUBDIRS=	asyncio \
 		xmlrpc \
 		zoneinfo \
 		__phello__
-TESTSUBDIRS=	ctypes/test \
-		distutils/tests \
+TESTSUBDIRS=	distutils/tests \
 		idlelib/idle_test \
 		lib2to3/tests \
 		lib2to3/tests/data \
@@ -1933,6 +1932,7 @@ TESTSUBDIRS=	ctypes/test \
 		test/libregrtest test/sndhdrdata \
 		test/subprocessdata test/support \
 		test/test_asyncio \
+		test/test_ctypes \
 		test/test_email test/test_email/data \
 		test/test_import \
 		test/test_import/data \

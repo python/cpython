@@ -1,5 +1,5 @@
 from ctypes import *
-from ctypes.test import need_symbol
+from test.test_ctypes import need_symbol
 import unittest
 import sys
 

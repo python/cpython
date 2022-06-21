@@ -1,6 +1,6 @@
 import unittest
 from ctypes import *
-from ctypes.test import need_symbol
+from test.test_ctypes import need_symbol
 import _ctypes_test
 
 dll = CDLL(_ctypes_test.__file__)
