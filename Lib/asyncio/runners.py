@@ -1,5 +1,6 @@
 __all__ = ('Runner', 'run')
 
+import sys
 import contextvars
 import enum
 import functools
@@ -17,6 +18,12 @@ class _State(enum.Enum):
     CLOSED = "closed"
 
 
+if sys.platform == "win32":
+    from .windows_events import ProactorEventLoop as _new_event_loop
+else:
+    from .unix_events import SelectorEventLoop as _new_event_loop
+
+
 class Runner:
     """A context manager that controls event loop life cycle.
 
@@ -25,7 +32,11 @@ class Runner:
     and properly finalizes the loop at the context manager exit.
 
     If debug is True, the event loop will be run in debug mode.
-    If loop_factory is passed, it is used for new event loop creation.
+    If loop_factory is passed, it is used for new event loop creation, otherwise
+    a ProactorEventLoop will be started on Windows and a SelectorEventLoop will
+    be started on unix
+    If set_policy_loop is True, the event loop in the default policy will be
+    set.
 
     asyncio.run(main(), debug=True)
 
@@ -45,13 +56,14 @@ class Runner:
 
     # Note: the class is final, it is not intended for inheritance.
 
-    def __init__(self, *, debug=None, loop_factory=None):
+    def __init__(self, *, debug=None, loop_factory=None, set_policy_loop=False):
         self._state = _State.CREATED
         self._debug = debug
         self._loop_factory = loop_factory
         self._loop = None
         self._context = None
         self._interrupt_count = 0
+        self._set_policy_loop = set_policy_loop
 
     def __enter__(self):
         self._lazy_init()
@@ -66,10 +78,14 @@ class Runner:
             return
         try:
             loop = self._loop
+            if self._set_policy_loop:
+                events.set_event_loop(loop)
             _cancel_all_tasks(loop)
             loop.run_until_complete(loop.shutdown_asyncgens())
             loop.run_until_complete(loop.shutdown_default_executor())
         finally:
+            if self._set_policy_loop:
+                events.set_event_loop(None)
             loop.close()
             self._loop = None
             self._state = _State.CLOSED
@@ -90,10 +106,11 @@ class Runner:
                 "Runner.run() cannot be called from a running event loop")
 
         self._lazy_init()
+        loop = self._loop
 
         if context is None:
             context = self._context
-        task = self._loop.create_task(coro, context=context)
+        task = loop.create_task(coro, context=context)
 
         if (threading.current_thread() is threading.main_thread()
             and signal.getsignal(signal.SIGINT) is signal.default_int_handler
@@ -111,13 +128,17 @@ class Runner:
 
         self._interrupt_count = 0
         try:
-            return self._loop.run_until_complete(task)
+            if self._set_policy_loop:
+                events.set_event_loop(loop)
+            return loop.run_until_complete(task)
         except exceptions.CancelledError:
             if self._interrupt_count > 0 and task.uncancel() == 0:
                 raise KeyboardInterrupt()
             else:
                 raise  # CancelledError
         finally:
+            if self._set_policy_loop:
+                events.set_event_loop(None)
             if (sigint_handler is not None
                 and signal.getsignal(signal.SIGINT) is sigint_handler
             ):
@@ -129,7 +150,7 @@ class Runner:
         if self._state is _State.INITIALIZED:
             return
         if self._loop_factory is None:
-            self._loop = events.new_event_loop()
+            self._loop = _new_event_loop()
         else:
             self._loop = self._loop_factory()
         if self._debug is not None:
@@ -159,7 +180,9 @@ def run(main, *, debug=None):
 
     If debug is True, the event loop will be run in debug mode.
 
-    This function always creates a new event loop and closes it at the end.
+    This function always creates a new event loop from the default policy sets
+    it in the event loop policy and closes it at the end and sets the policy
+    loop to None.
     It should be used as a main entry point for asyncio programs, and should
     ideally only be called once.
 
@@ -176,7 +199,11 @@ def run(main, *, debug=None):
         raise RuntimeError(
             "asyncio.run() cannot be called from a running event loop")
 
-    with Runner(debug=debug) as runner:
+    with Runner(
+        debug=debug,
+        loop_factory=events.new_event_loop,
+        set_policy_loop=True,
+    ) as runner:
         return runner.run(main)
 
 
