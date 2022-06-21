@@ -259,16 +259,16 @@ extern int _PyStaticCode_InternStrings(PyCodeObject *co);
 #ifdef Py_STATS
 
 
-#define STAT_INC(opname, name) _py_stats.opcode_stats[(opname)].specialization.name++
-#define STAT_DEC(opname, name) _py_stats.opcode_stats[(opname)].specialization.name--
-#define OPCODE_EXE_INC(opname) _py_stats.opcode_stats[(opname)].execution_count++
-#define CALL_STAT_INC(name) _py_stats.call_stats.name++
-#define OBJECT_STAT_INC(name) _py_stats.object_stats.name++
+#define STAT_INC(opname, name) do { if (_py_stats) _py_stats->opcode_stats[opname].specialization.name++; } while (0)
+#define STAT_DEC(opname, name) do { if (_py_stats) _py_stats->opcode_stats[opname].specialization.name--; } while (0)
+#define OPCODE_EXE_INC(opname) do { if (_py_stats) _py_stats->opcode_stats[opname].execution_count++; } while (0)
+#define CALL_STAT_INC(name) do { if (_py_stats) _py_stats->call_stats.name++; } while (0)
+#define OBJECT_STAT_INC(name) do { if (_py_stats) _py_stats->object_stats.name++; } while (0)
 #define OBJECT_STAT_INC_COND(name, cond) \
-    do { if (cond) _py_stats.object_stats.name++; } while (0)
-#define EVAL_CALL_STAT_INC(name) _py_stats.call_stats.eval_calls[(name)]++
+    do { if (_py_stats && cond) _py_stats->object_stats.name++; } while (0)
+#define EVAL_CALL_STAT_INC(name) do { if (_py_stats) _py_stats->call_stats.eval_calls[name]++; } while (0)
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) \
-    do { if (PyFunction_Check(callable)) _py_stats.call_stats.eval_calls[(name)]++; } while (0)
+    do { if (_py_stats && PyFunction_Check(callable)) _py_stats->call_stats.eval_calls[name]++; } while (0)
 
 // Used by the _opcode extension which is built as a shared library
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
