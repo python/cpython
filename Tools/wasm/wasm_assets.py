@@ -111,9 +111,7 @@ OMIT_MODULE_FILES = {
 
 # regression test sub directories
 OMIT_SUBDIRS = (
-    "ctypes/test/",
     "tkinter/test/",
-    "unittest/test/",
 )
 
 def get_builddir(args: argparse.Namespace) -> pathlib.Path:
