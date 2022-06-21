@@ -329,6 +329,13 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                 return False
         self.command, self.path = command, path
 
+        # gh-87389: The purpose of replacing '//' with '/' is to protect
+        # against open redirect attacks possibly triggered if the path starts
+        # with '//' because http clients treat //path as an absolute URI
+        # without scheme (similar to http://path) rather than a path.
+        if self.path.startswith('//'):
+            self.path = '/' + self.path.lstrip('/')  # Reduce to a single /
+
         # Examine the headers and look for a Connection directive.
         try:
             self.headers = http.client.parse_headers(self.rfile,
