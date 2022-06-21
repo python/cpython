@@ -180,6 +180,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(chain.from_iterable([''])), [])
         self.assertEqual(take(4, chain.from_iterable(['abc', 'def'])), list('abcd'))
         self.assertRaises(TypeError, list, chain.from_iterable([2, 3]))
+        self.assertEqual(list(islice(chain.from_iterable(repeat(range(5))), 2)), [0, 1])
 
     def test_chain_reducible(self):
         for oper in [copy.deepcopy] + picklecopiers:

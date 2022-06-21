@@ -21,9 +21,11 @@ Operating System Utilities
 
    Return true (nonzero) if the standard I/O file *fp* with name *filename* is
    deemed interactive.  This is the case for files for which ``isatty(fileno(fp))``
-   is true.  If the global flag :c:data:`Py_InteractiveFlag` is true, this function
+   is true.  If the :c:member:`PyConfig.interactive` is non-zero, this function
    also returns true if the *filename* pointer is ``NULL`` or if the name is equal to
    one of the strings ``'<stdin>'`` or ``'???'``.
+
+   This function must not be called before Python is initialized.
 
 
 .. c:function:: void PyOS_BeforeFork()
