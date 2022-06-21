@@ -1,17 +1,6 @@
-import os
-import sys
-import unittest
+import os.path
+from test.support import load_package_tests
 
-
-here = os.path.dirname(__file__)
-loader = unittest.defaultTestLoader
 
 def load_tests(*args):
-    suite = unittest.TestSuite()
-    for fn in os.listdir(here):
-        if fn.startswith("test") and fn.endswith(".py"):
-            modname = "test.test_unittest.testmock." + fn[:-3]
-            __import__(modname)
-            module = sys.modules[modname]
-            suite.addTest(loader.loadTestsFromModule(module))
-    return suite
+    return load_package_tests(os.path.dirname(__file__), *args)
