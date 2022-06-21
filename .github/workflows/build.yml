@@ -1,6 +1,6 @@
 name: Tests
 
-# bpo-40548: "paths-ignore" is not used to skip documentation-only PRs, because
+# gh-84728: "paths-ignore" is not used to skip documentation-only PRs, because
 # it prevents to mark a job as mandatory. A PR cannot be merged if a job is
 # mandatory but not scheduled because of "paths-ignore".
 on:
@@ -8,6 +8,7 @@ on:
   push:
     branches:
     - 'main'
+    - '3.11'
     - '3.10'
     - '3.9'
     - '3.8'
@@ -15,10 +16,14 @@ on:
   pull_request:
     branches:
     - 'main'
+    - '3.11'
     - '3.10'
     - '3.9'
     - '3.8'
     - '3.7'
+
+permissions:
+  contents: read
 
 jobs:
   check_source:
@@ -28,7 +33,7 @@ jobs:
       run_tests: ${{ steps.check.outputs.run_tests }}
       run_ssl_tests: ${{ steps.check.outputs.run_ssl_tests }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Check for source changes
         id: check
         run: |
@@ -60,8 +65,8 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
       - name: Install Dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Add ccache to PATH
@@ -74,12 +79,17 @@ jobs:
           grep "aclocal 1.16.3" aclocal.m4
           grep -q "runstatedir" configure
           grep -q "PKG_PROG_PKG_CONFIG" aclocal.m4
-      - name: Regenerate autoconf files
-        run: docker run --rm -v $(pwd):/src quay.io/tiran/cpython_autoconf:269
-      - name: Build CPython
+      - name: Configure CPython
         run: |
           # Build Python with the libpython dynamic library
           ./configure --with-pydebug --enable-shared
+      - name: Regenerate autoconf files with container image
+        run: make regen-configure
+      - name: Build CPython
+        run: |
+          # Deepfreeze will usually cause global objects to be added or removed,
+          # so we run it before regen-global-objects gets rum (in regen-all).
+          make regen-deepfreeze
           make -j4 regen-all
           make regen-stdlib-module-names
       - name: Check for changes
@@ -109,14 +119,14 @@ jobs:
     env:
        IncludeUwp: 'true'
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Build CPython
-      run: .\PCbuild\build.bat -e -p Win32
+      run: .\PCbuild\build.bat -e -d -p Win32
       timeout-minutes: 30
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
-      run: .\PCbuild\rt.bat -p Win32 -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+      run: .\PCbuild\rt.bat -p Win32 -d -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
 
   build_win_amd64:
     name: 'Windows (x64)'
@@ -126,16 +136,16 @@ jobs:
     env:
        IncludeUwp: 'true'
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Register MSVC problem matcher
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
-      run: .\PCbuild\build.bat -e -p x64
+      run: .\PCbuild\build.bat -e -d -p x64
       timeout-minutes: 30
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
-      run: .\PCbuild\rt.bat -p x64 -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+      run: .\PCbuild\rt.bat -p x64 -d -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
 
   build_macos:
     name: 'macOS'
@@ -145,7 +155,7 @@ jobs:
     env:
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Prepare homebrew environment variables
       run: |
         echo "LDFLAGS=-L$(brew --prefix tcl-tk)/lib" >> $GITHUB_ENV
@@ -165,10 +175,10 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1m
+      OPENSSL_VER: 1.1.1n
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
@@ -180,7 +190,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v2.1.7
+      uses: actions/cache@v3
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -224,14 +234,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        openssl_ver: [1.1.1m, 3.0.1]
+        openssl_ver: [1.1.1n, 3.0.2]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
       OPENSSL_DIR: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}
       LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
@@ -243,7 +253,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v2.1.7
+      uses: actions/cache@v3
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -271,11 +281,11 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1m
+      OPENSSL_VER: 1.1.1n
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
@@ -287,7 +297,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v2.1.7
+      uses: actions/cache@v3
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -306,12 +316,4 @@ jobs:
     - name: Display build info
       run: make pythoninfo
     - name: Tests
-      # Skip test_tools test_peg_generator test_concurrent_futures because
-      # there are too slow: between 5 and 20 minutes on this CI.
-      #
-      # Skip multiprocessing and concurrent.futures tests which are affected by
-      # bpo-45200 bug: libasan dead lock in pthread_create().
-      #
-      # test___all__ is skipped because importing some modules directly can trigger
-      # known problems with ASAN (like tk or crypt).
-      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu -x test___all__ test_multiprocessing_fork test_multiprocessing_forkserver test_multiprocessing_spawn test_tools test_peg_generator test_concurrent_futures"
+      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"

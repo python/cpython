@@ -537,6 +537,13 @@ data attributes of a new object type, and another is used to describe the value
 of a complex number.  These will  be discussed together with the functions that
 use them.
 
+.. c:type:: Py_ssize_t
+
+   A signed integral type such that ``sizeof(Py_ssize_t) == sizeof(size_t)``.
+   C99 doesn't define such a thing directly (size_t is an unsigned integral type).
+   See :pep:`353` for details. ``PY_SSIZE_T_MAX`` is the largest positive value
+   of type :c:type:`Py_ssize_t`.
+
 
 .. _api-exceptions:
 
@@ -709,12 +716,10 @@ the table of loaded modules, and creates the fundamental modules
 :mod:`builtins`, :mod:`__main__`, and :mod:`sys`.  It also
 initializes the module search path (``sys.path``).
 
-.. index:: single: PySys_SetArgvEx()
-
 :c:func:`Py_Initialize` does not set the "script argument list"  (``sys.argv``).
-If this variable is needed by Python code that will be executed later, it must
-be set explicitly with a call to  ``PySys_SetArgvEx(argc, argv, updatepath)``
-after the call to :c:func:`Py_Initialize`.
+If this variable is needed by Python code that will be executed later, setting
+:c:member:`PyConfig.argv` and :c:member:`PyConfig.parse_argv` must be set: see
+:ref:`Python Initialization Configuration <init-config>`.
 
 On most systems (in particular, on Unix and Windows, although the details are
 slightly different), :c:func:`Py_Initialize` calculates the module search path

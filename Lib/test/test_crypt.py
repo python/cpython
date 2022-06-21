@@ -1,12 +1,12 @@
 import sys
 import unittest
-from test.support import check_sanitizer
+from test.support import check_sanitizer, warnings_helper
 
 
 try:
     if check_sanitizer(address=True, memory=True):
         raise unittest.SkipTest("The crypt module SEGFAULTs on ASAN/MSAN builds")
-    import crypt
+    crypt = warnings_helper.import_deprecated("crypt")
     IMPORT_ERROR = None
 except ImportError as ex:
     if sys.platform != 'win32':

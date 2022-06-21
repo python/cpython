@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_pylifecycle.h"   // _PyArg_Fini
 
 #include <ctype.h>
 #include <float.h>
@@ -1009,58 +1010,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                                   arg, msgbuf, bufsize);
         }
         break;
-    }
-
-    case 'u': /* raw unicode buffer (Py_UNICODE *) */
-    case 'Z': /* raw unicode buffer or None */
-    {
-        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "getargs: The '%c' format is deprecated. Use 'U' instead.", c)) {
-            return NULL;
-        }
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-        Py_UNICODE **p = va_arg(*p_va, Py_UNICODE **);
-
-        if (*format == '#') {
-            /* "u#" or "Z#" */
-            REQUIRE_PY_SSIZE_T_CLEAN;
-            Py_ssize_t *psize = va_arg(*p_va, Py_ssize_t*);
-
-            if (c == 'Z' && arg == Py_None) {
-                *p = NULL;
-                *psize = 0;
-            }
-            else if (PyUnicode_Check(arg)) {
-                Py_ssize_t len;
-                *p = PyUnicode_AsUnicodeAndSize(arg, &len);
-                if (*p == NULL)
-                    RETURN_ERR_OCCURRED;
-                *psize = len;
-            }
-            else
-                return converterr(c == 'Z' ? "str or None" : "str",
-                                  arg, msgbuf, bufsize);
-            format++;
-        } else {
-            /* "u" or "Z" */
-            if (c == 'Z' && arg == Py_None)
-                *p = NULL;
-            else if (PyUnicode_Check(arg)) {
-                Py_ssize_t len;
-                *p = PyUnicode_AsUnicodeAndSize(arg, &len);
-                if (*p == NULL)
-                    RETURN_ERR_OCCURRED;
-                if (wcslen(*p) != (size_t)len) {
-                    PyErr_SetString(PyExc_ValueError, "embedded null character");
-                    RETURN_ERR_OCCURRED;
-                }
-            } else
-                return converterr(c == 'Z' ? "str or None" : "str",
-                                  arg, msgbuf, bufsize);
-        }
-        break;
-_Py_COMP_DIAG_POP
     }
 
     case 'e': {/* encoded string */
@@ -2684,8 +2633,6 @@ skipitem(const char **p_format, va_list *p_va, int flags)
     case 's': /* string */
     case 'z': /* string or None */
     case 'y': /* bytes */
-    case 'u': /* unicode string */
-    case 'Z': /* unicode string or None */
     case 'w': /* buffer, read-write */
         {
             if (p_va != NULL) {
@@ -2845,11 +2792,7 @@ PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t m
     stack = _PyTuple_ITEMS(args);
     nargs = PyTuple_GET_SIZE(args);
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, max);
-#else
-    va_start(vargs);
-#endif
     retval = unpack_stack(stack, nargs, name, min, max, vargs);
     va_end(vargs);
     return retval;
@@ -2862,11 +2805,7 @@ _PyArg_UnpackStack(PyObject *const *args, Py_ssize_t nargs, const char *name,
     int retval;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, max);
-#else
-    va_start(vargs);
-#endif
     retval = unpack_stack(args, nargs, name, min, max, vargs);
     va_end(vargs);
     return retval;

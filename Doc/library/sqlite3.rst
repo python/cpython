@@ -17,7 +17,7 @@ SQLite for internal data storage.  It's also possible to prototype an
 application using SQLite and then port the code to a larger database such as
 PostgreSQL or Oracle.
 
-The sqlite3 module was written by Gerhard Häring.  It provides a SQL interface
+The sqlite3 module was written by Gerhard Häring.  It provides an SQL interface
 compliant with the DB-API 2.0 specification described by :pep:`249`, and
 requires SQLite 3.7.15 or newer.
 
@@ -142,11 +142,21 @@ Module functions and constants
    The version number of this module, as a string. This is not the version of
    the SQLite library.
 
+   .. deprecated-removed:: 3.12 3.14
+      This constant used to reflect the version number of the ``pysqlite``
+      package, a third-party library which used to upstream changes to
+      ``sqlite3``. Today, it carries no meaning or practical value.
+
 
 .. data:: version_info
 
    The version number of this module, as a tuple of integers. This is not the
    version of the SQLite library.
+
+   .. deprecated-removed:: 3.12 3.14
+      This constant used to reflect the version number of the ``pysqlite``
+      package, a third-party library which used to upstream changes to
+      ``sqlite3``. Today, it carries no meaning or practical value.
 
 
 .. data:: sqlite_version
@@ -191,7 +201,7 @@ Module functions and constants
    |                  |                 |                      | connections and cursors       |
    +------------------+-----------------+----------------------+-------------------------------+
 
-   .. _threadsafety: https://www.python.org/dev/peps/pep-0249/#threadsafety
+   .. _threadsafety: https://peps.python.org/pep-0249/#threadsafety
    .. _SQLITE_THREADSAFE: https://sqlite.org/compile.html#threadsafe
 
    .. versionchanged:: 3.11
@@ -326,9 +336,9 @@ Module functions and constants
    float, str or bytes.
 
 
-.. function:: complete_statement(sql)
+.. function:: complete_statement(statement)
 
-   Returns :const:`True` if the string *sql* contains one or more complete SQL
+   Returns :const:`True` if the string *statement* contains one or more complete SQL
    statements terminated by semicolons. It does not verify that the SQL is
    syntactically correct, only that there are no unclosed string literals and the
    statement is terminated by a semicolon.
@@ -373,7 +383,7 @@ Connection Objects
 
 .. class:: Connection
 
-   A SQLite database connection has the following attributes and methods:
+   An SQLite database connection has the following attributes and methods:
 
    .. attribute:: isolation_level
 
@@ -394,50 +404,63 @@ Connection Objects
       supplied, this must be a callable returning an instance of :class:`Cursor`
       or its subclasses.
 
+   .. method:: blobopen(table, column, row, /, *, readonly=False, name="main")
+
+      Open a :class:`Blob` handle to the :abbr:`BLOB (Binary Large OBject)`
+      located in table name *table*, column name *column*, and row index *row*
+      of database *name*.
+      When *readonly* is :const:`True` the blob is opened without write
+      permissions.
+      Trying to open a blob in a ``WITHOUT ROWID`` table will raise
+      :exc:`OperationalError`.
+
+      .. note::
+
+         The blob size cannot be changed using the :class:`Blob` class.
+         Use the SQL function ``zeroblob`` to create a blob with a fixed size.
+
+      .. versionadded:: 3.11
+
    .. method:: commit()
 
-      This method commits the current transaction. If you don't call this method,
-      anything you did since the last call to ``commit()`` is not visible from
-      other database connections. If you wonder why you don't see the data you've
-      written to the database, please check you didn't forget to call this method.
+      Commit any pending transaction to the database.
+      If there is no open transaction, this method is a no-op.
 
    .. method:: rollback()
 
-      This method rolls back any changes to the database since the last call to
-      :meth:`commit`.
+      Roll back to the start of any pending transaction.
+      If there is no open transaction, this method is a no-op.
 
    .. method:: close()
 
-      This closes the database connection. Note that this does not automatically
-      call :meth:`commit`. If you just close your database connection without
-      calling :meth:`commit` first, your changes will be lost!
+      Close the database connection.
+      Any pending transaction is not committed implicitly;
+      make sure to :meth:`commit` before closing
+      to avoid losing pending changes.
 
    .. method:: execute(sql[, parameters])
 
-      This is a nonstandard shortcut that creates a cursor object by calling
-      the :meth:`~Connection.cursor` method, calls the cursor's
-      :meth:`~Cursor.execute` method with the *parameters* given, and returns
-      the cursor.
+      Create a new :class:`Cursor` object and call
+      :meth:`~Cursor.execute` on it with the given *sql* and *parameters*.
+      Return the new cursor object.
 
    .. method:: executemany(sql[, parameters])
 
-      This is a nonstandard shortcut that creates a cursor object by
-      calling the :meth:`~Connection.cursor` method, calls the cursor's
-      :meth:`~Cursor.executemany` method with the *parameters* given, and
-      returns the cursor.
+      Create a new :class:`Cursor` object and call
+      :meth:`~Cursor.executemany` on it with the given *sql* and *parameters*.
+      Return the new cursor object.
 
    .. method:: executescript(sql_script)
 
-      This is a nonstandard shortcut that creates a cursor object by
-      calling the :meth:`~Connection.cursor` method, calls the cursor's
-      :meth:`~Cursor.executescript` method with the given *sql_script*, and
-      returns the cursor.
+      Create a new :class:`Cursor` object and call
+      :meth:`~Cursor.executescript` on it with the given *sql_script*.
+      Return the new cursor object.
 
-   .. method:: create_function(name, num_params, func, *, deterministic=False)
+   .. method:: create_function(name, narg, func, *, deterministic=False)
 
       Creates a user-defined function that you can later use from within SQL
-      statements under the function name *name*. *num_params* is the number of
-      parameters the function accepts (if *num_params* is -1, the function may
+      statements under the function name *name*. *narg* is the number of
+      parameters the function accepts (if *narg* is -1, the function may
       take any number of arguments), and *func* is a Python callable that is
       called as the SQL function. If *deterministic* is true, the created function
       is marked as `deterministic <https://sqlite.org/deterministic.html>`_, which
@@ -456,12 +479,12 @@ Connection Objects
       .. literalinclude:: ../includes/sqlite3/md5func.py
 
 
-   .. method:: create_aggregate(name, num_params, aggregate_class)
+   .. method:: create_aggregate(name, n_arg, aggregate_class)
 
       Creates a user-defined aggregate function.
 
       The aggregate class must implement a ``step`` method, which accepts the number
-      of parameters *num_params* (if *num_params* is -1, the function may take
+      of parameters *n_arg* (if *n_arg* is -1, the function may take
       any number of arguments), and a ``finalize`` method which will return the
       final result of the aggregate.
 
@@ -473,24 +496,50 @@ Connection Objects
       .. literalinclude:: ../includes/sqlite3/mysumaggr.py
 
 
+   .. method:: create_window_function(name, num_params, aggregate_class, /)
+
+      Creates user-defined aggregate window function *name*.
+
+      *aggregate_class* must implement the following methods:
+
+      * ``step``: adds a row to the current window
+      * ``value``: returns the current value of the aggregate
+      * ``inverse``: removes a row from the current window
+      * ``finalize``: returns the final value of the aggregate
+
+      ``step`` and ``value`` accept *num_params* number of parameters,
+      unless *num_params* is ``-1``, in which case they may take any number of
+      arguments.  ``finalize`` and ``value`` can return any of the types
+      supported by SQLite:
+      :class:`bytes`, :class:`str`, :class:`int`, :class:`float`, and
+      :const:`None`.  Call :meth:`create_window_function` with
+      *aggregate_class* set to :const:`None` to clear window function *name*.
+
+      Aggregate window functions are supported by SQLite 3.25.0 and higher.
+      :exc:`NotSupportedError` will be raised if used with older versions.
+
+      .. versionadded:: 3.11
+
+      Example:
+
+      .. literalinclude:: ../includes/sqlite3/sumintwindow.py
+
+
    .. method:: create_collation(name, callable)
 
-      Creates a collation with the specified *name* and *callable*. The callable will
-      be passed two string arguments. It should return -1 if the first is ordered
-      lower than the second, 0 if they are ordered equal and 1 if the first is ordered
-      higher than the second.  Note that this controls sorting (ORDER BY in SQL) so
-      your comparisons don't affect other SQL operations.
+      Create a collation named *name* using the collating function *callable*.
+      *callable* is passed two :class:`string <str>` arguments,
+      and it should return an :class:`integer <int>`:
 
-      Note that the callable will get its parameters as Python bytestrings, which will
-      normally be encoded in UTF-8.
+      * ``1`` if the first is ordered higher than the second
+      * ``-1`` if the first is ordered lower than the second
+      * ``0`` if they are ordered equal
 
-      The following example shows a custom collation that sorts "the wrong way":
+      The following example shows a reverse sorting collation:
 
       .. literalinclude:: ../includes/sqlite3/collation_reverse.py
 
-      To remove a collation, call ``create_collation`` with ``None`` as callable::
-
-         con.create_collation("reverse", None)
+      Remove a collation function by setting *callable* to :const:`None`.
 
       .. versionchanged:: 3.11
          The collation name can contain any Unicode character.  Earlier, only
@@ -530,7 +579,7 @@ Connection Objects
          Added support for disabling the authorizer using :const:`None`.
 
 
-   .. method:: set_progress_handler(handler, n)
+   .. method:: set_progress_handler(progress_handler, n)
 
       This routine registers a callback. The callback is invoked for every *n*
       instructions of the SQLite virtual machine. This is useful if you want to
@@ -538,10 +587,10 @@ Connection Objects
       a GUI.
 
       If you want to clear any previously installed progress handler, call the
-      method with :const:`None` for *handler*.
+      method with :const:`None` for *progress_handler*.
 
       Returning a non-zero value from the handler function will terminate the
-      currently executing query and cause it to raise an :exc:`OperationalError`
+      currently executing query and cause it to raise a :exc:`DatabaseError`
       exception.
 
 
@@ -578,7 +627,7 @@ Connection Objects
 
       Loadable extensions are disabled by default. See [#f1]_.
 
-      .. audit-event:: sqlite3.enable_load_extension connection,enabled sqlite3.enable_load_extension
+      .. audit-event:: sqlite3.enable_load_extension connection,enabled sqlite3.Connection.enable_load_extension
 
       .. versionadded:: 3.2
 
@@ -589,13 +638,13 @@ Connection Objects
 
    .. method:: load_extension(path)
 
-      This routine loads a SQLite extension from a shared library.  You have to
+      This routine loads an SQLite extension from a shared library.  You have to
       enable extension loading with :meth:`enable_load_extension` before you can
       use this routine.
 
       Loadable extensions are disabled by default. See [#f1]_.
 
-      .. audit-event:: sqlite3.load_extension connection,path sqlite3.load_extension
+      .. audit-event:: sqlite3.load_extension connection,path sqlite3.Connection.load_extension
 
       .. versionadded:: 3.2
 
@@ -665,7 +714,7 @@ Connection Objects
 
    .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
 
-      This method makes a backup of a SQLite database even while it's being accessed
+      This method makes a backup of an SQLite database even while it's being accessed
       by other clients, or concurrently by the same connection.  The copy will be
       written into the mandatory argument *target*, that must be another
       :class:`Connection` instance.
@@ -748,6 +797,44 @@ Connection Objects
       .. versionadded:: 3.11
 
 
+   .. method:: serialize(*, name="main")
+
+      This method serializes a database into a :class:`bytes` object.  For an
+      ordinary on-disk database file, the serialization is just a copy of the
+      disk file.  For an in-memory database or a "temp" database, the
+      serialization is the same sequence of bytes which would be written to
+      disk if that database were backed up to disk.
+
+      *name* is the database to be serialized, and defaults to the main
+      database.
+
+      .. note::
+
+         This method is only available if the underlying SQLite library has the
+         serialize API.
+
+      .. versionadded:: 3.11
+
+
+   .. method:: deserialize(data, /, *, name="main")
+
+      This method causes the database connection to disconnect from database
+      *name*, and reopen *name* as an in-memory database based on the
+      serialization contained in *data*.  Deserialization will raise
+      :exc:`OperationalError` if the database connection is currently involved
+      in a read transaction or a backup operation.  :exc:`OverflowError` will be
+      raised if ``len(data)`` is larger than ``2**63 - 1``, and
+      :exc:`DatabaseError` will be raised if *data* does not contain a valid
+      SQLite database.
+
+      .. note::
+
+         This method is only available if the underlying SQLite library has the
+         deserialize API.
+
+      .. versionadded:: 3.11
+
+
 .. _sqlite3-cursor-objects:
 
 Cursor Objects
@@ -766,7 +853,7 @@ Cursor Objects
       :ref:`placeholders <sqlite3-placeholders>`.
 
       :meth:`execute` will only execute a single SQL statement. If you try to execute
-      more than one statement with it, it will raise a :exc:`.Warning`. Use
+      more than one statement with it, it will raise a :exc:`ProgrammingError`. Use
       :meth:`executescript` if you want to execute multiple SQL statements with one
       call.
 
@@ -836,11 +923,11 @@ Cursor Objects
 
    .. method:: setinputsizes(sizes)
 
-      Required by the DB-API. Is a no-op in :mod:`sqlite3`.
+      Required by the DB-API. Does nothing in :mod:`sqlite3`.
 
    .. method:: setoutputsize(size [, column])
 
-      Required by the DB-API. Is a no-op in :mod:`sqlite3`.
+      Required by the DB-API. Does nothing in :mod:`sqlite3`.
 
    .. attribute:: rowcount
 
@@ -963,19 +1050,77 @@ Now we plug :class:`Row` in::
    35.14
 
 
+Blob Objects
+------------
+
+.. versionadded:: 3.11
+
+.. class:: Blob
+
+   A :class:`Blob` instance is a :term:`file-like object`
+   that can read and write data in an SQLite :abbr:`BLOB (Binary Large OBject)`.
+   Call :func:`len(blob) <len>` to get the size (number of bytes) of the blob.
+   Use indices and :term:`slices <slice>` for direct access to the blob data.
+
+   Use the :class:`Blob` as a :term:`context manager` to ensure that the blob
+   handle is closed after use.
+
+   .. literalinclude:: ../includes/sqlite3/blob.py
+
+   .. method:: close()
+
+      Close the blob.
+
+      The blob will be unusable from this point onward.  An
+      :class:`~sqlite3.Error` (or subclass) exception will be raised if any
+      further operation is attempted with the blob.
+
+   .. method:: read(length=-1, /)
+
+      Read *length* bytes of data from the blob at the current offset position.
+      If the end of the blob is reached, the data up to
+      :abbr:`EOF (End of File)` will be returned.  When *length* is not
+      specified, or is negative, :meth:`~Blob.read` will read until the end of
+      the blob.
+
+   .. method:: write(data, /)
+
+      Write *data* to the blob at the current offset.  This function cannot
+      change the blob length.  Writing beyond the end of the blob will raise
+      :exc:`ValueError`.
+
+   .. method:: tell()
+
+      Return the current access position of the blob.
+
+   .. method:: seek(offset, origin=os.SEEK_SET, /)
+
+      Set the current access position of the blob to *offset*.  The *origin*
+      argument defaults to :data:`os.SEEK_SET` (absolute blob positioning).
+      Other values for *origin* are :data:`os.SEEK_CUR` (seek relative to the
+      current position) and :data:`os.SEEK_END` (seek relative to the blob’s
+      end).
+
+
 .. _sqlite3-exceptions:
 
 Exceptions
 ----------
 
+The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
+
 .. exception:: Warning
 
-   A subclass of :exc:`Exception`.
+   This exception is not currently raised by the ``sqlite3`` module,
+   but may be raised by applications using ``sqlite3``,
+   for example if a user-defined function truncates data while inserting.
+   ``Warning`` is a subclass of :exc:`Exception`.
 
 .. exception:: Error
 
-   The base class of the other exceptions in this module.  It is a subclass
-   of :exc:`Exception`.
+   The base class of the other exceptions in this module.
+   Use this to catch all errors with one single :keyword:`except` statement.
+   ``Error`` is a subclass of :exc:`Exception`.
 
    .. attribute:: sqlite_errorcode
 
@@ -991,35 +1136,63 @@ Exceptions
 
       .. versionadded:: 3.11
 
+.. exception:: InterfaceError
+
+   Exception raised for misuse of the low-level SQLite C API.
+   In other words, if this exception is raised, it probably indicates a bug in the
+   ``sqlite3`` module.
+   ``InterfaceError`` is a subclass of :exc:`Error`.
+
 .. exception:: DatabaseError
 
    Exception raised for errors that are related to the database.
+   This serves as the base exception for several types of database errors.
+   It is only raised implicitly through the specialised subclasses.
+   ``DatabaseError`` is a subclass of :exc:`Error`.
+
+.. exception:: DataError
+
+   Exception raised for errors caused by problems with the processed data,
+   like numeric values out of range, and strings which are too long.
+   ``DataError`` is a subclass of :exc:`DatabaseError`.
+
+.. exception:: OperationalError
+
+   Exception raised for errors that are related to the database's operation,
+   and not necessarily under the control of the programmer.
+   For example, the database path is not found,
+   or a transaction could not be processed.
+   ``OperationalError`` is a subclass of :exc:`DatabaseError`.
 
 .. exception:: IntegrityError
 
    Exception raised when the relational integrity of the database is affected,
    e.g. a foreign key check fails.  It is a subclass of :exc:`DatabaseError`.
 
+.. exception:: InternalError
+
+   Exception raised when SQLite encounters an internal error.
+   If this is raised, it may indicate that there is a problem with the runtime
+   SQLite library.
+   ``InternalError`` is a subclass of :exc:`DatabaseError`.
+
 .. exception:: ProgrammingError
 
-   Exception raised for programming errors, e.g. table not found or already
-   exists, syntax error in the SQL statement, wrong number of parameters
-   specified, etc.  It is a subclass of :exc:`DatabaseError`.
-
-.. exception:: OperationalError
-
-   Exception raised for errors that are related to the database's operation
-   and not necessarily under the control of the programmer, e.g. an unexpected
-   disconnect occurs, the data source name is not found, a transaction could
-   not be processed, etc.  It is a subclass of :exc:`DatabaseError`.
+   Exception raised for ``sqlite3`` API programming errors,
+   for example supplying the wrong number of bindings to a query,
+   or trying to operate on a closed :class:`Connection`.
+   ``ProgrammingError`` is a subclass of :exc:`DatabaseError`.
 
 .. exception:: NotSupportedError
 
-   Exception raised in case a method or database API was used which is not
-   supported by the database, e.g. calling the :meth:`~Connection.rollback`
-   method on a connection that does not support transaction or has
-   transactions turned off.  It is a subclass of :exc:`DatabaseError`.
+   Exception raised in case a method or database API is not supported by the
+   underlying SQLite library. For example, setting *deterministic* to
+   :const:`True` in :meth:`~Connection.create_function`, if the underlying SQLite library
+   does not support deterministic functions.
+   ``NotSupportedError`` is a subclass of :exc:`DatabaseError`.
 
+
+.. _sqlite3-blob-objects:
 
 .. _sqlite3-types:
 
@@ -1068,7 +1241,7 @@ This is how SQLite types are converted to Python types by default:
 +-------------+----------------------------------------------+
 
 The type system of the :mod:`sqlite3` module is extensible in two ways: you can
-store additional Python types in a SQLite database via object adaptation, and
+store additional Python types in an SQLite database via object adaptation, and
 you can let the :mod:`sqlite3` module convert SQLite types to different Python
 types via converters.
 
@@ -1257,13 +1430,27 @@ case-insensitively by name:
 .. literalinclude:: ../includes/sqlite3/rowclass.py
 
 
+.. _sqlite3-connection-context-manager:
+
 Using the connection as a context manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Connection objects can be used as context managers
-that automatically commit or rollback transactions.  In the event of an
-exception, the transaction is rolled back; otherwise, the transaction is
-committed:
+A :class:`Connection` object can be used as a context manager that
+automatically commits or rolls back open transactions when leaving the body of
+the context manager.
+If the body of the :keyword:`with` statement finishes without exceptions,
+the transaction is committed.
+If this commit fails,
+or if the body of the ``with`` statement raises an uncaught exception,
+the transaction is rolled back.
+
+If there is no open transaction upon leaving the body of the ``with`` statement,
+the context manager is a no-op.
+
+.. note::
+
+   The context manager neither implicitly opens a new transaction
+   nor closes the connection.
 
 .. literalinclude:: ../includes/sqlite3/ctx_manager.py
 

@@ -49,8 +49,8 @@ if os.name == 'nt':
                   'encoding (%s). Unicode filename tests may not be effective'
                   % (TESTFN_UNENCODABLE, sys.getfilesystemencoding()))
             TESTFN_UNENCODABLE = None
-# Mac OS X denies unencodable filenames (invalid utf-8)
-elif sys.platform != 'darwin':
+# macOS and Emscripten deny unencodable filenames (invalid utf-8)
+elif sys.platform not in {'darwin', 'emscripten', 'wasi'}:
     try:
         # ascii and utf-8 cannot encode the byte 0xff
         b'\xff'.decode(sys.getfilesystemencoding())
@@ -171,9 +171,13 @@ def can_symlink():
     global _can_symlink
     if _can_symlink is not None:
         return _can_symlink
-    symlink_path = TESTFN + "can_symlink"
+    # WASI / wasmtime prevents symlinks with absolute paths, see man
+    # openat2(2) RESOLVE_BENEATH. Almost all symlink tests use absolute
+    # paths. Skip symlink tests on WASI for now.
+    src = os.path.abspath(TESTFN)
+    symlink_path = src + "can_symlink"
     try:
-        os.symlink(TESTFN, symlink_path)
+        os.symlink(src, symlink_path)
         can = True
     except (OSError, NotImplementedError, AttributeError):
         can = False
@@ -230,6 +234,42 @@ def skip_unless_xattr(test):
     """Skip decorator for tests that require functional extended attributes"""
     ok = can_xattr()
     msg = "no non-broken extended attribute support"
+    return test if ok else unittest.skip(msg)(test)
+
+
+_can_chmod = None
+
+def can_chmod():
+    global _can_chmod
+    if _can_chmod is not None:
+        return _can_chmod
+    if not hasattr(os, "chown"):
+        _can_chmod = False
+        return _can_chmod
+    try:
+        with open(TESTFN, "wb") as f:
+            try:
+                os.chmod(TESTFN, 0o777)
+                mode1 = os.stat(TESTFN).st_mode
+                os.chmod(TESTFN, 0o666)
+                mode2 = os.stat(TESTFN).st_mode
+            except OSError as e:
+                can = False
+            else:
+                can = stat.S_IMODE(mode1) != stat.S_IMODE(mode2)
+    finally:
+        os.unlink(TESTFN)
+    _can_chmod = can
+    return can
+
+
+def skip_unless_working_chmod(test):
+    """Skip tests that require working os.chmod()
+
+    WASI SDK 15.0 cannot change file mode bits.
+    """
+    ok = can_chmod()
+    msg = "requires working os.chmod()"
     return test if ok else unittest.skip(msg)(test)
 
 
@@ -459,7 +499,10 @@ def create_empty_file(filename):
 def open_dir_fd(path):
     """Open a file descriptor to a directory."""
     assert os.path.isdir(path)
-    dir_fd = os.open(path, os.O_RDONLY)
+    flags = os.O_RDONLY
+    if hasattr(os, "O_DIRECTORY"):
+        flags |= os.O_DIRECTORY
+    dir_fd = os.open(path, flags)
     try:
         yield dir_fd
     finally:

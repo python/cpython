@@ -267,6 +267,9 @@ out.  Values can also span multiple lines, as long as they are indented deeper
 than the first line of the value.  Depending on the parser's mode, blank lines
 may be treated as parts of multiline values or ignored.
 
+By default,  a valid section name can be any string that does not contain '\\n' or ']'.
+To change this, see :attr:`ConfigParser.SECTCRE`.
+
 Configuration files may include comments, prefixed by specific
 characters (``#`` and ``;`` by default [1]_).  Comments may appear on
 their own on an otherwise empty line, possibly indented. [1]_
@@ -344,7 +347,8 @@ from ``get()`` calls.
       my_pictures: %(my_dir)s/Pictures
 
       [Escape]
-      gain: 80%%  # use a %% to escape the % sign (% is the only character that needs to be escaped)
+      # use a %% to escape the % sign (% is the only character that needs to be escaped):
+      gain: 80%%
 
    In the example above, :class:`ConfigParser` with *interpolation* set to
    ``BasicInterpolation()`` would resolve ``%(home_dir)s`` to the value of
@@ -379,7 +383,8 @@ from ``get()`` calls.
       my_pictures: ${my_dir}/Pictures
 
       [Escape]
-      cost: $$80  # use a $$ to escape the $ sign ($ is the only character that needs to be escaped)
+      # use a $$ to escape the $ sign ($ is the only character that needs to be escaped):
+      cost: $$80
 
    Values from other sections can be fetched as well:
 

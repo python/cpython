@@ -77,7 +77,7 @@ typedef struct _symtable_entry {
 
 extern PyTypeObject PySTEntry_Type;
 
-#define PySTEntry_Check(op) Py_IS_TYPE(op, &PySTEntry_Type)
+#define PySTEntry_Check(op) Py_IS_TYPE((op), &PySTEntry_Type)
 
 extern long _PyST_GetSymbol(PySTEntryObject *, PyObject *);
 extern int _PyST_GetScope(PySTEntryObject *, PyObject *);
@@ -127,8 +127,6 @@ extern struct symtable* _Py_SymtableStringObjectFlags(
     PyObject *filename,
     int start,
     PyCompilerFlags *flags);
-
-extern void _PySymtable_Fini(void);
 
 #ifdef __cplusplus
 }

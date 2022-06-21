@@ -3,9 +3,8 @@
 
 #include "Python.h"
 
-#include "code.h"                 // PyCode_Addr2Line etc
-#include "frameobject.h"          // PyFrame_GetBack()
 #include "pycore_ast.h"           // asdl_seq_*
+#include "pycore_call.h"          // _PyObject_CallMethodFormat()
 #include "pycore_compile.h"       // _PyAST_Optimize
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_frame.h"         // _PyFrame_GetCode()
@@ -15,7 +14,9 @@
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
+
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
+#include "frameobject.h"          // PyFrame_New()
 #include "structmember.h"         // PyMemberDef
 #include "osdefs.h"               // SEP
 #ifdef HAVE_FCNTL_H
@@ -31,11 +32,6 @@
 
 /* Function from Parser/tokenizer.c */
 extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
-
-_Py_IDENTIFIER(TextIOWrapper);
-_Py_IDENTIFIER(close);
-_Py_IDENTIFIER(open);
-_Py_IDENTIFIER(path);
 
 /*[clinic input]
 class TracebackType "PyTracebackObject *" "&PyTraceback_Type"
@@ -153,7 +149,7 @@ tb_next_set(PyTracebackObject *self, PyObject *new_next, void *Py_UNUSED(_))
 
 
 static PyMethodDef tb_methods[] = {
-   {"__dir__", (PyCFunction)tb_dir, METH_NOARGS},
+   {"__dir__", _PyCFunction_CAST(tb_dir), METH_NOARGS},
    {NULL, NULL, 0, NULL},
 };
 
@@ -243,8 +239,8 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
 {
     assert(tb_next == NULL || PyTraceBack_Check(tb_next));
     assert(frame != NULL);
-
-    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_frame->f_lasti*sizeof(_Py_CODEUNIT),
+    int addr = _PyInterpreterFrame_LASTI(frame->f_frame) * sizeof(_Py_CODEUNIT);
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, addr,
                          PyFrame_GetLineNumber(frame));
 }
 
@@ -317,6 +313,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
     const char* filepath;
     Py_ssize_t len;
     PyObject* result;
+    PyObject *open = NULL;
 
     filebytes = PyUnicode_EncodeFSDefault(filename);
     if (filebytes == NULL) {
@@ -333,11 +330,13 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
         tail++;
     taillen = strlen(tail);
 
-    syspath = _PySys_GetObjectId(&PyId_path);
+    PyThreadState *tstate = _PyThreadState_GET();
+    syspath = _PySys_GetAttr(tstate, &_Py_ID(path));
     if (syspath == NULL || !PyList_Check(syspath))
         goto error;
     npath = PyList_Size(syspath);
 
+    open = PyObject_GetAttr(io, &_Py_ID(open));
     for (i = 0; i < npath; i++) {
         v = PyList_GetItem(syspath, i);
         if (v == NULL) {
@@ -364,7 +363,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
             namebuf[len++] = SEP;
         strcpy(namebuf+len, tail);
 
-        binary = _PyObject_CallMethodId(io, &PyId_open, "ss", namebuf, "rb");
+        binary = _PyObject_CallMethodFormat(tstate, open, "ss", namebuf, "rb");
         if (binary != NULL) {
             result = binary;
             goto finally;
@@ -376,6 +375,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
 error:
     result = NULL;
 finally:
+    Py_XDECREF(open);
     Py_DECREF(filebytes);
     return result;
 }
@@ -448,10 +448,11 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
     }
 
     io = PyImport_ImportModule("io");
-    if (io == NULL)
+    if (io == NULL) {
         return -1;
-    binary = _PyObject_CallMethodId(io, &PyId_open, "Os", filename, "rb");
+    }
 
+    binary = _PyObject_CallMethod(io, &_Py_ID(open), "Os", filename, "rb");
     if (binary == NULL) {
         PyErr_Clear();
 
@@ -480,14 +481,15 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
         PyMem_Free(found_encoding);
         return 0;
     }
-    fob = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "Os", binary, encoding);
+    fob = _PyObject_CallMethod(io, &_Py_ID(TextIOWrapper),
+                               "Os", binary, encoding);
     Py_DECREF(io);
     PyMem_Free(found_encoding);
 
     if (fob == NULL) {
         PyErr_Clear();
 
-        res = _PyObject_CallMethodIdNoArgs(binary, &PyId_close);
+        res = PyObject_CallMethodNoArgs(binary, &_Py_ID(close));
         Py_DECREF(binary);
         if (res)
             Py_DECREF(res);
@@ -506,7 +508,7 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
             break;
         }
     }
-    res = _PyObject_CallMethodIdNoArgs(fob, &PyId_close);
+    res = PyObject_CallMethodNoArgs(fob, &_Py_ID(close));
     if (res) {
         Py_DECREF(res);
     }
@@ -1071,12 +1073,11 @@ _Py_DumpHexadecimal(int fd, uintptr_t value, Py_ssize_t width)
 void
 _Py_DumpASCII(int fd, PyObject *text)
 {
-    PyASCIIObject *ascii = (PyASCIIObject *)text;
+    PyASCIIObject *ascii = _PyASCIIObject_CAST(text);
     Py_ssize_t i, size;
     int truncated;
     int kind;
     void *data = NULL;
-    wchar_t *wstr = NULL;
     Py_UCS4 ch;
 
     if (!PyUnicode_Check(text))
@@ -1084,20 +1085,14 @@ _Py_DumpASCII(int fd, PyObject *text)
 
     size = ascii->length;
     kind = ascii->state.kind;
-    if (kind == PyUnicode_WCHAR_KIND) {
-        wstr = ((PyASCIIObject *)text)->wstr;
-        if (wstr == NULL)
-            return;
-        size = ((PyCompactUnicodeObject *)text)->wstr_length;
-    }
-    else if (ascii->state.compact) {
+    if (ascii->state.compact) {
         if (ascii->state.ascii)
-            data = ((PyASCIIObject*)text) + 1;
+            data = ascii + 1;
         else
-            data = ((PyCompactUnicodeObject*)text) + 1;
+            data = _PyCompactUnicodeObject_CAST(text) + 1;
     }
     else {
-        data = ((PyUnicodeObject *)text)->data.any;
+        data = _PyUnicodeObject_CAST(text)->data.any;
         if (data == NULL)
             return;
     }
@@ -1131,10 +1126,7 @@ _Py_DumpASCII(int fd, PyObject *text)
     }
 
     for (i=0; i < size; i++) {
-        if (kind != PyUnicode_WCHAR_KIND)
-            ch = PyUnicode_READ(kind, data, i);
-        else
-            ch = wstr[i];
+        ch = PyUnicode_READ(kind, data, i);
         if (' ' <= ch && ch <= 126) {
             /* printable ASCII character */
             char c = (char)ch;
@@ -1165,7 +1157,7 @@ done:
    This function is signal safe. */
 
 static void
-dump_frame(int fd, InterpreterFrame *frame)
+dump_frame(int fd, _PyInterpreterFrame *frame)
 {
     PyCodeObject *code = frame->f_code;
     PUTS(fd, "  File ");
@@ -1179,7 +1171,7 @@ dump_frame(int fd, InterpreterFrame *frame)
         PUTS(fd, "???");
     }
 
-    int lineno = PyCode_Addr2Line(code, frame->f_lasti*sizeof(_Py_CODEUNIT));
+    int lineno = _PyInterpreterFrame_GetLine(frame);
     PUTS(fd, ", line ");
     if (lineno >= 0) {
         _Py_DumpDecimal(fd, (size_t)lineno);
@@ -1203,7 +1195,7 @@ dump_frame(int fd, InterpreterFrame *frame)
 static void
 dump_traceback(int fd, PyThreadState *tstate, int write_header)
 {
-    InterpreterFrame *frame;
+    _PyInterpreterFrame *frame;
     unsigned int depth;
 
     if (write_header) {

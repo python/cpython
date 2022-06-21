@@ -47,7 +47,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.10, compared to 3.9.
-
+Python 3.10 was released on October 4, 2021.
 For full details, see the :ref:`changelog <changelog>`.
 
 Summary -- Release highlights
@@ -1019,7 +1019,7 @@ You can specify keyword-only on a per-field basis:
 
 .. code-block:: python
 
-    from dataclasses import dataclass
+    from dataclasses import dataclass, field
 
     @dataclass
     class Birthday:
@@ -1159,7 +1159,7 @@ Reedy in :issue:`40468`.)  Move the indent space setting from the Font tab to
 the new Windows tab.  (Contributed by Mark Roseman and Terry Jan Reedy in
 :issue:`33962`.)
 
-These changes were backported to a 3.9 maintenance release.
+The changes above were backported to a 3.9 maintenance release.
 
 Add a Shell sidebar.  Move the primary prompt ('>>>') to the sidebar.
 Add secondary prompts ('...') to the sidebar.  Left click and optional
@@ -1180,6 +1180,11 @@ Highlight the new :ref:`soft keywords <soft-keywords>` :keyword:`match`,
 pattern-matching statements. However, this highlighting is not perfect
 and will be incorrect in some rare cases, including some ``_``-s in
 ``case`` patterns.  (Contributed by Tal Einat in :issue:`44010`.)
+
+New in 3.10 maintenance releases.
+
+Apply syntax highlighting to `.pyi` files. (Contributed by Alex
+Waygood and Terry Jan Reedy in :issue:`45447`.)
 
 importlib.metadata
 ------------------
@@ -1217,6 +1222,12 @@ now call :func:`inspect.get_annotations` to retrieve annotations. This means
 :func:`inspect.signature` and :func:`inspect.Signature.from_callable` can
 also now un-stringize stringized annotations.
 (Contributed by Larry Hastings in :issue:`43817`.)
+
+itertools
+---------
+
+Add :func:`itertools.pairwise()`.
+(Contributed by Raymond Hettinger in :issue:`38200`.)
 
 linecache
 ---------
@@ -1735,7 +1746,7 @@ Deprecated
 
   * ``threading.Thread.setDaemon`` => :attr:`threading.Thread.daemon`
 
-  (Contributed by Jelle Zijlstra in :issue:`21574`.)
+  (Contributed by Jelle Zijlstra in :gh:`87889`.)
 
 * :meth:`pathlib.Path.link_to` is deprecated and slated for removal in
   Python 3.12. Use :meth:`pathlib.Path.hardlink_to` instead.
@@ -2014,8 +2025,8 @@ Build Changes
 
 * The ``configure`` script now uses the ``pkg-config`` utility, if available,
   to detect the location of Tcl/Tk headers and libraries.  As before, those
-  locations can be explicitly specified with the :option:`--with-tcltk-includes`
-  and :option:`--with-tcltk-libs` configuration options.
+  locations can be explicitly specified with the ``--with-tcltk-includes``
+  and ``--with-tcltk-libs`` configuration options.
   (Contributed by Manolis Stamatogiannakis in :issue:`42603`.)
 
 * Add :option:`--with-openssl-rpath` option to ``configure`` script. The option

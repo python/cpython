@@ -42,16 +42,6 @@
 
 #endif /* _POSIX_THREADS */
 
-
-#ifdef Py_DEBUG
-static int thread_debug = 0;
-#define dprintf(args)   (void)((thread_debug & 1) && printf args)
-#define d2printf(args)  ((thread_debug & 8) && printf args)
-#else
-#define dprintf(args)
-#define d2printf(args)
-#endif
-
 static int initialized;
 
 static void PyThread__init_thread(void); /* Forward */
@@ -59,40 +49,10 @@ static void PyThread__init_thread(void); /* Forward */
 void
 PyThread_init_thread(void)
 {
-#ifdef Py_DEBUG
-    const char *p = Py_GETENV("PYTHONTHREADDEBUG");
-
-    if (p) {
-        if (*p)
-            thread_debug = atoi(p);
-        else
-            thread_debug = 1;
-    }
-#endif /* Py_DEBUG */
     if (initialized)
         return;
     initialized = 1;
-    dprintf(("PyThread_init_thread called\n"));
     PyThread__init_thread();
-}
-
-void
-_PyThread_debug_deprecation(void)
-{
-#ifdef Py_DEBUG
-    if (thread_debug) {
-        // Flush previous dprintf() logs
-        fflush(stdout);
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "The threading debug (PYTHONTHREADDEBUG environment "
-                         "variable) is deprecated and will be removed "
-                         "in Python 3.12",
-                         0))
-        {
-            _PyErr_WriteUnraisableMsg("at Python startup", NULL);
-        }
-    }
-#endif
 }
 
 #if defined(_POSIX_THREADS)

@@ -306,7 +306,7 @@ memory from the Python heap.
 
 .. note::
     There is no guarantee that the memory returned by these allocators can be
-    successfully casted to a Python object when intercepting the allocating
+    successfully cast to a Python object when intercepting the allocating
     functions in this domain by the methods described in
     the :ref:`Customize Memory Allocators <customize-memory-allocators>` section.
 
@@ -403,7 +403,7 @@ Customize Memory Allocators
 .. c:type:: PyMemAllocatorEx
 
    Structure used to describe a memory block allocator. The structure has
-   four fields:
+   the following fields:
 
    +----------------------------------------------------------+---------------------------------------+
    | Field                                                    | Meaning                               |

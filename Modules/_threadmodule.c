@@ -17,11 +17,6 @@
 // ThreadError is just an alias to PyExc_RuntimeError
 #define ThreadError PyExc_RuntimeError
 
-_Py_IDENTIFIER(__dict__);
-
-_Py_IDENTIFIER(stderr);
-_Py_IDENTIFIER(flush);
-
 
 // Forward declarations
 static struct PyModuleDef thread_module;
@@ -259,9 +254,9 @@ lock__at_fork_reinit(lockobject *self, PyObject *Py_UNUSED(args))
 
 
 static PyMethodDef lock_methods[] = {
-    {"acquire_lock", (PyCFunction)(void(*)(void))lock_PyThread_acquire_lock,
+    {"acquire_lock", _PyCFunction_CAST(lock_PyThread_acquire_lock),
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
-    {"acquire",      (PyCFunction)(void(*)(void))lock_PyThread_acquire_lock,
+    {"acquire",      _PyCFunction_CAST(lock_PyThread_acquire_lock),
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
     {"release_lock", (PyCFunction)lock_PyThread_release_lock,
      METH_NOARGS, release_doc},
@@ -271,7 +266,7 @@ static PyMethodDef lock_methods[] = {
      METH_NOARGS, locked_doc},
     {"locked",       (PyCFunction)lock_locked_lock,
      METH_NOARGS, locked_doc},
-    {"__enter__",    (PyCFunction)(void(*)(void))lock_PyThread_acquire_lock,
+    {"__enter__",    _PyCFunction_CAST(lock_PyThread_acquire_lock),
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
     {"__exit__",    (PyCFunction)lock_PyThread_release_lock,
      METH_VARARGS, release_doc},
@@ -553,7 +548,7 @@ rlock__at_fork_reinit(rlockobject *self, PyObject *Py_UNUSED(args))
 
 
 static PyMethodDef rlock_methods[] = {
-    {"acquire",      (PyCFunction)(void(*)(void))rlock_acquire,
+    {"acquire",      _PyCFunction_CAST(rlock_acquire),
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"release",      (PyCFunction)rlock_release,
      METH_NOARGS, rlock_release_doc},
@@ -563,7 +558,7 @@ static PyMethodDef rlock_methods[] = {
      METH_VARARGS, rlock_acquire_restore_doc},
     {"_release_save", (PyCFunction)rlock_release_save,
      METH_NOARGS, rlock_release_save_doc},
-    {"__enter__",    (PyCFunction)(void(*)(void))rlock_acquire,
+    {"__enter__",    _PyCFunction_CAST(rlock_acquire),
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"__exit__",    (PyCFunction)rlock_release,
      METH_VARARGS, rlock_release_doc},
@@ -791,7 +786,7 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         }
     }
 
-    PyObject *module = _PyType_GetModuleByDef(type, &thread_module);
+    PyObject *module = PyType_GetModuleByDef(type, &thread_module);
     thread_module_state *state = get_thread_state(module);
 
     localobject *self = (localobject *)type->tp_alloc(type, 0);
@@ -930,7 +925,7 @@ _ldict(localobject *self, thread_module_state *state)
 static int
 local_setattro(localobject *self, PyObject *name, PyObject *v)
 {
-    PyObject *module = _PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
+    PyObject *module = PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
     thread_module_state *state = get_thread_state(module);
 
     PyObject *ldict = _ldict(self, state);
@@ -938,12 +933,7 @@ local_setattro(localobject *self, PyObject *name, PyObject *v)
         return -1;
     }
 
-    PyObject *str_dict = _PyUnicode_FromId(&PyId___dict__);  // borrowed ref
-    if (str_dict == NULL) {
-        return -1;
-    }
-
-    int r = PyObject_RichCompareBool(name, str_dict, Py_EQ);
+    int r = PyObject_RichCompareBool(name, &_Py_ID(__dict__), Py_EQ);
     if (r == -1) {
         return -1;
     }
@@ -987,19 +977,14 @@ static PyType_Spec local_type_spec = {
 static PyObject *
 local_getattro(localobject *self, PyObject *name)
 {
-    PyObject *module = _PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
+    PyObject *module = PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
     thread_module_state *state = get_thread_state(module);
 
     PyObject *ldict = _ldict(self, state);
     if (ldict == NULL)
         return NULL;
 
-    PyObject *str_dict = _PyUnicode_FromId(&PyId___dict__);  // borrowed ref
-    if (str_dict == NULL) {
-        return NULL;
-    }
-
-    int r = PyObject_RichCompareBool(name, str_dict, Py_EQ);
+    int r = PyObject_RichCompareBool(name, &_Py_ID(__dict__), Py_EQ);
     if (r == 1) {
         return Py_NewRef(ldict);
     }
@@ -1413,7 +1398,6 @@ static int
 thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
                        PyObject *exc_traceback, PyObject *thread)
 {
-    _Py_IDENTIFIER(name);
     /* print(f"Exception in thread {thread.name}:", file=file) */
     if (PyFile_WriteString("Exception in thread ", file) < 0) {
         return -1;
@@ -1421,7 +1405,7 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
 
     PyObject *name = NULL;
     if (thread != Py_None) {
-        if (_PyObject_LookupAttrId(thread, &PyId_name, &name) < 0) {
+        if (_PyObject_LookupAttr(thread, &_Py_ID(name), &name) < 0) {
             return -1;
         }
     }
@@ -1459,7 +1443,7 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
     _PyErr_Display(file, exc_type, exc_value, exc_traceback);
 
     /* Call file.flush() */
-    PyObject *res = _PyObject_CallMethodIdNoArgs(file, &PyId_flush);
+    PyObject *res = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
     if (!res) {
         return -1;
     }
@@ -1514,7 +1498,8 @@ thread_excepthook(PyObject *module, PyObject *args)
     PyObject *exc_tb = PyStructSequence_GET_ITEM(args, 2);
     PyObject *thread = PyStructSequence_GET_ITEM(args, 3);
 
-    PyObject *file = _PySys_GetObjectId(&PyId_stderr);
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *file = _PySys_GetAttr(tstate, &_Py_ID(stderr));
     if (file == NULL || file == Py_None) {
         if (thread == Py_None) {
             /* do nothing if sys.stderr is None and thread is None */
@@ -1645,7 +1630,7 @@ thread_module_exec(PyObject *module)
     }
 
     // TIMEOUT_MAX
-    double timeout_max = (_PyTime_t)PY_TIMEOUT_MAX * 1e-6;
+    double timeout_max = (double)PY_TIMEOUT_MAX * 1e-6;
     double time_max = _PyTime_AsSecondsDouble(_PyTime_MAX);
     timeout_max = Py_MIN(timeout_max, time_max);
     // Round towards minus infinity

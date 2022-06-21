@@ -40,7 +40,7 @@ PyDoc_STRVAR(binascii_b2a_uu__doc__,
 "Uuencode line of data.");
 
 #define BINASCII_B2A_UU_METHODDEF    \
-    {"b2a_uu", (PyCFunction)(void(*)(void))binascii_b2a_uu, METH_FASTCALL|METH_KEYWORDS, binascii_b2a_uu__doc__},
+    {"b2a_uu", _PyCFunction_CAST(binascii_b2a_uu), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_uu__doc__},
 
 static PyObject *
 binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick);
@@ -97,7 +97,7 @@ PyDoc_STRVAR(binascii_a2b_base64__doc__,
 "    The same applies to excess data after padding (= / ==).");
 
 #define BINASCII_A2B_BASE64_METHODDEF    \
-    {"a2b_base64", (PyCFunction)(void(*)(void))binascii_a2b_base64, METH_FASTCALL|METH_KEYWORDS, binascii_a2b_base64__doc__},
+    {"a2b_base64", _PyCFunction_CAST(binascii_a2b_base64), METH_FASTCALL|METH_KEYWORDS, binascii_a2b_base64__doc__},
 
 static PyObject *
 binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode);
@@ -145,7 +145,7 @@ PyDoc_STRVAR(binascii_b2a_base64__doc__,
 "Base64-code line of data.");
 
 #define BINASCII_B2A_BASE64_METHODDEF    \
-    {"b2a_base64", (PyCFunction)(void(*)(void))binascii_b2a_base64, METH_FASTCALL|METH_KEYWORDS, binascii_b2a_base64__doc__},
+    {"b2a_base64", _PyCFunction_CAST(binascii_b2a_base64), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_base64__doc__},
 
 static PyObject *
 binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline);
@@ -198,7 +198,7 @@ PyDoc_STRVAR(binascii_crc_hqx__doc__,
 "Compute CRC-CCITT incrementally.");
 
 #define BINASCII_CRC_HQX_METHODDEF    \
-    {"crc_hqx", (PyCFunction)(void(*)(void))binascii_crc_hqx, METH_FASTCALL, binascii_crc_hqx__doc__},
+    {"crc_hqx", _PyCFunction_CAST(binascii_crc_hqx), METH_FASTCALL, binascii_crc_hqx__doc__},
 
 static PyObject *
 binascii_crc_hqx_impl(PyObject *module, Py_buffer *data, unsigned int crc);
@@ -242,7 +242,7 @@ PyDoc_STRVAR(binascii_crc32__doc__,
 "Compute CRC-32 incrementally.");
 
 #define BINASCII_CRC32_METHODDEF    \
-    {"crc32", (PyCFunction)(void(*)(void))binascii_crc32, METH_FASTCALL, binascii_crc32__doc__},
+    {"crc32", _PyCFunction_CAST(binascii_crc32), METH_FASTCALL, binascii_crc32__doc__},
 
 static unsigned int
 binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc);
@@ -312,7 +312,7 @@ PyDoc_STRVAR(binascii_b2a_hex__doc__,
 "b\'b9_01ef\'");
 
 #define BINASCII_B2A_HEX_METHODDEF    \
-    {"b2a_hex", (PyCFunction)(void(*)(void))binascii_b2a_hex, METH_FASTCALL|METH_KEYWORDS, binascii_b2a_hex__doc__},
+    {"b2a_hex", _PyCFunction_CAST(binascii_b2a_hex), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_hex__doc__},
 
 static PyObject *
 binascii_b2a_hex_impl(PyObject *module, Py_buffer *data, PyObject *sep,
@@ -382,7 +382,7 @@ PyDoc_STRVAR(binascii_hexlify__doc__,
 "available as \"b2a_hex()\".");
 
 #define BINASCII_HEXLIFY_METHODDEF    \
-    {"hexlify", (PyCFunction)(void(*)(void))binascii_hexlify, METH_FASTCALL|METH_KEYWORDS, binascii_hexlify__doc__},
+    {"hexlify", _PyCFunction_CAST(binascii_hexlify), METH_FASTCALL|METH_KEYWORDS, binascii_hexlify__doc__},
 
 static PyObject *
 binascii_hexlify_impl(PyObject *module, Py_buffer *data, PyObject *sep,
@@ -510,7 +510,7 @@ PyDoc_STRVAR(binascii_a2b_qp__doc__,
 "Decode a string of qp-encoded data.");
 
 #define BINASCII_A2B_QP_METHODDEF    \
-    {"a2b_qp", (PyCFunction)(void(*)(void))binascii_a2b_qp, METH_FASTCALL|METH_KEYWORDS, binascii_a2b_qp__doc__},
+    {"a2b_qp", _PyCFunction_CAST(binascii_a2b_qp), METH_FASTCALL|METH_KEYWORDS, binascii_a2b_qp__doc__},
 
 static PyObject *
 binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header);
@@ -562,7 +562,7 @@ PyDoc_STRVAR(binascii_b2a_qp__doc__,
 "are both encoded.  When quotetabs is set, space and tabs are encoded.");
 
 #define BINASCII_B2A_QP_METHODDEF    \
-    {"b2a_qp", (PyCFunction)(void(*)(void))binascii_b2a_qp, METH_FASTCALL|METH_KEYWORDS, binascii_b2a_qp__doc__},
+    {"b2a_qp", _PyCFunction_CAST(binascii_b2a_qp), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_qp__doc__},
 
 static PyObject *
 binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
@@ -628,4 +628,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=4162d08536697182 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ba9ed7b810b8762d input=a9049054013a1b77]*/

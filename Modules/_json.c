@@ -7,8 +7,10 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
+#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "structmember.h"         // PyMemberDef
 #include "pycore_accu.h"
 
@@ -1058,19 +1060,19 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
             return scanstring_unicode(pystr, idx + 1, s->strict, next_idx_ptr);
         case '{':
             /* object */
-            if (Py_EnterRecursiveCall(" while decoding a JSON object "
-                                      "from a unicode string"))
+            if (_Py_EnterRecursiveCall(" while decoding a JSON object "
+                                       "from a unicode string"))
                 return NULL;
             res = _parse_object_unicode(s, pystr, idx + 1, next_idx_ptr);
-            Py_LeaveRecursiveCall();
+            _Py_LeaveRecursiveCall();
             return res;
         case '[':
             /* array */
-            if (Py_EnterRecursiveCall(" while decoding a JSON array "
-                                      "from a unicode string"))
+            if (_Py_EnterRecursiveCall(" while decoding a JSON array "
+                                       "from a unicode string"))
                 return NULL;
             res = _parse_array_unicode(s, pystr, idx + 1, next_idx_ptr);
-            Py_LeaveRecursiveCall();
+            _Py_LeaveRecursiveCall();
             return res;
         case 'n':
             /* null */
@@ -1429,17 +1431,17 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
         return _steal_accumulate(acc, encoded);
     }
     else if (PyList_Check(obj) || PyTuple_Check(obj)) {
-        if (Py_EnterRecursiveCall(" while encoding a JSON object"))
+        if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
         rv = encoder_listencode_list(s, acc, obj, indent_level);
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCall();
         return rv;
     }
     else if (PyDict_Check(obj)) {
-        if (Py_EnterRecursiveCall(" while encoding a JSON object"))
+        if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
         rv = encoder_listencode_dict(s, acc, obj, indent_level);
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCall();
         return rv;
     }
     else {
@@ -1467,13 +1469,13 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
             return -1;
         }
 
-        if (Py_EnterRecursiveCall(" while encoding a JSON object")) {
+        if (_Py_EnterRecursiveCall(" while encoding a JSON object")) {
             Py_DECREF(newobj);
             Py_XDECREF(ident);
             return -1;
         }
         rv = encoder_listencode_obj(s, acc, newobj, indent_level);
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCall();
 
         Py_DECREF(newobj);
         if (rv) {

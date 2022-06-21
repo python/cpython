@@ -57,7 +57,7 @@ pysqlite_microprotocols_add(pysqlite_state *state, PyTypeObject *type,
 
     assert(type != NULL);
     assert(proto != NULL);
-    key = Py_BuildValue("(OO)", (PyObject*)type, proto);
+    key = PyTuple_Pack(2, (PyObject *)type, proto);
     if (!key) {
         return -1;
     }
@@ -74,8 +74,6 @@ PyObject *
 pysqlite_microprotocols_adapt(pysqlite_state *state, PyObject *obj,
                               PyObject *proto, PyObject *alt)
 {
-    _Py_IDENTIFIER(__adapt__);
-    _Py_IDENTIFIER(__conform__);
     PyObject *adapter, *key, *adapted;
 
     /* we don't check for exact type conformance as specified in PEP 246
@@ -83,7 +81,7 @@ pysqlite_microprotocols_adapt(pysqlite_state *state, PyObject *obj,
        way to get a quotable object to be its instance */
 
     /* look for an adapter in the registry */
-    key = Py_BuildValue("(OO)", (PyObject*)Py_TYPE(obj), proto);
+    key = PyTuple_Pack(2, (PyObject *)Py_TYPE(obj), proto);
     if (!key) {
         return NULL;
     }
@@ -100,7 +98,7 @@ pysqlite_microprotocols_adapt(pysqlite_state *state, PyObject *obj,
     }
 
     /* try to have the protocol adapt this object */
-    if (_PyObject_LookupAttrId(proto, &PyId___adapt__, &adapter) < 0) {
+    if (_PyObject_LookupAttr(proto, state->str___adapt__, &adapter) < 0) {
         return NULL;
     }
     if (adapter) {
@@ -119,7 +117,7 @@ pysqlite_microprotocols_adapt(pysqlite_state *state, PyObject *obj,
     }
 
     /* and finally try to have the object adapt itself */
-    if (_PyObject_LookupAttrId(obj, &PyId___conform__, &adapter) < 0) {
+    if (_PyObject_LookupAttr(obj, state->str___conform__, &adapter) < 0) {
         return NULL;
     }
     if (adapter) {

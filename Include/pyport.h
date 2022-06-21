@@ -14,6 +14,73 @@
 #endif
 
 
+// Macro to use C++ static_cast<>, reinterpret_cast<> and const_cast<>
+// in the Python C API.
+//
+// In C++, _Py_CAST(type, expr) converts a constant expression to a
+// non constant type using const_cast<type>. For example,
+// _Py_CAST(PyObject*, op) can convert a "const PyObject*" to
+// "PyObject*".
+//
+// The type argument must not be a constant type.
+#ifdef __cplusplus
+#include <cstddef>
+#  define _Py_STATIC_CAST(type, expr) static_cast<type>(expr)
+extern "C++" {
+    namespace {
+        template <typename type>
+        inline type _Py_CAST_impl(long int ptr) {
+            return reinterpret_cast<type>(ptr);
+        }
+        template <typename type>
+        inline type _Py_CAST_impl(int ptr) {
+            return reinterpret_cast<type>(ptr);
+        }
+#if __cplusplus >= 201103
+        template <typename type>
+        inline type _Py_CAST_impl(std::nullptr_t) {
+            return static_cast<type>(nullptr);
+        }
+#endif
+
+        template <typename type, typename expr_type>
+            inline type _Py_CAST_impl(expr_type *expr) {
+                return reinterpret_cast<type>(expr);
+            }
+
+        template <typename type, typename expr_type>
+            inline type _Py_CAST_impl(expr_type const *expr) {
+                return reinterpret_cast<type>(const_cast<expr_type *>(expr));
+            }
+
+        template <typename type, typename expr_type>
+            inline type _Py_CAST_impl(expr_type &expr) {
+                return static_cast<type>(expr);
+            }
+
+        template <typename type, typename expr_type>
+            inline type _Py_CAST_impl(expr_type const &expr) {
+                return static_cast<type>(const_cast<expr_type &>(expr));
+            }
+    }
+}
+#  define _Py_CAST(type, expr) _Py_CAST_impl<type>(expr)
+
+#else
+#  define _Py_STATIC_CAST(type, expr) ((type)(expr))
+#  define _Py_CAST(type, expr) ((type)(expr))
+#endif
+
+// Static inline functions should use _Py_NULL rather than using directly NULL
+// to prevent C++ compiler warnings. On C++11 and newer, _Py_NULL is defined as
+// nullptr.
+#if defined(__cplusplus) && __cplusplus >= 201103
+#  define _Py_NULL nullptr
+#else
+#  define _Py_NULL NULL
+#endif
+
+
 /* Defines to build Python and its standard library:
  *
  * - Py_BUILD_CORE: Build Python core. Give access to Python internals, but
@@ -104,16 +171,22 @@ typedef intptr_t        Py_intptr_t;
 /* Py_ssize_t is a signed integral type such that sizeof(Py_ssize_t) ==
  * sizeof(size_t).  C99 doesn't define such a thing directly (size_t is an
  * unsigned integral type).  See PEP 353 for details.
+ * PY_SSIZE_T_MAX is the largest positive value of type Py_ssize_t.
  */
 #ifdef HAVE_PY_SSIZE_T
 
 #elif HAVE_SSIZE_T
 typedef ssize_t         Py_ssize_t;
+#   define PY_SSIZE_T_MAX SSIZE_MAX
 #elif SIZEOF_VOID_P == SIZEOF_SIZE_T
 typedef Py_intptr_t     Py_ssize_t;
+#   define PY_SSIZE_T_MAX INTPTR_MAX
 #else
 #   error "Python needs a typedef for Py_ssize_t in pyport.h."
 #endif
+
+/* Smallest negative value of type Py_ssize_t. */
+#define PY_SSIZE_T_MIN (-PY_SSIZE_T_MAX-1)
 
 /* Py_hash_t is the same size as a pointer. */
 #define SIZEOF_PY_HASH_T SIZEOF_SIZE_T
@@ -128,37 +201,10 @@ typedef Py_ssize_t Py_ssize_clean_t;
 /* Largest possible value of size_t. */
 #define PY_SIZE_MAX SIZE_MAX
 
-/* Largest positive value of type Py_ssize_t. */
-#define PY_SSIZE_T_MAX ((Py_ssize_t)(((size_t)-1)>>1))
-/* Smallest negative value of type Py_ssize_t. */
-#define PY_SSIZE_T_MIN (-PY_SSIZE_T_MAX-1)
-
-/* Macro kept for backward compatibility: use "z" in new code.
+/* Macro kept for backward compatibility: use directly "z" in new code.
  *
- * PY_FORMAT_SIZE_T is a platform-specific modifier for use in a printf
- * format to convert an argument with the width of a size_t or Py_ssize_t.
- * C99 introduced "z" for this purpose, but old MSVCs had not supported it.
- * Since MSVC supports "z" since (at least) 2015, we can just use "z"
- * for new code.
- *
- * These "high level" Python format functions interpret "z" correctly on
- * all platforms (Python interprets the format string itself, and does whatever
- * the platform C requires to convert a size_t/Py_ssize_t argument):
- *
- *     PyBytes_FromFormat
- *     PyErr_Format
- *     PyBytes_FromFormatV
- *     PyUnicode_FromFormatV
- *
- * Lower-level uses require that you interpolate the correct format modifier
- * yourself (e.g., calling printf, fprintf, sprintf, PyOS_snprintf); for
- * example,
- *
- *     Py_ssize_t index;
- *     fprintf(stderr, "index %" PY_FORMAT_SIZE_T "d sucks\n", index);
- *
- * That will expand to %zd or to something else correct for a Py_ssize_t on
- * the platform.
+ * PY_FORMAT_SIZE_T is a modifier for use in a printf format to convert an
+ * argument with the width of a size_t or Py_ssize_t: "z" (C99).
  */
 #ifndef PY_FORMAT_SIZE_T
 #   define PY_FORMAT_SIZE_T "z"
@@ -170,23 +216,12 @@ typedef Py_ssize_t Py_ssize_clean_t;
  * Py_LOCAL_INLINE does the same thing, and also explicitly requests inlining,
  * for platforms that support that.
  *
- * If PY_LOCAL_AGGRESSIVE is defined before python.h is included, more
- * "aggressive" inlining/optimization is enabled for the entire module.  This
- * may lead to code bloat, and may slow things down for those reasons.  It may
- * also lead to errors, if the code relies on pointer aliasing.  Use with
- * care.
- *
  * NOTE: You can only use this for functions that are entirely local to a
  * module; functions that are exported via method tables, callbacks, etc,
  * should keep using static.
  */
 
 #if defined(_MSC_VER)
-#  if defined(PY_LOCAL_AGGRESSIVE)
-   /* enable more aggressive optimization for MSVC */
-   /* active in both release and debug builds - see bpo-43271 */
-#  pragma optimize("gt", on)
-#endif
    /* ignore warnings if the compiler decides not to inline a function */
 #  pragma warning(disable: 4710)
    /* fastest possible local call under MSVC */
@@ -306,65 +341,11 @@ extern "C" {
  *    VALUE may be evaluated more than once.
  */
 #ifdef Py_DEBUG
-#define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) \
-    (assert((WIDE)(NARROW)(VALUE) == (VALUE)), (NARROW)(VALUE))
+#  define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) \
+       (assert(_Py_STATIC_CAST(WIDE, _Py_STATIC_CAST(NARROW, (VALUE))) == (VALUE)), \
+        _Py_STATIC_CAST(NARROW, (VALUE)))
 #else
-#define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
-#endif
-
-/*  The functions _Py_dg_strtod and _Py_dg_dtoa in Python/dtoa.c (which are
- *  required to support the short float repr introduced in Python 3.1) require
- *  that the floating-point unit that's being used for arithmetic operations
- *  on C doubles is set to use 53-bit precision.  It also requires that the
- *  FPU rounding mode is round-half-to-even, but that's less often an issue.
- *
- *  If your FPU isn't already set to 53-bit precision/round-half-to-even, and
- *  you want to make use of _Py_dg_strtod and _Py_dg_dtoa, then you should
- *
- *     #define HAVE_PY_SET_53BIT_PRECISION 1
- *
- * The macros are designed to be used within a single C function: see
- * Python/pystrtod.c for an example of their use.
- */
-
-// HAVE_PY_SET_53BIT_PRECISION macro must be kept in sync with pycore_pymath.h
-#ifdef HAVE_GCC_ASM_FOR_X87
-   // Get and set x87 control word for gcc/x86
-#  define HAVE_PY_SET_53BIT_PRECISION 1
-#endif
-#if defined(_MSC_VER) && !defined(_WIN64) && !defined(_M_ARM)
-   // Get and set x87 control word for VisualStudio/x86.
-   // x87 not supported in 64-bit or ARM.
-#  define HAVE_PY_SET_53BIT_PRECISION 1
-#endif
-#ifdef HAVE_GCC_ASM_FOR_MC68881
-#  define HAVE_PY_SET_53BIT_PRECISION 1
-#endif
-
-
-/* If we can't guarantee 53-bit precision, don't use the code
-   in Python/dtoa.c, but fall back to standard code.  This
-   means that repr of a float will be long (17 sig digits).
-
-   Realistically, there are two things that could go wrong:
-
-   (1) doubles aren't IEEE 754 doubles, or
-   (2) we're on x86 with the rounding precision set to 64-bits
-       (extended precision), and we don't know how to change
-       the rounding precision.
- */
-
-#if !defined(DOUBLE_IS_LITTLE_ENDIAN_IEEE754) && \
-    !defined(DOUBLE_IS_BIG_ENDIAN_IEEE754) && \
-    !defined(DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754)
-#  define PY_NO_SHORT_FLOAT_REPR
-#endif
-
-/* double rounding is symptomatic of use of extended precision on x86.  If
-   we're seeing double rounding, and we don't have any mechanism available for
-   changing the FPU rounding precision, then don't use Python/dtoa.c. */
-#if defined(X87_DOUBLE_ROUNDING) && !defined(HAVE_PY_SET_53BIT_PRECISION)
-#  define PY_NO_SHORT_FLOAT_REPR
+#  define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) _Py_STATIC_CAST(NARROW, (VALUE))
 #endif
 
 

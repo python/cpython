@@ -45,12 +45,11 @@ def _wait_for_interp_to_run(interp, timeout=None):
     # run subinterpreter eariler than the main thread in multiprocess.
     if timeout is None:
         timeout = support.SHORT_TIMEOUT
-    start_time = time.monotonic()
-    deadline = start_time + timeout
-    while not interpreters.is_running(interp):
-        if time.monotonic() > deadline:
-            raise RuntimeError('interp is not running')
-        time.sleep(0.010)
+    for _ in support.sleeping_retry(timeout, error=False):
+        if interpreters.is_running(interp):
+            break
+    else:
+        raise RuntimeError('interp is not running')
 
 
 @contextlib.contextmanager
@@ -818,7 +817,7 @@ class RunStringTests(TestBase):
 
         self.assertEqual(out, 'it worked!')
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @support.requires_fork()
     def test_fork(self):
         import tempfile
         with tempfile.NamedTemporaryFile('w+', encoding="utf-8") as file:
