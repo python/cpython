@@ -1770,9 +1770,7 @@ def patch(test_instance, object_to_patch, attr_name, new_value):
 
 @contextlib.contextmanager
 def patch_list(orig):
-    """
-    Like unittest.mock.patch.dict, but for lists.
-    """
+    """Like unittest.mock.patch.dict, but for lists."""
     try:
         saved = orig[:]
         yield
