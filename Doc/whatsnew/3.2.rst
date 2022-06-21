@@ -2593,7 +2593,7 @@ Changes to Python's build process and to the C API include:
   longer used and it had never been documented (:issue:`8837`).
 
 There were a number of other small changes to the C-API.  See the
-Misc/NEWS <https://github.com/python/cpython/blob/v3.2.6/Misc/NEWS>`_
+`Misc/NEWS <https://github.com/python/cpython/blob/v3.2.6/Misc/NEWS>`_
 file for a complete list.
 
 Also, there were a number of updates to the Mac OS X build, see
