@@ -2117,6 +2117,9 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr)
     _Py_CODEUNIT next = instr[1+INLINE_CACHE_ENTRIES_FOR_ITER];
     int next_opcode = _PyOpcode_Deopt[_Py_OPCODE(next)];
     int next_oparg = _Py_OPARG(next);
+    _Py_CODEUNIT nextnext = instr[1 + INLINE_CACHE_ENTRIES_FOR_ITER +
+                                  1 + INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE];
+    int nextnext_opcode = _PyOpcode_Deopt[_Py_OPCODE(nextnext)];
     if (tp == &PyListIter_Type) {
         _Py_SET_OPCODE(*instr, FOR_ITER_LIST);
         goto success;
@@ -2132,6 +2135,12 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr)
     else if (tp == &PyDictIterItem_Type && next_opcode == UNPACK_SEQUENCE
                                         && next_oparg == 2) {
         _Py_SET_OPCODE(*instr, FOR_ITER_DICT_ITEMS);
+        goto success;
+    }
+    else if (tp == &PyEnum_Type &&
+             next_opcode == UNPACK_SEQUENCE && next_oparg == 2 &&
+             nextnext_opcode == STORE_FAST) {
+        _Py_SET_OPCODE(*instr, FOR_ITER_ENUMERATE);
         goto success;
     }
     else {

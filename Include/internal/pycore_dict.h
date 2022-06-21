@@ -192,7 +192,7 @@ typedef struct {
     Py_ssize_t len;
 } _PyDictIterObject;
 
-extern int _PyDictItemsIter_GetNext(_PyDictIterObject *, PyObject **);
+int _PyDictItemsIter_GetNext(_PyDictIterObject *, PyObject **);
 
 #ifdef __cplusplus
 }

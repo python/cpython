@@ -4,6 +4,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_enumerate.h"     // _PyEnumObject
 
 #include "clinic/enumobject.c.h"
 
@@ -12,15 +13,6 @@ class enumerate "enumobject *" "&PyEnum_Type"
 class reversed "reversedobject *" "&PyReversed_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=d2dfdf1a88c88975]*/
-
-typedef struct {
-    PyObject_HEAD
-    Py_ssize_t en_index;           /* current index of enumeration */
-    PyObject* en_sit;              /* secondary iterator of enumeration */
-    PyObject* en_result;           /* result tuple  */
-    PyObject* en_longindex;        /* index for sequences >= PY_SSIZE_T_MAX */
-    PyObject* one;                 /* borrowed reference */
-} enumobject;
 
 
 /*[clinic input]
@@ -44,9 +36,9 @@ static PyObject *
 enum_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *start)
 /*[clinic end generated code: output=e95e6e439f812c10 input=782e4911efcb8acf]*/
 {
-    enumobject *en;
+    _PyEnumObject *en;
 
-    en = (enumobject *)type->tp_alloc(type, 0);
+    en = (_PyEnumObject *)type->tp_alloc(type, 0);
     if (en == NULL)
         return NULL;
     if (start != NULL) {
@@ -149,7 +141,7 @@ enumerate_vectorcall(PyObject *type, PyObject *const *args,
 }
 
 static void
-enum_dealloc(enumobject *en)
+enum_dealloc(_PyEnumObject *en)
 {
     PyObject_GC_UnTrack(en);
     Py_XDECREF(en->en_sit);
@@ -159,7 +151,7 @@ enum_dealloc(enumobject *en)
 }
 
 static int
-enum_traverse(enumobject *en, visitproc visit, void *arg)
+enum_traverse(_PyEnumObject *en, visitproc visit, void *arg)
 {
     Py_VISIT(en->en_sit);
     Py_VISIT(en->en_result);
@@ -168,7 +160,7 @@ enum_traverse(enumobject *en, visitproc visit, void *arg)
 }
 
 static PyObject *
-enum_next_long(enumobject *en, PyObject* next_item)
+enum_next_long(_PyEnumObject *en, PyObject* next_item)
 {
     PyObject *result = en->en_result;
     PyObject *next_index;
@@ -218,8 +210,34 @@ enum_next_long(enumobject *en, PyObject* next_item)
     return result;
 }
 
+int
+_PyEnum_GetNext(_PyEnumObject *en, PyObject **stack, PyObject **index_target)
+{
+    PyObject *it = en->en_sit;
+    stack[0] = (*Py_TYPE(it)->tp_iternext)(it);
+    if (stack[0] == NULL) {
+        return -1;
+    }
+    if (en->en_index == PY_SSIZE_T_MAX) {
+        PyObject *pair = enum_next_long(en, stack[0]);
+        if (pair == NULL) {
+            Py_DECREF(stack[0]);
+            return -1;
+        }
+        *index_target = PyTuple_GET_ITEM(pair, 0);
+        Py_DECREF(pair);
+        return 0;
+    }
+    if (_PyLong_AssignValue(index_target, en->en_index) < 0) {
+        Py_DECREF(stack[0]);
+        return -1;
+    }
+    en->en_index++;
+    return 0;
+}
+
 static PyObject *
-enum_next(enumobject *en)
+enum_next(_PyEnumObject *en)
 {
     PyObject *next_index;
     PyObject *next_item;
@@ -269,7 +287,7 @@ enum_next(enumobject *en)
 }
 
 static PyObject *
-enum_reduce(enumobject *en, PyObject *Py_UNUSED(ignored))
+enum_reduce(_PyEnumObject *en, PyObject *Py_UNUSED(ignored))
 {
     if (en->en_longindex != NULL)
         return Py_BuildValue("O(OO)", Py_TYPE(en), en->en_sit, en->en_longindex);
@@ -289,7 +307,7 @@ static PyMethodDef enum_methods[] = {
 PyTypeObject PyEnum_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "enumerate",                    /* tp_name */
-    sizeof(enumobject),             /* tp_basicsize */
+    sizeof(_PyEnumObject),          /* tp_basicsize */
     0,                              /* tp_itemsize */
     /* methods */
     (destructor)enum_dealloc,       /* tp_dealloc */

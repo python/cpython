@@ -26,6 +26,7 @@
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
+#include "pycore_enumerate.h"
 
 #include "pycore_dict.h"
 #include "dictobject.h"
@@ -4435,6 +4436,7 @@ handle_eval_breaker:
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
                 DISPATCH();
             }
+        iterator_exhausted:
             if (_PyErr_Occurred(tstate)) {
                 if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                     goto error;
@@ -4533,7 +4535,26 @@ handle_eval_breaker:
         }
 
         TARGET(FOR_ITER_ENUMERATE) {
-            Py_UNREACHABLE();
+            // FOR_ITER + UNPACK_SEQUENCE(2) + STORE_FAST
+            assert(cframe.use_tracing == 0);
+            _PyEnumObject *it = (_PyEnumObject *)TOP();
+            DEOPT_IF(Py_TYPE(it) != &PyEnum_Type, FOR_ITER);
+            _Py_CODEUNIT next = next_instr[INLINE_CACHE_ENTRIES_FOR_ITER];
+            assert(_PyOpcode_Deopt[_Py_OPCODE(next)] == UNPACK_SEQUENCE);
+            assert(_Py_OPARG(next) == 2);
+            _Py_CODEUNIT nextnext =
+                next_instr[INLINE_CACHE_ENTRIES_FOR_ITER +
+                           1 + INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE];
+            assert(_PyOpcode_Deopt[_Py_OPCODE(nextnext)] == STORE_FAST);
+            PyObject **target = &GETLOCAL(_Py_OPARG(nextnext));
+            int err = _PyEnum_GetNext(it, stack_pointer, target);
+            if (err < 0) {
+                goto iterator_exhausted;
+            }
+            STACK_GROW(1);
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + 1 +
+                   INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE + 1);
+            DISPATCH();
         }
 
         TARGET(FOR_ITER_RANGE) {
