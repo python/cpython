@@ -111,7 +111,6 @@ OMIT_MODULE_FILES = {
 
 # regression test sub directories
 OMIT_SUBDIRS = (
-    "ctypes/test/",
     "tkinter/test/",
     "unittest/test/",
 )

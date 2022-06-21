@@ -1,6 +1,6 @@
 import unittest
 import ctypes
-from ctypes.test import need_symbol
+from test.test_ctypes import need_symbol
 
 import _ctypes_test
 
