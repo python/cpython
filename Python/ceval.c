@@ -2248,6 +2248,30 @@ handle_eval_breaker:
             NOTRACE_DISPATCH();
         }
 
+        TARGET(BINARY_SUBSCR_UNICODE_INT) {
+            assert(cframe.use_tracing == 0);
+            PyObject *sub = TOP();
+            PyObject *unicode = SECOND();
+            DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
+            DEOPT_IF(!PyUnicode_CheckExact(unicode), BINARY_SUBSCR);
+
+            // Deopt unless 0 <= sub < PyUnicode_GetLength(unicode)
+            Py_ssize_t signed_magnitude = Py_SIZE(sub);
+            DEOPT_IF(((size_t)signed_magnitude) > 1, BINARY_SUBSCR);
+            assert(((PyLongObject *)_PyLong_GetZero())->ob_digit[0] == 0);
+            Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
+            DEOPT_IF(index >= PyUnicode_GetLength(unicode), BINARY_SUBSCR);
+            STAT_INC(BINARY_SUBSCR, hit);
+            PyObject *res = _PyUnicode_GetItem(unicode, index);
+            assert(res != NULL);
+            STACK_SHRINK(1);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            SET_TOP(res);
+            Py_DECREF(unicode);
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            NOTRACE_DISPATCH();
+        }
+
         TARGET(BINARY_SUBSCR_DICT) {
             assert(cframe.use_tracing == 0);
             PyObject *dict = SECOND();

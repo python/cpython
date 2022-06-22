@@ -1239,10 +1239,21 @@ _Py_Specialize_BinarySubscr(
             PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_TUPLE_SLICE : SPEC_FAIL_OTHER);
         goto fail;
     }
+    if (container_type == &PyUnicode_Type) {
+        if (PyLong_CheckExact(sub)) {
+            _Py_SET_OPCODE(*instr, BINARY_SUBSCR_UNICODE_INT);
+            goto success;
+        }
+        SPECIALIZATION_FAIL(BINARY_SUBSCR,
+            PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_UNICODE_SLICE : SPEC_FAIL_OTHER);
+        goto fail;
+    }
+
     if (container_type == &PyDict_Type) {
         _Py_SET_OPCODE(*instr, BINARY_SUBSCR_DICT);
         goto success;
     }
+
     PyTypeObject *cls = Py_TYPE(container);
     PyObject *descriptor = _PyType_Lookup(cls, &_Py_ID(__getitem__));
     if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {

@@ -11030,13 +11030,17 @@ unicode_find(PyObject *self, PyObject *args)
     return PyLong_FromSsize_t(result);
 }
 
+PyObject *_PyUnicode_GetItem(PyObject *unicode, Py_ssize_t index)
+{
+    const void *data = PyUnicode_DATA(unicode);
+    int kind = PyUnicode_KIND(unicode);
+    Py_UCS4 ch = PyUnicode_READ(kind, data, index);
+    return unicode_char(ch);
+}
+
 static PyObject *
 unicode_getitem(PyObject *self, Py_ssize_t index)
 {
-    const void *data;
-    int kind;
-    Py_UCS4 ch;
-
     if (!PyUnicode_Check(self)) {
         PyErr_BadArgument();
         return NULL;
@@ -11045,10 +11049,7 @@ unicode_getitem(PyObject *self, Py_ssize_t index)
         PyErr_SetString(PyExc_IndexError, "string index out of range");
         return NULL;
     }
-    kind = PyUnicode_KIND(self);
-    data = PyUnicode_DATA(self);
-    ch = PyUnicode_READ(kind, data, index);
-    return unicode_char(ch);
+    return _PyUnicode_GetItem(self, index);
 }
 
 /* Believe it or not, this produces the same value for ASCII strings
