@@ -1241,12 +1241,18 @@ _Py_Specialize_BinarySubscr(
     }
     if (container_type == &PyUnicode_Type) {
         if (PyLong_CheckExact(sub)) {
-            _Py_SET_OPCODE(*instr, BINARY_SUBSCR_UNICODE_INT);
-            goto success;
+            if (PyUnicode_IS_ASCII(container)) {
+                _Py_SET_OPCODE(*instr, BINARY_SUBSCR_ASCII_INT);
+                goto success;
+            }
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_NON_ASCII_INT);
+            goto fail;
         }
-        SPECIALIZATION_FAIL(BINARY_SUBSCR,
-            PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_UNICODE_SLICE : SPEC_FAIL_OTHER);
-        goto fail;
+        else {
+            SPECIALIZATION_FAIL(BINARY_SUBSCR,
+                PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_UNICODE_SLICE : SPEC_FAIL_OTHER);
+            goto fail;
+        }
     }
 
     if (container_type == &PyDict_Type) {

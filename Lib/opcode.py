@@ -250,7 +250,7 @@ _specializations = {
         "BINARY_SUBSCR_GETITEM",
         "BINARY_SUBSCR_LIST_INT",
         "BINARY_SUBSCR_TUPLE_INT",
-        "BINARY_SUBSCR_UNICODE_INT",
+        "BINARY_SUBSCR_ASCII_INT",
     ],
     "CALL": [
         "CALL_ADAPTIVE",

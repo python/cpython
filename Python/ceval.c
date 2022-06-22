@@ -16,6 +16,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_global_objects.h" // _Py_SINGLETON
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_opcode.h"        // EXTRA_CASES
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
@@ -2248,21 +2249,25 @@ handle_eval_breaker:
             NOTRACE_DISPATCH();
         }
 
-        TARGET(BINARY_SUBSCR_UNICODE_INT) {
+        TARGET(BINARY_SUBSCR_ASCII_INT) {
             assert(cframe.use_tracing == 0);
             PyObject *sub = TOP();
             PyObject *unicode = SECOND();
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
             DEOPT_IF(!PyUnicode_CheckExact(unicode), BINARY_SUBSCR);
+            DEOPT_IF(!PyUnicode_IS_ASCII(unicode), BINARY_SUBSCR);
 
-            // Deopt unless 0 <= sub < PyUnicode_GetLength(unicode)
+            // Deopt unless 0 <= sub < ascii->length
+            PyASCIIObject *ascii = _PyASCIIObject_CAST(unicode);
             Py_ssize_t signed_magnitude = Py_SIZE(sub);
             DEOPT_IF(((size_t)signed_magnitude) > 1, BINARY_SUBSCR);
             assert(((PyLongObject *)_PyLong_GetZero())->ob_digit[0] == 0);
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
-            DEOPT_IF(index >= PyUnicode_GetLength(unicode), BINARY_SUBSCR);
+            DEOPT_IF(index >= ascii->length, BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
-            PyObject *res = _PyUnicode_GetItem(unicode, index);
+            Py_UCS4 ch = PyUnicode_1BYTE_DATA(ascii)[index];
+            PyObject *res = (PyObject*)&_Py_SINGLETON(strings).ascii[ch];
+            Py_INCREF(res);
             assert(res != NULL);
             STACK_SHRINK(1);
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);

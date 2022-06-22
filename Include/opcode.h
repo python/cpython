@@ -134,7 +134,7 @@ extern "C" {
 #define BINARY_SUBSCR_GETITEM                   19
 #define BINARY_SUBSCR_LIST_INT                  20
 #define BINARY_SUBSCR_TUPLE_INT                 21
-#define BINARY_SUBSCR_UNICODE_INT               22
+#define BINARY_SUBSCR_ASCII_INT                 22
 #define CALL_ADAPTIVE                           23
 #define CALL_PY_EXACT_ARGS                      24
 #define CALL_PY_WITH_DEFAULTS                   28

@@ -55,7 +55,6 @@ struct _Py_unicode_state {
 
 extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
 
-PyObject *_PyUnicode_GetItem(PyObject *unicode, Py_ssize_t index);
 
 #ifdef __cplusplus
 }
