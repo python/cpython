@@ -5,7 +5,7 @@
    :synopsis: Operations on pathnames.
 
 **Source code:** :source:`Lib/posixpath.py` (for POSIX) and
-:source:`Lib/ntpath.py` (for Windows NT).
+:source:`Lib/ntpath.py` (for Windows).
 
 .. index:: single: path; operations
 
@@ -469,7 +469,7 @@ the :mod:`glob` module.)
       ("c:", "/dir")
 
    If the path contains a UNC path, drive will contain the host name
-   and share, up to but not including the fourth separator::
+   and share::
 
       >>> splitdrive("//host/computer/dir")
       ("//host/computer", "/dir")

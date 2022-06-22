@@ -36,9 +36,6 @@ _testcapi = import_helper.import_module('_testcapi')
 
 import _testinternalcapi
 
-# Were we compiled --with-pydebug or with #define Py_DEBUG?
-Py_DEBUG = hasattr(sys, 'gettotalrefcount')
-
 
 def decode_stderr(err):
     return err.decode('utf-8', 'replace').replace('\r', '')
@@ -73,16 +70,17 @@ class CAPITest(unittest.TestCase):
                                   'import _testcapi;'
                                   '_testcapi.crash_no_current_thread()'],
                                  stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
+                                 stderr=subprocess.PIPE,
+                                 text=True)
         (out, err) = p.communicate()
-        self.assertEqual(out, b'')
+        self.assertEqual(out, '')
         # This used to cause an infinite loop.
-        self.assertTrue(err.rstrip().startswith(
-                         b'Fatal Python error: '
-                         b'PyThreadState_Get: '
-                         b'the function must be called with the GIL held, '
-                         b'but the GIL is released '
-                         b'(the current Python thread state is NULL)'),
+        msg = ("Fatal Python error: PyThreadState_Get: "
+               "the function must be called with the GIL held, "
+               "after Python initialization and before Python finalization, "
+               "but the GIL is released "
+               "(the current Python thread state is NULL)")
+        self.assertTrue(err.rstrip().startswith(msg),
                         err)
 
     def test_memoryview_from_NULL_pointer(self):
@@ -140,7 +138,7 @@ class CAPITest(unittest.TestCase):
             def __len__(self):
                 return 1
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
-                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22)
+                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)
         # Issue #15736: overflow in _PySequence_BytesToCharpArray()
         class Z(object):
             def __len__(self):
@@ -148,7 +146,7 @@ class CAPITest(unittest.TestCase):
             def __getitem__(self, i):
                 return b'x'
         self.assertRaises(MemoryError, _posixsubprocess.fork_exec,
-                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22)
+                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)
 
     @unittest.skipUnless(_posixsubprocess, '_posixsubprocess required for this test.')
     def test_subprocess_fork_exec(self):
@@ -158,7 +156,7 @@ class CAPITest(unittest.TestCase):
 
         # Issue #15738: crash in subprocess_fork_exec()
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
-                          Z(),[b'1'],3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22)
+                          Z(),[b'1'],3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
@@ -230,7 +228,7 @@ class CAPITest(unittest.TestCase):
     def test_return_null_without_error(self):
         # Issue #23571: A function must not return NULL without setting an
         # error
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             code = textwrap.dedent("""
                 import _testcapi
                 from test import support
@@ -258,7 +256,7 @@ class CAPITest(unittest.TestCase):
 
     def test_return_result_with_error(self):
         # Issue #23571: A function must not return a result with an error set
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             code = textwrap.dedent("""
                 import _testcapi
                 from test import support
@@ -516,7 +514,7 @@ class CAPITest(unittest.TestCase):
         del subclass_instance
 
         # Test that setting __class__ modified the reference counts of the types
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             # gh-89373: In debug mode, _Py_Dealloc() keeps a strong reference
             # to the type while calling tp_dealloc()
             self.assertEqual(type_refcnt, B.refcnt_in_del)
@@ -586,7 +584,7 @@ class CAPITest(unittest.TestCase):
         del subclass_instance
 
         # Test that setting __class__ modified the reference counts of the types
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             # gh-89373: In debug mode, _Py_Dealloc() keeps a strong reference
             # to the type while calling tp_dealloc()
             self.assertEqual(type_refcnt, _testcapi.HeapCTypeSubclassWithFinalizer.refcnt_in_del)
@@ -607,6 +605,25 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(obj.pvalue, 12)
         del obj.value
         self.assertEqual(obj.pvalue, 0)
+
+    def test_heaptype_with_custom_metaclass(self):
+        self.assertTrue(issubclass(_testcapi.HeapCTypeMetaclass, type))
+        self.assertTrue(issubclass(_testcapi.HeapCTypeMetaclassCustomNew, type))
+
+        t = _testcapi.pytype_fromspec_meta(_testcapi.HeapCTypeMetaclass)
+        self.assertIsInstance(t, type)
+        self.assertEqual(t.__name__, "HeapCTypeViaMetaclass")
+        self.assertIs(type(t), _testcapi.HeapCTypeMetaclass)
+
+        msg = "Metaclasses with custom tp_new are not supported."
+        with self.assertRaisesRegex(TypeError, msg):
+            t = _testcapi.pytype_fromspec_meta(_testcapi.HeapCTypeMetaclassCustomNew)
+
+    def test_pytype_fromspec_with_repeated_slots(self):
+        for variant in range(2):
+            with self.subTest(variant=variant):
+                with self.assertRaises(SystemError):
+                    _testcapi.create_type_from_repeated_slots(variant)
 
     def test_pynumber_tobase(self):
         from _testcapi import pynumber_tobase
@@ -788,6 +805,7 @@ class TestPendingCalls(unittest.TestCase):
 
 class SubinterpreterTest(unittest.TestCase):
 
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_subinterps(self):
         import builtins
         r, w = os.pipe()
@@ -803,6 +821,7 @@ class SubinterpreterTest(unittest.TestCase):
             self.assertNotEqual(pickle.load(f), id(sys.modules))
             self.assertNotEqual(pickle.load(f), id(builtins))
 
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_subinterps_recent_language_features(self):
         r, w = os.pipe()
         code = """if 1:
@@ -1027,7 +1046,7 @@ class PyMemPymallocDebugTests(PyMemDebugTests):
     PYTHONMALLOC = 'pymalloc_debug'
 
 
-@unittest.skipUnless(Py_DEBUG, 'need Py_DEBUG')
+@unittest.skipUnless(support.Py_DEBUG, 'need Py_DEBUG')
 class PyMemDefaultTests(PyMemDebugTests):
     # test default allocator of Python compiled in debug mode
     PYTHONMALLOC = ''
@@ -1140,6 +1159,34 @@ class Test_FrameAPI(unittest.TestCase):
         gen = self.getgenframe()
         frame = next(gen)
         self.assertIs(gen, _testcapi.frame_getgenerator(frame))
+
+
+SUFFICIENT_TO_DEOPT_AND_SPECIALIZE = 100
+
+class Test_Pep523API(unittest.TestCase):
+
+    def do_test(self, func):
+        calls = []
+        start = SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
+        count = start + SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
+        for i in range(count):
+            if i == start:
+                _testinternalcapi.set_eval_frame_record(calls)
+            func()
+        _testinternalcapi.set_eval_frame_default()
+        self.assertEqual(len(calls), SUFFICIENT_TO_DEOPT_AND_SPECIALIZE)
+        for name in calls:
+            self.assertEqual(name, func.__name__)
+
+    def test_pep523_with_specialization_simple(self):
+        def func1():
+            pass
+        self.do_test(func1)
+
+    def test_pep523_with_specialization_with_default(self):
+        def func2(x=None):
+            pass
+        self.do_test(func2)
 
 
 if __name__ == "__main__":

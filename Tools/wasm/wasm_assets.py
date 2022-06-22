@@ -13,18 +13,13 @@ import argparse
 import pathlib
 import shutil
 import sys
+import sysconfig
 import zipfile
 
 # source directory
 SRCDIR = pathlib.Path(__file__).parent.parent.parent.absolute()
 SRCDIR_LIB = SRCDIR / "Lib"
 
-# sysconfig data relative to build dir.
-SYSCONFIGDATA = pathlib.PurePath(
-    "build",
-    f"lib.emscripten-wasm32-{sys.version_info.major}.{sys.version_info.minor}",
-    "_sysconfigdata__emscripten_wasm32-emscripten.py",
-)
 
 # Library directory relative to $(prefix).
 WASM_LIB = pathlib.PurePath("lib")
@@ -116,10 +111,24 @@ OMIT_MODULE_FILES = {
 
 # regression test sub directories
 OMIT_SUBDIRS = (
-    "ctypes/test/",
     "tkinter/test/",
-    "unittest/test/",
 )
+
+def get_builddir(args: argparse.Namespace) -> pathlib.Path:
+    """Get builddir path from pybuilddir.txt
+    """
+    with open("pybuilddir.txt", encoding="utf-8") as f:
+        builddir = f.read()
+    return pathlib.Path(builddir)
+
+
+def get_sysconfigdata(args: argparse.Namespace) -> pathlib.Path:
+    """Get path to sysconfigdata relative to build root
+    """
+    data_name = sysconfig._get_sysconfigdata_name()
+    assert "emscripten_wasm32" in data_name
+    filename = data_name + ".py"
+    return args.builddir / filename
 
 
 def create_stdlib_zip(
@@ -150,7 +159,7 @@ def detect_extension_modules(args: argparse.Namespace):
     modules = {}
 
     # disabled by Modules/Setup.local ?
-    with open(args.builddir / "Makefile") as f:
+    with open(args.buildroot / "Makefile") as f:
         for line in f:
             if line.startswith("MODDISABLED_NAMES="):
                 disabled = line.split("=", 1)[1].strip().split()
@@ -183,8 +192,8 @@ def path(val: str) -> pathlib.Path:
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--builddir",
-    help="absolute build directory",
+    "--buildroot",
+    help="absolute path to build root",
     default=pathlib.Path(".").absolute(),
     type=path,
 )
@@ -202,7 +211,7 @@ def main():
     relative_prefix = args.prefix.relative_to(pathlib.Path("/"))
     args.srcdir = SRCDIR
     args.srcdir_lib = SRCDIR_LIB
-    args.wasm_root = args.builddir / relative_prefix
+    args.wasm_root = args.buildroot / relative_prefix
     args.wasm_stdlib_zip = args.wasm_root / WASM_STDLIB_ZIP
     args.wasm_stdlib = args.wasm_root / WASM_STDLIB
     args.wasm_dynload = args.wasm_root / WASM_DYNLOAD
@@ -212,9 +221,10 @@ def main():
     args.compression = zipfile.ZIP_DEFLATED
     args.compresslevel = 9
 
-    args.sysconfig_data = args.builddir / SYSCONFIGDATA
+    args.builddir = get_builddir(args)
+    args.sysconfig_data = get_sysconfigdata(args)
     if not args.sysconfig_data.is_file():
-        raise ValueError(f"sysconfigdata file {SYSCONFIGDATA} missing.")
+        raise ValueError(f"sysconfigdata file {args.sysconfig_data} missing.")
 
     extmods = detect_extension_modules(args)
     omit_files = list(OMIT_FILES)

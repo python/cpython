@@ -130,7 +130,7 @@ role_with_no_backticks = re.compile(r"%s[^` ]" % all_roles)
 
 # Find role glued with another word like:
 # the:c:func:`PyThreadState_LeaveTracing` function.
-# instad of:
+# instead of:
 # the :c:func:`PyThreadState_LeaveTracing` function.
 role_glued_with_word = re.compile(r"[a-zA-Z]%s" % all_roles)
 

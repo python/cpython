@@ -341,6 +341,35 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(log, [1])
         self.assertTrue(self.root.winfo_exists())
 
+    def test_info_patchlevel(self):
+        vi = self.root.info_patchlevel()
+        f = tkinter.Frame(self.root)
+        self.assertEqual(f.info_patchlevel(), vi)
+        # The following is almost a copy of tests for sys.version_info.
+        self.assertIsInstance(vi[:], tuple)
+        self.assertEqual(len(vi), 5)
+        self.assertIsInstance(vi[0], int)
+        self.assertIsInstance(vi[1], int)
+        self.assertIsInstance(vi[2], int)
+        self.assertIn(vi[3], ("alpha", "beta", "candidate", "final"))
+        self.assertIsInstance(vi[4], int)
+        self.assertIsInstance(vi.major, int)
+        self.assertIsInstance(vi.minor, int)
+        self.assertIsInstance(vi.micro, int)
+        self.assertIn(vi.releaselevel, ("alpha", "beta", "final"))
+        self.assertIsInstance(vi.serial, int)
+        self.assertEqual(vi[0], vi.major)
+        self.assertEqual(vi[1], vi.minor)
+        self.assertEqual(vi[2], vi.micro)
+        self.assertEqual(vi[3], vi.releaselevel)
+        self.assertEqual(vi[4], vi.serial)
+        self.assertTrue(vi > (1,0,0))
+        if vi.releaselevel == 'final':
+            self.assertEqual(vi.serial, 0)
+        else:
+            self.assertEqual(vi.micro, 0)
+        self.assertTrue(str(vi).startswith(f'{vi.major}.{vi.minor}'))
+
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 

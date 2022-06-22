@@ -1,2 +1,0 @@
-Add *encoding* and *errors* arguments to :func:`subprocess.getoutput` and
-:func:`subprocess.getstatusoutput`.

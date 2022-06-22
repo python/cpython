@@ -714,7 +714,7 @@ Constants
    Selects SSL version 2 as the channel encryption protocol.
 
    This protocol is not available if OpenSSL is compiled with the
-   ``OPENSSL_NO_SSL2`` flag.
+   ``no-ssl2`` option.
 
    .. warning::
 
@@ -728,8 +728,8 @@ Constants
 
    Selects SSL version 3 as the channel encryption protocol.
 
-   This protocol is not be available if OpenSSL is compiled with the
-   ``OPENSSL_NO_SSLv3`` flag.
+   This protocol is not available if OpenSSL is compiled with the
+   ``no-ssl3`` option.
 
    .. warning::
 
@@ -1910,7 +1910,7 @@ to speed up repeated connections from the same clients.
 .. method:: SSLContext.session_stats()
 
    Get statistics about the SSL sessions created or managed by this context.
-   A dictionary is returned which maps the names of each `piece of information <https://www.openssl.org/docs/man1.1.1/ssl/SSL_CTX_sess_number.html>`_ to their
+   A dictionary is returned which maps the names of each `piece of information <https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_sess_number.html>`_ to their
    numeric values.  For example, here is the total number of hits and misses
    in the session cache since the context was created::
 
@@ -2704,7 +2704,7 @@ enabled when negotiating a SSL session is possible through the
 :meth:`SSLContext.set_ciphers` method.  Starting from Python 3.2.3, the
 ssl module disables certain weak ciphers by default, but you may want
 to further restrict the cipher choice. Be sure to read OpenSSL's documentation
-about the `cipher list format <https://www.openssl.org/docs/manmaster/man1/ciphers.html#CIPHER-LIST-FORMAT>`_.
+about the `cipher list format <https://www.openssl.org/docs/man1.1.1/man1/ciphers.html#CIPHER-LIST-FORMAT>`_.
 If you want to check which ciphers are enabled by a given cipher list, use
 :meth:`SSLContext.get_ciphers` or the ``openssl ciphers`` command on your
 system.

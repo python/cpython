@@ -1,1 +1,0 @@
-Accept ellipsis as the last argument of :data:`typing.Concatenate`.

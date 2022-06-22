@@ -1524,6 +1524,7 @@
     added = '3.2'
 [function.PyUnicode_GetSize]
     added = '3.2'
+    abi_only = true
 [function.PyUnicode_IsIdentifier]
     added = '3.2'
 [function.PyUnicode_Join]
@@ -1562,6 +1563,7 @@
     added = '3.2'
 [function.PyUnicode_InternImmortal]
     added = '3.2'
+    abi_only = true
 [function.PyUnicode_InternInPlace]
     added = '3.2'
 [data.PyUnicode_Type]
@@ -2273,3 +2275,5 @@
     added = '3.11'
 [function.PyErr_SetHandledException]
     added = '3.11'
+[function.PyType_FromMetaclass]
+    added = '3.12'

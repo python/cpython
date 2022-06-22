@@ -189,8 +189,8 @@ compare_handler(PyObject *func, PyObject *dfl_ign_handler)
     return PyObject_RichCompareBool(func, dfl_ign_handler, Py_EQ) == 1;
 }
 
-#ifdef HAVE_GETITIMER
-/* auxiliary functions for setitimer */
+#ifdef HAVE_SETITIMER
+/* auxiliary function for setitimer */
 static int
 timeval_from_double(PyObject *obj, struct timeval *tv)
 {
@@ -206,7 +206,10 @@ timeval_from_double(PyObject *obj, struct timeval *tv)
     }
     return _PyTime_AsTimeval(t, tv, _PyTime_ROUND_CEILING);
 }
+#endif
 
+#if defined(HAVE_SETITIMER) || defined(HAVE_GETITIMER)
+/* auxiliary functions for get/setitimer */
 Py_LOCAL_INLINE(double)
 double_from_timeval(struct timeval *tv)
 {
@@ -1381,7 +1384,7 @@ static PyMethodDef signal_methods[] = {
     SIGNAL_RAISE_SIGNAL_METHODDEF
     SIGNAL_STRSIGNAL_METHODDEF
     SIGNAL_GETSIGNAL_METHODDEF
-    {"set_wakeup_fd", (PyCFunction)(void(*)(void))signal_set_wakeup_fd, METH_VARARGS | METH_KEYWORDS, set_wakeup_fd_doc},
+    {"set_wakeup_fd", _PyCFunction_CAST(signal_set_wakeup_fd), METH_VARARGS | METH_KEYWORDS, set_wakeup_fd_doc},
     SIGNAL_SIGINTERRUPT_METHODDEF
     SIGNAL_PAUSE_METHODDEF
     SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
