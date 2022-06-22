@@ -88,7 +88,6 @@ import hashlib
 import http.client
 import io
 import os
-import posixpath
 import re
 import socket
 import string

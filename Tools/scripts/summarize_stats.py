@@ -7,7 +7,6 @@ import os.path
 import opcode
 from datetime import date
 import itertools
-import argparse
 import sys
 
 if os.name == "nt":
@@ -108,13 +107,14 @@ def extract_opcode_stats(stats):
         opcode_stats[int(n)][rest.strip(".")] = value
     return opcode_stats
 
-def parse_kinds(spec_src):
+def parse_kinds(spec_src, prefix="SPEC_FAIL"):
     defines = collections.defaultdict(list)
+    start = "#define " + prefix + "_"
     for line in spec_src:
         line = line.strip()
-        if not line.startswith("#define SPEC_FAIL_"):
+        if not line.startswith(start):
             continue
-        line = line[len("#define SPEC_FAIL_"):]
+        line = line[len(start):]
         name, val = line.split()
         defines[int(val.strip())].append(name.strip())
     return defines
@@ -129,8 +129,6 @@ def kind_to_text(kind, defines, opname):
         opname = "ATTR"
     if opname.endswith("SUBSCR"):
         opname = "SUBSCR"
-    if opname.startswith("PRECALL"):
-        opname = "CALL"
     for name in defines[kind]:
         if name.startswith(opname):
             return pretty(name[len(opname)+1:])
@@ -189,6 +187,12 @@ class Section:
         print("</details>")
         print()
 
+def to_str(x):
+    if isinstance(x, int):
+        return format(x, ",d")
+    else:
+        return str(x)
+
 def emit_table(header, rows):
     width = len(header)
     header_line = "|"
@@ -204,8 +208,8 @@ def emit_table(header, rows):
     print(under_line)
     for row in rows:
         if width is not None and len(row) != width:
-            raise ValueError("Wrong number of elements in row '" + str(rows) + "'")
-        print("|", " | ".join(str(i) for i in row), "|")
+            raise ValueError("Wrong number of elements in row '" + str(row) + "'")
+        print("|", " | ".join(to_str(i) for i in row), "|")
     print()
 
 def emit_execution_counts(opcode_stats, total):
@@ -252,8 +256,23 @@ def emit_specialization_overview(opcode_stats, total):
             ("Not specialized", not_specialized, f"{not_specialized*100/total:0.1f}%"),
             ("Specialized", specialized, f"{specialized*100/total:0.1f}%"),
         ))
+        for title, field in (("Deferred", "specialization.deferred"), ("Misses", "specialization.miss")):
+            total = 0
+            counts = []
+            for i, opcode_stat in enumerate(opcode_stats):
+                value = opcode_stat.get(field, 0)
+                counts.append((value, opname[i]))
+                total += value
+            counts.sort(reverse=True)
+            if total:
+                with Section(f"{title} by instruction", 3):
+                    rows = [ (name, count, f"{100*count/total:0.1f}%") for (count, name) in counts[:10] ]
+                    emit_table(("Name", "Count:", "Ratio:"), rows)
 
 def emit_call_stats(stats):
+    stats_path = os.path.join(os.path.dirname(__file__), "../../Include/pystats.h")
+    with open(stats_path) as stats_src:
+        defines = parse_kinds(stats_src, prefix="EVAL_CALL")
     with Section("Call stats", summary="Inlined calls and frame stats"):
         total = 0
         for key, value in stats.items():
@@ -263,6 +282,11 @@ def emit_call_stats(stats):
         for key, value in stats.items():
             if "Calls to" in key:
                 rows.append((key, value, f"{100*value/total:0.1f}%"))
+            elif key.startswith("Calls "):
+                name, index = key[:-1].split("[")
+                index =  int(index)
+                label = name + " (" + pretty(defines[index][0]) + ")"
+                rows.append((label, value, f"{100*value/total:0.1f}%"))
         for key, value in stats.items():
             if key.startswith("Frame"):
                 rows.append((key, value, f"{100*value/total:0.1f}%"))
@@ -271,7 +295,9 @@ def emit_call_stats(stats):
 def emit_object_stats(stats):
     with Section("Object stats", summary="allocations, frees and dict materializatons"):
         total_materializations = stats.get("Object new values")
-        total_allocations = stats.get("Object allocations")
+        total_allocations = stats.get("Object allocations") + stats.get("Object allocations from freelist")
+        total_increfs = stats.get("Object interpreter increfs") + stats.get("Object increfs")
+        total_decrefs = stats.get("Object interpreter decrefs") + stats.get("Object decrefs")
         rows = []
         for key, value in stats.items():
             if key.startswith("Object"):
@@ -279,6 +305,10 @@ def emit_object_stats(stats):
                     ratio = f"{100*value/total_materializations:0.1f}%"
                 elif "allocations" in key:
                     ratio = f"{100*value/total_allocations:0.1f}%"
+                elif "increfs"     in key:
+                    ratio = f"{100*value/total_increfs:0.1f}%"
+                elif "decrefs"     in key:
+                    ratio = f"{100*value/total_decrefs:0.1f}%"
                 else:
                     ratio = ""
                 label = key[6:].strip()
@@ -315,7 +345,7 @@ def emit_pair_counts(opcode_stats, total):
         emit_table(("Pair", "Count:", "Self:", "Cumulative:"),
             rows
         )
-    with Section("Predecessor/Successor Pairs", summary="Top 3 predecessors and successors of each opcode"):
+    with Section("Predecessor/Successor Pairs", summary="Top 5 predecessors and successors of each opcode"):
         predecessors = collections.defaultdict(collections.Counter)
         successors = collections.defaultdict(collections.Counter)
         total_predecessors = collections.Counter()
@@ -334,10 +364,10 @@ def emit_pair_counts(opcode_stats, total):
             pred_rows = succ_rows = ()
             if total1:
                 pred_rows = [(opname[pred], count, f"{count/total1:.1%}")
-                             for (pred, count) in predecessors[i].most_common(3)]
+                             for (pred, count) in predecessors[i].most_common(5)]
             if total2:
                 succ_rows = [(opname[succ], count, f"{count/total2:.1%}")
-                             for (succ, count) in successors[i].most_common(3)]
+                             for (succ, count) in successors[i].most_common(5)]
             with Section(name, 3, f"Successors and predecessors for {name}"):
                 emit_table(("Predecessors", "Count:", "Percentage:"),
                     pred_rows

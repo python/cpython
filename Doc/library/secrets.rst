@@ -129,7 +129,7 @@ Other functions
 .. function:: compare_digest(a, b)
 
    Return ``True`` if strings *a* and *b* are equal, otherwise ``False``,
-   in such a way as to reduce the risk of
+   using a "constant-time compare" to reduce the risk of
    `timing attacks <https://codahale.com/a-lesson-in-timing-attacks/>`_.
    See :func:`hmac.compare_digest` for additional details.
 

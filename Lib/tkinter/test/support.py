@@ -1,5 +1,4 @@
 import functools
-import re
 import tkinter
 import unittest
 

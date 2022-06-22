@@ -1701,7 +1701,7 @@ Sub-commands
 
 .. method:: ArgumentParser.add_subparsers([title], [description], [prog], \
                                           [parser_class], [action], \
-                                          [option_string], [dest], [required], \
+                                          [option_strings], [dest], [required], \
                                           [help], [metavar])
 
    Many programs split up their functionality into a number of sub-commands,
