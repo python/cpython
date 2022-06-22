@@ -1232,7 +1232,7 @@ There are two ways to adapt Python objects to SQLite types:
 letting your object adapt itself, or using an *adapter callable*.
 The latter will take precedence above the former. For a library that exports a
 custom type, it may make sense to enable that type to adapt itself. As an
-application developer, it may make more sense to take control, and register
+application developer, it may make more sense to take direct control by registering
 custom adapter functions.
 
 
