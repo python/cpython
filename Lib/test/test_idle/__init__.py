@@ -1,5 +1,4 @@
-'''idlelib.idle_test is a private implementation of test.test_idle,
-which tests the IDLE application as part of the stdlib test suite.
+'''Tests the IDLE application as part of the stdlib test suite.
 Run IDLE tests alone with "python -m test.test_idle".
 Starting with Python 3.6, IDLE requires tcl/tk 8.5 or later.
 
