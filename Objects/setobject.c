@@ -833,35 +833,15 @@ static PyObject *setiter_iternext(_PySetIterObject *si) {
 
 PyTypeObject PySetIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "set_iterator",                             /* tp_name */
-    sizeof(_PySetIterObject),                   /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    /* methods */
-    (destructor)setiter_dealloc,                /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    0,                                          /* tp_doc */
-    (traverseproc)setiter_traverse,             /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc)setiter_iternext,             /* tp_iternext */
-    setiter_methods,                            /* tp_methods */
-    0,
+    .tp_name = "set_iterator",
+    .tp_basicsize = sizeof(_PySetIterObject),
+    .tp_dealloc = (destructor)setiter_dealloc,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = (traverseproc)setiter_traverse,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)setiter_iternext,
+    .tp_methods = setiter_methods,
 };
 
 static PyObject *
