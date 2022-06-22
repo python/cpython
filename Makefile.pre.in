@@ -1987,15 +1987,15 @@ TESTSUBDIRS=	distutils/tests \
 		test/test_lib2to3/data/fixers \
 		test/test_lib2to3/data/fixers/myfixes \
 		test/test_peg_generator \
+		test/test_tkinter \
 		test/test_tools \
+		test/test_ttk \
 		test/test_warnings test/test_warnings/data \
 		test/test_zoneinfo test/test_zoneinfo/data \
 		test/test_unittest test/test_unittest/testmock \
 		test/tracedmodules \
 		test/xmltestdata test/xmltestdata/c14n-20 \
-		test/ziptestdata \
-		tkinter/test tkinter/test/test_tkinter \
-		tkinter/test/test_ttk
+		test/ziptestdata
 
 TEST_MODULES=@TEST_MODULES@
 libinstall:	all $(srcdir)/Modules/xxmodule.c

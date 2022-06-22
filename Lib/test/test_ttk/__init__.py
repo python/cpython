@@ -1,16 +1,18 @@
+import os.path
 import unittest
 from test import support
 from test.support import import_helper
-from test.support import check_sanitizer
 
-if check_sanitizer(address=True, memory=True):
-    raise unittest.SkipTest("Tests involvin libX11 can SEGFAULT on ASAN/MSAN builds")
+
+if support.check_sanitizer(address=True, memory=True):
+    raise unittest.SkipTest("Tests involving libX11 can SEGFAULT on ASAN/MSAN builds")
 
 # Skip this test if _tkinter wasn't built.
 import_helper.import_module('_tkinter')
 
 # Skip test if tk cannot be initialized.
 support.requires('gui')
+
 
 import tkinter
 from _tkinter import TclError
@@ -32,9 +34,6 @@ def setUpModule():
             root.destroy()
         del root
 
-def load_tests(loader, tests, pattern):
-    return loader.discover('tkinter.test.test_ttk')
 
-
-if __name__ == '__main__':
-    unittest.main()
+def load_tests(*args):
+    return support.load_package_tests(os.path.dirname(__file__), *args)

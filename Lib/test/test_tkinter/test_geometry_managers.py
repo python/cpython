@@ -4,8 +4,8 @@ import tkinter
 from tkinter import TclError
 from test.support import requires
 
-from tkinter.test.support import pixels_conv
-from tkinter.test.widget_tests import AbstractWidgetTest
+from test.test_tkinter.support import pixels_conv
+from test.test_tkinter.widget_tests import AbstractWidgetTest
 
 requires('gui')
 
