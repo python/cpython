@@ -1,0 +1,2 @@
+Fix ``memoryview`` use after free when accessing the backing buffer in certain cases.
+

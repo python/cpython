@@ -306,23 +306,23 @@ Kumar Srinivasan and Graham Bleaney.)
 PEP 681: Data Class Transforms
 ------------------------------
 
-The new :data:`~typing.dataclass_transform` annotation may be used to
-decorate a function that is itself a decorator, a class, or a metaclass.
+:data:`~typing.dataclass_transform` may be used to
+decorate a class, metaclass, or a function that is itself a decorator.
 The presence of ``@dataclass_transform()`` tells a static type checker that the
-decorated function, class, or metaclass performs runtime "magic" that
-transforms a class, endowing it with dataclass-like behaviors.
+decorated object performs runtime "magic" that
+transforms a class, giving it :func:`dataclasses.dataclass`-like behaviors.
 
 For example::
 
-    # The ``create_model`` decorator is defined by a library.
+    # The create_model decorator is defined by a library.
     @typing.dataclass_transform()
-    def create_model(cls: Type[_T]) -> Type[_T]:
+    def create_model(cls: Type[T]) -> Type[T]:
         cls.__init__ = ...
         cls.__eq__ = ...
         cls.__ne__ = ...
         return cls
 
-    # The ``create_model`` decorator can now be used to create new model
+    # The create_model decorator can now be used to create new model
     # classes, like this:
     @create_model
     class CustomerModel:
@@ -373,6 +373,9 @@ Other Language Changes
   the current directory, the script's directory or an empty string.
   (Contributed by Victor Stinner in :gh:`57684`.)
 
+* A ``"z"`` option was added to the format specification mini-language that
+  coerces negative zero to zero after rounding to the format precision.  See
+  :pep:`682` for more details.  (Contributed by John Belmonte in :gh:`90153`.)
 
 Other CPython Implementation Changes
 ====================================
@@ -403,6 +406,11 @@ Other CPython Implementation Changes
   instead of prepending them.
   (Contributed by Bastian Neuburger in :issue:`44934`.)
 
+* The :c:member:`PyConfig.module_search_paths_set` field must now be set to 1 for
+  initialization to use :c:member:`PyConfig.module_search_paths` to initialize
+  :data:`sys.path`. Otherwise, initialization will recalculate the path and replace
+  any values added to ``module_search_paths``.
+
 
 New Modules
 ===========
@@ -430,6 +438,10 @@ asyncio
 * Add :meth:`~asyncio.streams.StreamWriter.start_tls` method for upgrading
   existing stream-based connections to TLS. (Contributed by Ian Good in
   :issue:`34975`.)
+
+* Add :class:`~asyncio.Barrier` class to the synchronization primitives of
+  the asyncio library. (Contributed by Yves Duprat and Andrew Svetlov in
+  :gh:`87518`.)
 
 datetime
 --------
@@ -726,6 +738,12 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   the given type. At runtime it simply returns the received value.
   (Contributed by Jelle Zijlstra in :gh:`90638`.)
 
+* :data:`typing.TypedDict` types can now be generic. (Contributed by
+  Samodya Abeysiriwardane in :gh:`89026`.)
+
+* :class:`~typing.NamedTuple` types can now be generic.
+  (Contributed by Serhiy Storchaka in :issue:`43923`.)
+
 * Allow subclassing of :class:`typing.Any`. This is useful for avoiding
   type checker errors related to highly dynamic class, such as mocks.
   (Contributed by Shantanu Jain in :gh:`91154`.)
@@ -739,11 +757,33 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   to clear all registered overloads of a function.
   (Contributed by Jelle Zijlstra in :gh:`89263`.)
 
-* :data:`typing.TypedDict` subclasses can now be generic. (Contributed by
-  Samodya Abey in :gh:`89026`.)
+* The :meth:`__init__` method of :class:`~typing.Protocol` subclasses
+  is now preserved. (Contributed by Adrian Garcia Badarasco in :gh:`88970`.)
 
-* :class:`~typing.NamedTuple` subclasses can now be generic.
-  (Contributed by Serhiy Storchaka in :issue:`43923`.)
+* The representation of empty tuple types (``Tuple[()]``) is simplified.
+  This affects introspection, e.g. ``get_args(Tuple[()])`` now evaluates
+  to ``()`` instead of ``((),)``.
+  (Contributed by Serhiy Storchaka in :gh:`91137`.)
+
+* Loosen runtime requirements for type annotations by removing the callable
+  check in the private ``typing._type_check`` function. (Contributed by
+  Gregory Beauregard in :gh:`90802`.)
+
+* :func:`typing.get_type_hints` now supports evaluating strings as forward
+  references in :ref:`PEP 585 generic aliases <types-genericalias>`.
+  (Contributed by Niklas Rosenstein in :gh:`85542`.)
+
+* :func:`typing.get_type_hints` no longer adds :data:`~typing.Optional`
+  to parameters with ``None`` as a default. (Contributed by Nikita Sobolev
+  in :gh:`90353`.)
+
+* :func:`typing.get_type_hints` now supports evaluating bare stringified
+  :data:`~typing.ClassVar` annotations. (Contributed by Gregory Beauregard
+  in :gh:`90711`.)
+
+* :func:`typing.no_type_check` no longer modifies external classes and functions.
+  It also now correctly marks classmethods as not to be type checked. (Contributed
+  by Nikita Sobolev in :gh:`90729`.)
 
 
 tkinter
@@ -1116,8 +1156,8 @@ Deprecated
   that was added in Python 3.10.
   (Contributed by Raymond Hettinger in :gh:`89519`.)
 
-* Octal escapes with value larger than ``0o377`` now produce
-  a :exc:`DeprecationWarning`.
+* Octal escapes in string and bytes literals with value larger than ``0o377`` now
+  produce :exc:`DeprecationWarning`.
   In a future Python version they will be a :exc:`SyntaxWarning` and
   eventually a :exc:`SyntaxError`.
   (Contributed by Serhiy Storchaka in :gh:`81548`.)
@@ -1184,7 +1224,11 @@ Deprecated
   removed in Python 3.13. Use :func:`locale.setlocale`,
   :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
   :func:`locale.getlocale` functions instead.
-  (Contributed by Victor Stinner in :issue:`46659`.)
+  (Contributed by Victor Stinner in :gh:`90817`.)
+
+* The :func:`locale.resetlocale` function is deprecated and will be
+  removed in Python 3.13. Use ``locale.setlocale(locale.LC_ALL, "")`` instead.
+  (Contributed by Victor Stinner in :gh:`90817`.)
 
 * The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
   deprecated since at least Python 3.6. Their documentation and deprecation
@@ -1231,6 +1275,15 @@ Deprecated
   currently unplanned, but users are encouraged to use :class:`str` instead
   wherever possible.
   (Contributed by Alex Waygood in :gh:`92332`.)
+
+* The keyword argument syntax for constructing :data:`~typing.TypedDict` types
+  is now deprecated. Support will be removed in Python 3.13. (Contributed by
+  Jingchen Ye in :gh:`90224`.)
+
+* The :func:`re.template` function and the corresponding :const:`re.TEMPLATE`
+  and :const:`re.T` flags are deprecated, as they were undocumented and
+  lacked an obvious purpose. They will be removed in Python 3.13.
+  (Contributed by Serhiy Storchaka and Miro Hrončok in :gh:`92728`.)
 
 
 Pending Removal in Python 3.12
@@ -1699,6 +1752,21 @@ Porting to Python 3.11
   which are not available in the limited C API.
   (Contributed by Victor Stinner in :issue:`46007`.)
 
+* The following frame functions and type are now directly available with
+  ``#include <Python.h>``, it's no longer needed to add
+  ``#include <frameobject.h>``:
+
+  * :c:func:`PyFrame_Check`
+  * :c:func:`PyFrame_GetBack`
+  * :c:func:`PyFrame_GetBuiltins`
+  * :c:func:`PyFrame_GetGenerator`
+  * :c:func:`PyFrame_GetGlobals`
+  * :c:func:`PyFrame_GetLasti`
+  * :c:func:`PyFrame_GetLocals`
+  * :c:type:`PyFrame_Type`
+
+  (Contributed by Victor Stinner in :gh:`93937`.)
+
 .. _pyframeobject-3.11-hiding:
 
 * The :c:type:`PyFrameObject` structure members have been removed from the
@@ -1825,6 +1893,15 @@ Porting to Python 3.11
 * Distributors are encouraged to build Python with the optimized Blake2
   library `libb2`_.
 
+* The :c:member:`PyConfig.module_search_paths_set` field must now be set to 1 for
+  initialization to use :c:member:`PyConfig.module_search_paths` to initialize
+  :data:`sys.path`. Otherwise, initialization will recalculate the path and replace
+  any values added to ``module_search_paths``.
+
+* :c:func:`PyConfig_Read` no longer calculates the initial search path, and will not
+  fill any values into :c:member:`PyConfig.module_search_paths`. To calculate default
+  paths and then modify them, finish initialization and use :c:func:`PySys_GetObject`
+  to retrieve :data:`sys.path` as a Python list object and modify it directly.
 
 Deprecated
 ----------

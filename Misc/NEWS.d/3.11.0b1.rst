@@ -1373,6 +1373,7 @@ Suppress expression chaining for more :mod:`re` parsing errors.
 
 Remove undocumented and never working function ``re.template()`` and flag
 ``re.TEMPLATE``.
+This was later reverted in 3.11.0b2 and deprecated instead.
 
 ..
 

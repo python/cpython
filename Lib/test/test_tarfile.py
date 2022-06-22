@@ -228,6 +228,7 @@ class UstarReadTest(ReadTest, unittest.TestCase):
     def add_dir_and_getmember(self, name):
         with os_helper.temp_cwd():
             with tarfile.open(tmpname, 'w') as tar:
+                tar.format = tarfile.USTAR_FORMAT
                 try:
                     os.mkdir(name)
                     tar.add(name)
@@ -630,6 +631,7 @@ class MiscReadTestBase(CommonReadTest):
                 data = f.read()
             self.assertEqual(sha256sum(data), sha256_regtype)
 
+    @os_helper.skip_unless_working_chmod
     def test_extractall(self):
         # Test if extractall() correctly restores directory permissions
         # and times (see issue1735).
@@ -660,6 +662,7 @@ class MiscReadTestBase(CommonReadTest):
             tar.close()
             os_helper.rmtree(DIR)
 
+    @os_helper.skip_unless_working_chmod
     def test_extract_directory(self):
         dirtype = "ustar/dirtype"
         DIR = os.path.join(TEMPDIR, "extractdir")
@@ -1018,11 +1021,26 @@ class LongnameTest:
                                               "iso8859-1", "strict")
             self.assertEqual(tarinfo.type, self.longnametype)
 
+    def test_longname_directory(self):
+        # Test reading a longlink directory. Issue #47231.
+        longdir = ('a' * 101) + '/'
+        with os_helper.temp_cwd():
+            with tarfile.open(tmpname, 'w') as tar:
+                tar.format = self.format
+                try:
+                    os.mkdir(longdir)
+                    tar.add(longdir)
+                finally:
+                    os.rmdir(longdir.rstrip("/"))
+            with tarfile.open(tmpname) as tar:
+                self.assertIsNotNone(tar.getmember(longdir))
+                self.assertIsNotNone(tar.getmember(longdir.removesuffix('/')))
 
 class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase):
 
     subdir = "gnu"
     longnametype = tarfile.GNUTYPE_LONGNAME
+    format = tarfile.GNU_FORMAT
 
     # Since 3.2 tarfile is supposed to accurately restore sparse members and
     # produce files with holes. This is what we actually want to test here.
@@ -1082,6 +1100,7 @@ class PaxReadTest(LongnameTest, ReadTest, unittest.TestCase):
 
     subdir = "pax"
     longnametype = tarfile.XHDTYPE
+    format = tarfile.PAX_FORMAT
 
     def test_pax_global_headers(self):
         tar = tarfile.open(tarname, encoding="iso8859-1")
@@ -1498,7 +1517,10 @@ class StreamWriteTest(WriteTestBase, unittest.TestCase):
 
     @unittest.skipUnless(sys.platform != "win32" and hasattr(os, "umask"),
                          "Missing umask implementation")
-    @unittest.skipIf(support.is_emscripten, "Emscripten's umask is a stub.")
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "Emscripten's/WASI's umask is a stub."
+    )
     def test_file_mode(self):
         # Test for issue #8464: Create files with correct
         # permissions.

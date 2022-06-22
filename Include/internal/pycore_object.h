@@ -17,7 +17,7 @@ extern "C" {
 #define _PyObject_IMMORTAL_INIT(type) \
     { \
         .ob_refcnt = 999999999, \
-        .ob_type = type, \
+        .ob_type = (type), \
     }
 #define _PyVarObject_IMMORTAL_INIT(type, size) \
     { \
@@ -29,11 +29,13 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
     const char *func,
     const char *message);
 
-#define _Py_FatalRefcountError(message) _Py_FatalRefcountErrorFunc(__func__, message)
+#define _Py_FatalRefcountError(message) \
+    _Py_FatalRefcountErrorFunc(__func__, (message))
 
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
+    _Py_DECREF_STAT_INC();
 #ifdef Py_REF_DEBUG
     _Py_RefTotal--;
 #endif
@@ -51,6 +53,7 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 static inline void
 _Py_DECREF_NO_DEALLOC(PyObject *op)
 {
+    _Py_DECREF_STAT_INC();
 #ifdef Py_REF_DEBUG
     _Py_RefTotal--;
 #endif
@@ -273,7 +276,7 @@ extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 
 // Access macro to the members which are floating "behind" the object
 #define _PyHeapType_GET_MEMBERS(etype) \
-    ((PyMemberDef *)(((char *)etype) + Py_TYPE(etype)->tp_basicsize))
+    ((PyMemberDef *)(((char *)(etype)) + Py_TYPE(etype)->tp_basicsize))
 
 PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
 
@@ -294,7 +297,7 @@ PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
 #define _PyCFunction_TrampolineCall(meth, self, args) \
     _PyCFunctionWithKeywords_TrampolineCall( \
-        (*(PyCFunctionWithKeywords)(void(*)(void))meth), self, args, NULL)
+        (*(PyCFunctionWithKeywords)(void(*)(void))(meth)), (self), (args), NULL)
 extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
     PyCFunctionWithKeywords meth, PyObject *, PyObject *, PyObject *);
 #else

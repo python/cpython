@@ -206,8 +206,8 @@ which disallows mutable objects such as :class:`bytearray`.
    encoding passed in as parameter.
 
 .. versionchanged:: 3.12
-   ``u``, ``u#``, ``Z``, and ``Z#`` are removed because they used legacy ``Py_UNICODE*``
-   representation.
+   ``u``, ``u#``, ``Z``, and ``Z#`` are removed because they used a legacy
+   ``Py_UNICODE*`` representation.
 
 
 Numbers
@@ -249,7 +249,7 @@ Numbers
    Convert a Python integer to a C :c:type:`unsigned long long`
    without overflow checking.
 
-``n`` (:class:`int`) [Py_ssize_t]
+``n`` (:class:`int`) [:c:type:`Py_ssize_t`]
    Convert a Python integer to a C :c:type:`Py_ssize_t`.
 
 ``c`` (:class:`bytes` or :class:`bytearray` of length 1) [char]
@@ -576,7 +576,7 @@ Building values
    ``K`` (:class:`int`) [unsigned long long]
       Convert a C :c:type:`unsigned long long` to a Python integer object.
 
-   ``n`` (:class:`int`) [Py_ssize_t]
+   ``n`` (:class:`int`) [:c:type:`Py_ssize_t`]
       Convert a C :c:type:`Py_ssize_t` to a Python integer.
 
    ``c`` (:class:`bytes` of length 1) [char]

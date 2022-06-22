@@ -409,7 +409,7 @@ Some smaller changes made to the core Python language are:
   evaluating has no elements.  (Contributed by Julian Berman in
   :issue:`18111`.)
 
-* Module objects are now :mod:`weakref`'able.
+* Module objects are now :ref:`weakly referenceable <mod-weakref>`.
 
 * Module ``__file__`` attributes (and related values) should now always
   contain absolute paths by default, with the sole exception of
@@ -1113,8 +1113,8 @@ with additional speedups by Antoine Pitrou in :issue:`19219`.)
 mmap
 ----
 
-mmap objects can now be :mod:`weakref`\ ed.  (Contributed by Valerie Lambert in
-:issue:`4885`.)
+mmap objects are now :ref:`weakly referenceable <mod-weakref>`.
+(Contributed by Valerie Lambert in :issue:`4885`.)
 
 
 multiprocessing
