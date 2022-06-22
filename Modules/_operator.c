@@ -839,7 +839,7 @@ _operator__compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
                     PyUnicode_GET_LENGTH(a),
                     PyUnicode_GET_LENGTH(b));
     }
-    /* fallback to buffer interface for bytes, bytesarray and other */
+    /* fallback to buffer interface for bytes, bytearray and other */
     else {
         Py_buffer view_a;
         Py_buffer view_b;
@@ -1230,9 +1230,6 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* prepare attr while checking args */
     for (idx = 0; idx < nattrs; ++idx) {
         PyObject *item = PyTuple_GET_ITEM(args, idx);
-        Py_ssize_t item_len;
-        const void *data;
-        unsigned int kind;
         int dot_count;
 
         if (!PyUnicode_Check(item)) {
@@ -1245,9 +1242,9 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(attr);
             return NULL;
         }
-        item_len = PyUnicode_GET_LENGTH(item);
-        kind = PyUnicode_KIND(item);
-        data = PyUnicode_DATA(item);
+        Py_ssize_t item_len = PyUnicode_GET_LENGTH(item);
+        int kind = PyUnicode_KIND(item);
+        const void *data = PyUnicode_DATA(item);
 
         /* check whether the string is dotted */
         dot_count = 0;
@@ -1755,16 +1752,11 @@ methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
         return Py_BuildValue("ON", Py_TYPE(mc), newargs);
     }
     else {
-        PyObject *functools;
         PyObject *partial;
         PyObject *constructor;
         PyObject *newargs[2];
 
-        functools = PyImport_ImportModule("functools");
-        if (!functools)
-            return NULL;
-        partial = PyObject_GetAttr(functools, &_Py_ID(partial));
-        Py_DECREF(functools);
+        partial = _PyImport_GetModuleAttrString("functools", "partial");
         if (!partial)
             return NULL;
 

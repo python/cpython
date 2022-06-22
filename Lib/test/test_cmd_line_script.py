@@ -558,8 +558,9 @@ class CmdLineTest(unittest.TestCase):
         # Mac OS X denies the creation of a file with an invalid UTF-8 name.
         # Windows allows creating a name with an arbitrary bytes name, but
         # Python cannot a undecodable bytes argument to a subprocess.
+        # WASI does not permit invalid UTF-8 names.
         if (os_helper.TESTFN_UNDECODABLE
-        and sys.platform not in ('win32', 'darwin')):
+        and sys.platform not in ('win32', 'darwin', 'emscripten', 'wasi')):
             name = os.fsdecode(os_helper.TESTFN_UNDECODABLE)
         elif os_helper.TESTFN_NONASCII:
             name = os_helper.TESTFN_NONASCII

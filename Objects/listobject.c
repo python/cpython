@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_interp.h"        // PyInterpreterState.list
-#include "pycore_list.h"          // struct _Py_list_state
+#include "pycore_list.h"          // struct _Py_list_state, _PyListIterObject
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include <stddef.h>
@@ -94,6 +94,12 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
     assert(self->ob_item == NULL);
     assert(size > 0);
 
+    /* Since the Python memory allocator has granularity of 16 bytes on 64-bit
+     * platforms (8 on 32-bit), there is no benefit of allocating space for
+     * the odd number of items, and there is no drawback of rounding the
+     * allocated size up to the nearest even number.
+     */
+    size = (size + 1) & ~(size_t)1;
     PyObject **items = PyMem_New(PyObject*, size);
     if (items == NULL) {
         PyErr_NoMemory();
@@ -3182,19 +3188,13 @@ PyTypeObject PyList_Type = {
 
 /*********************** List Iterator **************************/
 
-typedef struct {
-    PyObject_HEAD
-    Py_ssize_t it_index;
-    PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
-} listiterobject;
-
-static void listiter_dealloc(listiterobject *);
-static int listiter_traverse(listiterobject *, visitproc, void *);
-static PyObject *listiter_next(listiterobject *);
-static PyObject *listiter_len(listiterobject *, PyObject *);
+static void listiter_dealloc(_PyListIterObject *);
+static int listiter_traverse(_PyListIterObject *, visitproc, void *);
+static PyObject *listiter_next(_PyListIterObject *);
+static PyObject *listiter_len(_PyListIterObject *, PyObject *);
 static PyObject *listiter_reduce_general(void *_it, int forward);
-static PyObject *listiter_reduce(listiterobject *, PyObject *);
-static PyObject *listiter_setstate(listiterobject *, PyObject *state);
+static PyObject *listiter_reduce(_PyListIterObject *, PyObject *);
+static PyObject *listiter_setstate(_PyListIterObject *, PyObject *state);
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
@@ -3210,7 +3210,7 @@ static PyMethodDef listiter_methods[] = {
 PyTypeObject PyListIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "list_iterator",                            /* tp_name */
-    sizeof(listiterobject),                     /* tp_basicsize */
+    sizeof(_PyListIterObject),                  /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)listiter_dealloc,               /* tp_dealloc */
@@ -3244,13 +3244,13 @@ PyTypeObject PyListIter_Type = {
 static PyObject *
 list_iter(PyObject *seq)
 {
-    listiterobject *it;
+    _PyListIterObject *it;
 
     if (!PyList_Check(seq)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    it = PyObject_GC_New(listiterobject, &PyListIter_Type);
+    it = PyObject_GC_New(_PyListIterObject, &PyListIter_Type);
     if (it == NULL)
         return NULL;
     it->it_index = 0;
@@ -3261,7 +3261,7 @@ list_iter(PyObject *seq)
 }
 
 static void
-listiter_dealloc(listiterobject *it)
+listiter_dealloc(_PyListIterObject *it)
 {
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
@@ -3269,14 +3269,14 @@ listiter_dealloc(listiterobject *it)
 }
 
 static int
-listiter_traverse(listiterobject *it, visitproc visit, void *arg)
+listiter_traverse(_PyListIterObject *it, visitproc visit, void *arg)
 {
     Py_VISIT(it->it_seq);
     return 0;
 }
 
 static PyObject *
-listiter_next(listiterobject *it)
+listiter_next(_PyListIterObject *it)
 {
     PyListObject *seq;
     PyObject *item;
@@ -3300,7 +3300,7 @@ listiter_next(listiterobject *it)
 }
 
 static PyObject *
-listiter_len(listiterobject *it, PyObject *Py_UNUSED(ignored))
+listiter_len(_PyListIterObject *it, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t len;
     if (it->it_seq) {
@@ -3312,13 +3312,13 @@ listiter_len(listiterobject *it, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-listiter_reduce(listiterobject *it, PyObject *Py_UNUSED(ignored))
+listiter_reduce(_PyListIterObject *it, PyObject *Py_UNUSED(ignored))
 {
     return listiter_reduce_general(it, 1);
 }
 
 static PyObject *
-listiter_setstate(listiterobject *it, PyObject *state)
+listiter_setstate(_PyListIterObject *it, PyObject *state)
 {
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
@@ -3493,7 +3493,7 @@ listiter_reduce_general(void *_it, int forward)
 
     /* the objects are not the same, index is of different types! */
     if (forward) {
-        listiterobject *it = (listiterobject *)_it;
+        _PyListIterObject *it = (_PyListIterObject *)_it;
         if (it->it_seq) {
             return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
                                  it->it_seq, it->it_index);

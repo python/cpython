@@ -2512,7 +2512,7 @@ To add cleanup code that must be run even in the case of an exception, use
    after :func:`setUpModule` if :func:`setUpModule` raises an exception.
 
    It is responsible for calling all the cleanup functions added by
-   :func:`addCleanupModule`. If you need cleanup functions to be called
+   :func:`addModuleCleanup`. If you need cleanup functions to be called
    *prior* to :func:`tearDownModule` then you can call
    :func:`doModuleCleanups` yourself.
 
