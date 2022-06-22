@@ -2498,6 +2498,16 @@ class IpaddrUnitTest(unittest.TestCase):
                          'b.d.0.1.0.0.2.ip6.arpa',
                          addr2.reverse_pointer)
 
+    def testReversePointerIPNetwork(self):
+        ipnet6_1 = ipaddress.ip_network('2001:db8:1:2:3:4:5::/64',False)
+        ipnet4_1 = ipaddress.ip_network('127.0.0.1/24',False)
+        ipnet6_2 = ipaddress.ip_network('2001:db8:1:2:3:4:5::',False)
+        ipnet4_2 = ipaddress.ip_network('127.0.0.1',False)
+        self.assertEqual('0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.0.0.1.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa', ipnet6_1.reverse_pointer)
+        self.assertEqual('0.0.0.0.5.0.0.0.4.0.0.0.3.0.0.0.2.0.0.0.1.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa', ipnet6_2.reverse_pointer)
+        self.assertEqual('0.0.0.127.in-addr.arpa', ipnet4_1.reverse_pointer)
+        self.assertEqual('1.0.0.127.in-addr.arpa', ipnet4_2.reverse_pointer)
+
     def testIntRepresentation(self):
         self.assertEqual(16909060, int(self.ipv4_address))
         self.assertEqual(42540616829182469433547762482097946625,

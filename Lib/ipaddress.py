@@ -1251,7 +1251,8 @@ class _BaseV4:
         This implements the method described in RFC1035 3.5.
 
         """
-        reverse_octets = str(self).split('.')[::-1]
+        no_prefix = str(self).split("/")[0]
+        reverse_octets = no_prefix.split('.')[::-1]
         return '.'.join(reverse_octets) + '.in-addr.arpa'
 
     @property
@@ -1837,7 +1838,8 @@ class _BaseV6:
         This implements the method described in RFC3596 2.5.
 
         """
-        reverse_chars = self.exploded[::-1].replace(':', '')
+        no_prefix = self.exploded.split("/")[0]
+        reverse_chars = no_prefix[::-1].replace(':', '')
         return '.'.join(reverse_chars) + '.ip6.arpa'
 
     @staticmethod
