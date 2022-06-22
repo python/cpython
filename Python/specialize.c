@@ -1253,7 +1253,6 @@ _Py_Specialize_BinarySubscr(
         _Py_SET_OPCODE(*instr, BINARY_SUBSCR_DICT);
         goto success;
     }
-
     PyTypeObject *cls = Py_TYPE(container);
     PyObject *descriptor = _PyType_Lookup(cls, &_Py_ID(__getitem__));
     if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
