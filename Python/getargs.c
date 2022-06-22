@@ -919,7 +919,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         if (*format == '#') {
             REQUIRE_PY_SSIZE_T_CLEAN;
             Py_ssize_t *psize = va_arg(*p_va, Py_ssize_t*);
-            *psize = count;
+            memcpy(psize, &count, sizeof(Py_ssize_t));
             format++;
         } else {
             if (strlen(*p) != (size_t)count) {
