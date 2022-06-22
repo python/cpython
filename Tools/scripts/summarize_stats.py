@@ -7,7 +7,6 @@ import os.path
 import opcode
 from datetime import date
 import itertools
-import argparse
 import sys
 
 if os.name == "nt":
