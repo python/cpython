@@ -1054,8 +1054,8 @@ class TestInterestingEdgeCases(unittest.TestCase):
     def assert_stop_iteration(self, iterator):
         with self.assertRaises(StopIteration) as caught:
             next(iterator)
-        self.assertIs(caught.exception.value, None)
-        self.assertIs(caught.exception.__context__, None)
+        self.assertIsNone(caught.exception.value)
+        self.assertIsNone(caught.exception.__context__)
 
     def assert_generator_raised_stop_iteration(self):
         return self.assertRaisesRegex(RuntimeError, r"^generator raised StopIteration$")
@@ -1090,7 +1090,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             with self.assertRaises(GeneratorExit) as caught:
                 g.throw(thrown)
             self.assertIs(caught.exception, thrown)
-            self.assertIs(caught.exception.__context__, None)
+            self.assertIsNone(caught.exception.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw StopIteration"):
@@ -1101,7 +1101,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             with self.assert_generator_raised_stop_iteration() as caught:
                 g.throw(thrown)
             self.assertIs(caught.exception.__context__, thrown)
-            self.assertIs(caught.exception.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw BaseException"):
@@ -1111,7 +1111,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             with self.assertRaises(BaseException) as caught:
                 g.throw(thrown)
             self.assertIs(caught.exception, thrown)
-            self.assertIs(caught.exception.__context__, None)
+            self.assertIsNone(caught.exception.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw Exception"):
@@ -1121,7 +1121,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             with self.assertRaises(Exception) as caught:
                 g.throw(thrown)
             self.assertIs(caught.exception, thrown)
-            self.assertIs(caught.exception.__context__, None)
+            self.assertIsNone(caught.exception.__context__)
             self.assert_stop_iteration(g)
 
     def test_close_and_throw_raise_generator_exit(self):
@@ -1161,7 +1161,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             # propagates. This is consistent with PEP 380:
             # https://peps.python.org/pep-0380/#proposal
             self.assertIs(caught.exception, thrown)
-            self.assertIs(caught.exception.__context__, None)
+            self.assertIsNone(caught.exception.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw StopIteration"):
@@ -1173,7 +1173,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
                 g.throw(thrown)
             self.assertIs(caught.exception, raised)
             self.assertIs(caught.exception.__context__, thrown)
-            self.assertIs(caught.exception.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw BaseException"):
@@ -1185,7 +1185,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
                 g.throw(thrown)
             self.assertIs(caught.exception, raised)
             self.assertIs(caught.exception.__context__, thrown)
-            self.assertIs(caught.exception.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw Exception"):
@@ -1197,7 +1197,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
                 g.throw(thrown)
             self.assertIs(caught.exception, raised)
             self.assertIs(caught.exception.__context__, thrown)
-            self.assertIs(caught.exception.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__)
             self.assert_stop_iteration(g)
 
     def test_close_and_throw_raise_stop_iteration(self):
@@ -1226,7 +1226,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
                 g.close()
             self.assertIs(caught.exception.__context__, raised)
             self.assertIsInstance(caught.exception.__context__.__context__, GeneratorExit)
-            self.assertIs(caught.exception.__context__.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw GeneratorExit"):
@@ -1241,7 +1241,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             # This isn't the same GeneratorExit as thrown! It's the one created
             # by calling inner.close():
             self.assertIsInstance(caught.exception.__context__.__context__, GeneratorExit)
-            self.assertIs(caught.exception.__context__.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw StopIteration"):
@@ -1254,7 +1254,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
                 g.throw(thrown)
             self.assertIs(caught.exception.__context__, raised)
             self.assertIs(caught.exception.__context__.__context__, thrown)
-            self.assertIs(caught.exception.__context__.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw BaseException"):
@@ -1267,7 +1267,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
                 g.throw(thrown)
             self.assertIs(caught.exception.__context__, raised)
             self.assertIs(caught.exception.__context__.__context__, thrown)
-            self.assertIs(caught.exception.__context__.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw Exception"):
@@ -1280,7 +1280,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
                 g.throw(thrown)
             self.assertIs(caught.exception.__context__, raised)
             self.assertIs(caught.exception.__context__.__context__, thrown)
-            self.assertIs(caught.exception.__context__.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__.__context__)
             self.assert_stop_iteration(g)
 
     def test_close_and_throw_raise_base_exception(self):
@@ -1308,7 +1308,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
                 g.close()
             self.assertIs(caught.exception, raised)
             self.assertIsInstance(caught.exception.__context__, GeneratorExit)
-            self.assertIs(caught.exception.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw GeneratorExit"):
@@ -1322,7 +1322,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             # This isn't the same GeneratorExit as thrown! It's the one created
             # by calling inner.close():
             self.assertIsInstance(caught.exception.__context__, GeneratorExit)
-            self.assertIs(caught.exception.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw StopIteration"):
@@ -1334,7 +1334,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
                 g.throw(thrown)
             self.assertIs(caught.exception, raised)
             self.assertIs(caught.exception.__context__, thrown)
-            self.assertIs(caught.exception.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw BaseException"):
@@ -1346,7 +1346,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
                 g.throw(thrown)
             self.assertIs(caught.exception, raised)
             self.assertIs(caught.exception.__context__, thrown)
-            self.assertIs(caught.exception.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw Exception"):
@@ -1358,7 +1358,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
                 g.throw(thrown)
             self.assertIs(caught.exception, raised)
             self.assertIs(caught.exception.__context__, thrown)
-            self.assertIs(caught.exception.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__)
             self.assert_stop_iteration(g)
 
     def test_close_and_throw_raise_exception(self):
@@ -1386,7 +1386,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
                 g.close()
             self.assertIs(caught.exception, raised)
             self.assertIsInstance(caught.exception.__context__, GeneratorExit)
-            self.assertIs(caught.exception.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw GeneratorExit"):
@@ -1400,7 +1400,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             # This isn't the same GeneratorExit as thrown! It's the one created
             # by calling inner.close():
             self.assertIsInstance(caught.exception.__context__, GeneratorExit)
-            self.assertIs(caught.exception.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw StopIteration"):
@@ -1412,7 +1412,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
                 g.throw(thrown)
             self.assertIs(caught.exception, raised)
             self.assertIs(caught.exception.__context__, thrown)
-            self.assertIs(caught.exception.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw BaseException"):
@@ -1424,7 +1424,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
                 g.throw(thrown)
             self.assertIs(caught.exception, raised)
             self.assertIs(caught.exception.__context__, thrown)
-            self.assertIs(caught.exception.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw Exception"):
@@ -1436,7 +1436,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
                 g.throw(thrown)
             self.assertIs(caught.exception, raised)
             self.assertIs(caught.exception.__context__, thrown)
-            self.assertIs(caught.exception.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__)
             self.assert_stop_iteration(g)
 
     def test_close_and_throw_yield(self):
@@ -1462,7 +1462,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             # https://peps.python.org/pep-0342/#new-generator-method-close
             with self.assert_generator_ignored_generator_exit() as caught:
                 g.close()
-            self.assertIs(caught.exception.__context__, None)
+            self.assertIsNone(caught.exception.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw GeneratorExit"):
@@ -1473,7 +1473,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             # https://peps.python.org/pep-0342/#new-generator-method-close
             with self.assert_generator_ignored_generator_exit() as caught:
                 g.throw(thrown)
-            self.assertIs(caught.exception.__context__, None)
+            self.assertIsNone(caught.exception.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw StopIteration"):
@@ -1485,7 +1485,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             with self.assert_generator_raised_stop_iteration() as caught:
                 next(g)
             self.assertIs(caught.exception.__context__, thrown)
-            self.assertIs(caught.exception.__context__.__context__, None)
+            self.assertIsNone(caught.exception.__context__.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw BaseException"):
@@ -1496,7 +1496,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             with self.assertRaises(BaseException) as caught:
                 next(g)
             self.assertIs(caught.exception, thrown)
-            self.assertIs(caught.exception.__context__, None)
+            self.assertIsNone(caught.exception.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw Exception"):
@@ -1507,7 +1507,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             with self.assertRaises(Exception) as caught:
                 next(g)
             self.assertIs(caught.exception, thrown)
-            self.assertIs(caught.exception.__context__, None)
+            self.assertIsNone(caught.exception.__context__)
             self.assert_stop_iteration(g)
 
     def test_close_and_throw_return(self):
@@ -1543,7 +1543,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             with self.assertRaises(GeneratorExit) as caught:
                 g.throw(thrown)
             self.assertIs(caught.exception, thrown)
-            self.assertIs(caught.exception.__context__, None)
+            self.assertIsNone(caught.exception.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw StopIteration"):
@@ -1553,7 +1553,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             with self.assertRaises(StopIteration) as caught:
                 g.throw(thrown)
             self.assertIs(caught.exception.value, returned)
-            self.assertIs(caught.exception.__context__, None)
+            self.assertIsNone(caught.exception.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw BaseException"):
@@ -1563,7 +1563,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             with self.assertRaises(StopIteration) as caught:
                 g.throw(thrown)
             self.assertIs(caught.exception.value, returned)
-            self.assertIs(caught.exception.__context__, None)
+            self.assertIsNone(caught.exception.__context__)
             self.assert_stop_iteration(g)
 
         with self.subTest("throw Exception"):
@@ -1573,7 +1573,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             with self.assertRaises(StopIteration) as caught:
                 g.throw(thrown)
             self.assertIs(caught.exception.value, returned)
-            self.assertIs(caught.exception.__context__, None)
+            self.assertIsNone(caught.exception.__context__)
             self.assert_stop_iteration(g)
 
 
