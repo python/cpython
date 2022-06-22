@@ -776,6 +776,16 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         files = {TESTMOD + ".py": (NOW, test_src)}
         self.doTest(".py", files, TESTMOD, comment=b"c" * ((1 << 16) - 1))
 
+    def testZip64(self):
+        # This is the simplest way to make zipfile generate the zip64 EOCD block
+        files = {f"f{n}.py": (NOW, test_src) for n in range(65537)}
+        self.doTest(".py", files, "f6")
+
+    def testZip64CruftAndComment(self):
+        # This is the simplest way to make zipfile generate the zip64 EOCD block
+        files = {f"f{n}.py": (NOW, test_src) for n in range(65537)}
+        self.doTest(".py", files, "f65536", comment=b"c" * ((1 << 16) - 1))
+
 
 @support.requires_zlib()
 class CompressedZipImportTestCase(UncompressedZipImportTestCase):
