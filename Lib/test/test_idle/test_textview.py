@@ -5,6 +5,7 @@ is a widget containing a widget, etcetera, all tests must be gui tests.
 Using mock Text would not change this.  Other mocks are used to retrieve
 information about calls.
 """
+import idlelib
 from idlelib import textview as tv
 from test.support import requires
 requires('gui')
@@ -176,7 +177,7 @@ class ViewFunctionTest(unittest.TestCase):
 
     def test_bad_encoding(self):
         p = os.path
-        fn = p.abspath(p.join(p.dirname(__file__), '..', 'CREDITS.txt'))
+        fn = p.abspath(p.join(p.dirname(idlelib.__file__), 'CREDITS.txt'))
         view = tv.view_file(root, 'Title', fn, 'ascii', modal=False)
         self.assertIsNone(view)
         self.assertEqual(tv.showerror.title, 'Unicode Decode Error')

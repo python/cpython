@@ -89,7 +89,7 @@ class FindfilesTest(unittest.TestCase):
     def test_recurse(self):
         ff = grep.findfiles
         parent = os.path.dirname(self.path)
-        grepfile = os.path.join(parent, 'grep.py')
+        test_os = os.path.join(parent, 'test_os.py')
         pat = '*.py'
 
         # Get Python files only in parent directory.
@@ -97,7 +97,7 @@ class FindfilesTest(unittest.TestCase):
         parent_size = len(filelist)
         # Lots of Python files in idlelib.
         self.assertGreater(parent_size, 20)
-        self.assertIn(grepfile, filelist)
+        self.assertIn(test_os, filelist)
         # Without subdirectories, this file isn't returned.
         self.assertNotIn(self.realpath, filelist)
 
@@ -105,7 +105,7 @@ class FindfilesTest(unittest.TestCase):
         filelist = list(ff(parent, pat, True))
         # More files found now.
         self.assertGreater(len(filelist), parent_size)
-        self.assertIn(grepfile, filelist)
+        self.assertIn(test_os, filelist)
         # This file exists in list now.
         self.assertIn(self.realpath, filelist)
 
