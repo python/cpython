@@ -216,8 +216,8 @@ Module functions and constants
          n number(10)            ! will look up a converter named "number"
        )
 
-   This flag may be paired with :const:`PARSE_COLNAMES` using the ``|``
-   operator.
+   This flag may be combined with :const:`PARSE_COLNAMES` using the ``|``
+   (bitwise or) operator.
 
 
 .. data:: PARSE_COLNAMES
