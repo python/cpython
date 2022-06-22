@@ -9,7 +9,6 @@ from tkinter import filedialog
 from tkinter import messagebox
 from tkinter.simpledialog import askstring
 
-import idlelib
 from idlelib.config import idleConf
 from idlelib.util import py_extensions
 
