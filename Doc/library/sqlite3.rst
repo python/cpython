@@ -329,8 +329,8 @@ Module functions and constants
    *typename*. Consult the parameter *detect_types* of
    :func:`connect` for information regarding how type detection works.
 
-   Note: *typename* and the name of the type in your query are matched in a
-   case-insensitive manner.
+   Note: *typename* and the name of the type in your query are matched
+   case-insensitively.
 
 
 .. function:: register_adapter(type, adapter)
