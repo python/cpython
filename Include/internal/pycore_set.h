@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+/***** Set iterator type ***********************************************/
+
 typedef struct {
     PyObject_HEAD
     PySetObject *si_set; /* Set to NULL when iterator is exhausted */

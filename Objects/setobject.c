@@ -729,8 +729,6 @@ frozenset_hash(PyObject *self)
     return hash;
 }
 
-/***** Set iterator type ***********************************************/
-
 static void
 setiter_dealloc(_PySetIterObject *si)
 {
