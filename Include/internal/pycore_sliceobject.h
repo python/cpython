@@ -13,6 +13,8 @@ extern "C" {
 
 extern void _PySlice_Fini(PyInterpreterState *);
 
+extern PyObject *
+_PyBuildSlice_Consume2(PyObject *start, PyObject *stop);
 
 #ifdef __cplusplus
 }

@@ -23,6 +23,7 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
+#include "pycore_sliceobject.h"   // _PyBuildSlice_Consume2
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
@@ -2136,6 +2137,46 @@ handle_eval_breaker:
             if (res == NULL)
                 goto error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            DISPATCH();
+        }
+
+        TARGET(BINARY_SLICE) {
+            PyObject *stop = POP();
+            PyObject *start = POP();
+            PyObject *container = TOP();
+
+            PyObject *slice = _PyBuildSlice_Consume2(start, stop);
+            if (slice == NULL) {
+                goto error;
+            }
+            PyObject *res = PyObject_GetItem(container, slice);
+            Py_DECREF(slice);
+            if (res == NULL) {
+                goto error;
+            }
+            SET_TOP(res);
+            Py_DECREF(container);
+            DISPATCH();
+        }
+
+        TARGET(STORE_SLICE) {
+            PyObject *stop = POP();
+            PyObject *start = POP();
+            PyObject *container = TOP();
+            PyObject *v = SECOND();
+
+            PyObject *slice = _PyBuildSlice_Consume2(start, stop);
+            if (slice == NULL) {
+                goto error;
+            }
+            int err = PyObject_SetItem(container, slice, v);
+            Py_DECREF(slice);
+            if (err) {
+                goto error;
+            }
+            STACK_SHRINK(2);
+            Py_DECREF(v);
+            Py_DECREF(container);
             DISPATCH();
         }
 

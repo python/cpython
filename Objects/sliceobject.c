@@ -149,6 +149,37 @@ PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
 }
 
 PyObject *
+_PyBuildSlice_Consume2(PyObject *start, PyObject *stop)
+{
+    assert(start != NULL && stop != NULL);
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PySliceObject *obj;
+    if (interp->slice_cache != NULL) {
+        obj = interp->slice_cache;
+        interp->slice_cache = NULL;
+        _Py_NewReference((PyObject *)obj);
+    }
+    else {
+        obj = PyObject_GC_New(PySliceObject, &PySlice_Type);
+        if (obj == NULL) {
+            goto error;
+        }
+    }
+
+    obj->start = start;
+    obj->stop = stop;
+    obj->step = Py_NewRef(Py_None);
+
+    _PyObject_GC_TRACK(obj);
+    return (PyObject *) obj;
+error:
+    Py_DECREF(start);
+    Py_DECREF(stop);
+    return NULL;
+}
+
+PyObject *
 _PySlice_FromIndices(Py_ssize_t istart, Py_ssize_t istop)
 {
     PyObject *start, *end, *slice;
