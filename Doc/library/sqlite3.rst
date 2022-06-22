@@ -1285,7 +1285,7 @@ and constructs a :class:`Point` object from it.
 
 We now need to tell ``sqlite3`` when it should convert a given SQLite value.
 This is done when connecting to a database, using the *detect_types* parameter
-of :meth:`connect`. There are three options:
+of :func:`connect`. There are three options:
 
 * Implicit: set *detect_types* to :const:`PARSE_DECLTYPES`
 * Explicit: set *detect_types* to :const:`PARSE_COLNAMES`
