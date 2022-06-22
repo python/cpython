@@ -222,8 +222,9 @@ Module functions and constants
 
 .. data:: PARSE_COLNAMES
 
-   Use this flag together with the *detect_types* parameter of :meth:`connect` to enable
-   parsing of column names in queries.
+   Pass this flag value to the *detect_types* parameter of
+   :func:`connect` to look up a converter function by
+   parsing the column names in queries.
    ``sqlite3`` will look for strings containing square brackets (``[]``),
    and will look up a converter function using the word inside the brackets as
    the converter dictionary key.
