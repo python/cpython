@@ -106,7 +106,6 @@ help.html    # copy of idle.html in docs, displayed by IDLE Help
 Subdirectories
 --------------
 Icons        # small image files
-idle_test    # files for human test and automated unit tests
 
 Unused and Deprecated files and objects (nim)
 ---------------------------------------------

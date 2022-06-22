@@ -9,14 +9,14 @@ python -m test.test_idle
 
 Human-mediated tests were added later in 3.4.
 
-python -m idlelib.idle_test.htest
+python -m test.test_idle.htest
 
 
 1. Test Files
 
-The idle directory, idlelib, has over 60 xyz.py files. The idle_test
+The idle directory, idlelib, has over 60 xyz.py files. The Lib/test/test_idle
 subdirectory contains test_xyz.py for each implementation file xyz.py.
-To add a test for abc.py, open idle_test/template.py and immediately
+To add a test for abc.py, open Lib/test/test_idle/template.py and immediately
 Save As test_abc.py.  Insert 'abc' on the first line, and replace
 'zzdummy' with 'abc.
 
@@ -33,7 +33,7 @@ insert the import and main lines before the htest lines.
 
 if __name__ == "__main__":
     from unittest import main
-    main('idlelib.idle_test.test_abc', verbosity=2, exit=False)
+    main('test.test_idle.test_abc', verbosity=2, exit=False)
 
 The ', exit=False' is only needed if an htest follows.
 
@@ -114,7 +114,7 @@ these conditions are met:
 
 Tests of non-GUI operations should avoid creating tk widgets. Incidental
 uses of tk variables and messageboxes can be replaced by the mock
-classes in idle_test/mock_tk.py. The mock text handles some uses of the
+classes in test_idle/mock_tk.py. The mock text handles some uses of the
 tk Text widget.
 
 
@@ -132,22 +132,22 @@ GUI tests, in test_xyz.py. (Both '-m idlelib' and '-m idlelib.idle'
 start Idle and so cannot run tests.)
 
 python -m idlelib.xyz
-python -m idlelib.idle_test.test_xyz
+python -m test.test_idle.test_xyz
 
-The following runs all idle_test/test_*.py tests interactively.
+The following runs all test_idle/test_*.py tests interactively.
 
 >>> import unittest
->>> unittest.main('idlelib.idle_test', verbosity=2)
+>>> unittest.main('test.test_idle', verbosity=2)
 
 The following run all Idle tests at a command line.  Option '-v' is the
 same as 'verbosity=2'.
 
-python -m unittest -v idlelib.idle_test
+python -m unittest -v test.test_idle
 python -m test -v -ugui test_idle
 python -m test.test_idle
 
 The idle tests are 'discovered' by
-idlelib.idle_test.__init__.load_tests, which is also imported into
+test.test_idle.__init__.load_tests, which is also imported into
 test.test_idle. Normally, neither file should be changed when working on
 individual test modules. The third command runs unittest indirectly
 through regrtest. The same happens when the entire test suite is run
@@ -161,8 +161,8 @@ latter allows use of other regrtest options.  When using the latter,
 all components of the pattern must be present, but any can be replaced
 by '*'.
 
-python -m unittest -v idlelib.idle_test.test_xyz.Test_case.test_meth
-python -m test -m idlelib.idle_test.text_xyz.Test_case.test_meth test_idle
+python -m unittest -v test.test_idle.test_xyz.Test_case.test_meth
+python -m test -m test.test_idle.text_xyz.Test_case.test_meth test_idle
 
 The test suite can be run in an IDLE user process from Shell.
 >>> import test.autotest  # Issue 25588, 2017/10/13, 3.6.4, 3.7.0a2.
@@ -173,13 +173,13 @@ work when run from the editor.
 4. Human-mediated Tests
 
 Human-mediated tests are widget tests that cannot be automated but need
-human verification. They are contained in idlelib/idle_test/htest.py,
+human verification. They are contained in test_idle/htest.py,
 which has instructions.  (Some modules need an auxiliary function,
 identified with "# htest # on the header line.)  The set is about
 complete, though some tests need improvement. To run all htests, run the
 htest file from an editor or from the command line with:
 
-python -m idlelib.idle_test.htest
+python -m test.test_idle.htest
 
 
 5. Test Coverage
@@ -225,8 +225,8 @@ rem filename without .py, 2nd parameter if test is not test_filename
 setlocal
 set py=f:\dev\3x\pcbuild\win32\python_d.exe
 set src=idlelib.%1
-if "%2" EQU "" set tst=f:/dev/3x/Lib/idlelib/idle_test/test_%1.py
-if "%2" NEQ "" set tst=f:/dev/ex/Lib/idlelib/idle_test/test_%2.py
+if "%2" EQU "" set tst=f:/dev/3x/Lib/test/test_idle/test_%1.py
+if "%2" NEQ "" set tst=f:/dev/ex/Lib/test/test_idle/test_%2.py
 
 %py% -m coverage run --pylib --source=%src% %tst%
 %py% -m coverage report --show-missing
