@@ -33,7 +33,7 @@ class Runner:
 
     If debug is True, the event loop will be run in debug mode.
     If loop_factory is passed, it is used for new event loop creation, otherwise
-    a ProactorEventLoop will be started on Windows and a SelectorEventLoop will
+    a ProactorEventLoop will be started on Windows or a SelectorEventLoop will
     be started on unix
     If set_policy_loop is True, the event loop in the default policy will be
     set.
