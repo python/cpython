@@ -906,6 +906,6 @@ def _dump():  # htest # (not really, but ignore in coverage)
 
 if __name__ == '__main__':
     from unittest import main
-    main('idlelib.idle_test.test_config', verbosity=2, exit=False)
+    main('test.test_idle.test_config', verbosity=2, exit=False)
 
     # Run revised _dump() as htest?

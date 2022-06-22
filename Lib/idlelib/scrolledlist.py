@@ -143,7 +143,7 @@ def _scrolled_list(parent):  # htest #
 
 if __name__ == '__main__':
     from unittest import main
-    main('idlelib.idle_test.test_scrolledlist', verbosity=2,)
+    main('test.test_idle.test_scrolledlist', verbosity=2,)
 
-    from idlelib.idle_test.htest import run
+    from test.test_idle.htest import run
     run(_scrolled_list)

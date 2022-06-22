@@ -637,6 +637,6 @@ class Executive:
 
 if __name__ == '__main__':
     from unittest import main
-    main('idlelib.idle_test.test_run', verbosity=2)
+    main('test.test_idle.test_run', verbosity=2)
 
 capture_warnings(False)  # Make sure turned off; see bpo-18081.

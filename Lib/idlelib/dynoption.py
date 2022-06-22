@@ -54,5 +54,5 @@ def _dyn_option_menu(parent):  # htest #
     button.pack()
 
 if __name__ == '__main__':
-    from idlelib.idle_test.htest import run
+    from test.test_idle.htest import run
     run(_dyn_option_menu)

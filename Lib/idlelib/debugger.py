@@ -545,6 +545,6 @@ class NamespaceViewer:
 
 if __name__ == "__main__":
     from unittest import main
-    main('idlelib.idle_test.test_debugger', verbosity=2, exit=False)
+    main('test.test_idle.test_debugger', verbosity=2, exit=False)
 
 # TODO: htest?

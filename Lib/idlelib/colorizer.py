@@ -357,7 +357,7 @@ class ColorDelegator(Delegator):
 
 def _color_delegator(parent):  # htest #
     from tkinter import Toplevel, Text
-    from idlelib.idle_test.test_colorizer import source
+    from test.test_idle.test_colorizer import source
     from idlelib.percolator import Percolator
 
     top = Toplevel(parent)
@@ -378,7 +378,7 @@ def _color_delegator(parent):  # htest #
 
 if __name__ == "__main__":
     from unittest import main
-    main('idlelib.idle_test.test_colorizer', verbosity=2, exit=False)
+    main('test.test_idle.test_colorizer', verbosity=2, exit=False)
 
-    from idlelib.idle_test.htest import run
+    from test.test_idle.htest import run
     run(_color_delegator)

@@ -231,4 +231,4 @@ def get_line_col(index):
 
 if __name__ == "__main__":
     from unittest import main
-    main('idlelib.idle_test.test_searchengine', verbosity=2)
+    main('test.test_idle.test_searchengine', verbosity=2)

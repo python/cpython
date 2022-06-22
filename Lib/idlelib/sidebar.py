@@ -515,7 +515,7 @@ class ShellSidebar(BaseSideBar):
 
 
 def _linenumbers_drag_scrolling(parent):  # htest #
-    from idlelib.idle_test.test_sidebar import Dummy_editwin
+    from test.test_idle.test_sidebar import Dummy_editwin
 
     toplevel = tk.Toplevel(parent)
     text_frame = tk.Frame(toplevel)
@@ -538,7 +538,7 @@ def _linenumbers_drag_scrolling(parent):  # htest #
 
 if __name__ == '__main__':
     from unittest import main
-    main('idlelib.idle_test.test_sidebar', verbosity=2, exit=False)
+    main('test.test_idle.test_sidebar', verbosity=2, exit=False)
 
-    from idlelib.idle_test.htest import run
+    from test.test_idle.htest import run
     run(_linenumbers_drag_scrolling)

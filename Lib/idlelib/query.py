@@ -386,7 +386,7 @@ class CustomRun(Query):
 
 if __name__ == '__main__':
     from unittest import main
-    main('idlelib.idle_test.test_query', verbosity=2, exit=False)
+    main('test.test_idle.test_query', verbosity=2, exit=False)
 
-    from idlelib.idle_test.htest import run
+    from test.test_idle.htest import run
     run(Query, HelpSource, CustomRun)

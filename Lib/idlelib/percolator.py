@@ -112,7 +112,7 @@ def _percolator(parent):  # htest #
 
 if __name__ == "__main__":
     from unittest import main
-    main('idlelib.idle_test.test_percolator', verbosity=2, exit=False)
+    main('test.test_idle.test_percolator', verbosity=2, exit=False)
 
-    from idlelib.idle_test.htest import run
+    from test.test_idle.htest import run
     run(_percolator)
