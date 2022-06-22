@@ -199,8 +199,9 @@ Module functions and constants
 
 .. data:: PARSE_DECLTYPES
 
-   Use this flag together with the *detect_types* parameter of :meth:`connect` to enable
-   parsing of declared types for each column returned.
+   Pass this flag value to the *detect_types* parameter of
+   :func:`connect` to look up a converter function using
+   the declared types for each column.
    The types are declared when the database table is created.
    ``sqlite3`` will look up a converter function using the first word of the
    declared type as the converter dictionary key.
