@@ -20,8 +20,7 @@ if sys.platform == 'win32':
 else:
     errors = 'surrogateescape'
 
-
-
+    
 class IOBinding:
 # One instance per editor Window so methods know which to save, close.
 # Open returns focus to self.editwin if aborted.
