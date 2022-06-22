@@ -568,12 +568,18 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    .. note::
 
-      This function is not thread-safe.
+      This function is not thread-safe when custom archivers registered
+      with :func:`register_archive_format` are used.  In this case it
+      temporarily changes the current working directory of the process
+      to perform archiving.
 
    .. versionchanged:: 3.8
       The modern pax (POSIX.1-2001) format is now used instead of
       the legacy GNU format for archives created with ``format="tar"``.
 
+   .. versionchanged:: 3.10.6
+      This function is now made thread-safe during creation of standard
+      ``.zip`` and tar archives.
 
 .. function:: get_archive_formats()
 
