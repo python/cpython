@@ -1292,7 +1292,7 @@ of :func:`connect`. There are three options:
 * Both: set *detect_types* to
   ``sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES``
 
-The following example illustrates the implicit and explicit approach:
+The following example illustrates the implicit and explicit approaches:
 
 .. literalinclude:: ../includes/sqlite3/converter_point.py
 
