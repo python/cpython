@@ -2995,6 +2995,95 @@ refer to the comments in the code snippet for more detailed information.
     if __name__=='__main__':
         main()
 
+Logging to syslog with RFC5424 support
+--------------------------------------
+
+Although :rfc:`5424` dates from 2009, most syslog servers are configured by detault to
+use the older :rfc:`3164`, which hails from 2001. When ``logging`` was added to Python
+in 2003, it supported the earlier (and only existing) protocol at the time. Since
+RFC5424 came out, as there has not been widespread deployment of it in syslog
+servers, the :class:`~logging.handlers.SysLogHandler` functionality has not been
+updated.
+
+RFC 5424 contains some useful features such as support for structured data, and if you
+need to be able to log to a syslog server with support for it, you can do so with a
+subclassed handler which looks something like this::
+
+    import datetime
+    import logging.handlers
+    import re
+    import socket
+    import time
+
+    class SysLogHandler5424(logging.handlers.SysLogHandler):
+
+        tz_offset = re.compile(r'([+-]\d{2})(\d{2})$')
+        escaped = re.compile(r'([\]"\\])')
+
+        def __init__(self, *args, **kwargs):
+            self.msgid = kwargs.pop('msgid', None)
+            self.appname = kwargs.pop('appname', None)
+            super().__init__(*args, **kwargs)
+
+        def format(self, record):
+            version = 1
+            asctime = datetime.datetime.fromtimestamp(record.created).isoformat()
+            m = self.tz_offset.match(time.strftime('%z'))
+            has_offset = False
+            if m and time.timezone:
+                hrs, mins = m.groups()
+                if int(hrs) or int(mins):
+                    has_offset = True
+            if not has_offset:
+                asctime += 'Z'
+            else:
+                asctime += f'{hrs}:{mins}'
+            try:
+                hostname = socket.gethostname()
+            except Exception:
+                hostname = '-'
+            appname = self.appname or '-'
+            procid = record.process
+            msgid = '-'
+            msg = super().format(record)
+            sdata = '-'
+            if hasattr(record, 'structured_data'):
+                sd = record.structured_data
+                # This should be a dict where the keys are SD-ID and the value is a
+                # dict mapping PARAM-NAME to PARAM-VALUE (refer to the RFC for what these
+                # mean)
+                # There's no error checking here - it's purely for illustration, and you
+                # can adapt this code for use in production environments
+                parts = []
+
+                def replacer(m):
+                    g = m.groups()
+                    return '\\' + g[0]
+
+                for sdid, dv in sd.items():
+                    part = f'[{sdid}'
+                    for k, v in dv.items():
+                        s = str(v)
+                        s = self.escaped.sub(replacer, s)
+                        part += f' {k}="{s}"'
+                    part += ']'
+                    parts.append(part)
+                sdata = ''.join(parts)
+            return f'{version} {asctime} {hostname} {appname} {procid} {msgid} {sdata} {msg}'
+
+You'll need to be familiar with RFC 5424 to fully understand the above code, and it
+may be that you have slightly different needs (e.g. for how you pass structural data
+to the log). Nevertheless, the above should be adaptable to your speciric needs. With
+the above handler, you'd pass structured data using something like this::
+
+    sd = {
+        'foo@12345': {'bar': 'baz', 'baz': 'bozz', 'fizz': r'buzz'},
+        'foo@54321': {'rab': 'baz', 'zab': 'bozz', 'zzif': r'buzz'}
+    }
+    extra = {'structured_data': sd}
+    i = 1
+    logger.debug('Message %d', i, extra=extra)
+
 
 .. patterns-to-avoid:
 

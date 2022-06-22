@@ -2,7 +2,6 @@ import faulthandler
 import json
 import os
 import queue
-import shlex
 import signal
 import subprocess
 import sys
@@ -57,8 +56,7 @@ def run_test_in_subprocess(testname: str, ns: Namespace) -> subprocess.Popen:
     worker_args = (ns_dict, testname)
     worker_args = json.dumps(worker_args)
     if ns.python is not None:
-        # The "executable" may be two or more parts, e.g. "node python.js"
-        executable = shlex.split(ns.python)
+        executable = ns.python
     else:
         executable = [sys.executable]
     cmd = [*executable, *support.args_from_interpreter_flags(),

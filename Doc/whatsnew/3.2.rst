@@ -1647,7 +1647,7 @@ for secure (encrypted, authenticated) internet connections:
 * The :func:`ssl.wrap_socket` constructor function now takes a *ciphers*
   argument.  The *ciphers* string lists the allowed encryption algorithms using
   the format described in the `OpenSSL documentation
-  <https://www.openssl.org/docs/manmaster/man1/ciphers.html#CIPHER-LIST-FORMAT>`__.
+  <https://www.openssl.org/docs/man1.0.2/man1/ciphers.html#CIPHER-LIST-FORMAT>`__.
 
 * When linked against recent versions of OpenSSL, the :mod:`ssl` module now
   supports the Server Name Indication extension to the TLS protocol, allowing
@@ -2593,10 +2593,12 @@ Changes to Python's build process and to the C API include:
   longer used and it had never been documented (:issue:`8837`).
 
 There were a number of other small changes to the C-API.  See the
-:source:`Misc/NEWS` file for a complete list.
+Misc/NEWS <https://github.com/python/cpython/blob/v3.2.6/Misc/NEWS>`_
+file for a complete list.
 
 Also, there were a number of updates to the Mac OS X build, see
-:source:`Mac/BuildScript/README.txt` for details.  For users running a 32/64-bit
+`Mac/BuildScript/README.txt <https://github.com/python/cpython/blob/v3.2.6/Mac/BuildScript/README.txt>`_
+for details.  For users running a 32/64-bit
 build, there is a known problem with the default Tcl/Tk on Mac OS X 10.6.
 Accordingly, we recommend installing an updated alternative such as
 `ActiveState Tcl/Tk 8.5.9 <https://www.activestate.com/activetcl/downloads>`_\.

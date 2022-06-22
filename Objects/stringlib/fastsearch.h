@@ -345,7 +345,7 @@ STRINGLIB(_preprocess)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
     }
     // Fill up a compressed Boyer-Moore "Bad Character" table
     Py_ssize_t not_found_shift = Py_MIN(len_needle, MAX_SHIFT);
-    for (Py_ssize_t i = 0; i < TABLE_SIZE; i++) {
+    for (Py_ssize_t i = 0; i < (Py_ssize_t)TABLE_SIZE; i++) {
         p->table[i] = Py_SAFE_DOWNCAST(not_found_shift,
                                        Py_ssize_t, SHIFT_TYPE);
     }

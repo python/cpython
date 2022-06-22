@@ -1902,6 +1902,7 @@ class _BasePathTest(object):
             with p:
                 pass
 
+    @os_helper.skip_unless_working_chmod
     def test_chmod(self):
         p = self.cls(BASE) / 'fileA'
         mode = p.stat().st_mode
@@ -1916,6 +1917,7 @@ class _BasePathTest(object):
 
     # On Windows, os.chmod does not follow symlinks (issue #15411)
     @only_posix
+    @os_helper.skip_unless_working_chmod
     def test_chmod_follow_symlinks_true(self):
         p = self.cls(BASE) / 'linkA'
         q = p.resolve()
@@ -1931,6 +1933,7 @@ class _BasePathTest(object):
 
     # XXX also need a test for lchmod.
 
+    @os_helper.skip_unless_working_chmod
     def test_stat(self):
         p = self.cls(BASE) / 'fileA'
         st = p.stat()

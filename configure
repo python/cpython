@@ -949,6 +949,7 @@ CONFIG_ARGS
 SOVERSION
 VERSION
 PYTHON_FOR_REGEN
+PYTHON_FOR_BUILD_DEPS
 FREEZE_MODULE_DEPS
 FREEZE_MODULE
 FREEZE_MODULE_BOOTSTRAP_DEPS
@@ -3282,6 +3283,7 @@ if test "x$cross_compiling" = xyes; then :
     FREEZE_MODULE_BOOTSTRAP_DEPS='$(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
     FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
+    PYTHON_FOR_BUILD_DEPS=''
 
 else
 
@@ -3289,9 +3291,11 @@ else
     FREEZE_MODULE_BOOTSTRAP_DEPS="Programs/_freeze_module"
     FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
+    PYTHON_FOR_BUILD_DEPS='$(BUILDPYTHON)'
 
 
 fi
+
 
 
 
@@ -5213,6 +5217,39 @@ $as_echo "$ac_cv_path_EGREP" >&6; }
 
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CC compiler name" >&5
+$as_echo_n "checking for CC compiler name... " >&6; }
+if ${ac_cv_cc_name+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+cat > conftest.c <<EOF
+#if defined(__INTEL_COMPILER) || defined(__ICC)
+  icc
+#elif defined(__ibmxl__) || defined(__xlc__) || defined(__xlC__)
+  xlc
+#elif defined(_MSC_VER)
+  msvc
+#elif defined(__clang__)
+  clang
+#elif defined(__GNUC__)
+  gcc
+#else
+#  error unknown compiler
+#endif
+EOF
+
+if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
+  ac_cv_cc_name=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
+else
+  ac_cv_cc_name="unknown"
+fi
+rm -f conftest.c conftest.out
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cc_name" >&5
+$as_echo "$ac_cv_cc_name" >&6; }
+
 # checks for UNIX variants that set C preprocessor variables
 # may set _GNU_SOURCE, __EXTENSIONS__, _POSIX_PTHREAD_SEMANTICS,
 # _POSIX_SOURCE, _POSIX_1_SOURCE, and more
@@ -6172,6 +6209,66 @@ if test x$MULTIARCH != x; then
 fi
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PEP 11 support tier" >&5
+$as_echo_n "checking for PEP 11 support tier... " >&6; }
+case $host/$ac_cv_cc_name in #(
+  x86_64-*-linux-gnu/gcc) :
+    PY_SUPPORT_TIER=1 ;; #(
+    x86_64-apple-darwin*/clang) :
+    PY_SUPPORT_TIER=1 ;; #(
+    i686-pc-windows-msvc/msvc) :
+    PY_SUPPORT_TIER=1 ;; #(
+    x86_64-pc-windows-msvc/msvc) :
+    PY_SUPPORT_TIER=1 ;; #(
+
+  aarch64-apple-darwin*/clang) :
+    PY_SUPPORT_TIER=2 ;; #(
+    aarch64-*-linux-gnu/gcc) :
+    PY_SUPPORT_TIER=2 ;; #(
+    aarch64-*-linux-gnu/clang) :
+    PY_SUPPORT_TIER=2 ;; #(
+  powerpc64le-*-linux-gnu/gcc) :
+    PY_SUPPORT_TIER=2 ;; #(
+    x86_64-*-linux-gnu/clang) :
+    PY_SUPPORT_TIER=2 ;; #(
+
+  aarch64-pc-windows-msvc/msvc) :
+    PY_SUPPORT_TIER=3 ;; #(
+    armv7l-*-linux-gnueabihf/gcc) :
+    PY_SUPPORT_TIER=3 ;; #(
+    powerpc64le-*-linux-gnu/clang) :
+    PY_SUPPORT_TIER=3 ;; #(
+    s390x-*-linux-gnu/gcc) :
+    PY_SUPPORT_TIER=3 ;; #(
+        x86_64-*-freebsd/clang) :
+    PY_SUPPORT_TIER=3 ;; #(
+  *) :
+      PY_SUPPORT_TIER=0
+ ;;
+esac
+
+case $PY_SUPPORT_TIER in #(
+  1) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $host/$ac_cv_cc_name has tier 1 (supported)" >&5
+$as_echo "$host/$ac_cv_cc_name has tier 1 (supported)" >&6; } ;; #(
+  2) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $host/$ac_cv_cc_name has tier 2 (supported)" >&5
+$as_echo "$host/$ac_cv_cc_name has tier 2 (supported)" >&6; } ;; #(
+  3) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $host/$ac_cv_cc_name has tier 3 (partially supported)" >&5
+$as_echo "$host/$ac_cv_cc_name has tier 3 (partially supported)" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $host/$ac_cv_cc_name is not supported" >&5
+$as_echo "$as_me: WARNING: $host/$ac_cv_cc_name is not supported" >&2;}
+ ;;
+esac
+
+
+cat >>confdefs.h <<_ACEOF
+#define PY_SUPPORT_TIER $PY_SUPPORT_TIER
+_ACEOF
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -Wl,--no-as-needed" >&5
 $as_echo_n "checking for -Wl,--no-as-needed... " >&6; }
 if ${ac_cv_wl_no_as_needed+:} false; then :
@@ -6688,6 +6785,8 @@ else
 
 fi
      ;; #(
+              WASI/*) :
+    HOSTRUNNER='wasmtime run --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt) --mapdir /::$(srcdir) --' ;; #(
   *) :
     HOSTRUNNER=''
    ;;
@@ -6696,6 +6795,10 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HOSTRUNNER" >&5
 $as_echo "$HOSTRUNNER" >&6; }
+
+if test -n "$HOSTRUNNER"; then
+    PYTHON_FOR_BUILD="_PYTHON_HOSTRUNNER='$HOSTRUNNER' $PYTHON_FOR_BUILD"
+fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
 $as_echo "$LDLIBRARY" >&6; }
@@ -24660,7 +24763,7 @@ $as_echo_n "checking for stdlib extension module _ctypes_test... " >&6; }
         if test "$py_cv_module__ctypes_test" != "n/a"; then :
 
     if test "$TEST_MODULES" = yes; then :
-  if true; then :
+  if test "$ac_cv_func_dlopen" = yes; then :
   py_cv_module__ctypes_test=yes
 else
   py_cv_module__ctypes_test=missing
@@ -26404,4 +26507,17 @@ $as_echo "$as_me:
 If you want a release build with all stable optimizations active (PGO, etc),
 please run ./configure --enable-optimizations
 " >&6;}
+fi
+
+if test "x$PY_SUPPORT_TIER" = x0; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
+
+Platform \"$host\" with compiler \"$ac_cv_cc_name\" is not supported by the
+CPython core team, see https://peps.python.org/pep-0011/ for more information.
+" >&5
+$as_echo "$as_me: WARNING:
+
+Platform \"$host\" with compiler \"$ac_cv_cc_name\" is not supported by the
+CPython core team, see https://peps.python.org/pep-0011/ for more information.
+" >&2;}
 fi
