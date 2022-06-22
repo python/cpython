@@ -1928,7 +1928,6 @@ LIBSUBDIRS=	asyncio \
 		zoneinfo \
 		__phello__
 TESTSUBDIRS=	distutils/tests \
-		idlelib/idle_test \
 		test test/audiodata \
 		test/capath test/cjkencodings \
 		test/data test/decimaltestdata \
@@ -1939,6 +1938,7 @@ TESTSUBDIRS=	distutils/tests \
 		test/test_asyncio \
 		test/test_ctypes \
 		test/test_email test/test_email/data \
+		test/test_idle \
 		test/test_import \
 		test/test_import/data \
 		test/test_import/data/circular_imports \
