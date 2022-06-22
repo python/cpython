@@ -2,7 +2,7 @@
 #include "pegen.h"
 
 #if defined(Py_DEBUG) && defined(Py_BUILD_CORE)
-#  define D(x) if (Py_DebugFlag) x;
+#  define D(x) if (p->debug) { x; }
 #else
 #  define D(x)
 #endif
@@ -7945,6 +7945,10 @@ closed_pattern_rule(Parser *p)
         return NULL;
     }
     pattern_ty _res = NULL;
+    if (_PyPegen_is_memoized(p, closed_pattern_type, &_res)) {
+        p->level--;
+        return _res;
+    }
     int _mark = p->mark;
     { // literal_pattern
         if (p->error_indicator) {
@@ -8100,6 +8104,7 @@ closed_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
+    _PyPegen_insert_memo(p, _mark, closed_pattern_type, _res);
     p->level--;
     return _res;
 }
@@ -9623,6 +9628,10 @@ star_pattern_rule(Parser *p)
         return NULL;
     }
     pattern_ty _res = NULL;
+    if (_PyPegen_is_memoized(p, star_pattern_type, &_res)) {
+        p->level--;
+        return _res;
+    }
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -9707,6 +9716,7 @@ star_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
+    _PyPegen_insert_memo(p, _mark, star_pattern_type, _res);
     p->level--;
     return _res;
 }

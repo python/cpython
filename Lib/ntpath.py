@@ -23,6 +23,7 @@ import stat
 import genericpath
 from genericpath import *
 
+
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime", "islink","exists","lexists","isdir","isfile",
@@ -41,14 +42,39 @@ def _get_bothseps(path):
 # Other normalizations (such as optimizing '../' away) are not done
 # (this is done by normpath).
 
-def normcase(s):
-    """Normalize case of pathname.
+try:
+    from _winapi import (
+        LCMapStringEx as _LCMapStringEx,
+        LOCALE_NAME_INVARIANT as _LOCALE_NAME_INVARIANT,
+        LCMAP_LOWERCASE as _LCMAP_LOWERCASE)
 
-    Makes all characters lowercase and all slashes into backslashes."""
-    s = os.fspath(s)
-    if isinstance(s, bytes):
-        return s.replace(b'/', b'\\').lower()
-    else:
+    def normcase(s):
+        """Normalize case of pathname.
+
+        Makes all characters lowercase and all slashes into backslashes.
+        """
+        s = os.fspath(s)
+        if not s:
+            return s
+        if isinstance(s, bytes):
+            encoding = sys.getfilesystemencoding()
+            s = s.decode(encoding, 'surrogateescape').replace('/', '\\')
+            s = _LCMapStringEx(_LOCALE_NAME_INVARIANT,
+                               _LCMAP_LOWERCASE, s)
+            return s.encode(encoding, 'surrogateescape')
+        else:
+            return _LCMapStringEx(_LOCALE_NAME_INVARIANT,
+                                  _LCMAP_LOWERCASE,
+                                  s.replace('/', '\\'))
+except ImportError:
+    def normcase(s):
+        """Normalize case of pathname.
+
+        Makes all characters lowercase and all slashes into backslashes.
+        """
+        s = os.fspath(s)
+        if isinstance(s, bytes):
+            return os.fsencode(os.fsdecode(s).replace('/', '\\').lower())
         return s.replace('/', '\\').lower()
 
 
@@ -146,17 +172,23 @@ def splitdrive(p):
             sep = b'\\'
             altsep = b'/'
             colon = b':'
+            unc_prefix = b'\\\\?\\UNC'
         else:
             sep = '\\'
             altsep = '/'
             colon = ':'
+            unc_prefix = '\\\\?\\UNC'
         normp = p.replace(altsep, sep)
         if (normp[0:2] == sep*2) and (normp[2:3] != sep):
             # is a UNC path:
             # vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
             # \\machine\mountpoint\directory\etc\...
             #           directory ^^^^^^^^^^^^^^^
-            index = normp.find(sep, 2)
+            if normp[:8].upper().rstrip(sep) == unc_prefix:
+                start = 8
+            else:
+                start = 2
+            index = normp.find(sep, start)
             if index == -1:
                 return p[:0], p
             index2 = normp.find(sep, index + 1)

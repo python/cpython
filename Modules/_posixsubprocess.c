@@ -612,8 +612,10 @@ child_exec(char *const exec_array[],
 #endif
 
 #ifdef HAVE_SETPGID
-    if (pgid_to_set >= 0)
+    static_assert(_Py_IS_TYPE_SIGNED(pid_t), "pid_t is unsigned");
+    if (pgid_to_set >= 0) {
         POSIX_CALL(setpgid(0, pgid_to_set));
+    }
 #endif
 
 #ifdef HAVE_SETGROUPS

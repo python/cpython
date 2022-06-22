@@ -23,6 +23,7 @@ else:
     import _posixshmem
     _USE_POSIX = True
 
+from . import resource_tracker
 
 _O_CREX = os.O_CREAT | os.O_EXCL
 
@@ -116,8 +117,7 @@ class SharedMemory:
                 self.unlink()
                 raise
 
-            from .resource_tracker import register
-            register(self._name, "shared_memory")
+            resource_tracker.register(self._name, "shared_memory")
 
         else:
 
@@ -237,9 +237,8 @@ class SharedMemory:
         called once (and only once) across all processes which have access
         to the shared memory block."""
         if _USE_POSIX and self._name:
-            from .resource_tracker import unregister
             _posixshmem.shm_unlink(self._name)
-            unregister(self._name, "shared_memory")
+            resource_tracker.unregister(self._name, "shared_memory")
 
 
 _encoding = "utf8"
