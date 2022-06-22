@@ -38,6 +38,7 @@
 
 /* Object used as dummy key to fill deleted entries */
 static PyObject _dummy_struct;
+
 #define dummy (&_dummy_struct)
 
 
