@@ -6605,9 +6605,16 @@ static int
 assemble_emit_linetable_pair(struct assembler *a, int bdelta, int ldelta)
 {
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_lnotab);
-    if (a->a_lnotab_off + 2 >= len) {
-        if (_PyBytes_Resize(&a->a_lnotab, len * 2) < 0)
+    if (a->a_lnotab_off > INT_MAX - 2) {
+        goto overflow;
+    }
+    if (a->a_lnotab_off >= len - 2) {
+        if (len > INT_MAX / 2) {
+            goto overflow;
+        }
+        if (_PyBytes_Resize(&a->a_lnotab, len * 2) < 0) {
             return 0;
+        }
     }
     unsigned char *lnotab = (unsigned char *) PyBytes_AS_STRING(a->a_lnotab);
     lnotab += a->a_lnotab_off;
@@ -6615,6 +6622,9 @@ assemble_emit_linetable_pair(struct assembler *a, int bdelta, int ldelta)
     *lnotab++ = bdelta;
     *lnotab++ = ldelta;
     return 1;
+overflow:
+    PyErr_SetString(PyExc_OverflowError, "line number table is too long");
+    return 0;
 }
 
 /* Appends a range to the end of the line number table. See
@@ -6687,14 +6697,17 @@ assemble_emit(struct assembler *a, struct instr *i)
     int size, arg = 0;
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_bytecode);
     _Py_CODEUNIT *code;
-
     arg = i->i_oparg;
     size = instrsize(arg);
     if (i->i_lineno && !assemble_lnotab(a, i))
         return 0;
+    if (a->a_offset > INT_MAX - size) {
+        goto overflow;
+    }
     if (a->a_offset + size >= len / (int)sizeof(_Py_CODEUNIT)) {
-        if (len > PY_SSIZE_T_MAX / 2)
-            return 0;
+        if (len > INT_MAX / 2) {
+            goto overflow;
+        }
         if (_PyBytes_Resize(&a->a_bytecode, len * 2) < 0)
             return 0;
     }
@@ -6702,6 +6715,9 @@ assemble_emit(struct assembler *a, struct instr *i)
     a->a_offset += size;
     write_op_arg(code, i->i_opcode, arg, size);
     return 1;
+overflow:
+    PyErr_SetString(PyExc_OverflowError, "bytecode is too long");
+    return 0;
 }
 
 static void
