@@ -109,11 +109,6 @@ OMIT_MODULE_FILES = {
     "_zoneinfo": ["zoneinfo/"],
 }
 
-# regression test sub directories
-OMIT_SUBDIRS = (
-    "tkinter/test/",
-)
-
 def get_builddir(args: argparse.Namespace) -> pathlib.Path:
     """Get builddir path from pybuilddir.txt
     """
@@ -136,9 +131,6 @@ def create_stdlib_zip(
     *,
     optimize: int = 0,
 ) -> None:
-    def filterfunc(name: str) -> bool:
-        return not name.startswith(args.omit_subdirs_absolute)
-
     with zipfile.PyZipFile(
         args.wasm_stdlib_zip, mode="w", compression=args.compression, optimize=optimize
     ) as pzf:
@@ -152,7 +144,7 @@ def create_stdlib_zip(
                 continue
             if entry.name.endswith(".py") or entry.is_dir():
                 # writepy() writes .pyc files (bytecode).
-                pzf.writepy(entry, filterfunc=filterfunc)
+                pzf.writepy(entry)
 
 
 def detect_extension_modules(args: argparse.Namespace):
@@ -234,9 +226,6 @@ def main():
             omit_files.extend(modfiles)
 
     args.omit_files_absolute = {args.srcdir_lib / name for name in omit_files}
-    args.omit_subdirs_absolute = tuple(
-        str(args.srcdir_lib / name) for name in OMIT_SUBDIRS
-    )
 
     # Empty, unused directory for dynamic libs, but required for site initialization.
     args.wasm_dynload.mkdir(parents=True, exist_ok=True)

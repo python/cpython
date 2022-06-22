@@ -4,7 +4,7 @@ import tkinter
 from tkinter import ttk
 from test import support
 from test.support import requires
-from tkinter.test.support import AbstractTkTest, get_tk_patchlevel
+from test.test_tkinter.support import AbstractTkTest, get_tk_patchlevel
 
 requires('gui')
 

@@ -1,7 +1,7 @@
 # Common tests for test_tkinter/test_widgets.py and test_ttk/test_widgets.py
 
 import tkinter
-from tkinter.test.support import (AbstractTkTest, tcl_version,
+from test.test_tkinter.support import (AbstractTkTest, tcl_version,
                                   pixels_conv, tcl_obj_eq)
 import test.support
 
