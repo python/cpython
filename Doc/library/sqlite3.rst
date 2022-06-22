@@ -233,8 +233,8 @@ Module functions and constants
 
       SELECT p as "p [point]" FROM test;  ! will look up converter "point"
 
-   This flag may be paired with :const:`PARSE_DECLTYPES` using the ``|``
-   operator.
+   This flag may be combined with :const:`PARSE_DECLTYPES` using the ``|``
+   (bitwise or) operator.
 
 
 .. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri])
