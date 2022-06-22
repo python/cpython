@@ -377,11 +377,7 @@ PyBytes_FromFormat(const char *format, ...)
     PyObject* ret;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     ret = PyBytes_FromFormatV(format, vargs);
     va_end(vargs);
     return ret;
@@ -2396,7 +2392,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
 
     if (!PyUnicode_IS_ASCII(string)) {
         const void *data = PyUnicode_DATA(string);
-        unsigned int kind = PyUnicode_KIND(string);
+        int kind = PyUnicode_KIND(string);
         Py_ssize_t i;
 
         /* search for the first non-ASCII character */

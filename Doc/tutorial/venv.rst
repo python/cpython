@@ -60,7 +60,7 @@ Once you've created a virtual environment, you may activate it.
 
 On Windows, run::
 
-  tutorial-env\Scripts\activate.bat
+  tutorial-env\Scripts\activate
 
 On Unix or MacOS, run::
 

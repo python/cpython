@@ -4,7 +4,6 @@ import unittest
 import time
 
 import asyncio
-from asyncio import tasks
 
 
 def tearDownModule():

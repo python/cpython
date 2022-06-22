@@ -22,7 +22,6 @@ import re
 import shlex
 import string
 import sys
-import tempfile
 import textwrap
 import traceback
 import types
@@ -3526,9 +3525,7 @@ class Py_UNICODE_converter(CConverter):
     def cleanup(self):
         if not self.length:
             return """\
-#if !USE_UNICODE_WCHAR_CACHE
 PyMem_Free((void *){name});
-#endif /* USE_UNICODE_WCHAR_CACHE */
 """.format(name=self.name)
 
     def parse_arg(self, argname, argnum):
@@ -3539,11 +3536,7 @@ PyMem_Free((void *){name});
                         _PyArg_BadArgument("{{name}}", {argnum}, "str", {argname});
                         goto exit;
                     }}}}
-                    #if USE_UNICODE_WCHAR_CACHE
-                    {paramname} = _PyUnicode_AsUnicode({argname});
-                    #else /* USE_UNICODE_WCHAR_CACHE */
                     {paramname} = PyUnicode_AsWideCharString({argname}, NULL);
-                    #endif /* USE_UNICODE_WCHAR_CACHE */
                     if ({paramname} == NULL) {{{{
                         goto exit;
                     }}}}
@@ -3554,11 +3547,7 @@ PyMem_Free((void *){name});
                         {paramname} = NULL;
                     }}}}
                     else if (PyUnicode_Check({argname})) {{{{
-                        #if USE_UNICODE_WCHAR_CACHE
-                        {paramname} = _PyUnicode_AsUnicode({argname});
-                        #else /* USE_UNICODE_WCHAR_CACHE */
                         {paramname} = PyUnicode_AsWideCharString({argname}, NULL);
-                        #endif /* USE_UNICODE_WCHAR_CACHE */
                         if ({paramname} == NULL) {{{{
                             goto exit;
                         }}}}

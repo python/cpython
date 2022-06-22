@@ -82,7 +82,7 @@ class TestSSL(test_utils.TestCase):
     def tcp_server(self, server_prog, *,
                    family=socket.AF_INET,
                    addr=None,
-                   timeout=5,
+                   timeout=support.SHORT_TIMEOUT,
                    backlog=1,
                    max_clients=10):
 
@@ -113,7 +113,7 @@ class TestSSL(test_utils.TestCase):
 
     def tcp_client(self, client_prog,
                    family=socket.AF_INET,
-                   timeout=10):
+                   timeout=support.SHORT_TIMEOUT):
 
         sock = socket.socket(family, socket.SOCK_STREAM)
 
@@ -238,7 +238,7 @@ class TestSSL(test_utils.TestCase):
 
         async def start_server():
             extras = {}
-            extras = dict(ssl_handshake_timeout=40.0)
+            extras = dict(ssl_handshake_timeout=support.SHORT_TIMEOUT)
 
             srv = await asyncio.start_server(
                 handle_client,
@@ -303,7 +303,7 @@ class TestSSL(test_utils.TestCase):
 
         async def client(addr):
             extras = {}
-            extras = dict(ssl_handshake_timeout=40.0)
+            extras = dict(ssl_handshake_timeout=support.SHORT_TIMEOUT)
 
             reader, writer = await asyncio.open_connection(
                 *addr,
@@ -428,7 +428,7 @@ class TestSSL(test_utils.TestCase):
                 *addr,
                 ssl=client_sslctx,
                 server_hostname='',
-                ssl_handshake_timeout=1.0)
+                ssl_handshake_timeout=support.SHORT_TIMEOUT)
             writer.close()
             await self.wait_closed(writer)
 
@@ -590,7 +590,7 @@ class TestSSL(test_utils.TestCase):
 
         extras = {}
         if server_ssl:
-            extras = dict(ssl_handshake_timeout=10.0)
+            extras = dict(ssl_handshake_timeout=support.SHORT_TIMEOUT)
 
         f = loop.create_task(
             loop.connect_accepted_socket(
@@ -718,7 +718,8 @@ class TestSSL(test_utils.TestCase):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
 
     def test_create_connection_memory_leak(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
@@ -776,7 +777,8 @@ class TestSSL(test_utils.TestCase):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
 
         # No garbage is left for SSL client from loop.create_connection, even
         # if user stores the SSLTransport in corresponding protocol instance
@@ -936,7 +938,8 @@ class TestSSL(test_utils.TestCase):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
 
     def test_start_tls_server_1(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
@@ -1186,7 +1189,7 @@ class TestSSL(test_utils.TestCase):
 
         async def client(addr):
             extras = {}
-            extras = dict(ssl_handshake_timeout=10.0)
+            extras = dict(ssl_handshake_timeout=support.SHORT_TIMEOUT)
 
             reader, writer = await asyncio.open_connection(
                 *addr,

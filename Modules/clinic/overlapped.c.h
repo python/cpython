@@ -230,9 +230,7 @@ _overlapped_CreateEvent(PyObject *module, PyObject *const *args, Py_ssize_t narg
 
 exit:
     /* Cleanup for Name */
-    #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)Name);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
 
     return return_value;
 }
@@ -812,11 +810,7 @@ _overlapped_Overlapped_ConnectPipe(OverlappedObject *self, PyObject *arg)
         _PyArg_BadArgument("ConnectPipe", "argument", "str", arg);
         goto exit;
     }
-    #if USE_UNICODE_WCHAR_CACHE
-    Address = _PyUnicode_AsUnicode(arg);
-    #else /* USE_UNICODE_WCHAR_CACHE */
     Address = PyUnicode_AsWideCharString(arg, NULL);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
     if (Address == NULL) {
         goto exit;
     }
@@ -824,9 +818,7 @@ _overlapped_Overlapped_ConnectPipe(OverlappedObject *self, PyObject *arg)
 
 exit:
     /* Cleanup for Address */
-    #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)Address);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
 
     return return_value;
 }
@@ -968,4 +960,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=b0f15f5c09f1147e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9078d9f9984864a2 input=a9049054013a1b77]*/
