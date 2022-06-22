@@ -336,7 +336,7 @@ Module functions and constants
 .. function:: register_adapter(type, adapter)
 
    Register an *adapter* callable to adapt the Python type *type* into an SQLite type.
-   The adapter is called with a Python object as its sole argument,
+   The adapter is called with a Python type object as its sole argument,
    and must return a valid SQLite type:
    :class:`int`, :class:`float`, :class:`str`, :class:`bytes`, or :const:`None`.
 
