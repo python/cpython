@@ -5,9 +5,9 @@ from test.support import requires, gc_collect
 import sys
 
 from test.test_ttk_textonly import MockTclObj
-from tkinter.test.support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
+from test.test_tkinter.support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
                                   simulate_mouse_click, AbstractDefaultRootTest)
-from tkinter.test.widget_tests import (add_standard_options,
+from test.test_tkinter.widget_tests import (add_standard_options,
     AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
     setUpModule)
 

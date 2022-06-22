@@ -1,7 +1,7 @@
 import unittest
 import tkinter
 from test.support import requires, swap_attr
-from tkinter.test.support import AbstractDefaultRootTest, AbstractTkTest
+from test.test_tkinter.support import AbstractDefaultRootTest, AbstractTkTest
 from tkinter import colorchooser
 from tkinter.colorchooser import askcolor
 from tkinter.commondialog import Dialog
