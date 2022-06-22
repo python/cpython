@@ -6853,9 +6853,10 @@ call_trace(Py_tracefunc func, PyObject *obj,
     tstate->tracing_what = what;
     PyThreadState_EnterTracing(tstate);
     assert(_PyInterpreterFrame_LASTI(frame) >= 0);
-    initialize_trace_info(&tstate->trace_info, frame);
-    int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
-    f->f_lineno = _PyCode_CheckLineNumber(addr, &tstate->trace_info.bounds);
+    if (_PyCode_InitLineArray(frame->f_code)) {
+        return -1;
+    }
+    f->f_lineno = _PyCode_LineNumberFromArray(frame->f_code, _PyInterpreterFrame_LASTI(frame));
     result = func(obj, f, what, arg);
     f->f_lineno = 0;
     PyThreadState_LeaveTracing(tstate);
@@ -6892,7 +6893,9 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
        represents a jump backwards, update the frame's line number and
        then call the trace function if we're tracing source lines.
     */
-    initialize_trace_info(&tstate->trace_info, frame);
+    if (_PyCode_InitLineArray(frame->f_code)) {
+        return -1;
+    }
     int entry_point = 0;
     _Py_CODEUNIT *code = _PyCode_CODE(frame->f_code);
     while (_PyOpcode_Deopt[_Py_OPCODE(code[entry_point])] != RESUME) {
@@ -6903,10 +6906,9 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
         lastline = -1;
     }
     else {
-        lastline = _PyCode_CheckLineNumber(instr_prev*sizeof(_Py_CODEUNIT), &tstate->trace_info.bounds);
+        lastline = _PyCode_LineNumberFromArray(frame->f_code, instr_prev);
     }
-    int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
-    int line = _PyCode_CheckLineNumber(addr, &tstate->trace_info.bounds);
+    int line = _PyCode_LineNumberFromArray(frame->f_code, _PyInterpreterFrame_LASTI(frame));
     PyFrameObject *f = _PyFrame_GetFrameObject(frame);
     if (f == NULL) {
         return -1;
