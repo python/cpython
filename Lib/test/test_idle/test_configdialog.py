@@ -7,7 +7,7 @@ from test.support import requires
 requires('gui')
 import unittest
 from unittest import mock
-from idlelib.idle_test.mock_idle import Func
+from test.test_idle.mock_idle import Func
 from tkinter import (Tk, StringVar, IntVar, BooleanVar, DISABLED, NORMAL)
 from idlelib import config
 from idlelib.configdialog import idleConf, changes, tracers

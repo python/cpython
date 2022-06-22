@@ -4,7 +4,7 @@ from idlelib import browser
 from test.support import requires
 import unittest
 from unittest import mock
-from idlelib.idle_test.mock_idle import Func
+from test.test_idle.mock_idle import Func
 
 from collections import deque
 import os.path

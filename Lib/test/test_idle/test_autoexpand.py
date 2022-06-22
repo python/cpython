@@ -28,7 +28,7 @@ class AutoExpandTest(unittest.TestCase):
 ##            requires('gui')
 ##            #raise ResourceDenied()  # Uncomment to test mock.
 ##        except ResourceDenied:
-##            from idlelib.idle_test.mock_tk import Text
+##            from test.test_idle.mock_tk import Text
 ##            cls.text = Text()
 ##            cls.text.bell = lambda: None
 ##        else:

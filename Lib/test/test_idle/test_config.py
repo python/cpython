@@ -11,7 +11,7 @@ from test.support import captured_stderr, findfile
 import unittest
 from unittest import mock
 import idlelib
-from idlelib.idle_test.mock_idle import Func
+from test.test_idle.mock_idle import Func
 
 # Tests should not depend on fortuitous user configurations.
 # They must not affect actual user .cfg files.

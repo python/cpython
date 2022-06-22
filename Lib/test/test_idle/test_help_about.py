@@ -7,8 +7,8 @@ from idlelib import help_about
 import unittest
 from test.support import requires, findfile
 from tkinter import Tk, TclError
-from idlelib.idle_test.mock_idle import Func
-from idlelib.idle_test.mock_tk import Mbox_func
+from test.test_idle.mock_idle import Func
+from test.test_idle.mock_tk import Mbox_func
 from idlelib import textview
 import os.path
 from platform import python_version

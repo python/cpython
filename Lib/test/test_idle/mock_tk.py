@@ -61,7 +61,7 @@ class Mbox:
 
     Example usage in test_module.py for testing functions in module.py:
     ---
-from idlelib.idle_test.mock_tk import Mbox
+from test.test_idle.mock_tk import Mbox
 import module
 
 orig_mbox = module.messagebox

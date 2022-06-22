@@ -6,7 +6,7 @@ from unittest.mock import Mock
 import textwrap
 import types
 import re
-from idlelib.idle_test.mock_tk import Text
+from test.test_idle.mock_tk import Text
 
 
 # Test Class TC is used in multiple get_argspec test methods

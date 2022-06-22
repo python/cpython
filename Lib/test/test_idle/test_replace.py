@@ -7,7 +7,7 @@ requires('gui')
 from tkinter import Tk, Text
 
 from unittest.mock import Mock
-from idlelib.idle_test.mock_tk import Mbox
+from test.test_idle.mock_tk import Mbox
 import idlelib.searchengine as se
 
 orig_mbox = se.messagebox

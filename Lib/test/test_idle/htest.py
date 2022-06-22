@@ -23,7 +23,7 @@ End the module with
 
 if __name__ == '__main__':
     <unittest, if there is one>
-    from idlelib.idle_test.htest import run
+    from test.test_idle.htest import run
     run(X)
 
 To have wrapper functions and test invocation code ignored by coveragepy

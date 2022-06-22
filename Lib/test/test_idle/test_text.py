@@ -195,7 +195,7 @@ class MockTextTest(TextTest, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        from idlelib.idle_test.mock_tk import Text
+        from test.test_idle.mock_tk import Text
         cls.Text = Text
 
     def setUp(self):

@@ -8,7 +8,7 @@ Currently only test grep_it, coverage 51%.
 from idlelib import grep
 import unittest
 from test.support import captured_stdout
-from idlelib.idle_test.mock_tk import Var
+from test.test_idle.mock_tk import Var
 import os
 import re
 

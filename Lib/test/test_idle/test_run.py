@@ -7,7 +7,7 @@ from test.support import captured_output, captured_stderr, has_no_debug_ranges
 import unittest
 from unittest import mock
 import idlelib
-from idlelib.idle_test.mock_idle import Func
+from test.test_idle.mock_idle import Func
 
 idlelib.testing = True  # Use {} for executing test user code.
 

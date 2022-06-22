@@ -1,7 +1,7 @@
 """Test parenmatch, coverage 91%.
 
 This must currently be a gui test because ParenMatch methods use
-several text methods not defined on idlelib.idle_test.mock_tk.Text.
+several text methods not defined on test.test_idle.mock_tk.Text.
 """
 from idlelib.parenmatch import ParenMatch
 from test.support import requires

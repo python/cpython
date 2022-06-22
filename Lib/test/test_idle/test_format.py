@@ -6,7 +6,7 @@ from unittest import mock
 from test.support import requires
 from tkinter import Tk, Text
 from idlelib.editor import EditorWindow
-from idlelib.idle_test.mock_idle import Editor as MockEditor
+from test.test_idle.mock_idle import Editor as MockEditor
 
 
 class Is_Get_Test(unittest.TestCase):
@@ -52,7 +52,7 @@ class FindTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        from idlelib.idle_test.mock_tk import Text
+        from test.test_idle.mock_tk import Text
         cls.text = Text()
 
     def runcase(self, inserttext, stopline, expected):

@@ -9,7 +9,7 @@ import os.path
 import pyclbr  # for _modules
 import sys  # for sys.path
 
-from idlelib.idle_test.mock_idle import Func
+from test.test_idle.mock_idle import Func
 import idlelib  # for __file__
 from idlelib import browser
 from idlelib.tree import TreeNode

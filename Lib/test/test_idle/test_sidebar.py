@@ -7,7 +7,7 @@ import unittest
 import unittest.mock
 from test.support import requires, swap_attr
 import tkinter as tk
-from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
+from test.test_idle.tkinter_testing_utils import run_in_tk_mainloop
 
 from idlelib.delegator import Delegator
 from idlelib.editor import fixwordbreaks

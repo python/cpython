@@ -13,8 +13,8 @@ import os
 import unittest
 from tkinter import Tk, TclError, CHAR, NONE, WORD
 from tkinter.ttk import Button
-from idlelib.idle_test.mock_idle import Func
-from idlelib.idle_test.mock_tk import Mbox_func
+from test.test_idle.mock_idle import Func
+from test.test_idle.mock_tk import Mbox_func
 
 def setUpModule():
     global root

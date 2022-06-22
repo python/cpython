@@ -10,8 +10,8 @@ from test.support import requires
 import unittest
 from unittest import mock
 from tkinter import Tk, TclError
-from idlelib.idle_test.mock_idle import Func
-from idlelib.idle_test.mock_tk import Mbox_func
+from test.test_idle.mock_idle import Func
+from test.test_idle.mock_tk import Mbox_func
 
 gkd = config_key.GetKeysDialog
 

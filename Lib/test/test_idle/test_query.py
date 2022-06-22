@@ -16,7 +16,7 @@ from tkinter import Tk, END
 
 import sys
 from unittest import mock
-from idlelib.idle_test.mock_tk import Var
+from test.test_idle.mock_tk import Var
 
 
 # NON-GUI TESTS

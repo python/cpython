@@ -5,8 +5,8 @@ import unittest
 # from test.support import requires
 from tkinter import  BooleanVar, StringVar, TclError  # ,Tk, Text
 from tkinter import messagebox
-from idlelib.idle_test.mock_tk import Var, Mbox
-from idlelib.idle_test.mock_tk import Text as mockText
+from test.test_idle.mock_tk import Var, Mbox
+from test.test_idle.mock_tk import Text as mockText
 import re
 
 # With mock replacements, the module does not use any gui widgets.
