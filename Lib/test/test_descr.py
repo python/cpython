@@ -3563,7 +3563,6 @@ order (MRO) for bases """
     def test_str_of_str_subclass(self):
         # Testing __str__ defined in subclass of str ...
         import binascii
-        import io
 
         class octetstring(str):
             def __str__(self):

@@ -470,12 +470,14 @@ error:
 /*[clinic input]
 _sqlite3.Connection.close as pysqlite_connection_close
 
-Closes the connection.
+Close the database connection.
+
+Any pending transaction is not committed implicitly.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_close_impl(pysqlite_Connection *self)
-/*[clinic end generated code: output=a546a0da212c9b97 input=3d58064bbffaa3d3]*/
+/*[clinic end generated code: output=a546a0da212c9b97 input=b3ed5b74f6fefc06]*/
 {
     if (!pysqlite_check_thread(self)) {
         return NULL;
@@ -522,12 +524,14 @@ int pysqlite_check_connection(pysqlite_Connection* con)
 /*[clinic input]
 _sqlite3.Connection.commit as pysqlite_connection_commit
 
-Commit the current transaction.
+Commit any pending transaction to the database.
+
+If there is no open transaction, this method is a no-op.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_commit_impl(pysqlite_Connection *self)
-/*[clinic end generated code: output=3da45579e89407f2 input=39c12c04dda276a8]*/
+/*[clinic end generated code: output=3da45579e89407f2 input=c8793c97c3446065]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -557,12 +561,14 @@ pysqlite_connection_commit_impl(pysqlite_Connection *self)
 /*[clinic input]
 _sqlite3.Connection.rollback as pysqlite_connection_rollback
 
-Roll back the current transaction.
+Roll back to the start of any pending transaction.
+
+If there is no open transaction, this method is a no-op.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_rollback_impl(pysqlite_Connection *self)
-/*[clinic end generated code: output=b66fa0d43e7ef305 input=12d4e8d068942830]*/
+/*[clinic end generated code: output=b66fa0d43e7ef305 input=7f60a2f1076f16b3]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1582,9 +1588,8 @@ static PyObject* pysqlite_connection_get_total_changes(pysqlite_Connection* self
 {
     if (!pysqlite_check_connection(self)) {
         return NULL;
-    } else {
-        return Py_BuildValue("i", sqlite3_total_changes(self->db));
     }
+    return PyLong_FromLong(sqlite3_total_changes(self->db));
 }
 
 static PyObject* pysqlite_connection_get_in_transaction(pysqlite_Connection* self, void* unused)
@@ -1841,43 +1846,21 @@ static PyObject *
 pysqlite_connection_iterdump_impl(pysqlite_Connection *self)
 /*[clinic end generated code: output=586997aaf9808768 input=1911ca756066da89]*/
 {
-    PyObject* retval = NULL;
-    PyObject* module = NULL;
-    PyObject* module_dict;
-    PyObject* pyfn_iterdump;
-
     if (!pysqlite_check_connection(self)) {
-        goto finally;
+        return NULL;
     }
 
-    module = PyImport_ImportModule(MODULE_NAME ".dump");
-    if (!module) {
-        goto finally;
-    }
-
-    module_dict = PyModule_GetDict(module);
-    if (!module_dict) {
-        goto finally;
-    }
-
-    PyObject *meth = PyUnicode_InternFromString("_iterdump");
-    if (meth == NULL) {
-        goto finally;
-    }
-    pyfn_iterdump = PyDict_GetItemWithError(module_dict, meth);
-    Py_DECREF(meth);
-    if (!pyfn_iterdump) {
+    PyObject *iterdump = _PyImport_GetModuleAttrString(MODULE_NAME ".dump", "_iterdump");
+    if (!iterdump) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(self->OperationalError,
                             "Failed to obtain _iterdump() reference");
         }
-        goto finally;
+        return NULL;
     }
 
-    retval = PyObject_CallOneArg(pyfn_iterdump, (PyObject *)self);
-
-finally:
-    Py_XDECREF(module);
+    PyObject *retval = PyObject_CallOneArg(iterdump, (PyObject *)self);
+    Py_DECREF(iterdump);
     return retval;
 }
 
@@ -2091,7 +2074,7 @@ serialize_impl(pysqlite_Connection *self, const char *name)
                      name);
         return NULL;
     }
-    PyObject *res = PyBytes_FromStringAndSize(data, size);
+    PyObject *res = PyBytes_FromStringAndSize(data, (Py_ssize_t)size);
     if (!(flags & SQLITE_SERIALIZE_NOCOPY)) {
         sqlite3_free((void *)data);
     }
