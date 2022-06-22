@@ -262,8 +262,9 @@ Module functions and constants
    module-level :func:`register_converter` function allow you to easily do that.
 
    *detect_types* defaults to 0 (type detection disabled).
-   Set it to any combination of :const:`PARSE_DECLTYPES` and
-   :const:`PARSE_COLNAMES` to enable type detection.
+   Set it to any combination (using ``|``, bitwise or) of
+   :const:`PARSE_DECLTYPES` and :const:`PARSE_COLNAMES`
+   to enable type detection.
    Types cannot be detected for generated fields (for example ``max(data)``),
    even when the *detect_types* parameter is set.
    In such cases, the returned type is :class:`str`.
