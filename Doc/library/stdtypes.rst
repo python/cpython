@@ -1645,9 +1645,10 @@ expression support in the :mod:`re` module).
 .. method:: str.endswith(suffix[, start[, end]])
 
    Return ``True`` if the string ends with the specified *suffix*, otherwise return
-   ``False``.  *suffix* can also be a tuple of suffixes to look for.  With optional
-   *start*, test beginning at that position.  With optional *end*, stop comparing
-   at that position.
+   ``False``.  *suffix* can also be a tuple of suffixes to look for.
+
+   Optional arguments *start* and *end* are interpreted as in slice notation,
+   and restrict the comparison to the range [*start*, *end*].
 
 
 .. method:: str.expandtabs(tabsize=8)
@@ -2137,9 +2138,10 @@ expression support in the :mod:`re` module).
 .. method:: str.startswith(prefix[, start[, end]])
 
    Return ``True`` if string starts with the *prefix*, otherwise return ``False``.
-   *prefix* can also be a tuple of prefixes to look for.  With optional *start*,
-   test string beginning at that position.  With optional *end*, stop comparing
-   string at that position.
+   *prefix* can also be a tuple of prefixes to look for.
+
+   Optional arguments *start* and *end* are interpreted as in slice notation,
+   and restrict the comparison to the range [*start*, *end*].
 
 
 .. method:: str.strip([chars])
@@ -2779,8 +2781,10 @@ arbitrary binary data.
 
    Return ``True`` if the binary data ends with the specified *suffix*,
    otherwise return ``False``.  *suffix* can also be a tuple of suffixes to
-   look for.  With optional *start*, test beginning at that position.  With
-   optional *end*, stop comparing at that position.
+   look for.
+
+   Optional arguments *start* and *end* are interpreted as in slice notation,
+   and restrict the comparison to the range [*start*, *end*].
 
    The suffix(es) to search for may be any :term:`bytes-like object`.
 
@@ -2919,8 +2923,10 @@ arbitrary binary data.
 
    Return ``True`` if the binary data starts with the specified *prefix*,
    otherwise return ``False``.  *prefix* can also be a tuple of prefixes to
-   look for.  With optional *start*, test beginning at that position.  With
-   optional *end*, stop comparing at that position.
+   look for.
+
+   Optional arguments *start* and *end* are interpreted as in slice notation,
+   and restrict the comparison to the range [*start*, *end*].
 
    The prefix(es) to search for may be any :term:`bytes-like object`.
 
