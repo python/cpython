@@ -7,6 +7,7 @@ import difflib
 import gc
 from functools import wraps
 import asyncio
+from test.support import import_helper
 
 support.requires_working_socket(module=True)
 
@@ -606,6 +607,58 @@ class TraceTestCase(unittest.TestCase):
         except Exception:
             pass
         self.compare_events(doit_async.__code__.co_firstlineno,
+                            tracer.events, events)
+
+    def test_async_for_backwards_jump_has_no_line(self):
+        async def arange(n):
+            for i in range(n):
+                yield i
+        async def f():
+            async for i in arange(3):
+                if i > 100:
+                    break # should never be traced
+
+        tracer = self.make_tracer()
+        coro = f()
+        try:
+            sys.settrace(tracer.trace)
+            coro.send(None)
+        except Exception:
+            pass
+        finally:
+            sys.settrace(None)
+
+        events = [
+            (0, 'call'),
+            (1, 'line'),
+            (-3, 'call'),
+            (-2, 'line'),
+            (-1, 'line'),
+            (-1, 'return'),
+            (1, 'exception'),
+            (2, 'line'),
+            (1, 'line'),
+            (-1, 'call'),
+            (-2, 'line'),
+            (-1, 'line'),
+            (-1, 'return'),
+            (1, 'exception'),
+            (2, 'line'),
+            (1, 'line'),
+            (-1, 'call'),
+            (-2, 'line'),
+            (-1, 'line'),
+            (-1, 'return'),
+            (1, 'exception'),
+            (2, 'line'),
+            (1, 'line'),
+            (-1, 'call'),
+            (-2, 'line'),
+            (-2, 'return'),
+            (1, 'exception'),
+            (1, 'return'),
+        ]
+        self.compare_events(f.__code__.co_firstlineno,
                             tracer.events, events)
 
     def test_21_repeated_pass(self):
@@ -1472,6 +1525,58 @@ class TraceTestCase(unittest.TestCase):
              (3, 'line'),
              (3, 'return'),
              (1, 'return')])
+
+    @support.cpython_only
+    def test_no_line_event_after_creating_generator(self):
+        # Spurious line events before call events only show up with C tracer
+
+        # Skip this test if the _testcapi module isn't available.
+        _testcapi = import_helper.import_module('_testcapi')
+
+        def gen():
+            yield 1
+
+        def func():
+            for _ in (
+                gen()
+            ):
+                pass
+
+        EXPECTED_EVENTS = [
+            (0, 'call'),
+            (2, 'line'),
+            (1, 'line'),
+            (-3, 'call'),
+            (-2, 'line'),
+            (-2, 'return'),
+            (4, 'line'),
+            (1, 'line'),
+            (-2, 'call'),
+            (-2, 'return'),
+            (1, 'return'),
+        ]
+
+        # C level events should be the same as expected and the same as Python level.
+
+        events = []
+        # Turning on and off tracing must be on same line to avoid unwanted LINE events.
+        _testcapi.settrace_to_record(events); func(); sys.settrace(None)
+        start_line = func.__code__.co_firstlineno
+        events = [
+            (line-start_line, EVENT_NAMES[what])
+            for (what, line, arg) in events
+        ]
+        self.assertEqual(events, EXPECTED_EVENTS)
+
+        self.run_and_compare(func, EXPECTED_EVENTS)
+
+
+EVENT_NAMES = [
+    'call',
+    'exception',
+    'line',
+    'return'
+]
 
 
 class SkipLineEventsTraceTestCase(TraceTestCase):

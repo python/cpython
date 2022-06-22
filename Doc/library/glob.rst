@@ -49,7 +49,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
    symlinks are included in the results (as in the shell). Whether or not the
    results are sorted depends on the file system.  If a file that satisfies
    conditions is removed or added during the call of this function, whether
-   a path name for that file be included is unspecified.
+   a path name for that file will be included is unspecified.
 
    If *root_dir* is not ``None``, it should be a :term:`path-like object`
    specifying the root directory for searching.  It has the same effect on

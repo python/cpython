@@ -1,0 +1,1 @@
+Added ``taskName`` attribute to :mod:`logging` module for use with :mod:`asyncio` tasks.
