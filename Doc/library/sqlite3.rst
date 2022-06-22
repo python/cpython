@@ -205,7 +205,8 @@ Module functions and constants
    The types are declared when the database table is created.
    ``sqlite3`` will look up a converter function using the first word of the
    declared type as the converter dictionary key.
-   For example, the following SQL code results in the following lookups:
+   For example:
+
 
    .. code-block:: sql
 
