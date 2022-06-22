@@ -1416,6 +1416,8 @@ class PyBuildExt(build_ext):
             # if --enable-loadable-sqlite-extensions configure option is used.
             if '--enable-loadable-sqlite-extensions' not in sysconfig.get_config_var("CONFIG_ARGS"):
                 sqlite_defines.append(("SQLITE_OMIT_LOAD_EXTENSION", "1"))
+            elif MACOS and sqlite_incdir == os.path.join(MACOS_SDK_ROOT, "usr/include"):
+                raise DistutilsError("System version of SQLite does not support loadable extensions")
 
             if MACOS:
                 # In every directory on the search path search for a dynamic
@@ -1576,7 +1578,9 @@ class PyBuildExt(build_ext):
                 ('XML_POOR_ENTROPY', '1'),
             ]
             extra_compile_args = []
-            expat_lib = []
+            # bpo-44394: libexpat uses isnan() of math.h and needs linkage
+            # against the libm
+            expat_lib = ['m']
             expat_sources = ['expat/xmlparse.c',
                              'expat/xmlrole.c',
                              'expat/xmltok.c']

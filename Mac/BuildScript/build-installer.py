@@ -242,9 +242,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1k",
-              url="https://www.openssl.org/source/openssl-1.1.1k.tar.gz",
-              checksum='c4e7d95f782b08116afa27b30393dd27',
+              name="OpenSSL 1.1.1n",
+              url="https://www.openssl.org/source/openssl-1.1.1n.tar.gz",
+              checksum='2aad5635f9bb338bc2c6b7d19cbc9676',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -264,7 +264,7 @@ def library_recipes():
             tcl_checksum='8a4c004f48984a03a7747e9ba06e4da4'
 
             tk_checksum='c7ee71a2d05bba78dfffd76528dc17c6'
-            tk_patches = [ ]
+            tk_patches = ['bpo-44828-filedialog-crash-monterey.patch']
 
 
         result.extend([
