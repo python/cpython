@@ -768,16 +768,6 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         self.assertIn('test.txt', os.listdir(dst_dir))
 
     # Issue 47049: See https://bugs.python.org/issue47049
-    # Create following filesystem structure:
-    #
-    # src_dir
-    # ├── test.txt
-    # └── subdir
-    #     ├── doesnotexist.txt -> IDONOTEXIST
-    #     └── test.txt -> ../test.txt
-    #
-    # It is important to copy src_dir/subdir and not the entire src_dir to
-    # reproduce the wrong behavior without the fix.
     @os_helper.skip_unless_symlink
     def test_copytree_no_symlinks_ignore_dangling_symlinks(self):
         src_dir = self.mkdtemp()
