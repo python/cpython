@@ -1347,7 +1347,7 @@ Here's the simplest example of a custom converter, from ``Modules/zlibmodule.c``
     /*[python end generated code: output=da39a3ee5e6b4b0d input=35521e4e733823c7]*/
 
 This block adds a converter to Argument Clinic named ``ssize_t``.  Parameters
-declared as ``ssize_t`` will be declared as type ``Py_ssize_t``, and will
+declared as ``ssize_t`` will be declared as type :c:type:`Py_ssize_t`, and will
 be parsed by the ``'O&'`` format unit, which will call the
 ``ssize_t_converter`` converter function.  ``ssize_t`` variables
 automatically support default values.

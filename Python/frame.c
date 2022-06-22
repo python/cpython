@@ -1,7 +1,9 @@
 
+#define _PY_INTERPRETER
+
 #include "Python.h"
 #include "frameobject.h"
-#include "pycore_code.h"           // stats
+#include "pycore_code.h"          // stats
 #include "pycore_frame.h"
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "opcode.h"
@@ -110,22 +112,6 @@ _PyFrame_Clear(_PyInterpreterFrame *frame)
     Py_XDECREF(frame->f_locals);
     Py_DECREF(frame->f_func);
     Py_DECREF(frame->f_code);
-}
-
-/* Consumes reference to func */
-_PyInterpreterFrame *
-_PyFrame_Push(PyThreadState *tstate, PyFunctionObject *func)
-{
-    PyCodeObject *code = (PyCodeObject *)func->func_code;
-    size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
-    CALL_STAT_INC(frames_pushed);
-    _PyInterpreterFrame *new_frame = _PyThreadState_BumpFramePointer(tstate, size);
-    if (new_frame == NULL) {
-        Py_DECREF(func);
-        return NULL;
-    }
-    _PyFrame_InitializeSpecials(new_frame, func, NULL, code->co_nlocalsplus);
-    return new_frame;
 }
 
 int

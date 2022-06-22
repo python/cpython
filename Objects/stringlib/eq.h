@@ -6,9 +6,6 @@
 Py_LOCAL_INLINE(int)
 unicode_eq(PyObject *a, PyObject *b)
 {
-    assert(PyUnicode_Check(a));
-    assert(PyUnicode_Check(b));
-
     if (PyUnicode_GET_LENGTH(a) != PyUnicode_GET_LENGTH(b))
         return 0;
     if (PyUnicode_GET_LENGTH(a) == 0)

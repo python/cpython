@@ -28,6 +28,7 @@ socket.getdefaulttimeout() -- get the default timeout value
 socket.setdefaulttimeout() -- set the default timeout value
 create_connection() -- connects to an address, with an optional timeout and
                        optional source address.
+create_server() -- create a TCP socket and bind it to a specified address.
 
  [*] not available on all platforms!
 
@@ -122,7 +123,7 @@ if sys.platform.lower().startswith("win"):
     errorTab[10014] = "A fault occurred on the network??"  # WSAEFAULT
     errorTab[10022] = "An invalid operation was attempted."
     errorTab[10024] = "Too many open files."
-    errorTab[10035] = "The socket operation would block"
+    errorTab[10035] = "The socket operation would block."
     errorTab[10036] = "A blocking operation is already in progress."
     errorTab[10037] = "Operation already in progress."
     errorTab[10038] = "Socket operation on nonsocket."

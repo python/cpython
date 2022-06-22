@@ -31,10 +31,7 @@ the set are:
 More Python resources:
 
 * https://www.python.org:  The major Python web site.  It contains code,
-  documentation, and pointers to Python-related pages around the web.  This web
-  site is mirrored in various places around the world, such as Europe, Japan, and
-  Australia; a mirror may be faster than the main site, depending on your
-  geographical location.
+  documentation, and pointers to Python-related pages around the web.
 
 * https://docs.python.org:  Fast access to Python's  documentation.
 

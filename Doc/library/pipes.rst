@@ -10,8 +10,10 @@
 
 **Source code:** :source:`Lib/pipes.py`
 
-.. deprecated:: 3.11
-   The :mod:`pipes` module is deprecated (see :pep:`594` for details).
+.. deprecated-removed:: 3.11 3.13
+   The :mod:`pipes` module is deprecated
+   (see :pep:`PEP 594 <594#pipes>` for details).
+   Please use the :mod:`subprocess` module instead.
 
 --------------
 

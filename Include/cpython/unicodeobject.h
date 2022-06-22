@@ -98,15 +98,9 @@ typedef struct {
     Py_ssize_t length;          /* Number of code points in the string */
     Py_hash_t hash;             /* Hash value; -1 if not set */
     struct {
-        /*
-           SSTATE_NOT_INTERNED (0)
-           SSTATE_INTERNED_MORTAL (1)
-           SSTATE_INTERNED_IMMORTAL (2)
-
-           If interned != SSTATE_NOT_INTERNED, the two references from the
-           dictionary to this object are *not* counted in ob_refcnt.
-         */
-        unsigned int interned:2;
+        /* If interned is set, the two references from the
+           dictionary to this object are *not* counted in ob_refcnt. */
+        unsigned int interned:1;
         /* Character size:
 
            - PyUnicode_1BYTE_KIND (1):
@@ -189,23 +183,18 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
 /* Interning state. */
 #define SSTATE_NOT_INTERNED 0
 #define SSTATE_INTERNED_MORTAL 1
-#define SSTATE_INTERNED_IMMORTAL 2
 
 /* Use only if you know it's a string */
 static inline unsigned int PyUnicode_CHECK_INTERNED(PyObject *op) {
     return _PyASCIIObject_CAST(op)->state.interned;
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define PyUnicode_CHECK_INTERNED(op) PyUnicode_CHECK_INTERNED(_PyObject_CAST(op))
-#endif
+#define PyUnicode_CHECK_INTERNED(op) PyUnicode_CHECK_INTERNED(_PyObject_CAST(op))
 
 /* For backward compatibility */
-static inline unsigned int PyUnicode_IS_READY(PyObject *op) {
+static inline unsigned int PyUnicode_IS_READY(PyObject* Py_UNUSED(op)) {
     return 1;
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define PyUnicode_IS_READY(op) PyUnicode_IS_READY(_PyObject_CAST(op))
-#endif
+#define PyUnicode_IS_READY(op) PyUnicode_IS_READY(_PyObject_CAST(op))
 
 /* Return true if the string contains only ASCII characters, or 0 if not. The
    string may be compact (PyUnicode_IS_COMPACT_ASCII) or not, but must be
@@ -213,27 +202,21 @@ static inline unsigned int PyUnicode_IS_READY(PyObject *op) {
 static inline unsigned int PyUnicode_IS_ASCII(PyObject *op) {
     return _PyASCIIObject_CAST(op)->state.ascii;
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define PyUnicode_IS_ASCII(op) PyUnicode_IS_ASCII(_PyObject_CAST(op))
-#endif
+#define PyUnicode_IS_ASCII(op) PyUnicode_IS_ASCII(_PyObject_CAST(op))
 
 /* Return true if the string is compact or 0 if not.
    No type checks or Ready calls are performed. */
 static inline unsigned int PyUnicode_IS_COMPACT(PyObject *op) {
     return _PyASCIIObject_CAST(op)->state.compact;
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define PyUnicode_IS_COMPACT(op) PyUnicode_IS_COMPACT(_PyObject_CAST(op))
-#endif
+#define PyUnicode_IS_COMPACT(op) PyUnicode_IS_COMPACT(_PyObject_CAST(op))
 
 /* Return true if the string is a compact ASCII string (use PyASCIIObject
    structure), or 0 if not.  No type checks or Ready calls are performed. */
 static inline int PyUnicode_IS_COMPACT_ASCII(PyObject *op) {
     return (_PyASCIIObject_CAST(op)->state.ascii && PyUnicode_IS_COMPACT(op));
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define PyUnicode_IS_COMPACT_ASCII(op) PyUnicode_IS_COMPACT_ASCII(_PyObject_CAST(op))
-#endif
+#define PyUnicode_IS_COMPACT_ASCII(op) PyUnicode_IS_COMPACT_ASCII(_PyObject_CAST(op))
 
 enum PyUnicode_Kind {
 /* Return values of the PyUnicode_KIND() function: */
@@ -242,9 +225,15 @@ enum PyUnicode_Kind {
     PyUnicode_4BYTE_KIND = 4
 };
 
-/* Return one of the PyUnicode_*_KIND values defined above. */
-#define PyUnicode_KIND(op) \
-    (_PyASCIIObject_CAST(op)->state.kind)
+// PyUnicode_KIND(): Return one of the PyUnicode_*_KIND values defined above.
+//
+// gh-89653: Converting this macro to a static inline function would introduce
+// new compiler warnings on "kind < PyUnicode_KIND(str)" (compare signed and
+// unsigned numbers) where kind type is an int or on
+// "unsigned int kind = PyUnicode_KIND(str)" (cast signed to unsigned).
+// Only declare the function as static inline function in the limited C API
+// version 3.12 which is stricter.
+#define PyUnicode_KIND(op) (_PyASCIIObject_CAST(op)->state.kind)
 
 /* Return a void pointer to the raw unicode buffer. */
 static inline void* _PyUnicode_COMPACT_DATA(PyObject *op) {
@@ -255,8 +244,9 @@ static inline void* _PyUnicode_COMPACT_DATA(PyObject *op) {
 }
 
 static inline void* _PyUnicode_NONCOMPACT_DATA(PyObject *op) {
+    void *data;
     assert(!PyUnicode_IS_COMPACT(op));
-    void *data = _PyUnicodeObject_CAST(op)->data.any;
+    data = _PyUnicodeObject_CAST(op)->data.any;
     assert(data != NULL);
     return data;
 }
@@ -267,9 +257,7 @@ static inline void* PyUnicode_DATA(PyObject *op) {
     }
     return _PyUnicode_NONCOMPACT_DATA(op);
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define PyUnicode_DATA(op) PyUnicode_DATA(_PyObject_CAST(op))
-#endif
+#define PyUnicode_DATA(op) PyUnicode_DATA(_PyObject_CAST(op))
 
 /* Return pointers to the canonical representation cast to unsigned char,
    Py_UCS2, or Py_UCS4 for direct character access.
@@ -284,9 +272,7 @@ static inline void* PyUnicode_DATA(PyObject *op) {
 static inline Py_ssize_t PyUnicode_GET_LENGTH(PyObject *op) {
     return _PyASCIIObject_CAST(op)->length;
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define PyUnicode_GET_LENGTH(op) PyUnicode_GET_LENGTH(_PyObject_CAST(op))
-#endif
+#define PyUnicode_GET_LENGTH(op) PyUnicode_GET_LENGTH(_PyObject_CAST(op))
 
 /* Write into the canonical representation, this function does not do any sanity
    checks and is intended for usage in loops.  The caller should cache the
@@ -296,6 +282,7 @@ static inline Py_ssize_t PyUnicode_GET_LENGTH(PyObject *op) {
 static inline void PyUnicode_WRITE(int kind, void *data,
                                    Py_ssize_t index, Py_UCS4 value)
 {
+    assert(index >= 0);
     if (kind == PyUnicode_1BYTE_KIND) {
         assert(value <= 0xffU);
         _Py_STATIC_CAST(Py_UCS1*, data)[index] = _Py_STATIC_CAST(Py_UCS1, value);
@@ -310,17 +297,16 @@ static inline void PyUnicode_WRITE(int kind, void *data,
         _Py_STATIC_CAST(Py_UCS4*, data)[index] = value;
     }
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #define PyUnicode_WRITE(kind, data, index, value) \
     PyUnicode_WRITE(_Py_STATIC_CAST(int, kind), _Py_CAST(void*, data), \
                     (index), _Py_STATIC_CAST(Py_UCS4, value))
-#endif
 
 /* Read a code point from the string's canonical representation.  No checks
    or ready calls are performed. */
 static inline Py_UCS4 PyUnicode_READ(int kind,
                                      const void *data, Py_ssize_t index)
 {
+    assert(index >= 0);
     if (kind == PyUnicode_1BYTE_KIND) {
         return _Py_STATIC_CAST(const Py_UCS1*, data)[index];
     }
@@ -330,11 +316,10 @@ static inline Py_UCS4 PyUnicode_READ(int kind,
     assert(kind == PyUnicode_4BYTE_KIND);
     return _Py_STATIC_CAST(const Py_UCS4*, data)[index];
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #define PyUnicode_READ(kind, data, index) \
-    PyUnicode_READ(_Py_STATIC_CAST(int, kind), _Py_CAST(const void*, data), \
+    PyUnicode_READ(_Py_STATIC_CAST(int, kind), \
+                   _Py_STATIC_CAST(const void*, data), \
                    (index))
-#endif
 
 /* PyUnicode_READ_CHAR() is less efficient than PyUnicode_READ() because it
    calls PyUnicode_KIND() and might call it twice.  For single reads, use
@@ -342,7 +327,13 @@ static inline Py_UCS4 PyUnicode_READ(int kind,
    cache kind and use PyUnicode_READ instead. */
 static inline Py_UCS4 PyUnicode_READ_CHAR(PyObject *unicode, Py_ssize_t index)
 {
-    int kind = PyUnicode_KIND(unicode);
+    int kind;
+
+    assert(index >= 0);
+    // Tolerate reading the NUL character at str[len(str)]
+    assert(index <= PyUnicode_GET_LENGTH(unicode));
+
+    kind = PyUnicode_KIND(unicode);
     if (kind == PyUnicode_1BYTE_KIND) {
         return PyUnicode_1BYTE_DATA(unicode)[index];
     }
@@ -352,21 +343,21 @@ static inline Py_UCS4 PyUnicode_READ_CHAR(PyObject *unicode, Py_ssize_t index)
     assert(kind == PyUnicode_4BYTE_KIND);
     return PyUnicode_4BYTE_DATA(unicode)[index];
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define PyUnicode_READ_CHAR(unicode, index) \
-       PyUnicode_READ_CHAR(_PyObject_CAST(unicode), (index))
-#endif
+#define PyUnicode_READ_CHAR(unicode, index) \
+    PyUnicode_READ_CHAR(_PyObject_CAST(unicode), (index))
 
 /* Return a maximum character value which is suitable for creating another
    string based on op.  This is always an approximation but more efficient
    than iterating over the string. */
 static inline Py_UCS4 PyUnicode_MAX_CHAR_VALUE(PyObject *op)
 {
+    int kind;
+
     if (PyUnicode_IS_ASCII(op)) {
         return 0x7fU;
     }
 
-    int kind = PyUnicode_KIND(op);
+    kind = PyUnicode_KIND(op);
     if (kind == PyUnicode_1BYTE_KIND) {
        return 0xffU;
     }
@@ -376,10 +367,8 @@ static inline Py_UCS4 PyUnicode_MAX_CHAR_VALUE(PyObject *op)
     assert(kind == PyUnicode_4BYTE_KIND);
     return 0x10ffffU;
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define PyUnicode_MAX_CHAR_VALUE(op) \
-       PyUnicode_MAX_CHAR_VALUE(_PyObject_CAST(op))
-#endif
+#define PyUnicode_MAX_CHAR_VALUE(op) \
+    PyUnicode_MAX_CHAR_VALUE(_PyObject_CAST(op))
 
 /* === Public API ========================================================= */
 
@@ -394,13 +383,11 @@ PyAPI_FUNC(PyObject*) PyUnicode_New(
     );
 
 /* For backward compatibility */
-static inline int PyUnicode_READY(PyObject *op)
+static inline int PyUnicode_READY(PyObject* Py_UNUSED(op))
 {
     return 0;
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define PyUnicode_READY(op) PyUnicode_READY(_PyObject_CAST(op))
-#endif
+#define PyUnicode_READY(op) PyUnicode_READY(_PyObject_CAST(op))
 
 /* Get a copy of a Unicode string. */
 PyAPI_FUNC(PyObject*) _PyUnicode_Copy(
@@ -493,7 +480,7 @@ PyAPI_FUNC(Py_UCS4) _PyUnicode_FindMaxChar (
 typedef struct {
     PyObject *buffer;
     void *data;
-    enum PyUnicode_Kind kind;
+    int kind;
     Py_UCS4 maxchar;
     Py_ssize_t size;
     Py_ssize_t pos;
@@ -552,7 +539,7 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
    macro instead. */
 PyAPI_FUNC(int)
 _PyUnicodeWriter_PrepareKindInternal(_PyUnicodeWriter *writer,
-                                     enum PyUnicode_Kind kind);
+                                     int kind);
 
 /* Append a Unicode character.
    Return 0 on success, raise an exception and return -1 on error. */

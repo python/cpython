@@ -1,5 +1,5 @@
 from decimal import Decimal
-from test.support import verbose, is_android, is_emscripten
+from test.support import verbose, is_android, is_emscripten, is_wasi
 from test.support.warnings_helper import check_warnings
 import unittest
 import locale
@@ -373,13 +373,19 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
-    @unittest.skipIf(is_emscripten, "musl libc issue on Emscripten, bpo-46390")
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "musl libc issue on Emscripten/WASI, bpo-46390"
+    )
     def test_strcoll_with_diacritic(self):
         self.assertLess(locale.strcoll('à', 'b'), 0)
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
-    @unittest.skipIf(is_emscripten, "musl libc issue on Emscripten, bpo-46390")
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "musl libc issue on Emscripten/WASI, bpo-46390"
+    )
     def test_strxfrm_with_diacritic(self):
         self.assertLess(locale.strxfrm('à'), locale.strxfrm('b'))
 
