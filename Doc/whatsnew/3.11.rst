@@ -676,7 +676,7 @@ sys
 sysconfig
 ---------
 
-* Two new :ref:`installation schemes <installation_paths>`
+* Three new :ref:`installation schemes <installation_paths>`
   (*posix_venv*, *nt_venv* and *venv*) were added and are used when Python
   creates new virtual environments or when it is running from a virtual
   environment.
