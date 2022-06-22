@@ -799,19 +799,16 @@ class EnumType(type):
                 boundary=boundary,
                 )
 
-    def __contains__(cls, member):
-        """Return True if `member` is in `cls`.
+    def __contains__(cls, value):
+        """Return True if `value` is in `cls`.
 
-        `member` is in `cls` iff:
-        1) `member` is a proper member of the `cls` enum, or
-        2) `member` is the value of a member of the `cls` enum.
-
-        Beware that 2) can lead to some confusion if members of different
-        enums have the same value.
+        `value` is in `cls` if:
+        1) `value` is a member of `cls`, or
+        2) `value` is the value of one of the `cls`'s members.
         """
-        if isinstance(member, cls):
+        if isinstance(value, cls):
             return True
-        return member in cls._value2member_map_ or member in cls._unhashable_values_
+        return value in cls._value2member_map_ or value in cls._unhashable_values_
 
     def __delattr__(cls, attr):
         # nicer error message when someone tries to delete an attribute

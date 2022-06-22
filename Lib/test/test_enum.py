@@ -346,10 +346,7 @@ class _EnumTests:
     def test_contains_tf(self):
         MainEnum = self.MainEnum
         self.assertIn(MainEnum.first, MainEnum)
-        if type(self) is TestMinimalDate or type(self) is TestMixedDate:
-            self.assertTrue(date(*self.source_values[0]) in MainEnum)
-        else:
-            self.assertTrue(self.source_values[0] in MainEnum)
+        self.assertTrue(self.values[0] in MainEnum)
         if type(self) is not TestStrEnum:
             self.assertFalse('first' in MainEnum)
         val = MainEnum.dupe
@@ -359,21 +356,37 @@ class _EnumTests:
             one = auto()
             two = auto()
         self.assertNotIn(OtherEnum.two, MainEnum)
+        #
+        if MainEnum._member_type_ is object:
+            # enums without mixed data types will always be False
+            class NotEqualEnum(self.enum_type):
+                this = self.source_values[0]
+                that = self.source_values[1]
+            self.assertNotIn(NotEqualEnum.this, MainEnum)
+            self.assertNotIn(NotEqualEnum.that, MainEnum)
+        else:
+            # enums with mixed data types may be True
+            class EqualEnum(self.enum_type):
+                this = self.source_values[0]
+                that = self.source_values[1]
+            self.assertIn(EqualEnum.this, MainEnum)
+            self.assertIn(EqualEnum.that, MainEnum)
 
     def test_contains_same_name_diff_enum_diff_values(self):
         MainEnum = self.MainEnum
+        #
         class OtherEnum(Enum):
             first = "brand"
             second = "new"
             third = "values"
-
+        #
         self.assertIn(MainEnum.first, MainEnum)
         self.assertIn(MainEnum.second, MainEnum)
         self.assertIn(MainEnum.third, MainEnum)
         self.assertNotIn(MainEnum.first, OtherEnum)
         self.assertNotIn(MainEnum.second, OtherEnum)
         self.assertNotIn(MainEnum.third, OtherEnum)
-
+        #
         self.assertIn(OtherEnum.first, OtherEnum)
         self.assertIn(OtherEnum.second, OtherEnum)
         self.assertIn(OtherEnum.third, OtherEnum)
@@ -4049,15 +4062,12 @@ class Color(enum.Enum)
  |  ----------------------------------------------------------------------
  |  Methods inherited from enum.EnumType:
  |\x20\x20
- |  __contains__(member) from enum.EnumType
- |      Return True if `member` is in `cls`.
+ |  __contains__(value) from enum.EnumType
+ |      Return True if `value` is in `cls`.
  |      
- |      `member` is in `cls` iff:
- |      1) `member` is a proper member of the `cls` enum, or
- |      2) `member` is the value of a member of the `cls` enum.
- |      
- |      Beware that 2) can lead to some confusion if members of different
- |      enums have the same value.
+ |      `value` is in `cls` if:
+ |      1) `value` is a member of `cls`, or
+ |      2) `value` is the value of one of the `cls`'s members.
  |\x20\x20
  |  __getitem__(name) from enum.EnumType
  |      Return the member matching `name`.
