@@ -825,7 +825,6 @@ fail:
 }
 
 static PyObject *setiter_iternext(_PySetIterObject *si) {
-    PyObject *key = NULL;
     PyObject *stack[1];
     int err = _PySetIter_GetNext(si, stack);
     if (err <= 0) {
