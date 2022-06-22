@@ -5067,7 +5067,8 @@ static PyType_Spec PySSLSession_spec = {
     .name = "_ssl.SSLSession",
     .basicsize = sizeof(PySSLSession),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = PySSLSession_slots,
 };
 
