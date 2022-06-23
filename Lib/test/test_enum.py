@@ -4054,36 +4054,6 @@ Help on class Color in module %s:
 class Color(enum.Enum)
  |  Color(value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
  |\x20\x20
- |  A collection of name/value pairs.
- |\x20\x20
- |  Access them by:
- |\x20\x20
- |  - attribute access::
- |\x20\x20
- |  >>> Color.CYAN
- |  <Color.CYAN: 1>
- |\x20\x20
- |  - value lookup:
- |\x20\x20
- |  >>> Color(1)
- |  <Color.CYAN: 1>
- |\x20\x20
- |  - name lookup:
- |\x20\x20
- |  >>> Color['CYAN']
- |  <Color.CYAN: 1>
- |\x20\x20
- |  Enumerations can be iterated over, and know how many members they have:
- |\x20\x20
- |  >>> len(Color)
- |  3
- |\x20\x20
- |  >>> list(Color)
- |  [<Color.CYAN: 1>, <Color.MAGENTA: 2>, <Color.YELLOW: 3>]
- |\x20\x20
- |  Methods can be added to enumerations, and members can have their own
- |  attributes -- see the documentation for details.
- |\x20\x20
  |  Method resolution order:
  |      Color
  |      enum.Enum
@@ -4329,77 +4299,13 @@ class MiscTestCase(unittest.TestCase):
     def test_doc_1(self):
         class Single(Enum):
             ONE = 1
-        self.assertEqual(
-                Single.__doc__,
-                dedent("""\
-                    A collection of name/value pairs.
-
-                    Access them by:
-
-                    - attribute access::
-
-                    >>> Single.ONE
-                    <Single.ONE: 1>
-
-                    - value lookup:
-
-                    >>> Single(1)
-                    <Single.ONE: 1>
-
-                    - name lookup:
-
-                    >>> Single['ONE']
-                    <Single.ONE: 1>
-
-                    Enumerations can be iterated over, and know how many members they have:
-
-                    >>> len(Single)
-                    1
-
-                    >>> list(Single)
-                    [<Single.ONE: 1>]
-
-                    Methods can be added to enumerations, and members can have their own
-                    attributes -- see the documentation for details.
-                    """))
+        self.assertEqual(Single.__doc__, None)
 
     def test_doc_2(self):
         class Double(Enum):
             ONE = 1
             TWO = 2
-        self.assertEqual(
-                Double.__doc__,
-                dedent("""\
-                    A collection of name/value pairs.
-
-                    Access them by:
-
-                    - attribute access::
-
-                    >>> Double.ONE
-                    <Double.ONE: 1>
-
-                    - value lookup:
-
-                    >>> Double(1)
-                    <Double.ONE: 1>
-
-                    - name lookup:
-
-                    >>> Double['ONE']
-                    <Double.ONE: 1>
-
-                    Enumerations can be iterated over, and know how many members they have:
-
-                    >>> len(Double)
-                    2
-
-                    >>> list(Double)
-                    [<Double.ONE: 1>, <Double.TWO: 2>]
-
-                    Methods can be added to enumerations, and members can have their own
-                    attributes -- see the documentation for details.
-                    """))
+        self.assertEqual(Double.__doc__, None)
 
 
     def test_doc_1(self):
@@ -4407,39 +4313,7 @@ class MiscTestCase(unittest.TestCase):
             ONE = 1
             TWO = 2
             THREE = 3
-        self.assertEqual(
-                Triple.__doc__,
-                dedent("""\
-                    A collection of name/value pairs.
-
-                    Access them by:
-
-                    - attribute access::
-
-                    >>> Triple.ONE
-                    <Triple.ONE: 1>
-
-                    - value lookup:
-
-                    >>> Triple(1)
-                    <Triple.ONE: 1>
-
-                    - name lookup:
-
-                    >>> Triple['ONE']
-                    <Triple.ONE: 1>
-
-                    Enumerations can be iterated over, and know how many members they have:
-
-                    >>> len(Triple)
-                    3
-
-                    >>> list(Triple)
-                    [<Triple.ONE: 1>, <Triple.TWO: 2>, <Triple.THREE: 3>]
-
-                    Methods can be added to enumerations, and members can have their own
-                    attributes -- see the documentation for details.
-                    """))
+        self.assertEqual(Triple.__doc__, None)
 
     def test_doc_1(self):
         class Quadruple(Enum):
@@ -4447,39 +4321,7 @@ class MiscTestCase(unittest.TestCase):
             TWO = 2
             THREE = 3
             FOUR = 4
-        self.assertEqual(
-                Quadruple.__doc__,
-                dedent("""\
-                    A collection of name/value pairs.
-
-                    Access them by:
-
-                    - attribute access::
-
-                    >>> Quadruple.ONE
-                    <Quadruple.ONE: 1>
-
-                    - value lookup:
-
-                    >>> Quadruple(1)
-                    <Quadruple.ONE: 1>
-
-                    - name lookup:
-
-                    >>> Quadruple['ONE']
-                    <Quadruple.ONE: 1>
-
-                    Enumerations can be iterated over, and know how many members they have:
-
-                    >>> len(Quadruple)
-                    4
-
-                    >>> list(Quadruple)[:3]
-                    [<Quadruple.ONE: 1>, <Quadruple.TWO: 2>, <Quadruple.THREE: 3>]
-
-                    Methods can be added to enumerations, and members can have their own
-                    attributes -- see the documentation for details.
-                    """))
+        self.assertEqual(Quadruple.__doc__, None)
 
 
 # These are unordered here on purpose to ensure that declaration order
