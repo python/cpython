@@ -130,14 +130,10 @@ stmt_reset(pysqlite_Statement *self)
 {
     int rc = SQLITE_OK;
 
-    if (self->in_use && self->st) {
+    if (self->st != NULL) {
         Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_reset(self->st);
         Py_END_ALLOW_THREADS
-
-        if (rc == SQLITE_OK) {
-            self->in_use = 0;
-        }
     }
 
     return rc;
