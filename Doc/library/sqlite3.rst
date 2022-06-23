@@ -234,8 +234,9 @@ Module functions and constants
 
    Pass this flag value to the *detect_types* parameter of
    :func:`connect` to look up a converter function by
-   parsing the type name from the column name in queries.
-   The type name must be wrapped in square brackets (``[]``)
+   using the type name, parsed from the query column name,
+   as the converter dictionary key.
+   The type name must be wrapped in square brackets (``[]``).
 
    .. code-block:: sql
 
