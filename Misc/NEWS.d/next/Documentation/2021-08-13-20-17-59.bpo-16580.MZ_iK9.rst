@@ -1,2 +1,0 @@
-Added code equivalents for the :meth:`int.to_bytes` and :meth:`int.from_bytes`
-methods, as well as tests ensuring that these code equivalents are valid.

@@ -1,2 +1,0 @@
-Fix an issue where argparse would not preserve values in a provided namespace
-when using a subparser with defaults.

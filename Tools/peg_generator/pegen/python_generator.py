@@ -1,5 +1,4 @@
-import ast
-import re
+import os.path
 import token
 from typing import IO, Any, Dict, Optional, Sequence, Set, Text, Tuple
 
@@ -214,7 +213,8 @@ class PythonParserGenerator(ParserGenerator, GrammarVisitor):
         self.collect_rules()
         header = self.grammar.metas.get("header", MODULE_PREFIX)
         if header is not None:
-            self.print(header.rstrip("\n").format(filename=filename))
+            basename = os.path.basename(filename)
+            self.print(header.rstrip("\n").format(filename=basename))
         subheader = self.grammar.metas.get("subheader", "")
         if subheader:
             self.print(subheader)

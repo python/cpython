@@ -36,60 +36,110 @@
    and __phello__.spam.  Loading any will print some famous words... */
 
 #include "Python.h"
+#include "pycore_import.h"
+
+#include <stdbool.h>
 
 /* Includes for frozen modules: */
-#include "frozen_modules/importlib__bootstrap.h"
-#include "frozen_modules/importlib__bootstrap_external.h"
-#include "frozen_modules/zipimport.h"
-#include "frozen_modules/abc.h"
-#include "frozen_modules/codecs.h"
-#include "frozen_modules/io.h"
-#include "frozen_modules/_collections_abc.h"
-#include "frozen_modules/_sitebuiltins.h"
-#include "frozen_modules/genericpath.h"
-#include "frozen_modules/ntpath.h"
-#include "frozen_modules/posixpath.h"
-#include "frozen_modules/os.h"
-#include "frozen_modules/site.h"
-#include "frozen_modules/stat.h"
-#include "frozen_modules/__hello__.h"
 /* End includes */
 
-/* Note that a negative size indicates a package. */
+#define GET_CODE(name) _Py_get_##name##_toplevel
 
-static const struct _frozen _PyImport_FrozenModules[] = {
-    /* import system */
-    {"_frozen_importlib", _Py_M__importlib__bootstrap,
-        (int)sizeof(_Py_M__importlib__bootstrap)},
-    {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external,
-        (int)sizeof(_Py_M__importlib__bootstrap_external)},
-    {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport)},
+/* Start extern declarations */
+extern PyObject *_Py_get_importlib__bootstrap_toplevel(void);
+extern PyObject *_Py_get_importlib__bootstrap_external_toplevel(void);
+extern PyObject *_Py_get_zipimport_toplevel(void);
+extern PyObject *_Py_get_abc_toplevel(void);
+extern PyObject *_Py_get_codecs_toplevel(void);
+extern PyObject *_Py_get_io_toplevel(void);
+extern PyObject *_Py_get__collections_abc_toplevel(void);
+extern PyObject *_Py_get__sitebuiltins_toplevel(void);
+extern PyObject *_Py_get_genericpath_toplevel(void);
+extern PyObject *_Py_get_ntpath_toplevel(void);
+extern PyObject *_Py_get_posixpath_toplevel(void);
+extern PyObject *_Py_get_posixpath_toplevel(void);
+extern PyObject *_Py_get_os_toplevel(void);
+extern PyObject *_Py_get_site_toplevel(void);
+extern PyObject *_Py_get_stat_toplevel(void);
+extern PyObject *_Py_get_importlib_util_toplevel(void);
+extern PyObject *_Py_get_importlib_machinery_toplevel(void);
+extern PyObject *_Py_get_runpy_toplevel(void);
+extern PyObject *_Py_get___hello___toplevel(void);
+extern PyObject *_Py_get___hello___toplevel(void);
+extern PyObject *_Py_get___hello___toplevel(void);
+extern PyObject *_Py_get___hello___toplevel(void);
+extern PyObject *_Py_get___phello___toplevel(void);
+extern PyObject *_Py_get___phello___toplevel(void);
+extern PyObject *_Py_get___phello___ham_toplevel(void);
+extern PyObject *_Py_get___phello___ham_toplevel(void);
+extern PyObject *_Py_get___phello___ham_eggs_toplevel(void);
+extern PyObject *_Py_get___phello___spam_toplevel(void);
+extern PyObject *_Py_get_frozen_only_toplevel(void);
+/* End extern declarations */
 
+static const struct _frozen bootstrap_modules[] = {
+    {"_frozen_importlib", NULL, 0, false, GET_CODE(importlib__bootstrap)},
+    {"_frozen_importlib_external", NULL, 0, false, GET_CODE(importlib__bootstrap_external)},
+    {"zipimport", NULL, 0, false, GET_CODE(zipimport)},
+    {0, 0, 0} /* bootstrap sentinel */
+};
+static const struct _frozen stdlib_modules[] = {
     /* stdlib - startup, without site (python -S) */
-    {"abc", _Py_M__abc, (int)sizeof(_Py_M__abc)},
-    {"codecs", _Py_M__codecs, (int)sizeof(_Py_M__codecs)},
-    {"io", _Py_M__io, (int)sizeof(_Py_M__io)},
+    {"abc", NULL, 0, false, GET_CODE(abc)},
+    {"codecs", NULL, 0, false, GET_CODE(codecs)},
+    {"io", NULL, 0, false, GET_CODE(io)},
 
     /* stdlib - startup, with site */
-    {"_collections_abc", _Py_M___collections_abc,
-        (int)sizeof(_Py_M___collections_abc)},
-    {"_sitebuiltins", _Py_M___sitebuiltins, (int)sizeof(_Py_M___sitebuiltins)},
-    {"genericpath", _Py_M__genericpath, (int)sizeof(_Py_M__genericpath)},
-    {"ntpath", _Py_M__ntpath, (int)sizeof(_Py_M__ntpath)},
-    {"posixpath", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath)},
-    {"os.path", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath)},
-    {"os", _Py_M__os, (int)sizeof(_Py_M__os)},
-    {"site", _Py_M__site, (int)sizeof(_Py_M__site)},
-    {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat)},
+    {"_collections_abc", NULL, 0, false, GET_CODE(_collections_abc)},
+    {"_sitebuiltins", NULL, 0, false, GET_CODE(_sitebuiltins)},
+    {"genericpath", NULL, 0, false, GET_CODE(genericpath)},
+    {"ntpath", NULL, 0, false, GET_CODE(ntpath)},
+    {"posixpath", NULL, 0, false, GET_CODE(posixpath)},
+    {"os.path", NULL, 0, false, GET_CODE(posixpath)},
+    {"os", NULL, 0, false, GET_CODE(os)},
+    {"site", NULL, 0, false, GET_CODE(site)},
+    {"stat", NULL, 0, false, GET_CODE(stat)},
 
-    /* Test module */
-    {"__hello__", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
-    {"__phello__", _Py_M____hello__, -(int)sizeof(_Py_M____hello__)},
-    {"__phello__.spam", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
-    {0, 0, 0} /* sentinel */
+    /* runpy - run module with -m */
+    {"importlib.util", NULL, 0, false, GET_CODE(importlib_util)},
+    {"importlib.machinery", NULL, 0, false, GET_CODE(importlib_machinery)},
+    {"runpy", NULL, 0, false, GET_CODE(runpy)},
+    {0, 0, 0} /* stdlib sentinel */
 };
+static const struct _frozen test_modules[] = {
+    {"__hello__", NULL, 0, false, GET_CODE(__hello__)},
+    {"__hello_alias__", NULL, 0, false, GET_CODE(__hello__)},
+    {"__phello_alias__", NULL, 0, true, GET_CODE(__hello__)},
+    {"__phello_alias__.spam", NULL, 0, false, GET_CODE(__hello__)},
+    {"__phello__", NULL, 0, true, GET_CODE(__phello__)},
+    {"__phello__.__init__", NULL, 0, false, GET_CODE(__phello__)},
+    {"__phello__.ham", NULL, 0, true, GET_CODE(__phello___ham)},
+    {"__phello__.ham.__init__", NULL, 0, false, GET_CODE(__phello___ham)},
+    {"__phello__.ham.eggs", NULL, 0, false, GET_CODE(__phello___ham_eggs)},
+    {"__phello__.spam", NULL, 0, false, GET_CODE(__phello___spam)},
+    {"__hello_only__", NULL, 0, false, GET_CODE(frozen_only)},
+    {0, 0, 0} /* test sentinel */
+};
+const struct _frozen *_PyImport_FrozenBootstrap = bootstrap_modules;
+const struct _frozen *_PyImport_FrozenStdlib = stdlib_modules;
+const struct _frozen *_PyImport_FrozenTest = test_modules;
+
+static const struct _module_alias aliases[] = {
+    {"_frozen_importlib", "importlib._bootstrap"},
+    {"_frozen_importlib_external", "importlib._bootstrap_external"},
+    {"os.path", "posixpath"},
+    {"__hello_alias__", "__hello__"},
+    {"__phello_alias__", "__hello__"},
+    {"__phello_alias__.spam", "__hello__"},
+    {"__phello__.__init__", "<__phello__"},
+    {"__phello__.ham.__init__", "<__phello__.ham"},
+    {"__hello_only__", NULL},
+    {0, 0} /* aliases sentinel */
+};
+const struct _module_alias *_PyImport_FrozenAliases = aliases;
+
 
 /* Embedding apps may change this pointer to point to their favorite
    collection of frozen modules: */
 
-const struct _frozen *PyImport_FrozenModules = _PyImport_FrozenModules;
+const struct _frozen *PyImport_FrozenModules = NULL;

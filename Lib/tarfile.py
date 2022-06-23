@@ -888,15 +888,24 @@ class TarInfo(object):
         # Test number fields for values that exceed the field limit or values
         # that like to be stored as float.
         for name, digits in (("uid", 8), ("gid", 8), ("size", 12), ("mtime", 12)):
-            if name in pax_headers:
-                # The pax header has priority. Avoid overflow.
-                info[name] = 0
-                continue
+            needs_pax = False
 
             val = info[name]
-            if not 0 <= val < 8 ** (digits - 1) or isinstance(val, float):
-                pax_headers[name] = str(val)
+            val_is_float = isinstance(val, float)
+            val_int = round(val) if val_is_float else val
+            if not 0 <= val_int < 8 ** (digits - 1):
+                # Avoid overflow.
                 info[name] = 0
+                needs_pax = True
+            elif val_is_float:
+                # Put rounded value in ustar header, and full
+                # precision value in pax header.
+                info[name] = val_int
+                needs_pax = True
+
+            # The existing pax header has priority.
+            if needs_pax and name not in pax_headers:
+                pax_headers[name] = str(val)
 
         # Create a pax extended header if necessary.
         if pax_headers:
@@ -1154,6 +1163,11 @@ class TarInfo(object):
         # header information.
         self._apply_pax_info(tarfile.pax_headers, tarfile.encoding, tarfile.errors)
 
+        # Remove redundant slashes from directories. This is to be consistent
+        # with frombuf().
+        if self.isdir():
+            self.name = self.name.rstrip("/")
+
         return self
 
     def _proc_gnulong(self, tarfile):
@@ -1175,6 +1189,11 @@ class TarInfo(object):
             next.name = nts(buf, tarfile.encoding, tarfile.errors)
         elif self.type == GNUTYPE_LONGLINK:
             next.linkname = nts(buf, tarfile.encoding, tarfile.errors)
+
+        # Remove redundant slashes from directories. This is to be consistent
+        # with frombuf().
+        if next.isdir():
+            next.name = next.name.removesuffix("/")
 
         return next
 
@@ -1789,7 +1808,7 @@ class TarFile(object):
            than once in the archive, its last occurrence is assumed to be the
            most up-to-date version.
         """
-        tarinfo = self._getmember(name)
+        tarinfo = self._getmember(name.rstrip('/'))
         if tarinfo is None:
             raise KeyError("filename %r not found" % name)
         return tarinfo
@@ -2349,6 +2368,15 @@ class TarFile(object):
                     raise ReadError(str(e)) from None
             except SubsequentHeaderError as e:
                 raise ReadError(str(e)) from None
+            except Exception as e:
+                try:
+                    import zlib
+                    if isinstance(e, zlib.error):
+                        raise ReadError(f'zlib error: {e}') from None
+                    else:
+                        raise e
+                except ImportError:
+                    raise e
             break
 
         if tarinfo is not None:
@@ -2484,7 +2512,9 @@ def is_tarfile(name):
     """
     try:
         if hasattr(name, "read"):
+            pos = name.tell()
             t = open(fileobj=name)
+            name.seek(pos)
         else:
             t = open(name)
         t.close()

@@ -116,6 +116,21 @@ class GeneralTest(unittest.TestCase):
         atexit._run_exitfuncs()
         self.assertEqual(l, [5])
 
+    def test_atexit_with_unregistered_function(self):
+        # See bpo-46025 for more info
+        def func():
+            atexit.unregister(func)
+            1/0
+        atexit.register(func)
+        try:
+            with support.catch_unraisable_exception() as cm:
+                atexit._run_exitfuncs()
+                self.assertEqual(cm.unraisable.object, func)
+                self.assertEqual(cm.unraisable.exc_type, ZeroDivisionError)
+                self.assertEqual(type(cm.unraisable.exc_value), ZeroDivisionError)
+        finally:
+            atexit.unregister(func)
+
 
 if __name__ == "__main__":
     unittest.main()

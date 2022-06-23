@@ -52,10 +52,21 @@ raised for division by zero and mod by zero.
    returned.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bit_length()
-#include "pycore_dtoa.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_dtoa.h"          // _Py_dg_infinity()
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyObject_LookupSpecial()
+#include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
+/* For DBL_EPSILON in _math.h */
+#include <float.h>
+/* For _Py_log1p with workarounds for buggy handling of zeros. */
 #include "_math.h"
 
 #include "clinic/mathmodule.c.h"
@@ -65,6 +76,20 @@ module math
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=76bc7002685dd942]*/
 
+
+typedef struct {
+    PyObject *str___ceil__;
+    PyObject *str___floor__;
+    PyObject *str___trunc__;
+} math_module_state;
+
+static inline math_module_state*
+get_math_module_state(PyObject *module)
+{
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (math_module_state *)state;
+}
 
 /*
    sin(pi*x), giving accurate results for all finite x (especially x
@@ -263,7 +288,7 @@ lanczos_sum(double x)
 static double
 m_inf(void)
 {
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
     return _Py_dg_infinity(0);
 #else
     return Py_HUGE_VAL;
@@ -273,12 +298,12 @@ m_inf(void)
 /* Constant nan value, generated in the same way as float('nan'). */
 /* We don't currently assume that Py_NAN is defined everywhere. */
 
-#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+#if _PY_SHORT_FLOAT_REPR == 1
 
 static double
 m_nan(void)
 {
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
     return _Py_dg_stdnan(0);
 #else
     return Py_NAN;
@@ -977,9 +1002,13 @@ is_error(double x)
          * On some platforms (Ubuntu/ia64) it seems that errno can be
          * set to ERANGE for subnormal results that do *not* underflow
          * to zero.  So to be safe, we'll ignore ERANGE whenever the
-         * function result is less than one in absolute value.
+         * function result is less than 1.5 in absolute value.
+         *
+         * bpo-46018: Changed to 1.5 to ensure underflows in expm1()
+         * are correctly detected, since the function may underflow
+         * toward -1.0 rather than 0.0.
          */
-        if (fabs(x) < 1.0)
+        if (fabs(x) < 1.5)
             result = 0;
         else
             PyErr_SetString(PyExc_OverflowError,
@@ -1161,14 +1190,14 @@ FUNC1(acos, acos, 0,
       "acos($module, x, /)\n--\n\n"
       "Return the arc cosine (measured in radians) of x.\n\n"
       "The result is between 0 and pi.")
-FUNC1(acosh, m_acosh, 0,
+FUNC1(acosh, acosh, 0,
       "acosh($module, x, /)\n--\n\n"
       "Return the inverse hyperbolic cosine of x.")
 FUNC1(asin, asin, 0,
       "asin($module, x, /)\n--\n\n"
       "Return the arc sine (measured in radians) of x.\n\n"
       "The result is between -pi/2 and pi/2.")
-FUNC1(asinh, m_asinh, 0,
+FUNC1(asinh, asinh, 0,
       "asinh($module, x, /)\n--\n\n"
       "Return the inverse hyperbolic sine of x.")
 FUNC1(atan, atan, 0,
@@ -1179,7 +1208,7 @@ FUNC2(atan2, m_atan2,
       "atan2($module, y, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of y/x.\n\n"
       "Unlike atan(y/x), the signs of both x and y are considered.")
-FUNC1(atanh, m_atanh, 0,
+FUNC1(atanh, atanh, 0,
       "atanh($module, x, /)\n--\n\n"
       "Return the inverse hyperbolic tangent of x.")
 FUNC1(cbrt, cbrt, 0,
@@ -1201,12 +1230,12 @@ static PyObject *
 math_ceil(PyObject *module, PyObject *number)
 /*[clinic end generated code: output=6c3b8a78bc201c67 input=2725352806399cab]*/
 {
-    _Py_IDENTIFIER(__ceil__);
 
     if (!PyFloat_CheckExact(number)) {
-        PyObject *method = _PyObject_LookupSpecial(number, &PyId___ceil__);
+        math_module_state *state = get_math_module_state(module);
+        PyObject *method = _PyObject_LookupSpecial(number, state->str___ceil__);
         if (method != NULL) {
-            PyObject *result = _PyObject_CallNoArg(method);
+            PyObject *result = _PyObject_CallNoArgs(method);
             Py_DECREF(method);
             return result;
         }
@@ -1240,7 +1269,10 @@ FUNC1A(erfc, m_erfc,
 FUNC1(exp, exp, 1,
       "exp($module, x, /)\n--\n\n"
       "Return e raised to the power of x.")
-FUNC1(expm1, m_expm1, 1,
+FUNC1(exp2, exp2, 1,
+      "exp2($module, x, /)\n--\n\n"
+      "Return 2 raised to the power of x.")
+FUNC1(expm1, expm1, 1,
       "expm1($module, x, /)\n--\n\n"
       "Return exp(x)-1.\n\n"
       "This function avoids the loss of precision involved in the direct "
@@ -1266,16 +1298,15 @@ math_floor(PyObject *module, PyObject *number)
 {
     double x;
 
-    _Py_IDENTIFIER(__floor__);
-
     if (PyFloat_CheckExact(number)) {
         x = PyFloat_AS_DOUBLE(number);
     }
     else
     {
-        PyObject *method = _PyObject_LookupSpecial(number, &PyId___floor__);
+        math_module_state *state = get_math_module_state(module);
+        PyObject *method = _PyObject_LookupSpecial(number, state->str___floor__);
         if (method != NULL) {
-            PyObject *result = _PyObject_CallNoArg(method);
+            PyObject *result = _PyObject_CallNoArgs(method);
             Py_DECREF(method);
             return result;
         }
@@ -1703,20 +1734,49 @@ completes the proof sketch.
 
 */
 
+/*
+    The _approximate_isqrt_tab table provides approximate square roots for
+    16-bit integers. For any n in the range 2**14 <= n < 2**16, the value
+
+        a = _approximate_isqrt_tab[(n >> 8) - 64]
+
+    is an approximate square root of n, satisfying (a - 1)**2 < n < (a + 1)**2.
+
+    The table was computed in Python using the expression:
+
+        [min(round(sqrt(256*n + 128)), 255) for n in range(64, 256)]
+*/
+
+static const uint8_t _approximate_isqrt_tab[192] = {
+    128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139,
+    140, 141, 142, 143, 144, 144, 145, 146, 147, 148, 149, 150,
+    151, 151, 152, 153, 154, 155, 156, 156, 157, 158, 159, 160,
+    160, 161, 162, 163, 164, 164, 165, 166, 167, 167, 168, 169,
+    170, 170, 171, 172, 173, 173, 174, 175, 176, 176, 177, 178,
+    179, 179, 180, 181, 181, 182, 183, 183, 184, 185, 186, 186,
+    187, 188, 188, 189, 190, 190, 191, 192, 192, 193, 194, 194,
+    195, 196, 196, 197, 198, 198, 199, 200, 200, 201, 201, 202,
+    203, 203, 204, 205, 205, 206, 206, 207, 208, 208, 209, 210,
+    210, 211, 211, 212, 213, 213, 214, 214, 215, 216, 216, 217,
+    217, 218, 219, 219, 220, 220, 221, 221, 222, 223, 223, 224,
+    224, 225, 225, 226, 227, 227, 228, 228, 229, 229, 230, 230,
+    231, 232, 232, 233, 233, 234, 234, 235, 235, 236, 237, 237,
+    238, 238, 239, 239, 240, 240, 241, 241, 242, 242, 243, 243,
+    244, 244, 245, 246, 246, 247, 247, 248, 248, 249, 249, 250,
+    250, 251, 251, 252, 252, 253, 253, 254, 254, 255, 255, 255,
+};
 
 /* Approximate square root of a large 64-bit integer.
 
    Given `n` satisfying `2**62 <= n < 2**64`, return `a`
    satisfying `(a - 1)**2 < n < (a + 1)**2`. */
 
-static uint64_t
+static inline uint32_t
 _approximate_isqrt(uint64_t n)
 {
-    uint32_t u = 1U + (n >> 62);
-    u = (u << 1) + (n >> 59) / u;
-    u = (u << 3) + (n >> 53) / u;
-    u = (u << 7) + (n >> 41) / u;
-    return (u << 15) + (n >> 17) / u;
+    uint32_t u = _approximate_isqrt_tab[(n >> 56) - 64];
+    u = (u << 7) + (uint32_t)(n >> 41) / u;
+    return (u << 15) + (uint32_t)((n >> 17) / u);
 }
 
 /*[clinic input]
@@ -1734,7 +1794,8 @@ math_isqrt(PyObject *module, PyObject *n)
 {
     int a_too_large, c_bit_length;
     size_t c, d;
-    uint64_t m, u;
+    uint64_t m;
+    uint32_t u;
     PyObject *a = NULL, *b;
 
     n = _PyNumber_Index(n);
@@ -1761,18 +1822,17 @@ math_isqrt(PyObject *module, PyObject *n)
     c = (c - 1U) / 2U;
 
     /* Fast path: if c <= 31 then n < 2**64 and we can compute directly with a
-       fast, almost branch-free algorithm. In the final correction, we use `u*u
-       - 1 >= m` instead of the simpler `u*u > m` in order to get the correct
-       result in the corner case where `u=2**32`. */
+       fast, almost branch-free algorithm. */
     if (c <= 31U) {
+        int shift = 31 - (int)c;
         m = (uint64_t)PyLong_AsUnsignedLongLong(n);
         Py_DECREF(n);
         if (m == (uint64_t)(-1) && PyErr_Occurred()) {
             return NULL;
         }
-        u = _approximate_isqrt(m << (62U - 2U*c)) >> (31U - c);
-        u -= u * u - 1U >= m;
-        return PyLong_FromUnsignedLongLong((unsigned long long)u);
+        u = _approximate_isqrt(m << 2*shift) >> shift;
+        u -= (uint64_t)u * u > m;
+        return PyLong_FromUnsignedLong(u);
     }
 
     /* Slow path: n >= 2**64. We perform the first five iterations in C integer
@@ -1796,7 +1856,7 @@ math_isqrt(PyObject *module, PyObject *n)
         goto error;
     }
     u = _approximate_isqrt(m) >> (31U - d);
-    a = PyLong_FromUnsignedLongLong((unsigned long long)u);
+    a = PyLong_FromUnsignedLong(u);
     if (a == NULL) {
         goto error;
     }
@@ -2047,17 +2107,17 @@ static const unsigned long SmallFactorials[] = {
 /*[clinic input]
 math.factorial
 
-    x as arg: object
+    n as arg: object
     /
 
-Find x!.
+Find n!.
 
 Raise a ValueError if x is negative or non-integral.
 [clinic start generated code]*/
 
 static PyObject *
 math_factorial(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=6686f26fae00e9ca input=6d1c8105c0d91fb4]*/
+/*[clinic end generated code: output=6686f26fae00e9ca input=713fb771677e8c31]*/
 {
     long x, two_valuation;
     int overflow;
@@ -2110,7 +2170,6 @@ static PyObject *
 math_trunc(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=34b9697b707e1031 input=2168b34e0a09134d]*/
 {
-    _Py_IDENTIFIER(__trunc__);
     PyObject *trunc, *result;
 
     if (PyFloat_CheckExact(x)) {
@@ -2122,7 +2181,8 @@ math_trunc(PyObject *module, PyObject *x)
             return NULL;
     }
 
-    trunc = _PyObject_LookupSpecial(x, &PyId___trunc__);
+    math_module_state *state = get_math_module_state(module);
+    trunc = _PyObject_LookupSpecial(x, state->str___trunc__);
     if (trunc == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_TypeError,
@@ -2130,7 +2190,7 @@ math_trunc(PyObject *module, PyObject *x)
                          Py_TYPE(x)->tp_name);
         return NULL;
     }
-    result = _PyObject_CallNoArg(trunc);
+    result = _PyObject_CallNoArgs(trunc);
     Py_DECREF(trunc);
     return result;
 }
@@ -2266,7 +2326,7 @@ math_modf_impl(PyObject *module, double x)
    in that int is larger than PY_SSIZE_T_MAX. */
 
 static PyObject*
-loghelper(PyObject* arg, double (*func)(double), const char *funcname)
+loghelper(PyObject* arg, double (*func)(double))
 {
     /* If it is int, do it ourselves. */
     if (PyLong_Check(arg)) {
@@ -2326,11 +2386,11 @@ math_log_impl(PyObject *module, PyObject *x, int group_right_1,
     PyObject *num, *den;
     PyObject *ans;
 
-    num = loghelper(x, m_log, "log");
+    num = loghelper(x, m_log);
     if (num == NULL || base == NULL)
         return num;
 
-    den = loghelper(base, m_log, "log");
+    den = loghelper(base, m_log);
     if (den == NULL) {
         Py_DECREF(num);
         return NULL;
@@ -2356,7 +2416,7 @@ static PyObject *
 math_log2(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=5425899a4d5d6acb input=08321262bae4f39b]*/
 {
-    return loghelper(x, m_log2, "log2");
+    return loghelper(x, m_log2);
 }
 
 
@@ -2373,7 +2433,7 @@ static PyObject *
 math_log10(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=be72a64617df9c6f input=b2469d02c6469e53]*/
 {
-    return loghelper(x, m_log10, "log10");
+    return loghelper(x, m_log10);
 }
 
 
@@ -3082,14 +3142,9 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
     }
 
     if (result == NULL) {
-        result = PyLong_FromLong(1);
-        if (result == NULL) {
-            Py_DECREF(iter);
-            return NULL;
-        }
-    } else {
-        Py_INCREF(result);
+        result = _PyLong_GetOne();
     }
+    Py_INCREF(result);
 #ifndef SLOW_PROD
     /* Fast paths for integers keeping temporary products in C.
      * Assumes all inputs are the same type.
@@ -3105,7 +3160,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
         }
         /* Loop over all the items in the iterable until we finish, we overflow
          * or we found a non integer element */
-        while(result == NULL) {
+        while (result == NULL) {
             item = PyIter_Next(iter);
             if (item == NULL) {
                 Py_DECREF(iter);
@@ -3215,6 +3270,300 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 }
 
 
+/* least significant 64 bits of the odd part of factorial(n), for n in range(128).
+
+Python code to generate the values:
+
+    import math
+
+    for n in range(128):
+        fac = math.factorial(n)
+        fac_odd_part = fac // (fac & -fac)
+        reduced_fac_odd_part = fac_odd_part % (2**64)
+        print(f"{reduced_fac_odd_part:#018x}u")
+*/
+static const uint64_t reduced_factorial_odd_part[] = {
+    0x0000000000000001u, 0x0000000000000001u, 0x0000000000000001u, 0x0000000000000003u,
+    0x0000000000000003u, 0x000000000000000fu, 0x000000000000002du, 0x000000000000013bu,
+    0x000000000000013bu, 0x0000000000000b13u, 0x000000000000375fu, 0x0000000000026115u,
+    0x000000000007233fu, 0x00000000005cca33u, 0x0000000002898765u, 0x00000000260eeeebu,
+    0x00000000260eeeebu, 0x0000000286fddd9bu, 0x00000016beecca73u, 0x000001b02b930689u,
+    0x00000870d9df20adu, 0x0000b141df4dae31u, 0x00079dd498567c1bu, 0x00af2e19afc5266du,
+    0x020d8a4d0f4f7347u, 0x335281867ec241efu, 0x9b3093d46fdd5923u, 0x5e1f9767cc5866b1u,
+    0x92dd23d6966aced7u, 0xa30d0f4f0a196e5bu, 0x8dc3e5a1977d7755u, 0x2ab8ce915831734bu,
+    0x2ab8ce915831734bu, 0x81d2a0bc5e5fdcabu, 0x9efcac82445da75bu, 0xbc8b95cf58cde171u,
+    0xa0e8444a1f3cecf9u, 0x4191deb683ce3ffdu, 0xddd3878bc84ebfc7u, 0xcb39a64b83ff3751u,
+    0xf8203f7993fc1495u, 0xbd2a2a78b35f4bddu, 0x84757be6b6d13921u, 0x3fbbcfc0b524988bu,
+    0xbd11ed47c8928df9u, 0x3c26b59e41c2f4c5u, 0x677a5137e883fdb3u, 0xff74e943b03b93ddu,
+    0xfe5ebbcb10b2bb97u, 0xb021f1de3235e7e7u, 0x33509eb2e743a58fu, 0x390f9da41279fb7du,
+    0xe5cb0154f031c559u, 0x93074695ba4ddb6du, 0x81c471caa636247fu, 0xe1347289b5a1d749u,
+    0x286f21c3f76ce2ffu, 0x00be84a2173e8ac7u, 0x1595065ca215b88bu, 0xf95877595b018809u,
+    0x9c2efe3c5516f887u, 0x373294604679382bu, 0xaf1ff7a888adcd35u, 0x18ddf279a2c5800bu,
+    0x18ddf279a2c5800bu, 0x505a90e2542582cbu, 0x5bacad2cd8d5dc2bu, 0xfe3152bcbff89f41u,
+    0xe1467e88bf829351u, 0xb8001adb9e31b4d5u, 0x2803ac06a0cbb91fu, 0x1904b5d698805799u,
+    0xe12a648b5c831461u, 0x3516abbd6160cfa9u, 0xac46d25f12fe036du, 0x78bfa1da906b00efu,
+    0xf6390338b7f111bdu, 0x0f25f80f538255d9u, 0x4ec8ca55b8db140fu, 0x4ff670740b9b30a1u,
+    0x8fd032443a07f325u, 0x80dfe7965c83eeb5u, 0xa3dc1714d1213afdu, 0x205b7bbfcdc62007u,
+    0xa78126bbe140a093u, 0x9de1dc61ca7550cfu, 0x84f0046d01b492c5u, 0x2d91810b945de0f3u,
+    0xf5408b7f6008aa71u, 0x43707f4863034149u, 0xdac65fb9679279d5u, 0xc48406e7d1114eb7u,
+    0xa7dc9ed3c88e1271u, 0xfb25b2efdb9cb30du, 0x1bebda0951c4df63u, 0x5c85e975580ee5bdu,
+    0x1591bc60082cb137u, 0x2c38606318ef25d7u, 0x76ca72f7c5c63e27u, 0xf04a75d17baa0915u,
+    0x77458175139ae30du, 0x0e6c1330bc1b9421u, 0xdf87d2b5797e8293u, 0xefa5c703e1e68925u,
+    0x2b6b1b3278b4f6e1u, 0xceee27b382394249u, 0xd74e3829f5dab91du, 0xfdb17989c26b5f1fu,
+    0xc1b7d18781530845u, 0x7b4436b2105a8561u, 0x7ba7c0418372a7d7u, 0x9dbc5c67feb6c639u,
+    0x502686d7f6ff6b8fu, 0x6101855406be7a1fu, 0x9956afb5806930e7u, 0xe1f0ee88af40f7c5u,
+    0x984b057bda5c1151u, 0x9a49819acc13ea05u, 0x8ef0dead0896ef27u, 0x71f7826efe292b21u,
+    0xad80a480e46986efu, 0x01cdc0ebf5e0c6f7u, 0x6e06f839968f68dbu, 0xdd5943ab56e76139u,
+    0xcdcf31bf8604c5e7u, 0x7e2b4a847054a1cbu, 0x0ca75697a4d3d0f5u, 0x4703f53ac514a98bu,
+};
+
+/* inverses of reduced_factorial_odd_part values modulo 2**64.
+
+Python code to generate the values:
+
+    import math
+
+    for n in range(128):
+        fac = math.factorial(n)
+        fac_odd_part = fac // (fac & -fac)
+        inverted_fac_odd_part = pow(fac_odd_part, -1, 2**64)
+        print(f"{inverted_fac_odd_part:#018x}u")
+*/
+static const uint64_t inverted_factorial_odd_part[] = {
+    0x0000000000000001u, 0x0000000000000001u, 0x0000000000000001u, 0xaaaaaaaaaaaaaaabu,
+    0xaaaaaaaaaaaaaaabu, 0xeeeeeeeeeeeeeeefu, 0x4fa4fa4fa4fa4fa5u, 0x2ff2ff2ff2ff2ff3u,
+    0x2ff2ff2ff2ff2ff3u, 0x938cc70553e3771bu, 0xb71c27cddd93e49fu, 0xb38e3229fcdee63du,
+    0xe684bb63544a4cbfu, 0xc2f684917ca340fbu, 0xf747c9cba417526du, 0xbb26eb51d7bd49c3u,
+    0xbb26eb51d7bd49c3u, 0xb0a7efb985294093u, 0xbe4b8c69f259eabbu, 0x6854d17ed6dc4fb9u,
+    0xe1aa904c915f4325u, 0x3b8206df131cead1u, 0x79c6009fea76fe13u, 0xd8c5d381633cd365u,
+    0x4841f12b21144677u, 0x4a91ff68200b0d0fu, 0x8f9513a58c4f9e8bu, 0x2b3e690621a42251u,
+    0x4f520f00e03c04e7u, 0x2edf84ee600211d3u, 0xadcaa2764aaacdfdu, 0x161f4f9033f4fe63u,
+    0x161f4f9033f4fe63u, 0xbada2932ea4d3e03u, 0xcec189f3efaa30d3u, 0xf7475bb68330bf91u,
+    0x37eb7bf7d5b01549u, 0x46b35660a4e91555u, 0xa567c12d81f151f7u, 0x4c724007bb2071b1u,
+    0x0f4a0cce58a016bdu, 0xfa21068e66106475u, 0x244ab72b5a318ae1u, 0x366ce67e080d0f23u,
+    0xd666fdae5dd2a449u, 0xd740ddd0acc06a0du, 0xb050bbbb28e6f97bu, 0x70b003fe890a5c75u,
+    0xd03aabff83037427u, 0x13ec4ca72c783bd7u, 0x90282c06afdbd96fu, 0x4414ddb9db4a95d5u,
+    0xa2c68735ae6832e9u, 0xbf72d71455676665u, 0xa8469fab6b759b7fu, 0xc1e55b56e606caf9u,
+    0x40455630fc4a1cffu, 0x0120a7b0046d16f7u, 0xa7c3553b08faef23u, 0x9f0bfd1b08d48639u,
+    0xa433ffce9a304d37u, 0xa22ad1d53915c683u, 0xcb6cbc723ba5dd1du, 0x547fb1b8ab9d0ba3u,
+    0x547fb1b8ab9d0ba3u, 0x8f15a826498852e3u, 0x32e1a03f38880283u, 0x3de4cce63283f0c1u,
+    0x5dfe6667e4da95b1u, 0xfda6eeeef479e47du, 0xf14de991cc7882dfu, 0xe68db79247630ca9u,
+    0xa7d6db8207ee8fa1u, 0x255e1f0fcf034499u, 0xc9a8990e43dd7e65u, 0x3279b6f289702e0fu,
+    0xe7b5905d9b71b195u, 0x03025ba41ff0da69u, 0xb7df3d6d3be55aefu, 0xf89b212ebff2b361u,
+    0xfe856d095996f0adu, 0xd6e533e9fdf20f9du, 0xf8c0e84a63da3255u, 0xa677876cd91b4db7u,
+    0x07ed4f97780d7d9bu, 0x90a8705f258db62fu, 0xa41bbb2be31b1c0du, 0x6ec28690b038383bu,
+    0xdb860c3bb2edd691u, 0x0838286838a980f9u, 0x558417a74b36f77du, 0x71779afc3646ef07u,
+    0x743cda377ccb6e91u, 0x7fdf9f3fe89153c5u, 0xdc97d25df49b9a4bu, 0x76321a778eb37d95u,
+    0x7cbb5e27da3bd487u, 0x9cff4ade1a009de7u, 0x70eb166d05c15197u, 0xdcf0460b71d5fe3du,
+    0x5ac1ee5260b6a3c5u, 0xc922dedfdd78efe1u, 0xe5d381dc3b8eeb9bu, 0xd57e5347bafc6aadu,
+    0x86939040983acd21u, 0x395b9d69740a4ff9u, 0x1467299c8e43d135u, 0x5fe440fcad975cdfu,
+    0xcaa9a39794a6ca8du, 0xf61dbd640868dea1u, 0xac09d98d74843be7u, 0x2b103b9e1a6b4809u,
+    0x2ab92d16960f536fu, 0x6653323d5e3681dfu, 0xefd48c1c0624e2d7u, 0xa496fefe04816f0du,
+    0x1754a7b07bbdd7b1u, 0x23353c829a3852cdu, 0xbf831261abd59097u, 0x57a8e656df0618e1u,
+    0x16e9206c3100680fu, 0xadad4c6ee921dac7u, 0x635f2b3860265353u, 0xdd6d0059f44b3d09u,
+    0xac4dd6b894447dd7u, 0x42ea183eeaa87be3u, 0x15612d1550ee5b5du, 0x226fa19d656cb623u,
+};
+
+/* exponent of the largest power of 2 dividing factorial(n), for n in range(68)
+
+Python code to generate the values:
+
+import math
+
+for n in range(128):
+    fac = math.factorial(n)
+    fac_trailing_zeros = (fac & -fac).bit_length() - 1
+    print(fac_trailing_zeros)
+*/
+
+static const uint8_t factorial_trailing_zeros[] = {
+     0,  0,  1,  1,  3,  3,  4,  4,  7,  7,  8,  8, 10, 10, 11, 11,  //  0-15
+    15, 15, 16, 16, 18, 18, 19, 19, 22, 22, 23, 23, 25, 25, 26, 26,  // 16-31
+    31, 31, 32, 32, 34, 34, 35, 35, 38, 38, 39, 39, 41, 41, 42, 42,  // 32-47
+    46, 46, 47, 47, 49, 49, 50, 50, 53, 53, 54, 54, 56, 56, 57, 57,  // 48-63
+    63, 63, 64, 64, 66, 66, 67, 67, 70, 70, 71, 71, 73, 73, 74, 74,  // 64-79
+    78, 78, 79, 79, 81, 81, 82, 82, 85, 85, 86, 86, 88, 88, 89, 89,  // 80-95
+    94, 94, 95, 95, 97, 97, 98, 98, 101, 101, 102, 102, 104, 104, 105, 105,  // 96-111
+    109, 109, 110, 110, 112, 112, 113, 113, 116, 116, 117, 117, 119, 119, 120, 120,  // 112-127
+};
+
+/* Number of permutations and combinations.
+ * P(n, k) = n! / (n-k)!
+ * C(n, k) = P(n, k) / k!
+ */
+
+/* Calculate C(n, k) for n in the 63-bit range. */
+static PyObject *
+perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
+{
+    if (k == 0) {
+        return PyLong_FromLong(1);
+    }
+
+    /* For small enough n and k the result fits in the 64-bit range and can
+     * be calculated without allocating intermediate PyLong objects. */
+    if (iscomb) {
+        /* Maps k to the maximal n so that 2*k-1 <= n <= 127 and C(n, k)
+         * fits into a uint64_t.  Exclude k = 1, because the second fast
+         * path is faster for this case.*/
+        static const unsigned char fast_comb_limits1[] = {
+            0, 0, 127, 127, 127, 127, 127, 127,  // 0-7
+            127, 127, 127, 127, 127, 127, 127, 127,  // 8-15
+            116, 105, 97, 91, 86, 82, 78, 76,  // 16-23
+            74, 72, 71, 70, 69, 68, 68, 67,  // 24-31
+            67, 67, 67,  // 32-34
+        };
+        if (k < Py_ARRAY_LENGTH(fast_comb_limits1) && n <= fast_comb_limits1[k]) {
+            /*
+                comb(n, k) fits into a uint64_t. We compute it as
+
+                    comb_odd_part << shift
+
+                where 2**shift is the largest power of two dividing comb(n, k)
+                and comb_odd_part is comb(n, k) >> shift. comb_odd_part can be
+                calculated efficiently via arithmetic modulo 2**64, using three
+                lookups and two uint64_t multiplications.
+            */
+            uint64_t comb_odd_part = reduced_factorial_odd_part[n]
+                                   * inverted_factorial_odd_part[k]
+                                   * inverted_factorial_odd_part[n - k];
+            int shift = factorial_trailing_zeros[n]
+                      - factorial_trailing_zeros[k]
+                      - factorial_trailing_zeros[n - k];
+            return PyLong_FromUnsignedLongLong(comb_odd_part << shift);
+        }
+
+        /* Maps k to the maximal n so that 2*k-1 <= n <= 127 and C(n, k)*k
+         * fits into a long long (which is at least 64 bit).  Only contains
+         * items larger than in fast_comb_limits1. */
+        static const unsigned long long fast_comb_limits2[] = {
+            0, ULLONG_MAX, 4294967296ULL, 3329022, 102570, 13467, 3612, 1449,  // 0-7
+            746, 453, 308, 227, 178, 147,  // 8-13
+        };
+        if (k < Py_ARRAY_LENGTH(fast_comb_limits2) && n <= fast_comb_limits2[k]) {
+            /* C(n, k) = C(n, k-1) * (n-k+1) / k */
+            unsigned long long result = n;
+            for (unsigned long long i = 1; i < k;) {
+                result *= --n;
+                result /= ++i;
+            }
+            return PyLong_FromUnsignedLongLong(result);
+        }
+    }
+    else {
+        /* Maps k to the maximal n so that k <= n and P(n, k)
+         * fits into a long long (which is at least 64 bit). */
+        static const unsigned long long fast_perm_limits[] = {
+            0, ULLONG_MAX, 4294967296ULL, 2642246, 65537, 7133, 1627, 568,  // 0-7
+            259, 142, 88, 61, 45, 36, 30, 26,  // 8-15
+            24, 22, 21, 20, 20,  // 16-20
+        };
+        if (k < Py_ARRAY_LENGTH(fast_perm_limits) && n <= fast_perm_limits[k]) {
+            if (n <= 127) {
+                /* P(n, k) fits into a uint64_t. */
+                uint64_t perm_odd_part = reduced_factorial_odd_part[n]
+                                       * inverted_factorial_odd_part[n - k];
+                int shift = factorial_trailing_zeros[n]
+                          - factorial_trailing_zeros[n - k];
+                return PyLong_FromUnsignedLongLong(perm_odd_part << shift);
+            }
+
+            /* P(n, k) = P(n, k-1) * (n-k+1) */
+            unsigned long long result = n;
+            for (unsigned long long i = 1; i < k;) {
+                result *= --n;
+                ++i;
+            }
+            return PyLong_FromUnsignedLongLong(result);
+        }
+    }
+
+    /* For larger n use recursive formulas:
+     *
+     *   P(n, k) = P(n, j) * P(n-j, k-j)
+     *   C(n, k) = C(n, j) * C(n-j, k-j) // C(k, j)
+     */
+    unsigned long long j = k / 2;
+    PyObject *a, *b;
+    a = perm_comb_small(n, j, iscomb);
+    if (a == NULL) {
+        return NULL;
+    }
+    b = perm_comb_small(n - j, k - j, iscomb);
+    if (b == NULL) {
+        goto error;
+    }
+    Py_SETREF(a, PyNumber_Multiply(a, b));
+    Py_DECREF(b);
+    if (iscomb && a != NULL) {
+        b = perm_comb_small(k, j, 1);
+        if (b == NULL) {
+            goto error;
+        }
+        Py_SETREF(a, PyNumber_FloorDivide(a, b));
+        Py_DECREF(b);
+    }
+    return a;
+
+error:
+    Py_DECREF(a);
+    return NULL;
+}
+
+/* Calculate P(n, k) or C(n, k) using recursive formulas.
+ * It is more efficient than sequential multiplication thanks to
+ * Karatsuba multiplication.
+ */
+static PyObject *
+perm_comb(PyObject *n, unsigned long long k, int iscomb)
+{
+    if (k == 0) {
+        return PyLong_FromLong(1);
+    }
+    if (k == 1) {
+        Py_INCREF(n);
+        return n;
+    }
+
+    /* P(n, k) = P(n, j) * P(n-j, k-j) */
+    /* C(n, k) = C(n, j) * C(n-j, k-j) // C(k, j) */
+    unsigned long long j = k / 2;
+    PyObject *a, *b;
+    a = perm_comb(n, j, iscomb);
+    if (a == NULL) {
+        return NULL;
+    }
+    PyObject *t = PyLong_FromUnsignedLongLong(j);
+    if (t == NULL) {
+        goto error;
+    }
+    n = PyNumber_Subtract(n, t);
+    Py_DECREF(t);
+    if (n == NULL) {
+        goto error;
+    }
+    b = perm_comb(n, k - j, iscomb);
+    Py_DECREF(n);
+    if (b == NULL) {
+        goto error;
+    }
+    Py_SETREF(a, PyNumber_Multiply(a, b));
+    Py_DECREF(b);
+    if (iscomb && a != NULL) {
+        b = perm_comb_small(k, j, 1);
+        if (b == NULL) {
+            goto error;
+        }
+        Py_SETREF(a, PyNumber_FloorDivide(a, b));
+        Py_DECREF(b);
+    }
+    return a;
+
+error:
+    Py_DECREF(a);
+    return NULL;
+}
+
 /*[clinic input]
 math.perm
 
@@ -3238,9 +3587,9 @@ static PyObject *
 math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
 /*[clinic end generated code: output=e021a25469653e23 input=5311c5a00f359b53]*/
 {
-    PyObject *result = NULL, *factor = NULL;
+    PyObject *result = NULL;
     int overflow, cmp;
-    long long i, factors;
+    long long ki, ni;
 
     if (k == Py_None) {
         return math_factorial(module, n);
@@ -3254,6 +3603,7 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
         Py_DECREF(n);
         return NULL;
     }
+    assert(PyLong_CheckExact(n) && PyLong_CheckExact(k));
 
     if (Py_SIZE(n) < 0) {
         PyErr_SetString(PyExc_ValueError,
@@ -3275,42 +3625,26 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
         goto error;
     }
 
-    factors = PyLong_AsLongLongAndOverflow(k, &overflow);
+    ki = PyLong_AsLongLongAndOverflow(k, &overflow);
+    assert(overflow >= 0 && !PyErr_Occurred());
     if (overflow > 0) {
         PyErr_Format(PyExc_OverflowError,
                      "k must not exceed %lld",
                      LLONG_MAX);
         goto error;
     }
-    else if (factors == -1) {
-        /* k is nonnegative, so a return value of -1 can only indicate error */
-        goto error;
-    }
+    assert(ki >= 0);
 
-    if (factors == 0) {
-        result = PyLong_FromLong(1);
-        goto done;
+    ni = PyLong_AsLongLongAndOverflow(n, &overflow);
+    assert(overflow >= 0 && !PyErr_Occurred());
+    if (!overflow && ki > 1) {
+        assert(ni >= 0);
+        result = perm_comb_small((unsigned long long)ni,
+                                 (unsigned long long)ki, 0);
     }
-
-    result = n;
-    Py_INCREF(result);
-    if (factors == 1) {
-        goto done;
+    else {
+        result = perm_comb(n, (unsigned long long)ki, 0);
     }
-
-    factor = Py_NewRef(n);
-    PyObject *one = _PyLong_GetOne();  // borrowed ref
-    for (i = 1; i < factors; ++i) {
-        Py_SETREF(factor, PyNumber_Subtract(factor, one));
-        if (factor == NULL) {
-            goto error;
-        }
-        Py_SETREF(result, PyNumber_Multiply(result, factor));
-        if (result == NULL) {
-            goto error;
-        }
-    }
-    Py_DECREF(factor);
 
 done:
     Py_DECREF(n);
@@ -3318,13 +3652,10 @@ done:
     return result;
 
 error:
-    Py_XDECREF(factor);
-    Py_XDECREF(result);
     Py_DECREF(n);
     Py_DECREF(k);
     return NULL;
 }
-
 
 /*[clinic input]
 math.comb
@@ -3351,9 +3682,9 @@ static PyObject *
 math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
 /*[clinic end generated code: output=bd2cec8d854f3493 input=9a05315af2518709]*/
 {
-    PyObject *result = NULL, *factor = NULL, *temp;
+    PyObject *result = NULL, *temp;
     int overflow, cmp;
-    long long i, factors;
+    long long ki, ni;
 
     n = PyNumber_Index(n);
     if (n == NULL) {
@@ -3364,6 +3695,7 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
         Py_DECREF(n);
         return NULL;
     }
+    assert(PyLong_CheckExact(n) && PyLong_CheckExact(k));
 
     if (Py_SIZE(n) < 0) {
         PyErr_SetString(PyExc_ValueError,
@@ -3376,73 +3708,60 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
         goto error;
     }
 
-    /* k = min(k, n - k) */
-    temp = PyNumber_Subtract(n, k);
-    if (temp == NULL) {
-        goto error;
-    }
-    if (Py_SIZE(temp) < 0) {
-        Py_DECREF(temp);
-        result = PyLong_FromLong(0);
-        goto done;
-    }
-    cmp = PyObject_RichCompareBool(temp, k, Py_LT);
-    if (cmp > 0) {
-        Py_SETREF(k, temp);
+    ni = PyLong_AsLongLongAndOverflow(n, &overflow);
+    assert(overflow >= 0 && !PyErr_Occurred());
+    if (!overflow) {
+        assert(ni >= 0);
+        ki = PyLong_AsLongLongAndOverflow(k, &overflow);
+        assert(overflow >= 0 && !PyErr_Occurred());
+        if (overflow || ki > ni) {
+            result = PyLong_FromLong(0);
+            goto done;
+        }
+        assert(ki >= 0);
+
+        ki = Py_MIN(ki, ni - ki);
+        if (ki > 1) {
+            result = perm_comb_small((unsigned long long)ni,
+                                     (unsigned long long)ki, 1);
+            goto done;
+        }
+        /* For k == 1 just return the original n in perm_comb(). */
     }
     else {
-        Py_DECREF(temp);
-        if (cmp < 0) {
-            goto error;
-        }
-    }
-
-    factors = PyLong_AsLongLongAndOverflow(k, &overflow);
-    if (overflow > 0) {
-        PyErr_Format(PyExc_OverflowError,
-                     "min(n - k, k) must not exceed %lld",
-                     LLONG_MAX);
-        goto error;
-    }
-    if (factors == -1) {
-        /* k is nonnegative, so a return value of -1 can only indicate error */
-        goto error;
-    }
-
-    if (factors == 0) {
-        result = PyLong_FromLong(1);
-        goto done;
-    }
-
-    result = n;
-    Py_INCREF(result);
-    if (factors == 1) {
-        goto done;
-    }
-
-    factor = Py_NewRef(n);
-    PyObject *one = _PyLong_GetOne();  // borrowed ref
-    for (i = 1; i < factors; ++i) {
-        Py_SETREF(factor, PyNumber_Subtract(factor, one));
-        if (factor == NULL) {
-            goto error;
-        }
-        Py_SETREF(result, PyNumber_Multiply(result, factor));
-        if (result == NULL) {
-            goto error;
-        }
-
-        temp = PyLong_FromUnsignedLongLong((unsigned long long)i + 1);
+        /* k = min(k, n - k) */
+        temp = PyNumber_Subtract(n, k);
         if (temp == NULL) {
             goto error;
         }
-        Py_SETREF(result, PyNumber_FloorDivide(result, temp));
-        Py_DECREF(temp);
-        if (result == NULL) {
+        if (Py_SIZE(temp) < 0) {
+            Py_DECREF(temp);
+            result = PyLong_FromLong(0);
+            goto done;
+        }
+        cmp = PyObject_RichCompareBool(temp, k, Py_LT);
+        if (cmp > 0) {
+            Py_SETREF(k, temp);
+        }
+        else {
+            Py_DECREF(temp);
+            if (cmp < 0) {
+                goto error;
+            }
+        }
+
+        ki = PyLong_AsLongLongAndOverflow(k, &overflow);
+        assert(overflow >= 0 && !PyErr_Occurred());
+        if (overflow) {
+            PyErr_Format(PyExc_OverflowError,
+                         "min(n - k, k) must not exceed %lld",
+                         LLONG_MAX);
             goto error;
         }
+        assert(ki >= 0);
     }
-    Py_DECREF(factor);
+
+    result = perm_comb(n, (unsigned long long)ki, 1);
 
 done:
     Py_DECREF(n);
@@ -3450,8 +3769,6 @@ done:
     return result;
 
 error:
-    Py_XDECREF(factor);
-    Py_XDECREF(result);
     Py_DECREF(n);
     Py_DECREF(k);
     return NULL;
@@ -3522,6 +3839,20 @@ math_ulp_impl(PyObject *module, double x)
 static int
 math_exec(PyObject *module)
 {
+
+    math_module_state *state = get_math_module_state(module);
+    state->str___ceil__ = PyUnicode_InternFromString("__ceil__");
+    if (state->str___ceil__ == NULL) {
+        return -1;
+    }
+    state->str___floor__ = PyUnicode_InternFromString("__floor__");
+    if (state->str___floor__ == NULL) {
+        return -1;
+    }
+    state->str___trunc__ = PyUnicode_InternFromString("__trunc__");
+    if (state->str___trunc__ == NULL) {
+        return -1;
+    }
     if (PyModule_AddObject(module, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
         return -1;
     }
@@ -3535,12 +3866,28 @@ math_exec(PyObject *module)
     if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(m_inf())) < 0) {
         return -1;
     }
-#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+#if _PY_SHORT_FLOAT_REPR == 1
     if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(m_nan())) < 0) {
         return -1;
     }
 #endif
     return 0;
+}
+
+static int
+math_clear(PyObject *module)
+{
+    math_module_state *state = get_math_module_state(module);
+    Py_CLEAR(state->str___ceil__);
+    Py_CLEAR(state->str___floor__);
+    Py_CLEAR(state->str___trunc__);
+    return 0;
+}
+
+static void
+math_free(void *module)
+{
+    math_clear((PyObject *)module);
 }
 
 static PyMethodDef math_methods[] = {
@@ -3549,11 +3896,11 @@ static PyMethodDef math_methods[] = {
     {"asin",            math_asin,      METH_O,         math_asin_doc},
     {"asinh",           math_asinh,     METH_O,         math_asinh_doc},
     {"atan",            math_atan,      METH_O,         math_atan_doc},
-    {"atan2",           (PyCFunction)(void(*)(void))math_atan2,     METH_FASTCALL,  math_atan2_doc},
+    {"atan2",           _PyCFunction_CAST(math_atan2),     METH_FASTCALL,  math_atan2_doc},
     {"atanh",           math_atanh,     METH_O,         math_atanh_doc},
     {"cbrt",            math_cbrt,      METH_O,         math_cbrt_doc},
     MATH_CEIL_METHODDEF
-    {"copysign",        (PyCFunction)(void(*)(void))math_copysign,  METH_FASTCALL,  math_copysign_doc},
+    {"copysign",        _PyCFunction_CAST(math_copysign),  METH_FASTCALL,  math_copysign_doc},
     {"cos",             math_cos,       METH_O,         math_cos_doc},
     {"cosh",            math_cosh,      METH_O,         math_cosh_doc},
     MATH_DEGREES_METHODDEF
@@ -3561,6 +3908,7 @@ static PyMethodDef math_methods[] = {
     {"erf",             math_erf,       METH_O,         math_erf_doc},
     {"erfc",            math_erfc,      METH_O,         math_erfc_doc},
     {"exp",             math_exp,       METH_O,         math_exp_doc},
+    {"exp2",            math_exp2,      METH_O,         math_exp2_doc},
     {"expm1",           math_expm1,     METH_O,         math_expm1_doc},
     {"fabs",            math_fabs,      METH_O,         math_fabs_doc},
     MATH_FACTORIAL_METHODDEF
@@ -3569,14 +3917,14 @@ static PyMethodDef math_methods[] = {
     MATH_FREXP_METHODDEF
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
-    {"gcd",             (PyCFunction)(void(*)(void))math_gcd,       METH_FASTCALL,  math_gcd_doc},
-    {"hypot",           (PyCFunction)(void(*)(void))math_hypot,     METH_FASTCALL,  math_hypot_doc},
+    {"gcd",             _PyCFunction_CAST(math_gcd),       METH_FASTCALL,  math_gcd_doc},
+    {"hypot",           _PyCFunction_CAST(math_hypot),     METH_FASTCALL,  math_hypot_doc},
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
     MATH_ISINF_METHODDEF
     MATH_ISNAN_METHODDEF
     MATH_ISQRT_METHODDEF
-    {"lcm",             (PyCFunction)(void(*)(void))math_lcm,       METH_FASTCALL,  math_lcm_doc},
+    {"lcm",             _PyCFunction_CAST(math_lcm),       METH_FASTCALL,  math_lcm_doc},
     MATH_LDEXP_METHODDEF
     {"lgamma",          math_lgamma,    METH_O,         math_lgamma_doc},
     MATH_LOG_METHODDEF
@@ -3586,7 +3934,7 @@ static PyMethodDef math_methods[] = {
     MATH_MODF_METHODDEF
     MATH_POW_METHODDEF
     MATH_RADIANS_METHODDEF
-    {"remainder",       (PyCFunction)(void(*)(void))math_remainder, METH_FASTCALL,  math_remainder_doc},
+    {"remainder",       _PyCFunction_CAST(math_remainder), METH_FASTCALL,  math_remainder_doc},
     {"sin",             math_sin,       METH_O,         math_sin_doc},
     {"sinh",            math_sinh,      METH_O,         math_sinh_doc},
     {"sqrt",            math_sqrt,      METH_O,         math_sqrt_doc},
@@ -3614,9 +3962,11 @@ static struct PyModuleDef mathmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "math",
     .m_doc = module_doc,
-    .m_size = 0,
+    .m_size = sizeof(math_module_state),
     .m_methods = math_methods,
     .m_slots = math_slots,
+    .m_clear = math_clear,
+    .m_free = math_free,
 };
 
 PyMODINIT_FUNC

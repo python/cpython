@@ -1,4 +1,0 @@
-:func:`importlib._bootstrap._find_and_load` now implements a two-step
-check to avoid locking when modules have been already imported and are
-ready. This improves performance of repeated calls to
-:func:`importlib.import_module` and :func:`importlib.__import__`.

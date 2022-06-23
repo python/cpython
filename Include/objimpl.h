@@ -135,14 +135,14 @@ PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
 
 // Alias to PyObject_New(). In Python 3.8, PyObject_NEW() called directly
 // PyObject_MALLOC() with _PyObject_SIZE().
-#define PyObject_NEW(type, typeobj) PyObject_New(type, typeobj)
+#define PyObject_NEW(type, typeobj) PyObject_New((type), (typeobj))
 
 #define PyObject_NewVar(type, typeobj, n) \
                 ( (type *) _PyObject_NewVar((typeobj), (n)) )
 
 // Alias to PyObject_NewVar(). In Python 3.8, PyObject_NEW_VAR() called
 // directly PyObject_MALLOC() with _PyObject_VAR_SIZE().
-#define PyObject_NEW_VAR(type, typeobj, n) PyObject_NewVar(type, typeobj, n)
+#define PyObject_NEW_VAR(type, typeobj, n) PyObject_NewVar((type), (typeobj), (n))
 
 
 /*
@@ -182,9 +182,9 @@ PyAPI_FUNC(void) PyObject_GC_UnTrack(void *);
 PyAPI_FUNC(void) PyObject_GC_Del(void *);
 
 #define PyObject_GC_New(type, typeobj) \
-                ( (type *) _PyObject_GC_New(typeobj) )
+    _Py_CAST(type*, _PyObject_GC_New(typeobj))
 #define PyObject_GC_NewVar(type, typeobj, n) \
-                ( (type *) _PyObject_GC_NewVar((typeobj), (n)) )
+    _Py_CAST(type*, _PyObject_GC_NewVar((typeobj), (n)))
 
 PyAPI_FUNC(int) PyObject_GC_IsTracked(PyObject *);
 PyAPI_FUNC(int) PyObject_GC_IsFinalized(PyObject *);
@@ -205,7 +205,7 @@ PyAPI_FUNC(int) PyObject_GC_IsFinalized(PyObject *);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_OBJIMPL_H
-#  include  "cpython/objimpl.h"
+#  include "cpython/objimpl.h"
 #  undef Py_CPYTHON_OBJIMPL_H
 #endif
 

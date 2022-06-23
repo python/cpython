@@ -18,7 +18,7 @@
 This module provides access to Transport Layer Security (often known as "Secure
 Sockets Layer") encryption and peer authentication facilities for network
 sockets, both client-side and server-side.  This module uses the OpenSSL
-library. It is available on all modern Unix systems, Windows, Mac OS X, and
+library. It is available on all modern Unix systems, Windows, macOS, and
 probably additional platforms, as long as OpenSSL is installed on that platform.
 
 .. note::
@@ -714,7 +714,7 @@ Constants
    Selects SSL version 2 as the channel encryption protocol.
 
    This protocol is not available if OpenSSL is compiled with the
-   ``OPENSSL_NO_SSL2`` flag.
+   ``no-ssl2`` option.
 
    .. warning::
 
@@ -728,8 +728,8 @@ Constants
 
    Selects SSL version 3 as the channel encryption protocol.
 
-   This protocol is not be available if OpenSSL is compiled with the
-   ``OPENSSL_NO_SSLv3`` flag.
+   This protocol is not available if OpenSSL is compiled with the
+   ``no-ssl3`` option.
 
    .. warning::
 
@@ -1397,7 +1397,7 @@ SSL sockets also have the following additional methods and attributes:
 .. method:: SSLSocket.version()
 
    Return the actual SSL protocol version negotiated by the connection
-   as a string, or ``None`` is no secure connection is established.
+   as a string, or ``None`` if no secure connection is established.
    As of this writing, possible return values include ``"SSLv2"``,
    ``"SSLv3"``, ``"TLSv1"``, ``"TLSv1.1"`` and ``"TLSv1.2"``.
    Recent OpenSSL versions may define more return values.
@@ -1548,7 +1548,7 @@ to speed up repeated connections from the same clients.
    string must be the path to a single file in PEM format containing the
    certificate as well as any number of CA certificates needed to establish
    the certificate's authenticity.  The *keyfile* string, if present, must
-   point to a file containing the private key in.  Otherwise the private
+   point to a file containing the private key.  Otherwise the private
    key will be taken from *certfile* as well.  See the discussion of
    :ref:`ssl-certificates` for more information on how the certificate
    is stored in the *certfile*.
@@ -1576,7 +1576,7 @@ to speed up repeated connections from the same clients.
 
    Load a set of default "certification authority" (CA) certificates from
    default locations. On Windows it loads CA certs from the ``CA`` and
-   ``ROOT`` system stores. On other systems it calls
+   ``ROOT`` system stores. On all systems it calls
    :meth:`SSLContext.set_default_verify_paths`. In the future the method may
    load CA certificates from other locations, too.
 
@@ -1753,10 +1753,10 @@ to speed up repeated connections from the same clients.
    Due to the early negotiation phase of the TLS connection, only limited
    methods and attributes are usable like
    :meth:`SSLSocket.selected_alpn_protocol` and :attr:`SSLSocket.context`.
-   :meth:`SSLSocket.getpeercert`, :meth:`SSLSocket.getpeercert`,
-   :meth:`SSLSocket.cipher` and :meth:`SSLSocket.compress` methods require that
+   The :meth:`SSLSocket.getpeercert`,
+   :meth:`SSLSocket.cipher` and :meth:`SSLSocket.compression` methods require that
    the TLS connection has progressed beyond the TLS Client Hello and therefore
-   will not contain return meaningful values nor can they be called safely.
+   will not return meaningful values nor can they be called safely.
 
    The *sni_callback* function must return ``None`` to allow the
    TLS negotiation to continue.  If a TLS failure is required, a constant
@@ -1910,7 +1910,7 @@ to speed up repeated connections from the same clients.
 .. method:: SSLContext.session_stats()
 
    Get statistics about the SSL sessions created or managed by this context.
-   A dictionary is returned which maps the names of each `piece of information <https://www.openssl.org/docs/man1.1.1/ssl/SSL_CTX_sess_number.html>`_ to their
+   A dictionary is returned which maps the names of each `piece of information <https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_sess_number.html>`_ to their
    numeric values.  For example, here is the total number of hits and misses
    in the session cache since the context was created::
 
@@ -2070,7 +2070,7 @@ to speed up repeated connections from the same clients.
       :attr:`SSLContext.verify_flags` returns :class:`VerifyFlags` flags:
 
          >>> ssl.create_default_context().verify_flags  # doctest: +SKIP
-         ssl.VERIFY_X509_TRUSTED_FIRST
+         <VerifyFlags.VERIFY_X509_TRUSTED_FIRST: 32768>
 
 .. attribute:: SSLContext.verify_mode
 
@@ -2081,8 +2081,8 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.6
       :attr:`SSLContext.verify_mode` returns :class:`VerifyMode` enum:
 
-         >>> ssl.create_default_context().verify_mode
-         ssl.CERT_REQUIRED
+         >>> ssl.create_default_context().verify_mode  # doctest: +SKIP
+         <VerifyMode.CERT_REQUIRED: 2>
 
 .. index:: single: certificates
 
@@ -2357,7 +2357,7 @@ waiting for clients to connect::
    context.load_cert_chain(certfile="mycertfile", keyfile="mykeyfile")
 
    bindsocket = socket.socket()
-   bindsocket.bind(('myaddr.mydomain.com', 10023))
+   bindsocket.bind(('myaddr.example.com', 10023))
    bindsocket.listen(5)
 
 When a client connects, you'll call :meth:`accept` on the socket to get the
@@ -2704,7 +2704,7 @@ enabled when negotiating a SSL session is possible through the
 :meth:`SSLContext.set_ciphers` method.  Starting from Python 3.2.3, the
 ssl module disables certain weak ciphers by default, but you may want
 to further restrict the cipher choice. Be sure to read OpenSSL's documentation
-about the `cipher list format <https://www.openssl.org/docs/manmaster/man1/ciphers.html#CIPHER-LIST-FORMAT>`_.
+about the `cipher list format <https://www.openssl.org/docs/man1.1.1/man1/ciphers.html#CIPHER-LIST-FORMAT>`_.
 If you want to check which ciphers are enabled by a given cipher list, use
 :meth:`SSLContext.get_ciphers` or the ``openssl ciphers`` command on your
 system.

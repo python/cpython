@@ -1,2 +1,0 @@
-Refine the syntax error for trailing commas in import statements. Patch by
-Pablo Galindo.

@@ -6,7 +6,12 @@ import sys
 import types
 import unittest
 
+from test import support
 from test.support import findfile
+
+
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 
 def abspath(filename):
@@ -34,7 +39,7 @@ def normalize_trace_output(output):
         return "\n".join(result)
     except (IndexError, ValueError):
         raise AssertionError(
-            "tracer produced unparseable output:\n{}".format(output)
+            "tracer produced unparsable output:\n{}".format(output)
         )
 
 
@@ -170,4 +175,4 @@ class SystemTapOptimizedTests(TraceTests, unittest.TestCase):
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

@@ -154,7 +154,7 @@ The modern interface provides:
    This version does not allow the digit 0 (zero) to the letter O (oh) and digit
    1 (one) to either the letter I (eye) or letter L (el) mappings, all these
    characters are included in the Extended Hex Alphabet and are not
-   interchangable.
+   interchangeable.
 
    .. versionadded:: 3.10
 
@@ -201,7 +201,7 @@ The modern interface provides:
    .. versionadded:: 3.4
 
 
-.. function:: a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \\t\\n\\r\\v')
+.. function:: a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v')
 
    Decode the Ascii85 encoded :term:`bytes-like object` or ASCII string *b* and
    return the decoded :class:`bytes`.

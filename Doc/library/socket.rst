@@ -197,10 +197,14 @@ created.  Socket addresses are represented as follows:
   - *addr* - Optional bytes-like object specifying the hardware physical
     address, whose interpretation depends on the device.
 
+   .. availability:: Linux >= 2.2.
+
 - :const:`AF_QIPCRTR` is a Linux-only socket based interface for communicating
   with services running on co-processors in Qualcomm platforms. The address
   family is represented as a ``(node, port)`` tuple where the *node* and *port*
   are non-negative integers.
+
+   .. availability:: Linux >= 4.7.
 
   .. versionadded:: 3.8
 
@@ -221,6 +225,29 @@ created.  Socket addresses are represented as follows:
 
   .. versionadded:: 3.9
 
+- :const:`AF_HYPERV` is a Windows-only socket based interface for communicating
+  with Hyper-V hosts and guests. The address family is represented as a
+  ``(vm_id, service_id)`` tuple where the ``vm_id`` and ``service_id`` are
+  UUID strings.
+
+  The ``vm_id`` is the virtual machine identifier or a set of known VMID values
+  if the target is not a specific virtual machine. Known VMID constants
+  defined on ``socket`` are:
+
+  - ``HV_GUID_ZERO``
+  - ``HV_GUID_BROADCAST``
+  - ``HV_GUID_WILDCARD`` - Used to bind on itself and accept connections from
+    all partitions.
+  - ``HV_GUID_CHILDREN`` - Used to bind on itself and accept connection from
+    child partitions.
+  - ``HV_GUID_LOOPBACK`` - Used as a target to itself.
+  - ``HV_GUID_PARENT`` - When used as a bind accepts connection from the parent
+    partition. When used as an address target it will connect to the parent partition.
+
+  The ``service_id`` is the service identifier of the registered service.
+
+  .. versionadded:: 3.12
+
 If you use a hostname in the *host* portion of IPv4/v6 socket address, the
 program may show a nondeterministic behavior, as Python uses the first address
 returned from the DNS resolution.  The socket address will be resolved
@@ -229,9 +256,9 @@ resolution and/or the host configuration.  For deterministic behavior use a
 numeric address in *host* portion.
 
 All errors raise exceptions.  The normal exceptions for invalid argument types
-and out-of-memory conditions can be raised; starting from Python 3.3, errors
+and out-of-memory conditions can be raised. Errors
 related to socket or address semantics raise :exc:`OSError` or one of its
-subclasses (they used to raise :exc:`socket.error`).
+subclasses.
 
 Non-blocking mode is supported through :meth:`~socket.setblocking`.  A
 generalization of this based on timeouts is supported through
@@ -384,6 +411,15 @@ Constants
        Added ``TCP_KEEPALIVE``. On MacOS this constant can be used in the same
        way that ``TCP_KEEPIDLE`` is used on Linux.
 
+   .. versionchanged:: 3.11
+      Added ``TCP_CONNECTION_INFO``. On MacOS this constant can be used in the
+      same way that ``TCP_INFO`` is used on Linux and BSD.
+
+   .. versionchanged:: 3.12
+      Added ``SO_RTABLE`` and ``SO_USER_COOKIE``. On OpenBSD
+      and FreeBSD respectively those constants can be used in the same way that
+      ``SO_MARK`` is used on Linux.
+
 .. data:: AF_CAN
           PF_CAN
           SOL_CAN_*
@@ -392,9 +428,12 @@ Constants
    Many constants of these forms, documented in the Linux documentation, are
    also defined in the socket module.
 
-   .. availability:: Linux >= 2.6.25.
+   .. availability:: Linux >= 2.6.25, NetBSD >= 8.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.11
+      NetBSD support was added.
 
 .. data:: CAN_BCM
           CAN_BCM_*
@@ -516,7 +555,7 @@ Constants
 
 .. data:: AF_LINK
 
-  .. availability:: BSD, OSX.
+  .. availability:: BSD, macOS.
 
   .. versionadded:: 3.4
 
@@ -549,6 +588,49 @@ Constants
 
    .. availability:: Linux >= 4.7.
 
+.. data:: SCM_CREDS2
+          LOCAL_CREDS
+          LOCAL_CREDS_PERSISTENT
+
+   LOCAL_CREDS and LOCAL_CREDS_PERSISTENT can be used
+   with SOCK_DGRAM, SOCK_STREAM sockets, equivalent to
+   Linux/DragonFlyBSD SO_PASSCRED, while LOCAL_CREDS
+   sends the credentials at first read, LOCAL_CREDS_PERSISTENT
+   sends for each read, SCM_CREDS2 must be then used for
+   the latter for the message type.
+
+   .. versionadded:: 3.11
+
+   .. availability:: FreeBSD.
+
+.. data:: SO_INCOMING_CPU
+
+   Constant to optimize CPU locality, to be used in conjunction with
+   :data:`SO_REUSEPORT`.
+
+  .. versionadded:: 3.11
+
+  .. availability:: Linux >= 3.9
+
+.. data:: AF_HYPERV
+          HV_PROTOCOL_RAW
+          HVSOCKET_CONNECT_TIMEOUT
+          HVSOCKET_CONNECT_TIMEOUT_MAX
+          HVSOCKET_CONNECTED_SUSPEND
+          HVSOCKET_ADDRESS_FLAG_PASSTHRU
+          HV_GUID_ZERO
+          HV_GUID_WILDCARD
+          HV_GUID_BROADCAST
+          HV_GUID_CHILDREN
+          HV_GUID_LOOPBACK
+          HV_GUID_LOOPBACK
+
+   Constants for Windows Hyper-V sockets for host/guest communications.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.12
+
 Functions
 ^^^^^^^^^
 
@@ -558,7 +640,7 @@ Creating sockets
 The following functions all create :ref:`socket objects <socket-objects>`.
 
 
-.. function:: socket(family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None)
+.. class:: socket(family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None)
 
    Create a new socket using the given address family, socket type and protocol
    number.  The address family should be :const:`AF_INET` (the default),
@@ -638,7 +720,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
       Windows support added.
 
 
-.. function:: create_connection(address[, timeout[, source_address]])
+.. function:: create_connection(address, timeout=GLOBAL_DEFAULT, source_address=None, *, all_errors=False)
 
    Connect to a TCP service listening on the internet *address* (a 2-tuple
    ``(host, port)``), and return the socket object.  This is a higher-level
@@ -657,13 +739,22 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    socket to bind to as its source address before connecting.  If host or port
    are '' or 0 respectively the OS default behavior will be used.
 
+   When a connection cannot be created, an exception is raised. By default,
+   it is the exception from the last address in the list. If *all_errors*
+   is ``True``, it is an :exc:`ExceptionGroup` containing the errors of all
+   attempts.
+
    .. versionchanged:: 3.2
       *source_address* was added.
+
+   .. versionchanged:: 3.11
+      *all_errors* was added.
+
 
 .. function:: create_server(address, *, family=AF_INET, backlog=None, reuse_port=False, dualstack_ipv6=False)
 
    Convenience function which creates a TCP socket bound to *address* (a 2-tuple
-   ``(host, port)``) and return the socket object.
+   ``(host, port)``) and returns the socket object.
 
    *family* should be either :data:`AF_INET` or :data:`AF_INET6`.
    *backlog* is the queue size passed to :meth:`socket.listen`; when ``0``
@@ -827,8 +918,8 @@ The :mod:`socket` module also offers various network-related services:
 .. function:: gethostbyname_ex(hostname)
 
    Translate a host name to IPv4 address format, extended interface. Return a
-   triple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the primary
-   host name responding to the given *ip_address*, *aliaslist* is a (possibly
+   triple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the host's
+   primary host name, *aliaslist* is a (possibly
    empty) list of alternative host names for the same address, and *ipaddrlist* is
    a list of IPv4 addresses for the same interface on the same host (often but not
    always a single address). :func:`gethostbyname_ex` does not support IPv6 name
@@ -1984,10 +2075,10 @@ the interface::
    # Include IP headers
    s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
 
-   # receive all packages
+   # receive all packets
    s.ioctl(socket.SIO_RCVALL, socket.RCVALL_ON)
 
-   # receive a package
+   # receive a packet
    print(s.recvfrom(65565))
 
    # disabled promiscuous mode

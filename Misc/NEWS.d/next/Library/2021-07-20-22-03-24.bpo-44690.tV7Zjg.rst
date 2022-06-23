@@ -1,1 +1,0 @@
-Adopt *binacii.a2b_base64*'s strict mode in *base64.b64decode*.

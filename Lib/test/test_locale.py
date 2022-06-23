@@ -1,5 +1,5 @@
 from decimal import Decimal
-from test.support import verbose, is_android
+from test.support import verbose, is_android, is_emscripten, is_wasi
 from test.support.warnings_helper import check_warnings
 import unittest
 import locale
@@ -363,7 +363,7 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
     locale_type = locale.LC_ALL
 
     def setUp(self):
-        enc = codecs.lookup(locale.getpreferredencoding(False) or 'ascii').name
+        enc = codecs.lookup(locale.getencoding() or 'ascii').name
         if enc not in ('utf-8', 'iso8859-1', 'cp1252'):
             raise unittest.SkipTest('encoding not suitable')
         if enc != 'iso8859-1' and (sys.platform == 'darwin' or is_android or
@@ -373,11 +373,19 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "musl libc issue on Emscripten/WASI, bpo-46390"
+    )
     def test_strcoll_with_diacritic(self):
         self.assertLess(locale.strcoll('à', 'b'), 0)
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "musl libc issue on Emscripten/WASI, bpo-46390"
+    )
     def test_strxfrm_with_diacritic(self):
         self.assertLess(locale.strxfrm('à'), locale.strxfrm('b'))
 
@@ -496,7 +504,7 @@ class NormalizeTest(unittest.TestCase):
 class TestMiscellaneous(unittest.TestCase):
     def test_defaults_UTF8(self):
         # Issue #18378: on (at least) macOS setting LC_CTYPE to "UTF-8" is
-        # valid. Futhermore LC_CTYPE=UTF is used by the UTF-8 locale coercing
+        # valid. Furthermore LC_CTYPE=UTF is used by the UTF-8 locale coercing
         # during interpreter startup (on macOS).
         import _locale
         import os
@@ -518,7 +526,8 @@ class TestMiscellaneous(unittest.TestCase):
 
             os.environ['LC_CTYPE'] = 'UTF-8'
 
-            self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
+            with check_warnings(('', DeprecationWarning)):
+                self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
 
         finally:
             for k in orig_env:
@@ -529,6 +538,14 @@ class TestMiscellaneous(unittest.TestCase):
 
             if orig_getlocale is not None:
                 _locale._getdefaultlocale = orig_getlocale
+
+    def test_getencoding(self):
+        # Invoke getencoding to make sure it does not cause exceptions.
+        enc = locale.getencoding()
+        self.assertIsInstance(enc, str)
+        self.assertNotEqual(enc, "")
+        # make sure it is valid
+        codecs.lookup(enc)
 
     def test_getpreferredencoding(self):
         # Invoke getpreferredencoding to make sure it does not cause exceptions.

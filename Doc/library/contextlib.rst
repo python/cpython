@@ -130,7 +130,9 @@ Functions and classes provided:
    either as decorators or with :keyword:`async with` statements::
 
      import time
+     from contextlib import asynccontextmanager
 
+     @asynccontextmanager
      async def timeit():
          now = time.monotonic()
          try:
@@ -179,7 +181,7 @@ Functions and classes provided:
    ``page.close()`` will be called when the :keyword:`with` block is exited.
 
 
-.. class:: aclosing(thing)
+.. function:: aclosing(thing)
 
    Return an async context manager that calls the ``aclose()`` method of *thing*
    upon completion of the block.  This is basically equivalent to::
@@ -353,6 +355,23 @@ Functions and classes provided:
    .. versionadded:: 3.5
 
 
+.. function:: chdir(path)
+
+   Non parallel-safe context manager to change the current working directory.
+   As this changes a global state, the working directory, it is not suitable
+   for use in most threaded or async contexts. It is also not suitable for most
+   non-linear code execution, like generators, where the program execution is
+   temporarily relinquished -- unless explicitly desired, you should not yield
+   when this context manager is active.
+
+   This is a simple wrapper around :func:`~os.chdir`, it changes the current
+   working directory upon entering and restores the old one on exit.
+
+   This context manager is :ref:`reentrant <reentrant-cms>`.
+
+   .. versionadded:: 3.11
+
+
 .. class:: ContextDecorator()
 
    A base class that enables a context manager to also be used as a decorator.
@@ -482,6 +501,9 @@ Functions and classes provided:
           # All opened files will automatically be closed at the end of
           # the with statement, even if attempts to open files later
           # in the list raise an exception
+
+   The :meth:`__enter__` method returns the :class:`ExitStack` instance, and
+   performs no additional operations.
 
    Each instance maintains a stack of registered callbacks that are called in
    reverse order when the instance is closed (either explicitly or implicitly
@@ -900,8 +922,8 @@ but may also be used *inside* a :keyword:`!with` statement that is already
 using the same context manager.
 
 :class:`threading.RLock` is an example of a reentrant context manager, as are
-:func:`suppress` and :func:`redirect_stdout`. Here's a very simple example of
-reentrant use::
+:func:`suppress`, :func:`redirect_stdout`, and :func:`chdir`. Here's a very
+simple example of reentrant use::
 
     >>> from contextlib import redirect_stdout
     >>> from io import StringIO

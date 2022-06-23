@@ -11,15 +11,15 @@
 .. versionchanged:: 3.10
    ``importlib.metadata`` is no longer provisional.
 
-**Source code:** :source:`Lib/importlib/metadata.py`
+**Source code:** :source:`Lib/importlib/metadata/__init__.py`
 
 ``importlib.metadata`` is a library that provides for access to installed
 package metadata.  Built in part on Python's import system, this library
 intends to replace similar functionality in the `entry point
 API`_ and `metadata API`_ of ``pkg_resources``.  Along with
-:mod:`importlib.resources` in Python 3.7
-and newer (backported as `importlib_resources`_ for older versions of
-Python), this can eliminate the need to use the older and less efficient
+:mod:`importlib.resources` (with new features backported to the
+`importlib_resources`_ package), this can eliminate the need to use the older
+and less efficient
 ``pkg_resources`` package.
 
 By "installed package" we generally mean a third-party package installed into
@@ -43,7 +43,7 @@ something into it:
 
     $ python3 -m venv example
     $ source example/bin/activate
-    (example) $ pip install wheel
+    (example) $ python -m pip install wheel
 
 You can get the version string for ``wheel`` by running the following:
 
@@ -136,7 +136,7 @@ Inspect the resolved entry point::
 The ``group`` and ``name`` are arbitrary values defined by the package author
 and usually a client will wish to resolve all entry points for a particular
 group.  Read `the setuptools docs
-<https://setuptools.readthedocs.io/en/latest/setuptools.html#dynamic-discovery-of-services-and-plugins>`_
+<https://setuptools.pypa.io/en/latest/userguide/entry_point.html>`_
 for more information on entry points, their definition, and usage.
 
 *Compatibility Note*
@@ -255,7 +255,7 @@ function::
 Package distributions
 ---------------------
 
-A convience method to resolve the distribution or
+A convenience method to resolve the distribution or
 distributions (in the case of a namespace package) for top-level
 Python packages or modules::
 
@@ -264,6 +264,7 @@ Python packages or modules::
 
 .. versionadded:: 3.10
 
+.. _distributions:
 
 Distributions
 =============
@@ -335,6 +336,3 @@ a custom finder, return instances of this derived ``Distribution`` in the
 .. _`entry point API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#entry-points
 .. _`metadata API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#metadata-api
 .. _`importlib_resources`: https://importlib-resources.readthedocs.io/en/latest/index.html
-
-
-.. rubric:: Footnotes

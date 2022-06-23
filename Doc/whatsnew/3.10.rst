@@ -47,15 +47,8 @@
    when researching a change.
 
 This article explains the new features in Python 3.10, compared to 3.9.
-
+Python 3.10 was released on October 4, 2021.
 For full details, see the :ref:`changelog <changelog>`.
-
-.. note::
-
-   Prerelease users should be aware that this document is currently in draft
-   form. It will be updated substantially as Python 3.10 moves towards release,
-   so it's worth checking back even after reading earlier versions.
-
 
 Summary -- Release highlights
 =============================
@@ -711,6 +704,7 @@ are added to enable the warning.
 
 See :ref:`io-text-encoding` for more information.
 
+.. _new-feat-related-type-hints:
 
 New Features Related to Type Hints
 ==================================
@@ -883,7 +877,12 @@ Other Language Changes
   collisions when creating dictionaries and sets containing multiple NaNs.
   (Contributed by Raymond Hettinger in :issue:`43475`.)
 
-*  A :exc:`SyntaxError` (instead of a :exc:`NameError`) will be raised when deleting the :const:`__debug__` constant. (Contributed by Dong-hee Na in :issue:`45000`.)
+* A :exc:`SyntaxError` (instead of a :exc:`NameError`) will be raised when deleting
+  the :const:`__debug__` constant.  (Contributed by Dong-hee Na in :issue:`45000`.)
+
+* :exc:`SyntaxError` exceptions now have ``end_lineno`` and
+  ``end_offset`` attributes.  They will be ``None`` if not determined.
+  (Contributed by Pablo Galindo in :issue:`43914`.)
 
 New Modules
 ===========
@@ -998,7 +997,7 @@ Added ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
 Keyword-only fields
 ~~~~~~~~~~~~~~~~~~~
 
-dataclassses now supports fields that are keyword-only in the
+dataclasses now supports fields that are keyword-only in the
 generated __init__ method.  There are a number of ways of specifying
 keyword-only fields.
 
@@ -1020,7 +1019,7 @@ You can specify keyword-only on a per-field basis:
 
 .. code-block:: python
 
-    from dataclasses import dataclass
+    from dataclasses import dataclass, field
 
     @dataclass
     class Birthday:
@@ -1149,10 +1148,18 @@ IDLE and idlelib
 ----------------
 
 Make IDLE invoke :func:`sys.excepthook` (when started without '-n').
-User hooks were previously ignored.  (Patch by Ken Hilton in
+User hooks were previously ignored.  (Contributed by Ken Hilton in
 :issue:`43008`.)
 
-This change was backported to a 3.9 maintenance release.
+Rearrange the settings dialog.  Split the General tab into Windows
+and Shell/Ed tabs.  Move help sources, which extend the Help menu, to the
+Extensions tab.  Make space for new options and shorten the dialog. The
+latter makes the dialog better fit small screens.  (Contributed by Terry Jan
+Reedy in :issue:`40468`.)  Move the indent space setting from the Font tab to
+the new Windows tab.  (Contributed by Mark Roseman and Terry Jan Reedy in
+:issue:`33962`.)
+
+The changes above were backported to a 3.9 maintenance release.
 
 Add a Shell sidebar.  Move the primary prompt ('>>>') to the sidebar.
 Add secondary prompts ('...') to the sidebar.  Left click and optional
@@ -1165,17 +1172,19 @@ in :issue:`37903`.)
 
 Use spaces instead of tabs to indent interactive code.  This makes
 interactive code entries 'look right'.  Making this feasible was a
-major motivation for adding the shell sidebar.  Contributed by
+major motivation for adding the shell sidebar.  (Contributed by
 Terry Jan Reedy in :issue:`37892`.)
-
-We expect to backport these shell changes to a future 3.9 maintenance
-release.
 
 Highlight the new :ref:`soft keywords <soft-keywords>` :keyword:`match`,
 :keyword:`case <match>`, and :keyword:`_ <wildcard-patterns>` in
 pattern-matching statements. However, this highlighting is not perfect
 and will be incorrect in some rare cases, including some ``_``-s in
-``case`` patterns.  (Contributed by Tal Einat in bpo-44010.)
+``case`` patterns.  (Contributed by Tal Einat in :issue:`44010`.)
+
+New in 3.10 maintenance releases.
+
+Apply syntax highlighting to `.pyi` files. (Contributed by Alex
+Waygood and Terry Jan Reedy in :issue:`45447`.)
 
 importlib.metadata
 ------------------
@@ -1184,7 +1193,7 @@ Feature parity with ``importlib_metadata`` 4.6
 (`history <https://importlib-metadata.readthedocs.io/en/latest/history.html>`_).
 
 :ref:`importlib.metadata entry points <entry-points>`
-now provides a nicer experience
+now provide a nicer experience
 for selecting entry points by group and name through a new
 :class:`importlib.metadata.EntryPoints` class. See the Compatibility
 Note in the docs for more info on the deprecation and usage.
@@ -1213,6 +1222,12 @@ now call :func:`inspect.get_annotations` to retrieve annotations. This means
 :func:`inspect.signature` and :func:`inspect.Signature.from_callable` can
 also now un-stringize stringized annotations.
 (Contributed by Larry Hastings in :issue:`43817`.)
+
+itertools
+---------
+
+Add :func:`itertools.pairwise()`.
+(Contributed by Raymond Hettinger in :issue:`38200`.)
 
 linecache
 ---------
@@ -1431,14 +1446,14 @@ of types readily interpretable by type checkers.
 typing
 ------
 
-For major changes, see `New Features Related to Type Hints`_.
+For major changes, see :ref:`new-feat-related-type-hints`.
 
 The behavior of :class:`typing.Literal` was changed to conform with :pep:`586`
 and to match the behavior of static type checkers specified in the PEP.
 
 1. ``Literal`` now de-duplicates parameters.
 2. Equality comparisons between ``Literal`` objects are now order independent.
-3. ``Literal`` comparisons now respects types.  For example,
+3. ``Literal`` comparisons now respect types.  For example,
    ``Literal[0] == Literal[False]`` previously evaluated to ``True``.  It is
    now ``False``.  To support this change, the internally used type cache now
    supports differentiating types.
@@ -1578,7 +1593,7 @@ Deprecated
 
 * Currently Python accepts numeric literals immediately followed by keywords,
   for example ``0in x``, ``1or x``, ``0if 1else 2``.  It allows confusing
-  and ambigious expressions like ``[0x1for x in y]`` (which can be
+  and ambiguous expressions like ``[0x1for x in y]`` (which can be
   interpreted as ``[0x1 for x in y]`` or ``[0x1f or x in y]``).  Starting in
   this release, a deprecation warning is raised if the numeric literal is
   immediately followed by one of keywords :keyword:`and`, :keyword:`else`,
@@ -1648,13 +1663,12 @@ Deprecated
   :meth:`importlib.machinery.FrozenImporter.find_module`,
   :meth:`importlib.machinery.WindowsRegistryFinder.find_module`,
   :meth:`importlib.machinery.PathFinder.find_module`,
-  :meth:`importlib.abc.MetaPathFinder.find_module`),
+  :meth:`importlib.abc.MetaPathFinder.find_module` ),
   :meth:`importlib.abc.PathEntryFinder.find_module` (
-  :meth:`importlib.machinery.FileFinder.find_module`,
-  ), and
+  :meth:`importlib.machinery.FileFinder.find_module` ), and
   :meth:`importlib.abc.PathEntryFinder.find_loader` (
-  :meth:`importlib.machinery.FileFinder.find_loader`
-  ) now raise :exc:`DeprecationWarning` and are slated for removal in
+  :meth:`importlib.machinery.FileFinder.find_loader` )
+  now raise :exc:`DeprecationWarning` and are slated for removal in
   Python 3.12 (previously they were documented as deprecated in Python 3.4).
   (Contributed by Brett Cannon in :issue:`42135`.)
 
@@ -1695,7 +1709,7 @@ Deprecated
 * :func:`asyncio.get_event_loop` now emits a deprecation warning if there is
   no running event loop. In the future it will be an alias of
   :func:`~asyncio.get_running_loop`.
-  :mod:`asyncio` functions which implicitly create a :class:`~asyncio.Future`
+  :mod:`asyncio` functions which implicitly create :class:`~asyncio.Future`
   or :class:`~asyncio.Task` objects now emit
   a deprecation warning if there is no running event loop and no explicit
   *loop* argument is passed: :func:`~asyncio.ensure_future`,
@@ -1732,7 +1746,7 @@ Deprecated
 
   * ``threading.Thread.setDaemon`` => :attr:`threading.Thread.daemon`
 
-  (Contributed by Jelle Zijlstra in :issue:`21574`.)
+  (Contributed by Jelle Zijlstra in :gh:`87889`.)
 
 * :meth:`pathlib.Path.link_to` is deprecated and slated for removal in
   Python 3.12. Use :meth:`pathlib.Path.hardlink_to` instead.
@@ -1835,7 +1849,7 @@ Removed
      running in different threads.
 
   Note that the low-level API will still accept ``loop``.
-  See `Changes in the Python API`_ for examples of how to replace existing code.
+  See :ref:`changes-python-api` for examples of how to replace existing code.
 
   (Contributed by Yurii Karabas, Andrew Svetlov, Yury Selivanov and Kyle Stanley
   in :issue:`42392`.)
@@ -1859,6 +1873,7 @@ Changes in the Python syntax
   following keyword.
   (Contributed by Serhiy Storchaka in :issue:`43833`).
 
+.. _changes-python-api:
 
 Changes in the Python API
 -------------------------
@@ -1915,7 +1930,7 @@ Changes in the Python API
   if the *globals* dictionary has no ``"__builtins__"`` key, rather than using
   ``{"None": None}`` as builtins: same behavior as :func:`eval` and
   :func:`exec` functions.  Defining a function with ``def function(...): ...``
-  in Python is not affected, globals cannot be overriden with this syntax: it
+  in Python is not affected, globals cannot be overridden with this syntax: it
   also inherits the current builtins.
   (Contributed by Victor Stinner in :issue:`42990`.)
 
@@ -1980,7 +1995,7 @@ Build Changes
   (Contributed by Victor Stinner in :issue:`36020`.)
 
 * :mod:`sqlite3` requires SQLite 3.7.15 or higher. (Contributed by Sergey Fedoseev
-  and Erlend E. Aasland :issue:`40744` and :issue:`40810`.)
+  and Erlend E. Aasland in :issue:`40744` and :issue:`40810`.)
 
 * The :mod:`atexit` module must now always be built as a built-in module.
   (Contributed by Victor Stinner in :issue:`42639`.)
@@ -2010,8 +2025,8 @@ Build Changes
 
 * The ``configure`` script now uses the ``pkg-config`` utility, if available,
   to detect the location of Tcl/Tk headers and libraries.  As before, those
-  locations can be explicitly specified with the :option:`--with-tcltk-includes`
-  and :option:`--with-tcltk-libs` configuration options.
+  locations can be explicitly specified with the ``--with-tcltk-includes``
+  and ``--with-tcltk-libs`` configuration options.
   (Contributed by Manolis Stamatogiannakis in :issue:`42603`.)
 
 * Add :option:`--with-openssl-rpath` option to ``configure`` script. The option
@@ -2305,3 +2320,6 @@ Removed
   These functions were undocumented, excluded from the limited C API, and were
   only used internally by the compiler.
   (Contributed by Victor Stinner in :issue:`43244`.)
+
+* The ``PyThreadState.use_tracing`` member has been removed to optimize Python.
+  (Contributed by Mark Shannon in :issue:`43760`.)

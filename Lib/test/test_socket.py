@@ -4,30 +4,30 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 
+import _thread as thread
+import array
+import contextlib
 import errno
 import io
 import itertools
-import socket
+import math
+import os
+import pickle
+import platform
+import queue
+import random
+import re
 import select
+import signal
+import socket
+import string
+import struct
+import sys
 import tempfile
+import threading
 import time
 import traceback
-import queue
-import sys
-import os
-import platform
-import array
-import contextlib
 from weakref import proxy
-import signal
-import math
-import pickle
-import struct
-import random
-import shutil
-import string
-import _thread as thread
-import threading
 try:
     import multiprocessing
 except ImportError:
@@ -36,6 +36,8 @@ try:
     import fcntl
 except ImportError:
     fcntl = None
+
+support.requires_working_socket(module=True)
 
 HOST = socket_helper.HOST
 # test unicode string and carriage return
@@ -141,6 +143,17 @@ def _have_socket_bluetooth():
     return True
 
 
+def _have_socket_hyperv():
+    """Check whether AF_HYPERV sockets are supported on this host."""
+    try:
+        s = socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW)
+    except (AttributeError, OSError):
+        return False
+    else:
+        s.close()
+    return True
+
+
 @contextlib.contextmanager
 def socket_setdefaulttimeout(timeout):
     old_timeout = socket.getdefaulttimeout()
@@ -168,6 +181,8 @@ HAVE_SOCKET_VSOCK = _have_socket_vsock()
 HAVE_SOCKET_UDPLITE = hasattr(socket, "IPPROTO_UDPLITE")
 
 HAVE_SOCKET_BLUETOOTH = _have_socket_bluetooth()
+
+HAVE_SOCKET_HYPERV = _have_socket_hyperv()
 
 # Size in bytes of the int type
 SIZEOF_INT = array.array("i").itemsize
@@ -336,9 +351,7 @@ class ThreadableTest:
         self.server_ready.set()
 
     def _setUp(self):
-        self.wait_threads = threading_helper.wait_threads_exit()
-        self.wait_threads.__enter__()
-        self.addCleanup(self.wait_threads.__exit__, None, None, None)
+        self.enterContext(threading_helper.wait_threads_exit())
 
         self.server_ready = threading.Event()
         self.client_ready = threading.Event()
@@ -591,16 +604,17 @@ class SocketTestBase(unittest.TestCase):
 
     def setUp(self):
         self.serv = self.newSocket()
+        self.addCleanup(self.close_server)
         self.bindServer()
+
+    def close_server(self):
+        self.serv.close()
+        self.serv = None
 
     def bindServer(self):
         """Bind server socket and set self.serv_addr to its address."""
         self.bindSock(self.serv)
         self.serv_addr = self.serv.getsockname()
-
-    def tearDown(self):
-        self.serv.close()
-        self.serv = None
 
 
 class SocketListeningTestMixin(SocketTestBase):
@@ -686,15 +700,10 @@ class UnixSocketTestBase(SocketTestBase):
     # can't send anything that might be problematic for a privileged
     # user running the tests.
 
-    def setUp(self):
-        self.dir_path = tempfile.mkdtemp()
-        self.addCleanup(os.rmdir, self.dir_path)
-        super().setUp()
-
     def bindSock(self, sock):
-        path = tempfile.mktemp(dir=self.dir_path)
-        socket_helper.bind_unix_socket(sock, path)
+        path = socket_helper.create_unix_domain_name()
         self.addCleanup(os_helper.unlink, path)
+        socket_helper.bind_unix_socket(sock, path)
 
 class UnixStreamBase(UnixSocketTestBase):
     """Base class for Unix-domain SOCK_STREAM tests."""
@@ -1017,8 +1026,10 @@ class GeneralModuleTests(unittest.TestCase):
 
     def test_host_resolution_bad_address(self):
         # These are all malformed IP addresses and expected not to resolve to
-        # any result.  But some ISPs, e.g. AWS, may successfully resolve these
-        # IPs.
+        # any result.  But some ISPs, e.g. AWS and AT&T, may successfully
+        # resolve these IPs. In particular, AT&T's DNS Error Assist service
+        # will break this test.  See https://bugs.python.org/issue42092 for a
+        # workaround.
         explanation = (
             "resolving an invalid IP address did not raise OSError; "
             "can be caused by a broken DNS server"
@@ -1515,9 +1526,11 @@ class GeneralModuleTests(unittest.TestCase):
         infos = socket.getaddrinfo(HOST, 80, socket.AF_INET, socket.SOCK_STREAM)
         for family, type, _, _, _ in infos:
             self.assertEqual(family, socket.AF_INET)
-            self.assertEqual(str(family), 'AF_INET')
+            self.assertEqual(repr(family), '<AddressFamily.AF_INET: %r>' % family.value)
+            self.assertEqual(str(family), str(family.value))
             self.assertEqual(type, socket.SOCK_STREAM)
-            self.assertEqual(str(type), 'SOCK_STREAM')
+            self.assertEqual(repr(type), '<SocketKind.SOCK_STREAM: %r>' % type.value)
+            self.assertEqual(str(type), str(type.value))
         infos = socket.getaddrinfo(HOST, None, 0, socket.SOCK_STREAM)
         for _, socktype, _, _, _ in infos:
             self.assertEqual(socktype, socket.SOCK_STREAM)
@@ -1791,8 +1804,10 @@ class GeneralModuleTests(unittest.TestCase):
         # Make sure that the AF_* and SOCK_* constants have enum-like string
         # reprs.
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            self.assertEqual(str(s.family), 'AF_INET')
-            self.assertEqual(str(s.type), 'SOCK_STREAM')
+            self.assertEqual(repr(s.family), '<AddressFamily.AF_INET: %r>' % s.family.value)
+            self.assertEqual(repr(s.type), '<SocketKind.SOCK_STREAM: %r>' % s.type.value)
+            self.assertEqual(str(s.family), str(s.family.value))
+            self.assertEqual(str(s.type), str(s.type.value))
 
     def test_socket_consistent_sock_type(self):
         SOCK_NONBLOCK = getattr(socket, 'SOCK_NONBLOCK', 0)
@@ -1885,17 +1900,18 @@ class GeneralModuleTests(unittest.TestCase):
             self._test_socket_fileno(s, socket.AF_INET6, socket.SOCK_STREAM)
 
         if hasattr(socket, "AF_UNIX"):
-            tmpdir = tempfile.mkdtemp()
-            self.addCleanup(shutil.rmtree, tmpdir)
+            unix_name = socket_helper.create_unix_domain_name()
+            self.addCleanup(os_helper.unlink, unix_name)
+
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            self.addCleanup(s.close)
-            try:
-                s.bind(os.path.join(tmpdir, 'socket'))
-            except PermissionError:
-                pass
-            else:
-                self._test_socket_fileno(s, socket.AF_UNIX,
-                                         socket.SOCK_STREAM)
+            with s:
+                try:
+                    s.bind(unix_name)
+                except PermissionError:
+                    pass
+                else:
+                    self._test_socket_fileno(s, socket.AF_UNIX,
+                                             socket.SOCK_STREAM)
 
     def test_socket_fileno_rejects_float(self):
         with self.assertRaises(TypeError):
@@ -2451,6 +2467,59 @@ class BasicBluetoothTest(unittest.TestCase):
     def testCreateScoSocket(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_SCO) as s:
             pass
+
+
+@unittest.skipUnless(HAVE_SOCKET_HYPERV,
+                     'Hyper-V sockets required for this test.')
+class BasicHyperVTest(unittest.TestCase):
+
+    def testHyperVConstants(self):
+        socket.HVSOCKET_CONNECT_TIMEOUT
+        socket.HVSOCKET_CONNECT_TIMEOUT_MAX
+        socket.HVSOCKET_CONNECTED_SUSPEND
+        socket.HVSOCKET_ADDRESS_FLAG_PASSTHRU
+        socket.HV_GUID_ZERO
+        socket.HV_GUID_WILDCARD
+        socket.HV_GUID_BROADCAST
+        socket.HV_GUID_CHILDREN
+        socket.HV_GUID_LOOPBACK
+        socket.HV_GUID_LOOPBACK
+
+    def testCreateHyperVSocketWithUnknownProtoFailure(self):
+        expected = "A protocol was specified in the socket function call " \
+            "that does not support the semantics of the socket type requested"
+        with self.assertRaisesRegex(OSError, expected):
+            socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM)
+
+    def testCreateHyperVSocketAddrNotTupleFailure(self):
+        expected = "connect(): AF_HYPERV address must be tuple, not str"
+        with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
+            with self.assertRaisesRegex(TypeError, re.escape(expected)):
+                s.connect(socket.HV_GUID_ZERO)
+
+    def testCreateHyperVSocketAddrNotTupleOf2StrsFailure(self):
+        expected = "AF_HYPERV address must be a str tuple (vm_id, service_id)"
+        with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
+            with self.assertRaisesRegex(TypeError, re.escape(expected)):
+                s.connect((socket.HV_GUID_ZERO,))
+
+    def testCreateHyperVSocketAddrNotTupleOfStrsFailure(self):
+        expected = "AF_HYPERV address must be a str tuple (vm_id, service_id)"
+        with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
+            with self.assertRaisesRegex(TypeError, re.escape(expected)):
+                s.connect((1, 2))
+
+    def testCreateHyperVSocketAddrVmIdNotValidUUIDFailure(self):
+        expected = "connect(): AF_HYPERV address vm_id is not a valid UUID string"
+        with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
+            with self.assertRaisesRegex(ValueError, re.escape(expected)):
+                s.connect(("00", socket.HV_GUID_ZERO))
+
+    def testCreateHyperVSocketAddrServiceIdNotValidUUIDFailure(self):
+        expected = "connect(): AF_HYPERV address service_id is not a valid UUID string"
+        with socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM, socket.HV_PROTOCOL_RAW) as s:
+            with self.assertRaisesRegex(ValueError, re.escape(expected)):
+                s.connect((socket.HV_GUID_ZERO, "00"))
 
 
 class BasicTCPTest(SocketConnectedTest):
@@ -5168,6 +5237,24 @@ class NetworkConnectionNoServer(unittest.TestCase):
         # expected errnos.
         expected_errnos = socket_helper.get_socket_conn_refused_errs()
         self.assertIn(cm.exception.errno, expected_errnos)
+
+    def test_create_connection_all_errors(self):
+        port = socket_helper.find_unused_port()
+        try:
+            socket.create_connection((HOST, port), all_errors=True)
+        except ExceptionGroup as e:
+            eg = e
+        else:
+            self.fail('expected connection to fail')
+
+        self.assertIsInstance(eg, ExceptionGroup)
+        for e in eg.exceptions:
+            self.assertIsInstance(e, OSError)
+
+        addresses = socket.getaddrinfo(
+            'localhost', port, 0, socket.SOCK_STREAM)
+        # assert that we got an exception for each address
+        self.assertEqual(len(addresses), len(eg.exceptions))
 
     def test_create_connection_timeout(self):
         # Issue #9792: create_connection() should not recast timeout errors

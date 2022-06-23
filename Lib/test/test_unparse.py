@@ -93,6 +93,19 @@ finally:
     suite5
 """
 
+try_except_star_finally = """\
+try:
+    suite1
+except* ex1:
+    suite2
+except* ex2:
+    suite3
+else:
+    suite4
+finally:
+    suite5
+"""
+
 with_simple = """\
 with f():
     suite1
@@ -117,7 +130,43 @@ docstring_prefixes = (
 
 class ASTTestCase(unittest.TestCase):
     def assertASTEqual(self, ast1, ast2):
-        self.assertEqual(ast.dump(ast1), ast.dump(ast2))
+        # Ensure the comparisons start at an AST node
+        self.assertIsInstance(ast1, ast.AST)
+        self.assertIsInstance(ast2, ast.AST)
+
+        # An AST comparison routine modeled after ast.dump(), but
+        # instead of string building, it traverses the two trees
+        # in lock-step.
+        def traverse_compare(a, b, missing=object()):
+            if type(a) is not type(b):
+                self.fail(f"{type(a)!r} is not {type(b)!r}")
+            if isinstance(a, ast.AST):
+                for field in a._fields:
+                    value1 = getattr(a, field, missing)
+                    value2 = getattr(b, field, missing)
+                    # Singletons are equal by definition, so further
+                    # testing can be skipped.
+                    if value1 is not value2:
+                        traverse_compare(value1, value2)
+            elif isinstance(a, list):
+                try:
+                    for node1, node2 in zip(a, b, strict=True):
+                        traverse_compare(node1, node2)
+                except ValueError:
+                    # Attempt a "pretty" error ala assertSequenceEqual()
+                    len1 = len(a)
+                    len2 = len(b)
+                    if len1 > len2:
+                        what = "First"
+                        diff = len1 - len2
+                    else:
+                        what = "Second"
+                        diff = len2 - len1
+                    msg = f"{what} list contains {diff} additional elements."
+                    raise self.failureException(msg) from None
+            elif a != b:
+                self.fail(f"{a!r} != {b!r}")
+        traverse_compare(ast1, ast2)
 
     def check_ast_roundtrip(self, code1, **kwargs):
         with self.subTest(code1=code1, ast_parse_kwargs=kwargs):
@@ -304,6 +353,9 @@ class UnparseTestCase(ASTTestCase):
     def test_try_except_finally(self):
         self.check_ast_roundtrip(try_except_finally)
 
+    def test_try_except_star_finally(self):
+        self.check_ast_roundtrip(try_except_star_finally)
+
     def test_starred_assignment(self):
         self.check_ast_roundtrip("a, *b, c = seq")
         self.check_ast_roundtrip("a, (*b, c) = seq")
@@ -328,7 +380,17 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip("a[i]")
         self.check_ast_roundtrip("a[i,]")
         self.check_ast_roundtrip("a[i, j]")
+        # The AST for these next two both look like `a[(*a,)]`
         self.check_ast_roundtrip("a[(*a,)]")
+        self.check_ast_roundtrip("a[*a]")
+        self.check_ast_roundtrip("a[b, *a]")
+        self.check_ast_roundtrip("a[*a, c]")
+        self.check_ast_roundtrip("a[b, *a, c]")
+        self.check_ast_roundtrip("a[*a, *a]")
+        self.check_ast_roundtrip("a[b, *a, *a]")
+        self.check_ast_roundtrip("a[*a, b, *a]")
+        self.check_ast_roundtrip("a[*a, *a, b]")
+        self.check_ast_roundtrip("a[b, *a, *a, c]")
         self.check_ast_roundtrip("a[(a:=b)]")
         self.check_ast_roundtrip("a[(a:=b,c)]")
         self.check_ast_roundtrip("a[()]")
@@ -427,7 +489,7 @@ class UnparseTestCase(ASTTestCase):
 
 
 class CosmeticTestCase(ASTTestCase):
-    """Test if there are cosmetic issues caused by unnecesary additions"""
+    """Test if there are cosmetic issues caused by unnecessary additions"""
 
     def test_simple_expressions_parens(self):
         self.check_src_roundtrip("(a := b)")
@@ -527,9 +589,23 @@ class CosmeticTestCase(ASTTestCase):
             self.check_src_roundtrip(f"{prefix} 1")
 
     def test_slices(self):
+        self.check_src_roundtrip("a[()]")
         self.check_src_roundtrip("a[1]")
         self.check_src_roundtrip("a[1, 2]")
-        self.check_src_roundtrip("a[(1, *a)]")
+        # Note that `a[*a]`, `a[*a,]`, and `a[(*a,)]` all evaluate to the same
+        # thing at runtime and have the same AST, but only `a[*a,]` passes
+        # this test, because that's what `ast.unparse` produces.
+        self.check_src_roundtrip("a[*a,]")
+        self.check_src_roundtrip("a[1, *a]")
+        self.check_src_roundtrip("a[*a, 2]")
+        self.check_src_roundtrip("a[1, *a, 2]")
+        self.check_src_roundtrip("a[*a, *a]")
+        self.check_src_roundtrip("a[1, *a, *a]")
+        self.check_src_roundtrip("a[*a, 1, *a]")
+        self.check_src_roundtrip("a[*a, *a, 1]")
+        self.check_src_roundtrip("a[1, *a, *a, 2]")
+        self.check_src_roundtrip("a[1:2, *a]")
+        self.check_src_roundtrip("a[*a, 1:2]")
 
     def test_lambda_parameters(self):
         self.check_src_roundtrip("lambda: something")
@@ -572,6 +648,9 @@ class CosmeticTestCase(ASTTestCase):
                     self.check_src_roundtrip(source.format(target=target))
 
     def test_star_expr_assign_target_multiple(self):
+        self.check_src_roundtrip("() = []")
+        self.check_src_roundtrip("[] = ()")
+        self.check_src_roundtrip("() = [a] = c, = [d] = e, f = () = g = h")
         self.check_src_roundtrip("a = b = c = d")
         self.check_src_roundtrip("a, b = c, d = e, f = g")
         self.check_src_roundtrip("[a, b] = [c, d] = [e, f] = g")

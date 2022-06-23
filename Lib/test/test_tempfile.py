@@ -62,6 +62,25 @@ class TestLowLevelInternals(unittest.TestCase):
     def test_infer_return_type_pathlib(self):
         self.assertIs(str, tempfile._infer_return_type(pathlib.Path('/')))
 
+    def test_infer_return_type_pathlike(self):
+        class Path:
+            def __init__(self, path):
+                self.path = path
+
+            def __fspath__(self):
+                return self.path
+
+        self.assertIs(str, tempfile._infer_return_type(Path('/')))
+        self.assertIs(bytes, tempfile._infer_return_type(Path(b'/')))
+        self.assertIs(str, tempfile._infer_return_type('', Path('')))
+        self.assertIs(bytes, tempfile._infer_return_type(b'', Path(b'')))
+        self.assertIs(bytes, tempfile._infer_return_type(None, Path(b'')))
+        self.assertIs(str, tempfile._infer_return_type(None, Path('')))
+
+        with self.assertRaises(TypeError):
+            tempfile._infer_return_type('', Path(b''))
+        with self.assertRaises(TypeError):
+            tempfile._infer_return_type(b'', Path(''))
 
 # Common functionality.
 
@@ -71,13 +90,9 @@ class BaseTestCase(unittest.TestCase):
     b_check = re.compile(br"^[a-z0-9_-]{8}$")
 
     def setUp(self):
-        self._warnings_manager = warnings_helper.check_warnings()
-        self._warnings_manager.__enter__()
+        self.enterContext(warnings_helper.check_warnings())
         warnings.filterwarnings("ignore", category=RuntimeWarning,
                                 message="mktemp", module=__name__)
-
-    def tearDown(self):
-        self._warnings_manager.__exit__(None, None, None)
 
     def nameCheck(self, name, dir, pre, suf):
         (ndir, nbase) = os.path.split(name)
@@ -179,8 +194,7 @@ class TestRandomNameSequence(BaseTestCase):
             if i == 20:
                 break
 
-    @unittest.skipUnless(hasattr(os, 'fork'),
-        "os.fork is required for this test")
+    @support.requires_fork()
     def test_process_awareness(self):
         # ensure that the random source differs between
         # child and parent.
@@ -323,6 +337,9 @@ def _mock_candidate_names(*names):
 
 class TestBadTempdir:
 
+    @unittest.skipIf(
+        support.is_emscripten, "Emscripten cannot remove write bits."
+    )
     def test_read_only_directory(self):
         with _inside_empty_temp_dir():
             oldmode = mode = os.stat(tempfile.tempdir).st_mode
@@ -433,6 +450,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
             support.gc_collect()  # For PyPy or other GCs.
             os.rmdir(dir)
 
+    @os_helper.skip_unless_working_chmod
     def test_file_mode(self):
         # _mkstemp_inner creates files with the proper mode
 
@@ -447,6 +465,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         self.assertEqual(mode, expected)
 
     @unittest.skipUnless(has_spawnl, 'os.spawnl not available')
+    @support.requires_subprocess()
     def test_noinherit(self):
         # _mkstemp_inner file handles are not inherited by child processes
 
@@ -769,6 +788,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         finally:
             os.rmdir(dir)
 
+    @os_helper.skip_unless_working_chmod
     def test_mode(self):
         # mkdtemp creates directories with the proper mode
 
@@ -1039,6 +1059,30 @@ class TestSpooledTemporaryFile(BaseTestCase):
         f = self.do_create(max_size=100, pre="a", suf=".txt")
         self.assertFalse(f._rolled)
 
+    def test_is_iobase(self):
+        # SpooledTemporaryFile should implement io.IOBase
+        self.assertIsInstance(self.do_create(), io.IOBase)
+
+    def test_iobase_interface(self):
+        # SpooledTemporaryFile should implement the io.IOBase interface.
+        # Ensure it has all the required methods and properties.
+        iobase_attrs = {
+            # From IOBase
+            'fileno', 'seek', 'truncate', 'close', 'closed', '__enter__',
+            '__exit__', 'flush', 'isatty', '__iter__', '__next__', 'readable',
+            'readline', 'readlines', 'seekable', 'tell', 'writable',
+            'writelines',
+            # From BufferedIOBase (binary mode) and TextIOBase (text mode)
+            'detach', 'read', 'read1', 'write', 'readinto', 'readinto1',
+            'encoding', 'errors', 'newlines',
+        }
+        spooledtempfile_attrs = set(dir(tempfile.SpooledTemporaryFile))
+        missing_attrs = iobase_attrs - spooledtempfile_attrs
+        self.assertFalse(
+            missing_attrs,
+            'SpooledTemporaryFile missing attributes from IOBase/BufferedIOBase/TextIOBase'
+        )
+
     def test_del_on_close(self):
         # A SpooledTemporaryFile is deleted when closed
         dir = tempfile.mkdtemp()
@@ -1053,6 +1097,33 @@ class TestSpooledTemporaryFile(BaseTestCase):
                         "SpooledTemporaryFile %s exists after close" % filename)
         finally:
             os.rmdir(dir)
+
+    def test_del_unrolled_file(self):
+        # The unrolled SpooledTemporaryFile should raise a ResourceWarning
+        # when deleted since the file was not explicitly closed.
+        f = self.do_create(max_size=10)
+        f.write(b'foo')
+        self.assertEqual(f.name, None)  # Unrolled so no filename/fd
+        with self.assertWarns(ResourceWarning):
+            f.__del__()
+
+    @unittest.skipIf(
+        support.is_emscripten, "Emscripten cannot fstat renamed files."
+    )
+    def test_del_rolled_file(self):
+        # The rolled file should be deleted when the SpooledTemporaryFile
+        # object is deleted. This should raise a ResourceWarning since the file
+        # was not explicitly closed.
+        f = self.do_create(max_size=2)
+        f.write(b'foo')
+        name = f.name  # This is a fd on posix+cygwin, a filename everywhere else
+        self.assertTrue(os.path.exists(name))
+        with self.assertWarns(ResourceWarning):
+            f.__del__()
+        self.assertFalse(
+            os.path.exists(name),
+            "Rolled SpooledTemporaryFile (name=%s) exists after delete" % name
+        )
 
     def test_rewrite_small(self):
         # A SpooledTemporaryFile can be written to multiple within the max_size
@@ -1264,6 +1335,9 @@ class TestSpooledTemporaryFile(BaseTestCase):
                 pass
         self.assertRaises(ValueError, use_closed)
 
+    @unittest.skipIf(
+        support.is_emscripten, "Emscripten cannot fstat renamed files."
+    )
     def test_truncate_with_size_parameter(self):
         # A SpooledTemporaryFile can be truncated to zero size
         f = tempfile.SpooledTemporaryFile(max_size=10)
@@ -1435,7 +1509,7 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(
                 temp_path.exists(),
                 sys.platform.startswith("win"),
-                f"TemporaryDirectory {temp_path!s} existance state unexpected")
+                f"TemporaryDirectory {temp_path!s} existence state unexpected")
             temp_dir.cleanup()
             self.assertFalse(
                 temp_path.exists(),
@@ -1494,7 +1568,7 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(
                 temp_path.exists(),
                 sys.platform.startswith("win"),
-                f"TemporaryDirectory {temp_path!s} existance state unexpected")
+                f"TemporaryDirectory {temp_path!s} existence state unexpected")
 
     def test_del_on_shutdown(self):
         # A TemporaryDirectory may be cleaned up during shutdown
@@ -1559,7 +1633,7 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(
                 temp_path.exists(),
                 sys.platform.startswith("win"),
-                f"TemporaryDirectory {temp_path!s} existance state unexpected")
+                f"TemporaryDirectory {temp_path!s} existence state unexpected")
             err = err.decode('utf-8', 'backslashreplace')
             self.assertNotIn("Exception", err)
             self.assertNotIn("Error", err)

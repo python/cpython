@@ -412,7 +412,7 @@ For example::
            multiple_results = [pool.apply_async(os.getpid, ()) for i in range(4)]
            print([res.get(timeout=1) for res in multiple_results])
 
-           # make a single worker sleep for 10 secs
+           # make a single worker sleep for 10 seconds
            res = pool.apply_async(time.sleep, (10,))
            try:
                print(res.get(timeout=1))
@@ -485,7 +485,9 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    to ``True`` or ``False``.  If ``None`` (the default), this flag will be
    inherited from the creating process.
 
-   By default, no arguments are passed to *target*.
+   By default, no arguments are passed to *target*. The *args* argument,
+   which defaults to ``()``, can be used to specify a list or tuple of the arguments
+   to pass to *target*.
 
    If a subclass overrides the constructor, it must make sure it invokes the
    base class constructor (:meth:`Process.__init__`) before doing anything else
@@ -502,6 +504,19 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       method invokes the callable object passed to the object's constructor as
       the target argument, if any, with sequential and keyword arguments taken
       from the *args* and *kwargs* arguments, respectively.
+
+      Using a list or tuple as the *args* argument passed to :class:`Process`
+      achieves the same effect.
+
+      Example::
+
+         >>> from multiprocessing import Process
+         >>> p = Process(target=print, args=[1])
+         >>> p.run()
+         1
+         >>> p = Process(target=print, args=(1,))
+         >>> p.run()
+         1
 
    .. method:: start()
 
@@ -569,8 +584,15 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    .. attribute:: exitcode
 
       The child's exit code.  This will be ``None`` if the process has not yet
-      terminated.  A negative value *-N* indicates that the child was terminated
-      by signal *N*.
+      terminated.
+
+      If the child's :meth:`run` method returned normally, the exit code
+      will be 0.  If it terminated via :func:`sys.exit` with an integer
+      argument *N*, the exit code will be *N*.
+
+      If the child terminated due to an exception not caught within
+      :meth:`run`, the exit code will be 1.  If it was terminated by
+      signal *N*, the exit code will be the negative value *-N*.
 
    .. attribute:: authkey
 
@@ -783,7 +805,7 @@ For an example of the usage of queues for interprocess communication see
       multithreading/multiprocessing semantics, this number is not reliable.
 
       Note that this may raise :exc:`NotImplementedError` on Unix platforms like
-      Mac OS X where ``sem_getvalue()`` is not implemented.
+      macOS where ``sem_getvalue()`` is not implemented.
 
    .. method:: empty()
 
@@ -1030,13 +1052,19 @@ Miscellaneous
 
    The return value can be ``'fork'``, ``'spawn'``, ``'forkserver'``
    or ``None``.  ``'fork'`` is the default on Unix, while ``'spawn'`` is
-   the default on Windows.
+   the default on Windows and macOS.
+
+.. versionchanged:: 3.8
+
+   On macOS, the *spawn* start method is now the default.  The *fork* start
+   method should be considered unsafe as it can lead to crashes of the
+   subprocess. See :issue:`33725`.
 
    .. versionadded:: 3.4
 
-.. function:: set_executable()
+.. function:: set_executable(executable)
 
-   Sets the path of the Python interpreter to use when starting a child process.
+   Set the path of the Python interpreter to use when starting a child process.
    (By default :data:`sys.executable` is used).  Embedders will probably need to
    do some thing like ::
 
@@ -1046,6 +1074,9 @@ Miscellaneous
 
    .. versionchanged:: 3.4
       Now supported on Unix when the ``'spawn'`` start method is used.
+
+   .. versionchanged:: 3.11
+      Accepts a :term:`path-like object`.
 
 .. function:: set_start_method(method)
 
@@ -1235,7 +1266,7 @@ object -- see :ref:`multiprocessing-managers`.
    first argument is named *block*, as is consistent with :meth:`Lock.acquire`.
 
    .. note::
-      On Mac OS X, this is indistinguishable from :class:`Semaphore` because
+      On macOS, this is indistinguishable from :class:`Semaphore` because
       ``sem_getvalue()`` is not implemented on that platform.
 
 .. class:: Condition([lock])
@@ -1374,7 +1405,7 @@ object -- see :ref:`multiprocessing-managers`.
 
 .. note::
 
-   On Mac OS X, ``sem_timedwait`` is unsupported, so calling ``acquire()`` with
+   On macOS, ``sem_timedwait`` is unsupported, so calling ``acquire()`` with
    a timeout will emulate that function's behavior using a sleeping loop.
 
 .. note::
@@ -1635,6 +1666,7 @@ different machines. A manager object controls a server process which manages
 proxies.
 
 .. function:: multiprocessing.Manager()
+   :module:
 
    Returns a started :class:`~multiprocessing.managers.SyncManager` object which
    can be used for sharing objects between processes.  The returned manager
@@ -1648,7 +1680,7 @@ Manager processes will be shutdown as soon as they are garbage collected or
 their parent process exits.  The manager classes are defined in the
 :mod:`multiprocessing.managers` module:
 
-.. class:: BaseManager([address[, authkey]])
+.. class:: BaseManager(address=None, authkey=None, serializer='pickle', ctx=None, *, shutdown_timeout=1.0)
 
    Create a BaseManager object.
 
@@ -1662,6 +1694,20 @@ their parent process exits.  The manager classes are defined in the
    validity of incoming connections to the server process.  If
    *authkey* is ``None`` then ``current_process().authkey`` is used.
    Otherwise *authkey* is used and it must be a byte string.
+
+   *serializer* must be ``'pickle'`` (use :mod:`pickle` serialization) or
+   ``'xmlrpclib'`` (use :mod:`xmlrpc.client` serialization).
+
+   *ctx* is a context object, or ``None`` (use the current context). See the
+   :func:`get_context` function.
+
+   *shutdown_timeout* is a timeout in seconds used to wait until the process
+   used by the manager completes in the :meth:`shutdown` method. If the
+   shutdown times out, the process is terminated. If terminating the process
+   also times out, the process is killed.
+
+   .. versionchanged: 3.11
+      Added the *shutdown_timeout* parameter.
 
    .. method:: start([initializer[, initargs]])
 
@@ -2630,12 +2676,13 @@ handler type) for messages from different processes to get mixed up.
    inherited.
 
 .. currentmodule:: multiprocessing
-.. function:: log_to_stderr()
+.. function:: log_to_stderr(level=None)
 
    This function performs a call to :func:`get_logger` but in addition to
    returning the logger created by get_logger, it adds a handler which sends
    output to :data:`sys.stderr` using format
    ``'[%(levelname)s/%(processName)s] %(message)s'``.
+   You can modify ``levelname`` of the logger by passing a ``level`` argument.
 
 Below is an example session with logging turned on::
 

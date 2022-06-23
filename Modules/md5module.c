@@ -15,10 +15,13 @@
 */
 
 /* MD5 objects */
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
 #include "hashlib.h"
-#include "pystrhex.h"
+#include "pycore_strhex.h"        // _Py_strhex()
 
 /*[clinic input]
 module _md5

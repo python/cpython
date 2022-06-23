@@ -147,10 +147,52 @@ For example, the following code will print B, C, D in that order::
 Note that if the *except clauses* were reversed (with ``except B`` first), it
 would have printed B, B, B --- the first matching *except clause* is triggered.
 
-All exceptions inherit from :exc:`BaseException`, and so it can be used to serve
-as a wildcard. Use this with extreme caution, since it is easy to mask a real
-programming error in this way!  It can also be used to print an error message and
-then re-raise the exception (allowing a caller to handle the exception as well)::
+When an exception occurs, it may have associated values, also known as the
+exception's *arguments*. The presence and types of the arguments depend on the
+exception type.
+
+The *except clause* may specify a variable after the exception name.  The
+variable is bound to the exception instance which typically has an ``args``
+attribute that stores the arguments. For convenience, builtin exception
+types define :meth:`__str__` to print all the arguments without explicitly
+accessing ``.args``.  ::
+
+   >>> try:
+   ...     raise Exception('spam', 'eggs')
+   ... except Exception as inst:
+   ...     print(type(inst))    # the exception instance
+   ...     print(inst.args)     # arguments stored in .args
+   ...     print(inst)          # __str__ allows args to be printed directly,
+   ...                          # but may be overridden in exception subclasses
+   ...     x, y = inst.args     # unpack args
+   ...     print('x =', x)
+   ...     print('y =', y)
+   ...
+   <class 'Exception'>
+   ('spam', 'eggs')
+   ('spam', 'eggs')
+   x = spam
+   y = eggs
+
+The exception's :meth:`__str__` output is printed as the last part ('detail')
+of the message for unhandled exceptions.
+
+:exc:`BaseException` is the common base class of all exceptions. One of its
+subclasses, :exc:`Exception`, is the base class of all the non-fatal exceptions.
+Exceptions which are not subclasses of :exc:`Exception` are not typically
+handled, because they are used to indicate that the program should terminate.
+They include :exc:`SystemExit` which is raised by :meth:`sys.exit` and
+:exc:`KeyboardInterrupt` which is raised when a user wishes to interrupt
+the program.
+
+:exc:`Exception` can be used as a wildcard that catches (almost) everything.
+However, it is good practice to be as specific as possible with the types
+of exceptions that we intend to handle, and to allow any unexpected
+exceptions to propagate on.
+
+The most common pattern for handling :exc:`Exception` is to print or log
+the exception and then re-raise it (allowing a caller to handle the
+exception as well)::
 
    import sys
 
@@ -159,15 +201,12 @@ then re-raise the exception (allowing a caller to handle the exception as well):
        s = f.readline()
        i = int(s.strip())
    except OSError as err:
-       print("OS error: {0}".format(err))
+       print("OS error:", err)
    except ValueError:
        print("Could not convert data to an integer.")
-   except BaseException as err:
+   except Exception as err:
        print(f"Unexpected {err=}, {type(err)=}")
        raise
-
-Alternatively the last except clause may omit the exception name(s), however the exception
-value must then be retrieved from ``sys.exc_info()[1]``.
 
 The :keyword:`try` ... :keyword:`except` statement has an optional *else
 clause*, which, when present, must follow all *except clauses*.  It is useful
@@ -188,39 +227,8 @@ the :keyword:`try` clause because it avoids accidentally catching an exception
 that wasn't raised by the code being protected by the :keyword:`!try` ...
 :keyword:`!except` statement.
 
-When an exception occurs, it may have an associated value, also known as the
-exception's *argument*. The presence and type of the argument depend on the
-exception type.
-
-The *except clause* may specify a variable after the exception name.  The
-variable is bound to an exception instance with the arguments stored in
-``instance.args``.  For convenience, the exception instance defines
-:meth:`__str__` so the arguments can be printed directly without having to
-reference ``.args``.  One may also instantiate an exception first before
-raising it and add any attributes to it as desired. ::
-
-   >>> try:
-   ...     raise Exception('spam', 'eggs')
-   ... except Exception as inst:
-   ...     print(type(inst))    # the exception instance
-   ...     print(inst.args)     # arguments stored in .args
-   ...     print(inst)          # __str__ allows args to be printed directly,
-   ...                          # but may be overridden in exception subclasses
-   ...     x, y = inst.args     # unpack args
-   ...     print('x =', x)
-   ...     print('y =', y)
-   ...
-   <class 'Exception'>
-   ('spam', 'eggs')
-   ('spam', 'eggs')
-   x = spam
-   y = eggs
-
-If an exception has arguments, they are printed as the last part ('detail') of
-the message for unhandled exceptions.
-
-Exception handlers don't just handle exceptions if they occur immediately in the
-*try clause*, but also if they occur inside functions that are called (even
+Exception handlers do not handle only exceptions that occur immediately in the
+*try clause*, but also those that occur inside functions that are called (even
 indirectly) in the *try clause*. For example::
 
    >>> def this_fails():
@@ -249,8 +257,9 @@ exception to occur. For example::
 
 The sole argument to :keyword:`raise` indicates the exception to be raised.
 This must be either an exception instance or an exception class (a class that
-derives from :class:`Exception`).  If an exception class is passed, it will
-be implicitly instantiated by calling its constructor with no arguments::
+derives from :class:`BaseException`, such as :exc:`Exception` or one of its
+subclasses).  If an exception class is passed, it will be implicitly
+instantiated by calling its constructor with no arguments::
 
    raise ValueError  # shorthand for 'raise ValueError()'
 
@@ -329,48 +338,13 @@ be derived from the :exc:`Exception` class, either directly or indirectly.
 
 Exception classes can be defined which do anything any other class can do, but
 are usually kept simple, often only offering a number of attributes that allow
-information about the error to be extracted by handlers for the exception.  When
-creating a module that can raise several distinct errors, a common practice is
-to create a base class for exceptions defined by that module, and subclass that
-to create specific exception classes for different error conditions::
-
-   class Error(Exception):
-       """Base class for exceptions in this module."""
-       pass
-
-   class InputError(Error):
-       """Exception raised for errors in the input.
-
-       Attributes:
-           expression -- input expression in which the error occurred
-           message -- explanation of the error
-       """
-
-       def __init__(self, expression, message):
-           self.expression = expression
-           self.message = message
-
-   class TransitionError(Error):
-       """Raised when an operation attempts a state transition that's not
-       allowed.
-
-       Attributes:
-           previous -- state at beginning of transition
-           next -- attempted new state
-           message -- explanation of why the specific transition is not allowed
-       """
-
-       def __init__(self, previous, next, message):
-           self.previous = previous
-           self.next = next
-           self.message = message
+information about the error to be extracted by handlers for the exception.
 
 Most exceptions are defined with names that end in "Error", similar to the
 naming of the standard exceptions.
 
 Many standard modules define their own exceptions to report errors that may
-occur in functions they define.  More information on classes is presented in
-chapter :ref:`tut-classes`.
+occur in functions they define.
 
 
 .. _tut-cleanup:
@@ -496,3 +470,156 @@ used in a way that ensures they are always cleaned up promptly and correctly. ::
 After the statement is executed, the file *f* is always closed, even if a
 problem was encountered while processing the lines. Objects which, like files,
 provide predefined clean-up actions will indicate this in their documentation.
+
+
+.. _tut-exception-groups:
+
+Raising and Handling Multiple Unrelated Exceptions
+==================================================
+
+There are situations where it is necessary to report several exceptions that
+have occurred. This it often the case in concurrency frameworks, when several
+tasks may have failed in parallel, but there are also other use cases where
+it is desirable to continue execution and collect multiple errors rather than
+raise the first exception.
+
+The builtin :exc:`ExceptionGroup` wraps a list of exception instances so
+that they can be raised together. It is an exception itself, so it can be
+caught like any other exception. ::
+
+   >>> def f():
+   ...     excs = [OSError('error 1'), SystemError('error 2')]
+   ...     raise ExceptionGroup('there were problems', excs)
+   ...
+   >>> f()
+     + Exception Group Traceback (most recent call last):
+     |   File "<stdin>", line 1, in <module>
+     |   File "<stdin>", line 3, in f
+     | ExceptionGroup: there were problems
+     +-+---------------- 1 ----------------
+       | OSError: error 1
+       +---------------- 2 ----------------
+       | SystemError: error 2
+       +------------------------------------
+   >>> try:
+   ...     f()
+   ... except Exception as e:
+   ...     print(f'caught {type(e)}: e')
+   ...
+   caught <class 'ExceptionGroup'>: e
+   >>>
+
+By using ``except*`` instead of ``except``, we can selectively
+handle only the exceptions in the group that match a certain
+type. In the following example, which shows a nested exception
+group, each ``except*`` clause extracts from the group exceptions
+of a certain type while letting all other exceptions propagate to
+other clauses and eventually to be reraised. ::
+
+   >>> def f():
+   ...     raise ExceptionGroup("group1",
+   ...                          [OSError(1),
+   ...                           SystemError(2),
+   ...                           ExceptionGroup("group2",
+   ...                                          [OSError(3), RecursionError(4)])])
+   ...
+   >>> try:
+   ...     f()
+   ... except* OSError as e:
+   ...     print("There were OSErrors")
+   ... except* SystemError as e:
+   ...     print("There were SystemErrors")
+   ...
+   There were OSErrors
+   There were SystemErrors
+     + Exception Group Traceback (most recent call last):
+     |   File "<stdin>", line 2, in <module>
+     |   File "<stdin>", line 2, in f
+     | ExceptionGroup: group1
+     +-+---------------- 1 ----------------
+       | ExceptionGroup: group2
+       +-+---------------- 1 ----------------
+         | RecursionError: 4
+         +------------------------------------
+   >>>
+
+Note that the exceptions nested in an exception group must be instances,
+not types. This is because in practice the exceptions would typically
+be ones that have already been raised and caught by the program, along
+the following pattern::
+
+   >>> excs = []
+   ... for test in tests:
+   ...     try:
+   ...         test.run()
+   ...     except Exception as e:
+   ...         excs.append(e)
+   ...
+   >>> if excs:
+   ...    raise ExceptionGroup("Test Failures", excs)
+   ...
+
+
+Enriching Exceptions with Notes
+===============================
+
+When an exception is created in order to be raised, it is usually initialized
+with information that describes the error that has occurred. There are cases
+where it is useful to add information after the exception was caught. For this
+purpose, exceptions have a method ``add_note(note)`` that accepts a string and
+adds it to the exception's notes list. The standard traceback rendering
+includes all notes, in the order they were added, after the exception. ::
+
+   >>> try:
+   ...     raise TypeError('bad type')
+   ... except Exception as e:
+   ...     e.add_note('Add some information')
+   ...     e.add_note('Add some more information')
+   ...     raise
+   ...
+   Traceback (most recent call last):
+     File "<stdin>", line 2, in <module>
+   TypeError: bad type
+   Add some information
+   Add some more information
+   >>>
+
+For example, when collecting exceptions into an exception group, we may want
+to add context information for the individual errors. In the following each
+exception in the group has a note indicating when this error has occurred. ::
+
+   >>> def f():
+   ...     raise OSError('operation failed')
+   ...
+   >>> excs = []
+   >>> for i in range(3):
+   ...     try:
+   ...         f()
+   ...     except Exception as e:
+   ...         e.add_note(f'Happened in Iteration {i+1}')
+   ...         excs.append(e)
+   ...
+   >>> raise ExceptionGroup('We have some problems', excs)
+     + Exception Group Traceback (most recent call last):
+     |   File "<stdin>", line 1, in <module>
+     | ExceptionGroup: We have some problems (3 sub-exceptions)
+     +-+---------------- 1 ----------------
+       | Traceback (most recent call last):
+       |   File "<stdin>", line 3, in <module>
+       |   File "<stdin>", line 2, in f
+       | OSError: operation failed
+       | Happened in Iteration 1
+       +---------------- 2 ----------------
+       | Traceback (most recent call last):
+       |   File "<stdin>", line 3, in <module>
+       |   File "<stdin>", line 2, in f
+       | OSError: operation failed
+       | Happened in Iteration 2
+       +---------------- 3 ----------------
+       | Traceback (most recent call last):
+       |   File "<stdin>", line 3, in <module>
+       |   File "<stdin>", line 2, in f
+       | OSError: operation failed
+       | Happened in Iteration 3
+       +------------------------------------
+   >>>

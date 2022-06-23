@@ -1,1 +1,0 @@
-Fix undefined behaviour in complex object exponentiation.

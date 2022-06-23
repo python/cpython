@@ -35,24 +35,22 @@
 typedef struct _callback_context
 {
     PyObject *callable;
+    PyObject *module;
     pysqlite_state *state;
 } callback_context;
 
 typedef struct
 {
     PyObject_HEAD
-    sqlite3* db;
+    sqlite3 *db;
     pysqlite_state *state;
 
     /* the type detection mode. Only 0, PARSE_DECLTYPES, PARSE_COLNAMES or a
      * bitwise combination thereof makes sense */
     int detect_types;
 
-    /* None for autocommit, otherwise a PyUnicode with the isolation level */
-    PyObject* isolation_level;
-
-    /* NULL for autocommit, otherwise a string with the BEGIN statement */
-    const char* begin_statement;
+    /* NULL for autocommit, otherwise a string with the isolation level */
+    const char *isolation_level;
 
     /* 1 if a check should be performed for each API call if the connection is
      * used from the same thread it was created in */
@@ -65,8 +63,9 @@ typedef struct
 
     PyObject *statement_cache;
 
-    /* Lists of weak references to statements and cursors used within this connection */
-    PyObject* cursors;
+    /* Lists of weak references to cursors and blobs used within this connection */
+    PyObject *cursors;
+    PyObject *blobs;
 
     /* Counters for how many cursors were created in the connection. May be
      * reset to 0 at certain intervals */
@@ -100,7 +99,6 @@ typedef struct
     PyObject* NotSupportedError;
 } pysqlite_Connection;
 
-int pysqlite_connection_register_cursor(pysqlite_Connection* connection, PyObject* cursor);
 int pysqlite_check_thread(pysqlite_Connection* self);
 int pysqlite_check_connection(pysqlite_Connection* con);
 

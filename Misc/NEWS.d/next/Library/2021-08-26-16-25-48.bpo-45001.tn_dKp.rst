@@ -1,2 +1,0 @@
-Made email date parsing more robust against malformed input, namely a
-whitespace-only ``Date:`` header. Patch by Wouter Bolsterlee.

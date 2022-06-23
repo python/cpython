@@ -1028,7 +1028,9 @@ class ConfigParserTestCaseNoInterpolation(BasicTestCase, unittest.TestCase):
 
 class ConfigParserTestCaseLegacyInterpolation(ConfigParserTestCase):
     config_class = configparser.ConfigParser
-    interpolation = configparser.LegacyInterpolation()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        interpolation = configparser.LegacyInterpolation()
 
     def test_set_malformatted_interpolation(self):
         cf = self.fromstring("[sect]\n"
@@ -1046,6 +1048,14 @@ class ConfigParserTestCaseLegacyInterpolation(ConfigParserTestCase):
         # bug #5741: double percents are *not* malformed
         cf.set("sect", "option2", "foo%%bar")
         self.assertEqual(cf.get("sect", "option2"), "foo%%bar")
+
+
+class ConfigParserTestCaseInvalidInterpolationType(unittest.TestCase):
+    def test_error_on_wrong_type_for_interpolation(self):
+        for value in [configparser.ExtendedInterpolation,  42,  "a string"]:
+            with self.subTest(value=value):
+                with self.assertRaises(TypeError):
+                    configparser.ConfigParser(interpolation=value)
 
 
 class ConfigParserTestCaseNonStandardDelimiters(ConfigParserTestCase):
@@ -1602,15 +1612,11 @@ class CoverageOneHundredTestCase(unittest.TestCase):
         self.assertEqual(error.section, 'section')
 
     def test_parsing_error(self):
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(TypeError) as cm:
             configparser.ParsingError()
-        self.assertEqual(str(cm.exception), "Required argument `source' not "
-                                            "given.")
-        with self.assertRaises(ValueError) as cm:
-            configparser.ParsingError(source='source', filename='filename')
-        self.assertEqual(str(cm.exception), "Cannot specify both `filename' "
-                                            "and `source'. Use `source'.")
-        error = configparser.ParsingError(filename='source')
+        error = configparser.ParsingError(source='source')
+        self.assertEqual(error.source, 'source')
+        error = configparser.ParsingError('source')
         self.assertEqual(error.source, 'source')
 
     def test_interpolation_validation(self):
@@ -1629,6 +1635,14 @@ class CoverageOneHundredTestCase(unittest.TestCase):
             parser['section']['invalid_reference']
         self.assertEqual(str(cm.exception), "bad interpolation variable "
                                             "reference '%(()'")
+
+    def test_legacyinterpolation_deprecation(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", DeprecationWarning)
+            configparser.LegacyInterpolation()
+        self.assertGreaterEqual(len(w), 1)
+        for warning in w:
+            self.assertIs(warning.category, DeprecationWarning)
 
     def test_sectionproxy_repr(self):
         parser = configparser.ConfigParser()
@@ -1795,7 +1809,7 @@ class ExceptionPicklingTestCase(unittest.TestCase):
             self.assertEqual(e1.source, e2.source)
             self.assertEqual(e1.errors, e2.errors)
             self.assertEqual(repr(e1), repr(e2))
-        e1 = configparser.ParsingError(filename='filename')
+        e1 = configparser.ParsingError('filename')
         e1.append(1, 'line1')
         e1.append(2, 'line2')
         e1.append(3, 'line3')

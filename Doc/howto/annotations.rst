@@ -156,7 +156,7 @@ Manually Un-Stringizing Stringized Annotations
   require annotating with string values that specifically
   *can't* be evaluated.  For example:
 
-  * :pep:`604` union types using `|`, before support for this
+  * :pep:`604` union types using ``|``, before support for this
     was added to Python 3.10.
   * Definitions that aren't needed at runtime, only imported
     when :const:`typing.TYPE_CHECKING` is true.

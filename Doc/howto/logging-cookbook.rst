@@ -7,7 +7,8 @@ Logging Cookbook
 :Author: Vinay Sajip <vinay_sajip at red-dove dot com>
 
 This page contains a number of recipes related to logging, which have been found
-useful in the past.
+useful in the past. For links to tutorial and reference information, please see
+:ref:`cookbook-ref-links`.
 
 .. currentmodule:: logging
 
@@ -541,6 +542,17 @@ alternative there, as well as adapting the above script to use your alternative
 serialization.
 
 
+Running a logging socket listener in production
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To run a logging listener in production, you may need to use a process-management tool
+such as `Supervisor <http://supervisord.org/>`_. `Here
+<https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b>`_ is a Gist which
+provides the bare-bones files to run the above functionality using Supervisor: you
+will need to change the `/path/to/` parts in the Gist to reflect the actual paths you
+want to use.
+
+
 .. _context-info:
 
 Adding contextual information to your logging output
@@ -702,6 +714,32 @@ which, when run, produces something like:
     2010-09-06 22:38:15,301 d.e.f DEBUG    IP: 123.231.231.123 User: fred     A message at DEBUG level with 2 parameters
     2010-09-06 22:38:15,301 d.e.f INFO     IP: 123.231.231.123 User: fred     A message at INFO level with 2 parameters
 
+Imparting contextual information in handlers
+--------------------------------------------
+
+Each :class:`~Handler` has its own chain of filters.
+If you want to add contextual information to a :class:`LogRecord` without leaking
+it to other handlers, you can use a filter that returns
+a new :class:`~LogRecord` instead of modifying it in-place, as shown in the following script::
+
+    import copy
+    import logging
+
+    def filter(record: logging.LogRecord):
+        record = copy.copy(record)
+        record.user = 'jim'
+        return record
+
+    if __name__ == '__main__':
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(message)s from %(user)-8s')
+        handler.setFormatter(formatter)
+        handler.addFilter(filter)
+        logger.addHandler(handler)
+
+        logger.info('A log message')
 
 .. _multiple-processes:
 
@@ -981,6 +1019,17 @@ to this (remembering to first import :mod:`concurrent.futures`)::
     with concurrent.futures.ProcessPoolExecutor(max_workers=10) as executor:
         for i in range(10):
             executor.submit(worker_process, queue, worker_configurer)
+
+Deploying Web applications using Gunicorn and uWSGI
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When deploying Web applications using `Gunicorn <https://gunicorn.org/>`_ or `uWSGI
+<https://uwsgi-docs.readthedocs.io/en/latest/>`_ (or similar), multiple worker
+processes are created to handle client requests. In such environments, avoid creating
+file-based handlers directly in your web application. Instead, use a
+:class:`SocketHandler` to log from the web application to a listener in a separate
+process. This can be set up using a process management tool such as Supervisor - see
+`Running a logging socket listener in production`_ for more details.
 
 
 Using file rotation
@@ -1766,22 +1815,15 @@ Python used.
 If you need more specialised processing, you can use a custom JSON encoder,
 as in the following complete example::
 
-    from __future__ import unicode_literals
-
     import json
     import logging
 
-    # This next bit is to ensure the script runs unchanged on 2.x and 3.x
-    try:
-        unicode
-    except NameError:
-        unicode = str
 
     class Encoder(json.JSONEncoder):
         def default(self, o):
             if isinstance(o, set):
                 return tuple(o)
-            elif isinstance(o, unicode):
+            elif isinstance(o, str):
                 return o.encode('unicode_escape').decode('ascii')
             return super().default(o)
 
@@ -2980,6 +3022,95 @@ refer to the comments in the code snippet for more detailed information.
     if __name__=='__main__':
         main()
 
+Logging to syslog with RFC5424 support
+--------------------------------------
+
+Although :rfc:`5424` dates from 2009, most syslog servers are configured by detault to
+use the older :rfc:`3164`, which hails from 2001. When ``logging`` was added to Python
+in 2003, it supported the earlier (and only existing) protocol at the time. Since
+RFC5424 came out, as there has not been widespread deployment of it in syslog
+servers, the :class:`~logging.handlers.SysLogHandler` functionality has not been
+updated.
+
+RFC 5424 contains some useful features such as support for structured data, and if you
+need to be able to log to a syslog server with support for it, you can do so with a
+subclassed handler which looks something like this::
+
+    import datetime
+    import logging.handlers
+    import re
+    import socket
+    import time
+
+    class SysLogHandler5424(logging.handlers.SysLogHandler):
+
+        tz_offset = re.compile(r'([+-]\d{2})(\d{2})$')
+        escaped = re.compile(r'([\]"\\])')
+
+        def __init__(self, *args, **kwargs):
+            self.msgid = kwargs.pop('msgid', None)
+            self.appname = kwargs.pop('appname', None)
+            super().__init__(*args, **kwargs)
+
+        def format(self, record):
+            version = 1
+            asctime = datetime.datetime.fromtimestamp(record.created).isoformat()
+            m = self.tz_offset.match(time.strftime('%z'))
+            has_offset = False
+            if m and time.timezone:
+                hrs, mins = m.groups()
+                if int(hrs) or int(mins):
+                    has_offset = True
+            if not has_offset:
+                asctime += 'Z'
+            else:
+                asctime += f'{hrs}:{mins}'
+            try:
+                hostname = socket.gethostname()
+            except Exception:
+                hostname = '-'
+            appname = self.appname or '-'
+            procid = record.process
+            msgid = '-'
+            msg = super().format(record)
+            sdata = '-'
+            if hasattr(record, 'structured_data'):
+                sd = record.structured_data
+                # This should be a dict where the keys are SD-ID and the value is a
+                # dict mapping PARAM-NAME to PARAM-VALUE (refer to the RFC for what these
+                # mean)
+                # There's no error checking here - it's purely for illustration, and you
+                # can adapt this code for use in production environments
+                parts = []
+
+                def replacer(m):
+                    g = m.groups()
+                    return '\\' + g[0]
+
+                for sdid, dv in sd.items():
+                    part = f'[{sdid}'
+                    for k, v in dv.items():
+                        s = str(v)
+                        s = self.escaped.sub(replacer, s)
+                        part += f' {k}="{s}"'
+                    part += ']'
+                    parts.append(part)
+                sdata = ''.join(parts)
+            return f'{version} {asctime} {hostname} {appname} {procid} {msgid} {sdata} {msg}'
+
+You'll need to be familiar with RFC 5424 to fully understand the above code, and it
+may be that you have slightly different needs (e.g. for how you pass structural data
+to the log). Nevertheless, the above should be adaptable to your speciric needs. With
+the above handler, you'd pass structured data using something like this::
+
+    sd = {
+        'foo@12345': {'bar': 'baz', 'baz': 'bozz', 'fizz': r'buzz'},
+        'foo@54321': {'rab': 'baz', 'zab': 'bozz', 'zzif': r'buzz'}
+    }
+    extra = {'structured_data': sd}
+    i = 1
+    logger.debug('Message %d', i, extra=extra)
+
 
 .. patterns-to-avoid:
 
@@ -3060,3 +3191,23 @@ the :ref:`existing mechanisms <context-info>` for passing contextual
 information into your logs and restrict the loggers created to those describing
 areas within your application (generally modules, but occasionally slightly
 more fine-grained than that).
+
+.. _cookbook-ref-links:
+
+Other resources
+---------------
+
+.. seealso::
+
+   Module :mod:`logging`
+      API reference for the logging module.
+
+   Module :mod:`logging.config`
+      Configuration API for the logging module.
+
+   Module :mod:`logging.handlers`
+      Useful handlers included with the logging module.
+
+   :ref:`Basic Tutorial <logging-basic-tutorial>`
+
+   :ref:`Advanced Tutorial <logging-advanced-tutorial>`

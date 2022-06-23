@@ -1,11 +1,11 @@
-import collections
 import faulthandler
 import json
-import os
+import os.path
 import queue
 import signal
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import traceback
@@ -17,7 +17,8 @@ from test.support import os_helper
 from test.libregrtest.cmdline import Namespace
 from test.libregrtest.main import Regrtest
 from test.libregrtest.runtest import (
-    runtest, is_failed, TestResult, Interrupted, Timeout, ChildError, PROGRESS_MIN_TIME)
+    runtest, is_failed, TestResult, Interrupted, Timeout, ChildError,
+    PROGRESS_MIN_TIME, Passed, EnvChanged)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import format_duration, print_warning
 
@@ -52,25 +53,36 @@ def parse_worker_args(worker_args) -> tuple[Namespace, str]:
     return (ns, test_name)
 
 
-def run_test_in_subprocess(testname: str, ns: Namespace) -> subprocess.Popen:
+def run_test_in_subprocess(testname: str, ns: Namespace, tmp_dir: str) -> subprocess.Popen:
     ns_dict = vars(ns)
     worker_args = (ns_dict, testname)
     worker_args = json.dumps(worker_args)
-
-    cmd = [sys.executable, *support.args_from_interpreter_flags(),
+    if ns.python is not None:
+        executable = ns.python
+    else:
+        executable = [sys.executable]
+    cmd = [*executable, *support.args_from_interpreter_flags(),
            '-u',    # Unbuffered stdout and stderr
            '-m', 'test.regrtest',
            '--worker-args', worker_args]
 
+    env = dict(os.environ)
+    if tmp_dir is not None:
+        env['TMPDIR'] = tmp_dir
+        env['TEMP'] = tmp_dir
+        env['TMP'] = tmp_dir
+
     # Running the child from the same working directory as regrtest's original
     # invocation ensures that TEMPDIR for the child is the same when
     # sysconfig.is_python_build() is true. See issue 15300.
-    kw = {}
+    kw = {'env': env}
     if USE_PROCESS_GROUP:
         kw['start_new_session'] = True
     return subprocess.Popen(cmd,
                             stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
+                            # bpo-45410: Write stderr into stdout to keep
+                            # messages order
+                            stderr=subprocess.STDOUT,
                             universal_newlines=True,
                             close_fds=(os.name != 'nt'),
                             cwd=os_helper.SAVEDCWD,
@@ -114,8 +126,8 @@ class MultiprocessIterator:
 
 class MultiprocessResult(NamedTuple):
     result: TestResult
+    # bpo-45410: stderr is written into stdout to keep messages order
     stdout: str
-    stderr: str
     error_msg: str
 
 
@@ -195,18 +207,17 @@ class TestWorkerProcess(threading.Thread):
         self,
         test_result: TestResult,
         stdout: str = '',
-        stderr: str = '',
         err_msg=None
     ) -> MultiprocessResult:
         test_result.duration_sec = time.monotonic() - self.start_time
-        return MultiprocessResult(test_result, stdout, stderr, err_msg)
+        return MultiprocessResult(test_result, stdout, err_msg)
 
-    def _run_process(self, test_name: str) -> tuple[int, str, str]:
+    def _run_process(self, test_name: str, tmp_dir: str) -> tuple[int, str, str]:
         self.start_time = time.monotonic()
 
         self.current_test_name = test_name
         try:
-            popen = run_test_in_subprocess(test_name, self.ns)
+            popen = run_test_in_subprocess(test_name, self.ns, tmp_dir)
 
             self._killed = False
             self._popen = popen
@@ -223,13 +234,14 @@ class TestWorkerProcess(threading.Thread):
                 raise ExitThread
 
             try:
-                stdout, stderr = popen.communicate(timeout=self.timeout)
+                # bpo-45410: stderr is written into stdout
+                stdout, _ = popen.communicate(timeout=self.timeout)
                 retcode = popen.returncode
                 assert retcode is not None
             except subprocess.TimeoutExpired:
                 if self._stopped:
-                    # kill() has been called: communicate() fails
-                    # on reading closed stdout/stderr
+                    # kill() has been called: communicate() fails on reading
+                    # closed stdout
                     raise ExitThread
 
                 # On timeout, kill the process
@@ -238,20 +250,19 @@ class TestWorkerProcess(threading.Thread):
                 # None means TIMEOUT for the caller
                 retcode = None
                 # bpo-38207: Don't attempt to call communicate() again: on it
-                # can hang until all child processes using stdout and stderr
+                # can hang until all child processes using stdout
                 # pipes completes.
-                stdout = stderr = ''
+                stdout = ''
             except OSError:
                 if self._stopped:
                     # kill() has been called: communicate() fails
-                    # on reading closed stdout/stderr
+                    # on reading closed stdout
                     raise ExitThread
                 raise
             else:
                 stdout = stdout.strip()
-                stderr = stderr.rstrip()
 
-            return (retcode, stdout, stderr)
+            return (retcode, stdout)
         except:
             self._kill()
             raise
@@ -261,10 +272,26 @@ class TestWorkerProcess(threading.Thread):
             self.current_test_name = None
 
     def _runtest(self, test_name: str) -> MultiprocessResult:
-        retcode, stdout, stderr = self._run_process(test_name)
+        # Don't check for leaked temporary files and directories if Python is
+        # run on WASI. WASI don't pass environment variables like TMPDIR to
+        # worker processes.
+        if not support.is_wasi:
+            # gh-93353: Check for leaked temporary files in the parent process,
+            # since the deletion of temporary files can happen late during
+            # Python finalization: too late for libregrtest.
+            tmp_dir = tempfile.mkdtemp(prefix="test_python_")
+            tmp_dir = os.path.abspath(tmp_dir)
+            try:
+                retcode, stdout = self._run_process(test_name, tmp_dir)
+            finally:
+                tmp_files = os.listdir(tmp_dir)
+                os_helper.rmtree(tmp_dir)
+        else:
+            retcode, stdout = self._run_process(test_name, None)
+            tmp_files = ()
 
         if retcode is None:
-            return self.mp_result_error(Timeout(test_name), stdout, stderr)
+            return self.mp_result_error(Timeout(test_name), stdout)
 
         err_msg = None
         if retcode != 0:
@@ -282,10 +309,17 @@ class TestWorkerProcess(threading.Thread):
                     err_msg = "Failed to parse worker JSON: %s" % exc
 
         if err_msg is not None:
-            return self.mp_result_error(ChildError(test_name),
-                                        stdout, stderr, err_msg)
+            return self.mp_result_error(ChildError(test_name), stdout, err_msg)
 
-        return MultiprocessResult(result, stdout, stderr, err_msg)
+        if tmp_files:
+            msg = (f'\n\n'
+                   f'Warning -- {test_name} leaked temporary files '
+                   f'({len(tmp_files)}): {", ".join(sorted(tmp_files))}')
+            stdout += msg
+            if isinstance(result, Passed):
+                result = EnvChanged.from_passed(result)
+
+        return MultiprocessResult(result, stdout, err_msg)
 
     def run(self) -> None:
         while not self._stopped:
@@ -309,10 +343,8 @@ class TestWorkerProcess(threading.Thread):
     def _wait_completed(self) -> None:
         popen = self._popen
 
-        # stdout and stderr must be closed to ensure that communicate()
-        # does not hang
+        # stdout must be closed to ensure that communicate() does not hang
         popen.stdout.close()
-        popen.stderr.close()
 
         try:
             popen.wait(JOIN_TIMEOUT)
@@ -395,16 +427,12 @@ class MultiprocessTestRunner:
             worker.wait_stopped(start_time)
 
     def _get_result(self) -> QueueOutput | None:
-        if not any(worker.is_alive() for worker in self.workers):
-            # all worker threads are done: consume pending results
-            try:
-                return self.output.get(timeout=0)
-            except queue.Empty:
-                return None
-
         use_faulthandler = (self.ns.timeout is not None)
         timeout = PROGRESS_UPDATE
-        while True:
+
+        # bpo-46205: check the status of workers every iteration to avoid
+        # waiting forever on an empty queue.
+        while any(worker.is_alive() for worker in self.workers):
             if use_faulthandler:
                 faulthandler.dump_traceback_later(MAIN_PROCESS_TIMEOUT,
                                                   exit=True)
@@ -419,6 +447,12 @@ class MultiprocessTestRunner:
             running = get_running(self.workers)
             if running and not self.ns.pgo:
                 self.log('running: %s' % ', '.join(running))
+
+        # all worker threads are done: consume pending results
+        try:
+            return self.output.get(timeout=0)
+        except queue.Empty:
+            return None
 
     def display_result(self, mp_result: MultiprocessResult) -> None:
         result = mp_result.result
@@ -449,8 +483,6 @@ class MultiprocessTestRunner:
 
         if mp_result.stdout:
             print(mp_result.stdout, flush=True)
-        if mp_result.stderr and not self.ns.pgo:
-            print(mp_result.stderr, file=sys.stderr, flush=True)
 
         if must_stop(mp_result.result, self.ns):
             return True

@@ -84,9 +84,9 @@ considered a package.
 
 All modules have a name.  Subpackage names are separated from their parent
 package name by a dot, akin to Python's standard attribute access syntax.  Thus
-you might have a module called :mod:`sys` and a package called :mod:`email`,
-which in turn has a subpackage called :mod:`email.mime` and a module within
-that subpackage called :mod:`email.mime.text`.
+you might have a package called :mod:`email`, which in turn has a subpackage
+called :mod:`email.mime` and a module within that subpackage called
+:mod:`email.mime.text`.
 
 
 Regular packages
@@ -490,21 +490,19 @@ submodule.  Let's say you have the following directory structure::
     spam/
         __init__.py
         foo.py
-        bar.py
 
-and ``spam/__init__.py`` has the following lines in it::
+and ``spam/__init__.py`` has the following line in it::
 
     from .foo import Foo
-    from .bar import Bar
 
-then executing the following puts a name binding to ``foo`` and ``bar`` in the
+then executing the following puts name bindings for ``foo`` and ``Foo`` in the
 ``spam`` module::
 
     >>> import spam
     >>> spam.foo
     <module 'spam.foo' from '/tmp/imports/spam/foo.py'>
-    >>> spam.bar
-    <module 'spam.bar' from '/tmp/imports/spam/bar.py'>
+    >>> spam.Foo
+    <class 'spam.foo.Foo'>
 
 Given Python's familiar name binding rules this might seem surprising, but
 it's actually a fundamental feature of the import system.  The invariant
@@ -605,22 +603,23 @@ the module.
 
    ``__file__`` is optional (if set, value must be a string). It indicates
    the pathname of the file from which the module was loaded (if
-   loaded from a file), or the pathname of the shared libray file
+   loaded from a file), or the pathname of the shared library file
    for extension modules loaded dynamically from a shared library.
    It might be missing for certain types of modules, such as C
    modules that are statically linked into the interpreter, and the
    import system may opt to leave it unset if it has no semantic
    meaning (e.g. a module loaded from a database).
 
-   If ``__file__`` is set, it may also be appropriate to set the
-   ``__cached__`` attribute which is the path to any compiled version of
+   If ``__file__`` is set then the ``__cached__`` attribute might also
+   be set,  which is the path to any compiled version of
    the code (e.g. byte-compiled file). The file does not need to exist
    to set this attribute; the path can simply point to where the
    compiled file would exist (see :pep:`3147`).
 
-   It is also appropriate to set ``__cached__`` when ``__file__`` is not
+   Note that ``__cached__`` may be set even if ``__file__`` is not
    set.  However, that scenario is quite atypical.  Ultimately, the
-   loader is what makes use of ``__file__`` and/or ``__cached__``.  So
+   loader is what makes use of the module spec provided by the finder
+   (from which ``__file__`` and ``__cached__`` are derived).  So
    if a loader can load from a cached module but otherwise does not load
    from a file, that atypical scenario may be appropriate.
 

@@ -138,7 +138,7 @@ provide the public methods described below.
 
 .. method:: Queue.put_nowait(item)
 
-   Equivalent to ``put(item, False)``.
+   Equivalent to ``put(item, block=False)``.
 
 
 .. method:: Queue.get(block=True, timeout=None)
@@ -201,15 +201,14 @@ Example of how to wait for enqueued tasks to be completed::
             print(f'Finished {item}')
             q.task_done()
 
-    # turn-on the worker thread
+    # Turn-on the worker thread.
     threading.Thread(target=worker, daemon=True).start()
 
-    # send thirty task requests to the worker
+    # Send thirty task requests to the worker.
     for item in range(30):
         q.put(item)
-    print('All task requests sent\n', end='')
 
-    # block until all tasks are done
+    # Block until all tasks are done.
     q.join()
     print('All work completed')
 
@@ -249,7 +248,7 @@ SimpleQueue Objects
 
 .. method:: SimpleQueue.put_nowait(item)
 
-   Equivalent to ``put(item)``, provided for compatibility with
+   Equivalent to ``put(item, block=False)``, provided for compatibility with
    :meth:`Queue.put_nowait`.
 
 

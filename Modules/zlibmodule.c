@@ -82,7 +82,7 @@ typedef struct {
     Bytef *next_posi;
 } _Uint32Window;
 
-/* Initialize the buffer with an inital buffer size.
+/* Initialize the buffer with an initial buffer size.
 
    On success, return value >= 0
    On failure, return value < 0 */
@@ -1269,11 +1269,12 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
         return NULL;
     }
 
+    ENTER_ZLIB(self);
+
     if (PyObject_GetBuffer(self->unconsumed_tail, &data, PyBUF_SIMPLE) == -1) {
+        LEAVE_ZLIB(self);
         return NULL;
     }
-
-    ENTER_ZLIB(self);
 
     self->zst.next_in = data.buf;
     ibuflen = data.len;
@@ -1419,7 +1420,7 @@ zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 }
 
 /*[clinic input]
-zlib.crc32
+zlib.crc32 -> unsigned_int
 
     data: Py_buffer
     value: unsigned_int(bitwise=True) = 0
@@ -1431,12 +1432,10 @@ Compute a CRC-32 checksum of data.
 The returned checksum is an integer.
 [clinic start generated code]*/
 
-static PyObject *
+static unsigned int
 zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
-/*[clinic end generated code: output=63499fa20af7ea25 input=26c3ed430fa00b4c]*/
+/*[clinic end generated code: output=b217562e4fe6d6a6 input=1229cb2fb5ea948a]*/
 {
-    int signed_val;
-
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
     if (data->len > 1024*5) {
@@ -1451,12 +1450,12 @@ zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
             buf += (size_t) UINT_MAX;
             len -= (size_t) UINT_MAX;
         }
-        signed_val = crc32(value, buf, (unsigned int)len);
+        value = crc32(value, buf, (unsigned int)len);
         Py_END_ALLOW_THREADS
     } else {
-        signed_val = crc32(value, data->buf, (unsigned int)data->len);
+        value = crc32(value, data->buf, (unsigned int)data->len);
     }
-    return PyLong_FromUnsignedLong(signed_val & 0xffffffffU);
+    return value;
 }
 
 
@@ -1507,7 +1506,7 @@ PyDoc_STRVAR(zlib_module_documentation,
 "compressobj([level[, ...]]) -- Return a compressor object.\n"
 "crc32(string[, start]) -- Compute a CRC-32 checksum.\n"
 "decompress(string,[wbits],[bufsize]) -- Decompresses a compressed string.\n"
-"decompressobj([wbits[, zdict]]]) -- Return a decompressor object.\n"
+"decompressobj([wbits[, zdict]]) -- Return a decompressor object.\n"
 "\n"
 "'wbits' is window buffer size and container format.\n"
 "Compressor objects support compress() and flush() methods; decompressor\n"

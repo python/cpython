@@ -1,6 +1,7 @@
 /* Python interpreter main program */
 
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_initconfig.h"    // _PyArgv
 #include "pycore_interp.h"        // _PyInterpreterState.sysdict
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
@@ -157,11 +158,10 @@ error:
 static int
 pymain_sys_path_add_path0(PyInterpreterState *interp, PyObject *path0)
 {
-    _Py_IDENTIFIER(path);
     PyObject *sys_path;
     PyObject *sysdict = interp->sysdict;
     if (sysdict != NULL) {
-        sys_path = _PyDict_GetItemIdWithError(sysdict, &PyId_path);
+        sys_path = PyDict_GetItemWithError(sysdict, &_Py_ID(path));
         if (sys_path == NULL && PyErr_Occurred()) {
             return -1;
         }
@@ -213,6 +213,13 @@ pymain_import_readline(const PyConfig *config)
     }
 
     PyObject *mod = PyImport_ImportModule("readline");
+    if (mod == NULL) {
+        PyErr_Clear();
+    }
+    else {
+        Py_DECREF(mod);
+    }
+    mod = PyImport_ImportModule("rlcompleter");
     if (mod == NULL) {
         PyErr_Clear();
     }
@@ -457,7 +464,7 @@ pymain_run_interactive_hook(int *exitcode)
         goto error;
     }
 
-    result = _PyObject_CallNoArg(hook);
+    result = _PyObject_CallNoArgs(hook);
     Py_DECREF(hook);
     if (result == NULL) {
         goto error;
@@ -472,12 +479,23 @@ error:
 }
 
 
+static void
+pymain_set_inspect(PyConfig *config, int inspect)
+{
+    config->inspect = inspect;
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    Py_InspectFlag = inspect;
+_Py_COMP_DIAG_POP
+}
+
+
 static int
 pymain_run_stdin(PyConfig *config)
 {
     if (stdin_is_interactive(config)) {
-        config->inspect = 0;
-        Py_InspectFlag = 0; /* do exit on SystemExit */
+        // do exit on SystemExit
+        pymain_set_inspect(config, 0);
 
         int exitcode;
         if (pymain_run_startup(config, &exitcode)) {
@@ -510,16 +528,14 @@ pymain_repl(PyConfig *config, int *exitcode)
     /* Check this environment variable at the end, to give programs the
        opportunity to set it from Python. */
     if (!config->inspect && _Py_GetEnv(config->use_environment, "PYTHONINSPECT")) {
-        config->inspect = 1;
-        Py_InspectFlag = 1;
+        pymain_set_inspect(config, 1);
     }
 
     if (!(config->inspect && stdin_is_interactive(config) && config_run_code(config))) {
         return;
     }
 
-    config->inspect = 0;
-    Py_InspectFlag = 0;
+    pymain_set_inspect(config, 0);
     if (pymain_run_interactive_hook(exitcode)) {
         return;
     }
@@ -533,11 +549,16 @@ pymain_repl(PyConfig *config, int *exitcode)
 static void
 pymain_run_python(int *exitcode)
 {
+    PyObject *main_importer_path = NULL;
     PyInterpreterState *interp = _PyInterpreterState_GET();
     /* pymain_run_stdin() modify the config */
     PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
 
-    PyObject *main_importer_path = NULL;
+    /* ensure path config is written into global variables */
+    if (_PyStatus_EXCEPTION(_PyPathConfig_UpdateGlobal(config))) {
+        goto error;
+    }
+
     if (config->run_filename != NULL) {
         /* If filename is a package (ex: directory or ZIP file) which contains
            __main__.py, main_importer_path is set to filename and will be
@@ -550,12 +571,15 @@ pymain_run_python(int *exitcode)
         }
     }
 
+    // import readline and rlcompleter before script dir is added to sys.path
+    pymain_import_readline(config);
+
     if (main_importer_path != NULL) {
         if (pymain_sys_path_add_path0(interp, main_importer_path) < 0) {
             goto error;
         }
     }
-    else if (!config->isolated) {
+    else if (!config->safe_path) {
         PyObject *path0 = NULL;
         int res = _PyPathConfig_ComputeSysPath0(&config->argv, &path0);
         if (res < 0) {
@@ -572,7 +596,6 @@ pymain_run_python(int *exitcode)
     }
 
     pymain_header(config);
-    pymain_import_readline(config);
 
     if (config->run_command) {
         *exitcode = pymain_run_command(config->run_command);

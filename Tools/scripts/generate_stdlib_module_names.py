@@ -1,5 +1,6 @@
 # This script lists the names of standard library modules
 # to update Python/stdlib_mod_names.h
+import _imp
 import os.path
 import re
 import subprocess
@@ -11,7 +12,6 @@ SRC_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 STDLIB_PATH = os.path.join(SRC_DIR, 'Lib')
 MODULES_SETUP = os.path.join(SRC_DIR, 'Modules', 'Setup')
 SETUP_PY = os.path.join(SRC_DIR, 'setup.py')
-TEST_EMBED = os.path.join(SRC_DIR, 'Programs', '_testembed')
 
 IGNORE = {
     '__init__',
@@ -21,6 +21,9 @@ IGNORE = {
     # Test modules and packages
     '__hello__',
     '__phello__',
+    '__hello_alias__',
+    '__phello_alias__',
+    '__hello_only__',
     '_ctypes_test',
     '_testbuffer',
     '_testcapi',
@@ -32,7 +35,6 @@ IGNORE = {
     '_xxtestfuzz',
     'distutils.tests',
     'idlelib.idle_test',
-    'lib2to3.tests',
     'test',
     'xxlimited',
     'xxlimited_35',
@@ -51,6 +53,10 @@ WINDOWS_MODULES = (
     'winsound'
 )
 
+# macOS extension modules
+MACOS_MODULES = (
+    '_scproxy',
+)
 
 # Pure Python modules (Lib/*.py)
 def list_python_modules(names):
@@ -110,16 +116,11 @@ def list_modules_setup_extensions(names):
 # List frozen modules of the PyImport_FrozenModules list (Python/frozen.c).
 # Use the "./Programs/_testembed list_frozen" command.
 def list_frozen(names):
-    args = [TEST_EMBED, 'list_frozen']
-    proc = subprocess.run(args, stdout=subprocess.PIPE, text=True)
-    exitcode = proc.returncode
-    if exitcode:
-        cmd = ' '.join(args)
-        print(f"{cmd} failed with exitcode {exitcode}")
-        sys.exit(exitcode)
     submodules = set()
-    for line in proc.stdout.splitlines():
-        name = line.strip()
+    for name in _imp._frozen_module_names():
+        # To skip __hello__, __hello_alias__ and etc.
+        if name.startswith('__'):
+            continue
         if '.' in name:
             submodules.add(name)
         else:
@@ -133,7 +134,7 @@ def list_frozen(names):
 
 
 def list_modules():
-    names = set(sys.builtin_module_names) | set(WINDOWS_MODULES)
+    names = set(sys.builtin_module_names) | set(WINDOWS_MODULES) | set(MACOS_MODULES)
     list_modules_setup_extensions(names)
     list_setup_extensions(names)
     list_packages(names)

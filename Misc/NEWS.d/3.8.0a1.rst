@@ -3355,7 +3355,7 @@ if the ``PATH`` environment variable is not set.
 
 On Windows, fix multiprocessing.Connection for very large read: fix
 _winapi.PeekNamedPipe() and _winapi.ReadFile() for read larger than INT_MAX
-(usually 2^31-1).
+(usually ``2**31-1``).
 
 ..
 
@@ -4617,7 +4617,7 @@ Based on patch by c-fos.
 .. section: Library
 
 Remove HMAC default to md5 marked for removal in 3.8 (removal originally
-planned in 3.6, bump to 3.8 in gh-7062).
+planned in 3.6, bump to 3.8 in PR 7062).
 
 ..
 

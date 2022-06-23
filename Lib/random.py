@@ -50,7 +50,7 @@ from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from math import tau as TWOPI, floor as _floor, isfinite as _isfinite
 from os import urandom as _urandom
-from _collections_abc import Set as _Set, Sequence as _Sequence
+from _collections_abc import Sequence as _Sequence
 from operator import index as _index
 from itertools import accumulate as _accumulate, repeat as _repeat
 from bisect import bisect as _bisect
@@ -233,10 +233,8 @@ class Random(_random.Random):
                 break
 
     def _randbelow_with_getrandbits(self, n):
-        "Return a random int in the range [0,n).  Returns 0 if n==0."
+        "Return a random int in the range [0,n).  Defined for n > 0."
 
-        if not n:
-            return 0
         getrandbits = self.getrandbits
         k = n.bit_length()  # don't use (n-1) here because n can be 1
         r = getrandbits(k)  # 0 <= r < 2**k
@@ -245,7 +243,7 @@ class Random(_random.Random):
         return r
 
     def _randbelow_without_getrandbits(self, n, maxsize=1<<BPF):
-        """Return a random int in the range [0,n).  Returns 0 if n==0.
+        """Return a random int in the range [0,n).  Defined for n > 0.
 
         The implementation does not use getrandbits, but only random.
         """
@@ -256,8 +254,6 @@ class Random(_random.Random):
                 "enough bits to choose from a population range this large.\n"
                 "To remove the range limitation, add a getrandbits() method.")
             return _floor(random() * n)
-        if n == 0:
-            return 0
         rem = maxsize % n
         limit = (maxsize - rem) / maxsize   # int(limit * maxsize) % n == 0
         r = random()
@@ -286,67 +282,34 @@ class Random(_random.Random):
     ## -------------------- integer methods  -------------------
 
     def randrange(self, start, stop=None, step=_ONE):
-        """Choose a random item from range(start, stop[, step]).
+        """Choose a random item from range(stop) or range(start, stop[, step]).
 
-        This fixes the problem with randint() which includes the
-        endpoint; in Python this is usually not what you want.
+        Roughly equivalent to ``choice(range(start, stop, step))`` but
+        supports arbitrarily large ranges and is optimized for common cases.
 
         """
 
         # This code is a bit messy to make it fast for the
         # common case while still doing adequate error checking.
-        try:
-            istart = _index(start)
-        except TypeError:
-            istart = int(start)
-            if istart != start:
-                _warn('randrange() will raise TypeError in the future',
-                      DeprecationWarning, 2)
-                raise ValueError("non-integer arg 1 for randrange()")
-            _warn('non-integer arguments to randrange() have been deprecated '
-                  'since Python 3.10 and will be removed in a subsequent '
-                  'version',
-                  DeprecationWarning, 2)
+        istart = _index(start)
         if stop is None:
             # We don't check for "step != 1" because it hasn't been
             # type checked and converted to an integer yet.
             if step is not _ONE:
-                raise TypeError('Missing a non-None stop argument')
+                raise TypeError("Missing a non-None stop argument")
             if istart > 0:
                 return self._randbelow(istart)
             raise ValueError("empty range for randrange()")
 
-        # stop argument supplied.
-        try:
-            istop = _index(stop)
-        except TypeError:
-            istop = int(stop)
-            if istop != stop:
-                _warn('randrange() will raise TypeError in the future',
-                      DeprecationWarning, 2)
-                raise ValueError("non-integer stop for randrange()")
-            _warn('non-integer arguments to randrange() have been deprecated '
-                  'since Python 3.10 and will be removed in a subsequent '
-                  'version',
-                  DeprecationWarning, 2)
+        # Stop argument supplied.
+        istop = _index(stop)
         width = istop - istart
-        try:
-            istep = _index(step)
-        except TypeError:
-            istep = int(step)
-            if istep != step:
-                _warn('randrange() will raise TypeError in the future',
-                      DeprecationWarning, 2)
-                raise ValueError("non-integer step for randrange()")
-            _warn('non-integer arguments to randrange() have been deprecated '
-                  'since Python 3.10 and will be removed in a subsequent '
-                  'version',
-                  DeprecationWarning, 2)
+        istep = _index(step)
         # Fast path.
         if istep == 1:
             if width > 0:
                 return istart + self._randbelow(width)
-            raise ValueError("empty range for randrange() (%d, %d, %d)" % (istart, istop, width))
+            raise ValueError(f"empty range in randrange({start}, {stop})")
 
         # Non-unit step argument supplied.
         if istep > 0:
@@ -356,7 +319,7 @@ class Random(_random.Random):
         else:
             raise ValueError("zero step for randrange()")
         if n <= 0:
-            raise ValueError("empty range for randrange()")
+            raise ValueError(f"empty range in randrange({start}, {stop}, {step})")
         return istart + istep * self._randbelow(n)
 
     def randint(self, a, b):
@@ -370,7 +333,8 @@ class Random(_random.Random):
 
     def choice(self, seq):
         """Choose a random element from a non-empty sequence."""
-        # raises IndexError if seq is empty
+        if not seq:
+            raise IndexError('Cannot choose from an empty sequence')
         return seq[self._randbelow(len(seq))]
 
     def shuffle(self, x):
@@ -541,7 +505,7 @@ class Random(_random.Random):
             low, high = high, low
         return low + (high - low) * _sqrt(u * c)
 
-    def normalvariate(self, mu, sigma):
+    def normalvariate(self, mu=0.0, sigma=1.0):
         """Normal distribution.
 
         mu is the mean, and sigma is the standard deviation.
@@ -562,7 +526,7 @@ class Random(_random.Random):
                 break
         return mu + z * sigma
 
-    def gauss(self, mu, sigma):
+    def gauss(self, mu=0.0, sigma=1.0):
         """Gaussian distribution.
 
         mu is the mean, and sigma is the standard deviation.  This is

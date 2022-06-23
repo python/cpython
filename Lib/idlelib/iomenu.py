@@ -9,8 +9,10 @@ from tkinter import filedialog
 from tkinter import messagebox
 from tkinter.simpledialog import askstring
 
-import idlelib
 from idlelib.config import idleConf
+from idlelib.util import py_extensions
+
+py_extensions = ' '.join("*"+ext for ext in py_extensions)
 
 encoding = 'utf-8'
 if sys.platform == 'win32':
@@ -18,8 +20,7 @@ if sys.platform == 'win32':
 else:
     errors = 'surrogateescape'
 
-
-
+    
 class IOBinding:
 # One instance per editor Window so methods know which to save, close.
 # Open returns focus to self.editwin if aborted.
@@ -348,7 +349,7 @@ class IOBinding:
     savedialog = None
 
     filetypes = (
-        ("Python files", "*.py *.pyw", "TEXT"),
+        ("Python files", py_extensions, "TEXT"),
         ("Text files", "*.txt", "TEXT"),
         ("All files", "*"),
         )

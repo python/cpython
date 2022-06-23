@@ -475,6 +475,57 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(s.substitute(dict(who='tim', what='ham')),
                          'tim likes to eat a bag of ham worth $100')
 
+    def test_is_valid(self):
+        eq = self.assertEqual
+        s = Template('$who likes to eat a bag of ${what} worth $$100')
+        self.assertTrue(s.is_valid())
+
+        s = Template('$who likes to eat a bag of ${what} worth $100')
+        self.assertFalse(s.is_valid())
+
+        # if the pattern has an unrecognized capture group,
+        # it should raise ValueError like substitute and safe_substitute do
+        class BadPattern(Template):
+            pattern = r"""
+            (?P<badname>.*)                  |
+            (?P<escaped>@{2})                   |
+            @(?P<named>[_a-z][._a-z0-9]*)       |
+            @{(?P<braced>[_a-z][._a-z0-9]*)}    |
+            (?P<invalid>@)                      |
+            """
+        s = BadPattern('@bag.foo.who likes to eat a bag of @bag.what')
+        self.assertRaises(ValueError, s.is_valid)
+
+    def test_get_identifiers(self):
+        eq = self.assertEqual
+        raises = self.assertRaises
+        s = Template('$who likes to eat a bag of ${what} worth $$100')
+        ids = s.get_identifiers()
+        eq(ids, ['who', 'what'])
+
+        # repeated identifiers only included once
+        s = Template('$who likes to eat a bag of ${what} worth $$100; ${who} likes to eat a bag of $what worth $$100')
+        ids = s.get_identifiers()
+        eq(ids, ['who', 'what'])
+
+        # invalid identifiers are ignored
+        s = Template('$who likes to eat a bag of ${what} worth $100')
+        ids = s.get_identifiers()
+        eq(ids, ['who', 'what'])
+
+        # if the pattern has an unrecognized capture group,
+        # it should raise ValueError like substitute and safe_substitute do
+        class BadPattern(Template):
+            pattern = r"""
+            (?P<badname>.*)                  |
+            (?P<escaped>@{2})                   |
+            @(?P<named>[_a-z][._a-z0-9]*)       |
+            @{(?P<braced>[_a-z][._a-z0-9]*)}    |
+            (?P<invalid>@)                      |
+            """
+        s = BadPattern('@bag.foo.who likes to eat a bag of @bag.what')
+        self.assertRaises(ValueError, s.get_identifiers)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -12,7 +12,7 @@ Unix versions.
 
 Group database entries are reported as a tuple-like object, whose attributes
 correspond to the members of the ``group`` structure (Attribute field below, see
-``<pwd.h>``):
+``<grp.h>``):
 
 +-------+-----------+---------------------------------+
 | Index | Attribute | Meaning                         |

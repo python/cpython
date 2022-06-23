@@ -3,6 +3,10 @@
 /* New version supporting byte order, alignment and size options,
    character strings, and unsigned numbers */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
@@ -33,7 +37,7 @@ get_struct_state(PyObject *module)
 static struct PyModuleDef _structmodule;
 
 #define get_struct_state_structinst(self) \
-    (get_struct_state(_PyType_GetModuleByDef(Py_TYPE(self), &_structmodule)))
+    (get_struct_state(PyType_GetModuleByDef(Py_TYPE(self), &_structmodule)))
 #define get_struct_state_iterinst(self) \
     (get_struct_state(PyType_GetModule(Py_TYPE(self))))
 
@@ -298,9 +302,7 @@ static PyObject *
 unpack_halffloat(const char *p,  /* start of 2-byte string */
                  int le)         /* true for little-endian, false for big-endian */
 {
-    double x;
-
-    x = _PyFloat_Unpack2((unsigned char *)p, le);
+    double x = PyFloat_Unpack2(p, le);
     if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
@@ -319,7 +321,7 @@ pack_halffloat(_structmodulestate *state,
                         "required argument is not a float");
         return -1;
     }
-    return _PyFloat_Pack2(x, (unsigned char *)p, le);
+    return PyFloat_Pack2(x, p, le);
 }
 
 static PyObject *
@@ -328,7 +330,7 @@ unpack_float(const char *p,  /* start of 4-byte string */
 {
     double x;
 
-    x = _PyFloat_Unpack4((unsigned char *)p, le);
+    x = PyFloat_Unpack4(p, le);
     if (x == -1.0 && PyErr_Occurred())
         return NULL;
     return PyFloat_FromDouble(x);
@@ -340,7 +342,7 @@ unpack_double(const char *p,  /* start of 8-byte string */
 {
     double x;
 
-    x = _PyFloat_Unpack8((unsigned char *)p, le);
+    x = PyFloat_Unpack8(p, le);
     if (x == -1.0 && PyErr_Occurred())
         return NULL;
     return PyFloat_FromDouble(x);
@@ -974,7 +976,7 @@ bp_float(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
                         "required argument is not a float");
         return -1;
     }
-    return _PyFloat_Pack4(x, (unsigned char *)p, 0);
+    return PyFloat_Pack4(x, p, 0);
 }
 
 static int
@@ -986,7 +988,7 @@ bp_double(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
                         "required argument is not a float");
         return -1;
     }
-    return _PyFloat_Pack8(x, (unsigned char *)p, 0);
+    return PyFloat_Pack8(x, p, 0);
 }
 
 static int
@@ -1189,7 +1191,7 @@ lp_float(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
                         "required argument is not a float");
         return -1;
     }
-    return _PyFloat_Pack4(x, (unsigned char *)p, 1);
+    return PyFloat_Pack4(x, p, 1);
 }
 
 static int
@@ -1201,7 +1203,7 @@ lp_double(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
                         "required argument is not a float");
         return -1;
     }
-    return _PyFloat_Pack8(x, (unsigned char *)p, 1);
+    return PyFloat_Pack8(x, p, 1);
 }
 
 static formatdef lilendian_table[] = {
@@ -1475,7 +1477,6 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
         if (format == NULL)
             return -1;
     }
-    /* XXX support buffer interface, too */
     else {
         Py_INCREF(format);
     }
@@ -2048,8 +2049,8 @@ s_sizeof(PyStructObject *self, void *unused)
 
 static struct PyMethodDef s_methods[] = {
     STRUCT_ITER_UNPACK_METHODDEF
-    {"pack",            (PyCFunction)(void(*)(void))s_pack, METH_FASTCALL, s_pack__doc__},
-    {"pack_into",       (PyCFunction)(void(*)(void))s_pack_into, METH_FASTCALL, s_pack_into__doc__},
+    {"pack",            _PyCFunction_CAST(s_pack), METH_FASTCALL, s_pack__doc__},
+    {"pack_into",       _PyCFunction_CAST(s_pack_into), METH_FASTCALL, s_pack_into__doc__},
     STRUCT_UNPACK_METHODDEF
     STRUCT_UNPACK_FROM_METHODDEF
     {"__sizeof__",      (PyCFunction)s_sizeof, METH_NOARGS, s_sizeof__doc__},
@@ -2060,8 +2061,6 @@ static PyMemberDef s_members[] = {
     {"__weaklistoffset__", T_PYSSIZET, offsetof(PyStructObject, weakreflist), READONLY},
     {NULL}  /* sentinel */
 };
-
-#define OFF(x) offsetof(PyStructObject, x)
 
 static PyGetSetDef s_getsetlist[] = {
     {"format", (getter)s_get_format, (setter)NULL, "struct format string", NULL},
@@ -2299,8 +2298,8 @@ static struct PyMethodDef module_functions[] = {
     _CLEARCACHE_METHODDEF
     CALCSIZE_METHODDEF
     ITER_UNPACK_METHODDEF
-    {"pack",            (PyCFunction)(void(*)(void))pack, METH_FASTCALL,   pack_doc},
-    {"pack_into",       (PyCFunction)(void(*)(void))pack_into, METH_FASTCALL,   pack_into_doc},
+    {"pack",            _PyCFunction_CAST(pack), METH_FASTCALL,   pack_doc},
+    {"pack_into",       _PyCFunction_CAST(pack_into), METH_FASTCALL,   pack_into_doc},
     UNPACK_METHODDEF
     UNPACK_FROM_METHODDEF
     {NULL,       NULL}          /* sentinel */
