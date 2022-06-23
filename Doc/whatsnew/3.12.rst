@@ -90,6 +90,13 @@ New Modules
 Improved Modules
 ================
 
+os
+--
+
+* Add :data:`os.PIDFD_NONBLOCK` to open a file descriptor
+  for a process with :func:`os.pidfd_open` in non-blocking mode.
+  (Contributed by Kumar Aditya in :gh:`93312`.)
+
 
 Optimizations
 =============
@@ -99,13 +106,87 @@ Optimizations
   (Contributed by Inada Naoki in :gh:`92536`.)
 
 
+CPython bytecode changes
+========================
+
+* Removed the :opcode:`LOAD_METHOD` instruction. It has been merged into
+  :opcode:`LOAD_ATTR`. :opcode:`LOAD_ATTR` will now behave like the old
+  :opcode:`LOAD_METHOD` instruction if the low bit of its oparg is set.
+  (Contributed by Ken Jin in :gh:`93429`.)
+
+
 Deprecated
 ==========
 
 
+Pending Removal in Python 3.13
+==============================
+
+The following modules and APIs have been deprecated in earlier Python releases,
+and will be removed in Python 3.13.
+
+Modules (see :pep:`594`):
+
+* :mod:`aifc`
+* :mod:`audioop`
+* :mod:`cgi`
+* :mod:`cgitb`
+* :mod:`chunk`
+* :mod:`crypt`
+* :mod:`imghdr`
+* :mod:`mailcap`
+* :mod:`msilib`
+* :mod:`nis`
+* :mod:`nntplib`
+* :mod:`ossaudiodev`
+* :mod:`pipes`
+* :mod:`sndhdr`
+* :mod:`spwd`
+* :mod:`sunau`
+* :mod:`telnetlib`
+* :mod:`uu`
+* :mod:`xdrlib`
+
+APIs:
+
+* :class:`configparser.LegacyInterpolation` (:gh:`90765`)
+* :func:`locale.getdefaultlocale` (:gh:`90817`)
+* :meth:`turtle.RawTurtle.settiltangle` (:gh:`50096`)
+* :func:`unittest.findTestCases` (:gh:`50096`)
+* :func:`unittest.makeSuite` (:gh:`50096`)
+* :func:`unittest.getTestCaseNames` (:gh:`50096`)
+* :class:`webbrowser.MacOSX` (:gh:`86421`)
+
+Pending Removal in Future Versions
+==================================
+
+The following APIs were deprecated in earlier Python versions and will be removed,
+although there is currently no date scheduled for their removal.
+
+* :class:`typing.Text` (:gh:`92332`)
+
+* Currently Python accepts numeric literals immediately followed by keywords,
+  for example ``0in x``, ``1or x``, ``0if 1else 2``.  It allows confusing
+  and ambiguous expressions like ``[0x1for x in y]`` (which can be
+  interpreted as ``[0x1 for x in y]`` or ``[0x1f or x in y]``).
+  A syntax warning is raised if the numeric literal is
+  immediately followed by one of keywords :keyword:`and`, :keyword:`else`,
+  :keyword:`for`, :keyword:`if`, :keyword:`in`, :keyword:`is` and :keyword:`or`.
+  In a future release it will be changed to a syntax error. (:gh:`87999`)
+
 
 Removed
 =======
+
+* Several names deprecated in the :mod:`configparser` way back in 3.2 have
+  been removed per :gh:`89336`:
+
+  * :class:`configparser.ParsingError` no longer has a ``filename`` attribute
+    or argument. Use the ``source`` attribute and argument instead.
+  * :mod:`configparser` no longer has a ``SafeConfigParser`` class. Use the
+    shorter :class:`~configparser.ConfigParser` name instead.
+  * :class:`configparser.ConfigParser` no longer has a ``readfp`` method.
+    Use :meth:`~configparser.ConfigParser.read_file` instead.
 
 * The following undocumented :mod:`sqlite3` features, deprecated in Python
   3.10, are now removed:
@@ -113,7 +194,19 @@ Removed
   * ``sqlite3.enable_shared_cache()``
   * ``sqlite3.OptimizedUnicode``
 
+  If a shared cache must be used, open the database in URI mode using the
+  ``cache=shared`` query parameter.
+
+  The ``sqlite3.OptimizedUnicode`` text factory has been an alias for
+  :class:`str` since Python 3.3. Code that previously set the text factory to
+  ``OptimizedUnicode`` can either use ``str`` explicitly, or rely on the
+  default value which is also ``str``.
+
   (Contributed by Erlend E. Aasland in :gh:`92548`)
+
+* The ``--experimental-isolated-subinterpreters`` configure flag
+  (and corresponding ``EXPERIMENTAL_ISOLATED_SUBINTERPRETERS``)
+  have been removed.
 
 
 Porting to Python 3.12
@@ -140,9 +233,20 @@ Changes in the Python API
   select from a larger range than ``randrange(10**25)``.
   (Originally suggested by Serhiy Storchaka gh-86388.)
 
+* :class:`argparse.ArgumentParser` changed encoding and error handler
+  for reading arguments from file (e.g. ``fromfile_prefix_chars`` option)
+  from default text encoding (e.g. :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`)
+  to :term:`filesystem encoding and error handler`.
+  Argument files should be encoded in UTF-8 instead of ANSI Codepage on Windows.
+
 
 Build Changes
 =============
+
+* ``va_start()`` with two parameters, like ``va_start(args, format),``
+  is now required to build Python.
+  ``va_start()`` is no longer called with a single parameter.
+  (Contributed by Kumar Aditya in :gh:`93207`.)
 
 
 C API Changes
@@ -150,6 +254,11 @@ C API Changes
 
 New Features
 ------------
+
+* Added the new limited C API function :c:func:`PyType_FromMetaclass`,
+  which generalizes the existing :c:func:`PyType_FromModuleAndSpec` using
+  an additional metaclass argument.
+  (Contributed by Wenzel Jakob in :gh:`93012`.)
 
 Porting to Python 3.12
 ----------------------
@@ -163,6 +272,35 @@ Porting to Python 3.12
 
 Deprecated
 ----------
+
+* Deprecate global configuration variable:
+
+  * :c:var:`Py_DebugFlag`: use :c:member:`PyConfig.parser_debug`
+  * :c:var:`Py_VerboseFlag`: use :c:member:`PyConfig.verbose`
+  * :c:var:`Py_QuietFlag`: use :c:member:`PyConfig.quiet`
+  * :c:var:`Py_InteractiveFlag`: use :c:member:`PyConfig.interactive`
+  * :c:var:`Py_InspectFlag`: use :c:member:`PyConfig.inspect`
+  * :c:var:`Py_OptimizeFlag`: use :c:member:`PyConfig.optimization_level`
+  * :c:var:`Py_NoSiteFlag`: use :c:member:`PyConfig.site_import`
+  * :c:var:`Py_BytesWarningFlag`: use :c:member:`PyConfig.bytes_warning`
+  * :c:var:`Py_FrozenFlag`: use :c:member:`PyConfig.pathconfig_warnings`
+  * :c:var:`Py_IgnoreEnvironmentFlag`: use :c:member:`PyConfig.use_environment`
+  * :c:var:`Py_DontWriteBytecodeFlag`: use :c:member:`PyConfig.write_bytecode`
+  * :c:var:`Py_NoUserSiteDirectory`: use :c:member:`PyConfig.user_site_directory`
+  * :c:var:`Py_UnbufferedStdioFlag`: use :c:member:`PyConfig.buffered_stdio`
+  * :c:var:`Py_HashRandomizationFlag`: use :c:member:`PyConfig.use_hash_seed`
+    and :c:member:`PyConfig.hash_seed`
+  * :c:var:`Py_IsolatedFlag`: use :c:member:`PyConfig.isolated`
+  * :c:var:`Py_LegacyWindowsFSEncodingFlag`: use :c:member:`PyConfig.legacy_windows_fs_encoding`
+  * :c:var:`Py_LegacyWindowsStdioFlag`: use :c:member:`PyConfig.legacy_windows_stdio`
+  * :c:var:`Py_FileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`
+  * :c:var:`Py_FileSystemDefaultEncodeErrors`: use :c:member:`PyConfig.filesystem_errors`
+  * :c:var:`Py_UTF8Mode`: use :c:member:`PyPreConfig.utf8_mode` (see :c:func:`Py_PreInitialize`)
+
+  The :c:func:`Py_InitializeFromConfig` API should be used with
+  :c:type:`PyConfig` instead.
+  (Contributed by Victor Stinner in :gh:`77782`.)
+
 
 Removed
 -------

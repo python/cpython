@@ -278,6 +278,8 @@ Effects of a debug build:
 * Add ``d`` to :data:`sys.abiflags`.
 * Add :func:`sys.gettotalrefcount` function.
 * Add :option:`-X showrefcount <-X>` command line option.
+* Add :option:`-d` command line option and :envvar:`PYTHONDEBUG` environment
+  variable to debug the parser.
 * Add support for the ``__lltrace__`` variable: enable low-level tracing in the
   bytecode evaluation loop if the variable is defined.
 * Install :ref:`debug hooks on memory allocators <default-memory-allocators>`
@@ -747,6 +749,17 @@ Compiler flags
    extensions.  Use it when a compiler flag should *not* be part of the
    distutils :envvar:`CFLAGS` once Python is installed (:issue:`21121`).
 
+   In particular, :envvar:`CFLAGS` should not contain:
+
+   * the compiler flag `-I` (for setting the search path for include files).
+     The `-I` flags are processed from left to right, and any flags in
+     :envvar:`CFLAGS` would take precedence over user- and package-supplied `-I`
+     flags.
+
+   * hardening flags such as `-Werror` because distributions cannot control
+     whether packages installed by users conform to such heightened
+     standards.
+
    .. versionadded:: 3.5
 
 .. envvar:: EXTRA_CFLAGS
@@ -858,6 +871,13 @@ Linker flags
    :envvar:`LDFLAGS_NODIST` is used in the same manner as
    :envvar:`CFLAGS_NODIST`.  Use it when a linker flag should *not* be part of
    the distutils :envvar:`LDFLAGS` once Python is installed (:issue:`35257`).
+
+   In particular, :envvar:`LDFLAGS` should not contain:
+
+   * the compiler flag `-L` (for setting the search path for libraries).
+     The `-L` flags are processed from left to right, and any flags in
+     :envvar:`LDFLAGS` would take precedence over user- and package-supplied `-L`
+     flags.
 
 .. envvar:: CONFIGURE_LDFLAGS_NODIST
 

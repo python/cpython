@@ -1,7 +1,9 @@
 """Deep freeze
 
-The script is executed by _bootstrap_python interpreter. Shared library
-extension modules are not available.
+The script may be executed by _bootstrap_python interpreter.
+Shared library extension modules are not available in that case.
+On Windows, and in cross-compilation cases, it is executed
+by Python 3.10, and 3.11 features are not available.
 """
 import argparse
 import ast
@@ -19,6 +21,9 @@ from generate_global_objects import get_identifiers_and_strings
 
 verbose = False
 identifiers, strings = get_identifiers_and_strings()
+
+# This must be kept in sync with opcode.py
+RESUME = 151
 
 def isprintable(b: bytes) -> bool:
     return all(0x20 <= c < 0x7f for c in b)
@@ -115,6 +120,7 @@ class Printer:
         self.write('#include "Python.h"')
         self.write('#include "internal/pycore_gc.h"')
         self.write('#include "internal/pycore_code.h"')
+        self.write('#include "internal/pycore_frame.h"')
         self.write('#include "internal/pycore_long.h"')
         self.write("")
 
@@ -250,9 +256,11 @@ class Printer:
             self.write(f".co_exceptiontable = {co_exceptiontable},")
             self.field(code, "co_flags")
             self.write(".co_warmup = QUICKENING_INITIAL_WARMUP_VALUE,")
+            self.write("._co_linearray_entry_size = 0,")
             self.field(code, "co_argcount")
             self.field(code, "co_posonlyargcount")
             self.field(code, "co_kwonlyargcount")
+            self.write(f".co_framesize = {code.co_stacksize + len(localsplusnames)} + FRAME_SPECIALS_SIZE,")
             self.field(code, "co_stacksize")
             self.field(code, "co_firstlineno")
             self.write(f".co_nlocalsplus = {len(localsplusnames)},")
@@ -266,7 +274,12 @@ class Printer:
             self.write(f".co_name = {co_name},")
             self.write(f".co_qualname = {co_qualname},")
             self.write(f".co_linetable = {co_linetable},")
+            self.write("._co_linearray = NULL,")
             self.write(f".co_code_adaptive = {co_code_adaptive},")
+            for i, op in enumerate(code.co_code[::2]):
+                if op == RESUME:
+                    self.write(f"._co_firsttraceable = {i},")
+                    break
         name_as_code = f"(PyCodeObject *)&{name}"
         self.deallocs.append(f"_PyStaticCode_Dealloc({name_as_code});")
         self.interns.append(f"_PyStaticCode_InternStrings({name_as_code})")

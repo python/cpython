@@ -1051,7 +1051,13 @@ possible, while any potentially slow operations (such as sending an email via
       want to override this if you want to use blocking behaviour, or a
       timeout, or a customized queue implementation.
 
+   .. attribute:: listener
 
+      When created via configuration using :func:`~logging.config.dictConfig`, this
+      attribute will contain a :class:`QueueListener` instance for use with this
+      handler. Otherwise, it will be ``None``.
+
+      .. versionadded:: 3.12
 
 .. _queue-listener:
 

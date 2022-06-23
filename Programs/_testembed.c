@@ -1550,6 +1550,46 @@ static int test_init_setpythonhome(void)
 }
 
 
+static int test_init_is_python_build(void)
+{
+    // gh-91985: in-tree builds fail to check for build directory landmarks
+    // under the effect of 'home' or PYTHONHOME environment variable.
+    char *env = getenv("TESTHOME");
+    if (!env) {
+        error("missing TESTHOME env var");
+        return 1;
+    }
+    wchar_t *home = Py_DecodeLocale(env, NULL);
+    if (home == NULL) {
+        error("failed to decode TESTHOME");
+        return 1;
+    }
+
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
+    config_set_program_name(&config);
+    config_set_string(&config, &config.home, home);
+    PyMem_RawFree(home);
+    putenv("TESTHOME=");
+
+    // Use an impossible value so we can detect whether it isn't updated
+    // during initialization.
+    config._is_python_build = INT_MAX;
+    env = getenv("NEGATIVE_ISPYTHONBUILD");
+    if (env && strcmp(env, "0") != 0) {
+        config._is_python_build++;
+    }
+    init_from_config_clear(&config);
+    Py_Finalize();
+    // Second initialization
+    config._is_python_build = -1;
+    init_from_config_clear(&config);
+    dump_config();  // home and _is_python_build are cached in _Py_path_config
+    Py_Finalize();
+    return 0;
+}
+
+
 static int test_init_warnoptions(void)
 {
     putenv("PYTHONWARNINGS=ignore:::env1,ignore:::env2");
@@ -1965,6 +2005,7 @@ static struct TestCase TestCases[] = {
     {"test_init_setpath", test_init_setpath},
     {"test_init_setpath_config", test_init_setpath_config},
     {"test_init_setpythonhome", test_init_setpythonhome},
+    {"test_init_is_python_build", test_init_is_python_build},
     {"test_init_warnoptions", test_init_warnoptions},
     {"test_init_set_config", test_init_set_config},
     {"test_run_main", test_run_main},
