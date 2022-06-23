@@ -418,7 +418,7 @@ static void
 frame_stack_pop(PyFrameObject *f)
 {
     PyObject *v = _PyFrame_StackPop(f->f_frame);
-    Py_DECREF(v);
+    Py_XDECREF(v);
 }
 
 static PyFrameState
