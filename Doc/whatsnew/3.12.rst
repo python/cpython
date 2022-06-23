@@ -233,6 +233,12 @@ Changes in the Python API
   select from a larger range than ``randrange(10**25)``.
   (Originally suggested by Serhiy Storchaka gh-86388.)
 
+* :class:`argparse.ArgumentParser` changed encoding and error handler
+  for reading arguments from file (e.g. ``fromfile_prefix_chars`` option)
+  from default text encoding (e.g. :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`)
+  to :term:`filesystem encoding and error handler`.
+  Argument files should be encoded in UTF-8 instead of ANSI Codepage on Windows.
+
 
 Build Changes
 =============
