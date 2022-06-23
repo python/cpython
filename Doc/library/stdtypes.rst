@@ -1644,11 +1644,10 @@ expression support in the :mod:`re` module).
 
 .. method:: str.endswith(suffix[, start[, end]])
 
-   Return ``True`` if the string ends with the specified *suffix*, otherwise return
-   ``False``.  *suffix* can also be a tuple of suffixes to look for.
-
-   Optional arguments *start* and *end* are interpreted as in slice notation,
-   and restrict the comparison to the range [*start*, *end*].
+   Return ``True`` if the range [*start*, *end*] ends with the specified
+   *suffix*, otherwise return ``False``. *suffix* can also be a tuple of
+   suffixes to look for.  Optional arguments *start* and *end* are
+   interpreted as in slice notation.
 
 
 .. method:: str.expandtabs(tabsize=8)
@@ -2137,11 +2136,10 @@ expression support in the :mod:`re` module).
 
 .. method:: str.startswith(prefix[, start[, end]])
 
-   Return ``True`` if string starts with the *prefix*, otherwise return ``False``.
-   *prefix* can also be a tuple of prefixes to look for.
-
-   Optional arguments *start* and *end* are interpreted as in slice notation,
-   and restrict the comparison to the range [*start*, *end*].
+   Return ``True`` if the range [*start*, *end*] starts with the specified
+   *prefix*, otherwise return ``False``. *prefix* can also be a tuple of
+   prefixes to look for.  Optional arguments *start* and *end* are
+   interpreted as in slice notation.
 
 
 .. method:: str.strip([chars])
@@ -2779,12 +2777,10 @@ arbitrary binary data.
 .. method:: bytes.endswith(suffix[, start[, end]])
             bytearray.endswith(suffix[, start[, end]])
 
-   Return ``True`` if the binary data ends with the specified *suffix*,
-   otherwise return ``False``.  *suffix* can also be a tuple of suffixes to
-   look for.
-
-   Optional arguments *start* and *end* are interpreted as in slice notation,
-   and restrict the comparison to the range [*start*, *end*].
+   Return ``True`` if the binary data in the range [*start*, *end*]
+   ends with the specified *suffix*, otherwise return ``False``.
+   *suffix* can also be a tuple of suffixes to look for.  Optional
+   arguments *start* and *end* are interpreted as in slice notation.
 
    The suffix(es) to search for may be any :term:`bytes-like object`.
 
@@ -2921,12 +2917,10 @@ arbitrary binary data.
 .. method:: bytes.startswith(prefix[, start[, end]])
             bytearray.startswith(prefix[, start[, end]])
 
-   Return ``True`` if the binary data starts with the specified *prefix*,
-   otherwise return ``False``.  *prefix* can also be a tuple of prefixes to
-   look for.
-
-   Optional arguments *start* and *end* are interpreted as in slice notation,
-   and restrict the comparison to the range [*start*, *end*].
+   Return ``True`` if the binary data in the range [*start*, *end*]
+   starts with the specified *prefix*, otherwise return ``False``.
+   *prefix* can also be a tuple of prefixes to look for.  Optional
+   arguments *start* and *end* are interpreted as in slice notation.
 
    The prefix(es) to search for may be any :term:`bytes-like object`.
 
