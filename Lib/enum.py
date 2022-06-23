@@ -1205,21 +1205,21 @@ class Enum(metaclass=EnumType):
     def __init__(self, *args, **kwds):
         pass
 
-    def _generate_next_value_(name, start, count, last_value):
+    def _generate_next_value_(name, start, count, last_values):
         """
         Generate the next value when not given.
 
         name: the name of the member
         start: the initial start value or None
         count: the number of existing members
-        last_value: the list of values assigned
+        last_values: the list of values assigned
         """
-        if not last_value:
+        if not last_values:
             return start
         try:
-            last = last_value[-1]
-            last_value.sort()
-            if last == last_value[-1]:
+            last = last_values[-1]
+            last_values.sort()
+            if last == last_values[-1]:
                 # no difference between old and new methods
                 return last + 1
             else:
@@ -1233,7 +1233,7 @@ class Enum(metaclass=EnumType):
                     DeprecationWarning,
                     stacklevel=3,
                     )
-            for v in last_value:
+            for v in last_values:
                 try:
                     return v + 1
                 except TypeError:
@@ -1389,7 +1389,7 @@ class Flag(Enum, boundary=STRICT):
         name: the name of the member
         start: the initial start value or None
         count: the number of existing members
-        last_value: the last value assigned or None
+        last_values: the last value assigned or None
         """
         if not count:
             return start if start is not None else 1
