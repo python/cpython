@@ -1029,10 +1029,11 @@ if 1:
     @support.cpython_only
     def test_uses_slice_instructions(self):
 
-        def check_slice_ops(func, expected):
-            actual = len(
-                [_ for instr in dis.Bytecode(func) if "SLICE" in instr.opname]
-            )
+        def check_op_count(func, op, expected):
+            actual = 0
+            for instr in dis.Bytecode(func):
+                 if instr.opname == op:
+                     actual += 1
             self.assertEqual(actual, expected)
 
         def load():
@@ -1050,10 +1051,15 @@ if 1:
         def aug():
             x[a:b] += y
 
-        check_slice_ops(load, 4)
-        check_slice_ops(store, 4)
-        check_slice_ops(long_slice, 0)
-        check_slice_ops(aug, 2)
+        check_op_count(load, "BINARY_SLICE", 4)
+        check_op_count(load, "BUILD_SLICE", 0)
+        check_op_count(store, "STORE_SLICE", 4)
+        check_op_count(store, "BUILD_SLICE", 0)
+        check_op_count(long_slice, "BUILD_SLICE", 1)
+        check_op_count(long_slice, "BINARY_SLICE", 0)
+        check_op_count(aug, "BINARY_SLICE", 1)
+        check_op_count(aug, "STORE_SLICE", 1)
+        check_op_count(aug, "BUILD_SLICE", 0)
 
 
 @requires_debug_ranges()
