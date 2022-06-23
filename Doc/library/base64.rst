@@ -53,11 +53,13 @@ The modern interface provides:
    Encode the :term:`bytes-like object` *s* using Base64 and return the encoded
    :class:`bytes`.
 
-   Optional *altchars* must be a :term:`bytes-like object` of at least
-   length 2 (additional characters are ignored) which specifies an alternative
-   alphabet for the ``+`` and ``/`` characters.  This allows an application to e.g.
-   generate URL or filesystem safe Base64 strings.  The default is ``None``, for
-   which the standard Base64 alphabet is used.
+   Optional *altchars* must be a :term:`bytes-like object` of length 2 which
+   specifies an alternative alphabet for the ``+`` and ``/`` characters.
+   This allows an application to e.g. generate URL or filesystem safe Base64
+   strings.  The default is ``None``, for which the standard Base64 alphabet is used.
+
+   Raises an :exc:`AssertionError` if the length of *altchars* is not 2.  Raises a
+   :exc:`TypeError` if *altchars* is not a :term:`bytes-like object`.
 
 
 .. function:: b64decode(s, altchars=None, validate=False)
@@ -65,9 +67,9 @@ The modern interface provides:
    Decode the Base64 encoded :term:`bytes-like object` or ASCII string
    *s* and return the decoded :class:`bytes`.
 
-   Optional *altchars* must be a :term:`bytes-like object` or ASCII string of
-   at least length 2 (additional characters are ignored) which specifies the
-   alternative alphabet used instead of the ``+`` and ``/`` characters.
+   Optional *altchars* must be a :term:`bytes-like object` or ASCII string
+   of length 2 which specifies the alternative alphabet used instead of the
+   ``+`` and ``/`` characters.
 
    A :exc:`binascii.Error` exception is raised
    if *s* is incorrectly padded.
@@ -80,6 +82,7 @@ The modern interface provides:
 
    For more information about the strict base64 check, see :func:`binascii.a2b_base64`
 
+   Raises an :exc:`AssertionError` if the length of *altchars* is not 2.
 
 .. function:: standard_b64encode(s)
 
