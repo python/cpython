@@ -336,7 +336,10 @@ Module functions and constants
 
    Register the *converter* callable to convert SQLite objects of type *typename* into a
    Python object of a specific type. The converter is invoked for all SQLite values of type
-   *typename*. Consult the parameter *detect_types* of
+   *typename*;
+   it is passed a :class:`bytes` object and should return an object of the
+   desired Python type.
+   Consult the parameter *detect_types* of
    :func:`connect` for information regarding how type detection works.
 
    Note: *typename* and the name of the type in your query are matched
