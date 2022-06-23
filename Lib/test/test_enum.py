@@ -3953,22 +3953,53 @@ class TestInternals(unittest.TestCase):
         self.assertEqual(Color.blue.value, 'blue')
         self.assertEqual(Color.green.value, 'green')
 
-    def test_auto_garbage(self):
-        class Color(Enum):
-            red = 'red'
-            blue = auto()
+    @unittest.skipIf(
+            python_version >= (3, 13),
+            'mixed types with auto() no longer supported',
+            )
+    def test_auto_garbage_ok(self):
+        with self.assertWarnsRegex(DeprecationWarning, 'will require all values to be sortable'):
+            class Color(Enum):
+                red = 'red'
+                blue = auto()
         self.assertEqual(Color.blue.value, 1)
 
-    def test_auto_garbage_corrected(self):
-        class Color(Enum):
-            red = 'red'
-            blue = 2
-            green = auto()
+    @unittest.skipIf(
+            python_version >= (3, 13),
+            'mixed types with auto() no longer supported',
+            )
+    def test_auto_garbage_corrected_ok(self):
+        with self.assertWarnsRegex(DeprecationWarning, 'will require all values to be sortable'):
+            class Color(Enum):
+                red = 'red'
+                blue = 2
+                green = auto()
 
         self.assertEqual(list(Color), [Color.red, Color.blue, Color.green])
         self.assertEqual(Color.red.value, 'red')
         self.assertEqual(Color.blue.value, 2)
         self.assertEqual(Color.green.value, 3)
+
+    @unittest.skipIf(
+            python_version < (3, 13),
+            'mixed types with auto() will raise in 3.13',
+            )
+    def test_auto_garbage_fail(self):
+        with self.assertRaisesRegex(TypeError, 'will require all values to be sortable'):
+            class Color(Enum):
+                red = 'red'
+                blue = auto()
+
+    @unittest.skipIf(
+            python_version < (3, 13),
+            'mixed types with auto() will raise in 3.13',
+            )
+    def test_auto_garbage_corrected_fail(self):
+        with self.assertRaisesRegex(TypeError, 'will require all values to be sortable'):
+            class Color(Enum):
+                red = 'red'
+                blue = 2
+                green = auto()
 
     def test_auto_order(self):
         with self.assertRaises(TypeError):
@@ -3990,6 +4021,22 @@ class TestInternals(unittest.TestCase):
         self.assertEqual(list(Color), [Color.red, Color.blue])
         self.assertEqual(Color.red.value, 'pathological case')
         self.assertEqual(Color.blue.value, 'blue')
+
+    @unittest.skipIf(
+            python_version < (3, 13),
+            'auto() will return highest value + 1 in 3.13',
+            )
+    def test_auto_with_aliases(self):
+        class Color(Enum):
+            red = auto()
+            blue = auto()
+            oxford = blue
+            crimson = red
+            green = auto()
+        self.assertIs(Color.crimson, Color.red)
+        self.assertIs(Color.oxford, Color.blue)
+        self.assertIsNot(Color.green, Color.red)
+        self.assertIsNot(Color.green, Color.blue)
 
     def test_duplicate_auto(self):
         class Dupes(Enum):
