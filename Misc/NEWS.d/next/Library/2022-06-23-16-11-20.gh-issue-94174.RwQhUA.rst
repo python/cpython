@@ -1,0 +1,3 @@
+:func:`asyncio.get_event_loop` now fails if there is no current event loop.
+In Python 3.10, it emits a :exc:`DeprecationWarning` in this case.
+Patch by Victor Stinner

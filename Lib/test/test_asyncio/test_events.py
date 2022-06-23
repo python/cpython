@@ -2708,15 +2708,11 @@ class GetEventLoopTestsMixin:
             asyncio.set_event_loop_policy(Policy())
             loop = asyncio.new_event_loop()
 
-            with self.assertWarns(DeprecationWarning) as cm:
-                with self.assertRaises(TestError):
-                    asyncio.get_event_loop()
-            self.assertEqual(cm.filename, __file__)
+            with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+                asyncio.get_event_loop()
             asyncio.set_event_loop(None)
-            with self.assertWarns(DeprecationWarning) as cm:
-                with self.assertRaises(TestError):
-                    asyncio.get_event_loop()
-            self.assertEqual(cm.filename, __file__)
+            with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+                asyncio.get_event_loop()
 
             with self.assertRaisesRegex(RuntimeError, 'no running'):
                 asyncio.get_running_loop()
@@ -2730,16 +2726,12 @@ class GetEventLoopTestsMixin:
             loop.run_until_complete(func())
 
             asyncio.set_event_loop(loop)
-            with self.assertWarns(DeprecationWarning) as cm:
-                with self.assertRaises(TestError):
-                    asyncio.get_event_loop()
-            self.assertEqual(cm.filename, __file__)
+            with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+                asyncio.get_event_loop()
 
             asyncio.set_event_loop(None)
-            with self.assertWarns(DeprecationWarning) as cm:
-                with self.assertRaises(TestError):
-                    asyncio.get_event_loop()
-            self.assertEqual(cm.filename, __file__)
+            with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+                asyncio.get_event_loop()
 
         finally:
             asyncio.set_event_loop_policy(old_policy)
@@ -2758,15 +2750,11 @@ class GetEventLoopTestsMixin:
             loop = asyncio.new_event_loop()
             self.addCleanup(loop.close)
 
-            with self.assertWarns(DeprecationWarning) as cm:
-                loop2 = asyncio.get_event_loop()
-            self.addCleanup(loop2.close)
-            self.assertEqual(cm.filename, __file__)
+            with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+                asyncio.get_event_loop()
             asyncio.set_event_loop(None)
-            with self.assertWarns(DeprecationWarning) as cm:
-                with self.assertRaisesRegex(RuntimeError, 'no current'):
-                    asyncio.get_event_loop()
-            self.assertEqual(cm.filename, __file__)
+            with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+                asyncio.get_event_loop()
 
             with self.assertRaisesRegex(RuntimeError, 'no running'):
                 asyncio.get_running_loop()
@@ -2780,15 +2768,12 @@ class GetEventLoopTestsMixin:
             loop.run_until_complete(func())
 
             asyncio.set_event_loop(loop)
-            with self.assertWarns(DeprecationWarning) as cm:
-                self.assertIs(asyncio.get_event_loop(), loop)
-            self.assertEqual(cm.filename, __file__)
+            with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+                asyncio.get_event_loop()
 
             asyncio.set_event_loop(None)
-            with self.assertWarns(DeprecationWarning) as cm:
-                with self.assertRaisesRegex(RuntimeError, 'no current'):
-                    asyncio.get_event_loop()
-            self.assertEqual(cm.filename, __file__)
+            with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+                asyncio.get_event_loop()
 
         finally:
             asyncio.set_event_loop_policy(old_policy)

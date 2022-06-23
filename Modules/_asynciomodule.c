@@ -21,7 +21,6 @@ _Py_IDENTIFIER(_asyncio_future_blocking);
 _Py_IDENTIFIER(add_done_callback);
 _Py_IDENTIFIER(call_soon);
 _Py_IDENTIFIER(cancel);
-_Py_IDENTIFIER(get_event_loop);
 _Py_IDENTIFIER(throw);
 _Py_IDENTIFIER(_check_future);
 
@@ -330,8 +329,6 @@ static PyObject *
 get_event_loop(int stacklevel)
 {
     PyObject *loop;
-    PyObject *policy;
-
     if (get_running_loop(&loop)) {
         return NULL;
     }
@@ -339,21 +336,8 @@ get_event_loop(int stacklevel)
         return loop;
     }
 
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "There is no current event loop",
-                     stacklevel))
-    {
-        return NULL;
-    }
-
-    policy = PyObject_CallNoArgs(asyncio_get_event_loop_policy);
-    if (policy == NULL) {
-        return NULL;
-    }
-
-    loop = _PyObject_CallMethodIdNoArgs(policy, &PyId_get_event_loop);
-    Py_DECREF(policy);
-    return loop;
+    PyErr_SetString(PyExc_RuntimeError, "There is no current event loop");
+    return NULL;
 }
 
 

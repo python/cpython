@@ -239,6 +239,10 @@ Changes in the Python API
   to :term:`filesystem encoding and error handler`.
   Argument files should be encoded in UTF-8 instead of ANSI Codepage on Windows.
 
+* :func:`asyncio.get_event_loop` now fails if there is no current event loop.
+  In Python 3.10, it emits a :exc:`DeprecationWarning` in this case.
+  (Contributed by Victor Stinner in :gh:`94174`.)
+
 
 Build Changes
 =============

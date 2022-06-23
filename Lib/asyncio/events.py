@@ -789,10 +789,8 @@ def _get_event_loop(stacklevel=3):
     current_loop = _get_running_loop()
     if current_loop is not None:
         return current_loop
-    import warnings
-    warnings.warn('There is no current event loop',
-                  DeprecationWarning, stacklevel=stacklevel)
-    return get_event_loop_policy().get_event_loop()
+    raise RuntimeError('There is no current event loop in thread %r.'
+                       % threading.current_thread().name)
 
 
 def set_event_loop(loop):
