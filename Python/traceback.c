@@ -736,7 +736,7 @@ print_error_location_carets(PyObject *f, int offset, Py_ssize_t start_offset, Py
     int special_chars = (left_end_offset != -1 || right_start_offset != -1);
     const char *str;
     while (++offset <= end_offset) {
-        if (offset <= start_offset || offset > end_offset) {
+        if (offset <= start_offset) {
             str = " ";
         } else if (special_chars && left_end_offset < offset && offset <= right_start_offset) {
             str = secondary;
@@ -813,7 +813,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     //
     //  ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE
     //        ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^~~~~~~~~~~~~~~~~~~~
-    //        |              |-> left_end_offset     |                  |-> left_offset
+    //        |              |-> left_end_offset     |                  |-> end_offset
     //        |-> start_offset                       |-> right_start_offset
     //
     // In general we will only have (start_offset, end_offset) but we can gather more information
