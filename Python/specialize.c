@@ -1245,12 +1245,12 @@ _Py_Specialize_BinarySubscr(
                 _Py_SET_OPCODE(*instr, BINARY_SUBSCR_ASCII_INT);
                 goto success;
             }
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_NON_ASCII_INT);
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OTHER);
             goto fail;
         }
         else {
             SPECIALIZATION_FAIL(BINARY_SUBSCR,
-                PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_UNICODE_SLICE : SPEC_FAIL_OTHER);
+                PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_STRING_SLICE : SPEC_FAIL_OTHER);
             goto fail;
         }
     }
