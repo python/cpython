@@ -717,7 +717,7 @@ class GenericWatcherTests(test_utils.TestCase):
     def test_create_subprocess_fails_with_inactive_watcher(self):
 
         async def execute():
-            watcher = mock.create_autopec(asyncio.AbstractChildWatcher)
+            watcher = mock.create_autospec(asyncio.AbstractChildWatcher)
             watcher.is_active.return_value = False
             asyncio.set_child_watcher(watcher)
 
