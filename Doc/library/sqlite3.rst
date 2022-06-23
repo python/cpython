@@ -265,8 +265,7 @@ Module functions and constants
    For the *isolation_level* parameter, please see the
    :attr:`~Connection.isolation_level` property of :class:`Connection` objects.
 
-   SQLite :ref:`natively supports<sqlite3-types>`
-   only the types TEXT, INTEGER, REAL, BLOB and NULL. If
+   SQLite natively supports only the types TEXT, INTEGER, REAL, BLOB and NULL. If
    you want to use other types you must add support for them yourself. The
    *detect_types* parameter and the using custom **converters** registered with the
    module-level :func:`register_converter` function allow you to easily do that.
