@@ -1205,28 +1205,39 @@ class Enum(metaclass=EnumType):
     def __init__(self, *args, **kwds):
         pass
 
-    def _generate_next_value_(name, start, count, last_values):
+    def _generate_next_value_(name, start, count, last_value):
         """
         Generate the next value when not given.
 
         name: the name of the member
         start: the initial start value or None
         count: the number of existing members
-        last_values: the list of values assigned
+        last_value: the list of values assigned
         """
-
-        # Filter funciton to deal with last_values lists of mixed types
-        def test_incrementable(n):
-            try:
-                n + 1
-                return True
-            except TypeError:
-                return False
-
-        checked_last_values = sorted(filter(test_incrementable, last_values))
-        if checked_last_values:
-            return checked_last_values[-1] + 1
-        else:
+        if not last_value:
+            return start
+        try:
+            last = last_value[-1]
+            last_value.sort()
+            if last == last_value[-1]:
+                # no difference between old and new methods
+                return last + 1
+            else:
+                # trigger old method (with warning)
+                raise TypeError
+        except TypeError:
+            import warnings
+            warnings.warn(
+                    "In 3.13 the default `auto()`/`_generate_next_value_` will require all values to be sortable and support adding +1\n"
+                    "and the value returned will be the largest value in the enum incremented by 1",
+                    DeprecationWarning,
+                    stacklevel=3,
+                    )
+            for v in last_value:
+                try:
+                    return v + 1
+                except TypeError:
+                    pass
             return start
 
     @classmethod
