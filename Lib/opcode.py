@@ -6,7 +6,7 @@ operate on bytecodes (e.g. peephole optimizers).
 
 __all__ = ["cmp_op", "hasconst", "hasname", "hasjrel", "hasjabs",
            "haslocal", "hascompare", "hasfree", "opname", "opmap",
-           "HAVE_ARGUMENT", "EXTENDED_ARG", "hasnargs"]
+           "HAVE_ARGUMENT", "EXTENDED_ARG"]
 
 # It's a chicken-and-egg I'm afraid:
 # We're imported before _opcode's made.
@@ -30,7 +30,6 @@ hasjabs = []
 haslocal = []
 hascompare = []
 hasfree = []
-hasnargs = [] # unused
 
 opmap = {}
 opname = ['<%r>' % (op,) for op in range(256)]
