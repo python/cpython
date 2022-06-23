@@ -3,6 +3,7 @@ import json
 import os.path
 import queue
 import signal
+import select
 import subprocess
 import sys
 import tempfile
@@ -97,8 +98,37 @@ def run_tests_worker(ns: Namespace, test_name: str) -> NoReturn:
     print()   # Force a newline (just in case)
 
     # Serialize TestResult as dict in JSON
-    print(json.dumps(result, cls=EncodeTestResult), flush=True)
+    dump_result(json.dumps(result, cls=EncodeTestResult), sys.stdout)
     sys.exit(0)
+
+
+def dump_result(data, stream):
+    """Dump result data to output stream
+
+    Workaround for non-blocking pipes on wasm32-emscripten, GH-94026.
+
+    Writes with len(data) <= PIPE_BUF either succeed or fail with EAGAIN
+    without writing any data. See man write(3) for more details.
+    """
+    data = data.encode(stream.encoding)
+    # flush buffers, just in case
+    stream.flush()
+    fd = stream.fileno()
+    while data:
+        exc = None
+        cur = data[:select.PIPE_BUF]
+        for _ in range(10):
+            # retry 10 times with 100 ms magic sleep between retries
+            try:
+                written = os.write(fd, cur)
+            except BlockingIOError as e:
+                exc = e
+                time.sleep(0.1)
+            else:
+                break
+        else:
+            raise exc from None
+        data = data[written:]
 
 
 # We do not use a generator so multiple threads can call next().

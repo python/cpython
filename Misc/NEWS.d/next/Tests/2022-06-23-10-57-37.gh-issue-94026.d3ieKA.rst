@@ -1,0 +1,2 @@
+``runtest_mp`` test worker now handles :exc:`BlockingIOError` to work around
+non-blocking pipes on Emscripten.
