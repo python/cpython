@@ -712,7 +712,7 @@ else:
             self.set_event_loop(self.loop)
 
 
-class GenericWatcherTests:
+class GenericWatcherTests(test_utils.TestCase):
 
     def test_create_subprocess_fails_with_inactive_watcher(self):
 
@@ -727,9 +727,42 @@ class GenericWatcherTests:
 
             watcher.add_child_handler.assert_not_called()
 
-        self.assertIsNone(self.loop.run_until_complete(execute()))
+        self.assertIsNone(asyncio.run(execute()))
 
 
+    def has_pidfd_support():
+        if not hasattr(os, 'pidfd_open'):
+            return False
+        try:
+            os.close(os.pidfd_open(os.getpid()))
+        except OSError:
+            return False
+        return True
+
+    @unittest.skipUnless(
+        has_pidfd_support(),
+        "operating system does not support pidfds",
+    )
+    def test_create_subprocess_with_pidfd(self):
+        async def in_thread():
+            proc = await asyncio.create_subprocess_exec(
+                *args,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate(b"some data")
+            return proc.returncode, stdout
+
+        async def main():
+            return await asyncio.to_thread(asyncio.run, in_thread())
+
+        asyncio.set_child_watcher(PidfdChildWatcher())
+        try:
+            returncode, stdout = asyncio.run(main())
+            self.assertEqual(returncode, 0)
+            self.assertEqual(stdout, b'some data')
+        finally:
+            asyncio.set_child_watcher(None)
 
 
 if __name__ == '__main__':
