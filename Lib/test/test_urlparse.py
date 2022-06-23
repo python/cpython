@@ -569,6 +569,36 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p1.params, 'phone-context=+1-914-555')
 
 
+    def test_urlsplit_remove_unsafe_bytes(self):
+        # Remove ASCII tabs and newlines from input
+        url = "http://www.python.org/java\nscript:\talert('msg\r\n')/#frag"
+        p = urlparse.urlsplit(url)
+        self.assertEqual(p.scheme, "http")
+        self.assertEqual(p.netloc, "www.python.org")
+        self.assertEqual(p.path, "/javascript:alert('msg')/")
+        self.assertEqual(p.query, "")
+        self.assertEqual(p.fragment, "frag")
+        self.assertEqual(p.username, None)
+        self.assertEqual(p.password, None)
+        self.assertEqual(p.hostname, "www.python.org")
+        self.assertEqual(p.port, None)
+        self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/#frag")
+
+        # Remove ASCII tabs and newlines from input as unicode.
+        url = u"http://www.python.org/java\nscript:\talert('msg\r\n')/#frag"
+        p = urlparse.urlsplit(url)
+        self.assertEqual(p.scheme, u"http")
+        self.assertEqual(p.netloc, u"www.python.org")
+        self.assertEqual(p.path, u"/javascript:alert('msg')/")
+        self.assertEqual(p.query, u"")
+        self.assertEqual(p.fragment, u"frag")
+        self.assertEqual(p.username, None)
+        self.assertEqual(p.password, None)
+        self.assertEqual(p.hostname, u"www.python.org")
+        self.assertEqual(p.port, None)
+        self.assertEqual(p.geturl(), u"http://www.python.org/javascript:alert('msg')/#frag")
+
+
     def test_attributes_bad_port(self):
         """Check handling of non-integer ports."""
         p = urlparse.urlsplit("http://www.example.net:foo")
