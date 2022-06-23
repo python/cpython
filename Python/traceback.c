@@ -592,7 +592,6 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent,
  *  Traceback (most recent call last):
  *    File "/home/isidentical/cpython/cpython/t.py", line 10, in <module>
  *      add_values(1, 2, 'x', 3, 4)
- *      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
  *    File "/home/isidentical/cpython/cpython/t.py", line 2, in add_values
  *      return a + b + c + d + e
  *             ~~~~~~^~~
@@ -792,6 +791,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
 
     int code_offset = tb->tb_lasti;
     PyCodeObject* code = frame->f_frame->f_code;
+    const Py_ssize_t source_line_len = PyUnicode_GET_LENGTH(source_line);
 
     int start_line;
     int end_line;
@@ -859,7 +859,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
             goto done;
         }
 
-        Py_ssize_t i = PyUnicode_GET_LENGTH(source_line);
+        Py_ssize_t i = source_line_len;
         while (--i >= 0) {
             if (!IS_WHITESPACE(source_line_str[i])) {
                 break;
@@ -867,6 +867,13 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
         }
 
         end_offset = i + 1;
+    }
+
+    // elide indicators if primary char spans the frame line
+    Py_ssize_t stripped_line_len = source_line_len - truncation - _TRACEBACK_SOURCE_LINE_INDENT;
+    if (end_offset - start_offset == stripped_line_len &&
+            left_end_offset == -1 && right_start_offset == -1) {
+        goto done;
     }
 
     if (_Py_WriteIndentedMargin(margin_indent, margin, f) < 0) {

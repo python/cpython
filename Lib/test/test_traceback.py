@@ -252,7 +252,7 @@ class TracebackCases(unittest.TestCase):
             self.assertTrue(stdout[2].endswith(err_line),
                 "Invalid traceback line: {0!r} instead of {1!r}".format(
                     stdout[2], err_line))
-            actual_err_msg = stdout[3 if has_no_debug_ranges() else 4]
+            actual_err_msg = stdout[3]
             self.assertTrue(actual_err_msg == err_msg,
                 "Invalid error message: {0!r} instead of {1!r}".format(
                     actual_err_msg, err_msg))
@@ -704,23 +704,23 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         )
         self.assertEqual(result_lines, expected_error.splitlines())
 
-# @cpython_only
-# @requires_debug_ranges()
-# class CPythonTracebackErrorCaretTests(TracebackErrorLocationCaretTests):
-#     """
-#     Same set of tests as above but with Python's internal traceback printing.
-#     """
-#     def get_exception(self, callable):
-#         from _testcapi import exception_print
-#         try:
-#             callable()
-#             self.fail("No exception thrown.")
-#         except Exception as e:
-#             with captured_output("stderr") as tbstderr:
-#                 exception_print(e)
-#             return tbstderr.getvalue().splitlines()[:-1]
-# 
-#     callable_line = get_exception.__code__.co_firstlineno + 3
+@cpython_only
+@requires_debug_ranges()
+class CPythonTracebackErrorCaretTests(TracebackErrorLocationCaretTests):
+    """
+    Same set of tests as above but with Python's internal traceback printing.
+    """
+    def get_exception(self, callable):
+        from _testcapi import exception_print
+        try:
+            callable()
+            self.fail("No exception thrown.")
+        except Exception as e:
+            with captured_output("stderr") as tbstderr:
+                exception_print(e)
+            return tbstderr.getvalue().splitlines()[:-1]
+
+    callable_line = get_exception.__code__.co_firstlineno + 3
 
 
 class TracebackFormatTests(unittest.TestCase):
@@ -1015,14 +1015,14 @@ class TracebackFormatTests(unittest.TestCase):
     def test_recursive_traceback_python(self):
         self._check_recursive_traceback_display(traceback.print_exc)
 
-    # @cpython_only
-    # @requires_debug_ranges()
-    # def test_recursive_traceback_cpython_internal(self):
-    #     from _testcapi import exception_print
-    #     def render_exc():
-    #         exc_type, exc_value, exc_tb = sys.exc_info()
-    #         exception_print(exc_value)
-    #     self._check_recursive_traceback_display(render_exc)
+    @cpython_only
+    @requires_debug_ranges()
+    def test_recursive_traceback_cpython_internal(self):
+        from _testcapi import exception_print
+        def render_exc():
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            exception_print(exc_value)
+        self._check_recursive_traceback_display(render_exc)
 
     def test_format_stack(self):
         def fmt():
@@ -1058,16 +1058,10 @@ class TracebackFormatTests(unittest.TestCase):
             exception_print(exc_val)
 
         tb = stderr_f.getvalue().strip().splitlines()
-        if has_no_debug_ranges():
-            self.assertEqual(11, len(tb))
-            self.assertEqual(context_message.strip(), tb[5])
-            self.assertIn('UnhashableException: ex2', tb[3])
-            self.assertIn('UnhashableException: ex1', tb[10])
-        else:
-            self.assertEqual(13, len(tb))
-            self.assertEqual(context_message.strip(), tb[6])
-            self.assertIn('UnhashableException: ex2', tb[4])
-            self.assertIn('UnhashableException: ex1', tb[12])
+        self.assertEqual(11, len(tb))
+        self.assertEqual(context_message.strip(), tb[5])
+        self.assertIn('UnhashableException: ex2', tb[3])
+        self.assertIn('UnhashableException: ex1', tb[10])
 
     def deep_eg(self):
         e = TypeError(1)
@@ -1451,15 +1445,17 @@ class BaseExceptionReportingTests:
     # #### Exception Groups ####
 
     def test_exception_group_basic(self):
+        self.maxDiff = None
         def exc():
-            raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])
+            if True: raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])
 
         expected = (
              f'  + Exception Group Traceback (most recent call last):\n'
              f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
              f'  |     exception_or_callable()\n'
              f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 1}, in exc\n'
-             f'  |     raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])\n'
+             f'  |     if True: raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])\n'
+             f'  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
              f'  | ExceptionGroup: eg (2 sub-exceptions)\n'
              f'  +-+---------------- 1 ----------------\n'
              f'    | ValueError: 1\n'
@@ -1474,13 +1470,14 @@ class BaseExceptionReportingTests:
         def exc():
             EG = ExceptionGroup
             try:
-                raise EG("eg1", [ValueError(1), TypeError(2)])
+                if True: raise EG("eg1", [ValueError(1), TypeError(2)])
             except Exception as e:
                 raise EG("eg2", [ValueError(3), TypeError(4)]) from e
 
         expected = (f'  + Exception Group Traceback (most recent call last):\n'
                     f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 3}, in exc\n'
-                    f'  |     raise EG("eg1", [ValueError(1), TypeError(2)])\n'
+                    f'  |     if True: raise EG("eg1", [ValueError(1), TypeError(2)])\n'
+                    f'  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
                     f'  | ExceptionGroup: eg1 (2 sub-exceptions)\n'
                     f'  +-+---------------- 1 ----------------\n'
                     f'    | ValueError: 1\n'
@@ -1510,7 +1507,7 @@ class BaseExceptionReportingTests:
             EG = ExceptionGroup
             try:
                 try:
-                    raise EG("eg1", [ValueError(1), TypeError(2)])
+                    if True: raise EG("eg1", [ValueError(1), TypeError(2)])
                 except:
                     raise EG("eg2", [ValueError(3), TypeError(4)])
             except:
@@ -1519,7 +1516,8 @@ class BaseExceptionReportingTests:
         expected = (
              f'  + Exception Group Traceback (most recent call last):\n'
              f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 4}, in exc\n'
-             f'  |     raise EG("eg1", [ValueError(1), TypeError(2)])\n'
+             f'  |     if True: raise EG("eg1", [ValueError(1), TypeError(2)])\n'
+             f'  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
              f'  | ExceptionGroup: eg1 (2 sub-exceptions)\n'
              f'  +-+---------------- 1 ----------------\n'
              f'    | ValueError: 1\n'
@@ -1558,7 +1556,7 @@ class BaseExceptionReportingTests:
             TE = TypeError
             try:
                 try:
-                    raise EG("nested", [TE(2), TE(3)])
+                    if True: raise EG("nested", [TE(2), TE(3)])
                 except Exception as e:
                     exc = e
                 raise EG("eg", [VE(1), exc, VE(4)])
@@ -1574,7 +1572,8 @@ class BaseExceptionReportingTests:
                     f'    +---------------- 2 ----------------\n'
                     f'    | Exception Group Traceback (most recent call last):\n'
                     f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 6}, in exc\n'
-                    f'    |     raise EG("nested", [TE(2), TE(3)])\n'
+                    f'    |     if True: raise EG("nested", [TE(2), TE(3)])\n'
+                    f'    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
                     f'    | ExceptionGroup: nested (2 sub-exceptions)\n'
                     f'    +-+---------------- 1 ----------------\n'
                     f'      | TypeError: 2\n'
@@ -1732,7 +1731,7 @@ class BaseExceptionReportingTests:
                 excs = []
                 for msg in ['bad value', 'terrible value']:
                     try:
-                        raise ValueError(msg)
+                        if True: raise ValueError(msg)
                     except ValueError as e:
                         e.add_note(f'the {msg}')
                         excs.append(e)
@@ -1761,13 +1760,15 @@ class BaseExceptionReportingTests:
                     f'  +-+---------------- 1 ----------------\n'
                     f'    | Traceback (most recent call last):\n'
                     f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 5}, in exc\n'
-                    f'    |     raise ValueError(msg)\n'
+                    f'    |     if True: raise ValueError(msg)\n'
+                    f'    |              ^^^^^^^^^^^^^^^^^^^^^\n'
                     f'    | ValueError: bad value\n'
                     f'    | the bad value\n'
                     f'    +---------------- 2 ----------------\n'
                     f'    | Traceback (most recent call last):\n'
                     f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 5}, in exc\n'
-                    f'    |     raise ValueError(msg)\n'
+                    f'    |     if True: raise ValueError(msg)\n'
+                    f'    |              ^^^^^^^^^^^^^^^^^^^^^\n'
                     f'    | ValueError: terrible value\n'
                     f'    | the terrible value\n'
                     f'    +------------------------------------\n')
@@ -1781,7 +1782,7 @@ class BaseExceptionReportingTests:
                 excs = []
                 for msg in ['bad value', 'terrible value']:
                     try:
-                        raise ValueError(msg)
+                        if True: raise ValueError(msg)
                     except ValueError as e:
                         e.add_note(f'the {msg}')
                         e.add_note(f'Goodbye {msg}')
@@ -1813,14 +1814,16 @@ class BaseExceptionReportingTests:
                     f'  +-+---------------- 1 ----------------\n'
                     f'    | Traceback (most recent call last):\n'
                     f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 5}, in exc\n'
-                    f'    |     raise ValueError(msg)\n'
+                    f'    |     if True: raise ValueError(msg)\n'
+                    f'    |              ^^^^^^^^^^^^^^^^^^^^^\n'
                     f'    | ValueError: bad value\n'
                     f'    | the bad value\n'
                     f'    | Goodbye bad value\n'
                     f'    +---------------- 2 ----------------\n'
                     f'    | Traceback (most recent call last):\n'
                     f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 5}, in exc\n'
-                    f'    |     raise ValueError(msg)\n'
+                    f'    |     if True: raise ValueError(msg)\n'
+                    f'    |              ^^^^^^^^^^^^^^^^^^^^^\n'
                     f'    | ValueError: terrible value\n'
                     f'    | the terrible value\n'
                     f'    | Goodbye terrible value\n'
@@ -1871,18 +1874,18 @@ class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
         return s
 
 
-# class CExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
-#     #
-#     # This checks built-in reporting by the interpreter.
-#     #
-# 
-#     @cpython_only
-#     def get_report(self, e):
-#         from _testcapi import exception_print
-#         e = self.get_exception(e)
-#         with captured_output("stderr") as s:
-#             exception_print(e)
-#         return s.getvalue()
+class CExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
+    #
+    # This checks built-in reporting by the interpreter.
+    #
+
+    @cpython_only
+    def get_report(self, e):
+        from _testcapi import exception_print
+        e = self.get_exception(e)
+        with captured_output("stderr") as s:
+            exception_print(e)
+        return s.getvalue()
 
 
 class LimitTests(unittest.TestCase):
