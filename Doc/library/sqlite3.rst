@@ -1379,13 +1379,10 @@ Adapter and Converter Recipes
 
 This section shows recipes for common adapters and converters.
 
-.. testsetup::
-
-   import sqlite3
-
-.. doctest::
+.. code-block::
 
    import datetime
+   import sqlite3
 
    def adapt_date_iso(val):
        """Adapt datetime.date to ISO 8601 date."""
