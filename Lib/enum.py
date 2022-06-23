@@ -799,26 +799,16 @@ class EnumType(type):
                 boundary=boundary,
                 )
 
-    def __contains__(cls, member):
-        """
-        Return True if member is a member of this enum
-        raises TypeError if member is not an enum member
+    def __contains__(cls, value):
+        """Return True if `value` is in `cls`.
 
-        note: in 3.12 TypeError will no longer be raised, and True will also be
-        returned if member is the value of a member in this enum
+        `value` is in `cls` if:
+        1) `value` is a member of `cls`, or
+        2) `value` is the value of one of the `cls`'s members.
         """
-        if not isinstance(member, Enum):
-            import warnings
-            warnings.warn(
-                    "in 3.12 __contains__ will no longer raise TypeError, but will return True or\n"
-                    "False depending on whether the value is a member or the value of a member",
-                    DeprecationWarning,
-                    stacklevel=2,
-                    )
-            raise TypeError(
-                "unsupported operand type(s) for 'in': '%s' and '%s'" % (
-                    type(member).__qualname__, cls.__class__.__qualname__))
-        return isinstance(member, cls) and member._name_ in cls._member_map_
+        if isinstance(value, cls):
+            return True
+        return value in cls._value2member_map_ or value in cls._unhashable_values_
 
     def __delattr__(cls, attr):
         # nicer error message when someone tries to delete an attribute
@@ -1215,21 +1205,39 @@ class Enum(metaclass=EnumType):
     def __init__(self, *args, **kwds):
         pass
 
-    def _generate_next_value_(name, start, count, last_values):
+    def _generate_next_value_(name, start, count, last_value):
         """
         Generate the next value when not given.
 
         name: the name of the member
         start: the initial start value or None
         count: the number of existing members
-        last_value: the last value assigned or None
+        last_value: the list of values assigned
         """
-        for last_value in reversed(last_values):
-            try:
-                return last_value + 1
-            except TypeError:
-                pass
-        else:
+        if not last_value:
+            return start
+        try:
+            last = last_value[-1]
+            last_value.sort()
+            if last == last_value[-1]:
+                # no difference between old and new methods
+                return last + 1
+            else:
+                # trigger old method (with warning)
+                raise TypeError
+        except TypeError:
+            import warnings
+            warnings.warn(
+                    "In 3.13 the default `auto()`/`_generate_next_value_` will require all values to be sortable and support adding +1\n"
+                    "and the value returned will be the largest value in the enum incremented by 1",
+                    DeprecationWarning,
+                    stacklevel=3,
+                    )
+            for v in last_value:
+                try:
+                    return v + 1
+                except TypeError:
+                    pass
             return start
 
     @classmethod

@@ -9,7 +9,6 @@ import signal
 import socket
 import stat
 import sys
-import tempfile
 import threading
 import unittest
 from unittest import mock

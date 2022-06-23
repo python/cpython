@@ -22,6 +22,7 @@
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_range.h"         // _PyRangeIterObject
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
@@ -1309,7 +1310,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
     do { \
         frame->prev_instr = next_instr++; \
         OPCODE_EXE_INC(op); \
-        _py_stats.opcode_stats[lastopcode].pair_count[op]++; \
+        if (_py_stats) _py_stats->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
@@ -1823,7 +1824,6 @@ handle_eval_breaker:
         }
 
         TARGET(STORE_FAST) {
-            PREDICTED(STORE_FAST);
             PyObject *value = POP();
             SETLOCAL(oparg, value);
             DISPATCH();
@@ -4393,7 +4393,6 @@ handle_eval_breaker:
             SET_TOP(iter);
             if (iter == NULL)
                 goto error;
-            PREDICT(FOR_ITER);
             DISPATCH();
         }
 
@@ -4430,16 +4429,10 @@ handle_eval_breaker:
             PREDICTED(FOR_ITER);
             /* before: [iter]; after: [iter, iter()] *or* [] */
             PyObject *iter = TOP();
-#ifdef Py_STATS
-            extern int _PySpecialization_ClassifyIterator(PyObject *);
-            _py_stats.opcode_stats[FOR_ITER].specialization.failure++;
-            _py_stats.opcode_stats[FOR_ITER].specialization.failure_kinds[_PySpecialization_ClassifyIterator(iter)]++;
-#endif
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next != NULL) {
                 PUSH(next);
-                PREDICT(STORE_FAST);
-                PREDICT(UNPACK_SEQUENCE);
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
                 DISPATCH();
             }
             if (_PyErr_Occurred(tstate)) {
@@ -4451,11 +4444,68 @@ handle_eval_breaker:
                 }
                 _PyErr_Clear(tstate);
             }
+        iterator_exhausted_no_error:
             /* iterator ended normally */
-            STACK_SHRINK(1);
-            Py_DECREF(iter);
-            JUMPBY(oparg);
+            assert(!_PyErr_Occurred(tstate));
+            Py_DECREF(POP());
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
             DISPATCH();
+        }
+
+        TARGET(FOR_ITER_ADAPTIVE) {
+            assert(cframe.use_tracing == 0);
+            _PyForIterCache *cache = (_PyForIterCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                next_instr--;
+                _Py_Specialize_ForIter(TOP(), next_instr);
+                NOTRACE_DISPATCH_SAME_OPARG();
+            }
+            else {
+                STAT_INC(FOR_ITER, deferred);
+                DECREMENT_ADAPTIVE_COUNTER(cache);
+                JUMP_TO_INSTRUCTION(FOR_ITER);
+            }
+        }
+
+        TARGET(FOR_ITER_LIST) {
+            assert(cframe.use_tracing == 0);
+            _PyListIterObject *it = (_PyListIterObject *)TOP();
+            DEOPT_IF(Py_TYPE(it) != &PyListIter_Type, FOR_ITER);
+            STAT_INC(FOR_ITER, hit);
+            PyListObject *seq = it->it_seq;
+            if (seq == NULL) {
+                goto iterator_exhausted_no_error;
+            }
+            if (it->it_index < PyList_GET_SIZE(seq)) {
+                PyObject *next = PyList_GET_ITEM(seq, it->it_index++);
+                Py_INCREF(next);
+                PUSH(next);
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
+                NOTRACE_DISPATCH();
+            }
+            it->it_seq = NULL;
+            Py_DECREF(seq);
+            goto iterator_exhausted_no_error;
+        }
+
+        TARGET(FOR_ITER_RANGE) {
+            assert(cframe.use_tracing == 0);
+            _PyRangeIterObject *r = (_PyRangeIterObject *)TOP();
+            DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
+            STAT_INC(FOR_ITER, hit);
+            _Py_CODEUNIT next = next_instr[INLINE_CACHE_ENTRIES_FOR_ITER];
+            assert(_PyOpcode_Deopt[_Py_OPCODE(next)] == STORE_FAST);
+            if (r->index >= r->len) {
+                goto iterator_exhausted_no_error;
+            }
+            long value = (long)(r->start +
+                                (unsigned long)(r->index++) * r->step);
+            if (_PyLong_AssignValue(&GETLOCAL(_Py_OPARG(next)), value) < 0) {
+                goto error;
+            }
+            // The STORE_FAST is already done.
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + 1);
+            NOTRACE_DISPATCH();
         }
 
         TARGET(BEFORE_ASYNC_WITH) {
@@ -7740,7 +7790,7 @@ _Py_GetDXProfile(PyObject *self, PyObject *args)
     PyObject *l = PyList_New(257);
     if (l == NULL) return NULL;
     for (i = 0; i < 256; i++) {
-        PyObject *x = getarray(_py_stats.opcode_stats[i].pair_count);
+        PyObject *x = getarray(_py_stats_struct.opcode_stats[i].pair_count);
         if (x == NULL) {
             Py_DECREF(l);
             return NULL;
@@ -7754,7 +7804,7 @@ _Py_GetDXProfile(PyObject *self, PyObject *args)
     }
     for (i = 0; i < 256; i++) {
         PyObject *x = PyLong_FromUnsignedLongLong(
-            _py_stats.opcode_stats[i].execution_count);
+            _py_stats_struct.opcode_stats[i].execution_count);
         if (x == NULL) {
             Py_DECREF(counts);
             Py_DECREF(l);
