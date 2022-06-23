@@ -77,13 +77,7 @@ init_normalization(Parser *p)
     if (p->normalize) {
         return 1;
     }
-    PyObject *m = PyImport_ImportModule("unicodedata");
-    if (!m)
-    {
-        return 0;
-    }
-    p->normalize = PyObject_GetAttrString(m, "normalize");
-    Py_DECREF(m);
+    p->normalize = _PyImport_GetModuleAttrString("unicodedata", "normalize");
     if (!p->normalize)
     {
         return 0;

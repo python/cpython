@@ -3282,6 +3282,10 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
     {
 #ifdef HAVE_CHMOD
         result = chmod(path->narrow, mode);
+#elif defined(__wasi__)
+        // WASI SDK 15.0 does not support chmod.
+        // Ignore missing syscall for now.
+        result = 0;
 #else
         result = -1;
         errno = ENOSYS;
@@ -8275,11 +8279,7 @@ wait_helper(PyObject *module, pid_t pid, int status, struct rusage *ru)
         memset(ru, 0, sizeof(*ru));
     }
 
-    PyObject *m = PyImport_ImportModule("resource");
-    if (m == NULL)
-        return NULL;
-    struct_rusage = PyObject_GetAttr(m, get_posix_state(module)->struct_rusage);
-    Py_DECREF(m);
+    struct_rusage = _PyImport_GetModuleAttrString("resource", "struct_rusage");
     if (struct_rusage == NULL)
         return NULL;
 

@@ -1,7 +1,6 @@
 # Python test set -- part 5, built-in exceptions
 
 import copy
-import gc
 import os
 import sys
 import unittest

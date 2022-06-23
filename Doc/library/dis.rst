@@ -887,7 +887,20 @@ iterations of the loop.
 
 .. opcode:: LOAD_ATTR (namei)
 
-   Replaces TOS with ``getattr(TOS, co_names[namei])``.
+   If the low bit of ``namei`` is not set, this replaces TOS with
+   ``getattr(TOS, co_names[namei>>1])``.
+
+   If the low bit of ``namei`` is set, this will attempt to load a method named
+   ``co_names[namei>>1]`` from the TOS object. TOS is popped.
+   This bytecode distinguishes two cases: if TOS has a method with the correct
+   name, the bytecode pushes the unbound method and TOS. TOS will be used as
+   the first argument (``self``) by :opcode:`CALL` when calling the
+   unbound method. Otherwise, ``NULL`` and the object return by the attribute
+   lookup are pushed.
+
+   .. versionchanged:: 3.12
+      If the low bit of ``namei`` is set, then a ``NULL`` or ``self`` is
+      pushed to the stack before the attribute or unbound method respectively.
 
 
 .. opcode:: COMPARE_OP (opname)
@@ -1042,6 +1055,17 @@ iterations of the loop.
 
    Pushes a reference to the local ``co_varnames[var_num]`` onto the stack.
 
+   .. versionchanged:: 3.12
+      This opcode is now only used in situations where the local variable is
+      guaranteed to be initialized. It cannot raise :exc:`UnboundLocalError`.
+
+.. opcode:: LOAD_FAST_CHECK (var_num)
+
+   Pushes a reference to the local ``co_varnames[var_num]`` onto the stack,
+   raising an :exc:`UnboundLocalError` if the local variable has not been
+   initialized.
+
+   .. versionadded:: 3.12
 
 .. opcode:: STORE_FAST (var_num)
 
@@ -1176,18 +1200,6 @@ iterations of the loop.
    returned by the callable object.
 
    .. versionadded:: 3.6
-
-
-.. opcode:: LOAD_METHOD (namei)
-
-   Loads a method named ``co_names[namei]`` from the TOS object. TOS is popped.
-   This bytecode distinguishes two cases: if TOS has a method with the correct
-   name, the bytecode pushes the unbound method and TOS. TOS will be used as
-   the first argument (``self``) by :opcode:`CALL` when calling the
-   unbound method. Otherwise, ``NULL`` and the object return by the attribute
-   lookup are pushed.
-
-   .. versionadded:: 3.7
 
 
 .. opcode:: PUSH_NULL

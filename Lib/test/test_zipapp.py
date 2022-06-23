@@ -9,6 +9,7 @@ import unittest
 import zipapp
 import zipfile
 from test.support import requires_zlib
+from test.support import os_helper
 
 from unittest.mock import patch
 
@@ -317,6 +318,7 @@ class ZipAppTest(unittest.TestCase):
     # (Unix only) tests that archives with shebang lines are made executable
     @unittest.skipIf(sys.platform == 'win32',
                      'Windows does not support an executable bit')
+    @os_helper.skip_unless_working_chmod
     def test_shebang_is_executable(self):
         # Test that an archive with a shebang line is made executable.
         source = self.tmpdir / 'source'
