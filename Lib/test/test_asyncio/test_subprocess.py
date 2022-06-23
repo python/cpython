@@ -746,7 +746,7 @@ class GenericWatcherTests(test_utils.TestCase):
     def test_create_subprocess_with_pidfd(self):
         async def in_thread():
             proc = await asyncio.create_subprocess_exec(
-                *args,
+                *PROGRAM_CAT,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
             )
