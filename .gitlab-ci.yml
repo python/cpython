@@ -18,11 +18,11 @@ stages:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - docker run --rm -v "$(Get-Location):c:\mnt" -e CI_JOB_ID=${CI_JOB_ID} -e WINDOWS_BUILDER=true -e AWS_NETWORKING=true -e TARGET_ARCH="$ARCH" datadog/agent-buildimages-windows_x64:1809 C:\mnt\build.bat
     - get-childitem build-out
-    - Get-FileHash -Algorithm SHA256 build-out/python-windows-3.8.11-${ARCH}.zip
+    - Get-FileHash -Algorithm SHA256 build-out/python-windows-3.8.13-${ARCH}.zip
   artifacts:
     expire_in: 2 weeks
     paths:
-      - build-out/python-windows-3.8.11-${ARCH}.zip
+      - build-out/python-windows-3.8.13-${ARCH}.zip
 
 build_binaries_x64:
   extends: .build_common
@@ -42,8 +42,8 @@ deploy_x64:
     !reference [.manual]
   script:
     - $hash = (git rev-parse --short HEAD 2> $null)
-    - Write-Host "Uploading zip python-windows-3.8.11-${hash}-x64.zip"
-    - Invoke-Expression "aws s3 cp --only-show-errors --region us-east-1 --sse AES256 --acl public-read build-out/python-windows-3.8.11-x64.zip s3://dd-agent-omnibus/python-windows-3.8.11-${hash}-x64.zip"
+    - Write-Host "Uploading zip python-windows-3.8.13-${hash}-x64.zip"
+    - Invoke-Expression "aws s3 cp --only-show-errors --region us-east-1 --sse AES256 --acl public-read build-out/python-windows-3.8.13-x64.zip s3://dd-agent-omnibus/python-windows-3.8.13-${hash}-x64.zip"
 
 deploy_x86:
   stage: deploy
@@ -53,5 +53,5 @@ deploy_x86:
     !reference [.manual]
   script:
     - $hash = (git rev-parse --short HEAD 2> $null)
-    - Write-Host "Uploading zip python-windows-3.8.11-${hash}-x86.zip"
-    - Invoke-Expression "aws s3 cp --only-show-errors --region us-east-1 --sse AES256 --acl public-read build-out/python-windows-3.8.11-x86.zip s3://dd-agent-omnibus/python-windows-3.8.11-${hash}-x86.zip"
+    - Write-Host "Uploading zip python-windows-3.8.13-${hash}-x86.zip"
+    - Invoke-Expression "aws s3 cp --only-show-errors --region us-east-1 --sse AES256 --acl public-read build-out/python-windows-3.8.13-x86.zip s3://dd-agent-omnibus/python-windows-3.8.13-${hash}-x86.zip"
