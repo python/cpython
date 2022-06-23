@@ -224,10 +224,8 @@ Module functions and constants
 
    Pass this flag value to the *detect_types* parameter of
    :func:`connect` to look up a converter function by
-   parsing the column names in queries.
-   ``sqlite3`` will look for strings containing square brackets (``[]``),
-   and will look up a converter function using the word inside the brackets as
-   the converter dictionary key.
+   parsing the type name from the column name in queries.
+   The type name must be wrapped in square brackets (``[]``)
 
    .. code-block:: sql
 
@@ -256,7 +254,8 @@ Module functions and constants
    For the *isolation_level* parameter, please see the
    :attr:`~Connection.isolation_level` property of :class:`Connection` objects.
 
-   SQLite natively supports only the types TEXT, INTEGER, REAL, BLOB and NULL. If
+   SQLite :ref:`natively supports<sqlite3-types>`
+   only the types TEXT, INTEGER, REAL, BLOB and NULL. If
    you want to use other types you must add support for them yourself. The
    *detect_types* parameter and the using custom **converters** registered with the
    module-level :func:`register_converter` function allow you to easily do that.
@@ -265,6 +264,7 @@ Module functions and constants
    Set it to any combination (using ``|``, bitwise or) of
    :const:`PARSE_DECLTYPES` and :const:`PARSE_COLNAMES`
    to enable type detection.
+   Column names takes precedence over declared types if both flags are set.
    Types cannot be detected for generated fields (for example ``max(data)``),
    even when the *detect_types* parameter is set.
    In such cases, the returned type is :class:`str`.
@@ -336,9 +336,9 @@ Module functions and constants
 .. function:: register_adapter(type, adapter)
 
    Register an *adapter* callable to adapt the Python type *type* into an SQLite type.
-   The adapter is called with a Python type object as its sole argument,
-   and must return a valid SQLite type:
-   :class:`int`, :class:`float`, :class:`str`, :class:`bytes`, or :const:`None`.
+   The adapter is called with a Python object of type *type* as its sole argument,
+   and must return a value of a
+   :ref:`type that SQLite natively understands<sqlite3-types>`.
 
 
 .. function:: complete_statement(sql)
@@ -1223,10 +1223,9 @@ types via converters.
 Using adapters to store custom Python types in SQLite databases
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-SQLite supports only a limited set of types natively.
+SQLite supports only a limited set of data types natively.
 To store custom Python types in SQLite databases, *adapt* them to one of the
-basic types supported by SQLite:
-:class:`int`, :class:`float`, :class:`str`, :class:`bytes`, or :const:`None`.
+:ref:`Python types SQLite natively understands<sqlite3-types>`.
 
 There are two ways to adapt Python objects to SQLite types:
 letting your object adapt itself, or using an *adapter callable*.
@@ -1255,7 +1254,7 @@ Registering an adapter callable
 
 The other possibility is to create a function that converts the Python object
 to an SQLite-compatible type.
-This function can then be registered using :meth:`register_adapter`.
+This function can then be registered using :func:`register_adapter`.
 
 .. literalinclude:: ../includes/sqlite3/adapter_point_2.py
 
@@ -1263,8 +1262,9 @@ This function can then be registered using :meth:`register_adapter`.
 Converting SQLite values to custom Python types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Writing an adapter lets you send custom Python types to SQLite.
-To be able to convert SQLite values to custom Python types, we use *converters*.
+Writing an adapter lets you convert *from* custom Python types *to* SQLite values.
+To be able to convert *from* SQLite values *to* custom Python types,
+we use *converters*.
 
 Let's go back to the :class:`Point` class. We stored the x and y coordinates
 separated via semicolons as strings in SQLite.
@@ -1290,7 +1290,8 @@ of :func:`connect`. There are three options:
 * Implicit: set *detect_types* to :const:`PARSE_DECLTYPES`
 * Explicit: set *detect_types* to :const:`PARSE_COLNAMES`
 * Both: set *detect_types* to
-  ``sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES``
+  ``sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES``.
+  Colum names take precedence over declared types.
 
 The following example illustrates the implicit and explicit approaches:
 
