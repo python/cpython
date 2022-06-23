@@ -1,1 +1,1 @@
-This allows the default indexes pages used by SimpleHTTPRequestHandler in send_head to be overridden.  This makes it easy to add custom index page names without having to write a custom override of send_head.
+Add an index_pages parameter to support using non-default index page names.
