@@ -6169,25 +6169,6 @@ compiler_warn(struct compiler *c, const char *format, ...)
 }
 
 static int
-compiler_subscript_slice(struct compiler *c, expr_ty s, expr_context_ty ctx)
-{
-    assert(s->v.Slice.step == NULL);
-    int n = compiler_slice(c, s);
-    if (n == 0) {
-        return 0;
-    }
-    assert(n == 2);
-    if (ctx == Load) {
-        ADDOP(c, BINARY_SLICE);
-    }
-    else {
-        assert(ctx == Store);
-        ADDOP(c, STORE_SLICE);
-    }
-    return 1;
-}
-
-static int
 compiler_subscript(struct compiler *c, expr_ty e)
 {
     expr_context_ty ctx = e->v.Subscript.ctx;
@@ -6204,19 +6185,32 @@ compiler_subscript(struct compiler *c, expr_ty e)
 
     VISIT(c, expr, e->v.Subscript.value);
     if (is_two_element_slice(e->v.Subscript.slice) && ctx != Del) {
-        return compiler_subscript_slice(c, e->v.Subscript.slice, ctx);
+        if (!compiler_slice(c, e->v.Subscript.slice)) {
+            return 0;
+        }
+        if (ctx == Load) {
+            ADDOP(c, BINARY_SLICE);
+        }
+        else {
+            assert(ctx == Store);
+            ADDOP(c, STORE_SLICE);
+        }
     }
-    VISIT(c, expr, e->v.Subscript.slice);
-    switch (ctx) {
-        case Load:    op = BINARY_SUBSCR; break;
-        case Store:   op = STORE_SUBSCR; break;
-        case Del:     op = DELETE_SUBSCR; break;
+    else {
+        VISIT(c, expr, e->v.Subscript.slice);
+        switch (ctx) {
+            case Load:    op = BINARY_SUBSCR; break;
+            case Store:   op = STORE_SUBSCR; break;
+            case Del:     op = DELETE_SUBSCR; break;
+        }
+        assert(op);
+        ADDOP(c, op);
     }
-    assert(op);
-    ADDOP(c, op);
     return 1;
 }
 
+/* Returns the number of the values emitted,
+ * thus are needed to build the slice, or 0 if there is an error. */
 static int
 compiler_slice(struct compiler *c, expr_ty s)
 {
