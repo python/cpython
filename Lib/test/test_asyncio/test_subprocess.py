@@ -720,6 +720,8 @@ class GenericWatcherTests(test_utils.TestCase):
             watcher = mock.create_autospec(asyncio.AbstractChildWatcher)
             watcher.is_active.return_value = False
             asyncio.set_child_watcher(watcher)
+            self.assertIs(asyncio.get_child_watcher(), watcher)
+            self.assertFalse(asyncio.get_child_watcher().is_active())
 
             with self.assertRaises(RuntimeError):
                 await subprocess.create_subprocess_exec(
