@@ -756,7 +756,7 @@ class GenericWatcherTests(test_utils.TestCase):
         async def main():
             return await asyncio.to_thread(asyncio.run, in_thread())
 
-        asyncio.set_child_watcher(PidfdChildWatcher())
+        asyncio.set_child_watcher(asyncio.PidfdChildWatcher())
         try:
             returncode, stdout = asyncio.run(main())
             self.assertEqual(returncode, 0)
