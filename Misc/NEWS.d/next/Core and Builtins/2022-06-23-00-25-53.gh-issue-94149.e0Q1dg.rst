@@ -1,0 +1,1 @@
+Fixed an unaligned write in convertsimple() which could crash on architectures requiring strict alignment, e.g. sparc.
