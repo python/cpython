@@ -1,0 +1,7 @@
+Fix PyObject_NEW and PyObject_NEW_VAR
+
+The commit 7ad6f74 tried to add brackets to tons of macros, but they break
+PyObject_New and PyObject_MEW_VAR since the macro would expand to ((Type)*)
+which breaks compilation for those CPython headers.
+
+Fix the issue 94185.
