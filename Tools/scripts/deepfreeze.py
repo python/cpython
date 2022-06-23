@@ -1,7 +1,9 @@
 """Deep freeze
 
-The script is executed by _bootstrap_python interpreter. Shared library
-extension modules are not available.
+The script may be executed by _bootstrap_python interpreter.
+Shared library extension modules are not available in that case.
+On Windows, and in cross-compilation cases, it is executed
+by Python 3.10, and 3.11 features are not avaiable.
 """
 import argparse
 import ast
