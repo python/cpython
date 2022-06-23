@@ -27,7 +27,8 @@ from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
 from test.support import (reap_children, captured_output, captured_stdout,
-                          captured_stderr, requires_docstrings)
+                          captured_stderr, is_emscripten, is_wasi,
+                          requires_docstrings)
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test import pydoc_mod
 
@@ -850,6 +851,23 @@ class B(A)
         for expected_line in expected_lines:
             self.assertIn(expected_line, as_text)
 
+    def test__future__imports(self):
+        # __future__ features are excluded from module help,
+        # except when it's the __future__ module itself
+        import __future__
+        future_text, _ = get_pydoc_text(__future__)
+        future_html, _ = get_pydoc_html(__future__)
+        pydoc_mod_text, _ = get_pydoc_text(pydoc_mod)
+        pydoc_mod_html, _ = get_pydoc_html(pydoc_mod)
+
+        for feature in __future__.all_feature_names:
+            txt = f"{feature} = _Feature"
+            html = f"<strong>{feature}</strong> = _Feature"
+            self.assertIn(txt, future_text)
+            self.assertIn(html, future_html)
+            self.assertNotIn(txt, pydoc_mod_text)
+            self.assertNotIn(html, pydoc_mod_html)
+
 
 class PydocImportTest(PydocBaseTest):
 
@@ -915,6 +933,8 @@ class PydocImportTest(PydocBaseTest):
         self.assertEqual(out.getvalue(), '')
         self.assertEqual(err.getvalue(), '')
 
+    @os_helper.skip_unless_working_chmod
+    @unittest.skipIf(is_emscripten, "cannot remove x bit")
     def test_apropos_empty_doc(self):
         pkgdir = os.path.join(TESTFN, 'walkpkg')
         os.mkdir(pkgdir)
@@ -1049,14 +1069,14 @@ class TestDescriptions(unittest.TestCase):
         self.assertIn(types.UnionType.__doc__.strip().splitlines()[0], doc)
 
     def test_special_form(self):
-        self.assertEqual(pydoc.describe(typing.Any), '_SpecialForm')
-        doc = pydoc.render_doc(typing.Any, renderer=pydoc.plaintext)
+        self.assertEqual(pydoc.describe(typing.NoReturn), '_SpecialForm')
+        doc = pydoc.render_doc(typing.NoReturn, renderer=pydoc.plaintext)
         self.assertIn('_SpecialForm in module typing', doc)
-        if typing.Any.__doc__:
-            self.assertIn('Any = typing.Any', doc)
-            self.assertIn(typing.Any.__doc__.strip().splitlines()[0], doc)
+        if typing.NoReturn.__doc__:
+            self.assertIn('NoReturn = typing.NoReturn', doc)
+            self.assertIn(typing.NoReturn.__doc__.strip().splitlines()[0], doc)
         else:
-            self.assertIn('Any = class _SpecialForm(_Final)', doc)
+            self.assertIn('NoReturn = class _SpecialForm(_Final)', doc)
 
     def test_typing_pydoc(self):
         def foo(data: typing.List[typing.Any],
@@ -1339,6 +1359,10 @@ foo
         )
 
 
+@unittest.skipIf(
+    is_emscripten or is_wasi,
+    "Socket server not available on Emscripten/WASI."
+)
 class PydocServerTest(unittest.TestCase):
     """Tests for pydoc._start_server"""
 

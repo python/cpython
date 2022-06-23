@@ -18,7 +18,10 @@ import umarshal
 from generate_global_objects import get_identifiers_and_strings
 
 verbose = False
-identifiers = get_identifiers_and_strings()[0]
+identifiers, strings = get_identifiers_and_strings()
+
+# This must be kept in sync with opcode.py
+RESUME = 151
 
 def isprintable(b: bytes) -> bool:
     return all(0x20 <= c < 0x7f for c in b)
@@ -115,6 +118,7 @@ class Printer:
         self.write('#include "Python.h"')
         self.write('#include "internal/pycore_gc.h"')
         self.write('#include "internal/pycore_code.h"')
+        self.write('#include "internal/pycore_frame.h"')
         self.write('#include "internal/pycore_long.h"')
         self.write("")
 
@@ -168,8 +172,12 @@ class Printer:
         return f"& {name}.ob_base.ob_base"
 
     def generate_unicode(self, name: str, s: str) -> str:
+        if s in strings:
+            return f"&_Py_STR({strings[s]})"
         if s in identifiers:
             return f"&_Py_ID({s})"
+        if re.match(r'\A[A-Za-z0-9_]+\Z', s):
+            name = f"const_str_{s}"
         kind, ascii = analyze_character_width(s)
         if kind == PyUnicode_1BYTE_KIND:
             datatype = "uint8_t"
@@ -185,6 +193,7 @@ class Printer:
                 else:
                     self.write("PyCompactUnicodeObject _compact;")
                 self.write(f"{datatype} _data[{len(s)+1}];")
+        self.deallocs.append(f"_PyStaticUnicode_Dealloc((PyObject *)&{name});")
         with self.block(f"{name} =", ";"):
             if ascii:
                 with self.block("._ascii =", ","):
@@ -195,7 +204,6 @@ class Printer:
                         self.write(".kind = 1,")
                         self.write(".compact = 1,")
                         self.write(".ascii = 1,")
-                        self.write(".ready = 1,")
                 self.write(f"._data = {make_string_literal(s.encode('ascii'))},")
                 return f"& {name}._ascii.ob_base"
             else:
@@ -208,39 +216,22 @@ class Printer:
                             self.write(f".kind = {kind},")
                             self.write(".compact = 1,")
                             self.write(".ascii = 0,")
-                            self.write(".ready = 1,")
                 with self.block(f"._data =", ","):
                     for i in range(0, len(s), 16):
                         data = s[i:i+16]
                         self.write(", ".join(map(str, map(ord, data))) + ",")
-                if kind == PyUnicode_2BYTE_KIND:
-                    self.patchups.append("if (sizeof(wchar_t) == 2) {")
-                    self.patchups.append(f"    {name}._compact._base.wstr = (wchar_t *) {name}._data;")
-                    self.patchups.append(f"    {name}._compact.wstr_length = {len(s)};")
-                    self.patchups.append("}")
-                if kind == PyUnicode_4BYTE_KIND:
-                    self.patchups.append("if (sizeof(wchar_t) == 4) {")
-                    self.patchups.append(f"    {name}._compact._base.wstr = (wchar_t *) {name}._data;")
-                    self.patchups.append(f"    {name}._compact.wstr_length = {len(s)};")
-                    self.patchups.append("}")
                 return f"& {name}._compact._base.ob_base"
 
 
     def generate_code(self, name: str, code: types.CodeType) -> str:
         # The ordering here matches PyCode_NewWithPosOnlyArgs()
         # (but see below).
-        co_code = self.generate(name + "_code", code.co_code)
         co_consts = self.generate(name + "_consts", code.co_consts)
         co_names = self.generate(name + "_names", code.co_names)
-        co_varnames = self.generate(name + "_varnames", code.co_varnames)
-        co_freevars = self.generate(name + "_freevars", code.co_freevars)
-        co_cellvars = self.generate(name + "_cellvars", code.co_cellvars)
         co_filename = self.generate(name + "_filename", code.co_filename)
         co_name = self.generate(name + "_name", code.co_name)
         co_qualname = self.generate(name + "_qualname", code.co_qualname)
         co_linetable = self.generate(name + "_linetable", code.co_linetable)
-        co_endlinetable = self.generate(name + "_endlinetable", code.co_endlinetable)
-        co_columntable = self.generate(name + "_columntable", code.co_columntable)
         co_exceptiontable = self.generate(name + "_exceptiontable", code.co_exceptiontable)
         # These fields are not directly accessible
         localsplusnames, localspluskinds = get_localsplus(code)
@@ -249,42 +240,48 @@ class Printer:
         # Derived values
         nlocals, nplaincellvars, ncellvars, nfreevars = \
             get_localsplus_counts(code, localsplusnames, localspluskinds)
-        with self.block(f"static struct PyCodeObject {name} =", ";"):
-            self.object_head("PyCode_Type")
+        co_code_adaptive = make_string_literal(code.co_code)
+        self.write("static")
+        with self.indent():
+            self.write(f"struct _PyCode_DEF({len(code.co_code)})")
+        with self.block(f"{name} =", ";"):
+            self.object_var_head("PyCode_Type", len(code.co_code) // 2)
             # But the ordering here must match that in cpython/code.h
             # (which is a pain because we tend to reorder those for perf)
             # otherwise MSVC doesn't like it.
             self.write(f".co_consts = {co_consts},")
             self.write(f".co_names = {co_names},")
-            self.write(f".co_firstinstr = (_Py_CODEUNIT *) {removesuffix(co_code, '.ob_base.ob_base')}.ob_sval,")
             self.write(f".co_exceptiontable = {co_exceptiontable},")
             self.field(code, "co_flags")
             self.write(".co_warmup = QUICKENING_INITIAL_WARMUP_VALUE,")
+            self.write("._co_linearray_entry_size = 0,")
             self.field(code, "co_argcount")
             self.field(code, "co_posonlyargcount")
             self.field(code, "co_kwonlyargcount")
+            self.write(f".co_framesize = {code.co_stacksize + len(localsplusnames)} + FRAME_SPECIALS_SIZE,")
             self.field(code, "co_stacksize")
             self.field(code, "co_firstlineno")
-            self.write(f".co_code = {co_code},")
+            self.write(f".co_nlocalsplus = {len(localsplusnames)},")
+            self.field(code, "co_nlocals")
+            self.write(f".co_nplaincellvars = {nplaincellvars},")
+            self.write(f".co_ncellvars = {ncellvars},")
+            self.write(f".co_nfreevars = {nfreevars},")
             self.write(f".co_localsplusnames = {co_localsplusnames},")
             self.write(f".co_localspluskinds = {co_localspluskinds},")
             self.write(f".co_filename = {co_filename},")
             self.write(f".co_name = {co_name},")
             self.write(f".co_qualname = {co_qualname},")
             self.write(f".co_linetable = {co_linetable},")
-            self.write(f".co_endlinetable = {co_endlinetable},")
-            self.write(f".co_columntable = {co_columntable},")
-            self.write(f".co_nlocalsplus = {len(localsplusnames)},")
-            self.field(code, "co_nlocals")
-            self.write(f".co_nplaincellvars = {nplaincellvars},")
-            self.write(f".co_ncellvars = {ncellvars},")
-            self.write(f".co_nfreevars = {nfreevars},")
-            self.write(f".co_varnames = {co_varnames},")
-            self.write(f".co_cellvars = {co_cellvars},")
-            self.write(f".co_freevars = {co_freevars},")
-        self.deallocs.append(f"_PyStaticCode_Dealloc(&{name});")
-        self.interns.append(f"_PyStaticCode_InternStrings(&{name})")
-        return f"& {name}.ob_base"
+            self.write("._co_linearray = NULL,")
+            self.write(f".co_code_adaptive = {co_code_adaptive},")
+            for i, op in enumerate(code.co_code[::2]):
+                if op == RESUME:
+                    self.write(f"._co_firsttraceable = {i},")
+                    break
+        name_as_code = f"(PyCodeObject *)&{name}"
+        self.deallocs.append(f"_PyStaticCode_Dealloc({name_as_code});")
+        self.interns.append(f"_PyStaticCode_InternStrings({name_as_code})")
+        return f"& {name}.ob_base.ob_base"
 
     def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:
         if len(t) == 0:
@@ -328,6 +325,10 @@ class Printer:
     def generate_int(self, name: str, i: int) -> str:
         if -5 <= i <= 256:
             return f"(PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + {i}]"
+        if i >= 0:
+            name = f"const_int_{i}"
+        else:
+            name = f"const_int_negative_{abs(i)}"
         if abs(i) < 2**15:
             self._generate_int_for_bits(name, i, 2**15)
         else:
@@ -450,13 +451,13 @@ def generate(args: list[str], output: TextIO) -> None:
                 code = compile(fd.read(), f"<frozen {modname}>", "exec")
             printer.generate_file(modname, code)
     with printer.block(f"void\n_Py_Deepfreeze_Fini(void)"):
-            for p in printer.deallocs:
-                printer.write(p)
+        for p in printer.deallocs:
+            printer.write(p)
     with printer.block(f"int\n_Py_Deepfreeze_Init(void)"):
-            for p in printer.interns:
-                with printer.block(f"if ({p} < 0)"):
-                    printer.write("return -1;")
-            printer.write("return 0;")
+        for p in printer.interns:
+            with printer.block(f"if ({p} < 0)"):
+                printer.write("return -1;")
+        printer.write("return 0;")
     if verbose:
         print(f"Cache hits: {printer.hits}, misses: {printer.misses}")
 

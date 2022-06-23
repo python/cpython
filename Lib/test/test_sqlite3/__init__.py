@@ -3,7 +3,6 @@ from test.support import import_helper, load_package_tests, verbose
 # Skip test if _sqlite3 module not installed.
 import_helper.import_module('_sqlite3')
 
-import unittest
 import os
 import sqlite3
 

@@ -1349,6 +1349,8 @@ Using the non-data descriptor protocol, a pure Python version of
             if cls is None:
                 cls = type(obj)
             if hasattr(type(self.f), '__get__'):
+                # This code path was added in Python 3.9
+                # and was deprecated in Python 3.11.
                 return self.f.__get__(cls, cls)
             return MethodType(self.f, cls)
 
@@ -1386,7 +1388,7 @@ Using the non-data descriptor protocol, a pure Python version of
 The code path for ``hasattr(type(self.f), '__get__')`` was added in
 Python 3.9 and makes it possible for :func:`classmethod` to support
 chained decorators.  For example, a classmethod and property could be
-chained together:
+chained together.  In Python 3.11, this functionality was deprecated.
 
 .. testcode::
 

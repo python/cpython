@@ -123,27 +123,26 @@ Functions for integers
 .. function:: randrange(stop)
               randrange(start, stop[, step])
 
-   Return a randomly selected element from ``range(start, stop, step)``.  This is
-   equivalent to ``choice(range(start, stop, step))``, but doesn't actually build a
-   range object.
+   Return a randomly selected element from ``range(start, stop, step)``.
 
-   The positional argument pattern matches that of :func:`range`.  Keyword arguments
-   should not be used because the function may use them in unexpected ways.
+   This is roughly equivalent to ``choice(range(start, stop, step))`` but
+   supports arbitrarily large ranges and is optimized for common cases.
+
+   The positional argument pattern matches the :func:`range` function.
+
+   Keyword arguments should not be used because they can interpreted
+   in unexpected ways. For example ``range(start=100)`` is interpreted
+   as ``range(0, 100, 1)``.
 
    .. versionchanged:: 3.2
       :meth:`randrange` is more sophisticated about producing equally distributed
       values.  Formerly it used a style like ``int(random()*n)`` which could produce
       slightly uneven distributions.
 
-   .. deprecated:: 3.10
-      The automatic conversion of non-integer types to equivalent integers is
-      deprecated.  Currently ``randrange(10.0)`` is losslessly converted to
-      ``randrange(10)``.  In the future, this will raise a :exc:`TypeError`.
-
-   .. deprecated:: 3.10
-      The exception raised for non-integral values such as ``randrange(10.5)``
-      or ``randrange('10')`` will be changed from :exc:`ValueError` to
-      :exc:`TypeError`.
+   .. versionchanged:: 3.12
+      Automatic conversion of non-integer types is no longer supported.
+      Calls such as ``randrange(10.0)`` and ``randrange(Fraction(10, 1))``
+      now raise a :exc:`TypeError`.
 
 .. function:: randint(a, b)
 
@@ -257,7 +256,7 @@ Functions for sequences
    .. versionchanged:: 3.11
 
       The *population* must be a sequence.  Automatic conversion of sets
-      to lists is longer supported.
+      to lists is no longer supported.
 
 
 .. _real-valued-distributions:

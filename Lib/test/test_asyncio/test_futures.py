@@ -148,7 +148,7 @@ class BaseFutureTests:
         with self.assertWarns(DeprecationWarning) as cm:
             with self.assertRaisesRegex(RuntimeError, 'There is no current event loop'):
                 self._new_future()
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
 
     def test_constructor_use_running_loop(self):
         async def test():
@@ -163,7 +163,7 @@ class BaseFutureTests:
         self.addCleanup(asyncio.set_event_loop, None)
         with self.assertWarns(DeprecationWarning) as cm:
             f = self._new_future()
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
         self.assertIs(f._loop, self.loop)
         self.assertIs(f.get_loop(), self.loop)
 
@@ -228,14 +228,22 @@ class BaseFutureTests:
         self.assertTrue(hasattr(f, '_cancel_message'))
         self.assertEqual(f._cancel_message, None)
 
-        f.cancel('my message')
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "Passing 'msg' argument"
+        ):
+            f.cancel('my message')
         with self.assertRaises(asyncio.CancelledError):
             self.loop.run_until_complete(f)
         self.assertEqual(f._cancel_message, 'my message')
 
     def test_future_cancel_message_setter(self):
         f = self._new_future(loop=self.loop)
-        f.cancel('my message')
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "Passing 'msg' argument"
+        ):
+            f.cancel('my message')
         f._cancel_message = 'my new message'
         self.assertEqual(f._cancel_message, 'my new message')
 
@@ -502,7 +510,7 @@ class BaseFutureTests:
         with self.assertWarns(DeprecationWarning) as cm:
             with self.assertRaises(RuntimeError):
                 asyncio.wrap_future(f1)
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
         ex.shutdown(wait=True)
 
     def test_wrap_future_use_running_loop(self):
@@ -526,7 +534,7 @@ class BaseFutureTests:
         f1 = ex.submit(run, 'oi')
         with self.assertWarns(DeprecationWarning) as cm:
             f2 = asyncio.wrap_future(f1)
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
         self.assertIs(self.loop, f2._loop)
         ex.shutdown(wait=True)
 

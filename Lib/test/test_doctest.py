@@ -4,7 +4,6 @@ Test script for doctest.
 
 from test import support
 from test.support import import_helper
-from test.support import os_helper
 import doctest
 import functools
 import os
@@ -14,12 +13,17 @@ import importlib.abc
 import importlib.util
 import unittest
 import tempfile
-import shutil
 import types
 import contextlib
 
+
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test_CLI requires subprocess support.")
+
+
 # NOTE: There are some additional tests relating to interaction with
 #       zipimport in the test_zipimport_support test module.
+# There are also related tests in `test_doctest2` module.
 
 ######################################################################
 ## Sample Objects (used by test cases)
@@ -455,7 +459,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from test_doctest.py:28 (1 example)>]
+    [<DocTest sample_func from test_doctest.py:32 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -636,6 +640,26 @@ displays.
      1  SampleClass.a_staticmethod
      1  SampleClass.double
      1  SampleClass.get
+
+When used with `exclude_empty=False` we are also interested in line numbers
+of doctests that are empty.
+It used to be broken for quite some time until `bpo-28249`.
+
+    >>> from test import doctest_lineno
+    >>> tests = doctest.DocTestFinder(exclude_empty=False).find(doctest_lineno)
+    >>> for t in tests:
+    ...     print('%5s  %s' % (t.lineno, t.name))
+     None  test.doctest_lineno
+       22  test.doctest_lineno.ClassWithDocstring
+       30  test.doctest_lineno.ClassWithDoctest
+     None  test.doctest_lineno.ClassWithoutDocstring
+     None  test.doctest_lineno.MethodWrapper
+       39  test.doctest_lineno.MethodWrapper.method_with_docstring
+       45  test.doctest_lineno.MethodWrapper.method_with_doctest
+     None  test.doctest_lineno.MethodWrapper.method_without_docstring
+        4  test.doctest_lineno.func_with_docstring
+       12  test.doctest_lineno.func_with_doctest
+     None  test.doctest_lineno.func_without_docstring
 
 Turning off Recursion
 ~~~~~~~~~~~~~~~~~~~~~
@@ -2785,6 +2809,8 @@ in it, and use a package hook to install a custom loader; on any platform,
 at least one of the line endings will raise a ValueError for inconsistent
 whitespace if doctest does not correctly do the newline conversion.
 
+    >>> from test.support import os_helper
+    >>> import shutil
     >>> dn = tempfile.mkdtemp()
     >>> pkg = os.path.join(dn, "doctest_testpkg")
     >>> os.mkdir(pkg)
@@ -3127,6 +3153,22 @@ def test_no_trailing_whitespace_stripping():
     *NOTE*: `\x20` is for checking the trailing whitespace on the +a line above.
     We cannot use actual spaces there, as a commit hook prevents from committing
     patches that contain trailing whitespace. More info on Issue 24746.
+    """
+
+
+def test_run_doctestsuite_multiple_times():
+    """
+    It was not possible to run the same DocTestSuite multiple times
+    http://bugs.python.org/issue2604
+    http://bugs.python.org/issue9736
+
+    >>> import unittest
+    >>> import test.sample_doctest
+    >>> suite = doctest.DocTestSuite(test.sample_doctest)
+    >>> suite.run(unittest.TestResult())
+    <unittest.result.TestResult run=9 errors=0 failures=4>
+    >>> suite.run(unittest.TestResult())
+    <unittest.result.TestResult run=9 errors=0 failures=4>
     """
 
 

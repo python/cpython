@@ -10,6 +10,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_bytesobject.h"   // _PyBytes_Repeat
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 #include <stddef.h>
@@ -59,7 +60,6 @@ typedef struct {
 
     PyObject *str_read;
     PyObject *str_write;
-    PyObject *str__array_reconstructor;
     PyObject *str___dict__;
     PyObject *str_iter;
 } array_state;
@@ -910,34 +910,24 @@ static PyObject *
 array_repeat(arrayobject *a, Py_ssize_t n)
 {
     array_state *state = find_array_state_by_type(Py_TYPE(a));
-    Py_ssize_t size;
-    arrayobject *np;
-    Py_ssize_t oldbytes, newbytes;
+
     if (n < 0)
         n = 0;
-    if ((Py_SIZE(a) != 0) && (n > PY_SSIZE_T_MAX / Py_SIZE(a))) {
+    const Py_ssize_t array_length = Py_SIZE(a);
+    if ((array_length != 0) && (n > PY_SSIZE_T_MAX / array_length)) {
         return PyErr_NoMemory();
     }
-    size = Py_SIZE(a) * n;
-    np = (arrayobject *) newarrayobject(state->ArrayType, size, a->ob_descr);
+    Py_ssize_t size = array_length * n;
+    arrayobject* np = (arrayobject *) newarrayobject(state->ArrayType, size, a->ob_descr);
     if (np == NULL)
         return NULL;
     if (size == 0)
         return (PyObject *)np;
-    oldbytes = Py_SIZE(a) * a->ob_descr->itemsize;
-    newbytes = oldbytes * n;
-    /* this follows the code in unicode_repeat */
-    if (oldbytes == 1) {
-        memset(np->ob_item, a->ob_item[0], newbytes);
-    } else {
-        Py_ssize_t done = oldbytes;
-        memcpy(np->ob_item, a->ob_item, oldbytes);
-        while (done < newbytes) {
-            Py_ssize_t ncopy = (done <= newbytes-done) ? done : newbytes-done;
-            memcpy(np->ob_item+done, np->ob_item, ncopy);
-            done += ncopy;
-        }
-    }
+
+    const Py_ssize_t oldbytes = array_length * a->ob_descr->itemsize;
+    const Py_ssize_t newbytes = oldbytes * n;
+    _PyBytes_Repeat(np->ob_item, newbytes, a->ob_item, oldbytes);
+
     return (PyObject *)np;
 }
 
@@ -1075,27 +1065,23 @@ array_inplace_concat(arrayobject *self, PyObject *bb)
 static PyObject *
 array_inplace_repeat(arrayobject *self, Py_ssize_t n)
 {
-    char *items, *p;
-    Py_ssize_t size, i;
+    const Py_ssize_t array_size = Py_SIZE(self);
 
-    if (Py_SIZE(self) > 0) {
+    if (array_size > 0 && n != 1 ) {
         if (n < 0)
             n = 0;
         if ((self->ob_descr->itemsize != 0) &&
-            (Py_SIZE(self) > PY_SSIZE_T_MAX / self->ob_descr->itemsize)) {
+            (array_size > PY_SSIZE_T_MAX / self->ob_descr->itemsize)) {
             return PyErr_NoMemory();
         }
-        size = Py_SIZE(self) * self->ob_descr->itemsize;
+        Py_ssize_t size = array_size * self->ob_descr->itemsize;
         if (n > 0 && size > PY_SSIZE_T_MAX / n) {
             return PyErr_NoMemory();
         }
-        if (array_resize(self, n * Py_SIZE(self)) == -1)
+        if (array_resize(self, n * array_size) == -1)
             return NULL;
-        items = p = self->ob_item;
-        for (i = 1; i < n; i++) {
-            p += size;
-            memcpy(p, items, size);
-        }
+
+        _PyBytes_Repeat(self->ob_item, n*size, self->ob_item, size);
     }
     Py_INCREF(self);
     return (PyObject *)self;
@@ -2212,13 +2198,8 @@ array_array___reduce_ex___impl(arrayobject *self, PyTypeObject *cls,
     assert(state != NULL);
 
     if (array_reconstructor == NULL) {
-        PyObject *array_module = PyImport_ImportModule("array");
-        if (array_module == NULL)
-            return NULL;
-        array_reconstructor = PyObject_GetAttr(
-            array_module,
-            state->str__array_reconstructor);
-        Py_DECREF(array_module);
+        array_reconstructor = _PyImport_GetModuleAttrString(
+                "array", "_array_reconstructor");
         if (array_reconstructor == NULL)
             return NULL;
     }
@@ -3042,7 +3023,6 @@ array_clear(PyObject *module)
     Py_CLEAR(state->ArrayIterType);
     Py_CLEAR(state->str_read);
     Py_CLEAR(state->str_write);
-    Py_CLEAR(state->str__array_reconstructor);
     Py_CLEAR(state->str___dict__);
     Py_CLEAR(state->str_iter);
     return 0;
@@ -3088,7 +3068,6 @@ array_modexec(PyObject *m)
     /* Add interned strings */
     ADD_INTERNED(state, read);
     ADD_INTERNED(state, write);
-    ADD_INTERNED(state, _array_reconstructor);
     ADD_INTERNED(state, __dict__);
     ADD_INTERNED(state, iter);
 
@@ -3102,13 +3081,8 @@ array_modexec(PyObject *m)
         return -1;
     }
 
-    PyObject *abc_mod = PyImport_ImportModule("collections.abc");
-    if (!abc_mod) {
-        Py_DECREF((PyObject *)state->ArrayType);
-        return -1;
-    }
-    PyObject *mutablesequence = PyObject_GetAttrString(abc_mod, "MutableSequence");
-    Py_DECREF(abc_mod);
+    PyObject *mutablesequence = _PyImport_GetModuleAttrString(
+            "collections.abc", "MutableSequence");
     if (!mutablesequence) {
         Py_DECREF((PyObject *)state->ArrayType);
         return -1;

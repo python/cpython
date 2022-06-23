@@ -1,2 +1,0 @@
-Prevent CVE-2022-26488 by ensuring the Add to PATH option in the Windows
-installer uses the correct path when being repaired.

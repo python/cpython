@@ -4,6 +4,7 @@
 .. module:: msilib
    :platform: Windows
    :synopsis: Creation of Microsoft Installer files, and CAB files.
+   :deprecated:
 
 .. moduleauthor:: Martin v. Löwis <martin@v.loewis.de>
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
@@ -11,6 +12,10 @@
 **Source code:** :source:`Lib/msilib/__init__.py`
 
 .. index:: single: msi
+
+.. deprecated-removed:: 3.11 3.13
+   The :mod:`msilib` module is deprecated
+   (see :pep:`PEP 594 <594#msilib>` for details).
 
 --------------
 

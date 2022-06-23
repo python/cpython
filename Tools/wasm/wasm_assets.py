@@ -13,14 +13,13 @@ import argparse
 import pathlib
 import shutil
 import sys
+import sysconfig
 import zipfile
 
 # source directory
 SRCDIR = pathlib.Path(__file__).parent.parent.parent.absolute()
 SRCDIR_LIB = SRCDIR / "Lib"
 
-# sysconfig data relative to build dir.
-SYSCONFIGDATA_GLOB = "build/lib.*/_sysconfigdata_*.py"
 
 # Library directory relative to $(prefix).
 WASM_LIB = pathlib.PurePath("lib")
@@ -38,33 +37,44 @@ WASM_DYNLOAD = WASM_STDLIB / "lib-dynload"
 OMIT_FILES = (
     # regression tests
     "test/",
-    # user interfaces: TK, curses
-    "curses/",
-    "idlelib/",
-    "tkinter/",
-    "turtle.py",
-    "turtledemo/",
     # package management
     "ensurepip/",
     "venv/",
     # build system
     "distutils/",
     "lib2to3/",
-    # concurrency
-    "concurrent/",
-    "multiprocessing/",
     # deprecated
     "asyncore.py",
     "asynchat.py",
-    # Synchronous network I/O and protocols are not supported; for example,
-    # socket.create_connection() raises an exception:
-    # "BlockingIOError: [Errno 26] Operation in progress".
+    "uu.py",
+    "xdrlib.py",
+    # other platforms
+    "_aix_support.py",
+    "_bootsubprocess.py",
+    "_osx_support.py",
+    # webbrowser
+    "antigravity.py",
+    "webbrowser.py",
+    # Pure Python implementations of C extensions
+    "_pydecimal.py",
+    "_pyio.py",
+    # Misc unused or large files
+    "pydoc_data/",
+    "msilib/",
+)
+
+# Synchronous network I/O and protocols are not supported; for example,
+# socket.create_connection() raises an exception:
+# "BlockingIOError: [Errno 26] Operation in progress".
+OMIT_NETWORKING_FILES = (
     "cgi.py",
     "cgitb.py",
     "email/",
     "ftplib.py",
     "http/",
     "imaplib.py",
+    "mailbox.py",
+    "mailcap.py",
     "nntplib.py",
     "poplib.py",
     "smtpd.py",
@@ -77,62 +87,95 @@ OMIT_FILES = (
     "urllib/response.py",
     "urllib/robotparser.py",
     "wsgiref/",
-    "xmlrpc/",
-    # dbm / gdbm
-    "dbm/",
-    # other platforms
-    "_aix_support.py",
-    "_bootsubprocess.py",
-    "_osx_support.py",
-    # webbrowser
-    "antigravity.py",
-    "webbrowser.py",
-    # ctypes
-    "ctypes/",
-    # Pure Python implementations of C extensions
-    "_pydecimal.py",
-    "_pyio.py",
-    # Misc unused or large files
-    "pydoc_data/",
-    "msilib/",
 )
 
-# regression test sub directories
-OMIT_SUBDIRS = (
-    "ctypes/test/",
-    "tkinter/test/",
-    "unittest/test/",
-)
+OMIT_MODULE_FILES = {
+    "_asyncio": ["asyncio/"],
+    "audioop": ["aifc.py", "sunau.py", "wave.py"],
+    "_crypt": ["crypt.py"],
+    "_curses": ["curses/"],
+    "_ctypes": ["ctypes/"],
+    "_decimal": ["decimal.py"],
+    "_dbm": ["dbm/ndbm.py"],
+    "_gdbm": ["dbm/gnu.py"],
+    "_json": ["json/"],
+    "_multiprocessing": ["concurrent/", "multiprocessing/"],
+    "pyexpat": ["xml/", "xmlrpc/"],
+    "readline": ["rlcompleter.py"],
+    "_sqlite3": ["sqlite3/"],
+    "_ssl": ["ssl.py"],
+    "_tkinter": ["idlelib/", "tkinter/", "turtle.py", "turtledemo/"],
+
+    "_zoneinfo": ["zoneinfo/"],
+}
+
+def get_builddir(args: argparse.Namespace) -> pathlib.Path:
+    """Get builddir path from pybuilddir.txt
+    """
+    with open("pybuilddir.txt", encoding="utf-8") as f:
+        builddir = f.read()
+    return pathlib.Path(builddir)
 
 
-OMIT_ABSOLUTE = {SRCDIR_LIB / name for name in OMIT_FILES}
-OMIT_SUBDIRS_ABSOLUTE = tuple(str(SRCDIR_LIB / name) for name in OMIT_SUBDIRS)
-
-
-def filterfunc(name: str) -> bool:
-    return not name.startswith(OMIT_SUBDIRS_ABSOLUTE)
+def get_sysconfigdata(args: argparse.Namespace) -> pathlib.Path:
+    """Get path to sysconfigdata relative to build root
+    """
+    data_name = sysconfig._get_sysconfigdata_name()
+    assert "emscripten_wasm32" in data_name
+    filename = data_name + ".py"
+    return args.builddir / filename
 
 
 def create_stdlib_zip(
-    args: argparse.Namespace, compression: int = zipfile.ZIP_DEFLATED, *, optimize: int = 0
+    args: argparse.Namespace,
+    *,
+    optimize: int = 0,
 ) -> None:
-    sysconfig_data = list(args.builddir.glob(SYSCONFIGDATA_GLOB))
-    if not sysconfig_data:
-        raise ValueError("No sysconfigdata file found")
-
     with zipfile.PyZipFile(
-        args.wasm_stdlib_zip, mode="w", compression=compression, optimize=0
+        args.wasm_stdlib_zip, mode="w", compression=args.compression, optimize=optimize
     ) as pzf:
+        if args.compresslevel is not None:
+            pzf.compresslevel = args.compresslevel
+        pzf.writepy(args.sysconfig_data)
         for entry in sorted(args.srcdir_lib.iterdir()):
             if entry.name == "__pycache__":
                 continue
-            if entry in OMIT_ABSOLUTE:
+            if entry in args.omit_files_absolute:
                 continue
             if entry.name.endswith(".py") or entry.is_dir():
                 # writepy() writes .pyc files (bytecode).
-                pzf.writepy(entry, filterfunc=filterfunc)
-        for entry in sysconfig_data:
-            pzf.writepy(entry)
+                pzf.writepy(entry)
+
+
+def detect_extension_modules(args: argparse.Namespace):
+    modules = {}
+
+    # disabled by Modules/Setup.local ?
+    with open(args.buildroot / "Makefile") as f:
+        for line in f:
+            if line.startswith("MODDISABLED_NAMES="):
+                disabled = line.split("=", 1)[1].strip().split()
+                for modname in disabled:
+                    modules[modname] = False
+                break
+
+    # disabled by configure?
+    with open(args.sysconfig_data) as f:
+        data = f.read()
+    loc = {}
+    exec(data, globals(), loc)
+
+    for name, value in loc["build_time_vars"].items():
+        if value not in {"yes", "missing", "disabled", "n/a"}:
+            continue
+        if not name.startswith("MODULE_"):
+            continue
+        if name.endswith(("_CFLAGS", "_DEPS", "_LDFLAGS")):
+            continue
+        modname = name.removeprefix("MODULE_").lower()
+        if modname not in modules:
+            modules[modname] = value == "yes"
+    return modules
 
 
 def path(val: str) -> pathlib.Path:
@@ -141,13 +184,16 @@ def path(val: str) -> pathlib.Path:
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--builddir",
-    help="absolute build directory",
+    "--buildroot",
+    help="absolute path to build root",
     default=pathlib.Path(".").absolute(),
     type=path,
 )
 parser.add_argument(
-    "--prefix", help="install prefix", default=pathlib.Path("/usr/local"), type=path
+    "--prefix",
+    help="install prefix",
+    default=pathlib.Path("/usr/local"),
+    type=path,
 )
 
 
@@ -157,10 +203,29 @@ def main():
     relative_prefix = args.prefix.relative_to(pathlib.Path("/"))
     args.srcdir = SRCDIR
     args.srcdir_lib = SRCDIR_LIB
-    args.wasm_root = args.builddir / relative_prefix
+    args.wasm_root = args.buildroot / relative_prefix
     args.wasm_stdlib_zip = args.wasm_root / WASM_STDLIB_ZIP
     args.wasm_stdlib = args.wasm_root / WASM_STDLIB
     args.wasm_dynload = args.wasm_root / WASM_DYNLOAD
+
+    # bpo-17004: zipimport supports only zlib compression.
+    # Emscripten ZIP_STORED + -sLZ4=1 linker flags results in larger file.
+    args.compression = zipfile.ZIP_DEFLATED
+    args.compresslevel = 9
+
+    args.builddir = get_builddir(args)
+    args.sysconfig_data = get_sysconfigdata(args)
+    if not args.sysconfig_data.is_file():
+        raise ValueError(f"sysconfigdata file {args.sysconfig_data} missing.")
+
+    extmods = detect_extension_modules(args)
+    omit_files = list(OMIT_FILES)
+    omit_files.extend(OMIT_NETWORKING_FILES)
+    for modname, modfiles in OMIT_MODULE_FILES.items():
+        if not extmods.get(modname):
+            omit_files.extend(modfiles)
+
+    args.omit_files_absolute = {args.srcdir_lib / name for name in omit_files}
 
     # Empty, unused directory for dynamic libs, but required for site initialization.
     args.wasm_dynload.mkdir(parents=True, exist_ok=True)
@@ -170,7 +235,7 @@ def main():
     shutil.copy(args.srcdir_lib / "os.py", args.wasm_stdlib)
     # The rest of stdlib that's useful in a WASM context.
     create_stdlib_zip(args)
-    size = round(args.wasm_stdlib_zip.stat().st_size / 1024 ** 2, 2)
+    size = round(args.wasm_stdlib_zip.stat().st_size / 1024**2, 2)
     parser.exit(0, f"Created {args.wasm_stdlib_zip} ({size} MiB)\n")
 
 

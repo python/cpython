@@ -91,8 +91,8 @@ library that Python uses on your platform. On most platforms the
 
    Hashlib now uses SHA3 and SHAKE from OpenSSL 1.1.1 and newer.
 
-For example, to obtain the digest of the byte string ``b'Nobody inspects the
-spammish repetition'``::
+For example, to obtain the digest of the byte string ``b"Nobody inspects the
+spammish repetition"``::
 
    >>> import hashlib
    >>> m = hashlib.sha256()
@@ -100,15 +100,13 @@ spammish repetition'``::
    >>> m.update(b" the spammish repetition")
    >>> m.digest()
    b'\x03\x1e\xdd}Ae\x15\x93\xc5\xfe\\\x00o\xa5u+7\xfd\xdf\xf7\xbcN\x84:\xa6\xaf\x0c\x95\x0fK\x94\x06'
-   >>> m.digest_size
-   32
-   >>> m.block_size
-   64
+   >>> m.hexdigest()
+   '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
 More condensed:
 
-   >>> hashlib.sha224(b"Nobody inspects the spammish repetition").hexdigest()
-   'a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2'
+   >>> hashlib.sha256(b"Nobody inspects the spammish repetition").hexdigest()
+   '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
 .. function:: new(name[, data], *, usedforsecurity=True)
 
@@ -226,6 +224,49 @@ by the SHAKE algorithm.
    Like :meth:`digest` except the digest is returned as a string object of
    double length, containing only hexadecimal digits.  This may be used to
    exchange the value safely in email or other non-binary environments.
+
+
+File hashing
+------------
+
+The hashlib module provides a helper function for efficient hashing of
+a file or file-like object.
+
+.. function:: file_digest(fileobj, digest, /)
+
+   Return a digest object that has been updated with contents of file object.
+
+   *fileobj* must be a file-like object opened for reading in binary mode.
+   It accepts file objects from  builtin :func:`open`, :class:`~io.BytesIO`
+   instances, SocketIO objects from :meth:`socket.socket.makefile`, and
+   similar. The function may bypass Python's I/O and use the file descriptor
+   from :meth:`~io.IOBase.fileno` directly. *fileobj* must be assumed to be
+   in an unknown state after this function returns or raises. It is up to
+   the caller to close *fileobj*.
+
+   *digest* must either be a hash algorithm name as a *str*, a hash
+   constructor, or a callable that returns a hash object.
+
+   Example:
+
+      >>> import io, hashlib, hmac
+      >>> with open(hashlib.__file__, "rb") as f:
+      ...     digest = hashlib.file_digest(f, "sha256")
+      ...
+      >>> digest.hexdigest()  # doctest: +ELLIPSIS
+      '...'
+
+      >>> buf = io.BytesIO(b"somedata")
+      >>> mac1 = hmac.HMAC(b"key", digestmod=hashlib.sha512)
+      >>> digest = hashlib.file_digest(buf, lambda: mac1)
+
+      >>> digest is mac1
+      True
+      >>> mac2 = hmac.HMAC(b"key", b"somedata", digestmod=hashlib.sha512)
+      >>> mac1.digest() == mac2.digest()
+      True
+
+   .. versionadded:: 3.11
 
 
 Key derivation
@@ -627,7 +668,7 @@ function:
     hash function used in the protocol summarily stops this type of attack.
 
     (`The Skein Hash Function Family
-    <http://www.skein-hash.info/sites/default/files/skein1.3.pdf>`_,
+    <https://www.schneier.com/wp-content/uploads/2016/02/skein.pdf>`_,
     p. 21)
 
 BLAKE2 can be personalized by passing bytes to the *person* argument::

@@ -81,7 +81,7 @@ if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable &
 if "%SKIPBUILD%" EQU "1" goto skipdoc
 if "%SKIPDOC%" EQU "1" goto skipdoc
 
-call "%D%..\..\doc\make.bat" htmlhelp
+call "%D%..\..\doc\make.bat" html
 if errorlevel 1 exit /B %ERRORLEVEL%
 :skipdoc
 

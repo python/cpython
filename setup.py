@@ -84,9 +84,14 @@ CYGWIN = (HOST_PLATFORM == 'cygwin')
 MACOS = (HOST_PLATFORM == 'darwin')
 AIX = (HOST_PLATFORM.startswith('aix'))
 VXWORKS = ('vxworks' in HOST_PLATFORM)
+EMSCRIPTEN = HOST_PLATFORM == 'emscripten-wasm32'
 CC = os.environ.get("CC")
 if not CC:
     CC = sysconfig.get_config_var("CC")
+
+if EMSCRIPTEN:
+    # emcc is a Python script from a different Python interpreter.
+    os.environ.pop("PYTHONPATH", None)
 
 
 SUMMARY = """
@@ -208,28 +213,6 @@ def macosx_sdk_root():
     return MACOS_SDK_ROOT
 
 
-def macosx_sdk_specified():
-    """Returns true if an SDK was explicitly configured.
-
-    True if an SDK was selected at configure time, either by specifying
-    --enable-universalsdk=(something other than no or /) or by adding a
-    -isysroot option to CFLAGS.  In some cases, like when making
-    decisions about macOS Tk framework paths, we need to be able to
-    know whether the user explicitly asked to build with an SDK versus
-    the implicit use of an SDK when header files are no longer
-    installed on a running system by the Command Line Tools.
-    """
-    global MACOS_SDK_SPECIFIED
-
-    # If already called, return cached result.
-    if MACOS_SDK_SPECIFIED:
-        return MACOS_SDK_SPECIFIED
-
-    # Find the sdk root and set MACOS_SDK_SPECIFIED
-    macosx_sdk_root()
-    return MACOS_SDK_SPECIFIED
-
-
 def is_macosx_sdk_path(path):
     """
     Returns True if 'path' can be located in a macOS SDK
@@ -285,59 +268,6 @@ def find_file(filename, std_dirs, paths):
 
     # Not found anywhere
     return None
-
-
-def find_library_file(compiler, libname, std_dirs, paths):
-    result = compiler.find_library_file(std_dirs + paths, libname)
-    if result is None:
-        return None
-
-    if MACOS:
-        sysroot = macosx_sdk_root()
-
-    # Check whether the found file is in one of the standard directories
-    dirname = os.path.dirname(result)
-    for p in std_dirs:
-        # Ensure path doesn't end with path separator
-        p = p.rstrip(os.sep)
-
-        if MACOS and is_macosx_sdk_path(p):
-            # Note that, as of Xcode 7, Apple SDKs may contain textual stub
-            # libraries with .tbd extensions rather than the normal .dylib
-            # shared libraries installed in /.  The Apple compiler tool
-            # chain handles this transparently but it can cause problems
-            # for programs that are being built with an SDK and searching
-            # for specific libraries.  Distutils find_library_file() now
-            # knows to also search for and return .tbd files.  But callers
-            # of find_library_file need to keep in mind that the base filename
-            # of the returned SDK library file might have a different extension
-            # from that of the library file installed on the running system,
-            # for example:
-            #   /Applications/Xcode.app/Contents/Developer/Platforms/
-            #       MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk/
-            #       usr/lib/libedit.tbd
-            # vs
-            #   /usr/lib/libedit.dylib
-            if os.path.join(sysroot, p[1:]) == dirname:
-                return [ ]
-
-        if p == dirname:
-            return [ ]
-
-    # Otherwise, it must have been in one of the additional directories,
-    # so we have to figure out which one.
-    for p in paths:
-        # Ensure path doesn't end with path separator
-        p = p.rstrip(os.sep)
-
-        if MACOS and is_macosx_sdk_path(p):
-            if os.path.join(sysroot, p[1:]) == dirname:
-                return [ p ]
-
-        if p == dirname:
-            return [p]
-    else:
-        assert False, "Internal error: Path not found in std_dirs or paths"
 
 
 def validate_tzpath():
@@ -413,7 +343,7 @@ class PyBuildExt(build_ext):
 
         Distutils appends extra args to the compiler arguments. Some flags like
         -I must appear earlier, otherwise the pre-processor picks up files
-        from system inclue directories.
+        from system include directories.
         """
         upper_name = ext.name.upper()
         # Parse compiler flags (-I, -D, -U, extra args)
@@ -1277,7 +1207,7 @@ class PyBuildExt(build_ext):
             if dbm_args:
                 dbm_order = [arg.split('=')[-1] for arg in dbm_args][-1].split(":")
             else:
-                dbm_order = "ndbm:gdbm:bdb".split(":")
+                dbm_order = "gdbm:ndbm:bdb".split(":")
             dbmext = None
             for cand in dbm_order:
                 if cand == "ndbm":
@@ -1326,6 +1256,7 @@ class PyBuildExt(build_ext):
 
     def detect_sqlite(self):
         sources = [
+            "_sqlite/blob.c",
             "_sqlite/connection.c",
             "_sqlite/cursor.c",
             "_sqlite/microprotocols.c",
@@ -1428,8 +1359,7 @@ class PyBuildExt(build_ext):
         self.detect_decimal()
         self.detect_ctypes()
         self.detect_multiprocessing()
-        if not self.detect_tkinter():
-            self.missing.append('_tkinter')
+        self.detect_tkinter()
         self.detect_uuid()
 
         # Uncomment the next line if you want to play with xxmodule.c
@@ -1438,309 +1368,8 @@ class PyBuildExt(build_ext):
         self.addext(Extension('xxlimited', ['xxlimited.c']))
         self.addext(Extension('xxlimited_35', ['xxlimited_35.c']))
 
-    def detect_tkinter_fromenv(self):
-        # Build _tkinter using the Tcl/Tk locations specified by
-        # the _TCLTK_INCLUDES and _TCLTK_LIBS environment variables.
-        # This method is meant to be invoked by detect_tkinter().
-        #
-        # The variables can be set via one of the following ways.
-        #
-        # - Automatically, at configuration time, by using pkg-config.
-        #   The tool is called by the configure script.
-        #   Additional pkg-config configuration paths can be set via the
-        #   PKG_CONFIG_PATH environment variable.
-        #
-        #     PKG_CONFIG_PATH=".../lib/pkgconfig" ./configure ...
-        #
-        # - Explicitly, at configuration time by setting both
-        #   --with-tcltk-includes and --with-tcltk-libs.
-        #
-        #     ./configure ... \
-        #     --with-tcltk-includes="-I/path/to/tclincludes \
-        #                            -I/path/to/tkincludes"
-        #     --with-tcltk-libs="-L/path/to/tcllibs -ltclm.n \
-        #                        -L/path/to/tklibs -ltkm.n"
-        #
-        #  - Explicitly, at compile time, by passing TCLTK_INCLUDES and
-        #    TCLTK_LIBS to the make target.
-        #    This will override any configuration-time option.
-        #
-        #      make TCLTK_INCLUDES="..." TCLTK_LIBS="..."
-        #
-        # This can be useful for building and testing tkinter with multiple
-        # versions of Tcl/Tk.  Note that a build of Tk depends on a particular
-        # build of Tcl so you need to specify both arguments and use care when
-        # overriding.
-
-        # The _TCLTK variables are created in the Makefile sharedmods target.
-        tcltk_includes = os.environ.get('_TCLTK_INCLUDES')
-        tcltk_libs = os.environ.get('_TCLTK_LIBS')
-        if not (tcltk_includes and tcltk_libs):
-            # Resume default configuration search.
-            return False
-
-        extra_compile_args = tcltk_includes.split()
-        extra_link_args = tcltk_libs.split()
-        self.add(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
-                           define_macros=[('WITH_APPINIT', 1)],
-                           extra_compile_args = extra_compile_args,
-                           extra_link_args = extra_link_args))
-        return True
-
-    def detect_tkinter_darwin(self):
-        # Build default _tkinter on macOS using Tcl and Tk frameworks.
-        # This method is meant to be invoked by detect_tkinter().
-        #
-        # The macOS native Tk (AKA Aqua Tk) and Tcl are most commonly
-        # built and installed as macOS framework bundles.  However,
-        # for several reasons, we cannot take full advantage of the
-        # Apple-supplied compiler chain's -framework options here.
-        # Instead, we need to find and pass to the compiler the
-        # absolute paths of the Tcl and Tk headers files we want to use
-        # and the absolute path to the directory containing the Tcl
-        # and Tk frameworks for linking.
-        #
-        # We want to handle here two common use cases on macOS:
-        # 1. Build and link with system-wide third-party or user-built
-        #    Tcl and Tk frameworks installed in /Library/Frameworks.
-        # 2. Build and link using a user-specified macOS SDK so that the
-        #    built Python can be exported to other systems.  In this case,
-        #    search only the SDK's /Library/Frameworks (normally empty)
-        #    and /System/Library/Frameworks.
-        #
-        # Any other use cases are handled either by detect_tkinter_fromenv(),
-        # or detect_tkinter(). The former handles non-standard locations of
-        # Tcl/Tk, defined via the _TCLTK_INCLUDES and _TCLTK_LIBS environment
-        # variables. The latter handles any Tcl/Tk versions installed in
-        # standard Unix directories.
-        #
-        # It would be desirable to also handle here the case where
-        # you want to build and link with a framework build of Tcl and Tk
-        # that is not in /Library/Frameworks, say, in your private
-        # $HOME/Library/Frameworks directory or elsewhere. It turns
-        # out to be difficult to make that work automatically here
-        # without bringing into play more tools and magic. That case
-        # can be handled using a recipe with the right arguments
-        # to detect_tkinter_fromenv().
-        #
-        # Note also that the fallback case here is to try to use the
-        # Apple-supplied Tcl and Tk frameworks in /System/Library but
-        # be forewarned that they are deprecated by Apple and typically
-        # out-of-date and buggy; their use should be avoided if at
-        # all possible by installing a newer version of Tcl and Tk in
-        # /Library/Frameworks before building Python without
-        # an explicit SDK or by configuring build arguments explicitly.
-
-        from os.path import join, exists
-
-        sysroot = macosx_sdk_root() # path to the SDK or '/'
-
-        if macosx_sdk_specified():
-            # Use case #2: an SDK other than '/' was specified.
-            # Only search there.
-            framework_dirs = [
-                join(sysroot, 'Library', 'Frameworks'),
-                join(sysroot, 'System', 'Library', 'Frameworks'),
-            ]
-        else:
-            # Use case #1: no explicit SDK selected.
-            # Search the local system-wide /Library/Frameworks,
-            # not the one in the default SDK, otherwise fall back to
-            # /System/Library/Frameworks whose header files may be in
-            # the default SDK or, on older systems, actually installed.
-            framework_dirs = [
-                join('/', 'Library', 'Frameworks'),
-                join(sysroot, 'System', 'Library', 'Frameworks'),
-            ]
-
-        # Find the directory that contains the Tcl.framework and
-        # Tk.framework bundles.
-        for F in framework_dirs:
-            # both Tcl.framework and Tk.framework should be present
-            for fw in 'Tcl', 'Tk':
-                if not exists(join(F, fw + '.framework')):
-                    break
-            else:
-                # ok, F is now directory with both frameworks. Continue
-                # building
-                break
-        else:
-            # Tk and Tcl frameworks not found. Normal "unix" tkinter search
-            # will now resume.
-            return False
-
-        include_dirs = [
-            join(F, fw + '.framework', H)
-            for fw in ('Tcl', 'Tk')
-            for H in ('Headers',)
-        ]
-
-        # Add the base framework directory as well
-        compile_args = ['-F', F]
-
-        # Do not build tkinter for archs that this Tk was not built with.
-        cflags = sysconfig.get_config_vars('CFLAGS')[0]
-        archs = re.findall(r'-arch\s+(\w+)', cflags)
-
-        tmpfile = os.path.join(self.build_temp, 'tk.arch')
-        if not os.path.exists(self.build_temp):
-            os.makedirs(self.build_temp)
-
-        run_command(
-            "file {}/Tk.framework/Tk | grep 'for architecture' > {}".format(F, tmpfile)
-        )
-        with open(tmpfile) as fp:
-            detected_archs = []
-            for ln in fp:
-                a = ln.split()[-1]
-                if a in archs:
-                    detected_archs.append(ln.split()[-1])
-        os.unlink(tmpfile)
-
-        arch_args = []
-        for a in detected_archs:
-            arch_args.append('-arch')
-            arch_args.append(a)
-
-        compile_args += arch_args
-        link_args = [','.join(['-Wl', '-F', F, '-framework', 'Tcl', '-framework', 'Tk']), *arch_args]
-
-        # The X11/xlib.h file bundled in the Tk sources can cause function
-        # prototype warnings from the compiler. Since we cannot easily fix
-        # that, suppress the warnings here instead.
-        if '-Wstrict-prototypes' in cflags.split():
-            compile_args.append('-Wno-strict-prototypes')
-
-        self.add(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
-                           define_macros=[('WITH_APPINIT', 1)],
-                           include_dirs=include_dirs,
-                           libraries=[],
-                           extra_compile_args=compile_args,
-                           extra_link_args=link_args))
-        return True
-
     def detect_tkinter(self):
-        # The _tkinter module.
-        #
-        # Detection of Tcl/Tk is attempted in the following order:
-        #   - Through environment variables.
-        #   - Platform specific detection of Tcl/Tk (currently only macOS).
-        #   - Search of various standard Unix header/library paths.
-        #
-        # Detection stops at the first successful method.
-
-        # Check for Tcl and Tk at the locations indicated by _TCLTK_INCLUDES
-        # and _TCLTK_LIBS environment variables.
-        if self.detect_tkinter_fromenv():
-            return True
-
-        # Rather than complicate the code below, detecting and building
-        # AquaTk is a separate method. Only one Tkinter will be built on
-        # Darwin - either AquaTk, if it is found, or X11 based Tk.
-        if (MACOS and self.detect_tkinter_darwin()):
-            return True
-
-        # Assume we haven't found any of the libraries or include files
-        # The versions with dots are used on Unix, and the versions without
-        # dots on Windows, for detection by cygwin.
-        tcllib = tklib = tcl_includes = tk_includes = None
-        for version in ['8.6', '86', '8.5', '85', '8.4', '84', '8.3', '83',
-                        '8.2', '82', '8.1', '81', '8.0', '80']:
-            tklib = self.compiler.find_library_file(self.lib_dirs,
-                                                        'tk' + version)
-            tcllib = self.compiler.find_library_file(self.lib_dirs,
-                                                         'tcl' + version)
-            if tklib and tcllib:
-                # Exit the loop when we've found the Tcl/Tk libraries
-                break
-
-        # Now check for the header files
-        if tklib and tcllib:
-            # Check for the include files on Debian and {Free,Open}BSD, where
-            # they're put in /usr/include/{tcl,tk}X.Y
-            dotversion = version
-            if '.' not in dotversion and "bsd" in HOST_PLATFORM.lower():
-                # OpenBSD and FreeBSD use Tcl/Tk library names like libtcl83.a,
-                # but the include subdirs are named like .../include/tcl8.3.
-                dotversion = dotversion[:-1] + '.' + dotversion[-1]
-            tcl_include_sub = []
-            tk_include_sub = []
-            for dir in self.inc_dirs:
-                tcl_include_sub += [dir + os.sep + "tcl" + dotversion]
-                tk_include_sub += [dir + os.sep + "tk" + dotversion]
-            tk_include_sub += tcl_include_sub
-            tcl_includes = find_file('tcl.h', self.inc_dirs, tcl_include_sub)
-            tk_includes = find_file('tk.h', self.inc_dirs, tk_include_sub)
-
-        if (tcllib is None or tklib is None or
-            tcl_includes is None or tk_includes is None):
-            self.announce("INFO: Can't locate Tcl/Tk libs and/or headers", 2)
-            return False
-
-        # OK... everything seems to be present for Tcl/Tk.
-
-        include_dirs = []
-        libs = []
-        defs = []
-        added_lib_dirs = []
-        for dir in tcl_includes + tk_includes:
-            if dir not in include_dirs:
-                include_dirs.append(dir)
-
-        # Check for various platform-specific directories
-        if HOST_PLATFORM == 'sunos5':
-            include_dirs.append('/usr/openwin/include')
-            added_lib_dirs.append('/usr/openwin/lib')
-        elif os.path.exists('/usr/X11R6/include'):
-            include_dirs.append('/usr/X11R6/include')
-            added_lib_dirs.append('/usr/X11R6/lib64')
-            added_lib_dirs.append('/usr/X11R6/lib')
-        elif os.path.exists('/usr/X11R5/include'):
-            include_dirs.append('/usr/X11R5/include')
-            added_lib_dirs.append('/usr/X11R5/lib')
-        else:
-            # Assume default location for X11
-            include_dirs.append('/usr/X11/include')
-            added_lib_dirs.append('/usr/X11/lib')
-
-        # If Cygwin, then verify that X is installed before proceeding
-        if CYGWIN:
-            x11_inc = find_file('X11/Xlib.h', [], include_dirs)
-            if x11_inc is None:
-                return False
-
-        # Check for BLT extension
-        if self.compiler.find_library_file(self.lib_dirs + added_lib_dirs,
-                                               'BLT8.0'):
-            defs.append( ('WITH_BLT', 1) )
-            libs.append('BLT8.0')
-        elif self.compiler.find_library_file(self.lib_dirs + added_lib_dirs,
-                                                'BLT'):
-            defs.append( ('WITH_BLT', 1) )
-            libs.append('BLT')
-
-        # Add the Tcl/Tk libraries
-        libs.append('tk'+ version)
-        libs.append('tcl'+ version)
-
-        # Finally, link with the X11 libraries (not appropriate on cygwin)
-        if not CYGWIN:
-            libs.append('X11')
-
-        # XXX handle these, but how to detect?
-        # *** Uncomment and edit for PIL (TkImaging) extension only:
-        #       -DWITH_PIL -I../Extensions/Imaging/libImaging  tkImaging.c \
-        # *** Uncomment and edit for TOGL extension only:
-        #       -DWITH_TOGL togl.c \
-        # *** Uncomment these for TOGL extension only:
-        #       -lGL -lGLU -lXext -lXmu \
-
-        self.add(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
-                           define_macros=[('WITH_APPINIT', 1)] + defs,
-                           include_dirs=include_dirs,
-                           libraries=libs,
-                           library_dirs=added_lib_dirs))
-        return True
+        self.addext(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c']))
 
     def configure_ctypes(self, ext):
         return True
@@ -1778,9 +1407,6 @@ class PyBuildExt(build_ext):
             # compiler, please research a proper solution, instead of
             # finding some -z option for the Sun compiler.
             extra_link_args.append('-mimpure-text')
-
-        elif HOST_PLATFORM.startswith('hp-ux'):
-            extra_link_args.append('-fPIC')
 
         ext = Extension('_ctypes',
                         include_dirs=include_dirs,

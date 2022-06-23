@@ -22,15 +22,6 @@ if sys.platform == 'win32':
         pass
 
 from tkinter import messagebox
-if TkVersion < 8.5:
-    root = Tk()  # otherwise create root in main
-    root.withdraw()
-    from idlelib.run import fix_scaling
-    fix_scaling(root)
-    messagebox.showerror("Idle Cannot Start",
-            "Idle requires tcl/tk 8.5+, not %s." % TkVersion,
-            parent=root)
-    raise SystemExit(1)
 
 from code import InteractiveInterpreter
 import itertools
@@ -1689,11 +1680,6 @@ def main():
         # check for problematic issues and print warning message(s) in
         # the IDLE shell window; this is less intrusive than always
         # opening a separate window.
-
-        # Warn if using a problematic OS X Tk version.
-        tkversionwarning = macosx.tkVersionWarning(root)
-        if tkversionwarning:
-            shell.show_warning(tkversionwarning)
 
         # Warn if the "Prefer tabs when opening documents" system
         # preference is set to "Always".

@@ -1,3 +1,4 @@
+import copy
 import enum
 import doctest
 import inspect
@@ -6,12 +7,14 @@ import pydoc
 import sys
 import unittest
 import threading
+import typing
 import builtins as bltns
 from collections import OrderedDict
 from datetime import date
 from enum import Enum, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
 from enum import STRICT, CONFORM, EJECT, KEEP, _simple_enum, _test_simple_enum
 from enum import verify, UNIQUE, CONTINUOUS, NAMED_FLAGS, ReprEnum
+from enum import member, nonmember
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
@@ -188,6 +191,12 @@ class HeadlightsC(IntFlag, boundary=enum.CONFORM):
     FOG_C = auto()
 
 
+@enum.global_enum
+class NoName(Flag):
+    ONE = 1
+    TWO = 2
+
+
 # tests
 
 class _EnumTests:
@@ -334,36 +343,12 @@ class _EnumTests:
         with self.assertRaises(AttributeError):
             self.MainEnum.second = 'really first'
 
-    @unittest.skipIf(
-            python_version >= (3, 12),
-            '__contains__ now returns True/False for all inputs',
-            )
-    def test_contains_er(self):
-        MainEnum = self.MainEnum
-        self.assertIn(MainEnum.third, MainEnum)
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                self.source_values[1] in MainEnum
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                'first' in MainEnum
-        val = MainEnum.dupe
-        self.assertIn(val, MainEnum)
-        #
-        class OtherEnum(Enum):
-            one = auto()
-            two = auto()
-        self.assertNotIn(OtherEnum.two, MainEnum)
-
-    @unittest.skipIf(
-            python_version < (3, 12),
-            '__contains__ works only with enum memmbers before 3.12',
-            )
     def test_contains_tf(self):
         MainEnum = self.MainEnum
         self.assertIn(MainEnum.first, MainEnum)
-        self.assertTrue(self.source_values[0] in MainEnum)
-        self.assertFalse('first' in MainEnum)
+        self.assertTrue(self.values[0] in MainEnum)
+        if type(self) is not TestStrEnum:
+            self.assertFalse('first' in MainEnum)
         val = MainEnum.dupe
         self.assertIn(val, MainEnum)
         #
@@ -371,6 +356,43 @@ class _EnumTests:
             one = auto()
             two = auto()
         self.assertNotIn(OtherEnum.two, MainEnum)
+        #
+        if MainEnum._member_type_ is object:
+            # enums without mixed data types will always be False
+            class NotEqualEnum(self.enum_type):
+                this = self.source_values[0]
+                that = self.source_values[1]
+            self.assertNotIn(NotEqualEnum.this, MainEnum)
+            self.assertNotIn(NotEqualEnum.that, MainEnum)
+        else:
+            # enums with mixed data types may be True
+            class EqualEnum(self.enum_type):
+                this = self.source_values[0]
+                that = self.source_values[1]
+            self.assertIn(EqualEnum.this, MainEnum)
+            self.assertIn(EqualEnum.that, MainEnum)
+
+    def test_contains_same_name_diff_enum_diff_values(self):
+        MainEnum = self.MainEnum
+        #
+        class OtherEnum(Enum):
+            first = "brand"
+            second = "new"
+            third = "values"
+        #
+        self.assertIn(MainEnum.first, MainEnum)
+        self.assertIn(MainEnum.second, MainEnum)
+        self.assertIn(MainEnum.third, MainEnum)
+        self.assertNotIn(MainEnum.first, OtherEnum)
+        self.assertNotIn(MainEnum.second, OtherEnum)
+        self.assertNotIn(MainEnum.third, OtherEnum)
+        #
+        self.assertIn(OtherEnum.first, OtherEnum)
+        self.assertIn(OtherEnum.second, OtherEnum)
+        self.assertIn(OtherEnum.third, OtherEnum)
+        self.assertNotIn(OtherEnum.first, MainEnum)
+        self.assertNotIn(OtherEnum.second, MainEnum)
+        self.assertNotIn(OtherEnum.third, MainEnum)
 
     def test_dir_on_class(self):
         TE = self.MainEnum
@@ -613,6 +635,7 @@ class _PlainOutputTests:
     def test_str(self):
         TE = self.MainEnum
         if self.is_flag:
+            self.assertEqual(str(TE(0)), "MainEnum(0)")
             self.assertEqual(str(TE.dupe), "MainEnum.dupe")
             self.assertEqual(str(self.dupe2), "MainEnum.first|third")
         else:
@@ -723,6 +746,13 @@ class _MinimalOutputTests:
             self.assertFormatIsValue('{:n}', TE.third)
             self.assertFormatIsValue('{:5.2}', TE.third)
             self.assertFormatIsValue('{:f}', TE.third)
+
+    def test_copy(self):
+        TE = self.MainEnum
+        copied = copy.copy(TE)
+        self.assertEqual(copied, TE)
+        deep = copy.deepcopy(TE)
+        self.assertEqual(deep, TE)
 
 
 class _FlagTests:
@@ -938,6 +968,155 @@ class TestSpecial(unittest.TestCase):
             raise Theory
         self.assertEqual(Theory.__qualname__, 'spanish_inquisition')
 
+    def test_enum_of_types(self):
+        """Support using Enum to refer to types deliberately."""
+        class MyTypes(Enum):
+            i = int
+            f = float
+            s = str
+        self.assertEqual(MyTypes.i.value, int)
+        self.assertEqual(MyTypes.f.value, float)
+        self.assertEqual(MyTypes.s.value, str)
+        class Foo:
+            pass
+        class Bar:
+            pass
+        class MyTypes2(Enum):
+            a = Foo
+            b = Bar
+        self.assertEqual(MyTypes2.a.value, Foo)
+        self.assertEqual(MyTypes2.b.value, Bar)
+        class SpamEnumNotInner:
+            pass
+        class SpamEnum(Enum):
+            spam = SpamEnumNotInner
+        self.assertEqual(SpamEnum.spam.value, SpamEnumNotInner)
+
+    def test_enum_of_generic_aliases(self):
+        class E(Enum):
+            a = typing.List[int]
+            b = list[int]
+        self.assertEqual(E.a.value, typing.List[int])
+        self.assertEqual(E.b.value, list[int])
+        self.assertEqual(repr(E.a), '<E.a: typing.List[int]>')
+        self.assertEqual(repr(E.b), '<E.b: list[int]>')
+
+    @unittest.skipIf(
+            python_version >= (3, 13),
+            'inner classes are not members',
+            )
+    def test_nested_classes_in_enum_are_members(self):
+        """
+        Check for warnings pre-3.13
+        """
+        with self.assertWarnsRegex(DeprecationWarning, 'will not become a member'):
+            class Outer(Enum):
+                a = 1
+                b = 2
+                class Inner(Enum):
+                    foo = 10
+                    bar = 11
+        self.assertTrue(isinstance(Outer.Inner, Outer))
+        self.assertEqual(Outer.a.value, 1)
+        self.assertEqual(Outer.Inner.value.foo.value, 10)
+        self.assertEqual(
+            list(Outer.Inner.value),
+            [Outer.Inner.value.foo, Outer.Inner.value.bar],
+            )
+        self.assertEqual(
+            list(Outer),
+            [Outer.a, Outer.b, Outer.Inner],
+            )
+
+    @unittest.skipIf(
+            python_version < (3, 13),
+            'inner classes are still members',
+            )
+    def test_nested_classes_in_enum_are_not_members(self):
+        """Support locally-defined nested classes."""
+        class Outer(Enum):
+            a = 1
+            b = 2
+            class Inner(Enum):
+                foo = 10
+                bar = 11
+        self.assertTrue(isinstance(Outer.Inner, type))
+        self.assertEqual(Outer.a.value, 1)
+        self.assertEqual(Outer.Inner.foo.value, 10)
+        self.assertEqual(
+            list(Outer.Inner),
+            [Outer.Inner.foo, Outer.Inner.bar],
+            )
+        self.assertEqual(
+            list(Outer),
+            [Outer.a, Outer.b],
+            )
+
+    def test_nested_classes_in_enum_with_nonmember(self):
+        class Outer(Enum):
+            a = 1
+            b = 2
+            @nonmember
+            class Inner(Enum):
+                foo = 10
+                bar = 11
+        self.assertTrue(isinstance(Outer.Inner, type))
+        self.assertEqual(Outer.a.value, 1)
+        self.assertEqual(Outer.Inner.foo.value, 10)
+        self.assertEqual(
+            list(Outer.Inner),
+            [Outer.Inner.foo, Outer.Inner.bar],
+            )
+        self.assertEqual(
+            list(Outer),
+            [Outer.a, Outer.b],
+            )
+
+    def test_enum_of_types_with_nonmember(self):
+        """Support using Enum to refer to types deliberately."""
+        class MyTypes(Enum):
+            i = int
+            f = nonmember(float)
+            s = str
+        self.assertEqual(MyTypes.i.value, int)
+        self.assertTrue(MyTypes.f is float)
+        self.assertEqual(MyTypes.s.value, str)
+        class Foo:
+            pass
+        class Bar:
+            pass
+        class MyTypes2(Enum):
+            a = Foo
+            b = nonmember(Bar)
+        self.assertEqual(MyTypes2.a.value, Foo)
+        self.assertTrue(MyTypes2.b is Bar)
+        class SpamEnumIsInner:
+            pass
+        class SpamEnum(Enum):
+            spam = nonmember(SpamEnumIsInner)
+        self.assertTrue(SpamEnum.spam is SpamEnumIsInner)
+
+    def test_nested_classes_in_enum_with_member(self):
+        """Support locally-defined nested classes."""
+        class Outer(Enum):
+            a = 1
+            b = 2
+            @member
+            class Inner(Enum):
+                foo = 10
+                bar = 11
+        self.assertTrue(isinstance(Outer.Inner, Outer))
+        self.assertEqual(Outer.a.value, 1)
+        self.assertEqual(Outer.Inner.value.foo.value, 10)
+        self.assertEqual(
+            list(Outer.Inner.value),
+            [Outer.Inner.value.foo, Outer.Inner.value.bar],
+            )
+        self.assertEqual(
+            list(Outer),
+            [Outer.a, Outer.b, Outer.Inner],
+            )
+
     def test_enum_with_value_name(self):
         class Huh(Enum):
             name = 1
@@ -946,6 +1125,28 @@ class TestSpecial(unittest.TestCase):
         self.assertIs(type(Huh.name), Huh)
         self.assertEqual(Huh.name.name, 'name')
         self.assertEqual(Huh.name.value, 1)
+
+    def test_contains_name_and_value_overlap(self):
+        class IntEnum1(IntEnum):
+            X = 1
+        class IntEnum2(IntEnum):
+            X = 1
+        class IntEnum3(IntEnum):
+            X = 2
+        class IntEnum4(IntEnum):
+            Y = 1
+        self.assertIn(IntEnum1.X, IntEnum1)
+        self.assertIn(IntEnum1.X, IntEnum2)
+        self.assertNotIn(IntEnum1.X, IntEnum3)
+        self.assertIn(IntEnum1.X, IntEnum4)
+
+    def test_contains_different_types_same_members(self):
+        class IntEnum1(IntEnum):
+            X = 1
+        class IntFlag1(IntFlag):
+            X = 1
+        self.assertIn(IntEnum1.X, IntFlag1)
+        self.assertIn(IntFlag1.X, IntEnum1)
 
     def test_inherited_data_type(self):
         class HexInt(int):
@@ -2504,6 +2705,26 @@ class TestSpecial(unittest.TestCase):
         self.assertTrue(isinstance(MyIntFlag.ONE | MyIntFlag.TWO, MyIntFlag), MyIntFlag.ONE | MyIntFlag.TWO)
         self.assertTrue(isinstance(MyIntFlag.ONE | 2, MyIntFlag))
 
+    def test_int_flags_copy(self):
+        class MyIntFlag(IntFlag):
+            ONE = 1
+            TWO = 2
+            FOUR = 4
+
+        flags = MyIntFlag.ONE | MyIntFlag.TWO
+        copied = copy.copy(flags)
+        deep = copy.deepcopy(flags)
+        self.assertEqual(copied, flags)
+        self.assertEqual(deep, flags)
+
+        flags = MyIntFlag.ONE | MyIntFlag.TWO | 8
+        copied = copy.copy(flags)
+        deep = copy.deepcopy(flags)
+        self.assertEqual(copied, flags)
+        self.assertEqual(deep, flags)
+        self.assertEqual(copied.value, 1 | 2 | 8)
+
+
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
 
@@ -2781,32 +3002,6 @@ class OldTestFlag(unittest.TestCase):
         test_pickle_dump_load(self.assertIs, FlagStooges.CURLY|FlagStooges.MOE)
         test_pickle_dump_load(self.assertIs, FlagStooges)
 
-    @unittest.skipIf(
-            python_version >= (3, 12),
-            '__contains__ now returns True/False for all inputs',
-            )
-    def test_contains_er(self):
-        Open = self.Open
-        Color = self.Color
-        self.assertFalse(Color.BLACK in Open)
-        self.assertFalse(Open.RO in Color)
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                'BLACK' in Color
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                'RO' in Open
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                1 in Color
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                1 in Open
-
-    @unittest.skipIf(
-            python_version < (3, 12),
-            '__contains__ only works with enum memmbers before 3.12',
-            )
     def test_contains_tf(self):
         Open = self.Open
         Color = self.Color
@@ -2814,6 +3009,8 @@ class OldTestFlag(unittest.TestCase):
         self.assertFalse(Open.RO in Color)
         self.assertFalse('BLACK' in Color)
         self.assertFalse('RO' in Open)
+        self.assertTrue(Color.BLACK in Color)
+        self.assertTrue(Open.RO in Open)
         self.assertTrue(1 in Color)
         self.assertTrue(1 in Open)
 
@@ -2949,6 +3146,7 @@ class OldTestFlag(unittest.TestCase):
         self.assertEqual(str(Color.BLUE), 'blue')
 
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_unique_composite(self):
         # override __eq__ to be identity only
         class TestFlag(Flag):
@@ -3096,6 +3294,10 @@ class OldTestIntFlag(unittest.TestCase):
                 '%(m)s.OFF_C' % {'m': SHORT_MODULE},
                 )
 
+    def test_global_enum_str(self):
+        self.assertEqual(str(NoName.ONE & NoName.TWO), 'NoName(0)')
+        self.assertEqual(str(NoName(0)), 'NoName(0)')
+
     def test_format(self):
         Perm = self.Perm
         self.assertEqual(format(Perm.R, ''), '4')
@@ -3196,7 +3398,10 @@ class OldTestIntFlag(unittest.TestCase):
         self.assertIs((Open.WO|Open.CE) & ~Open.WO, Open.CE)
 
     def test_boundary(self):
-        self.assertIs(enum.IntFlag._boundary_, EJECT)
+        self.assertIs(enum.IntFlag._boundary_, KEEP)
+        class Simple(IntFlag, boundary=KEEP):
+            SINGLE = 1
+        #
         class Iron(IntFlag, boundary=STRICT):
             ONE = 1
             TWO = 2
@@ -3215,7 +3420,6 @@ class OldTestIntFlag(unittest.TestCase):
             EIGHT = 8
         self.assertIs(Space._boundary_, EJECT)
         #
-        #
         class Bizarre(IntFlag, boundary=KEEP):
             b = 3
             c = 4
@@ -3232,6 +3436,12 @@ class OldTestIntFlag(unittest.TestCase):
         self.assertEqual(list(Bizarre), [Bizarre.c])
         self.assertIs(Bizarre(3), Bizarre.b)
         self.assertIs(Bizarre(6), Bizarre.d)
+        #
+        simple = Simple.SINGLE | Iron.TWO
+        self.assertEqual(simple, 3)
+        self.assertIsInstance(simple, Simple)
+        self.assertEqual(repr(simple), '<Simple.SINGLE|<Iron.TWO: 2>: 3>')
+        self.assertEqual(str(simple), '3')
 
     def test_iter(self):
         Color = self.Color
@@ -3340,41 +3550,11 @@ class OldTestIntFlag(unittest.TestCase):
         self.assertEqual(len(lst), len(Thing))
         self.assertEqual(len(Thing), 0, Thing)
 
-    @unittest.skipIf(
-            python_version >= (3, 12),
-            '__contains__ now returns True/False for all inputs',
-            )
-    def test_contains_er(self):
-        Open = self.Open
-        Color = self.Color
-        self.assertTrue(Color.GREEN in Color)
-        self.assertTrue(Open.RW in Open)
-        self.assertFalse(Color.GREEN in Open)
-        self.assertFalse(Open.RW in Color)
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                'GREEN' in Color
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                'RW' in Open
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                2 in Color
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                2 in Open
-
-    @unittest.skipIf(
-            python_version < (3, 12),
-            '__contains__ only works with enum memmbers before 3.12',
-            )
     def test_contains_tf(self):
         Open = self.Open
         Color = self.Color
         self.assertTrue(Color.GREEN in Color)
         self.assertTrue(Open.RW in Open)
-        self.assertTrue(Color.GREEN in Open)
-        self.assertTrue(Open.RW in Color)
         self.assertFalse('GREEN' in Color)
         self.assertFalse('RW' in Open)
         self.assertTrue(2 in Color)
@@ -3481,6 +3661,7 @@ class OldTestIntFlag(unittest.TestCase):
         self.assertEqual(str(Color.BLUE), 'blue')
 
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_unique_composite(self):
         # override __eq__ to be identity only
         class TestFlag(IntFlag):
@@ -3772,22 +3953,53 @@ class TestInternals(unittest.TestCase):
         self.assertEqual(Color.blue.value, 'blue')
         self.assertEqual(Color.green.value, 'green')
 
-    def test_auto_garbage(self):
-        class Color(Enum):
-            red = 'red'
-            blue = auto()
+    @unittest.skipIf(
+            python_version >= (3, 13),
+            'mixed types with auto() no longer supported',
+            )
+    def test_auto_garbage_ok(self):
+        with self.assertWarnsRegex(DeprecationWarning, 'will require all values to be sortable'):
+            class Color(Enum):
+                red = 'red'
+                blue = auto()
         self.assertEqual(Color.blue.value, 1)
 
-    def test_auto_garbage_corrected(self):
-        class Color(Enum):
-            red = 'red'
-            blue = 2
-            green = auto()
+    @unittest.skipIf(
+            python_version >= (3, 13),
+            'mixed types with auto() no longer supported',
+            )
+    def test_auto_garbage_corrected_ok(self):
+        with self.assertWarnsRegex(DeprecationWarning, 'will require all values to be sortable'):
+            class Color(Enum):
+                red = 'red'
+                blue = 2
+                green = auto()
 
         self.assertEqual(list(Color), [Color.red, Color.blue, Color.green])
         self.assertEqual(Color.red.value, 'red')
         self.assertEqual(Color.blue.value, 2)
         self.assertEqual(Color.green.value, 3)
+
+    @unittest.skipIf(
+            python_version < (3, 13),
+            'mixed types with auto() will raise in 3.13',
+            )
+    def test_auto_garbage_fail(self):
+        with self.assertRaisesRegex(TypeError, 'will require all values to be sortable'):
+            class Color(Enum):
+                red = 'red'
+                blue = auto()
+
+    @unittest.skipIf(
+            python_version < (3, 13),
+            'mixed types with auto() will raise in 3.13',
+            )
+    def test_auto_garbage_corrected_fail(self):
+        with self.assertRaisesRegex(TypeError, 'will require all values to be sortable'):
+            class Color(Enum):
+                red = 'red'
+                blue = 2
+                green = auto()
 
     def test_auto_order(self):
         with self.assertRaises(TypeError):
@@ -3809,6 +4021,22 @@ class TestInternals(unittest.TestCase):
         self.assertEqual(list(Color), [Color.red, Color.blue])
         self.assertEqual(Color.red.value, 'pathological case')
         self.assertEqual(Color.blue.value, 'blue')
+
+    @unittest.skipIf(
+            python_version < (3, 13),
+            'auto() will return highest value + 1 in 3.13',
+            )
+    def test_auto_with_aliases(self):
+        class Color(Enum):
+            red = auto()
+            blue = auto()
+            oxford = blue
+            crimson = red
+            green = auto()
+        self.assertIs(Color.crimson, Color.red)
+        self.assertIs(Color.oxford, Color.blue)
+        self.assertIsNot(Color.green, Color.red)
+        self.assertIsNot(Color.green, Color.blue)
 
     def test_duplicate_auto(self):
         class Dupes(Enum):
@@ -3881,12 +4109,12 @@ class Color(enum.Enum)
  |  ----------------------------------------------------------------------
  |  Methods inherited from enum.EnumType:
  |\x20\x20
- |  __contains__(member) from enum.EnumType
- |      Return True if member is a member of this enum
- |      raises TypeError if member is not an enum member
- |\x20\x20\x20\x20\x20\x20
- |      note: in 3.12 TypeError will no longer be raised, and True will also be
- |      returned if member is the value of a member in this enum
+ |  __contains__(value) from enum.EnumType
+ |      Return True if `value` is in `cls`.
+ |      
+ |      `value` is in `cls` if:
+ |      1) `value` is a member of `cls`, or
+ |      2) `value` is the value of one of the `cls`'s members.
  |\x20\x20
  |  __getitem__(name) from enum.EnumType
  |      Return the member matching `name`.
