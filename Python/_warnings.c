@@ -4,7 +4,6 @@
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "frameobject.h"          // PyFrame_GetBack()
 #include "pycore_frame.h"
 #include "clinic/_warnings.c.h"
 

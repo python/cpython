@@ -1,0 +1,2 @@
+Store offset of first traceable instruction in code object to avoid having
+to recompute it for each instruction when tracing.
