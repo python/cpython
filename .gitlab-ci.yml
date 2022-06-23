@@ -2,9 +2,6 @@ stages:
   - binary_build
   - deploy
 
-variables:
-  DATADOG_AGENT_WINBUILDIMAGES: v4319944-68f7e12
-
 .manual:
   - when: manual
     allow_failure: true
@@ -14,11 +11,12 @@ variables:
   tags: ["runner:windows-docker", "windowsversion:1809"]
   variables:
     ARCH: "x64"
+    DATADOG_AGENT_WINBUILDIMAGES: v8339702-f91ff4f
   script:
     - $ErrorActionPreference = "Stop"
     - '$_instance_id = (iwr  -UseBasicParsing http://169.254.169.254/latest/meta-data/instance-id).content ; Write-Host "Running on instance $($_instance_id)"'
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
-    - docker run --rm -v "$(Get-Location):c:\mnt" -e CI_JOB_ID=${CI_JOB_ID} -e WINDOWS_BUILDER=true -e AWS_NETWORKING=true -e TARGET_ARCH="$ARCH" 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/windows_1809_${ARCH}:${Env:DATADOG_AGENT_WINBUILDIMAGES} C:\mnt\build.bat
+    - docker run --rm -v "$(Get-Location):c:\mnt" -e CI_JOB_ID=${CI_JOB_ID} -e WINDOWS_BUILDER=true -e AWS_NETWORKING=true -e TARGET_ARCH="$ARCH" datadog/agent-buildimages-windows_x64:1809 C:\mnt\build.bat
     - get-childitem build-out
     - Get-FileHash -Algorithm SHA256 build-out/python-windows-3.8.11-${ARCH}.zip
   artifacts:

@@ -95,7 +95,7 @@ jobs:
 
   build_win32:
     name: 'Windows (x86)'
-    runs-on: windows-latest
+    runs-on: windows-2019
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
@@ -109,7 +109,7 @@ jobs:
 
   build_win_amd64:
     name: 'Windows (x64)'
-    runs-on: windows-latest
+    runs-on: windows-2019
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
@@ -143,7 +143,7 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1k
+      OPENSSL_VER: 1.1.1n
     steps:
     - uses: actions/checkout@v2
     - name: Install Dependencies
@@ -184,7 +184,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        openssl_ver: [1.0.2u, 1.1.0l, 1.1.1k, 3.0.0-alpha14]
+        openssl_ver: [1.0.2u, 1.1.0l, 1.1.1l]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl

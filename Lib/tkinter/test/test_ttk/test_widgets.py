@@ -169,10 +169,13 @@ class AbstractLabelTest(AbstractWidgetTest):
                 errmsg='image "spam" doesn\'t exist')
 
     def test_configure_compound(self):
+        options = 'none text image center top bottom left right'.split()
+        errmsg = (
+            'bad compound "{}": must be'
+            f' {", ".join(options[:-1])}, or {options[-1]}'
+            )
         widget = self.create()
-        self.checkEnumParam(widget, 'compound',
-                'none', 'text', 'image', 'center',
-                'top', 'bottom', 'left', 'right')
+        self.checkEnumParam(widget, 'compound', *options, errmsg=errmsg)
 
     def test_configure_state(self):
         widget = self.create()
