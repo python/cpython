@@ -45,7 +45,7 @@ extern "C" {
 #define ASYNC_GEN_WRAP                          87
 #define PREP_RERAISE_STAR                       88
 #define POP_EXCEPT                              89
-#define HAVE_ARGUMENT                           90
+#define _HAVE_ARGUMENT                          90
 #define STORE_NAME                              90
 #define DELETE_NAME                             91
 #define UNPACK_SEQUENCE                         92
@@ -118,6 +118,19 @@ extern "C" {
 #define POP_JUMP_BACKWARD_IF_NONE              174
 #define POP_JUMP_BACKWARD_IF_FALSE             175
 #define POP_JUMP_BACKWARD_IF_TRUE              176
+#define MIN_VIRTUAL_OPCODE                     256
+#define SETUP_FINALLY                          256
+#define SETUP_CLEANUP                          257
+#define SETUP_WITH                             258
+#define POP_BLOCK                              259
+#define JUMP                                   260
+#define JUMP_NO_INTERRUPT                      261
+#define POP_JUMP_IF_FALSE                      262
+#define POP_JUMP_IF_TRUE                       263
+#define POP_JUMP_IF_NONE                       264
+#define POP_JUMP_IF_NOT_NONE                   265
+#define LOAD_METHOD                            266
+#define MAX_VIRTUAL_OPCODE                     266
 #define BINARY_OP_ADAPTIVE                       3
 #define BINARY_OP_ADD_FLOAT                      4
 #define BINARY_OP_ADD_INT                        5
@@ -192,9 +205,19 @@ extern "C" {
 #define UNPACK_SEQUENCE_TWO_TUPLE              180
 #define DO_TRACING                             255
 
+#define HAS_ARG(op) ((((op) >= _HAVE_ARGUMENT) && (!IS_VIRTUAL_OPCODE(op)))\
+    || ((op) == JUMP) \
+    || ((op) == JUMP_NO_INTERRUPT) \
+    || ((op) == POP_JUMP_IF_FALSE) \
+    || ((op) == POP_JUMP_IF_TRUE) \
+    || ((op) == POP_JUMP_IF_NONE) \
+    || ((op) == POP_JUMP_IF_NOT_NONE) \
+    || ((op) == LOAD_METHOD) \
+    )
+
 #define HAS_CONST(op) (false\
-    || ((op) == 100) \
-    || ((op) == 172) \
+    || ((op) == LOAD_CONST) \
+    || ((op) == KW_NAMES) \
     )
 
 #define NB_ADD                                   0
@@ -224,11 +247,8 @@ extern "C" {
 #define NB_INPLACE_TRUE_DIVIDE                  24
 #define NB_INPLACE_XOR                          25
 
-#define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
 
-/* Reserve some bytecodes for internal use in the compiler.
- * The value of 240 is arbitrary. */
-#define IS_ARTIFICIAL(op) ((op) > 240)
+#define IS_VIRTUAL_OPCODE(op) (((op) >= MIN_VIRTUAL_OPCODE) && ((op) <= MAX_VIRTUAL_OPCODE))
 
 #ifdef __cplusplus
 }

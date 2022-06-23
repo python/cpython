@@ -1330,15 +1330,67 @@ iterations of the loop.
     .. versionadded:: 3.11
 
 
-.. opcode:: HAVE_ARGUMENT
+.. opcode:: _HAVE_ARGUMENT
 
    This is not really an opcode.  It identifies the dividing line between
-   opcodes which don't use their argument and those that do
-   (``< HAVE_ARGUMENT`` and ``>= HAVE_ARGUMENT``, respectively).
+   non-virtual opcodes which don't use their argument and those that do
+   (``< _HAVE_ARGUMENT`` and ``>= _HAVE_ARGUMENT``, respectively).
+
+   See also the :data:`hasarg` collection, which contains virtual as well
+   as non-virtual opcodes that use their argument.
 
    .. versionchanged:: 3.6
-      Now every instruction has an argument, but opcodes ``< HAVE_ARGUMENT``
-      ignore it. Before, only opcodes ``>= HAVE_ARGUMENT`` had an argument.
+      Now every instruction has an argument, but opcodes ``< _HAVE_ARGUMENT``
+      ignore it. Before, only opcodes ``>= _HAVE_ARGUMENT`` had an argument.
+
+   .. versionchanged:: 3.12
+      This field was renamed from ``HAVE_ARGUMENT`` to ``_HAVE_ARGUMENT``,
+      and its use is now discouraged. Check membership in :data:`hasarg` instead.
+
+
+**Virtual opcodes**
+
+These opcodes do not appear in python bytecode, they are used by the compiler
+but are replaced by real opcodes or removed before bytecode is generated.
+
+.. opcode:: SETUP_FINALLY
+
+   Set up an exception handler for the following code block. If an exception
+   occurs, the value stack level is restored to its current state and control
+   is transferred to the exception handler.
+
+
+.. opcode:: SETUP_CLEANUP
+
+   Like ``SETUP_FINALLY``, but in case of exception also pushes the last
+   instruction to the stack so that ``RERAISE`` can restore it.
+
+
+.. opcode:: SETUP_WITH
+
+   Set up an exception handler for a :keyword:`with` or :keyword:`async with`
+   block. Pushes the last executed instruction to the stack like ``SETUP_CLEANUP``.
+
+
+.. opcode:: POP_BLOCK
+
+   Marks the end of the code block associated with the last ``SETUP_FINALLY``,
+   ``SETUP_CLEANUP`` or ``SETUP_WITH``.
+
+.. opcode:: JUMP
+.. opcode:: JUMP_NO_INTERRUPT
+.. opcode:: POP_JUMP_IF_FALSE
+.. opcode:: POP_JUMP_IF_TRUE
+.. opcode:: POP_JUMP_IF_NONE
+.. opcode:: POP_JUMP_IF_NOT_NONE
+
+   Undirected relative jump instructions which are replaced by their
+   directed (forward/backward) counterparts by the assembler.
+
+.. opcode:: LOAD_METHOD
+
+   Optimized unbound method lookup. Emitted as a ``LOAD_ATTR`` opcode
+   with a flag set in the arg.
 
 
 .. _opcode_collections:
@@ -1348,6 +1400,9 @@ Opcode collections
 
 These collections are provided for automatic introspection of bytecode
 instructions:
+
+   .. versionchanged:: 3.12
+      The collections now contain virtual opcodes as well.
 
 .. data:: opname
 
@@ -1362,6 +1417,11 @@ instructions:
 .. data:: cmp_op
 
    Sequence of all compare operation names.
+
+
+.. data:: hasarg
+
+   Sequence of bytecodes that use their argument.
 
 
 .. data:: hasconst
@@ -1400,3 +1460,7 @@ instructions:
 .. data:: hascompare
 
    Sequence of bytecodes of Boolean operations.
+
+.. data:: hasexc
+
+   Sequence of bytecodes that set an exception handler.

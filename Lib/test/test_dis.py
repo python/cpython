@@ -879,7 +879,7 @@ class DisTests(DisTestBase):
 
     def test_boundaries(self):
         self.assertEqual(dis.opmap["EXTENDED_ARG"], dis.EXTENDED_ARG)
-        self.assertEqual(dis.opmap["STORE_NAME"], dis.HAVE_ARGUMENT)
+        self.assertEqual(dis.opmap["STORE_NAME"], dis._HAVE_ARGUMENT)
 
     def test_widths(self):
         long_opcodes = set(['POP_JUMP_FORWARD_IF_FALSE',
@@ -897,7 +897,7 @@ class DisTests(DisTestBase):
                 continue
             with self.subTest(opname=opname):
                 width = dis._OPNAME_WIDTH
-                if opcode < dis.HAVE_ARGUMENT:
+                if opcode in dis.hasarg:
                     width += 1 + dis._OPARG_WIDTH
                 self.assertLessEqual(len(opname), width)
 
