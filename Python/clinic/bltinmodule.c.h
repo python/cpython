@@ -522,7 +522,7 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_id__doc__,
-"id($module, obj, /)\n"
+"id($self, obj, /)\n"
 "--\n"
 "\n"
 "Return the identity of an object.\n"
@@ -1045,4 +1045,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a2c5c53e8aead7c3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1c58745b448d11ff input=a9049054013a1b77]*/
