@@ -479,6 +479,20 @@ the original TOS1.
    Implements ``del TOS1[TOS]``.
 
 
+.. opcode:: BINARY_SLICE
+
+   Implements ``TOS = TOS2[TOS1:TOS]``.
+
+   .. versionadded:: 3.12
+
+
+.. opcode:: STORE_SLICE
+
+   Implements ``TOS2[TOS1:TOS] = TOS3``.
+
+   .. versionadded:: 3.12
+
+
 **Coroutine opcodes**
 
 .. opcode:: GET_AWAITABLE (where)
