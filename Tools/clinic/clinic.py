@@ -1050,6 +1050,16 @@ class CLanguage(Language):
                                 goto %s;
                             }}
                             """ % add_label, indent=4))
+                    if p.deprecated_positional:
+                        parser_code.append(normalize_snippet("""
+                            if (nargs == %s) {{
+                                if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                                    "Using '%s' as positional argument is deprecated", 2))
+                                {{
+                                    goto exit;
+                                }}
+                            }}
+                            """ % (str(i+1), p.name), indent=4))
                     if i + 1 == len(parameters):
                         parser_code.append(normalize_snippet(parsearg, indent=4))
                     else:
@@ -4017,6 +4027,7 @@ class DSLParser:
         self.parameter_indent = None
         self.keyword_only = False
         self.positional_only = False
+        self.deprecated_positional = False
         self.group = 0
         self.parameter_state = self.ps_start
         self.seen_positional_with_default = False
@@ -4457,7 +4468,7 @@ class DSLParser:
 
         line = line.lstrip()
 
-        if line in ('*', '/', '[', ']'):
+        if line in ('x', '*', '/', '[', ']'):
             self.parse_special_symbol(line)
             return
 
@@ -4698,6 +4709,7 @@ class DSLParser:
 
 
         p = Parameter(parameter_name, kind, function=self.function, converter=converter, default=value, group=self.group)
+        p.deprecated_positional = self.deprecated_positional
 
         names = [k.name for k in self.function.parameters.values()]
         if parameter_name in names[1:]:
@@ -4730,6 +4742,12 @@ class DSLParser:
         return name, False, kwargs
 
     def parse_special_symbol(self, symbol):
+        if symbol == 'x':
+            if self.keyword_only:
+                fail("Function " + self.function.name + ": 'x' must come before '*'")
+            if self.deprecated_positional:
+                fail("Function " + self.function.name + " uses 'x' more than once.")
+            self.deprecated_positional = True
         if symbol == '*':
             if self.keyword_only:
                 fail("Function " + self.function.name + " uses '*' more than once.")
@@ -5094,6 +5112,8 @@ class DSLParser:
                 no_parameter_after_star = last_parameter.kind != inspect.Parameter.KEYWORD_ONLY
             if no_parameter_after_star:
                 fail("Function " + self.function.name + " specifies '*' without any parameters afterwards.")
+
+        # EAA: Add check here
 
         # remove trailing whitespace from all parameter docstrings
         for name, value in self.function.parameters.items():
