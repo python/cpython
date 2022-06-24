@@ -752,6 +752,9 @@ if sys.platform != 'win32':
                 return proc.returncode, stdout
 
             async def main():
+                # asyncio.run did not call asyncio.set_event_loop()
+                with self.assertRaises(RuntimeError):
+                    asyncio.get_event_loop_policy().get_event_loop()
                 return await asyncio.to_thread(asyncio.run, in_thread())
 
             asyncio.set_child_watcher(asyncio.PidfdChildWatcher())
