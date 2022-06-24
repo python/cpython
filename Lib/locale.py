@@ -247,21 +247,6 @@ def format_string(f, val, grouping=False, monetary=False):
 
     return new_f % val
 
-def format(percent, value, grouping=False, monetary=False, *additional):
-    """Deprecated, use format_string instead."""
-    import warnings
-    warnings.warn(
-        "This method will be removed in a future version of Python. "
-        "Use 'locale.format_string()' instead.",
-        DeprecationWarning, stacklevel=2
-    )
-
-    match = _percent_re.match(percent)
-    if not match or len(match.group())!= len(percent):
-        raise ValueError(("format() must be given exactly one %%char "
-                         "format specifier, %s not valid") % repr(percent))
-    return _format(percent, value, grouping, monetary, *additional)
-
 def currency(val, symbol=True, grouping=False, international=False):
     """Formats val according to the currency settings
     in the current locale."""
