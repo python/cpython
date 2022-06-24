@@ -266,14 +266,18 @@ operation is being performed, so the intermediate analysis object isn't useful:
 
 .. function:: findlinestarts(code)
 
-   This generator function uses the ``co_firstlineno`` and ``co_lnotab``
-   attributes of the code object *code* to find the offsets which are starts of
+   This generator function uses the ``co_lines`` method
+   of the code object *code* to find the offsets which are starts of
    lines in the source code.  They are generated as ``(offset, lineno)`` pairs.
-   See :source:`Objects/lnotab_notes.txt` for the ``co_lnotab`` format and
-   how to decode it.
+   See :source:`Objects/lnotab_notes.txt` for details about the ``co_lines``
+   method.
 
    .. versionchanged:: 3.6
       Line numbers can be decreasing. Before, they were always increasing.
+
+   .. versionchanged:: 3.10
+      The :pep:`626` ``co_lines`` method is used instead of the ``co_firstlineno``
+      and ``co_lnotab`` attributes of the code object.
 
 
 .. function:: findlabels(code)
