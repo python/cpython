@@ -43,9 +43,7 @@ pysqlite_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (!args) {
         goto exit;
     }
-    if (!PyUnicode_FSConverter(args[0], &database)) {
-        goto exit;
-    }
+    database = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
@@ -294,4 +292,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=43aa4f4356f9269d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a7cfa6dc9d54273c input=a9049054013a1b77]*/

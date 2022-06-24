@@ -13,6 +13,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "structmember.h"         // PyMemberDef
 #include "opcode.h"               // SEND
+#include "pystats.h"
 
 static PyObject *gen_close(PyGenObject *, PyObject *);
 static PyObject *async_gen_asend_new(PyAsyncGenObject *, PyObject *);
@@ -218,6 +219,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     }
 
     gen->gi_frame_state = FRAME_EXECUTING;
+    EVAL_CALL_STAT_INC(EVAL_CALL_GENERATOR);
     result = _PyEval_EvalFrame(tstate, frame, exc);
     if (gen->gi_frame_state == FRAME_EXECUTING) {
         gen->gi_frame_state = FRAME_COMPLETED;

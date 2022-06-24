@@ -16,7 +16,6 @@
 #include "pycore_symtable.h"      // PySTEntry_Type
 #include "pycore_typeobject.h"    // _PyTypes_InitSlotDefs()
 #include "pycore_unionobject.h"   // _PyUnion_Type
-#include "frameobject.h"          // PyFrame_Type
 #include "pycore_interpreteridobject.h"  // _PyInterpreterID_Type
 
 #ifdef Py_LIMITED_API
@@ -274,11 +273,8 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
     }
     else {
         if (Py_REFCNT(op) <= 0) {
-            /* XXX(twouters) cast refcount to long until %zd is
-               universally available */
             Py_BEGIN_ALLOW_THREADS
-            fprintf(fp, "<refcnt %ld at %p>",
-                (long)Py_REFCNT(op), (void *)op);
+            fprintf(fp, "<refcnt %zd at %p>", Py_REFCNT(op), (void *)op);
             Py_END_ALLOW_THREADS
         }
         else {
@@ -371,9 +367,7 @@ _PyObject_Dump(PyObject* op)
 
     /* first, write fields which are the least likely to crash */
     fprintf(stderr, "object address  : %p\n", (void *)op);
-    /* XXX(twouters) cast refcount to long until %zd is
-       universally available */
-    fprintf(stderr, "object refcount : %ld\n", (long)Py_REFCNT(op));
+    fprintf(stderr, "object refcount : %zd\n", Py_REFCNT(op));
     fflush(stderr);
 
     PyTypeObject *type = Py_TYPE(op);

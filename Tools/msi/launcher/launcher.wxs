@@ -3,12 +3,17 @@
     <Product Id="*" Language="!(loc.LCID)" Name="!(loc.Title)" Version="$(var.Version)" Manufacturer="!(loc.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
         <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" />
         <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
-        
+
         <Property Id="Suppress_TARGETDIR_Check" Value="1" />
         <Icon Id="ARPIcon" SourceFile="!(bindpath.src)PC\icons\launcher.ico" />
         <Property Id="ARPPRODUCTICON" Value="ARPIcon" />
         <Property Id="ARPNOMODIFY" Value="1" />
         <Property Id="DISABLEADVTSHORTCUTS" Value="1" />
+
+        <Property Id="ARM64_SHELLEXT">
+            <ComponentSearch Id="RegistrySearch_ARM64_SHELLEXT_Detected"
+                             Guid="{C591963D-7FC6-4FCE-8642-5E01E6B8848F}" />
+        </Property>
 
         <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
             <ComponentGroupRef Id="launcher_exe" Primary="yes" />
@@ -17,14 +22,14 @@
             <ComponentGroupRef Id="launcher_exe" />
             <ComponentGroupRef Id="launcher_reg" />
         </Feature>
-        
+
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="LauncherInstallDirectory" />
         </Directory>
-        
+
         <CustomAction Id="SetLauncherInstallDirectoryLM" Property="LauncherInstallDirectory" Value="[WindowsFolder]" />
         <CustomAction Id="SetLauncherInstallDirectoryCU" Property="LauncherInstallDirectory" Value="[LocalAppDataFolder]Programs\Python\Launcher" />
-        
+
         <InstallExecuteSequence>
             <Custom Before="SetLauncherInstallDirectoryLM" Action="SetLauncherInstallDirectoryCU">NOT Installed AND NOT ALLUSERS=1</Custom>
             <Custom Before="CostFinalize" Action="SetLauncherInstallDirectoryLM">NOT Installed AND ALLUSERS=1</Custom>
