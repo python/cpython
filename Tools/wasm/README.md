@@ -173,6 +173,8 @@ functions.
   [bpo-46390](https://bugs.python.org/issue46390).
 - Python's object allocator ``obmalloc`` is disabled by default.
 - ``ensurepip`` is not available.
+- Some ``ctypes`` features like ``c_longlong`` and ``c_longdouble`` may need
+   NodeJS option ``--experimental-wasm-bigint``.
 
 ## wasm32-emscripten in browsers
 
