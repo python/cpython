@@ -141,6 +141,11 @@ for name in (
     try:
         name.decode(sys.getfilesystemencoding())
     except UnicodeDecodeError:
+        try:
+            name.decode(sys.getfilesystemencoding(),
+                        sys.getfilesystemencodeerrors())
+        except UnicodeDecodeError:
+            continue
         TESTFN_UNDECODABLE = os.fsencode(TESTFN_ASCII) + name
         break
 
