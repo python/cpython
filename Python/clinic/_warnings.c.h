@@ -69,7 +69,7 @@ exit:
 
 PyDoc_STRVAR(warnings_warn_explicit__doc__,
 "warn_explicit($module, /, message, category, filename, lineno,\n"
-"              mod=<unrepresentable>, registry=None,\n"
+"              module=<unrepresentable>, registry=None,\n"
 "              module_globals=None, source=None)\n"
 "--\n"
 "\n"
@@ -79,16 +79,16 @@ PyDoc_STRVAR(warnings_warn_explicit__doc__,
     {"warn_explicit", _PyCFunction_CAST(warnings_warn_explicit), METH_FASTCALL|METH_KEYWORDS, warnings_warn_explicit__doc__},
 
 static PyObject *
-warnings_warn_explicit_impl(PyObject *module, PyObject *message,
+warnings_warn_explicit_impl(PyObject *_module, PyObject *message,
                             PyObject *category, PyObject *filename,
-                            int lineno, PyObject *mod, PyObject *registry,
+                            int lineno, PyObject *module, PyObject *registry,
                             PyObject *module_globals, PyObject *sourceobj);
 
 static PyObject *
-warnings_warn_explicit(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+warnings_warn_explicit(PyObject *_module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"message", "category", "filename", "lineno", "mod", "registry", "module_globals", "source", NULL};
+    static const char * const _keywords[] = {"message", "category", "filename", "lineno", "module", "registry", "module_globals", "source", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "warn_explicit", 0};
     PyObject *argsbuf[8];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 4;
@@ -96,7 +96,7 @@ warnings_warn_explicit(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *category;
     PyObject *filename;
     int lineno;
-    PyObject *mod = NULL;
+    PyObject *module = NULL;
     PyObject *registry = Py_None;
     PyObject *module_globals = Py_None;
     PyObject *sourceobj = Py_None;
@@ -123,7 +123,7 @@ warnings_warn_explicit(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         goto skip_optional_pos;
     }
     if (args[4]) {
-        mod = args[4];
+        module = args[4];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -142,9 +142,9 @@ warnings_warn_explicit(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     }
     sourceobj = args[7];
 skip_optional_pos:
-    return_value = warnings_warn_explicit_impl(module, message, category, filename, lineno, mod, registry, module_globals, sourceobj);
+    return_value = warnings_warn_explicit_impl(_module, message, category, filename, lineno, module, registry, module_globals, sourceobj);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c987f4f834a6930e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=68443ff7e840bc8c input=a9049054013a1b77]*/

@@ -1033,11 +1033,12 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
 /*[clinic input]
 warn_explicit as warnings_warn_explicit
 
+    _module: self(type="PyObject *")
     message: object
     category: object
     filename: unicode
     lineno: int
-    mod: object = NULL
+    module: object = NULL
     registry: object = None
     module_globals: object = None
     source as sourceobj: object = None
@@ -1046,11 +1047,11 @@ Issue a warning, or maybe ignore it or raise an exception.
 [clinic start generated code]*/
 
 static PyObject *
-warnings_warn_explicit_impl(PyObject *module, PyObject *message,
+warnings_warn_explicit_impl(PyObject *_module, PyObject *message,
                             PyObject *category, PyObject *filename,
-                            int lineno, PyObject *mod, PyObject *registry,
+                            int lineno, PyObject *module, PyObject *registry,
                             PyObject *module_globals, PyObject *sourceobj)
-/*[clinic end generated code: output=c49c62b15a49a186 input=81e348c13d2f0cda]*/
+/*[clinic end generated code: output=724ff9da85258808 input=b2771a0c4840a660]*/
 {
     PyObject *source_line = NULL;
     PyObject *returned;
@@ -1073,8 +1074,8 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
             return NULL;
         }
     }
-    returned = warn_explicit(tstate, category, message, filename, lineno, mod,
-                             registry, source_line, sourceobj);
+    returned = warn_explicit(tstate, category, message, filename, lineno,
+                             module, registry, source_line, sourceobj);
     Py_XDECREF(source_line);
     return returned;
 }
