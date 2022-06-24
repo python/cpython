@@ -1505,7 +1505,7 @@ class TestArgumentsFromFile(TempDirMixin, ParserTestCase):
     def setUp(self):
         super(TestArgumentsFromFile, self).setUp()
         file_texts = [
-            ('hello', self.hello.encode(sys.getfilesystemencoding()) + b'\n'),
+            ('hello', os.fsencode(self.hello) + b'\n'),
             ('recursive', b'-a\n'
                           b'A\n'
                           b'@hello'),
@@ -1535,8 +1535,7 @@ class TestArgumentsFromFile(TempDirMixin, ParserTestCase):
     ]
     if os_helper.TESTFN_UNDECODABLE:
         undecodable = os_helper.TESTFN_UNDECODABLE.lstrip(b'@')
-        decoded_undecodable = undecodable.decode(sys.getfilesystemencoding(),
-                                                 sys.getfilesystemencodeerrors())
+        decoded_undecodable = os.fsdecode(undecodable)
         successes += [
             ('@undecodable X', NS(a=None, x=decoded_undecodable, y=['X'])),
             ('X @undecodable', NS(a=None, x='X', y=[decoded_undecodable])),
