@@ -6775,13 +6775,11 @@ then
   case $ac_sys_system/$ac_sys_emscripten_target in #(
   Emscripten/node*) :
 
+      # bigint for ctypes c_longlong, c_longdouble
+      HOSTRUNNER="node --experimental-wasm-bigint"
       if test "x$enable_wasm_pthreads" = xyes; then :
 
-        HOSTRUNNER='node --experimental-wasm-threads --experimental-wasm-bulk-memory'
-
-else
-
-        HOSTRUNNER='node'
+        HOSTRUNNER="$HOSTRUNNER --experimental-wasm-threads --experimental-wasm-bulk-memory"
 
 fi
      ;; #(
@@ -24652,7 +24650,7 @@ $as_echo_n "checking for stdlib extension module _ctypes_test... " >&6; }
         if test "$py_cv_module__ctypes_test" != "n/a"; then :
 
     if test "$TEST_MODULES" = yes; then :
-  if true; then :
+  if test "$ac_cv_func_dlopen" = yes; then :
   py_cv_module__ctypes_test=yes
 else
   py_cv_module__ctypes_test=missing

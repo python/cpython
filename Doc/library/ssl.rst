@@ -311,27 +311,6 @@ Random generation
 
    .. versionadded:: 3.3
 
-.. function:: RAND_pseudo_bytes(num)
-
-   Return (bytes, is_cryptographic): bytes are *num* pseudo-random bytes,
-   is_cryptographic is ``True`` if the bytes generated are cryptographically
-   strong. Raises an :class:`SSLError` if the operation is not supported by the
-   current RAND method.
-
-   Generated pseudo-random byte sequences will be unique if they are of
-   sufficient length, but are not necessarily unpredictable. They can be used
-   for non-cryptographic purposes and for certain purposes in cryptographic
-   protocols, but usually not for key generation etc.
-
-   For almost all applications :func:`os.urandom` is preferable.
-
-   .. versionadded:: 3.3
-
-   .. deprecated:: 3.6
-
-      OpenSSL has deprecated :func:`ssl.RAND_pseudo_bytes`, use
-      :func:`ssl.RAND_bytes` instead.
-
 .. function:: RAND_status()
 
    Return ``True`` if the SSL pseudo-random number generator has been seeded
@@ -1910,7 +1889,7 @@ to speed up repeated connections from the same clients.
 .. method:: SSLContext.session_stats()
 
    Get statistics about the SSL sessions created or managed by this context.
-   A dictionary is returned which maps the names of each `piece of information <https://www.openssl.org/docs/man1.1.1/ssl/SSL_CTX_sess_number.html>`_ to their
+   A dictionary is returned which maps the names of each `piece of information <https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_sess_number.html>`_ to their
    numeric values.  For example, here is the total number of hits and misses
    in the session cache since the context was created::
 
@@ -2704,7 +2683,7 @@ enabled when negotiating a SSL session is possible through the
 :meth:`SSLContext.set_ciphers` method.  Starting from Python 3.2.3, the
 ssl module disables certain weak ciphers by default, but you may want
 to further restrict the cipher choice. Be sure to read OpenSSL's documentation
-about the `cipher list format <https://www.openssl.org/docs/manmaster/man1/ciphers.html#CIPHER-LIST-FORMAT>`_.
+about the `cipher list format <https://www.openssl.org/docs/man1.1.1/man1/ciphers.html#CIPHER-LIST-FORMAT>`_.
 If you want to check which ciphers are enabled by a given cipher list, use
 :meth:`SSLContext.get_ciphers` or the ``openssl ciphers`` command on your
 system.
@@ -2717,8 +2696,8 @@ for example the :mod:`multiprocessing` or :mod:`concurrent.futures` modules),
 be aware that OpenSSL's internal random number generator does not properly
 handle forked processes.  Applications must change the PRNG state of the
 parent process if they use any SSL feature with :func:`os.fork`.  Any
-successful call of :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
-:func:`~ssl.RAND_pseudo_bytes` is sufficient.
+successful call of :func:`~ssl.RAND_add` or :func:`~ssl.RAND_bytes` is
+sufficient.
 
 
 .. _ssl-tlsv1_3:
