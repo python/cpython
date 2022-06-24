@@ -54,6 +54,7 @@ _sqlite3.connect as pysqlite_connect
     factory: object(c_default='(PyObject*)clinic_state()->ConnectionType') = ConnectionType
     cached_statements: int = 128
     uri: bool = False
+    *
     autocommit: object = NULL
 
 Opens a connection to the SQLite database file database.
@@ -67,7 +68,7 @@ pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
                       int detect_types, PyObject *isolation_level,
                       int check_same_thread, PyObject *factory,
                       int cached_statements, int uri, PyObject *autocommit)
-/*[clinic end generated code: output=4b77f986d8f15727 input=98e9bff671a5e098]*/
+/*[clinic end generated code: output=4b77f986d8f15727 input=9b4c4440b0f881c5]*/
 {
     if (isolation_level == NULL) {
         isolation_level = PyUnicode_FromString("");

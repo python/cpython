@@ -30,7 +30,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     int uri = 0;
     enum autocommit_mode autocommit = -1;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 9, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 8, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -103,10 +103,14 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
             goto skip_optional_pos;
         }
     }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
     if (!autocommit_converter(fastargs[8], &autocommit)) {
         goto exit;
     }
-skip_optional_pos:
+skip_optional_kwonly:
     return_value = pysqlite_connection_init_impl((pysqlite_Connection *)self, database, timeout, detect_types, isolation_level, check_same_thread, factory, cache_size, uri, autocommit);
 
 exit:
@@ -1247,4 +1251,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=e3512db370820810 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3b6c00acce63721c input=a9049054013a1b77]*/

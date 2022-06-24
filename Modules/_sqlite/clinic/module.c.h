@@ -5,7 +5,7 @@ preserve
 PyDoc_STRVAR(pysqlite_connect__doc__,
 "connect($module, /, database, timeout=5.0, detect_types=0,\n"
 "        isolation_level=<unrepresentable>, check_same_thread=True,\n"
-"        factory=ConnectionType, cached_statements=128, uri=False,\n"
+"        factory=ConnectionType, cached_statements=128, uri=False, *,\n"
 "        autocommit=<unrepresentable>)\n"
 "--\n"
 "\n"
@@ -41,7 +41,7 @@ pysqlite_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     int uri = 0;
     PyObject *autocommit = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 9, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 8, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -112,8 +112,12 @@ pysqlite_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    autocommit = args[8];
 skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    autocommit = args[8];
+skip_optional_kwonly:
     return_value = pysqlite_connect_impl(module, database, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri, autocommit);
 
 exit:
@@ -300,4 +304,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=592ef17c0e421e90 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1a78a29eb478df0e input=a9049054013a1b77]*/
