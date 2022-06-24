@@ -180,7 +180,7 @@ module documentation.  This section lists the differences between the API and
    .. versionchanged:: 3.9
       The *standalone* parameter was added.
 
-.. method:: Node.toprettyxml(indent="\\t", newl="\\n", encoding=None, \
+.. method:: Node.toprettyxml(indent="\t", newl="\n", encoding=None, \
                              standalone=None)
 
    Return a pretty-printed version of the document. *indent* specifies the

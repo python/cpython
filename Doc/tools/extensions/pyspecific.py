@@ -30,7 +30,6 @@ from sphinx.locale import translators
 from sphinx.util import status_iterator, logging
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.text import TextWriter, TextTranslator
-from sphinx.writers.latex import LaTeXTranslator
 
 try:
     from sphinx.domains.python import PyFunction, PyMethod
@@ -418,12 +417,7 @@ class DeprecatedRemoved(Directive):
                                    translatable=False)
             node.append(para)
         env = self.state.document.settings.env
-        # deprecated pre-Sphinx-2 method
-        if hasattr(env, 'note_versionchange'):
-            env.note_versionchange('deprecated', version[0], node, self.lineno)
-        # new method
-        else:
-            env.get_domain('changeset').note_changeset(node)
+        env.get_domain('changeset').note_changeset(node)
         return [node] + messages
 
 

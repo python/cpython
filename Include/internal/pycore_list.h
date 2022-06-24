@@ -68,6 +68,12 @@ _Py_memory_repeat(char* dest, Py_ssize_t len_dest, Py_ssize_t len_src)
     }
 }
 
+typedef struct {
+    PyObject_HEAD
+    Py_ssize_t it_index;
+    PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
+} _PyListIterObject;
+
 #ifdef __cplusplus
 }
 #endif
