@@ -4972,7 +4972,7 @@ class DSLParser:
             if p.is_vararg():
                 p_add("*")
 
-            name = p.converter.signature_name or p.name
+            name = p.name or p.converter.signature_name
             p_add(name)
 
             if not p.is_vararg() and p.converter.is_optional():
