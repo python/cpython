@@ -3718,7 +3718,7 @@ AC_DEFUN([PY_CHECK_SQLITE_FUNC], [
     [AS_VAR_SET([py_var], [no])])
   ])
   AS_VAR_IF([py_var], [yes], [$2])
-  AS_VAR_IF([py_var], [no], [m4_ifblank([$3], [have_supported_sqlite3=no], [$3])])
+  AS_VAR_IF([py_var], [no], [m4_default_nblank([$3], [have_supported_sqlite3=no])])
   AS_VAR_POPDEF([py_var])
 ])
 
@@ -3763,7 +3763,7 @@ dnl hence CPPFLAGS instead of CFLAGS.
           [PY_SQLITE_HAVE_SERIALIZE], [1],
           [Define if SQLite was compiled with the serialize API]
         )
-      ], [required=no])
+      ], [ ])
     ], [
       have_supported_sqlite3=no
     ])
