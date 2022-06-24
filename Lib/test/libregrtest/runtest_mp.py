@@ -53,7 +53,7 @@ def parse_worker_args(worker_args) -> tuple[Namespace, str]:
     return (ns, test_name)
 
 
-def run_test_in_subprocess(testname: str, ns: Namespace, tmp_dir: str) -> subprocess.Popen:
+def run_test_in_subprocess(testname: str, ns: Namespace, tmp_dir: str, stdout_file: str|None) -> subprocess.Popen:
     ns_dict = vars(ns)
     worker_args = (ns_dict, testname)
     worker_args = json.dumps(worker_args)
@@ -75,18 +75,27 @@ def run_test_in_subprocess(testname: str, ns: Namespace, tmp_dir: str) -> subpro
     # Running the child from the same working directory as regrtest's original
     # invocation ensures that TEMPDIR for the child is the same when
     # sysconfig.is_python_build() is true. See issue 15300.
-    kw = {'env': env}
+    kw = dict(
+        env=env,
+        text=True,
+        close_fds=(os.name != 'nt'),
+        cwd=os_helper.SAVEDCWD,
+        stdout=subprocess.PIPE,
+        # bpo-45410: Write stderr into stdout to keep messages order
+        stderr=subprocess.STDOUT,
+    )
     if USE_PROCESS_GROUP:
         kw['start_new_session'] = True
-    return subprocess.Popen(cmd,
-                            stdout=subprocess.PIPE,
-                            # bpo-45410: Write stderr into stdout to keep
-                            # messages order
-                            stderr=subprocess.STDOUT,
-                            universal_newlines=True,
-                            close_fds=(os.name != 'nt'),
-                            cwd=os_helper.SAVEDCWD,
-                            **kw)
+    fd = None
+    try:
+        if stdout_file:
+            fd = os.open(stdout_file, os.O_WRONLY | os.O_CREAT)
+            kw['stdout'] = fd
+            kw['stderr'] = fd
+        return subprocess.Popen(cmd, **kw)
+    finally:
+        if fd is not None:
+            os.close(fd)
 
 
 def run_tests_worker(ns: Namespace, test_name: str) -> NoReturn:
@@ -212,12 +221,13 @@ class TestWorkerProcess(threading.Thread):
         test_result.duration_sec = time.monotonic() - self.start_time
         return MultiprocessResult(test_result, stdout, err_msg)
 
-    def _run_process(self, test_name: str, tmp_dir: str) -> tuple[int, str, str]:
+    def _run_process(self, test_name: str, tmp_dir: str, stdout_file: str|None) -> tuple[int, str, str]:
         self.start_time = time.monotonic()
 
         self.current_test_name = test_name
         try:
-            popen = run_test_in_subprocess(test_name, self.ns, tmp_dir)
+            popen = run_test_in_subprocess(test_name, self.ns, tmp_dir,
+                                           stdout_file)
 
             self._killed = False
             self._popen = popen
@@ -233,11 +243,14 @@ class TestWorkerProcess(threading.Thread):
                 self._kill()
                 raise ExitThread
 
+            stdout = ''
             try:
                 # bpo-45410: stderr is written into stdout
-                stdout, _ = popen.communicate(timeout=self.timeout)
+                if not stdout_file:
+                    stdout, _ = popen.communicate(timeout=self.timeout)
+                else:
+                    popen.wait(timeout=self.timeout)
                 retcode = popen.returncode
-                assert retcode is not None
             except subprocess.TimeoutExpired:
                 if self._stopped:
                     # kill() has been called: communicate() fails on reading
@@ -249,18 +262,24 @@ class TestWorkerProcess(threading.Thread):
 
                 # None means TIMEOUT for the caller
                 retcode = None
+
                 # bpo-38207: Don't attempt to call communicate() again: on it
-                # can hang until all child processes using stdout
-                # pipes completes.
-                stdout = ''
+                # can hang until all child processes using the same stdout pipe
+                # completes (a test worker process can spawn child processes).
             except OSError:
                 if self._stopped:
                     # kill() has been called: communicate() fails
                     # on reading closed stdout
                     raise ExitThread
                 raise
-            else:
-                stdout = stdout.strip()
+
+            if stdout_file:
+                # child process should use the same encoding for stdout
+                encoding = sys.stdout.encoding
+                with open(stdout_file, encoding=encoding) as fp:
+                    stdout = fp.read()
+
+            stdout = stdout.strip()
 
             return (retcode, stdout)
         except:
@@ -272,23 +291,28 @@ class TestWorkerProcess(threading.Thread):
             self.current_test_name = None
 
     def _runtest(self, test_name: str) -> MultiprocessResult:
-        # Don't check for leaked temporary files and directories if Python is
-        # run on WASI. WASI don't pass environment variables like TMPDIR to
-        # worker processes.
-        if not support.is_wasi:
-            # gh-93353: Check for leaked temporary files in the parent process,
-            # since the deletion of temporary files can happen late during
-            # Python finalization: too late for libregrtest.
-            tmp_dir = tempfile.mkdtemp(prefix="test_python_")
-            tmp_dir = os.path.abspath(tmp_dir)
-            try:
-                retcode, stdout = self._run_process(test_name, tmp_dir)
-            finally:
-                tmp_files = os.listdir(tmp_dir)
-                os_helper.rmtree(tmp_dir)
-        else:
-            retcode, stdout = self._run_process(test_name, None)
-            tmp_files = ()
+        stdout_file = tempfile.mktemp(prefix="test_python_", suffix="_stdout.txt")
+        stdout_file = os.path.abspath(stdout_file)
+        try:
+            # Don't check for leaked temporary files and directories if Python
+            # is run on WASI. WASI don't pass environment variables like TMPDIR
+            # to worker processes.
+            if not support.is_wasi:
+                # gh-93353: Check for leaked temporary files in the parent
+                # process, since the deletion of temporary files can happen
+                # late during Python finalization: too late for libregrtest.
+                tmp_dir = tempfile.mkdtemp(prefix="test_python_")
+                tmp_dir = os.path.abspath(tmp_dir)
+                try:
+                    retcode, stdout = self._run_process(test_name, tmp_dir, stdout_file)
+                finally:
+                    tmp_files = os.listdir(tmp_dir)
+                    os_helper.rmtree(tmp_dir)
+            else:
+                retcode, stdout = self._run_process(test_name, None, stdout_file)
+                tmp_files = ()
+        finally:
+            os_helper.unlink(stdout_file)
 
         if retcode is None:
             return self.mp_result_error(Timeout(test_name), stdout)
@@ -344,7 +368,8 @@ class TestWorkerProcess(threading.Thread):
         popen = self._popen
 
         # stdout must be closed to ensure that communicate() does not hang
-        popen.stdout.close()
+        if popen.stdout is not None:
+            popen.stdout.close()
 
         try:
             popen.wait(JOIN_TIMEOUT)
