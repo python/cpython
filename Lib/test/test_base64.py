@@ -759,17 +759,6 @@ class TestMain(unittest.TestCase):
         if os.path.exists(os_helper.TESTFN):
             os.unlink(os_helper.TESTFN)
 
-    def get_output(self, *args):
-        return script_helper.assert_python_ok('-m', 'base64', *args).out
-
-    def test_encode_decode(self):
-        output = self.get_output('-t')
-        self.assertSequenceEqual(output.splitlines(), (
-            b"b'Aladdin:open sesame'",
-            br"b'QWxhZGRpbjpvcGVuIHNlc2FtZQ==\n'",
-            b"b'Aladdin:open sesame'",
-        ))
-
     def test_encode_file(self):
         with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(b'a\xffb\n')
