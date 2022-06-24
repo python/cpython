@@ -267,7 +267,7 @@ Module functions and constants
 
    SQLite natively supports only the types TEXT, INTEGER, REAL, BLOB and NULL. If
    you want to use other types you must add support for them yourself. The
-   *detect_types* parameter and the using custom **converters** registered with the
+   *detect_types* parameter and using custom **converters** registered with the
    module-level :func:`register_converter` function allow you to easily do that.
 
    *detect_types* defaults to 0 (type detection disabled).
