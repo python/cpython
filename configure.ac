@@ -3703,10 +3703,23 @@ AS_VAR_APPEND([LIBSQLITE3_CFLAGS], [' -I$(srcdir)/Modules/_sqlite'])
 
 dnl PY_CHECK_SQLITE_FUNC(FUNCTION, IF-FOUND, IF-NOT-FOUND)
 AC_DEFUN([PY_CHECK_SQLITE_FUNC], [
-  dnl We use AC_SEARCH_LIBS iso. AC_CHECK_LIB since we already patched LIBS
-  AC_SEARCH_LIBS([$1], [], [$2], [
-    m4_ifblank([$3], [have_supported_sqlite3=no], [$3])
+  AS_VAR_PUSHDEF([py_var], [ac_cv_lib_sqlite3_$1])
+  AC_CACHE_CHECK([for sqlite3 function $1], [py_var], [
+    AC_COMPILE_IFELSE([
+      AC_LANG_PROGRAM([
+        #include <sqlite3.h>
+      ], [
+        #ifndef $1
+        void *x=$1
+        #endif
+      ])
+    ],
+    [AS_VAR_SET([py_var], [yes])],
+    [AS_VAR_SET([py_var], [no])])
   ])
+  AS_VAR_IF([py_var], [yes], [$2])
+  AS_VAR_IF([py_var], [no], [m4_ifblank([$3], [have_supported_sqlite3=no], [$3])])
+  AS_VAR_POPDEF([py_var])
 ])
 
 WITH_SAVE_ENV([
@@ -3741,16 +3754,16 @@ dnl hence CPPFLAGS instead of CFLAGS.
         PY_CHECK_SQLITE_FUNC([sqlite3_trace])
       ])
       PY_CHECK_SQLITE_FUNC([sqlite3_value_double])
-      AC_SEARCH_LIBS([sqlite3_load_extension], [],
+      PY_CHECK_SQLITE_FUNC([sqlite3_load_extension],
         [have_sqlite3_load_extension=yes],
         [have_sqlite3_load_extension=no]
       )
-      AC_SEARCH_LIBS([sqlite3_serialize], [], [
+      PY_CHECK_SQLITE_FUNC([sqlite3_serialize], [
         AC_DEFINE(
           [PY_SQLITE_HAVE_SERIALIZE], [1],
           [Define if SQLite was compiled with the serialize API]
         )
-      ])
+      ], [])
     ], [
       have_supported_sqlite3=no
     ])

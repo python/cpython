@@ -12497,620 +12497,450 @@ if ac_fn_c_try_compile "$LINENO"; then :
 
       have_supported_sqlite3=yes
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sqlite3_bind_double" >&5
-$as_echo_n "checking for library containing sqlite3_bind_double... " >&6; }
-if ${ac_cv_search_sqlite3_bind_double+:} false; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3 function sqlite3_bind_double" >&5
+$as_echo_n "checking for sqlite3 function sqlite3_bind_double... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_bind_double+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char sqlite3_bind_double ();
+
+        #include <sqlite3.h>
+
 int
 main ()
 {
-return sqlite3_bind_double ();
+
+        #ifndef sqlite3_bind_double
+        void *x=sqlite3_bind_double
+        #endif
+
   ;
   return 0;
 }
+
 _ACEOF
-for ac_lib in '' ; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_sqlite3_bind_double=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_sqlite3_bind_double+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_sqlite3_bind_double+:} false; then :
-
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_bind_double=yes
 else
-  ac_cv_search_sqlite3_bind_double=no
+  ac_cv_lib_sqlite3_sqlite3_bind_double=no
 fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_sqlite3_bind_double" >&5
-$as_echo "$ac_cv_search_sqlite3_bind_double" >&6; }
-ac_res=$ac_cv_search_sqlite3_bind_double
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_bind_double" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_bind_double" >&6; }
+  if test "x$ac_cv_lib_sqlite3_sqlite3_bind_double" = xyes; then :
 
-else
-
-    have_supported_sqlite3=no
-
+fi
+  if test "x$ac_cv_lib_sqlite3_sqlite3_bind_double" = xno; then :
+  have_supported_sqlite3=no
 fi
 
 
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sqlite3_column_decltype" >&5
-$as_echo_n "checking for library containing sqlite3_column_decltype... " >&6; }
-if ${ac_cv_search_sqlite3_column_decltype+:} false; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3 function sqlite3_column_decltype" >&5
+$as_echo_n "checking for sqlite3 function sqlite3_column_decltype... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_column_decltype+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char sqlite3_column_decltype ();
+
+        #include <sqlite3.h>
+
 int
 main ()
 {
-return sqlite3_column_decltype ();
+
+        #ifndef sqlite3_column_decltype
+        void *x=sqlite3_column_decltype
+        #endif
+
   ;
   return 0;
 }
+
 _ACEOF
-for ac_lib in '' ; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_sqlite3_column_decltype=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_sqlite3_column_decltype+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_sqlite3_column_decltype+:} false; then :
-
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_column_decltype=yes
 else
-  ac_cv_search_sqlite3_column_decltype=no
+  ac_cv_lib_sqlite3_sqlite3_column_decltype=no
 fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_sqlite3_column_decltype" >&5
-$as_echo "$ac_cv_search_sqlite3_column_decltype" >&6; }
-ac_res=$ac_cv_search_sqlite3_column_decltype
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_column_decltype" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_column_decltype" >&6; }
+  if test "x$ac_cv_lib_sqlite3_sqlite3_column_decltype" = xyes; then :
 
-else
-
-    have_supported_sqlite3=no
-
+fi
+  if test "x$ac_cv_lib_sqlite3_sqlite3_column_decltype" = xno; then :
+  have_supported_sqlite3=no
 fi
 
 
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sqlite3_column_double" >&5
-$as_echo_n "checking for library containing sqlite3_column_double... " >&6; }
-if ${ac_cv_search_sqlite3_column_double+:} false; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3 function sqlite3_column_double" >&5
+$as_echo_n "checking for sqlite3 function sqlite3_column_double... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_column_double+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char sqlite3_column_double ();
+
+        #include <sqlite3.h>
+
 int
 main ()
 {
-return sqlite3_column_double ();
+
+        #ifndef sqlite3_column_double
+        void *x=sqlite3_column_double
+        #endif
+
   ;
   return 0;
 }
+
 _ACEOF
-for ac_lib in '' ; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_sqlite3_column_double=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_sqlite3_column_double+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_sqlite3_column_double+:} false; then :
-
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_column_double=yes
 else
-  ac_cv_search_sqlite3_column_double=no
+  ac_cv_lib_sqlite3_sqlite3_column_double=no
 fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_sqlite3_column_double" >&5
-$as_echo "$ac_cv_search_sqlite3_column_double" >&6; }
-ac_res=$ac_cv_search_sqlite3_column_double
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_column_double" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_column_double" >&6; }
+  if test "x$ac_cv_lib_sqlite3_sqlite3_column_double" = xyes; then :
 
-else
-
-    have_supported_sqlite3=no
-
+fi
+  if test "x$ac_cv_lib_sqlite3_sqlite3_column_double" = xno; then :
+  have_supported_sqlite3=no
 fi
 
 
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sqlite3_complete" >&5
-$as_echo_n "checking for library containing sqlite3_complete... " >&6; }
-if ${ac_cv_search_sqlite3_complete+:} false; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3 function sqlite3_complete" >&5
+$as_echo_n "checking for sqlite3 function sqlite3_complete... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_complete+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char sqlite3_complete ();
+
+        #include <sqlite3.h>
+
 int
 main ()
 {
-return sqlite3_complete ();
+
+        #ifndef sqlite3_complete
+        void *x=sqlite3_complete
+        #endif
+
   ;
   return 0;
 }
+
 _ACEOF
-for ac_lib in '' ; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_sqlite3_complete=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_sqlite3_complete+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_sqlite3_complete+:} false; then :
-
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_complete=yes
 else
-  ac_cv_search_sqlite3_complete=no
+  ac_cv_lib_sqlite3_sqlite3_complete=no
 fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_sqlite3_complete" >&5
-$as_echo "$ac_cv_search_sqlite3_complete" >&6; }
-ac_res=$ac_cv_search_sqlite3_complete
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_complete" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_complete" >&6; }
+  if test "x$ac_cv_lib_sqlite3_sqlite3_complete" = xyes; then :
 
-else
-
-    have_supported_sqlite3=no
-
+fi
+  if test "x$ac_cv_lib_sqlite3_sqlite3_complete" = xno; then :
+  have_supported_sqlite3=no
 fi
 
 
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sqlite3_enable_shared_cache" >&5
-$as_echo_n "checking for library containing sqlite3_enable_shared_cache... " >&6; }
-if ${ac_cv_search_sqlite3_enable_shared_cache+:} false; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3 function sqlite3_enable_shared_cache" >&5
+$as_echo_n "checking for sqlite3 function sqlite3_enable_shared_cache... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_enable_shared_cache+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char sqlite3_enable_shared_cache ();
+
+        #include <sqlite3.h>
+
 int
 main ()
 {
-return sqlite3_enable_shared_cache ();
+
+        #ifndef sqlite3_enable_shared_cache
+        void *x=sqlite3_enable_shared_cache
+        #endif
+
   ;
   return 0;
 }
+
 _ACEOF
-for ac_lib in '' ; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_sqlite3_enable_shared_cache=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_sqlite3_enable_shared_cache+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_sqlite3_enable_shared_cache+:} false; then :
-
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_enable_shared_cache=yes
 else
-  ac_cv_search_sqlite3_enable_shared_cache=no
+  ac_cv_lib_sqlite3_sqlite3_enable_shared_cache=no
 fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_sqlite3_enable_shared_cache" >&5
-$as_echo "$ac_cv_search_sqlite3_enable_shared_cache" >&6; }
-ac_res=$ac_cv_search_sqlite3_enable_shared_cache
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_enable_shared_cache" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_enable_shared_cache" >&6; }
+  if test "x$ac_cv_lib_sqlite3_sqlite3_enable_shared_cache" = xyes; then :
 
-else
-
-    have_supported_sqlite3=no
-
+fi
+  if test "x$ac_cv_lib_sqlite3_sqlite3_enable_shared_cache" = xno; then :
+  have_supported_sqlite3=no
 fi
 
 
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sqlite3_progress_handler" >&5
-$as_echo_n "checking for library containing sqlite3_progress_handler... " >&6; }
-if ${ac_cv_search_sqlite3_progress_handler+:} false; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3 function sqlite3_progress_handler" >&5
+$as_echo_n "checking for sqlite3 function sqlite3_progress_handler... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_progress_handler+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char sqlite3_progress_handler ();
+
+        #include <sqlite3.h>
+
 int
 main ()
 {
-return sqlite3_progress_handler ();
+
+        #ifndef sqlite3_progress_handler
+        void *x=sqlite3_progress_handler
+        #endif
+
   ;
   return 0;
 }
+
 _ACEOF
-for ac_lib in '' ; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_sqlite3_progress_handler=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_sqlite3_progress_handler+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_sqlite3_progress_handler+:} false; then :
-
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_progress_handler=yes
 else
-  ac_cv_search_sqlite3_progress_handler=no
+  ac_cv_lib_sqlite3_sqlite3_progress_handler=no
 fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_sqlite3_progress_handler" >&5
-$as_echo "$ac_cv_search_sqlite3_progress_handler" >&6; }
-ac_res=$ac_cv_search_sqlite3_progress_handler
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_progress_handler" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_progress_handler" >&6; }
+  if test "x$ac_cv_lib_sqlite3_sqlite3_progress_handler" = xyes; then :
 
-else
-
-    have_supported_sqlite3=no
-
+fi
+  if test "x$ac_cv_lib_sqlite3_sqlite3_progress_handler" = xno; then :
+  have_supported_sqlite3=no
 fi
 
 
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sqlite3_result_double" >&5
-$as_echo_n "checking for library containing sqlite3_result_double... " >&6; }
-if ${ac_cv_search_sqlite3_result_double+:} false; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3 function sqlite3_result_double" >&5
+$as_echo_n "checking for sqlite3 function sqlite3_result_double... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_result_double+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char sqlite3_result_double ();
+
+        #include <sqlite3.h>
+
 int
 main ()
 {
-return sqlite3_result_double ();
+
+        #ifndef sqlite3_result_double
+        void *x=sqlite3_result_double
+        #endif
+
   ;
   return 0;
 }
+
 _ACEOF
-for ac_lib in '' ; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_sqlite3_result_double=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_sqlite3_result_double+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_sqlite3_result_double+:} false; then :
-
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_result_double=yes
 else
-  ac_cv_search_sqlite3_result_double=no
+  ac_cv_lib_sqlite3_sqlite3_result_double=no
 fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_sqlite3_result_double" >&5
-$as_echo "$ac_cv_search_sqlite3_result_double" >&6; }
-ac_res=$ac_cv_search_sqlite3_result_double
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_result_double" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_result_double" >&6; }
+  if test "x$ac_cv_lib_sqlite3_sqlite3_result_double" = xyes; then :
 
-else
-
-    have_supported_sqlite3=no
-
+fi
+  if test "x$ac_cv_lib_sqlite3_sqlite3_result_double" = xno; then :
+  have_supported_sqlite3=no
 fi
 
 
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sqlite3_set_authorizer" >&5
-$as_echo_n "checking for library containing sqlite3_set_authorizer... " >&6; }
-if ${ac_cv_search_sqlite3_set_authorizer+:} false; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3 function sqlite3_set_authorizer" >&5
+$as_echo_n "checking for sqlite3 function sqlite3_set_authorizer... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_set_authorizer+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char sqlite3_set_authorizer ();
+
+        #include <sqlite3.h>
+
 int
 main ()
 {
-return sqlite3_set_authorizer ();
+
+        #ifndef sqlite3_set_authorizer
+        void *x=sqlite3_set_authorizer
+        #endif
+
   ;
   return 0;
 }
+
 _ACEOF
-for ac_lib in '' ; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_sqlite3_set_authorizer=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_sqlite3_set_authorizer+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_sqlite3_set_authorizer+:} false; then :
-
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_set_authorizer=yes
 else
-  ac_cv_search_sqlite3_set_authorizer=no
+  ac_cv_lib_sqlite3_sqlite3_set_authorizer=no
 fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_sqlite3_set_authorizer" >&5
-$as_echo "$ac_cv_search_sqlite3_set_authorizer" >&6; }
-ac_res=$ac_cv_search_sqlite3_set_authorizer
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_set_authorizer" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_set_authorizer" >&6; }
+  if test "x$ac_cv_lib_sqlite3_sqlite3_set_authorizer" = xyes; then :
 
-else
-
-    have_supported_sqlite3=no
-
+fi
+  if test "x$ac_cv_lib_sqlite3_sqlite3_set_authorizer" = xno; then :
+  have_supported_sqlite3=no
 fi
 
 
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sqlite3_trace_v2" >&5
-$as_echo_n "checking for library containing sqlite3_trace_v2... " >&6; }
-if ${ac_cv_search_sqlite3_trace_v2+:} false; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3 function sqlite3_trace_v2" >&5
+$as_echo_n "checking for sqlite3 function sqlite3_trace_v2... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_trace_v2+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char sqlite3_trace_v2 ();
+
+        #include <sqlite3.h>
+
 int
 main ()
 {
-return sqlite3_trace_v2 ();
+
+        #ifndef sqlite3_trace_v2
+        void *x=sqlite3_trace_v2
+        #endif
+
   ;
   return 0;
 }
+
 _ACEOF
-for ac_lib in '' ; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_sqlite3_trace_v2=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_sqlite3_trace_v2+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_sqlite3_trace_v2+:} false; then :
-
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_trace_v2=yes
 else
-  ac_cv_search_sqlite3_trace_v2=no
+  ac_cv_lib_sqlite3_sqlite3_trace_v2=no
 fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_sqlite3_trace_v2" >&5
-$as_echo "$ac_cv_search_sqlite3_trace_v2" >&6; }
-ac_res=$ac_cv_search_sqlite3_trace_v2
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_trace_v2" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_trace_v2" >&6; }
+  if test "x$ac_cv_lib_sqlite3_sqlite3_trace_v2" = xyes; then :
 
-else
-
+fi
+  if test "x$ac_cv_lib_sqlite3_sqlite3_trace_v2" = xno; then :
 
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sqlite3_trace" >&5
-$as_echo_n "checking for library containing sqlite3_trace... " >&6; }
-if ${ac_cv_search_sqlite3_trace+:} false; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3 function sqlite3_trace" >&5
+$as_echo_n "checking for sqlite3 function sqlite3_trace... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_trace+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char sqlite3_trace ();
+
+        #include <sqlite3.h>
+
 int
 main ()
 {
-return sqlite3_trace ();
+
+        #ifndef sqlite3_trace
+        void *x=sqlite3_trace
+        #endif
+
   ;
   return 0;
 }
+
 _ACEOF
-for ac_lib in '' ; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_sqlite3_trace=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_sqlite3_trace+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_sqlite3_trace+:} false; then :
-
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_trace=yes
 else
-  ac_cv_search_sqlite3_trace=no
+  ac_cv_lib_sqlite3_sqlite3_trace=no
 fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_sqlite3_trace" >&5
-$as_echo "$ac_cv_search_sqlite3_trace" >&6; }
-ac_res=$ac_cv_search_sqlite3_trace
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
-else
-
-    have_supported_sqlite3=no
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_trace" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_trace" >&6; }
+  if test "x$ac_cv_lib_sqlite3_sqlite3_trace" = xyes; then :
 
+fi
+  if test "x$ac_cv_lib_sqlite3_sqlite3_trace" = xno; then :
+  have_supported_sqlite3=no
+fi
 
 
 
@@ -13118,185 +12948,144 @@ fi
 
 
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sqlite3_value_double" >&5
-$as_echo_n "checking for library containing sqlite3_value_double... " >&6; }
-if ${ac_cv_search_sqlite3_value_double+:} false; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3 function sqlite3_value_double" >&5
+$as_echo_n "checking for sqlite3 function sqlite3_value_double... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_value_double+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char sqlite3_value_double ();
+
+        #include <sqlite3.h>
+
 int
 main ()
 {
-return sqlite3_value_double ();
+
+        #ifndef sqlite3_value_double
+        void *x=sqlite3_value_double
+        #endif
+
   ;
   return 0;
 }
+
 _ACEOF
-for ac_lib in '' ; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_sqlite3_value_double=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_sqlite3_value_double+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_sqlite3_value_double+:} false; then :
-
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_value_double=yes
 else
-  ac_cv_search_sqlite3_value_double=no
+  ac_cv_lib_sqlite3_sqlite3_value_double=no
 fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_sqlite3_value_double" >&5
-$as_echo "$ac_cv_search_sqlite3_value_double" >&6; }
-ac_res=$ac_cv_search_sqlite3_value_double
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_value_double" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_value_double" >&6; }
+  if test "x$ac_cv_lib_sqlite3_sqlite3_value_double" = xyes; then :
 
-else
-
-    have_supported_sqlite3=no
-
+fi
+  if test "x$ac_cv_lib_sqlite3_sqlite3_value_double" = xno; then :
+  have_supported_sqlite3=no
 fi
 
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sqlite3_load_extension" >&5
-$as_echo_n "checking for library containing sqlite3_load_extension... " >&6; }
-if ${ac_cv_search_sqlite3_load_extension+:} false; then :
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3 function sqlite3_load_extension" >&5
+$as_echo_n "checking for sqlite3 function sqlite3_load_extension... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_load_extension+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char sqlite3_load_extension ();
+
+        #include <sqlite3.h>
+
 int
 main ()
 {
-return sqlite3_load_extension ();
+
+        #ifndef sqlite3_load_extension
+        void *x=sqlite3_load_extension
+        #endif
+
   ;
   return 0;
 }
-_ACEOF
-for ac_lib in '' ; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_sqlite3_load_extension=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_sqlite3_load_extension+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_sqlite3_load_extension+:} false; then :
 
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_load_extension=yes
 else
-  ac_cv_search_sqlite3_load_extension=no
+  ac_cv_lib_sqlite3_sqlite3_load_extension=no
 fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_sqlite3_load_extension" >&5
-$as_echo "$ac_cv_search_sqlite3_load_extension" >&6; }
-ac_res=$ac_cv_search_sqlite3_load_extension
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_load_extension" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_load_extension" >&6; }
+  if test "x$ac_cv_lib_sqlite3_sqlite3_load_extension" = xyes; then :
   have_sqlite3_load_extension=yes
-else
+fi
+  if test "x$ac_cv_lib_sqlite3_sqlite3_load_extension" = xno; then :
   have_sqlite3_load_extension=no
 
 fi
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sqlite3_serialize" >&5
-$as_echo_n "checking for library containing sqlite3_serialize... " >&6; }
-if ${ac_cv_search_sqlite3_serialize+:} false; then :
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3 function sqlite3_serialize" >&5
+$as_echo_n "checking for sqlite3 function sqlite3_serialize... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_serialize+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char sqlite3_serialize ();
+
+        #include <sqlite3.h>
+
 int
 main ()
 {
-return sqlite3_serialize ();
+
+        #ifndef sqlite3_serialize
+        void *x=sqlite3_serialize
+        #endif
+
   ;
   return 0;
 }
-_ACEOF
-for ac_lib in '' ; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_sqlite3_serialize=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_sqlite3_serialize+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_sqlite3_serialize+:} false; then :
 
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_serialize=yes
 else
-  ac_cv_search_sqlite3_serialize=no
+  ac_cv_lib_sqlite3_sqlite3_serialize=no
 fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_sqlite3_serialize" >&5
-$as_echo "$ac_cv_search_sqlite3_serialize" >&6; }
-ac_res=$ac_cv_search_sqlite3_serialize
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_serialize" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_serialize" >&6; }
+  if test "x$ac_cv_lib_sqlite3_sqlite3_serialize" = xyes; then :
 
 
 $as_echo "#define PY_SQLITE_HAVE_SERIALIZE 1" >>confdefs.h
 
 
 fi
+  if test "x$ac_cv_lib_sqlite3_sqlite3_serialize" = xno; then :
+  have_supported_sqlite3=no
+fi
+
 
 
 else
