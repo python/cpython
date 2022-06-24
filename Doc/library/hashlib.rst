@@ -300,23 +300,16 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
 
    >>> from hashlib import pbkdf2_hmac
    >>> our_app_iters = 500_000  # Application specific, read above.
-   >>> dk = pbkdf2_hmac('sha256', b'password', b'bad salt'*2, our_app_iters)
+   >>> dk = pbkdf2_hmac('sha256', b'password', b'bad salt' * 2, our_app_iters)
    >>> dk.hex()
    '15530bba69924174860db778f2c6f8104d3aaf9d26241840c8c4a641c8d000a9'
 
+   Function only available when Python is compiled with OpenSSL.
+
    .. versionadded:: 3.4
 
-   .. note::
-
-      A fast implementation of *pbkdf2_hmac* is available with OpenSSL.  The
-      Python implementation uses an inline version of :mod:`hmac`. It is about
-      three times slower and doesn't release the GIL.
-
-   .. deprecated:: 3.10
-
-      Slow Python implementation of *pbkdf2_hmac* is deprecated. In the
-      future the function will only be available when Python is compiled
-      with OpenSSL.
+   .. versionchanged:: 3.12
+      Remove the slow pure Python implementation, deprecated in Python 3.10.
 
 .. function:: scrypt(password, *, salt, n, r, p, maxmem=0, dklen=64)
 
