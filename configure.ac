@@ -1486,10 +1486,10 @@ if test -z "$HOSTRUNNER"
 then
   AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
     [Emscripten/node*], [
+      # bigint for ctypes c_longlong, c_longdouble
+      HOSTRUNNER="node --experimental-wasm-bigint"
       AS_VAR_IF([enable_wasm_pthreads], [yes], [
-        HOSTRUNNER='node --experimental-wasm-threads --experimental-wasm-bulk-memory'
-      ], [
-        HOSTRUNNER='node'
+        HOSTRUNNER="$HOSTRUNNER --experimental-wasm-threads --experimental-wasm-bulk-memory"
       ])
     ],
     dnl TODO: support other WASI runtimes
