@@ -98,8 +98,10 @@ popd
 ```
 
 ```shell
-node --experimental-wasm-threads --experimental-wasm-bulk-memory builddir/emscripten-node/python.js
+node --experimental-wasm-threads --experimental-wasm-bulk-memory --experimental-wasm-bigint builddir/emscripten-node/python.js
 ```
+
+(``--experimental-wasm-bigint`` is not needed with recent NodeJS versions)
 
 # wasm32-emscripten limitations and issues
 
