@@ -1445,7 +1445,6 @@ class BaseExceptionReportingTests:
     # #### Exception Groups ####
 
     def test_exception_group_basic(self):
-        self.maxDiff = None
         def exc():
             if True: raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])
 
