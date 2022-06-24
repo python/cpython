@@ -1,0 +1,2 @@
+Add ``__parameters__`` and ``__getitem__`` in :class:`~typing.TypeVar` and
+:class:`~ParamSpec`.

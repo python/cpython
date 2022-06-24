@@ -204,7 +204,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__trunc__)
         STRUCT_FOR_ID(__typing_is_unpacked_typevartuple__)
         STRUCT_FOR_ID(__typing_prepare_subst__)
-        STRUCT_FOR_ID(__typing_subst__)
         STRUCT_FOR_ID(__typing_unpacked_tuple_args__)
         STRUCT_FOR_ID(__warningregistry__)
         STRUCT_FOR_ID(__weaklistoffset__)

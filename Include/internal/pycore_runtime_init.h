@@ -826,7 +826,6 @@ extern "C" {
                 INIT_ID(__trunc__), \
                 INIT_ID(__typing_is_unpacked_typevartuple__), \
                 INIT_ID(__typing_prepare_subst__), \
-                INIT_ID(__typing_subst__), \
                 INIT_ID(__typing_unpacked_tuple_args__), \
                 INIT_ID(__warningregistry__), \
                 INIT_ID(__weaklistoffset__), \

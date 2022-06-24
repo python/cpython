@@ -448,16 +448,18 @@ class TypeVarTests(BaseTestCase):
 
     def test_var_substitution(self):
         T = TypeVar('T')
-        subst = T.__typing_subst__
-        self.assertIs(subst(int), int)
-        self.assertEqual(subst(list[int]), list[int])
-        self.assertEqual(subst(List[int]), List[int])
-        self.assertEqual(subst(List), List)
-        self.assertIs(subst(Any), Any)
-        self.assertIs(subst(None), type(None))
-        self.assertIs(subst(T), T)
-        self.assertEqual(subst(int|str), int|str)
-        self.assertEqual(subst(Union[int, str]), Union[int, str])
+        self.assertEqual(T.__parameters__, (T,))
+        self.assertIs(T.__parameters__[0], T)
+        self.assertIs(T[int,], int)
+        self.assertEqual(T[list[int],], list[int])
+        self.assertEqual(T[List[int],], List[int])
+        self.assertEqual(T[List,], List)
+        self.assertIs(T[Any,], Any)
+        self.assertIs(T[None,], type(None))
+        self.assertIs(T[T,], T)
+        self.assertIs(T[(int,)], int)
+        self.assertEqual(T[int|str,], int|str)
+        self.assertEqual(T[Union[int, str],], Union[int, str])
 
     def test_bad_var_substitution(self):
         T = TypeVar('T')
@@ -470,7 +472,7 @@ class TypeVarTests(BaseTestCase):
         for arg in bad_args:
             with self.subTest(arg=arg):
                 with self.assertRaises(TypeError):
-                    T.__typing_subst__(arg)
+                    T[arg,]
                 with self.assertRaises(TypeError):
                     List[T][arg]
                 with self.assertRaises(TypeError):
@@ -6819,13 +6821,14 @@ class ParamSpecTests(BaseTestCase):
     def test_var_substitution(self):
         T = TypeVar("T")
         P = ParamSpec("P")
-        subst = P.__typing_subst__
-        self.assertEqual(subst((int, str)), (int, str))
-        self.assertEqual(subst([int, str]), (int, str))
-        self.assertEqual(subst([None]), (type(None),))
-        self.assertIs(subst(...), ...)
-        self.assertIs(subst(P), P)
-        self.assertEqual(subst(Concatenate[int, P]), Concatenate[int, P])
+        self.assertEqual(P.__parameters__, (P,))
+        self.assertIs(P.__parameters__[0], P)
+        self.assertEqual(P[(int, str),], (int, str))
+        self.assertEqual(P[[int, str],], (int, str))
+        self.assertEqual(P[[None],], (type(None),))
+        self.assertIs(P[...,], ...)
+        self.assertIs(P[P,], P)
+        self.assertEqual(P[Concatenate[int, P],], Concatenate[int, P])
 
     def test_bad_var_substitution(self):
         T = TypeVar('T')
@@ -6834,7 +6837,7 @@ class ParamSpecTests(BaseTestCase):
         for arg in bad_args:
             with self.subTest(arg=arg):
                 with self.assertRaises(TypeError):
-                    P.__typing_subst__(arg)
+                    P[arg,]
                 with self.assertRaises(TypeError):
                     typing.Callable[P, T][arg, str]
                 with self.assertRaises(TypeError):

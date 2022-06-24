@@ -218,40 +218,29 @@ _Py_make_parameters(PyObject *args)
     Py_ssize_t iparam = 0;
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *t = PyTuple_GET_ITEM(args, iarg);
-        PyObject *subst;
-        if (_PyObject_LookupAttr(t, &_Py_ID(__typing_subst__), &subst) < 0) {
+        PyObject *subparams;
+        if (_PyObject_LookupAttr(t, &_Py_ID(__parameters__),
+                                    &subparams) < 0) {
             Py_DECREF(parameters);
             return NULL;
         }
-        if (subst) {
-            iparam += tuple_add(parameters, iparam, t);
-            Py_DECREF(subst);
-        }
-        else {
-            PyObject *subparams;
-            if (_PyObject_LookupAttr(t, &_Py_ID(__parameters__),
-                                     &subparams) < 0) {
-                Py_DECREF(parameters);
-                return NULL;
-            }
-            if (subparams && PyTuple_Check(subparams)) {
-                Py_ssize_t len2 = PyTuple_GET_SIZE(subparams);
-                Py_ssize_t needed = len2 - 1 - (iarg - iparam);
-                if (needed > 0) {
-                    len += needed;
-                    if (_PyTuple_Resize(&parameters, len) < 0) {
-                        Py_DECREF(subparams);
-                        Py_DECREF(parameters);
-                        return NULL;
-                    }
-                }
-                for (Py_ssize_t j = 0; j < len2; j++) {
-                    PyObject *t2 = PyTuple_GET_ITEM(subparams, j);
-                    iparam += tuple_add(parameters, iparam, t2);
+        if (subparams && PyTuple_Check(subparams)) {
+            Py_ssize_t len2 = PyTuple_GET_SIZE(subparams);
+            Py_ssize_t needed = len2 - 1 - (iarg - iparam);
+            if (needed > 0) {
+                len += needed;
+                if (_PyTuple_Resize(&parameters, len) < 0) {
+                    Py_DECREF(subparams);
+                    Py_DECREF(parameters);
+                    return NULL;
                 }
             }
-            Py_XDECREF(subparams);
+            for (Py_ssize_t j = 0; j < len2; j++) {
+                PyObject *t2 = PyTuple_GET_ITEM(subparams, j);
+                iparam += tuple_add(parameters, iparam, t2);
+            }
         }
+        Py_XDECREF(subparams);
     }
     if (iparam < len) {
         if (_PyTuple_Resize(&parameters, iparam) < 0) {
@@ -460,21 +449,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
             Py_DECREF(item);
             return NULL;
         }
-        PyObject *subst;
-        if (_PyObject_LookupAttr(arg, &_Py_ID(__typing_subst__), &subst) < 0) {
-            Py_DECREF(newargs);
-            Py_DECREF(item);
-            return NULL;
-        }
-        if (subst) {
-            Py_ssize_t iparam = tuple_index(parameters, nparams, arg);
-            assert(iparam >= 0);
-            arg = PyObject_CallOneArg(subst, argitems[iparam]);
-            Py_DECREF(subst);
-        }
-        else {
-            arg = subs_tvars(arg, parameters, argitems, nitems);
-        }
+        arg = subs_tvars(arg, parameters, argitems, nitems);
         if (arg == NULL) {
             Py_DECREF(newargs);
             Py_DECREF(item);

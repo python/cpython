@@ -250,13 +250,9 @@ def _collect_parameters(args):
     """
     parameters = []
     for t in args:
-        if hasattr(t, '__typing_subst__'):
-            if t not in parameters:
-                parameters.append(t)
-        else:
-            for x in getattr(t, '__parameters__', ()):
-                if x not in parameters:
-                    parameters.append(x)
+        for x in getattr(t, '__parameters__', ()):
+            if x not in parameters:
+                parameters.append(x)
     return tuple(parameters)
 
 
@@ -954,6 +950,9 @@ class _BoundVarianceMixin:
             prefix = '~'
         return prefix + self.__name__
 
+    @property
+    def __parameters__(self):
+        return (self,)
 
 class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
               _root=True):
@@ -1014,7 +1013,9 @@ class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
         if def_mod != 'typing':
             self.__module__ = def_mod
 
-    def __typing_subst__(self, arg):
+    def __getitem__(self, arg):
+        if isinstance(arg, tuple) and len(arg) == 1:
+            arg, = arg
         msg = "Parameters to generic types must be types."
         arg = _type_check(arg, msg, is_argument=True)
         if ((isinstance(arg, _GenericAlias) and arg.__origin__ is Unpack) or
@@ -1062,8 +1063,12 @@ class TypeVarTuple(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
     def __repr__(self):
         return self.__name__
 
-    def __typing_subst__(self, arg):
+    def __getitem__(self, arg):
         raise TypeError("Substitution of bare TypeVarTuple is not supported")
+
+    @property
+    def __parameters__(self):
+        return (self,)
 
     def __typing_prepare_subst__(self, alias, args):
         params = alias.__parameters__
@@ -1212,7 +1217,9 @@ class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
         if def_mod != 'typing':
             self.__module__ = def_mod
 
-    def __typing_subst__(self, arg):
+    def __getitem__(self, arg):
+        if isinstance(arg, tuple) and len(arg) == 1:
+            arg, = arg
         if isinstance(arg, (list, tuple)):
             arg = tuple(_type_check(a, "Expected a type.") for a in arg)
         elif not _is_param_expr(arg):
@@ -1420,21 +1427,17 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         new_args = []
         for old_arg in self.__args__:
 
-            substfunc = getattr(old_arg, '__typing_subst__', None)
-            if substfunc:
-                new_arg = substfunc(new_arg_by_param[old_arg])
+            subparams = getattr(old_arg, '__parameters__', ())
+            if not subparams:
+                new_arg = old_arg
             else:
-                subparams = getattr(old_arg, '__parameters__', ())
-                if not subparams:
-                    new_arg = old_arg
-                else:
-                    subargs = []
-                    for x in subparams:
-                        if isinstance(x, TypeVarTuple):
-                            subargs.extend(new_arg_by_param[x])
-                        else:
-                            subargs.append(new_arg_by_param[x])
-                    new_arg = old_arg[tuple(subargs)]
+                subargs = []
+                for x in subparams:
+                    if isinstance(x, TypeVarTuple):
+                        subargs.extend(new_arg_by_param[x])
+                    else:
+                        subargs.append(new_arg_by_param[x])
+                new_arg = old_arg[tuple(subargs)]
 
             if self.__origin__ == collections.abc.Callable and isinstance(new_arg, tuple):
                 # Consider the following `Callable`.
