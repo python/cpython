@@ -331,7 +331,6 @@ Module functions and constants
 
    .. versionchanged:: 3.12
       Added the *autocommit* parameter.
-      Deprecated the *isolation_level* parameter.
 
 
 .. function:: register_converter(typename, callable)
@@ -435,8 +434,9 @@ Connection Objects
 
          The PEP 249-compliant autocommit feature and the SQLite autocommit
          feature are two related, but different concepts.
-         To query the SQLite autocommit mode, use :attr:`in_transaction`.
-         To query the sqlite3 autocommit mode, use the *autocommit* attribute.
+         Query the SQLite autocommit mode using the :attr:`in_transaction`
+         attribute.
+         Query the ``sqlite3`` autocommit mode using the *autocommit* attribute.
 
       .. versionadded:: 3.12
 
