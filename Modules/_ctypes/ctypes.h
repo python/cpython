@@ -20,7 +20,7 @@
  */
 #ifndef CTYPES_MAX_ARGCOUNT
   #ifdef __EMSCRIPTEN__
-    #define CTYPES_MAX_ARGCOUNT 122
+    #define CTYPES_MAX_ARGCOUNT 1000
   #else
     #define CTYPES_MAX_ARGCOUNT 1024
   #endif
