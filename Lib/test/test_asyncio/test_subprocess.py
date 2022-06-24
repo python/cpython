@@ -702,6 +702,65 @@ if sys.platform != 'win32':
                                       test_utils.TestCase):
         Watcher = unix_events.PidfdChildWatcher
 
+
+    class GenericWatcherTests(test_utils.TestCase):
+
+        def test_create_subprocess_fails_with_inactive_watcher(self):
+            watcher = mock.create_autospec(
+                asyncio.AbstractChildWatcher,
+                **{"__enter__.return_value.is_active.return_value": False}
+            )
+
+            async def execute():
+                asyncio.set_child_watcher(watcher)
+
+                with self.assertRaises(RuntimeError):
+                    await subprocess.create_subprocess_exec(
+                        os_helper.FakePath(sys.executable), '-c', 'pass')
+
+                watcher.add_child_handler.assert_not_called()
+
+            self.assertIsNone(asyncio.run(execute()))
+            self.assertListEqual(watcher.mock_calls, [
+                mock.call.__enter__(),
+                mock.call.__enter__().is_active(),
+                mock.call.__exit__(RuntimeError, mock.ANY, mock.ANY),
+            ])
+
+
+        def has_pidfd_support():
+            if not hasattr(os, 'pidfd_open'):
+                return False
+            try:
+                os.close(os.pidfd_open(os.getpid()))
+            except OSError:
+                return False
+            return True
+
+        @unittest.skipUnless(
+            has_pidfd_support(),
+            "operating system does not support pidfds",
+        )
+        def test_create_subprocess_with_pidfd(self):
+            async def in_thread():
+                proc = await asyncio.create_subprocess_exec(
+                    *PROGRAM_CAT,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                )
+                stdout, stderr = await proc.communicate(b"some data")
+                return proc.returncode, stdout
+
+            async def main():
+                return await asyncio.to_thread(asyncio.run, in_thread())
+
+            asyncio.set_child_watcher(asyncio.PidfdChildWatcher())
+            try:
+                returncode, stdout = asyncio.run(main())
+                self.assertEqual(returncode, 0)
+                self.assertEqual(stdout, b'some data')
+            finally:
+                asyncio.set_child_watcher(None)
 else:
     # Windows
     class SubprocessProactorTests(SubprocessMixin, test_utils.TestCase):
@@ -710,67 +769,6 @@ else:
             super().setUp()
             self.loop = asyncio.ProactorEventLoop()
             self.set_event_loop(self.loop)
-
-
-class GenericWatcherTests(test_utils.TestCase):
-
-    def test_create_subprocess_fails_with_inactive_watcher(self):
-        watcher = mock.create_autospec(
-            asyncio.AbstractChildWatcher,
-            **{"__enter__.return_value.is_active.return_value": False}
-        )
-
-        async def execute():
-            asyncio.set_child_watcher(watcher)
-
-            with self.assertRaises(RuntimeError):
-                await subprocess.create_subprocess_exec(
-                    os_helper.FakePath(sys.executable), '-c', 'pass')
-
-            watcher.add_child_handler.assert_not_called()
-
-        self.assertIsNone(asyncio.run(execute()))
-        self.assertListEqual(watcher.mock_calls, [
-            mock.call.__enter__(),
-            mock.call.__enter__().is_active(),
-            mock.call.__exit__(RuntimeError, mock.ANY, mock.ANY),
-        ])
-
-
-    def has_pidfd_support():
-        if not hasattr(os, 'pidfd_open'):
-            return False
-        try:
-            os.close(os.pidfd_open(os.getpid()))
-        except OSError:
-            return False
-        return True
-
-    @unittest.skipUnless(
-        has_pidfd_support(),
-        "operating system does not support pidfds",
-    )
-    def test_create_subprocess_with_pidfd(self):
-        async def in_thread():
-            proc = await asyncio.create_subprocess_exec(
-                *PROGRAM_CAT,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-            )
-            stdout, stderr = await proc.communicate(b"some data")
-            return proc.returncode, stdout
-
-        async def main():
-            return await asyncio.to_thread(asyncio.run, in_thread())
-
-        asyncio.set_child_watcher(asyncio.PidfdChildWatcher())
-        try:
-            returncode, stdout = asyncio.run(main())
-            self.assertEqual(returncode, 0)
-            self.assertEqual(stdout, b'some data')
-        finally:
-            asyncio.set_child_watcher(None)
-
 
 if __name__ == '__main__':
     unittest.main()
