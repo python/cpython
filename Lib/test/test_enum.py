@@ -4081,7 +4081,7 @@ class Color(enum.Enum)
  |\x20\x20
  |  __contains__(value) from enum.EnumType
  |      Return True if `value` is in `cls`.
- |      
+ |
  |      `value` is in `cls` if:
  |      1) `value` is a member of `cls`, or
  |      2) `value` is the value of one of the `cls`'s members.
