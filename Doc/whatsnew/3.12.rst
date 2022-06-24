@@ -214,6 +214,10 @@ Removed
   also a static method.
   (Contributed by Victor Stinner in :gh:`94169`.)
 
+* Remove the :func:`ssl.RAND_pseudo_bytes` function, deprecated in Python 3.6:
+  use :func:`os.urandom` or :func:`ssl.RAND_bytes` instead.
+  (Contributed by Victor Stinner in :gh:`94199`.)
+
 
 Porting to Python 3.12
 ======================
