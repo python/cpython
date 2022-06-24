@@ -4188,6 +4188,48 @@ test_pymem_alloc0(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_pymem_new(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    char *ptr;
+    PyTypeObject *type = &PyBaseObject_Type;
+    PyTypeObject *var_type = &PyLong_Type;
+
+    // PyObject_New()
+    ptr = PyObject_New(char, type);
+    if (ptr == NULL) {
+        goto alloc_failed;
+    }
+    PyObject_Free(ptr);
+
+    // PyObject_NEW()
+    ptr = PyObject_NEW(char, type);
+    if (ptr == NULL) {
+        goto alloc_failed;
+    }
+    PyObject_Free(ptr);
+
+    // PyObject_NewVar()
+    ptr = PyObject_NewVar(char, var_type, 3);
+    if (ptr == NULL) {
+        goto alloc_failed;
+    }
+    PyObject_Free(ptr);
+
+    // PyObject_NEW_VAR()
+    ptr = PyObject_NEW_VAR(char, var_type, 3);
+    if (ptr == NULL) {
+        goto alloc_failed;
+    }
+    PyObject_Free(ptr);
+
+    Py_RETURN_NONE;
+
+alloc_failed:
+    PyErr_NoMemory();
+    return NULL;
+}
+
 typedef struct {
     PyMemAllocatorEx alloc;
 
@@ -6284,6 +6326,7 @@ static PyMethodDef TestMethods[] = {
     {"with_tp_del",             with_tp_del,                     METH_VARARGS},
     {"create_cfunction",        create_cfunction,                METH_NOARGS},
     {"test_pymem_alloc0",       test_pymem_alloc0,               METH_NOARGS},
+    {"test_pymem_new",          test_pymem_new,                  METH_NOARGS},
     {"test_pymem_setrawallocators",test_pymem_setrawallocators,  METH_NOARGS},
     {"test_pymem_setallocators",test_pymem_setallocators,        METH_NOARGS},
     {"test_pyobject_setallocators",test_pyobject_setallocators,  METH_NOARGS},
