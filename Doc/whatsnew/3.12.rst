@@ -90,6 +90,15 @@ New Modules
 Improved Modules
 ================
 
+dis
+---
+
+* Virtual opcodes are now exposed in :mod:`dis`. :data:`~dis.HAVE_ARGUMENT`
+  is still relevant to real opcodes, but it is not useful for virtual opcodes.
+  It is renamed to :data:`~dis._HAVE_ARGUMENT`, and you should use the
+  new :data:`~dis.hasarg` collection instead.
+  (Contributed by Irit Katriel in :gh:`94216`.)
+
 os
 --
 
