@@ -1,3 +1,5 @@
-Add BINARY_SLICE and STORE_SLICE instructions for more efficient handling
+Add :opcode:`BINARY_SLICE` and :opcode:`STORE_SLICE` instructions for more efficient handling
 and better specialization of slicing operations, where the slice is explicit
 in the source code.
+
+
