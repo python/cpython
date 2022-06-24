@@ -311,27 +311,6 @@ Random generation
 
    .. versionadded:: 3.3
 
-.. function:: RAND_pseudo_bytes(num)
-
-   Return (bytes, is_cryptographic): bytes are *num* pseudo-random bytes,
-   is_cryptographic is ``True`` if the bytes generated are cryptographically
-   strong. Raises an :class:`SSLError` if the operation is not supported by the
-   current RAND method.
-
-   Generated pseudo-random byte sequences will be unique if they are of
-   sufficient length, but are not necessarily unpredictable. They can be used
-   for non-cryptographic purposes and for certain purposes in cryptographic
-   protocols, but usually not for key generation etc.
-
-   For almost all applications :func:`os.urandom` is preferable.
-
-   .. versionadded:: 3.3
-
-   .. deprecated:: 3.6
-
-      OpenSSL has deprecated :func:`ssl.RAND_pseudo_bytes`, use
-      :func:`ssl.RAND_bytes` instead.
-
 .. function:: RAND_status()
 
    Return ``True`` if the SSL pseudo-random number generator has been seeded
@@ -2717,8 +2696,8 @@ for example the :mod:`multiprocessing` or :mod:`concurrent.futures` modules),
 be aware that OpenSSL's internal random number generator does not properly
 handle forked processes.  Applications must change the PRNG state of the
 parent process if they use any SSL feature with :func:`os.fork`.  Any
-successful call of :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
-:func:`~ssl.RAND_pseudo_bytes` is sufficient.
+successful call of :func:`~ssl.RAND_add` or :func:`~ssl.RAND_bytes` is
+sufficient.
 
 
 .. _ssl-tlsv1_3:
