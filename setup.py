@@ -538,7 +538,6 @@ class PyBuildExt(build_ext):
 
         if self.missing:
             print()
-            print("Python build finished successfully!")
             print("The necessary bits to build these optional modules were not "
                   "found:")
             print_three_column(self.missing)
@@ -1407,9 +1406,6 @@ class PyBuildExt(build_ext):
             # compiler, please research a proper solution, instead of
             # finding some -z option for the Sun compiler.
             extra_link_args.append('-mimpure-text')
-
-        elif HOST_PLATFORM.startswith('hp-ux'):
-            extra_link_args.append('-fPIC')
 
         ext = Extension('_ctypes',
                         include_dirs=include_dirs,

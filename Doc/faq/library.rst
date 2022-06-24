@@ -483,8 +483,14 @@ including :func:`~shutil.copyfile`, :func:`~shutil.copytree`, and
 How do I copy a file?
 ---------------------
 
-The :mod:`shutil` module contains a :func:`~shutil.copyfile` function.  Note
-that on MacOS 9 it doesn't copy the resource fork and Finder info.
+The :mod:`shutil` module contains a :func:`~shutil.copyfile` function.
+Note that on Windows NTFS volumes, it does not copy
+`alternate data streams
+<https://en.wikipedia.org/wiki/NTFS#Alternate_data_stream_(ADS)>`_
+nor `resource forks <https://en.wikipedia.org/wiki/Resource_fork>`__
+on macOS HFS+ volumes, though both are now rarely used.
+It also doesn't copy file permissions and metadata, though using
+:func:`shutil.copy2` instead will preserve most (though not all) of it.
 
 
 How do I read (or write) binary data?
@@ -664,7 +670,7 @@ A summary of available frameworks is maintained by Paul Boddie at
 https://wiki.python.org/moin/WebProgramming\ .
 
 Cameron Laird maintains a useful set of pages about Python web technologies at
-http://phaseit.net/claird/comp.lang.python/web_python.
+https://web.archive.org/web/20210224183619/http://phaseit.net/claird/comp.lang.python/web_python.
 
 
 How can I mimic CGI form submission (METHOD=POST)?
