@@ -110,48 +110,10 @@ void _PySlice_Fini(PyInterpreterState *interp)
    index is present.
 */
 
-PyObject *
-PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
+static PySliceObject *
+_PyBuildSlice_Consume2(PyObject *start, PyObject *stop, PyObject *step)
 {
-    if (step == NULL) {
-        step = Py_None;
-    }
-    if (start == NULL) {
-        start = Py_None;
-    }
-    if (stop == NULL) {
-        stop = Py_None;
-    }
-
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PySliceObject *obj;
-    if (interp->slice_cache != NULL) {
-        obj = interp->slice_cache;
-        interp->slice_cache = NULL;
-        _Py_NewReference((PyObject *)obj);
-    }
-    else {
-        obj = PyObject_GC_New(PySliceObject, &PySlice_Type);
-        if (obj == NULL) {
-            return NULL;
-        }
-    }
-
-    Py_INCREF(step);
-    obj->step = step;
-    Py_INCREF(start);
-    obj->start = start;
-    Py_INCREF(stop);
-    obj->stop = stop;
-
-    _PyObject_GC_TRACK(obj);
-    return (PyObject *) obj;
-}
-
-PyObject *
-_PyBuildSlice_Consume2(PyObject *start, PyObject *stop)
-{
-    assert(start != NULL && stop != NULL);
+    assert(start != NULL && stop != NULL && step != NULL);
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PySliceObject *obj;
@@ -169,14 +131,38 @@ _PyBuildSlice_Consume2(PyObject *start, PyObject *stop)
 
     obj->start = start;
     obj->stop = stop;
-    obj->step = Py_NewRef(Py_None);
+    obj->step = Py_NewRef(step);
 
     _PyObject_GC_TRACK(obj);
-    return (PyObject *) obj;
+    return obj;
 error:
     Py_DECREF(start);
     Py_DECREF(stop);
     return NULL;
+}
+
+PyObject *
+PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
+{
+    if (step == NULL) {
+        step = Py_None;
+    }
+    if (start == NULL) {
+        start = Py_None;
+    }
+    if (stop == NULL) {
+        stop = Py_None;
+    }
+    Py_INCREF(start);
+    Py_INCREF(stop);
+    return (PyObject *) _PyBuildSlice_Consume2(start, stop, step);
+}
+
+PyObject *
+_PyBuildSlice_ConsumeRefs(PyObject *start, PyObject *stop)
+{
+    assert(start != NULL && stop != NULL);
+    return (PyObject *)_PyBuildSlice_Consume2(start, stop, Py_None);
 }
 
 PyObject *
