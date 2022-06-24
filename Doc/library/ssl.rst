@@ -311,27 +311,6 @@ Random generation
 
    .. versionadded:: 3.3
 
-.. function:: RAND_pseudo_bytes(num)
-
-   Return (bytes, is_cryptographic): bytes are *num* pseudo-random bytes,
-   is_cryptographic is ``True`` if the bytes generated are cryptographically
-   strong. Raises an :class:`SSLError` if the operation is not supported by the
-   current RAND method.
-
-   Generated pseudo-random byte sequences will be unique if they are of
-   sufficient length, but are not necessarily unpredictable. They can be used
-   for non-cryptographic purposes and for certain purposes in cryptographic
-   protocols, but usually not for key generation etc.
-
-   For almost all applications :func:`os.urandom` is preferable.
-
-   .. versionadded:: 3.3
-
-   .. deprecated:: 3.6
-
-      OpenSSL has deprecated :func:`ssl.RAND_pseudo_bytes`, use
-      :func:`ssl.RAND_bytes` instead.
-
 .. function:: RAND_status()
 
    Return ``True`` if the SSL pseudo-random number generator has been seeded
@@ -714,7 +693,7 @@ Constants
    Selects SSL version 2 as the channel encryption protocol.
 
    This protocol is not available if OpenSSL is compiled with the
-   ``OPENSSL_NO_SSL2`` flag.
+   ``no-ssl2`` option.
 
    .. warning::
 
@@ -728,8 +707,8 @@ Constants
 
    Selects SSL version 3 as the channel encryption protocol.
 
-   This protocol is not be available if OpenSSL is compiled with the
-   ``OPENSSL_NO_SSLv3`` flag.
+   This protocol is not available if OpenSSL is compiled with the
+   ``no-ssl3`` option.
 
    .. warning::
 
@@ -1397,7 +1376,7 @@ SSL sockets also have the following additional methods and attributes:
 .. method:: SSLSocket.version()
 
    Return the actual SSL protocol version negotiated by the connection
-   as a string, or ``None`` is no secure connection is established.
+   as a string, or ``None`` if no secure connection is established.
    As of this writing, possible return values include ``"SSLv2"``,
    ``"SSLv3"``, ``"TLSv1"``, ``"TLSv1.1"`` and ``"TLSv1.2"``.
    Recent OpenSSL versions may define more return values.
@@ -1548,7 +1527,7 @@ to speed up repeated connections from the same clients.
    string must be the path to a single file in PEM format containing the
    certificate as well as any number of CA certificates needed to establish
    the certificate's authenticity.  The *keyfile* string, if present, must
-   point to a file containing the private key in.  Otherwise the private
+   point to a file containing the private key.  Otherwise the private
    key will be taken from *certfile* as well.  See the discussion of
    :ref:`ssl-certificates` for more information on how the certificate
    is stored in the *certfile*.
@@ -1910,7 +1889,7 @@ to speed up repeated connections from the same clients.
 .. method:: SSLContext.session_stats()
 
    Get statistics about the SSL sessions created or managed by this context.
-   A dictionary is returned which maps the names of each `piece of information <https://www.openssl.org/docs/man1.1.1/ssl/SSL_CTX_sess_number.html>`_ to their
+   A dictionary is returned which maps the names of each `piece of information <https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_sess_number.html>`_ to their
    numeric values.  For example, here is the total number of hits and misses
    in the session cache since the context was created::
 
@@ -2357,7 +2336,7 @@ waiting for clients to connect::
    context.load_cert_chain(certfile="mycertfile", keyfile="mykeyfile")
 
    bindsocket = socket.socket()
-   bindsocket.bind(('myaddr.mydomain.com', 10023))
+   bindsocket.bind(('myaddr.example.com', 10023))
    bindsocket.listen(5)
 
 When a client connects, you'll call :meth:`accept` on the socket to get the
@@ -2704,7 +2683,7 @@ enabled when negotiating a SSL session is possible through the
 :meth:`SSLContext.set_ciphers` method.  Starting from Python 3.2.3, the
 ssl module disables certain weak ciphers by default, but you may want
 to further restrict the cipher choice. Be sure to read OpenSSL's documentation
-about the `cipher list format <https://www.openssl.org/docs/manmaster/man1/ciphers.html#CIPHER-LIST-FORMAT>`_.
+about the `cipher list format <https://www.openssl.org/docs/man1.1.1/man1/ciphers.html#CIPHER-LIST-FORMAT>`_.
 If you want to check which ciphers are enabled by a given cipher list, use
 :meth:`SSLContext.get_ciphers` or the ``openssl ciphers`` command on your
 system.
@@ -2717,8 +2696,8 @@ for example the :mod:`multiprocessing` or :mod:`concurrent.futures` modules),
 be aware that OpenSSL's internal random number generator does not properly
 handle forked processes.  Applications must change the PRNG state of the
 parent process if they use any SSL feature with :func:`os.fork`.  Any
-successful call of :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
-:func:`~ssl.RAND_pseudo_bytes` is sufficient.
+successful call of :func:`~ssl.RAND_add` or :func:`~ssl.RAND_bytes` is
+sufficient.
 
 
 .. _ssl-tlsv1_3:

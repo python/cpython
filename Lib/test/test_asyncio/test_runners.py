@@ -1,15 +1,22 @@
+import _thread
 import asyncio
 import contextvars
-import gc
 import re
+import signal
+import threading
 import unittest
 
 from unittest import mock
+from unittest.mock import patch
 from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
+
+
+def interrupt_self():
+    _thread.interrupt_main()
 
 
 class TestPolicy(asyncio.AbstractEventLoopPolicy):
@@ -37,6 +44,9 @@ class BaseTest(unittest.TestCase):
     def new_loop(self):
         loop = asyncio.BaseEventLoop()
         loop._process_events = mock.Mock()
+        # Mock waking event loop from select
+        loop._write_to_self = mock.Mock()
+        loop._write_to_self.return_value = None
         loop._selector = mock.Mock()
         loop._selector.select.return_value = ()
         loop.shutdown_ag_run = False
@@ -298,7 +308,7 @@ class RunnerTests(BaseTest):
 
             self.assertEqual(2, runner.run(get_context()).get(cvar))
 
-    def test_recursine_run(self):
+    def test_recursive_run(self):
         async def g():
             pass
 
@@ -317,6 +327,74 @@ class RunnerTests(BaseTest):
                     ),
                 ):
                     runner.run(f())
+
+    def test_interrupt_call_soon(self):
+        # The only case when task is not suspended by waiting a future
+        # or another task
+        assert threading.current_thread() is threading.main_thread()
+
+        async def coro():
+            with self.assertRaises(asyncio.CancelledError):
+                while True:
+                    await asyncio.sleep(0)
+            raise asyncio.CancelledError()
+
+        with asyncio.Runner() as runner:
+            runner.get_loop().call_later(0.1, interrupt_self)
+            with self.assertRaises(KeyboardInterrupt):
+                runner.run(coro())
+
+    def test_interrupt_wait(self):
+        # interrupting when waiting a future cancels both future and main task
+        assert threading.current_thread() is threading.main_thread()
+
+        async def coro(fut):
+            with self.assertRaises(asyncio.CancelledError):
+                await fut
+            raise asyncio.CancelledError()
+
+        with asyncio.Runner() as runner:
+            fut = runner.get_loop().create_future()
+            runner.get_loop().call_later(0.1, interrupt_self)
+
+            with self.assertRaises(KeyboardInterrupt):
+                runner.run(coro(fut))
+
+            self.assertTrue(fut.cancelled())
+
+    def test_interrupt_cancelled_task(self):
+        # interrupting cancelled main task doesn't raise KeyboardInterrupt
+        assert threading.current_thread() is threading.main_thread()
+
+        async def subtask(task):
+            await asyncio.sleep(0)
+            task.cancel()
+            interrupt_self()
+
+        async def coro():
+            asyncio.create_task(subtask(asyncio.current_task()))
+            await asyncio.sleep(10)
+
+        with asyncio.Runner() as runner:
+            with self.assertRaises(asyncio.CancelledError):
+                runner.run(coro())
+
+    def test_signal_install_not_supported_ok(self):
+        # signal.signal() can throw if the "main thread" doesn't have signals enabled
+        assert threading.current_thread() is threading.main_thread()
+
+        async def coro():
+            pass
+
+        with asyncio.Runner() as runner:
+            with patch.object(
+                signal,
+                "signal",
+                side_effect=ValueError(
+                    "signal only works in main thread of the main interpreter"
+                )
+            ):
+                runner.run(coro())
 
 
 if __name__ == '__main__':

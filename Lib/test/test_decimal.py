@@ -39,6 +39,7 @@ from test.support import (TestFailed,
                           run_with_locale, cpython_only,
                           darwin_malloc_err_warning)
 from test.support.import_helper import import_fresh_module
+from test.support import threading_helper
 from test.support import warnings_helper
 import random
 import inspect
@@ -1071,6 +1072,57 @@ class FormatTest(unittest.TestCase):
             (',e', '123456', '1.23456e+5'),
             (',E', '123456', '1.23456E+5'),
 
+            # negative zero: default behavior
+            ('.1f', '-0', '-0.0'),
+            ('.1f', '-.0', '-0.0'),
+            ('.1f', '-.01', '-0.0'),
+
+            # negative zero: z option
+            ('z.1f', '0.', '0.0'),
+            ('z6.1f', '0.', '   0.0'),
+            ('z6.1f', '-1.', '  -1.0'),
+            ('z.1f', '-0.', '0.0'),
+            ('z.1f', '.01', '0.0'),
+            ('z.1f', '-.01', '0.0'),
+            ('z.2f', '0.', '0.00'),
+            ('z.2f', '-0.', '0.00'),
+            ('z.2f', '.001', '0.00'),
+            ('z.2f', '-.001', '0.00'),
+
+            ('z.1e', '0.', '0.0e+1'),
+            ('z.1e', '-0.', '0.0e+1'),
+            ('z.1E', '0.', '0.0E+1'),
+            ('z.1E', '-0.', '0.0E+1'),
+
+            ('z.2e', '-0.001', '-1.00e-3'),  # tests for mishandled rounding
+            ('z.2g', '-0.001', '-0.001'),
+            ('z.2%', '-0.001', '-0.10%'),
+
+            ('zf', '-0.0000', '0.0000'),  # non-normalized form is preserved
+
+            ('z.1f', '-00000.000001', '0.0'),
+            ('z.1f', '-00000.', '0.0'),
+            ('z.1f', '-.0000000000', '0.0'),
+
+            ('z.2f', '-00000.000001', '0.00'),
+            ('z.2f', '-00000.', '0.00'),
+            ('z.2f', '-.0000000000', '0.00'),
+
+            ('z.1f', '.09', '0.1'),
+            ('z.1f', '-.09', '-0.1'),
+
+            (' z.0f', '-0.', ' 0'),
+            ('+z.0f', '-0.', '+0'),
+            ('-z.0f', '-0.', '0'),
+            (' z.0f', '-1.', '-1'),
+            ('+z.0f', '-1.', '-1'),
+            ('-z.0f', '-1.', '-1'),
+
+            ('z>6.1f', '-0.', 'zz-0.0'),
+            ('z>z6.1f', '-0.', 'zzz0.0'),
+            ('x>z6.1f', '-0.', 'xxx0.0'),
+            ('🖤>z6.1f', '-0.', '🖤🖤🖤0.0'),  # multi-byte fill char
+
             # issue 6850
             ('a=-7.0', '0.12345', 'aaaa0.1'),
 
@@ -1084,6 +1136,15 @@ class FormatTest(unittest.TestCase):
 
         # bytes format argument
         self.assertRaises(TypeError, Decimal(1).__format__, b'-020')
+
+    def test_negative_zero_format_directed_rounding(self):
+        with self.decimal.localcontext() as ctx:
+            ctx.rounding = ROUND_CEILING
+            self.assertEqual(format(self.decimal.Decimal('-0.001'), 'z.2f'),
+                            '0.00')
+
+    def test_negative_zero_bad_format(self):
+        self.assertRaises(ValueError, format, self.decimal.Decimal('1.23'), 'fz')
 
     def test_n_format(self):
         Decimal = self.decimal.Decimal
@@ -1591,6 +1652,8 @@ def thfunc2(cls):
     for sig in Overflow, Underflow, DivisionByZero, InvalidOperation:
         cls.assertFalse(thiscontext.flags[sig])
 
+
+@threading_helper.requires_working_threading()
 class ThreadingTest(unittest.TestCase):
     '''Unit tests for thread local contexts in Decimal.'''
 
@@ -3602,6 +3665,40 @@ class ContextWithStatement(unittest.TestCase):
         self.assertIsNot(new_ctx, set_ctx, 'did not copy the context')
         self.assertIs(set_ctx, enter_ctx, '__enter__ returned wrong context')
 
+    def test_localcontext_kwargs(self):
+        with self.decimal.localcontext(
+            prec=10, rounding=ROUND_HALF_DOWN,
+            Emin=-20, Emax=20, capitals=0,
+            clamp=1
+        ) as ctx:
+            self.assertEqual(ctx.prec, 10)
+            self.assertEqual(ctx.rounding, self.decimal.ROUND_HALF_DOWN)
+            self.assertEqual(ctx.Emin, -20)
+            self.assertEqual(ctx.Emax, 20)
+            self.assertEqual(ctx.capitals, 0)
+            self.assertEqual(ctx.clamp, 1)
+
+        self.assertRaises(TypeError, self.decimal.localcontext, precision=10)
+
+        self.assertRaises(ValueError, self.decimal.localcontext, Emin=1)
+        self.assertRaises(ValueError, self.decimal.localcontext, Emax=-1)
+        self.assertRaises(ValueError, self.decimal.localcontext, capitals=2)
+        self.assertRaises(ValueError, self.decimal.localcontext, clamp=2)
+
+        self.assertRaises(TypeError, self.decimal.localcontext, rounding="")
+        self.assertRaises(TypeError, self.decimal.localcontext, rounding=1)
+
+        self.assertRaises(TypeError, self.decimal.localcontext, flags="")
+        self.assertRaises(TypeError, self.decimal.localcontext, traps="")
+        self.assertRaises(TypeError, self.decimal.localcontext, Emin="")
+        self.assertRaises(TypeError, self.decimal.localcontext, Emax="")
+
+    def test_local_context_kwargs_does_not_overwrite_existing_argument(self):
+        ctx = self.decimal.getcontext()
+        ctx.prec = 28
+        with self.decimal.localcontext(prec=10) as ctx2:
+            self.assertEqual(ctx.prec, 28)
+
     def test_nested_with_statements(self):
         # Use a copy of the supplied context in the block
         Decimal = self.decimal.Decimal
@@ -5423,6 +5520,7 @@ class CWhitebox(unittest.TestCase):
 
         with localcontext() as c:
 
+            c.prec = 9
             c.traps[InvalidOperation] = True
             c.traps[Overflow] = True
             c.traps[Underflow] = True

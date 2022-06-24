@@ -219,6 +219,13 @@ pymain_import_readline(const PyConfig *config)
     else {
         Py_DECREF(mod);
     }
+    mod = PyImport_ImportModule("rlcompleter");
+    if (mod == NULL) {
+        PyErr_Clear();
+    }
+    else {
+        Py_DECREF(mod);
+    }
 }
 
 
@@ -472,12 +479,23 @@ error:
 }
 
 
+static void
+pymain_set_inspect(PyConfig *config, int inspect)
+{
+    config->inspect = inspect;
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    Py_InspectFlag = inspect;
+_Py_COMP_DIAG_POP
+}
+
+
 static int
 pymain_run_stdin(PyConfig *config)
 {
     if (stdin_is_interactive(config)) {
-        config->inspect = 0;
-        Py_InspectFlag = 0; /* do exit on SystemExit */
+        // do exit on SystemExit
+        pymain_set_inspect(config, 0);
 
         int exitcode;
         if (pymain_run_startup(config, &exitcode)) {
@@ -510,16 +528,14 @@ pymain_repl(PyConfig *config, int *exitcode)
     /* Check this environment variable at the end, to give programs the
        opportunity to set it from Python. */
     if (!config->inspect && _Py_GetEnv(config->use_environment, "PYTHONINSPECT")) {
-        config->inspect = 1;
-        Py_InspectFlag = 1;
+        pymain_set_inspect(config, 1);
     }
 
     if (!(config->inspect && stdin_is_interactive(config) && config_run_code(config))) {
         return;
     }
 
-    config->inspect = 0;
-    Py_InspectFlag = 0;
+    pymain_set_inspect(config, 0);
     if (pymain_run_interactive_hook(exitcode)) {
         return;
     }
@@ -555,12 +571,15 @@ pymain_run_python(int *exitcode)
         }
     }
 
+    // import readline and rlcompleter before script dir is added to sys.path
+    pymain_import_readline(config);
+
     if (main_importer_path != NULL) {
         if (pymain_sys_path_add_path0(interp, main_importer_path) < 0) {
             goto error;
         }
     }
-    else if (!config->isolated) {
+    else if (!config->safe_path) {
         PyObject *path0 = NULL;
         int res = _PyPathConfig_ComputeSysPath0(&config->argv, &path0);
         if (res < 0) {
@@ -577,7 +596,6 @@ pymain_run_python(int *exitcode)
     }
 
     pymain_header(config);
-    pymain_import_readline(config);
 
     if (config->run_command) {
         *exitcode = pymain_run_command(config->run_command);

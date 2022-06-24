@@ -1,5 +1,5 @@
 from pygments.lexer import RegexLexer, bygroups, include
-from pygments.token import Comment, Generic, Keyword, Name, Operator, Punctuation, Text
+from pygments.token import Comment, Keyword, Name, Operator, Punctuation, Text
 
 from sphinx.highlighting import lexers
 

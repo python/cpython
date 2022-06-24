@@ -396,9 +396,21 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a6 3486 (Use inline caching for PRECALL and CALL)
 #     Python 3.11a6 3487 (Remove the adaptive "oparg counter" mechanism)
 #     Python 3.11a6 3488 (LOAD_GLOBAL can push additional NULL)
+#     Python 3.11a6 3489 (Add JUMP_BACKWARD, remove JUMP_ABSOLUTE)
+#     Python 3.11a6 3490 (remove JUMP_IF_NOT_EXC_MATCH, add CHECK_EXC_MATCH)
+#     Python 3.11a6 3491 (remove JUMP_IF_NOT_EG_MATCH, add CHECK_EG_MATCH,
+#                         add JUMP_BACKWARD_NO_INTERRUPT, make JUMP_NO_INTERRUPT virtual)
+#     Python 3.11a7 3492 (make POP_JUMP_IF_NONE/NOT_NONE/TRUE/FALSE relative)
+#     Python 3.11a7 3493 (Make JUMP_IF_TRUE_OR_POP/JUMP_IF_FALSE_OR_POP relative)
+#     Python 3.11a7 3494 (New location info table)
+#     Python 3.12a1 3500 (Remove PRECALL opcode)
+#     Python 3.12a1 3501 (YIELD_VALUE oparg == stack_depth)
+#     Python 3.12a1 3502 (LOAD_FAST_CHECK, no NULL-check in LOAD_FAST)
+#     Python 3.12a1 3503 (Shrink LOAD_METHOD cache)
+#     Python 3.12a1 3504 (Merge LOAD_METHOD back into LOAD_ATTR)
+#     Python 3.12a1 3505 (Specialization/Cache for FOR_ITER)
 
-#     Python 3.12 will start with magic number 3500
-
+#     Python 3.13 will start with 3550
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -410,7 +422,8 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3488).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3505).to_bytes(2, 'little') + b'\r\n'
+
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -1387,7 +1400,9 @@ class PathFinder:
         """Call the invalidate_caches() method on all path entry finders
         stored in sys.path_importer_caches (where implemented)."""
         for name, finder in list(sys.path_importer_cache.items()):
-            if finder is None:
+            # Drop entry if finder name is a relative path. The current
+            # working directory may have changed.
+            if finder is None or not _path_isabs(name):
                 del sys.path_importer_cache[name]
             elif hasattr(finder, 'invalidate_caches'):
                 finder.invalidate_caches()
@@ -1555,9 +1570,12 @@ class FileFinder:
             loaders.extend((suffix, loader) for suffix in suffixes)
         self._loaders = loaders
         # Base (directory) path
-        self.path = path or '.'
-        if not _path_isabs(self.path):
-            self.path = _path_join(_os.getcwd(), self.path)
+        if not path or path == '.':
+            self.path = _os.getcwd()
+        elif not _path_isabs(path):
+            self.path = _path_join(_os.getcwd(), path)
+        else:
+            self.path = path
         self._path_mtime = -1
         self._path_cache = set()
         self._relaxed_path_cache = set()

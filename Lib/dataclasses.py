@@ -230,7 +230,7 @@ class InitVar:
         self.type = type
 
     def __repr__(self):
-        if isinstance(self.type, type) and not isinstance(self.type, GenericAlias):
+        if isinstance(self.type, type):
             type_name = self.type.__name__
         else:
             # typing objects, e.g. List[int]
@@ -298,7 +298,7 @@ class Field:
     # This is used to support the PEP 487 __set_name__ protocol in the
     # case where we're using a field that contains a descriptor as a
     # default value.  For details on __set_name__, see
-    # https://www.python.org/dev/peps/pep-0487/#implementation-details.
+    # https://peps.python.org/pep-0487/#implementation-details.
     #
     # Note that in _process_class, this Field object is overwritten
     # with the default value, so the end result is a descriptor that
@@ -883,7 +883,7 @@ _hash_action = {(False, False, False, False): None,
 
 
 def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
-                   match_args, kw_only, slots):
+                   match_args, kw_only, slots, weakref_slot):
     # Now that dicts retain insertion order, there's no reason to use
     # an ordered dict.  I am leveraging that ordering here, because
     # derived class fields overwrite base class fields, but the order
@@ -1101,8 +1101,11 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         _set_new_attribute(cls, '__match_args__',
                            tuple(f.name for f in std_init_fields))
 
+    # It's an error to specify weakref_slot if slots is False.
+    if weakref_slot and not slots:
+        raise TypeError('weakref_slot is True but slots is False')
     if slots:
-        cls = _add_slots(cls, frozen)
+        cls = _add_slots(cls, frozen, weakref_slot)
 
     abc.update_abstractmethods(cls)
 
@@ -1137,7 +1140,7 @@ def _get_slots(cls):
             raise TypeError(f"Slots of '{cls.__name__}' cannot be determined")
 
 
-def _add_slots(cls, is_frozen):
+def _add_slots(cls, is_frozen, weakref_slot):
     # Need to create a new class, since we can't set __slots__
     #  after a class has been created.
 
@@ -1152,9 +1155,19 @@ def _add_slots(cls, is_frozen):
     inherited_slots = set(
         itertools.chain.from_iterable(map(_get_slots, cls.__mro__[1:-1]))
     )
+    # The slots for our class.  Remove slots from our base classes.  Add
+    # '__weakref__' if weakref_slot was given, unless it is already present.
     cls_dict["__slots__"] = tuple(
-        itertools.filterfalse(inherited_slots.__contains__, field_names)
+        itertools.filterfalse(
+            inherited_slots.__contains__,
+            itertools.chain(
+                # gh-93521: '__weakref__' also needs to be filtered out if
+                # already present in inherited_slots
+                field_names, ('__weakref__',) if weakref_slot else ()
+            )
+        ),
     )
+
     for field_name in field_names:
         # Remove our attributes, if present. They'll still be
         #  available in _MARKER.
@@ -1179,7 +1192,7 @@ def _add_slots(cls, is_frozen):
 
 def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
               unsafe_hash=False, frozen=False, match_args=True,
-              kw_only=False, slots=False):
+              kw_only=False, slots=False, weakref_slot=False):
     """Returns the same class as was passed in, with dunder methods
     added based on the fields defined in the class.
 
@@ -1197,7 +1210,8 @@ def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
 
     def wrap(cls):
         return _process_class(cls, init, repr, eq, order, unsafe_hash,
-                              frozen, match_args, kw_only, slots)
+                              frozen, match_args, kw_only, slots,
+                              weakref_slot)
 
     # See if we're being called as @dataclass or @dataclass().
     if cls is None:
@@ -1234,7 +1248,7 @@ def _is_dataclass_instance(obj):
 def is_dataclass(obj):
     """Returns True if obj is a dataclass or an instance of a
     dataclass."""
-    cls = obj if isinstance(obj, type) and not isinstance(obj, GenericAlias) else type(obj)
+    cls = obj if isinstance(obj, type) else type(obj)
     return hasattr(cls, _FIELDS)
 
 
@@ -1356,7 +1370,8 @@ def _astuple_inner(obj, tuple_factory):
 
 def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                    repr=True, eq=True, order=False, unsafe_hash=False,
-                   frozen=False, match_args=True, kw_only=False, slots=False):
+                   frozen=False, match_args=True, kw_only=False, slots=False,
+                   weakref_slot=False):
     """Return a new dynamically created dataclass.
 
     The dataclass name will be 'cls_name'.  'fields' is an iterable
@@ -1423,7 +1438,8 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     # Apply the normal decorator.
     return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
                      unsafe_hash=unsafe_hash, frozen=frozen,
-                     match_args=match_args, kw_only=kw_only, slots=slots)
+                     match_args=match_args, kw_only=kw_only, slots=slots,
+                     weakref_slot=weakref_slot)
 
 
 def replace(obj, /, **changes):

@@ -119,3 +119,30 @@ Runner context manager
 
       Embedded *loop* and *context* are created at the :keyword:`with` body entering
       or the first call of :meth:`run` or :meth:`get_loop`.
+
+
+Handling Keyboard Interruption
+==============================
+
+.. versionadded:: 3.11
+
+When :const:`signal.SIGINT` is raised by :kbd:`Ctrl-C`, :exc:`KeyboardInterrupt`
+exception is raised in the main thread by default. However this doesn't work with
+:mod:`asyncio` because it can interrupt asyncio internals and can hang the program from
+exiting.
+
+To mitigate this issue, :mod:`asyncio` handles :const:`signal.SIGINT` as follows:
+
+1. :meth:`asyncio.Runner.run` installs a custom :const:`signal.SIGINT` handler before
+   any user code is executed and removes it when exiting from the function.
+2. The :class:`~asyncio.Runner` creates the main task for the passed coroutine for its
+   execution.
+3. When :const:`signal.SIGINT` is raised by :kbd:`Ctrl-C`, the custom signal handler
+   cancels the main task by calling :meth:`asyncio.Task.cancel` which raises
+   :exc:`asyncio.CancelledError` inside the main task.  This causes the Python stack
+   to unwind, ``try/except`` and ``try/finally`` blocks can be used for resource
+   cleanup.  After the main task is cancelled, :meth:`asyncio.Runner.run` raises
+   :exc:`KeyboardInterrupt`.
+4. A user could write a tight loop which cannot be interrupted by
+   :meth:`asyncio.Task.cancel`, in which case the second following :kbd:`Ctrl-C`
+   immediately raises the :exc:`KeyboardInterrupt` without cancelling the main task.

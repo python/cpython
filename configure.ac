@@ -6,7 +6,7 @@ dnl Python's configure script requires autoconf 2.69 and autoconf-archive.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define(PYTHON_VERSION, 3.11)
+m4_define(PYTHON_VERSION, 3.12)
 
 AC_PREREQ([2.69])
 
@@ -143,6 +143,7 @@ AS_VAR_IF([cross_compiling], [yes],
     FREEZE_MODULE_BOOTSTRAP_DEPS='$(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
     FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
+    PYTHON_FOR_BUILD_DEPS=''
   ],
   [
     dnl internal build tools also depend on Programs/_freeze_module and _bootstrap_python.
@@ -150,12 +151,14 @@ AS_VAR_IF([cross_compiling], [yes],
     FREEZE_MODULE_BOOTSTRAP_DEPS="Programs/_freeze_module"
     FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
+    PYTHON_FOR_BUILD_DEPS='$(BUILDPYTHON)'
   ]
 )
 AC_SUBST([FREEZE_MODULE_BOOTSTRAP])
 AC_SUBST([FREEZE_MODULE_BOOTSTRAP_DEPS])
 AC_SUBST([FREEZE_MODULE])
 AC_SUBST([FREEZE_MODULE_DEPS])
+AC_SUBST([PYTHON_FOR_BUILD_DEPS])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
   [python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python],
@@ -770,6 +773,35 @@ AC_PROG_GREP
 AC_PROG_SED
 AC_PROG_EGREP
 
+dnl detect compiler name
+dnl check for xlc before clang, newer xlc's can use clang as frontend.
+dnl check for GCC last, other compilers set __GNUC__, too.
+dnl msvc is listed for completeness.
+AC_CACHE_CHECK([for CC compiler name], [ac_cv_cc_name], [
+cat > conftest.c <<EOF
+#if defined(__INTEL_COMPILER) || defined(__ICC)
+  icc
+#elif defined(__ibmxl__) || defined(__xlc__) || defined(__xlC__)
+  xlc
+#elif defined(_MSC_VER)
+  msvc
+#elif defined(__clang__)
+  clang
+#elif defined(__GNUC__)
+  gcc
+#else
+#  error unknown compiler
+#endif
+EOF
+
+if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
+  ac_cv_cc_name=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
+else
+  ac_cv_cc_name="unknown"
+fi
+rm -f conftest.c conftest.out
+])
+
 # checks for UNIX variants that set C preprocessor variables
 # may set _GNU_SOURCE, __EXTENSIONS__, _POSIX_PTHREAD_SEMANTICS,
 # _POSIX_SOURCE, _POSIX_1_SOURCE, and more
@@ -1031,6 +1063,42 @@ if test x$MULTIARCH != x; then
 fi
 AC_SUBST(MULTIARCH_CPPFLAGS)
 
+dnl Support tiers according to https://peps.python.org/pep-0011/
+dnl
+dnl NOTE: Windows support tiers are defined in PC/pyconfig.h.
+dnl
+AC_MSG_CHECKING([for PEP 11 support tier])
+AS_CASE([$host/$ac_cv_cc_name],
+  [x86_64-*-linux-gnu/gcc],          [PY_SUPPORT_TIER=1], dnl Linux on AMD64, any vendor, glibc, gcc
+  [x86_64-apple-darwin*/clang],      [PY_SUPPORT_TIER=1], dnl macOS on Intel, any version
+  [i686-pc-windows-msvc/msvc],       [PY_SUPPORT_TIER=1], dnl 32bit Windows on Intel, MSVC
+  [x86_64-pc-windows-msvc/msvc],     [PY_SUPPORT_TIER=1], dnl 64bit Windows on AMD64, MSVC
+
+  [aarch64-apple-darwin*/clang],     [PY_SUPPORT_TIER=2], dnl macOS on M1, any version
+  [aarch64-*-linux-gnu/gcc],         [PY_SUPPORT_TIER=2], dnl Linux ARM64, glibc, gcc+clang
+  [aarch64-*-linux-gnu/clang],       [PY_SUPPORT_TIER=2],
+  [powerpc64le-*-linux-gnu/gcc],     [PY_SUPPORT_TIER=2], dnl Linux on PPC64 little endian, glibc, gcc
+  [x86_64-*-linux-gnu/clang],        [PY_SUPPORT_TIER=2], dnl Linux on AMD64, any vendor, glibc, clang
+
+  [aarch64-pc-windows-msvc/msvc],    [PY_SUPPORT_TIER=3], dnl Windows ARM64, MSVC
+  [armv7l-*-linux-gnueabihf/gcc],    [PY_SUPPORT_TIER=3], dnl ARMv7 LE with hardware floats, any vendor, glibc, gcc
+  [powerpc64le-*-linux-gnu/clang],   [PY_SUPPORT_TIER=3], dnl Linux on PPC64 little endian, glibc, clang
+  [s390x-*-linux-gnu/gcc],           [PY_SUPPORT_TIER=3], dnl Linux on 64bit s390x (big endian), glibc, gcc
+  dnl [wasm32-unknown-emscripten/clang], [PY_SUPPORT_TIER=3], dnl WebAssembly Emscripten
+  dnl [wasm32-unknown-wasi/clang],       [PY_SUPPORT_TIER=3], dnl WebAssembly System Interface
+  [x86_64-*-freebsd/clang],          [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
+  [PY_SUPPORT_TIER=0]
+)
+
+AS_CASE([$PY_SUPPORT_TIER],
+  [1], [AC_MSG_RESULT([$host/$ac_cv_cc_name has tier 1 (supported)])],
+  [2], [AC_MSG_RESULT([$host/$ac_cv_cc_name has tier 2 (supported)])],
+  [3], [AC_MSG_RESULT([$host/$ac_cv_cc_name has tier 3 (partially supported)])],
+  [AC_MSG_WARN([$host/$ac_cv_cc_name is not supported])]
+)
+
+AC_DEFINE_UNQUOTED([PY_SUPPORT_TIER], [$PY_SUPPORT_TIER], [PEP 11 Support tier (1, 2, 3 or 0 for unsupported)])
+
 AC_CACHE_CHECK([for -Wl,--no-as-needed], [ac_cv_wl_no_as_needed], [
   save_LDFLAGS="$LDFLAGS"
   AS_VAR_APPEND([LDFLAGS], [-Wl,--no-as-needed])
@@ -1091,6 +1159,12 @@ AC_ARG_WITH([emscripten-target],
     AS_CASE([$with_emscripten_target],
       [browser], [ac_sys_emscripten_target=browser],
       [node], [ac_sys_emscripten_target=node],
+dnl Debug builds with source map / dwarf symbols. Py_DEBUG builds easily
+dnl run out of stack space. Detached sybmols and map prohibit some
+dnl optimizations and increase file size. Options are undocumented so we
+dnl are free to remove them in the future.
+      [browser-debug], [ac_sys_emscripten_target=browser-debug],
+      [node-debug], [ac_sys_emscripten_target=node-debug],
       [AC_MSG_ERROR([Invalid argument: --with-emscripten-target=browser|node])]
     )
   ], [
@@ -1100,6 +1174,40 @@ AC_ARG_WITH([emscripten-target],
   AS_VAR_IF([ac_sys_system], [Emscripten], [ac_sys_emscripten_target=browser])
 ])
 AC_MSG_RESULT([$ac_sys_emscripten_target])
+
+dnl On Emscripten dlopen() requires -s MAIN_MODULE and -fPIC. The flags
+dnl disables dead code elimination and increases the size of the WASM module
+dnl by about 1.5 to 2MB. MAIN_MODULE defines __wasm_mutable_globals__.
+dnl See https://emscripten.org/docs/compiling/Dynamic-Linking.html
+AC_MSG_CHECKING([for --enable-wasm-dynamic-linking])
+AC_ARG_ENABLE([wasm-dynamic-linking],
+  [AS_HELP_STRING([--enable-wasm-dynamic-linking],
+                  [Enable dynamic linking support for WebAssembly (default is no)])],
+[
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [],
+    [WASI], [AC_MSG_ERROR([WASI dynamic linking is not implemented yet.])],
+    [AC_MSG_ERROR([--enable-wasm-dynamic-linking only applies to Emscripten and WASI])]
+  )
+], [
+  enable_wasm_dynamic_linking=missing
+])
+AC_MSG_RESULT([$enable_wasm_dynamic_linking])
+
+AC_MSG_CHECKING([for --enable-wasm-pthreads])
+AC_ARG_ENABLE([wasm-pthreads],
+  [AS_HELP_STRING([--enable-wasm-pthreads],
+                  [Enable pthread emulation for WebAssembly (default is no)])],
+[
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [],
+    [WASI], [AC_MSG_ERROR([WASI threading is not implemented yet.])],
+    [AC_MSG_ERROR([--enable-wasm-pthreads only applies to Emscripten and WASI])]
+  )
+], [
+  enable_wasm_pthreads=missing
+])
+AC_MSG_RESULT([$enable_wasm_pthreads])
 
 AC_MSG_CHECKING([for --with-suffix])
 AC_ARG_WITH([suffix],
@@ -1112,8 +1220,8 @@ AC_ARG_WITH([suffix],
   )
 ], [
   AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-    [Emscripten/browser], [EXEEXT=.html],
-    [Emscripten/node], [EXEEXT=.js],
+    [Emscripten/browser*], [EXEEXT=.js],
+    [Emscripten/node*], [EXEEXT=.js],
     [WASI/*], [EXEEXT=.wasm],
     [EXEEXT=]
   )
@@ -1222,7 +1330,7 @@ AC_MSG_RESULT($EXPORTSYMS)
 # make sure we default having it set to "no": this is used by
 # distutils.unixccompiler to know if it should add --enable-new-dtags
 # to linker command lines, and failing to detect GNU ld simply results
-# in the same bahaviour as before.
+# in the same behaviour as before.
 AC_SUBST(GNULD)
 AC_MSG_CHECKING(for GNU ld)
 ac_prog=ld
@@ -1372,11 +1480,38 @@ if test "$cross_compiling" = yes; then
 	RUNSHARED=
 fi
 
+AC_ARG_VAR([HOSTRUNNER], [Program to run CPython for the host platform])
+AC_MSG_CHECKING([HOSTRUNNER])
+if test -z "$HOSTRUNNER"
+then
+  AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+    [Emscripten/node*], [
+      # bigint for ctypes c_longlong, c_longdouble
+      HOSTRUNNER="node --experimental-wasm-bigint"
+      AS_VAR_IF([enable_wasm_pthreads], [yes], [
+        HOSTRUNNER="$HOSTRUNNER --experimental-wasm-threads --experimental-wasm-bulk-memory"
+      ])
+    ],
+    dnl TODO: support other WASI runtimes
+    dnl wasmtime starts the proces with "/" as CWD. For OOT builds add the
+    dnl directory containing _sysconfigdata to PYTHONPATH.
+    [WASI/*], [HOSTRUNNER='wasmtime run --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --mapdir /::$(srcdir) --'],
+    [HOSTRUNNER='']
+  )
+fi
+AC_SUBST([HOSTRUNNER])
+AC_MSG_RESULT([$HOSTRUNNER])
+
+if test -n "$HOSTRUNNER"; then
+  dnl Pass hostrunner variable as env var in order to expand shell expressions.
+  PYTHON_FOR_BUILD="_PYTHON_HOSTRUNNER='$HOSTRUNNER' $PYTHON_FOR_BUILD"
+fi
+
 AC_MSG_RESULT($LDLIBRARY)
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [Emscripten/browser], [LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB)'],
+  [Emscripten/browser*], [LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB)'],
   [LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)']
 )
 LINK_PYTHON_DEPS='$(LIBRARY_DEPS)'
@@ -1549,10 +1684,10 @@ if test "$Py_OPT" = 'true' ; then
       ])
       ;;
   esac
-elif test "$ac_sys_system" = "Emscripten"; then
+elif test "$ac_sys_system" = "Emscripten" -o "$ac_sys_system" = "WASI"; then
   dnl Emscripten does not support shared extensions yet. Build
-  dnl "python.[js,html,wasm]", "pybuilddir.txt", and "platform" files.
-  DEF_MAKE_ALL_RULE="build_platform"
+  dnl "python.[js,wasm]", "pybuilddir.txt", and "platform" files.
+  DEF_MAKE_ALL_RULE="build_wasm"
   REQUIRE_PGO="no"
   DEF_MAKE_RULE="all"
 else
@@ -1884,41 +2019,72 @@ then
 fi
 
 # WASM flags
-# TODO: Add -s MAIN_MODULE=2 for dlopen() support.
-# The option disables code elimination, which increases code size of main
-# binary. All objects must be built with -fPIC.
-AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [Emscripten/browser], [
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1"
-    LINKFORSHARED="--preload-file \$(WASM_ASSETS_DIR)"
-    WASM_ASSETS_DIR=".\$(prefix)"
-    WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
-    dnl separate-dwarf does not seem to work in Chrome DevTools Support.
-    if test "$Py_DEBUG" = 'true'; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
-      LINKFORSHARED="$LINKFORSHARED -gsource-map --emit-symbol-map"
-    else
-      LINKFORSHARED="$LINKFORSHARED -O2 -g0"
-    fi
+AS_CASE([$ac_sys_system],
+  [Emscripten], [
+    dnl build with WASM debug info if either Py_DEBUG is set or the target is
+    dnl node-debug or browser-debug.
+    AS_VAR_IF([Py_DEBUG], [yes], [wasm_debug=yes], [wasm_debug=no])
+
+    dnl Start with 20 MB and allow to grow
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sTOTAL_MEMORY=20971520"])
+
+    dnl map int64_t and uint64_t to JS bigint
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sWASM_BIGINT"])
+
+    dnl Include file system support
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
+
+    AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
+      AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
+    ])
+
+    AS_VAR_IF([enable_wasm_pthreads], [yes], [
+      AS_VAR_APPEND([CFLAGS_NODIST], [" -pthread"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -sUSE_PTHREADS"])
+      AS_VAR_APPEND([LINKFORSHARED], [" -sPROXY_TO_PTHREAD"])
+    ])
+
+    AS_CASE([$ac_sys_emscripten_target],
+      [browser*], [
+        AS_VAR_IF([ac_sys_emscripten_target], [browser-debug], [wasm_debug=yes])
+        AS_VAR_APPEND([LINKFORSHARED], [" --preload-file=\$(WASM_ASSETS_DIR)"])
+        WASM_ASSETS_DIR=".\$(prefix)"
+        WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
+        dnl separate-dwarf does not seem to work in Chrome DevTools Support.
+        WASM_LINKFORSHARED_DEBUG="-gsource-map --emit-symbol-map"
+      ],
+      [node*], [
+        AS_VAR_IF([ac_sys_emscripten_target], [node-debug], [wasm_debug=yes])
+        AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sNODERAWFS"])
+        AS_VAR_APPEND([LINKFORSHARED], [" -sEXIT_RUNTIME"])
+        WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
+      ]
+    )
+
+    AS_VAR_IF([wasm_debug], [yes], [
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -sASSERTIONS"])
+      AS_VAR_APPEND([LINKFORSHARED], [" $WASM_LINKFORSHARED_DEBUG"])
+    ], [
+      AS_VAR_APPEND([LINKFORSHARED], [" -O2 -g0"])
+    ])
   ],
-  [Emscripten/node], [
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s USE_PTHREADS=1"
-    LINKFORSHARED="-s PROXY_TO_PTHREAD=1 -s EXIT_RUNTIME=1"
-    CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
-    if test "$Py_DEBUG" = 'true'; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
-      LINKFORSHARED="$LINKFORSHARED -gseparate-dwarf --emit-symbol-map"
-    else
-      LINKFORSHARED="$LINKFORSHARED -O2 -gseparate-dwarf"
-    fi
-  ],
-  [WASI/*], [
+  [WASI], [
     AC_DEFINE([_WASI_EMULATED_SIGNAL], [1], [Define to 1 if you want to emulate signals on WASI])
     AC_DEFINE([_WASI_EMULATED_GETPID], [1], [Define to 1 if you want to emulate getpid() on WASI])
     AC_DEFINE([_WASI_EMULATED_PROCESS_CLOCKS], [1], [Define to 1 if you want to emulate process clocks on WASI])
     LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
+
+    dnl increase initial memory and stack size, move stack first
+    dnl https://github.com/WebAssembly/wasi-libc/issues/233
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=524288 -Wl,--stack-first -Wl,--initial-memory=10485760"])
   ]
+)
+
+AS_CASE([$enable_wasm_dynamic_linking],
+  [yes], [ac_cv_func_dlopen=yes],
+  [no], [ac_cv_func_dlopen=no],
+  [missing], []
 )
 
 AC_SUBST(BASECFLAGS)
@@ -1949,7 +2115,7 @@ AC_DEFUN([PY_CHECK_CC_WARNING], [
 # tweak BASECFLAGS based on compiler and platform
 case $GCC in
 yes)
-    CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
+    CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
 
     PY_CHECK_CC_WARNING([enable], [extra], [if we can add -Wextra])
     AS_VAR_IF([ac_cv_enable_extra_warning], [yes],
@@ -2418,7 +2584,8 @@ AC_DEFINE(STDC_HEADERS, 1, [Define to 1 if you have the ANSI C header files.])
 # checks for header files
 AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
-  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/memfd.h linux/random.h linux/soundcard.h \
+  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/memfd.h \
+  linux/random.h linux/soundcard.h \
   linux/tipc.h linux/wait.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
@@ -2426,7 +2593,7 @@ AC_CHECK_HEADERS([ \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
   sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h \
   sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
-  termios.h util.h utime.h \
+  termios.h util.h utime.h utmp.h \
 ])
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
@@ -2920,13 +3087,12 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
+	Emscripten|WASI)
+		LDSHARED='$(CC) -shared'
+		LDCXXSHARED='$(CXX) -shared';;
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
-	Emscripten*)
-		LDSHARED='$(CC) -shared -s SIDE_MODULE=1'
-		LDCXXSHARED='$(CXX) -shared -s SIDE_MODULE=1'
-    ;;
 	FreeBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
@@ -2965,15 +3131,30 @@ then
 	SCO_SV*)
 		LDSHARED='$(CC) -Wl,-G,-Bexport'
 		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
+	WASI*)
+		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
+			dnl not iplemented yet
+		]);;
 	CYGWIN*)
 		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
 		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
 	*)	LDSHARED="ld";;
 	esac
 fi
+
+dnl Emscripten's emconfigure sets LDSHARED. Set BLDSHARED outside the
+dnl test -z $LDSHARED block to configure BLDSHARED for side module support.
+if test "$enable_wasm_dynamic_linking" = "yes" -a "$ac_sys_system" = "Emscripten"; then
+  BLDSHARED='$(CC) -shared -sSIDE_MODULE=1'
+fi
+
 AC_MSG_RESULT($LDSHARED)
 LDCXXSHARED=${LDCXXSHARED-$LDSHARED}
+
+AC_MSG_CHECKING([BLDSHARED flags])
 BLDSHARED=${BLDSHARED-$LDSHARED}
+AC_MSG_RESULT([$BLDSHARED])
+
 # CCSHARED are the C *flags* used to create objects to go into a shared
 # library (module) -- this is only needed for a few systems
 AC_MSG_CHECKING(CCSHARED)
@@ -2992,6 +3173,10 @@ then
 		 fi;;
 	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
+	Emscripten*|WASI*)
+		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
+			CCSHARED="-fPIC"
+		]);;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
@@ -3093,6 +3278,12 @@ then
 		CFLAGSFORSHARED='$(CCSHARED)'
 	esac
 fi
+
+dnl WASM dynamic linking requires -fPIC.
+AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
+  CFLAGSFORSHARED='$(CCSHARED)'
+])
+
 AC_MSG_RESULT($CFLAGSFORSHARED)
 
 # SHLIBS are libraries (except -lc and -lm) to link to the python shared
@@ -3498,6 +3689,12 @@ AS_VAR_IF([have_nis], [yes], [
   ])
 ])
 
+dnl On NetBSD, when using OSS audio, you need to link against libossaudio
+AS_CASE([$ac_sys_system],
+  [NetBSD*], [OSSAUDIODEV_LIBS="-lossaudio"],
+  [OSSAUDIODEV_LIBS=""]
+)
+
 dnl Check for SQLite library. Use pkg-config if available.
 PKG_CHECK_MODULES(
   [LIBSQLITE3], [sqlite3 >= 3.7.15], [], [
@@ -3507,77 +3704,156 @@ PKG_CHECK_MODULES(
 )
 AS_VAR_APPEND([LIBSQLITE3_CFLAGS], [' -I$(srcdir)/Modules/_sqlite'])
 
-WITH_SAVE_ENV(
+dnl PY_CHECK_SQLITE_FUNC(FUNCTION, IF-FOUND, IF-NOT-FOUND)
+AC_DEFUN([PY_CHECK_SQLITE_FUNC], [
+  AC_CHECK_LIB([sqlite3], [$1], [$2], [
+    m4_ifblank([$3], [have_supported_sqlite3=no], [$3])
+  ])
+])
+
+WITH_SAVE_ENV([
 dnl bpo-45774/GH-29507: The CPP check in AC_CHECK_HEADER can fail on FreeBSD,
 dnl hence CPPFLAGS instead of CFLAGS.
   CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
   LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
 
   AC_CHECK_HEADER([sqlite3.h], [
-    AC_CHECK_LIB([sqlite3], [sqlite3_open_v2], [
-      have_sqlite3=yes
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([
-          #include <sqlite3.h>
-          #if SQLITE_VERSION_NUMBER < 3007015
-          #  error "SQLite 3.7.15 or higher required"
-          #endif
-        ], [])
-      ], [have_supported_sqlite3=yes], [have_supported_sqlite3=no])
-    ], [have_sqlite3=no])
-    AC_CHECK_LIB([sqlite3], [sqlite3_load_extension],
-                 [have_sqlite3_load_extension=yes],
-                 [have_sqlite3_load_extension=no])
+    have_sqlite3=yes
+
+    AC_COMPILE_IFELSE([
+      AC_LANG_PROGRAM([
+        #include <sqlite3.h>
+        #if SQLITE_VERSION_NUMBER < 3007015
+        #  error "SQLite 3.7.15 or higher required"
+        #endif
+      ], [])
+    ], [
+      have_supported_sqlite3=yes
+      dnl Check that required functions are in place. A lot of stuff may be
+      dnl omitted with SQLITE_OMIT_* compile time defines.
+      PY_CHECK_SQLITE_FUNC([sqlite3_bind_double])
+      PY_CHECK_SQLITE_FUNC([sqlite3_column_decltype])
+      PY_CHECK_SQLITE_FUNC([sqlite3_column_double])
+      PY_CHECK_SQLITE_FUNC([sqlite3_complete])
+      PY_CHECK_SQLITE_FUNC([sqlite3_enable_shared_cache])
+      PY_CHECK_SQLITE_FUNC([sqlite3_progress_handler])
+      PY_CHECK_SQLITE_FUNC([sqlite3_result_double])
+      PY_CHECK_SQLITE_FUNC([sqlite3_set_authorizer])
+      PY_CHECK_SQLITE_FUNC([sqlite3_trace_v2], [], [
+        PY_CHECK_SQLITE_FUNC([sqlite3_trace])
+      ])
+      PY_CHECK_SQLITE_FUNC([sqlite3_value_double])
+      AC_CHECK_LIB([sqlite3], [sqlite3_load_extension],
+        [have_sqlite3_load_extension=yes],
+        [have_sqlite3_load_extension=no]
+      )
+      AC_CHECK_LIB([sqlite3], [sqlite3_serialize], [
+        AC_DEFINE(
+          [PY_SQLITE_HAVE_SERIALIZE], [1],
+          [Define if SQLite was compiled with the serialize API]
+        )
+      ])
+    ], [
+      have_supported_sqlite3=no
+    ])
   ])
-)
-
-# Check for support for loadable sqlite extensions
-AC_MSG_CHECKING(for --enable-loadable-sqlite-extensions)
-AC_ARG_ENABLE(loadable-sqlite-extensions,
-              AS_HELP_STRING([--enable-loadable-sqlite-extensions],
-                             [support loadable extensions in _sqlite module, see Doc/library/sqlite3.rst (default is no)]),
-              [AS_VAR_IF([have_sqlite3_load_extension], [no],
-                         [AC_MSG_WARN([Your version of SQLite does not support loadable extensions])])],
-              [enable_loadable_sqlite_extensions=no])
-AC_MSG_RESULT($enable_loadable_sqlite_extensions)
-
-AS_VAR_IF([enable_loadable_sqlite_extensions], [yes], [
-  AC_DEFINE(PY_SQLITE_ENABLE_LOAD_EXTENSION, 1,
-  [Define to 1 to build the sqlite module with loadable extensions support.])
 ])
 
-# Check for --with-tcltk-includes=path and --with-tcltk-libs=path
-AC_SUBST(TCLTK_INCLUDES)
-AC_SUBST(TCLTK_LIBS)
-AC_MSG_CHECKING(for --with-tcltk-includes)
-AC_ARG_WITH(tcltk-includes,
-            AS_HELP_STRING([--with-tcltk-includes='-I...'], [override search for Tcl and Tk include files]),
-            [],
-            [with_tcltk_includes="default"])
-AC_MSG_RESULT($with_tcltk_includes)
-AC_MSG_CHECKING(for --with-tcltk-libs)
-AC_ARG_WITH(tcltk-libs,
-            AS_HELP_STRING([--with-tcltk-libs='-L...'], [override search for Tcl and Tk libs]),
-            [],
-            [with_tcltk_libs="default"])
-AC_MSG_RESULT($with_tcltk_libs)
-if test "x$with_tcltk_includes" = xdefault || test "x$with_tcltk_libs" = xdefault
-then
-  if test "x$with_tcltk_includes" != "x$with_tcltk_libs"
-  then
-    AC_MSG_ERROR([use both --with-tcltk-includes='...' and --with-tcltk-libs='...' or neither])
-  fi
-  if test -n "$PKG_CONFIG" && "$PKG_CONFIG" --exists tcl tk; then
-    TCLTK_INCLUDES="`"$PKG_CONFIG" tcl tk --cflags-only-I 2>/dev/null`"
-    TCLTK_LIBS="`"$PKG_CONFIG" tcl tk --libs 2>/dev/null`"
-  else
-    TCLTK_INCLUDES=""
-    TCLTK_LIBS=""
-  fi
-else
-  TCLTK_INCLUDES="$with_tcltk_includes"
-  TCLTK_LIBS="$with_tcltk_libs"
-fi
+dnl Check for support for loadable sqlite extensions
+AC_MSG_CHECKING([for --enable-loadable-sqlite-extensions])
+AC_ARG_ENABLE([loadable-sqlite-extensions],
+  AS_HELP_STRING(
+    [--enable-loadable-sqlite-extensions], [
+      support loadable extensions in the sqlite3 module, see
+      Doc/library/sqlite3.rst (default is no)
+    ]
+  ), [
+    AS_VAR_IF([have_sqlite3_load_extension], [no], [
+      AC_MSG_RESULT([n/a])
+      AC_MSG_WARN([Your version of SQLite does not support loadable extensions])
+    ], [
+      AC_MSG_RESULT([yes])
+      AC_DEFINE(
+        [PY_SQLITE_ENABLE_LOAD_EXTENSION], [1],
+        [Define to 1 to build the sqlite module with loadable extensions support.]
+      )
+    ])
+  ], [
+    AC_MSG_RESULT([no])
+  ]
+)
+
+dnl
+dnl Detect Tcl/Tk. Use pkg-config if available.
+dnl
+found_tcltk=no
+for _QUERY in \
+  "tcl >= 8.5.12 tk >= 8.5.12" \
+  "tcl8.6 tk8.6" \
+  "tcl86 tk86" \
+  "tcl8.5 >= 8.5.12 tk8.5 >= 8.5.12" \
+  "tcl85 >= 8.5.12 tk85 >= 8.5.12" \
+; do
+  PKG_CHECK_EXISTS([$_QUERY], [
+    PKG_CHECK_MODULES([TCLTK], [$_QUERY], [found_tcltk=yes], [found_tcltk=no])
+  ])
+  AS_VAR_IF([found_tcltk], [yes], [break])
+done
+
+AS_VAR_IF([found_tcltk], [no], [
+  TCLTK_CFLAGS=${TCLTK_CFLAGS-""}
+  TCLTK_LIBS=${TCLTK_LIBS-""}
+])
+
+dnl FreeBSD has an X11 dependency which is not implicitly resolved.
+AS_CASE([$ac_sys_system],
+  [FreeBSD*], [
+    PKG_CHECK_EXISTS([x11], [
+      PKG_CHECK_MODULES([X11], [x11], [
+        TCLTK_CFLAGS="$TCLTK_CFLAGS $X11_CFLAGS"
+        TCLTK_LIBS="$TCLTK_LIBS $X11_LIBS"
+      ])
+    ])
+  ]
+)
+
+WITH_SAVE_ENV([
+  CPPFLAGS="$TCLTK_CFLAGS $CFLAGS"
+  LIBS="$TCLTK_LIBS $LDFLAGS"
+
+  AC_LINK_IFELSE([
+    AC_LANG_PROGRAM([
+      #include <tcl.h>
+      #include <tk.h>
+      #if defined(TK_HEX_VERSION)
+      #  if TK_HEX_VERSION < 0x0805020c
+      #    error "Tk older than 8.5.12 not supported"
+      #  endif
+      #endif
+      #if (TCL_MAJOR_VERSION < 8) || \
+          ((TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 5)) || \
+          ((TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION == 5) && (TCL_RELEASE_SERIAL < 12))
+      #  error "Tcl older than 8.5.12 not supported"
+      #endif
+      #if (TK_MAJOR_VERSION < 8) || \
+          ((TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION < 5)) || \
+          ((TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION == 5) && (TK_RELEASE_SERIAL < 12))
+      #  error "Tk older than 8.5.12 not supported"
+      #endif
+    ], [
+      void *x1 = Tcl_Init;
+      void *x2 = Tk_Init;
+    ])
+  ], [
+    have_tcltk=yes
+    dnl The X11/xlib.h file bundled in the Tk sources can cause function
+    dnl prototype warnings from the compiler. Since we cannot easily fix
+    dnl that, suppress the warnings here instead.
+    AS_VAR_APPEND([TCLTK_CFLAGS], [" -Wno-strict-prototypes -DWITH_APPINIT=1"])
+  ], [
+    have_tcltk=no
+  ])
+])
 
 dnl check for _gdbmmodule dependencies
 dnl NOTE: gdbm does not provide a pkgconf file.
@@ -3659,7 +3935,7 @@ AC_CHECK_HEADERS([db.h], [
 AC_MSG_CHECKING(for --with-dbmliborder)
 AC_ARG_WITH(dbmliborder,
             AS_HELP_STRING([--with-dbmliborder=db1:db2:...], [override order to check db backends for dbm; a valid value is a colon separated string with the backend names `ndbm', `gdbm' and `bdb'.]),
-[], [with_dbmliborder=ndbm:gdbm:bdb])
+[], [with_dbmliborder=gdbm:ndbm:bdb])
 
 have_gdbm_dbmliborder=no
 as_save_IFS=$IFS
@@ -3674,7 +3950,7 @@ for db in $with_dbmliborder; do
 done
 IFS=$as_save_IFS
 AS_VAR_IF([with_dbmliborder], [error], [
-  AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:... (ndbm:gdbm:bdb)])
+  AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:... (gdbm:ndbm:bdb)])
 ])
 AC_MSG_RESULT($with_dbmliborder)
 
@@ -3855,12 +4131,16 @@ dnl the check does not work on cross compilation case...
 #include <sys/types.h>
 #include <sys/socket.h>]],
 [[int domain = AF_INET6;]])],[
-  AC_MSG_RESULT(yes)
   ipv6=yes
 ],[
-  AC_MSG_RESULT(no)
   ipv6=no
 ])
+
+AS_CASE([$ac_sys_system],
+  [WASI], [ipv6=no]
+)
+
+AC_MSG_RESULT([$ipv6])
 
 if test "$ipv6" = "yes"; then
 	AC_MSG_CHECKING(if RFC2553 API is available)
@@ -4041,9 +4321,10 @@ AC_ARG_WITH(pymalloc,
 
 if test -z "$with_pymalloc"
 then
-  dnl default to yes except for wasm32-emscripten
+  dnl default to yes except for wasm32-emscripten and wasm32-wasi.
   AS_CASE([$ac_sys_system],
     [Emscripten], [with_pymalloc="no"],
+    [WASI], [with_pymalloc="no"],
     [with_pymalloc="yes"]
   )
 fi
@@ -4141,6 +4422,19 @@ then
         DTRACE_OBJS="Python/pydtrace.o"
     fi
 fi
+
+dnl Platform-specific C and header files.
+PLATFORM_HEADERS=
+PLATFORM_OBJS=
+
+AS_CASE([$ac_sys_system],
+  [Emscripten], [
+    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o'])
+    AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h'])
+  ],
+)
+AC_SUBST([PLATFORM_HEADERS])
+AC_SUBST([PLATFORM_OBJS])
 
 # -I${DLINCLDIR} is added to the compile rule for importdl.o
 AC_SUBST(DLINCLDIR)
@@ -4402,7 +4696,8 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
 ])
 
 if test "$have_zlib" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$ZLIB_LIBS" = "-lz"; then
-  ZLIB_LIBS="-s USE_ZLIB=1"
+  ZLIB_CFLAGS="-sUSE_ZLIB"
+  ZLIB_LIBS="-sUSE_ZLIB"
 fi
 
 dnl binascii can use zlib for optimized crc32.
@@ -4424,7 +4719,8 @@ PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
 ])
 
 if test "$have_bzip2" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$BZIP2_LIBS" = "-lbz2"; then
-  BZIP2_LIBS="-s USE_BZIP2=1"
+  BZIP2_CFLAGS="-sUSE_BZIP2"
+  BZIP2_LIBS="-sUSE_BZIP2"
 fi
 
 
@@ -4464,13 +4760,16 @@ PY_CHECK_FUNC([setgroups], [
 #endif
 ])
 
-# check for openpty and forkpty
+# check for openpty, login_tty, and forkpty
 
 AC_CHECK_FUNCS(openpty,,
    AC_CHECK_LIB(util,openpty,
      [AC_DEFINE(HAVE_OPENPTY) LIBS="$LIBS -lutil"],
      AC_CHECK_LIB(bsd,openpty, [AC_DEFINE(HAVE_OPENPTY) LIBS="$LIBS -lbsd"])
    )
+)
+AC_SEARCH_LIBS([login_tty], [util],
+ [AC_DEFINE([HAVE_LOGIN_TTY], [1], [Define to 1 if you have the `login_tty' function.])]
 )
 AC_CHECK_FUNCS(forkpty,,
    AC_CHECK_LIB(util,forkpty,
@@ -4802,27 +5101,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[int foo(int x) { return 0; }]], [[return fo
 AS_VAR_IF([ac_cv_function_prototypes], [yes], [
   AC_DEFINE(HAVE_PROTOTYPES, 1,
      [Define if your compiler supports function prototype])
-])
-
-works=no
-AC_CACHE_CHECK([for variable length prototypes and stdarg.h], [ac_cv_stdarg_prototypes], [
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <stdarg.h>
-int foo(int x, ...) {
-	va_list va;
-	va_start(va, x);
-	va_arg(va, int);
-	va_arg(va, char *);
-	va_arg(va, double);
-	return 0;
-}
-]], [[return foo(10, "", 3.14);]])],
-  [ac_cv_stdarg_prototypes=yes], [ac_cv_stdarg_prototypes=no])
-])
-AS_VAR_IF([ac_cv_stdarg_prototypes], [yes], [
-  AC_DEFINE(HAVE_STDARG_PROTOTYPES, 1,
-   [Define if your compiler supports variable length function prototypes
-   (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h>])
 ])
 
 
@@ -5203,18 +5481,6 @@ if test "$wchar_h" = yes
 then
   AC_CHECK_SIZEOF(wchar_t, 4, [#include <wchar.h>])
 fi
-
-AC_MSG_CHECKING(for UCS-4 tcl)
-have_ucs4_tcl=no
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <tcl.h>
-#if TCL_UTF_MAX != 6
-# error "NOT UCS4_TCL"
-#endif]], [[]])],[
-  AC_DEFINE(HAVE_UCS4_TCL, 1, [Define this if you have tcl and TCL_UTF_MAX==6])
-  have_ucs4_tcl=yes
-],[])
-AC_MSG_RESULT($have_ucs4_tcl)
 
 # check whether wchar_t is signed or not
 if test "$wchar_h" = yes
@@ -5798,52 +6064,6 @@ then
 	LIBS="$LIBS -framework CoreFoundation"
 fi
 
-AC_CACHE_CHECK([for %zd printf() format support], ac_cv_have_size_t_format, [dnl
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <stdio.h>
-#include <stddef.h>
-#include <string.h>
-
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-
-#ifdef HAVE_SSIZE_T
-typedef ssize_t Py_ssize_t;
-#elif SIZEOF_VOID_P == SIZEOF_LONG
-typedef long Py_ssize_t;
-#else
-typedef int Py_ssize_t;
-#endif
-
-int main()
-{
-    char buffer[256];
-
-    if(sprintf(buffer, "%zd", (size_t)123) < 0)
-       	return 1;
-
-    if (strcmp(buffer, "123"))
-	return 1;
-
-    if (sprintf(buffer, "%zd", (Py_ssize_t)-123) < 0)
-       	return 1;
-
-    if (strcmp(buffer, "-123"))
-	return 1;
-
-    return 0;
-}
-]])],
-  [ac_cv_have_size_t_format=yes],
-  [ac_cv_have_size_t_format=no],
-  [ac_cv_have_size_t_format="cross -- assuming yes"
-])])
-if test "$ac_cv_have_size_t_format" != no ; then
-  AC_DEFINE(PY_FORMAT_SIZE_T, "z",
-  [Define to printf format modifier for Py_ssize_t])
-fi
-
 AC_CHECK_TYPE(socklen_t,,
   AC_DEFINE(socklen_t,int,
             [Define to `int' if <sys/socket.h> does not define.]),[
@@ -5946,6 +6166,7 @@ SRCDIRS="\
   Modules/_multiprocessing \
   Modules/_sha3 \
   Modules/_sqlite \
+  Modules/_sre \
   Modules/_xxtestfuzz \
   Modules/cjkcodecs \
   Modules/expat \
@@ -6400,40 +6621,20 @@ AS_VAR_IF([with_builtin_blake2], [yes], [
   ], [have_libb2=no])
 ])
 
-# --with-experimental-isolated-subinterpreters
-AH_TEMPLATE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS,
-            [Better isolate subinterpreters, experimental build mode.])
-AC_MSG_CHECKING(for --with-experimental-isolated-subinterpreters)
-AC_ARG_WITH(experimental-isolated-subinterpreters,
-  AS_HELP_STRING([--with-experimental-isolated-subinterpreters],
-                 [better isolate subinterpreters, experimental build mode (default is no)]),
-[
-if test "$withval" != no
-then
-  AC_MSG_RESULT(yes);
-  AC_DEFINE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS)
-else
-  AC_MSG_RESULT(no);
-fi],
-[AC_MSG_RESULT(no)])
-
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.
-AC_MSG_CHECKING(for --disable-test-modules)
-AC_ARG_ENABLE(test-modules,
-              AS_HELP_STRING([--disable-test-modules], [don't build nor install test modules]))
-if test "$enable_test_modules" = no; then
-    TEST_MODULES=no
-else
-    AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-      [Emscripten/browser], [TEST_MODULES=no],
-      [TEST_MODULES=yes]
-    )
-fi
-AS_VAR_IF([TEST_MODULES], [yes],
-  [AC_MSG_RESULT(no)], [AC_MSG_RESULT(yes)]
-)
-AC_SUBST(TEST_MODULES)
+AC_MSG_CHECKING([for --disable-test-modules])
+AC_ARG_ENABLE([test-modules],
+  [AS_HELP_STRING([--disable-test-modules], [don't build nor install test modules])], [
+  AS_VAR_IF([enable_test_modules], [yes], [TEST_MODULES=yes], [TEST_MODULES=no])
+], [
+  AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+    [Emscripten/browser*], [TEST_MODULES=no],
+    [TEST_MODULES=yes]
+  )
+])
+AC_MSG_RESULT([$TEST_MODULES])
+AC_SUBST([TEST_MODULES])
 
 AC_DEFUN([PY_STDLIB_MOD_SET_NA], [
   m4_foreach([mod], [$@], [
@@ -6444,16 +6645,19 @@ AC_DEFUN([PY_STDLIB_MOD_SET_NA], [
 dnl Modules that are not available on some platforms
 dnl AIX has shadow passwords, but access is not via getspent()
 dnl VxWorks does not provide crypt() function
-AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [AIX/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
-  [VxWorks*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [_crypt], [termios], [grp])],
-  [Darwin/*], [PY_STDLIB_MOD_SET_NA([ossaudiodev], [spwd])],
-  [CYGWIN*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
-  [QNX*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
-  [FreeBSD*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
-  [Emscripten/browser], [
+AS_CASE([$ac_sys_system],
+  [AIX], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
+  [VxWorks*], [PY_STDLIB_MOD_SET_NA([_scproxy], [_crypt], [termios], [grp])],
+  [Darwin], [PY_STDLIB_MOD_SET_NA([ossaudiodev], [spwd])],
+  [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
+  [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
+  [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
+  [Emscripten|WASI], [
+    dnl subprocess and multiprocessing are not supported (no fork syscall).
+    dnl curses and tkinter user interface are not available.
+    dnl dbm and gdbm aren't available, too.
+    dnl Emscripten and WASI provide only stubs for pwd, grp APIs.
     PY_STDLIB_MOD_SET_NA(
-      [_ctypes],
       [_curses],
       [_curses_panel],
       [_dbm],
@@ -6464,30 +6668,6 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
       [_scproxy],
       [_tkinter],
       [_xxsubinterpreters],
-      [fcntl],
-      [grp],
-      [nis],
-      [ossaudiodev],
-      [pwd],
-      [resource],
-      [readline],
-      [spwd],
-      [syslog],
-      [termios],
-    )
-  ],
-  dnl Some modules like _posixsubprocess do not work. We build them anyway
-  dnl so imports in tests do not fail.
-  [Emscripten/node], [
-    PY_STDLIB_MOD_SET_NA(
-      [_ctypes],
-      [_curses],
-      [_curses_panel],
-      [_dbm],
-      [_gdbm],
-      [_scproxy],
-      [_tkinter],
-      [_xxsubinterpreters],
       [grp],
       [nis],
       [ossaudiodev],
@@ -6495,24 +6675,27 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
       [spwd],
       [syslog],
     )
-  ],
-  [WASI/*], [
-    PY_STDLIB_MOD_SET_NA(
-      [_ctypes],
-      [_ctypes_test],
-      [_curses],
-      [_curses_panel],
-      [_dbm],
-      [_gdbm],
-      [_scproxy],
-      [_tkinter],
-      [_xxsubinterpreters],
-      [grp],
-      [nis],
-      [ossaudiodev],
-      [pwd],
-      [spwd],
-      [syslog],
+    AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+      [Emscripten/browser*], [
+        dnl These modules are not particularly useful in browsers.
+        PY_STDLIB_MOD_SET_NA(
+          [fcntl],
+          [resource],
+          [readline],
+          [termios],
+        )
+      ],
+      [Emscripten/node*], [],
+      [WASI/*], [
+        dnl WASI SDK 15.0 does not support file locking, mmap, and more.
+        PY_STDLIB_MOD_SET_NA(
+          [_ctypes_test],
+          [fcntl],
+          [mmap],
+          [resource],
+          [termios],
+        )
+      ]
     )
   ],
   [PY_STDLIB_MOD_SET_NA([_scproxy])]
@@ -6648,7 +6831,8 @@ PY_STDLIB_MOD([_socket],
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
 PY_STDLIB_MOD([ossaudiodev],
-  [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes])
+  [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes],
+  [], [$OSSAUDIODEV_LIBS])
 PY_STDLIB_MOD([pwd], [], [test "$ac_cv_func_getpwuid" = yes -o "$ac_cv_func_getpwuid_r" = yes])
 PY_STDLIB_MOD([resource], [], [test "$ac_cv_header_sys_resource_h" = yes])
 PY_STDLIB_MOD([_scproxy],
@@ -6700,7 +6884,9 @@ PY_STDLIB_MOD([_sqlite3],
   [test "$have_sqlite3" = "yes"],
   [test "$have_supported_sqlite3" = "yes"],
   [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
-dnl PY_STDLIB_MOD([_tkinter], [], [], [], [])
+PY_STDLIB_MOD([_tkinter],
+  [], [test "$have_tcltk" = "yes"],
+  [$TCLTK_CFLAGS], [$TCLTK_LIBS])
 PY_STDLIB_MOD([_uuid],
   [], [test "$have_uuid" = "yes"],
   [$LIBUUID_CFLAGS], [$LIBUUID_LIBS])
@@ -6728,7 +6914,7 @@ PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
-PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [], [], [-lm])
+PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes], [], [-lm])
 
 dnl Limited API template modules.
 dnl The limited C API is not compatible with the Py_TRACE_REFS macro.
@@ -6768,3 +6954,9 @@ If you want a release build with all stable optimizations active (PGO, etc),
 please run ./configure --enable-optimizations
 ])
 fi
+
+AS_VAR_IF([PY_SUPPORT_TIER], [0], [AC_MSG_WARN([
+
+Platform "$host" with compiler "$ac_cv_cc_name" is not supported by the
+CPython core team, see https://peps.python.org/pep-0011/ for more information.
+])])

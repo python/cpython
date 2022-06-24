@@ -596,7 +596,7 @@ generator function.
 In addition to :meth:`~generator.send`, there are two other methods on
 generators:
 
-* :meth:`throw(type, value=None, traceback=None) <generator.throw>` is used to
+* :meth:`throw(value) <generator.throw>` is used to
   raise an exception inside the generator; the exception is raised by the
   ``yield`` expression where the generator's execution is paused.
 

@@ -12,7 +12,6 @@ from test.support import warnings_helper
 import socket
 import select
 import time
-import datetime
 import enum
 import gc
 import os
@@ -30,18 +29,16 @@ try:
 except ImportError:
     ctypes = None
 
-import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import asyncore
+
+asyncore = warnings_helper.import_deprecated('asyncore')
+
 
 ssl = import_helper.import_module("ssl")
 import _ssl
 
 from ssl import TLSVersion, _TLSContentType, _TLSMessageType, _TLSAlertType
 
-Py_DEBUG = hasattr(sys, 'gettotalrefcount')
-Py_DEBUG_WIN32 = Py_DEBUG and sys.platform == 'win32'
+Py_DEBUG_WIN32 = support.Py_DEBUG and sys.platform == 'win32'
 
 PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = socket_helper.HOST
@@ -385,10 +382,6 @@ class BasicSocketTests(unittest.TestCase):
                              % (v, (v and "sufficient randomness") or
                                 "insufficient randomness"))
 
-        with warnings_helper.check_warnings():
-            data, is_cryptographic = ssl.RAND_pseudo_bytes(16)
-        self.assertEqual(len(data), 16)
-        self.assertEqual(is_cryptographic, v == 1)
         if v:
             data = ssl.RAND_bytes(16)
             self.assertEqual(len(data), 16)
@@ -397,8 +390,6 @@ class BasicSocketTests(unittest.TestCase):
 
         # negative num is invalid
         self.assertRaises(ValueError, ssl.RAND_bytes, -5)
-        with warnings_helper.check_warnings():
-            self.assertRaises(ValueError, ssl.RAND_pseudo_bytes, -5)
 
         ssl.RAND_add("this is a random string", 75.0)
         ssl.RAND_add(b"this is a random bytes object", 75.0)
@@ -1659,7 +1650,8 @@ class ContextTests(unittest.TestCase):
             self.assertEqual(ctx.cert_store_stats(), {"crl": 0, "x509": 1, "x509_ca": 0})
 
     @unittest.skipUnless(sys.platform == "win32", "Windows specific")
-    @unittest.skipIf(hasattr(sys, "gettotalrefcount"), "Debug build does not share environment between CRTs")
+    @unittest.skipIf(support.Py_DEBUG,
+                     "Debug build does not share environment between CRTs")
     def test_load_default_certs_env_windows(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ctx.load_default_certs()
@@ -2001,9 +1993,8 @@ class SimpleBackgroundTests(unittest.TestCase):
         self.server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         self.server_context.load_cert_chain(SIGNED_CERTFILE)
         server = ThreadedEchoServer(context=self.server_context)
+        self.enterContext(server)
         self.server_addr = (HOST, server.port)
-        server.__enter__()
-        self.addCleanup(server.__exit__, None, None, None)
 
     def test_connect(self):
         with test_wrap_socket(socket.socket(socket.AF_INET),
@@ -2265,11 +2256,8 @@ class SimpleBackgroundTests(unittest.TestCase):
         # A simple IO loop. Call func(*args) depending on the error we get
         # (WANT_READ or WANT_WRITE) move data between the socket and the BIOs.
         timeout = kwargs.get('timeout', support.SHORT_TIMEOUT)
-        deadline = time.monotonic() + timeout
         count = 0
-        while True:
-            if time.monotonic() > deadline:
-                self.fail("timeout")
+        for _ in support.busy_retry(timeout):
             errno = None
             count += 1
             try:
@@ -3715,8 +3703,7 @@ class ThreadedTests(unittest.TestCase):
 
     def test_recv_zero(self):
         server = ThreadedEchoServer(CERTFILE)
-        server.__enter__()
-        self.addCleanup(server.__exit__, None, None)
+        self.enterContext(server)
         s = socket.create_connection((HOST, server.port))
         self.addCleanup(s.close)
         s = test_wrap_socket(s, suppress_ragged_eofs=False)
