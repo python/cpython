@@ -5158,24 +5158,6 @@ _ssl_RAND_bytes_impl(PyObject *module, int n)
     return PySSL_RAND(module, n, 0);
 }
 
-/*[clinic input]
-_ssl.RAND_pseudo_bytes
-    n: int
-    /
-
-Generate n pseudo-random bytes.
-
-Return a pair (bytes, is_cryptographic).  is_cryptographic is True
-if the bytes generated are cryptographically strong.
-[clinic start generated code]*/
-
-static PyObject *
-_ssl_RAND_pseudo_bytes_impl(PyObject *module, int n)
-/*[clinic end generated code: output=b1509e937000e52d input=58312bd53f9bbdd0]*/
-{
-    PY_SSL_DEPRECATED("ssl.RAND_pseudo_bytes() is deprecated", 1, NULL);
-    return PySSL_RAND(module, n, 1);
-}
 
 /*[clinic input]
 _ssl.RAND_status
@@ -5634,7 +5616,6 @@ static PyMethodDef PySSL_methods[] = {
     _SSL__TEST_DECODE_CERT_METHODDEF
     _SSL_RAND_ADD_METHODDEF
     _SSL_RAND_BYTES_METHODDEF
-    _SSL_RAND_PSEUDO_BYTES_METHODDEF
     _SSL_RAND_STATUS_METHODDEF
     _SSL_GET_DEFAULT_VERIFY_PATHS_METHODDEF
     _SSL_ENUM_CERTIFICATES_METHODDEF

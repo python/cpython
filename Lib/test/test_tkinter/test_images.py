@@ -2,7 +2,7 @@ import unittest
 import tkinter
 from test import support
 from test.support import os_helper
-from tkinter.test.support import AbstractTkTest, AbstractDefaultRootTest, requires_tcl
+from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest, requires_tcl
 
 support.requires('gui')
 
