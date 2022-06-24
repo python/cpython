@@ -177,21 +177,21 @@ creation according to their needs, the :class:`EnvBuilder` class.
         ``clear=True``, contents of the environment directory will be cleared
         and then all necessary subdirectories will be recreated.
 
-        The returned context object is a :type:`types.SimpleNamespace` with the
+        The returned context object is a :class:`types.SimpleNamespace` with the
         following attributes:
 
         * ``env_dir`` - The location of the virtual environment. Used for
-        ``__VENV_DIR__`` in activation scripts (see :meth:`install_scripts`).
+          ``__VENV_DIR__`` in activation scripts (see :meth:`install_scripts`).
 
         * ``env_name`` - The name of the virtual environment. Used for
-        ``__VENV_NAME__`` in activation scripts (see :meth:`install_scripts`).
+          ``__VENV_NAME__`` in activation scripts (see :meth:`install_scripts`).
 
         * ``prompt`` - The prompt to be used by the activation scripts. Used for
-        ``__VENV_PROMPT__`` in activation scripts (see :meth:`install_scripts`).
+          ``__VENV_PROMPT__`` in activation scripts (see :meth:`install_scripts`).
 
         * ``executable`` - The underlying Python executable used by the virtual
-        environment. This takes into account the case where a virtual environment
-        is created from another virtual environment.
+          environment. This takes into account the case where a virtual environment
+          is created from another virtual environment.
 
         * ``inc_path`` - The include path for the virtual environment.
 
@@ -200,16 +200,16 @@ creation according to their needs, the :class:`EnvBuilder` class.
         * ``bin_path`` - The script path for the virtual environment.
 
         * ``bin_name`` - The name of the script path relative to the virtual
-        environment location. Used for ``__VENV_BIN_NAME__`` in activation
-        scripts (see :meth:`install_scripts`).
+          environment location. Used for ``__VENV_BIN_NAME__`` in activation
+          scripts (see :meth:`install_scripts`).
 
         * ``env_exe`` - The name of the Python interpreter in the virtual
-        environment. Used for ``__VENV_PYTHON__`` in activation scripts
-        (see :meth:`install_scripts`).
+          environment. Used for ``__VENV_PYTHON__`` in activation scripts
+          (see :meth:`install_scripts`).
 
         * ``env_exec_cmd`` - The name of the Python interpreter, taking into
-        account filesystem redirections. This can be used to run Python in
-        the virtual environment.
+          account filesystem redirections. This can be used to run Python in
+          the virtual environment.
 
 
         .. versionchanged:: 3.12
