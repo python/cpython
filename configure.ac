@@ -3763,7 +3763,7 @@ dnl hence CPPFLAGS instead of CFLAGS.
           [PY_SQLITE_HAVE_SERIALIZE], [1],
           [Define if SQLite was compiled with the serialize API]
         )
-      ], [])
+      ], [have_supported_sqlite3=$have_supported_sqlite3])
     ], [
       have_supported_sqlite3=no
     ])

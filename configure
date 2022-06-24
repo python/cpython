@@ -13083,7 +13083,7 @@ $as_echo "#define PY_SQLITE_HAVE_SERIALIZE 1" >>confdefs.h
 
 fi
   if test "x$ac_cv_lib_sqlite3_sqlite3_serialize" = xno; then :
-  have_supported_sqlite3=no
+  have_supported_sqlite3=$have_supported_sqlite3
 fi
 
 
