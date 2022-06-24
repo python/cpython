@@ -90,7 +90,7 @@ typedef uint16_t _Py_CODEUNIT;
     PyObject *co_qualname;        /* unicode (qualname, for reference) */      \
     PyObject *co_linetable;       /* bytes object that holds location info */  \
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
-    PyObject *_co_code;               /* cached co_code object/attribute */    \
+    PyObject *_co_code;           /* cached co_code object/attribute */        \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     char *_co_linearray;          /* array of line offsets */                  \
     /* Scratch space for extra data relating to the code object.               \
