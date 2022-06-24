@@ -1383,12 +1383,16 @@ if hasattr(http.client, 'HTTPSConnection'):
 
         def __init__(self, debuglevel=0, context=None, check_hostname=None):
             AbstractHTTPHandler.__init__(self, debuglevel)
+            if context is None:
+                http_version = http.client.HTTPSConnection._http_vsn
+                context = http.client._create_https_context(http_version)
+            if check_hostname is not None:
+                context.check_hostname = check_hostname
             self._context = context
-            self._check_hostname = check_hostname
 
         def https_open(self, req):
             return self.do_open(http.client.HTTPSConnection, req,
-                context=self._context, check_hostname=self._check_hostname)
+                                context=self._context)
 
         https_request = AbstractHTTPHandler.do_request_
 
