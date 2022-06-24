@@ -7953,6 +7953,8 @@ fi
 
         as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH -sTOTAL_MEMORY=20971520"
 
+        as_fn_append LDFLAGS_NODIST " -sWASM_BIGINT"
+
         as_fn_append LDFLAGS_NODIST " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
 
     if test "x$enable_wasm_dynamic_linking" = xyes; then :
