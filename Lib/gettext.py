@@ -164,26 +164,15 @@ def _parse(tokens, priority=-1):
     return result, nexttok
 
 
-def _as_int(n):
-    try:
-        i = round(n)
-    except TypeError:
-        raise TypeError('Plural value must be an integer, got %s' %
-                        (n.__class__.__name__,)) from None
-    import warnings
-    warnings.warn('Plural value must be an integer, got %s' %
-                  (n.__class__.__name__,),
-                  DeprecationWarning, 4)
-    return n
-
-
 def c2py(plural):
     """Gets a C expression as used in PO files for plural forms and returns a
     Python function that implements an equivalent expression.
     """
+    import textwrap
 
     if len(plural) > 1000:
         raise ValueError('plural form expression is too long')
+
     try:
         result, nexttok = _parse(_tokenize(plural))
         if nexttok:
@@ -200,13 +189,16 @@ def c2py(plural):
             elif c == ')':
                 depth -= 1
 
-        ns = {'_as_int': _as_int}
-        exec('''if True:
+        ns = {}
+        code = textwrap.dedent('''
             def func(n):
                 if not isinstance(n, int):
-                    n = _as_int(n)
+                    raise TypeError(f'Plural value must be an integer, '
+                                    f'got {n.__class__.__name__}')
                 return int(%s)
-            ''' % result, ns)
+            ''')
+        code = code % result
+        exec(code, ns)
         return ns['func']
     except RecursionError:
         # Recursion error can be raised in _parse() or exec().

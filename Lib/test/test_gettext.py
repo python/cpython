@@ -488,12 +488,8 @@ class PluralFormsTestCase(GettextBaseTest):
         f = gettext.c2py('n != 1')
         self.assertEqual(f(1), 0)
         self.assertEqual(f(2), 1)
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(f(1.0), 0)
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(f(2.0), 1)
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(f(1.1), 1)
+
+        self.assertRaises(TypeError, f, 1.0)
         self.assertRaises(TypeError, f, '2')
         self.assertRaises(TypeError, f, b'2')
         self.assertRaises(TypeError, f, [])
