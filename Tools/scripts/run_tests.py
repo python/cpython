@@ -63,9 +63,9 @@ def main(regrtest_args):
         args.append('-n')         # Silence alerts under Windows
     if not any(is_multiprocess_flag(arg) for arg in regrtest_args):
         if cross_compile and hostrunner:
-            # For now use only one core for cross-compiled builds;
+            # For now use only two cores for cross-compiled builds;
             # hostrunner can be expensive.
-            args.extend(['-j', '1'])
+            args.extend(['-j', '2'])
         else:
             args.extend(['-j', '0'])  # Use all CPU cores
     if not any(is_resource_use_flag(arg) for arg in regrtest_args):

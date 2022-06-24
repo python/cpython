@@ -413,6 +413,51 @@ The :mod:`test.support` module defines the following constants:
 
 The :mod:`test.support` module defines the following functions:
 
+.. function:: busy_retry(timeout, err_msg=None, /, *, error=True)
+
+   Run the loop body until ``break`` stops the loop.
+
+   After *timeout* seconds, raise an :exc:`AssertionError` if *error* is true,
+   or just stop the loop if *error* is false.
+
+   Example::
+
+       for _ in support.busy_retry(support.SHORT_TIMEOUT):
+           if check():
+               break
+
+   Example of error=False usage::
+
+       for _ in support.busy_retry(support.SHORT_TIMEOUT, error=False):
+           if check():
+               break
+       else:
+           raise RuntimeError('my custom error')
+
+.. function:: sleeping_retry(timeout, err_msg=None, /, *, init_delay=0.010, max_delay=1.0, error=True)
+
+   Wait strategy that applies exponential backoff.
+
+   Run the loop body until ``break`` stops the loop. Sleep at each loop
+   iteration, but not at the first iteration. The sleep delay is doubled at
+   each iteration (up to *max_delay* seconds).
+
+   See :func:`busy_retry` documentation for the parameters usage.
+
+   Example raising an exception after SHORT_TIMEOUT seconds::
+
+       for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+           if check():
+               break
+
+   Example of error=False usage::
+
+       for _ in support.sleeping_retry(support.SHORT_TIMEOUT, error=False):
+           if check():
+               break
+       else:
+           raise RuntimeError('my custom error')
+
 .. function:: is_resource_enabled(resource)
 
    Return ``True`` if *resource* is enabled and available. The list of

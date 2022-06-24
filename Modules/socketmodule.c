@@ -1016,6 +1016,7 @@ init_sockobject(PySocketSockObject *s,
 }
 
 
+#ifdef HAVE_SOCKETPAIR
 /* Create a new socket object.
    This just creates the object and initializes it.
    If the creation fails, return NULL and set an exception (implicit
@@ -1035,6 +1036,7 @@ new_sockobject(SOCKET_T fd, int family, int type, int proto)
     }
     return s;
 }
+#endif
 
 
 /* Lock to allow python interpreter to continue, but only allow one
@@ -7470,7 +7472,6 @@ PyInit__socket(void)
     /* for setsockopt() */
     PyModule_AddIntMacro(m, HVSOCKET_CONNECT_TIMEOUT);
     PyModule_AddIntMacro(m, HVSOCKET_CONNECT_TIMEOUT_MAX);
-    PyModule_AddIntMacro(m, HVSOCKET_CONTAINER_PASSTHRU);
     PyModule_AddIntMacro(m, HVSOCKET_CONNECTED_SUSPEND);
     PyModule_AddIntMacro(m, HVSOCKET_ADDRESS_FLAG_PASSTHRU);
 

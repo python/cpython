@@ -19,7 +19,7 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyMethod_Type;
 
-#define PyMethod_Check(op) Py_IS_TYPE(op, &PyMethod_Type)
+#define PyMethod_Check(op) Py_IS_TYPE((op), &PyMethod_Type)
 
 PyAPI_FUNC(PyObject *) PyMethod_New(PyObject *, PyObject *);
 
@@ -29,9 +29,9 @@ PyAPI_FUNC(PyObject *) PyMethod_Self(PyObject *);
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
 #define PyMethod_GET_FUNCTION(meth) \
-        (((PyMethodObject *)meth) -> im_func)
+        (((PyMethodObject *)(meth)) -> im_func)
 #define PyMethod_GET_SELF(meth) \
-        (((PyMethodObject *)meth) -> im_self)
+        (((PyMethodObject *)(meth)) -> im_self)
 
 typedef struct {
     PyObject_HEAD
@@ -40,7 +40,7 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyInstanceMethod_Type;
 
-#define PyInstanceMethod_Check(op) Py_IS_TYPE(op, &PyInstanceMethod_Type)
+#define PyInstanceMethod_Check(op) Py_IS_TYPE((op), &PyInstanceMethod_Type)
 
 PyAPI_FUNC(PyObject *) PyInstanceMethod_New(PyObject *);
 PyAPI_FUNC(PyObject *) PyInstanceMethod_Function(PyObject *);
@@ -48,7 +48,7 @@ PyAPI_FUNC(PyObject *) PyInstanceMethod_Function(PyObject *);
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
 #define PyInstanceMethod_GET_FUNCTION(meth) \
-        (((PyInstanceMethodObject *)meth) -> func)
+        (((PyInstanceMethodObject *)(meth)) -> func)
 
 #ifdef __cplusplus
 }

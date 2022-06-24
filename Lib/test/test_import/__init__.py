@@ -889,6 +889,7 @@ class PycacheTests(unittest.TestCase):
             "due to varying filesystem permission semantics (issue #11956)")
     @skip_if_dont_write_bytecode
     @os_helper.skip_unless_working_chmod
+    @unittest.skipIf(is_emscripten, "umask is a stub")
     def test_unwritable_directory(self):
         # When the umask causes the new __pycache__ directory to be
         # unwritable, the import still succeeds but no .pyc file is written.

@@ -382,10 +382,6 @@ class BasicSocketTests(unittest.TestCase):
                              % (v, (v and "sufficient randomness") or
                                 "insufficient randomness"))
 
-        with warnings_helper.check_warnings():
-            data, is_cryptographic = ssl.RAND_pseudo_bytes(16)
-        self.assertEqual(len(data), 16)
-        self.assertEqual(is_cryptographic, v == 1)
         if v:
             data = ssl.RAND_bytes(16)
             self.assertEqual(len(data), 16)
@@ -394,8 +390,6 @@ class BasicSocketTests(unittest.TestCase):
 
         # negative num is invalid
         self.assertRaises(ValueError, ssl.RAND_bytes, -5)
-        with warnings_helper.check_warnings():
-            self.assertRaises(ValueError, ssl.RAND_pseudo_bytes, -5)
 
         ssl.RAND_add("this is a random string", 75.0)
         ssl.RAND_add(b"this is a random bytes object", 75.0)
@@ -2262,11 +2256,8 @@ class SimpleBackgroundTests(unittest.TestCase):
         # A simple IO loop. Call func(*args) depending on the error we get
         # (WANT_READ or WANT_WRITE) move data between the socket and the BIOs.
         timeout = kwargs.get('timeout', support.SHORT_TIMEOUT)
-        deadline = time.monotonic() + timeout
         count = 0
-        while True:
-            if time.monotonic() > deadline:
-                self.fail("timeout")
+        for _ in support.busy_retry(timeout):
             errno = None
             count += 1
             try:
