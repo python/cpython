@@ -18,9 +18,10 @@ Functions:
                           seconds past the Epoch (the time values
                           returned from time.time())
 
-  fetch_server_certificate (HOST, PORT) -- fetch the certificate provided
-                          by the server running on HOST at port PORT.  No
-                          validation of the certificate is performed.
+  get_server_certificate (addr, ssl_version, ca_certs, timeout) -- Retrieve the
+                          certificate from the server at the specified
+                          address and return it as a PEM-encoded string
+
 
 Integer constants:
 
@@ -105,7 +106,7 @@ from _ssl import (
     SSLSyscallError, SSLEOFError, SSLCertVerificationError
     )
 from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
-from _ssl import RAND_status, RAND_add, RAND_bytes, RAND_pseudo_bytes
+from _ssl import RAND_status, RAND_add, RAND_bytes
 try:
     from _ssl import RAND_egd
 except ImportError:

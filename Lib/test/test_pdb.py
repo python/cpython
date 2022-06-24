@@ -13,6 +13,7 @@ import linecache
 
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
+from test import support
 from test.support import os_helper
 # This little helper class is essential for testing pdb under doctest.
 from test.test_doctest import _FakeInput
@@ -1362,11 +1363,57 @@ def test_pdb_issue_43318():
     4
     """
 
+def test_pdb_issue_gh_91742():
+    """See GH-91742
 
+    >>> def test_function():
+    ...    __author__ = "pi"
+    ...    __version__ = "3.14"
+    ...
+    ...    def about():
+    ...        '''About'''
+    ...        print(f"Author: {__author__!r}",
+    ...            f"Version: {__version__!r}",
+    ...            sep=" ")
+    ...
+    ...    import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...    about()
+
+
+    >>> reset_Breakpoint()
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'step',
+    ...     'next',
+    ...     'next',
+    ...     'jump 5',
+    ...     'continue'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_issue_gh_91742[0]>(12)test_function()
+    -> about()
+    (Pdb) step
+    --Call--
+    > <doctest test.test_pdb.test_pdb_issue_gh_91742[0]>(5)about()
+    -> def about():
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_91742[0]>(7)about()
+    -> print(f"Author: {__author__!r}",
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_91742[0]>(8)about()
+    -> f"Version: {__version__!r}",
+    (Pdb) jump 5
+    > <doctest test.test_pdb.test_pdb_issue_gh_91742[0]>(5)about()
+    -> def about():
+    (Pdb) continue
+    Author: 'pi' Version: '3.14'
+    """
+@support.requires_subprocess()
 class PdbTestCase(unittest.TestCase):
     def tearDown(self):
         os_helper.unlink(os_helper.TESTFN)
 
+    @unittest.skipIf(sys.flags.safe_path,
+                     'PYTHONSAFEPATH changes default sys.path')
     def _run_pdb(self, pdb_args, commands):
         self.addCleanup(os_helper.rmtree, '__pycache__')
         cmd = [sys.executable, '-m', 'pdb'] + pdb_args

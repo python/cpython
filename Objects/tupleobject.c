@@ -5,8 +5,7 @@
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
-#include "pycore_object.h"        // _PyObject_GC_TRACK()
-#include "pycore_pyerrors.h"      // _Py_FatalRefcountError()
+#include "pycore_object.h"        // _PyObject_GC_TRACK(), _Py_FatalRefcountError()
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"
@@ -1196,6 +1195,7 @@ maybe_freelist_pop(Py_ssize_t size)
 #endif
             _Py_NewReference((PyObject *)op);
             /* END inlined _PyObject_InitVar() */
+            OBJECT_STAT_INC(from_freelist);
             return op;
         }
     }
@@ -1225,6 +1225,7 @@ maybe_freelist_push(PyTupleObject *op)
         op->ob_item[0] = (PyObject *) STATE.free_list[index];
         STATE.free_list[index] = op;
         STATE.numfree[index]++;
+        OBJECT_STAT_INC(to_freelist);
         return 1;
     }
 #endif

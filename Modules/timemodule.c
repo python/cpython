@@ -910,14 +910,9 @@ is not present, current time as returned by localtime() is used.\n\
 static PyObject *
 time_strptime(PyObject *self, PyObject *args)
 {
-    PyObject *module, *func, *result;
+    PyObject *func, *result;
 
-    module = PyImport_ImportModule("_strptime");
-    if (!module)
-        return NULL;
-
-    func = PyObject_GetAttr(module, &_Py_ID(_strptime_time));
-    Py_DECREF(module);
+    func = _PyImport_GetModuleAttrString("_strptime", "_strptime_time");
     if (!func) {
         return NULL;
     }
@@ -1479,7 +1474,9 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
     return 0;
 }
 
-#elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_PROCESS_CPUTIME_ID)
+#elif defined(HAVE_CLOCK_GETTIME) && \
+      defined(CLOCK_PROCESS_CPUTIME_ID) && \
+      !defined(__EMSCRIPTEN__) && !defined(__wasi__)
 #define HAVE_THREAD_TIME
 
 #if defined(__APPLE__) && defined(__has_attribute) && __has_attribute(availability)

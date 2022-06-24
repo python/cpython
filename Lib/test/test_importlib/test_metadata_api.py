@@ -90,8 +90,10 @@ class APITests(
             self.assertEqual(ep.dist.version, "1.0.0")
 
     def test_entry_points_unique_packages(self):
-        # Entry points should only be exposed for the first package
-        # on sys.path with a given name.
+        """
+        Entry points should only be exposed for the first package
+        on sys.path with a given name.
+        """
         alt_site_dir = self.fixtures.enter_context(fixtures.tempdir())
         self.fixtures.enter_context(self.add_sys_path(alt_site_dir))
         alt_pkg = {
@@ -123,9 +125,11 @@ class APITests(
         assert entry_points(group='missing') == ()
 
     def test_entry_points_dict_construction(self):
-        # Prior versions of entry_points() returned simple lists and
-        # allowed casting those lists into maps by name using ``dict()``.
-        # Capture this now deprecated use-case.
+        """
+        Prior versions of entry_points() returned simple lists and
+        allowed casting those lists into maps by name using ``dict()``.
+        Capture this now deprecated use-case.
+        """
         with suppress_known_deprecation() as caught:
             eps = dict(entry_points(group='entries'))
 
@@ -154,9 +158,11 @@ class APITests(
         assert "Accessing entry points by index is deprecated" in str(expected)
 
     def test_entry_points_groups_getitem(self):
-        # Prior versions of entry_points() returned a dict. Ensure
-        # that callers using '.__getitem__()' are supported but warned to
-        # migrate.
+        """
+        Prior versions of entry_points() returned a dict. Ensure
+        that callers using '.__getitem__()' are supported but warned to
+        migrate.
+        """
         with suppress_known_deprecation():
             entry_points()['entries'] == entry_points(group='entries')
 
@@ -164,9 +170,11 @@ class APITests(
                 entry_points()['missing']
 
     def test_entry_points_groups_get(self):
-        # Prior versions of entry_points() returned a dict. Ensure
-        # that callers using '.get()' are supported but warned to
-        # migrate.
+        """
+        Prior versions of entry_points() returned a dict. Ensure
+        that callers using '.get()' are supported but warned to
+        migrate.
+        """
         with suppress_known_deprecation():
             entry_points().get('missing', 'default') == 'default'
             entry_points().get('entries', 'default') == entry_points()['entries']
@@ -313,7 +321,7 @@ class OffSysPathTests(fixtures.DistInfoPkgOffPath, unittest.TestCase):
         assert any(dist.metadata['Name'] == 'distinfo-pkg' for dist in dists)
 
     def test_distribution_at_pathlib(self):
-        # Demonstrate how to load metadata direct from a directory.
+        """Demonstrate how to load metadata direct from a directory."""
         dist_info_path = self.site_dir / 'distinfo_pkg-1.0.0.dist-info'
         dist = Distribution.at(dist_info_path)
         assert dist.version == '1.0.0'

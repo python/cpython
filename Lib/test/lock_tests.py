@@ -2,7 +2,6 @@
 Various tests for synchronization primitives.
 """
 
-import os
 import gc
 import sys
 import time
@@ -15,7 +14,7 @@ from test import support
 from test.support import threading_helper
 
 
-requires_fork = unittest.skipUnless(hasattr(os, 'fork'),
+requires_fork = unittest.skipUnless(support.has_fork_support,
                                     "platform doesn't support fork "
                                      "(no _at_fork_reinit method)")
 

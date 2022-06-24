@@ -14,8 +14,9 @@ import subprocess
 import sysconfig
 import argparse
 import textwrap
+import tomllib
 import difflib
-import shutil
+import pprint
 import sys
 import os
 import os.path
@@ -45,23 +46,16 @@ EXCLUDED_HEADERS = {
 MACOS = (sys.platform == "darwin")
 UNIXY = MACOS or (sys.platform == "linux")  # XXX should this be "not Windows"?
 
-IFDEF_DOC_NOTES = {
-    'MS_WINDOWS': 'on Windows',
-    'HAVE_FORK': 'on platforms with fork()',
-    'USE_STACKCHECK': 'on platforms with USE_STACKCHECK',
-}
 
-# The stable ABI manifest (Misc/stable_abi.txt) exists only to fill the
+# The stable ABI manifest (Misc/stable_abi.toml) exists only to fill the
 # following dataclasses.
 # Feel free to change its syntax (and the `parse_manifest` function)
 # to better serve that purpose (while keeping it human-readable).
 
-@dataclasses.dataclass
 class Manifest:
     """Collection of `ABIItem`s forming the stable ABI/limited API."""
-
-    kind = 'manifest'
-    contents: dict = dataclasses.field(default_factory=dict)
+    def __init__(self):
+        self.contents = dict()
 
     def add(self, item):
         if item.name in self.contents:
@@ -69,14 +63,6 @@ class Manifest:
             # even if they're different kinds (e.g. function vs. macro).
             raise ValueError(f'duplicate ABI item {item.name}')
         self.contents[item.name] = item
-
-    @property
-    def feature_defines(self):
-        """Return all feature defines which affect what's available
-
-        These are e.g. HAVE_FORK and MS_WINDOWS.
-        """
-        return set(item.ifdef for item in self.contents.values()) - {None}
 
     def select(self, kinds, *, include_abi_only=True, ifdef=None):
         """Yield selected items of the manifest
@@ -86,7 +72,7 @@ class Manifest:
             stable ABI.
             If False, include only items from the limited API
             (i.e. items people should use today)
-        ifdef: set of feature defines (e.g. {'HAVE_FORK', 'MS_WINDOWS'}).
+        ifdef: set of feature macros (e.g. {'HAVE_FORK', 'MS_WINDOWS'}).
             If None (default), items are not filtered by this. (This is
             different from the empty set, which filters out all such
             conditional items.)
@@ -104,78 +90,75 @@ class Manifest:
 
     def dump(self):
         """Yield lines to recreate the manifest file (sans comments/newlines)"""
-        # Recursive in preparation for struct member & function argument nodes
         for item in self.contents.values():
-            yield from item.dump(indent=0)
+            fields = dataclasses.fields(item)
+            yield f"[{item.kind}.{item.name}]"
+            for field in fields:
+                if field.name in {'name', 'value', 'kind'}:
+                    continue
+                value = getattr(item, field.name)
+                if value == field.default:
+                    pass
+                elif value is True:
+                    yield f"    {field.name} = true"
+                elif value:
+                    yield f"    {field.name} = {value!r}"
 
+
+itemclasses = {}
+def itemclass(kind):
+    """Register the decorated class in `itemclasses`"""
+    def decorator(cls):
+        itemclasses[kind] = cls
+        return cls
+    return decorator
+
+@itemclass('function')
+@itemclass('macro')
+@itemclass('data')
+@itemclass('const')
+@itemclass('typedef')
 @dataclasses.dataclass
 class ABIItem:
     """Information on one item (function, macro, struct, etc.)"""
 
-    kind: str
     name: str
+    kind: str
     added: str = None
-    contents: list = dataclasses.field(default_factory=list)
     abi_only: bool = False
     ifdef: str = None
 
-    KINDS = frozenset({
-        'struct', 'function', 'macro', 'data', 'const', 'typedef',
-    })
+@itemclass('feature_macro')
+@dataclasses.dataclass(kw_only=True)
+class FeatureMacro(ABIItem):
+    name: str
+    doc: str
+    windows: bool = False
+    abi_only: bool = True
 
-    def dump(self, indent=0):
-        yield f"{'    ' * indent}{self.kind} {self.name}"
-        if self.added:
-            yield f"{'    ' * (indent+1)}added {self.added}"
-        if self.ifdef:
-            yield f"{'    ' * (indent+1)}ifdef {self.ifdef}"
-        if self.abi_only:
-            yield f"{'    ' * (indent+1)}abi_only"
+@itemclass('struct')
+@dataclasses.dataclass(kw_only=True)
+class Struct(ABIItem):
+    struct_abi_kind: str
+    members: list = None
+
 
 def parse_manifest(file):
     """Parse the given file (iterable of lines) to a Manifest"""
 
-    LINE_RE = re.compile('(?P<indent>[ ]*)(?P<kind>[^ ]+)[ ]*(?P<content>.*)')
     manifest = Manifest()
 
-    # parents of currently processed line, each with its indentation level
-    levels = [(manifest, -1)]
+    data = tomllib.load(file)
 
-    def raise_error(msg):
-        raise SyntaxError(f'line {lineno}: {msg}')
+    for kind, itemclass in itemclasses.items():
+        for name, item_data in data[kind].items():
+            try:
+                item = itemclass(name=name, kind=kind, **item_data)
+                manifest.add(item)
+            except BaseException as exc:
+                exc.add_note(f'in {kind} {name}')
+                raise
 
-    for lineno, line in enumerate(file, start=1):
-        line, sep, comment = line.partition('#')
-        line = line.rstrip()
-        if not line:
-            continue
-        match = LINE_RE.fullmatch(line)
-        if not match:
-            raise_error(f'invalid syntax: {line}')
-        level = len(match['indent'])
-        kind = match['kind']
-        content = match['content']
-        while level <= levels[-1][1]:
-            levels.pop()
-        parent = levels[-1][0]
-        entry = None
-        if kind in ABIItem.KINDS:
-            if parent.kind not in {'manifest'}:
-                raise_error(f'{kind} cannot go in {parent.kind}')
-            entry = ABIItem(kind, content)
-            parent.add(entry)
-        elif kind in {'added', 'ifdef'}:
-            if parent.kind not in ABIItem.KINDS:
-                raise_error(f'{kind} cannot go in {parent.kind}')
-            setattr(parent, kind, content)
-        elif kind in {'abi_only'}:
-            if parent.kind not in {'function', 'data'}:
-                raise_error(f'{kind} cannot go in {parent.kind}')
-            parent.abi_only = True
-        else:
-            raise_error(f"unknown kind {kind!r}")
-            # When adding more, update the comment in stable_abi.txt.
-        levels.append((entry, level))
     return manifest
 
 # The tool can run individual "actions".
@@ -219,9 +202,14 @@ def gen_python3dll(manifest, args, outfile):
     def sort_key(item):
         return item.name.lower()
 
+    windows_feature_macros = {
+        item.name for item in manifest.select({'feature_macro'}) if item.windows
+    }
     for item in sorted(
             manifest.select(
-                {'function'}, include_abi_only=True, ifdef={'MS_WINDOWS'}),
+                {'function'},
+                include_abi_only=True,
+                ifdef=windows_feature_macros),
             key=sort_key):
         write(f'EXPORT_FUNC({item.name})')
 
@@ -229,7 +217,9 @@ def gen_python3dll(manifest, args, outfile):
 
     for item in sorted(
             manifest.select(
-                {'data'}, include_abi_only=True, ifdef={'MS_WINDOWS'}),
+                {'data'},
+                include_abi_only=True,
+                ifdef=windows_feature_macros),
             key=sort_key):
         write(f'EXPORT_DATA({item.name})')
 
@@ -246,18 +236,29 @@ REST_ROLES = {
 def gen_doc_annotations(manifest, args, outfile):
     """Generate/check the stable ABI list for documentation annotations"""
     writer = csv.DictWriter(
-        outfile, ['role', 'name', 'added', 'ifdef_note'], lineterminator='\n')
+        outfile,
+        ['role', 'name', 'added', 'ifdef_note', 'struct_abi_kind'],
+        lineterminator='\n')
     writer.writeheader()
     for item in manifest.select(REST_ROLES.keys(), include_abi_only=False):
         if item.ifdef:
-            ifdef_note = IFDEF_DOC_NOTES[item.ifdef]
+            ifdef_note = manifest.contents[item.ifdef].doc
         else:
             ifdef_note = None
-        writer.writerow({
+        row = {
             'role': REST_ROLES[item.kind],
             'name': item.name,
             'added': item.added,
-            'ifdef_note': ifdef_note})
+            'ifdef_note': ifdef_note}
+        rows = [row]
+        if item.kind == 'struct':
+            row['struct_abi_kind'] = item.struct_abi_kind
+            for member_name in item.members or ():
+                rows.append({
+                    'role': 'member',
+                    'name': f'{item.name}.{member_name}',
+                    'added': item.added})
+        writer.writerows(rows)
 
 @generator("ctypes_test", 'Lib/test/test_stable_abi_ctypes.py')
 def gen_ctypes_test(manifest, args, outfile):
@@ -269,23 +270,43 @@ def gen_ctypes_test(manifest, args, outfile):
         """Test that all symbols of the Stable ABI are accessible using ctypes
         """
 
+        import sys
         import unittest
         from test.support.import_helper import import_module
+        from _testcapi import get_feature_macros
 
+        feature_macros = get_feature_macros()
         ctypes_test = import_module('ctypes')
 
         class TestStableABIAvailability(unittest.TestCase):
             def test_available_symbols(self):
+
                 for symbol_name in SYMBOL_NAMES:
                     with self.subTest(symbol_name):
                         ctypes_test.pythonapi[symbol_name]
+
+            def test_feature_macros(self):
+                self.assertEqual(
+                    set(get_feature_macros()), EXPECTED_FEATURE_MACROS)
+
+            # The feature macros for Windows are used in creating the DLL
+            # definition, so they must be known on all platforms.
+            # If we are on Windows, we check that the hardcoded data matches
+            # the reality.
+            @unittest.skipIf(sys.platform != "win32", "Windows specific test")
+            def test_windows_feature_macros(self):
+                for name, value in WINDOWS_FEATURE_MACROS.items():
+                    if value != 'maybe':
+                        with self.subTest(name):
+                            self.assertEqual(feature_macros[name], value)
 
         SYMBOL_NAMES = (
     '''))
     items = manifest.select(
         {'function', 'data'},
         include_abi_only=True,
-        ifdef=set())
+    )
+    optional_items = {}
     for item in items:
         if item.name in (
                 # Some symbols aren't exported on all platforms.
@@ -293,8 +314,45 @@ def gen_ctypes_test(manifest, args, outfile):
                 'PyModule_Create2', 'PyModule_FromDefAndSpec2',
             ):
             continue
-        write(f'    "{item.name}",')
+        if item.ifdef:
+            optional_items.setdefault(item.ifdef, []).append(item.name)
+        else:
+            write(f'    "{item.name}",')
     write(")")
+    for ifdef, names in optional_items.items():
+        write(f"if feature_macros[{ifdef!r}]:")
+        write(f"    SYMBOL_NAMES += (")
+        for name in names:
+            write(f"        {name!r},")
+        write("    )")
+    write("")
+    feature_macros = list(manifest.select({'feature_macro'}))
+    feature_names = sorted(m.name for m in feature_macros)
+    write(f"EXPECTED_FEATURE_MACROS = set({pprint.pformat(feature_names)})")
+
+    windows_feature_macros = {m.name: m.windows for m in feature_macros}
+    write(f"WINDOWS_FEATURE_MACROS = {pprint.pformat(windows_feature_macros)}")
+
+
+@generator("testcapi_feature_macros", 'Modules/_testcapi_feature_macros.inc')
+def gen_testcapi_feature_macros(manifest, args, outfile):
+    """Generate/check the stable ABI list for documentation annotations"""
+    write = partial(print, file=outfile)
+    write('// Generated by Tools/scripts/stable_abi.py')
+    write()
+    write('// Add an entry in dict `result` for each Stable ABI feature macro.')
+    write()
+    for macro in manifest.select({'feature_macro'}):
+        name = macro.name
+        write(f'#ifdef {name}')
+        write(f'    res = PyDict_SetItemString(result, "{name}", Py_True);')
+        write('#else')
+        write(f'    res = PyDict_SetItemString(result, "{name}", Py_False);')
+        write('#endif')
+        write('if (res) {')
+        write('    Py_DECREF(result); return NULL;')
+        write('}')
+        write()
 
 
 def generate_or_check(manifest, args, path, func):
@@ -331,7 +389,8 @@ def do_unixy_check(manifest, args):
     # Get all macros first: we'll need feature macros like HAVE_FORK and
     # MS_WINDOWS for everything else
     present_macros = gcc_get_limited_api_macros(['Include/Python.h'])
-    feature_defines = manifest.feature_defines & present_macros
+    feature_macros = set(m.name for m in manifest.select({'feature_macro'}))
+    feature_macros &= present_macros
 
     # Check that we have all needed macros
     expected_macros = set(
@@ -344,7 +403,7 @@ def do_unixy_check(manifest, args):
         + 'with Py_LIMITED_API:')
 
     expected_symbols = set(item.name for item in manifest.select(
-        {'function', 'data'}, include_abi_only=True, ifdef=feature_defines,
+        {'function', 'data'}, include_abi_only=True, ifdef=feature_macros,
     ))
 
     # Check the static library (*.a)
@@ -364,7 +423,7 @@ def do_unixy_check(manifest, args):
 
     # Check definitions in the header files
     expected_defs = set(item.name for item in manifest.select(
-        {'function', 'data'}, include_abi_only=False, ifdef=feature_defines,
+        {'function', 'data'}, include_abi_only=False, ifdef=feature_macros,
     ))
     found_defs = gcc_get_limited_api_definitions(['Include/Python.h'])
     missing_defs = expected_defs - found_defs
@@ -541,6 +600,28 @@ def check_private_names(manifest):
                 f'`{name}` is private (underscore-prefixed) and should be '
                 + 'removed from the stable ABI list or or marked `abi_only`')
 
+def check_dump(manifest, filename):
+    """Check that manifest.dump() corresponds to the data.
+
+    Mainly useful when debugging this script.
+    """
+    dumped = tomllib.loads('\n'.join(manifest.dump()))
+    with filename.open('rb') as file:
+        from_file = tomllib.load(file)
+    if dumped != from_file:
+        print(f'Dump differs from loaded data!', file=sys.stderr)
+        diff = difflib.unified_diff(
+            pprint.pformat(dumped).splitlines(),
+            pprint.pformat(from_file).splitlines(),
+            '<dumped>', str(filename),
+            lineterm='',
+        )
+        for line in diff:
+            print(line, file=sys.stderr)
+        return False
+    else:
+        return True
+
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -602,7 +683,16 @@ def main():
         run_all_generators = True
         args.unixy_check = True
 
-    with args.file.open() as file:
+    try:
+        file = args.file.open('rb')
+    except FileNotFoundError as err:
+        if args.file.suffix == '.txt':
+            # Provide a better error message
+            suggestion = args.file.with_suffix('.toml')
+            raise FileNotFoundError(
+                f'{args.file} not found. Did you mean {suggestion} ?') from err
+        raise
+    with file:
         manifest = parse_manifest(file)
 
     check_private_names(manifest)
@@ -615,7 +705,7 @@ def main():
     if args.dump:
         for line in manifest.dump():
             print(line)
-        results['dump'] = True
+        results['dump'] = check_dump(manifest, args.file)
 
     for gen in generators:
         filename = getattr(args, gen.var_name)
@@ -656,7 +746,7 @@ def main():
 
         And in PEP 384:
 
-        https://www.python.org/dev/peps/pep-0384/
+        https://peps.python.org/pep-0384/
         """)
 
 

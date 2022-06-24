@@ -113,7 +113,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
     def __del__(self, _warn=warnings.warn):
         if self._sock is not None:
             _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
-            self.close()
+            self._sock.close()
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
         try:
@@ -158,7 +158,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             # end then it may fail with ERROR_NETNAME_DELETED if we
             # just close our end.  First calling shutdown() seems to
             # cure it, but maybe using DisconnectEx() would be better.
-            if hasattr(self._sock, 'shutdown'):
+            if hasattr(self._sock, 'shutdown') and self._sock.fileno() != -1:
                 self._sock.shutdown(socket.SHUT_RDWR)
             self._sock.close()
             self._sock = None
@@ -459,6 +459,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                  waiter=None, extra=None):
         self._address = address
         self._empty_waiter = None
+        self._buffer_size = 0
         # We don't need to call _protocol.connection_made() since our base
         # constructor does it for us.
         super().__init__(loop, sock, protocol, waiter=waiter, extra=extra)
@@ -471,7 +472,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
         _set_socket_extra(self, sock)
 
     def get_write_buffer_size(self):
-        return sum(len(data) for data, _ in self._buffer)
+        return self._buffer_size
 
     def abort(self):
         self._force_close(None)
@@ -496,6 +497,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
 
         # Ensure that what we buffer is immutable.
         self._buffer.append((bytes(data), addr))
+        self._buffer_size += len(data)
 
         if self._write_fut is None:
             # No current write operations are active, kick one off
@@ -522,6 +524,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                 return
 
             data, addr = self._buffer.popleft()
+            self._buffer_size -= len(data)
             if self._address is not None:
                 self._write_fut = self._loop._proactor.send(self._sock,
                                                             data)

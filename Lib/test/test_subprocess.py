@@ -1543,6 +1543,22 @@ class ProcessTestCase(BaseTestCase):
         self.assertIsInstance(subprocess.Popen[bytes], types.GenericAlias)
         self.assertIsInstance(subprocess.CompletedProcess[str], types.GenericAlias)
 
+    @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
+                     "vfork() not enabled by configure.")
+    @mock.patch("subprocess._fork_exec")
+    def test__use_vfork(self, mock_fork_exec):
+        self.assertTrue(subprocess._USE_VFORK)  # The default value regardless.
+        mock_fork_exec.side_effect = RuntimeError("just testing args")
+        with self.assertRaises(RuntimeError):
+            subprocess.run([sys.executable, "-c", "pass"])
+        mock_fork_exec.assert_called_once()
+        self.assertTrue(mock_fork_exec.call_args.args[-1])
+        with mock.patch.object(subprocess, '_USE_VFORK', False):
+            with self.assertRaises(RuntimeError):
+                subprocess.run([sys.executable, "-c", "pass"])
+            self.assertFalse(mock_fork_exec.call_args_list[-1].args[-1])
+
+
 class RunFuncTestCase(BaseTestCase):
     def run_python(self, code, **kwargs):
         """Run Python code in a subprocess using subprocess.run"""
@@ -1717,6 +1733,19 @@ class RunFuncTestCase(BaseTestCase):
                         msg="TimeoutExpired was delayed! Bad traceback:\n```\n"
                         f"{stacks}```")
 
+    def test_encoding_warning(self):
+        code = textwrap.dedent("""\
+            from subprocess import *
+            run("echo hello", shell=True, text=True)
+            check_output("echo hello", shell=True, text=True)
+            """)
+        cp = subprocess.run([sys.executable, "-Xwarn_default_encoding", "-c", code],
+                            capture_output=True)
+        lines = cp.stderr.splitlines()
+        self.assertEqual(len(lines), 2, lines)
+        self.assertTrue(lines[0].startswith(b"<string>:2: EncodingWarning: "))
+        self.assertTrue(lines[1].startswith(b"<string>:3: EncodingWarning: "))
+
 
 def _get_test_grp_name():
     for name_group in ('staff', 'nogroup', 'grp', 'nobody', 'nfsnobody'):
@@ -1805,7 +1834,7 @@ class POSIXProcessTestCase(BaseTestCase):
         def __del__(self):
             pass
 
-    @mock.patch("subprocess._posixsubprocess.fork_exec")
+    @mock.patch("subprocess._fork_exec")
     def test_exception_errpipe_normal(self, fork_exec):
         """Test error passing done through errpipe_write in the good case"""
         def proper_error(*args):
@@ -1822,7 +1851,7 @@ class POSIXProcessTestCase(BaseTestCase):
             with self.assertRaises(IsADirectoryError):
                 self.PopenNoDestructor(["non_existent_command"])
 
-    @mock.patch("subprocess._posixsubprocess.fork_exec")
+    @mock.patch("subprocess._fork_exec")
     def test_exception_errpipe_bad_data(self, fork_exec):
         """Test error passing done through errpipe_write where its not
         in the expected format"""
@@ -1876,13 +1905,31 @@ class POSIXProcessTestCase(BaseTestCase):
             output = subprocess.check_output(
                     [sys.executable, "-c", "import os; print(os.getsid(0))"],
                     start_new_session=True)
-        except OSError as e:
+        except PermissionError as e:
             if e.errno != errno.EPERM:
-                raise
+                raise  # EACCES?
         else:
             parent_sid = os.getsid(0)
             child_sid = int(output)
             self.assertNotEqual(parent_sid, child_sid)
+
+    @unittest.skipUnless(hasattr(os, 'setpgid') and hasattr(os, 'getpgid'),
+                         'no setpgid or getpgid on platform')
+    def test_process_group_0(self):
+        # For code coverage of calling setpgid().  We don't care if we get an
+        # EPERM error from it depending on the test execution environment, that
+        # still indicates that it was called.
+        try:
+            output = subprocess.check_output(
+                    [sys.executable, "-c", "import os; print(os.getpgid(0))"],
+                    process_group=0)
+        except PermissionError as e:
+            if e.errno != errno.EPERM:
+                raise  # EACCES?
+        else:
+            parent_pgid = os.getpgid(0)
+            child_pgid = int(output)
+            self.assertNotEqual(parent_pgid, child_pgid)
 
     @unittest.skipUnless(hasattr(os, 'setreuid'), 'no setreuid on platform')
     def test_user(self):
@@ -2112,7 +2159,7 @@ class POSIXProcessTestCase(BaseTestCase):
                                  preexec_fn=raise_it)
         except subprocess.SubprocessError as e:
             self.assertTrue(
-                    subprocess._posixsubprocess,
+                    subprocess._fork_exec,
                     "Expected a ValueError from the preexec_fn")
         except ValueError as e:
             self.assertIn("coconut", e.args[0])
@@ -2600,11 +2647,11 @@ class POSIXProcessTestCase(BaseTestCase):
                 preexec_fn=prepare)
         except ValueError as err:
             # Pure Python implementations keeps the message
-            self.assertIsNone(subprocess._posixsubprocess)
+            self.assertIsNone(subprocess._fork_exec)
             self.assertEqual(str(err), "surrogate:\uDCff")
         except subprocess.SubprocessError as err:
             # _posixsubprocess uses a default message
-            self.assertIsNotNone(subprocess._posixsubprocess)
+            self.assertIsNotNone(subprocess._fork_exec)
             self.assertEqual(str(err), "Exception occurred in preexec_fn.")
         else:
             self.fail("Expected ValueError or subprocess.SubprocessError")
@@ -3105,9 +3152,9 @@ class POSIXProcessTestCase(BaseTestCase):
                         True, (), cwd, env_list,
                         -1, -1, -1, -1,
                         1, 2, 3, 4,
-                        True, True,
+                        True, True, 0,
                         False, [], 0, -1,
-                        func)
+                        func, False)
                 # Attempt to prevent
                 # "TypeError: fork_exec() takes exactly N arguments (M given)"
                 # from passing the test.  More refactoring to have us start
@@ -3154,9 +3201,9 @@ class POSIXProcessTestCase(BaseTestCase):
                         True, fds_to_keep, None, [b"env"],
                         -1, -1, -1, -1,
                         1, 2, 3, 4,
-                        True, True,
+                        True, True, 0,
                         None, None, None, -1,
-                        None)
+                        None, "no vfork")
                 self.assertIn('fds_to_keep', str(c.exception))
         finally:
             if not gc_enabled:

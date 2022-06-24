@@ -242,6 +242,14 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         test_utils.run_briefly(self.loop)
         self.assertFalse(self.protocol.connection_lost.called)
 
+    def test_close_invalid_sockobj(self):
+        tr = self.socket_transport()
+        self.sock.fileno.return_value = -1
+        tr.close()
+        test_utils.run_briefly(self.loop)
+        self.protocol.connection_lost.assert_called_with(None)
+        self.assertFalse(self.sock.shutdown.called)
+
     @mock.patch('asyncio.base_events.logger')
     def test_fatal_error(self, m_logging):
         tr = self.socket_transport()
