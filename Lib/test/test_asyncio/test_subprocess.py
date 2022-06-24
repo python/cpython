@@ -715,13 +715,13 @@ else:
 class GenericWatcherTests(test_utils.TestCase):
 
     def test_create_subprocess_fails_with_inactive_watcher(self):
+        watcher = mock.create_autospec(
+            asyncio.AbstractChildWatcher,
+            **{"__enter__.return_value.is_active.return_value": False}
+        )
 
         async def execute():
-            watcher = mock.create_autospec(asyncio.AbstractChildWatcher)
-            watcher.is_active.return_value = False
             asyncio.set_child_watcher(watcher)
-            self.assertIs(asyncio.get_child_watcher(), watcher)
-            self.assertFalse(asyncio.get_child_watcher().is_active())
 
             with self.assertRaises(RuntimeError):
                 await subprocess.create_subprocess_exec(
@@ -730,6 +730,11 @@ class GenericWatcherTests(test_utils.TestCase):
             watcher.add_child_handler.assert_not_called()
 
         self.assertIsNone(asyncio.run(execute()))
+        self.assertListEqual(watcher.mock_calls, [
+            mock.call.__enter__(),
+            mock.call.__enter__().is_active(),
+            mock.call.__exit__(RuntimeError, mock.ANY, mock.ANY),
+        ])
 
 
     def has_pidfd_support():
