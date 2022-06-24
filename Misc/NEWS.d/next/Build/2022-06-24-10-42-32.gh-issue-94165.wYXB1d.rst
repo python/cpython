@@ -1,0 +1,2 @@
+Fix SQLite 3 dependency detection on Emscripten by preventing configure from
+adding multiple linker options for each SQLite 3 C API it checks.
