@@ -6775,13 +6775,11 @@ then
   case $ac_sys_system/$ac_sys_emscripten_target in #(
   Emscripten/node*) :
 
+      # bigint for ctypes c_longlong, c_longdouble
+      HOSTRUNNER="node --experimental-wasm-bigint"
       if test "x$enable_wasm_pthreads" = xyes; then :
 
-        HOSTRUNNER='node --experimental-wasm-threads --experimental-wasm-bulk-memory'
-
-else
-
-        HOSTRUNNER='node'
+        HOSTRUNNER="$HOSTRUNNER --experimental-wasm-threads --experimental-wasm-bulk-memory"
 
 fi
      ;; #(
