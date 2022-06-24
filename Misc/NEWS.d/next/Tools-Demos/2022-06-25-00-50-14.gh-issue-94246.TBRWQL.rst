@@ -1,0 +1,2 @@
+Argument Clinic started to prefer user supplied names for document string
+rendering of special variables (like ``self`` and ``module``).
