@@ -214,6 +214,16 @@ Removed
   also a static method.
   (Contributed by Victor Stinner in :gh:`94169`.)
 
+* Remove the :func:`ssl.RAND_pseudo_bytes` function, deprecated in Python 3.6:
+  use :func:`os.urandom` or :func:`ssl.RAND_bytes` instead.
+  (Contributed by Victor Stinner in :gh:`94199`.)
+
+* :mod:`gzip`: Remove the ``filename`` attribute of :class:`gzip.GzipFile`,
+  deprecated since Python 2.6, use the :attr:`~gzip.GzipFile.name` attribute
+  instead. In write mode, the ``filename`` attribute added ``'.gz'`` file
+  extension if it was not present.
+  (Contributed by Victor Stinner in :gh:`94196`.)
+
 
 Porting to Python 3.12
 ======================
