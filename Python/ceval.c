@@ -23,7 +23,7 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
-#include "pycore_sliceobject.h"   // _PyBuildSlice_Consume2
+#include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
@@ -2145,7 +2145,7 @@ handle_eval_breaker:
             PyObject *start = POP();
             PyObject *container = TOP();
 
-            PyObject *slice = _PyBuildSlice_Consume2(start, stop);
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
             if (slice == NULL) {
                 goto error;
             }
@@ -2165,7 +2165,7 @@ handle_eval_breaker:
             PyObject *container = TOP();
             PyObject *v = SECOND();
 
-            PyObject *slice = _PyBuildSlice_Consume2(start, stop);
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
             if (slice == NULL) {
                 goto error;
             }
