@@ -2,10 +2,10 @@ import faulthandler
 import json
 import os.path
 import queue
-import shlex
 import signal
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import traceback
@@ -58,8 +58,7 @@ def run_test_in_subprocess(testname: str, ns: Namespace, tmp_dir: str) -> subpro
     worker_args = (ns_dict, testname)
     worker_args = json.dumps(worker_args)
     if ns.python is not None:
-        # The "executable" may be two or more parts, e.g. "node python.js"
-        executable = shlex.split(ns.python)
+        executable = ns.python
     else:
         executable = [sys.executable]
     cmd = [*executable, *support.args_from_interpreter_flags(),
@@ -273,14 +272,16 @@ class TestWorkerProcess(threading.Thread):
             self.current_test_name = None
 
     def _runtest(self, test_name: str) -> MultiprocessResult:
-        if self.ns.use_mp == 1:
+        # Don't check for leaked temporary files and directories if Python is
+        # run on WASI. WASI don't pass environment variables like TMPDIR to
+        # worker processes.
+        if not support.is_wasi:
             # gh-93353: Check for leaked temporary files in the parent process,
             # since the deletion of temporary files can happen late during
             # Python finalization: too late for libregrtest.
-            tmp_dir = os.getcwd() + '_tmpdir'
+            tmp_dir = tempfile.mkdtemp(prefix="test_python_")
             tmp_dir = os.path.abspath(tmp_dir)
             try:
-                os.mkdir(tmp_dir)
                 retcode, stdout = self._run_process(test_name, tmp_dir)
             finally:
                 tmp_files = os.listdir(tmp_dir)

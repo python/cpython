@@ -278,6 +278,11 @@ _specializations = {
     "EXTENDED_ARG": [
         "EXTENDED_ARG_QUICK",
     ],
+    "FOR_ITER": [
+        "FOR_ITER_ADAPTIVE",
+        "FOR_ITER_LIST",
+        "FOR_ITER_RANGE",
+    ],
     "JUMP_BACKWARD": [
         "JUMP_BACKWARD_QUICK",
     ],
@@ -287,6 +292,7 @@ _specializations = {
         "LOAD_ATTR_CLASS",
         "LOAD_ATTR_INSTANCE_VALUE",
         "LOAD_ATTR_MODULE",
+        "LOAD_ATTR_PROPERTY",
         "LOAD_ATTR_SLOT",
         "LOAD_ATTR_WITH_HINT",
         # These will always push [unbound method, self] onto the stack.
@@ -365,6 +371,9 @@ _cache_format = {
         "counter": 1,
         "type_version": 2,
         "func_version": 1,
+    },
+    "FOR_ITER": {
+        "counter": 1,
     },
     "LOAD_ATTR": {
         "counter": 1,

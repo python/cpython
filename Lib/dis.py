@@ -37,6 +37,7 @@ LOAD_CONST = opmap['LOAD_CONST']
 LOAD_GLOBAL = opmap['LOAD_GLOBAL']
 BINARY_OP = opmap['BINARY_OP']
 JUMP_BACKWARD = opmap['JUMP_BACKWARD']
+FOR_ITER = opmap['FOR_ITER']
 LOAD_ATTR = opmap['LOAD_ATTR']
 
 CACHE = opmap["CACHE"]
@@ -476,6 +477,8 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             elif deop in hasjrel:
                 signed_arg = -arg if _is_backward_jump(deop) else arg
                 argval = offset + 2 + signed_arg*2
+                if deop == FOR_ITER:
+                    argval += 2
                 argrepr = "to " + repr(argval)
             elif deop in haslocal or deop in hasfree:
                 argval, argrepr = _get_name_info(arg, varname_from_oparg)
@@ -497,17 +500,29 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         yield Instruction(_all_opname[op], op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target, positions)
-        if show_caches and _inline_cache_entries[deop]:
-            for name, caches in _cache_format[opname[deop]].items():
-                data = code[offset + 2: offset + 2 + caches * 2]
-                argrepr = f"{name}: {int.from_bytes(data, sys.byteorder)}"
-                for _ in range(caches):
-                    offset += 2
-                    yield Instruction(
-                        "CACHE", 0, 0, None, argrepr, offset, None, False, None
-                    )
-                    # Only show the actual value for the first cache entry:
+        caches = _inline_cache_entries[deop]
+        if not caches:
+            continue
+        if not show_caches:
+            # We still need to advance the co_positions iterator:
+            for _ in range(caches):
+                next(co_positions, ())
+            continue
+        for name, size in _cache_format[opname[deop]].items():
+            for i in range(size):
+                offset += 2
+                # Only show the fancy argrepr for a CACHE instruction when it's
+                # the first entry for a particular cache value and the
+                # instruction using it is actually quickened:
+                if i == 0 and op != deop:
+                    data = code[offset: offset + 2 * size]
+                    argrepr = f"{name}: {int.from_bytes(data, sys.byteorder)}"
+                else:
                     argrepr = ""
+                yield Instruction(
+                    "CACHE", CACHE, 0, None, argrepr, offset, None, False,
+                    Positions(*next(co_positions, ()))
+                )
 
 def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False):
     """Disassemble a code object."""
@@ -617,11 +632,14 @@ def findlabels(code):
     labels = []
     for offset, op, arg in _unpack_opargs(code):
         if arg is not None:
-            if op in hasjrel:
-                if _is_backward_jump(op):
+            deop = _deoptop(op)
+            if deop in hasjrel:
+                if _is_backward_jump(deop):
                     arg = -arg
                 label = offset + 2 + arg*2
-            elif op in hasjabs:
+                if deop == FOR_ITER:
+                    label += 2
+            elif deop in hasjabs:
                 label = arg*2
             else:
                 continue
