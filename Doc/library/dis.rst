@@ -514,8 +514,8 @@ the original TOS1.
 
 .. opcode:: GET_ANEXT
 
-   Implements ``PUSH(get_awaitable(TOS.__anext__()))``.  See ``GET_AWAITABLE``
-   for details about ``get_awaitable``
+   Pushes ``get_awaitable(TOS.__anext__())`` to the stack.  See
+   ``GET_AWAITABLE`` for details about ``get_awaitable``.
 
    .. versionadded:: 3.5
 
