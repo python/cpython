@@ -238,7 +238,11 @@ PyHash_GetFuncDef(void)
 #    error SIZEOF_PY_UHASH_T must be 4 or 8
 #  endif /* SIZEOF_PY_UHASH_T */
 #else /* not Windows */
-#  define PY_UHASH_CPY(dst, src) memcpy(dst, src, SIZEOF_PY_UHASH_T)
+#  if _Py__has_builtin(__builtin_memcpy_inline)
+#    define PY_UHASH_CPY(dst, src) __builtin_memcpy_inline(dst, src, SIZEOF_PY_UHASH_T)
+#  else
+#    define PY_UHASH_CPY(dst, src) memcpy(dst, src, SIZEOF_PY_UHASH_T)
+#  endif
 #endif /* _MSC_VER */
 
 
