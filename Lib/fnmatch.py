@@ -16,7 +16,7 @@ import functools
 
 __all__ = ["filter", "fnmatch", "fnmatchcase", "translate"]
 
-def fnmatch(name, pat):
+def fnmatch(filename, pattern):
     """Test whether FILENAME matches PATTERN.
 
     Patterns are Unix shell style:
@@ -31,47 +31,47 @@ def fnmatch(name, pat):
     if the operating system requires it.
     If you don't want this, use fnmatchcase(FILENAME, PATTERN).
     """
-    name = os.path.normcase(name)
-    pat = os.path.normcase(pat)
-    return fnmatchcase(name, pat)
+    filename = os.path.normcase(filename)
+    pattern = os.path.normcase(pattern)
+    return fnmatchcase(filename, pattern)
 
 @functools.lru_cache(maxsize=32768, typed=True)
-def _compile_pattern(pat):
-    if isinstance(pat, bytes):
-        pat_str = str(pat, 'ISO-8859-1')
+def _compile_pattern(pattern):
+    if isinstance(pattern, bytes):
+        pat_str = str(pattern, 'ISO-8859-1')
         res_str = translate(pat_str)
         res = bytes(res_str, 'ISO-8859-1')
     else:
-        res = translate(pat)
+        res = translate(pattern)
     return re.compile(res).match
 
-def filter(names, pat):
+def filter(filenames, pattern):
     """Construct a list from those elements of the iterable NAMES that match PAT."""
     result = []
-    pat = os.path.normcase(pat)
-    match = _compile_pattern(pat)
+    pattern = os.path.normcase(pattern)
+    match = _compile_pattern(pattern)
     if os.path is posixpath:
         # normcase on posix is NOP. Optimize it away from the loop.
-        for name in names:
-            if match(name):
-                result.append(name)
+        for filename in filenames:
+            if match(filename):
+                result.append(filename)
     else:
-        for name in names:
-            if match(os.path.normcase(name)):
-                result.append(name)
+        for filename in filenames:
+            if match(os.path.normcase(filename)):
+                result.append(filename)
     return result
 
-def fnmatchcase(name, pat):
+def fnmatchcase(filename, pattern):
     """Test whether FILENAME matches PATTERN, including case.
 
     This is a version of fnmatch() which doesn't case-normalize
     its arguments.
     """
-    match = _compile_pattern(pat)
-    return match(name) is not None
+    match = _compile_pattern(pattern)
+    return match(filename) is not None
 
 
-def translate(pat):
+def translate(pattern):
     """Translate a shell PATTERN to a regular expression.
 
     There is no way to quote meta-characters.
@@ -80,9 +80,9 @@ def translate(pat):
     STAR = object()
     res = []
     add = res.append
-    i, n = 0, len(pat)
+    i, n = 0, len(pattern)
     while i < n:
-        c = pat[i]
+        c = pattern[i]
         i = i+1
         if c == '*':
             # compress consecutive `*` into one
@@ -92,29 +92,29 @@ def translate(pat):
             add('.')
         elif c == '[':
             j = i
-            if j < n and pat[j] == '!':
+            if j < n and pattern[j] == '!':
                 j = j+1
-            if j < n and pat[j] == ']':
+            if j < n and pattern[j] == ']':
                 j = j+1
-            while j < n and pat[j] != ']':
+            while j < n and pattern[j] != ']':
                 j = j+1
             if j >= n:
                 add('\\[')
             else:
-                stuff = pat[i:j]
+                stuff = pattern[i:j]
                 if '-' not in stuff:
                     stuff = stuff.replace('\\', r'\\')
                 else:
                     chunks = []
-                    k = i+2 if pat[i] == '!' else i+1
+                    k = i+2 if pattern[i] == '!' else i+1
                     while True:
-                        k = pat.find('-', k, j)
+                        k = pattern.find('-', k, j)
                         if k < 0:
                             break
-                        chunks.append(pat[i:k])
+                        chunks.append(pattern[i:k])
                         i = k+1
                         k = k+3
-                    chunk = pat[i:j]
+                    chunk = pattern[i:j]
                     if chunk:
                         chunks.append(chunk)
                     else:
