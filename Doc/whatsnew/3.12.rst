@@ -118,6 +118,9 @@ CPython bytecode changes
 Deprecated
 ==========
 
+* The default :mod:`sqlite3` adapters and converters are now deprecated.
+  (Contributed by Erlend E. Aasland in :gh:`90016`.)
+
 
 Pending Removal in Python 3.13
 ==============================

@@ -1305,6 +1305,8 @@ This function can then be registered using :func:`register_adapter`.
 .. literalinclude:: ../includes/sqlite3/adapter_point_2.py
 
 
+.. _sqlite3-converters:
+
 Converting SQLite values to custom Python types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1345,27 +1347,24 @@ The following example illustrates the implicit and explicit approaches:
 .. literalinclude:: ../includes/sqlite3/converter_point.py
 
 
-Default adapters and converters
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Default adapters and converters (deprecated)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-There are default adapters for the date and datetime types in the datetime
-module. They will be sent as ISO dates/ISO timestamps to SQLite.
+.. note::
 
-The default converters are registered under the name "date" for
-:class:`datetime.date` and under the name "timestamp" for
-:class:`datetime.datetime`.
+   The default adapters and converters are deprecated as of Python 3.12.
+   Use the :ref:`sqlite3-adapter-converter-recipes`
+   and tailor them to you need.
 
-This way, you can use date/timestamps from Python without any additional
-fiddling in most cases. The format of the adapters is also compatible with the
-experimental SQLite date/time functions.
+The deprecated default adapters and converters consists of:
 
-The following example demonstrates this.
-
-.. literalinclude:: ../includes/sqlite3/pysqlite_datetime.py
-
-If a timestamp stored in SQLite has a fractional part longer than 6
-numbers, its value will be truncated to microsecond precision by the
-timestamp converter.
+* Adapt :class:`datetime.date` objects to ISO format :class:`strings <str>`.
+* Adapt :class:`datetime.datetime` objects to ISO format :class:`strings <str>`.
+* Convert :ref:`declared <sqlite3-converters>` "date" types to ``datetime.date``
+  objects.
+* Convert declared "timestamp" types to ``datetime.datetime`` objects.
+  If a timestamp stored in SQLite has a fractional part longer than 6
+  numbers, its value will be truncated to microsecond precision.
 
 .. note::
 
@@ -1373,6 +1372,12 @@ timestamp converter.
    always returns a naive :class:`datetime.datetime` object. To preserve UTC
    offsets in timestamps, either leave converters disabled, or register an
    offset-aware converter with :func:`register_converter`.
+
+.. versionchanged:: 3.12
+
+   Deprecated default adapters and converters.
+
+.. deprecated:: 3.12
 
 
 .. _sqlite3-adapter-converter-recipes:

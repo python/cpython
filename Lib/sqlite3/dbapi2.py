@@ -55,16 +55,24 @@ Binary = memoryview
 collections.abc.Sequence.register(Row)
 
 def register_adapters_and_converters():
+    from warnings import warn
+
+    msg = "The default {what} are deprecated as of Python 3.12"
+
     def adapt_date(val):
+        warn(msg.format(what="adapters"), DeprecationWarning, stacklevel=2)
         return val.isoformat()
 
     def adapt_datetime(val):
+        warn(msg.format(what="adapters"), DeprecationWarning, stacklevel=2)
         return val.isoformat(" ")
 
     def convert_date(val):
+        warn(msg.format(what="converters"), DeprecationWarning, stacklevel=2)
         return datetime.date(*map(int, val.split(b"-")))
 
     def convert_timestamp(val):
+        warn(msg.format(what="converters"), DeprecationWarning, stacklevel=2)
         datepart, timepart = val.split(b" ")
         year, month, day = map(int, datepart.split(b"-"))
         timepart_full = timepart.split(b".")

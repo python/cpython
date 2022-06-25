@@ -1,0 +1,2 @@
+Deprecate default :mod:`sqlite3` adapters and converters. Patch by Erlend E.
+Aasland.
