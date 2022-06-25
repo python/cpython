@@ -575,7 +575,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    .. note::
 
       This function is not thread-safe when custom archivers registered
-      with :func:`register_archive_format` does not support the *root_dir*
+      with :func:`register_archive_format` do not support the *root_dir*
       argument.  In this case it
       temporarily changes the current working directory of the process
       to perform archiving.
