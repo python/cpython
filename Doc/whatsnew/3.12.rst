@@ -224,6 +224,11 @@ Removed
   extension if it was not present.
   (Contributed by Victor Stinner in :gh:`94196`.)
 
+* Remove the :func:`ssl.match_hostname` function. The
+  :func:`ssl.match_hostname` was deprecated in Python 3.7. OpenSSL performs
+  hostname matching since Python 3.7, Python no longer uses the
+  :func:`ssl.match_hostname` function.
+  (Contributed by Victor Stinner in :gh:`94199`.)
 
 Porting to Python 3.12
 ======================
