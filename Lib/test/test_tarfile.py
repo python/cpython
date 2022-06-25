@@ -1554,6 +1554,74 @@ class Bz2StreamWriteTest(Bz2Test, StreamWriteTest):
 class LzmaStreamWriteTest(LzmaTest, StreamWriteTest):
     decompressor = lzma.LZMADecompressor if lzma else None
 
+class _CompressedWriteTest(TarTest):
+    # This is not actually a standalone test.
+    # It does not inherit WriteTest because it only makes sense with gz,bz2
+    source = (b"And we move to Bristol where they have a special, " +
+              b"Very Silly candidate")
+
+    def _compressed_tar(self, compresslevel):
+        fobj = io.BytesIO()
+        with tarfile.open(tmpname, self.mode, fobj,
+                          compresslevel=compresslevel) as tarfl:
+            tarfl.addfile(tarfile.TarInfo("foo"), io.BytesIO(self.source))
+        return fobj
+
+    def _test_bz2_header(self, compresslevel):
+        fobj = self._compressed_tar(compresslevel)
+        self.assertEqual(fobj.getvalue()[0:10],
+                         b"BZh%d1AY&SY" % compresslevel)
+
+    def _test_gz_header(self, compresslevel):
+        fobj = self._compressed_tar(compresslevel)
+        self.assertEqual(fobj.getvalue()[:3], b"\x1f\x8b\x08")
+
+class Bz2CompressWriteTest(Bz2Test, _CompressedWriteTest, unittest.TestCase):
+    prefix = "w:"
+    def test_compression_levels(self):
+        self._test_bz2_header(1)
+        self._test_bz2_header(5)
+        self._test_bz2_header(9)
+
+class Bz2CompressStreamWriteTest(Bz2Test, _CompressedWriteTest,
+        unittest.TestCase):
+    prefix = "w|"
+    def test_compression_levels(self):
+        self._test_bz2_header(1)
+        self._test_bz2_header(5)
+        self._test_bz2_header(9)
+
+class GzCompressWriteTest(GzipTest,  _CompressedWriteTest, unittest.TestCase):
+    prefix = "w:"
+    def test_compression_levels(self):
+        self._test_gz_header(1)
+        self._test_gz_header(5)
+        self._test_gz_header(9)
+
+class GzCompressStreamWriteTest(GzipTest, _CompressedWriteTest,
+        unittest.TestCase):
+    prefix = "w|"
+    def test_compression_levels(self):
+        self._test_gz_header(1)
+        self._test_gz_header(5)
+        self._test_gz_header(9)
+
+class CompressLevelRaises(unittest.TestCase):
+    def test_compresslevel_wrong_modes(self):
+        compresslevel = 5
+        fobj = io.BytesIO()
+        with self.assertRaises(TypeError):
+            tarfile.open(tmpname, "w:", fobj, compresslevel=compresslevel)
+
+    def test_wrong_compresslevels(self):
+        # BZ2 checks that the compresslevel is in [1,9]. gz does not
+        fobj = io.BytesIO()
+        with self.assertRaises(ValueError):
+            tarfile.open(tmpname, "w:bz2", fobj, compresslevel=0)
+        with self.assertRaises(ValueError):
+            tarfile.open(tmpname, "w:bz2", fobj, compresslevel=10)
+        with self.assertRaises(ValueError):
+            tarfile.open(tmpname, "w|bz2", fobj, compresslevel=10)
 
 class GNUWriteTest(unittest.TestCase):
     # This testcase checks for correct creation of GNU Longname
