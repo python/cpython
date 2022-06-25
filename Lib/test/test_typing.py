@@ -51,6 +51,10 @@ py_typing = import_helper.import_fresh_module('typing', blocked=['_typing'])
 c_typing = import_helper.import_fresh_module('typing', fresh=['_typing'])
 
 
+CANNOT_SUBCLASS_TYPE = 'Cannot subclass special typing classes'
+CANNOT_SUBCLASS_INSTANCE = 'Cannot subclass an instance of %s'
+
+
 class BaseTestCase(TestCase):
 
     def assertIsSubclass(self, cls, class_or_tuple, msg=None):
@@ -170,10 +174,11 @@ class BottomTypeTestsMixin:
             self.bottom_type[int]
 
     def test_cannot_subclass(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError,
+                'Cannot subclass ' + re.escape(str(self.bottom_type))):
             class A(self.bottom_type):
                 pass
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class A(type(self.bottom_type)):
                 pass
 
@@ -266,10 +271,11 @@ class SelfTests(BaseTestCase):
             Self[int]
 
     def test_cannot_subclass(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(Self)):
                 pass
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError,
+                r'Cannot subclass typing\.Self'):
             class C(Self):
                 pass
 
@@ -322,10 +328,11 @@ class LiteralStringTests(BaseTestCase):
             LiteralString[int]
 
     def test_cannot_subclass(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(LiteralString)):
                 pass
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError,
+                r'Cannot subclass typing\.LiteralString'):
             class C(LiteralString):
                 pass
 
@@ -415,15 +422,13 @@ class TypeVarTests(BaseTestCase):
         self.assertNotEqual(TypeVar('T'), TypeVar('T'))
         self.assertNotEqual(TypeVar('T', int, str), TypeVar('T', int, str))
 
-    def test_cannot_subclass_vars(self):
-        with self.assertRaises(TypeError):
-            class V(TypeVar('T')):
-                pass
-
-    def test_cannot_subclass_var_itself(self):
-        with self.assertRaises(TypeError):
-            class V(TypeVar):
-                pass
+    def test_cannot_subclass(self):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+            class V(TypeVar): pass
+        T = TypeVar("T")
+        with self.assertRaisesRegex(TypeError,
+                CANNOT_SUBCLASS_INSTANCE % 'TypeVar'):
+            class V(T): pass
 
     def test_cannot_instantiate_vars(self):
         with self.assertRaises(TypeError):
@@ -1016,15 +1021,14 @@ class TypeVarTupleTests(BaseTestCase):
         self.assertEndsWith(repr(F[float]), 'A[float, *tuple[str, ...]]')
         self.assertEndsWith(repr(F[float, str]), 'A[float, str, *tuple[str, ...]]')
 
-    def test_cannot_subclass_class(self):
-        with self.assertRaises(TypeError):
+    def test_cannot_subclass(self):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(TypeVarTuple): pass
-
-    def test_cannot_subclass_instance(self):
         Ts = TypeVarTuple('Ts')
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError,
+                CANNOT_SUBCLASS_INSTANCE % 'TypeVarTuple'):
             class C(Ts): pass
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, r'Cannot subclass \*Ts'):
             class C(Unpack[Ts]): pass
 
     def test_variadic_class_args_are_correct(self):
@@ -1411,13 +1415,15 @@ class UnionTests(BaseTestCase):
         self.assertEqual(repr(u), 'typing.Optional[str]')
 
     def test_cannot_subclass(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError,
+                r'Cannot subclass typing\.Union'):
             class C(Union):
                 pass
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(Union)):
                 pass
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError,
+                r'Cannot subclass typing\.Union\[int, str\]'):
             class C(Union[int, str]):
                 pass
 
@@ -3658,10 +3664,10 @@ class ClassVarTests(BaseTestCase):
         self.assertEqual(repr(cv), 'typing.ClassVar[%s.Employee]' % __name__)
 
     def test_cannot_subclass(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(ClassVar)):
                 pass
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(ClassVar[int])):
                 pass
 
@@ -3700,10 +3706,10 @@ class FinalTests(BaseTestCase):
         self.assertEqual(repr(cv), 'typing.Final[tuple[int]]')
 
     def test_cannot_subclass(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(Final)):
                 pass
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(Final[int])):
                 pass
 
@@ -6206,16 +6212,18 @@ class RequiredTests(BaseTestCase):
         self.assertEqual(repr(cv), f'typing.Required[{__name__}.Employee]')
 
     def test_cannot_subclass(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(Required)):
                 pass
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(Required[int])):
                 pass
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError,
+                r'Cannot subclass typing\.Required'):
             class C(Required):
                 pass
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError,
+                r'Cannot subclass typing\.Required\[int\]'):
             class C(Required[int]):
                 pass
 
@@ -6252,16 +6260,18 @@ class NotRequiredTests(BaseTestCase):
         self.assertEqual(repr(cv), f'typing.NotRequired[{__name__}.Employee]')
 
     def test_cannot_subclass(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(NotRequired)):
                 pass
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(NotRequired[int])):
                 pass
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError,
+                r'Cannot subclass typing\.NotRequired'):
             class C(NotRequired):
                 pass
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError,
+                r'Cannot subclass typing\.NotRequired\[int\]'):
             class C(NotRequired[int]):
                 pass
 
@@ -6677,7 +6687,8 @@ class TypeAliasTests(BaseTestCase):
             issubclass(TypeAlias, Employee)
 
     def test_cannot_subclass(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError,
+                r'Cannot subclass typing\.TypeAlias'):
             class C(TypeAlias):
                 pass
 
@@ -6879,6 +6890,24 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(C2[Concatenate[str, P2]].__parameters__, (P2,))
         self.assertEqual(C2[Concatenate[T, P2]].__parameters__, (T, P2))
 
+    def test_cannot_subclass(self):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+            class C(ParamSpec): pass
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+            class C(ParamSpecArgs): pass
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+            class C(ParamSpecKwargs): pass
+        P = ParamSpec('P')
+        with self.assertRaisesRegex(TypeError,
+                CANNOT_SUBCLASS_INSTANCE % 'ParamSpec'):
+            class C(P): pass
+        with self.assertRaisesRegex(TypeError,
+                CANNOT_SUBCLASS_INSTANCE % 'ParamSpecArgs'):
+            class C(P.args): pass
+        with self.assertRaisesRegex(TypeError,
+                CANNOT_SUBCLASS_INSTANCE % 'ParamSpecKwargs'):
+            class C(P.kwargs): pass
+
 
 class ConcatenateTests(BaseTestCase):
     def test_basics(self):
@@ -6945,10 +6974,10 @@ class TypeGuardTests(BaseTestCase):
         self.assertEqual(repr(cv), 'typing.TypeGuard[tuple[int]]')
 
     def test_cannot_subclass(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(TypeGuard)):
                 pass
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(TypeGuard[int])):
                 pass
 
