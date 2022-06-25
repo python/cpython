@@ -1,10 +1,12 @@
 from collections import abc
 import array
+import gc
 import math
 import operator
 import unittest
 import struct
 import sys
+import weakref
 
 from test import support
 from test.support import import_helper
@@ -671,6 +673,21 @@ class StructTest(unittest.TestCase):
         self.assertEqual(stdout.rstrip(), b"")
         self.assertIn(b"Exception ignored in:", stderr)
         self.assertIn(b"C.__del__", stderr)
+
+    def test__struct_reference_cycle_cleaned_up(self):
+        # Regression test for python/cpython#94207.
+
+        # When we create a new struct module, trigger use of its cache,
+        # and then delete it ...
+        _struct_module = import_helper.import_fresh_module("_struct")
+        module_ref = weakref.ref(_struct_module)
+        _struct_module.calcsize("b")
+        del _struct_module
+
+        # Then the module should have been garbage collected.
+        gc.collect()
+        self.assertIsNone(
+            module_ref(), "_struct module was not garbage collected")
 
     def test_issue35714(self):
         # Embedded null characters should not be allowed in format strings.
