@@ -98,8 +98,10 @@ popd
 ```
 
 ```shell
-node --experimental-wasm-threads --experimental-wasm-bulk-memory builddir/emscripten-node/python.js
+node --experimental-wasm-threads --experimental-wasm-bulk-memory --experimental-wasm-bigint builddir/emscripten-node/python.js
 ```
+
+(``--experimental-wasm-bigint`` is not needed with recent NodeJS versions)
 
 # wasm32-emscripten limitations and issues
 
@@ -173,6 +175,8 @@ functions.
   [bpo-46390](https://bugs.python.org/issue46390).
 - Python's object allocator ``obmalloc`` is disabled by default.
 - ``ensurepip`` is not available.
+- Some ``ctypes`` features like ``c_longlong`` and ``c_longdouble`` may need
+   NodeJS option ``--experimental-wasm-bigint``.
 
 ## wasm32-emscripten in browsers
 
@@ -235,10 +239,30 @@ are:
   call read/write/accept on a file descriptor that is passed into the process.
 - ``socket.gethostname()`` and host name resolution APIs like
   ``socket.gethostbyname()`` are not implemented and always fail.
+- ``open(2)`` checks flags more strictly. Caller must pass either
+  ``O_RDONLY``, ``O_RDWR``, or ``O_WDONLY`` to ``os.open``. Directory file
+  descriptors must be created with flags ``O_RDONLY | O_DIRECTORY``.
 - ``chmod(2)`` is not available. It's not possible to modify file permissions,
   yet. A future version of WASI may provide a limited ``set_permissions`` API.
+- User/group related features like ``os.chown()``, ``os.getuid``, etc. are
+  stubs or fail with ``ENOTSUP``.
 - File locking (``fcntl``) is not available.
 - ``os.pipe()``, ``os.mkfifo()``, and ``os.mknod()`` are not supported.
+- ``process_time`` does not work as expected because it's implemented using
+  wall clock.
+- ``os.umask()`` is a stub.
+- ``sys.executable`` is empty.
+- ``/dev/null`` / ``os.devnull`` may not be available.
+- ``os.utime*()`` is buggy in WASM SDK 15.0, see
+  [utimensat() with timespec=NULL sets wrong time](https://github.com/bytecodealliance/wasmtime/issues/4184)
+- ``os.symlink()`` fails with ``PermissionError`` when attempting to create a
+  symlink with an absolute path with wasmtime 0.36.0. The wasmtime runtime
+  uses ``openat2(2)`` syscall with flag ``RESOLVE_BENEATH`` to open files.
+  The flag causes the syscall to reject symlinks with absolute paths.
+- ``os.curdir`` (aka ``.``) seems to behave differently, which breaks some
+  ``importlib`` tests that add ``.`` to ``sys.path`` and indirectly
+  ``sys.path_importer_cache``.
+- WASI runtime environments may not provide a dedicated temp directory.
 
 
 # Detect WebAssembly builds
@@ -318,3 +342,81 @@ Feature detection flags:
 * ``__wasm_bulk_memory__``
 * ``__wasm_atomics__``
 * ``__wasm_mutable_globals__``
+
+## Install SDKs and dependencies manually
+
+In some cases (e.g. build bots) you may prefer to install build dependencies
+directly on the system instead of using the container image. Total disk size
+of SDKs and cached libraries is about 1.6 GB.
+
+### Install OS dependencies
+
+```shell
+# Debian/Ubuntu
+apt update
+apt install -y git make xz-utils bzip2 curl python3-minimal ccache
+```
+
+```shell
+# Fedora
+dnf install -y git make xz bzip2 which ccache
+```
+
+### Install [Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html)
+
+**NOTE**: Follow the on-screen instructions how to add the SDK to ``PATH``.
+
+```shell
+git clone https://github.com/emscripten-core/emsdk.git /opt/emsdk
+/opt/emsdk/emsdk install latest
+/opt/emsdk/emsdk activate latest
+```
+
+### Optionally: pre-build and cache static libraries
+
+Emscripten SDK provides static builds of core libraries without PIC
+(position-independent code). Python builds with ``dlopen`` support require
+PIC. To populate the build cache, run:
+
+```shell
+. /opt/emsdk/emsdk_env.sh
+embuilder build --force zlib bzip2
+embuilder build --force --pic \
+    zlib bzip2 libc-mt libdlmalloc-mt libsockets-mt \
+    libstubs libcompiler_rt libcompiler_rt-mt crtbegin libhtml5 \
+    libc++-mt-noexcept libc++abi-mt-noexcept \
+    libal libGL-mt libstubs-debug libc-mt-debug
+```
+
+### Install [WASI-SDK](https://github.com/WebAssembly/wasi-sdk)
+
+**NOTE**: WASI-SDK's clang may show a warning on Fedora:
+``/lib64/libtinfo.so.6: no version information available``,
+[RHBZ#1875587](https://bugzilla.redhat.com/show_bug.cgi?id=1875587).
+
+```shell
+export WASI_VERSION=16
+export WASI_VERSION_FULL=${WASI_VERSION}.0
+curl -sSf -L -O https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_VERSION}/wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
+mkdir -p /opt/wasi-sdk
+tar --strip-components=1 -C /opt/wasi-sdk -xvf wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
+rm -f wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
+```
+
+### Install [wasmtime](https://github.com/bytecodealliance/wasmtime) WASI runtime
+
+**NOTE**: wasmtime 0.37 has a bug. Newer versions should be fine again.
+
+```shell
+curl -sSf -L -o ~/install-wasmtime.sh https://wasmtime.dev/install.sh
+chmod +x ~/install-wasmtime.sh
+~/install-wasmtime.sh --version v0.36.0
+ln -srf -t /usr/local/bin/ ~/.wasmtime/bin/wasmtime
+```
+
+### Install [WASIX](https://github.com/singlestore-labs/wasix)
+
+```shell
+git clone https://github.com/singlestore-labs/wasix.git ~/wasix
+make install -C ~/wasix
+```

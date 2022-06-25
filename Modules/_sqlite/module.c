@@ -46,7 +46,7 @@ module _sqlite3
 /*[clinic input]
 _sqlite3.connect as pysqlite_connect
 
-    database: object(converter='PyUnicode_FSConverter')
+    database: object
     timeout: double = 5.0
     detect_types: int = 0
     isolation_level: object = NULL
@@ -66,7 +66,7 @@ pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
                       int detect_types, PyObject *isolation_level,
                       int check_same_thread, PyObject *factory,
                       int cached_statements, int uri)
-/*[clinic end generated code: output=450ac9078b4868bb input=ea6355ba55a78e12]*/
+/*[clinic end generated code: output=450ac9078b4868bb input=e16914663ddf93ce]*/
 {
     if (isolation_level == NULL) {
         isolation_level = PyUnicode_FromString("");
@@ -81,7 +81,6 @@ pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
                                           timeout, detect_types,
                                           isolation_level, check_same_thread,
                                           factory, cached_statements, uri);
-    Py_DECREF(database);  // needed bco. the AC FSConverter
     Py_DECREF(isolation_level);
     return res;
 }
@@ -228,14 +227,8 @@ static int converters_init(PyObject* module)
 static int
 load_functools_lru_cache(PyObject *module)
 {
-    PyObject *functools = PyImport_ImportModule("functools");
-    if (functools == NULL) {
-        return -1;
-    }
-
     pysqlite_state *state = pysqlite_get_state(module);
-    state->lru_cache = PyObject_GetAttrString(functools, "lru_cache");
-    Py_DECREF(functools);
+    state->lru_cache = _PyImport_GetModuleAttrString("functools", "lru_cache");
     if (state->lru_cache == NULL) {
         return -1;
     }
@@ -708,7 +701,7 @@ module_exec(PyObject *module)
         goto error;
     }
 
-    if (PyModule_AddStringConstant(module, "version", PYSQLITE_VERSION) < 0) {
+    if (PyModule_AddStringConstant(module, "_deprecated_version", PYSQLITE_VERSION) < 0) {
         goto error;
     }
 

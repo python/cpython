@@ -35,7 +35,6 @@ IGNORE = {
     '_xxtestfuzz',
     'distutils.tests',
     'idlelib.idle_test',
-    'lib2to3.tests',
     'test',
     'xxlimited',
     'xxlimited_35',
