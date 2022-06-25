@@ -695,8 +695,9 @@ class StructTest(unittest.TestCase):
         Struct = struct.Struct
         unpack_iterator = type(struct.iter_unpack("b", b'x'))
         for cls in (Struct, unpack_iterator):
-            with self.assertRaises(TypeError):
-                cls.x = 1
+            with self.subTest(cls=cls):
+                with self.assertRaises(TypeError):
+                    cls.x = 1
 
 
     def test_issue35714(self):
