@@ -603,7 +603,8 @@ def collect_sqlite(info_add):
         return
 
     attributes = ('version', 'sqlite_version')
-    copy_attributes(info_add, sqlite3, 'sqlite3.%s', attributes)
+    with warnings.catch_warnings(record=True):
+        copy_attributes(info_add, sqlite3, 'sqlite3.%s', attributes)
 
 
 def collect_zlib(info_add):
