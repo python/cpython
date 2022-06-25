@@ -3288,7 +3288,8 @@ class GenericTests(BaseTestCase):
             self.assertEqual(x.bar, 'abc')
             self.assertEqual(x.__dict__, {'foo': 42, 'bar': 'abc'})
         samples = [Any, Union, Tuple, Callable, ClassVar,
-                   Union[int, str], ClassVar[List], Tuple[int, ...], Callable[[str], bytes],
+                   Union[int, str], ClassVar[List], Tuple[int, ...], Tuple[()],
+                   Callable[[str], bytes],
                    typing.DefaultDict, typing.FrozenSet[int]]
         for s in samples:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -3306,7 +3307,8 @@ class GenericTests(BaseTestCase):
     def test_copy_and_deepcopy(self):
         T = TypeVar('T')
         class Node(Generic[T]): ...
-        things = [Union[T, int], Tuple[T, int], Callable[..., T], Callable[[int], int],
+        things = [Union[T, int], Tuple[T, int], Tuple[()],
+                  Callable[..., T], Callable[[int], int],
                   Tuple[Any, Any], Node[T], Node[int], Node[Any], typing.Iterable[T],
                   typing.Iterable[Any], typing.Iterable[int], typing.Dict[int, str],
                   typing.Dict[T, Any], ClassVar[int], ClassVar[List[T]], Tuple['T', 'T'],
