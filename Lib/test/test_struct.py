@@ -9,6 +9,7 @@ import sys
 import weakref
 
 from test import support
+from test.support import import_helper
 from test.support.script_helper import assert_python_ok
 
 ISBIGENDIAN = sys.byteorder == "big"
