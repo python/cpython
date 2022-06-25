@@ -6955,13 +6955,7 @@ Returns the interface index corresponding to the interface name if_name.");
 static PyObject *
 socket_if_indextoname(PyObject *self, PyObject *arg)
 {
-#ifdef MS_WINDOWS
-    NET_IFINDEX index_long;
-    NET_IFINDEX index;
-#else
     unsigned long index_long;
-    unsigned int index;
-#endif
     char name[IF_NAMESIZE + 1];
 
     index_long = PyLong_AsUnsignedLong(arg);
@@ -6969,7 +6963,11 @@ socket_if_indextoname(PyObject *self, PyObject *arg)
         return NULL;
     }
 
-    index = (unsigned int)index_long;
+#ifdef MS_WINDOWS
+    NET_IFINDEX index = (NET_IFINDEX)index_long;
+#else
+    unsigned int index = (unsigned int)index_long;
+#endif
 
     if ((unsigned long)index != index_long) {
         PyErr_SetString(PyExc_OverflowError, "index is too large");
