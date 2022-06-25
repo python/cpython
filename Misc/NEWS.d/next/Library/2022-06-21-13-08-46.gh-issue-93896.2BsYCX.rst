@@ -1,1 +1,1 @@
-restore the set_event_loop calls to asyncio.run and AsyncTestCase removed in the 3.11 betas
+Restored missing ``set_event_loop()`` calls in ``asyncio.run()`` and ``AsyncTestCase`` accidentally removed in the 3.11 betas.
