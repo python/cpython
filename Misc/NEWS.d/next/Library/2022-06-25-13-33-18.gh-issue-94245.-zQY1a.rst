@@ -1,0 +1,1 @@
+Fix pickling and copying of ``typing.Tuple[()]``.
