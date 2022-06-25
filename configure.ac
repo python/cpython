@@ -1486,10 +1486,10 @@ if test -z "$HOSTRUNNER"
 then
   AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
     [Emscripten/node*], [
+      # bigint for ctypes c_longlong, c_longdouble
+      HOSTRUNNER="node --experimental-wasm-bigint"
       AS_VAR_IF([enable_wasm_pthreads], [yes], [
-        HOSTRUNNER='node --experimental-wasm-threads --experimental-wasm-bulk-memory'
-      ], [
-        HOSTRUNNER='node'
+        HOSTRUNNER="$HOSTRUNNER --experimental-wasm-threads --experimental-wasm-bulk-memory"
       ])
     ],
     dnl TODO: support other WASI runtimes
@@ -2027,6 +2027,9 @@ AS_CASE([$ac_sys_system],
 
     dnl Start with 20 MB and allow to grow
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sTOTAL_MEMORY=20971520"])
+
+    dnl map int64_t and uint64_t to JS bigint
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sWASM_BIGINT"])
 
     dnl Include file system support
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
