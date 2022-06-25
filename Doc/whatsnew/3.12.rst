@@ -79,6 +79,9 @@ New Features
 Other Language Changes
 ======================
 
+* :class:`types.MappingProxyType` instances are now hashable if the underlying
+  mapping is hashable.
+  (Contributed by Serhiy Storchaka in :gh:`87995`.)
 
 
 New Modules
