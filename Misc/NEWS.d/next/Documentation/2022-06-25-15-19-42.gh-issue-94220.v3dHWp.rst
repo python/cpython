@@ -1,0 +1,1 @@
+Change parameters of functions in fnmatch module in `lib\fnmatch.py` from `name(s)` and `pat` to `filename(s)` and `pattern`. To make it consistent with the documentation which uses `filename(s)` and `pattern`.
