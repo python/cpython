@@ -1613,6 +1613,7 @@ class CompressLevelRaises(unittest.TestCase):
         with self.assertRaises(TypeError):
             tarfile.open(tmpname, "w:", fobj, compresslevel=compresslevel)
 
+    @support.requires_bz2()
     def test_wrong_compresslevels(self):
         # BZ2 checks that the compresslevel is in [1,9]. gz does not
         fobj = io.BytesIO()
