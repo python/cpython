@@ -334,9 +334,9 @@ Module functions and constants
 
 .. function:: register_converter(typename, converter)
 
-   Register the *converter* callable to convert SQLite objects of type *typename* into a
-   Python object of a specific type. The converter is invoked for all SQLite values of type
-   *typename*;
+   Register the *converter* callable to convert SQLite objects of type
+   *typename* into a Python object of a specific type.
+   The converter is invoked for all SQLite values of type *typename*;
    it is passed a :class:`bytes` object and should return an object of the
    desired Python type.
    Consult the parameter *detect_types* of
@@ -348,9 +348,10 @@ Module functions and constants
 
 .. function:: register_adapter(type, adapter)
 
-   Register an *adapter* callable to adapt the Python type *type* into an SQLite type.
-   The adapter is called with a Python object of type *type* as its sole argument,
-   and must return a value of a
+   Register an *adapter* callable to adapt the Python type *type* into an
+   SQLite type.
+   The adapter is called with a Python object of type *type* as its sole
+   argument, and must return a value of a
    :ref:`type that SQLite natively understands<sqlite3-types>`.
 
 
@@ -1273,10 +1274,11 @@ To store custom Python types in SQLite databases, *adapt* them to one of the
 
 There are two ways to adapt Python objects to SQLite types:
 letting your object adapt itself, or using an *adapter callable*.
-The latter will take precedence above the former. For a library that exports a
-custom type, it may make sense to enable that type to adapt itself. As an
-application developer, it may make more sense to take direct control by registering
-custom adapter functions.
+The latter will take precedence above the former.
+For a library that exports a custom type,
+it may make sense to enable that type to adapt itself.
+As an application developer, it may make more sense to take direct control by
+registering custom adapter functions.
 
 
 Letting your object adapt itself
@@ -1306,7 +1308,8 @@ This function can then be registered using :func:`register_adapter`.
 Converting SQLite values to custom Python types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Writing an adapter lets you convert *from* custom Python types *to* SQLite values.
+Writing an adapter lets you convert *from* custom Python types *to* SQLite
+values.
 To be able to convert *from* SQLite values *to* custom Python types,
 we use *converters*.
 
