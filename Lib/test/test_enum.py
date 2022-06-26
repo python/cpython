@@ -66,9 +66,26 @@ try:
     class FlagStooges(Flag):
         LARRY = 1
         CURLY = 2
-        MOE = 3
+        MOE = 4
 except Exception as exc:
     FlagStooges = exc
+
+class FlagStoogesWithZero(Flag):
+    NOFLAG = 0
+    LARRY = 1
+    CURLY = 2
+    MOE = 4
+
+class IntFlagStooges(IntFlag):
+    LARRY = 1
+    CURLY = 2
+    MOE = 4
+
+class IntFlagStoogesWithZero(IntFlag):
+    NOFLAG = 0
+    LARRY = 1
+    CURLY = 2
+    MOE = 4
 
 # for pickle test and subclass tests
 class Name(StrEnum):
@@ -2999,8 +3016,31 @@ class OldTestFlag(unittest.TestCase):
     def test_pickle(self):
         if isinstance(FlagStooges, Exception):
             raise FlagStooges
-        test_pickle_dump_load(self.assertIs, FlagStooges.CURLY|FlagStooges.MOE)
+        test_pickle_dump_load(self.assertIs, FlagStooges.CURLY)
+        test_pickle_dump_load(self.assertEqual,
+                        FlagStooges.CURLY|FlagStooges.MOE)
+        test_pickle_dump_load(self.assertEqual,
+                        FlagStooges.CURLY&~FlagStooges.CURLY)
         test_pickle_dump_load(self.assertIs, FlagStooges)
+
+        test_pickle_dump_load(self.assertIs, FlagStoogesWithZero.CURLY)
+        test_pickle_dump_load(self.assertEqual,
+                        FlagStoogesWithZero.CURLY|FlagStoogesWithZero.MOE)
+        test_pickle_dump_load(self.assertIs, FlagStoogesWithZero.NOFLAG)
+
+        test_pickle_dump_load(self.assertIs, IntFlagStooges.CURLY)
+        test_pickle_dump_load(self.assertEqual,
+                        IntFlagStooges.CURLY|IntFlagStooges.MOE)
+        test_pickle_dump_load(self.assertEqual,
+                        IntFlagStooges.CURLY|IntFlagStooges.MOE|0x30)
+        test_pickle_dump_load(self.assertEqual, IntFlagStooges(0))
+        test_pickle_dump_load(self.assertEqual, IntFlagStooges(0x30))
+        test_pickle_dump_load(self.assertIs, IntFlagStooges)
+
+        test_pickle_dump_load(self.assertIs, IntFlagStoogesWithZero.CURLY)
+        test_pickle_dump_load(self.assertEqual,
+                        IntFlagStoogesWithZero.CURLY|IntFlagStoogesWithZero.MOE)
+        test_pickle_dump_load(self.assertIs, IntFlagStoogesWithZero.NOFLAG)
 
     def test_contains_tf(self):
         Open = self.Open
