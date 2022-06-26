@@ -1358,13 +1358,12 @@ Default adapters and converters (deprecated)
 
 The deprecated default adapters and converters consists of:
 
-* Adapt :class:`datetime.date` objects to ISO format :class:`strings <str>`.
-* Adapt :class:`datetime.datetime` objects to ISO format :class:`strings <str>`.
+* Adapt :class:`datetime.date` objects to :class:`strings <str>` in ISO format.
+* Adapt :class:`datetime.datetime` objects to strings ISO format.
 * Convert :ref:`declared <sqlite3-converters>` "date" types to ``datetime.date``
   objects.
 * Convert declared "timestamp" types to ``datetime.datetime`` objects.
-  If a timestamp stored in SQLite has a fractional part longer than 6
-  numbers, its value will be truncated to microsecond precision.
+  Fractional parts will be truncated to 6 digits (microsecond precision).
 
 .. note::
 
