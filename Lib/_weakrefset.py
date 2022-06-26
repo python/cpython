@@ -85,7 +85,7 @@ class WeakSet:
         dict, slots = self.__getstate__()
         for name in WeakSet.__slots__:
             slots.pop(name, None)
-        state = (dict, slots) if dict or slots else None
+        state = (dict, slots) if slots else (dict or None)
         return self.__class__, (list(self),), state
 
     def add(self, item):
