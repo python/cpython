@@ -4,11 +4,12 @@ After tooltip.py, which uses ideas gleaned from PySol.
 Used by calltip.py.
 """
 from tkinter import Label, LEFT, SOLID, TclError
+from tkinter.scrolledtext import ScrolledText
 
 from idlelib.tooltip import TooltipBase
 
 HIDE_EVENT = "<<calltipwindow-hide>>"
-HIDE_SEQUENCES = ("<Key-Escape>", "<FocusOut>")
+HIDE_SEQUENCES = ("<Key-Escape>",)
 CHECKHIDE_EVENT = "<<calltipwindow-checkhide>>"
 CHECKHIDE_SEQUENCES = ("<KeyRelease>", "<ButtonRelease>")
 CHECKHIDE_TIME = 100  # milliseconds
@@ -74,16 +75,21 @@ class CalltipWindow(TooltipBase):
             int, self.anchor_widget.index(parenleft).split("."))
 
         super().showtip()
+        self.tipwindow.wm_attributes('-topmost', 1)
 
         self._bind_events()
 
     def showcontents(self):
         """Create the call-tip widget."""
-        self.label = Label(self.tipwindow, text=self.text, justify=LEFT,
+        self.label = ScrolledText(self.tipwindow, wrap="word",
                            background="#ffffd0", foreground="black",
                            relief=SOLID, borderwidth=1,
                            font=self.anchor_widget['font'])
+        self.label.insert('1.0', self.text)
+        self.label.config(state='disabled')
         self.label.pack()
+
+        self.tipwindow.geometry('%dx%d' % (400, 120))
 
     def checkhide_event(self, event=None):
         """Handle CHECK_HIDE_EVENT: call hidetip or reschedule."""
@@ -156,6 +162,8 @@ class CalltipWindow(TooltipBase):
                                               self.hide_event)
         for seq in HIDE_SEQUENCES:
             self.anchor_widget.event_add(HIDE_EVENT, seq)
+        if self.tipwindow:
+            self.tipwindow.bind("<Key-Escape>", self.hide_event)
 
     def _unbind_events(self):
         """Unbind event handlers."""

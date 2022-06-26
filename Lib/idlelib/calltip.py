@@ -182,19 +182,13 @@ def get_argspec(ob):
         # If fob has no argument, use default callable argspec.
         argspec = _default_callable_argspec
 
-    lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent=_INDENT)
-             if len(argspec) > _MAX_COLS else [argspec] if argspec else [])
+    lines = [argspec] if argspec else []
 
     # Augment lines from docstring, if any, and join to get argspec.
     doc = inspect.getdoc(ob)
     if doc:
-        for line in doc.split('\n', _MAX_LINES)[:_MAX_LINES]:
-            line = line.strip()
-            if not line:
-                break
-            if len(line) > _MAX_COLS:
-                line = line[: _MAX_COLS - 3] + '...'
-            lines.append(line)
+        for line in doc.split('\n'):
+            lines.append(line.strip())
     argspec = '\n'.join(lines)
 
     return argspec or _default_callable_argspec

@@ -93,24 +93,20 @@ Return the string obtained by replacing the leftmost
 non-overlapping occurrences of the pattern in string by the
 replacement repl.  repl can be either a string or a callable;
 if a string, backslash escapes in it are processed.  If it is
-a callable, it's passed the Match object and must return''')
+a callable, it's passed the Match object and must return
+a replacement string to be used.''')
         tiptest(p.sub, '''\
 (repl, string, count=0)
-Return the string obtained by replacing the leftmost \
-non-overlapping occurrences o...''')
+Return the string obtained by replacing the leftmost non-overlapping \
+occurrences of pattern in string by the replacement repl.''')
 
-    def test_signature_wrap(self):
+    def test_signature(self):
         if textwrap.TextWrapper.__doc__ is not None:
-            self.assertEqual(get_spec(textwrap.TextWrapper), '''\
-(width=70, initial_indent='', subsequent_indent='', expand_tabs=True,
-    replace_whitespace=True, fix_sentence_endings=False, break_long_words=True,
-    drop_whitespace=True, break_on_hyphens=True, tabsize=8, *, max_lines=None,
-    placeholder=' [...]')
-Object for wrapping/filling text.  The public interface consists of
-the wrap() and fill() methods; the other methods are just there for
-subclasses to override in order to tweak the default behaviour.
-If you want to completely replace the main wrapping algorithm,
-you\'ll probably have to override _wrap_chunks().''')
+            self.assertEqual(get_spec(textwrap.TextWrapper).split('\n')[0], '''\
+(width=70, initial_indent='', subsequent_indent='', expand_tabs=True, \
+replace_whitespace=True, fix_sentence_endings=False, break_long_words=True, \
+drop_whitespace=True, break_on_hyphens=True, tabsize=8, *, max_lines=None, \
+placeholder=' [...]')''')
 
     def test_properly_formatted(self):
 
@@ -127,16 +123,14 @@ you\'ll probably have to override _wrap_chunks().''')
         indent = calltip._INDENT
 
         sfoo = "(s='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n" + indent + "aaaaaaaaa"\
-               "aaaaaaaaaa')"
+               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')"
         sbar = "(s='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n" + indent + "aaaaaaaaa"\
-               "aaaaaaaaaa')\nHello Guido"
+               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')"\
+               "\nHello Guido"
         sbaz = "(s='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n" + indent + "aaaaaaaaa"\
-               "aaaaaaaaaa', z='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"\
-               "bbbbbbbbbbbbbbbbb\n" + indent + "bbbbbbbbbbbbbbbbbbbbbb"\
-               "bbbbbbbbbbbbbbbbbbbbbb')"
+               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',"\
+               " z='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"\
+               "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb')"
 
         for func,doc in [(foo, sfoo), (bar, sbar), (baz, sbaz)]:
             with self.subTest(func=func, doc=doc):
@@ -145,29 +139,7 @@ you\'ll probably have to override _wrap_chunks().''')
     def test_docline_truncation(self):
         def f(): pass
         f.__doc__ = 'a'*300
-        self.assertEqual(get_spec(f), f"()\n{'a'*(calltip._MAX_COLS-3) + '...'}")
-
-    @unittest.skipIf(MISSING_C_DOCSTRINGS,
-                     "Signature information for builtins requires docstrings")
-    def test_multiline_docstring(self):
-        # Test fewer lines than max.
-        self.assertEqual(get_spec(range),
-                "range(stop) -> range object\n"
-                "range(start, stop[, step]) -> range object")
-
-        # Test max lines
-        self.assertEqual(get_spec(bytes), '''\
-bytes(iterable_of_ints) -> bytes
-bytes(string, encoding[, errors]) -> bytes
-bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer
-bytes(int) -> bytes object of size given by the parameter initialized with null bytes
-bytes() -> empty bytes object''')
-
-    def test_multiline_docstring_2(self):
-        # Test more than max lines
-        def f(): pass
-        f.__doc__ = 'a\n' * 15
-        self.assertEqual(get_spec(f), '()' + '\na' * calltip._MAX_LINES)
+        self.assertEqual(get_spec(f), "()\n%s" % ('a'*300))
 
     def test_functions(self):
         def t1(): 'doc'
