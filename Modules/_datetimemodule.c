@@ -1718,17 +1718,17 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         goto Done;
     {
         PyObject *format;
-        PyObject *time = PyImport_ImportModule("time");
+        PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
 
-        if (time == NULL)
+        if (strftime == NULL)
             goto Done;
         format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
         if (format != NULL) {
-            result = _PyObject_CallMethodIdObjArgs(time, &PyId_strftime,
+            result = PyObject_CallFunctionObjArgs(strftime,
                                                    format, timetuple, NULL);
             Py_DECREF(format);
         }
-        Py_DECREF(time);
+        Py_DECREF(strftime);
     }
  Done:
     Py_XDECREF(freplacement);
@@ -1748,12 +1748,10 @@ static PyObject *
 time_time(void)
 {
     PyObject *result = NULL;
-    PyObject *time = PyImport_ImportModule("time");
+    PyObject *time = _PyImport_GetModuleAttrString("time", "time");
 
     if (time != NULL) {
-        _Py_IDENTIFIER(time);
-
-        result = _PyObject_CallMethodIdNoArgs(time, &PyId_time);
+        result = PyObject_CallNoArgs(time);
         Py_DECREF(time);
     }
     return result;
@@ -1765,31 +1763,21 @@ time_time(void)
 static PyObject *
 build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
 {
-    PyObject *time;
+    PyObject *struct_time;
     PyObject *result;
-    _Py_IDENTIFIER(struct_time);
-    PyObject *args;
 
-
-    time = PyImport_ImportModule("time");
-    if (time == NULL) {
+    struct_time = _PyImport_GetModuleAttrString("time", "struct_time");
+    if (struct_time == NULL) {
         return NULL;
     }
 
-    args = Py_BuildValue("iiiiiiiii",
+    result = PyObject_CallFunction(struct_time, "((iiiiiiiii))",
                          y, m, d,
                          hh, mm, ss,
                          weekday(y, m, d),
                          days_before_month(y, m) + d,
                          dstflag);
-    if (args == NULL) {
-        Py_DECREF(time);
-        return NULL;
-    }
-
-    result = _PyObject_CallMethodIdOneArg(time, &PyId_struct_time, args);
-    Py_DECREF(time);
-    Py_DECREF(args);
+    Py_DECREF(struct_time);
     return result;
 }
 

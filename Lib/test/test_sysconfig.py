@@ -11,7 +11,6 @@ from test.support import (
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
                                     change_cwd)
-from test.support.warnings_helper import check_warnings
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
@@ -370,7 +369,7 @@ class TestSysConfig(unittest.TestCase):
                 base = base.replace(sys.base_prefix, sys.prefix)
             if HAS_USER_BASE:
                 user_path = get_path(name, 'posix_user')
-                expected = global_path.replace(base, user, 1)
+                expected = os.path.normpath(global_path.replace(base, user, 1))
                 # bpo-44860: platlib of posix_user doesn't use sys.platlibdir,
                 # whereas posix_prefix does.
                 if name == 'platlib':

@@ -4,6 +4,7 @@
 #include "opcode.h"
 #include "structmember.h"         // PyMemberDef
 #include "pycore_code.h"          // _PyCodeConstructor
+#include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
 #include "pycore_opcode.h"        // _PyOpcode_Deopt
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -327,6 +328,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     /* derived values */
     co->co_nlocalsplus = nlocalsplus;
     co->co_nlocals = nlocals;
+    co->co_framesize = nlocalsplus + con->stacksize + FRAME_SPECIALS_SIZE;
     co->co_nplaincellvars = nplaincellvars;
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
@@ -337,8 +339,16 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->_co_code = NULL;
 
     co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
+    co->_co_linearray_entry_size = 0;
+    co->_co_linearray = NULL;
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
            PyBytes_GET_SIZE(con->code));
+    int entry_point = 0;
+    while (entry_point < Py_SIZE(co) &&
+        _Py_OPCODE(_PyCode_CODE(co)[entry_point]) != RESUME) {
+        entry_point++;
+    }
+    co->_co_firsttraceable = entry_point;
 }
 
 static int
@@ -696,12 +706,59 @@ failed:
 */
 
 int
+_PyCode_CreateLineArray(PyCodeObject *co)
+{
+    assert(co->_co_linearray == NULL);
+    PyCodeAddressRange bounds;
+    int size;
+    int max_line = 0;
+    _PyCode_InitAddressRange(co, &bounds);
+    while(_PyLineTable_NextAddressRange(&bounds)) {
+        if (bounds.ar_line > max_line) {
+            max_line = bounds.ar_line;
+        }
+    }
+    if (max_line < (1 << 15)) {
+        size = 2;
+    }
+    else {
+        size = 4;
+    }
+    co->_co_linearray = PyMem_Malloc(Py_SIZE(co)*size);
+    if (co->_co_linearray == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    co->_co_linearray_entry_size = size;
+    _PyCode_InitAddressRange(co, &bounds);
+    while(_PyLineTable_NextAddressRange(&bounds)) {
+        int start = bounds.ar_start / sizeof(_Py_CODEUNIT);
+        int end = bounds.ar_end / sizeof(_Py_CODEUNIT);
+        for (int index = start; index < end; index++) {
+            assert(index < (int)Py_SIZE(co));
+            if (size == 2) {
+                assert(((int16_t)bounds.ar_line) == bounds.ar_line);
+                ((int16_t *)co->_co_linearray)[index] = bounds.ar_line;
+            }
+            else {
+                assert(size == 4);
+                ((int32_t *)co->_co_linearray)[index] = bounds.ar_line;
+            }
+        }
+    }
+    return 0;
+}
+
+int
 PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
     if (addrq < 0) {
         return co->co_firstlineno;
     }
     assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
+    if (co->_co_linearray) {
+        return _PyCode_LineNumberFromArray(co, addrq / sizeof(_Py_CODEUNIT));
+    }
     PyCodeAddressRange bounds;
     _PyCode_InitAddressRange(co, &bounds);
     return _PyCode_CheckLineNumber(addrq, &bounds);
@@ -769,6 +826,11 @@ next_code_delta(PyCodeAddressRange *bounds)
 static int
 previous_code_delta(PyCodeAddressRange *bounds)
 {
+    if (bounds->ar_start == 0) {
+        // If we looking at the first entry, the
+        // "previous" entry has an implicit length of 1.
+        return 1;
+    }
     const uint8_t *ptr = bounds->opaque.lo_next-1;
     while (((*ptr) & 128) == 0) {
         ptr--;
@@ -812,7 +874,7 @@ static void
 retreat(PyCodeAddressRange *bounds)
 {
     ASSERT_VALID_BOUNDS(bounds);
-    assert(bounds->ar_start > 0);
+    assert(bounds->ar_start >= 0);
     do {
         bounds->opaque.lo_next--;
     } while (((*bounds->opaque.lo_next) & 128) == 0);
@@ -1378,7 +1440,7 @@ _PyCode_GetCode(PyCodeObject *co)
     }
     deopt_code((_Py_CODEUNIT *)PyBytes_AS_STRING(code), Py_SIZE(co));
     assert(co->_co_code == NULL);
-    co->_co_code = (void *)Py_NewRef(code);
+    co->_co_code = Py_NewRef(code);
     return code;
 }
 
@@ -1540,6 +1602,9 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->_co_code);
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)co);
+    }
+    if (co->_co_linearray) {
+        PyMem_Free(co->_co_linearray);
     }
     if (co->co_warmup == 0) {
         _Py_QuickenedCount--;
@@ -2092,10 +2157,15 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
     deopt_code(_PyCode_CODE(co), Py_SIZE(co));
     co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
     PyMem_Free(co->co_extra);
+    Py_CLEAR(co->_co_code);
     co->co_extra = NULL;
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *)co);
         co->co_weakreflist = NULL;
+    }
+    if (co->_co_linearray) {
+        PyMem_Free(co->_co_linearray);
+        co->_co_linearray = NULL;
     }
 }
 

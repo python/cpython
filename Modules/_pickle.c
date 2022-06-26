@@ -232,8 +232,6 @@ _Pickle_InitState(PickleState *st)
 {
     PyObject *copyreg = NULL;
     PyObject *compat_pickle = NULL;
-    PyObject *codecs = NULL;
-    PyObject *functools = NULL;
 
     st->getattr = _PyEval_GetBuiltin(&_Py_ID(getattr));
     if (st->getattr == NULL)
@@ -329,10 +327,7 @@ _Pickle_InitState(PickleState *st)
     }
     Py_CLEAR(compat_pickle);
 
-    codecs = PyImport_ImportModule("codecs");
-    if (codecs == NULL)
-        goto error;
-    st->codecs_encode = PyObject_GetAttrString(codecs, "encode");
+    st->codecs_encode = _PyImport_GetModuleAttrString("codecs", "encode");
     if (st->codecs_encode == NULL) {
         goto error;
     }
@@ -342,23 +337,16 @@ _Pickle_InitState(PickleState *st)
                      Py_TYPE(st->codecs_encode)->tp_name);
         goto error;
     }
-    Py_CLEAR(codecs);
 
-    functools = PyImport_ImportModule("functools");
-    if (!functools)
-        goto error;
-    st->partial = PyObject_GetAttrString(functools, "partial");
+    st->partial = _PyImport_GetModuleAttrString("functools", "partial");
     if (!st->partial)
         goto error;
-    Py_CLEAR(functools);
 
     return 0;
 
   error:
     Py_CLEAR(copyreg);
     Py_CLEAR(compat_pickle);
-    Py_CLEAR(codecs);
-    Py_CLEAR(functools);
     _Pickle_ClearState(st);
     return -1;
 }

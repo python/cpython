@@ -1,5 +1,4 @@
 import collections.abc
-import traceback
 import types
 import unittest
 

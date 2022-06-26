@@ -12,7 +12,6 @@ from distutils.ccompiler import get_default_compiler
 from distutils.tests import support
 from test.support import run_unittest, swap_item, requires_subprocess, is_wasi
 from test.support.os_helper import TESTFN
-from test.support.warnings_helper import check_warnings
 
 
 class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):

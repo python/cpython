@@ -373,6 +373,9 @@ Other Language Changes
   the current directory, the script's directory or an empty string.
   (Contributed by Victor Stinner in :gh:`57684`.)
 
+* A ``"z"`` option was added to the format specification mini-language that
+  coerces negative zero to zero after rounding to the format precision.  See
+  :pep:`682` for more details.  (Contributed by John Belmonte in :gh:`90153`.)
 
 Other CPython Implementation Changes
 ====================================
@@ -1749,6 +1752,21 @@ Porting to Python 3.11
   which are not available in the limited C API.
   (Contributed by Victor Stinner in :issue:`46007`.)
 
+* The following frame functions and type are now directly available with
+  ``#include <Python.h>``, it's no longer needed to add
+  ``#include <frameobject.h>``:
+
+  * :c:func:`PyFrame_Check`
+  * :c:func:`PyFrame_GetBack`
+  * :c:func:`PyFrame_GetBuiltins`
+  * :c:func:`PyFrame_GetGenerator`
+  * :c:func:`PyFrame_GetGlobals`
+  * :c:func:`PyFrame_GetLasti`
+  * :c:func:`PyFrame_GetLocals`
+  * :c:type:`PyFrame_Type`
+
+  (Contributed by Victor Stinner in :gh:`93937`.)
+
 .. _pyframeobject-3.11-hiding:
 
 * The :c:type:`PyFrameObject` structure members have been removed from the
@@ -1884,7 +1902,6 @@ Porting to Python 3.11
   fill any values into :c:member:`PyConfig.module_search_paths`. To calculate default
   paths and then modify them, finish initialization and use :c:func:`PySys_GetObject`
   to retrieve :data:`sys.path` as a Python list object and modify it directly.
-
 
 Deprecated
 ----------
