@@ -178,6 +178,45 @@ although there is currently no date scheduled for their removal.
 Removed
 =======
 
+* Removed many old deprecated :mod:`unittest` features:
+
+  - A number of :class:`~unittest.TestCase` method aliases:
+
+    ============================ =============================== ===============
+       Deprecated alias           Method Name                     Deprecated in
+    ============================ =============================== ===============
+     ``failUnless``               :meth:`.assertTrue`             3.1
+     ``failIf``                   :meth:`.assertFalse`            3.1
+     ``failUnlessEqual``          :meth:`.assertEqual`            3.1
+     ``failIfEqual``              :meth:`.assertNotEqual`         3.1
+     ``failUnlessAlmostEqual``    :meth:`.assertAlmostEqual`      3.1
+     ``failIfAlmostEqual``        :meth:`.assertNotAlmostEqual`   3.1
+     ``failUnlessRaises``         :meth:`.assertRaises`           3.1
+     ``assert_``                  :meth:`.assertTrue`             3.2
+     ``assertEquals``             :meth:`.assertEqual`            3.2
+     ``assertNotEquals``          :meth:`.assertNotEqual`         3.2
+     ``assertAlmostEquals``       :meth:`.assertAlmostEqual`      3.2
+     ``assertNotAlmostEquals``    :meth:`.assertNotAlmostEqual`   3.2
+     ``assertRegexpMatches``      :meth:`.assertRegex`            3.2
+     ``assertRaisesRegexp``       :meth:`.assertRaisesRegex`      3.2
+     ``assertNotRegexpMatches``   :meth:`.assertNotRegex`         3.5
+    ============================ =============================== ===============
+
+    You can use https://github.com/isidentical/teyit to automatically modernise
+    your unit tests.
+
+  - Undocumented and broken :class:`~unittest.TestCase` method
+    ``assertDictContainsSubset`` (deprecated in Python 3.2).
+
+  - Undocumented :meth:`TestLoader.loadTestsFromModule
+    <unittest.TestLoader.loadTestsFromModule>` parameter *use_load_tests*
+    (deprecated and ignored since Python 3.2).
+
+  - An alias of the :class:`~unittest.TextTestResult` class:
+    ``_TextTestResult`` (deprecated in Python 3.2).
+
+  (Contributed by Serhiy Storchaka in :issue:`45162`.)
+
 * Several names deprecated in the :mod:`configparser` way back in 3.2 have
   been removed per :gh:`89336`:
 
@@ -224,6 +263,11 @@ Removed
   extension if it was not present.
   (Contributed by Victor Stinner in :gh:`94196`.)
 
+* Remove the :func:`ssl.match_hostname` function. The
+  :func:`ssl.match_hostname` was deprecated in Python 3.7. OpenSSL performs
+  hostname matching since Python 3.7, Python no longer uses the
+  :func:`ssl.match_hostname` function.
+  (Contributed by Victor Stinner in :gh:`94199`.)
 
 Porting to Python 3.12
 ======================
