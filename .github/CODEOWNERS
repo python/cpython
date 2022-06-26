@@ -53,6 +53,7 @@ Python/pythonrun.c            @iritkatriel
 /Lib/html/                    @ezio-melotti
 /Lib/_markupbase.py           @ezio-melotti
 /Lib/test/test_html*.py       @ezio-melotti
+/Tools/scripts/*html5*        @ezio-melotti
 
 # Import (including importlib).
 # Ignoring importlib.h so as to not get flagged on

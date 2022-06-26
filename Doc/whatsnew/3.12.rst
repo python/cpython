@@ -178,6 +178,16 @@ although there is currently no date scheduled for their removal.
 Removed
 =======
 
+* Several names deprecated in the :mod:`configparser` way back in 3.2 have
+  been removed per :gh:`89336`:
+
+  * :class:`configparser.ParsingError` no longer has a ``filename`` attribute
+    or argument. Use the ``source`` attribute and argument instead.
+  * :mod:`configparser` no longer has a ``SafeConfigParser`` class. Use the
+    shorter :class:`~configparser.ConfigParser` name instead.
+  * :class:`configparser.ConfigParser` no longer has a ``readfp`` method.
+    Use :meth:`~configparser.ConfigParser.read_file` instead.
+
 * The following undocumented :mod:`sqlite3` features, deprecated in Python
   3.10, are now removed:
 
@@ -198,6 +208,27 @@ Removed
   (and corresponding ``EXPERIMENTAL_ISOLATED_SUBINTERPRETERS``)
   have been removed.
 
+* Remove ``io.OpenWrapper`` and ``_pyio.OpenWrapper``, deprecated in Python
+  3.10: just use :func:`open` instead. The :func:`open` (:func:`io.open`)
+  function is a built-in function. Since Python 3.10, :func:`_pyio.open` is
+  also a static method.
+  (Contributed by Victor Stinner in :gh:`94169`.)
+
+* Remove the :func:`ssl.RAND_pseudo_bytes` function, deprecated in Python 3.6:
+  use :func:`os.urandom` or :func:`ssl.RAND_bytes` instead.
+  (Contributed by Victor Stinner in :gh:`94199`.)
+
+* :mod:`gzip`: Remove the ``filename`` attribute of :class:`gzip.GzipFile`,
+  deprecated since Python 2.6, use the :attr:`~gzip.GzipFile.name` attribute
+  instead. In write mode, the ``filename`` attribute added ``'.gz'`` file
+  extension if it was not present.
+  (Contributed by Victor Stinner in :gh:`94196`.)
+
+* Remove the :func:`ssl.match_hostname` function. The
+  :func:`ssl.match_hostname` was deprecated in Python 3.7. OpenSSL performs
+  hostname matching since Python 3.7, Python no longer uses the
+  :func:`ssl.match_hostname` function.
+  (Contributed by Victor Stinner in :gh:`94199`.)
 
 Porting to Python 3.12
 ======================
@@ -222,6 +253,12 @@ Changes in the Python API
   TypeError.  This also prevents bugs where ``randrange(1e25)`` would silently
   select from a larger range than ``randrange(10**25)``.
   (Originally suggested by Serhiy Storchaka gh-86388.)
+
+* :class:`argparse.ArgumentParser` changed encoding and error handler
+  for reading arguments from file (e.g. ``fromfile_prefix_chars`` option)
+  from default text encoding (e.g. :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`)
+  to :term:`filesystem encoding and error handler`.
+  Argument files should be encoded in UTF-8 instead of ANSI Codepage on Windows.
 
 
 Build Changes
