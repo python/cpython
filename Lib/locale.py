@@ -26,7 +26,7 @@ import functools
 # trying the import.  So __all__ is also fiddled at the end of the file.
 __all__ = ["getlocale", "getdefaultlocale", "getpreferredencoding", "Error",
            "setlocale", "resetlocale", "localeconv", "strcoll", "strxfrm",
-           "str", "atof", "atoi", "format", "format_string", "currency",
+           "str", "atof", "atoi", "format_string", "currency",
            "normalize", "LC_CTYPE", "LC_COLLATE", "LC_TIME", "LC_MONETARY",
            "LC_NUMERIC", "LC_ALL", "CHAR_MAX", "getencoding"]
 
