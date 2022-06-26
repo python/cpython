@@ -689,6 +689,18 @@ class StructTest(unittest.TestCase):
         self.assertIsNone(
             module_ref(), "_struct module was not garbage collected")
 
+    @support.cpython_only
+    def test__struct_types_immutable(self):
+        # See https://github.com/python/cpython/issues/94254
+
+        Struct = struct.Struct
+        unpack_iterator = type(struct.iter_unpack("b", b'x'))
+        for cls in (Struct, unpack_iterator):
+            with self.subTest(cls=cls):
+                with self.assertRaises(TypeError):
+                    cls.x = 1
+
+
     def test_issue35714(self):
         # Embedded null characters should not be allowed in format strings.
         for s in '\0', '2\0i', b'\0':
