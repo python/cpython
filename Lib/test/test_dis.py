@@ -633,6 +633,22 @@ dis_loop_test_quickened_code = """\
        loop_test.__code__.co_firstlineno + 2,
        loop_test.__code__.co_firstlineno + 1,)
 
+def extended_arg_quick():
+    *_, _ = ...
+
+dis_extended_arg_quick_code = """\
+%3d           0 RESUME                   0
+
+%3d           2 LOAD_CONST               1 (Ellipsis)
+              4 EXTENDED_ARG_QUICK       1
+              6 UNPACK_EX              256
+              8 STORE_FAST               0 (_)
+             10 STORE_FAST               0 (_)
+             12 LOAD_CONST               0 (None)
+             14 RETURN_VALUE
+"""% (extended_arg_quick.__code__.co_firstlineno,
+      extended_arg_quick.__code__.co_firstlineno + 1,)
+
 QUICKENING_WARMUP_DELAY = 8
 
 class DisTestBase(unittest.TestCase):
@@ -1011,6 +1027,11 @@ class DisTests(DisTestBase):
         got = self.get_disassembly(loop_test, adaptive=True)
         self.do_disassembly_compare(got, dis_loop_test_quickened_code, True)
 
+    @cpython_only
+    def test_extended_arg_quick(self):
+        got = self.get_disassembly(extended_arg_quick)
+        self.do_disassembly_compare(got, dis_extended_arg_quick_code, True)
+
     def get_cached_values(self, quickened, adaptive):
         def f():
             l = []
@@ -1039,8 +1060,10 @@ class DisTests(DisTestBase):
                     caches = list(self.get_cached_values(quickened, adaptive))
                     for cache in caches:
                         self.assertRegex(cache, pattern)
-                    self.assertEqual(caches.count(""), 8)
-                    self.assertEqual(len(caches), 25)
+                    total_caches = 25
+                    empty_caches = 8 if adaptive and quickened else total_caches
+                    self.assertEqual(caches.count(""), empty_caches)
+                    self.assertEqual(len(caches), total_caches)
 
 
 class DisWithFileTests(DisTests):
@@ -1607,6 +1630,36 @@ class InstructionTests(InstructionTestCase):
                 self.assertIsNone(positions.end_lineno)
                 self.assertIsNone(positions.col_offset)
                 self.assertIsNone(positions.end_col_offset)
+
+    @requires_debug_ranges()
+    def test_co_positions_with_lots_of_caches(self):
+        def roots(a, b, c):
+            d = b**2 - 4 * a * c
+            yield (-b - cmath.sqrt(d)) / (2 * a)
+            if d:
+                yield (-b + cmath.sqrt(d)) / (2 * a)
+        code = roots.__code__
+        ops = code.co_code[::2]
+        cache_opcode = opcode.opmap["CACHE"]
+        caches = sum(op == cache_opcode for op in ops)
+        non_caches = len(ops) - caches
+        # Make sure we have "lots of caches". If not, roots should be changed:
+        assert 1 / 3 <= caches / non_caches, "this test needs more caches!"
+        for show_caches in (False, True):
+            for adaptive in (False, True):
+                with self.subTest(f"{adaptive=}, {show_caches=}"):
+                    co_positions = [
+                        positions
+                        for op, positions in zip(ops, code.co_positions(), strict=True)
+                        if show_caches or op != cache_opcode
+                    ]
+                    dis_positions = [
+                        instruction.positions
+                        for instruction in dis.get_instructions(
+                            code, adaptive=adaptive, show_caches=show_caches
+                        )
+                    ]
+                    self.assertEqual(co_positions, dis_positions)
 
 # get_instructions has its own tests above, so can rely on it to validate
 # the object oriented API

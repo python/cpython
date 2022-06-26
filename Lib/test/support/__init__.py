@@ -304,6 +304,8 @@ def requires(resource, msg=None):
         if msg is None:
             msg = "Use of the %r resource not enabled" % resource
         raise ResourceDenied(msg)
+    if resource in {"network", "urlfetch"} and not has_socket_support:
+        raise ResourceDenied("No socket support")
     if resource == 'gui' and not _is_gui_available():
         raise ResourceDenied(_is_gui_available.reason)
 
@@ -1771,6 +1773,16 @@ def patch(test_instance, object_to_patch, attr_name, new_value):
     setattr(object_to_patch, attr_name, new_value)
 
 
+@contextlib.contextmanager
+def patch_list(orig):
+    """Like unittest.mock.patch.dict, but for lists."""
+    try:
+        saved = orig[:]
+        yield
+    finally:
+        orig[:] = saved
+
+
 def run_in_subinterp(code):
     """
     Run code in a subinterpreter. Raise unittest.SkipTest if the tracemalloc
@@ -2194,3 +2206,20 @@ def clear_ignored_deprecations(*tokens: object) -> None:
     if warnings.filters != new_filters:
         warnings.filters[:] = new_filters
         warnings._filters_mutated()
+
+
+# Skip a test if venv with pip is known to not work.
+def requires_venv_with_pip():
+    # ensurepip requires zlib to open ZIP archives (.whl binary wheel packages)
+    try:
+        import zlib
+    except ImportError:
+        return unittest.skipIf(True, "venv: ensurepip requires zlib")
+
+    # bpo-26610: pip/pep425tags.py requires ctypes.
+    # gh-92820: setuptools/windows_support.py uses ctypes (setuptools 58.1).
+    try:
+        import ctypes
+    except ImportError:
+        ctypes = None
+    return unittest.skipUnless(ctypes, 'venv: pip requires ctypes')

@@ -45,6 +45,7 @@ class TestCase(unittest.TestCase):
         env['COLUMNS'] = '80'
 
 
+@os_helper.skip_unless_working_chmod
 class TempDirMixin(object):
 
     def setUp(self):

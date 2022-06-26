@@ -1,7 +1,9 @@
 """Deep freeze
 
-The script is executed by _bootstrap_python interpreter. Shared library
-extension modules are not available.
+The script may be executed by _bootstrap_python interpreter.
+Shared library extension modules are not available in that case.
+On Windows, and in cross-compilation cases, it is executed
+by Python 3.10, and 3.11 features are not available.
 """
 import argparse
 import ast
@@ -262,6 +264,7 @@ class Printer:
             self.write(f".co_exceptiontable = {co_exceptiontable},")
             self.field(code, "co_flags")
             self.write(".co_warmup = QUICKENING_INITIAL_WARMUP_VALUE,")
+            self.write("._co_linearray_entry_size = 0,")
             self.field(code, "co_argcount")
             self.field(code, "co_posonlyargcount")
             self.field(code, "co_kwonlyargcount")
@@ -278,6 +281,8 @@ class Printer:
             self.write(f".co_name = {co_name},")
             self.write(f".co_qualname = {co_qualname},")
             self.write(f".co_linetable = {co_linetable},")
+            self.write(f"._co_code = NULL,")
+            self.write("._co_linearray = NULL,")
             self.write(f".co_code_adaptive = {co_code_adaptive},")
         name_as_code = f"(PyCodeObject *)&{name}"
         self.deallocs.append(f"_PyStaticCode_Dealloc({name_as_code});")

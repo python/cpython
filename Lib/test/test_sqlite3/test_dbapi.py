@@ -29,7 +29,10 @@ import threading
 import unittest
 import urllib.parse
 
-from test.support import SHORT_TIMEOUT, bigmemtest, check_disallow_instantiation
+from test.support import (
+    SHORT_TIMEOUT, bigmemtest, check_disallow_instantiation, requires_subprocess,
+    is_emscripten, is_wasi
+)
 from test.support import threading_helper
 from _testcapi import INT_MAX, ULLONG_MAX
 from os import SEEK_SET, SEEK_CUR, SEEK_END
@@ -658,6 +661,7 @@ class OpenTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
     @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
+    @unittest.skipIf(is_emscripten or is_wasi, "not supported on Emscripten/WASI")
     @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
     def test_open_with_undecodable_path(self):
         path = TESTFN_UNDECODABLE
@@ -703,6 +707,7 @@ class OpenTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
     @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
+    @unittest.skipIf(is_emscripten or is_wasi, "not supported on Emscripten/WASI")
     @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
     def test_open_undecodable_uri(self):
         path = TESTFN_UNDECODABLE
@@ -751,22 +756,44 @@ class CursorTests(unittest.TestCase):
         with self.assertRaises(sqlite.OperationalError):
             self.cu.execute("select asdf")
 
-    def test_execute_too_much_sql(self):
-        self.assertRaisesRegex(sqlite.ProgrammingError,
-                               "You can only execute one statement at a time",
-                               self.cu.execute, "select 5+4; select 4+5")
+    def test_execute_multiple_statements(self):
+        msg = "You can only execute one statement at a time"
+        dataset = (
+            "select 1; select 2",
+            "select 1; // c++ comments are not allowed",
+            "select 1; *not a comment",
+            "select 1; -*not a comment",
+            "select 1; /* */ a",
+            "select 1; /**/a",
+            "select 1; -",
+            "select 1; /",
+            "select 1; -\n- select 2",
+            """select 1;
+               -- comment
+               select 2
+            """,
+        )
+        for query in dataset:
+            with self.subTest(query=query):
+                with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+                    self.cu.execute(query)
 
-    def test_execute_too_much_sql2(self):
-        self.cu.execute("select 5+4; -- foo bar")
-
-    def test_execute_too_much_sql3(self):
-        self.cu.execute("""
+    def test_execute_with_appended_comments(self):
+        dataset = (
+            "select 1; -- foo bar",
+            "select 1; --",
+            "select 1; /*",  # Unclosed comments ending in \0 are skipped.
+            """
             select 5+4;
 
             /*
             foo
             */
-            """)
+            """,
+        )
+        for query in dataset:
+            with self.subTest(query=query):
+                self.cu.execute(query)
 
     def test_execute_wrong_sql_arg(self):
         with self.assertRaises(TypeError):
@@ -902,6 +929,38 @@ class CursorTests(unittest.TestCase):
         self.cu.execute("delete from test")
         self.cu.executemany("insert into test(name) values (?)", [(1,), (2,), (3,)])
         self.assertEqual(self.cu.rowcount, 3)
+
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 35, 0),
+                     "Requires SQLite 3.35.0 or newer")
+    def test_rowcount_update_returning(self):
+        # gh-93421: rowcount is updated correctly for UPDATE...RETURNING queries
+        self.cu.execute("update test set name='bar' where name='foo' returning 1")
+        self.assertEqual(self.cu.fetchone()[0], 1)
+        self.assertEqual(self.cu.rowcount, 1)
+
+    def test_rowcount_prefixed_with_comment(self):
+        # gh-79579: rowcount is updated even if query is prefixed with comments
+        self.cu.execute("""
+            -- foo
+            insert into test(name) values ('foo'), ('foo')
+        """)
+        self.assertEqual(self.cu.rowcount, 2)
+        self.cu.execute("""
+            /* -- messy *r /* /* ** *- *--
+            */
+            /* one more */ insert into test(name) values ('messy')
+        """)
+        self.assertEqual(self.cu.rowcount, 1)
+        self.cu.execute("/* bar */ update test set name='bar' where name='foo'")
+        self.assertEqual(self.cu.rowcount, 3)
+
+    def test_rowcount_vaccuum(self):
+        data = ((1,), (2,), (3,))
+        self.cu.executemany("insert into test(income) values(?)", data)
+        self.assertEqual(self.cu.rowcount, 3)
+        self.cx.commit()
+        self.cu.execute("vacuum")
+        self.assertEqual(self.cu.rowcount, -1)
 
     def test_total_changes(self):
         self.cu.execute("insert into test(name) values ('foo')")
@@ -1404,6 +1463,7 @@ class BlobTests(unittest.TestCase):
                                    blob.read)
 
 
+@threading_helper.requires_working_threading()
 class ThreadTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:")
@@ -1768,6 +1828,7 @@ class SqliteOnConflictTests(unittest.TestCase):
         self.assertEqual(self.cu.fetchall(), [('Very different data!', 'foo')])
 
 
+@requires_subprocess()
 class MultiprocessTests(unittest.TestCase):
     CONNECTION_TIMEOUT = SHORT_TIMEOUT / 1000.  # Defaults to 30 ms
 

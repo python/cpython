@@ -2632,6 +2632,37 @@ PyImport_AppendInittab(const char *name, PyObject* (*initfunc)(void))
     return PyImport_ExtendInittab(newtab);
 }
 
+
+PyObject *
+_PyImport_GetModuleAttr(PyObject *modname, PyObject *attrname)
+{
+    PyObject *mod = PyImport_Import(modname);
+    if (mod == NULL) {
+        return NULL;
+    }
+    PyObject *result = PyObject_GetAttr(mod, attrname);
+    Py_DECREF(mod);
+    return result;
+}
+
+PyObject *
+_PyImport_GetModuleAttrString(const char *modname, const char *attrname)
+{
+    PyObject *pmodname = PyUnicode_FromString(modname);
+    if (pmodname == NULL) {
+        return NULL;
+    }
+    PyObject *pattrname = PyUnicode_FromString(attrname);
+    if (pattrname == NULL) {
+        Py_DECREF(pmodname);
+        return NULL;
+    }
+    PyObject *result = _PyImport_GetModuleAttr(pmodname, pattrname);
+    Py_DECREF(pattrname);
+    Py_DECREF(pmodname);
+    return result;
+}
+
 #ifdef __cplusplus
 }
 #endif

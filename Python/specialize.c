@@ -1904,13 +1904,14 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
 #ifndef Py_STATS
         _Py_SET_OPCODE(*instr, COMPARE_OP);
         return;
-#endif
+#else
         if (next_opcode == EXTENDED_ARG) {
             SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_EXTENDED_ARG);
             goto failure;
         }
         SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_NOT_FOLLOWED_BY_COND_JUMP);
         goto failure;
+#endif
     }
     assert(oparg <= Py_GE);
     int when_to_jump_mask = compare_masks[oparg];

@@ -143,6 +143,7 @@ AS_VAR_IF([cross_compiling], [yes],
     FREEZE_MODULE_BOOTSTRAP_DEPS='$(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
     FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
+    PYTHON_FOR_BUILD_DEPS=''
   ],
   [
     dnl internal build tools also depend on Programs/_freeze_module and _bootstrap_python.
@@ -150,12 +151,14 @@ AS_VAR_IF([cross_compiling], [yes],
     FREEZE_MODULE_BOOTSTRAP_DEPS="Programs/_freeze_module"
     FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
+    PYTHON_FOR_BUILD_DEPS='$(BUILDPYTHON)'
   ]
 )
 AC_SUBST([FREEZE_MODULE_BOOTSTRAP])
 AC_SUBST([FREEZE_MODULE_BOOTSTRAP_DEPS])
 AC_SUBST([FREEZE_MODULE])
 AC_SUBST([FREEZE_MODULE_DEPS])
+AC_SUBST([PYTHON_FOR_BUILD_DEPS])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
   [python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python],
@@ -770,6 +773,35 @@ AC_PROG_GREP
 AC_PROG_SED
 AC_PROG_EGREP
 
+dnl detect compiler name
+dnl check for xlc before clang, newer xlc's can use clang as frontend.
+dnl check for GCC last, other compilers set __GNUC__, too.
+dnl msvc is listed for completeness.
+AC_CACHE_CHECK([for CC compiler name], [ac_cv_cc_name], [
+cat > conftest.c <<EOF
+#if defined(__INTEL_COMPILER) || defined(__ICC)
+  icc
+#elif defined(__ibmxl__) || defined(__xlc__) || defined(__xlC__)
+  xlc
+#elif defined(_MSC_VER)
+  msvc
+#elif defined(__clang__)
+  clang
+#elif defined(__GNUC__)
+  gcc
+#else
+#  error unknown compiler
+#endif
+EOF
+
+if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
+  ac_cv_cc_name=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
+else
+  ac_cv_cc_name="unknown"
+fi
+rm -f conftest.c conftest.out
+])
+
 # checks for UNIX variants that set C preprocessor variables
 # may set _GNU_SOURCE, __EXTENSIONS__, _POSIX_PTHREAD_SEMANTICS,
 # _POSIX_SOURCE, _POSIX_1_SOURCE, and more
@@ -1030,6 +1062,42 @@ if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""
 fi
 AC_SUBST(MULTIARCH_CPPFLAGS)
+
+dnl Support tiers according to https://peps.python.org/pep-0011/
+dnl
+dnl NOTE: Windows support tiers are defined in PC/pyconfig.h.
+dnl
+AC_MSG_CHECKING([for PEP 11 support tier])
+AS_CASE([$host/$ac_cv_cc_name],
+  [x86_64-*-linux-gnu/gcc],          [PY_SUPPORT_TIER=1], dnl Linux on AMD64, any vendor, glibc, gcc
+  [x86_64-apple-darwin*/clang],      [PY_SUPPORT_TIER=1], dnl macOS on Intel, any version
+  [i686-pc-windows-msvc/msvc],       [PY_SUPPORT_TIER=1], dnl 32bit Windows on Intel, MSVC
+  [x86_64-pc-windows-msvc/msvc],     [PY_SUPPORT_TIER=1], dnl 64bit Windows on AMD64, MSVC
+
+  [aarch64-apple-darwin*/clang],     [PY_SUPPORT_TIER=2], dnl macOS on M1, any version
+  [aarch64-*-linux-gnu/gcc],         [PY_SUPPORT_TIER=2], dnl Linux ARM64, glibc, gcc+clang
+  [aarch64-*-linux-gnu/clang],       [PY_SUPPORT_TIER=2],
+  [powerpc64le-*-linux-gnu/gcc],     [PY_SUPPORT_TIER=2], dnl Linux on PPC64 little endian, glibc, gcc
+  [x86_64-*-linux-gnu/clang],        [PY_SUPPORT_TIER=2], dnl Linux on AMD64, any vendor, glibc, clang
+
+  [aarch64-pc-windows-msvc/msvc],    [PY_SUPPORT_TIER=3], dnl Windows ARM64, MSVC
+  [armv7l-*-linux-gnueabihf/gcc],    [PY_SUPPORT_TIER=3], dnl ARMv7 LE with hardware floats, any vendor, glibc, gcc
+  [powerpc64le-*-linux-gnu/clang],   [PY_SUPPORT_TIER=3], dnl Linux on PPC64 little endian, glibc, clang
+  [s390x-*-linux-gnu/gcc],           [PY_SUPPORT_TIER=3], dnl Linux on 64bit s390x (big endian), glibc, gcc
+  dnl [wasm32-unknown-emscripten/clang], [PY_SUPPORT_TIER=3], dnl WebAssembly Emscripten
+  dnl [wasm32-unknown-wasi/clang],       [PY_SUPPORT_TIER=3], dnl WebAssembly System Interface
+  [x86_64-*-freebsd/clang],          [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
+  [PY_SUPPORT_TIER=0]
+)
+
+AS_CASE([$PY_SUPPORT_TIER],
+  [1], [AC_MSG_RESULT([$host/$ac_cv_cc_name has tier 1 (supported)])],
+  [2], [AC_MSG_RESULT([$host/$ac_cv_cc_name has tier 2 (supported)])],
+  [3], [AC_MSG_RESULT([$host/$ac_cv_cc_name has tier 3 (partially supported)])],
+  [AC_MSG_WARN([$host/$ac_cv_cc_name is not supported])]
+)
+
+AC_DEFINE_UNQUOTED([PY_SUPPORT_TIER], [$PY_SUPPORT_TIER], [PEP 11 Support tier (1, 2, 3 or 0 for unsupported)])
 
 AC_CACHE_CHECK([for -Wl,--no-as-needed], [ac_cv_wl_no_as_needed], [
   save_LDFLAGS="$LDFLAGS"
@@ -1418,17 +1486,26 @@ if test -z "$HOSTRUNNER"
 then
   AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
     [Emscripten/node*], [
+      # bigint for ctypes c_longlong, c_longdouble
+      HOSTRUNNER="node --experimental-wasm-bigint"
       AS_VAR_IF([enable_wasm_pthreads], [yes], [
-        HOSTRUNNER='node --experimental-wasm-threads --experimental-wasm-bulk-memory'
-      ], [
-        HOSTRUNNER='node'
+        HOSTRUNNER="$HOSTRUNNER --experimental-wasm-threads --experimental-wasm-bulk-memory"
       ])
     ],
+    dnl TODO: support other WASI runtimes
+    dnl wasmtime starts the proces with "/" as CWD. For OOT builds add the
+    dnl directory containing _sysconfigdata to PYTHONPATH.
+    [WASI/*], [HOSTRUNNER='wasmtime run --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt) --mapdir /::$(srcdir) --'],
     [HOSTRUNNER='']
   )
 fi
 AC_SUBST([HOSTRUNNER])
 AC_MSG_RESULT([$HOSTRUNNER])
+
+if test -n "$HOSTRUNNER"; then
+  dnl Pass hostrunner variable as env var in order to expand shell expressions.
+  PYTHON_FOR_BUILD="_PYTHON_HOSTRUNNER='$HOSTRUNNER' $PYTHON_FOR_BUILD"
+fi
 
 AC_MSG_RESULT($LDLIBRARY)
 
@@ -1950,6 +2027,9 @@ AS_CASE([$ac_sys_system],
     
     dnl Start with 20 MB and allow to grow
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sTOTAL_MEMORY=20971520"])
+
+    dnl map int64_t and uint64_t to JS bigint
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sWASM_BIGINT"])
 
     dnl Include file system support
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
@@ -6673,10 +6753,13 @@ AS_CASE([$ac_sys_system],
       ],
       [Emscripten/node*], [],
       [WASI/*], [
-        dnl WASI SDK 15.0 does not support file locking.
+        dnl WASI SDK 15.0 does not support file locking, mmap, and more.
         PY_STDLIB_MOD_SET_NA(
           [_ctypes_test],
-	  [fcntl],
+          [fcntl],
+          [mmap],
+          [resource],
+          [termios],
         )
       ]
     )
@@ -6897,7 +6980,7 @@ PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
-PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [], [], [-lm])
+PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes], [], [-lm])
 
 dnl Limited API template modules.
 dnl The limited C API is not compatible with the Py_TRACE_REFS macro.
@@ -6937,3 +7020,9 @@ If you want a release build with all stable optimizations active (PGO, etc),
 please run ./configure --enable-optimizations
 ])
 fi
+
+AS_VAR_IF([PY_SUPPORT_TIER], [0], [AC_MSG_WARN([
+
+Platform "$host" with compiler "$ac_cv_cc_name" is not supported by the
+CPython core team, see https://peps.python.org/pep-0011/ for more information.
+])])

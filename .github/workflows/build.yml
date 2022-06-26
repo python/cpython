@@ -76,7 +76,16 @@ jobs:
           ./configure --enable-shared
           make -j4
       - name: Check for changes in the ABI
-        run: make check-abidump
+        run: |
+          make check-abidump
+          if [ $? -neq 0 ] ; then
+            echo "Generated ABI file is not up to date."
+            echo "Please, add the release manager of this branch as a reviewer of this PR."
+            echo ""
+            echo "To learn more about this check, please visit: https://devguide.python.org/setup/?highlight=abi#regenerate-the-abi-dump"
+            echo ""
+            exit 1
+          fi
 
   check_generated_files:
     name: 'Check if generated files are up to date'

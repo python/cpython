@@ -840,6 +840,38 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_winapi_LCMapStringEx__doc__,
+"LCMapStringEx($module, /, locale, flags, src)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_LCMAPSTRINGEX_METHODDEF    \
+    {"LCMapStringEx", _PyCFunction_CAST(_winapi_LCMapStringEx), METH_FASTCALL|METH_KEYWORDS, _winapi_LCMapStringEx__doc__},
+
+static PyObject *
+_winapi_LCMapStringEx_impl(PyObject *module, PyObject *locale, DWORD flags,
+                           PyObject *src);
+
+static PyObject *
+_winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"locale", "flags", "src", NULL};
+    static _PyArg_Parser _parser = {"UkU:LCMapStringEx", _keywords, 0};
+    PyObject *locale;
+    DWORD flags;
+    PyObject *src;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &locale, &flags, &src)) {
+        goto exit;
+    }
+    return_value = _winapi_LCMapStringEx_impl(module, locale, flags, src);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_winapi_ReadFile__doc__,
 "ReadFile($module, /, handle, size, overlapped=False)\n"
 "--\n"
@@ -1184,4 +1216,4 @@ _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a4ede01aede352a4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dfbccec8f11b7433 input=a9049054013a1b77]*/

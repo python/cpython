@@ -149,7 +149,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    contains a good example of its use.
 
 
-.. function:: context_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\\n')
+.. function:: context_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n')
 
    Compare *a* and *b* (lists of strings); return a delta (a :term:`generator`
    generating the delta lines) in context diff format.
@@ -279,7 +279,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       emu
 
 
-.. function:: unified_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\\n')
+.. function:: unified_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n')
 
    Compare *a* and *b* (lists of strings); return a delta (a :term:`generator`
    generating the delta lines) in unified diff format.
@@ -321,7 +321,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    See :ref:`difflib-interface` for a more detailed example.
 
-.. function:: diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'', fromfiledate=b'', tofiledate=b'', n=3, lineterm=b'\\n')
+.. function:: diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'', fromfiledate=b'', tofiledate=b'', n=3, lineterm=b'\n')
 
    Compare *a* and *b* (lists of bytes objects) using *dfunc*; yield a
    sequence of delta lines (also bytes) in the format returned by *dfunc*.
