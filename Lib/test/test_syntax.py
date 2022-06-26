@@ -1273,11 +1273,11 @@ Incomplete dictionary literals
 
    # Ensure that the error is not raised for invalid expressions
 
-   >>> {1: 2, 3: foo(,), 4: 5} 
+   >>> {1: 2, 3: foo(,), 4: 5}
    Traceback (most recent call last):
    SyntaxError: invalid syntax
 
-   >>> {1: $, 2: 3} 
+   >>> {1: $, 2: 3}
    Traceback (most recent call last):
    SyntaxError: invalid syntax
 
