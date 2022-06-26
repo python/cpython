@@ -108,10 +108,12 @@ EXTRA_QUEUED_CALLS = 1
 
 
 # On Windows, WaitForMultipleObjects is used to wait for processes to finish.
-# It can wait on, at most, 63 objects. There is an overhead of two objects:
+# It can wait on, at most, 64 objects. There is an overhead of two to three
+# objects:
 # - the result queue reader
 # - the thread wakeup reader
-_MAX_WINDOWS_WORKERS = 63 - 2
+# - sometimes _PyOS_SigintEvent
+_MAX_WINDOWS_WORKERS = 64 - 3
 
 # Hack to embed stringification of remote traceback in local traceback
 
