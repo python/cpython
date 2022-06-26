@@ -689,7 +689,8 @@ class StructTest(unittest.TestCase):
         self.assertIsNone(
             module_ref(), "_struct module was not garbage collected")
 
-    def test__struct_types_immutable(self) -> None:
+    @support.cpython_only
+    def test__struct_types_immutable(self):
         # See https://github.com/python/cpython/issues/94254
 
         Struct = struct.Struct
