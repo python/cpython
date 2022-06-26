@@ -126,11 +126,11 @@ Module Contents
 
    :func:`member`
 
-      Make `obj` a member.  Can be used as a decorator.
+      Make ``obj`` a member.  Can be used as a decorator.
 
    :func:`nonmember`
 
-      Do not make `obj` a member.  Can be used as a decorator.
+      Do not make ``obj`` a member.  Can be used as a decorator.
 
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
@@ -760,6 +760,10 @@ Utilities and Decorators
 
    ``_generate_next_value_`` can be overridden to customize the values used by
    *auto*.
+
+   .. note:: in 3.13 the default ``"generate_next_value_`` will always return
+             the highest member value incremented by 1, and will fail if any
+             member is an incompatible type.
 
 .. decorator:: property
 

@@ -74,6 +74,9 @@ except ModuleNotFoundError:
 else:
     _mswindows = True
 
+# wasm32-emscripten and wasm32-wasi do not support processes
+_can_fork_exec = sys.platform not in {"emscripten", "wasi"}
+
 if _mswindows:
     import _winapi
     from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
@@ -97,13 +100,10 @@ if _mswindows:
                     "CREATE_NO_WINDOW", "DETACHED_PROCESS",
                     "CREATE_DEFAULT_ERROR_MODE", "CREATE_BREAKAWAY_FROM_JOB"])
 else:
-    if sys.platform in {"emscripten", "wasi"}:
-        def _fork_exec(*args, **kwargs):
-            raise OSError(
-                errno.ENOTSUP, f"{sys.platform} does not support processes."
-            )
-    else:
+    if _can_fork_exec:
         from _posixsubprocess import fork_exec as _fork_exec
+    else:
+        _fork_exec = None
     import select
     import selectors
 
@@ -801,6 +801,11 @@ class Popen:
                  encoding=None, errors=None, text=None, umask=-1, pipesize=-1,
                  process_group=None):
         """Create new Popen instance."""
+        if not _can_fork_exec:
+            raise OSError(
+                errno.ENOTSUP, f"{sys.platform} does not support processes."
+            )
+
         _cleanup()
         # Held while anything is calling waitpid before returncode has been
         # updated to prevent clobbering returncode if wait() or poll() are

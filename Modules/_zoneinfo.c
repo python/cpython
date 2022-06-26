@@ -659,14 +659,8 @@ zoneinfo_reduce(PyObject *obj_self, PyObject *unused)
     PyZoneInfo_ZoneInfo *self = (PyZoneInfo_ZoneInfo *)obj_self;
     if (self->source == SOURCE_FILE) {
         // Objects constructed from files cannot be pickled.
-        PyObject *pickle = PyImport_ImportModule("pickle");
-        if (pickle == NULL) {
-            return NULL;
-        }
-
         PyObject *pickle_error =
-            PyObject_GetAttrString(pickle, "PicklingError");
-        Py_DECREF(pickle);
+            _PyImport_GetModuleAttrString("pickle", "PicklingError");
         if (pickle_error == NULL) {
             return NULL;
         }
@@ -2492,14 +2486,13 @@ clear_strong_cache(const PyTypeObject *const type)
 static PyObject *
 new_weak_cache(void)
 {
-    PyObject *weakref_module = PyImport_ImportModule("weakref");
-    if (weakref_module == NULL) {
+    PyObject *WeakValueDictionary =
+            _PyImport_GetModuleAttrString("weakref", "WeakValueDictionary");
+    if (WeakValueDictionary == NULL) {
         return NULL;
     }
-
-    PyObject *weak_cache =
-        PyObject_CallMethod(weakref_module, "WeakValueDictionary", "");
-    Py_DECREF(weakref_module);
+    PyObject *weak_cache = PyObject_CallNoArgs(WeakValueDictionary);
+    Py_DECREF(WeakValueDictionary);
     return weak_cache;
 }
 
@@ -2656,25 +2649,13 @@ zoneinfomodule_exec(PyObject *m)
     PyModule_AddObject(m, "ZoneInfo", (PyObject *)&PyZoneInfo_ZoneInfoType);
 
     /* Populate imports */
-    PyObject *_tzpath_module = PyImport_ImportModule("zoneinfo._tzpath");
-    if (_tzpath_module == NULL) {
-        goto error;
-    }
-
     _tzpath_find_tzfile =
-        PyObject_GetAttrString(_tzpath_module, "find_tzfile");
-    Py_DECREF(_tzpath_module);
+        _PyImport_GetModuleAttrString("zoneinfo._tzpath", "find_tzfile");
     if (_tzpath_find_tzfile == NULL) {
         goto error;
     }
 
-    PyObject *io_module = PyImport_ImportModule("io");
-    if (io_module == NULL) {
-        goto error;
-    }
-
-    io_open = PyObject_GetAttrString(io_module, "open");
-    Py_DECREF(io_module);
+    io_open = _PyImport_GetModuleAttrString("io", "open");
     if (io_open == NULL) {
         goto error;
     }

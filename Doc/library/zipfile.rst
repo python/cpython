@@ -139,7 +139,7 @@ ZipFile Objects
 
 
 .. class:: ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True, \
-                   compresslevel=None, *, strict_timestamps=True,
+                   compresslevel=None, *, strict_timestamps=True, \
                    metadata_encoding=None)
 
    Open a ZIP file, where *file* can be a path to a file (a string), a
