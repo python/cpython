@@ -1353,7 +1353,7 @@ Default adapters and converters (deprecated)
 .. note::
 
    The default adapters and converters are deprecated as of Python 3.12.
-   Use the :ref:`sqlite3-adapter-converter-recipes`
+   Instead, use the :ref:`sqlite3-adapter-converter-recipes`
    and tailor them to you need.
 
 The deprecated default adapters and converters consists of:
