@@ -417,8 +417,11 @@ Connection Objects
 
    .. attribute:: in_transaction
 
+      This read-only attribute corresponds to the low-level SQLite autocommit
+      mode.
+
       :const:`True` if a transaction is active (there are uncommitted changes),
-      :const:`False` otherwise.  Read-only attribute.
+      :const:`False` otherwise.
 
       .. versionadded:: 3.2
 
@@ -884,14 +887,14 @@ Cursor Objects
       If :attr:`isolation_level` is not :const:`None`,
       *sql* is an INSERT, UPDATE, DELETE, or REPLACE statement,
       and there is no open transaction,
-      ``sqlite3`` will implicitly open a new transaction.
+      a transaction is implicitly opened before executing *sql*.
 
 
    .. method:: executemany(sql, seq_of_parameters)
 
       Execute a :ref:`parameterized <sqlite3-placeholders>` SQL command
       against all parameter sequences or mappings found in the sequence
-      *seq_of_parameters*.  The ``sqlite3`` module also allows using an
+      *seq_of_parameters*.  It is also possible to use an
       :term:`iterator` yielding parameters instead of a sequence.
       Uses the same implicit transaction handling as :meth:`~Cursor.execute`.
 
@@ -907,7 +910,7 @@ Cursor Objects
       Execute multiple SQL statements at once.
       If there is a pending transaciton,
       an implicit ``COMMIT`` statement is executed first.
-      This method disregards :attr:`isolation_level`;
+      No other implicit transaction control is performed;
       any transaction control must be added to *sql_script*.
 
       *sql_script* must be a :class:`string <str>`.
