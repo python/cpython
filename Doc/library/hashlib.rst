@@ -309,7 +309,8 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.12
-      Remove the slow pure Python implementation, deprecated in Python 3.10.
+      Function now only available when Python is built with OpenSSL. The slow
+      pure Python implementation has been removed.
 
 .. function:: scrypt(password, *, salt, n, r, p, maxmem=0, dklen=64)
 
