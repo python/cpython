@@ -166,7 +166,7 @@ are referred to by using the name of the argument. ::
 Positional and keyword arguments can be arbitrarily combined::
 
    >>> print('The story of {0}, {1}, and {other}.'.format('Bill', 'Manfred',
-                                                          other='Georg'))
+   ...                                                    other='Georg'))
    The story of Bill, Manfred, and Georg.
 
 If you have a really long format string that you don't want to split up, it
