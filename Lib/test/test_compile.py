@@ -1207,6 +1207,11 @@ class TestExpressionStackSize(unittest.TestCase):
         code += "   x and x\n" * self.N
         self.check_stack_size(code)
 
+    # Test that this compiles
+    def test_stack_3050(self):
+        M = 3050
+        code = "x," * M + "=t"
+        compile(code, "<foo>", "single")
 
 class TestStackSizeStability(unittest.TestCase):
     # Check that repeating certain snippets doesn't increase the stack size
