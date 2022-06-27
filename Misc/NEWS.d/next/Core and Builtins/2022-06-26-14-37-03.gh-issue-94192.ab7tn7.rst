@@ -1,0 +1,1 @@
+Fix error for dictionary literals with invalid expression as value.
