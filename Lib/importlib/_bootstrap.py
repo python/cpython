@@ -45,6 +45,37 @@ _module_locks = {}
 _blocking_on = {}
 
 
+class _BlockingOnManager:
+    """
+    A context manager responsible to updating ``_blocking_on`` to track which
+    threads are likely blocked on taking the import locks for which modules.
+    """
+    def __init__(self, tid, lock):
+        # The id of the thread in which this manager is being used.
+        self.tid = tid
+        # The _ModuleLock for a certain module which the running thread wants
+        # to take.
+        self.lock = lock
+
+    def __enter__(self):
+        """
+        Mark the running thread as waiting for the lock this manager knows
+        about.
+
+        :return: A context manager which can be used to take and release the
+        lock for the _ModuleLock this manager knows about.
+        """
+        _blocking_on[self.tid] = self.lock
+        return self.lock.lock
+
+    def __exit__(self, *args, **kwargs):
+        """
+        Mark the running thread as no longer waiting for the lock this manager
+        knows about.
+        """
+        del _blocking_on[self.tid]
+
+
 class _DeadlockError(RuntimeError):
     pass
 
@@ -112,13 +143,12 @@ class _ModuleLock:
         Otherwise, the lock is always acquired and True is returned.
         """
         tid = _thread.get_ident()
-        _blocking_on[tid] = self
-        try:
+        with _BlockingOnManager(tid, self) as the_lock:
             while True:
                 # Protect interaction with state on self with a per-module
                 # lock.  This makes it safe for more than one thread to try to
                 # acquire the lock for a single module at the same time.
-                with self.lock:
+                with the_lock:
                     if self.count == 0 or self.owner == tid:
                         # If the lock for this module is unowned then we can
                         # take the lock immediately and succeed.  If the lock
@@ -174,8 +204,6 @@ class _ModuleLock:
                 # give it up now.  We'll take it non-blockingly again on the
                 # next iteration around this while loop.
                 self.wakeup.release()
-        finally:
-            del _blocking_on[tid]
 
     def release(self):
         tid = _thread.get_ident()
