@@ -385,6 +385,7 @@ miss_counter_start(void) {
 #define SPEC_FAIL_ATTR_METACLASS_ATTRIBUTE 27
 #define SPEC_FAIL_ATTR_CUSTOM_GETATTRO 28
 #define SPEC_FAIL_ATTR_NOT_HEAP_TYPE 29
+#define SPEC_FAIL_ATTR_NOT_MATCHING_CUSTOM_GETATTRIBUTE 30
 
 /* Binary subscr and store subscr */
 
@@ -540,77 +541,6 @@ specialize_module_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
     return 0;
 }
 
-static int
-specialize_custom_getattribute(PyTypeObject *type, _Py_CODEUNIT *instr,
-    unsigned int tp_version_tag)
-{
-    if (type->tp_getattr != NULL && type->tp_getattro == NULL) {
-        goto fail;
-    }
-    getattrofunc getattro_slot = type->tp_getattro;
-    /* The following comment is copied from typeobject.c */
-    /* There are two slot dispatch functions for tp_getattro.
-
-       - _Py_slot_tp_getattro() is used when __getattribute__ is overridden
-         but no __getattr__ hook is present;
-
-       - _Py_slot_tp_getattr_hook() is used when a __getattr__ hook is present.
-
-       The code in update_one_slot() always installs
-       _Py_slot_tp_getattr_hook(); this detects the absence of
-       __getattr__ and then installs the simpler slot if necessary. */
-    if (getattro_slot != _Py_slot_tp_getattro &&
-        getattro_slot != _Py_slot_tp_getattr_hook) {
-        /* E.g. the custom getattro for super() objects */
-        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CUSTOM_GETATTRO);
-        goto fail;
-    }
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NOT_HEAP_TYPE);
-        goto fail;
-    }
-    _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + 1);
-    PyObject *getattr = _PyType_Lookup(type, &_Py_ID(__getattr__));
-    if (getattr == NULL && getattro_slot != _Py_slot_tp_getattro) {
-        /* According to typeobject rules, if getattr is NULL,
-           getattro_slot should be _Py_slot_tp_getattro */
-        goto fail;
-    }
-    PyObject *getattribute = _PyType_Lookup(type,
-        &_Py_ID(__getattribute__));
-    /* Whether to call PyObject_GenericGetAttr or getattribute
-       at runtime */
-    bool custom_getattribute = !(getattribute == NULL ||
-        (Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
-            ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
-            (void *)PyObject_GenericGetAttr));
-
-    if (getattr || getattribute) {
-        PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
-        /* borrowed */
-        ht->_spec_cache.getattribute = custom_getattribute ?
-            getattribute : NULL;
-
-        uint32_t func_version = 0;
-        if (getattr) {
-            func_version = maybe_function_get_version(getattr, 2, LOAD_ATTR);
-        }
-        /* func_version == 0 is OK if there's no __getattr__
-           or __getattr__ isn't a Python function*/
-        write_u32(lm_cache->keys_version, func_version);
-        /* borrowed */
-        ((PyHeapTypeObject *)type)->_spec_cache.getattr = getattr;
-        assert(type->tp_version_tag != 0);
-        write_u32(lm_cache->type_version, type->tp_version_tag);
-        _Py_SET_OPCODE(*instr, func_version ? LOAD_ATTR_GETATTRIBUTE_GETATTR_PY_OVERRIDDEN : LOAD_ATTR_GETATTRIBUTE_GETATTR_OVERRIDDEN);
-        goto success;
-    }
-fail:
-    return 1;
-success:
-    return 0;
-}
-
 
 /* Attribute specialization */
 
@@ -627,13 +557,15 @@ typedef enum {
     MUTABLE,   /* Instance of a mutable class; might, or might not, be a descriptor */
     ABSENT, /* Attribute is not present on the class */
     DUNDER_CLASS, /* __class__ attribute */
-    GETSET_OVERRIDDEN /* __getattribute__ or __setattr__ has been overridden */
+    GETSET_OVERRIDDEN, /* __getattribute__ or __setattr__ has been overridden */
+    GET_CALL_GETATTRIBUTE /* Descriptor requires calling __getattribute__ */
 } DescriptorClassification;
 
 
 static DescriptorClassification
 analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int store)
 {
+    int has_getattr = 0;
     if (store) {
         if (type->tp_setattro != PyObject_GenericSetAttr) {
             *descr = NULL;
@@ -642,8 +574,47 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
     }
     else {
         if (type->tp_getattro != PyObject_GenericGetAttr) {
-            *descr = NULL;
-            return GETSET_OVERRIDDEN;
+            getattrofunc getattro_slot = type->tp_getattro;
+            /* The following comment is copied from typeobject.c */
+            /* There are two slot dispatch functions for tp_getattro.
+
+               - _Py_slot_tp_getattro() is used when __getattribute__ is overridden
+                 but no __getattr__ hook is present;
+
+               - _Py_slot_tp_getattr_hook() is used when a __getattr__ hook is present.
+
+               The code in update_one_slot() always installs
+               _Py_slot_tp_getattr_hook(); this detects the absence of
+               __getattr__ and then installs the simpler slot if necessary. */
+            /* Using some custom tp_getattro, like super() objects */
+            if (getattro_slot != _Py_slot_tp_getattr_hook &&
+                getattro_slot != _Py_slot_tp_getattro) {
+                *descr = NULL;
+                return GETSET_OVERRIDDEN;
+            }
+            PyObject *getattribute = _PyType_Lookup(type,
+                &_Py_ID(__getattribute__));
+            bool custom_getattribute = !(getattribute == NULL ||
+                (Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
+                    ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
+                    (void *)PyObject_GenericGetAttr));
+            if (custom_getattribute) {
+                if (getattro_slot == _Py_slot_tp_getattro &&
+                    Py_IS_TYPE(getattribute, &PyFunction_Type)) {
+                    *descr = getattribute;
+                    return GET_CALL_GETATTRIBUTE;
+                }
+                *descr = NULL;
+                return GETSET_OVERRIDDEN;
+            }
+            /* Potentially has __getattr__ but no custom __getattribute__.
+               Fall through to usual descriptor analysis.
+               Usual attribute lookup should only be allowed at runtime
+               if we can guarantee that there is no way an exception can be
+               raised. This means some specializations, e.g. specializing
+               for property() isn't safe.
+            */
+            has_getattr = (getattro_slot == _Py_slot_tp_getattr_hook);
         }
     }
     PyObject *descriptor = _PyType_Lookup(type, name);
@@ -665,7 +636,10 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
             return OTHER_SLOT;
         }
         if (desc_cls == &PyProperty_Type) {
-            return PROPERTY;
+            /* We can't detect at runtime whether an attribute exists
+               with property. So that means we may have to call
+               __getattr__. */
+            return has_getattr ? GETSET_OVERRIDDEN : PROPERTY;
         }
         if (PyUnicode_CompareWithASCIIString(name, "__class__") == 0) {
             if (descriptor == _PyType_Lookup(&PyBaseObject_Type, name)) {
@@ -847,12 +821,24 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_MUTABLE_CLASS);
             goto fail;
         case GETSET_OVERRIDDEN:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OVERRIDDEN);
+            goto fail;
+        case GET_CALL_GETATTRIBUTE:
         {
-            int err = specialize_custom_getattribute(type, instr,
-                type->tp_version_tag);
-            if (err) {
+            getattrofunc getattro_slot = type->tp_getattro;
+            assert(getattro_slot == _Py_slot_tp_getattro);
+            assert(Py_IS_TYPE(descr, &PyFunction_Type));
+            _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + 1);
+            uint32_t func_version = maybe_function_get_version(descr, 2,
+                LOAD_ATTR);
+            if (func_version == 0) {
                 goto fail;
             }
+            /* borrowed */
+            write_obj(lm_cache->descr, descr);
+            write_u32(lm_cache->keys_version, func_version);
+            write_u32(lm_cache->type_version, type->tp_version_tag);
+            _Py_SET_OPCODE(*instr, LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN);
             goto success;
         }
         case BUILTIN_CLASSMETHOD:
@@ -933,6 +919,7 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         case MUTABLE:
             SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_ATTR_MUTABLE_CLASS);
             goto fail;
+        case GET_CALL_GETATTRIBUTE:
         case GETSET_OVERRIDDEN:
             SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OVERRIDDEN);
             goto fail;

@@ -3682,40 +3682,7 @@ handle_eval_breaker:
             goto start_frame;
         }
 
-        TARGET(LOAD_ATTR_GETATTRIBUTE_GETATTR_OVERRIDDEN) {
-            assert(cframe.use_tracing == 0);
-            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
-            PyObject *owner = TOP();
-            PyTypeObject *cls = Py_TYPE(owner);
-            uint32_t type_version = read_u32(cache->type_version);
-            DEOPT_IF(cls->tp_version_tag != type_version, LOAD_ATTR);
-            assert(type_version != 0);
-            STAT_INC(LOAD_ATTR, hit);
-
-            PyObject *name = GETITEM(names, oparg >> 1);
-            PyObject *getattribute = ((PyHeapTypeObject *)cls)->_spec_cache.getattribute;
-            PyObject *getattr = ((PyHeapTypeObject *)cls)->_spec_cache.getattr;
-            PyObject *res = getattribute ?
-                _Py_call_attribute(owner, getattribute, name)
-                : PyObject_GenericGetAttr(owner, name);
-            if (res == NULL &&
-                getattr &&
-                PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                PyErr_Clear();
-                res = _Py_call_attribute(owner, getattr, name);
-            }
-            if (res == NULL) {
-                goto error;
-            }
-            SET_TOP(NULL);
-            STACK_GROW((oparg & 1));
-            SET_TOP(res);
-            Py_DECREF(owner);
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            DISPATCH();
-        }
-
-        TARGET(LOAD_ATTR_GETATTRIBUTE_GETATTR_PY_OVERRIDDEN) {
+        TARGET(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
@@ -3724,39 +3691,20 @@ handle_eval_breaker:
             uint32_t type_version = read_u32(cache->type_version);
             DEOPT_IF(cls->tp_version_tag != type_version, LOAD_ATTR);
             assert(type_version != 0);
-            PyObject *getattr = ((PyHeapTypeObject *)cls)->_spec_cache.getattr;
-            assert(Py_IS_TYPE(getattr, &PyFunction_Type));
-            PyFunctionObject *f = (PyFunctionObject *)getattr;
+            PyObject *getattribute = read_obj(cache->descr);
+            assert(Py_IS_TYPE(getattribute, &PyFunction_Type));
+            PyFunctionObject *f = (PyFunctionObject *)getattribute;
             uint32_t func_version = read_u32(cache->keys_version);
             assert(func_version != 0);
             DEOPT_IF(f->func_version != func_version, LOAD_ATTR);
             PyCodeObject *code = (PyCodeObject *)f->func_code;
             assert(code->co_argcount == 2);
+            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(LOAD_ATTR, hit);
 
             PyObject *name = GETITEM(names, oparg >> 1);
-            PyObject *getattribute = ((PyHeapTypeObject *)cls)->_spec_cache.getattribute;
-            /* Possible todo: inlining this call frame? */
-            PyObject *res = getattribute ?
-                _Py_call_attribute(owner, getattribute, name)
-                : PyObject_GenericGetAttr(owner, name);
-            if (res) {
-                SET_TOP(NULL);
-                STACK_GROW((oparg & 1));
-                SET_TOP(res);
-                Py_DECREF(owner);
-                JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-                DISPATCH();
-            }
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                goto error;
-            }
-            PyErr_Clear();
             Py_INCREF(f);
-            _PyInterpreterFrame *new_frame = _PyFrame_Push(tstate, f);
-            if (new_frame == NULL) {
-                goto error;
-            }
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f);
             SET_TOP(NULL);
             int push_null = !(oparg & 1);
             STACK_SHRINK(push_null);
