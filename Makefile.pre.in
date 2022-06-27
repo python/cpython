@@ -222,7 +222,7 @@ OPENSSL_RPATH=@OPENSSL_RPATH@
 #   * missing: build dependency is missing
 #   * disabled: module is disabled
 #   * n/a: module is not available on the current platform
-# MODULE_EGG=yes  # yes, missing, disabled, n/a
+# MODULE_EGG_STATE=yes  # yes, missing, disabled, n/a
 # MODULE_EGG_CFLAGS=
 # MODULE_EGG_LDFLAGS=
 @MODULE_BLOCK@
@@ -339,10 +339,6 @@ IO_OBJS=	\
 		Modules/_io/textio.o \
 		Modules/_io/bytesio.o \
 		Modules/_io/stringio.o
-
-##########################################################################
-
-LIBFFI_INCLUDEDIR=	@LIBFFI_INCLUDEDIR@
 
 ##########################################################################
 # Parser
@@ -1204,7 +1200,7 @@ regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
 regen-abidump: all
 	@$(MKDIR_P) $(srcdir)/Doc/data/
 	abidw "libpython$(LDVERSION).so" --no-architecture --out-file $(srcdir)/Doc/data/python$(LDVERSION).abi.new
-	@$(UPDATE_FILE) $(srcdir)/Doc/data/python$(LDVERSION).abi $(srcdir)/Doc/data/python$(LDVERSION).abi.new
+	@$(UPDATE_FILE) --create $(srcdir)/Doc/data/python$(LDVERSION).abi $(srcdir)/Doc/data/python$(LDVERSION).abi.new
 
 check-abidump: all
 	abidiff $(srcdir)/Doc/data/python$(LDVERSION).abi "libpython$(LDVERSION).so" --drop-private-types --no-architecture --no-added-syms
@@ -2519,14 +2515,15 @@ Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 .PHONY: gdbhooks
 
 ##########################################################################
-# Module dependencies
+# Module dependencies and platform-specific files
 
 MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_PYEXPAT_DEPS=$(LIBEXPAT_HEADERS) @LIBEXPAT_INTERNAL@
 MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/unicodename_db.h
 MODULE__BLAKE2_DEPS=$(srcdir)/Modules/_blake2/impl/blake2-config.h $(srcdir)/Modules/_blake2/impl/blake2-impl.h $(srcdir)/Modules/_blake2/impl/blake2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2b-ref.c $(srcdir)/Modules/_blake2/impl/blake2b-round.h $(srcdir)/Modules/_blake2/impl/blake2b.c $(srcdir)/Modules/_blake2/impl/blake2s-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2s-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2s-load-xop.h $(srcdir)/Modules/_blake2/impl/blake2s-ref.c $(srcdir)/Modules/_blake2/impl/blake2s-round.h $(srcdir)/Modules/_blake2/impl/blake2s.c $(srcdir)/Modules/_blake2/blake2module.h $(srcdir)/Modules/hashlib.h
-MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
+MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h $(srcdir)/Modules/_ctypes/darwin/dlfcn.h
+MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
 MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h $(LIBMPDEC_HEADERS) @LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c $(LIBEXPAT_HEADERS) @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
