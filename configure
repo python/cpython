@@ -666,6 +666,8 @@ MODULE__GDBM_FALSE
 MODULE__GDBM_TRUE
 MODULE__DECIMAL_FALSE
 MODULE__DECIMAL_TRUE
+MODULE__CTYPES_FALSE
+MODULE__CTYPES_TRUE
 MODULE__CRYPT_FALSE
 MODULE__CRYPT_TRUE
 MODULE__BLAKE2_FALSE
@@ -836,7 +838,9 @@ LIBNSL_CFLAGS
 LIBMPDEC_INTERNAL
 LIBMPDEC_LDFLAGS
 LIBMPDEC_CFLAGS
-LIBFFI_INCLUDEDIR
+MODULE__CTYPES_MALLOC_CLOSURE
+LIBFFI_LIBS
+LIBFFI_CFLAGS
 LIBEXPAT_INTERNAL
 LIBEXPAT_LDFLAGS
 LIBEXPAT_CFLAGS
@@ -922,6 +926,7 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+HAS_XCRUN
 EXPORT_MACOSX_DEPLOYMENT_TARGET
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET
 _PYTHON_HOST_PLATFORM
@@ -949,6 +954,7 @@ CONFIG_ARGS
 SOVERSION
 VERSION
 PYTHON_FOR_REGEN
+PYTHON_FOR_BUILD_DEPS
 FREEZE_MODULE_DEPS
 FREEZE_MODULE
 FREEZE_MODULE_BOOTSTRAP_DEPS
@@ -1080,6 +1086,8 @@ HOSTRUNNER
 PROFILE_TASK
 LIBUUID_CFLAGS
 LIBUUID_LIBS
+LIBFFI_CFLAGS
+LIBFFI_LIBS
 LIBNSL_CFLAGS
 LIBNSL_LIBS
 LIBSQLITE3_CFLAGS
@@ -1883,6 +1891,9 @@ Some influential environment variables:
               C compiler flags for LIBUUID, overriding pkg-config
   LIBUUID_LIBS
               linker flags for LIBUUID, overriding pkg-config
+  LIBFFI_CFLAGS
+              C compiler flags for LIBFFI, overriding pkg-config
+  LIBFFI_LIBS linker flags for LIBFFI, overriding pkg-config
   LIBNSL_CFLAGS
               C compiler flags for LIBNSL, overriding pkg-config
   LIBNSL_LIBS linker flags for LIBNSL, overriding pkg-config
@@ -3041,6 +3052,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
@@ -3282,6 +3295,7 @@ if test "x$cross_compiling" = xyes; then :
     FREEZE_MODULE_BOOTSTRAP_DEPS='$(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
     FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
+    PYTHON_FOR_BUILD_DEPS=''
 
 else
 
@@ -3289,9 +3303,11 @@ else
     FREEZE_MODULE_BOOTSTRAP_DEPS="Programs/_freeze_module"
     FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
+    PYTHON_FOR_BUILD_DEPS='$(BUILDPYTHON)'
 
 
 fi
+
 
 
 
@@ -4030,6 +4046,56 @@ fi
 
 if test "$ac_sys_system" = "Darwin"
 then
+    # Extract the first word of "xcrun", so it can be a program name with args.
+set dummy xcrun; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_HAS_XCRUN+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$HAS_XCRUN"; then
+  ac_cv_prog_HAS_XCRUN="$HAS_XCRUN" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_HAS_XCRUN="yes"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_HAS_XCRUN" && ac_cv_prog_HAS_XCRUN="missing"
+fi
+fi
+HAS_XCRUN=$ac_cv_prog_HAS_XCRUN
+if test -n "$HAS_XCRUN"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAS_XCRUN" >&5
+$as_echo "$HAS_XCRUN" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking macOS SDKROOT" >&5
+$as_echo_n "checking macOS SDKROOT... " >&6; }
+  if test -z "$SDKROOT"; then
+        if test "$HAS_XCRUN" = "yes"; then
+            SDKROOT=$(xcrun --show-sdk-path)
+    else
+            SDKROOT="/"
+    fi
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SDKROOT" >&5
+$as_echo "$SDKROOT" >&6; }
+
 	# Compiler selection on MacOSX is more complicated than
 	# AC_PROG_CC can handle, see Mac/README for more
 	# information
@@ -6272,7 +6338,7 @@ if ${ac_cv_wl_no_as_needed+:} false; then :
 else
 
   save_LDFLAGS="$LDFLAGS"
-  as_fn_append LDFLAGS -Wl,--no-as-needed
+  as_fn_append LDFLAGS " -Wl,--no-as-needed"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6771,18 +6837,16 @@ then
   case $ac_sys_system/$ac_sys_emscripten_target in #(
   Emscripten/node*) :
 
+      # bigint for ctypes c_longlong, c_longdouble
+      HOSTRUNNER="node --experimental-wasm-bigint"
       if test "x$enable_wasm_pthreads" = xyes; then :
 
-        HOSTRUNNER='node --experimental-wasm-threads --experimental-wasm-bulk-memory'
-
-else
-
-        HOSTRUNNER='node'
+        HOSTRUNNER="$HOSTRUNNER --experimental-wasm-threads --experimental-wasm-bulk-memory"
 
 fi
      ;; #(
               WASI/*) :
-    HOSTRUNNER='wasmtime run --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt) --mapdir /::$(srcdir) --' ;; #(
+    HOSTRUNNER='wasmtime run --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --mapdir /::$(srcdir) --' ;; #(
   *) :
     HOSTRUNNER=''
    ;;
@@ -7950,6 +8014,8 @@ else
 fi
 
         as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH -sTOTAL_MEMORY=20971520"
+
+        as_fn_append LDFLAGS_NODIST " -sWASM_BIGINT"
 
         as_fn_append LDFLAGS_NODIST " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
 
@@ -11958,12 +12024,436 @@ $as_echo "$as_me: WARNING: --with(out)-system-ffi is ignored on this platform" >
     with_system_ffi="yes"
 fi
 
-if test "$with_system_ffi" = "yes" && test -n "$PKG_CONFIG"; then
-    LIBFFI_INCLUDEDIR="`"$PKG_CONFIG" libffi --cflags-only-I 2>/dev/null | sed -e 's/^-I//;s/ *$//'`"
+have_libffi=missing
+if test "x$with_system_ffi" = xyes; then :
+
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBFFI" >&5
+$as_echo_n "checking for LIBFFI... " >&6; }
+
+if test -n "$LIBFFI_CFLAGS"; then
+    pkg_cv_LIBFFI_CFLAGS="$LIBFFI_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libffi\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libffi") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBFFI_CFLAGS=`$PKG_CONFIG --cflags "libffi" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
-    LIBFFI_INCLUDEDIR=""
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBFFI_LIBS"; then
+    pkg_cv_LIBFFI_LIBS="$LIBFFI_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libffi\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libffi") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBFFI_LIBS=`$PKG_CONFIG --libs "libffi" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
 fi
 
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBFFI_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libffi" 2>&1`
+        else
+	        LIBFFI_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libffi" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBFFI_PKG_ERRORS" >&5
+
+
+    ac_fn_c_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
+if test "x$ac_cv_header_ffi_h" = xyes; then :
+
+      save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_call in -lffi" >&5
+$as_echo_n "checking for ffi_call in -lffi... " >&6; }
+if ${ac_cv_lib_ffi_ffi_call+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lffi  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ffi_call ();
+int
+main ()
+{
+return ffi_call ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_ffi_ffi_call=yes
+else
+  ac_cv_lib_ffi_ffi_call=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ffi_ffi_call" >&5
+$as_echo "$ac_cv_lib_ffi_ffi_call" >&6; }
+if test "x$ac_cv_lib_ffi_ffi_call" = xyes; then :
+  have_libffi=yes
+else
+  have_libffi=no
+fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+fi
+
+
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+    ac_fn_c_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
+if test "x$ac_cv_header_ffi_h" = xyes; then :
+
+      save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_call in -lffi" >&5
+$as_echo_n "checking for ffi_call in -lffi... " >&6; }
+if ${ac_cv_lib_ffi_ffi_call+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lffi  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ffi_call ();
+int
+main ()
+{
+return ffi_call ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_ffi_ffi_call=yes
+else
+  ac_cv_lib_ffi_ffi_call=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ffi_ffi_call" >&5
+$as_echo "$ac_cv_lib_ffi_ffi_call" >&6; }
+if test "x$ac_cv_lib_ffi_ffi_call" = xyes; then :
+  have_libffi=yes
+else
+  have_libffi=no
+fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+fi
+
+
+
+else
+	LIBFFI_CFLAGS=$pkg_cv_LIBFFI_CFLAGS
+	LIBFFI_LIBS=$pkg_cv_LIBFFI_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_libffi=yes
+fi
+
+else
+
+  if test "x$ac_sys_system" = xDarwin; then :
+
+    save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+      CFLAGS="-I${SDKROOT}/usr/include/ffi $CFLAGS"
+      ac_fn_c_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
+if test "x$ac_cv_header_ffi_h" = xyes; then :
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_call in -lffi" >&5
+$as_echo_n "checking for ffi_call in -lffi... " >&6; }
+if ${ac_cv_lib_ffi_ffi_call+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lffi  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ffi_call ();
+int
+main ()
+{
+return ffi_call ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_ffi_ffi_call=yes
+else
+  ac_cv_lib_ffi_ffi_call=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ffi_ffi_call" >&5
+$as_echo "$ac_cv_lib_ffi_ffi_call" >&6; }
+if test "x$ac_cv_lib_ffi_ffi_call" = xyes; then :
+
+                    have_libffi=yes
+          LIBFFI_CFLAGS="-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
+          LIBFFI_LIBS="-lffi"
+
+else
+  have_libffi=no
+fi
+
+
+fi
+
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+fi
+
+fi
+
+if test "x$have_libffi" = xyes; then :
+
+  ctypes_malloc_closure=no
+  case $ac_sys_system in #(
+  Darwin) :
+
+            as_fn_append LIBFFI_CFLAGS " -I\$(srcdir)/Modules/_ctypes/darwin -DMACOSX"
+      ctypes_malloc_closure=yes
+     ;; #(
+  sunos5) :
+    as_fn_append LIBFFI_LIBS " -mimpure-text"
+   ;; #(
+  *) :
+     ;;
+esac
+  if test "x$ctypes_malloc_closure" = xyes; then :
+
+    MODULE__CTYPES_MALLOC_CLOSURE=_ctypes/malloc_closure.c
+    as_fn_append LIBFFI_CFLAGS " -DUSING_MALLOC_CLOSURE_DOT_C=1"
+
+fi
+
+
+    if test "x$ac_cv_lib_dl_dlopen" = xyes; then :
+  as_fn_append LIBFFI_LIBS " -ldl"
+fi
+
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
+    LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_prep_cif_var" >&5
+$as_echo_n "checking for ffi_prep_cif_var... " >&6; }
+if ${ac_cv_func_ffi_prep_cif_var+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <ffi.h>
+int
+main ()
+{
+void *x=ffi_prep_cif_var
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_ffi_prep_cif_var=yes
+else
+  ac_cv_func_ffi_prep_cif_var=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_ffi_prep_cif_var" >&5
+$as_echo "$ac_cv_func_ffi_prep_cif_var" >&6; }
+  if test "x$ac_cv_func_ffi_prep_cif_var" = xyes; then :
+
+$as_echo "#define HAVE_FFI_PREP_CIF_VAR 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_prep_closure_loc" >&5
+$as_echo_n "checking for ffi_prep_closure_loc... " >&6; }
+if ${ac_cv_func_ffi_prep_closure_loc+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <ffi.h>
+int
+main ()
+{
+void *x=ffi_prep_closure_loc
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_ffi_prep_closure_loc=yes
+else
+  ac_cv_func_ffi_prep_closure_loc=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_ffi_prep_closure_loc" >&5
+$as_echo "$ac_cv_func_ffi_prep_closure_loc" >&6; }
+  if test "x$ac_cv_func_ffi_prep_closure_loc" = xyes; then :
+
+$as_echo "#define HAVE_FFI_PREP_CLOSURE_LOC 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_closure_alloc" >&5
+$as_echo_n "checking for ffi_closure_alloc... " >&6; }
+if ${ac_cv_func_ffi_closure_alloc+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <ffi.h>
+int
+main ()
+{
+void *x=ffi_closure_alloc
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_ffi_closure_alloc=yes
+else
+  ac_cv_func_ffi_closure_alloc=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_ffi_closure_alloc" >&5
+$as_echo "$ac_cv_func_ffi_closure_alloc" >&6; }
+  if test "x$ac_cv_func_ffi_closure_alloc" = xyes; then :
+
+$as_echo "#define HAVE_FFI_CLOSURE_ALLOC 1" >>confdefs.h
+
+fi
+
+
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+fi
 
 # Check for use of the system libmpdec library
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-system-libmpdec" >&5
@@ -14992,8 +15482,6 @@ if test "x$ac_cv_have_decl_dirfd" = xyes; then :
 $as_echo "#define HAVE_DIRFD 1" >>confdefs.h
 
 fi
-
-
 
 
 # For some functions, having a definition is not sufficient, since
@@ -22636,7 +23124,7 @@ else
   MODULE__IO_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__IO=$py_cv_module__io$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__IO_STATE=$py_cv_module__io$as_nl"
   if test "x$py_cv_module__io" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__IO_CFLAGS=-I\$(srcdir)/Modules/_io$as_nl"
@@ -22656,7 +23144,7 @@ else
   MODULE_TIME_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE_TIME=$py_cv_module_time$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_TIME_STATE=$py_cv_module_time$as_nl"
   if test "x$py_cv_module_time" = xyes; then :
 
 
@@ -22677,7 +23165,7 @@ else
   MODULE_ARRAY_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE_ARRAY=$py_cv_module_array$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_ARRAY_STATE=$py_cv_module_array$as_nl"
   if test "x$py_cv_module_array" = xyes; then :
 
 
@@ -22697,7 +23185,7 @@ else
   MODULE__ASYNCIO_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__ASYNCIO=$py_cv_module__asyncio$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__ASYNCIO_STATE=$py_cv_module__asyncio$as_nl"
   if test "x$py_cv_module__asyncio" = xyes; then :
 
 
@@ -22717,7 +23205,7 @@ else
   MODULE__BISECT_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__BISECT=$py_cv_module__bisect$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__BISECT_STATE=$py_cv_module__bisect$as_nl"
   if test "x$py_cv_module__bisect" = xyes; then :
 
 
@@ -22737,7 +23225,7 @@ else
   MODULE__CONTEXTVARS_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__CONTEXTVARS=$py_cv_module__contextvars$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CONTEXTVARS_STATE=$py_cv_module__contextvars$as_nl"
   if test "x$py_cv_module__contextvars" = xyes; then :
 
 
@@ -22757,7 +23245,7 @@ else
   MODULE__CSV_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__CSV=$py_cv_module__csv$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CSV_STATE=$py_cv_module__csv$as_nl"
   if test "x$py_cv_module__csv" = xyes; then :
 
 
@@ -22777,7 +23265,7 @@ else
   MODULE__HEAPQ_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__HEAPQ=$py_cv_module__heapq$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__HEAPQ_STATE=$py_cv_module__heapq$as_nl"
   if test "x$py_cv_module__heapq" = xyes; then :
 
 
@@ -22797,7 +23285,7 @@ else
   MODULE__JSON_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__JSON=$py_cv_module__json$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__JSON_STATE=$py_cv_module__json$as_nl"
   if test "x$py_cv_module__json" = xyes; then :
 
 
@@ -22817,7 +23305,7 @@ else
   MODULE__LSPROF_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__LSPROF=$py_cv_module__lsprof$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__LSPROF_STATE=$py_cv_module__lsprof$as_nl"
   if test "x$py_cv_module__lsprof" = xyes; then :
 
 
@@ -22837,7 +23325,7 @@ else
   MODULE__OPCODE_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__OPCODE=$py_cv_module__opcode$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__OPCODE_STATE=$py_cv_module__opcode$as_nl"
   if test "x$py_cv_module__opcode" = xyes; then :
 
 
@@ -22857,7 +23345,7 @@ else
   MODULE__PICKLE_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__PICKLE=$py_cv_module__pickle$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__PICKLE_STATE=$py_cv_module__pickle$as_nl"
   if test "x$py_cv_module__pickle" = xyes; then :
 
 
@@ -22877,7 +23365,7 @@ else
   MODULE__POSIXSUBPROCESS_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__POSIXSUBPROCESS=$py_cv_module__posixsubprocess$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__POSIXSUBPROCESS_STATE=$py_cv_module__posixsubprocess$as_nl"
   if test "x$py_cv_module__posixsubprocess" = xyes; then :
 
 
@@ -22897,7 +23385,7 @@ else
   MODULE__QUEUE_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__QUEUE=$py_cv_module__queue$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__QUEUE_STATE=$py_cv_module__queue$as_nl"
   if test "x$py_cv_module__queue" = xyes; then :
 
 
@@ -22917,7 +23405,7 @@ else
   MODULE__RANDOM_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__RANDOM=$py_cv_module__random$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__RANDOM_STATE=$py_cv_module__random$as_nl"
   if test "x$py_cv_module__random" = xyes; then :
 
 
@@ -22937,7 +23425,7 @@ else
   MODULE_SELECT_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE_SELECT=$py_cv_module_select$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_SELECT_STATE=$py_cv_module_select$as_nl"
   if test "x$py_cv_module_select" = xyes; then :
 
 
@@ -22957,7 +23445,7 @@ else
   MODULE__STRUCT_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__STRUCT=$py_cv_module__struct$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__STRUCT_STATE=$py_cv_module__struct$as_nl"
   if test "x$py_cv_module__struct" = xyes; then :
 
 
@@ -22977,7 +23465,7 @@ else
   MODULE__TYPING_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__TYPING=$py_cv_module__typing$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__TYPING_STATE=$py_cv_module__typing$as_nl"
   if test "x$py_cv_module__typing" = xyes; then :
 
 
@@ -22997,7 +23485,7 @@ else
   MODULE__XXSUBINTERPRETERS_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS=$py_cv_module__xxsubinterpreters$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS_STATE=$py_cv_module__xxsubinterpreters$as_nl"
   if test "x$py_cv_module__xxsubinterpreters" = xyes; then :
 
 
@@ -23017,7 +23505,7 @@ else
   MODULE__ZONEINFO_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__ZONEINFO=$py_cv_module__zoneinfo$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__ZONEINFO_STATE=$py_cv_module__zoneinfo$as_nl"
   if test "x$py_cv_module__zoneinfo" = xyes; then :
 
 
@@ -23042,7 +23530,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING=$py_cv_module__multiprocessing$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING_STATE=$py_cv_module__multiprocessing$as_nl"
   if test "x$py_cv_module__multiprocessing" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING_CFLAGS=-I\$(srcdir)/Modules/_multiprocessing$as_nl"
@@ -23076,7 +23564,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM=$py_cv_module__posixshmem$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_STATE=$py_cv_module__posixshmem$as_nl"
   if test "x$py_cv_module__posixshmem" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_CFLAGS=$POSIXSHMEM_CFLAGS$as_nl"
@@ -23107,7 +23595,7 @@ else
   MODULE_AUDIOOP_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE_AUDIOOP=$py_cv_module_audioop$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_AUDIOOP_STATE=$py_cv_module_audioop$as_nl"
   if test "x$py_cv_module_audioop" = xyes; then :
 
 
@@ -23127,7 +23615,7 @@ else
   MODULE__STATISTICS_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__STATISTICS=$py_cv_module__statistics$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__STATISTICS_STATE=$py_cv_module__statistics$as_nl"
   if test "x$py_cv_module__statistics" = xyes; then :
 
 
@@ -23147,7 +23635,7 @@ else
   MODULE_CMATH_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE_CMATH=$py_cv_module_cmath$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_CMATH_STATE=$py_cv_module_cmath$as_nl"
   if test "x$py_cv_module_cmath" = xyes; then :
 
 
@@ -23167,7 +23655,7 @@ else
   MODULE_MATH_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE_MATH=$py_cv_module_math$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_MATH_STATE=$py_cv_module_math$as_nl"
   if test "x$py_cv_module_math" = xyes; then :
 
 
@@ -23188,7 +23676,7 @@ else
   MODULE__DATETIME_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__DATETIME=$py_cv_module__datetime$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__DATETIME_STATE=$py_cv_module__datetime$as_nl"
   if test "x$py_cv_module__datetime" = xyes; then :
 
 
@@ -23213,7 +23701,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_FCNTL=$py_cv_module_fcntl$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_FCNTL_STATE=$py_cv_module_fcntl$as_nl"
   if test "x$py_cv_module_fcntl" = xyes; then :
 
 
@@ -23247,7 +23735,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_MMAP=$py_cv_module_mmap$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_MMAP_STATE=$py_cv_module_mmap$as_nl"
   if test "x$py_cv_module_mmap" = xyes; then :
 
 
@@ -23281,7 +23769,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__SOCKET=$py_cv_module__socket$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__SOCKET_STATE=$py_cv_module__socket$as_nl"
   if test "x$py_cv_module__socket" = xyes; then :
 
 
@@ -23316,7 +23804,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_GRP=$py_cv_module_grp$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_GRP_STATE=$py_cv_module_grp$as_nl"
   if test "x$py_cv_module_grp" = xyes; then :
 
 
@@ -23350,7 +23838,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV=$py_cv_module_ossaudiodev$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV_STATE=$py_cv_module_ossaudiodev$as_nl"
   if test "x$py_cv_module_ossaudiodev" = xyes; then :
 
 
@@ -23384,7 +23872,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_PWD=$py_cv_module_pwd$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_PWD_STATE=$py_cv_module_pwd$as_nl"
   if test "x$py_cv_module_pwd" = xyes; then :
 
 
@@ -23418,7 +23906,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_RESOURCE=$py_cv_module_resource$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_RESOURCE_STATE=$py_cv_module_resource$as_nl"
   if test "x$py_cv_module_resource" = xyes; then :
 
 
@@ -23452,7 +23940,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__SCPROXY=$py_cv_module__scproxy$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__SCPROXY_STATE=$py_cv_module__scproxy$as_nl"
   if test "x$py_cv_module__scproxy" = xyes; then :
 
 
@@ -23486,7 +23974,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_SPWD=$py_cv_module_spwd$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_SPWD_STATE=$py_cv_module_spwd$as_nl"
   if test "x$py_cv_module_spwd" = xyes; then :
 
 
@@ -23520,7 +24008,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_SYSLOG=$py_cv_module_syslog$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_SYSLOG_STATE=$py_cv_module_syslog$as_nl"
   if test "x$py_cv_module_syslog" = xyes; then :
 
 
@@ -23554,7 +24042,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_TERMIOS=$py_cv_module_termios$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_TERMIOS_STATE=$py_cv_module_termios$as_nl"
   if test "x$py_cv_module_termios" = xyes; then :
 
 
@@ -23589,7 +24077,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_PYEXPAT=$py_cv_module_pyexpat$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_PYEXPAT_STATE=$py_cv_module_pyexpat$as_nl"
   if test "x$py_cv_module_pyexpat" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE_PYEXPAT_CFLAGS=$LIBEXPAT_CFLAGS$as_nl"
@@ -23623,7 +24111,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE=$py_cv_module__elementtree$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE_STATE=$py_cv_module__elementtree$as_nl"
   if test "x$py_cv_module__elementtree" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE_CFLAGS=$LIBEXPAT_CFLAGS$as_nl"
@@ -23653,7 +24141,7 @@ else
   MODULE__CODECS_CN_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_CN=$py_cv_module__codecs_cn$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_CN_STATE=$py_cv_module__codecs_cn$as_nl"
   if test "x$py_cv_module__codecs_cn" = xyes; then :
 
 
@@ -23673,7 +24161,7 @@ else
   MODULE__CODECS_HK_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_HK=$py_cv_module__codecs_hk$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_HK_STATE=$py_cv_module__codecs_hk$as_nl"
   if test "x$py_cv_module__codecs_hk" = xyes; then :
 
 
@@ -23693,7 +24181,7 @@ else
   MODULE__CODECS_ISO2022_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_ISO2022=$py_cv_module__codecs_iso2022$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_ISO2022_STATE=$py_cv_module__codecs_iso2022$as_nl"
   if test "x$py_cv_module__codecs_iso2022" = xyes; then :
 
 
@@ -23713,7 +24201,7 @@ else
   MODULE__CODECS_JP_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_JP=$py_cv_module__codecs_jp$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_JP_STATE=$py_cv_module__codecs_jp$as_nl"
   if test "x$py_cv_module__codecs_jp" = xyes; then :
 
 
@@ -23733,7 +24221,7 @@ else
   MODULE__CODECS_KR_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_KR=$py_cv_module__codecs_kr$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_KR_STATE=$py_cv_module__codecs_kr$as_nl"
   if test "x$py_cv_module__codecs_kr" = xyes; then :
 
 
@@ -23753,7 +24241,7 @@ else
   MODULE__CODECS_TW_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_TW=$py_cv_module__codecs_tw$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_TW_STATE=$py_cv_module__codecs_tw$as_nl"
   if test "x$py_cv_module__codecs_tw" = xyes; then :
 
 
@@ -23773,7 +24261,7 @@ else
   MODULE__MULTIBYTECODEC_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__MULTIBYTECODEC=$py_cv_module__multibytecodec$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__MULTIBYTECODEC_STATE=$py_cv_module__multibytecodec$as_nl"
   if test "x$py_cv_module__multibytecodec" = xyes; then :
 
 
@@ -23793,7 +24281,7 @@ else
   MODULE_UNICODEDATA_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE_UNICODEDATA=$py_cv_module_unicodedata$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_UNICODEDATA_STATE=$py_cv_module_unicodedata$as_nl"
   if test "x$py_cv_module_unicodedata" = xyes; then :
 
 
@@ -23818,7 +24306,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__MD5=$py_cv_module__md5$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__MD5_STATE=$py_cv_module__md5$as_nl"
   if test "x$py_cv_module__md5" = xyes; then :
 
 
@@ -23852,7 +24340,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__SHA1=$py_cv_module__sha1$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__SHA1_STATE=$py_cv_module__sha1$as_nl"
   if test "x$py_cv_module__sha1" = xyes; then :
 
 
@@ -23886,7 +24374,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__SHA256=$py_cv_module__sha256$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__SHA256_STATE=$py_cv_module__sha256$as_nl"
   if test "x$py_cv_module__sha256" = xyes; then :
 
 
@@ -23920,7 +24408,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__SHA512=$py_cv_module__sha512$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__SHA512_STATE=$py_cv_module__sha512$as_nl"
   if test "x$py_cv_module__sha512" = xyes; then :
 
 
@@ -23954,7 +24442,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__SHA3=$py_cv_module__sha3$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__SHA3_STATE=$py_cv_module__sha3$as_nl"
   if test "x$py_cv_module__sha3" = xyes; then :
 
 
@@ -23988,7 +24476,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__BLAKE2=$py_cv_module__blake2$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__BLAKE2_STATE=$py_cv_module__blake2$as_nl"
   if test "x$py_cv_module__blake2" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__BLAKE2_CFLAGS=$LIBB2_CFLAGS$as_nl"
@@ -24023,7 +24511,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CRYPT=$py_cv_module__crypt$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CRYPT_STATE=$py_cv_module__crypt$as_nl"
   if test "x$py_cv_module__crypt" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__CRYPT_CFLAGS=$LIBCRYPT_CFLAGS$as_nl"
@@ -24042,6 +24530,40 @@ fi
 $as_echo "$py_cv_module__crypt" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _ctypes" >&5
+$as_echo_n "checking for stdlib extension module _ctypes... " >&6; }
+        if test "$py_cv_module__ctypes" != "n/a"; then :
+
+    if true; then :
+  if test "$have_libffi" = yes; then :
+  py_cv_module__ctypes=yes
+else
+  py_cv_module__ctypes=missing
+fi
+else
+  py_cv_module__ctypes=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__CTYPES_STATE=$py_cv_module__ctypes$as_nl"
+  if test "x$py_cv_module__ctypes" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_CFLAGS=$LIBFFI_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_LDFLAGS=$LIBFFI_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module__ctypes" = yes; then
+  MODULE__CTYPES_TRUE=
+  MODULE__CTYPES_FALSE='#'
+else
+  MODULE__CTYPES_TRUE='#'
+  MODULE__CTYPES_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__ctypes" >&5
+$as_echo "$py_cv_module__ctypes" >&6; }
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _decimal" >&5
 $as_echo_n "checking for stdlib extension module _decimal... " >&6; }
         if test "$py_cv_module__decimal" != "n/a"; then :
@@ -24057,7 +24579,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__DECIMAL=$py_cv_module__decimal$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__DECIMAL_STATE=$py_cv_module__decimal$as_nl"
   if test "x$py_cv_module__decimal" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__DECIMAL_CFLAGS=$LIBMPDEC_CFLAGS$as_nl"
@@ -24091,7 +24613,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__GDBM=$py_cv_module__gdbm$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__GDBM_STATE=$py_cv_module__gdbm$as_nl"
   if test "x$py_cv_module__gdbm" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__GDBM_CFLAGS=$GDBM_CFLAGS$as_nl"
@@ -24125,7 +24647,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_NIS=$py_cv_module_nis$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_NIS_STATE=$py_cv_module_nis$as_nl"
   if test "x$py_cv_module_nis" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE_NIS_CFLAGS=$LIBNSL_CFLAGS$as_nl"
@@ -24159,7 +24681,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__SQLITE3=$py_cv_module__sqlite3$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__SQLITE3_STATE=$py_cv_module__sqlite3$as_nl"
   if test "x$py_cv_module__sqlite3" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__SQLITE3_CFLAGS=$LIBSQLITE3_CFLAGS$as_nl"
@@ -24193,7 +24715,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__TKINTER=$py_cv_module__tkinter$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__TKINTER_STATE=$py_cv_module__tkinter$as_nl"
   if test "x$py_cv_module__tkinter" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__TKINTER_CFLAGS=$TCLTK_CFLAGS$as_nl"
@@ -24227,7 +24749,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__UUID=$py_cv_module__uuid$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__UUID_STATE=$py_cv_module__uuid$as_nl"
   if test "x$py_cv_module__uuid" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__UUID_CFLAGS=$LIBUUID_CFLAGS$as_nl"
@@ -24262,7 +24784,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_ZLIB=$py_cv_module_zlib$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_ZLIB_STATE=$py_cv_module_zlib$as_nl"
   if test "x$py_cv_module_zlib" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE_ZLIB_CFLAGS=$ZLIB_CFLAGS$as_nl"
@@ -24292,7 +24814,7 @@ else
   MODULE_BINASCII_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE_BINASCII=$py_cv_module_binascii$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_BINASCII_STATE=$py_cv_module_binascii$as_nl"
   if test "x$py_cv_module_binascii" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE_BINASCII_CFLAGS=$BINASCII_CFLAGS$as_nl"
@@ -24316,7 +24838,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__BZ2=$py_cv_module__bz2$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__BZ2_STATE=$py_cv_module__bz2$as_nl"
   if test "x$py_cv_module__bz2" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__BZ2_CFLAGS=$BZIP2_CFLAGS$as_nl"
@@ -24350,7 +24872,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__LZMA=$py_cv_module__lzma$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__LZMA_STATE=$py_cv_module__lzma$as_nl"
   if test "x$py_cv_module__lzma" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__LZMA_CFLAGS=$LIBLZMA_CFLAGS$as_nl"
@@ -24385,7 +24907,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__SSL=$py_cv_module__ssl$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__SSL_STATE=$py_cv_module__ssl$as_nl"
   if test "x$py_cv_module__ssl" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__SSL_CFLAGS=$OPENSSL_INCLUDES$as_nl"
@@ -24419,7 +24941,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__HASHLIB=$py_cv_module__hashlib$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__HASHLIB_STATE=$py_cv_module__hashlib$as_nl"
   if test "x$py_cv_module__hashlib" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__HASHLIB_CFLAGS=$OPENSSL_INCLUDES$as_nl"
@@ -24454,7 +24976,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__TESTCAPI=$py_cv_module__testcapi$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_STATE=$py_cv_module__testcapi$as_nl"
   if test "x$py_cv_module__testcapi" = xyes; then :
 
 
@@ -24488,7 +25010,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__TESTINTERNALCAPI=$py_cv_module__testinternalcapi$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__TESTINTERNALCAPI_STATE=$py_cv_module__testinternalcapi$as_nl"
   if test "x$py_cv_module__testinternalcapi" = xyes; then :
 
 
@@ -24522,7 +25044,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__TESTBUFFER=$py_cv_module__testbuffer$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__TESTBUFFER_STATE=$py_cv_module__testbuffer$as_nl"
   if test "x$py_cv_module__testbuffer" = xyes; then :
 
 
@@ -24556,7 +25078,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__TESTIMPORTMULTIPLE=$py_cv_module__testimportmultiple$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__TESTIMPORTMULTIPLE_STATE=$py_cv_module__testimportmultiple$as_nl"
   if test "x$py_cv_module__testimportmultiple" = xyes; then :
 
 
@@ -24590,7 +25112,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__TESTMULTIPHASE=$py_cv_module__testmultiphase$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__TESTMULTIPHASE_STATE=$py_cv_module__testmultiphase$as_nl"
   if test "x$py_cv_module__testmultiphase" = xyes; then :
 
 
@@ -24624,7 +25146,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__XXTESTFUZZ=$py_cv_module__xxtestfuzz$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__XXTESTFUZZ_STATE=$py_cv_module__xxtestfuzz$as_nl"
   if test "x$py_cv_module__xxtestfuzz" = xyes; then :
 
 
@@ -24648,7 +25170,7 @@ $as_echo_n "checking for stdlib extension module _ctypes_test... " >&6; }
         if test "$py_cv_module__ctypes_test" != "n/a"; then :
 
     if test "$TEST_MODULES" = yes; then :
-  if true; then :
+  if test "$have_libffi" = yes -a "$ac_cv_func_dlopen" = yes; then :
   py_cv_module__ctypes_test=yes
 else
   py_cv_module__ctypes_test=missing
@@ -24658,11 +25180,11 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST=$py_cv_module__ctypes_test$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_STATE=$py_cv_module__ctypes_test$as_nl"
   if test "x$py_cv_module__ctypes_test" = xyes; then :
 
 
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_LDFLAGS=-lm$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_LDFLAGS=$LIBM$as_nl"
 
 fi
    if test "$py_cv_module__ctypes_test" = yes; then
@@ -24693,7 +25215,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_XXLIMITED=$py_cv_module_xxlimited$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_STATE=$py_cv_module_xxlimited$as_nl"
   if test "x$py_cv_module_xxlimited" = xyes; then :
 
 
@@ -24727,7 +25249,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_35=$py_cv_module_xxlimited_35$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_35_STATE=$py_cv_module_xxlimited_35$as_nl"
   if test "x$py_cv_module_xxlimited_35" = xyes; then :
 
 
@@ -25084,6 +25606,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__CRYPT_TRUE}" && test -z "${MODULE__CRYPT_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__CRYPT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CTYPES_TRUE}" && test -z "${MODULE__CTYPES_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CTYPES\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__DECIMAL_TRUE}" && test -z "${MODULE__DECIMAL_FALSE}"; then

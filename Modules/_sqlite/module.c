@@ -108,16 +108,16 @@ pysqlite_complete_statement_impl(PyObject *module, const char *statement)
 _sqlite3.register_adapter as pysqlite_register_adapter
 
     type: object(type='PyTypeObject *')
-    caster: object
+    adapter as caster: object
     /
 
-Registers an adapter with sqlite3's adapter registry.
+Register a function to adapt Python objects to SQLite values.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
                                PyObject *caster)
-/*[clinic end generated code: output=a287e8db18e8af23 input=b4bd87afcadc535d]*/
+/*[clinic end generated code: output=a287e8db18e8af23 input=29a5e0f213030242]*/
 {
     int rc;
 
@@ -142,17 +142,17 @@ pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
 /*[clinic input]
 _sqlite3.register_converter as pysqlite_register_converter
 
-    name as orig_name: unicode
+    typename as orig_name: unicode
     converter as callable: object
     /
 
-Registers a converter with sqlite3.
+Register a function to convert SQLite values to Python objects.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
                                  PyObject *callable)
-/*[clinic end generated code: output=a2f2bfeed7230062 input=90f645419425d6c4]*/
+/*[clinic end generated code: output=a2f2bfeed7230062 input=159a444971b40378]*/
 {
     PyObject* name = NULL;
     PyObject* retval = NULL;
@@ -227,14 +227,8 @@ static int converters_init(PyObject* module)
 static int
 load_functools_lru_cache(PyObject *module)
 {
-    PyObject *functools = PyImport_ImportModule("functools");
-    if (functools == NULL) {
-        return -1;
-    }
-
     pysqlite_state *state = pysqlite_get_state(module);
-    state->lru_cache = PyObject_GetAttrString(functools, "lru_cache");
-    Py_DECREF(functools);
+    state->lru_cache = _PyImport_GetModuleAttrString("functools", "lru_cache");
     if (state->lru_cache == NULL) {
         return -1;
     }
