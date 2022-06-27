@@ -1,1 +1,0 @@
-Improve syntax errors for invalid "as" targets. Patch by Pablo Galindo

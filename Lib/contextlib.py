@@ -1,5 +1,6 @@
 """Utilities for with-statement contexts.  See PEP 343."""
 import abc
+import os
 import sys
 import _collections_abc
 from collections import deque
@@ -9,7 +10,8 @@ from types import MethodType, GenericAlias
 __all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
            "AbstractContextManager", "AbstractAsyncContextManager",
            "AsyncExitStack", "ContextDecorator", "ExitStack",
-           "redirect_stdout", "redirect_stderr", "suppress", "aclosing"]
+           "redirect_stdout", "redirect_stderr", "suppress", "aclosing",
+           "chdir"]
 
 
 class AbstractContextManager(abc.ABC):
@@ -159,6 +161,7 @@ class _GeneratorContextManager(
             except RuntimeError as exc:
                 # Don't re-raise the passed in exception. (issue27122)
                 if exc is value:
+                    exc.__traceback__ = traceback
                     return False
                 # Avoid suppressing if a StopIteration exception
                 # was passed to throw() and later wrapped into a RuntimeError
@@ -170,6 +173,7 @@ class _GeneratorContextManager(
                     isinstance(value, StopIteration)
                     and exc.__cause__ is value
                 ):
+                    exc.__traceback__ = traceback
                     return False
                 raise
             except BaseException as exc:
@@ -181,6 +185,7 @@ class _GeneratorContextManager(
                 # and the __exit__() protocol.
                 if exc is not value:
                     raise
+                exc.__traceback__ = traceback
                 return False
             raise RuntimeError("generator didn't stop after throw()")
 
@@ -545,10 +550,10 @@ class ExitStack(_BaseExitStack, AbstractContextManager):
             # Context may not be correct, so find the end of the chain
             while 1:
                 exc_context = new_exc.__context__
-                if exc_context is old_exc:
+                if exc_context is None or exc_context is old_exc:
                     # Context is already set correctly (see issue 20317)
                     return
-                if exc_context is None or exc_context is frame_exc:
+                if exc_context is frame_exc:
                     break
                 new_exc = exc_context
             # Change the end of the chain to point to the exception
@@ -685,10 +690,10 @@ class AsyncExitStack(_BaseExitStack, AbstractAsyncContextManager):
             # Context may not be correct, so find the end of the chain
             while 1:
                 exc_context = new_exc.__context__
-                if exc_context is old_exc:
+                if exc_context is None or exc_context is old_exc:
                     # Context is already set correctly (see issue 20317)
                     return
-                if exc_context is None or exc_context is frame_exc:
+                if exc_context is frame_exc:
                     break
                 new_exc = exc_context
             # Change the end of the chain to point to the exception
@@ -754,3 +759,18 @@ class nullcontext(AbstractContextManager, AbstractAsyncContextManager):
 
     async def __aexit__(self, *excinfo):
         pass
+
+
+class chdir(AbstractContextManager):
+    """Non thread-safe context manager to change the current working directory."""
+
+    def __init__(self, path):
+        self.path = path
+        self._old_cwd = []
+
+    def __enter__(self):
+        self._old_cwd.append(os.getcwd())
+        os.chdir(self.path)
+
+    def __exit__(self, *excinfo):
+        os.chdir(self._old_cwd.pop())

@@ -9,10 +9,15 @@
 //// STRING HANDLING FUNCTIONS ////
 
 static int
-warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char, Token *t)
+warn_invalid_escape_sequence(Parser *p, const char *first_invalid_escape, Token *t)
 {
+    unsigned char c = *first_invalid_escape;
+    int octal = ('4' <= c && c <= '7');
     PyObject *msg =
-        PyUnicode_FromFormat("invalid escape sequence '\\%c'", first_invalid_escape_char);
+        octal
+        ? PyUnicode_FromFormat("invalid octal escape sequence '\\%.3s'",
+                               first_invalid_escape)
+        : PyUnicode_FromFormat("invalid escape sequence '\\%c'", c);
     if (msg == NULL) {
         return -1;
     }
@@ -27,7 +32,13 @@ warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char,
                since _PyPegen_raise_error uses p->tokens[p->fill - 1] for the
                error location, if p->known_err_token is not set. */
             p->known_err_token = t;
-            RAISE_SYNTAX_ERROR("invalid escape sequence '\\%c'", first_invalid_escape_char);
+            if (octal) {
+                RAISE_SYNTAX_ERROR("invalid octal escape sequence '\\%.3s'",
+                                   first_invalid_escape);
+            }
+            else {
+                RAISE_SYNTAX_ERROR("invalid escape sequence '\\%c'", c);
+            }
         }
         Py_DECREF(msg);
         return -1;
@@ -115,10 +126,10 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
     s = buf;
 
     const char *first_invalid_escape;
-    v = _PyUnicode_DecodeUnicodeEscape(s, len, NULL, &first_invalid_escape);
+    v = _PyUnicode_DecodeUnicodeEscapeInternal(s, len, NULL, NULL, &first_invalid_escape);
 
     if (v != NULL && first_invalid_escape != NULL) {
-        if (warn_invalid_escape_sequence(parser, *first_invalid_escape, t) < 0) {
+        if (warn_invalid_escape_sequence(parser, first_invalid_escape, t) < 0) {
             /* We have not decref u before because first_invalid_escape points
                inside u. */
             Py_XDECREF(u);
@@ -140,7 +151,7 @@ decode_bytes_with_escapes(Parser *p, const char *s, Py_ssize_t len, Token *t)
     }
 
     if (first_invalid_escape != NULL) {
-        if (warn_invalid_escape_sequence(p, *first_invalid_escape, t) < 0) {
+        if (warn_invalid_escape_sequence(p, first_invalid_escape, t) < 0) {
             Py_DECREF(result);
             return NULL;
         }
@@ -279,49 +290,48 @@ _PyPegen_parsestr(Parser *p, int *bytesmode, int *rawmode, PyObject **result,
 /* Fix locations for the given node and its children.
 
    `parent` is the enclosing node.
+   `expr_start` is the starting position of the expression (pointing to the open brace).
    `n` is the node which locations are going to be fixed relative to parent.
    `expr_str` is the child node's string representation, including braces.
 */
 static bool
-fstring_find_expr_location(Token *parent, char *expr_str, int *p_lines, int *p_cols)
+fstring_find_expr_location(Token *parent, const char* expr_start, char *expr_str, int *p_lines, int *p_cols)
 {
     *p_lines = 0;
     *p_cols = 0;
+    assert(expr_start != NULL && *expr_start == '{');
     if (parent && parent->bytes) {
         const char *parent_str = PyBytes_AsString(parent->bytes);
         if (!parent_str) {
             return false;
         }
-        const char *substr = strstr(parent_str, expr_str);
-        if (substr) {
-            // The following is needed, in order to correctly shift the column
-            // offset, in the case that (disregarding any whitespace) a newline
-            // immediately follows the opening curly brace of the fstring expression.
-            bool newline_after_brace = 1;
-            const char *start = substr + 1;
-            while (start && *start != '}' && *start != '\n') {
-                if (*start != ' ' && *start != '\t' && *start != '\f') {
-                    newline_after_brace = 0;
-                    break;
-                }
-                start++;
+        // The following is needed, in order to correctly shift the column
+        // offset, in the case that (disregarding any whitespace) a newline
+        // immediately follows the opening curly brace of the fstring expression.
+        bool newline_after_brace = 1;
+        const char *start = expr_start + 1;
+        while (start && *start != '}' && *start != '\n') {
+            if (*start != ' ' && *start != '\t' && *start != '\f') {
+                newline_after_brace = 0;
+                break;
             }
+            start++;
+        }
 
-            // Account for the characters from the last newline character to our
-            // left until the beginning of substr.
-            if (!newline_after_brace) {
-                start = substr;
-                while (start > parent_str && *start != '\n') {
-                    start--;
-                }
-                *p_cols += (int)(substr - start);
+        // Account for the characters from the last newline character to our
+        // left until the beginning of expr_start.
+        if (!newline_after_brace) {
+            start = expr_start;
+            while (start > parent_str && *start != '\n') {
+                start--;
             }
-            /* adjust the start based on the number of newlines encountered
-               before the f-string expression */
-            for (const char *p = parent_str; p < substr; p++) {
-                if (*p == '\n') {
-                    (*p_lines)++;
-                }
+            *p_cols += (int)(expr_start - start);
+        }
+        /* adjust the start based on the number of newlines encountered
+           before the f-string expression */
+        for (const char *p = parent_str; p < expr_start; p++) {
+            if (*p == '\n') {
+                (*p_lines)++;
             }
         }
     }
@@ -358,14 +368,19 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
             break;
         }
     }
+
     if (s == expr_end) {
+        if (*expr_end == '!' || *expr_end == ':' || *expr_end == '=') {
+            RAISE_SYNTAX_ERROR("f-string: expression required before '%c'", *expr_end);
+            return NULL;
+        }
         RAISE_SYNTAX_ERROR("f-string: empty expression not allowed");
         return NULL;
     }
 
     len = expr_end - expr_start;
     /* Allocate 3 extra bytes: open paren, close paren, null byte. */
-    str = PyMem_Malloc(len + 3);
+    str = PyMem_Calloc(len + 3, sizeof(char));
     if (str == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -373,17 +388,10 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
 
     // The call to fstring_find_expr_location is responsible for finding the column offset
     // the generated AST nodes need to be shifted to the right, which is equal to the number
-    // of the f-string characters before the expression starts. In order to correctly compute
-    // this offset, strstr gets called in fstring_find_expr_location which only succeeds
-    // if curly braces appear before and after the f-string expression (exactly like they do
-    // in the f-string itself), hence the following lines.
-    str[0] = '{';
+    // of the f-string characters before the expression starts.
     memcpy(str+1, expr_start, len);
-    str[len+1] = '}';
-    str[len+2] = 0;
-
     int lines, cols;
-    if (!fstring_find_expr_location(t, str, &lines, &cols)) {
+    if (!fstring_find_expr_location(t, expr_start-1, str+1, &lines, &cols)) {
         PyMem_Free(str);
         return NULL;
     }
@@ -394,17 +402,20 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
     str[0] = '(';
     str[len+1] = ')';
 
-    struct tok_state* tok = PyTokenizer_FromString(str, 1);
+    struct tok_state* tok = _PyTokenizer_FromString(str, 1);
     if (tok == NULL) {
         PyMem_Free(str);
         return NULL;
     }
     Py_INCREF(p->tok->filename);
+
     tok->filename = p->tok->filename;
+    tok->lineno = t->lineno + lines - 1;
 
     Parser *p2 = _PyPegen_Parser_New(tok, Py_fstring_input, p->flags, p->feature_version,
                                      NULL, p->arena);
-    p2->starting_lineno = t->lineno + lines - 1;
+
+    p2->starting_lineno = t->lineno + lines;
     p2->starting_col_offset = t->col_offset + cols;
 
     expr = _PyPegen_run_parser(p2);
@@ -417,7 +428,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
 exit:
     PyMem_Free(str);
     _PyPegen_Parser_Free(p2);
-    PyTokenizer_Free(tok);
+    _PyTokenizer_Free(tok);
     return result;
 }
 
@@ -447,14 +458,25 @@ fstring_find_literal(Parser *p, const char **str, const char *end, int raw,
         if (!raw && ch == '\\' && s < end) {
             ch = *s++;
             if (ch == 'N') {
+                /* We need to look at and skip matching braces for "\N{name}"
+                   sequences because otherwise we'll think the opening '{'
+                   starts an expression, which is not the case with "\N".
+                   Keep looking for either a matched '{' '}' pair, or the end
+                   of the string. */
+
                 if (s < end && *s++ == '{') {
                     while (s < end && *s++ != '}') {
                     }
                     continue;
                 }
-                break;
+
+                /* This is an invalid "\N" sequence, since it's a "\N" not
+                   followed by a "{".  Just keep parsing this literal.  This
+                   error will be caught later by
+                   decode_unicode_with_escapes(). */
+                continue;
             }
-            if (ch == '{' && warn_invalid_escape_sequence(p, ch, t) < 0) {
+            if (ch == '{' && warn_invalid_escape_sequence(p, s-1, t) < 0) {
                 return -1;
             }
         }
@@ -496,7 +518,8 @@ done:
             *literal = PyUnicode_DecodeUTF8Stateful(literal_start,
                                                     s - literal_start,
                                                     NULL, NULL);
-        } else {
+        }
+        else {
             *literal = decode_unicode_with_escapes(p, literal_start,
                                                    s - literal_start, t);
         }
@@ -659,12 +682,12 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
                     *str += 1;
                     continue;
                 }
-                /* Don't get out of the loop for these, if they're single
-                   chars (not part of 2-char tokens). If by themselves, they
-                   don't end an expression (unlike say '!'). */
-                if (ch == '>' || ch == '<') {
-                    continue;
-                }
+            }
+            /* Don't get out of the loop for these, if they're single
+               chars (not part of 2-char tokens). If by themselves, they
+               don't end an expression (unlike say '!'). */
+            if (ch == '>' || ch == '<') {
+                continue;
             }
 
             /* Normal way out of this loop. */
@@ -691,10 +714,10 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
         }
     }
     expr_end = *str;
-    /* If we leave this loop in a string or with mismatched parens, we
-       don't care. We'll get a syntax error when compiling the
-       expression. But, we can produce a better error message, so
-       let's just do that.*/
+    /* If we leave the above loop in a string or with mismatched parens, we
+       don't really care. We'll get a syntax error when compiling the
+       expression. But, we can produce a better error message, so let's just
+       do that.*/
     if (quote_char) {
         RAISE_SYNTAX_ERROR("f-string: unterminated string");
         goto error;
@@ -733,7 +756,9 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
         while (Py_ISSPACE(**str)) {
             *str += 1;
         }
-
+        if (*str >= end) {
+            goto unexpected_end_of_string;
+        }
         /* Set *expr_text to the text of the expression. */
         *expr_text = PyUnicode_FromStringAndSize(expr_start, *str-expr_start);
         if (!*expr_text) {
@@ -744,27 +769,43 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
     /* Check for a conversion char, if present. */
     if (**str == '!') {
         *str += 1;
-        if (*str >= end) {
-            goto unexpected_end_of_string;
+        const char *conv_start = *str;
+        while (1) {
+            if (*str >= end) {
+                goto unexpected_end_of_string;
+            }
+            if (**str == '}' || **str == ':') {
+                break;
+            }
+            *str += 1;
+        }
+        if (*str == conv_start) {
+            RAISE_SYNTAX_ERROR(
+                      "f-string: missed conversion character");
+            goto error;
         }
 
-        conversion = (unsigned char)**str;
-        *str += 1;
-
+        conversion = (unsigned char)*conv_start;
         /* Validate the conversion. */
-        if (!(conversion == 's' || conversion == 'r' || conversion == 'a')) {
-            RAISE_SYNTAX_ERROR(
-                      "f-string: invalid conversion character: "
-                      "expected 's', 'r', or 'a'");
+        if ((*str != conv_start + 1) ||
+            !(conversion == 's' || conversion == 'r' || conversion == 'a'))
+        {
+            PyObject *conv_obj = PyUnicode_FromStringAndSize(conv_start,
+                                                             *str-conv_start);
+            if (conv_obj) {
+                RAISE_SYNTAX_ERROR(
+                        "f-string: invalid conversion character %R: "
+                        "expected 's', 'r', or 'a'",
+                        conv_obj);
+                Py_DECREF(conv_obj);
+            }
             goto error;
         }
 
     }
 
     /* Check for the format spec, if present. */
-    if (*str >= end) {
-        goto unexpected_end_of_string;
-    }
+    assert(*str < end);
     if (**str == ':') {
         *str += 1;
         if (*str >= end) {
@@ -1135,9 +1176,7 @@ _PyPegen_FstringParser_ConcatFstring(Parser *p, FstringParser *state, const char
 
         /* We know we have an expression. Convert any existing string
            to a Constant node. */
-        if (!state->last_str) {
-            /* Do nothing. No previous literal. */
-        } else {
+        if (state->last_str) {
             /* Convert the existing last_str literal to a Constant node. */
             expr_ty last_str = make_str_node_and_del(p, &state->last_str, first_token, last_token);
             if (!last_str || ExprList_Append(&state->expr_list, last_str) < 0) {

@@ -2641,6 +2641,19 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f((False, range(-1, -11, -1), True)), alts[3])
         self.assertEqual(f((False, range(10, 20), True)), alts[4])
 
+    def test_patma_248(self):
+        class C(dict):
+            @staticmethod
+            def get(key, default=None):
+                return 'bar'
+
+        x = C({'foo': 'bar'})
+        match x:
+            case {'foo': bar}:
+                y = bar
+
+        self.assertEqual(y, 'bar')
+
 
 class TestSyntaxErrors(unittest.TestCase):
 
@@ -3137,6 +3150,27 @@ class TestTracing(unittest.TestCase):
         self.assertListEqual(self._trace(f, "go n"), [1, 2, 3])
         self.assertListEqual(self._trace(f, "go x"), [1, 2, 3])
         self.assertListEqual(self._trace(f, "spam"), [1, 2, 3])
+
+    def test_parser_deeply_nested_patterns(self):
+        # Deeply nested patterns can cause exponential backtracking when parsing.
+        # See gh-93671 for more information.
+
+        levels = 100
+
+        patterns = [
+            "A" + "(" * levels + ")" * levels,
+            "{1:" * levels + "1" + "}" * levels,
+            "[" * levels + "1" + "]" * levels,
+        ]
+
+        for pattern in patterns:
+            with self.subTest(pattern):
+                code = inspect.cleandoc("""
+                    match None:
+                        case {}:
+                            pass
+                """.format(pattern))
+                compile(code, "<string>", "exec")
 
 
 if __name__ == "__main__":

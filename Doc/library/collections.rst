@@ -271,12 +271,12 @@ For example::
     .. versionadded:: 3.1
 
     .. versionchanged:: 3.7 As a :class:`dict` subclass, :class:`Counter`
-       Inherited the capability to remember insertion order.  Math operations
+       inherited the capability to remember insertion order.  Math operations
        on *Counter* objects also preserve order.  Results are ordered
        according to when an element is first encountered in the left operand
        and then by the order encountered in the right operand.
 
-    Counter objects support three methods beyond those available for all
+    Counter objects support additional methods beyond those available for all
     dictionaries:
 
     .. method:: elements()
@@ -343,7 +343,7 @@ All of those tests treat missing elements as having zero counts so that
 ``Counter(a=1) == Counter(a=1, b=0)`` returns true.
 
 .. versionadded:: 3.10
-   Rich comparison operations we were added
+   Rich comparison operations were added.
 
 .. versionchanged:: 3.10
    In equality tests, missing elements are treated as having zero counts.
@@ -366,8 +366,11 @@ Several mathematical operations are provided for combining :class:`Counter`
 objects to produce multisets (counters that have counts greater than zero).
 Addition and subtraction combine counters by adding or subtracting the counts
 of corresponding elements.  Intersection and union return the minimum and
-maximum of corresponding counts.  Each operation can accept inputs with signed
+maximum of corresponding counts.  Equality and inclusion compare
+corresponding counts.  Each operation can accept inputs with signed
 counts, but the output will exclude results with counts of zero or less.
+
+.. doctest::
 
     >>> c = Counter(a=3, b=1)
     >>> d = Counter(a=1, b=2)
@@ -375,10 +378,14 @@ counts, but the output will exclude results with counts of zero or less.
     Counter({'a': 4, 'b': 3})
     >>> c - d                       # subtract (keeping only positive counts)
     Counter({'a': 2})
-    >>> c & d                       # intersection:  min(c[x], d[x]) # doctest: +SKIP
+    >>> c & d                       # intersection:  min(c[x], d[x])
     Counter({'a': 1, 'b': 1})
     >>> c | d                       # union:  max(c[x], d[x])
     Counter({'a': 3, 'b': 2})
+    >>> c == d                      # equality:  c[x] == d[x]
+    False
+    >>> c <= d                      # inclusion:  c[x] <= d[x]
+    False
 
 Unary addition and subtraction are shortcuts for adding an empty counter
 or subtracting from an empty counter.
@@ -1085,18 +1092,35 @@ Some differences from :class:`dict` still remain:
   Space efficiency, iteration speed, and the performance of update
   operations were secondary.
 
-* Algorithmically, :class:`OrderedDict` can handle frequent reordering
-  operations better than :class:`dict`.  This makes it suitable for tracking
-  recent accesses (for example in an `LRU cache
-  <https://medium.com/@krishankantsinghal/my-first-blog-on-medium-583159139237>`_).
+* The :class:`OrderedDict` algorithm can handle frequent reordering operations
+  better than :class:`dict`.  As shown in the recipes below, this makes it
+  suitable for implementing various kinds of LRU caches.
 
 * The equality operation for :class:`OrderedDict` checks for matching order.
+
+  A regular :class:`dict` can emulate the order sensitive equality test with
+  ``p == q and all(k1 == k2 for k1, k2 in zip(p, q))``.
 
 * The :meth:`popitem` method of :class:`OrderedDict` has a different
   signature.  It accepts an optional argument to specify which item is popped.
 
-* :class:`OrderedDict` has a :meth:`move_to_end` method to
-  efficiently reposition an element to an endpoint.
+  A regular :class:`dict` can emulate OrderedDict's ``od.popitem(last=True)``
+  with ``d.popitem()`` which is guaranteed to pop the rightmost (last) item.
+
+  A regular :class:`dict` can emulate OrderedDict's ``od.popitem(last=False)``
+  with ``(k := next(iter(d)), d.pop(k))`` which will return and remove the
+  leftmost (first) item if it exists.
+
+* :class:`OrderedDict` has a :meth:`move_to_end` method to efficiently
+  reposition an element to an endpoint.
+
+  A regular :class:`dict` can emulate OrderedDict's ``od.move_to_end(k,
+  last=True)`` with ``d[k] = d.pop(k)`` which will move the key and its
+  associated value to the rightmost (last) position.
+
+  A regular :class:`dict` does not have an efficient equivalent for
+  OrderedDict's ``od.move_to_end(k, last=False)`` which moves the key
+  and its associated value to the leftmost (first) position.
 
 * Until Python 3.8, :class:`dict` lacked a :meth:`__reversed__` method.
 
@@ -1120,14 +1144,16 @@ Some differences from :class:`dict` still remain:
         Move an existing *key* to either end of an ordered dictionary.  The item
         is moved to the right end if *last* is true (the default) or to the
         beginning if *last* is false.  Raises :exc:`KeyError` if the *key* does
-        not exist::
+        not exist:
+
+        .. doctest::
 
             >>> d = OrderedDict.fromkeys('abcde')
             >>> d.move_to_end('b')
-            >>> ''.join(d.keys())
+            >>> ''.join(d)
             'acdeb'
             >>> d.move_to_end('b', last=False)
-            >>> ''.join(d.keys())
+            >>> ''.join(d)
             'bacde'
 
         .. versionadded:: 3.2
@@ -1175,40 +1201,97 @@ variants of :func:`functools.lru_cache`:
 
 .. testcode::
 
-    class LRU:
+    from time import time
 
-        def __init__(self, func, maxsize=128):
+    class TimeBoundedLRU:
+        "LRU Cache that invalidates and refreshes old entries."
+
+        def __init__(self, func, maxsize=128, maxage=30):
+            self.cache = OrderedDict()      # { args : (timestamp, result)}
             self.func = func
             self.maxsize = maxsize
-            self.cache = OrderedDict()
+            self.maxage = maxage
 
         def __call__(self, *args):
             if args in self.cache:
-                value = self.cache[args]
                 self.cache.move_to_end(args)
-                return value
-            value = self.func(*args)
-            if len(self.cache) >= self.maxsize:
-                self.cache.popitem(False)
-            self.cache[args] = value
-            return value
+                timestamp, result = self.cache[args]
+                if time() - timestamp <= self.maxage:
+                    return result
+            result = self.func(*args)
+            self.cache[args] = time(), result
+            if len(self.cache) > self.maxsize:
+                self.cache.popitem(0)
+            return result
+
+
+.. testcode::
+
+    class MultiHitLRUCache:
+        """ LRU cache that defers caching a result until
+            it has been requested multiple times.
+
+            To avoid flushing the LRU cache with one-time requests,
+            we don't cache until a request has been made more than once.
+
+        """
+
+        def __init__(self, func, maxsize=128, maxrequests=4096, cache_after=1):
+            self.requests = OrderedDict()   # { uncached_key : request_count }
+            self.cache = OrderedDict()      # { cached_key : function_result }
+            self.func = func
+            self.maxrequests = maxrequests  # max number of uncached requests
+            self.maxsize = maxsize          # max number of stored return values
+            self.cache_after = cache_after
+
+        def __call__(self, *args):
+            if args in self.cache:
+                self.cache.move_to_end(args)
+                return self.cache[args]
+            result = self.func(*args)
+            self.requests[args] = self.requests.get(args, 0) + 1
+            if self.requests[args] <= self.cache_after:
+                self.requests.move_to_end(args)
+                if len(self.requests) > self.maxrequests:
+                    self.requests.popitem(0)
+            else:
+                self.requests.pop(args, None)
+                self.cache[args] = result
+                if len(self.cache) > self.maxsize:
+                    self.cache.popitem(0)
+            return result
 
 .. doctest::
     :hide:
 
     >>> def square(x):
-    ...     return x ** 2
+    ...     return x * x
     ...
-    >>> s = LRU(square, maxsize=5)
-    >>> actual = [(s(x), s(x)) for x in range(20)]
-    >>> expected = [(x**2, x**2) for x in range(20)]
-    >>> actual == expected
+    >>> f = MultiHitLRUCache(square, maxsize=4, maxrequests=6)
+    >>> list(map(f, range(10)))  # First requests, don't cache
+    [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+    >>> f(4)  # Cache the second request
+    16
+    >>> f(6)  # Cache the second request
+    36
+    >>> f(2)  # The first request aged out, so don't cache
+    4
+    >>> f(6)  # Cache hit
+    36
+    >>> f(4)  # Cache hit and move to front
+    16
+    >>> list(f.cache.values())
+    [36, 16]
+    >>> set(f.requests).isdisjoint(f.cache)
     True
-    >>> actual = list(s.cache.items())
-    >>> expected = [((x,), x**2) for x in range(15, 20)]
-    >>> actual == expected
+    >>> list(map(f, [9, 8, 7]))   # Cache these second requests
+    [81, 64, 49]
+    >>> list(map(f, [7, 9]))  # Cache hits
+    [49, 81]
+    >>> list(f.cache.values())
+    [16, 64, 49, 81]
+    >>> set(f.requests).isdisjoint(f.cache)
     True
-
 
 :class:`UserDict` objects
 -------------------------

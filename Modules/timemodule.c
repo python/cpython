@@ -1,33 +1,31 @@
 /* Time module */
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_namespace.h"     // _PyNamespace_New()
+#include "pycore_runtime.h"       // _Py_ID()
 
 #include <ctype.h>
 
 #ifdef HAVE_SYS_TIMES_H
-#include <sys/times.h>
+#  include <sys/times.h>
 #endif
-
 #ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
+#  include <sys/types.h>
 #endif
-
 #if defined(HAVE_SYS_RESOURCE_H)
-#include <sys/resource.h>
+#  include <sys/resource.h>
 #endif
-
 #ifdef QUICKWIN
-#include <io.h>
+# include <io.h>
 #endif
-
 #if defined(HAVE_PTHREAD_H)
 #  include <pthread.h>
 #endif
-
 #if defined(_AIX)
 #   include <sys/thread.h>
 #endif
-
 #if defined(__WATCOMC__) && !defined(__QNX__)
 #  include <i86.h>
 #else
@@ -38,17 +36,17 @@
 #endif /* !__WATCOMC__ || __QNX__ */
 
 #ifdef _Py_MEMORY_SANITIZER
-# include <sanitizer/msan_interface.h>
+#  include <sanitizer/msan_interface.h>
 #endif
 
 #ifdef _MSC_VER
-#define _Py_timezone _timezone
-#define _Py_daylight _daylight
-#define _Py_tzname _tzname
+#  define _Py_timezone _timezone
+#  define _Py_daylight _daylight
+#  define _Py_tzname _tzname
 #else
-#define _Py_timezone timezone
-#define _Py_daylight daylight
-#define _Py_tzname tzname
+#  define _Py_timezone timezone
+#  define _Py_daylight daylight
+#  define _Py_tzname tzname
 #endif
 
 #if defined(__APPLE__ ) && defined(__has_builtin)
@@ -60,10 +58,25 @@
 #  define HAVE_CLOCK_GETTIME_RUNTIME 1
 #endif
 
+
 #define SEC_TO_NS (1000 * 1000 * 1000)
 
+
 /* Forward declarations */
-static int pysleep(_PyTime_t);
+static int pysleep(_PyTime_t timeout);
+
+
+typedef struct {
+    PyTypeObject *struct_time_type;
+} time_module_state;
+
+static inline time_module_state*
+get_time_state(PyObject *module)
+{
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (time_module_state *)state;
+}
 
 
 static PyObject*
@@ -128,12 +141,11 @@ static int
 _PyTime_GetClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 {
     static int initialized = 0;
-    clock_t ticks;
 
     if (!initialized) {
         initialized = 1;
 
-        /* must sure that _PyTime_MulDiv(ticks, SEC_TO_NS, CLOCKS_PER_SEC)
+        /* Make sure that _PyTime_MulDiv(ticks, SEC_TO_NS, CLOCKS_PER_SEC)
            above cannot overflow */
         if ((_PyTime_t)CLOCKS_PER_SEC > _PyTime_MAX / SEC_TO_NS) {
             PyErr_SetString(PyExc_OverflowError,
@@ -149,14 +161,15 @@ _PyTime_GetClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
         info->adjustable = 0;
     }
 
-    ticks = clock();
+    clock_t ticks = clock();
     if (ticks == (clock_t)-1) {
         PyErr_SetString(PyExc_RuntimeError,
                         "the processor time used is not available "
                         "or its value cannot be represented");
         return -1;
     }
-    *tp = _PyTime_MulDiv(ticks, SEC_TO_NS, (_PyTime_t)CLOCKS_PER_SEC);
+    _PyTime_t ns = _PyTime_MulDiv(ticks, SEC_TO_NS, (_PyTime_t)CLOCKS_PER_SEC);
+    *tp = _PyTime_FromNanoseconds(ns);
     return 0;
 }
 #endif /* HAVE_CLOCK */
@@ -357,18 +370,19 @@ Return the clk_id of a thread's CPU time clock.");
 #endif /* HAVE_PTHREAD_GETCPUCLOCKID */
 
 static PyObject *
-time_sleep(PyObject *self, PyObject *obj)
+time_sleep(PyObject *self, PyObject *timeout_obj)
 {
-    _PyTime_t secs;
-    if (_PyTime_FromSecondsObject(&secs, obj, _PyTime_ROUND_TIMEOUT))
+    _PyTime_t timeout;
+    if (_PyTime_FromSecondsObject(&timeout, timeout_obj, _PyTime_ROUND_TIMEOUT))
         return NULL;
-    if (secs < 0) {
+    if (timeout < 0) {
         PyErr_SetString(PyExc_ValueError,
                         "sleep length must be non-negative");
         return NULL;
     }
-    if (pysleep(secs) != 0)
+    if (pysleep(timeout) != 0) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -406,18 +420,22 @@ static PyStructSequence_Desc struct_time_type_desc = {
     9,
 };
 
-static int initialized;
-static PyTypeObject StructTimeType;
+#if defined(MS_WINDOWS)
+#ifndef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
+  #define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
+#endif
 
+static DWORD timer_flags = (DWORD)-1;
+#endif
 
 static PyObject *
-tmtotuple(struct tm *p
+tmtotuple(time_module_state *state, struct tm *p
 #ifndef HAVE_STRUCT_TM_TM_ZONE
         , const char *zone, time_t gmtoff
 #endif
 )
 {
-    PyObject *v = PyStructSequence_New(&StructTimeType);
+    PyObject *v = PyStructSequence_New(state->struct_time_type);
     if (v == NULL)
         return NULL;
 
@@ -474,7 +492,7 @@ parse_time_t_args(PyObject *args, const char *format, time_t *pwhen)
 }
 
 static PyObject *
-time_gmtime(PyObject *self, PyObject *args)
+time_gmtime(PyObject *module, PyObject *args)
 {
     time_t when;
     struct tm buf;
@@ -485,10 +503,12 @@ time_gmtime(PyObject *self, PyObject *args)
     errno = 0;
     if (_PyTime_gmtime(when, &buf) != 0)
         return NULL;
+
+    time_module_state *state = get_time_state(module);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-    return tmtotuple(&buf);
+    return tmtotuple(state, &buf);
 #else
-    return tmtotuple(&buf, "UTC", 0);
+    return tmtotuple(state, &buf, "UTC", 0);
 #endif
 }
 
@@ -516,7 +536,7 @@ If the platform supports the tm_gmtoff and tm_zone, they are available as\n\
 attributes only.");
 
 static PyObject *
-time_localtime(PyObject *self, PyObject *args)
+time_localtime(PyObject *module, PyObject *args)
 {
     time_t when;
     struct tm buf;
@@ -525,8 +545,10 @@ time_localtime(PyObject *self, PyObject *args)
         return NULL;
     if (_PyTime_localtime(when, &buf) != 0)
         return NULL;
+
+    time_module_state *state = get_time_state(module);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-    return tmtotuple(&buf);
+    return tmtotuple(state, &buf);
 #else
     {
         struct tm local = buf;
@@ -534,7 +556,7 @@ time_localtime(PyObject *self, PyObject *args)
         time_t gmtoff;
         strftime(zone, sizeof(zone), "%Z", &buf);
         gmtoff = timegm(&buf) - when;
-        return tmtotuple(&local, zone, gmtoff);
+        return tmtotuple(state, &local, zone, gmtoff);
     }
 #endif
 }
@@ -554,7 +576,8 @@ When 'seconds' is not passed in, convert the current time instead.");
  * an exception and return 0 on error.
  */
 static int
-gettmarg(PyObject *args, struct tm *p, const char *format)
+gettmarg(time_module_state *state, PyObject *args,
+         struct tm *p, const char *format)
 {
     int y;
 
@@ -582,7 +605,7 @@ gettmarg(PyObject *args, struct tm *p, const char *format)
     p->tm_wday = (p->tm_wday + 1) % 7;
     p->tm_yday--;
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-    if (Py_IS_TYPE(args, &StructTimeType)) {
+    if (Py_IS_TYPE(args, state->struct_time_type)) {
         PyObject *item;
         item = PyStructSequence_GET_ITEM(args, 9);
         if (item != Py_None) {
@@ -723,7 +746,7 @@ the C library strftime function.\n"
 #endif
 
 static PyObject *
-time_strftime(PyObject *self, PyObject *args)
+time_strftime(PyObject *module, PyObject *args)
 {
     PyObject *tup = NULL;
     struct tm buf;
@@ -747,12 +770,13 @@ time_strftime(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "U|O:strftime", &format_arg, &tup))
         return NULL;
 
+    time_module_state *state = get_time_state(module);
     if (tup == NULL) {
         time_t tt = time(NULL);
         if (_PyTime_localtime(tt, &buf) != 0)
             return NULL;
     }
-    else if (!gettmarg(tup, &buf,
+    else if (!gettmarg(state, tup, &buf,
                        "iiiiiiiii;strftime(): illegal time tuple argument") ||
              !checktm(&buf))
     {
@@ -886,15 +910,9 @@ is not present, current time as returned by localtime() is used.\n\
 static PyObject *
 time_strptime(PyObject *self, PyObject *args)
 {
-    PyObject *module, *func, *result;
-    _Py_IDENTIFIER(_strptime_time);
+    PyObject *func, *result;
 
-    module = PyImport_ImportModuleNoBlock("_strptime");
-    if (!module)
-        return NULL;
-
-    func = _PyObject_GetAttrId(module, &PyId__strptime_time);
-    Py_DECREF(module);
+    func = _PyImport_GetModuleAttrString("_strptime", "_strptime_time");
     if (!func) {
         return NULL;
     }
@@ -935,19 +953,21 @@ _asctime(struct tm *timeptr)
 }
 
 static PyObject *
-time_asctime(PyObject *self, PyObject *args)
+time_asctime(PyObject *module, PyObject *args)
 {
     PyObject *tup = NULL;
     struct tm buf;
 
     if (!PyArg_UnpackTuple(args, "asctime", 0, 1, &tup))
         return NULL;
+
+    time_module_state *state = get_time_state(module);
     if (tup == NULL) {
         time_t tt = time(NULL);
         if (_PyTime_localtime(tt, &buf) != 0)
             return NULL;
     }
-    else if (!gettmarg(tup, &buf,
+    else if (!gettmarg(state, tup, &buf,
                        "iiiiiiiii;asctime(): illegal time tuple argument") ||
              !checktm(&buf))
     {
@@ -984,12 +1004,13 @@ not present, current time as returned by localtime() is used.");
 
 #ifdef HAVE_MKTIME
 static PyObject *
-time_mktime(PyObject *self, PyObject *tm_tuple)
+time_mktime(PyObject *module, PyObject *tm_tuple)
 {
     struct tm tm;
     time_t tt;
 
-    if (!gettmarg(tm_tuple, &tm,
+    time_module_state *state = get_time_state(module);
+    if (!gettmarg(state, tm_tuple, &tm,
                   "iiiiiiiii;mktime(): illegal time tuple argument"))
     {
         return NULL;
@@ -1069,7 +1090,7 @@ time_tzset(PyObject *self, PyObject *unused)
 {
     PyObject* m;
 
-    m = PyImport_ImportModuleNoBlock("time");
+    m = PyImport_ImportModule("time");
     if (m == NULL) {
         return NULL;
     }
@@ -1256,7 +1277,7 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 #endif
 
     /* getrusage(RUSAGE_SELF) */
-#if defined(HAVE_SYS_RESOURCE_H)
+#if defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRUSAGE)
     struct rusage ru;
 
     if (getrusage(RUSAGE_SELF, &ru) == 0) {
@@ -1325,10 +1346,10 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
                 info->resolution = 1.0 / (double)ticks_per_second;
             }
 
-            _PyTime_t total;
-            total = _PyTime_MulDiv(t.tms_utime, SEC_TO_NS, ticks_per_second);
-            total += _PyTime_MulDiv(t.tms_stime, SEC_TO_NS, ticks_per_second);
-            *tp = total;
+            _PyTime_t ns;
+            ns = _PyTime_MulDiv(t.tms_utime, SEC_TO_NS, ticks_per_second);
+            ns += _PyTime_MulDiv(t.tms_stime, SEC_TO_NS, ticks_per_second);
+            *tp = _PyTime_FromNanoseconds(ns);
             return 0;
         }
     }
@@ -1453,7 +1474,9 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
     return 0;
 }
 
-#elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_PROCESS_CPUTIME_ID)
+#elif defined(HAVE_CLOCK_GETTIME) && \
+      defined(CLOCK_PROCESS_CPUTIME_ID) && \
+      !defined(__EMSCRIPTEN__) && !defined(__wasi__)
 #define HAVE_THREAD_TIME
 
 #if defined(__APPLE__) && defined(__has_attribute) && __has_attribute(availability)
@@ -1882,6 +1905,7 @@ if it is -1, mktime() should guess based on the date and time.\n");
 static int
 time_exec(PyObject *module)
 {
+    time_module_state *state = get_time_state(module);
 #if defined(__APPLE__) && defined(HAVE_CLOCK_GETTIME)
     if (HAVE_CLOCK_GETTIME_RUNTIME) {
         /* pass: ^^^ cannot use '!' here */
@@ -1995,21 +2019,18 @@ time_exec(PyObject *module)
 
 #endif  /* defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES) */
 
-    if (!initialized) {
-        if (PyStructSequence_InitType2(&StructTimeType,
-                                       &struct_time_type_desc) < 0) {
-            return -1;
-        }
-    }
     if (PyModule_AddIntConstant(module, "_STRUCT_TM_ITEMS", 11)) {
         return -1;
     }
-    Py_INCREF(&StructTimeType);
-    if (PyModule_AddObject(module, "struct_time", (PyObject*) &StructTimeType)) {
-        Py_DECREF(&StructTimeType);
+
+    // struct_time type
+    state->struct_time_type = PyStructSequence_NewType(&struct_time_type_desc);
+    if (state->struct_time_type == NULL) {
         return -1;
     }
-    initialized = 1;
+    if (PyModule_AddType(module, state->struct_time_type)) {
+        return -1;
+    }
 
 #if defined(__linux__) && !defined(__GLIBC__)
     struct tm tm;
@@ -2018,8 +2039,51 @@ time_exec(PyObject *module)
         utc_string = tm.tm_zone;
 #endif
 
+#if defined(MS_WINDOWS)
+    if (timer_flags == (DWORD)-1) {
+        DWORD test_flags = CREATE_WAITABLE_TIMER_HIGH_RESOLUTION;
+        HANDLE timer = CreateWaitableTimerExW(NULL, NULL, test_flags,
+                                              TIMER_ALL_ACCESS);
+        if (timer == NULL) {
+            // CREATE_WAITABLE_TIMER_HIGH_RESOLUTION is not supported.
+            timer_flags = 0;
+        }
+        else {
+            // CREATE_WAITABLE_TIMER_HIGH_RESOLUTION is supported.
+            timer_flags = CREATE_WAITABLE_TIMER_HIGH_RESOLUTION;
+            CloseHandle(timer);
+        }
+    }
+#endif
+
     return 0;
 }
+
+
+static int
+time_module_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    time_module_state *state = get_time_state(module);
+    Py_VISIT(state->struct_time_type);
+    return 0;
+}
+
+
+static int
+time_module_clear(PyObject *module)
+{
+    time_module_state *state = get_time_state(module);
+    Py_CLEAR(state->struct_time_type);
+    return 0;
+}
+
+
+static void
+time_module_free(void *module)
+{
+    time_module_clear((PyObject *)module);
+}
+
 
 static struct PyModuleDef_Slot time_slots[] = {
     {Py_mod_exec, time_exec},
@@ -2028,14 +2092,14 @@ static struct PyModuleDef_Slot time_slots[] = {
 
 static struct PyModuleDef timemodule = {
     PyModuleDef_HEAD_INIT,
-    "time",
-    module_doc,
-    0,
-    time_methods,
-    time_slots,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "time",
+    .m_doc = module_doc,
+    .m_size = sizeof(time_module_state),
+    .m_methods = time_methods,
+    .m_slots = time_slots,
+    .m_traverse = time_module_traverse,
+    .m_clear = time_module_clear,
+    .m_free = time_module_free,
 };
 
 PyMODINIT_FUNC
@@ -2044,88 +2108,188 @@ PyInit_time(void)
     return PyModuleDef_Init(&timemodule);
 }
 
-/* Implement pysleep() for various platforms.
-   When interrupted (or when another error occurs), return -1 and
-   set an exception; else return 0. */
 
+// time.sleep() implementation.
+// On error, raise an exception and return -1.
+// On success, return 0.
 static int
-pysleep(_PyTime_t secs)
+pysleep(_PyTime_t timeout)
 {
-    _PyTime_t deadline, monotonic;
+    assert(timeout >= 0);
+
 #ifndef MS_WINDOWS
-    struct timeval timeout;
-    int err = 0;
+#ifdef HAVE_CLOCK_NANOSLEEP
+    struct timespec timeout_abs;
+#elif defined(HAVE_NANOSLEEP)
+    struct timespec timeout_ts;
 #else
-    _PyTime_t millisecs;
-    unsigned long ul_millis;
-    DWORD rc;
-    HANDLE hInterruptEvent;
+    struct timeval timeout_tv;
 #endif
+    _PyTime_t deadline, monotonic;
+    int err = 0;
 
     if (get_monotonic(&monotonic) < 0) {
         return -1;
     }
-    deadline = monotonic + secs;
+    deadline = monotonic + timeout;
+#ifdef HAVE_CLOCK_NANOSLEEP
+    if (_PyTime_AsTimespec(deadline, &timeout_abs) < 0) {
+        return -1;
+    }
+#endif
 
     do {
-#ifndef MS_WINDOWS
-        if (_PyTime_AsTimeval(secs, &timeout, _PyTime_ROUND_CEILING) < 0)
-            return -1;
-
-        Py_BEGIN_ALLOW_THREADS
-        err = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
-        Py_END_ALLOW_THREADS
-
-        if (err == 0)
-            break;
-
-        if (errno != EINTR) {
-            PyErr_SetFromErrno(PyExc_OSError);
+#ifdef HAVE_CLOCK_NANOSLEEP
+        // use timeout_abs
+#elif defined(HAVE_NANOSLEEP)
+        if (_PyTime_AsTimespec(timeout, &timeout_ts) < 0) {
             return -1;
         }
 #else
-        millisecs = _PyTime_AsMilliseconds(secs, _PyTime_ROUND_CEILING);
-        if (millisecs > (double)ULONG_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "sleep length is too large");
+        if (_PyTime_AsTimeval(timeout, &timeout_tv, _PyTime_ROUND_CEILING) < 0) {
             return -1;
         }
-
-        /* Allow sleep(0) to maintain win32 semantics, and as decreed
-         * by Guido, only the main thread can be interrupted.
-         */
-        ul_millis = (unsigned long)millisecs;
-        if (ul_millis == 0 || !_PyOS_IsMainThread()) {
-            Py_BEGIN_ALLOW_THREADS
-            Sleep(ul_millis);
-            Py_END_ALLOW_THREADS
-            break;
-        }
-
-        hInterruptEvent = _PyOS_SigintEvent();
-        ResetEvent(hInterruptEvent);
-
-        Py_BEGIN_ALLOW_THREADS
-        rc = WaitForSingleObjectEx(hInterruptEvent, ul_millis, FALSE);
-        Py_END_ALLOW_THREADS
-
-        if (rc != WAIT_OBJECT_0)
-            break;
 #endif
 
-        /* sleep was interrupted by SIGINT */
-        if (PyErr_CheckSignals())
-            return -1;
+        int ret;
+        Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_CLOCK_NANOSLEEP
+        ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &timeout_abs, NULL);
+        err = ret;
+#elif defined(HAVE_NANOSLEEP)
+        ret = nanosleep(&timeout_ts, NULL);
+        err = errno;
+#else
+        ret = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout_tv);
+        err = errno;
+#endif
+        Py_END_ALLOW_THREADS
 
+        if (ret == 0) {
+            break;
+        }
+
+        if (err != EINTR) {
+            errno = err;
+            PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+
+        /* sleep was interrupted by SIGINT */
+        if (PyErr_CheckSignals()) {
+            return -1;
+        }
+
+#ifndef HAVE_CLOCK_NANOSLEEP
         if (get_monotonic(&monotonic) < 0) {
             return -1;
         }
-        secs = deadline - monotonic;
-        if (secs < 0) {
+        timeout = deadline - monotonic;
+        if (timeout < 0) {
             break;
         }
         /* retry with the recomputed delay */
+#endif
     } while (1);
 
     return 0;
+#else  // MS_WINDOWS
+    _PyTime_t timeout_100ns = _PyTime_As100Nanoseconds(timeout,
+                                                       _PyTime_ROUND_CEILING);
+
+    // Maintain Windows Sleep() semantics for time.sleep(0)
+    if (timeout_100ns == 0) {
+        Py_BEGIN_ALLOW_THREADS
+        // A value of zero causes the thread to relinquish the remainder of its
+        // time slice to any other thread that is ready to run. If there are no
+        // other threads ready to run, the function returns immediately, and
+        // the thread continues execution.
+        Sleep(0);
+        Py_END_ALLOW_THREADS
+        return 0;
+    }
+
+    LARGE_INTEGER relative_timeout;
+    // No need to check for integer overflow, both types are signed
+    assert(sizeof(relative_timeout) == sizeof(timeout_100ns));
+    // SetWaitableTimer(): a negative due time indicates relative time
+    relative_timeout.QuadPart = -timeout_100ns;
+
+    HANDLE timer = CreateWaitableTimerExW(NULL, NULL, timer_flags,
+                                          TIMER_ALL_ACCESS);
+    if (timer == NULL) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+
+    if (!SetWaitableTimerEx(timer, &relative_timeout,
+                            0, // no period; the timer is signaled once
+                            NULL, NULL, // no completion routine
+                            NULL,  // no wake context; do not resume from suspend
+                            0)) // no tolerable delay for timer coalescing
+    {
+        PyErr_SetFromWindowsErr(0);
+        goto error;
+    }
+
+    // Only the main thread can be interrupted by SIGINT.
+    // Signal handlers are only executed in the main thread.
+    if (_PyOS_IsMainThread()) {
+        HANDLE sigint_event = _PyOS_SigintEvent();
+
+        while (1) {
+            // Check for pending SIGINT signal before resetting the event
+            if (PyErr_CheckSignals()) {
+                goto error;
+            }
+            ResetEvent(sigint_event);
+
+            HANDLE events[] = {timer, sigint_event};
+            DWORD rc;
+
+            Py_BEGIN_ALLOW_THREADS
+            rc = WaitForMultipleObjects(Py_ARRAY_LENGTH(events), events,
+                                        // bWaitAll
+                                        FALSE,
+                                        // No wait timeout
+                                        INFINITE);
+            Py_END_ALLOW_THREADS
+
+            if (rc == WAIT_FAILED) {
+                PyErr_SetFromWindowsErr(0);
+                goto error;
+            }
+
+            if (rc == WAIT_OBJECT_0) {
+                // Timer signaled: we are done
+                break;
+            }
+
+            assert(rc == (WAIT_OBJECT_0 + 1));
+            // The sleep was interrupted by SIGINT: restart sleeping
+        }
+    }
+    else {
+        DWORD rc;
+
+        Py_BEGIN_ALLOW_THREADS
+        rc = WaitForSingleObject(timer, INFINITE);
+        Py_END_ALLOW_THREADS
+
+        if (rc == WAIT_FAILED) {
+            PyErr_SetFromWindowsErr(0);
+            goto error;
+        }
+
+        assert(rc == WAIT_OBJECT_0);
+        // Timer signaled: we are done
+    }
+
+    CloseHandle(timer);
+    return 0;
+
+error:
+    CloseHandle(timer);
+    return -1;
+#endif
 }

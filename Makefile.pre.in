@@ -21,6 +21,7 @@
 # === Variables set by makesetup ===
 
 MODBUILT_NAMES=    _MODBUILT_NAMES_
+MODSHARED_NAMES=   _MODSHARED_NAMES_
 MODDISABLED_NAMES= _MODDISABLED_NAMES_
 MODOBJS=           _MODOBJS_
 MODLIBS=           _MODLIBS_
@@ -89,6 +90,9 @@ CONFIGURE_CFLAGS_NODIST=@CFLAGS_NODIST@
 # Use it when a linker flag should _not_ be part of the distutils LDFLAGS
 # once Python is installed (bpo-35257)
 CONFIGURE_LDFLAGS_NODIST=@LDFLAGS_NODIST@
+# LDFLAGS_NOLTO is an extra flag to disable lto. It is used to speed up building
+# of _bootstrap_python and _freeze_module tools, which don't need LTO.
+CONFIGURE_LDFLAGS_NOLTO=@LDFLAGS_NOLTO@
 CONFIGURE_CPPFLAGS=	@CPPFLAGS@
 CONFIGURE_LDFLAGS=	@LDFLAGS@
 # Avoid assigning CFLAGS, LDFLAGS, etc. so users can use them on the
@@ -102,8 +106,8 @@ PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST) -I$(srcdir)/Include
 PY_CPPFLAGS=	$(BASECPPFLAGS) -I. -I$(srcdir)/Include $(CONFIGURE_CPPFLAGS) $(CPPFLAGS)
 PY_LDFLAGS=	$(CONFIGURE_LDFLAGS) $(LDFLAGS)
 PY_LDFLAGS_NODIST=$(CONFIGURE_LDFLAGS_NODIST) $(LDFLAGS_NODIST)
+PY_LDFLAGS_NOLTO=$(PY_LDFLAGS) $(CONFIGURE_LDFLAGS_NOLTO) $(LDFLAGS_NODIST)
 NO_AS_NEEDED=	@NO_AS_NEEDED@
-SGI_ABI=	@SGI_ABI@
 CCSHARED=	@CCSHARED@
 # LINKFORSHARED are the flags passed to the $(CC) command that links
 # the python executable -- this is only needed for a few systems
@@ -201,11 +205,27 @@ RUNSHARED=       @RUNSHARED@
 # ensurepip options
 ENSUREPIP=      @ENSUREPIP@
 
+# Internal static libraries
+LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
+LIBEXPAT_A= Modules/expat/libexpat.a
+
 # OpenSSL options for setup.py so sysconfig can pick up AC_SUBST() vars.
 OPENSSL_INCLUDES=@OPENSSL_INCLUDES@
 OPENSSL_LIBS=@OPENSSL_LIBS@
 OPENSSL_LDFLAGS=@OPENSSL_LDFLAGS@
 OPENSSL_RPATH=@OPENSSL_RPATH@
+
+# Module state, compiler flags and linker flags
+# Empty CFLAGS and LDFLAGS are omitted.
+# states:
+#   * yes: module is available
+#   * missing: build dependency is missing
+#   * disabled: module is disabled
+#   * n/a: module is not available on the current platform
+# MODULE_EGG=yes  # yes, missing, disabled, n/a
+# MODULE_EGG_CFLAGS=
+# MODULE_EGG_LDFLAGS=
+@MODULE_BLOCK@
 
 # Default zoneinfo.TZPATH. Added here to expose it in sysconfig.get_config_var
 TZPATH=@TZPATH@
@@ -226,6 +246,10 @@ SRCDIRS= 	@SRCDIRS@
 # Other subdirectories
 SUBDIRSTOO=	Include Lib Misc
 
+# assets for Emscripten browser builds
+WASM_ASSETS_DIR=.$(prefix)
+WASM_STDLIB=$(WASM_ASSETS_DIR)/lib/python$(VERSION)/os.py
+
 # Files and directories to be distributed
 CONFIGFILES=	configure configure.ac acconfig.h pyconfig.h.in Makefile.pre.in
 DISTFILES=	README.rst ChangeLog $(CONFIGFILES)
@@ -241,6 +265,7 @@ DLLLIBRARY=	@DLLLIBRARY@
 LDLIBRARYDIR=   @LDLIBRARYDIR@
 INSTSONAME=	@INSTSONAME@
 LIBRARY_DEPS=	@LIBRARY_DEPS@
+LINK_PYTHON_DEPS=@LINK_PYTHON_DEPS@
 PY_ENABLE_SHARED=	@PY_ENABLE_SHARED@
 STATIC_LIBPYTHON=	@STATIC_LIBPYTHON@
 
@@ -260,16 +285,27 @@ LIBOBJS=	@LIBOBJS@
 PYTHON=		python$(EXE)
 BUILDPYTHON=	python$(BUILDEXE)
 
+HOSTRUNNER= @HOSTRUNNER@
+
 PYTHON_FOR_REGEN?=@PYTHON_FOR_REGEN@
 UPDATE_FILE=$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/update_file.py
 PYTHON_FOR_BUILD=@PYTHON_FOR_BUILD@
+# Single-platform builds depend on $(BUILDPYTHON). Cross builds use an
+# external "build Python" and have an empty PYTHON_FOR_BUILD_DEPS.
+PYTHON_FOR_BUILD_DEPS=@PYTHON_FOR_BUILD_DEPS@
+
+# Single-platform builds use Programs/_freeze_module.c for bootstrapping and
+# ./_bootstrap_python Programs/_freeze_module.py for remaining modules
+# Cross builds use an external "build Python" for all modules.
+PYTHON_FOR_FREEZE=@PYTHON_FOR_FREEZE@
+FREEZE_MODULE_BOOTSTRAP=@FREEZE_MODULE_BOOTSTRAP@
+FREEZE_MODULE_BOOTSTRAP_DEPS=@FREEZE_MODULE_BOOTSTRAP_DEPS@
+FREEZE_MODULE=@FREEZE_MODULE@
+FREEZE_MODULE_DEPS=@FREEZE_MODULE_DEPS@
+
 _PYTHON_HOST_PLATFORM=@_PYTHON_HOST_PLATFORM@
 BUILD_GNU_TYPE=	@build@
 HOST_GNU_TYPE=	@host@
-
-# Tcl and Tk config info from --with-tcltk-includes and -libs options
-TCLTK_INCLUDES=	@TCLTK_INCLUDES@
-TCLTK_LIBS=	@TCLTK_LIBS@
 
 # The task to run while instrumented when building the profile-opt target.
 # To speed up profile generation, we don't run the full unit test suite
@@ -290,7 +326,6 @@ COVERAGE_REPORT_OPTIONS=--no-branch-coverage --title "CPython lcov report"
 # Modules
 MODULE_OBJS=	\
 		Modules/config.o \
-		Modules/getpath.o \
 		Modules/main.o \
 		Modules/gcmodule.o
 
@@ -306,14 +341,12 @@ IO_OBJS=	\
 		Modules/_io/stringio.o
 
 ##########################################################################
-
-LIBFFI_INCLUDEDIR=	@LIBFFI_INCLUDEDIR@
-
-##########################################################################
 # Parser
 
 PEGEN_OBJS=		\
 		Parser/pegen.o \
+		Parser/pegen_errors.o \
+		Parser/action_helpers.o \
 		Parser/parser.o \
 		Parser/string_parser.o \
 		Parser/peg_api.o
@@ -339,6 +372,7 @@ PARSER_HEADERS= \
 PYTHON_OBJS=	\
 		Python/_warnings.o \
 		Python/Python-ast.o \
+		Python/Python-tokenize.o \
 		Python/asdl.o \
 		Python/ast.o \
 		Python/ast_opt.o \
@@ -396,7 +430,8 @@ PYTHON_OBJS=	\
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
 		$(MACHDEP_OBJS) \
-		$(DTRACE_OBJS)
+		$(DTRACE_OBJS) \
+		@PLATFORM_OBJS@
 
 
 ##########################################################################
@@ -447,6 +482,8 @@ OBJECT_OBJS=	\
 		Objects/unionobject.o \
 		Objects/weakrefobject.o
 
+DEEPFREEZE_OBJS = Python/deepfreeze/deepfreeze.o
+
 ##########################################################################
 # objects that get linked into the Python library
 LIBRARY_OBJS_OMIT_FROZEN=	\
@@ -459,7 +496,11 @@ LIBRARY_OBJS_OMIT_FROZEN=	\
 
 LIBRARY_OBJS=	\
 		$(LIBRARY_OBJS_OMIT_FROZEN) \
+		$(DEEPFREEZE_OBJS) \
+		Modules/getpath.o \
 		Python/frozen.o
+
+LINK_PYTHON_OBJS=@LINK_PYTHON_OBJS@
 
 ##########################################################################
 # DTrace
@@ -469,17 +510,85 @@ LIBRARY_OBJS=	\
 DTRACE_DEPS = \
 	Python/ceval.o Python/import.o Python/sysmodule.o Modules/gcmodule.o
 
+##########################################################################
+# decimal's libmpdec
+
+LIBMPDEC_OBJS= \
+		Modules/_decimal/libmpdec/basearith.o \
+		Modules/_decimal/libmpdec/constants.o \
+		Modules/_decimal/libmpdec/context.o \
+		Modules/_decimal/libmpdec/convolute.o \
+		Modules/_decimal/libmpdec/crt.o \
+		Modules/_decimal/libmpdec/difradix2.o \
+		Modules/_decimal/libmpdec/fnt.o \
+		Modules/_decimal/libmpdec/fourstep.o \
+		Modules/_decimal/libmpdec/io.o \
+		Modules/_decimal/libmpdec/mpalloc.o \
+		Modules/_decimal/libmpdec/mpdecimal.o \
+		Modules/_decimal/libmpdec/numbertheory.o \
+		Modules/_decimal/libmpdec/sixstep.o \
+		Modules/_decimal/libmpdec/transpose.o
+		# _decimal does not use signaling API
+		# Modules/_decimal/libmpdec/mpsignal.o
+
+LIBMPDEC_HEADERS= \
+		$(srcdir)/Modules/_decimal/libmpdec/basearith.h \
+		$(srcdir)/Modules/_decimal/libmpdec/bits.h \
+		$(srcdir)/Modules/_decimal/libmpdec/constants.h \
+		$(srcdir)/Modules/_decimal/libmpdec/convolute.h \
+		$(srcdir)/Modules/_decimal/libmpdec/crt.h \
+		$(srcdir)/Modules/_decimal/libmpdec/difradix2.h \
+		$(srcdir)/Modules/_decimal/libmpdec/fnt.h \
+		$(srcdir)/Modules/_decimal/libmpdec/fourstep.h \
+		$(srcdir)/Modules/_decimal/libmpdec/io.h \
+		$(srcdir)/Modules/_decimal/libmpdec/mpalloc.h \
+		$(srcdir)/Modules/_decimal/libmpdec/mpdecimal.h \
+		$(srcdir)/Modules/_decimal/libmpdec/numbertheory.h \
+		$(srcdir)/Modules/_decimal/libmpdec/sixstep.h \
+		$(srcdir)/Modules/_decimal/libmpdec/transpose.h \
+		$(srcdir)/Modules/_decimal/libmpdec/typearith.h \
+		$(srcdir)/Modules/_decimal/libmpdec/umodarith.h
+
+##########################################################################
+# pyexpat's expat library
+
+LIBEXPAT_OBJS= \
+		Modules/expat/xmlparse.o \
+		Modules/expat/xmlrole.o \
+		Modules/expat/xmltok.o
+
+LIBEXPAT_HEADERS= \
+		Modules/expat/ascii.h \
+		Modules/expat/asciitab.h \
+		Modules/expat/expat.h \
+		Modules/expat/expat_config.h \
+		Modules/expat/expat_external.h \
+		Modules/expat/iasciitab.h \
+		Modules/expat/internal.h \
+		Modules/expat/latin1tab.h \
+		Modules/expat/nametab.h \
+		Modules/expat/pyexpatns.h \
+		Modules/expat/siphash.h \
+		Modules/expat/utf8tab.h \
+		Modules/expat/xmlrole.h \
+		Modules/expat/xmltok.h \
+		Modules/expat/xmltok_impl.h
+
 #########################################################################
 # Rules
 
 # Default target
 all:		@DEF_MAKE_ALL_RULE@
-build_all:	check-clean-src $(BUILDPYTHON) oldsharedmods sharedmods gdbhooks \
-		Programs/_testembed python-config
+build_all:	check-clean-src $(BUILDPYTHON) platform oldsharedmods sharedmods \
+		gdbhooks Programs/_testembed python-config
+build_wasm: check-clean-src $(BUILDPYTHON) platform oldsharedmods python-config
 
 # Check that the source is clean when building out of source.
 check-clean-src:
-	@if test -n "$(VPATH)" -a -f "$(srcdir)/Programs/python.o"; then \
+	@if test -n "$(VPATH)" -a \( \
+	    -f "$(srcdir)/Programs/python.o" \
+	    -o -f "$(srcdir)\Python/frozen_modules/importlib._bootstrap.h" \
+	\); then \
 		echo "Error: The source directory ($(srcdir)) is not clean" ; \
 		echo "Building Python out of the source tree (in $(abs_builddir)) requires a clean source tree ($(abs_srcdir))" ; \
 		echo "Try to run: make -C \"$(srcdir)\" clean" ; \
@@ -556,7 +665,6 @@ coverage-lcov:
 	    '*/Modules/_blake2/impl/*' \
 	    '*/Modules/_ctypes/libffi*/*' \
 	    '*/Modules/_decimal/libmpdec/*' \
-	    '*/Modules/_sha3/kcp/*' \
 	    '*/Modules/expat/*' \
 	    '*/Modules/zlib/*' \
 	    '*/Include/*' \
@@ -573,8 +681,8 @@ coverage-lcov:
 	@echo "lcov report at $(COVERAGE_REPORT)/index.html"
 	@echo
 
-# Force regeneration of parser and importlib
-coverage-report: regen-token regen-importlib
+# Force regeneration of parser and frozen modules
+coverage-report: regen-token regen-frozen
 	@ # build with coverage info
 	$(MAKE) coverage
 	@ # run tests, ignore failures
@@ -588,10 +696,10 @@ clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --srcdir $(srcdir)
 
 # Build the interpreter
-$(BUILDPYTHON):	Programs/python.o $(LIBRARY_DEPS)
-	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS)
+$(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
+	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
-platform: $(BUILDPYTHON) pybuilddir.txt
+platform: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import sys ; from sysconfig import get_platform ; print("%s-%d.%d" % (get_platform(), *sys.version_info[:2]))' >platform
 
 # Create build directory and generate the sysconfig build-time data there.
@@ -601,7 +709,7 @@ platform: $(BUILDPYTHON) pybuilddir.txt
 # problems by creating a dummy pybuilddir.txt just to allow interpreter
 # initialization to succeed.  It will be overwritten by generate-posix-vars
 # or removed in case of failure.
-pybuilddir.txt: $(BUILDPYTHON)
+pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 	@echo "none" > ./pybuilddir.txt
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -S -m sysconfig --generate-posix-vars ;\
 	if test $$? -ne 0 ; then \
@@ -609,10 +717,6 @@ pybuilddir.txt: $(BUILDPYTHON)
 		rm -f ./pybuilddir.txt ; \
 		exit 1 ; \
 	fi
-
-# This is shared by the math and cmath modules
-Modules/_math.o: Modules/_math.c Modules/_math.h
-	$(CC) -c $(CCSHARED) $(PY_CORE_CFLAGS) -o $@ $<
 
 # blake2s is auto-generated from blake2b
 $(srcdir)/Modules/_blake2/blake2s_impl.c: $(srcdir)/Modules/_blake2/blake2b_impl.c $(srcdir)/Modules/_blake2/blake2b2s.py
@@ -624,16 +728,14 @@ $(srcdir)/Modules/_blake2/blake2s_impl.c: $(srcdir)/Modules/_blake2/blake2b_impl
 # -s, --silent or --quiet is always the first char.
 # Under BSD make, MAKEFLAGS might be " -s -v x=y".
 # Ignore macros passed by GNU make, passed after --
-sharedmods: $(BUILDPYTHON) pybuilddir.txt Modules/_math.o
+sharedmods: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt @LIBMPDEC_INTERNAL@ @LIBEXPAT_INTERNAL@
 	@case "`echo X $$MAKEFLAGS | sed 's/^X //;s/ -- .*//'`" in \
 	    *\ -s*|s*) quiet="-q";; \
 	    *) quiet="";; \
 	esac; \
 	echo "$(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' \
-		_TCLTK_INCLUDES='$(TCLTK_INCLUDES)' _TCLTK_LIBS='$(TCLTK_LIBS)' \
 		$(PYTHON_FOR_BUILD) $(srcdir)/setup.py $$quiet build"; \
 	$(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' \
-		_TCLTK_INCLUDES='$(TCLTK_INCLUDES)' _TCLTK_LIBS='$(TCLTK_LIBS)' \
 		$(PYTHON_FOR_BUILD) $(srcdir)/setup.py $$quiet build
 
 
@@ -706,18 +808,136 @@ $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
 	else true; \
 	fi
 
+# wasm32-emscripten browser build
+# wasm assets directory is relative to current build dir, e.g. "./usr/local".
+# --preload-file turns a relative asset path into an absolute path.
 
-oldsharedmods: $(SHAREDMODS)
+$(WASM_STDLIB): $(srcdir)/Lib/*.py $(srcdir)/Lib/*/*.py \
+	    $(srcdir)/Tools/wasm/wasm_assets.py \
+	    Makefile pybuilddir.txt Modules/Setup.local \
+	    python.html python.worker.js
+	$(PYTHON_FOR_BUILD) $(srcdir)/Tools/wasm/wasm_assets.py \
+	    --buildroot . --prefix $(prefix)
 
+python.html: $(srcdir)/Tools/wasm/python.html python.worker.js
+	@cp $(srcdir)/Tools/wasm/python.html $@
+
+python.worker.js: $(srcdir)/Tools/wasm/python.worker.js
+	@cp $(srcdir)/Tools/wasm/python.worker.js $@
+
+##########################################################################
+# Build static libmpdec.a
+LIBMPDEC_CFLAGS=$(PY_STDMODULE_CFLAGS) $(CCSHARED) @LIBMPDEC_CFLAGS@
+
+# for setup.py
+DECIMAL_CFLAGS=@LIBMPDEC_CFLAGS@
+DECIMAL_LDFLAGS=@LIBMPDEC_LDFLAGS@
+
+# "%.o: %c" is not portable
+Modules/_decimal/libmpdec/basearith.o: $(srcdir)/Modules/_decimal/libmpdec/basearith.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/basearith.c
+
+Modules/_decimal/libmpdec/constants.o: $(srcdir)/Modules/_decimal/libmpdec/constants.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/constants.c
+
+Modules/_decimal/libmpdec/context.o: $(srcdir)/Modules/_decimal/libmpdec/context.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/context.c
+
+Modules/_decimal/libmpdec/convolute.o: $(srcdir)/Modules/_decimal/libmpdec/convolute.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/convolute.c
+
+Modules/_decimal/libmpdec/crt.o: $(srcdir)/Modules/_decimal/libmpdec/crt.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/crt.c
+
+Modules/_decimal/libmpdec/difradix2.o: $(srcdir)/Modules/_decimal/libmpdec/difradix2.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/difradix2.c
+
+Modules/_decimal/libmpdec/fnt.o: $(srcdir)/Modules/_decimal/libmpdec/fnt.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/fnt.c
+
+Modules/_decimal/libmpdec/fourstep.o: $(srcdir)/Modules/_decimal/libmpdec/fourstep.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/fourstep.c
+
+Modules/_decimal/libmpdec/io.o: $(srcdir)/Modules/_decimal/libmpdec/io.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/io.c
+
+Modules/_decimal/libmpdec/mpalloc.o: $(srcdir)/Modules/_decimal/libmpdec/mpalloc.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpalloc.c
+
+Modules/_decimal/libmpdec/mpdecimal.o: $(srcdir)/Modules/_decimal/libmpdec/mpdecimal.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpdecimal.c
+
+Modules/_decimal/libmpdec/mpsignal.o: $(srcdir)/Modules/_decimal/libmpdec/mpsignal.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpsignal.c
+
+Modules/_decimal/libmpdec/numbertheory.o: $(srcdir)/Modules/_decimal/libmpdec/numbertheory.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/numbertheory.c
+
+Modules/_decimal/libmpdec/sixstep.o: $(srcdir)/Modules/_decimal/libmpdec/sixstep.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/sixstep.c
+
+Modules/_decimal/libmpdec/transpose.o: $(srcdir)/Modules/_decimal/libmpdec/transpose.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/transpose.c
+
+$(LIBMPDEC_A): $(LIBMPDEC_OBJS)
+	-rm -f $@
+	$(AR) $(ARFLAGS) $@ $(LIBMPDEC_OBJS)
+
+##########################################################################
+# Build static libexpat.a
+LIBEXPAT_CFLAGS=$(PY_STDMODULE_CFLAGS) $(CCSHARED) @LIBEXPAT_CFLAGS@
+
+# for setup.py
+EXPAT_CFLAGS=@LIBEXPAT_CFLAGS@
+EXPAT_LDFLAGS=@LIBEXPAT_LDFLAGS@
+
+Modules/expat/xmlparse.o: $(srcdir)/Modules/expat/xmlparse.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlparse.c
+
+Modules/expat/xmlrole.o: $(srcdir)/Modules/expat/xmlrole.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlrole.c
+
+Modules/expat/xmltok.o: $(srcdir)/Modules/expat/xmltok.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmltok.c
+
+$(LIBEXPAT_A): $(LIBEXPAT_OBJS)
+	-rm -f $@
+	$(AR) $(ARFLAGS) $@ $(LIBEXPAT_OBJS)
+
+# create relative links from build/lib.platform/egg.so to Modules/egg.so
+# pybuilddir.txt is created too late. We cannot use it in Makefile
+# targets. ln --relative is not portable.
+oldsharedmods: $(SHAREDMODS) pybuilddir.txt
+	@target=`cat pybuilddir.txt`; \
+	$(MKDIR_P) $$target; \
+	for mod in X $(SHAREDMODS); do \
+		if test $$mod != X; then \
+			$(LN) -sf ../../$$mod $$target/`basename $$mod`; \
+		fi; \
+	done
+
+Modules/Setup.local:
+	@# Create empty Setup.local when file was deleted by user
+	echo "# Edit this file for local setup changes" > $@
+
+Modules/Setup.bootstrap: $(srcdir)/Modules/Setup.bootstrap.in config.status
+	./config.status $@
+
+Modules/Setup.stdlib: $(srcdir)/Modules/Setup.stdlib.in config.status
+	./config.status $@
 
 Makefile Modules/config.c: Makefile.pre \
 				$(srcdir)/Modules/config.c.in \
 				$(MAKESETUP) \
 				$(srcdir)/Modules/Setup \
-				Modules/Setup.local
+				Modules/Setup.local \
+				Modules/Setup.bootstrap \
+				Modules/Setup.stdlib
 	$(SHELL) $(MAKESETUP) -c $(srcdir)/Modules/config.c.in \
 				-s Modules \
 				Modules/Setup.local \
+				@MODULES_SETUP_STDLIB@ \
+				Modules/Setup.bootstrap \
 				$(srcdir)/Modules/Setup
 	@mv config.c Modules
 	@echo "The Makefile was updated, you may need to re-run make."
@@ -727,53 +947,276 @@ regen-test-frozenmain: $(BUILDPYTHON)
 	# Regenerate Programs/test_frozenmain.h
 	# from Programs/test_frozenmain.py
 	# using Programs/freeze_test_frozenmain.py
-	$(RUNSHARED) ./$(BUILDPYTHON) Programs/freeze_test_frozenmain.py Programs/test_frozenmain.h
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Programs/freeze_test_frozenmain.py Programs/test_frozenmain.h
 
-Programs/_testembed: Programs/_testembed.o $(LIBRARY_DEPS)
-	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS)
+.PHONY: regen-re
+regen-re: $(BUILDPYTHON)
+	# Regenerate Lib/re/_casefix.py
+	# using Tools/scripts/generate_re_casefix.py
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/generate_re_casefix.py $(srcdir)/Lib/re/_casefix.py
+
+Programs/_testembed: Programs/_testembed.o $(LINK_PYTHON_DEPS)
+	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
-# Importlib
+# "Bootstrap Python" used to run deepfreeze.py
 
-Programs/_freeze_importlib.o: Programs/_freeze_importlib.c Makefile
+BOOTSTRAP_HEADERS = \
+	Python/frozen_modules/importlib._bootstrap.h \
+	Python/frozen_modules/importlib._bootstrap_external.h
 
-Programs/_freeze_importlib: Programs/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN)
-	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
+Programs/_bootstrap_python.o: Programs/_bootstrap_python.c $(BOOTSTRAP_HEADERS) $(PYTHON_HEADERS)
 
+_bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modules/getpath.o Modules/Setup.local
+	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ $(LIBRARY_OBJS_OMIT_FROZEN) \
+		Programs/_bootstrap_python.o Modules/getpath.o $(LIBS) $(MODLIBS) $(SYSLIBS)
+
+
+############################################################################
+# frozen modules (including importlib)
+#
+# Freezing is a multi step process. It works differently for standard builds
+# and cross builds. Standard builds use Programs/_freeze_module and
+# _bootstrap_python for freezing and deepfreezing, so users can build Python
+# without an existing Python installation. Cross builds cannot execute
+# compiled binaries and therefore rely on an external build Python
+# interpreter. The build interpreter must have same version and same bytecode
+# as the host (target) binary.
+#
+# Standard build process:
+# 1) compile minimal core objects for Py_Compile*() and PyMarshal_Write*().
+# 2) build Programs/_freeze_module binary.
+# 3) create frozen module headers for importlib and getpath.
+# 4) build _bootstrap_python binary.
+# 5) create remaining frozen module headers with
+#    ``./_bootstrap_python Programs/_freeze_module.py``. The pure Python
+#    script is used to test the cross compile code path.
+# 6) deepfreeze modules with _bootstrap_python
+#
+# Cross compile process:
+# 1) create all frozen module headers with external build Python and
+#    Programs/_freeze_module.py script.
+# 2) deepfreeze modules with external build Python.
+#
+
+# FROZEN_FILES_* are auto-generated by Tools/scripts/freeze_modules.py.
+FROZEN_FILES_IN = \
+		Lib/importlib/_bootstrap.py \
+		Lib/importlib/_bootstrap_external.py \
+		Lib/zipimport.py \
+		Lib/abc.py \
+		Lib/codecs.py \
+		Lib/io.py \
+		Lib/_collections_abc.py \
+		Lib/_sitebuiltins.py \
+		Lib/genericpath.py \
+		Lib/ntpath.py \
+		Lib/posixpath.py \
+		Lib/os.py \
+		Lib/site.py \
+		Lib/stat.py \
+		Lib/importlib/util.py \
+		Lib/importlib/machinery.py \
+		Lib/runpy.py \
+		Lib/__hello__.py \
+		Lib/__phello__/__init__.py \
+		Lib/__phello__/ham/__init__.py \
+		Lib/__phello__/ham/eggs.py \
+		Lib/__phello__/spam.py \
+		Tools/freeze/flag.py
+# End FROZEN_FILES_IN
+FROZEN_FILES_OUT = \
+		Python/frozen_modules/importlib._bootstrap.h \
+		Python/frozen_modules/importlib._bootstrap_external.h \
+		Python/frozen_modules/zipimport.h \
+		Python/frozen_modules/abc.h \
+		Python/frozen_modules/codecs.h \
+		Python/frozen_modules/io.h \
+		Python/frozen_modules/_collections_abc.h \
+		Python/frozen_modules/_sitebuiltins.h \
+		Python/frozen_modules/genericpath.h \
+		Python/frozen_modules/ntpath.h \
+		Python/frozen_modules/posixpath.h \
+		Python/frozen_modules/os.h \
+		Python/frozen_modules/site.h \
+		Python/frozen_modules/stat.h \
+		Python/frozen_modules/importlib.util.h \
+		Python/frozen_modules/importlib.machinery.h \
+		Python/frozen_modules/runpy.h \
+		Python/frozen_modules/__hello__.h \
+		Python/frozen_modules/__phello__.h \
+		Python/frozen_modules/__phello__.ham.h \
+		Python/frozen_modules/__phello__.ham.eggs.h \
+		Python/frozen_modules/__phello__.spam.h \
+		Python/frozen_modules/frozen_only.h
+# End FROZEN_FILES_OUT
+
+Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
+
+Modules/getpath_noop.o: $(srcdir)/Modules/getpath_noop.c Makefile
+
+Programs/_freeze_module: Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN)
+	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
+
+# We manually freeze getpath.py rather than through freeze_modules
+Python/frozen_modules/getpath.h: Modules/getpath.py $(FREEZE_MODULE_BOOTSTRAP_DEPS)
+	$(FREEZE_MODULE_BOOTSTRAP) getpath $(srcdir)/Modules/getpath.py Python/frozen_modules/getpath.h
+
+# BEGIN: freezing modules
+
+Python/frozen_modules/importlib._bootstrap.h: Lib/importlib/_bootstrap.py $(FREEZE_MODULE_BOOTSTRAP_DEPS)
+	$(FREEZE_MODULE_BOOTSTRAP) importlib._bootstrap $(srcdir)/Lib/importlib/_bootstrap.py Python/frozen_modules/importlib._bootstrap.h
+
+Python/frozen_modules/importlib._bootstrap_external.h: Lib/importlib/_bootstrap_external.py $(FREEZE_MODULE_BOOTSTRAP_DEPS)
+	$(FREEZE_MODULE_BOOTSTRAP) importlib._bootstrap_external $(srcdir)/Lib/importlib/_bootstrap_external.py Python/frozen_modules/importlib._bootstrap_external.h
+
+Python/frozen_modules/zipimport.h: Lib/zipimport.py $(FREEZE_MODULE_BOOTSTRAP_DEPS)
+	$(FREEZE_MODULE_BOOTSTRAP) zipimport $(srcdir)/Lib/zipimport.py Python/frozen_modules/zipimport.h
+
+Python/frozen_modules/abc.h: Lib/abc.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) abc $(srcdir)/Lib/abc.py Python/frozen_modules/abc.h
+
+Python/frozen_modules/codecs.h: Lib/codecs.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) codecs $(srcdir)/Lib/codecs.py Python/frozen_modules/codecs.h
+
+Python/frozen_modules/io.h: Lib/io.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) io $(srcdir)/Lib/io.py Python/frozen_modules/io.h
+
+Python/frozen_modules/_collections_abc.h: Lib/_collections_abc.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) _collections_abc $(srcdir)/Lib/_collections_abc.py Python/frozen_modules/_collections_abc.h
+
+Python/frozen_modules/_sitebuiltins.h: Lib/_sitebuiltins.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) _sitebuiltins $(srcdir)/Lib/_sitebuiltins.py Python/frozen_modules/_sitebuiltins.h
+
+Python/frozen_modules/genericpath.h: Lib/genericpath.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) genericpath $(srcdir)/Lib/genericpath.py Python/frozen_modules/genericpath.h
+
+Python/frozen_modules/ntpath.h: Lib/ntpath.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) ntpath $(srcdir)/Lib/ntpath.py Python/frozen_modules/ntpath.h
+
+Python/frozen_modules/posixpath.h: Lib/posixpath.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) posixpath $(srcdir)/Lib/posixpath.py Python/frozen_modules/posixpath.h
+
+Python/frozen_modules/os.h: Lib/os.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) os $(srcdir)/Lib/os.py Python/frozen_modules/os.h
+
+Python/frozen_modules/site.h: Lib/site.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) site $(srcdir)/Lib/site.py Python/frozen_modules/site.h
+
+Python/frozen_modules/stat.h: Lib/stat.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) stat $(srcdir)/Lib/stat.py Python/frozen_modules/stat.h
+
+Python/frozen_modules/importlib.util.h: Lib/importlib/util.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) importlib.util $(srcdir)/Lib/importlib/util.py Python/frozen_modules/importlib.util.h
+
+Python/frozen_modules/importlib.machinery.h: Lib/importlib/machinery.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) importlib.machinery $(srcdir)/Lib/importlib/machinery.py Python/frozen_modules/importlib.machinery.h
+
+Python/frozen_modules/runpy.h: Lib/runpy.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) runpy $(srcdir)/Lib/runpy.py Python/frozen_modules/runpy.h
+
+Python/frozen_modules/__hello__.h: Lib/__hello__.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) __hello__ $(srcdir)/Lib/__hello__.py Python/frozen_modules/__hello__.h
+
+Python/frozen_modules/__phello__.h: Lib/__phello__/__init__.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) __phello__ $(srcdir)/Lib/__phello__/__init__.py Python/frozen_modules/__phello__.h
+
+Python/frozen_modules/__phello__.ham.h: Lib/__phello__/ham/__init__.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) __phello__.ham $(srcdir)/Lib/__phello__/ham/__init__.py Python/frozen_modules/__phello__.ham.h
+
+Python/frozen_modules/__phello__.ham.eggs.h: Lib/__phello__/ham/eggs.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) __phello__.ham.eggs $(srcdir)/Lib/__phello__/ham/eggs.py Python/frozen_modules/__phello__.ham.eggs.h
+
+Python/frozen_modules/__phello__.spam.h: Lib/__phello__/spam.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) __phello__.spam $(srcdir)/Lib/__phello__/spam.py Python/frozen_modules/__phello__.spam.h
+
+Python/frozen_modules/frozen_only.h: Tools/freeze/flag.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) frozen_only $(srcdir)/Tools/freeze/flag.py Python/frozen_modules/frozen_only.h
+
+# END: freezing modules
+
+Tools/scripts/freeze_modules.py: $(FREEZE_MODULE)
+
+.PHONY: regen-frozen
+regen-frozen: Tools/scripts/freeze_modules.py $(FROZEN_FILES_IN)
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py
+	@echo "The Makefile was updated, you may need to re-run make."
+
+############################################################################
+# Deepfreeze targets
+
+.PHONY: regen-deepfreeze
+regen-deepfreeze: $(DEEPFREEZE_OBJS)
+
+DEEPFREEZE_DEPS=$(srcdir)/Tools/scripts/deepfreeze.py $(FREEZE_MODULE_DEPS) $(FROZEN_FILES_OUT)
+
+# BEGIN: deepfreeze modules
+Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py \
+	Python/frozen_modules/importlib._bootstrap.h:importlib._bootstrap \
+	Python/frozen_modules/importlib._bootstrap_external.h:importlib._bootstrap_external \
+	Python/frozen_modules/zipimport.h:zipimport \
+	Python/frozen_modules/abc.h:abc \
+	Python/frozen_modules/codecs.h:codecs \
+	Python/frozen_modules/io.h:io \
+	Python/frozen_modules/_collections_abc.h:_collections_abc \
+	Python/frozen_modules/_sitebuiltins.h:_sitebuiltins \
+	Python/frozen_modules/genericpath.h:genericpath \
+	Python/frozen_modules/ntpath.h:ntpath \
+	Python/frozen_modules/posixpath.h:posixpath \
+	Python/frozen_modules/os.h:os \
+	Python/frozen_modules/site.h:site \
+	Python/frozen_modules/stat.h:stat \
+	Python/frozen_modules/importlib.util.h:importlib.util \
+	Python/frozen_modules/importlib.machinery.h:importlib.machinery \
+	Python/frozen_modules/runpy.h:runpy \
+	Python/frozen_modules/__hello__.h:__hello__ \
+	Python/frozen_modules/__phello__.h:__phello__ \
+	Python/frozen_modules/__phello__.ham.h:__phello__.ham \
+	Python/frozen_modules/__phello__.ham.eggs.h:__phello__.ham.eggs \
+	Python/frozen_modules/__phello__.spam.h:__phello__.spam \
+	Python/frozen_modules/frozen_only.h:frozen_only \
+	-o Python/deepfreeze/deepfreeze.c
+# END: deepfreeze modules
+	@echo "Note: Deepfreeze may have added some global objects,"
+	@echo "      so run 'make regen-global-objects' if necessary."
+
+# We keep this renamed target around for folks with muscle memory.
 .PHONY: regen-importlib
-regen-importlib: Programs/_freeze_importlib
-	# Regenerate Python/importlib_external.h
-	# from Lib/importlib/_bootstrap_external.py using _freeze_importlib
-	./Programs/_freeze_importlib importlib._bootstrap_external \
-	    $(srcdir)/Lib/importlib/_bootstrap_external.py \
-	    $(srcdir)/Python/importlib_external.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/importlib_external.h $(srcdir)/Python/importlib_external.h.new
-	# Regenerate Python/importlib.h from Lib/importlib/_bootstrap.py
-	# using _freeze_importlib
-	./Programs/_freeze_importlib importlib._bootstrap \
-	    $(srcdir)/Lib/importlib/_bootstrap.py \
-	    $(srcdir)/Python/importlib.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib.h.new
-	# Regenerate Python/importlib_zipimport.h from Lib/zipimport.py
-	# using _freeze_importlib
-	./Programs/_freeze_importlib zipimport \
-	    $(srcdir)/Lib/zipimport.py \
-	    $(srcdir)/Python/importlib_zipimport.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/importlib_zipimport.h $(srcdir)/Python/importlib_zipimport.h.new
+regen-importlib: regen-frozen
 
+############################################################################
+# Global objects
+
+.PHONY: regen-global-objects
+regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
+	@echo "Note: Global objects can be added or removed by other tools (e.g. deepfreeze), "
+	@echo "      so be sure to re-run regen-global-objects after those tools."
+
+############################################################################
+# ABI
+
+regen-abidump: all
+	@$(MKDIR_P) $(srcdir)/Doc/data/
+	abidw "libpython$(LDVERSION).so" --no-architecture --out-file $(srcdir)/Doc/data/python$(LDVERSION).abi.new
+	@$(UPDATE_FILE) --create $(srcdir)/Doc/data/python$(LDVERSION).abi $(srcdir)/Doc/data/python$(LDVERSION).abi.new
+
+check-abidump: all
+	abidiff $(srcdir)/Doc/data/python$(LDVERSION).abi "libpython$(LDVERSION).so" --drop-private-types --no-architecture --no-added-syms
 
 regen-limited-abi: all
-	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.txt
-
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.toml
 
 ############################################################################
 # Regenerate all generated files
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
-	regen-token regen-ast regen-keyword regen-importlib clinic \
-	regen-pegen-metaparser regen-pegen regen-frozen regen-test-frozenmain
+	regen-token regen-ast regen-keyword regen-sre regen-frozen clinic \
+	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
+	regen-global-objects
 	@echo
-	@echo "Note: make regen-stdlib-module-names and autoconf should be run manually"
+	@echo "Note: make regen-stdlib-module-names and make regen-configure should be run manually"
 
 ############################################################################
 # Special rules for object files
@@ -791,12 +1234,14 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
 	      -DGITBRANCH="\"`LC_ALL=C $(GITBRANCH)`\"" \
 	      -o $@ $(srcdir)/Modules/getbuildinfo.c
 
-Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
+Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h Makefile $(PYTHON_HEADERS)
 	$(CC) -c $(PY_CORE_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
 		-DPREFIX='"$(prefix)"' \
 		-DEXEC_PREFIX='"$(exec_prefix)"' \
 		-DVERSION='"$(VERSION)"' \
 		-DVPATH='"$(VPATH)"' \
+		-DPLATLIBDIR='"$(PLATLIBDIR)"' \
+		-DPYTHONFRAMEWORK='"$(PYTHONFRAMEWORK)"' \
 		-o $@ $(srcdir)/Modules/getpath.c
 
 Programs/python.o: $(srcdir)/Programs/python.c
@@ -805,7 +1250,7 @@ Programs/python.o: $(srcdir)/Programs/python.c
 Programs/_testembed.o: $(srcdir)/Programs/_testembed.c Programs/test_frozenmain.h
 	$(MAINCC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/_testembed.c
 
-Modules/_sre.o: $(srcdir)/Modules/_sre.c $(srcdir)/Modules/sre.h $(srcdir)/Modules/sre_constants.h $(srcdir)/Modules/sre_lib.h
+Modules/_sre/sre.o: $(srcdir)/Modules/_sre/sre.c $(srcdir)/Modules/_sre/sre.h $(srcdir)/Modules/_sre/sre_constants.h $(srcdir)/Modules/_sre/sre_lib.h
 
 Modules/posixmodule.o: $(srcdir)/Modules/posixmodule.c $(srcdir)/Modules/posixmodule.h
 
@@ -830,11 +1275,6 @@ Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile $(srcdir)/Include/pydt
 		-DABIFLAGS='"$(ABIFLAGS)"' \
 		$(MULTIARCH_CPPFLAGS) \
 		-o $@ $(srcdir)/Python/sysmodule.c
-
-Python/initconfig.o: $(srcdir)/Python/initconfig.c
-	$(CC) -c $(PY_CORE_CFLAGS) \
-		-DPLATLIBDIR='"$(PLATLIBDIR)"' \
-		-o $@ $(srcdir)/Python/initconfig.c
 
 $(IO_OBJS): $(IO_H)
 
@@ -880,17 +1320,10 @@ regen-opcode:
 	# using Tools/scripts/generate_opcode_h.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_opcode_h.py \
 		$(srcdir)/Lib/opcode.py \
-		$(srcdir)/Include/opcode.h.new
+		$(srcdir)/Include/opcode.h.new \
+		$(srcdir)/Include/internal/pycore_opcode.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
-
-.PHONY: regen-frozen
-regen-frozen: Programs/_freeze_importlib
-	# Regenerate code for frozen module "__hello__".
-	./Programs/_freeze_importlib hello \
-		$(srcdir)/Tools/freeze/flag.py \
-		$(srcdir)/Python/frozen_hello.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/frozen_hello.h \
-		$(srcdir)/Python/frozen_hello.h.new
+	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode.h $(srcdir)/Include/internal/pycore_opcode.h.new
 
 .PHONY: regen-token
 regen-token:
@@ -899,11 +1332,11 @@ regen-token:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py rst \
 		$(srcdir)/Grammar/Tokens \
 		$(srcdir)/Doc/library/token-list.inc
-	# Regenerate Include/token.h from Grammar/Tokens
+	# Regenerate Include/internal/pycore_token.h from Grammar/Tokens
 	# using Tools/scripts/generate_token.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py h \
 		$(srcdir)/Grammar/Tokens \
-		$(srcdir)/Include/token.h
+		$(srcdir)/Include/internal/pycore_token.h
 	# Regenerate Parser/token.c from Grammar/Tokens
 	# using Tools/scripts/generate_token.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py c \
@@ -926,13 +1359,21 @@ regen-keyword:
 	$(UPDATE_FILE) $(srcdir)/Lib/keyword.py $(srcdir)/Lib/keyword.py.new
 
 .PHONY: regen-stdlib-module-names
-regen-stdlib-module-names: build_all Programs/_testembed
+regen-stdlib-module-names: all Programs/_testembed
 	# Regenerate Python/stdlib_module_names.h
 	# using Tools/scripts/generate_stdlib_module_names.py
 	$(RUNSHARED) ./$(BUILDPYTHON) \
 		$(srcdir)/Tools/scripts/generate_stdlib_module_names.py \
 		> $(srcdir)/Python/stdlib_module_names.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/stdlib_module_names.h $(srcdir)/Python/stdlib_module_names.h.new
+
+regen-sre:
+	# Regenerate Modules/_sre/sre_constants.h and Modules/_sre/sre_targets.h
+	# from Lib/re/_constants.py using Tools/scripts/generate_sre_constants.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_sre_constants.py \
+		$(srcdir)/Lib/re/_constants.py \
+		$(srcdir)/Modules/_sre/sre_constants.h \
+		$(srcdir)/Modules/_sre/sre_targets.h
 
 Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o Python/future.o: $(srcdir)/Include/internal/pycore_ast.h
 
@@ -971,8 +1412,7 @@ UNICODE_DEPS = \
 		$(srcdir)/Objects/stringlib/ucs2lib.h \
 		$(srcdir)/Objects/stringlib/ucs4lib.h \
 		$(srcdir)/Objects/stringlib/undef.h \
-		$(srcdir)/Objects/stringlib/unicode_format.h \
-		$(srcdir)/Objects/stringlib/unicodedefs.h
+		$(srcdir)/Objects/stringlib/unicode_format.h
 
 Objects/bytes_methods.o: $(srcdir)/Objects/bytes_methods.c $(BYTESTR_DEPS)
 Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS)
@@ -994,8 +1434,7 @@ regen-opcode-targets:
 Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/ceval_gil.h \
 		$(srcdir)/Python/condvar.h
 
-Python/frozen.o: $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib_external.h \
-		$(srcdir)/Python/importlib_zipimport.h $(srcdir)/Python/frozen_hello.h
+Python/frozen.o: $(FROZEN_FILES_OUT)
 
 # Generate DTrace probe macros, then rename them (PYTHON_ -> PyDTrace_) to
 # follow our naming conventions. dtrace(1) uses the output filename to generate
@@ -1035,45 +1474,36 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/boolobject.h \
 		$(srcdir)/Include/bytearrayobject.h \
 		$(srcdir)/Include/bytesobject.h \
-		$(srcdir)/Include/cellobject.h \
 		$(srcdir)/Include/ceval.h \
-		$(srcdir)/Include/classobject.h \
-		$(srcdir)/Include/code.h \
 		$(srcdir)/Include/codecs.h \
 		$(srcdir)/Include/compile.h \
 		$(srcdir)/Include/complexobject.h \
-		$(srcdir)/Include/context.h \
 		$(srcdir)/Include/descrobject.h \
 		$(srcdir)/Include/dictobject.h \
 		$(srcdir)/Include/dynamic_annotations.h \
 		$(srcdir)/Include/enumobject.h \
 		$(srcdir)/Include/errcode.h \
-		$(srcdir)/Include/eval.h \
 		$(srcdir)/Include/fileobject.h \
 		$(srcdir)/Include/fileutils.h \
 		$(srcdir)/Include/floatobject.h \
 		$(srcdir)/Include/frameobject.h \
-		$(srcdir)/Include/funcobject.h \
-		$(srcdir)/Include/genobject.h \
 		$(srcdir)/Include/import.h \
-		$(srcdir)/Include/interpreteridobject.h \
 		$(srcdir)/Include/intrcheck.h \
 		$(srcdir)/Include/iterobject.h \
 		$(srcdir)/Include/listobject.h \
-		$(srcdir)/Include/longintrepr.h \
 		$(srcdir)/Include/longobject.h \
 		$(srcdir)/Include/marshal.h \
 		$(srcdir)/Include/memoryobject.h \
 		$(srcdir)/Include/methodobject.h \
 		$(srcdir)/Include/modsupport.h \
 		$(srcdir)/Include/moduleobject.h \
-		$(srcdir)/Include/namespaceobject.h \
 		$(srcdir)/Include/object.h \
 		$(srcdir)/Include/objimpl.h \
 		$(srcdir)/Include/opcode.h \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \
+		$(srcdir)/Include/pybuffer.h \
 		$(srcdir)/Include/pycapsule.h \
 		$(srcdir)/Include/pydtrace.h \
 		$(srcdir)/Include/pyerrors.h \
@@ -1086,18 +1516,18 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pymem.h \
 		$(srcdir)/Include/pyport.h \
 		$(srcdir)/Include/pystate.h \
+		$(srcdir)/Include/pystats.h \
 		$(srcdir)/Include/pystrcmp.h \
-		$(srcdir)/Include/pystrhex.h \
 		$(srcdir)/Include/pystrtod.h \
 		$(srcdir)/Include/pythonrun.h \
 		$(srcdir)/Include/pythread.h \
+		$(srcdir)/Include/pytypedefs.h \
 		$(srcdir)/Include/rangeobject.h \
 		$(srcdir)/Include/setobject.h \
 		$(srcdir)/Include/sliceobject.h \
 		$(srcdir)/Include/structmember.h \
 		$(srcdir)/Include/structseq.h \
 		$(srcdir)/Include/sysmodule.h \
-		$(srcdir)/Include/token.h \
 		$(srcdir)/Include/traceback.h \
 		$(srcdir)/Include/tracemalloc.h \
 		$(srcdir)/Include/tupleobject.h \
@@ -1111,18 +1541,28 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/abstract.h \
 		$(srcdir)/Include/cpython/bytearrayobject.h \
 		$(srcdir)/Include/cpython/bytesobject.h \
+		$(srcdir)/Include/cpython/cellobject.h \
 		$(srcdir)/Include/cpython/ceval.h \
+		$(srcdir)/Include/cpython/classobject.h \
 		$(srcdir)/Include/cpython/code.h \
 		$(srcdir)/Include/cpython/compile.h \
+		$(srcdir)/Include/cpython/complexobject.h \
+		$(srcdir)/Include/cpython/context.h \
+		$(srcdir)/Include/cpython/descrobject.h \
 		$(srcdir)/Include/cpython/dictobject.h \
 		$(srcdir)/Include/cpython/fileobject.h \
 		$(srcdir)/Include/cpython/fileutils.h \
+		$(srcdir)/Include/cpython/floatobject.h \
 		$(srcdir)/Include/cpython/frameobject.h \
+		$(srcdir)/Include/cpython/funcobject.h \
+		$(srcdir)/Include/cpython/genobject.h \
 		$(srcdir)/Include/cpython/import.h \
 		$(srcdir)/Include/cpython/initconfig.h \
-		$(srcdir)/Include/cpython/interpreteridobject.h \
 		$(srcdir)/Include/cpython/listobject.h \
+		$(srcdir)/Include/cpython/longintrepr.h \
+		$(srcdir)/Include/cpython/longobject.h \
 		$(srcdir)/Include/cpython/methodobject.h \
+		$(srcdir)/Include/cpython/modsupport.h \
 		$(srcdir)/Include/cpython/object.h \
 		$(srcdir)/Include/cpython/objimpl.h \
 		$(srcdir)/Include/cpython/odictobject.h \
@@ -1131,15 +1571,20 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pydebug.h \
 		$(srcdir)/Include/cpython/pyerrors.h \
 		$(srcdir)/Include/cpython/pyfpe.h \
+		$(srcdir)/Include/cpython/pyframe.h \
 		$(srcdir)/Include/cpython/pylifecycle.h \
 		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
 		$(srcdir)/Include/cpython/pythonrun.h \
+		$(srcdir)/Include/cpython/pythread.h \
 		$(srcdir)/Include/cpython/pytime.h \
+		$(srcdir)/Include/cpython/setobject.h \
 		$(srcdir)/Include/cpython/sysmodule.h \
 		$(srcdir)/Include/cpython/traceback.h \
 		$(srcdir)/Include/cpython/tupleobject.h \
 		$(srcdir)/Include/cpython/unicodeobject.h \
+		$(srcdir)/Include/cpython/warnings.h \
+		$(srcdir)/Include/cpython/weakrefobject.h \
 		\
 		$(srcdir)/Include/internal/pycore_abstract.h \
 		$(srcdir)/Include/internal/pycore_accu.h \
@@ -1150,6 +1595,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_atomic_funcs.h \
 		$(srcdir)/Include/internal/pycore_bitutils.h \
 		$(srcdir)/Include/internal/pycore_bytes_methods.h \
+		$(srcdir)/Include/internal/pycore_bytesobject.h \
 		$(srcdir)/Include/internal/pycore_call.h \
 		$(srcdir)/Include/internal/pycore_ceval.h \
 		$(srcdir)/Include/internal/pycore_code.h \
@@ -1157,19 +1603,27 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_condvar.h \
 		$(srcdir)/Include/internal/pycore_context.h \
 		$(srcdir)/Include/internal/pycore_dict.h \
+		$(srcdir)/Include/internal/pycore_descrobject.h \
 		$(srcdir)/Include/internal/pycore_dtoa.h \
+		$(srcdir)/Include/internal/pycore_exceptions.h \
 		$(srcdir)/Include/internal/pycore_fileutils.h \
+		$(srcdir)/Include/internal/pycore_floatobject.h \
 		$(srcdir)/Include/internal/pycore_format.h \
+		$(srcdir)/Include/internal/pycore_function.h \
+		$(srcdir)/Include/internal/pycore_genobject.h \
 		$(srcdir)/Include/internal/pycore_getopt.h \
 		$(srcdir)/Include/internal/pycore_gil.h \
+		$(srcdir)/Include/internal/pycore_global_objects.h \
 		$(srcdir)/Include/internal/pycore_hamt.h \
 		$(srcdir)/Include/internal/pycore_hashtable.h \
 		$(srcdir)/Include/internal/pycore_import.h \
 		$(srcdir)/Include/internal/pycore_initconfig.h \
 		$(srcdir)/Include/internal/pycore_interp.h \
+		$(srcdir)/Include/internal/pycore_interpreteridobject.h \
 		$(srcdir)/Include/internal/pycore_list.h \
 		$(srcdir)/Include/internal/pycore_long.h \
 		$(srcdir)/Include/internal/pycore_moduleobject.h \
+		$(srcdir)/Include/internal/pycore_namespace.h \
 		$(srcdir)/Include/internal/pycore_object.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
 		$(srcdir)/Include/internal/pycore_pyarena.h \
@@ -1178,16 +1632,25 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_pylifecycle.h \
 		$(srcdir)/Include/internal/pycore_pymem.h \
 		$(srcdir)/Include/internal/pycore_pystate.h \
+		$(srcdir)/Include/internal/pycore_range.h \
 		$(srcdir)/Include/internal/pycore_runtime.h \
+		$(srcdir)/Include/internal/pycore_runtime_init.h \
+		$(srcdir)/Include/internal/pycore_signal.h \
+		$(srcdir)/Include/internal/pycore_sliceobject.h \
+		$(srcdir)/Include/internal/pycore_strhex.h \
 		$(srcdir)/Include/internal/pycore_structseq.h \
 		$(srcdir)/Include/internal/pycore_symtable.h \
 		$(srcdir)/Include/internal/pycore_sysmodule.h \
+		$(srcdir)/Include/internal/pycore_token.h \
 		$(srcdir)/Include/internal/pycore_traceback.h \
 		$(srcdir)/Include/internal/pycore_tuple.h \
+		$(srcdir)/Include/internal/pycore_typeobject.h \
 		$(srcdir)/Include/internal/pycore_ucnhash.h \
 		$(srcdir)/Include/internal/pycore_unionobject.h \
+		$(srcdir)/Include/internal/pycore_unicodeobject.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(DTRACE_HEADERS) \
+		@PLATFORM_HEADERS@ \
 		\
 		$(srcdir)/Python/stdlib_module_names.h
 
@@ -1197,7 +1660,7 @@ $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
 ######################################################################
 
 TESTOPTS=	$(EXTRATESTOPTS)
-TESTPYTHON=	$(RUNSHARED) ./$(BUILDPYTHON) $(TESTPYTHONOPTS)
+TESTPYTHON=	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(TESTPYTHONOPTS)
 TESTRUNNER=	$(TESTPYTHON) $(srcdir)/Tools/scripts/run_tests.py
 TESTTIMEOUT=	1200
 
@@ -1205,12 +1668,12 @@ TESTTIMEOUT=	1200
 
 # Remove "test_python_*" directories of previous failed test jobs.
 # Pass TESTOPTS options because it can contain --tempdir option.
-cleantest: build_all
+cleantest: all
 	$(TESTRUNNER) $(TESTOPTS) --cleanup
 
 # Run a basic set of regression tests.
 # This excludes some tests that are particularly resource-intensive.
-test:		@DEF_MAKE_RULE@ platform
+test: all
 		$(TESTRUNNER) $(TESTOPTS)
 
 # Run the full test suite twice - once without .pyc files, and once with.
@@ -1220,7 +1683,7 @@ test:		@DEF_MAKE_RULE@ platform
 # the bytecode read from a .pyc file had the bug, sometimes the directly
 # generated bytecode.  This is sometimes a very shy bug needing a lot of
 # sample data.
-testall:	@DEF_MAKE_RULE@ platform
+testall: all
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
 		$(TESTPYTHON) -E $(srcdir)/Lib/compileall.py
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
@@ -1229,7 +1692,7 @@ testall:	@DEF_MAKE_RULE@ platform
 
 # Run the test suite for both architectures in a Universal build on OSX.
 # Must be run on an Intel box.
-testuniversal:	@DEF_MAKE_RULE@ platform
+testuniversal: all
 		@if [ `arch` != 'i386' ]; then \
 			echo "This can only be used on OSX/i386" ;\
 			exit 1 ;\
@@ -1240,32 +1703,36 @@ testuniversal:	@DEF_MAKE_RULE@ platform
 
 # Like testall, but with only one pass and without multiple processes.
 # Run an optional script to include information about the build environment.
-buildbottest:	build_all platform
+buildbottest: all
 		-@if which pybuildbot.identify >/dev/null 2>&1; then \
 			pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
 		fi
 		$(TESTRUNNER) -j 1 -u all -W --slowest --fail-env-changed --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
-pythoninfo: build_all
-		$(RUNSHARED) ./$(BUILDPYTHON) -m test.pythoninfo
+pythoninfo: all
+		$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test.pythoninfo
 
 QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io test_lib2to3 \
 		test_multibytecodec test_urllib2_localnet test_itertools \
 		test_multiprocessing_fork test_multiprocessing_spawn \
 		test_multiprocessing_forkserver \
-		test_mailbox test_socket test_poll \
+		test_mailbox test_nntplib test_socket test_poll \
 		test_select test_zipfile test_concurrent_futures
-quicktest:	@DEF_MAKE_RULE@ platform
+quicktest: all
 		$(TESTRUNNER) $(QUICKTESTOPTS)
 
 # SSL tests
 .PHONY: multisslcompile multissltest
-multisslcompile: build_all
-	$(RUNSHARED) ./$(BUILDPYTHON) Tools/ssl/multissltests.py --steps=modules
+multisslcompile: all
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/ssl/multissltests.py --steps=modules
 
-multissltest: build_all
-	$(RUNSHARED) ./$(BUILDPYTHON) Tools/ssl/multissltests.py
+multissltest: all
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/ssl/multissltests.py
 
+# All install targets use the "all" target as synchronization point to
+# prevent race conditions with PGO builds. PGO builds use recursive make,
+# which can lead to two parallel `./python setup.py build` processes that
+# step on each others toes.
 install: @FRAMEWORKINSTALLFIRST@ commoninstall bininstall maninstall @FRAMEWORKINSTALLLAST@
 	if test "x$(ENSUREPIP)" != "xno"  ; then \
 		case $(ENSUREPIP) in \
@@ -1294,7 +1761,7 @@ commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
 # Install shared libraries enabled by Setup
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
 
-oldsharedinstall: $(DESTSHARED) $(SHAREDMODS)
+oldsharedinstall: $(DESTSHARED) all
 		@for i in X $(SHAREDMODS); do \
 		  if test $$i != X; then \
 		    echo $(INSTALL_SHARED) $$i $(DESTSHARED)/`basename $$i`; \
@@ -1351,13 +1818,13 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 		fi; \
 	fi
 	if test "x$(LIPO_32BIT_FLAGS)" != "x" ; then \
-		rm -f $(DESTDIR)$(BINDIR)python$(VERSION)-32$(EXE); \
+		rm -f $(DESTDIR)$(BINDIR)/python$(VERSION)-32$(EXE); \
 		lipo $(LIPO_32BIT_FLAGS) \
 			-output $(DESTDIR)$(BINDIR)/python$(VERSION)-32$(EXE) \
 			$(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
 	fi
 	if test "x$(LIPO_INTEL64_FLAGS)" != "x" ; then \
-		rm -f $(DESTDIR)$(BINDIR)python$(VERSION)-intel64$(EXE); \
+		rm -f $(DESTDIR)$(BINDIR)/python$(VERSION)-intel64$(EXE); \
 		lipo $(LIPO_INTEL64_FLAGS) \
 			-output $(DESTDIR)$(BINDIR)/python$(VERSION)-intel64$(EXE) \
 			$(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
@@ -1436,15 +1903,17 @@ LIBSUBDIRS=	asyncio \
 		html \
 		http \
 		idlelib idlelib/Icons \
-		importlib importlib/metadata \
+		importlib importlib/resources importlib/metadata \
 		json \
 		lib2to3 lib2to3/fixes lib2to3/pgen2 \
 		logging \
 		multiprocessing multiprocessing/dummy \
 		pydoc_data \
+		re \
 		site-packages \
 		sqlite3 \
 		tkinter \
+		tomllib \
 		turtledemo \
 		unittest \
 		urllib \
@@ -1452,15 +1921,10 @@ LIBSUBDIRS=	asyncio \
 		wsgiref \
 		$(XMLLIBSUBDIRS) \
 		xmlrpc \
-		zoneinfo
-TESTSUBDIRS=	ctypes/test \
-		distutils/tests \
+		zoneinfo \
+		__phello__
+TESTSUBDIRS=	distutils/tests \
 		idlelib/idle_test \
-		lib2to3/tests \
-		lib2to3/tests/data \
-		lib2to3/tests/data/fixers \
-		lib2to3/tests/data/fixers/myfixes \
-		sqlite3/test \
 		test test/audiodata \
 		test/capath test/cjkencodings \
 		test/data test/decimaltestdata \
@@ -1469,6 +1933,7 @@ TESTSUBDIRS=	ctypes/test \
 		test/libregrtest test/sndhdrdata \
 		test/subprocessdata test/support \
 		test/test_asyncio \
+		test/test_ctypes \
 		test/test_email test/test_email/data \
 		test/test_import \
 		test/test_import/data \
@@ -1521,19 +1986,23 @@ TESTSUBDIRS=	ctypes/test \
 		test/test_importlib/zipdata01 \
 		test/test_importlib/zipdata02 \
 		test/test_json \
+		test/test_lib2to3 \
+		test/test_lib2to3/data \
+		test/test_lib2to3/data/fixers \
+		test/test_lib2to3/data/fixers/myfixes \
 		test/test_peg_generator \
+		test/test_tkinter \
 		test/test_tools \
+		test/test_ttk \
 		test/test_warnings test/test_warnings/data \
 		test/test_zoneinfo test/test_zoneinfo/data \
+		test/test_unittest test/test_unittest/testmock \
 		test/tracedmodules \
 		test/xmltestdata test/xmltestdata/c14n-20 \
-		test/ziptestdata \
-		tkinter/test tkinter/test/test_tkinter \
-		tkinter/test/test_ttk \
-		unittest/test unittest/test/testmock
+		test/ziptestdata
 
 TEST_MODULES=@TEST_MODULES@
-libinstall:	build_all $(srcdir)/Modules/xxmodule.c
+libinstall:	all $(srcdir)/Modules/xxmodule.c
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -1608,17 +2077,17 @@ libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST)  $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi $(DESTDIR)$(LIBDEST)/compileall.py \
 		-j0 -d $(LIBDEST) -f \
-		-x 'bad_coding|badsyntax|site-packages|lib2to3/tests/data' \
+		-x 'bad_coding|badsyntax|site-packages|test/test_lib2to3/data' \
 		$(DESTDIR)$(LIBDEST)
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi -O $(DESTDIR)$(LIBDEST)/compileall.py \
 		-j0 -d $(LIBDEST) -f \
-		-x 'bad_coding|badsyntax|site-packages|lib2to3/tests/data' \
+		-x 'bad_coding|badsyntax|site-packages|test/test_lib2to3/data' \
 		$(DESTDIR)$(LIBDEST)
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi -OO $(DESTDIR)$(LIBDEST)/compileall.py \
 		-j0 -d $(LIBDEST) -f \
-		-x 'bad_coding|badsyntax|site-packages|lib2to3/tests/data' \
+		-x 'bad_coding|badsyntax|site-packages|test/test_lib2to3/data' \
 		$(DESTDIR)$(LIBDEST)
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi $(DESTDIR)$(LIBDEST)/compileall.py \
@@ -1698,7 +2167,7 @@ LIBPL=		@LIBPL@
 # pkgconfig directory
 LIBPC=		$(LIBDIR)/pkgconfig
 
-libainstall:	@DEF_MAKE_RULE@ python-config
+libainstall: all python-config
 	@for i in $(LIBDIR) $(LIBPL) $(LIBPC) $(BINDIR); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -1725,6 +2194,8 @@ libainstall:	@DEF_MAKE_RULE@ python-config
 	$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(DESTDIR)$(LIBPL)/config.c.in
 	$(INSTALL_DATA) Makefile $(DESTDIR)$(LIBPL)/Makefile
 	$(INSTALL_DATA) $(srcdir)/Modules/Setup $(DESTDIR)$(LIBPL)/Setup
+	$(INSTALL_DATA) Modules/Setup.bootstrap $(DESTDIR)$(LIBPL)/Setup.bootstrap
+	$(INSTALL_DATA) Modules/Setup.stdlib $(DESTDIR)$(LIBPL)/Setup.stdlib
 	$(INSTALL_DATA) Modules/Setup.local $(DESTDIR)$(LIBPL)/Setup.local
 	$(INSTALL_DATA) Misc/python.pc $(DESTDIR)$(LIBPC)/python-$(VERSION).pc
 	$(INSTALL_DATA) Misc/python-embed.pc $(DESTDIR)$(LIBPC)/python-$(VERSION)-embed.pc
@@ -1750,7 +2221,7 @@ libainstall:	@DEF_MAKE_RULE@ python-config
 
 # Install the dynamically loadable modules
 # This goes into $(exec_prefix)
-sharedinstall: sharedmods
+sharedinstall: all
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/setup.py install \
 	   	--prefix=$(prefix) \
 		--install-scripts=$(BINDIR) \
@@ -1867,10 +2338,16 @@ recheck:
 # Regenerate configure and pyconfig.h.in
 .PHONY: autoconf
 autoconf:
-	# Regenerate the configure script from configure.ac using autoconf
-	(cd $(srcdir); autoconf -Wall)
-	# Regenerate pyconfig.h.in from configure.ac using autoheader
-	(cd $(srcdir); autoheader -Wall)
+	(cd $(srcdir); autoreconf -ivf -Werror)
+
+.PHONY: regen-configure
+regen-configure:
+	@if command -v podman >/dev/null; then RUNTIME="podman"; else RUNTIME="docker"; fi; \
+	if ! command -v $$RUNTIME; then echo "$@ needs either Podman or Docker container runtime." >&2; exit 1; fi; \
+	if command -v selinuxenabled >/dev/null && selinuxenabled; then OPT=":Z"; fi; \
+	CMD="$$RUNTIME run --rm --pull=always -v $(abs_srcdir):/src$$OPT quay.io/tiran/cpython_autoconf:269"; \
+	echo $$CMD; \
+	$$CMD || exit $?
 
 # Create a tags file for vi
 tags::
@@ -1911,13 +2388,20 @@ clean-retain-profile: pycremoval
 	find . -name '*.[oa]' -exec rm -f {} ';'
 	find . -name '*.s[ol]' -exec rm -f {} ';'
 	find . -name '*.so.[0-9]*.[0-9]*' -exec rm -f {} ';'
+	find . -name '*.wasm' -exec rm -f {} ';'
 	find . -name '*.lst' -exec rm -f {} ';'
 	find build -name 'fficonfig.h' -exec rm -f {} ';' || true
 	find build -name '*.py' -exec rm -f {} ';' || true
 	find build -name '*.py[co]' -exec rm -f {} ';' || true
 	-rm -f pybuilddir.txt
 	-rm -f Lib/lib2to3/*Grammar*.pickle
-	-rm -f Programs/_testembed Programs/_freeze_importlib
+	-rm -f _bootstrap_python
+	-rm -f python.html python*.js python.data python*.symbols python*.map
+	-rm -f $(WASM_STDLIB)
+	-rm -f Programs/_testembed Programs/_freeze_module
+	-rm -f Python/deepfreeze/*.[co]
+	-rm -f Python/frozen_modules/*.h
+	-rm -f Python/frozen_modules/MANIFEST
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp
@@ -1952,6 +2436,7 @@ distclean: clobber
 	    if test "$$file" != "$(srcdir)/Lib/test/data/README"; then rm "$$file"; fi; \
 	done
 	-rm -f core Makefile Makefile.pre config.status Modules/Setup.local \
+	    Modules/Setup.bootstrap Modules/Setup.stdlib \
 		Modules/ld_so_aix Modules/python.exp Misc/python.pc \
 		Misc/python-embed.pc Misc/python-config.sh
 	-rm -f python*-gdb.py
@@ -1966,8 +2451,8 @@ distclean: clobber
 				     -exec rm -f {} ';'
 
 # Check that all symbols exported by libpython start with "Py" or "_Py"
-smelly: @DEF_MAKE_RULE@
-	$(RUNSHARED) ./$(BUILDPYTHON) Tools/scripts/smelly.py
+smelly: all
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/smelly.py
 
 # Find files with funny names
 funny:
@@ -2001,18 +2486,24 @@ funny:
 		-o -print
 
 # Perform some verification checks on any modified files.
-patchcheck: @DEF_MAKE_RULE@
+patchcheck: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/patchcheck.py
 
 check-limited-abi: all
-	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --all $(srcdir)/Misc/stable_abi.txt
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --all $(srcdir)/Misc/stable_abi.toml
+
+.PHONY: update-config
+update-config:
+	curl -sL -o config.guess 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD'
+	curl -sL -o config.sub 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD'
+	chmod +x config.guess config.sub
 
 # Dependencies
 
 Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 
 # Declare targets that aren't real files
-.PHONY: all build_all sharedmods check-clean-src oldsharedmods test quicktest
+.PHONY: all build_all build_wasm sharedmods check-clean-src oldsharedmods test quicktest
 .PHONY: install altinstall oldsharedinstall bininstall altbininstall
 .PHONY: maninstall libinstall inclinstall libainstall sharedinstall
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
@@ -2022,6 +2513,30 @@ Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 .PHONY: clean-retain-profile profile-removal run_profile_task
 .PHONY: build_all_generate_profile build_all_merge_profile
 .PHONY: gdbhooks
+
+##########################################################################
+# Module dependencies and platform-specific files
+
+MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
+MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
+MODULE_PYEXPAT_DEPS=$(LIBEXPAT_HEADERS) @LIBEXPAT_INTERNAL@
+MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/unicodename_db.h
+MODULE__BLAKE2_DEPS=$(srcdir)/Modules/_blake2/impl/blake2-config.h $(srcdir)/Modules/_blake2/impl/blake2-impl.h $(srcdir)/Modules/_blake2/impl/blake2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2b-ref.c $(srcdir)/Modules/_blake2/impl/blake2b-round.h $(srcdir)/Modules/_blake2/impl/blake2b.c $(srcdir)/Modules/_blake2/impl/blake2s-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2s-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2s-load-xop.h $(srcdir)/Modules/_blake2/impl/blake2s-ref.c $(srcdir)/Modules/_blake2/impl/blake2s-round.h $(srcdir)/Modules/_blake2/impl/blake2s.c $(srcdir)/Modules/_blake2/blake2module.h $(srcdir)/Modules/hashlib.h
+MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h $(srcdir)/Modules/_ctypes/darwin/dlfcn.h
+MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
+MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h $(LIBMPDEC_HEADERS) @LIBMPDEC_INTERNAL@
+MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c $(LIBEXPAT_HEADERS) @LIBEXPAT_INTERNAL@
+MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
+MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
+MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h
+MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h
+MODULE__SHA256_DEPS=$(srcdir)/Modules/hashlib.h
+MODULE__SHA3_DEPS=$(srcdir)/Modules/_sha3/sha3.c $(srcdir)/Modules/_sha3/sha3.h $(srcdir)/Modules/hashlib.h
+MODULE__SHA512_DEPS=$(srcdir)/Modules/hashlib.h
+MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h
+MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data.h $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
+MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/testcapi_long.h
+MODULE__SQLITE3_DEPS=$(srcdir)/Modules/_sqlite/connection.h $(srcdir)/Modules/_sqlite/cursor.h $(srcdir)/Modules/_sqlite/microprotocols.h $(srcdir)/Modules/_sqlite/module.h $(srcdir)/Modules/_sqlite/prepare_protocol.h $(srcdir)/Modules/_sqlite/row.h $(srcdir)/Modules/_sqlite/util.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
 # Local Variables:

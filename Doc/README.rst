@@ -29,13 +29,20 @@ Using make
 ----------
 
 To get started on UNIX, you can create a virtual environment and build
-documentation with the command::
+documentation with the commands::
 
+  make venv
   make html
 
 The virtual environment in the ``venv`` directory will contain all the tools
-necessary to build the documentation.  You can also configure where the virtual
-environment directory will be with the ``VENVDIR`` variable.
+necessary to build the documentation downloaded and installed from PyPI.
+If you'd like to create the virtual environment in a different location,
+you can specify it using the ``VENVDIR`` variable.
+
+You can also skip creating the virtual environment altogether, in which case
+the Makefile will look for instances of ``sphinxbuild`` and ``blurb``
+installed on your process ``PATH`` (configurable with the ``SPHINXBUILD`` and
+``BLURB`` variables).
 
 On Windows, we try to emulate the Makefile as closely as possible with a
 ``make.bat`` file. If you need to specify the Python interpreter to use,
@@ -84,7 +91,7 @@ Available make targets are:
 
 * "pydoc-topics", which builds a Python module containing a dictionary with
   plain text documentation for the labels defined in
-  `tools/pyspecific.py` -- pydoc needs these to show topic and keyword help.
+  ``tools/pyspecific.py`` -- pydoc needs these to show topic and keyword help.
 
 * "suspicious", which checks the parsed markup for text that looks like
   malformed and thus unconverted reST.
@@ -123,7 +130,7 @@ Contributing
 ============
 
 Bugs in the content should be reported to the
-`Python bug tracker <https://bugs.python.org>`_.
+`Python bug tracker <https://github.com/python/cpython/issues>`_.
 
 Bugs in the toolset should be reported to the tools themselves.
 

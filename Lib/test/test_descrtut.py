@@ -9,7 +9,9 @@
 # deterministic.
 
 from test.support import sortdict
-import pprint
+import doctest
+import unittest
+
 
 class defaultdict(dict):
     def __init__(self, default=None):
@@ -164,6 +166,7 @@ For instance of built-in types, x.__class__ is now the same as type(x):
 
 You can get the information from the list type:
 
+    >>> import pprint
     >>> pprint.pprint(dir(list))    # like list.__dict__.keys(), but sorted
     ['__add__',
      '__class__',
@@ -178,6 +181,7 @@ You can get the information from the list type:
      '__ge__',
      '__getattribute__',
      '__getitem__',
+     '__getstate__',
      '__gt__',
      '__hash__',
      '__iadd__',
@@ -469,19 +473,10 @@ __test__ = {"tut1": test_1,
             "tut7": test_7,
             "tut8": test_8}
 
-# Magic test name that regrtest.py invokes *after* importing this module.
-# This worms around a bootstrap problem.
-# Note that doctest and regrtest both look in sys.argv for a "-v" argument,
-# so this works as expected in both ways of running regrtest.
-def test_main(verbose=None):
-    # Obscure:  import this module as test.test_descrtut instead of as
-    # plain test_descrtut because the name of this module works its way
-    # into the doctest examples, and unless the full test.test_descrtut
-    # business is used the name can change depending on how the test is
-    # invoked.
-    from test import support, test_descrtut
-    support.run_doctest(test_descrtut, verbose)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
-# This part isn't needed for regrtest, but for running the test directly.
+
 if __name__ == "__main__":
-    test_main(1)
+    unittest.main()

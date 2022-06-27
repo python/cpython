@@ -23,7 +23,7 @@ compiles as follows in 3.10:
 
   3           2 LOAD_GLOBAL              0 (g)
               4 LOAD_CONST               1 (0)
-              6 CALL_FUNCTION            1
+              6 CALL_NO_KW               1
               8 POP_TOP
              10 POP_BLOCK
              12 LOAD_CONST               0 (None)
@@ -47,7 +47,7 @@ a table to determine where to jump to when an exception is raised.
 
   3           2 LOAD_GLOBAL              0 (g)
               4 LOAD_CONST               1 (0)
-              6 CALL_FUNCTION            1
+              6 CALL_NO_KW               1
               8 POP_TOP
              10 LOAD_CONST               0 (None)
              12 RETURN_VALUE
@@ -68,7 +68,7 @@ ExceptionTable:
 (Note this code is from an early 3.11 alpha, the NOP may well have be removed before release).
 
 If an instruction raises an exception then its offset is used to find the target to jump to.
-For example, the CALL_FUNCTION at offset 6, falls into the range 2 to 8.
+For example, the CALL_NO_KW at offset 6, falls into the range 2 to 8.
 So, if g() raises an exception, then control jumps to offset 14.
 
 
@@ -105,7 +105,7 @@ All offsets and lengths are in instructions, not bytes.
 We want the format to be compact, but quickly searchable.
 For it to be compact, it needs to have variable sized entries so that we can store common (small) offsets compactly, but handle large offsets if needed.
 For it to be searchable quickly, we need to support binary search giving us log(n) performance in all cases.
-Binary search typically assumes fixed size entries, but that is not necesary, as long as we can identify the start of an entry.
+Binary search typically assumes fixed size entries, but that is not necessary, as long as we can identify the start of an entry.
 
 It is worth noting that the size (end-start) is always smaller than the end, so we encode the entries as:
     start, size, target, depth, push-lasti

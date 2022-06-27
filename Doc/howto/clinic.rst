@@ -567,9 +567,6 @@ expression.  Currently the following are explicitly supported:
 * Simple symbolic constants like ``sys.maxsize``, which must
   start with the name of the module
 
-In case you're curious, this is implemented in  ``from_builtin()``
-in ``Lib/inspect.py``.
-
 (In the future, this may need to get even more elaborate,
 to allow full expressions like ``CONSTANT - 1``.)
 
@@ -851,15 +848,15 @@ on the right is the text you'd replace it with.
 ``'s#'``    ``str(zeroes=True)``
 ``'s*'``    ``Py_buffer(accept={buffer, str})``
 ``'U'``     ``unicode``
-``'u'``     ``Py_UNICODE``
-``'u#'``    ``Py_UNICODE(zeroes=True)``
+``'u'``     ``wchar_t``
+``'u#'``    ``wchar_t(zeroes=True)``
 ``'w*'``    ``Py_buffer(accept={rwbuffer})``
 ``'Y'``     ``PyByteArrayObject``
 ``'y'``     ``str(accept={bytes})``
 ``'y#'``    ``str(accept={robuffer}, zeroes=True)``
 ``'y*'``    ``Py_buffer``
-``'Z'``     ``Py_UNICODE(accept={str, NoneType})``
-``'Z#'``    ``Py_UNICODE(accept={str, NoneType}, zeroes=True)``
+``'Z'``     ``wchar_t(accept={str, NoneType})``
+``'Z#'``    ``wchar_t(accept={str, NoneType}, zeroes=True)``
 ``'z'``     ``str(accept={str, NoneType})``
 ``'z#'``    ``str(accept={str, NoneType}, zeroes=True)``
 ``'z*'``    ``Py_buffer(accept={buffer, str, NoneType})``
@@ -1252,15 +1249,15 @@ The ``defining_class`` converter is not compatible with ``__init__`` and ``__new
 methods, which cannot use the ``METH_METHOD`` convention.
 
 It is not possible to use ``defining_class`` with slot methods.  In order to
-fetch the module state from such methods, use ``_PyType_GetModuleByDef`` to
-look up the module and then :c:func:`PyModule_GetState` to fetch the module
+fetch the module state from such methods, use :c:func:`PyType_GetModuleByDef`
+to look up the module and then :c:func:`PyModule_GetState` to fetch the module
 state.  Example from the ``setattro`` slot method in
 ``Modules/_threadmodule.c``::
 
     static int
     local_setattro(localobject *self, PyObject *name, PyObject *v)
     {
-        PyObject *module = _PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
+        PyObject *module = PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
         thread_module_state *state = get_thread_state(module);
         ...
     }
@@ -1350,7 +1347,7 @@ Here's the simplest example of a custom converter, from ``Modules/zlibmodule.c``
     /*[python end generated code: output=da39a3ee5e6b4b0d input=35521e4e733823c7]*/
 
 This block adds a converter to Argument Clinic named ``ssize_t``.  Parameters
-declared as ``ssize_t`` will be declared as type ``Py_ssize_t``, and will
+declared as ``ssize_t`` will be declared as type :c:type:`Py_ssize_t`, and will
 be parsed by the ``'O&'`` format unit, which will call the
 ``ssize_t_converter`` converter function.  ``ssize_t`` variables
 automatically support default values.

@@ -6,7 +6,7 @@ of using the typical __path__/__name__ test).
 """
 import unittest
 import warnings
-from .. import util
+from test.test_importlib import util
 
 
 class Using__package__:

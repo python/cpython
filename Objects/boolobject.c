@@ -1,26 +1,15 @@
 /* Boolean type, a subtype of int */
 
 #include "Python.h"
-#include "longintrepr.h"
+#include "pycore_object.h"      // _Py_FatalRefcountError()
+#include "pycore_runtime.h"       // _Py_ID()
 
 /* We define bool_repr to return "False" or "True" */
-
-static PyObject *false_str = NULL;
-static PyObject *true_str = NULL;
 
 static PyObject *
 bool_repr(PyObject *self)
 {
-    PyObject *s;
-
-    if (self == Py_True)
-        s = true_str ? true_str :
-            (true_str = PyUnicode_InternFromString("True"));
-    else
-        s = false_str ? false_str :
-            (false_str = PyUnicode_InternFromString("False"));
-    Py_XINCREF(s);
-    return s;
+    return self == Py_True ? &_Py_ID(True) : &_Py_ID(False);
 }
 
 /* Function to return a bool from a C long */
@@ -153,6 +142,12 @@ static PyNumberMethods bool_as_number = {
     0,                          /* nb_index */
 };
 
+static void _Py_NO_RETURN
+bool_dealloc(PyObject* Py_UNUSED(ignore))
+{
+    _Py_FatalRefcountError("deallocating True or False");
+}
+
 /* The type object for bool.  Note that this cannot be subclassed! */
 
 PyTypeObject PyBool_Type = {
@@ -160,7 +155,7 @@ PyTypeObject PyBool_Type = {
     "bool",
     sizeof(struct _longobject),
     0,
-    0,                                          /* tp_dealloc */
+    bool_dealloc,                               /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */

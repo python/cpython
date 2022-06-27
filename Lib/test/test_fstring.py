@@ -212,11 +212,6 @@ f'{a * f"-{x()}-"}'"""
         self.assertEqual(call.col_offset, 11)
 
     def test_ast_line_numbers_duplicate_expression(self):
-        """Duplicate expression
-
-        NOTE: this is currently broken, always sets location of the first
-        expression.
-        """
         expr = """
 a = 10
 f'{a * x()} {a * x()} {a * x()}'
@@ -266,9 +261,9 @@ f'{a * x()} {a * x()} {a * x()}'
         self.assertEqual(binop.lineno, 3)
         self.assertEqual(binop.left.lineno, 3)
         self.assertEqual(binop.right.lineno, 3)
-        self.assertEqual(binop.col_offset, 3)  # FIXME: this is wrong
-        self.assertEqual(binop.left.col_offset, 3)  # FIXME: this is wrong
-        self.assertEqual(binop.right.col_offset, 7)  # FIXME: this is wrong
+        self.assertEqual(binop.col_offset, 13)
+        self.assertEqual(binop.left.col_offset, 13)
+        self.assertEqual(binop.right.col_offset, 17)
         # check the third binop location
         binop = t.body[1].value.values[4].value
         self.assertEqual(type(binop), ast.BinOp)
@@ -278,9 +273,32 @@ f'{a * x()} {a * x()} {a * x()}'
         self.assertEqual(binop.lineno, 3)
         self.assertEqual(binop.left.lineno, 3)
         self.assertEqual(binop.right.lineno, 3)
-        self.assertEqual(binop.col_offset, 3)  # FIXME: this is wrong
-        self.assertEqual(binop.left.col_offset, 3)  # FIXME: this is wrong
-        self.assertEqual(binop.right.col_offset, 7)  # FIXME: this is wrong
+        self.assertEqual(binop.col_offset, 23)
+        self.assertEqual(binop.left.col_offset, 23)
+        self.assertEqual(binop.right.col_offset, 27)
+
+    def test_ast_numbers_fstring_with_formatting(self):
+
+        t = ast.parse('f"Here is that pesky {xxx:.3f} again"')
+        self.assertEqual(len(t.body), 1)
+        self.assertEqual(t.body[0].lineno, 1)
+
+        self.assertEqual(type(t.body[0]), ast.Expr)
+        self.assertEqual(type(t.body[0].value), ast.JoinedStr)
+        self.assertEqual(len(t.body[0].value.values), 3)
+
+        self.assertEqual(type(t.body[0].value.values[0]), ast.Constant)
+        self.assertEqual(type(t.body[0].value.values[1]), ast.FormattedValue)
+        self.assertEqual(type(t.body[0].value.values[2]), ast.Constant)
+
+        _, expr, _ = t.body[0].value.values
+
+        name = expr.value
+        self.assertEqual(type(name), ast.Name)
+        self.assertEqual(name.lineno, 1)
+        self.assertEqual(name.end_lineno, 1)
+        self.assertEqual(name.col_offset, 22)
+        self.assertEqual(name.end_col_offset, 25)
 
     def test_ast_line_numbers_multiline_fstring(self):
         # See bpo-30465 for details.
@@ -572,7 +590,9 @@ x = (
         self.assertEqual(f'{-10:{"-"}#{1}0{"x"}}', '      -0xa')
         self.assertEqual(f'{10:#{3 != {4:5} and width}x}', '       0xa')
 
-        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
+        self.assertAllRaise(SyntaxError,
+                            """f-string: invalid conversion character 'r{"': """
+                            """expected 's', 'r', or 'a'""",
                             ["""f'{"s"!r{":10"}}'""",
 
                              # This looks like a nested format spec.
@@ -610,16 +630,27 @@ x = (
                             ["f'{}'",
                              "f'{ }'"
                              "f' {} '",
-                             "f'{!r}'",
-                             "f'{ !r}'",
                              "f'{10:{ }}'",
                              "f' { } '",
 
                              # The Python parser ignores also the following
                              # whitespace characters in additional to a space.
                              "f'''{\t\f\r\n}'''",
+                             ])
 
-                             # Catch the empty expression before the
+        # Different error messeges are raised when a specfier ('!', ':' or '=') is used after an empty expression
+        self.assertAllRaise(SyntaxError, "f-string: expression required before '!'",
+                            ["f'{!r}'",
+                             "f'{ !r}'",
+                             "f'{!}'",
+                             "f'''{\t\f\r\n!a}'''",
+
+                             # Catch empty expression before the
+                             #  missing closing brace.
+                             "f'{!'",
+                             "f'{!s:'",
+
+                             # Catch empty expression before the
                              #  invalid conversion.
                              "f'{!x}'",
                              "f'{ !xr}'",
@@ -627,16 +658,23 @@ x = (
                              "f'{!x:a}'",
                              "f'{ !xr:}'",
                              "f'{ !xr:a}'",
+                             ])
 
-                             "f'{!}'",
-                             "f'{:}'",
-
-                             # We find the empty expression before the
-                             #  missing closing brace.
-                             "f'{!'",
-                             "f'{!s:'",
+        self.assertAllRaise(SyntaxError, "f-string: expression required before ':'",
+                            ["f'{:}'",
+                             "f'{ :!}'",
+                             "f'{:2}'",
+                             "f'''{\t\f\r\n:a}'''",
                              "f'{:'",
-                             "f'{:x'",
+                             ])
+
+        self.assertAllRaise(SyntaxError, "f-string: expression required before '='",
+                            ["f'{=}'",
+                             "f'{ =}'",
+                             "f'{ =:}'",
+                             "f'{   =!}'",
+                             "f'''{\t\f\r\n=}'''",
+                             "f'{='",
                              ])
 
         # Different error message is raised for other whitespace characters.
@@ -728,12 +766,16 @@ x = (
         # differently inside f-strings.
         self.assertAllRaise(SyntaxError, r"\(unicode error\) 'unicodeescape' codec can't decode bytes in position .*: malformed \\N character escape",
                             [r"f'\N'",
+                             r"f'\N '",
+                             r"f'\N  '",  # See bpo-46503.
                              r"f'\N{'",
                              r"f'\N{GREEK CAPITAL LETTER DELTA'",
 
                              # Here are the non-f-string versions,
                              #  which should give the same errors.
                              r"'\N'",
+                             r"'\N '",
+                             r"'\N  '",
                              r"'\N{'",
                              r"'\N{GREEK CAPITAL LETTER DELTA'",
                              ])
@@ -926,7 +968,7 @@ x = (
                              "Bf''",
                              "BF''",]
         double_quote_cases = [case.replace("'", '"') for case in single_quote_cases]
-        self.assertAllRaise(SyntaxError, 'unexpected EOF while parsing',
+        self.assertAllRaise(SyntaxError, 'invalid syntax',
                             single_quote_cases + double_quote_cases)
 
     def test_leading_trailing_spaces(self):
@@ -972,19 +1014,28 @@ x = (
         # Not a conversion, but show that ! is allowed in a format spec.
         self.assertEqual(f'{3.14:!<10.10}', '3.14!!!!!!')
 
-        self.assertAllRaise(SyntaxError, 'f-string: invalid conversion character',
-                            ["f'{3!g}'",
-                             "f'{3!A}'",
-                             "f'{3!3}'",
-                             "f'{3!G}'",
-                             "f'{3!!}'",
-                             "f'{3!:}'",
-                             "f'{3! s}'",  # no space before conversion char
+        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
+                            ["f'{3!'",
+                             "f'{3!s'",
+                             "f'{3!g'",
                              ])
 
-        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
-                            ["f'{x!s{y}}'",
-                             "f'{3!ss}'",
+        self.assertAllRaise(SyntaxError, 'f-string: missed conversion character',
+                            ["f'{3!}'",
+                             "f'{3!:'",
+                             "f'{3!:}'",
+                             ])
+
+        for conv in 'g', 'A', '3', 'G', '!', ' s', 's ', ' s ', 'ä', 'ɐ', 'ª':
+            self.assertAllRaise(SyntaxError,
+                                "f-string: invalid conversion character %r: "
+                                "expected 's', 'r', or 'a'" % conv,
+                                ["f'{3!" + conv + "}'"])
+
+        self.assertAllRaise(SyntaxError,
+                            "f-string: invalid conversion character 'ss': "
+                            "expected 's', 'r', or 'a'",
+                            ["f'{3!ss}'",
                              "f'{3!ss:}'",
                              "f'{3!ss:s}'",
                              ])
@@ -1031,6 +1082,9 @@ x = (
                              "f'{{{'",
                              "f'{{}}{'",
                              "f'{'",
+                             "f'x{<'",  # See bpo-46762.
+                             "f'x{>'",
+                             "f'{i='",  # See gh-93418.
                              ])
 
         # But these are just normal strings.

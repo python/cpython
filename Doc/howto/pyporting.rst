@@ -20,8 +20,8 @@ Porting Python 2 Code to Python 3
    came into existence, you can read Nick Coghlan's `Python 3 Q & A`_ or
    Brett Cannon's `Why Python 3 exists`_.
 
-   For help with porting, you can email the python-porting_ mailing list with
-   questions.
+
+   For help with porting, you can view the archived python-porting_ mailing list.
 
 The Short Explanation
 =====================
@@ -446,7 +446,7 @@ to make sure everything functions as expected in both versions of Python.
 
 .. _pytype: https://github.com/google/pytype
 .. _python-future: http://python-future.org/
-.. _python-porting: https://mail.python.org/mailman/listinfo/python-porting
+.. _python-porting: https://mail.python.org/pipermail/python-porting/
 .. _six: https://pypi.org/project/six
 .. _tox: https://pypi.org/project/tox
 .. _trove classifier: https://pypi.org/classifiers

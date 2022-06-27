@@ -22,7 +22,7 @@ functions should be good enough; otherwise, you should use an instance of
                    replace_whitespace=True, fix_sentence_endings=False, \
                    break_long_words=True, drop_whitespace=True, \
                    break_on_hyphens=True, tabsize=8, max_lines=None, \
-                   fold_space_newline=False)
+                   fold_space_newline=False, placeholder=' [...]')
 
    Wraps the single paragraph in *text* (a string) so every line is at most
    *width* characters long.  Returns a list of output lines, without final
@@ -40,7 +40,8 @@ functions should be good enough; otherwise, you should use an instance of
                    replace_whitespace=True, fix_sentence_endings=False, \
                    break_long_words=True, drop_whitespace=True, \
                    break_on_hyphens=True, tabsize=8, \
-                   max_lines=None, fold_space_newline=False)
+                   max_lines=None, fold_space_newline=False, \
+                   placeholder=' [...]')
 
    Wraps the single paragraph in *text*, and returns a single string containing the
    wrapped paragraph.  :func:`fill` is shorthand for  ::

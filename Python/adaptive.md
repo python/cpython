@@ -12,18 +12,18 @@ A family of instructions has the following fundamental properties:
 * It has a single adaptive instruction that records an execution count and,
   at regular intervals, attempts to specialize itself. If not specializing,
   it executes the non-adaptive instruction.
-* It has at least one specialized form of the instruction that is tailored 
+* It has at least one specialized form of the instruction that is tailored
   for a particular value or set of values at runtime.
-* All members of the family have access to the same number of cache entries.
-  Individual family members do not need to use all of the entries.
+* All members of the family must have the same number of inline cache entries,
+  to ensure correct execution.
+  Individual family members do not need to use all of the entries,
+  but must skip over any unused entries when executing.
 
 The current implementation also requires the following,
 although these are not fundamental and may change:
 
-* If a family uses one or more entries, then the first entry must be a
-  `_PyAdaptiveEntry` entry.
-* If a family uses no cache entries, then the `oparg` is used as the
-  counter for the adaptive instruction.
+* All families uses one or more inline cache entries,
+  the first entry is always the counter.
 * All instruction names should start with the name of the non-adaptive
   instruction.
 * The adaptive instruction should end in `_ADAPTIVE`.
@@ -76,11 +76,15 @@ keeping `Ti` low which means minimizing branches and dependent memory
 accesses (pointer chasing). These two objectives may be in conflict,
 requiring judgement and experimentation to design the family of instructions.
 
+The size of the inline cache should as small as possible,
+without impairing performance, to reduce the number of
+`EXTENDED_ARG` jumps, and to reduce pressure on the CPU's data cache.
+
 ### Gathering data
 
 Before choosing how to specialize an instruction, it is important to gather
 some data. What are the patterns of usage of the base instruction?
-Data can best be gathered by instrumenting the interpreter. Since a 
+Data can best be gathered by instrumenting the interpreter. Since a
 specialization function and adaptive instruction are going to be required,
 instrumentation can most easily be added in the specialization function.
 
@@ -106,7 +110,7 @@ This can be tested quickly:
 * `globals->keys->dk_version == expected_version`
 
 and the operation can be performed quickly:
-* `value = globals->keys->entries[index].value`.
+* `value = entries[cache->index].me_value;`.
 
 Because it is impossible to measure the performance of an instruction without
 also measuring unrelated factors, the assessment of the quality of a
@@ -119,8 +123,7 @@ base instruction.
 
 In general, specialized instructions should be implemented in two parts:
 1. A sequence of guards, each of the form
-  `DEOPT_IF(guard-condition-is-false, BASE_NAME)`,
-  followed by a `record_cache_hit()`.
+  `DEOPT_IF(guard-condition-is-false, BASE_NAME)`.
 2. The operation, which should ideally have no branches and
   a minimum number of dependent memory accesses.
 
@@ -129,3 +132,11 @@ can be re-used in the operation.
 
 If there are branches in the operation, then consider further specialization
 to eliminate the branches.
+
+### Maintaining stats
+
+Finally, take care that stats are gather correctly.
+After the last `DEOPT_IF` has passed, a hit should be recorded with
+`STAT_INC(BASE_INSTRUCTION, hit)`.
+After a optimization has been deferred in the `ADAPTIVE` form,
+that should be recorded with `STAT_INC(BASE_INSTRUCTION, deferred)`.

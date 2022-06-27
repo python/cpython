@@ -8,9 +8,62 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include <stdbool.h>
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_runtime.h"       // _PyRuntime
+
+#define _PyObject_IMMORTAL_INIT(type) \
+    { \
+        .ob_refcnt = 999999999, \
+        .ob_type = (type), \
+    }
+#define _PyVarObject_IMMORTAL_INIT(type, size) \
+    { \
+        .ob_base = _PyObject_IMMORTAL_INIT(type), \
+        .ob_size = size, \
+    }
+
+PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
+    const char *func,
+    const char *message);
+
+#define _Py_FatalRefcountError(message) \
+    _Py_FatalRefcountErrorFunc(__func__, (message))
+
+static inline void
+_Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
+{
+    _Py_DECREF_STAT_INC();
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
+#endif
+    if (--op->ob_refcnt != 0) {
+        assert(op->ob_refcnt > 0);
+    }
+    else {
+#ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+#endif
+        destruct(op);
+    }
+}
+
+static inline void
+_Py_DECREF_NO_DEALLOC(PyObject *op)
+{
+    _Py_DECREF_STAT_INC();
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
+#endif
+    op->ob_refcnt--;
+#ifdef Py_DEBUG
+    if (op->ob_refcnt <= 0) {
+        _Py_FatalRefcountError("Expected a positive remaining refcount");
+    }
+#endif
+}
 
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
@@ -168,7 +221,16 @@ _PyObject_IS_GC(PyObject *obj)
 // Fast inlined version of PyType_IS_GC()
 #define _PyType_IS_GC(t) _PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
 
-// Usage: assert(_Py_CheckSlotResult(obj, "__getitem__", result != NULL)));
+static inline size_t
+_PyType_PreHeaderSize(PyTypeObject *tp)
+{
+    return _PyType_IS_GC(tp) * sizeof(PyGC_Head) +
+        _PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT) * 2 * sizeof(PyObject *);
+}
+
+void _PyObject_GC_Link(PyObject *op);
+
+// Usage: assert(_Py_CheckSlotResult(obj, "__getitem__", result != NULL));
 extern int _Py_CheckSlotResult(
     PyObject *obj,
     const char *slot_name,
@@ -178,7 +240,72 @@ extern int _Py_CheckSlotResult(
 // See also the Py_TPFLAGS_READY flag.
 #define _PyType_IsReady(type) ((type)->tp_dict != NULL)
 
+// Test if a type supports weak references
+static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
+    return (type->tp_weaklistoffset > 0);
+}
+
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
+
+extern int _PyObject_InitializeDict(PyObject *obj);
+extern int _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
+                                          PyObject *name, PyObject *value);
+PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
+                                        PyObject *name);
+
+static inline PyDictValues **_PyObject_ValuesPointer(PyObject *obj)
+{
+    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    return ((PyDictValues **)obj)-4;
+}
+
+static inline PyObject **_PyObject_ManagedDictPointer(PyObject *obj)
+{
+    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    return ((PyObject **)obj)-3;
+}
+
+#define MANAGED_DICT_OFFSET (((int)sizeof(PyObject *))*-3)
+
+extern PyObject ** _PyObject_DictPointer(PyObject *);
+extern int _PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, void *arg);
+extern void _PyObject_ClearInstanceAttributes(PyObject *self);
+extern void _PyObject_FreeInstanceAttributes(PyObject *self);
+extern int _PyObject_IsInstanceDictEmpty(PyObject *);
+extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
+
+// Access macro to the members which are floating "behind" the object
+#define _PyHeapType_GET_MEMBERS(etype) \
+    ((PyMemberDef *)(((char *)(etype)) + Py_TYPE(etype)->tp_basicsize))
+
+PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
+
+/* C function call trampolines to mitigate bad function pointer casts.
+ *
+ * Typical native ABIs ignore additional arguments or fill in missing
+ * values with 0/NULL in function pointer cast. Compilers do not show
+ * warnings when a function pointer is explicitly casted to an
+ * incompatible type.
+ *
+ * Bad fpcasts are an issue in WebAssembly. WASM's indirect_call has strict
+ * function signature checks. Argument count, types, and return type must
+ * match.
+ *
+ * Third party code unintentionally rely on problematic fpcasts. The call
+ * trampoline mitigates common occurences of bad fpcasts on Emscripten.
+ */
+#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+#define _PyCFunction_TrampolineCall(meth, self, args) \
+    _PyCFunctionWithKeywords_TrampolineCall( \
+        (*(PyCFunctionWithKeywords)(void(*)(void))(meth)), (self), (args), NULL)
+extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
+    PyCFunctionWithKeywords meth, PyObject *, PyObject *, PyObject *);
+#else
+#define _PyCFunction_TrampolineCall(meth, self, args) \
+    (meth)((self), (args))
+#define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
+    (meth)((self), (args), (kw))
+#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
 
 #ifdef __cplusplus
 }

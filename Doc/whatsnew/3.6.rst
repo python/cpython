@@ -162,10 +162,10 @@ Windows improvements:
 
 * A ``._pth`` file can be added to force isolated mode and fully specify
   all search paths to avoid registry and environment lookup. See
-  :ref:`the documentation <finding_modules>` for more information.
+  :ref:`the documentation <windows_finding_modules>` for more information.
 
 * A ``python36.zip`` file now works as a landmark to infer
-  :envvar:`PYTHONHOME`. See :ref:`the documentation <finding_modules>` for
+  :envvar:`PYTHONHOME`. See :ref:`the documentation <windows_finding_modules>` for
   more information.
 
 
@@ -1422,7 +1422,7 @@ The socket module now supports the address family
 Victor Stinner.)
 
 New Linux constants ``TCP_USER_TIMEOUT`` and ``TCP_CONGESTION`` were added.
-(Contributed by Omar Sandoval, issue:`26273`).
+(Contributed by Omar Sandoval, :issue:`26273`).
 
 
 socketserver
@@ -2117,7 +2117,8 @@ API and Feature Removals
   platform specific ``Lib/plat-*/`` directories, but were chronically out of
   date, inconsistently available across platforms, and unmaintained.  The
   script that created these modules is still available in the source
-  distribution at :source:`Tools/scripts/h2py.py`.
+  distribution at `Tools/scripts/h2py.py
+  <https://github.com/python/cpython/blob/v3.6.15/Tools/scripts/h2py.py>`_.
 
 * The deprecated ``asynchat.fifo`` class has been removed.
 

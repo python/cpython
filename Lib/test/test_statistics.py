@@ -9,13 +9,14 @@ import collections.abc
 import copy
 import decimal
 import doctest
+import itertools
 import math
 import pickle
 import random
 import sys
 import unittest
 from test import support
-from test.support import import_helper
+from test.support import import_helper, requires_IEEE_754
 
 from decimal import Decimal
 from fractions import Fraction
@@ -1039,50 +1040,6 @@ class FailNegTest(unittest.TestCase):
         self.assertEqual(errmsg, msg)
 
 
-class FindLteqTest(unittest.TestCase):
-    # Test _find_lteq private function.
-
-    def test_invalid_input_values(self):
-        for a, x in [
-            ([], 1),
-            ([1, 2], 3),
-            ([1, 3], 2)
-        ]:
-            with self.subTest(a=a, x=x):
-                with self.assertRaises(ValueError):
-                    statistics._find_lteq(a, x)
-
-    def test_locate_successfully(self):
-        for a, x, expected_i in [
-            ([1, 1, 1, 2, 3], 1, 0),
-            ([0, 1, 1, 1, 2, 3], 1, 1),
-            ([1, 2, 3, 3, 3], 3, 2)
-        ]:
-            with self.subTest(a=a, x=x):
-                self.assertEqual(expected_i, statistics._find_lteq(a, x))
-
-
-class FindRteqTest(unittest.TestCase):
-    # Test _find_rteq private function.
-
-    def test_invalid_input_values(self):
-        for a, l, x in [
-            ([1], 2, 1),
-            ([1, 3], 0, 2)
-        ]:
-            with self.assertRaises(ValueError):
-                statistics._find_rteq(a, l, x)
-
-    def test_locate_successfully(self):
-        for a, l, x, expected_i in [
-            ([1, 1, 1, 2, 3], 0, 1, 2),
-            ([0, 1, 1, 1, 2, 3], 0, 1, 3),
-            ([1, 2, 3, 3, 3], 0, 3, 4)
-        ]:
-            with self.subTest(a=a, l=l, x=x):
-                self.assertEqual(expected_i, statistics._find_rteq(a, l, x))
-
-
 # === Tests for public functions ===
 
 class UnivariateCommonMixin:
@@ -1210,6 +1167,9 @@ class UnivariateTypeMixin:
             def __add__(self, other):
                 return type(self)(super().__add__(other))
             __radd__ = __add__
+            def __mul__(self, other):
+                return type(self)(super().__mul__(other))
+            __rmul__ = __mul__
         return (float, Decimal, Fraction, MyFloat)
 
     def test_types_conserved(self):
@@ -1247,20 +1207,14 @@ class TestSum(NumericTestCase):
         # Override test for empty data.
         for data in ([], (), iter([])):
             self.assertEqual(self.func(data), (int, Fraction(0), 0))
-            self.assertEqual(self.func(data, 23), (int, Fraction(23), 0))
-            self.assertEqual(self.func(data, 2.3), (float, Fraction(2.3), 0))
 
     def test_ints(self):
         self.assertEqual(self.func([1, 5, 3, -4, -8, 20, 42, 1]),
                          (int, Fraction(60), 8))
-        self.assertEqual(self.func([4, 2, 3, -8, 7], 1000),
-                         (int, Fraction(1008), 5))
 
     def test_floats(self):
         self.assertEqual(self.func([0.25]*20),
                          (float, Fraction(5.0), 20))
-        self.assertEqual(self.func([0.125, 0.25, 0.5, 0.75], 1.5),
-                         (float, Fraction(3.125), 4))
 
     def test_fractions(self):
         self.assertEqual(self.func([Fraction(1, 1000)]*500),
@@ -1280,14 +1234,6 @@ class TestSum(NumericTestCase):
         # we differ by a very slight amount :-(
         data = [random.uniform(-100, 1000) for _ in range(1000)]
         self.assertApproxEqual(float(self.func(data)[1]), math.fsum(data), rel=2e-16)
-
-    def test_start_argument(self):
-        # Test that the optional start argument works correctly.
-        data = [random.uniform(1, 1000) for _ in range(100)]
-        t = self.func(data)[1]
-        self.assertEqual(t+42, self.func(data, 42)[1])
-        self.assertEqual(t-23, self.func(data, -23)[1])
-        self.assertEqual(t+Fraction(1e20), self.func(data, 1e20)[1])
 
     def test_strings_fail(self):
         # Sum of strings should fail.
@@ -1796,6 +1742,12 @@ class TestMedianGrouped(TestMedian):
                 data = [x]*count
                 self.assertEqual(self.func(data), float(x))
 
+    def test_single_value(self):
+        # Override method from AverageMixin.
+        # Average of a single value is the value as a float.
+        for x in (23, 42.5, 1.3e15, Fraction(15, 19), Decimal('0.28')):
+            self.assertEqual(self.func([x]), float(x))
+
     def test_odd_fractions(self):
         # Test median_grouped works with an odd number of Fractions.
         F = Fraction
@@ -1911,10 +1863,13 @@ class TestMode(NumericTestCase, AverageMixin, UnivariateTypeMixin):
 
     def test_counter_data(self):
         # Test that a Counter is treated like any other iterable.
-        data = collections.Counter([1, 1, 1, 2])
-        # Since the keys of the counter are treated as data points, not the
-        # counts, this should return the first mode encountered, 1
-        self.assertEqual(self.func(data), 1)
+        # We're making sure mode() first calls iter() on its input.
+        # The concern is that a Counter of a Counter returns the original
+        # unchanged rather than counting its keys.
+        c = collections.Counter(a=1, b=2)
+        # If iter() is called, mode(c) loops over the keys, ['a', 'b'],
+        # all the counts will be 1, and the first encountered mode is 'a'.
+        self.assertEqual(self.func(c), 'a')
 
 
 class TestMultiMode(unittest.TestCase):
@@ -2098,6 +2053,13 @@ class TestPVariance(VarianceStdevMixin, NumericTestCase, UnivariateTypeMixin):
         self.assertEqual(result, exact)
         self.assertIsInstance(result, Decimal)
 
+    def test_accuracy_bug_20499(self):
+        data = [0, 0, 1]
+        exact = 2 / 9
+        result = self.func(data)
+        self.assertEqual(result, exact)
+        self.assertIsInstance(result, float)
+
 
 class TestVariance(VarianceStdevMixin, NumericTestCase, UnivariateTypeMixin):
     # Tests for sample variance.
@@ -2138,6 +2100,13 @@ class TestVariance(VarianceStdevMixin, NumericTestCase, UnivariateTypeMixin):
         self.assertEqual(self.func(data), 0.5)
         self.assertEqual(self.func(data, xbar=2.0), 1.0)
 
+    def test_accuracy_bug_20499(self):
+        data = [0, 0, 2]
+        exact = 4 / 3
+        result = self.func(data)
+        self.assertEqual(result, exact)
+        self.assertIsInstance(result, float)
+
 class TestPStdev(VarianceStdevMixin, NumericTestCase):
     # Tests for population standard deviation.
     def setUp(self):
@@ -2155,6 +2124,103 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
         self.assertEqual(self.func(data), 2.5)
         self.assertEqual(self.func(data, mu=0.5), 6.5)
 
+class TestSqrtHelpers(unittest.TestCase):
+
+    def test_integer_sqrt_of_frac_rto(self):
+        for n, m in itertools.product(range(100), range(1, 1000)):
+            r = statistics._integer_sqrt_of_frac_rto(n, m)
+            self.assertIsInstance(r, int)
+            if r*r*m == n:
+                # Root is exact
+                continue
+            # Inexact, so the root should be odd
+            self.assertEqual(r&1, 1)
+            # Verify correct rounding
+            self.assertTrue(m * (r - 1)**2 < n < m * (r + 1)**2)
+
+    @requires_IEEE_754
+    def test_float_sqrt_of_frac(self):
+
+        def is_root_correctly_rounded(x: Fraction, root: float) -> bool:
+            if not x:
+                return root == 0.0
+
+            # Extract adjacent representable floats
+            r_up: float = math.nextafter(root, math.inf)
+            r_down: float = math.nextafter(root, -math.inf)
+            assert r_down < root < r_up
+
+            # Convert to fractions for exact arithmetic
+            frac_root: Fraction = Fraction(root)
+            half_way_up: Fraction = (frac_root + Fraction(r_up)) / 2
+            half_way_down: Fraction = (frac_root + Fraction(r_down)) / 2
+
+            # Check a closed interval.
+            # Does not test for a midpoint rounding rule.
+            return half_way_down ** 2 <= x <= half_way_up ** 2
+
+        randrange = random.randrange
+
+        for i in range(60_000):
+            numerator: int = randrange(10 ** randrange(50))
+            denonimator: int = randrange(10 ** randrange(50)) + 1
+            with self.subTest(numerator=numerator, denonimator=denonimator):
+                x: Fraction = Fraction(numerator, denonimator)
+                root: float = statistics._float_sqrt_of_frac(numerator, denonimator)
+                self.assertTrue(is_root_correctly_rounded(x, root))
+
+        # Verify that corner cases and error handling match math.sqrt()
+        self.assertEqual(statistics._float_sqrt_of_frac(0, 1), 0.0)
+        with self.assertRaises(ValueError):
+            statistics._float_sqrt_of_frac(-1, 1)
+        with self.assertRaises(ValueError):
+            statistics._float_sqrt_of_frac(1, -1)
+
+        # Error handling for zero denominator matches that for Fraction(1, 0)
+        with self.assertRaises(ZeroDivisionError):
+            statistics._float_sqrt_of_frac(1, 0)
+
+        # The result is well defined if both inputs are negative
+        self.assertEqual(statistics._float_sqrt_of_frac(-2, -1), statistics._float_sqrt_of_frac(2, 1))
+
+    def test_decimal_sqrt_of_frac(self):
+        root: Decimal
+        numerator: int
+        denominator: int
+
+        for root, numerator, denominator in [
+            (Decimal('0.4481904599041192673635338663'), 200874688349065940678243576378, 1000000000000000000000000000000),  # No adj
+            (Decimal('0.7924949131383786609961759598'), 628048187350206338833590574929, 1000000000000000000000000000000),  # Adj up
+            (Decimal('0.8500554152289934068192208727'), 722594208960136395984391238251, 1000000000000000000000000000000),  # Adj down
+        ]:
+            with decimal.localcontext(decimal.DefaultContext):
+                self.assertEqual(statistics._decimal_sqrt_of_frac(numerator, denominator), root)
+
+            # Confirm expected root with a quad precision decimal computation
+            with decimal.localcontext(decimal.DefaultContext) as ctx:
+                ctx.prec *= 4
+                high_prec_ratio = Decimal(numerator) / Decimal(denominator)
+                ctx.rounding = decimal.ROUND_05UP
+                high_prec_root = high_prec_ratio.sqrt()
+            with decimal.localcontext(decimal.DefaultContext):
+                target_root = +high_prec_root
+            self.assertEqual(root, target_root)
+
+        # Verify that corner cases and error handling match Decimal.sqrt()
+        self.assertEqual(statistics._decimal_sqrt_of_frac(0, 1), 0.0)
+        with self.assertRaises(decimal.InvalidOperation):
+            statistics._decimal_sqrt_of_frac(-1, 1)
+        with self.assertRaises(decimal.InvalidOperation):
+            statistics._decimal_sqrt_of_frac(1, -1)
+
+        # Error handling for zero denominator matches that for Fraction(1, 0)
+        with self.assertRaises(ZeroDivisionError):
+            statistics._decimal_sqrt_of_frac(1, 0)
+
+        # The result is well defined if both inputs are negative
+        self.assertEqual(statistics._decimal_sqrt_of_frac(-2, -1), statistics._decimal_sqrt_of_frac(2, 1))
+
+
 class TestStdev(VarianceStdevMixin, NumericTestCase):
     # Tests for sample standard deviation.
     def setUp(self):
@@ -2169,7 +2235,7 @@ class TestStdev(VarianceStdevMixin, NumericTestCase):
         # Test that stdev is, in fact, the square root of variance.
         data = [random.uniform(-2, 9) for _ in range(1000)]
         expected = math.sqrt(statistics.variance(data))
-        self.assertEqual(self.func(data), expected)
+        self.assertAlmostEqual(self.func(data), expected)
 
     def test_center_not_at_mean(self):
         data = (1.0, 2.0)
@@ -2262,6 +2328,22 @@ class TestGeometricMean(unittest.TestCase):
         self.assertTrue(math.isinf(geometric_mean([10, Inf])), 'infinity')
         with self.assertRaises(ValueError):
             geometric_mean([Inf, -Inf])
+
+    def test_mixed_int_and_float(self):
+        # Regression test for b.p.o. issue #28327
+        geometric_mean = statistics.geometric_mean
+        expected_mean = 3.80675409583932
+        values = [
+            [2, 3, 5, 7],
+            [2, 3, 5, 7.0],
+            [2, 3, 5.0, 7.0],
+            [2, 3.0, 5.0, 7.0],
+            [2.0, 3.0, 5.0, 7.0],
+        ]
+        for v in values:
+            with self.subTest(v=v):
+                actual_mean = geometric_mean(v)
+                self.assertAlmostEqual(actual_mean, expected_mean, places=5)
 
 
 class TestQuantiles(unittest.TestCase):
@@ -2505,6 +2587,12 @@ class TestLinearRegression(unittest.TestCase):
             self.assertAlmostEqual(intercept, true_intercept)
             self.assertAlmostEqual(slope, true_slope)
 
+    def test_proportional(self):
+        x = [10, 20, 30, 40]
+        y = [180, 398, 610, 799]
+        slope, intercept = statistics.linear_regression(x, y, proportional=True)
+        self.assertAlmostEqual(slope, 20 + 1/150)
+        self.assertEqual(intercept, 0.0)
 
 class TestNormalDist:
 

@@ -11,7 +11,7 @@ API Reference
       and other APIs, makes the API consistent across different Python versions,
       and is hence recommended over using ``distutils`` directly.
 
-.. _New and changed setup.py arguments in setuptools: https://setuptools.readthedocs.io/en/latest/setuptools.html#new-and-changed-setup-keywords
+.. _New and changed setup.py arguments in setuptools: https://web.archive.org/web/20210614192516/https://setuptools.pypa.io/en/stable/userguide/keywords.html
 
 .. include:: ./_setuptools_disclaimer.rst
 
@@ -373,7 +373,7 @@ This module provides the following functions.
    compiler object under Unix---if you supply a value for *compiler*, *plat* is
    ignored.
 
-   .. % Is the posix/nt only thing still true? Mac OS X seems to work, and
+   .. % Is the posix/nt only thing still true? macOS seems to work, and
    .. % returns a UnixCCompiler instance. How to document this... hmm.
 
 
@@ -1119,11 +1119,11 @@ other utility module.
 
    For non-POSIX platforms, currently just returns ``sys.platform``.
 
-   For Mac OS X systems the OS version reflects the minimal version on which
+   For macOS systems the OS version reflects the minimal version on which
    binaries will run (that is, the value of ``MACOSX_DEPLOYMENT_TARGET``
    during the build of Python), not the OS version of the current system.
 
-   For universal binary builds on Mac OS X the architecture value reflects
+   For universal binary builds on macOS the architecture value reflects
    the universal binary status instead of the architecture of the current
    processor. For 32-bit universal binaries the architecture is ``fat``,
    for 64-bit universal binaries the architecture is ``fat64``, and
@@ -1132,7 +1132,7 @@ other utility module.
    a 3-way universal build (ppc, i386, x86_64) and ``intel`` is used for
    a universal build with the i386 and x86_64 architectures
 
-   Examples of returned values on Mac OS X:
+   Examples of returned values on macOS:
 
    * ``macosx-10.3-ppc``
 
@@ -1850,22 +1850,6 @@ Subclasses of :class:`Command` must define the following methods.
 
 
 .. % todo
-
-
-:mod:`distutils.command.bdist_msi` --- Build a Microsoft Installer binary package
-=================================================================================
-
-.. module:: distutils.command.bdist_msi
-   :synopsis: Build a binary distribution as a Windows MSI file
-
-.. class:: bdist_msi
-
-.. deprecated:: 3.9
-   Use bdist_wheel (wheel packages) instead.
-
-   Builds a `Windows Installer`_ (.msi) binary package.
-
-   .. _Windows Installer: https://msdn.microsoft.com/en-us/library/cc185688(VS.85).aspx
 
 
 :mod:`distutils.command.bdist_rpm` --- Build a binary distribution as a Redhat RPM and SRPM

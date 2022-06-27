@@ -160,7 +160,8 @@ Directory and files operations
    Copies the file *src* to the file or directory *dst*.  *src* and *dst*
    should be :term:`path-like objects <path-like object>` or strings.  If
    *dst* specifies a directory, the file will be copied into *dst* using the
-   base filename from *src*.  Returns the path to the newly created file.
+   base filename from *src*. If *dst* specifies a file that already exists,
+   it will be replaced. Returns the path to the newly created file.
 
    If *follow_symlinks* is false, and *src* is a symbolic link,
    *dst* will be created as a symbolic link.  If *follow_symlinks*
@@ -230,9 +231,8 @@ Directory and files operations
               dirs_exist_ok=False)
 
    Recursively copy an entire directory tree rooted at *src* to a directory
-   named *dst* and return the destination directory. *dirs_exist_ok* dictates
-   whether to raise an exception in case *dst* or any missing parent directory
-   already exists.
+   named *dst* and return the destination directory.  All intermediate
+   directories needed to contain *dst* will also be created by default.
 
    Permissions and times of directories are copied with :func:`copystat`,
    individual files are copied using :func:`~shutil.copy2`.
@@ -263,8 +263,14 @@ Directory and files operations
 
    If *copy_function* is given, it must be a callable that will be used to copy
    each file. It will be called with the source path and the destination path
-   as arguments. By default, :func:`~shutil.copy2` is used, but any function
-   that supports the same signature (like :func:`~shutil.copy`) can be used.
+   as arguments. By default, :func:`~shutil.copy2` is used, but any function
+   that supports the same signature (like :func:`~shutil.copy`) can be used.
+
+   If *dirs_exist_ok* is false (the default) and *dst* already exists, a
+   :exc:`FileExistsError` is raised. If *dirs_exist_ok* is true, the copying
+   operation will continue if it encounters existing directories, and files
+   within the *dst* tree will be overwritten by corresponding files from the
+   *src* tree.
 
    .. audit-event:: shutil.copytree src,dst shutil.copytree
 
@@ -275,7 +281,7 @@ Directory and files operations
    .. versionchanged:: 3.2
       Added the *copy_function* argument to be able to provide a custom copy
       function.
-      Added the *ignore_dangling_symlinks* argument to silent dangling symlinks
+      Added the *ignore_dangling_symlinks* argument to silence dangling symlinks
       errors when *symlinks* is false.
 
    .. versionchanged:: 3.8
@@ -286,7 +292,7 @@ Directory and files operations
    .. versionadded:: 3.8
       The *dirs_exist_ok* parameter.
 
-.. function:: rmtree(path, ignore_errors=False, onerror=None)
+.. function:: rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None)
 
    .. index:: single: directory; deleting
 
@@ -295,6 +301,9 @@ Directory and files operations
    from failed removals will be ignored; if false or omitted, such errors are
    handled by calling a handler specified by *onerror* or, if that is omitted,
    they raise an exception.
+
+   This function can support :ref:`paths relative to directory descriptors
+   <dir_fd>`.
 
    .. note::
 
@@ -315,7 +324,7 @@ Directory and files operations
    *excinfo*, will be the exception information returned by
    :func:`sys.exc_info`.  Exceptions raised by *onerror* will not be caught.
 
-   .. audit-event:: shutil.rmtree path shutil.rmtree
+   .. audit-event:: shutil.rmtree path,dir_fd shutil.rmtree
 
    .. versionchanged:: 3.3
       Added a symlink attack resistant version that is used automatically
@@ -324,6 +333,9 @@ Directory and files operations
    .. versionchanged:: 3.8
       On Windows, will no longer delete the contents of a directory junction
       before removing the junction.
+
+   .. versionchanged:: 3.11
+      The *dir_fd* parameter.
 
    .. attribute:: rmtree.avoids_symlink_attacks
 
@@ -470,42 +482,7 @@ file then shutil will silently fallback on using less efficient
 copytree example
 ~~~~~~~~~~~~~~~~
 
-This example is the implementation of the :func:`copytree` function, described
-above, with the docstring omitted.  It demonstrates many of the other functions
-provided by this module. ::
-
-   def copytree(src, dst, symlinks=False):
-       names = os.listdir(src)
-       os.makedirs(dst)
-       errors = []
-       for name in names:
-           srcname = os.path.join(src, name)
-           dstname = os.path.join(dst, name)
-           try:
-               if symlinks and os.path.islink(srcname):
-                   linkto = os.readlink(srcname)
-                   os.symlink(linkto, dstname)
-               elif os.path.isdir(srcname):
-                   copytree(srcname, dstname, symlinks)
-               else:
-                   copy2(srcname, dstname)
-               # XXX What about devices, sockets etc.?
-           except OSError as why:
-               errors.append((srcname, dstname, str(why)))
-           # catch the Error from the recursive copytree so that we can
-           # continue with other files
-           except Error as err:
-               errors.extend(err.args[0])
-       try:
-           copystat(src, dst)
-       except OSError as why:
-           # can't copy file access times on Windows
-           if why.winerror is None:
-               errors.extend((src, dst, str(why)))
-       if errors:
-           raise Error(errors)
-
-Another example that uses the :func:`ignore_patterns` helper::
+An example that uses the :func:`ignore_patterns` helper::
 
    from shutil import copytree, ignore_patterns
 
@@ -597,12 +574,18 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    .. note::
 
-      This function is not thread-safe.
+      This function is not thread-safe when custom archivers registered
+      with :func:`register_archive_format` are used.  In this case it
+      temporarily changes the current working directory of the process
+      to perform archiving.
 
    .. versionchanged:: 3.8
       The modern pax (POSIX.1-2001) format is now used instead of
       the legacy GNU format for archives created with ``format="tar"``.
 
+   .. versionchanged:: 3.10.6
+      This function is now made thread-safe during creation of standard
+      ``.zip`` and tar archives.
 
 .. function:: get_archive_formats()
 
@@ -659,9 +642,15 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    .. audit-event:: shutil.unpack_archive filename,extract_dir,format shutil.unpack_archive
 
+   .. warning::
+
+      Never extract archives from untrusted sources without prior inspection.
+      It is possible that files are created outside of the path specified in
+      the *extract_dir* argument, e.g. members that have absolute filenames
+      starting with "/" or filenames with two dots "..".
+
    .. versionchanged:: 3.7
       Accepts a :term:`path-like object` for *filename* and *extract_dir*.
-
 
 .. function:: register_unpack_format(name, extensions, function[, extra_args[, description]])
 
@@ -803,6 +792,10 @@ Querying the size of the output terminal
    `Other Environment Variables`_.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.11
+      The ``fallback`` values are also used if :func:`os.get_terminal_size`
+      returns zeroes.
 
 .. _`fcopyfile`:
    http://www.manpagez.com/man/3/copyfile/

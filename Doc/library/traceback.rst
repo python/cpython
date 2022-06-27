@@ -236,6 +236,14 @@ capture data for later printing in a lightweight fashion.
 
       The ``__suppress_context__`` value from the original exception.
 
+   .. attribute:: __notes__
+
+      The ``__notes__`` value from the original exception, or ``None``
+      if the exception does not have any notes. If it is not ``None``
+      is it formatted in the traceback after the exception string.
+
+      .. versionadded:: 3.11
+
    .. attribute:: stack
 
       A :class:`StackSummary` representing the traceback.
@@ -353,11 +361,12 @@ capture data for later printing in a lightweight fashion.
       .. versionchanged:: 3.6
          Long sequences of repeated frames are now abbreviated.
 
-   .. method:: format_frame(frame)
+   .. method:: format_frame_summary(frame_summary)
 
       Returns a string for printing one of the frames involved in the stack.
-      This method gets called for each frame object to be printed in the
-      :class:`StackSummary`.
+      This method is called for each :class:`FrameSummary` object to be
+      printed by :meth:`StackSummary.format`. If it returns ``None``, the
+      frame is omitted from the output.
 
       .. versionadded:: 3.11
 
@@ -367,7 +376,7 @@ capture data for later printing in a lightweight fashion.
 
 .. versionadded:: 3.5
 
-:class:`FrameSummary` objects represent a single frame in a traceback.
+A :class:`FrameSummary` object represents a single frame in a traceback.
 
 .. class:: FrameSummary(filename, lineno, name, lookup_line=True, locals=None, line=None)
 

@@ -1,4 +1,0 @@
-List all kwargs for :func:`textwrap.wrap`, :func:`textwrap.fill`, and
-:func:`textwrap.shorten`. Now, there are nav links to attributes of
-:class:`TextWrap`, which makes navigation much easier while minimizing
-duplication in the documentation.
