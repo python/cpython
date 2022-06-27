@@ -103,6 +103,29 @@ To actually run a coroutine, asyncio provides three main mechanisms:
       world
       finished at 17:14:34
 
+* The :class:`asyncio.TaskGroup` class provides a more modern
+  alternative to :func:`create_task`.
+  Using this API the last example becomes::
+
+      async def main():
+          async with asyncio.TaskGroup() as tg:
+              task1 = tg.create_task(
+                  say_after(1, 'hello'))
+
+              task2 = tg.create_task(
+                  say_after(2, 'world'))
+
+              print(f"started at {time.strftime('%X')}")
+
+          # The wait is implicit when the context manager exits.
+
+          print(f"finished at {time.strftime('%X')}")
+
+The timing and output should be the same as for the previous version.
+
+   .. versionchanged:: 3.11
+      Added :class:`asyncio.TaskGroup`.
+
 
 .. _asyncio-awaitables:
 
@@ -223,6 +246,11 @@ Creating Tasks
    :exc:`RuntimeError` is raised if there is no running loop in
    current thread.
 
+   .. note::
+
+      :meth:`asyncio.TaskGroup.create_task` is a newer alternative
+      that allows for convenient waiting for a group of related tasks.
+
    .. important::
 
       Save a reference to the result of this function, to avoid
@@ -252,6 +280,27 @@ Creating Tasks
 
    .. versionchanged:: 3.11
       Added the *context* parameter.
+
+
+Task Groups
+===========
+
+Task groups combine a task creation API with a convenient
+and reliable API to wait for completion of all tasks in the group.
+
+.. class:: TaskGroup()
+
+   An :ref:`asynchronous context manager <async-context-managers>`
+   holding a group of tasks.
+   Tasks can be added to the group using the :meth:`create_task` method.
+   All tasks are awaited when the context manager exits.
+
+   .. versionadded:: 3.11
+
+   .. method:: create_tasks(coro, *, name=None, context=None)
+
+      Create a task in this task group.
+      The API is the same as the :func:`asyncio.create_task` function.
 
 
 Sleeping
