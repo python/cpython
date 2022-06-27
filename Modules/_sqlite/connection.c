@@ -201,7 +201,7 @@ _sqlite3.Connection.__init__ as pysqlite_connection_init
     cached_statements as cache_size: int = 128
     uri: bool = False
     *
-    autocommit: Autocommit(c_default='-1') = sqlite3.DEPRECATED_TRANSACTION_CONTROL
+    autocommit: Autocommit(c_default='DEPRECATED_TRANSACTION_CONTROL') = sqlite3.DEPRECATED_TRANSACTION_CONTROL
 [clinic start generated code]*/
 
 static int
@@ -211,7 +211,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
                               int check_same_thread, PyObject *factory,
                               int cache_size, int uri,
                               enum autocommit_mode autocommit)
-/*[clinic end generated code: output=cba057313ea7712f input=65557bd2e4e09b2d]*/
+/*[clinic end generated code: output=cba057313ea7712f input=5e01460961dd5ef5]*/
 {
     if (PySys_Audit("sqlite3.connect", "O", database) < 0) {
         return -1;

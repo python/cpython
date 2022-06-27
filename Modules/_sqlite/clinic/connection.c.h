@@ -28,7 +28,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *factory = (PyObject*)clinic_state()->ConnectionType;
     int cache_size = 128;
     int uri = 0;
-    enum autocommit_mode autocommit = -1;
+    enum autocommit_mode autocommit = DEPRECATED_TRANSACTION_CONTROL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 8, 0, argsbuf);
     if (!fastargs) {
@@ -1251,4 +1251,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=3b6c00acce63721c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=33436f5a0f151de9 input=a9049054013a1b77]*/
