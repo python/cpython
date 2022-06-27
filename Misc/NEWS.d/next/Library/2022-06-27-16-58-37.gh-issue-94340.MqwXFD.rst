@@ -1,0 +1,1 @@
+Add function to convert datetime object to year and quarter
