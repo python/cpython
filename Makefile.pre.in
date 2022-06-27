@@ -2124,20 +2124,22 @@ python-config: $(srcdir)/Misc/python-config.in Misc/python-config.sh
 	fi
 
 BUILD_SCRIPTS_DIR=build/scripts-$(VERSION)
+SCRIPT_2TO3=$(BUILD_SCRIPTS_DIR)/2to3-$(VERSION)
+SCRIPT_IDLE=$(BUILD_SCRIPTS_DIR)/idle$(VERSION)
+SCRIPT_PYDOC=$(BUILD_SCRIPTS_DIR)/pydoc$(VERSION)
+
 $(BUILD_SCRIPTS_DIR):
 	$(MKDIR_P) $@
 
-SCRIPT_2TO3=$(BUILD_SCRIPTS_DIR)/2to3-$(VERSION)
 $(SCRIPT_2TO3): $(srcdir)/Tools/scripts/2to3 $(BUILD_SCRIPTS_DIR)
+	$(MKDIR_P) $(BUILD_SCRIPTS_DIR)
 	sed -e "s,/usr/bin/env python3,$(EXENAME)," < $(srcdir)/Tools/scripts/2to3 > $@
 	chmod +x $@
 
-SCRIPT_IDLE=$(BUILD_SCRIPTS_DIR)/idle$(VERSION)
 $(SCRIPT_IDLE): $(srcdir)/Tools/scripts/idle3 $(BUILD_SCRIPTS_DIR)
 	sed -e "s,/usr/bin/env python3,$(EXENAME)," < $(srcdir)/Tools/scripts/idle3 > $@
 	chmod +x $@
 
-SCRIPT_PYDOC=$(BUILD_SCRIPTS_DIR)/pydoc$(VERSION)
 $(SCRIPT_PYDOC): $(srcdir)/Tools/scripts/pydoc3 $(BUILD_SCRIPTS_DIR)
 	sed -e "s,/usr/bin/env python3,$(EXENAME)," < $(srcdir)/Tools/scripts/pydoc3 > $@
 	chmod +x $@
