@@ -13,6 +13,16 @@ import math as _math
 import sys
 from operator import index as _index
 
+def _year_quarter(a):
+    """
+    extract the year and quarter from a datetime date
+    
+    a: datetime object e.g datetime.datetime(2022, 6, 27, 11, 19, 20, 218271)
+    """
+    b = str(a.year)
+    q = str(math.ceil(a.month/3.))
+    return b + '-' + 'Q' + q
+
 def _cmp(x, y):
     return 0 if x == y else 1 if x > y else -1
 
