@@ -411,8 +411,8 @@ Connection Objects
       or one of "", "DEFERRED", "IMMEDIATE" or "EXCLUSIVE".
       Defaults to the former (`""`), unless overridden at :func:`connect`,
       using the *isolation_level* parameter.
-      "" and "DEFERRED" carry the same meaning;
-      they both imply deferred isolation level.
+      Both "" and "DEFERRED" carry the same meaning;
+      they imply deferred isolation level.
       See :ref:`sqlite3-controlling-transactions` for more details.
 
    .. attribute:: in_transaction
