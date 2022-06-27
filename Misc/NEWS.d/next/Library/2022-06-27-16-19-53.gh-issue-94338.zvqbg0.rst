@@ -1,0 +1,1 @@
+Ignore suffix case on Windows in `find_executable`.
