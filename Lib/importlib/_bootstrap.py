@@ -162,6 +162,48 @@ class _DeadlockError(RuntimeError):
     pass
 
 
+
+def _has_deadlock(seen, subject, tids, _blocking_on):
+    """
+    Considering a graph where nodes are threads (represented by their id
+    as keys in ``blocking_on``) and edges are "blocked on" relationships
+    (represented by values in ``_blocking_on``), determine whether ``subject``
+    is reachable starting from any of the threads given by ``tids``.
+
+    :param seen: A set of threads that have already been visited.
+    :param subject: The thread id to try to reach.
+    :param tids: The thread ids from which to begin.
+    :param blocking_on: A dict representing the thread/blocking-on graph.
+    """
+    if subject in tids:
+        # If we have already reached the subject, we're done - signal that it
+        # is reachable.
+        return True
+
+    # Otherwise, try to reach the subject from each of the given tids.
+    for tid in tids:
+        blocking_on = _blocking_on.get(tid)
+        if blocking_on is None:
+            # There are no edges out from this node, skip it.
+            continue
+
+        if tid in seen:
+            # bpo 38091: the chain of tid's we encounter here
+            # eventually leads to a fixpoint or a cycle, but
+            # does not reach 'me'.  This means we would not
+            # actually deadlock.  This can happen if other
+            # threads are at the beginning of acquire() below.
+            return False
+        seen.add(tid)
+
+        # Follow the edges out from this thread.
+        edges = [lock.owner for lock in blocking_on]
+        if _has_deadlock(seen, subject, edges, _blocking_on):
+            return True
+
+    return False
+
+
 class _ModuleLock:
     """A recursive lock implementation which is able to detect deadlocks
     (e.g. thread 1 trying to take locks A then B, and thread 2 trying to
@@ -205,25 +247,20 @@ class _ModuleLock:
         self.waiters = []
 
     def has_deadlock(self):
-        # Deadlock avoidance for concurrent circular imports.
-        me = _thread.get_ident()
-        tid = self.owner
-        seen = set()
-        while True:
-            lock = _blocking_on.get(tid)
-            if lock is None:
-                return False
-            tid = lock.owner
-            if tid == me:
-                return True
-            if tid in seen:
-                # bpo 38091: the chain of tid's we encounter here
-                # eventually leads to a fixpoint or a cycle, but
-                # does not reach 'me'.  This means we would not
-                # actually deadlock.  This can happen if other
-                # threads are at the beginning of acquire() below.
-                return False
-            seen.add(tid)
+        # To avoid deadlocks for concurrent or re-entrant circular imports,
+        # look at the "blocking on" state to see if any threads are blocking
+        # on getting the import lock for any module for which the import lock
+        # is held by this thread.
+        return _has_deadlock(
+            seen=set(),
+            # Try to find this thread
+            subject=_thread.get_ident(),
+            # starting from the thread that holds the import lock for this
+            # module.
+            tids=[self.owner],
+            # using the global "blocking on" state.
+            _blocking_on=_blocking_on,
+        )
 
     def acquire(self):
         """
