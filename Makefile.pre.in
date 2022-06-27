@@ -2132,7 +2132,6 @@ $(BUILD_SCRIPTS_DIR):
 	$(MKDIR_P) $@
 
 $(SCRIPT_2TO3): $(srcdir)/Tools/scripts/2to3 $(BUILD_SCRIPTS_DIR)
-	$(MKDIR_P) $(BUILD_SCRIPTS_DIR)
 	sed -e "s,/usr/bin/env python3,$(EXENAME)," < $(srcdir)/Tools/scripts/2to3 > $@
 	chmod +x $@
 
@@ -2144,7 +2143,7 @@ $(SCRIPT_PYDOC): $(srcdir)/Tools/scripts/pydoc3 $(BUILD_SCRIPTS_DIR)
 	sed -e "s,/usr/bin/env python3,$(EXENAME)," < $(srcdir)/Tools/scripts/pydoc3 > $@
 	chmod +x $@
 
-scripts: $(SCRIPT_2TO3) $(SCRIPT_IDLE) $(SCRIPT_PYDOC) python-config
+scripts: $(BUILD_SCRIPTS_DIR) $(SCRIPT_2TO3) $(SCRIPT_IDLE) $(SCRIPT_PYDOC) python-config
 
 # Install the include files
 INCLDIRSTOMAKE=$(INCLUDEDIR) $(CONFINCLUDEDIR) $(INCLUDEPY) $(CONFINCLUDEPY)
