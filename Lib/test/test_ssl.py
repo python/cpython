@@ -610,6 +610,8 @@ class BasicSocketTests(unittest.TestCase):
                 )
 
         for protocol in protocols:
+            if not has_tls_protocol(protocol):
+                continue
             with self.subTest(protocol=protocol):
                 with self.assertWarns(DeprecationWarning) as cm:
                     ssl.SSLContext(protocol)
@@ -619,6 +621,8 @@ class BasicSocketTests(unittest.TestCase):
                 )
 
         for version in versions:
+            if not has_tls_version(version):
+                continue
             with self.subTest(version=version):
                 ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
                 with self.assertWarns(DeprecationWarning) as cm:
@@ -934,9 +938,10 @@ class ContextTests(unittest.TestCase):
 
     def test_constructor(self):
         for protocol in PROTOCOLS:
-            with warnings_helper.check_warnings():
-                ctx = ssl.SSLContext(protocol)
-            self.assertEqual(ctx.protocol, protocol)
+            if has_tls_protocol(protocol):
+                with warnings_helper.check_warnings():
+                    ctx = ssl.SSLContext(protocol)
+                self.assertEqual(ctx.protocol, protocol)
         with warnings_helper.check_warnings():
             ctx = ssl.SSLContext()
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLS)
@@ -1502,8 +1507,6 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
         self._assert_context_options(ctx)
 
-
-
     def test__create_stdlib_context(self):
         ctx = ssl._create_stdlib_context()
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLS_CLIENT)
@@ -1511,11 +1514,12 @@ class ContextTests(unittest.TestCase):
         self.assertFalse(ctx.check_hostname)
         self._assert_context_options(ctx)
 
-        with warnings_helper.check_warnings():
-            ctx = ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1)
-        self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
-        self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
-        self._assert_context_options(ctx)
+        if has_tls_protocol(ssl.PROTOCOL_TLSv1):
+            with warnings_helper.check_warnings():
+                ctx = ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1)
+            self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
+            self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
+            self._assert_context_options(ctx)
 
         with warnings_helper.check_warnings():
             ctx = ssl._create_stdlib_context(
