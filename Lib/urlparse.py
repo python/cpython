@@ -1,3 +1,7 @@
+# Copyright (C) 2022 ActiveState Software Inc.
+# urlparse.py is licensed under the PSFLv2 License.
+# See the file LICENSE for details.
+
 """Parse (absolute and relative) URLs.
 
 urlparse module is based upon the following RFC specifications.
