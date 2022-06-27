@@ -768,8 +768,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    possible if *message* is a :class:`Message` instance. If *message* is a string,
    a byte string,
    or a file, it should contain an :rfc:`2822`\ -compliant message, which is read
-   and parsed.  Files should be open in binary mode, but text mode files
-   are accepted for backward compatibility.
+   and parsed.  Files should be open in binary mode.
 
    The format-specific state and behaviors offered by subclasses vary, but in
    general it is only the properties that are not specific to a particular
@@ -786,6 +785,9 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    not be acceptable. For such situations, :class:`Mailbox` instances also
    offer string and file-like representations, and a custom message factory may
    be specified when a :class:`Mailbox` instance is initialized.
+
+   .. versionchanged:: 3.12
+      Text mode files are no longer accepted.
 
 
 .. _mailbox-maildirmessage:

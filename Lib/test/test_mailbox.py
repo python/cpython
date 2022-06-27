@@ -80,12 +80,8 @@ class TestMailbox(TestBase):
         self.assertEqual(len(self._box), 5)
         keys.append(self._box.add(_bytes_sample_message))
         self.assertEqual(len(self._box), 6)
-        with self.assertWarns(DeprecationWarning):
-            keys.append(self._box.add(
-                io.TextIOWrapper(io.BytesIO(_bytes_sample_message), encoding="utf-8")))
-        self.assertEqual(len(self._box), 7)
         self.assertEqual(self._box.get_string(keys[0]), self._template % 0)
-        for i in (1, 2, 3, 4, 5, 6):
+        for i in range(1, 6):
             self._check_sample(self._box[keys[i]])
 
     _nonascii_msg = textwrap.dedent("""\
@@ -163,28 +159,6 @@ class TestMailbox(TestBase):
             key = self._box.add(f)
         self.assertEqual(self._box.get_bytes(key).split(b'\n'),
             self._non_latin_bin_msg.split(b'\n'))
-
-    def test_add_text_file_warns(self):
-        with tempfile.TemporaryFile('w+', encoding='utf-8') as f:
-            f.write(_sample_message)
-            f.seek(0)
-            with self.assertWarns(DeprecationWarning):
-                key = self._box.add(f)
-        self.assertEqual(self._box.get_bytes(key).split(b'\n'),
-            _bytes_sample_message.split(b'\n'))
-
-    def test_add_StringIO_warns(self):
-        with self.assertWarns(DeprecationWarning):
-            key = self._box.add(io.StringIO(self._template % "0"))
-        self.assertEqual(self._box.get_string(key), self._template % "0")
-
-    def test_add_nonascii_StringIO_raises(self):
-        with self.assertWarns(DeprecationWarning):
-            with self.assertRaisesRegex(ValueError, "ASCII-only"):
-                self._box.add(io.StringIO(self._nonascii_msg))
-        self.assertEqual(len(self._box), 0)
-        self._box.close()
-        self.assertMailboxEmpty()
 
     def test_remove(self):
         # Remove messages using remove()

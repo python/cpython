@@ -6,18 +6,17 @@
 # or returning from a flush() method.  See functions _sync_flush() and
 # _sync_close().
 
-import os
-import time
 import calendar
-import socket
-import errno
-import copy
-import warnings
-import email
-import email.message
-import email.generator
-import io
 import contextlib
+import copy
+import email
+import email.generator
+import email.message
+import errno
+import io
+import os
+import socket
+import time
 from types import GenericAlias
 try:
     import fcntl
@@ -222,10 +221,6 @@ class Mailbox:
                 # Make sure the message ends with a newline
                 target.write(linesep)
         elif isinstance(message, (str, bytes, io.StringIO)):
-            if isinstance(message, io.StringIO):
-                warnings.warn("Use of StringIO input is deprecated, "
-                    "use BytesIO instead", DeprecationWarning, 3)
-                message = message.getvalue()
             if isinstance(message, str):
                 message = self._string_to_bytes(message)
             if mangle_from_:
@@ -236,10 +231,6 @@ class Mailbox:
                 # Make sure the message ends with a newline
                 target.write(linesep)
         elif hasattr(message, 'read'):
-            if hasattr(message, 'buffer'):
-                warnings.warn("Use of text mode files is deprecated, "
-                    "use a binary mode file instead", DeprecationWarning, 3)
-                message = message.buffer
             lastline = None
             while True:
                 line = message.readline()
@@ -1431,10 +1422,6 @@ class Babyl(_singlefileMailbox):
                     break
                 self._file.write(buffer.replace(b'\n', linesep))
         elif isinstance(message, (bytes, str, io.StringIO)):
-            if isinstance(message, io.StringIO):
-                warnings.warn("Use of StringIO input is deprecated, "
-                    "use BytesIO instead", DeprecationWarning, 3)
-                message = message.getvalue()
             if isinstance(message, str):
                 message = self._string_to_bytes(message)
             body_start = message.find(b'\n\n') + 2
@@ -1447,10 +1434,6 @@ class Babyl(_singlefileMailbox):
                 self._file.write(b'*** EOOH ***' + linesep + linesep)
                 self._file.write(message.replace(b'\n', linesep))
         elif hasattr(message, 'readline'):
-            if hasattr(message, 'buffer'):
-                warnings.warn("Use of text mode files is deprecated, "
-                    "use a binary mode file instead", DeprecationWarning, 3)
-                message = message.buffer
             original_pos = message.tell()
             first_pass = True
             while True:

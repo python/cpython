@@ -273,6 +273,11 @@ Removed
   use :func:`locale.format_string` instead.
   (Contributed by Victor Stinner in :gh:`94226`.)
 
+* The :mod:`mailbox` no longer accepts text mode files and
+  :class:`io.StringIO`. The support for text files was marked as deprecated
+  since Python 3.2. The module now only accepts binary files and
+  :class:`io.BytesIO`.
+  (Contributed by Victor Stinner in :gh:`94350`.)
 
 Porting to Python 3.12
 ======================
