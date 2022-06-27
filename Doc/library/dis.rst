@@ -1346,22 +1346,24 @@ iterations of the loop.
     .. versionadded:: 3.11
 
 
-.. opcode:: _HAVE_ARGUMENT
+.. opcode:: HAVE_ARGUMENT
 
    This is not really an opcode.  It identifies the dividing line between
    non-virtual opcodes which don't use their argument and those that do
-   (``< _HAVE_ARGUMENT`` and ``>= _HAVE_ARGUMENT``, respectively).
+   (``< HAVE_ARGUMENT`` and ``>= HAVE_ARGUMENT``, respectively).
 
    See also the :data:`hasarg` collection, which contains virtual as well
    as non-virtual opcodes that use their argument.
 
    .. versionchanged:: 3.6
-      Now every instruction has an argument, but opcodes ``< _HAVE_ARGUMENT``
-      ignore it. Before, only opcodes ``>= _HAVE_ARGUMENT`` had an argument.
+      Now every instruction has an argument, but opcodes ``< HAVE_ARGUMENT``
+      ignore it. Before, only opcodes ``>= HAVE_ARGUMENT`` had an argument.
 
    .. versionchanged:: 3.12
-      This field was renamed from ``HAVE_ARGUMENT`` to ``_HAVE_ARGUMENT``,
-      and its use is now discouraged. Check membership in :data:`hasarg` instead.
+      Virtual opcodes were added to the :mod:`dis` module, and for them it
+      is not true that comparison with ``HAVE_ARGUMENT`` indicates whether
+      they use their arg. Check membership in :data:`hasarg` instead if your
+      application uses virtual opcodes.
 
 
 **Virtual opcodes**
