@@ -24,6 +24,18 @@ module _multiprocessing
 
 #include "clinic/multiprocessing.c.h"
 
+typedef struct {
+    PyTypeObject *semlock_type;
+} _multiprocessingstate;
+
+static inline
+_multiprocessingstate *get_module_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_multiprocessingstate *)state;
+}
+
 /*
  * Function which raises exceptions based on error codes
  */
@@ -186,35 +198,38 @@ static PyMethodDef module_methods[] = {
 static int
 multiprocessing_exec(PyObject *module)
 {
+    _multiprocessingstate *state = get_module_state(module);
 #ifdef HAVE_MP_SEMAPHORE
 
-    /* Add _PyMp_SemLock type to module */
-    if (PyModule_AddType(module, &_PyMp_SemLockType) < 0) {
+    state->semlock_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+                module, &_PyMp_SemLockType_spec, NULL);
+
+    if (state->semlock_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->semlock_type) < 0) {
         return -1;
     }
 
-    {
-        PyObject *py_sem_value_max;
-        /* Some systems define SEM_VALUE_MAX as an unsigned value that
-         * causes it to be negative when used as an int (NetBSD).
-         *
-         * Issue #28152: Use (0) instead of 0 to fix a warning on dead code
-         * when using clang -Wunreachable-code. */
-        if ((int)(SEM_VALUE_MAX) < (0))
-            py_sem_value_max = PyLong_FromLong(INT_MAX);
-        else
-            py_sem_value_max = PyLong_FromLong(SEM_VALUE_MAX);
-
-        if (py_sem_value_max == NULL) {
-            return -1;
-        }
-        if (PyDict_SetItemString(_PyMp_SemLockType.tp_dict, "SEM_VALUE_MAX",
-                             py_sem_value_max) < 0) {
-            Py_DECREF(py_sem_value_max);
-            return -1;
-        }
-        Py_DECREF(py_sem_value_max);
+    PyObject *py_sem_value_max;
+    /* Some systems define SEM_VALUE_MAX as an unsigned value that
+     * causes it to be negative when used as an int (NetBSD).
+     *
+     * Issue #28152: Use (0) instead of 0 to fix a warning on dead code
+     * when using clang -Wunreachable-code. */
+    if ((int)(SEM_VALUE_MAX) < (0))
+        py_sem_value_max = PyLong_FromLong(INT_MAX);
+    else
+        py_sem_value_max = PyLong_FromLong(SEM_VALUE_MAX);
+    if (py_sem_value_max == NULL) {
+        return -1;
     }
+    if (PyDict_SetItemString(state->semlock_type->tp_dict, "SEM_VALUE_MAX",
+                         py_sem_value_max) < 0) {
+        Py_DECREF(py_sem_value_max);
+        return -1;
+    }
+    Py_DECREF(py_sem_value_max);
 
 #endif
 
@@ -260,6 +275,28 @@ multiprocessing_exec(PyObject *module)
     return 0;
 }
 
+static int
+multiprocessing_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    _multiprocessingstate *state = get_module_state(module);
+    Py_VISIT(state->semlock_type);
+    return 0;
+}
+
+static int
+multiprocessing_clear(PyObject *module)
+{
+    _multiprocessingstate *state = get_module_state(module);
+    Py_CLEAR(state->semlock_type);
+    return 0;
+}
+
+static void
+multiprocessing_dealloc(void *module)
+{
+    (void)multiprocessing_clear((PyObject *)module);
+}
+
 static PyModuleDef_Slot multiprocessing_slots[] = {
     {Py_mod_exec, multiprocessing_exec},
     {0, NULL}
@@ -268,8 +305,12 @@ static PyModuleDef_Slot multiprocessing_slots[] = {
 static struct PyModuleDef multiprocessing_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_multiprocessing",
+    .m_size = sizeof(_multiprocessingstate),
     .m_methods = module_methods,
     .m_slots = multiprocessing_slots,
+    .m_traverse = multiprocessing_traverse,
+    .m_clear = multiprocessing_clear,
+    .m_free = multiprocessing_dealloc,
 };
 
 PyMODINIT_FUNC
