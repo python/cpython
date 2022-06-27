@@ -2123,25 +2123,27 @@ python-config: $(srcdir)/Misc/python-config.in Misc/python-config.sh
 		cp python-config.py python-config; \
 	fi
 
-BUILD_SCRIPTS_DIR=build/scripts-$(VERSION)/
-SCRIPT_2TO3=$(BUILD_SCRIPTS_DIR)2to3-$(VERSION)
-SCRIPT_IDLE=$(BUILD_SCRIPTS_DIR)idle$(VERSION)
-SCRIPT_PYDOC=$(BUILD_SCRIPTS_DIR)pydoc$(VERSION)
+# macOS' make seems to ignore a dependency on a
+# "$(BUILD_SCRIPTS_DIR): $(MKDIR_P) $@" rule.
+BUILD_SCRIPTS_DIR=build/scripts-$(VERSION)
+SCRIPT_2TO3=$(BUILD_SCRIPTS_DIR)/2to3-$(VERSION)
+SCRIPT_IDLE=$(BUILD_SCRIPTS_DIR)/idle$(VERSION)
+SCRIPT_PYDOC=$(BUILD_SCRIPTS_DIR)/pydoc$(VERSION)
 
-$(BUILD_SCRIPTS_DIR):
-	$(MKDIR_P) $@
-
-$(SCRIPT_2TO3): $(BUILD_SCRIPTS_DIR) $(srcdir)/Tools/scripts/2to3
+$(SCRIPT_2TO3): $(srcdir)/Tools/scripts/2to3
+	@$(MKDIR_P) $(BUILD_SCRIPTS_DIR)
 	sed -e "s,/usr/bin/env python3,$(EXENAME)," < $(srcdir)/Tools/scripts/2to3 > $@
-	chmod +x $@
+	@chmod +x $@
 
-$(SCRIPT_IDLE): $(BUILD_SCRIPTS_DIR) $(srcdir)/Tools/scripts/idle3
+$(SCRIPT_IDLE): $(srcdir)/Tools/scripts/idle3
+	@$(MKDIR_P) $(BUILD_SCRIPTS_DIR)
 	sed -e "s,/usr/bin/env python3,$(EXENAME)," < $(srcdir)/Tools/scripts/idle3 > $@
-	chmod +x $@
+	@chmod +x $@
 
-$(SCRIPT_PYDOC): $(BUILD_SCRIPTS_DIR) $(srcdir)/Tools/scripts/pydoc3
+$(SCRIPT_PYDOC): $(srcdir)/Tools/scripts/pydoc3
+	@$(MKDIR_P) $(BUILD_SCRIPTS_DIR)
 	sed -e "s,/usr/bin/env python3,$(EXENAME)," < $(srcdir)/Tools/scripts/pydoc3 > $@
-	chmod +x $@
+	@chmod +x $@
 
 scripts: $(SCRIPT_2TO3) $(SCRIPT_IDLE) $(SCRIPT_PYDOC) python-config
 
