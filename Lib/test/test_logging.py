@@ -3603,6 +3603,9 @@ class ConfigDictTest(BaseTest):
                 if qh.listener.queue.empty():
                     break
 
+            # wait until the handler completed its last task
+            qh.listener.queue.join()
+
             with open(fn, encoding='utf-8') as f:
                 data = f.read().splitlines()
             self.assertEqual(data, ['foo', 'bar', 'baz'])

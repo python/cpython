@@ -2476,7 +2476,6 @@ class BasicHyperVTest(unittest.TestCase):
     def testHyperVConstants(self):
         socket.HVSOCKET_CONNECT_TIMEOUT
         socket.HVSOCKET_CONNECT_TIMEOUT_MAX
-        socket.HVSOCKET_CONTAINER_PASSTHRU
         socket.HVSOCKET_CONNECTED_SUSPEND
         socket.HVSOCKET_ADDRESS_FLAG_PASSTHRU
         socket.HV_GUID_ZERO

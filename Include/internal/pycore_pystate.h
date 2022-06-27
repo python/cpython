@@ -97,7 +97,7 @@ _Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
 
 // Call Py_FatalError() if tstate is NULL
 #define _Py_EnsureTstateNotNULL(tstate) \
-    _Py_EnsureFuncTstateNotNULL(__func__, tstate)
+    _Py_EnsureFuncTstateNotNULL(__func__, (tstate))
 
 
 /* Get the current interpreter state.

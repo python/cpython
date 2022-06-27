@@ -467,6 +467,6 @@ The :mod:`struct` module also defines the following type:
 
 .. _half precision format: https://en.wikipedia.org/wiki/Half-precision_floating-point_format
 
-.. _ieee 754 standard: https://en.wikipedia.org/wiki/IEEE_floating_point#IEEE_754-2008
+.. _ieee 754 standard: https://en.wikipedia.org/wiki/IEEE_754-2008_revision
 
 .. _IETF RFC 1700: https://tools.ietf.org/html/rfc1700

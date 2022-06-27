@@ -28,11 +28,13 @@ uint8_t _PyOpcode_Adaptive[256] = {
     [BINARY_OP] = BINARY_OP_ADAPTIVE,
     [COMPARE_OP] = COMPARE_OP_ADAPTIVE,
     [UNPACK_SEQUENCE] = UNPACK_SEQUENCE_ADAPTIVE,
+    [FOR_ITER] = FOR_ITER_ADAPTIVE,
 };
 
 Py_ssize_t _Py_QuickenedCount = 0;
 #ifdef Py_STATS
-PyStats _py_stats = { 0 };
+PyStats _py_stats_struct = { 0 };
+PyStats *_py_stats = &_py_stats_struct;
 
 #define ADD_STAT_TO_DICT(res, field) \
     do { \
@@ -92,7 +94,7 @@ add_stat_dict(
     int opcode,
     const char *name) {
 
-    SpecializationStats *stats = &_py_stats.opcode_stats[opcode].specialization;
+    SpecializationStats *stats = &_py_stats_struct.opcode_stats[opcode].specialization;
     PyObject *d = stats_to_dict(stats);
     if (d == NULL) {
         return -1;
@@ -209,8 +211,17 @@ print_stats(FILE *out, PyStats *stats) {
 }
 
 void
+_Py_StatsClear(void)
+{
+    _py_stats_struct = (PyStats) { 0 };
+}
+
+void
 _Py_PrintSpecializationStats(int to_file)
 {
+    if (_py_stats == NULL) {
+        return;
+    }
     FILE *out = stderr;
     if (to_file) {
         /* Write to a file instead of stderr. */
@@ -241,7 +252,7 @@ _Py_PrintSpecializationStats(int to_file)
     else {
         fprintf(out, "Specialization stats:\n");
     }
-    print_stats(out, &_py_stats);
+    print_stats(out, _py_stats);
     if (out != stderr) {
         fclose(out);
     }
@@ -249,8 +260,12 @@ _Py_PrintSpecializationStats(int to_file)
 
 #ifdef Py_STATS
 
-#define SPECIALIZATION_FAIL(opcode, kind) _py_stats.opcode_stats[opcode].specialization.failure_kinds[kind]++
-
+#define SPECIALIZATION_FAIL(opcode, kind) \
+do { \
+    if (_py_stats) { \
+        _py_stats->opcode_stats[opcode].specialization.failure_kinds[kind]++; \
+    } \
+} while (0)
 
 #endif
 #endif
@@ -2003,13 +2018,14 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
 #ifndef Py_STATS
         _Py_SET_OPCODE(*instr, COMPARE_OP);
         return;
-#endif
+#else
         if (next_opcode == EXTENDED_ARG) {
             SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_EXTENDED_ARG);
             goto failure;
         }
         SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_NOT_FOLLOWED_BY_COND_JUMP);
         goto failure;
+#endif
     }
     assert(oparg <= Py_GE);
     int when_to_jump_mask = compare_masks[oparg];
@@ -2183,3 +2199,33 @@ int
 }
 
 #endif
+
+void
+_Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr)
+{
+    assert(_PyOpcode_Caches[FOR_ITER] == INLINE_CACHE_ENTRIES_FOR_ITER);
+    _PyForIterCache *cache = (_PyForIterCache *)(instr + 1);
+    PyTypeObject *tp = Py_TYPE(iter);
+    _Py_CODEUNIT next = instr[1+INLINE_CACHE_ENTRIES_FOR_ITER];
+    int next_op = _PyOpcode_Deopt[_Py_OPCODE(next)];
+    if (tp == &PyListIter_Type) {
+        _Py_SET_OPCODE(*instr, FOR_ITER_LIST);
+        goto success;
+    }
+    else if (tp == &PyRangeIter_Type && next_op == STORE_FAST) {
+        _Py_SET_OPCODE(*instr, FOR_ITER_RANGE);
+        goto success;
+    }
+    else {
+        SPECIALIZATION_FAIL(FOR_ITER,
+                            _PySpecialization_ClassifyIterator(iter));
+        goto failure;
+    }
+failure:
+    STAT_INC(FOR_ITER, failure);
+    cache->counter = adaptive_counter_backoff(cache->counter);
+    return;
+success:
+    STAT_INC(FOR_ITER, success);
+    cache->counter = miss_counter_start();
+}
