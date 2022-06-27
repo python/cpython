@@ -47,7 +47,7 @@ extern "C" {
 #define ASYNC_GEN_WRAP                          87
 #define PREP_RERAISE_STAR                       88
 #define POP_EXCEPT                              89
-#define _HAVE_ARGUMENT                          90
+#define HAVE_ARGUMENT                           90
 #define STORE_NAME                              90
 #define DELETE_NAME                             91
 #define UNPACK_SEQUENCE                         92
@@ -207,7 +207,7 @@ extern "C" {
 #define UNPACK_SEQUENCE_TWO_TUPLE              182
 #define DO_TRACING                             255
 
-#define HAS_ARG(op) ((((op) >= _HAVE_ARGUMENT) && (!IS_VIRTUAL_OPCODE(op)))\
+#define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_VIRTUAL_OPCODE(op)))\
     || ((op) == JUMP) \
     || ((op) == JUMP_NO_INTERRUPT) \
     || ((op) == POP_JUMP_IF_FALSE) \
