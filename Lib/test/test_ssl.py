@@ -1086,7 +1086,7 @@ class ContextTests(unittest.TestCase):
         ctx.maximum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
         self.assertIn(
             ctx.maximum_version,
-            {ssl.TLSVersion.TLSv1, ssl.TLSVersion.SSLv3}
+            {ssl.TLSVersion.TLSv1, ssl.TLSVersion.TLSv1_1, ssl.TLSVersion.SSLv3}
         )
 
         ctx.minimum_version = ssl.TLSVersion.MAXIMUM_SUPPORTED
@@ -1098,19 +1098,19 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ctx.minimum_version = 42
 
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_1)
+        if has_tls_version(ssl.PROTOCOL_TLSv1_1):
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_1)
 
-        self.assertIn(
-            ctx.minimum_version, minimum_range
-        )
-        self.assertEqual(
-            ctx.maximum_version, ssl.TLSVersion.MAXIMUM_SUPPORTED
-        )
-        with self.assertRaises(ValueError):
-            ctx.minimum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
-        with self.assertRaises(ValueError):
-            ctx.maximum_version = ssl.TLSVersion.TLSv1
-
+            self.assertIn(
+                ctx.minimum_version, minimum_range
+            )
+            self.assertEqual(
+                ctx.maximum_version, ssl.TLSVersion.MAXIMUM_SUPPORTED
+            )
+            with self.assertRaises(ValueError):
+                ctx.minimum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
+            with self.assertRaises(ValueError):
+                ctx.maximum_version = ssl.TLSVersion.TLSv1
 
     @unittest.skipUnless(
         hasattr(ssl.SSLContext, 'security_level'),
@@ -3253,10 +3253,12 @@ class ThreadedTests(unittest.TestCase):
                            client_options=ssl.OP_NO_TLSv1_2)
 
         try_protocol_combo(ssl.PROTOCOL_TLS, ssl.PROTOCOL_TLSv1_2, 'TLSv1.2')
-        try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1, False)
-        try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1_2, False)
-        try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1_1, False)
-        try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_TLSv1_2, False)
+        if has_tls_protocol(ssl.PROTOCOL_TLSv1):
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1, False)
+            try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1_2, False)
+        if has_tls_protocol(ssl.PROTOCOL_TLSv1_1):
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1_1, False)
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_TLSv1_2, False)
 
     def test_starttls(self):
         """Switching from clear text to encrypted and back again."""
