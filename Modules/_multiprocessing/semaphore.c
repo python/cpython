@@ -454,7 +454,7 @@ static PyObject *
 newsemlockobject(PyTypeObject *type, SEM_HANDLE handle, int kind, int maxvalue,
                  char *name)
 {
-    SemLockObject *self = PyObject_GC_New(SemLockObject, type);
+    SemLockObject *self = (SemLockObject *)type->tp_alloc(type, 0);
     if (!self)
         return NULL;
     self->handle = handle;
