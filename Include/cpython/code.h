@@ -29,7 +29,8 @@ typedef uint16_t _Py_CODEUNIT;
 #endif
 
 // Use "unsigned char" instead of "uint8_t" here to avoid illegal aliasing:
-#define _Py_SET_OPCODE(word, opcode) (((unsigned char *)&(word))[0] = (opcode))
+#define _Py_SET_OPCODE(word, opcode) \
+    do { ((unsigned char *)&(word))[0] = (opcode); } while (0)
 
 // To avoid repeating ourselves in deepfreeze.py, all PyCodeObject members are
 // defined in this macro:
@@ -62,7 +63,8 @@ typedef uint16_t _Py_CODEUNIT;
     PyObject *co_exceptiontable;   /* Byte string encoding exception handling  \
                                       table */                                 \
     int co_flags;                  /* CO_..., see below */                     \
-    int co_warmup;                 /* Warmup counter for quickening */         \
+    short co_warmup;                 /* Warmup counter for quickening */       \
+    short _co_linearray_entry_size;  /* Size of each entry in _co_linearray */ \
                                                                                \
     /* The rest are not so impactful on performance. */                        \
     int co_argcount;              /* #arguments, except *args */               \
@@ -73,8 +75,8 @@ typedef uint16_t _Py_CODEUNIT;
                                                                                \
     /* redundant values (derived from co_localsplusnames and                   \
        co_localspluskinds) */                                                  \
-    int co_nlocalsplus;           /* number of local + cell + free variables   \
-                                  */                                           \
+    int co_nlocalsplus;           /* number of local + cell + free variables */ \
+    int co_framesize;             /* Size of frame in words */                 \
     int co_nlocals;               /* number of local variables */              \
     int co_nplaincellvars;        /* number of non-arg cell variables */       \
     int co_ncellvars;             /* total number of cell variables */         \
@@ -88,8 +90,9 @@ typedef uint16_t _Py_CODEUNIT;
     PyObject *co_qualname;        /* unicode (qualname, for reference) */      \
     PyObject *co_linetable;       /* bytes object that holds location info */  \
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
-    void *_co_code;               /* cached co_code object/attribute */        \
+    PyObject *_co_code;           /* cached co_code object/attribute */        \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
+    char *_co_linearray;          /* array of line offsets */                  \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \
        people to go through the proper APIs. */                                \

@@ -4301,14 +4301,6 @@ class MiscIOTest(unittest.TestCase):
         proc = assert_python_ok('-X', 'utf8=1', '-c', code)
         self.assertEqual(b"utf-8", proc.out.strip())
 
-    @support.cpython_only
-    # Depending if OpenWrapper was already created or not, the warning is
-    # emitted or not. For example, the attribute is already created when this
-    # test is run multiple times.
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test_openwrapper(self):
-        self.assertIs(self.io.OpenWrapper, self.io.open)
-
 
 class CMiscIOTest(MiscIOTest):
     io = io
