@@ -99,7 +99,7 @@ def find_executable(executable, path=None):
     os.environ['PATH'].  Returns the complete filename or None if not found.
     """
     _, ext = os.path.splitext(executable)
-    if (sys.platform == 'win32') and (ext != '.exe'):
+    if (sys.platform == 'win32') and (ext.lower() != '.exe'):
         executable = executable + '.exe'
 
     if os.path.isfile(executable):

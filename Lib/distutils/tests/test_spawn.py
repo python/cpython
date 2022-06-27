@@ -67,6 +67,11 @@ class SpawnTestCase(support.TempdirManager,
                 rv = find_executable(program_noeext, path=tmp_dir)
                 self.assertEqual(rv, filename)
 
+            if sys.platform == 'win32':
+                # test with uppercase ".EXE" extension
+                rv = find_executable(program_noeext + ".EXE", path=tmp_dir)
+                self.assertEqual(rv, filename)
+
             # test find in the current directory
             with os_helper.change_cwd(tmp_dir):
                 rv = find_executable(program)
