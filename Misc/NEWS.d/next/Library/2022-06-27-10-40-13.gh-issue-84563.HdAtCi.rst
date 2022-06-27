@@ -1,0 +1,1 @@
+Add function to easily extract year and quarter from datetime object
