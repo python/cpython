@@ -1928,14 +1928,6 @@ Deprecated
 * Deprecate the ``ob_shash`` member of the :c:type:`PyBytesObject`. Use :c:func:`PyObject_Hash` instead.
   (Contributed by Inada Naoki in :issue:`46864`.)
 
-  Function :func:`~gettext.bind_textdomain_codeset`, methods
-  :meth:`~gettext.NullTranslations.output_charset` and
-  :meth:`~gettext.NullTranslations.set_output_charset`, and the *codeset*
-  parameter of functions :func:`~gettext.translation` and
-  :func:`~gettext.install` are also removed, since they are only used for
-  the ``l*gettext()`` functions.
-  (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)
-=======
 Removed
 -------
 
