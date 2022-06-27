@@ -6,7 +6,7 @@ operate on bytecodes (e.g. peephole optimizers).
 
 __all__ = ["cmp_op", "hasarg", "hasconst", "hasname", "hasjrel", "hasjabs",
            "haslocal", "hascompare", "hasfree", "hasexc", "opname", "opmap",
-           "_HAVE_ARGUMENT", "EXTENDED_ARG"]
+           "HAVE_ARGUMENT", "EXTENDED_ARG"]
 
 # It's a chicken-and-egg I'm afraid:
 # We're imported before _opcode's made.
@@ -125,7 +125,7 @@ def_op('ASYNC_GEN_WRAP', 87)
 def_op('PREP_RERAISE_STAR', 88)
 def_op('POP_EXCEPT', 89)
 
-_HAVE_ARGUMENT = 90             # Non-virtual opcodes from here have an argument:
+HAVE_ARGUMENT = 90             # Non-virtual opcodes from here have an argument:
 
 name_op('STORE_NAME', 90)       # Index in name list
 name_op('DELETE_NAME', 91)      # ""
@@ -220,7 +220,7 @@ jrel_op('POP_JUMP_BACKWARD_IF_NONE', 174)
 jrel_op('POP_JUMP_BACKWARD_IF_FALSE', 175)
 jrel_op('POP_JUMP_BACKWARD_IF_TRUE', 176)
 
-hasarg.extend([op for op in opmap.values() if op >= _HAVE_ARGUMENT])
+hasarg.extend([op for op in opmap.values() if op >= HAVE_ARGUMENT])
 
 MIN_VIRTUAL_OPCODE = 256
 
