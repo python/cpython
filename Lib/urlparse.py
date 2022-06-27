@@ -1,3 +1,7 @@
+# Copyright (C) 2022 ActiveState Software Inc.
+# urlparse.py is licensed under the PSFLv2 License.
+# See the file LICENSE for details.
+
 """Parse (absolute and relative) URLs.
 
 urlparse module is based upon the following RFC specifications.
@@ -61,6 +65,9 @@ scheme_chars = ('abcdefghijklmnopqrstuvwxyz'
                 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                 '0123456789'
                 '+-.')
+
+# Unsafe bytes to be removed per WHATWG spec
+_UNSAFE_URL_BYTES_TO_REMOVE = ['\t', '\r', '\n']
 
 MAX_CACHE_SIZE = 20
 _parse_cache = {}
@@ -203,6 +210,8 @@ def urlsplit(url, scheme='', allow_fragments=True):
         if url[:i] == 'http': # optimize the common case
             scheme = url[:i].lower()
             url = url[i+1:]
+            for b in _UNSAFE_URL_BYTES_TO_REMOVE:
+                url = url.replace(b, '')
             if url[:2] == '//':
                 netloc, url = _splitnetloc(url, 2)
                 if (('[' in netloc and ']' not in netloc) or
@@ -226,6 +235,9 @@ def urlsplit(url, scheme='', allow_fragments=True):
             if not rest or any(c not in '0123456789' for c in rest):
                 # not a port number
                 scheme, url = url[:i].lower(), rest
+
+    for b in _UNSAFE_URL_BYTES_TO_REMOVE:
+        url = url.replace(b, '')
 
     if url[:2] == '//':
         netloc, url = _splitnetloc(url, 2)

@@ -1,0 +1,7 @@
+.. bpo: 0
+.. date: 2022-06-27
+.. nonce: caft@D
+.. release date: 2022-06-27
+.. section: Library
+
+Address CVE-2022-0391 in urlparse
