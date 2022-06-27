@@ -1371,23 +1371,32 @@ iterations of the loop.
 These opcodes do not appear in python bytecode, they are used by the compiler
 but are replaced by real opcodes or removed before bytecode is generated.
 
-.. opcode:: SETUP_FINALLY
+.. opcode:: SETUP_FINALLY (target)
 
    Set up an exception handler for the following code block. If an exception
    occurs, the value stack level is restored to its current state and control
-   is transferred to the exception handler.
+   is transferred to the exception handler at ``target``.
 
 
-.. opcode:: SETUP_CLEANUP
+.. opcode:: SETUP_CLEANUP (target)
 
    Like ``SETUP_FINALLY``, but in case of exception also pushes the last
-   instruction to the stack so that ``RERAISE`` can restore it.
+   instruction (``lasti``) to the stack so that ``RERAISE`` can restore it.
+   If an exception occurs, the value stack level and the last instruction on
+   the frame are restored to their current state, and control is transferred
+   to the exception handler at ``target``.
 
 
-.. opcode:: SETUP_WITH
+.. opcode:: SETUP_WITH (target)
 
    Set up an exception handler for a :keyword:`with` or :keyword:`async with`
-   block. Pushes the last executed instruction to the stack like ``SETUP_CLEANUP``.
+   block. Pushes the last executed instruction (``lasti``) to the stack like
+   ``SETUP_CLEANUP``. If an exception occurs, the value stack level and the
+   last instruction on the frame are restored to their current state. The
+   the context manager's :meth:`~object.__exit__` or
+   :meth:`~object.__aexit__` (which was poped from the stack) is called, its
+   return value is pushed to the stack, and control is transferred to the
+   exception handler at ``target``.
 
 
 .. opcode:: POP_BLOCK
@@ -1420,7 +1429,9 @@ These collections are provided for automatic introspection of bytecode
 instructions:
 
    .. versionchanged:: 3.12
-      The collections now contain virtual opcodes as well.
+      The collections now contain virtual opcodes as well. These are
+      opcodes in the range between ``MIN_VIRTUAL_OPCODE`` and
+      ``MAX_VIRTUAL_OPCODE``.
 
 .. data:: opname
 
