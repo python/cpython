@@ -1423,6 +1423,8 @@ instructions:
 
    Sequence of bytecodes that use their argument.
 
+    .. versionadded:: 3.12
+
 
 .. data:: hasconst
 
@@ -1464,3 +1466,5 @@ instructions:
 .. data:: hasexc
 
    Sequence of bytecodes that set an exception handler.
+
+    .. versionadded:: 3.12
