@@ -62,7 +62,7 @@ def get_makefile_modules(args: argparse.Namespace) -> list[ModuleInfo]:
     MODSHARED_NAMES: modules in *shared* block
     MODDISABLED_NAMES: modules in *disabled* block
 
-    Modules built by setup.py addext() have a MODULE_{modname} entry,
+    Modules built by setup.py addext() have a MODULE_{modname}_STATE entry,
     but are not listed in MODSHARED_NAMES.
 
     Modules built by old-style setup.py add() have neither a  MODULE_{modname}
@@ -73,16 +73,12 @@ def get_makefile_modules(args: argparse.Namespace) -> list[ModuleInfo]:
 
     modules = []
     for key, value in sysconfig.get_config_vars().items():
-        if not key.startswith("MODULE_"):
-            continue
-        if key.endswith(
-            ("_CFLAGS", "_DEPS", "_LDFLAGS", "_OBJS", "CTYPES_MALLOC_CLOSURE")
-        ):
+        if not key.startswith("MODULE_") or not key.endswith("_STATE"):
             continue
         if value not in {"yes", "disabled", "n/a"}:
             raise ValueError(f"Unsupported {value} for {key}")
 
-        modname = key[7:].lower()
+        modname = key[7:-6].lower()
         is_builtin = modname in modbuiltin
         if modname in moddisabled:
             # Setup "*disabled*" rule

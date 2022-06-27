@@ -93,13 +93,11 @@ def list_modules_setup_extensions(names):
     """Get MODULE_{modname}={yes|disabled|n/a} entries from Makefile
     """
     for key, value in sysconfig.get_config_vars().items():
-        if not key.startswith("MODULE_"):
-            continue
-        if key.endswith(("_CFLAGS", "_DEPS", "_LDFLAGS", "_OBJS")):
+        if not key.startswith("MODULE_") or not key.endswith("_STATE"):
             continue
         if value not in {"yes", "disabled", "n/a"}:
             raise ValueError(f"Unsupported {value} for {key}")
-        name = key[7:].lower()
+        name = key[7:-6].lower()
         names.add(name)
 
 
