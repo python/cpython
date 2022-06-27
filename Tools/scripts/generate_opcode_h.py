@@ -85,7 +85,7 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
     is_virtual = opcode['is_virtual']
     _virtual_ops = opcode['_virtual_ops']
 
-    _HAVE_ARGUMENT = opcode["_HAVE_ARGUMENT"]
+    HAVE_ARGUMENT = opcode["HAVE_ARGUMENT"]
     MIN_VIRTUAL_OPCODE = opcode["MIN_VIRTUAL_OPCODE"]
     MAX_VIRTUAL_OPCODE = opcode["MAX_VIRTUAL_OPCODE"]
 
@@ -115,8 +115,8 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
         for name in opname:
             if name in opmap:
                 op = opmap[name]
-                if op == _HAVE_ARGUMENT:
-                    fobj.write(DEFINE.format("_HAVE_ARGUMENT", _HAVE_ARGUMENT))
+                if op == HAVE_ARGUMENT:
+                    fobj.write(DEFINE.format("HAVE_ARGUMENT", HAVE_ARGUMENT))
                 if op == MIN_VIRTUAL_OPCODE:
                     fobj.write(DEFINE.format("MIN_VIRTUAL_OPCODE", MIN_VIRTUAL_OPCODE))
 
@@ -162,7 +162,7 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
         iobj.write("#endif   // NEED_OPCODE_TABLES\n")
 
         fobj.write("\n")
-        fobj.write("#define HAS_ARG(op) ((((op) >= _HAVE_ARGUMENT) && (!IS_VIRTUAL_OPCODE(op)))\\")
+        fobj.write("#define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_VIRTUAL_OPCODE(op)))\\")
         for op in _virtual_ops:
             if opmap[op] in hasarg:
                 fobj.write(f"\n    || ((op) == {op}) \\")
