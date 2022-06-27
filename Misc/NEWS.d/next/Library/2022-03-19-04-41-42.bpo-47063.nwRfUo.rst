@@ -1,0 +1,1 @@
+Add an index_pages parameter to support using non-default index page names.

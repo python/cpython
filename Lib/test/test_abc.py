@@ -154,7 +154,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 @abc.abstractmethod
                 def method_one(self):
                     pass
-            msg = r"class C with abstract method method_one"
+            msg = r"class C without an implementation for abstract method method_one"
             self.assertRaisesRegex(TypeError, msg, C)
 
         def test_object_new_with_many_abstractmethods(self):
@@ -165,7 +165,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 @abc.abstractmethod
                 def method_two(self):
                     pass
-            msg = r"class C with abstract methods method_one, method_two"
+            msg = r"class C without an implementation for abstract methods method_one, method_two"
             self.assertRaisesRegex(TypeError, msg, C)
 
         def test_abstractmethod_integration(self):
@@ -535,7 +535,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             A.foo = updated_foo
             abc.update_abstractmethods(A)
             self.assertEqual(A.__abstractmethods__, {'foo', 'bar'})
-            msg = "class A with abstract methods bar, foo"
+            msg = "class A without an implementation for abstract methods bar, foo"
             self.assertRaisesRegex(TypeError, msg, A)
 
         def test_update_implementation(self):
@@ -547,7 +547,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             class B(A):
                 pass
 
-            msg = "class B with abstract method foo"
+            msg = "class B without an implementation for abstract method foo"
             self.assertRaisesRegex(TypeError, msg, B)
             self.assertEqual(B.__abstractmethods__, {'foo'})
 
@@ -605,7 +605,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
             abc.update_abstractmethods(B)
 
-            msg = "class B with abstract method foo"
+            msg = "class B without an implementation for abstract method foo"
             self.assertRaisesRegex(TypeError, msg, B)
 
         def test_update_layered_implementation(self):
@@ -627,7 +627,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
             abc.update_abstractmethods(C)
 
-            msg = "class C with abstract method foo"
+            msg = "class C without an implementation for abstract method foo"
             self.assertRaisesRegex(TypeError, msg, C)
 
         def test_update_multi_inheritance(self):

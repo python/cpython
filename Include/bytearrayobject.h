@@ -21,8 +21,8 @@ PyAPI_DATA(PyTypeObject) PyByteArray_Type;
 PyAPI_DATA(PyTypeObject) PyByteArrayIter_Type;
 
 /* Type check macros */
-#define PyByteArray_Check(self) PyObject_TypeCheck(self, &PyByteArray_Type)
-#define PyByteArray_CheckExact(self) Py_IS_TYPE(self, &PyByteArray_Type)
+#define PyByteArray_Check(self) PyObject_TypeCheck((self), &PyByteArray_Type)
+#define PyByteArray_CheckExact(self) Py_IS_TYPE((self), &PyByteArray_Type)
 
 /* Direct API functions */
 PyAPI_FUNC(PyObject *) PyByteArray_FromObject(PyObject *);

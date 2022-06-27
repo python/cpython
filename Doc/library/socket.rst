@@ -225,6 +225,29 @@ created.  Socket addresses are represented as follows:
 
   .. versionadded:: 3.9
 
+- :const:`AF_HYPERV` is a Windows-only socket based interface for communicating
+  with Hyper-V hosts and guests. The address family is represented as a
+  ``(vm_id, service_id)`` tuple where the ``vm_id`` and ``service_id`` are
+  UUID strings.
+
+  The ``vm_id`` is the virtual machine identifier or a set of known VMID values
+  if the target is not a specific virtual machine. Known VMID constants
+  defined on ``socket`` are:
+
+  - ``HV_GUID_ZERO``
+  - ``HV_GUID_BROADCAST``
+  - ``HV_GUID_WILDCARD`` - Used to bind on itself and accept connections from
+    all partitions.
+  - ``HV_GUID_CHILDREN`` - Used to bind on itself and accept connection from
+    child partitions.
+  - ``HV_GUID_LOOPBACK`` - Used as a target to itself.
+  - ``HV_GUID_PARENT`` - When used as a bind accepts connection from the parent
+    partition. When used as an address target it will connect to the parent partition.
+
+  The ``service_id`` is the service identifier of the registered service.
+
+  .. versionadded:: 3.12
+
 If you use a hostname in the *host* portion of IPv4/v6 socket address, the
 program may show a nondeterministic behavior, as Python uses the first address
 returned from the DNS resolution.  The socket address will be resolved
@@ -233,9 +256,9 @@ resolution and/or the host configuration.  For deterministic behavior use a
 numeric address in *host* portion.
 
 All errors raise exceptions.  The normal exceptions for invalid argument types
-and out-of-memory conditions can be raised; starting from Python 3.3, errors
+and out-of-memory conditions can be raised. Errors
 related to socket or address semantics raise :exc:`OSError` or one of its
-subclasses (they used to raise :exc:`socket.error`).
+subclasses.
 
 Non-blocking mode is supported through :meth:`~socket.setblocking`.  A
 generalization of this based on timeouts is supported through
@@ -589,6 +612,25 @@ Constants
 
   .. availability:: Linux >= 3.9
 
+.. data:: AF_HYPERV
+          HV_PROTOCOL_RAW
+          HVSOCKET_CONNECT_TIMEOUT
+          HVSOCKET_CONNECT_TIMEOUT_MAX
+          HVSOCKET_CONNECTED_SUSPEND
+          HVSOCKET_ADDRESS_FLAG_PASSTHRU
+          HV_GUID_ZERO
+          HV_GUID_WILDCARD
+          HV_GUID_BROADCAST
+          HV_GUID_CHILDREN
+          HV_GUID_LOOPBACK
+          HV_GUID_LOOPBACK
+
+   Constants for Windows Hyper-V sockets for host/guest communications.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.12
+
 Functions
 ^^^^^^^^^
 
@@ -712,7 +754,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 .. function:: create_server(address, *, family=AF_INET, backlog=None, reuse_port=False, dualstack_ipv6=False)
 
    Convenience function which creates a TCP socket bound to *address* (a 2-tuple
-   ``(host, port)``) and return the socket object.
+   ``(host, port)``) and returns the socket object.
 
    *family* should be either :data:`AF_INET` or :data:`AF_INET6`.
    *backlog* is the queue size passed to :meth:`socket.listen`; when ``0``
@@ -2033,10 +2075,10 @@ the interface::
    # Include IP headers
    s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
 
-   # receive all packages
+   # receive all packets
    s.ioctl(socket.SIO_RCVALL, socket.RCVALL_ON)
 
-   # receive a package
+   # receive a packet
    print(s.recvfrom(65565))
 
    # disabled promiscuous mode

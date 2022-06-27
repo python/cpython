@@ -22,7 +22,6 @@ import re
 import shlex
 import string
 import sys
-import tempfile
 import textwrap
 import traceback
 import types
@@ -1628,10 +1627,16 @@ class BlockParser:
         def is_stop_line(line):
             # make sure to recognize stop line even if it
             # doesn't end with EOL (it could be the very end of the file)
-            if not line.startswith(stop_line):
+            if line.startswith(stop_line):
+                remainder = line[len(stop_line):]
+                if remainder and not remainder.isspace():
+                    fail(f"Garbage after stop line: {remainder!r}")
+                return True
+            else:
+                # gh-92256: don't allow incorrectly formatted stop lines
+                if line.lstrip().startswith(stop_line):
+                    fail(f"Whitespace is not allowed before the stop line: {line!r}")
                 return False
-            remainder = line[len(stop_line):]
-            return (not remainder) or remainder.isspace()
 
         # consume body of program
         while self.input:
@@ -3520,9 +3525,7 @@ class Py_UNICODE_converter(CConverter):
     def cleanup(self):
         if not self.length:
             return """\
-#if !USE_UNICODE_WCHAR_CACHE
 PyMem_Free((void *){name});
-#endif /* USE_UNICODE_WCHAR_CACHE */
 """.format(name=self.name)
 
     def parse_arg(self, argname, argnum):
@@ -3533,11 +3536,7 @@ PyMem_Free((void *){name});
                         _PyArg_BadArgument("{{name}}", {argnum}, "str", {argname});
                         goto exit;
                     }}}}
-                    #if USE_UNICODE_WCHAR_CACHE
-                    {paramname} = _PyUnicode_AsUnicode({argname});
-                    #else /* USE_UNICODE_WCHAR_CACHE */
                     {paramname} = PyUnicode_AsWideCharString({argname}, NULL);
-                    #endif /* USE_UNICODE_WCHAR_CACHE */
                     if ({paramname} == NULL) {{{{
                         goto exit;
                     }}}}
@@ -3548,11 +3547,7 @@ PyMem_Free((void *){name});
                         {paramname} = NULL;
                     }}}}
                     else if (PyUnicode_Check({argname})) {{{{
-                        #if USE_UNICODE_WCHAR_CACHE
-                        {paramname} = _PyUnicode_AsUnicode({argname});
-                        #else /* USE_UNICODE_WCHAR_CACHE */
                         {paramname} = PyUnicode_AsWideCharString({argname}, NULL);
-                        #endif /* USE_UNICODE_WCHAR_CACHE */
                         if ({paramname} == NULL) {{{{
                             goto exit;
                         }}}}
