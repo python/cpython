@@ -569,6 +569,17 @@ def _divide_and_round(a, b):
 
     return q
 
+def _year_quarter(a):
+    """
+    extract the year and quarter from a datetime date
+    
+    a: datetime object e.g datetime.datetime(2022, 6, 27, 11, 19, 20, 218271)
+    """
+    b = str(a.year)
+    q = str(math.ceil(a.month/3.))
+    year_quarter = b + '-' + 'Q' + q
+    return year_quarter
+
 
 class timedelta:
     """Represent the difference between two datetime objects.
