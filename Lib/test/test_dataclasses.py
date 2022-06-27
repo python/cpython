@@ -3257,7 +3257,7 @@ class TestDescriptors(unittest.TestCase):
 
         c = C(5)
 
-        # Make sure D.__set__ is called.
+        # Make sure D.__get__ is called.
         D.__get__.reset_mock()
         value = c.i
         self.assertEqual(D.__get__.call_count, 1)
