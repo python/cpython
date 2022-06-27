@@ -170,6 +170,21 @@ class GeneratorTest(unittest.TestCase):
             g.send(0)
         self.assertEqual(next(g), 1)
 
+    def test_handle_frame_object_in_creation(self):
+
+        def cb(*args):
+            try:
+                sys._getframe(1)
+            except ValueError:
+                pass
+
+        gc.set_threshold(1, 0, 0)
+        gc.callbacks.append(cb)
+
+        def gen():
+            yield 1
+
+        gen()
 
 class ExceptionTest(unittest.TestCase):
     # Tests for the issue #23353: check that the currently handled exception
