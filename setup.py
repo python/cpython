@@ -318,7 +318,7 @@ class PyBuildExt(build_ext):
         if update_flags:
             self.update_extension_flags(ext)
 
-        state = sysconfig.get_config_var(f"MODULE_{ext.name.upper()}")
+        state = sysconfig.get_config_var(f"MODULE_{ext.name.upper()}_STATE")
         if state == "yes":
             self.extensions.append(ext)
         elif state == "disabled":
@@ -329,7 +329,7 @@ class PyBuildExt(build_ext):
             # not available on current platform
             pass
         else:
-            # not migrated to MODULE_{name} yet.
+            # not migrated to MODULE_{name}_STATE yet.
             self.announce(
                 f'WARNING: Makefile is missing module variable for "{ext.name}"',
                 level=2

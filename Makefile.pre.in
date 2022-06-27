@@ -222,7 +222,7 @@ OPENSSL_RPATH=@OPENSSL_RPATH@
 #   * missing: build dependency is missing
 #   * disabled: module is disabled
 #   * n/a: module is not available on the current platform
-# MODULE_EGG=yes  # yes, missing, disabled, n/a
+# MODULE_EGG_STATE=yes  # yes, missing, disabled, n/a
 # MODULE_EGG_CFLAGS=
 # MODULE_EGG_LDFLAGS=
 @MODULE_BLOCK@
