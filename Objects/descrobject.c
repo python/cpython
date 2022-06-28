@@ -1178,16 +1178,16 @@ mappingproxy_getiter(mappingproxyobject *pp)
     return PyObject_GetIter(pp->mapping);
 }
 
-static PyObject *
-mappingproxy_str(mappingproxyobject *pp)
-{
-    return PyObject_Str(pp->mapping);
-}
-
 static Py_hash_t
 mappingproxy_hash(mappingproxyobject *pp)
 {
     return PyObject_Hash(pp->mapping);
+}
+
+static PyObject *
+mappingproxy_str(mappingproxyobject *pp)
+{
+    return PyObject_Str(pp->mapping);
 }
 
 static PyObject *
