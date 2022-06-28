@@ -82,19 +82,6 @@ OutputBuffer_OnError(_BlocksOutputBuffer *buffer)
 
 
 typedef struct {
-    PyTypeObject *bz2_compressor_type;
-    PyTypeObject *bz2_decompressor_type;
-} _bz2_state;
-
-static inline _bz2_state*
-get_bz2_state(PyObject *module)
-{
-    void *state = PyModule_GetState(module);
-    assert(state != NULL);
-    return (_bz2_state *)state;
-}
-
-typedef struct {
     PyObject_HEAD
     bz_stream bzs;
     int flushed;
@@ -775,52 +762,29 @@ static PyType_Spec bz2_decompressor_type_spec = {
 static int
 _bz2_exec(PyObject *module)
 {
-    _bz2_state *state = get_bz2_state(module);
-    state->bz2_compressor_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
+    PyTypeObject *bz2_compressor_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
                                                             &bz2_compressor_type_spec, NULL);
-    if (state->bz2_compressor_type == NULL) {
+    if (bz2_compressor_type == NULL) {
+        return -1;
+    }
+    int rc = PyModule_AddType(module, bz2_compressor_type);
+    Py_DECREF(bz2_compressor_type);
+    if (rc < 0) {
         return -1;
     }
 
-    if (PyModule_AddType(module, state->bz2_compressor_type) < 0) {
-        return -1;
-    }
-
-    state->bz2_decompressor_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
+    PyTypeObject *bz2_decompressor_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
                                                          &bz2_decompressor_type_spec, NULL);
-    if (state->bz2_decompressor_type == NULL) {
+    if (bz2_decompressor_type == NULL) {
+        return -1;
+    }
+    rc = PyModule_AddType(module, bz2_decompressor_type);
+    Py_DECREF(bz2_decompressor_type);
+    if (rc < 0) {
         return -1;
     }
 
-    if (PyModule_AddType(module, state->bz2_decompressor_type) < 0) {
-        return -1;
-    }
-
     return 0;
-}
-
-static int
-_bz2_traverse(PyObject *module, visitproc visit, void *arg)
-{
-    _bz2_state *state = get_bz2_state(module);
-    Py_VISIT(state->bz2_compressor_type);
-    Py_VISIT(state->bz2_decompressor_type);
-    return 0;
-}
-
-static int
-_bz2_clear(PyObject *module)
-{
-    _bz2_state *state = get_bz2_state(module);
-    Py_CLEAR(state->bz2_compressor_type);
-    Py_CLEAR(state->bz2_decompressor_type);
-    return 0;
-}
-
-static void
-_bz2_free(void *module)
-{
-    _bz2_clear((PyObject *)module);
 }
 
 static struct PyModuleDef_Slot _bz2_slots[] = {
@@ -829,13 +793,10 @@ static struct PyModuleDef_Slot _bz2_slots[] = {
 };
 
 static struct PyModuleDef _bz2module = {
-    PyModuleDef_HEAD_INIT,
+    .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_bz2",
-    .m_size = sizeof(_bz2_state),
+    .m_size = 0,
     .m_slots = _bz2_slots,
-    .m_traverse = _bz2_traverse,
-    .m_clear = _bz2_clear,
-    .m_free = _bz2_free,
 };
 
 PyMODINIT_FUNC
