@@ -168,8 +168,6 @@ def c2py(plural):
     """Gets a C expression as used in PO files for plural forms and returns a
     Python function that implements an equivalent expression.
     """
-    import textwrap
-
     if len(plural) > 1000:
         raise ValueError('plural form expression is too long')
 
@@ -190,13 +188,13 @@ def c2py(plural):
                 depth -= 1
 
         ns = {}
-        code = textwrap.dedent('''
+        code = '''if True:
             def func(n):
                 if not isinstance(n, int):
                     raise TypeError(f'Plural value must be an integer, '
                                     f'got {n.__class__.__name__}')
                 return int(%s)
-            ''')
+        '''
         code = code % result
         exec(code, ns)
         return ns['func']
