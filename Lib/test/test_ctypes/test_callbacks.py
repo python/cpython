@@ -65,10 +65,12 @@ class Callbacks(unittest.TestCase):
     def test_ulong(self):
         self.check_type(c_ulong, 42)
 
+    @need_symbol('c_longlong')
     def test_longlong(self):
         self.check_type(c_longlong, 42)
         self.check_type(c_longlong, -42)
 
+    @need_symbol('c_ulonglong')
     def test_ulonglong(self):
         self.check_type(c_ulonglong, 42)
 
@@ -82,6 +84,7 @@ class Callbacks(unittest.TestCase):
         self.check_type(c_double, 3.14)
         self.check_type(c_double, -3.14)
 
+    @need_symbol('c_longdouble')
     def test_longdouble(self):
         self.check_type(c_longdouble, 3.14)
         self.check_type(c_longdouble, -3.14)

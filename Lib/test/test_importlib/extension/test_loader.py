@@ -20,6 +20,10 @@ class LoaderTests(abc.LoaderTests):
     def setUp(self):
         if not self.machinery.EXTENSION_SUFFIXES:
             raise unittest.SkipTest("Requires dynamic loading support.")
+        if util.EXTENSIONS.name in sys.builtin_module_names:
+            raise unittest.SkipTest(
+                f"{util.EXTENSIONS.name} is a builtin module"
+            )
         self.loader = self.machinery.ExtensionFileLoader(util.EXTENSIONS.name,
                                                          util.EXTENSIONS.file_path)
 
@@ -97,6 +101,10 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
         if not self.machinery.EXTENSION_SUFFIXES:
             raise unittest.SkipTest("Requires dynamic loading support.")
         self.name = '_testmultiphase'
+        if self.name in sys.builtin_module_names:
+            raise unittest.SkipTest(
+                f"{self.name} is a builtin module"
+            )
         finder = self.machinery.FileFinder(None)
         self.spec = importlib.util.find_spec(self.name)
         assert self.spec

@@ -66,9 +66,26 @@ try:
     class FlagStooges(Flag):
         LARRY = 1
         CURLY = 2
-        MOE = 3
+        MOE = 4
 except Exception as exc:
     FlagStooges = exc
+
+class FlagStoogesWithZero(Flag):
+    NOFLAG = 0
+    LARRY = 1
+    CURLY = 2
+    MOE = 4
+
+class IntFlagStooges(IntFlag):
+    LARRY = 1
+    CURLY = 2
+    MOE = 4
+
+class IntFlagStoogesWithZero(IntFlag):
+    NOFLAG = 0
+    LARRY = 1
+    CURLY = 2
+    MOE = 4
 
 # for pickle test and subclass tests
 class Name(StrEnum):
@@ -2999,8 +3016,31 @@ class OldTestFlag(unittest.TestCase):
     def test_pickle(self):
         if isinstance(FlagStooges, Exception):
             raise FlagStooges
-        test_pickle_dump_load(self.assertIs, FlagStooges.CURLY|FlagStooges.MOE)
+        test_pickle_dump_load(self.assertIs, FlagStooges.CURLY)
+        test_pickle_dump_load(self.assertEqual,
+                        FlagStooges.CURLY|FlagStooges.MOE)
+        test_pickle_dump_load(self.assertEqual,
+                        FlagStooges.CURLY&~FlagStooges.CURLY)
         test_pickle_dump_load(self.assertIs, FlagStooges)
+
+        test_pickle_dump_load(self.assertIs, FlagStoogesWithZero.CURLY)
+        test_pickle_dump_load(self.assertEqual,
+                        FlagStoogesWithZero.CURLY|FlagStoogesWithZero.MOE)
+        test_pickle_dump_load(self.assertIs, FlagStoogesWithZero.NOFLAG)
+
+        test_pickle_dump_load(self.assertIs, IntFlagStooges.CURLY)
+        test_pickle_dump_load(self.assertEqual,
+                        IntFlagStooges.CURLY|IntFlagStooges.MOE)
+        test_pickle_dump_load(self.assertEqual,
+                        IntFlagStooges.CURLY|IntFlagStooges.MOE|0x30)
+        test_pickle_dump_load(self.assertEqual, IntFlagStooges(0))
+        test_pickle_dump_load(self.assertEqual, IntFlagStooges(0x30))
+        test_pickle_dump_load(self.assertIs, IntFlagStooges)
+
+        test_pickle_dump_load(self.assertIs, IntFlagStoogesWithZero.CURLY)
+        test_pickle_dump_load(self.assertEqual,
+                        IntFlagStoogesWithZero.CURLY|IntFlagStoogesWithZero.MOE)
+        test_pickle_dump_load(self.assertIs, IntFlagStoogesWithZero.NOFLAG)
 
     def test_contains_tf(self):
         Open = self.Open
@@ -4053,54 +4093,54 @@ Help on class Color in module %s:
 
 class Color(enum.Enum)
  |  Color(value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
- |\x20\x20
+ |
  |  Method resolution order:
  |      Color
  |      enum.Enum
  |      builtins.object
- |\x20\x20
+ |
  |  Data and other attributes defined here:
- |\x20\x20
+ |
  |  CYAN = <Color.CYAN: 1>
- |\x20\x20
+ |
  |  MAGENTA = <Color.MAGENTA: 2>
- |\x20\x20
+ |
  |  YELLOW = <Color.YELLOW: 3>
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from enum.Enum:
- |\x20\x20
+ |
  |  name
  |      The name of the Enum member.
- |\x20\x20
+ |
  |  value
  |      The value of the Enum member.
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Methods inherited from enum.EnumType:
- |\x20\x20
+ |
  |  __contains__(value) from enum.EnumType
  |      Return True if `value` is in `cls`.
- |      
+ |
  |      `value` is in `cls` if:
  |      1) `value` is a member of `cls`, or
  |      2) `value` is the value of one of the `cls`'s members.
- |\x20\x20
+ |
  |  __getitem__(name) from enum.EnumType
  |      Return the member matching `name`.
- |\x20\x20
+ |
  |  __iter__() from enum.EnumType
  |      Return members in definition order.
- |\x20\x20
+ |
  |  __len__() from enum.EnumType
  |      Return the number of members (no aliases)
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Readonly properties inherited from enum.EnumType:
- |\x20\x20
+ |
  |  __members__
  |      Returns a mapping of member name->value.
- |\x20\x20\x20\x20\x20\x20
+ |
  |      This mapping lists all enum members, including aliases. Note that this
  |      is a read-only view of the internal mapping."""
 
@@ -4109,30 +4149,30 @@ Help on class Color in module %s:
 
 class Color(enum.Enum)
  |  Color(value, names=None, *, module=None, qualname=None, type=None, start=1)
- |\x20\x20
+ |
  |  Method resolution order:
  |      Color
  |      enum.Enum
  |      builtins.object
- |\x20\x20
+ |
  |  Data and other attributes defined here:
- |\x20\x20
+ |
  |  YELLOW = <Color.YELLOW: 3>
- |\x20\x20
+ |
  |  MAGENTA = <Color.MAGENTA: 2>
- |\x20\x20
+ |
  |  CYAN = <Color.CYAN: 1>
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from enum.Enum:
- |\x20\x20
+ |
  |  name
- |\x20\x20
+ |
  |  value
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from enum.EnumType:
- |\x20\x20
+ |
  |  __members__"""
 
 class TestStdLib(unittest.TestCase):
