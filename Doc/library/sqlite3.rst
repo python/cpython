@@ -1442,9 +1442,9 @@ Controlling Transactions
 
 The ``sqlite3`` module does not adhere to the transaction handling recommended
 by PEP 249.
-Instead of keeping a transaction open and requiring the user to use the
-:meth:`~Connection.commit` and :meth:`~Connection.rollback` methods,
-``sqlite3`` only implicitly opens new transactions before
+If the connection attribute :attr:`isolation_level` is not :const:`None`,
+the following implicit transaction handling is performed:
+New transactions are implicitly opened before
 :meth:`~Cursor.execute` and :meth:`~Cursor.executemany` executes any of the
 following statements:
 
@@ -1456,11 +1456,13 @@ following statements:
 In addition, any pending transaction is implicitly committed in
 :meth:`~Cursor.executescript`, before execution of the given SQL script.
 No other implicit transaction handling is performed.
+Use the :meth:`~Connection.commit` and :meth:`~Connection.rollback` method
+to respectively commit and roll back pending transactions.
 
 You can control which kind of ``BEGIN`` statements ``sqlite3`` implicitly
 executes via the :attr:`isolation_level` connection attribute.
 
-The ``sqlite3`` module lets the user choose bypass its transaction handling, by
+The ``sqlite3`` module lets the user bypass its transaction handling by
 setting :attr:`isolation_level` to :const:`None`.
 This leaves the underlying SQLite library in autocommit mode,
 but also allows the user to perform any transaction handling using explicit SQL
