@@ -871,8 +871,8 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
 
     // Elide indicators if primary char spans the frame line
     Py_ssize_t stripped_line_len = source_line_len - truncation - _TRACEBACK_SOURCE_LINE_INDENT;
-    if (end_offset - start_offset == stripped_line_len &&
-            left_end_offset == -1 && right_start_offset == -1) {
+    bool has_secondary_ranges = (left_end_offset != -1 || right_start_offset != -1);
+    if (end_offset - start_offset == stripped_line_len && !has_secondary_ranges) {
         goto done;
     }
 
