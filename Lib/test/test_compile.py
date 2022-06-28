@@ -1026,6 +1026,42 @@ if 1:
         for instr in dis.Bytecode(while_not_chained):
             self.assertNotEqual(instr.opname, "EXTENDED_ARG")
 
+    @support.cpython_only
+    def test_uses_slice_instructions(self):
+
+        def check_op_count(func, op, expected):
+            actual = 0
+            for instr in dis.Bytecode(func):
+                 if instr.opname == op:
+                     actual += 1
+            self.assertEqual(actual, expected)
+
+        def load():
+            return x[a:b] + x [a:] + x[:b] + x[:]
+
+        def store():
+            x[a:b] = y
+            x [a:] = y
+            x[:b] = y
+            x[:] = y
+
+        def long_slice():
+            return x[a:b:c]
+
+        def aug():
+            x[a:b] += y
+
+        check_op_count(load, "BINARY_SLICE", 4)
+        check_op_count(load, "BUILD_SLICE", 0)
+        check_op_count(store, "STORE_SLICE", 4)
+        check_op_count(store, "BUILD_SLICE", 0)
+        check_op_count(long_slice, "BUILD_SLICE", 1)
+        check_op_count(long_slice, "BINARY_SLICE", 0)
+        check_op_count(aug, "BINARY_SLICE", 1)
+        check_op_count(aug, "STORE_SLICE", 1)
+        check_op_count(aug, "BUILD_SLICE", 0)
+
+
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
     # Ensure that compiled code snippets have correct line and column numbers
