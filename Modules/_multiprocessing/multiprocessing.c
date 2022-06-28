@@ -24,18 +24,6 @@ module _multiprocessing
 
 #include "clinic/multiprocessing.c.h"
 
-typedef struct {
-    PyTypeObject *semlock_type;
-} _multiprocessingstate;
-
-static inline
-_multiprocessingstate *get_module_state(PyObject *module)
-{
-    void *state = PyModule_GetState(module);
-    assert(state != NULL);
-    return (_multiprocessingstate *)state;
-}
-
 /*
  * Function which raises exceptions based on error codes
  */
@@ -198,16 +186,15 @@ static PyMethodDef module_methods[] = {
 static int
 multiprocessing_exec(PyObject *module)
 {
-    _multiprocessingstate *state = get_module_state(module);
 #ifdef HAVE_MP_SEMAPHORE
 
-    state->semlock_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+    PyTypeObject *semlock_type = (PyTypeObject *)PyType_FromModuleAndSpec(
                 module, &_PyMp_SemLockType_spec, NULL);
 
-    if (state->semlock_type == NULL) {
+    if (semlock_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(module, state->semlock_type) < 0) {
+    if (PyModule_AddType(module, semlock_type) < 0) {
         return -1;
     }
 
@@ -224,7 +211,7 @@ multiprocessing_exec(PyObject *module)
     if (py_sem_value_max == NULL) {
         return -1;
     }
-    if (PyDict_SetItemString(state->semlock_type->tp_dict, "SEM_VALUE_MAX",
+    if (PyDict_SetItemString(semlock_type->tp_dict, "SEM_VALUE_MAX",
                          py_sem_value_max) < 0) {
         Py_DECREF(py_sem_value_max);
         return -1;
@@ -275,28 +262,6 @@ multiprocessing_exec(PyObject *module)
     return 0;
 }
 
-static int
-multiprocessing_traverse(PyObject *module, visitproc visit, void *arg)
-{
-    _multiprocessingstate *state = get_module_state(module);
-    Py_VISIT(state->semlock_type);
-    return 0;
-}
-
-static int
-multiprocessing_clear(PyObject *module)
-{
-    _multiprocessingstate *state = get_module_state(module);
-    Py_CLEAR(state->semlock_type);
-    return 0;
-}
-
-static void
-multiprocessing_dealloc(void *module)
-{
-    (void)multiprocessing_clear((PyObject *)module);
-}
-
 static PyModuleDef_Slot multiprocessing_slots[] = {
     {Py_mod_exec, multiprocessing_exec},
     {0, NULL}
@@ -305,12 +270,9 @@ static PyModuleDef_Slot multiprocessing_slots[] = {
 static struct PyModuleDef multiprocessing_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_multiprocessing",
-    .m_size = sizeof(_multiprocessingstate),
+    .m_size = 0,
     .m_methods = module_methods,
     .m_slots = multiprocessing_slots,
-    .m_traverse = multiprocessing_traverse,
-    .m_clear = multiprocessing_clear,
-    .m_free = multiprocessing_dealloc,
 };
 
 PyMODINIT_FUNC
