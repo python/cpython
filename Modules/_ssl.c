@@ -138,9 +138,6 @@ extern const SSL_METHOD *TLSv1_2_method(void);
 #define INVALID_SOCKET (-1)
 #endif
 
-/* OpenSSL 1.1 does not have SSL 2.0 */
-#define OPENSSL_NO_SSL2
-
 /* Default cipher suites */
 #ifndef PY_SSL_DEFAULT_CIPHERS
 #define PY_SSL_DEFAULT_CIPHERS 1
@@ -5825,10 +5822,6 @@ sslmodule_init_constants(PyObject *m)
 #undef ADD_AD_CONSTANT
 
     /* protocol versions */
-#ifndef OPENSSL_NO_SSL2
-    PyModule_AddIntConstant(m, "PROTOCOL_SSLv2",
-                            PY_SSL_VERSION_SSL2);
-#endif
 #ifndef OPENSSL_NO_SSL3
     PyModule_AddIntConstant(m, "PROTOCOL_SSLv3",
                             PY_SSL_VERSION_SSL3);
@@ -5938,11 +5931,7 @@ sslmodule_init_constants(PyObject *m)
     addbool(m, "HAS_NPN", 0);
     addbool(m, "HAS_ALPN", 1);
 
-#if defined(SSL2_VERSION) && !defined(OPENSSL_NO_SSL2)
-    addbool(m, "HAS_SSLv2", 1);
-#else
     addbool(m, "HAS_SSLv2", 0);
-#endif
 
 #if defined(SSL3_VERSION) && !defined(OPENSSL_NO_SSL3)
     addbool(m, "HAS_SSLv3", 1);
