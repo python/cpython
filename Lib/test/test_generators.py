@@ -178,13 +178,18 @@ class GeneratorTest(unittest.TestCase):
             except ValueError:
                 pass
 
-        gc.set_threshold(1, 0, 0)
-        gc.callbacks.append(cb)
-
         def gen():
             yield 1
 
-        gen()
+        thresholds = gc.get_threshold()
+        gc.callbacks.append(cb)
+        gc.set_threshold(1, 0, 0)
+
+        try:
+            gen()
+        finally:
+            gc.set_threshold(*thresholds)
+            gc.callbacks.pop()
 
 class ExceptionTest(unittest.TestCase):
     # Tests for the issue #23353: check that the currently handled exception
