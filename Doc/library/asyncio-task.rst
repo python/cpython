@@ -287,6 +287,7 @@ Task Groups
 
 Task groups combine a task creation API with a convenient
 and reliable API to wait for completion of all tasks in the group.
+For an example see the last bullet under :ref:`coroutine`.
 
 .. class:: TaskGroup()
 
