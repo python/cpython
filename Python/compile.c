@@ -8211,6 +8211,10 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     }
     compute_localsplus_info(c, nlocalsplus, localsplusnames, localspluskinds);
 
+    if (!merge_const_one(c->c_const_cache, &localsplusnames)) {
+        goto error;
+    }
+
     struct _PyCodeConstructor con = {
         .filename = c->c_filename,
         .name = c->u->u_name,
@@ -8239,11 +8243,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     if (_PyCode_Validate(&con) < 0) {
         goto error;
     }
-
-    if (!merge_const_one(c->c_const_cache, &localsplusnames)) {
-        goto error;
-    }
-    con.localsplusnames = localsplusnames;
 
     co = _PyCode_New(&con);
     if (co == NULL) {
