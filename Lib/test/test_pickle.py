@@ -155,6 +155,29 @@ class PyIdPersPicklerTests(AbstractIdentityPersistentPicklerTests,
         check(PersPickler)
 
     @support.cpython_only
+    def test_custom_pickler_dispatch_table_memleak(self):
+        # See https://github.com/python/cpython/issues/89988
+
+        class Pickler(self.pickler):
+            def __init__(self, *args, **kwargs):
+                self.dispatch_table = table
+                super().__init__(*args, **kwargs)
+
+        class DispatchTable:
+            pass
+
+        table = DispatchTable()
+        pickler = Pickler(io.BytesIO())
+        self.assertIs(pickler.dispatch_table, table)
+        table_ref = weakref.ref(table)
+        self.assertIsNotNone(table_ref())
+        del pickler
+        del table
+        support.gc_collect()
+        self.assertIsNone(table_ref())
+
+
+    @support.cpython_only
     def test_unpickler_reference_cycle(self):
         def check(Unpickler):
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
