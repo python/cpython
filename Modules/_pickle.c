@@ -4773,7 +4773,9 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
     {
         return -1;
     }
-
+    if (self->dispatch_table != NULL) {
+        return 0;
+    }
     if (_PyObject_LookupAttr((PyObject *)self, &_Py_ID(dispatch_table),
                              &self->dispatch_table) < 0) {
         return -1;
