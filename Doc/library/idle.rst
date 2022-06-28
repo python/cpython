@@ -594,7 +594,7 @@ One may edit pasted code first.
 If one pastes more than one statement into Shell, the result will be a
 :exc:`SyntaxError` when multiple statements are compiled as if they were one.
 
-Lines containing`'RESTART'` mean that the user execution process has been
+Lines containing ``'RESTART'`` mean that the user execution process has been
 re-started.  This occurs when the user execution process has crashed,
 when one requests a restart on the Shell menu, or when one runs code
 in an editor window.
