@@ -193,7 +193,10 @@ class GeneratorTest(unittest.TestCase):
 
         class Sneaky:
             def __del__(self):
-                raise KeyboardInterrupt
+                try:
+                    raise KeyboardInterrupt
+                except:
+                    pass
 
         sneaky = Sneaky()
         sneaky._s = Sneaky()
@@ -202,10 +205,7 @@ class GeneratorTest(unittest.TestCase):
         gc.set_threshold(1, 0, 0)
         try:
             del sneaky
-            try:
-                gen()
-            except KeyboardInterrupt:
-                pass
+            gen()
         finally:
             gc.set_threshold(*thresholds)
 
