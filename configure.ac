@@ -49,6 +49,26 @@ AC_DEFUN([WITH_SAVE_ENV],
 [RESTORE_ENV]
 )dnl
 
+dnl PY_CHECK_FUNC(FUNCTION, [INCLUDES], [AC_DEFINE-VAR])
+AC_DEFUN([PY_CHECK_FUNC],
+[ AS_VAR_PUSHDEF([py_var], [ac_cv_func_$1])
+  AS_VAR_PUSHDEF([py_define], m4_ifblank([$3], [[HAVE_]m4_toupper($1)], [$3]))
+  AC_CACHE_CHECK(
+    [for $1],
+    [py_var],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([$2], [void *x=$1])],
+      [AS_VAR_SET([py_var], [yes])],
+      [AS_VAR_SET([py_var], [no])])]
+  )
+  AS_VAR_IF(
+    [py_var],
+    [yes],
+    [AC_DEFINE([py_define], [1], [Define if you have the '$1' function.])])
+  AS_VAR_POPDEF([py_var])
+  AS_VAR_POPDEF([py_define])
+])
+
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
@@ -713,6 +733,21 @@ fi
 
 if test "$ac_sys_system" = "Darwin"
 then
+  dnl look for SDKROOT
+  AC_CHECK_PROG([HAS_XCRUN], [xcrun], [yes], [missing])
+  AC_MSG_CHECKING([macOS SDKROOT])
+  if test -z "$SDKROOT"; then
+    dnl SDKROOT not set
+    if test "$HAS_XCRUN" = "yes"; then
+      dnl detect with Xcode
+      SDKROOT=$(xcrun --show-sdk-path)
+    else
+      dnl default to root
+      SDKROOT="/"
+    fi
+  fi
+  AC_MSG_RESULT([$SDKROOT])
+
 	# Compiler selection on MacOSX is more complicated than
 	# AC_PROG_CC can handle, see Mac/README for more
 	# information
@@ -1101,7 +1136,7 @@ AC_DEFINE_UNQUOTED([PY_SUPPORT_TIER], [$PY_SUPPORT_TIER], [PEP 11 Support tier (
 
 AC_CACHE_CHECK([for -Wl,--no-as-needed], [ac_cv_wl_no_as_needed], [
   save_LDFLAGS="$LDFLAGS"
-  AS_VAR_APPEND([LDFLAGS], [-Wl,--no-as-needed])
+  AS_VAR_APPEND([LDFLAGS], [" -Wl,--no-as-needed"])
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
     [NO_AS_NEEDED="-Wl,--no-as-needed"
      ac_cv_wl_no_as_needed=yes],
@@ -3564,12 +3599,60 @@ else
     with_system_ffi="yes"
 fi
 
-if test "$with_system_ffi" = "yes" && test -n "$PKG_CONFIG"; then
-    LIBFFI_INCLUDEDIR="`"$PKG_CONFIG" libffi --cflags-only-I 2>/dev/null | sed -e 's/^-I//;s/ *$//'`"
-else
-    LIBFFI_INCLUDEDIR=""
-fi
-AC_SUBST(LIBFFI_INCLUDEDIR)
+dnl detect libffi
+have_libffi=missing
+AS_VAR_IF([with_system_ffi], [yes], [
+  PKG_CHECK_MODULES([LIBFFI], [libffi], [have_libffi=yes], [
+    AC_CHECK_HEADER([ffi.h], [
+      WITH_SAVE_ENV([
+        AC_CHECK_LIB([ffi], [ffi_call], [have_libffi=yes], [have_libffi=no])
+      ])
+    ])
+  ])
+], [
+  AS_VAR_IF([ac_sys_system], [Darwin], [
+    WITH_SAVE_ENV([
+      CFLAGS="-I${SDKROOT}/usr/include/ffi $CFLAGS"
+      AC_CHECK_HEADER([ffi.h], [
+        AC_CHECK_LIB([ffi], [ffi_call], [
+          dnl use ffi from SDK root
+          have_libffi=yes
+          LIBFFI_CFLAGS="-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
+          LIBFFI_LIBS="-lffi"
+        ], [have_libffi=no])
+      ])
+    ])
+  ])
+])
+
+AS_VAR_IF([have_libffi], [yes], [
+  ctypes_malloc_closure=no
+  AS_CASE([$ac_sys_system],
+    [Darwin], [
+      dnl when do we need USING_APPLE_OS_LIBFFI?
+      AS_VAR_APPEND([LIBFFI_CFLAGS], [" -I\$(srcdir)/Modules/_ctypes/darwin -DMACOSX"])
+      ctypes_malloc_closure=yes
+    ],
+    [sunos5], [AS_VAR_APPEND([LIBFFI_LIBS], [" -mimpure-text"])]
+  )
+  AS_VAR_IF([ctypes_malloc_closure], [yes], [
+    MODULE__CTYPES_MALLOC_CLOSURE=_ctypes/malloc_closure.c
+    AS_VAR_APPEND([LIBFFI_CFLAGS], [" -DUSING_MALLOC_CLOSURE_DOT_C=1"])
+  ])
+  AC_SUBST([MODULE__CTYPES_MALLOC_CLOSURE])
+
+  dnl HAVE_LIBDL: for dlopen, see gh-76828
+  AS_VAR_IF([ac_cv_lib_dl_dlopen], [yes], [AS_VAR_APPEND([LIBFFI_LIBS], [" -ldl"])])
+
+  WITH_SAVE_ENV([
+    CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
+    LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
+
+    PY_CHECK_FUNC([ffi_prep_cif_var], [#include <ffi.h>])
+    PY_CHECK_FUNC([ffi_prep_closure_loc], [#include <ffi.h>])
+    PY_CHECK_FUNC([ffi_closure_alloc], [#include <ffi.h>])
+  ])
+])
 
 # Check for use of the system libmpdec library
 AC_MSG_CHECKING(for --with-system-libmpdec)
@@ -4525,26 +4608,6 @@ AC_CHECK_DECL(dirfd,
               Define if you have the 'dirfd' function or macro.), ,
       [#include <sys/types.h>
        #include <dirent.h>])
-
-dnl PY_CHECK_FUNC(FUNCTION, [INCLUDES], [AC_DEFINE-VAR])
-AC_DEFUN([PY_CHECK_FUNC],
-[ AS_VAR_PUSHDEF([py_var], [ac_cv_func_$1])
-  AS_VAR_PUSHDEF([py_define], m4_ifblank([$3], [[HAVE_]m4_toupper($1)], [$3]))
-  AC_CACHE_CHECK(
-    [for $1],
-    [py_var],
-    [AC_COMPILE_IFELSE(
-      [AC_LANG_PROGRAM([$2], [void *x=$1])],
-      [AS_VAR_SET([py_var], [yes])],
-      [AS_VAR_SET([py_var], [no])])]
-  )
-  AS_VAR_IF(
-    [py_var],
-    [yes],
-    [AC_DEFINE([py_define], [1], [Define if you have the '$1' function.])])
-  AS_VAR_POPDEF([py_var])
-  AS_VAR_POPDEF([py_define])
-])
 
 # For some functions, having a definition is not sufficient, since
 # we want to take their address.
@@ -6728,7 +6791,7 @@ MODULE_BLOCK=
 
 dnl Check for stdlib extension modules
 dnl PY_STDLIB_MOD([NAME], [ENABLED-TEST], [SUPPORTED-TEST], [CFLAGS], [LDFLAGS])
-dnl sets MODULE_$NAME based on PY_STDLIB_MOD_SET_NA(), ENABLED-TEST,
+dnl sets MODULE_$NAME_STATE based on PY_STDLIB_MOD_SET_NA(), ENABLED-TEST,
 dnl and SUPPORTED_TEST. ENABLED-TEST and SUPPORTED-TEST default to true if
 dnl empty.
 dnl    n/a: marked unavailable on platform by PY_STDLIB_MOD_SET_NA()
@@ -6746,7 +6809,7 @@ AC_DEFUN([PY_STDLIB_MOD], [
        [AS_IF([m4_ifblank([$3], [true], [$3])], [modstate=yes], [modstate=missing])],
        [modstate=disabled])
   ])
-  _MODULE_BLOCK_ADD(modcond, [$modstate])
+  _MODULE_BLOCK_ADD(modcond[_STATE], [$modstate])
   AS_VAR_IF([modstate], [yes], [
     m4_ifblank([$4], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$4])])
     m4_ifblank([$5], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$5])])
@@ -6767,7 +6830,7 @@ AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
   dnl Check if module has been disabled by PY_STDLIB_MOD_SET_NA()
   AS_IF([test "$modstate" != "n/a"], [modstate=yes])
   AM_CONDITIONAL(modcond, [test "$modstate" = yes])
-  _MODULE_BLOCK_ADD(modcond, [$modstate])
+  _MODULE_BLOCK_ADD(modcond[_STATE], [$modstate])
   AS_VAR_IF([modstate], [yes], [
     m4_ifblank([$2], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$2])])
     m4_ifblank([$3], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$3])])
@@ -6868,7 +6931,9 @@ PY_STDLIB_MOD([_blake2],
 PY_STDLIB_MOD([_crypt],
   [], [test "$ac_cv_crypt_crypt" = yes],
   [$LIBCRYPT_CFLAGS], [$LIBCRYPT_LIBS])
-dnl PY_STDLIB_MOD([_ctypes], [], [], [], [])
+PY_STDLIB_MOD([_ctypes],
+  [], [test "$have_libffi" = yes],
+  [$LIBFFI_CFLAGS], [$LIBFFI_LIBS])
 dnl PY_STDLIB_MOD([_curses], [], [], [], [])
 dnl PY_STDLIB_MOD([_curses_panel], [], [], [], [])
 PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
@@ -6914,7 +6979,9 @@ PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
-PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes], [], [-lm])
+PY_STDLIB_MOD([_ctypes_test],
+  [test "$TEST_MODULES" = yes], [test "$have_libffi" = yes -a "$ac_cv_func_dlopen" = yes],
+  [], [$LIBM])
 
 dnl Limited API template modules.
 dnl The limited C API is not compatible with the Py_TRACE_REFS macro.

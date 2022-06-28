@@ -335,7 +335,7 @@ class AST_Tests(unittest.TestCase):
         for snippet in snippets_to_validate:
             tree = ast.parse(snippet)
             compile(tree, '<string>', 'exec')
-    
+
     def test_invalid_position_information(self):
         invalid_linenos = [
             (10, 1), (-10, -11), (10, -11), (-5, -2), (-5, 1)
@@ -364,7 +364,7 @@ class AST_Tests(unittest.TestCase):
 
     def test_compilation_of_ast_nodes_with_default_end_position_values(self):
         tree = ast.Module(body=[
-            ast.Import(names=[ast.alias(name='builtins', lineno=1, col_offset=0)], lineno=1, col_offset=0), 
+            ast.Import(names=[ast.alias(name='builtins', lineno=1, col_offset=0)], lineno=1, col_offset=0),
             ast.Import(names=[ast.alias(name='traceback', lineno=0, col_offset=0)], lineno=0, col_offset=1)
         ], type_ignores=[])
 
