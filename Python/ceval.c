@@ -5611,6 +5611,10 @@ handle_eval_breaker:
         if (tstate->tracing == 0 &&
             INSTR_OFFSET() >= frame->f_code->_co_firsttraceable
         ) {
+            assert(
+                _PyOpcode_Deopt[first_instr[frame->f_code->_co_firsttraceable]]
+                == RESUME
+            );
             int instr_prev = _PyInterpreterFrame_LASTI(frame);
             frame->prev_instr = next_instr;
             TRACING_NEXTOPARG();
