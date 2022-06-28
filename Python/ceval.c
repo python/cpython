@@ -5705,6 +5705,8 @@ handle_eval_breaker:
         _unknown_opcode:
 #else
         EXTRA_CASES  // From opcode.h, a 'case' for each unused opcode
+            /* Load opcode for MSVC to optimize switch(opcode) separately */
+            opcode = _Py_OPCODE(*next_instr);
 #endif
             fprintf(stderr, "XXX lineno: %d, opcode: %d\n",
                     _PyInterpreterFrame_GetLine(frame),  opcode);
