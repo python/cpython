@@ -311,27 +311,6 @@ Random generation
 
    .. versionadded:: 3.3
 
-.. function:: RAND_pseudo_bytes(num)
-
-   Return (bytes, is_cryptographic): bytes are *num* pseudo-random bytes,
-   is_cryptographic is ``True`` if the bytes generated are cryptographically
-   strong. Raises an :class:`SSLError` if the operation is not supported by the
-   current RAND method.
-
-   Generated pseudo-random byte sequences will be unique if they are of
-   sufficient length, but are not necessarily unpredictable. They can be used
-   for non-cryptographic purposes and for certain purposes in cryptographic
-   protocols, but usually not for key generation etc.
-
-   For almost all applications :func:`os.urandom` is preferable.
-
-   .. versionadded:: 3.3
-
-   .. deprecated:: 3.6
-
-      OpenSSL has deprecated :func:`ssl.RAND_pseudo_bytes`, use
-      :func:`ssl.RAND_bytes` instead.
-
 .. function:: RAND_status()
 
    Return ``True`` if the SSL pseudo-random number generator has been seeded
@@ -355,49 +334,6 @@ Certificate handling
 .. testsetup::
 
    import ssl
-
-.. function:: match_hostname(cert, hostname)
-
-   Verify that *cert* (in decoded format as returned by
-   :meth:`SSLSocket.getpeercert`) matches the given *hostname*.  The rules
-   applied are those for checking the identity of HTTPS servers as outlined
-   in :rfc:`2818`, :rfc:`5280` and :rfc:`6125`.  In addition to HTTPS, this
-   function should be suitable for checking the identity of servers in
-   various SSL-based protocols such as FTPS, IMAPS, POPS and others.
-
-   :exc:`CertificateError` is raised on failure. On success, the function
-   returns nothing::
-
-      >>> cert = {'subject': ((('commonName', 'example.com'),),)}
-      >>> ssl.match_hostname(cert, "example.com")
-      >>> ssl.match_hostname(cert, "example.org")
-      Traceback (most recent call last):
-        File "<stdin>", line 1, in <module>
-        File "/home/py3k/Lib/ssl.py", line 130, in match_hostname
-      ssl.CertificateError: hostname 'example.org' doesn't match 'example.com'
-
-   .. versionadded:: 3.2
-
-   .. versionchanged:: 3.3.3
-      The function now follows :rfc:`6125`, section 6.4.3 and does neither
-      match multiple wildcards (e.g. ``*.*.com`` or ``*a*.example.org``) nor
-      a wildcard inside an internationalized domain names (IDN) fragment.
-      IDN A-labels such as ``www*.xn--pthon-kva.org`` are still supported,
-      but ``x*.python.org`` no longer matches ``xn--tda.python.org``.
-
-   .. versionchanged:: 3.5
-      Matching of IP addresses, when present in the subjectAltName field
-      of the certificate, is now supported.
-
-   .. versionchanged:: 3.7
-      The function is no longer used to TLS connections. Hostname matching
-      is now performed by OpenSSL.
-
-      Allow wildcard when it is the leftmost and the only character
-      in that segment. Partial wildcards like ``www*.example.com`` are no
-      longer supported.
-
-   .. deprecated:: 3.7
 
 .. function:: cert_time_to_seconds(cert_time)
 
@@ -1272,11 +1208,6 @@ SSL sockets also have the following additional methods and attributes:
        'subjectAltName': (('DNS', '*.eff.org'), ('DNS', 'eff.org')),
        'version': 3}
 
-   .. note::
-
-      To validate a certificate for a particular service, you can use the
-      :func:`match_hostname` function.
-
    If the ``binary_form`` parameter is :const:`True`, and a certificate was
    provided, this method returns the DER-encoded form of the entire certificate
    as a sequence of bytes, or :const:`None` if the peer did not provide a
@@ -1290,6 +1221,8 @@ SSL sockets also have the following additional methods and attributes:
      when requested by the server; therefore :meth:`getpeercert` will return
      :const:`None` if you used :const:`CERT_NONE` (rather than
      :const:`CERT_OPTIONAL` or :const:`CERT_REQUIRED`).
+
+   See also :attr:`SSLContext.check_hostname`.
 
    .. versionchanged:: 3.2
       The returned dictionary includes additional items such as ``issuer``
@@ -2660,10 +2593,9 @@ Therefore, when in client mode, it is highly recommended to use
 :const:`CERT_REQUIRED`.  However, it is in itself not sufficient; you also
 have to check that the server certificate, which can be obtained by calling
 :meth:`SSLSocket.getpeercert`, matches the desired service.  For many
-protocols and applications, the service can be identified by the hostname;
-in this case, the :func:`match_hostname` function can be used.  This common
-check is automatically performed when :attr:`SSLContext.check_hostname` is
-enabled.
+protocols and applications, the service can be identified by the hostname.
+This common check is automatically performed when
+:attr:`SSLContext.check_hostname` is enabled.
 
 .. versionchanged:: 3.7
    Hostname matchings is now performed by OpenSSL. Python no longer uses
@@ -2717,8 +2649,8 @@ for example the :mod:`multiprocessing` or :mod:`concurrent.futures` modules),
 be aware that OpenSSL's internal random number generator does not properly
 handle forked processes.  Applications must change the PRNG state of the
 parent process if they use any SSL feature with :func:`os.fork`.  Any
-successful call of :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
-:func:`~ssl.RAND_pseudo_bytes` is sufficient.
+successful call of :func:`~ssl.RAND_add` or :func:`~ssl.RAND_bytes` is
+sufficient.
 
 
 .. _ssl-tlsv1_3:
