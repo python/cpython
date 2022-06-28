@@ -1,1 +1,1 @@
-Add an indentation feature to ``reprlib.Repr``
+Allow multi-element reprs emitted by :mod:`reprlib` to be pretty-printed using configurable indentation.
