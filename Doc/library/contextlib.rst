@@ -129,16 +129,16 @@ Functions and classes provided:
    Context managers defined with :func:`asynccontextmanager` can be used
    either as decorators or with :keyword:`async with` statements::
 
-     import time
-     from contextlib import asynccontextmanager
+      import time
+      from contextlib import asynccontextmanager
 
-     @asynccontextmanager
-     async def timeit():
-         now = time.monotonic()
-         try:
-             yield
-         finally:
-             print(f'it took {time.monotonic() - now}s to run')
+      @asynccontextmanager
+      async def timeit():
+          now = time.monotonic()
+          try:
+              yield
+          finally:
+              print(f'it took {time.monotonic() - now}s to run')
 
       @timeit()
       async def main():
@@ -149,9 +149,9 @@ Functions and classes provided:
    created by :func:`asynccontextmanager` to meet the requirement that context
    managers support multiple invocations in order to be used as decorators.
 
-  .. versionchanged:: 3.10
-     Async context managers created with :func:`asynccontextmanager` can
-     be used as decorators.
+   .. versionchanged:: 3.10
+      Async context managers created with :func:`asynccontextmanager` can
+      be used as decorators.
 
 
 .. function:: closing(thing)
@@ -248,16 +248,16 @@ Functions and classes provided:
    It can also be used as a stand-in for
    :ref:`asynchronous context managers <async-context-managers>`::
 
-       async def send_http(session=None):
-          if not session:
-              # If no http session, create it with aiohttp
-              cm = aiohttp.ClientSession()
-          else:
-              # Caller is responsible for closing the session
-              cm = nullcontext(session)
+      async def send_http(session=None):
+         if not session:
+             # If no http session, create it with aiohttp
+             cm = aiohttp.ClientSession()
+         else:
+             # Caller is responsible for closing the session
+             cm = nullcontext(session)
 
-          async with cm as session:
-              # Send http requests with session
+         async with cm as session:
+             # Send http requests with session
 
    .. versionadded:: 3.7
 
@@ -280,25 +280,25 @@ Functions and classes provided:
 
    For example::
 
-       from contextlib import suppress
+      from contextlib import suppress
 
-       with suppress(FileNotFoundError):
-           os.remove('somefile.tmp')
+      with suppress(FileNotFoundError):
+          os.remove('somefile.tmp')
 
-       with suppress(FileNotFoundError):
-           os.remove('someotherfile.tmp')
+      with suppress(FileNotFoundError):
+          os.remove('someotherfile.tmp')
 
    This code is equivalent to::
 
-       try:
-           os.remove('somefile.tmp')
-       except FileNotFoundError:
-           pass
+      try:
+          os.remove('somefile.tmp')
+      except FileNotFoundError:
+          pass
 
-       try:
-           os.remove('someotherfile.tmp')
-       except FileNotFoundError:
-           pass
+      try:
+          os.remove('someotherfile.tmp')
+      except FileNotFoundError:
+          pass
 
    This context manager is :ref:`reentrant <reentrant-cms>`.
 
@@ -319,21 +319,21 @@ Functions and classes provided:
    ``__enter__`` method and so is available as the target of the
    :keyword:`with` statement::
 
-        with redirect_stdout(io.StringIO()) as f:
-            help(pow)
-        s = f.getvalue()
+      with redirect_stdout(io.StringIO()) as f:
+          help(pow)
+      s = f.getvalue()
 
    To send the output of :func:`help` to a file on disk, redirect the output
    to a regular file::
 
-        with open('help.txt', 'w') as f:
-            with redirect_stdout(f):
-                help(pow)
+      with open('help.txt', 'w') as f:
+          with redirect_stdout(f):
+              help(pow)
 
    To send the output of :func:`help` to *sys.stderr*::
 
-        with redirect_stdout(sys.stderr):
-            help(pow)
+      with redirect_stdout(sys.stderr):
+          help(pow)
 
    Note that the global side effect on :data:`sys.stdout` means that this
    context manager is not suitable for use in library code and most threaded
@@ -656,13 +656,13 @@ may come from the number of context managers needed being driven by user
 input (such as opening a user specified collection of files), or from
 some of the context managers being optional::
 
-    with ExitStack() as stack:
-        for resource in resources:
-            stack.enter_context(resource)
-        if need_special_resource():
-            special = acquire_special_resource()
-            stack.callback(release_special_resource, special)
-        # Perform operations that use the acquired resources
+   with ExitStack() as stack:
+       for resource in resources:
+           stack.enter_context(resource)
+       if need_special_resource():
+           special = acquire_special_resource()
+           stack.callback(release_special_resource, special)
+       # Perform operations that use the acquired resources
 
 As shown, :class:`ExitStack` also makes it quite easy to use :keyword:`with`
 statements to manage arbitrary resources that don't natively support the
@@ -828,33 +828,33 @@ writing both a function decorator and a context manager for the task,
 inheriting from :class:`ContextDecorator` provides both capabilities in a
 single definition::
 
-    from contextlib import ContextDecorator
-    import logging
+   from contextlib import ContextDecorator
+   import logging
 
-    logging.basicConfig(level=logging.INFO)
+   logging.basicConfig(level=logging.INFO)
 
-    class track_entry_and_exit(ContextDecorator):
-        def __init__(self, name):
-            self.name = name
+   class track_entry_and_exit(ContextDecorator):
+       def __init__(self, name):
+           self.name = name
 
-        def __enter__(self):
-            logging.info('Entering: %s', self.name)
+       def __enter__(self):
+           logging.info('Entering: %s', self.name)
 
-        def __exit__(self, exc_type, exc, exc_tb):
-            logging.info('Exiting: %s', self.name)
+       def __exit__(self, exc_type, exc, exc_tb):
+           logging.info('Exiting: %s', self.name)
 
 Instances of this class can be used as both a context manager::
 
-    with track_entry_and_exit('widget loader'):
-        print('Some time consuming activity goes here')
-        load_widget()
+   with track_entry_and_exit('widget loader'):
+       print('Some time consuming activity goes here')
+       load_widget()
 
 And also as a function decorator::
 
-    @track_entry_and_exit('widget loader')
-    def activity():
-        print('Some time consuming activity goes here')
-        load_widget()
+   @track_entry_and_exit('widget loader')
+   def activity():
+       print('Some time consuming activity goes here')
+       load_widget()
 
 Note that there is one additional limitation when using context managers
 as function decorators: there's no way to access the return value of
@@ -890,25 +890,25 @@ Context managers created using :func:`contextmanager` are also single use
 context managers, and will complain about the underlying generator failing
 to yield if an attempt is made to use them a second time::
 
-    >>> from contextlib import contextmanager
-    >>> @contextmanager
-    ... def singleuse():
-    ...     print("Before")
-    ...     yield
-    ...     print("After")
-    ...
-    >>> cm = singleuse()
-    >>> with cm:
-    ...     pass
-    ...
-    Before
-    After
-    >>> with cm:
-    ...     pass
-    ...
-    Traceback (most recent call last):
-        ...
-    RuntimeError: generator didn't yield
+   >>> from contextlib import contextmanager
+   >>> @contextmanager
+   ... def singleuse():
+   ...     print("Before")
+   ...     yield
+   ...     print("After")
+   ...
+   >>> cm = singleuse()
+   >>> with cm:
+   ...     pass
+   ...
+   Before
+   After
+   >>> with cm:
+   ...     pass
+   ...
+   Traceback (most recent call last):
+       ...
+   RuntimeError: generator didn't yield
 
 
 .. _reentrant-cms:
@@ -925,20 +925,20 @@ using the same context manager.
 :func:`suppress`, :func:`redirect_stdout`, and :func:`chdir`. Here's a very
 simple example of reentrant use::
 
-    >>> from contextlib import redirect_stdout
-    >>> from io import StringIO
-    >>> stream = StringIO()
-    >>> write_to_stream = redirect_stdout(stream)
-    >>> with write_to_stream:
-    ...     print("This is written to the stream rather than stdout")
-    ...     with write_to_stream:
-    ...         print("This is also written to the stream")
-    ...
-    >>> print("This is written directly to stdout")
-    This is written directly to stdout
-    >>> print(stream.getvalue())
-    This is written to the stream rather than stdout
-    This is also written to the stream
+   >>> from contextlib import redirect_stdout
+   >>> from io import StringIO
+   >>> stream = StringIO()
+   >>> write_to_stream = redirect_stdout(stream)
+   >>> with write_to_stream:
+   ...     print("This is written to the stream rather than stdout")
+   ...     with write_to_stream:
+   ...         print("This is also written to the stream")
+   ...
+   >>> print("This is written directly to stdout")
+   This is written directly to stdout
+   >>> print(stream.getvalue())
+   This is written to the stream rather than stdout
+   This is also written to the stream
 
 Real world examples of reentrancy are more likely to involve multiple
 functions calling each other and hence be far more complicated than this
@@ -971,31 +971,31 @@ Another example of a reusable, but not reentrant, context manager is
 when leaving any with statement, regardless of where those callbacks
 were added::
 
-    >>> from contextlib import ExitStack
-    >>> stack = ExitStack()
-    >>> with stack:
-    ...     stack.callback(print, "Callback: from first context")
-    ...     print("Leaving first context")
-    ...
-    Leaving first context
-    Callback: from first context
-    >>> with stack:
-    ...     stack.callback(print, "Callback: from second context")
-    ...     print("Leaving second context")
-    ...
-    Leaving second context
-    Callback: from second context
-    >>> with stack:
-    ...     stack.callback(print, "Callback: from outer context")
-    ...     with stack:
-    ...         stack.callback(print, "Callback: from inner context")
-    ...         print("Leaving inner context")
-    ...     print("Leaving outer context")
-    ...
-    Leaving inner context
-    Callback: from inner context
-    Callback: from outer context
-    Leaving outer context
+   >>> from contextlib import ExitStack
+   >>> stack = ExitStack()
+   >>> with stack:
+   ...     stack.callback(print, "Callback: from first context")
+   ...     print("Leaving first context")
+   ...
+   Leaving first context
+   Callback: from first context
+   >>> with stack:
+   ...     stack.callback(print, "Callback: from second context")
+   ...     print("Leaving second context")
+   ...
+   Leaving second context
+   Callback: from second context
+   >>> with stack:
+   ...     stack.callback(print, "Callback: from outer context")
+   ...     with stack:
+   ...         stack.callback(print, "Callback: from inner context")
+   ...         print("Leaving inner context")
+   ...     print("Leaving outer context")
+   ...
+   Leaving inner context
+   Callback: from inner context
+   Callback: from outer context
+   Leaving outer context
 
 As the output from the example shows, reusing a single stack object across
 multiple with statements works correctly, but attempting to nest them
@@ -1005,15 +1005,15 @@ statement, which is unlikely to be desirable behaviour.
 Using separate :class:`ExitStack` instances instead of reusing a single
 instance avoids that problem::
 
-    >>> from contextlib import ExitStack
-    >>> with ExitStack() as outer_stack:
-    ...     outer_stack.callback(print, "Callback: from outer context")
-    ...     with ExitStack() as inner_stack:
-    ...         inner_stack.callback(print, "Callback: from inner context")
-    ...         print("Leaving inner context")
-    ...     print("Leaving outer context")
-    ...
-    Leaving inner context
-    Callback: from inner context
-    Leaving outer context
-    Callback: from outer context
+   >>> from contextlib import ExitStack
+   >>> with ExitStack() as outer_stack:
+   ...     outer_stack.callback(print, "Callback: from outer context")
+   ...     with ExitStack() as inner_stack:
+   ...         inner_stack.callback(print, "Callback: from inner context")
+   ...         print("Leaving inner context")
+   ...     print("Leaving outer context")
+   ...
+   Leaving inner context
+   Callback: from inner context
+   Leaving outer context
+   Callback: from outer context
