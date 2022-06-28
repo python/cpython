@@ -648,6 +648,10 @@ class EnumType(type):
                         % (enum_class._member_names_, _order_)
                         )
         #
+        # store members in class dict for performance
+        for name, member in enum_class._member_map_.items():
+            setattr(enum_class, name, member)
+        #
         return enum_class
 
     def __bool__(cls):
@@ -694,26 +698,16 @@ class EnumType(type):
                 boundary=boundary,
                 )
 
-    def __contains__(cls, member):
-        """
-        Return True if member is a member of this enum
-        raises TypeError if member is not an enum member
+    def __contains__(cls, value):
+        """Return True if `value` is in `cls`.
 
-        note: in 3.12 TypeError will no longer be raised, and True will also be
-        returned if member is the value of a member in this enum
+        `value` is in `cls` if:
+        1) `value` is a member of `cls`, or
+        2) `value` is the value of one of the `cls`'s members.
         """
-        if not isinstance(member, Enum):
-            import warnings
-            warnings.warn(
-                    "in 3.12 __contains__ will no longer raise TypeError, but will return True or\n"
-                    "False depending on whether the value is a member or the value of a member",
-                    DeprecationWarning,
-                    stacklevel=2,
-                    )
-            raise TypeError(
-                "unsupported operand type(s) for 'in': '%s' and '%s'" % (
-                    type(member).__qualname__, cls.__class__.__qualname__))
-        return isinstance(member, cls) and member._name_ in cls._member_map_
+        if isinstance(value, cls):
+            return True
+        return value in cls._value2member_map_ or value in cls._unhashable_values_
 
     def __delattr__(cls, attr):
         # nicer error message when someone tries to delete an attribute
@@ -805,7 +799,7 @@ class EnumType(type):
         resulting in an inconsistent Enumeration.
         """
         member_map = cls.__dict__.get('_member_map_', {})
-        if name in member_map:
+        if name in member_map and not isinstance(value, cls) and value.name != name:
             raise AttributeError('cannot reassign member %r' % (name, ))
         super().__setattr__(name, value)
 
@@ -920,9 +914,6 @@ class EnumType(type):
         """
         if not bases:
             return object, Enum
-
-        mcls._check_for_existing_members_(class_name, bases)
-
         # ensure final parent class is an Enum derivative, find any concrete
         # data type, and check that Enum has no members
         first_enum = bases[-1]
