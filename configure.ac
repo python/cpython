@@ -7025,6 +7025,10 @@ AC_MSG_NOTICE([creating Makefile])
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
 			Modules/Setup.local Modules/Setup.stdlib Modules/Setup.bootstrap $srcdir/Modules/Setup
+if test $? -ne 0; then
+  AC_MSG_ERROR([makesetup failed])
+fi
+
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then

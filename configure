@@ -27358,6 +27358,10 @@ $as_echo "$as_me: creating Makefile" >&6;}
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
 			Modules/Setup.local Modules/Setup.stdlib Modules/Setup.bootstrap $srcdir/Modules/Setup
+if test $? -ne 0; then
+  as_fn_error $? "makesetup failed" "$LINENO" 5
+fi
+
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then
