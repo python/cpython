@@ -1467,7 +1467,7 @@ setting :attr:`isolation_level` to :const:`None`.
 This leaves the underlying SQLite library in autocommit mode,
 but also allows the user to perform any transaction handling using explicit SQL
 statements.
-The SQLite library autocommit mode can be queried using the
+The underlying SQLite library autocommit mode can be queried using the
 :attr:`in_transaction` connection attribute.
 
 .. note::
