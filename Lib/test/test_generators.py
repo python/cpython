@@ -182,6 +182,7 @@ class GeneratorTest(unittest.TestCase):
             yield 1
 
         thresholds = gc.get_threshold()
+
         gc.callbacks.append(cb)
         gc.set_threshold(1, 0, 0)
         try:
@@ -197,11 +198,14 @@ class GeneratorTest(unittest.TestCase):
         sneaky = Sneaky()
         sneaky._s = Sneaky()
         sneaky._s._s = sneaky
-        del sneaky
 
         gc.set_threshold(1, 0, 0)
         try:
-            gen()
+            del sneaky
+            try:
+                gen()
+            except KeyboardInterrupt:
+                pass
         finally:
             gc.set_threshold(*thresholds)
 
