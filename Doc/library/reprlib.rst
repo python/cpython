@@ -133,7 +133,9 @@ which format specific object types.
 
       >>> example = [
               1, 'spam', {'a': 2, 'b': 'spam eggs', 'c': {3: 4.5, 6: []}}, 'ham']
-      >>> print(reprlib.repr(example))
+      >>> import reprlib
+      >>> aRepr = reprlib.Repr()
+      >>> print(aRepr.repr(example))
       [1, 'spam', {'a': 2, 'b': 'spam eggs', 'c': {3: 4.5, 6: []}}, 'ham']
 
    If :attr:`~Repr.indent` is set to a string, each recursion level
@@ -141,8 +143,8 @@ which format specific object types.
 
    .. code-block:: pycon
 
-      >>> reprlib.aRepr.indent = '-->'
-      >>> print(reprlib.repr(example))
+      >>> aRepr.indent = '-->'
+      >>> print(aRepr.repr(example))
       [
       -->1,
       -->'spam',
@@ -162,8 +164,8 @@ which format specific object types.
 
    .. code-block:: pycon
 
-      >>> reprlib.aRepr.indent = 4
-      >>> print(reprlib.repr(example))
+      >>> aRepr.indent = 4
+      >>> print(aRepr.repr(example))
       [
           1,
           'spam',
