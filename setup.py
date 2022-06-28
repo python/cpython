@@ -1055,7 +1055,7 @@ class PyBuildExt(build_ext):
         self.detect_readline_curses()
         self.detect_dbm_gdbm()
 
-   
+
 
 class PyBuildInstall(install):
     # Suppress the warning about installation into the lib_dynload
