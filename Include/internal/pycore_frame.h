@@ -210,7 +210,10 @@ PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
     return (PyGenObject *)(((char *)frame) - offset_in_gen);
 }
 
-
+/* Determine whether a frame is incomplete.
+ * A frame is incomplete until the first RESUME instruction
+ * as it may be part way through creating cell objects or a
+ * generator or coroutine. */
 static inline bool
 _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
 {
