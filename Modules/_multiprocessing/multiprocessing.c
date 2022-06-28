@@ -197,7 +197,7 @@ multiprocessing_exec(PyObject *module)
     if (PyModule_AddType(module, semlock_type) < 0) {
         return -1;
     }
-
+    Py_DECREF(semlock_type);
     PyObject *py_sem_value_max;
     /* Some systems define SEM_VALUE_MAX as an unsigned value that
      * causes it to be negative when used as an int (NetBSD).
