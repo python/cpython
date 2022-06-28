@@ -2854,7 +2854,7 @@ except UnicodeEncodeError:
     # Skip the test: the filesystem encoding is unable to encode the filename
     supports_unicode = False
 
-if supports_unicode and not support.has_no_debug_ranges():
+if supports_unicode:
     def test_unicode(): """
 Check doctest with a non-ascii filename:
 
