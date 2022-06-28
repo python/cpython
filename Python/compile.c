@@ -8554,6 +8554,8 @@ assemble(struct compiler *c, int addNone)
 {
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
+    struct assembler a;
+    memset(&a, 0, sizeof(struct assembler));
 
     int code_flags = compute_code_flags(c);
     if (code_flags < 0) {
@@ -8683,7 +8685,6 @@ assemble(struct compiler *c, int addNone)
 
 
     /* Create assembler */
-    struct assembler a;
     if (!assemble_init(&a, c->u->u_firstlineno))
         goto error;
 
