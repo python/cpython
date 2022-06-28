@@ -2892,7 +2892,7 @@ case $ac_sys_system/$ac_sys_release in
         LIBTOOL_CRUFT="${LIBTOOL_CRUFT} -arch_only `/usr/bin/arch`"
     fi
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
+    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VfpoiERSION)';;
   Darwin/*)
     gcc_version=`gcc -dumpversion`
     if test ${gcc_version} '<' 4.0
@@ -6834,9 +6834,32 @@ AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
   m4_popdef([modstate])dnl
 ])
 
+dnl Some core modules are hard-coded in Modules/config.h.in
+dnl marshal, _imp, _ast, _tokenize, builtins, sys, gc, _warnings, _string
+
 dnl static modules in Modules/Setup.bootstrap
+PY_STDLIB_MOD_SIMPLE([atexit])
+PY_STDLIB_MOD_SIMPLE([faulthandler])
+PY_STDLIB_MOD_SIMPLE([posix])
+PY_STDLIB_MOD_SIMPLE([_signal])
+PY_STDLIB_MOD_SIMPLE([_tracemalloc])
+dnl bootstrap: modules used by importlib, deepfreeze, freeze, runpy, and sysconfig
+PY_STDLIB_MOD_SIMPLE([_codecs])
+PY_STDLIB_MOD_SIMPLE([_collections])
+PY_STDLIB_MOD_SIMPLE([errno])
 PY_STDLIB_MOD_SIMPLE([_io], [-I\$(srcdir)/Modules/_io], [])
+PY_STDLIB_MOD_SIMPLE([itertools])
+PY_STDLIB_MOD_SIMPLE([_sre])
+PY_STDLIB_MOD_SIMPLE([_thread])
 PY_STDLIB_MOD_SIMPLE([time], [], [$TIMEMODULE_LIB])
+PY_STDLIB_MOD_SIMPLE([_weakref])
+dnl bootstrap: commonly used core modules
+PY_STDLIB_MOD_SIMPLE([_abc])
+PY_STDLIB_MOD_SIMPLE([_functools])
+PY_STDLIB_MOD_SIMPLE([_locale])
+PY_STDLIB_MOD_SIMPLE([_operator])
+PY_STDLIB_MOD_SIMPLE([_stat])
+PY_STDLIB_MOD_SIMPLE([_symtable])
 
 dnl always enabled extension modules
 PY_STDLIB_MOD_SIMPLE([array])
@@ -6941,8 +6964,7 @@ PY_STDLIB_MOD([nis],
   [$LIBNSL_CFLAGS], [$LIBNSL_LIBS])
 dnl PY_STDLIB_MOD([readline], [], [], [], [])
 PY_STDLIB_MOD([_sqlite3],
-  [test "$have_sqlite3" = "yes"],
-  [test "$have_supported_sqlite3" = "yes"],
+  [], [test "$have_sqlite3" = "yes" -a "$have_supported_sqlite3" = "yes"],
   [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
 PY_STDLIB_MOD([_tkinter],
   [], [test "$have_tcltk" = "yes"],

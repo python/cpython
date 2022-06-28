@@ -582,8 +582,8 @@ LIBEXPAT_HEADERS= \
 # Default target
 all:		@DEF_MAKE_ALL_RULE@
 build_all:	check-clean-src $(BUILDPYTHON) platform oldsharedmods sharedmods \
-		gdbhooks Programs/_testembed scripts
-build_wasm: check-clean-src $(BUILDPYTHON) platform oldsharedmods python-config
+		gdbhooks Programs/_testembed scripts checkoldsharedmods
+build_wasm: check-clean-src $(BUILDPYTHON) platform oldsharedmods python-config checkoldsharedmods
 
 # Check that the source is clean when building out of source.
 check-clean-src:
@@ -909,7 +909,7 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 # create relative links from build/lib.platform/egg.so to Modules/egg.so
 # pybuilddir.txt is created too late. We cannot use it in Makefile
 # targets. ln --relative is not portable.
-oldsharedmods: $(SHAREDMODS) pybuilddir.txt
+oldsharedmods: $(SHAREDMODS) $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
 	@target=`cat pybuilddir.txt`; \
 	$(MKDIR_P) $$target; \
 	for mod in X $(SHAREDMODS); do \
@@ -917,7 +917,9 @@ oldsharedmods: $(SHAREDMODS) pybuilddir.txt
 			$(LN) -sf ../../$$mod $$target/`basename $$mod`; \
 		fi; \
 	done
-	@$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/check_shared_ext.py
+
+checkoldsharedmods: oldsharedmods $(BUILDPYTHON)
+	@$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/scripts/check_modules.py
 
 Modules/Setup.local:
 	@# Create empty Setup.local when file was deleted by user
@@ -2532,7 +2534,8 @@ update-config:
 Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 
 # Declare targets that aren't real files
-.PHONY: all build_all build_wasm sharedmods check-clean-src oldsharedmods test quicktest
+.PHONY: all build_all build_wasm sharedmods check-clean-src oldsharedmods
+.PHONY: checkoldsharedmods test quicktest
 .PHONY: install altinstall oldsharedinstall bininstall altbininstall
 .PHONY: maninstall libinstall inclinstall libainstall sharedinstall
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure

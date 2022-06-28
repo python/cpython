@@ -8,9 +8,10 @@ import sys
 import sysconfig
 
 
-SRC_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+HERE = os.path.dirname(__file__)
+SRC_DIR = os.path.dirname(os.path.dirname(HERE))
 STDLIB_PATH = os.path.join(SRC_DIR, 'Lib')
-SETUP_PY = os.path.join(SRC_DIR, 'setup.py')
+CHECK_MODULES = os.path.join(HERE, 'check_modules.py')
 
 IGNORE = {
     '__init__',
@@ -40,23 +41,6 @@ IGNORE = {
     'xxsubtype',
 }
 
-# Windows extension modules
-WINDOWS_MODULES = (
-    '_msi',
-    '_overlapped',
-    '_testconsole',
-    '_winapi',
-    'msvcrt',
-    'nt',
-    'winreg',
-    'winsound'
-)
-
-# macOS extension modules
-MACOS_MODULES = (
-    '_scproxy',
-)
-
 # Pure Python modules (Lib/*.py)
 def list_python_modules(names):
     for filename in os.listdir(STDLIB_PATH):
@@ -79,27 +63,14 @@ def list_packages(names):
             names.add(name)
 
 
-# Extension modules built by setup.py
-def list_setup_extensions(names):
-    cmd = [sys.executable, SETUP_PY, "-q", "build", "--list-module-names"]
-    output = subprocess.check_output(cmd)
-    output = output.decode("utf8")
+# Built-in and extension modules built by Modules/Setup*
+# also lists Windows modules, internal modules, and modules have not
+# been ported from setup.py to Modules/Setup
+def list_modules_check_modules(names):
+    cmd = [sys.executable, CHECK_MODULES, "--list-module-names"]
+    output = subprocess.check_output(cmd, text=True)
     extensions = output.splitlines()
     names |= set(extensions)
-
-
-# Built-in and extension modules built by Modules/Setup*
-def list_modules_setup_extensions(names):
-    """Get MODULE_{modname}={yes|disabled|n/a} entries from Makefile
-    """
-    for key, value in sysconfig.get_config_vars().items():
-        if not key.startswith("MODULE_") or not key.endswith("_STATE"):
-            continue
-        if value not in {"yes", "disabled", "n/a"}:
-            raise ValueError(f"Unsupported {value} for {key}")
-        name = key[7:-6].lower()
-        names.add(name)
-
 
 # List frozen modules of the PyImport_FrozenModules list (Python/frozen.c).
 # Use the "./Programs/_testembed list_frozen" command.
@@ -122,9 +93,9 @@ def list_frozen(names):
 
 
 def list_modules():
-    names = set(sys.builtin_module_names) | set(WINDOWS_MODULES) | set(MACOS_MODULES)
-    list_modules_setup_extensions(names)
-    list_setup_extensions(names)
+    names = set(sys.builtin_module_names)
+    list_modules_check_modules(names)
+    # list_setup_extensions(names)
     list_packages(names)
     list_python_modules(names)
     list_frozen(names)

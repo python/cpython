@@ -774,10 +774,46 @@ MODULE__ASYNCIO_FALSE
 MODULE__ASYNCIO_TRUE
 MODULE_ARRAY_FALSE
 MODULE_ARRAY_TRUE
+MODULE__SYMTABLE_FALSE
+MODULE__SYMTABLE_TRUE
+MODULE__STAT_FALSE
+MODULE__STAT_TRUE
+MODULE__OPERATOR_FALSE
+MODULE__OPERATOR_TRUE
+MODULE__LOCALE_FALSE
+MODULE__LOCALE_TRUE
+MODULE__FUNCTOOLS_FALSE
+MODULE__FUNCTOOLS_TRUE
+MODULE__ABC_FALSE
+MODULE__ABC_TRUE
+MODULE__WEAKREF_FALSE
+MODULE__WEAKREF_TRUE
 MODULE_TIME_FALSE
 MODULE_TIME_TRUE
+MODULE__THREAD_FALSE
+MODULE__THREAD_TRUE
+MODULE__SRE_FALSE
+MODULE__SRE_TRUE
+MODULE_ITERTOOLS_FALSE
+MODULE_ITERTOOLS_TRUE
 MODULE__IO_FALSE
 MODULE__IO_TRUE
+MODULE_ERRNO_FALSE
+MODULE_ERRNO_TRUE
+MODULE__COLLECTIONS_FALSE
+MODULE__COLLECTIONS_TRUE
+MODULE__CODECS_FALSE
+MODULE__CODECS_TRUE
+MODULE__TRACEMALLOC_FALSE
+MODULE__TRACEMALLOC_TRUE
+MODULE__SIGNAL_FALSE
+MODULE__SIGNAL_TRUE
+MODULE_POSIX_FALSE
+MODULE_POSIX_TRUE
+MODULE_FAULTHANDLER_FALSE
+MODULE_FAULTHANDLER_TRUE
+MODULE_ATEXIT_FALSE
+MODULE_ATEXIT_TRUE
 MODULE_BUILDTYPE
 TEST_MODULES
 LIBB2_LIBS
@@ -10456,7 +10492,7 @@ case $ac_sys_system/$ac_sys_release in
         LIBTOOL_CRUFT="${LIBTOOL_CRUFT} -arch_only `/usr/bin/arch`"
     fi
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
+    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VfpoiERSION)';;
   Darwin/*)
     gcc_version=`gcc -dumpversion`
     if test ${gcc_version} '<' 4.0
@@ -23102,6 +23138,167 @@ MODULE_BLOCK=
 
 
 
+
+        if test "$py_cv_module_atexit" != "n/a"; then :
+  py_cv_module_atexit=yes
+fi
+   if test "$py_cv_module_atexit" = yes; then
+  MODULE_ATEXIT_TRUE=
+  MODULE_ATEXIT_FALSE='#'
+else
+  MODULE_ATEXIT_TRUE='#'
+  MODULE_ATEXIT_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE_ATEXIT_STATE=$py_cv_module_atexit$as_nl"
+  if test "x$py_cv_module_atexit" = xyes; then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module_faulthandler" != "n/a"; then :
+  py_cv_module_faulthandler=yes
+fi
+   if test "$py_cv_module_faulthandler" = yes; then
+  MODULE_FAULTHANDLER_TRUE=
+  MODULE_FAULTHANDLER_FALSE='#'
+else
+  MODULE_FAULTHANDLER_TRUE='#'
+  MODULE_FAULTHANDLER_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE_FAULTHANDLER_STATE=$py_cv_module_faulthandler$as_nl"
+  if test "x$py_cv_module_faulthandler" = xyes; then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module_posix" != "n/a"; then :
+  py_cv_module_posix=yes
+fi
+   if test "$py_cv_module_posix" = yes; then
+  MODULE_POSIX_TRUE=
+  MODULE_POSIX_FALSE='#'
+else
+  MODULE_POSIX_TRUE='#'
+  MODULE_POSIX_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE_POSIX_STATE=$py_cv_module_posix$as_nl"
+  if test "x$py_cv_module_posix" = xyes; then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module__signal" != "n/a"; then :
+  py_cv_module__signal=yes
+fi
+   if test "$py_cv_module__signal" = yes; then
+  MODULE__SIGNAL_TRUE=
+  MODULE__SIGNAL_FALSE='#'
+else
+  MODULE__SIGNAL_TRUE='#'
+  MODULE__SIGNAL_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__SIGNAL_STATE=$py_cv_module__signal$as_nl"
+  if test "x$py_cv_module__signal" = xyes; then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module__tracemalloc" != "n/a"; then :
+  py_cv_module__tracemalloc=yes
+fi
+   if test "$py_cv_module__tracemalloc" = yes; then
+  MODULE__TRACEMALLOC_TRUE=
+  MODULE__TRACEMALLOC_FALSE='#'
+else
+  MODULE__TRACEMALLOC_TRUE='#'
+  MODULE__TRACEMALLOC_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__TRACEMALLOC_STATE=$py_cv_module__tracemalloc$as_nl"
+  if test "x$py_cv_module__tracemalloc" = xyes; then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module__codecs" != "n/a"; then :
+  py_cv_module__codecs=yes
+fi
+   if test "$py_cv_module__codecs" = yes; then
+  MODULE__CODECS_TRUE=
+  MODULE__CODECS_FALSE='#'
+else
+  MODULE__CODECS_TRUE='#'
+  MODULE__CODECS_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_STATE=$py_cv_module__codecs$as_nl"
+  if test "x$py_cv_module__codecs" = xyes; then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module__collections" != "n/a"; then :
+  py_cv_module__collections=yes
+fi
+   if test "$py_cv_module__collections" = yes; then
+  MODULE__COLLECTIONS_TRUE=
+  MODULE__COLLECTIONS_FALSE='#'
+else
+  MODULE__COLLECTIONS_TRUE='#'
+  MODULE__COLLECTIONS_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__COLLECTIONS_STATE=$py_cv_module__collections$as_nl"
+  if test "x$py_cv_module__collections" = xyes; then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module_errno" != "n/a"; then :
+  py_cv_module_errno=yes
+fi
+   if test "$py_cv_module_errno" = yes; then
+  MODULE_ERRNO_TRUE=
+  MODULE_ERRNO_FALSE='#'
+else
+  MODULE_ERRNO_TRUE='#'
+  MODULE_ERRNO_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE_ERRNO_STATE=$py_cv_module_errno$as_nl"
+  if test "x$py_cv_module_errno" = xyes; then :
+
+
+
+
+fi
+
+
         if test "$py_cv_module__io" != "n/a"; then :
   py_cv_module__io=yes
 fi
@@ -23117,6 +23314,66 @@ fi
   if test "x$py_cv_module__io" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__IO_CFLAGS=-I\$(srcdir)/Modules/_io$as_nl"
+
+
+fi
+
+
+        if test "$py_cv_module_itertools" != "n/a"; then :
+  py_cv_module_itertools=yes
+fi
+   if test "$py_cv_module_itertools" = yes; then
+  MODULE_ITERTOOLS_TRUE=
+  MODULE_ITERTOOLS_FALSE='#'
+else
+  MODULE_ITERTOOLS_TRUE='#'
+  MODULE_ITERTOOLS_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE_ITERTOOLS_STATE=$py_cv_module_itertools$as_nl"
+  if test "x$py_cv_module_itertools" = xyes; then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module__sre" != "n/a"; then :
+  py_cv_module__sre=yes
+fi
+   if test "$py_cv_module__sre" = yes; then
+  MODULE__SRE_TRUE=
+  MODULE__SRE_FALSE='#'
+else
+  MODULE__SRE_TRUE='#'
+  MODULE__SRE_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__SRE_STATE=$py_cv_module__sre$as_nl"
+  if test "x$py_cv_module__sre" = xyes; then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module__thread" != "n/a"; then :
+  py_cv_module__thread=yes
+fi
+   if test "$py_cv_module__thread" = yes; then
+  MODULE__THREAD_TRUE=
+  MODULE__THREAD_FALSE='#'
+else
+  MODULE__THREAD_TRUE='#'
+  MODULE__THREAD_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__THREAD_STATE=$py_cv_module__thread$as_nl"
+  if test "x$py_cv_module__thread" = xyes; then :
+
+
 
 
 fi
@@ -23138,6 +23395,146 @@ fi
 
 
     as_fn_append MODULE_BLOCK "MODULE_TIME_LDFLAGS=$TIMEMODULE_LIB$as_nl"
+
+fi
+
+
+        if test "$py_cv_module__weakref" != "n/a"; then :
+  py_cv_module__weakref=yes
+fi
+   if test "$py_cv_module__weakref" = yes; then
+  MODULE__WEAKREF_TRUE=
+  MODULE__WEAKREF_FALSE='#'
+else
+  MODULE__WEAKREF_TRUE='#'
+  MODULE__WEAKREF_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__WEAKREF_STATE=$py_cv_module__weakref$as_nl"
+  if test "x$py_cv_module__weakref" = xyes; then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module__abc" != "n/a"; then :
+  py_cv_module__abc=yes
+fi
+   if test "$py_cv_module__abc" = yes; then
+  MODULE__ABC_TRUE=
+  MODULE__ABC_FALSE='#'
+else
+  MODULE__ABC_TRUE='#'
+  MODULE__ABC_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__ABC_STATE=$py_cv_module__abc$as_nl"
+  if test "x$py_cv_module__abc" = xyes; then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module__functools" != "n/a"; then :
+  py_cv_module__functools=yes
+fi
+   if test "$py_cv_module__functools" = yes; then
+  MODULE__FUNCTOOLS_TRUE=
+  MODULE__FUNCTOOLS_FALSE='#'
+else
+  MODULE__FUNCTOOLS_TRUE='#'
+  MODULE__FUNCTOOLS_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__FUNCTOOLS_STATE=$py_cv_module__functools$as_nl"
+  if test "x$py_cv_module__functools" = xyes; then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module__locale" != "n/a"; then :
+  py_cv_module__locale=yes
+fi
+   if test "$py_cv_module__locale" = yes; then
+  MODULE__LOCALE_TRUE=
+  MODULE__LOCALE_FALSE='#'
+else
+  MODULE__LOCALE_TRUE='#'
+  MODULE__LOCALE_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__LOCALE_STATE=$py_cv_module__locale$as_nl"
+  if test "x$py_cv_module__locale" = xyes; then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module__operator" != "n/a"; then :
+  py_cv_module__operator=yes
+fi
+   if test "$py_cv_module__operator" = yes; then
+  MODULE__OPERATOR_TRUE=
+  MODULE__OPERATOR_FALSE='#'
+else
+  MODULE__OPERATOR_TRUE='#'
+  MODULE__OPERATOR_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__OPERATOR_STATE=$py_cv_module__operator$as_nl"
+  if test "x$py_cv_module__operator" = xyes; then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module__stat" != "n/a"; then :
+  py_cv_module__stat=yes
+fi
+   if test "$py_cv_module__stat" = yes; then
+  MODULE__STAT_TRUE=
+  MODULE__STAT_FALSE='#'
+else
+  MODULE__STAT_TRUE='#'
+  MODULE__STAT_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__STAT_STATE=$py_cv_module__stat$as_nl"
+  if test "x$py_cv_module__stat" = xyes; then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module__symtable" != "n/a"; then :
+  py_cv_module__symtable=yes
+fi
+   if test "$py_cv_module__symtable" = yes; then
+  MODULE__SYMTABLE_TRUE=
+  MODULE__SYMTABLE_FALSE='#'
+else
+  MODULE__SYMTABLE_TRUE='#'
+  MODULE__SYMTABLE_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__SYMTABLE_STATE=$py_cv_module__symtable$as_nl"
+  if test "x$py_cv_module__symtable" = xyes; then :
+
+
+
 
 fi
 
@@ -24659,8 +25056,8 @@ $as_echo "$py_cv_module_nis" >&6; }
 $as_echo_n "checking for stdlib extension module _sqlite3... " >&6; }
         if test "$py_cv_module__sqlite3" != "n/a"; then :
 
-    if test "$have_sqlite3" = "yes"; then :
-  if test "$have_supported_sqlite3" = "yes"; then :
+    if true; then :
+  if test "$have_sqlite3" = "yes" -a "$have_supported_sqlite3" = "yes"; then :
   py_cv_module__sqlite3=yes
 else
   py_cv_module__sqlite3=missing
@@ -25377,12 +25774,84 @@ LTLIBOBJS=$ac_ltlibobjs
 
 
 
+if test -z "${MODULE_ATEXIT_TRUE}" && test -z "${MODULE_ATEXIT_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_ATEXIT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_FAULTHANDLER_TRUE}" && test -z "${MODULE_FAULTHANDLER_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_FAULTHANDLER\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_POSIX_TRUE}" && test -z "${MODULE_POSIX_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_POSIX\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SIGNAL_TRUE}" && test -z "${MODULE__SIGNAL_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SIGNAL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TRACEMALLOC_TRUE}" && test -z "${MODULE__TRACEMALLOC_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TRACEMALLOC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CODECS_TRUE}" && test -z "${MODULE__CODECS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CODECS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__COLLECTIONS_TRUE}" && test -z "${MODULE__COLLECTIONS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__COLLECTIONS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_ERRNO_TRUE}" && test -z "${MODULE_ERRNO_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_ERRNO\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__IO_TRUE}" && test -z "${MODULE__IO_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__IO\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE_ITERTOOLS_TRUE}" && test -z "${MODULE_ITERTOOLS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_ITERTOOLS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SRE_TRUE}" && test -z "${MODULE__SRE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SRE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__THREAD_TRUE}" && test -z "${MODULE__THREAD_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__THREAD\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE_TIME_TRUE}" && test -z "${MODULE_TIME_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_TIME\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__WEAKREF_TRUE}" && test -z "${MODULE__WEAKREF_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__WEAKREF\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__ABC_TRUE}" && test -z "${MODULE__ABC_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__ABC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__FUNCTOOLS_TRUE}" && test -z "${MODULE__FUNCTOOLS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__FUNCTOOLS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__LOCALE_TRUE}" && test -z "${MODULE__LOCALE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__LOCALE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__OPERATOR_TRUE}" && test -z "${MODULE__OPERATOR_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__OPERATOR\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__STAT_TRUE}" && test -z "${MODULE__STAT_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__STAT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SYMTABLE_TRUE}" && test -z "${MODULE__SYMTABLE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SYMTABLE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_ARRAY_TRUE}" && test -z "${MODULE_ARRAY_FALSE}"; then
