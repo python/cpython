@@ -134,6 +134,21 @@ _PyFrame_SetStackPointer(_PyInterpreterFrame *frame, PyObject **stack_pointer)
     frame->stacktop = (int)(stack_pointer - frame->localsplus);
 }
 
+/* Determine whether a frame is incomplete.
+ * A frame is incomplete if it is part way through
+ * creating cell objects or a generator or coroutine.
+ *
+ * Frames on the frame stack are incomplete until the
+ * first RESUME instruction.
+ * Frames owned by a generator are always complete.
+ */
+static inline bool
+_PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
+{
+    return frame->owner != FRAME_OWNED_BY_GENERATOR &&
+    frame->prev_instr < _PyCode_CODE(frame->f_code) + frame->f_code->_co_firsttraceable;
+}
+
 /* For use by _PyFrame_GetFrameObject
   Do not call directly. */
 PyFrameObject *
@@ -145,6 +160,8 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame);
 static inline PyFrameObject *
 _PyFrame_GetFrameObject(_PyInterpreterFrame *frame)
 {
+
+    assert(!_PyFrame_IsIncomplete(frame));
     PyFrameObject *res =  frame->frame_obj;
     if (res != NULL) {
         return res;
@@ -208,16 +225,6 @@ PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
     assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
     size_t offset_in_gen = offsetof(PyGenObject, gi_iframe);
     return (PyGenObject *)(((char *)frame) - offset_in_gen);
-}
-
-/* Determine whether a frame is incomplete.
- * A frame is incomplete until the first RESUME instruction
- * as it may be part way through creating cell objects or a
- * generator or coroutine. */
-static inline bool
-_PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
-{
-    return frame->prev_instr < _PyCode_CODE(frame->f_code) + frame->f_code->_co_firsttraceable;
 }
 
 #ifdef __cplusplus
