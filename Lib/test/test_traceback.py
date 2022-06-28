@@ -386,6 +386,8 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
     callable_line = get_exception.__code__.co_firstlineno + 2
 
     def test_basic_caret(self):
+        # NOTE: In caret tests, "if True:" is used as a way to force indicator
+        #   display, since the raising expression spans only part of the line.
         def f():
             if True: raise ValueError("basic caret tests")
 
@@ -626,7 +628,9 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         self.assertEqual(result_lines, expected_error.splitlines())
 
     def test_caret_exception_group(self):
-        # especially, this covers whether indicators handle margin strings correctly
+        # Notably, this covers whether indicators handle margin strings correctly.
+        # (Exception groups use margin strings to display vertical indicators.)
+        # The implementation must account for both "indent" and "margin" offsets.
 
         def exc():
             if True: raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])

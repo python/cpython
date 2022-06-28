@@ -822,6 +822,9 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     // the different ranges (primary_error_char and secondary_error_char). If we cannot obtain the
     // AST information or we cannot identify special ranges within it, then left_end_offset and
     // right_end_offset will be set to -1.
+    //
+    // To keep the column indicators pertinent, they are not shown when the primary character
+    // spans the whole line.
 
     // Convert the utf-8 byte offset to the actual character offset so we print the right number of carets.
     assert(source_line);
