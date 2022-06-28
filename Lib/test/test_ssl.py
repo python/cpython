@@ -1098,7 +1098,7 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ctx.minimum_version = 42
 
-        if has_tls_version(ssl.PROTOCOL_TLSv1_1):
+        if has_tls_protocol(ssl.PROTOCOL_TLSv1_1):
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_1)
 
             self.assertIn(
