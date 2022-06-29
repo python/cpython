@@ -20,7 +20,9 @@ This module defines classes for implementing HTTP servers.
 .. warning::
 
     :mod:`http.server` is not recommended for production. It only implements
-    basic security checks.
+    basic security checks. :class:`SimpleHTTPRequestHandler` will follow
+    symbolic links when handling requests, this makes it possible for files
+    outside of the specified directory to be served.
 
 One class, :class:`HTTPServer`, is a :class:`socketserver.TCPServer` subclass.
 It creates and listens at the HTTP socket, dispatching the requests to a
