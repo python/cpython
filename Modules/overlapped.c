@@ -2046,7 +2046,6 @@ static PyModuleDef_Slot overlapped_slots[] = {
 static struct PyModuleDef overlapped_module = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_overlapped",
-    .m_size = 0,
     .m_methods = overlapped_functions,
     .m_slots = overlapped_slots,
 };
