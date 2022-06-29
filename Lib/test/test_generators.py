@@ -193,10 +193,7 @@ class GeneratorTest(unittest.TestCase):
 
         class Sneaky:
             def __del__(self):
-                try:
-                    raise KeyboardInterrupt
-                except:
-                    pass
+                inspect.stack()
 
         sneaky = Sneaky()
         sneaky._s = Sneaky()
