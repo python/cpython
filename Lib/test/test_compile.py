@@ -1207,10 +1207,10 @@ class TestExpressionStackSize(unittest.TestCase):
         code += "   x and x\n" * self.N
         self.check_stack_size(code)
 
-    # Test that this compiles
     def test_stack_3050(self):
         M = 3050
         code = "x," * M + "=t"
+        # This raised on 3.10.0 to 3.10.5
         compile(code, "<foo>", "single")
 
 
