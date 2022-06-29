@@ -2038,6 +2038,14 @@ success:
     cache->counter = miss_counter_start();
 }
 
+/* Code for init cleanup function.
+ * CALL_NO_KW_ALLOC_AND_ENTER_INIT will set up
+ * the frame to execute the EXIT_INIT_CHECK
+ * instruction.
+ * Starts with an assertion error, in case it is called
+ * directly.
+ * Ends with a RESUME so that it is not traced.
+ */
 char INIT_CLEANUP_CODE[10] = {
     LOAD_ASSERTION_ERROR, 0,
     RAISE_VARARGS, 1,
