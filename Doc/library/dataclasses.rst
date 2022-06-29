@@ -749,3 +749,47 @@ mutable types as default values for fields::
    ``dict``, or ``set``, unhashable objects are now not allowed as
    default values.  Unhashability is used to approximate
    mutability.
+
+Descriptor-typed fields
+-----------------------
+
+Fields that are assigned :ref:`descriptor objects <descriptors>` as their
+default value have the following special behaviors:
+
+* The value for the field passed to the dataclass's ``__init__`` method is
+  passed to the descriptor's ``__set__`` method rather than overwriting the
+  descriptor object.
+* Similiarly, when getting or setting the field, the descriptor's
+  ``__get__`` or ``__set__`` method is called rather than returning or
+  overwriting the descriptor object.
+* The value returned by the descriptor's ``__get__`` method when its
+  ``obj`` parameter is ``None``, will be used as the field's default
+  value. If the descriptor raises an ``AttributeError`` when ``obj``
+  is ``None``, the field will not have a default value.
+
+::
+
+  class Descriptor():
+    def __init__(self, *, default):
+      self._default = default
+
+    def __get__(self, obj, objtype):
+      if obj is None:
+        return self._default
+
+      return getattr(obj, "_x")
+
+    def __set__(self, obj, value):
+      if obj is not None:
+        setattr(obj, "_x", value)
+
+  @dataclass
+  class InventoryItem:
+      quantity_on_hand: Descriptor = Descriptor(default=100)
+
+  i = InventoryItem()
+  print(i.quantity_on_hand)   # 100
+
+Note that if a field is annotated with a desriptor type, but is not assigned
+a descriptor object as its default value, the field will act like a normal
+field.
