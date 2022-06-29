@@ -783,8 +783,7 @@ default value have the following special behaviors:
       return getattr(obj, "_x", self._default)
 
     def __set__(self, obj, value):
-      if obj is not None:
-        setattr(obj, "_x", value)
+      setattr(obj, "_x", value)
 
   @dataclass
   class InventoryItem:
