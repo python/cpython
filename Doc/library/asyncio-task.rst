@@ -286,22 +286,72 @@ Task Groups
 ===========
 
 Task groups combine a task creation API with a convenient
-and reliable API to wait for completion of all tasks in the group.
-For an example see the last bullet under :ref:`coroutine`.
+and reliable API to wait for all tasks in the group to finish.
+
+Example::
+
+    async def main():
+        async with asyncio.TaskGroup() as tg:
+            task1 = tg.create_task(some_coro(...))
+            task2 = tg.create_task(another_coro(...))
+        print("Both tasks have completed now.")
+
+The ``async with`` statement will wait for all tasks in the group to finish.
+While waiting, new tasks may still be added to the group
+(for example, by passing ``tg`` into one of the coroutines
+and calling ``tg.create_task()`` in that coroutine).
+Once the last task has finished and the ``async with`` block is exited,
+no new tasks may be added to the group.
+
+When one of the tasks belonging to the group fails
+with an exception other than :exc:`asyncio.CancelledError`,
+the remaining tasks in the group are cancelled.
+This cancellation of the remaining tasks is done only
+the first time any task fails (excluding :exc:`asyncio.CancelledError`).
+At this point, if the body of the ``async with`` statement is still active
+(i.e., ``__aexit__`` hasn't been called yet),
+the task directly containing the ``async with`` statement is also cancelled.
+The resulting :exc:`asyncio.CancelledError` will interrupt an ``await``,
+but it will not bubble out of the containing ``async with`` statement.
+
+Once all tasks have finished, if any tasks have failed
+with an exception other than :exc:`asyncio.CancelledError`,
+those exceptions are combined in an
+:exc:`ExceptionGroup` or :exc:`BaseExceptionGroup`
+(as appropriate, see their documentation)
+which is then raised.
+
+Two base exceptions are treated specially:
+If any task fails with :exc:`KeyboardInterrupt` or :exc:`SystemExit`,
+the task group still cancels the remaining tasks and waits for them,
+but then the initial :exc:`KeyboardInterrupt` or :exc:`SystemExit`
+is re-raised instead of :exc:`ExceptionGroup` or :exc:`BaseExceptionGroup`.
+
+If the body of the ``async with`` statement exits with an exception
+(so ``__aexit__`` is called with an exception set),
+this is treated the same as if one of the tasks failed:
+the remaining tasks are cancelled and then waited for,
+and non-cancellation exceptions are grouped into a
+(base) exception group and raised.
+The exception passed into ``__aexit__``,
+unless it is :exc:`asyncio.CancelledError`,
+is also included in the exception group.
+The same special case is made for
+:exc:`KeyboardInterrupt` and :exc:`SystemExit` here.
 
 .. class:: TaskGroup()
 
    An :ref:`asynchronous context manager <async-context-managers>`
    holding a group of tasks.
-   Tasks can be added to the group using the :meth:`create_task` method.
+   Tasks can be added to the group using :meth:`create_task`.
    All tasks are awaited when the context manager exits.
 
    .. versionadded:: 3.11
 
-   .. method:: create_tasks(coro, *, name=None, context=None)
+   .. method:: create_task(coro, *, name=None, context=None)
 
       Create a task in this task group.
-      The API is the same as the :func:`asyncio.create_task` function.
+      The signature matches that of :func:`asyncio.create_task`.
 
 
 Sleeping
