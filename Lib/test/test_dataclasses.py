@@ -3305,6 +3305,7 @@ class TestDescriptors(unittest.TestCase):
             def __get__(self, instance: Any, owner: object) -> int:
                 if instance is None:
                     return 100
+
                 return instance._x
 
             def __set__(self, instance: Any, value: int) -> None:
@@ -3319,6 +3320,24 @@ class TestDescriptors(unittest.TestCase):
 
         c = C(5)
         self.assertEqual(c.i, 5)
+
+    def test_no_default_value(self):
+        class D:
+            def __get__(self, instance: Any, owner: object) -> int:
+                if instance is None:
+                    raise AttributeError()
+
+                return instance._x
+
+            def __set__(self, instance: Any, value: int) -> None:
+                instance._x = value
+
+        @dataclass
+        class C:
+            i: D = D()
+
+        with self.assertRaisesRegex(TypeError, 'missing 1 required positional argument'):
+            c = C()
 
 class TestStringAnnotations(unittest.TestCase):
     def test_classvar(self):
