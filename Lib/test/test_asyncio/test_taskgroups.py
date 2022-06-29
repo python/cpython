@@ -726,7 +726,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             1 / 0
         async def coro2(g):
             try:
-                await asyncio.sleep(100)
+                await asyncio.sleep(1)
             except asyncio.CancelledError:
                 with self.assertRaises(RuntimeError):
                     g.create_task(c1 := coro1())
