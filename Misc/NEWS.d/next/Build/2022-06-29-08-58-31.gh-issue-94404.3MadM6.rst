@@ -1,0 +1,2 @@
+``makesetup`` now works around an issue with sed on macOS and uses correct
+CFLAGS for object files that end up in a shared extension.
