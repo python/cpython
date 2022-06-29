@@ -1834,7 +1834,6 @@ static struct PyModuleDef jsonmodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_json",
     .m_doc = module_doc,
-    .m_size = 0,
     .m_methods = speedups_methods,
     .m_slots = _json_slots,
 };
