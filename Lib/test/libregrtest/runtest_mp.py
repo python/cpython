@@ -235,7 +235,7 @@ class TestWorkerProcess(threading.Thread):
 
             try:
                 # gh-94026: stdout+stderr are written to tempfile
-                popen.communicate(timeout=self.timeout)
+                popen.wait(timeout=self.timeout)
                 retcode = popen.returncode
                 assert retcode is not None
                 return retcode
@@ -270,7 +270,9 @@ class TestWorkerProcess(threading.Thread):
     def _runtest(self, test_name: str) -> MultiprocessResult:
         # gh-94026: Write stdout+stderr to a tempfile as workaround for
         # non-blocking pipes on Emscripten with NodeJS.
-        with tempfile.TemporaryFile('w+') as stdout_fh:
+        with tempfile.TemporaryFile(
+            'w+', encoding=sys.stdout.encoding
+        ) as stdout_fh:
             # gh-93353: Check for leaked temporary files in the parent process,
             # since the deletion of temporary files can happen late during
             # Python finalization: too late for libregrtest.
