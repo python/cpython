@@ -1,0 +1,2 @@
+The MSVC compiler is now expected to generate faster switch code in the 
+interpreter main loop, which reduces memory access in dispatching opcode.
