@@ -795,7 +795,6 @@ static struct PyModuleDef_Slot _bz2_slots[] = {
 static struct PyModuleDef _bz2module = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_bz2",
-    .m_size = 0,
     .m_slots = _bz2_slots,
 };
 
