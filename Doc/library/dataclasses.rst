@@ -772,7 +772,7 @@ default value have the following special behaviors:
 
 ::
 
-  class Descriptor:
+  class IntConversionDescriptor:
     def __init__(self, *, default):
       self._default = default
 
@@ -786,14 +786,16 @@ default value have the following special behaviors:
       return getattr(obj, self._name, self._default)
 
     def __set__(self, obj, value):
-      setattr(obj, self._name, value)
+      setattr(obj, self._name, int(value))
 
   @dataclass
   class InventoryItem:
-      quantity_on_hand: Descriptor = Descriptor(default=100)
+    quantity_on_hand: IntConversionDescriptor = IntConversionDescriptor(default=100)
 
   i = InventoryItem()
   print(i.quantity_on_hand)   # 100
+  i.quantity_on_hand = 2.5    # calls __set__ with 2.5
+  print(i.quantity_on_hand)   # 2
 
 Note that if a field is annotated with a descriptor type, but is not assigned
 a descriptor object as its default value, the field will act like a normal
