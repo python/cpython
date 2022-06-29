@@ -62,7 +62,6 @@ typedef struct _PyInterpreterFrame {
     _Py_CODEUNIT *prev_instr;
     int stacktop;     /* Offset of TOS from localsplus  */
     bool is_entry;  // Whether this is the "root" frame for the current _PyCFrame.
-    bool is_artificial; // Hide this frame in backtraces.
     char owner;
     /* Locals and stack */
     PyObject *localsplus[1];
@@ -111,7 +110,6 @@ _PyFrame_InitializeSpecials(
     frame->frame_obj = NULL;
     frame->prev_instr = _PyCode_CODE(code) - 1;
     frame->is_entry = false;
-    frame->is_artificial = false;
     frame->owner = FRAME_OWNED_BY_THREAD;
 }
 

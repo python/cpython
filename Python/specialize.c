@@ -2023,11 +2023,12 @@ success:
     cache->counter = miss_counter_start();
 }
 
-char INIT_CLEANUP_CODE[8] = {
+char INIT_CLEANUP_CODE[10] = {
     LOAD_ASSERTION_ERROR, 0,
     RAISE_VARARGS, 1,
     EXIT_INIT_CHECK, 0,
-    RETURN_VALUE, 0
+    RETURN_VALUE, 0,
+    RESUME, 0
 };
 
 PyFunctionObject *_Py_InitCleanupFunc = NULL;
@@ -2047,7 +2048,7 @@ setup_init_cleanup_func(void) {
     if (name == NULL) {
         goto cleanup;
     }
-    code = PyBytes_FromStringAndSize(INIT_CLEANUP_CODE, 8);
+    code = PyBytes_FromStringAndSize(INIT_CLEANUP_CODE, sizeof(INIT_CLEANUP_CODE));
     if (code == NULL) {
         goto cleanup;
     }

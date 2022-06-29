@@ -1504,7 +1504,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 /* Shared opcode macros */
 
 #define TRACE_FUNCTION_EXIT() \
-    if (cframe.use_tracing && !frame->is_artificial) { \
+    if (cframe.use_tracing && INSTR_OFFSET() >= frame->f_code->_co_firsttraceable) { \
         if (trace_function_exit(tstate, frame, retval)) { \
             Py_DECREF(retval); \
             goto exit_unwind; \
@@ -5002,7 +5002,6 @@ handle_eval_breaker:
             Py_DECREF(tp);
             Py_INCREF(_Py_InitCleanupFunc);
             _PyInterpreterFrame *shim = _PyFrame_PushUnchecked(tstate, _Py_InitCleanupFunc);
-            shim->is_artificial = true;
             CALL_STAT_INC(inlined_py_calls);
             shim->previous = frame;
             shim->prev_instr = _PyCode_CODE(shim->f_code) + 1;
