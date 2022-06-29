@@ -4710,9 +4710,9 @@ class DSLParser:
 
         p = Parameter(parameter_name, kind, function=self.function, converter=converter, default=value, group=self.group)
 
-        if parameter_name in self.function.parameters:
+        if (c_name or parameter_name) in self.function.parameters:
             fail("You can't have two parameters named " + repr(parameter_name) + "!")
-        self.function.parameters[parameter_name] = p
+        self.function.parameters[c_name or parameter_name] = p
 
     def parse_converter(self, annotation):
         if (hasattr(ast, 'Constant') and
