@@ -4711,11 +4711,12 @@ class DSLParser:
         p = Parameter(parameter_name, kind, function=self.function, converter=converter, default=value, group=self.group)
 
         names = [k.name for k in self.function.parameters.values()]
-        key = f"{parameter_name}_{c_name}" if c_name else parameter_name
         if parameter_name in names[1:]:
             fail("You can't have two parameters named " + repr(parameter_name) + "!")
         elif names and parameter_name == names[0] and c_name is None:
             fail("Params named 'module' or 'self' need custom C names")
+
+        key = f"{parameter_name}_{c_name}" if c_name else parameter_name
         self.function.parameters[key] = p
 
     def parse_converter(self, annotation):
