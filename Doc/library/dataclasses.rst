@@ -759,25 +759,28 @@ default value have the following special behaviors:
 * The value for the field passed to the dataclass's ``__init__`` method is
   passed to the descriptor's ``__set__`` method rather than overwriting the
   descriptor object.
-* Similiarly, when getting or setting the field, the descriptor's
+* Similarly, when getting or setting the field, the descriptor's
   ``__get__`` or ``__set__`` method is called rather than returning or
   overwriting the descriptor object.
-* The value returned by the descriptor's ``__get__`` method when its
-  ``obj`` parameter is ``None``, will be used as the field's default
-  value. If the descriptor raises an ``AttributeError`` when ``obj``
-  is ``None``, the field will not have a default value.
+* To determine whether a field contains a default value, ``dataclasses``
+  will call the descriptor's ``__get__`` method using its class access
+  form (i.e. ``descriptor.__get__(obj=None, type=cls)``.  If the
+  descriptor returns a value in this case, it will be used as the
+  field's default. On the other hand, if the descriptor raises
+  :exc:`AttributeError` in this situation, no default value will be
+  provided for the field.
 
 ::
 
-  class Descriptor():
+  class Descriptor:
     def __init__(self, *, default):
       self._default = default
 
-    def __get__(self, obj, objtype):
+    def __get__(self, obj, type):
       if obj is None:
         return self._default
 
-      return getattr(obj, "_x")
+      return getattr(obj, "_x", self._default)
 
     def __set__(self, obj, value):
       if obj is not None:
@@ -790,6 +793,6 @@ default value have the following special behaviors:
   i = InventoryItem()
   print(i.quantity_on_hand)   # 100
 
-Note that if a field is annotated with a desriptor type, but is not assigned
+Note that if a field is annotated with a descriptor type, but is not assigned
 a descriptor object as its default value, the field will act like a normal
 field.
