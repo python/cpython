@@ -179,7 +179,7 @@ which format specific object types.
           },
           'ham',
       ]
-
+   .. versionadded:: 3.12
 
 .. method:: Repr.repr(obj)
 
