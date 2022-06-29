@@ -1213,6 +1213,7 @@ class TestExpressionStackSize(unittest.TestCase):
         code = "x," * M + "=t"
         compile(code, "<foo>", "single")
 
+
 class TestStackSizeStability(unittest.TestCase):
     # Check that repeating certain snippets doesn't increase the stack size
     # beyond what a single snippet requires.
