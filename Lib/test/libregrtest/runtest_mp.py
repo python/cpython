@@ -235,8 +235,7 @@ class TestWorkerProcess(threading.Thread):
 
             try:
                 # gh-94026: stdout+stderr are written to tempfile
-                popen.wait(timeout=self.timeout)
-                retcode = popen.returncode
+                retcode = popen.wait(timeout=self.timeout)
                 assert retcode is not None
                 return retcode
             except subprocess.TimeoutExpired:
