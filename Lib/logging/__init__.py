@@ -833,23 +833,36 @@ class Filterer(object):
         Determine if a record is loggable by consulting all the filters.
 
         The default is to allow the record to be logged; any filter can veto
-        this and the record is then dropped. Returns a zero value if a record
-        is to be dropped, else non-zero.
+        this by returning a falsy value.
+        If a filter attached to a handler returns a log record instance,
+        then that instance is used in place of the original log record in
+        any further processing of the event by that handler.
+        If a filter returns any other truthy value, the original log record
+        is used in any further processing of the event by that handler.
+
+        If none of the filters return falsy values, this method returns
+        a log record.
+        If any of the filters return a falsy value, this method returns
+        a falsy value.
 
         .. versionchanged:: 3.2
 
            Allow filters to be just callables.
+
+        .. versionchanged:: 3.12
+           Allow filters to return a LogRecord instead of
+           modifying it in place.
         """
-        rv = True
         for f in self.filters:
             if hasattr(f, 'filter'):
                 result = f.filter(record)
             else:
                 result = f(record) # assume callable - will raise if not
             if not result:
-                rv = False
-                break
-        return rv
+                return False
+            if isinstance(result, LogRecord):
+                record = result
+        return record
 
 #---------------------------------------------------------------------------
 #   Handler classes and functions
@@ -1001,10 +1014,14 @@ class Handler(Filterer):
 
         Emission depends on filters which may have been added to the handler.
         Wrap the actual emission of the record with acquisition/release of
-        the I/O thread lock. Returns whether the filter passed the record for
-        emission.
+        the I/O thread lock.
+
+        Returns an instance of the log record that was emitted
+        if it passed all filters, otherwise a falsy value is returned.
         """
         rv = self.filter(record)
+        if isinstance(rv, LogRecord):
+            record = rv
         if rv:
             self.acquire()
             try:
@@ -1673,8 +1690,14 @@ class Logger(Filterer):
         This method is used for unpickled records received from a socket, as
         well as those created locally. Logger-level filtering is applied.
         """
-        if (not self.disabled) and self.filter(record):
-            self.callHandlers(record)
+        if self.disabled:
+            return
+        maybe_record = self.filter(record)
+        if not maybe_record:
+            return
+        if isinstance(maybe_record, LogRecord):
+            record = maybe_record
+        self.callHandlers(record)
 
     def addHandler(self, hdlr):
         """

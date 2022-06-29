@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 """Generate C code from an ASDL description."""
 
-import os
 import sys
 import textwrap
 import types

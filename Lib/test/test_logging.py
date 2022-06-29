@@ -468,6 +468,51 @@ class CustomLevelsAndFiltersTest(BaseTest):
         for lvl in LEVEL_RANGE:
             logger.log(lvl, self.next_message())
 
+    def test_handler_filter_replaces_record(self):
+        def replace_message(record: logging.LogRecord):
+            record = copy.copy(record)
+            record.msg = "new message!"
+            return record
+
+        # Set up a logging hierarchy such that "child" and it's handler
+        # (and thus `replace_message()`) always get called before
+        # propagating up to "parent".
+        # Then we can confirm that `replace_message()` was able to
+        # replace the log record without having a side effect on
+        # other loggers or handlers.
+        parent = logging.getLogger("parent")
+        child = logging.getLogger("parent.child")
+        stream_1 = io.StringIO()
+        stream_2 = io.StringIO()
+        handler_1 = logging.StreamHandler(stream_1)
+        handler_2 = logging.StreamHandler(stream_2)
+        handler_2.addFilter(replace_message)
+        parent.addHandler(handler_1)
+        child.addHandler(handler_2)
+
+        child.info("original message")
+        handler_1.flush()
+        handler_2.flush()
+        self.assertEqual(stream_1.getvalue(), "original message\n")
+        self.assertEqual(stream_2.getvalue(), "new message!\n")
+
+    def test_logging_filter_replaces_record(self):
+        records = set()
+
+        class RecordingFilter(logging.Filter):
+            def filter(self, record: logging.LogRecord):
+                records.add(id(record))
+                return copy.copy(record)
+
+        logger = logging.getLogger("logger")
+        logger.setLevel(logging.INFO)
+        logger.addFilter(RecordingFilter())
+        logger.addFilter(RecordingFilter())
+
+        logger.info("msg")
+
+        self.assertEqual(2, len(records))
+
     def test_logger_filter(self):
         # Filter at logger level.
         self.root_logger.setLevel(VERBOSE)
@@ -1783,12 +1828,6 @@ class SocketHandlerTest(BaseTest):
         time.sleep(self.sock_hdlr.retryTime - now + 0.001)
         self.root_logger.error('Nor this')
 
-def _get_temp_domain_socket():
-    fn = make_temp_file(prefix='test_logging_', suffix='.sock')
-    # just need a name - file can't be present, or we'll get an
-    # 'address already in use' error.
-    os.remove(fn)
-    return fn
 
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 class UnixSocketHandlerTest(SocketHandlerTest):
@@ -1800,12 +1839,9 @@ class UnixSocketHandlerTest(SocketHandlerTest):
 
     def setUp(self):
         # override the definition in the base class
-        self.address = _get_temp_domain_socket()
+        self.address = socket_helper.create_unix_domain_name()
+        self.addCleanup(os_helper.unlink, self.address)
         SocketHandlerTest.setUp(self)
-
-    def tearDown(self):
-        SocketHandlerTest.tearDown(self)
-        os_helper.unlink(self.address)
 
 @support.requires_working_socket()
 @threading_helper.requires_working_threading()
@@ -1883,12 +1919,9 @@ class UnixDatagramHandlerTest(DatagramHandlerTest):
 
     def setUp(self):
         # override the definition in the base class
-        self.address = _get_temp_domain_socket()
+        self.address = socket_helper.create_unix_domain_name()
+        self.addCleanup(os_helper.unlink, self.address)
         DatagramHandlerTest.setUp(self)
-
-    def tearDown(self):
-        DatagramHandlerTest.tearDown(self)
-        os_helper.unlink(self.address)
 
 @support.requires_working_socket()
 @threading_helper.requires_working_threading()
@@ -1920,7 +1953,7 @@ class SysLogHandlerTest(BaseTest):
             self.sl_hdlr = hcls((server.server_address[0], server.port))
         else:
             self.sl_hdlr = hcls(server.server_address)
-        self.log_output = ''
+        self.log_output = b''
         self.root_logger.removeHandler(self.root_logger.handlers[0])
         self.root_logger.addHandler(self.sl_hdlr)
         self.handled = threading.Event()
@@ -1977,12 +2010,9 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
 
     def setUp(self):
         # override the definition in the base class
-        self.address = _get_temp_domain_socket()
+        self.address = socket_helper.create_unix_domain_name()
+        self.addCleanup(os_helper.unlink, self.address)
         SysLogHandlerTest.setUp(self)
-
-    def tearDown(self):
-        SysLogHandlerTest.tearDown(self)
-        os_helper.unlink(self.address)
 
 @unittest.skipUnless(socket_helper.IPV6_ENABLED,
                      'IPv6 support required for this test.')
@@ -3557,20 +3587,25 @@ class ConfigDictTest(BaseTest):
         if lspec is not None:
             cd['handlers']['ah']['listener'] = lspec
         qh = None
-        delay = 0.01
         try:
             self.apply_config(cd)
             qh = logging.getHandlerByName('ah')
             self.assertEqual(sorted(logging.getHandlerNames()), ['ah', 'h1'])
             self.assertIsNotNone(qh.listener)
             qh.listener.start()
-            # Need to let the listener thread get started
-            time.sleep(delay)
             logging.debug('foo')
             logging.info('bar')
             logging.warning('baz')
+
             # Need to let the listener thread finish its work
-            time.sleep(delay)
+            while support.sleeping_retry(support.LONG_TIMEOUT,
+                                         "queue not empty"):
+                if qh.listener.queue.empty():
+                    break
+
+            # wait until the handler completed its last task
+            qh.listener.queue.join()
+
             with open(fn, encoding='utf-8') as f:
                 data = f.read().splitlines()
             self.assertEqual(data, ['foo', 'bar', 'baz'])
