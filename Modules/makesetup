@@ -260,13 +260,14 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			\$*) ;;
 			*) src='$(srcdir)/'"$srcdir/$src";;
 			esac
+			# custom flags first, PY_STDMODULE_CFLAGS may contain -I with system libmpdec
 			case $doconfig in
-			no)	cc="$cc \$(PY_STDMODULE_CFLAGS) \$(CCSHARED)";;
+			no)	cc="$cc $cpps \$(PY_STDMODULE_CFLAGS) \$(CCSHARED)";;
 			*)
-				cc="$cc \$(PY_BUILTIN_MODULE_CFLAGS)";;
+				cc="$cc $cpps \$(PY_BUILTIN_MODULE_CFLAGS)";;
 			esac
 			# force rebuild when header file or module build flavor (static/shared) is changed
-			rule="$obj: $src \$(MODULE_${mods_upper}_DEPS) \$(PYTHON_HEADERS) Modules/config.c; $cc $cpps -c $src -o $obj"
+			rule="$obj: $src \$(MODULE_${mods_upper}_DEPS) \$(PYTHON_HEADERS) Modules/config.c; $cc -c $src -o $obj"
 			echo "$rule" >>$rulesf
 		done
 		case $doconfig in
