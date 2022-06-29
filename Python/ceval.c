@@ -23,6 +23,7 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
+#include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
@@ -1311,7 +1312,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
     do { \
         frame->prev_instr = next_instr++; \
         OPCODE_EXE_INC(op); \
-        _py_stats.opcode_stats[lastopcode].pair_count[op]++; \
+        if (_py_stats) _py_stats->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
@@ -2137,6 +2138,46 @@ handle_eval_breaker:
             if (res == NULL)
                 goto error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            DISPATCH();
+        }
+
+        TARGET(BINARY_SLICE) {
+            PyObject *stop = POP();
+            PyObject *start = POP();
+            PyObject *container = TOP();
+
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            if (slice == NULL) {
+                goto error;
+            }
+            PyObject *res = PyObject_GetItem(container, slice);
+            Py_DECREF(slice);
+            if (res == NULL) {
+                goto error;
+            }
+            SET_TOP(res);
+            Py_DECREF(container);
+            DISPATCH();
+        }
+
+        TARGET(STORE_SLICE) {
+            PyObject *stop = POP();
+            PyObject *start = POP();
+            PyObject *container = TOP();
+            PyObject *v = SECOND();
+
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            if (slice == NULL) {
+                goto error;
+            }
+            int err = PyObject_SetItem(container, slice, v);
+            Py_DECREF(slice);
+            if (err) {
+                goto error;
+            }
+            STACK_SHRINK(2);
+            Py_DECREF(v);
+            Py_DECREF(container);
             DISPATCH();
         }
 
@@ -7862,7 +7903,7 @@ _Py_GetDXProfile(PyObject *self, PyObject *args)
     PyObject *l = PyList_New(257);
     if (l == NULL) return NULL;
     for (i = 0; i < 256; i++) {
-        PyObject *x = getarray(_py_stats.opcode_stats[i].pair_count);
+        PyObject *x = getarray(_py_stats_struct.opcode_stats[i].pair_count);
         if (x == NULL) {
             Py_DECREF(l);
             return NULL;
@@ -7876,7 +7917,7 @@ _Py_GetDXProfile(PyObject *self, PyObject *args)
     }
     for (i = 0; i < 256; i++) {
         PyObject *x = PyLong_FromUnsignedLongLong(
-            _py_stats.opcode_stats[i].execution_count);
+            _py_stats_struct.opcode_stats[i].execution_count);
         if (x == NULL) {
             Py_DECREF(counts);
             Py_DECREF(l);

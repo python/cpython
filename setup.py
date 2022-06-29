@@ -47,7 +47,6 @@ with warnings.catch_warnings():
     )
 
     from distutils.command.build_ext import build_ext
-    from distutils.command.build_scripts import build_scripts
     from distutils.command.install import install
     from distutils.command.install_lib import install_lib
     from distutils.core import Extension, setup
@@ -318,7 +317,7 @@ class PyBuildExt(build_ext):
         if update_flags:
             self.update_extension_flags(ext)
 
-        state = sysconfig.get_config_var(f"MODULE_{ext.name.upper()}")
+        state = sysconfig.get_config_var(f"MODULE_{ext.name.upper()}_STATE")
         if state == "yes":
             self.extensions.append(ext)
         elif state == "disabled":
@@ -329,7 +328,7 @@ class PyBuildExt(build_ext):
             # not available on current platform
             pass
         else:
-            # not migrated to MODULE_{name} yet.
+            # not migrated to MODULE_{name}_STATE yet.
             self.announce(
                 f'WARNING: Makefile is missing module variable for "{ext.name}"',
                 level=2
@@ -395,11 +394,6 @@ class PyBuildExt(build_ext):
         # Remove modules that are present on the disabled list
         extensions = [ext for ext in self.extensions
                       if ext.name not in DISABLED_MODULE_LIST]
-        # move ctypes to the end, it depends on other modules
-        ext_map = dict((ext.name, i) for i, ext in enumerate(extensions))
-        if "_ctypes" in ext_map:
-            ctypes = extensions.pop(ext_map["_ctypes"])
-            extensions.append(ctypes)
         self.extensions = extensions
 
     def update_sources_depends(self):
@@ -412,10 +406,6 @@ class PyBuildExt(build_ext):
             # files relative to build base, e.g. libmpdec.a, libexpat.a
             os.getcwd()
         ]
-
-        # Fix up the paths for scripts, too
-        self.distribution.scripts = [os.path.join(self.srcdir, filename)
-                                     for filename in self.distribution.scripts]
 
         # Python header files
         include_dir = escape(sysconfig.get_path('include'))
@@ -538,7 +528,6 @@ class PyBuildExt(build_ext):
 
         if self.missing:
             print()
-            print("Python build finished successfully!")
             print("The necessary bits to build these optional modules were not "
                   "found:")
             print_three_column(self.missing)
@@ -601,12 +590,6 @@ class PyBuildExt(build_ext):
             raise RuntimeError("Failed to build some stdlib modules")
 
     def build_extension(self, ext):
-
-        if ext.name == '_ctypes':
-            if not self.configure_ctypes(ext):
-                self.failed.append(ext.name)
-                return
-
         try:
             build_ext.build_extension(self, ext)
         except (CCompilerError, DistutilsError) as why:
@@ -1371,101 +1354,23 @@ class PyBuildExt(build_ext):
     def detect_tkinter(self):
         self.addext(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c']))
 
-    def configure_ctypes(self, ext):
-        return True
-
     def detect_ctypes(self):
         # Thomas Heller's _ctypes module
+        src = [
+            '_ctypes/_ctypes.c',
+            '_ctypes/callbacks.c',
+            '_ctypes/callproc.c',
+            '_ctypes/stgdict.c',
+            '_ctypes/cfield.c',
+        ]
+        malloc_closure = sysconfig.get_config_var(
+            "MODULE__CTYPES_MALLOC_CLOSURE"
+        )
+        if malloc_closure:
+            src.append(malloc_closure)
 
-        if (not sysconfig.get_config_var("LIBFFI_INCLUDEDIR") and MACOS):
-            self.use_system_libffi = True
-        else:
-            self.use_system_libffi = '--with-system-ffi' in sysconfig.get_config_var("CONFIG_ARGS")
-
-        include_dirs = []
-        extra_compile_args = []
-        extra_link_args = []
-        sources = ['_ctypes/_ctypes.c',
-                   '_ctypes/callbacks.c',
-                   '_ctypes/callproc.c',
-                   '_ctypes/stgdict.c',
-                   '_ctypes/cfield.c']
-
-        if MACOS:
-            sources.append('_ctypes/malloc_closure.c')
-            extra_compile_args.append('-DUSING_MALLOC_CLOSURE_DOT_C=1')
-            extra_compile_args.append('-DMACOSX')
-            include_dirs.append('_ctypes/darwin')
-
-        elif HOST_PLATFORM == 'sunos5':
-            # XXX This shouldn't be necessary; it appears that some
-            # of the assembler code is non-PIC (i.e. it has relocations
-            # when it shouldn't. The proper fix would be to rewrite
-            # the assembler code to be PIC.
-            # This only works with GCC; the Sun compiler likely refuses
-            # this option. If you want to compile ctypes with the Sun
-            # compiler, please research a proper solution, instead of
-            # finding some -z option for the Sun compiler.
-            extra_link_args.append('-mimpure-text')
-
-        ext = Extension('_ctypes',
-                        include_dirs=include_dirs,
-                        extra_compile_args=extra_compile_args,
-                        extra_link_args=extra_link_args,
-                        libraries=[],
-                        sources=sources)
-        self.add(ext)
-        # function my_sqrt() needs libm for sqrt()
+        self.addext(Extension('_ctypes', src))
         self.addext(Extension('_ctypes_test', ['_ctypes/_ctypes_test.c']))
-
-        ffi_inc = sysconfig.get_config_var("LIBFFI_INCLUDEDIR")
-        ffi_lib = None
-
-        ffi_inc_dirs = self.inc_dirs.copy()
-        if MACOS:
-            ffi_in_sdk = os.path.join(macosx_sdk_root(), "usr/include/ffi")
-
-            if not ffi_inc:
-                if os.path.exists(ffi_in_sdk):
-                    ext.extra_compile_args.append("-DUSING_APPLE_OS_LIBFFI=1")
-                    ffi_inc = ffi_in_sdk
-                    ffi_lib = 'ffi'
-                else:
-                    # OS X 10.5 comes with libffi.dylib; the include files are
-                    # in /usr/include/ffi
-                    ffi_inc_dirs.append('/usr/include/ffi')
-
-        if not ffi_inc:
-            found = find_file('ffi.h', [], ffi_inc_dirs)
-            if found:
-                ffi_inc = found[0]
-        if ffi_inc:
-            ffi_h = ffi_inc + '/ffi.h'
-            if not os.path.exists(ffi_h):
-                ffi_inc = None
-                print('Header file {} does not exist'.format(ffi_h))
-        if ffi_lib is None and ffi_inc:
-            for lib_name in ('ffi', 'ffi_pic'):
-                if (self.compiler.find_library_file(self.lib_dirs, lib_name)):
-                    ffi_lib = lib_name
-                    break
-
-        if ffi_inc and ffi_lib:
-            ffi_headers = glob(os.path.join(ffi_inc, '*.h'))
-            if grep_headers_for('ffi_prep_cif_var', ffi_headers):
-                ext.extra_compile_args.append("-DHAVE_FFI_PREP_CIF_VAR=1")
-            if grep_headers_for('ffi_prep_closure_loc', ffi_headers):
-                ext.extra_compile_args.append("-DHAVE_FFI_PREP_CLOSURE_LOC=1")
-            if grep_headers_for('ffi_closure_alloc', ffi_headers):
-                ext.extra_compile_args.append("-DHAVE_FFI_CLOSURE_ALLOC=1")
-
-            ext.include_dirs.append(ffi_inc)
-            ext.libraries.append(ffi_lib)
-            self.use_system_libffi = True
-
-        if sysconfig.get_config_var('HAVE_LIBDL'):
-            # for dlopen, see bpo-32647
-            ext.libraries.append('dl')
 
     def detect_decimal(self):
         # Stefan Krah's _decimal module
@@ -1553,26 +1458,6 @@ class PyBuildInstallLib(install_lib):
             if not self.dry_run: os.chmod(dirpath, mode)
 
 
-class PyBuildScripts(build_scripts):
-    def copy_scripts(self):
-        outfiles, updated_files = build_scripts.copy_scripts(self)
-        fullversion = '-{0[0]}.{0[1]}'.format(sys.version_info)
-        minoronly = '.{0[1]}'.format(sys.version_info)
-        newoutfiles = []
-        newupdated_files = []
-        for filename in outfiles:
-            if filename.endswith('2to3'):
-                newfilename = filename + fullversion
-            else:
-                newfilename = filename + minoronly
-            log.info(f'renaming {filename} to {newfilename}')
-            os.rename(filename, newfilename)
-            newoutfiles.append(newfilename)
-            if filename in updated_files:
-                newupdated_files.append(newfilename)
-        return newoutfiles, newupdated_files
-
-
 def main():
     global LIST_MODULE_NAMES
 
@@ -1607,18 +1492,11 @@ def main():
 
           # Build info
           cmdclass = {'build_ext': PyBuildExt,
-                      'build_scripts': PyBuildScripts,
                       'install': PyBuildInstall,
                       'install_lib': PyBuildInstallLib},
           # A dummy module is defined here, because build_ext won't be
           # called unless there's at least one extension module defined.
           ext_modules=[Extension('_dummy', ['_dummy.c'])],
-
-          # If you change the scripts installed here, you also need to
-          # check the PyBuildScripts command above, and change the links
-          # created by the bininstall target in Makefile.pre.in
-          scripts = ["Tools/scripts/pydoc3", "Tools/scripts/idle3",
-                     "Tools/scripts/2to3"]
         )
 
 # --install-platlib

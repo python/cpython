@@ -67,6 +67,8 @@ def_op('UNARY_INVERT', 15)
 def_op('EXIT_INIT_CHECK', 16)
 
 def_op('BINARY_SUBSCR', 25)
+def_op('BINARY_SLICE', 26)
+def_op('STORE_SLICE', 27)
 
 def_op('GET_LEN', 30)
 def_op('MATCH_MAPPING', 31)

@@ -7,7 +7,6 @@ import os.path
 import opcode
 from datetime import date
 import itertools
-import argparse
 import sys
 
 if os.name == "nt":
@@ -61,12 +60,13 @@ def print_specialization_stats(name, family_stats, defines):
         for key in ("specialization.success",  "specialization.failure"):
             total_attempts += family_stats.get(key, 0)
         rows = []
-        for key in ("specialization.success",  "specialization.failure"):
-            label = key[len("specialization."):]
-            label = label[0].upper() + label[1:]
-            val = family_stats.get(key, 0)
-            rows.append((label, val, f"{100*val/total_attempts:0.1f}%"))
-        emit_table(("", "Count:", "Ratio:"), rows)
+        if total_attempts:
+            for key in ("specialization.success",  "specialization.failure"):
+                label = key[len("specialization."):]
+                label = label[0].upper() + label[1:]
+                val = family_stats.get(key, 0)
+                rows.append((label, val, f"{100*val/total_attempts:0.1f}%"))
+            emit_table(("", "Count:", "Ratio:"), rows)
         total_failures = family_stats.get("specialization.failure", 0)
         failure_kinds = [ 0 ] * 32
         for key in family_stats:
@@ -188,6 +188,12 @@ class Section:
         print("</details>")
         print()
 
+def to_str(x):
+    if isinstance(x, int):
+        return format(x, ",d")
+    else:
+        return str(x)
+
 def emit_table(header, rows):
     width = len(header)
     header_line = "|"
@@ -203,8 +209,8 @@ def emit_table(header, rows):
     print(under_line)
     for row in rows:
         if width is not None and len(row) != width:
-            raise ValueError("Wrong number of elements in row '" + str(rows) + "'")
-        print("|", " | ".join(str(i) for i in row), "|")
+            raise ValueError("Wrong number of elements in row '" + str(row) + "'")
+        print("|", " | ".join(to_str(i) for i in row), "|")
     print()
 
 def emit_execution_counts(opcode_stats, total):
@@ -251,6 +257,18 @@ def emit_specialization_overview(opcode_stats, total):
             ("Not specialized", not_specialized, f"{not_specialized*100/total:0.1f}%"),
             ("Specialized", specialized, f"{specialized*100/total:0.1f}%"),
         ))
+        for title, field in (("Deferred", "specialization.deferred"), ("Misses", "specialization.miss")):
+            total = 0
+            counts = []
+            for i, opcode_stat in enumerate(opcode_stats):
+                value = opcode_stat.get(field, 0)
+                counts.append((value, opname[i]))
+                total += value
+            counts.sort(reverse=True)
+            if total:
+                with Section(f"{title} by instruction", 3):
+                    rows = [ (name, count, f"{100*count/total:0.1f}%") for (count, name) in counts[:10] ]
+                    emit_table(("Name", "Count:", "Ratio:"), rows)
 
 def emit_call_stats(stats):
     stats_path = os.path.join(os.path.dirname(__file__), "../../Include/pystats.h")

@@ -7204,7 +7204,7 @@ wrap_descr_get(PyObject *self, PyObject *args, void *wrapped)
         obj = NULL;
     if (type == Py_None)
         type = NULL;
-    if (type == NULL &&obj == NULL) {
+    if (type == NULL && obj == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "__get__(None, None) is invalid");
         return NULL;
@@ -8229,7 +8229,7 @@ static slotdef slotdefs[] = {
     TPSLOT("__next__", tp_iternext, slot_tp_iternext, wrap_next,
            "__next__($self, /)\n--\n\nImplement next(self)."),
     TPSLOT("__get__", tp_descr_get, slot_tp_descr_get, wrap_descr_get,
-           "__get__($self, instance, owner, /)\n--\n\nReturn an attribute of instance, which is of type owner."),
+           "__get__($self, instance, owner=None, /)\n--\n\nReturn an attribute of instance, which is of type owner."),
     TPSLOT("__set__", tp_descr_set, slot_tp_descr_set, wrap_descr_set,
            "__set__($self, instance, value, /)\n--\n\nSet an attribute of instance to value."),
     TPSLOT("__delete__", tp_descr_set, slot_tp_descr_set,

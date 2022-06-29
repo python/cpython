@@ -35,7 +35,8 @@ uint8_t _PyOpcode_Adaptive[256] = {
 
 Py_ssize_t _Py_QuickenedCount = 0;
 #ifdef Py_STATS
-PyStats _py_stats = { 0 };
+PyStats _py_stats_struct = { 0 };
+PyStats *_py_stats = &_py_stats_struct;
 
 #define ADD_STAT_TO_DICT(res, field) \
     do { \
@@ -95,7 +96,7 @@ add_stat_dict(
     int opcode,
     const char *name) {
 
-    SpecializationStats *stats = &_py_stats.opcode_stats[opcode].specialization;
+    SpecializationStats *stats = &_py_stats_struct.opcode_stats[opcode].specialization;
     PyObject *d = stats_to_dict(stats);
     if (d == NULL) {
         return -1;
@@ -141,7 +142,8 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
 {
     /* Mark some opcodes as specializable for stats,
      * even though we don't specialize them yet. */
-    fprintf(out, "opcode[%d].specializable : 1\n", FOR_ITER);
+    fprintf(out, "opcode[%d].specializable : 1\n", BINARY_SLICE);
+    fprintf(out, "opcode[%d].specializable : 1\n", STORE_SLICE);
     for (int i = 0; i < 256; i++) {
         if (_PyOpcode_Adaptive[i]) {
             fprintf(out, "opcode[%d].specializable : 1\n", i);
@@ -212,8 +214,17 @@ print_stats(FILE *out, PyStats *stats) {
 }
 
 void
+_Py_StatsClear(void)
+{
+    _py_stats_struct = (PyStats) { 0 };
+}
+
+void
 _Py_PrintSpecializationStats(int to_file)
 {
+    if (_py_stats == NULL) {
+        return;
+    }
     FILE *out = stderr;
     if (to_file) {
         /* Write to a file instead of stderr. */
@@ -244,7 +255,7 @@ _Py_PrintSpecializationStats(int to_file)
     else {
         fprintf(out, "Specialization stats:\n");
     }
-    print_stats(out, &_py_stats);
+    print_stats(out, _py_stats);
     if (out != stderr) {
         fclose(out);
     }
@@ -252,8 +263,12 @@ _Py_PrintSpecializationStats(int to_file)
 
 #ifdef Py_STATS
 
-#define SPECIALIZATION_FAIL(opcode, kind) _py_stats.opcode_stats[opcode].specialization.failure_kinds[kind]++
-
+#define SPECIALIZATION_FAIL(opcode, kind) \
+do { \
+    if (_py_stats) { \
+        _py_stats->opcode_stats[opcode].specialization.failure_kinds[kind]++; \
+    } \
+} while (0)
 
 #endif
 #endif
