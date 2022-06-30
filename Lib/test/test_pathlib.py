@@ -637,7 +637,8 @@ class _BasePurePathTest(object):
         self.assertEqual(p.relative_to(P('a/b')), P())
         self.assertEqual(p.relative_to('a/b'), P())
         # With several args.
-        self.assertEqual(p.relative_to('a', 'b'), P())
+        with self.assertWarns(DeprecationWarning):
+            p.relative_to('a', 'b')
         # Unrelated paths.
         self.assertRaises(ValueError, p.relative_to, P('c'))
         self.assertRaises(ValueError, p.relative_to, P('a/b/c'))
@@ -671,7 +672,8 @@ class _BasePurePathTest(object):
         self.assertTrue(p.is_relative_to(P('a/b')))
         self.assertTrue(p.is_relative_to('a/b'))
         # With several args.
-        self.assertTrue(p.is_relative_to('a', 'b'))
+        with self.assertWarns(DeprecationWarning):
+            p.is_relative_to('a', 'b')
         # Unrelated paths.
         self.assertFalse(p.is_relative_to(P('c')))
         self.assertFalse(p.is_relative_to(P('a/b/c')))

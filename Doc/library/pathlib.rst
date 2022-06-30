@@ -490,7 +490,7 @@ Pure paths provide the following methods and properties:
       True
 
 
-.. method:: PurePath.is_relative_to(*other)
+.. method:: PurePath.is_relative_to(other)
 
    Return whether or not this path is relative to the *other* path.
 
@@ -564,7 +564,7 @@ Pure paths provide the following methods and properties:
       True
 
 
-.. method:: PurePath.relative_to(*other)
+.. method:: PurePath.relative_to(other)
 
    Compute a version of this path relative to the path represented by
    *other*.  If it's impossible, ValueError is raised::

@@ -640,7 +640,7 @@ class PurePath(object):
         return self._from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
 
-    def relative_to(self, *other):
+    def relative_to(self, other, *args):
         """Return the relative path to another path identified by the passed
         arguments.  If the operation is not possible (because this is not
         a subpath of the other path), raise ValueError.
@@ -649,8 +649,11 @@ class PurePath(object):
         # separate parts, i.e.:
         #   Path('c:/').relative_to('c:')  gives Path('/')
         #   Path('c:/').relative_to('/')   raise ValueError
-        if not other:
-            raise TypeError("need at least one argument")
+        if args:
+            warnings.warn("support for supplying more than one argument to "
+                          "pathlib.PurePath.relative_to() is deprecated and "
+                          "scheduled for removal in Python 3.14.",
+                          DeprecationWarning, stacklevel=2)
         parts = self._parts
         drv = self._drv
         root = self._root
@@ -658,7 +661,7 @@ class PurePath(object):
             abs_parts = [drv, root] + parts[1:]
         else:
             abs_parts = parts
-        to_drv, to_root, to_parts = self._parse_args(other)
+        to_drv, to_root, to_parts = self._parse_args((other,) + args)
         if to_root:
             to_abs_parts = [to_drv, to_root] + to_parts[1:]
         else:
@@ -673,11 +676,17 @@ class PurePath(object):
         return self._from_parsed_parts('', root if n == 1 else '',
                                        abs_parts[n:])
 
-    def is_relative_to(self, *other):
+    def is_relative_to(self, other, *args):
         """Return True if the path is relative to another path or False.
         """
+        if args:
+            warnings.warn("support for supplying more than one argument to "
+                          "pathlib.PurePath.is_relative_to() is deprecated "
+                          "and scheduled for removal in Python 3.14.",
+                          DeprecationWarning, stacklevel=2)
+            other = self._from_parts((other,) + args)
         try:
-            self.relative_to(*other)
+            self.relative_to(other)
             return True
         except ValueError:
             return False
