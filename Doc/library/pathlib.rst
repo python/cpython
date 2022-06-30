@@ -953,7 +953,7 @@ call fails (for example because the path doesn't exist).
 
    For each directory in the directory tree rooted at *self* (including
    *self* but excluding '.' and '..'), yields a 3-tuple
-   ``(dirpath, dirnames, filenames)`` 
+   ``(dirpath, dirnames, filenames)``
 
    *dirpath* is a Path to the directory, *dirnames* is a list of the names
    of the subdirectories in *dirpath* (excluding ``'.'`` and ``'..'``), and
